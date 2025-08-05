@@ -9,7 +9,6 @@ import { fetchYouTubeRSS } from '../lib/youtube';
 
 const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 3);
 ---
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -18,26 +17,32 @@ const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 3);
   <body>
     <Header />
     <main>
-      <section style="text-align:center; padding: 2rem 1rem;">
-        <h1 style="margin-bottom: .5rem;">🏞️ Hogg Country</h1>
-        <p>Dad’s hikes across Arkansas, Colorado, and beyond — trip logs, photos, maps, and trail stories.</p>
+      <section class="hero">
+        <div class="container">
+          <h1 class="font-display">🏞️ Hogg Country</h1>
+          <p>Dad’s hikes across Arkansas, Colorado, and beyond — trip logs, photos, maps, and trail stories.</p>
+        </div>
       </section>
 
       {videos.length ? (
-        <section style="max-width: 1100px; margin: 0 auto; padding: 1rem;">
-          <div style="display:flex; align-items:baseline; justify-content:space-between;">
-            <h2>Latest from YouTube</h2>
-            <a href="/videos">See all</a>
-          </div>
-          <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-            {videos.map((v) => (
-              <article style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
-                <YouTubeEmbed id={v.id} title={v.title} />
-                <div style="padding:.75rem 1rem;">
-                  <h3 style="margin:0 0 .25rem 0; font-size:1rem;">{v.title}</h3>
-                </div>
-              </article>
-            ))}
+        <section>
+          <div class="container">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:.75rem;">
+              <h2 class="font-display">Latest from YouTube</h2>
+              <a href="/videos">See all</a>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+              {videos.map((v) => (
+                <article class="card">
+                  <div class="video-frame">
+                    <YouTubeEmbed id={v.id} title={v.title} />
+                  </div>
+                  <div style="padding:.75rem 1rem;">
+                    <h3 class="video-title clamp-2">{v.title}</h3>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
       ) : null}
