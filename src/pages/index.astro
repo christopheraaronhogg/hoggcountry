@@ -4,6 +4,10 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { YT_FEED_URL } from '../lib/config';
+import { fetchYouTubeRSS } from '../lib/youtube';
+
+const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 3);
 ---
 
 <!doctype html>
@@ -19,10 +23,24 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
         <p>Dad’s hikes across Arkansas, Colorado, and beyond — trip logs, photos, maps, and trail stories.</p>
       </section>
 
-      <section style="max-width: 960px; margin: 0 auto; padding: 1rem;">
-        <h2>Featured clip</h2>
-        <YouTubeEmbed url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="Summit day recap" />
-      </section>
+      {videos.length ? (
+        <section style="max-width: 1100px; margin: 0 auto; padding: 1rem;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between;">
+            <h2>Latest from YouTube</h2>
+            <a href="/videos">See all</a>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+            {videos.map((v) => (
+              <article style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+                <YouTubeEmbed id={v.id} title={v.title} />
+                <div style="padding:.75rem 1rem;">
+                  <h3 style="margin:0 0 .25rem 0; font-size:1rem;">{v.title}</h3>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </main>
     <Footer />
   </body>

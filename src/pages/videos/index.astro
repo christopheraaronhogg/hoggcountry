@@ -1,0 +1,32 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
+import { YT_FEED_URL } from '../../lib/config';
+import { fetchYouTubeRSS } from '../../lib/youtube';
+
+const videos = await fetchYouTubeRSS(YT_FEED_URL);
+---
+<html lang="en">
+  <head>
+    <BaseHead title="Videos • Hogg Country" description="Recent uploads from our YouTube channel" />
+  </head>
+  <body>
+    <Header />
+    <main style="max-width: 1100px; margin: 0 auto; padding: 1rem;">
+      <h1>Videos</h1>
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+        {videos.map((v) => (
+          <article style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+            <YouTubeEmbed id={v.id} title={v.title} />
+            <div style="padding:.75rem 1rem;">
+              <h2 style="margin:0 0 .25rem 0; font-size:1rem;">{v.title}</h2>
+            </div>
+          </article>
+        ))}
+      </div>
+    </main>
+    <Footer />
+  </body>
+</html>
