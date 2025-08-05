@@ -1,3 +1,5 @@
+import { XMLParser } from 'fast-xml-parser';
+
 export type YtVideo = {
   id: string;
   title: string;
@@ -16,36 +18,43 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
   if (!res.ok) throw new Error(`YouTube RSS fetch failed: ${res.status}`);
   const xml = await res.text();
 
-  const items = parseYouTubeXML(xml);
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: '',
+    removeNSPrefix: false,
+  });
+
+  const data = parser.parse(xml) as any;
+  const entries = Array.isArray(data.feed?.entry)
+    ? data.feed.entry
+    : data.feed?.entry
+    ? [data.feed.entry]
+    : [];
+
+  const items: YtVideo[] = entries
+    .map((e: any) => {
+      const title = e.title || 'Untitled';
+      let link = '';
+      if (Array.isArray(e.link)) {
+        link = e.link.find((l: any) => l.href)?.href || e.link[0]?.href || '';
+      } else if (e.link && typeof e.link === 'object') {
+        link = e.link.href || '';
+      }
+      const published = e.published || '';
+      const videoId = e['yt:videoId'] || (link ? new URL(link).searchParams.get('v') : '') || '';
+      let thumbnail = '';
+      const mg = e['media:group'];
+      if (mg && mg['media:thumbnail'] && mg['media:thumbnail'].url) {
+        thumbnail = mg['media:thumbnail'].url;
+      } else if (e['media:thumbnail'] && e['media:thumbnail'].url) {
+        thumbnail = e['media:thumbnail'].url;
+      } else if (videoId) {
+        thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+      }
+      return { id: videoId, title, published, link, thumbnail } as YtVideo;
+    })
+    .filter((v: YtVideo) => v.id);
+
   cache = { items, ts: Date.now() };
-  return items;
-}
-
-function text(el: Element | null): string {
-  return el?.textContent || '';
-}
-
-function parseYouTubeXML(xml: string): YtVideo[] {
-  // Simple XML parse using DOMParser available in Astro env
-  const { DOMParser } = globalThis as any;
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'text/xml');
-
-  const entries = Array.from(doc.getElementsByTagName('entry'));
-  const mediaNs = 'http://search.yahoo.com/mrss/';
-  const ytNs = 'http://www.youtube.com/xml/schemas/2015';
-
-  const items: YtVideo[] = entries.map((e) => {
-    const title = text(e.getElementsByTagName('title')[0]);
-    const link = e.getElementsByTagName('link')[0]?.getAttribute('href') || '';
-    const published = text(e.getElementsByTagName('published')[0]);
-    const vid = e.getElementsByTagNameNS(ytNs, 'videoId')[0]?.textContent
-      || (link ? new URL(link).searchParams.get('v') : '')
-      || '';
-    const thumbEl = e.getElementsByTagNameNS(mediaNs, 'thumbnail')[0];
-    const thumbnail = thumbEl?.getAttribute('url') || (vid ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg` : '');
-    return { id: vid, title, published, link, thumbnail } as YtVideo;
-  }).filter(v => v.id);
-
   return items;
 }
