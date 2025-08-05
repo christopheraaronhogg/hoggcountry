@@ -2,11 +2,13 @@
 import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getCollection, getEntry } from 'astro:content';
+import { getEntry } from 'astro:content';
 import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
+import Gallery from '../../components/Gallery.svelte';
 import FormattedDate from '../../components/FormattedDate.astro';
 
 export async function getStaticPaths() {
+  const { getCollection } = await import('astro:content');
   const trips = await getCollection('trips');
   return trips.map((trip) => ({ params: { slug: trip.id } }));
 }
@@ -22,25 +24,53 @@ const data = entry!.data as any;
   </head>
   <body>
     <Header />
-    <main style="max-width: 860px; margin: 0 auto; padding: 1rem;">
-      <a href="/trips">← All trips</a>
-      <h1>{data.title}</h1>
-      <div style="color:#6b7280; font-size:.95rem; margin-bottom:1rem;">
-        <FormattedDate date={data.date} /> • {data.state}
-        {data.trail_name && ` • ${data.trail_name}`}
-        {data.distance_miles && ` • ${data.distance_miles} miles`}
-        {data.elevation_gain_ft && ` • ${data.elevation_gain_ft} ft gain`}
-      </div>
-      <article>
-        <slot />
-      </article>
+    <main>
+      <section class="hero" style="padding-bottom: 1rem;">
+        <div class="container">
+          <h1 class="font-display">{data.title}</h1>
+          <div style="color:#9aa3b2; font-size:.95rem; margin-top:.25rem;">
+            <FormattedDate date={data.date} />
+          </div>
+          <div class="badges">
+            {data.state && <span class="badge"><strong>State</strong> {data.state}</span>}
+            {data.trail_name && <span class="badge"><strong>Trail</strong> {data.trail_name}</span>}
+            {data.distance_miles && <span class="badge"><strong>Distance</strong> {data.distance_miles} mi</span>}
+            {data.elevation_gain_ft && <span class="badge"><strong>Gain</strong> {data.elevation_gain_ft} ft</span>}
+            {data.difficulty && <span class="badge"><strong>Difficulty</strong> {data.difficulty}</span>}
+            {(data.tags || []).map((t: string) => <span class="badge">#{t}</span>)}
+          </div>
+        </div>
+      </section>
 
-      {data.youtube?.length ? (
-        <section>
-          <h2>Clips</h2>
-          {data.youtube.map((u: string) => <YouTubeEmbed url={u} title={data.title} />)}
-        </section>
-      ) : null}
+      <section>
+        <div class="container" style="display:grid; gap: 1rem;">
+          <article class="card" style="padding: 1rem 1rem .5rem;">
+            <slot />
+          </article>
+
+          {data.gallery?.length ? (
+            <section class="card" style="padding: 1rem;">
+              <h2 class="section-title font-display">Gallery</h2>
+              <Gallery images={data.gallery.map((src: string) => ({ src }))} />
+            </section>
+          ) : null}
+
+          {data.youtube?.length ? (
+            <section>
+              <h2 class="section-title container font-display" style="margin-top: .5rem;">Clips</h2>
+              <div class="container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+                {data.youtube.map((u: string) => (
+                  <article class="card">
+                    <div class="video-frame">
+                      <YouTubeEmbed url={u} title={data.title} />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </section>
     </main>
     <Footer />
   </body>

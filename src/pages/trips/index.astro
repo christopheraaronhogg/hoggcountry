@@ -14,21 +14,39 @@ import FormattedDate from '../../components/FormattedDate.astro';
   </head>
   <body>
     <Header />
-    <main style="max-width: 960px; margin: 0 auto; padding: 1rem;">
-      <h1>Trips</h1>
-      <ul style="list-style:none; padding:0; display:grid; gap:1rem;">
-        {trips.map(({ id, data }) => (
-          <li style="border:1px solid #e5e7eb; border-radius:12px; padding:1rem;">
-            <a href={`/trips/${id}/`} style="text-decoration:none; color:inherit;">
-              <h2 style="margin:.25rem 0;">{data.title}</h2>
-              <div style="color:#6b7280; font-size:.9rem;">
-                <FormattedDate date={data.date} /> • {data.state}{data.trail_name ? ` • ${data.trail_name}` : ''}
-              </div>
-              {data.description && <p>{data.description}</p>}
-            </a>
-          </li>
-        ))}
-      </ul>
+    <main>
+      <section class="hero" style="padding-bottom:1.25rem;">
+        <div class="container">
+          <h1 class="font-display">Trips</h1>
+          <p>Hikes and adventures — Arkansas, Colorado, and beyond.</p>
+        </div>
+      </section>
+
+      <section>
+        <div class="container">
+          <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+            {trips.map(({ id, data }) => (
+              <article class="card">
+                <a href={`/trips/${id}/`} style="display:block; color:inherit; text-decoration:none;">
+                  <div style="padding:1rem 1rem .5rem;">
+                    <h2 class="clamp-2">{data.title}</h2>
+                    <div style="color:#9aa3b2; font-size:.9rem; margin-top:.15rem;">
+                      <FormattedDate date={data.date} />
+                    </div>
+                    <div class="badges">
+                      {data.state && <span class="badge"><strong>State</strong> {data.state}</span>}
+                      {data.distance_miles && <span class="badge"><strong>Distance</strong> {data.distance_miles} mi</span>}
+                      {data.elevation_gain_ft && <span class="badge"><strong>Gain</strong> {data.elevation_gain_ft} ft</span>}
+                      {data.difficulty && <span class="badge"><strong>Difficulty</strong> {data.difficulty}</span>}
+                      {(data.tags && data.tags[0]) && <span class="badge">#{data.tags[0]}</span>}
+                    </div>
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
     <Footer />
   </body>
