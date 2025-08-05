@@ -1,0 +1,64 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getCollection } from 'astro:content';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('trips');
+  const blog = await getCollection('posts');
+  const tags = new Set<string>();
+  posts.forEach((p) => (p.data.tags || []).forEach((t: string) => tags.add(t)));
+  blog.forEach((p) => (p.data.tags || []).forEach((t: string) => tags.add(t)));
+  return Array.from(tags).map((t) => ({ params: { tag: t } }));
+}
+
+const { tag } = Astro.params as { tag: string };
+const trips = (await getCollection('trips')).filter((p) => (p.data.tags || []).includes(tag));
+const blog = (await getCollection('posts')).filter((p) => (p.data.tags || []).includes(tag));
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title={`${tag} • Hogg Country`} description={`Trips and posts tagged ${tag}`} />
+  </head>
+  <body>
+    <Header />
+    <main style="max-width: 860px; margin: 0 auto; padding: 1rem;">
+      <a href="/tags">← All tags</a>
+      <h1>Tag: {tag}</h1>
+
+      {trips.length ? (
+        <section>
+          <h2>Trips</h2>
+          <ul>
+            {trips.map(({ id, data }) => (
+              <li>
+                <a href={`/trips/${id}/`}>{data.title}</a>
+                <span style="color:#6b7280;"> — <FormattedDate date={data.date} /></span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {blog.length ? (
+        <section>
+          <h2>Posts</h2>
+          <ul>
+            {blog.map(({ id, data }) => (
+              <li>
+                <a href={`/blog/${id}/`}>{data.title}</a>
+                <span style="color:#6b7280;"> — <FormattedDate date={data.date} /></span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {!trips.length && !blog.length ? <p>No entries with this tag yet.</p> : null}
+    </main>
+    <Footer />
+  </body>
+</html>

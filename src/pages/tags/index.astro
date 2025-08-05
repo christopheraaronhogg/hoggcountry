@@ -1,0 +1,39 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getCollection } from 'astro:content';
+---
+
+{ const posts = (await getCollection('trips')).flatMap((p) => p.data.tags?.map((t: string) => ({ tag: t, id: p.id })) || []);
+  const blogPosts = (await getCollection('posts')).flatMap((p) => p.data.tags?.map((t: string) => ({ tag: t, id: p.id, blog: true })) || []);
+  const all = [...posts, ...blogPosts];
+  const byTag = new Map<string, { trips: string[]; blog: string[] }>();
+  for (const { tag, id, blog } of all) {
+    const e = byTag.get(tag) || { trips: [], blog: [] };
+    if (blog) e.blog.push(id); else e.trips.push(id);
+    byTag.set(tag, e);
+  }
+  const tags = Array.from(byTag.entries()).sort((a,b) => b[1].trips.length + b[1].blog.length - (a[1].trips.length + a[1].blog.length));
+}
+
+<html lang="en">
+  <head>
+    <BaseHead title="Tags • Hogg Country" description="Browse by tag" />
+  </head>
+  <body>
+    <Header />
+    <main style="max-width: 860px; margin: 0 auto; padding: 1rem;">
+      <h1>Tags</h1>
+      <ul style="display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .75rem; list-style:none; padding:0;">
+        {tags.map(([tag, data]) => (
+          <li><a href={`/tags/${encodeURIComponent(tag)}/`} style="display:block; border:1px solid #e5e7eb; border-radius:10px; padding:.5rem .75rem; text-decoration:none; color:inherit;">
+            <strong>{tag}</strong>
+            <div style="color:#6b7280; font-size:.85rem;">{data.trips.length} trips • {data.blog.length} posts</div>
+          </a></li>
+        ))}
+      </ul>
+    </main>
+    <Footer />
+  </body>
+</html>
