@@ -1,0 +1,35 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getCollection } from 'astro:content';
+import FormattedDate from '../../components/FormattedDate.astro';
+---
+
+{ const trips = (await getCollection('trips')).sort((a,b) => +b.data.date - +a.data.date); }
+
+<html lang="en">
+  <head>
+    <BaseHead title="Trips • Hogg Country" description="Trips across Arkansas, Colorado, and beyond." />
+  </head>
+  <body>
+    <Header />
+    <main style="max-width: 960px; margin: 0 auto; padding: 1rem;">
+      <h1>Trips</h1>
+      <ul style="list-style:none; padding:0; display:grid; gap:1rem;">
+        {trips.map(({ id, data }) => (
+          <li style="border:1px solid #e5e7eb; border-radius:12px; padding:1rem;">
+            <a href={`/trips/${id}/`} style="text-decoration:none; color:inherit;">
+              <h2 style="margin:.25rem 0;">{data.title}</h2>
+              <div style="color:#6b7280; font-size:.9rem;">
+                <FormattedDate date={data.date} /> • {data.state}{data.trail_name ? ` • ${data.trail_name}` : ''}
+              </div>
+              {data.description && <p>{data.description}</p>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </main>
+    <Footer />
+  </body>
+</html>

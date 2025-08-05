@@ -1,0 +1,82 @@
+---
+// Privacy-friendly, lazy YouTube embed supporting Shorts & full videos.
+// Props: id?: string; url?: string; title: string; start?: number; autoplay?: boolean; captions?: boolean; aspect?: '16-9' | '9-16';
+const { id, url, title, start = 0, autoplay = false, captions = false, aspect } = Astro.props as any;
+
+function parseId(u?: string, fallback?: string): { id?: string; isShorts: boolean } {
+  if (!u) return { id: fallback, isShorts: false };
+  try {
+    const url = new URL(u);
+    if (url.hostname.includes('youtube.com')) {
+      if (url.pathname.startsWith('/shorts/')) {
+        return { id: url.pathname.split('/')[2], isShorts: true };
+      }
+      if (url.searchParams.get('v')) {
+        return { id: url.searchParams.get('v')!, isShorts: false };
+      }
+    }
+    if (url.hostname === 'youtu.be') {
+      return { id: url.pathname.replace('/', ''), isShorts: false };
+    }
+  } catch {}
+  return { id: fallback, isShorts: false };
+}
+
+const parsed = parseId(url, id);
+const videoId = parsed.id;
+const isShorts = parsed.isShorts || aspect === '9-16';
+const ratio = isShorts ? '56.25%' : '56.25%'; // 16:9 default; we constrain width for shorts
+const base = 'https://www.youtube-nocookie.com/embed/' + videoId;
+const params = new URLSearchParams({
+  rel: '0',
+  modestbranding: '1',
+  playsinline: '1',
+  start: String(start || 0),
+  ...(autoplay ? { autoplay: '1', mute: '1' } : {}),
+});
+const src = `${base}?${params.toString()}`;
+const thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+---
+
+{videoId ? (
+  <div class={`yt-outer ${isShorts ? 'shorts' : ''}`}>
+    <button class="yt-thumb" aria-label={`Play video: ${title}`} data-src={src} data-title={title}>
+      <img src={thumb} alt={title} loading="lazy" />
+      <div class="yt-play" aria-hidden="true">▶</div>
+    </button>
+  </div>
+) : (
+  <div>Invalid YouTube ID/URL</div>
+)}
+
+<script>
+  // Hydrate on load for click-to-play; small client script
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.yt-thumb') as HTMLButtonElement | null;
+    if (!btn) return;
+    const src = btn.getAttribute('data-src');
+    const title = btn.getAttribute('data-title') || '';
+    const wrapper = btn.parentElement as HTMLElement;
+    if (!src || !wrapper) return;
+    const iframe = document.createElement('iframe');
+    iframe.width = '100%';
+    iframe.height = '100%';
+    iframe.src = src;
+    iframe.title = title;
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    iframe.allowFullscreen = true as any;
+    iframe.loading = 'lazy' as any;
+    wrapper.replaceChild(iframe, btn);
+  });
+</script>
+
+<style>
+  .yt-outer { position: relative; width: 100%; max-width: 900px; margin: 1rem auto; }
+  .yt-outer::before { content: ''; display: block; padding-top: 56.25%; }
+  .yt-outer.shorts { max-width: 400px; }
+  .yt-outer > * { position: absolute; inset: 0; }
+  .yt-thumb { border: 0; background: #000; cursor: pointer; padding: 0; }
+  .yt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .yt-play { position: absolute; inset: 0; display: grid; place-items: center; color: white; font-size: 3rem; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
+  .yt-thumb:focus-visible { outline: 2px solid #60a5fa; outline-offset: 4px; border-radius: 6px; }
+</style>

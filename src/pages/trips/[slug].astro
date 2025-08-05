@@ -1,0 +1,47 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getCollection, getEntry } from 'astro:content';
+import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+export async function getStaticPaths() {
+  const trips = await getCollection('trips');
+  return trips.map((trip) => ({ params: { slug: trip.id } }));
+}
+
+const { slug } = Astro.params;
+const entry = await getEntry('trips', slug!);
+const data = entry!.data as any;
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title={`${data.title} • Hogg Country`} description={data.description || ''} />
+  </head>
+  <body>
+    <Header />
+    <main style="max-width: 860px; margin: 0 auto; padding: 1rem;">
+      <a href="/trips">← All trips</a>
+      <h1>{data.title}</h1>
+      <div style="color:#6b7280; font-size:.95rem; margin-bottom:1rem;">
+        <FormattedDate date={data.date} /> • {data.state}
+        {data.trail_name && ` • ${data.trail_name}`}
+        {data.distance_miles && ` • ${data.distance_miles} miles`}
+        {data.elevation_gain_ft && ` • ${data.elevation_gain_ft} ft gain`}
+      </div>
+      <article>
+        <slot />
+      </article>
+
+      {data.youtube?.length ? (
+        <section>
+          <h2>Clips</h2>
+          {data.youtube.map((u: string) => <YouTubeEmbed url={u} title={data.title} />)}
+        </section>
+      ) : null}
+    </main>
+    <Footer />
+  </body>
+</html>
