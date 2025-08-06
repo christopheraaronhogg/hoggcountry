@@ -6,7 +6,6 @@ import YouTubeEmbed from '../components/YouTubeEmbed.astro';
 import IconBadge from '../components/IconBadge.astro';
 import Timeline from '../components/Timeline.astro';
 import TimelineItem from '../components/TimelineItem.astro';
-import TimelineTicks from '../components/TimelineTicks.astro';
 
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { YT_FEED_URL } from '../lib/config';
@@ -46,7 +45,6 @@ const entries = combined.map((e, idx) => {
   const dateFull = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   return { ...e, side: (idx % 2 === 0 ? 'left' : 'right') as 'left' | 'right', dateShort, dateFull };
 });
-const tickDates = entries.map(e => e.date);
 ---
 <!doctype html>
 <html lang="en">
@@ -69,7 +67,6 @@ const tickDates = entries.map(e => e.date);
 
       <section id="timeline">
         <div class="container" style="position:relative;">
-          <TimelineTicks dates={tickDates} />
           <Timeline>
             {entries.map((e) => (
               <TimelineItem side={e.side}>
@@ -104,6 +101,7 @@ const tickDates = entries.map(e => e.date);
                         <div class="entry-head">
                           <h3 class="title clamp-2" style="margin:0;">{e.title}</h3>
                           <div class="entry-meta" aria-label={`Date ${e.dateFull}`}>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="#6b705c" aria-hidden="true" style="margin-right:.25rem;"><path d="M8 5v14l11-7z"/></svg>
                             <span>{e.dateShort}</span>
                             <span class="dot"></span><span>YouTube</span>
                           </div>
