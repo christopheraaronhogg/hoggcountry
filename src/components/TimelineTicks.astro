@@ -1,0 +1,20 @@
+---
+/**
+ * Render simple month/day ticks along the stitch. Provide an array of ISO dates.
+ */
+interface Props { dates: string[] }
+const { dates = [] } = Astro.props as Props;
+const labels = Array.from(new Set(dates.map((d) => {
+  const dt = new Date(d);
+  return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+})));
+---
+<div class="timeline-ticks" aria-hidden="true">
+  {labels.map((label) => <div class="tick"><span>{label}</span></div>)}
+</div>
+
+<style>
+  .timeline-ticks { position: absolute; left: calc(50% - 70px); top: 0; bottom: 0; width: 60px; display:flex; flex-direction:column; justify-content:space-between; pointer-events:none; }
+  .tick span { color: #6b705c; font-size: .8rem; }
+  @media (max-width: 820px) { .timeline-ticks { display:none; } }
+</style>

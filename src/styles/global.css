@@ -146,3 +146,13 @@ a:hover { color: #093d7f; }
 
 /* Clamping */
 .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Entry headers and video density tweaks */
+.entry-head { display:flex; align-items:baseline; justify-content:space-between; gap:.75rem; }
+.entry-meta { color: var(--muted); font-size: .85rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.entry-meta .dot { width:4px; height:4px; border-radius:999px; background:#9ea7a0; display:inline-block; }
+.video-card .video-frame { border-radius: 10px; }
+.video-card .title { margin: .5rem 0 0; font-size: 1rem; }
+.video-card .actions { margin-top: .25rem; font-size: .9rem; }
+.video-card .actions a { text-decoration: none; color: #0a4fa6; }
+.video-card .actions a:hover { text-decoration: underline; }

@@ -3,9 +3,10 @@ import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
-import Patch from '../components/Patch.astro';
+import IconBadge from '../components/IconBadge.astro';
 import Timeline from '../components/Timeline.astro';
 import TimelineItem from '../components/TimelineItem.astro';
+import TimelineTicks from '../components/TimelineTicks.astro';
 
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { YT_FEED_URL } from '../lib/config';
@@ -37,9 +38,15 @@ const vids = (await fetchYouTubeRSS(YT_FEED_URL)).map(v => ({
 const combined = [...trips, ...vids]
   .filter(i => !!i.date)
   .sort((a, b) => +new Date(b.date) - +new Date(a.date))
-  .slice(0, 8);
+  .slice(0, 10);
 
-const entries = combined.map((e, idx) => ({ ...e, side: (idx % 2 === 0 ? 'left' : 'right') as 'left' | 'right' }));
+const entries = combined.map((e, idx) => {
+  const d = new Date(e.date);
+  const dateShort = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const dateFull = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  return { ...e, side: (idx % 2 === 0 ? 'left' : 'right') as 'left' | 'right', dateShort, dateFull };
+});
+const tickDates = entries.map(e => e.date);
 ---
 <!doctype html>
 <html lang="en">
@@ -61,21 +68,27 @@ const entries = combined.map((e, idx) => ({ ...e, side: (idx % 2 === 0 ? 'left' 
       </section>
 
       <section id="timeline">
-        <div class="container">
+        <div class="container" style="position:relative;">
+          <TimelineTicks dates={tickDates} />
           <Timeline>
             {entries.map((e) => (
               <TimelineItem side={e.side}>
                 <Fragment slot="patch">
-                  <Patch variant={e.kind === 'trip' ? 'trip' : 'video'} label={e.kind === 'trip' ? 'TRIP' : 'VIDEO'} title={e.title} />
+                  <IconBadge variant={e.kind === 'trip' ? 'trip' : e.kind === 'video' ? 'video' : 'post'} title={e.title} />
                 </Fragment>
 
                 <div data-kind={e.kind}>
                   {e.kind === 'trip' ? (
-                    <article class="card" style="padding: 1rem 1rem .75rem;">
+                    <article class="card" style="padding: .75rem 1rem;">
                       <a href={e.url} style="text-decoration:none; color:inherit;">
-                        <h3 style="margin:0 0 .25rem 0;" class="font-display">{e.title}</h3>
+                        <div class="entry-head">
+                          <h3 class="font-display" style="margin:0;">{e.title}</h3>
+                          <div class="entry-meta" aria-label={`Date ${e.dateFull}`}>
+                            <span>{e.dateShort}</span>
+                            {e.meta.state && (<><span class="dot"></span><span>{e.meta.state}</span></>)}
+                          </div>
+                        </div>
                         <div class="badges" style="margin-top:.35rem;">
-                          {e.meta.state && <span class="badge"><strong>State</strong> {e.meta.state}</span>}
                           {e.meta.distance_miles && <span class="badge"><strong>Distance</strong> {e.meta.distance_miles} mi</span>}
                           {e.meta.elevation_gain_ft && <span class="badge"><strong>Gain</strong> {e.meta.elevation_gain_ft} ft</span>}
                           {e.meta.difficulty && <span class="badge"><strong>Diff</strong> {e.meta.difficulty}</span>}
@@ -83,13 +96,21 @@ const entries = combined.map((e, idx) => ({ ...e, side: (idx % 2 === 0 ? 'left' 
                       </a>
                     </article>
                   ) : (
-                    <article class="card" style="overflow:hidden;">
+                    <article class="card video-card" style="padding: .5rem .5rem .6rem;">
                       <div class="video-frame">
                         <YouTubeEmbed id={e.id} title={e.title} />
                       </div>
-                      <div style="padding:.75rem 1rem;">
-                        <h3 class="clamp-2">{e.title}</h3>
-                        <a href={e.url} target="_blank" rel="noopener" class="btn" style="margin-top:.5rem;">Open on YouTube</a>
+                      <div style="padding: .35rem .5rem .2rem;">
+                        <div class="entry-head">
+                          <h3 class="title clamp-2" style="margin:0;">{e.title}</h3>
+                          <div class="entry-meta" aria-label={`Date ${e.dateFull}`}>
+                            <span>{e.dateShort}</span>
+                            <span class="dot"></span><span>YouTube</span>
+                          </div>
+                        </div>
+                        <div class="actions">
+                          <a href={e.url} target="_blank" rel="noopener">Open on YouTube</a>
+                        </div>
                       </div>
                     </article>
                   )}
