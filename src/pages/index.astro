@@ -3,11 +3,43 @@ import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
+import Patch from '../components/Patch.astro';
+import Timeline from '../components/Timeline.astro';
+import TimelineItem from '../components/TimelineItem.astro';
+
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { YT_FEED_URL } from '../lib/config';
 import { fetchYouTubeRSS } from '../lib/youtube';
+import { getCollection } from 'astro:content';
 
-const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 3);
+const trips = (await getCollection('trips')).map(t => ({
+  kind: 'trip' as const,
+  id: t.id,
+  title: t.data.title,
+  date: new Date(t.data.date).toISOString(),
+  url: `/trips/${t.id}/`,
+  meta: {
+    state: t.data.state,
+    distance_miles: t.data.distance_miles,
+    elevation_gain_ft: t.data.elevation_gain_ft,
+    difficulty: t.data.difficulty,
+  },
+}));
+
+const vids = (await fetchYouTubeRSS(YT_FEED_URL)).map(v => ({
+  kind: 'video' as const,
+  id: v.id,
+  title: v.title,
+  date: v.published,
+  url: `https://www.youtube.com/watch?v=${v.id}`,
+}));
+
+const combined = [...trips, ...vids]
+  .filter(i => !!i.date)
+  .sort((a, b) => +new Date(b.date) - +new Date(a.date))
+  .slice(0, 8);
+
+const entries = combined.map((e, idx) => ({ ...e, side: (idx % 2 === 0 ? 'left' : 'right') as 'left' | 'right' }));
 ---
 <!doctype html>
 <html lang="en">
@@ -17,35 +49,55 @@ const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 3);
   <body>
     <Header />
     <main>
-      <section class="hero">
+      <section class="hero" style="padding-top:3.5rem;">
         <div class="container">
-          <h1 class="font-display">🏞️ Hogg Country</h1>
-          <p>Dad’s hikes across Arkansas, Colorado, and beyond — trip logs, photos, maps, and trail stories.</p>
+          <h1 class="font-display">Hogg Country — The Trailhead Logbook</h1>
+          <p>A hiker’s scrapbook: trips, summits, photos, and clips.</p>
+          <div style="margin-top:1rem; display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap;">
+            <a class="btn btn-primary" href="/trips">View Trips</a>
+            <a class="btn" href="/videos">Watch Videos</a>
+          </div>
+          <div class="chapter font-chapter">Chapter: Pike’s Peak • Colorado</div>
         </div>
       </section>
 
-      {videos.length ? (
-        <section>
-          <div class="container">
-            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:.75rem;">
-              <h2 class="font-display">Latest from YouTube</h2>
-              <a href="/videos">See all</a>
-            </div>
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-              {videos.map((v) => (
-                <article class="card">
-                  <div class="video-frame">
-                    <YouTubeEmbed id={v.id} title={v.title} />
-                  </div>
-                  <div style="padding:.75rem 1rem;">
-                    <h3 class="video-title clamp-2">{v.title}</h3>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
+      <section>
+        <div class="container">
+          <Timeline>
+            {entries.map((e) => (
+              <TimelineItem side={e.side}>
+                <Fragment slot="patch">
+                  <Patch variant={e.kind === 'trip' ? 'trip' : 'video'} label={e.kind === 'trip' ? 'TRIP' : 'VIDEO'} title={e.title} />
+                </Fragment>
+
+                {e.kind === 'trip' ? (
+                  <article class="card" style="padding: 1rem 1rem .75rem;">
+                    <a href={e.url} style="text-decoration:none; color:inherit;">
+                      <h3 style="margin:0 0 .25rem 0;" class="font-display">{e.title}</h3>
+                      <div class="badges" style="margin-top:.35rem;">
+                        {e.meta.state && <span class="badge"><strong>State</strong> {e.meta.state}</span>}
+                        {e.meta.distance_miles && <span class="badge"><strong>Distance</strong> {e.meta.distance_miles} mi</span>}
+                        {e.meta.elevation_gain_ft && <span class="badge"><strong>Gain</strong> {e.meta.elevation_gain_ft} ft</span>}
+                        {e.meta.difficulty && <span class="badge"><strong>Diff</strong> {e.meta.difficulty}</span>}
+                      </div>
+                    </a>
+                  </article>
+                ) : (
+                  <article class="card" style="overflow:hidden;">
+                    <div class="video-frame">
+                      <YouTubeEmbed id={e.id} title={e.title} />
+                    </div>
+                    <div style="padding:.75rem 1rem;">
+                      <h3 class="clamp-2">{e.title}</h3>
+                      <a href={e.url} target="_blank" rel="noopener" class="btn" style="margin-top:.5rem;">Open on YouTube</a>
+                    </div>
+                  </article>
+                )}
+              </TimelineItem>
+            ))}
+          </Timeline>
+        </div>
+      </section>
     </main>
     <Footer />
   </body>

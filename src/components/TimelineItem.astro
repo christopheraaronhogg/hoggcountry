@@ -1,0 +1,12 @@
+---
+interface Props { side?: 'left' | 'right' }
+const { side = 'left' } = Astro.props as Props;
+---
+<div class={`timeline-item ${side === 'right' ? 'right' : ''}`}>
+  <div class="side">
+    <slot name="patch" />
+  </div>
+  <div class="content">
+    <slot />
+  </div>
+</div>

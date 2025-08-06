@@ -1,0 +1,11 @@
+---
+interface Props {
+  variant?: 'trip' | 'video' | 'story' | 'map';
+  label?: string;
+  title?: string;
+}
+const { variant = 'trip', label = '', title = '' } = Astro.props as Props;
+---
+<div class={`patch ${variant}`} aria-label={title || label} title={title || label}>
+  <div class="inner">{label}</div>
+</div>
