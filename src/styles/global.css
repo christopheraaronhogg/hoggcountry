@@ -66,9 +66,7 @@ a:hover { color: #093d7f; }
   border-bottom: 1px solid var(--border);
 }
 .header .brand a { font-family: Oswald, sans-serif; font-weight: 700; font-size: 1.125rem; color: var(--pine); text-decoration: none; }
-.nav a {
-  padding: .85rem .6rem; border-bottom: 2px solid transparent; color: var(--pine); text-decoration: none;
-}
+.nav a { padding: .6rem .5rem; border-bottom: 2px solid transparent; color: var(--pine); text-decoration: none; }
 .nav a:hover { border-bottom-color: var(--alpine); }
 
 /* Hero */

@@ -54,14 +54,13 @@ const entries = combined.map((e, idx) => ({ ...e, side: (idx % 2 === 0 ? 'left' 
           <h1 class="font-display">Hogg Country — The Trailhead Logbook</h1>
           <p>A hiker’s scrapbook: trips, summits, photos, and clips.</p>
           <div style="margin-top:1rem; display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap;">
-            <a class="btn btn-primary" href="/trips">View Trips</a>
-            <a class="btn" href="/videos">Watch Videos</a>
+            <a class="btn btn-primary" href="#timeline">Jump to Timeline</a>
           </div>
           <div class="chapter font-chapter">Chapter: Pike’s Peak • Colorado</div>
         </div>
       </section>
 
-      <section>
+      <section id="timeline">
         <div class="container">
           <Timeline>
             {entries.map((e) => (
@@ -70,34 +69,60 @@ const entries = combined.map((e, idx) => ({ ...e, side: (idx % 2 === 0 ? 'left' 
                   <Patch variant={e.kind === 'trip' ? 'trip' : 'video'} label={e.kind === 'trip' ? 'TRIP' : 'VIDEO'} title={e.title} />
                 </Fragment>
 
-                {e.kind === 'trip' ? (
-                  <article class="card" style="padding: 1rem 1rem .75rem;">
-                    <a href={e.url} style="text-decoration:none; color:inherit;">
-                      <h3 style="margin:0 0 .25rem 0;" class="font-display">{e.title}</h3>
-                      <div class="badges" style="margin-top:.35rem;">
-                        {e.meta.state && <span class="badge"><strong>State</strong> {e.meta.state}</span>}
-                        {e.meta.distance_miles && <span class="badge"><strong>Distance</strong> {e.meta.distance_miles} mi</span>}
-                        {e.meta.elevation_gain_ft && <span class="badge"><strong>Gain</strong> {e.meta.elevation_gain_ft} ft</span>}
-                        {e.meta.difficulty && <span class="badge"><strong>Diff</strong> {e.meta.difficulty}</span>}
+                <div data-kind={e.kind}>
+                  {e.kind === 'trip' ? (
+                    <article class="card" style="padding: 1rem 1rem .75rem;">
+                      <a href={e.url} style="text-decoration:none; color:inherit;">
+                        <h3 style="margin:0 0 .25rem 0;" class="font-display">{e.title}</h3>
+                        <div class="badges" style="margin-top:.35rem;">
+                          {e.meta.state && <span class="badge"><strong>State</strong> {e.meta.state}</span>}
+                          {e.meta.distance_miles && <span class="badge"><strong>Distance</strong> {e.meta.distance_miles} mi</span>}
+                          {e.meta.elevation_gain_ft && <span class="badge"><strong>Gain</strong> {e.meta.elevation_gain_ft} ft</span>}
+                          {e.meta.difficulty && <span class="badge"><strong>Diff</strong> {e.meta.difficulty}</span>}
+                        </div>
+                      </a>
+                    </article>
+                  ) : (
+                    <article class="card" style="overflow:hidden;">
+                      <div class="video-frame">
+                        <YouTubeEmbed id={e.id} title={e.title} />
                       </div>
-                    </a>
-                  </article>
-                ) : (
-                  <article class="card" style="overflow:hidden;">
-                    <div class="video-frame">
-                      <YouTubeEmbed id={e.id} title={e.title} />
-                    </div>
-                    <div style="padding:.75rem 1rem;">
-                      <h3 class="clamp-2">{e.title}</h3>
-                      <a href={e.url} target="_blank" rel="noopener" class="btn" style="margin-top:.5rem;">Open on YouTube</a>
-                    </div>
-                  </article>
-                )}
+                      <div style="padding:.75rem 1rem;">
+                        <h3 class="clamp-2">{e.title}</h3>
+                        <a href={e.url} target="_blank" rel="noopener" class="btn" style="margin-top:.5rem;">Open on YouTube</a>
+                      </div>
+                    </article>
+                  )}
+                </div>
               </TimelineItem>
             ))}
           </Timeline>
         </div>
       </section>
+
+      <script>
+        const filters = document.getElementById('filters');
+        if (filters) {
+          filters.addEventListener('click', (e) => {
+            const btn = e.target.closest('button.pill');
+            if (!btn) return;
+            const value = btn.getAttribute('data-filter');
+            for (const b of filters.querySelectorAll('button.pill')) {
+              b.classList.toggle('is-active', b === btn);
+              b.setAttribute('aria-pressed', String(b === btn));
+            }
+            const items = document.querySelectorAll('.timeline-item .content > [data-kind]');
+            items.forEach((node) => {
+              const kind = node.getAttribute('data-kind');
+              const show = value === 'all' || value === kind;
+              const wrapper = node.closest('.timeline-item');
+              if (wrapper) {
+                wrapper.style.display = show ? '' : 'none';
+              }
+            });
+          });
+        }
+      </script>
     </main>
     <Footer />
   </body>
