@@ -2,13 +2,13 @@
 import { SITE_TITLE } from '../consts';
 ---
 
-<header class="header" style="min-height: 52px;">
+<header class="header" style="min-height: 52px; display:flex; align-items:center;">
   <nav class="container nav" style="display:flex; align-items:center; justify-content:space-between; gap:.75rem;">
     <h2 class="brand" style="margin:0;">
-      <a href="/" aria-label="Hogg Country">{SITE_TITLE}</a>
+      <a href="/" aria-label="Hogg Country" class="font-display">{SITE_TITLE}</a>
     </h2>
 
-    <div id="filters" class="filters" style="display:flex; gap:.5rem; align-items:center;">
+    <div id="filters" class="filters" style="display:flex; gap:.5rem; align-items:center; margin: 0;">
       <button class="pill is-active" data-filter="all" aria-pressed="true">All</button>
       <button class="pill" data-filter="trip" aria-pressed="false">Trips</button>
       <button class="pill" data-filter="video" aria-pressed="false">Videos</button>
@@ -28,6 +28,10 @@ import { SITE_TITLE } from '../consts';
     font: inherit;
     cursor: pointer;
     transition: background-color .12s ease, transform .12s ease, border-color .12s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
   .pill:hover { transform: translateY(-1px); }
   .pill.is-active {
@@ -36,4 +40,7 @@ import { SITE_TITLE } from '../consts';
     color: #2b2f26;
     font-weight: 700;
   }
+  /* Ensure brand/title is vertically centered within the bar */
+  .brand { display: flex; align-items: center; }
+  .brand a { line-height: 1; display: inline-flex; align-items: center; }
 </style>

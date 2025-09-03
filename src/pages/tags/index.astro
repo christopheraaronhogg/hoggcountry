@@ -3,20 +3,36 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { getCollection } from 'astro:content';
----
 
-{ const posts = (await getCollection('trips')).flatMap((p) => p.data.tags?.map((t: string) => ({ tag: t, id: p.id })) || []);
-  const blogPosts = (await getCollection('posts')).flatMap((p) => p.data.tags?.map((t: string) => ({ tag: t, id: p.id, blog: true })) || []);
-  const all = [...posts, ...blogPosts];
-  const byTag = new Map<string, { trips: string[]; blog: string[] }>();
-  for (const { tag, id, blog } of all) {
-    const e = byTag.get(tag) || { trips: [], blog: [] };
-    if (blog) e.blog.push(id); else e.trips.push(id);
-    byTag.set(tag, e);
+// Build tag index from trips and posts collections at build time
+const tripEntries = await getCollection('trips');
+const postEntries = await getCollection('posts');
+
+type TagBuckets = { trips: string[]; blog: string[] };
+const byTag = new Map<string, TagBuckets>();
+
+for (const t of tripEntries) {
+  for (const tag of t.data.tags || []) {
+    const bucket = byTag.get(tag) || { trips: [], blog: [] };
+    bucket.trips.push(t.id);
+    byTag.set(tag, bucket);
   }
-  const tags = Array.from(byTag.entries()).sort((a,b) => b[1].trips.length + b[1].blog.length - (a[1].trips.length + a[1].blog.length));
 }
 
+for (const p of postEntries) {
+  for (const tag of p.data.tags || []) {
+    const bucket = byTag.get(tag) || { trips: [], blog: [] };
+    bucket.blog.push(p.id);
+    byTag.set(tag, bucket);
+  }
+}
+
+const tags = Array.from(byTag.entries()).sort((a, b) => {
+  const aCount = a[1].trips.length + a[1].blog.length;
+  const bCount = b[1].trips.length + b[1].blog.length;
+  return bCount - aCount;
+});
+---
 <html lang="en">
   <head>
     <BaseHead title="Tags • Hogg Country" description="Browse by tag" />

@@ -5,6 +5,7 @@ import Footer from '../../components/Footer.astro';
 import { getEntry } from 'astro:content';
 import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
 import Gallery from '../../components/Gallery.svelte';
+import InfoPills from '../../components/InfoPills.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 
 export async function getStaticPaths() {
@@ -39,6 +40,7 @@ const data = entry!.data as any;
             {data.difficulty && <span class="badge"><strong>Difficulty</strong> {data.difficulty}</span>}
             {(data.tags || []).map((t: string) => <span class="badge">#{t}</span>)}
           </div>
+          <InfoPills pills={data.pills} />
         </div>
       </section>
 

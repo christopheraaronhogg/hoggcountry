@@ -5,10 +5,14 @@ state: Colorado
 trail_name: Barr Trail
 location: Manitou Springs, CO
 distance_miles: 25
- elevation_gain_ft: 7400
+elevation_gain_ft: 7400
 difficulty: Hard
 tags: ["14er", "Colorado", "Family"]
 cover_image: "/images/pikes-peak.jpg"
+pills:
+  - { label: "Days", value: "3", variant: stone }
+  - { label: "Distance", value: "25 mi", variant: alpine }
+  - { label: "Gain", value: "7,400 ft", variant: terra }
 youtube:
   - https://www.youtube.com/watch?v=dQw4w9WgXcQ
   - https://www.youtube.com/shorts/abcdefghijk

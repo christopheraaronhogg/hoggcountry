@@ -1,7 +1,5 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
 import IconBadge from '../components/IconBadge.astro';
 import Timeline from '../components/Timeline.astro';
@@ -46,14 +44,7 @@ const entries = combined.map((e, idx) => {
   return { ...e, side: (idx % 2 === 0 ? 'left' : 'right') as 'left' | 'right', dateShort, dateFull };
 });
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-  </head>
-  <body>
-    <Header />
-    <main>
+<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
       <section class="hero" style="padding-top:3.5rem;">
         <div class="container">
           <h1 class="font-display">Hogg Country — The Trailhead Logbook</h1>
@@ -64,6 +55,7 @@ const entries = combined.map((e, idx) => {
           <div class="chapter font-chapter">Chapter: Pike’s Peak • Colorado</div>
         </div>
       </section>
+
 
       <section id="timeline">
         <div class="container" style="position:relative;">
@@ -119,6 +111,7 @@ const entries = combined.map((e, idx) => {
         </div>
       </section>
 
+
       <script>
         const filters = document.getElementById('filters');
         if (filters) {
@@ -142,7 +135,5 @@ const entries = combined.map((e, idx) => {
           });
         }
       </script>
-    </main>
-    <Footer />
-  </body>
-</html>
+</BaseLayout>
+

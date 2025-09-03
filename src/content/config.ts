@@ -1,4 +1,12 @@
 import { defineCollection, z } from 'astro:content';
+import { glob } from 'astro/loaders';
+
+const pillSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+  href: z.string().url().optional(),
+  variant: z.enum(['alpine','marker','terra','stone']).optional(),
+});
 
 const trips = defineCollection({
   type: 'content',
@@ -17,6 +25,7 @@ const trips = defineCollection({
     tags: z.array(z.string()).default([]),
     description: z.string().optional(),
     youtube: z.array(z.string()).default([]),
+    pills: z.array(pillSchema).optional(),
   }),
 });
 
@@ -29,7 +38,22 @@ const posts = defineCollection({
     summary: z.string().optional(),
     cover_image: z.string().optional(),
     updatedDate: z.string().optional().transform((d) => (d ? new Date(d) : undefined)),
+    pills: z.array(pillSchema).optional(),
   }),
 });
 
-export const collections = { trips, posts };
+// Blog collection (from starter) using loader
+const blog = defineCollection({
+  loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      description: z.string(),
+      pubDate: z.coerce.date(),
+      updatedDate: z.coerce.date().optional(),
+      heroImage: image().optional(),
+      pills: z.array(pillSchema).optional(),
+    }),
+});
+
+export const collections = { trips, posts, blog };

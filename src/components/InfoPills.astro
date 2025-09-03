@@ -1,0 +1,29 @@
+---
+interface Pill { label: string; value: string; href?: string; variant?: 'alpine' | 'marker' | 'terra' | 'stone' }
+interface Props { pills?: Pill[] }
+const { pills = [] } = Astro.props as Props;
+---
+{pills.length ? (
+  <div class="badges">
+    {pills.filter(p => p && p.label && p.value).map((p) => (
+      p.href ? (
+        <a class={`badge ${p.variant ? `badge--${p.variant}` : ''}`} href={p.href} target="_blank" rel="noopener" aria-label={`${p.label}: ${p.value}`}>
+          <strong>{p.label}</strong> {p.value}
+        </a>
+      ) : (
+        <span class={`badge ${p.variant ? `badge--${p.variant}` : ''}`} aria-label={`${p.label}: ${p.value}`}>
+          <strong>{p.label}</strong> {p.value}
+        </span>
+      )
+    ))}
+  </div>
+) : null}
+
+<style>
+  /* Subtle variant tints using existing theme vars; keeps base look */
+  .badge--alpine { border-color: var(--alpine); }
+  .badge--marker { border-color: var(--marker); }
+  .badge--terra { border-color: var(--terra); }
+  .badge--stone { border-color: var(--stone); }
+</style>
+

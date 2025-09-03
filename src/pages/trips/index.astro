@@ -4,9 +4,9 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { getCollection } from 'astro:content';
 import FormattedDate from '../../components/FormattedDate.astro';
----
 
-{ const trips = (await getCollection('trips')).sort((a,b) => +b.data.date - +a.data.date); }
+const trips = (await getCollection('trips')).sort((a,b) => +b.data.date - +a.data.date);
+---
 
 <html lang="en">
   <head>
