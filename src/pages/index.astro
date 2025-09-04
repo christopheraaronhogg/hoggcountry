@@ -37,11 +37,11 @@ const combined = [...trips, ...vids]
   .sort((a, b) => +new Date(b.date) - +new Date(a.date))
   .slice(0, 10);
 
-const entries = combined.map((e, idx) => {
+const entries = combined.map((e) => {
   const d = new Date(e.date);
   const dateShort = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   const dateFull = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-  return { ...e, side: (idx % 2 === 0 ? 'left' : 'right') as 'left' | 'right', dateShort, dateFull };
+  return { ...e, dateShort, dateFull };
 });
 ---
 <BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
@@ -61,10 +61,8 @@ const entries = combined.map((e, idx) => {
         <div class="container" style="position:relative;">
           <Timeline>
             {entries.map((e) => (
-              <TimelineItem side={e.side}>
-                <Fragment slot="patch">
-                  <IconBadge variant={e.kind === 'trip' ? 'trip' : e.kind === 'video' ? 'video' : 'post'} title={e.title} />
-                </Fragment>
+              <TimelineItem>
+                <!-- Patch icon removed for single-sided, center-stitch layout -->
 
                 <div data-kind={e.kind}>
                   {e.kind === 'trip' ? (

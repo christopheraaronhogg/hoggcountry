@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     
 let isOpen = false;
     let seed = 'hogg-country';
@@ -179,6 +179,13 @@ let isOpen = false;
         isOpen = !isOpen;
     }
 
+    // Close on Escape for accessibility
+    function handleKeydown(e) {
+        if (e.key === 'Escape' && isOpen) {
+            isOpen = false;
+        }
+    }
+
     // Persist settings whenever they change
     function saveSettings() {
         try {
@@ -190,6 +197,8 @@ let isOpen = false;
 
     // Generate on mount, loading saved settings and applying saved SVG if available
     onMount(() => {
+        // keyboard listener for Escape
+        window.addEventListener('keydown', handleKeydown);
         try {
             const saved = localStorage.getItem('hc-bg-settings');
             if (saved) {
@@ -235,6 +244,10 @@ let isOpen = false;
         } catch (_) { /* ignore */ }
         generateMap();
     });
+
+    onDestroy(() => {
+        window.removeEventListener('keydown', handleKeydown);
+    });
 </script>
 
 <!-- Controls Toggle Button -->
@@ -244,10 +257,15 @@ let isOpen = false;
     title="Background Generator"
 >
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996 .608 2.296 .07 2.572-1.065z" />
         <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
 </button>
+
+{#if isOpen}
+  <!-- Click-outside backdrop to close panel -->
+  <div class="controls-backdrop" on:click={toggleWidget} aria-hidden="true"></div>
+{/if}
 
 <!-- Controls Panel -->
 <div class="controls-panel" class:open={isOpen}>
@@ -345,8 +363,15 @@ let isOpen = false;
         box-shadow: -4px 0 20px rgba(0,0,0,0.1);
     }
     
-    .controls-panel.open {
+.controls-panel.open {
         transform: translateX(0);
+    }
+
+    .controls-backdrop {
+        position: fixed;
+        inset: 0;
+        background: transparent; /* or rgba(0,0,0,0.02) if you want a hint */
+        z-index: 998;
     }
     
     .panel-header {
