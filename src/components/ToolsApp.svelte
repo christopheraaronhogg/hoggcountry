@@ -4,12 +4,13 @@
   import MilestoneCalculator from './MilestoneCalculator.svelte';
   import GearCalculator from './GearCalculator.svelte';
   import DaylightCalculator from './DaylightCalculator.svelte';
+  import ResupplyCalculator from './ResupplyCalculator.svelte';
 
   const tools = [
     { id: 'milestone', name: 'Milestones', icon: '📍', desc: 'Plan your journey timeline' },
     { id: 'gear', name: 'Gear', icon: '⚖️', desc: 'Optimize pack weight' },
     { id: 'daylight', name: 'Daylight', icon: '🌅', desc: 'Sunrise & sunset times' },
-    { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Town & food planner', disabled: true },
+    { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Town & food planner' },
   ];
 
   let activeTool = 'milestone';
@@ -80,14 +81,7 @@
         <DaylightCalculator />
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'resupply'}>
-        <div class="coming-soon">
-          <div class="coming-soon-content">
-            <span class="coming-soon-icon">🍽️</span>
-            <h3>Resupply Planner</h3>
-            <p>Interactive food carry calculator with town services and mail drop planning.</p>
-            <span class="coming-soon-badge">In Development</span>
-          </div>
-        </div>
+        <ResupplyCalculator />
       </div>
     </div>
   </div>
