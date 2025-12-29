@@ -21,11 +21,11 @@ This section documents verified long-distance completions, prior AT experience, 
 - Northern Arkansas | Includes Buffalo River region
 
 ### Ozark Trail — Full Thru-Hike
-- ~230 miles | ~40,000 ft cumulative elevation gain
-- Missouri | Rocky tread, long resupply gaps
+- ~350 miles | ~50,000–55,000 ft cumulative elevation gain
+- Missouri | Rocky, sustained tread, long resupply gaps
 
-**Total Completed Mileage:** ~720+ miles
-**Estimated Cumulative Elevation Gain:** ~120,000+ feet
+**Total Completed Mileage:** ~840+ miles
+**Estimated Cumulative Elevation Gain:** ~130,000–140,000 feet
 
 ## Recognition
 
