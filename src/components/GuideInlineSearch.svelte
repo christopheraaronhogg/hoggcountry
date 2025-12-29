@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   let { chapters = [] } = $props();
 
@@ -12,7 +12,12 @@
   let offlineReady = $state(false);
 
   // Search index loaded from pre-built JSON (works offline)
-  let contentIndex = $state([]);
+  // Using plain variable (not $state) to avoid reactivity overhead on large data
+  let contentIndex = [];
+
+  // Debounce timer
+  let searchTimeout = null;
+  const DEBOUNCE_MS = 150;
 
   onMount(async () => {
     // Load pre-built search index (cached by service worker for offline use)
@@ -20,11 +25,13 @@
       const response = await fetch('/guide-search-index.json');
       const index = await response.json();
 
-      // Transform to match expected format
+      // Pre-process: lowercase everything ONCE at load time
       contentIndex = index.map(item => ({
         id: item.id,
         title: item.title,
+        titleLower: item.title.toLowerCase(),
         description: item.description || '',
+        descriptionLower: (item.description || '').toLowerCase(),
         quickRef: item.quickRef || false,
         content: item.content.toLowerCase(),
         headers: (item.headers || '').toLowerCase()
@@ -43,7 +50,9 @@
           contentIndex.push({
             id: ch.id,
             title: ch.data.title,
+            titleLower: ch.data.title.toLowerCase(),
             description: ch.data.description || '',
+            descriptionLower: (ch.data.description || '').toLowerCase(),
             quickRef: ch.data.quickRef,
             content: text.toLowerCase(),
             headers: ''
@@ -52,10 +61,32 @@
       });
       indexLoaded = true;
     }
+
+    // Cleanup on unmount
+    return () => {
+      if (searchTimeout) clearTimeout(searchTimeout);
+    };
   });
 
-  // Search function
-  function search(q) {
+  // Debounced search - prevents blocking on every keystroke
+  function scheduleSearch(q) {
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    // Immediate clear if query too short
+    if (q.length < 2) {
+      results = [];
+      isOpen = false;
+      return;
+    }
+
+    // Show loading state immediately (optional visual feedback)
+    searchTimeout = setTimeout(() => {
+      executeSearch(q);
+    }, DEBOUNCE_MS);
+  }
+
+  // Actual search logic - runs after debounce
+  function executeSearch(q) {
     if (!indexLoaded || q.length < 2) {
       results = [];
       isOpen = false;
@@ -64,62 +95,73 @@
 
     const terms = q.toLowerCase().split(/\s+/).filter(t => t.length > 0);
 
-    results = contentIndex
-      .map(item => {
-        let score = 0;
-        let matchedTerms = [];
-        let snippet = '';
+    const searchResults = [];
 
-        terms.forEach(term => {
-          // Title match (highest priority)
-          if (item.title.toLowerCase().includes(term)) {
-            score += 100;
-            matchedTerms.push(term);
-          }
-          // Description match
-          if (item.description.toLowerCase().includes(term)) {
-            score += 50;
-            matchedTerms.push(term);
-          }
-          // Headers match (section titles)
-          if (item.headers && item.headers.includes(term)) {
-            score += 30;
-            matchedTerms.push(term);
-          }
-          // Content match
-          const contentLower = item.content;
-          const termIndex = contentLower.indexOf(term);
-          if (termIndex !== -1) {
-            score += 10;
-            matchedTerms.push(term);
+    // Use for loop instead of map/filter for better performance
+    for (let i = 0; i < contentIndex.length; i++) {
+      const item = contentIndex[i];
+      let score = 0;
+      const matchedTerms = [];
+      let snippet = '';
 
-            // Extract snippet around match
-            if (!snippet) {
-              const start = Math.max(0, termIndex - 40);
-              const end = Math.min(contentLower.length, termIndex + term.length + 60);
-              snippet = (start > 0 ? '...' : '') +
-                        item.content.slice(start, end).trim() +
-                        (end < contentLower.length ? '...' : '');
-            }
-          }
-        });
+      for (let j = 0; j < terms.length; j++) {
+        const term = terms[j];
 
-        return {
-          ...item,
+        // Title match (highest priority) - using pre-lowercased
+        if (item.titleLower.includes(term)) {
+          score += 100;
+          matchedTerms.push(term);
+        }
+        // Description match - using pre-lowercased
+        if (item.descriptionLower.includes(term)) {
+          score += 50;
+          matchedTerms.push(term);
+        }
+        // Headers match (section titles)
+        if (item.headers && item.headers.includes(term)) {
+          score += 30;
+          matchedTerms.push(term);
+        }
+        // Content match
+        const termIndex = item.content.indexOf(term);
+        if (termIndex !== -1) {
+          score += 10;
+          matchedTerms.push(term);
+
+          // Extract snippet around match (only once)
+          if (!snippet) {
+            const start = Math.max(0, termIndex - 40);
+            const end = Math.min(item.content.length, termIndex + term.length + 60);
+            snippet = (start > 0 ? '...' : '') +
+                      item.content.slice(start, end).trim() +
+                      (end < item.content.length ? '...' : '');
+          }
+        }
+      }
+
+      if (score > 0) {
+        searchResults.push({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          quickRef: item.quickRef,
           score,
           matchedTerms: [...new Set(matchedTerms)],
           snippet
-        };
-      })
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
+        });
+      }
+    }
 
+    // Sort by score descending and limit
+    searchResults.sort((a, b) => b.score - a.score);
+
+    results = searchResults.slice(0, 10);
     isOpen = results.length > 0 || q.length >= 2;
     selectedIndex = 0;
   }
 
-  $effect(() => { search(query); });
+  // React to query changes with debouncing
+  $effect(() => { scheduleSearch(query); });
 
   function scrollToResult(result) {
     const element = document.getElementById(result.id);
