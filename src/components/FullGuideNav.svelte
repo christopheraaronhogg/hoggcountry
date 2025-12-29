@@ -8,17 +8,18 @@
   let progress = 0;
   let showMobileNav = false;
   let showBackToTop = false;
-  let headerVisible = true;
+  let headerHidden = false;
 
   onMount(() => {
-    // Watch for header visibility changes
-    const header = document.querySelector('.guide-header');
-    if (header) {
+    // Watch for header wrapper visibility changes
+    const headerWrapper = document.querySelector('.guide-header-wrapper');
+    if (headerWrapper) {
       const observer = new MutationObserver(() => {
-        headerVisible = !header.classList.contains('hidden');
+        headerHidden = headerWrapper.classList.contains('is-hidden');
       });
-      observer.observe(header, { attributes: true, attributeFilter: ['class'] });
+      observer.observe(headerWrapper, { attributes: true, attributeFilter: ['class'] });
     }
+
     const sections = document.querySelectorAll('.chapter-section');
     const observerOptions = {
       root: null,
@@ -56,7 +57,7 @@
   function scrollToChapter(id) {
     const element = document.getElementById(id);
     if (element) {
-      const offset = headerVisible ? 100 : 55; // Account for header + progress bar
+      const offset = headerHidden ? 60 : 110; // Account for header + progress bar
       const top = element.getBoundingClientRect().top + window.scrollY - offset;
       window.scrollTo({ top, behavior: 'smooth' });
       showMobileNav = false;
@@ -104,7 +105,7 @@
 </script>
 
 <!-- Progress Bar -->
-<div class="progress-container" style="top: {headerVisible ? '44px' : '0'}">
+<div class="progress-container" style="top: {headerHidden ? '0' : '52px'}">
   <div class="progress-track">
     <div class="progress-fill" style="width: {progress}%"></div>
     <div class="progress-marker" style="left: {progress}%">
@@ -119,7 +120,7 @@
 </div>
 
 <!-- Desktop Sidebar -->
-<nav class="sidebar" style="top: {headerVisible ? '89px' : '45px'}" aria-label="Table of Contents">
+<nav class="sidebar" style="top: {headerHidden ? '48px' : '100px'}" aria-label="Table of Contents">
   <div class="sidebar-header">
     <span class="sidebar-icon">📖</span>
     <span class="sidebar-title">Contents</span>

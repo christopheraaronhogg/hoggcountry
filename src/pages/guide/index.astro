@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
-import GuideHeader from '../../components/GuideHeader.svelte';
+import Header from '../../components/Header.astro';
 import FullGuideNav from '../../components/FullGuideNav.svelte';
 import GuideInlineSearch from '../../components/GuideInlineSearch.svelte';
 import fs from 'node:fs';
@@ -79,8 +79,28 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
         background: var(--bg);
       }
 
+      /* Fixed header wrapper */
+      .guide-header-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1001;
+        transition: transform 0.3s ease;
+      }
+
+      .guide-header-wrapper.is-hidden {
+        transform: translateY(-100%);
+      }
+
+      .guide-header-wrapper :global(.header) {
+        background: linear-gradient(to bottom, rgba(245, 242, 232, 0.98), rgba(245, 242, 232, 0.95));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
       .guide-wrapper {
-        padding-top: 100px; /* Header (44px) + Progress bar (45px) + breathing room */
+        padding-top: 110px; /* Header (52px) + Progress bar (48px) + breathing room */
       }
 
       @media (min-width: 1025px) {
@@ -874,7 +894,9 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
     </style>
   </head>
   <body class="guide-page">
-    <GuideHeader client:load />
+    <div class="guide-header-wrapper">
+      <Header />
+    </div>
     <FullGuideNav client:load chapters={navChapters} markdownContent={markdownContent} />
 
     <div class="guide-wrapper">
@@ -992,7 +1014,8 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
     </div>
 
     <script define:vars={{ markdownContent }}>
-      document.getElementById('download-md-btn')?.addEventListener('click', function() {
+      // Markdown download handlers (TOC button and header button)
+      function downloadMarkdown() {
         const blob = new Blob([markdownContent], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1002,7 +1025,37 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      });
+      }
+
+      document.getElementById('download-md-btn')?.addEventListener('click', downloadMarkdown);
+      document.getElementById('download-md-header')?.addEventListener('click', downloadMarkdown);
+
+      // Scroll-based header hide/show
+      let lastScrollY = 0;
+      const headerWrapper = document.querySelector('.guide-header-wrapper');
+      const scrollThreshold = 100;
+
+      function handleScroll() {
+        const currentScrollY = window.scrollY;
+
+        // Always show at top of page
+        if (currentScrollY < scrollThreshold) {
+          headerWrapper?.classList.remove('is-hidden');
+          lastScrollY = currentScrollY;
+          return;
+        }
+
+        // Hide on scroll down, show on scroll up
+        if (currentScrollY > lastScrollY + 10) {
+          headerWrapper?.classList.add('is-hidden');
+        } else if (currentScrollY < lastScrollY - 10) {
+          headerWrapper?.classList.remove('is-hidden');
+        }
+
+        lastScrollY = currentScrollY;
+      }
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
     </script>
   </body>
 </html>
