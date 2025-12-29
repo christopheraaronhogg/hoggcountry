@@ -2,7 +2,6 @@
 import { SITE_TITLE } from '../consts';
 
 const pathname = Astro.url.pathname;
-const isHome = pathname === '/';
 const isGuide = pathname.startsWith('/guide') && !pathname.includes('/guide/quick') && !pathname.match(/\/guide\/\d/);
 const isGuidePage = pathname === '/guide' || pathname === '/guide/';
 const isTools = pathname.startsWith('/tools');
@@ -17,15 +16,6 @@ const isTools = pathname.startsWith('/tools');
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
       <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
     </div>
-
-    {isHome && (
-      <div id="filters" class="filters">
-        <button class="pill is-active" data-filter="all" aria-pressed="true">All</button>
-        <button class="pill" data-filter="trip" aria-pressed="false">Trips</button>
-        <button class="pill" data-filter="video" aria-pressed="false">Videos</button>
-        <button class="pill" data-filter="post" aria-pressed="false">Posts</button>
-      </div>
-    )}
 
     {isGuidePage && (
       <div class="guide-actions">
@@ -103,41 +93,6 @@ const isTools = pathname.startsWith('/tools');
     color: var(--pine);
     font-weight: 600;
     background: rgba(166, 181, 137, 0.2);
-  }
-
-  /* Filter pills (home page) */
-  .filters {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    margin: 0;
-  }
-
-  .pill {
-    appearance: none;
-    border: 1px solid var(--stone);
-    background: #fff;
-    color: var(--pine);
-    padding: 0.3rem 0.65rem;
-    border-radius: 999px;
-    font: inherit;
-    cursor: pointer;
-    transition: background-color 0.12s ease, transform 0.12s ease, border-color 0.12s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-  }
-
-  .pill:hover {
-    transform: translateY(-1px);
-  }
-
-  .pill.is-active {
-    background: var(--marker);
-    border-color: #e0d400;
-    color: #2b2f26;
-    font-weight: 700;
   }
 
   /* Guide page actions */
