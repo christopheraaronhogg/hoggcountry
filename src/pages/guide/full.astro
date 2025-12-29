@@ -1,0 +1,554 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import FullGuideNav from '../../components/FullGuideNav.svelte';
+
+const allGuides = await getCollection('guide');
+
+// Sort: main chapters by order, then quick refs
+const mainChapters = allGuides
+  .filter(g => !g.data.quickRef)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const quickRefs = allGuides
+  .filter(g => g.data.quickRef)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const sortedGuides = [...mainChapters, ...quickRefs];
+
+// Render all chapters
+const renderedChapters = await Promise.all(
+  sortedGuides.map(async (chapter) => {
+    const { Content } = await render(chapter);
+    return { chapter, Content };
+  })
+);
+
+// Prepare nav data
+const navChapters = sortedGuides.map(ch => ({
+  id: ch.id,
+  data: {
+    title: ch.data.title,
+    part: ch.data.part,
+    order: ch.data.order,
+    quickRef: ch.data.quickRef
+  }
+}));
+
+const title = "Complete AT Field Guide — Hogg Country";
+const description = "The complete Appalachian Trail NOBO Field Guide in one page. 2,190+ miles of trail-tested knowledge.";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={title} description={description} />
+    <style is:global>
+      /* ===== Full Guide Layout ===== */
+      body.full-guide-page {
+        background: var(--bg);
+      }
+
+      .full-guide-wrapper {
+        padding-top: 65px;
+      }
+
+      @media (min-width: 1025px) {
+        .full-guide-wrapper {
+          margin-left: 220px;
+        }
+      }
+
+      .guide-content-area {
+        max-width: 750px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 6rem;
+      }
+
+      /* ===== Guide Header ===== */
+      .guide-masthead {
+        text-align: center;
+        padding: 3rem 0 4rem;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 3rem;
+      }
+
+      .masthead-badge {
+        display: inline-block;
+        font-family: Oswald, sans-serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--terra);
+        background: rgba(217, 119, 6, 0.1);
+        padding: 0.35rem 0.75rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+      }
+
+      .masthead-title {
+        font-family: Oswald, sans-serif;
+        font-size: clamp(2.25rem, 5vw, 3.5rem);
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--ink);
+        margin: 0 0 0.5rem;
+      }
+
+      .masthead-subtitle {
+        font-family: Caveat, cursive;
+        font-size: 1.5rem;
+        color: var(--pine);
+        margin: 0 0 1.5rem;
+      }
+
+      .masthead-meta {
+        font-size: 0.85rem;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .masthead-divider {
+        width: 60px;
+        height: 3px;
+        background: var(--alpine);
+        margin: 2rem auto 0;
+        border-radius: 2px;
+      }
+
+      /* ===== Chapter Sections ===== */
+      .chapter-section {
+        scroll-margin-top: 80px;
+        padding: 3rem 0;
+        border-bottom: 1px dashed var(--border);
+        position: relative;
+      }
+
+      .chapter-section:last-child {
+        border-bottom: none;
+      }
+
+      .chapter-section.quick-ref {
+        background: linear-gradient(to right, rgba(240, 224, 0, 0.03), transparent);
+        margin: 0 -1.5rem;
+        padding: 3rem 1.5rem;
+      }
+
+      /* Chapter number watermark */
+      .chapter-number-bg {
+        position: absolute;
+        top: 2rem;
+        right: 0;
+        font-family: Oswald, sans-serif;
+        font-size: 8rem;
+        font-weight: 700;
+        color: var(--pine);
+        opacity: 0.03;
+        line-height: 1;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .chapter-header {
+        margin-bottom: 2rem;
+        position: relative;
+      }
+
+      .chapter-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: Oswald, sans-serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--muted);
+        margin-bottom: 0.5rem;
+      }
+
+      .chapter-label-line {
+        width: 30px;
+        height: 1px;
+        background: var(--stone);
+      }
+
+      .quick-ref-label {
+        color: var(--terra);
+      }
+
+      .quick-ref-label .chapter-label-line {
+        background: var(--terra);
+      }
+
+      /* ===== Prose Typography ===== */
+      .chapter-prose {
+        font-size: 1.05rem;
+        line-height: 1.85;
+        color: var(--fg);
+      }
+
+      .chapter-prose :global(h1) {
+        font-family: Oswald, sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0 0 1.5rem;
+        line-height: 1.2;
+      }
+
+      .chapter-prose :global(h2) {
+        font-family: Oswald, sans-serif;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--pine);
+        margin: 2.5rem 0 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .chapter-prose :global(h2:first-of-type) {
+        border-top: none;
+        padding-top: 0;
+      }
+
+      .chapter-prose :global(h3) {
+        font-family: Oswald, sans-serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--pine);
+        margin: 2rem 0 0.75rem;
+      }
+
+      .chapter-prose :global(h4) {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin: 1.5rem 0 0.5rem;
+      }
+
+      .chapter-prose :global(p) {
+        margin: 1.25rem 0;
+      }
+
+      .chapter-prose :global(ul),
+      .chapter-prose :global(ol) {
+        margin: 1.25rem 0;
+        padding-left: 1.5rem;
+      }
+
+      .chapter-prose :global(li) {
+        margin: 0.5rem 0;
+      }
+
+      .chapter-prose :global(li::marker) {
+        color: var(--alpine);
+      }
+
+      /* Blockquotes - styled as trail notes */
+      .chapter-prose :global(blockquote) {
+        position: relative;
+        margin: 2rem 0;
+        padding: 1.25rem 1.5rem 1.25rem 2rem;
+        background: linear-gradient(135deg, rgba(166, 181, 137, 0.08), rgba(166, 181, 137, 0.03));
+        border-left: 4px solid var(--alpine);
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+        color: var(--pine);
+      }
+
+      .chapter-prose :global(blockquote::before) {
+        content: '"';
+        position: absolute;
+        top: 0.5rem;
+        left: 0.75rem;
+        font-family: Georgia, serif;
+        font-size: 2rem;
+        color: var(--alpine);
+        opacity: 0.3;
+        line-height: 1;
+      }
+
+      .chapter-prose :global(blockquote p) {
+        margin: 0;
+      }
+
+      /* Strong/emphasis */
+      .chapter-prose :global(strong) {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .chapter-prose :global(em) {
+        font-style: italic;
+      }
+
+      /* Tables */
+      .chapter-prose :global(table) {
+        width: 100%;
+        margin: 2rem 0;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+
+      .chapter-prose :global(thead) {
+        background: var(--pine);
+        color: #fff;
+      }
+
+      .chapter-prose :global(th) {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-family: Oswald, sans-serif;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .chapter-prose :global(td) {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      .chapter-prose :global(tr:nth-child(even)) {
+        background: rgba(166, 181, 137, 0.05);
+      }
+
+      /* Code */
+      .chapter-prose :global(code) {
+        font-family: 'SF Mono', Menlo, Monaco, monospace;
+        font-size: 0.85em;
+        background: rgba(77, 89, 74, 0.08);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        color: var(--pine);
+      }
+
+      .chapter-prose :global(pre) {
+        margin: 2rem 0;
+        padding: 1.25rem;
+        background: #2b2f26;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+
+      .chapter-prose :global(pre code) {
+        background: none;
+        padding: 0;
+        color: #e8e6e1;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+
+      /* Horizontal rules */
+      .chapter-prose :global(hr) {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border), transparent);
+        margin: 3rem 0;
+      }
+
+      /* Links */
+      .chapter-prose :global(a) {
+        color: var(--pine);
+        text-decoration: underline;
+        text-decoration-color: var(--alpine);
+        text-underline-offset: 3px;
+        transition: color 0.15s ease;
+      }
+
+      .chapter-prose :global(a:hover) {
+        color: var(--terra);
+      }
+
+      /* ===== Guide Footer ===== */
+      .guide-footer {
+        text-align: center;
+        padding: 4rem 0 2rem;
+        border-top: 2px solid var(--border);
+        margin-top: 3rem;
+      }
+
+      .footer-blaze {
+        width: 50px;
+        height: 6px;
+        background: var(--marker);
+        margin: 0 auto 1.5rem;
+        border-radius: 3px;
+      }
+
+      .footer-text {
+        font-family: Caveat, cursive;
+        font-size: 1.75rem;
+        color: var(--pine);
+        margin: 0 0 1rem;
+      }
+
+      .footer-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        background: var(--pine);
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .footer-cta:hover {
+        background: var(--ink);
+        transform: translateY(-2px);
+      }
+
+      /* ===== Print Styles ===== */
+      @media print {
+        body.full-guide-page {
+          background: #fff;
+        }
+
+        .full-guide-wrapper {
+          margin-left: 0;
+          padding-top: 0;
+        }
+
+        .guide-content-area {
+          max-width: none;
+          padding: 0;
+        }
+
+        .guide-masthead {
+          page-break-after: always;
+        }
+
+        .chapter-section {
+          page-break-inside: avoid;
+        }
+
+        .chapter-number-bg {
+          display: none;
+        }
+
+        .guide-footer {
+          display: none;
+        }
+
+        .chapter-prose :global(table) {
+          font-size: 0.8rem;
+        }
+
+        .chapter-prose :global(blockquote) {
+          background: #f5f5f5;
+          border-left-color: #666;
+        }
+      }
+
+      /* ===== Responsive ===== */
+      @media (max-width: 600px) {
+        .guide-content-area {
+          padding: 1.5rem 1rem 5rem;
+        }
+
+        .guide-masthead {
+          padding: 2rem 0 3rem;
+        }
+
+        .masthead-title {
+          font-size: 2rem;
+        }
+
+        .masthead-subtitle {
+          font-size: 1.25rem;
+        }
+
+        .chapter-section {
+          padding: 2rem 0;
+        }
+
+        .chapter-number-bg {
+          font-size: 5rem;
+          top: 1.5rem;
+        }
+
+        .chapter-prose {
+          font-size: 1rem;
+        }
+
+        .chapter-prose :global(h1) {
+          font-size: 1.6rem;
+        }
+
+        .chapter-prose :global(h2) {
+          font-size: 1.25rem;
+        }
+
+        .chapter-prose :global(table) {
+          font-size: 0.8rem;
+        }
+
+        .chapter-prose :global(th),
+        .chapter-prose :global(td) {
+          padding: 0.5rem 0.6rem;
+        }
+      }
+    </style>
+  </head>
+  <body class="full-guide-page">
+    <FullGuideNav client:load chapters={navChapters} />
+
+    <div class="full-guide-wrapper">
+      <div class="guide-content-area">
+        <!-- Masthead -->
+        <header class="guide-masthead">
+          <span class="masthead-badge">AT 2026 • February Start</span>
+          <h1 class="masthead-title">
+            Appalachian Trail<br/>
+            Field Guide
+          </h1>
+          <p class="masthead-subtitle">Springer Mountain → Mount Katahdin</p>
+          <p class="masthead-meta">
+            2,190+ Miles of Trail-Tested Knowledge<br/>
+            Prepared for HoggCountry
+          </p>
+          <div class="masthead-divider"></div>
+        </header>
+
+        <!-- Chapters -->
+        {renderedChapters.map(({ chapter, Content }, index) => (
+          <section
+            id={chapter.id}
+            class={`chapter-section ${chapter.data.quickRef ? 'quick-ref' : ''}`}
+          >
+            {!chapter.data.quickRef && (
+              <span class="chapter-number-bg">{String(index).padStart(2, '0')}</span>
+            )}
+
+            <div class="chapter-header">
+              <div class={`chapter-label ${chapter.data.quickRef ? 'quick-ref-label' : ''}`}>
+                <span class="chapter-label-line"></span>
+                <span>{chapter.data.quickRef ? 'Quick Reference' : `Chapter ${String(index).padStart(2, '0')}`}</span>
+              </div>
+            </div>
+
+            <div class="chapter-prose">
+              <Content />
+            </div>
+          </section>
+        ))}
+
+        <!-- Footer -->
+        <footer class="guide-footer">
+          <div class="footer-blaze"></div>
+          <p class="footer-text">See you on Katahdin.</p>
+          <a href="/guide" class="footer-cta">
+            <span>←</span>
+            <span>View Chapter Index</span>
+          </a>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>

@@ -36,8 +36,13 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
   </section>
 
   <div class="container guide-container">
-    <!-- Search -->
-    <section class="search-section">
+    <!-- View Toggle + Search Row -->
+    <section class="guide-toolbar">
+      <div class="view-toggle-group">
+        <span class="view-label">View:</span>
+        <a href="/guide" class="view-btn active">Chapters</a>
+        <a href="/guide/full" class="view-btn">Full Document</a>
+      </div>
       <GuideSearch client:load chapters={searchableChapters} />
     </section>
 
@@ -95,10 +100,63 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
     padding-bottom: 4rem;
   }
 
-  .search-section {
-    margin: 1.5rem 0 2rem;
+  .guide-toolbar {
     display: flex;
-    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 1.5rem 0 2rem;
+    padding: 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .view-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .view-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-right: 0.25rem;
+  }
+
+  .view-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    text-decoration: none;
+    color: var(--pine);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.15s ease;
+  }
+
+  .view-btn:hover {
+    border-color: var(--alpine);
+    background: rgba(166, 181, 137, 0.1);
+  }
+
+  .view-btn.active {
+    background: var(--alpine);
+    border-color: var(--pine);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  @media (max-width: 600px) {
+    .guide-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .view-toggle-group {
+      justify-content: center;
+    }
   }
 
   .section-title {
