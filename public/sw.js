@@ -97,6 +97,13 @@ self.addEventListener('install', (event) => {
 
       await Promise.all(pagePromises);
       console.log('[SW] Precache complete - site ready for offline use');
+
+      // Notify all clients that caching is complete
+      const clients = await self.clients.matchAll();
+      clients.forEach(client => {
+        client.postMessage({ type: 'CACHE_COMPLETE', cached: true });
+      });
+
       return self.skipWaiting();
     })
   );

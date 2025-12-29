@@ -393,6 +393,81 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
         border-top: 1px solid var(--border);
       }
 
+      /* Offline Save Card */
+      .offline-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1.25rem;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, rgba(166, 181, 137, 0.15), rgba(166, 181, 137, 0.05));
+        border: 2px solid var(--alpine);
+        border-radius: 12px;
+        transition: all 0.2s ease;
+      }
+
+      .offline-card.saved {
+        background: linear-gradient(135deg, rgba(166, 181, 137, 0.25), rgba(166, 181, 137, 0.1));
+        border-color: var(--pine);
+      }
+
+      .offline-card.saving {
+        background: linear-gradient(135deg, rgba(240, 224, 0, 0.2), rgba(240, 224, 0, 0.05));
+        border-color: #d4c800;
+      }
+
+      .offline-card-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
+
+      .offline-card-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .offline-card-title {
+        font-family: Oswald, sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--pine);
+      }
+
+      .offline-card-desc {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 0.15rem;
+      }
+
+      .offline-save-btn {
+        padding: 0.5rem 1rem;
+        background: var(--pine);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+      }
+
+      .offline-save-btn:hover {
+        background: var(--ink);
+        transform: translateY(-1px);
+      }
+
+      .offline-save-btn:disabled {
+        background: var(--muted);
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .offline-save-btn.saved {
+        background: var(--alpine);
+      }
+
       .toc-download-btn {
         display: inline-flex;
         align-items: center;
@@ -1061,9 +1136,19 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
             </>
           )}
 
-          <!-- Download button -->
+          <!-- Download & Offline -->
           <div class="toc-downloads">
             <DownloadGuideButton client:load variant="toc" markdownContent={markdownContent} />
+          </div>
+
+          <!-- Offline Status Card -->
+          <div id="offline-card" class="offline-card">
+            <div class="offline-card-icon" id="offline-icon">📶</div>
+            <div class="offline-card-content">
+              <div class="offline-card-title" id="offline-title">Save for Offline</div>
+              <div class="offline-card-desc" id="offline-desc">Tap to save this guide for trail use without service</div>
+            </div>
+            <button id="offline-btn" class="offline-save-btn">Save</button>
           </div>
         </nav>
 
@@ -1132,7 +1217,130 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
       window.addEventListener('scroll', handleScroll, { passive: true });
       handleScroll(); // Check initial state
 
-      // Service worker now registered globally in BaseLayout
+      // Register service worker for offline functionality
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('[Guide] Service Worker registered - site will work offline');
+          })
+          .catch((err) => {
+            console.warn('[Guide] Service Worker registration failed:', err);
+          });
+      }
+
+      // Offline card functionality
+      (function() {
+        const card = document.getElementById('offline-card');
+        const icon = document.getElementById('offline-icon');
+        const title = document.getElementById('offline-title');
+        const desc = document.getElementById('offline-desc');
+        const btn = document.getElementById('offline-btn');
+
+        if (!card || !('serviceWorker' in navigator)) {
+          if (card) card.style.display = 'none';
+          return;
+        }
+
+        function showSaved() {
+          card.className = 'offline-card saved';
+          icon.textContent = '✅';
+          title.textContent = 'Saved for Offline';
+          desc.textContent = 'Guide & Tools ready - works without cell service';
+          btn.textContent = 'Ready';
+          btn.disabled = true;
+          btn.className = 'offline-save-btn saved';
+        }
+
+        function showSaving() {
+          card.className = 'offline-card saving';
+          icon.textContent = '⏳';
+          title.textContent = 'Saving...';
+          desc.textContent = 'Downloading guide for offline use';
+          btn.textContent = 'Saving...';
+          btn.disabled = true;
+        }
+
+        function showOffline() {
+          card.className = 'offline-card saved';
+          icon.textContent = '📴';
+          title.textContent = 'Offline Mode';
+          desc.textContent = 'No service - using saved content';
+          btn.textContent = 'Offline';
+          btn.disabled = true;
+        }
+
+        function showReady() {
+          card.className = 'offline-card';
+          icon.textContent = '📶';
+          title.textContent = 'Save for Offline';
+          desc.textContent = 'Tap to save this guide for trail use without service';
+          btn.textContent = 'Save';
+          btn.disabled = false;
+          btn.className = 'offline-save-btn';
+        }
+
+        // Check current state
+        function checkStatus() {
+          if (!navigator.onLine) {
+            showOffline();
+          } else if (navigator.serviceWorker.controller) {
+            showSaved();
+          } else {
+            showReady();
+          }
+        }
+
+        // Listen for SW messages
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data?.type === 'CACHE_COMPLETE') {
+            showSaved();
+          }
+        });
+
+        // Save button click
+        btn.addEventListener('click', () => {
+          if (navigator.serviceWorker.controller) {
+            showSaved();
+            return;
+          }
+
+          showSaving();
+
+          // Force SW registration and wait for cache
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              // Wait for activation
+              if (registration.active) {
+                showSaved();
+              } else {
+                const checkActive = setInterval(() => {
+                  if (navigator.serviceWorker.controller) {
+                    clearInterval(checkActive);
+                    // Give time for caching to complete
+                    setTimeout(showSaved, 2000);
+                  }
+                }, 500);
+                // Timeout after 30s
+                setTimeout(() => {
+                  clearInterval(checkActive);
+                  showSaved();
+                }, 30000);
+              }
+            })
+            .catch((err) => {
+              console.error('[Offline] Save failed:', err);
+              showReady();
+              alert('Could not save for offline. Please try again.');
+            });
+        });
+
+        // Listen for online/offline
+        window.addEventListener('online', checkStatus);
+        window.addEventListener('offline', checkStatus);
+
+        // Initial check
+        checkStatus();
+      })();
     </script>
   </body>
 </html>

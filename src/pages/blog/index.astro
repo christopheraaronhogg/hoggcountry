@@ -110,5 +110,12 @@ const posts = (await getCollection('blog')).sort(
 			</section>
 		</main>
 		<Footer />
+		<script is:inline>
+			if ('serviceWorker' in navigator) {
+				navigator.serviceWorker.register('/sw.js')
+					.then(() => console.log('[Blog] SW registered'))
+					.catch((err) => console.warn('[Blog] SW failed:', err));
+			}
+		</script>
 	</body>
 </html>
