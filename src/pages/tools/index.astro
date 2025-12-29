@@ -1,9 +1,10 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GearCalculator from '../../components/GearCalculator.svelte';
+import MilestoneCalculator from '../../components/MilestoneCalculator.svelte';
 
 const title = "Trail Tools — Hogg Country";
-const description = "Interactive tools for AT thru-hiking: gear calculator, weight optimization, and more.";
+const description = "Interactive tools for AT thru-hiking: milestone planner, gear calculator, and more.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -14,6 +15,19 @@ const description = "Interactive tools for AT thru-hiking: gear calculator, weig
   </section>
 
   <div class="container tools-container">
+    <!-- Milestone Calculator Section -->
+    <section class="tool-section">
+      <div class="tool-header">
+        <h2>Trail Milestone Calculator</h2>
+        <p class="tool-desc">
+          Enter your start date and daily pace to see when you'll hit each section,
+          key milestones, and your projected summit date.
+        </p>
+      </div>
+
+      <MilestoneCalculator client:load />
+    </section>
+
     <!-- Gear Calculator Section -->
     <section class="tool-section">
       <div class="tool-header">
@@ -77,24 +91,24 @@ const description = "Interactive tools for AT thru-hiking: gear calculator, weig
       <h2>More Tools Coming</h2>
       <div class="future-grid">
         <div class="future-card">
-          <span class="future-icon">📍</span>
-          <span class="future-name">Mile Planner</span>
-          <span class="future-desc">Input start date, see projected milestones</span>
+          <span class="future-icon">🍽️</span>
+          <span class="future-name">Resupply Planner</span>
+          <span class="future-desc">Food carry days by section with town services</span>
         </div>
         <div class="future-card">
-          <span class="future-icon">🔍</span>
-          <span class="future-name">Guide Search</span>
-          <span class="future-desc">Full-text search across all chapters</span>
+          <span class="future-icon">🌡️</span>
+          <span class="future-name">Layering Builder</span>
+          <span class="future-desc">Build your clothing system by conditions</span>
         </div>
         <div class="future-card">
-          <span class="future-icon">🥾</span>
-          <span class="future-name">Resupply Calculator</span>
-          <span class="future-desc">Food carry math by section</span>
+          <span class="future-icon">💰</span>
+          <span class="future-name">Budget Tracker</span>
+          <span class="future-desc">Track spending, project runway</span>
         </div>
         <div class="future-card">
-          <span class="future-icon">📊</span>
-          <span class="future-name">Progress Tracker</span>
-          <span class="future-desc">Live AT progress during the hike</span>
+          <span class="future-icon">🌅</span>
+          <span class="future-name">Daylight Calculator</span>
+          <span class="future-desc">Sunrise/sunset by date and latitude</span>
         </div>
       </div>
     </section>
