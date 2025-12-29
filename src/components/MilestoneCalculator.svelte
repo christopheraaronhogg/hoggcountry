@@ -467,6 +467,15 @@ Generated at hoggcountry.com/tools`;
     cursor: grabbing;
     transform: scale(1.1);
   }
+  .pace-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: var(--marker, #f0e000);
+    border: 3px solid var(--pine, #4d594a);
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
 
   .pace-value {
     font-family: Oswald, sans-serif;

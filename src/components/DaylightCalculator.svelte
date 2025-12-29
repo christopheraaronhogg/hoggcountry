@@ -2,13 +2,9 @@
   import { onMount } from 'svelte';
 
   let mounted = false;
-
-  onMount(() => {
-    mounted = true;
-  });
+  onMount(() => { mounted = true; });
 
   // Trail latitude data (approximate by mile marker)
-  // Georgia starts ~34.6°N, Maine ends ~45.9°N
   function getLatitude(mile) {
     const startLat = 34.6;
     const endLat = 45.9;
@@ -37,43 +33,20 @@
   // Calculate sunrise/sunset using simplified solar position algorithm
   function calculateSunTimes(date, latitude) {
     const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
-
-    // Solar declination
     const declination = 23.45 * Math.sin((360/365) * (dayOfYear - 81) * Math.PI / 180);
-
-    // Hour angle at sunrise/sunset
     const latRad = latitude * Math.PI / 180;
     const decRad = declination * Math.PI / 180;
-
     const cosHourAngle = -Math.tan(latRad) * Math.tan(decRad);
 
-    // Handle polar day/night
-    if (cosHourAngle < -1) {
-      return { sunrise: null, sunset: null, daylight: 24, polar: 'day' };
-    }
-    if (cosHourAngle > 1) {
-      return { sunrise: null, sunset: null, daylight: 0, polar: 'night' };
-    }
+    if (cosHourAngle < -1) return { sunrise: null, sunset: null, daylight: 24, polar: 'day' };
+    if (cosHourAngle > 1) return { sunrise: null, sunset: null, daylight: 0, polar: 'night' };
 
     const hourAngle = Math.acos(cosHourAngle) * 180 / Math.PI;
-
-    // Convert to hours (solar noon is 12:00)
     const sunriseHour = 12 - hourAngle / 15;
     const sunsetHour = 12 + hourAngle / 15;
+    const daylight = sunsetHour - sunriseHour;
 
-    // Adjust for timezone (approximate - AT is mostly Eastern time)
-    const tzOffset = 0;
-
-    const sunrise = sunriseHour + tzOffset;
-    const sunset = sunsetHour + tzOffset;
-    const daylight = sunset - sunrise;
-
-    return {
-      sunrise,
-      sunset,
-      daylight,
-      polar: null
-    };
+    return { sunrise: sunriseHour, sunset: sunsetHour, daylight, polar: null };
   }
 
   // Format decimal hours to HH:MM
@@ -111,18 +84,18 @@
   // Season context
   $: season = (() => {
     const month = dateObj.getMonth();
-    if (month >= 2 && month <= 4) return { name: 'Spring', icon: '🌸', color: '#a6b589' };
-    if (month >= 5 && month <= 7) return { name: 'Summer', icon: '☀️', color: '#d97706' };
-    if (month >= 8 && month <= 10) return { name: 'Fall', icon: '🍂', color: '#c45d2c' };
-    return { name: 'Winter', icon: '❄️', color: '#6b8cae' };
+    if (month >= 2 && month <= 4) return { name: 'Spring', icon: '🌸' };
+    if (month >= 5 && month <= 7) return { name: 'Summer', icon: '☀️' };
+    if (month >= 8 && month <= 10) return { name: 'Fall', icon: '🍂' };
+    return { name: 'Winter', icon: '❄️' };
   })();
 
   // Day length context
   $: dayContext = (() => {
-    if (sunTimes.daylight >= 14) return { label: 'Long summer day', quality: 'excellent', icon: '☀️' };
-    if (sunTimes.daylight >= 12) return { label: 'Good daylight', quality: 'good', icon: '🌤️' };
-    if (sunTimes.daylight >= 10) return { label: 'Moderate daylight', quality: 'moderate', icon: '⛅' };
-    return { label: 'Short winter day', quality: 'short', icon: '🌥️' };
+    if (sunTimes.daylight >= 14) return { label: 'Long summer day', quality: 'excellent' };
+    if (sunTimes.daylight >= 12) return { label: 'Good daylight', quality: 'good' };
+    if (sunTimes.daylight >= 10) return { label: 'Moderate daylight', quality: 'moderate' };
+    return { label: 'Short winter day', quality: 'short' };
   })();
 
   // Format date for display
@@ -133,49 +106,8 @@
     year: 'numeric'
   });
 
-  // Calculate SVG arc data
-  $: arcData = (() => {
-    const width = 320;
-    const height = 160;
-    const centerX = width / 2;
-    const centerY = height - 20;
-    const radius = 120;
-
-    // Map time to angle: 4am = -90°, 12pm = 0°, 8pm = 90°
-    const timeToAngle = (time) => ((time - 12) / 8) * 90;
-
-    const sunriseAngle = timeToAngle(sunTimes.sunrise || 6);
-    const sunsetAngle = timeToAngle(sunTimes.sunset || 18);
-
-    // Convert angle to SVG coordinates
-    const angleToPoint = (angle, r = radius) => {
-      const rad = (angle - 90) * Math.PI / 180;
-      return {
-        x: centerX + r * Math.cos(rad),
-        y: centerY + r * Math.sin(rad)
-      };
-    };
-
-    const sunrisePoint = angleToPoint(sunriseAngle);
-    const sunsetPoint = angleToPoint(sunsetAngle);
-    const noonPoint = angleToPoint(0);
-
-    // Create arc path
-    const largeArc = (sunsetAngle - sunriseAngle) > 180 ? 1 : 0;
-
-    return {
-      width,
-      height,
-      centerX,
-      centerY,
-      radius,
-      sunrise: sunrisePoint,
-      sunset: sunsetPoint,
-      noon: noonPoint,
-      arcPath: `M ${sunrisePoint.x} ${sunrisePoint.y} A ${radius} ${radius} 0 ${largeArc} 1 ${sunsetPoint.x} ${sunsetPoint.y}`,
-      horizonY: centerY,
-    };
-  })();
+  // Daylight percentage of 24h
+  $: daylightPct = Math.round((sunTimes.daylight / 24) * 100);
 </script>
 
 <div class="daylight-calc" class:mounted>
@@ -192,11 +124,12 @@
   <!-- Controls -->
   <div class="controls">
     <div class="control-group">
-      <label class="control-label">
+      <label class="control-label" for="date-input">
         <span class="label-icon">📅</span>
         <span>Date</span>
       </label>
       <input
+        id="date-input"
         type="date"
         bind:value={selectedDate}
         class="date-input"
@@ -205,12 +138,13 @@
     </div>
 
     <div class="control-group">
-      <label class="control-label">
+      <label class="control-label" for="mile-slider">
         <span class="label-icon">📍</span>
         <span>Trail Mile</span>
       </label>
       <div class="mile-slider-wrapper">
         <input
+          id="mile-slider"
           type="range"
           min="0"
           max="2198"
@@ -231,171 +165,91 @@
     </div>
   </div>
 
-  <!-- Sun Arc Visualization -->
-  <div class="sun-visual">
-    <svg viewBox="0 0 {arcData.width} {arcData.height}" class="sun-arc-svg">
-      <!-- Gradient definitions -->
-      <defs>
-        <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="#87CEEB" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#87CEEB" stop-opacity="0"/>
-        </linearGradient>
-        <linearGradient id="sunArcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#f97316"/>
-          <stop offset="50%" stop-color="#fbbf24"/>
-          <stop offset="100%" stop-color="#f97316"/>
-        </linearGradient>
-        <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#fbbf24"/>
-          <stop offset="70%" stop-color="#fbbf24" stop-opacity="0.5"/>
-          <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-
-      <!-- Sky background arc -->
-      <path
-        d="M 40 {arcData.horizonY} A 120 120 0 0 1 280 {arcData.horizonY}"
-        fill="url(#skyGradient)"
-      />
-
-      <!-- Horizon line -->
-      <line
-        x1="20" y1={arcData.horizonY}
-        x2="300" y2={arcData.horizonY}
-        stroke="var(--pine, #4d594a)"
-        stroke-width="2"
-        stroke-linecap="round"
-      />
-
-      <!-- Night portion of arc (background) -->
-      <path
-        d="M 40 {arcData.horizonY} A 120 120 0 0 1 280 {arcData.horizonY}"
-        fill="none"
-        stroke="var(--stone, #d4d0c4)"
-        stroke-width="6"
-        stroke-linecap="round"
-        opacity="0.4"
-      />
-
-      <!-- Daylight arc -->
-      <path
-        d={arcData.arcPath}
-        fill="none"
-        stroke="url(#sunArcGradient)"
-        stroke-width="6"
-        stroke-linecap="round"
-      />
-
-      <!-- Hour markers on horizon -->
-      <text x="40" y={arcData.horizonY + 16} class="hour-text">4 AM</text>
-      <text x="100" y={arcData.horizonY + 16} class="hour-text">8 AM</text>
-      <text x="160" y={arcData.horizonY + 16} class="hour-text" text-anchor="middle">NOON</text>
-      <text x="220" y={arcData.horizonY + 16} class="hour-text">4 PM</text>
-      <text x="280" y={arcData.horizonY + 16} class="hour-text" text-anchor="end">8 PM</text>
-
-      <!-- Sunrise marker -->
-      <circle
-        cx={arcData.sunrise.x}
-        cy={arcData.sunrise.y}
-        r="8"
-        fill="#f97316"
-        stroke="#fff"
-        stroke-width="2"
-      />
-      <text
-        x={arcData.sunrise.x}
-        y={arcData.sunrise.y - 14}
-        class="time-label"
-        text-anchor="middle"
-      >
-        {formatTime(sunTimes.sunrise)}
-      </text>
-
-      <!-- Sun at noon -->
-      <circle
-        cx={arcData.noon.x}
-        cy={arcData.noon.y}
-        r="24"
-        fill="url(#sunGlow)"
-      />
-      <circle
-        cx={arcData.noon.x}
-        cy={arcData.noon.y}
-        r="14"
-        fill="#fbbf24"
-        stroke="#f97316"
-        stroke-width="2"
-      />
-
-      <!-- Sunset marker -->
-      <circle
-        cx={arcData.sunset.x}
-        cy={arcData.sunset.y}
-        r="8"
-        fill="#f97316"
-        stroke="#fff"
-        stroke-width="2"
-      />
-      <text
-        x={arcData.sunset.x}
-        y={arcData.sunset.y - 14}
-        class="time-label"
-        text-anchor="middle"
-      >
-        {formatTime(sunTimes.sunset)}
-      </text>
-
-      <!-- Labels for sunrise/sunset -->
-      <text x={arcData.sunrise.x} y={arcData.horizonY - 4} class="marker-label" text-anchor="middle">RISE</text>
-      <text x={arcData.sunset.x} y={arcData.horizonY - 4} class="marker-label" text-anchor="middle">SET</text>
-    </svg>
+  <!-- Summary Stats -->
+  <div class="summary-bar">
+    <div class="stat sunrise-stat">
+      <span class="stat-icon">🌅</span>
+      <span class="stat-value">{formatTime(sunTimes.sunrise)}</span>
+      <span class="stat-label">Sunrise</span>
+    </div>
+    <div class="stat primary-stat">
+      <span class="stat-big">{formatDuration(sunTimes.daylight)}</span>
+      <span class="stat-label">Total Daylight</span>
+      <span class="stat-context {dayContext.quality}">{dayContext.label}</span>
+    </div>
+    <div class="stat sunset-stat">
+      <span class="stat-icon">🌇</span>
+      <span class="stat-value">{formatTime(sunTimes.sunset)}</span>
+      <span class="stat-label">Sunset</span>
+    </div>
   </div>
 
-  <!-- Stats Section -->
-  <div class="stats-section">
-    <div class="stat-primary">
-      <div class="stat-ring" style="--progress: {(sunTimes.daylight / 24) * 100}%; --color: {dayContext.quality === 'excellent' ? '#22c55e' : dayContext.quality === 'good' ? '#a6b589' : dayContext.quality === 'moderate' ? '#d97706' : '#6b8cae'}">
-        <div class="ring-inner">
-          <span class="stat-icon">{dayContext.icon}</span>
-          <span class="stat-big">{formatDuration(sunTimes.daylight)}</span>
-          <span class="stat-small">daylight</span>
-        </div>
+  <!-- Daylight Bar Visualization -->
+  <div class="daylight-visual">
+    <div class="daylight-track">
+      <div class="night-portion left"></div>
+      <div class="daylight-portion" style="width: {daylightPct}%">
+        <span class="day-label">{daylightPct}% daylight</span>
       </div>
-      <span class="stat-context" style="color: {dayContext.quality === 'excellent' ? '#22c55e' : dayContext.quality === 'good' ? '#4d594a' : dayContext.quality === 'moderate' ? '#d97706' : '#6b8cae'}">{dayContext.label}</span>
+      <div class="night-portion right"></div>
     </div>
+    <div class="time-markers">
+      <span>12 AM</span>
+      <span>6 AM</span>
+      <span>12 PM</span>
+      <span>6 PM</span>
+      <span>12 AM</span>
+    </div>
+  </div>
 
-    <div class="stat-grid">
-      <div class="stat-card sunrise">
-        <span class="card-icon">🌅</span>
-        <div class="card-content">
-          <span class="card-label">Sunrise</span>
-          <span class="card-value">{formatTime(sunTimes.sunrise)}</span>
+  <!-- Hiking Window Card -->
+  <div class="hiking-section">
+    <h3 class="section-title">
+      <span class="title-blaze"></span>
+      <span>Hiking Window</span>
+    </h3>
+
+    <div class="hiking-card">
+      <div class="hiking-main">
+        <span class="hiking-icon">🥾</span>
+        <div class="hiking-times">
+          <span class="hiking-range">{formatTime(hikingStart)} — {formatTime(hikingEnd)}</span>
+          <span class="hiking-duration">{formatDuration(hikingHours)} of safe hiking time</span>
         </div>
       </div>
+      <p class="hiking-note">
+        Allows 30 min after sunrise for breaking camp and 30 min before sunset for setup.
+      </p>
+    </div>
+  </div>
 
-      <div class="stat-card sunset">
-        <span class="card-icon">🌇</span>
-        <div class="card-content">
-          <span class="card-label">Sunset</span>
-          <span class="card-value">{formatTime(sunTimes.sunset)}</span>
+  <!-- Location Info -->
+  <div class="location-section">
+    <h3 class="section-title">
+      <span class="title-blaze"></span>
+      <span>Location Details</span>
+    </h3>
+
+    <div class="location-grid">
+      <div class="location-card">
+        <span class="loc-icon">🧭</span>
+        <div class="loc-content">
+          <span class="loc-label">Latitude</span>
+          <span class="loc-value">{latitude.toFixed(1)}°N</span>
         </div>
       </div>
-
-      <div class="stat-card hiking">
-        <span class="card-icon">🥾</span>
-        <div class="card-content">
-          <span class="card-label">Hiking Window</span>
-          <span class="card-value">{formatDuration(hikingHours)}</span>
-          <span class="card-sub">{formatTime(hikingStart)} – {formatTime(hikingEnd)}</span>
+      <div class="location-card">
+        <span class="loc-icon">📍</span>
+        <div class="loc-content">
+          <span class="loc-label">Region</span>
+          <span class="loc-value">{locationName}</span>
         </div>
       </div>
-
-      <div class="stat-card location">
-        <span class="card-icon">🧭</span>
-        <div class="card-content">
-          <span class="card-label">Latitude</span>
-          <span class="card-value">{latitude.toFixed(1)}°N</span>
-          <span class="card-sub">{locationName}</span>
+      <div class="location-card">
+        <span class="loc-icon">🛤️</span>
+        <div class="loc-content">
+          <span class="loc-label">Mile Marker</span>
+          <span class="loc-value">{mileMarker} / 2198</span>
         </div>
       </div>
     </div>
@@ -408,14 +262,7 @@
       <span>Planning Tips</span>
     </h3>
 
-    <div class="tips-grid">
-      <div class="tip">
-        <span class="tip-icon">💡</span>
-        <div class="tip-content">
-          <strong>Hiking Window</strong> allows 30 min after sunrise for breaking camp and 30 min before sunset for setting up.
-        </div>
-      </div>
-
+    <div class="tips-list">
       {#if dayContext.quality === 'short'}
         <div class="tip warning">
           <span class="tip-icon">⚠️</span>
@@ -438,6 +285,13 @@
           Times are approximate. Mountain terrain can delay sunrise and advance sunset by 15-30 minutes.
         </div>
       </div>
+
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        <div class="tip-content">
+          Northern latitudes (Vermont, NH, Maine) have longer summer days but much shorter winter days than Georgia.
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -452,11 +306,7 @@
     transform: translateY(10px);
     transition: opacity 0.4s ease, transform 0.4s ease;
   }
-
-  .daylight-calc.mounted {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  .daylight-calc.mounted { opacity: 1; transform: translateY(0); }
 
   /* Header */
   .calc-header {
@@ -464,22 +314,14 @@
     padding: 2rem 1.5rem 1.5rem;
     background: linear-gradient(135deg, var(--pine, #4d594a) 0%, #3a4238 100%);
     color: #fff;
-    overflow: hidden;
   }
-
   .header-topo {
-    position: absolute;
-    inset: 0;
-    opacity: 0.08;
+    position: absolute; inset: 0; opacity: 0.06;
     background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(255,255,255,0.5) 20px, rgba(255,255,255,0.5) 21px),
-      repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(255,255,255,0.3) 20px, rgba(255,255,255,0.3) 21px);
+      repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(255,255,255,0.4) 18px, rgba(255,255,255,0.4) 19px),
+      repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255,255,255,0.3) 18px, rgba(255,255,255,0.3) 19px);
   }
-
-  .header-content {
-    position: relative;
-  }
-
+  .header-content { position: relative; }
   .header-badge {
     display: inline-block;
     font-family: Oswald, sans-serif;
@@ -490,22 +332,15 @@
     color: #2b2f26;
     padding: 0.25rem 0.6rem;
     border-radius: 3px;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
-
   .header-title {
     font-family: Oswald, sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0 0 0.25rem;
-    letter-spacing: -0.01em;
   }
-
-  .header-sub {
-    font-size: 0.85rem;
-    opacity: 0.8;
-    margin: 0;
-  }
+  .header-sub { font-size: 0.85rem; opacity: 0.8; margin: 0; }
 
   /* Controls */
   .controls {
@@ -516,35 +351,18 @@
     background: linear-gradient(to bottom, rgba(166, 181, 137, 0.08), transparent);
     border-bottom: 1px solid var(--border, #e6e1d4);
   }
-
   @media (max-width: 600px) {
-    .controls {
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
-      padding: 1.25rem 1rem;
-    }
+    .controls { grid-template-columns: 1fr; gap: 1rem; padding: 1rem; }
   }
 
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
+  .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
   .control-label {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
-    font-weight: 600;
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.8rem; font-weight: 600;
     color: var(--pine, #4d594a);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    text-transform: uppercase; letter-spacing: 0.05em;
   }
-
-  .label-icon {
-    font-size: 1rem;
-  }
+  .label-icon { font-size: 1rem; }
 
   .date-input {
     padding: 0.75rem 1rem;
@@ -556,47 +374,34 @@
     color: var(--ink, #2b2f26);
     transition: border-color 0.15s ease;
   }
+  .date-input:focus { outline: none; border-color: var(--alpine, #a6b589); }
+  .date-display { font-size: 0.75rem; color: var(--muted, #5c665a); }
 
-  .date-input:focus {
-    outline: none;
-    border-color: var(--alpine, #a6b589);
-  }
-
-  .date-display {
-    font-size: 0.75rem;
-    color: var(--muted, #5c665a);
-  }
-
-  .mile-slider-wrapper {
-    position: relative;
-  }
-
+  .mile-slider-wrapper { position: relative; }
   .mile-slider {
     width: 100%;
     height: 10px;
     -webkit-appearance: none;
-    background: linear-gradient(90deg,
-      var(--alpine, #a6b589) 0%,
-      var(--pine, #4d594a) 50%,
-      var(--terra, #d97706) 100%
-    );
+    appearance: none;
+    background: linear-gradient(90deg, var(--alpine, #a6b589), var(--pine, #4d594a), var(--terra, #d97706));
     border-radius: 5px;
     cursor: pointer;
   }
-
   .mile-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 24px;
-    height: 24px;
+    -webkit-appearance: none; appearance: none;
+    width: 24px; height: 24px;
     background: var(--marker, #f0e000);
     border: 3px solid var(--pine, #4d594a);
     border-radius: 50%;
     cursor: grab;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
-
-  .mile-slider::-webkit-slider-thumb:active {
-    cursor: grabbing;
+  .mile-slider::-moz-range-thumb {
+    width: 24px; height: 24px;
+    background: var(--marker, #f0e000);
+    border: 3px solid var(--pine, #4d594a);
+    border-radius: 50%;
+    cursor: grab;
   }
 
   .mile-markers {
@@ -615,229 +420,225 @@
     align-items: baseline;
     margin-top: 0.25rem;
   }
-
   .mile-value {
     font-family: Oswald, sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--pine, #4d594a);
   }
-
   .mile-value::after {
     content: ' mi';
     font-size: 0.85rem;
     font-weight: 400;
     color: var(--muted, #5c665a);
   }
-
   .mile-location {
     font-size: 0.9rem;
     color: var(--terra, #d97706);
     font-weight: 600;
   }
 
-  /* Sun Visual */
-  .sun-visual {
-    padding: 1rem 1.5rem;
-    background: linear-gradient(to bottom, rgba(135, 206, 235, 0.05), transparent);
-  }
-
-  .sun-arc-svg {
-    width: 100%;
-    max-width: 400px;
-    margin: 0 auto;
-    display: block;
-  }
-
-  .sun-arc-svg .hour-text {
-    font-family: Oswald, sans-serif;
-    font-size: 9px;
-    fill: var(--muted, #5c665a);
-    letter-spacing: 0.02em;
-  }
-
-  .sun-arc-svg .time-label {
-    font-family: Oswald, sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    fill: var(--pine, #4d594a);
-  }
-
-  .sun-arc-svg .marker-label {
-    font-family: Oswald, sans-serif;
-    font-size: 8px;
-    font-weight: 600;
-    fill: var(--muted, #5c665a);
-    letter-spacing: 0.1em;
-  }
-
-  /* Stats Section */
-  .stats-section {
-    padding: 1.5rem;
+  /* Summary Bar */
+  .summary-bar {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg, #f5f2e8);
     border-bottom: 1px solid var(--border, #e6e1d4);
   }
 
-  .stat-primary {
+  .stat {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 1.25rem;
-  }
-
-  .stat-ring {
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: conic-gradient(
-      var(--color) 0% var(--progress),
-      var(--stone, #d4d0c4) var(--progress) 100%
-    );
-    display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 8px;
-  }
-
-  .ring-inner {
-    width: 100%;
-    height: 100%;
+    padding: 0.75rem 1rem;
     background: var(--card, #fff);
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    border-radius: 10px;
+    border: 2px solid var(--border, #e6e1d4);
+    min-width: 90px;
+  }
+  .stat-icon { font-size: 1.25rem; margin-bottom: 0.25rem; }
+  .stat-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--pine, #4d594a);
+  }
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted, #5c665a);
+    margin-top: 0.15rem;
   }
 
-  .stat-icon {
-    font-size: 1.5rem;
-    margin-bottom: 0.15rem;
+  .primary-stat {
+    padding: 1rem 1.5rem;
+    border-color: var(--alpine, #a6b589);
   }
-
   .stat-big {
     font-family: Oswald, sans-serif;
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--ink, #2b2f26);
+    color: var(--pine, #4d594a);
     line-height: 1;
   }
-
-  .stat-small {
-    font-size: 0.7rem;
-    color: var(--muted, #5c665a);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
   .stat-context {
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-top: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 500px) {
-    .stat-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .stat-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: var(--bg, #f5f2e8);
-    border-radius: 10px;
-    border-left: 3px solid var(--alpine, #a6b589);
-  }
-
-  .stat-card.sunrise {
-    border-left-color: #f97316;
-  }
-
-  .stat-card.sunset {
-    border-left-color: #f97316;
-  }
-
-  .stat-card.hiking {
-    border-left-color: var(--pine, #4d594a);
-  }
-
-  .stat-card.location {
-    border-left-color: var(--terra, #d97706);
-  }
-
-  .card-icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-  }
-
-  .card-content {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  .card-label {
     font-size: 0.7rem;
-    color: var(--muted, #5c665a);
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    margin-top: 0.35rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
+  .stat-context.excellent { background: rgba(34,197,94,0.15); color: #16a34a; }
+  .stat-context.good { background: rgba(166,181,137,0.2); color: #4d594a; }
+  .stat-context.moderate { background: rgba(217,119,6,0.15); color: #b45309; }
+  .stat-context.short { background: rgba(107,140,174,0.15); color: #4b6584; }
 
-  .card-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--ink, #2b2f26);
-    line-height: 1.2;
+  @media (max-width: 600px) {
+    .summary-bar { flex-wrap: wrap; gap: 0.75rem; }
+    .stat { min-width: 80px; padding: 0.6rem 0.75rem; }
+    .stat-big { font-size: 1.5rem; }
   }
 
-  .card-sub {
-    font-size: 0.75rem;
-    color: var(--muted, #5c665a);
+  /* Daylight Visual */
+  .daylight-visual {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border, #e6e1d4);
   }
-
-  /* Tips Section */
-  .tips-section {
-    padding: 1.25rem 1.5rem 1.5rem;
+  .daylight-track {
+    position: relative;
+    height: 32px;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    background: #1e293b;
   }
-
-  .section-title {
+  .night-portion {
+    background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+  }
+  .night-portion.left { flex: 1; }
+  .night-portion.right { flex: 1; }
+  .daylight-portion {
+    background: linear-gradient(180deg, #87CEEB 0%, #fbbf24 100%);
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    justify-content: center;
+    min-width: 80px;
+    position: relative;
+  }
+  .day-label {
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     font-weight: 600;
+    color: #1e293b;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.05em;
+  }
+  .time-markers {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+    font-size: 0.6rem;
+    color: var(--muted, #5c665a);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  /* Sections */
+  .hiking-section, .location-section, .tips-section {
+    padding: 1.25rem 1.5rem;
+  }
+  .hiking-section { border-bottom: 1px solid var(--border, #e6e1d4); }
+  .location-section { border-bottom: 1px solid var(--border, #e6e1d4); }
+
+  .section-title {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--pine, #4d594a);
     margin: 0 0 1rem;
   }
-
   .title-blaze {
-    width: 6px;
-    height: 14px;
+    width: 6px; height: 14px;
     background: var(--marker, #f0e000);
     border-radius: 2px;
   }
 
-  .tips-grid {
+  /* Hiking Card */
+  .hiking-card {
+    background: var(--bg, #f5f2e8);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--pine, #4d594a);
+  }
+  .hiking-main {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .hiking-icon { font-size: 1.75rem; }
+  .hiking-times { display: flex; flex-direction: column; }
+  .hiking-range {
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--pine, #4d594a);
+  }
+  .hiking-duration {
+    font-size: 0.8rem;
+    color: var(--muted, #5c665a);
+  }
+  .hiking-note {
+    font-size: 0.75rem;
+    color: var(--muted, #5c665a);
+    margin: 0.75rem 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border, #e6e1d4);
+    font-style: italic;
   }
 
+  /* Location Grid */
+  .location-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  @media (max-width: 500px) {
+    .location-grid { grid-template-columns: 1fr; }
+  }
+  .location-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    background: var(--bg, #f5f2e8);
+    border-radius: 8px;
+    border-left: 3px solid var(--alpine, #a6b589);
+  }
+  .loc-icon { font-size: 1.25rem; }
+  .loc-content { display: flex; flex-direction: column; }
+  .loc-label {
+    font-size: 0.65rem;
+    color: var(--muted, #5c665a);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .loc-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--pine, #4d594a);
+  }
+
+  /* Tips */
+  .tips-list { display: flex; flex-direction: column; gap: 0.5rem; }
   .tip {
     display: flex;
     align-items: flex-start;
@@ -847,59 +648,28 @@
     border-radius: 8px;
     border-left: 3px solid var(--alpine, #a6b589);
   }
-
   .tip.warning {
     background: rgba(217, 119, 6, 0.08);
     border-left-color: var(--terra, #d97706);
   }
-
   .tip.success {
     background: rgba(34, 197, 94, 0.08);
     border-left-color: #22c55e;
   }
-
-  .tip-icon {
-    font-size: 1.1rem;
-    flex-shrink: 0;
-  }
-
+  .tip-icon { font-size: 1.1rem; flex-shrink: 0; }
   .tip-content {
     font-size: 0.8rem;
     color: var(--pine, #4d594a);
     line-height: 1.5;
   }
-
-  .tip-content strong {
-    font-weight: 600;
-  }
-
-  .tip.warning .tip-content {
-    color: #92400e;
-  }
-
-  .tip.success .tip-content {
-    color: #166534;
-  }
+  .tip-content strong { font-weight: 600; }
+  .tip.warning .tip-content { color: #92400e; }
+  .tip.success .tip-content { color: #166534; }
 
   /* Mobile */
   @media (max-width: 600px) {
-    .calc-header {
-      padding: 1.5rem 1rem 1.25rem;
-    }
-
-    .header-title {
-      font-size: 1.35rem;
-    }
-
-    .stats-section,
-    .tips-section {
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-
-    .sun-visual {
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
-    }
+    .calc-header { padding: 1.5rem 1rem 1.25rem; }
+    .header-title { font-size: 1.35rem; }
+    .hiking-section, .location-section, .tips-section { padding: 1rem; }
   }
 </style>
