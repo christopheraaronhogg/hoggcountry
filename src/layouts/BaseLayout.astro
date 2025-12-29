@@ -5,12 +5,14 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import BackgroundWidget from '../components/BackgroundWidget.svelte';
 
+import { SITE_DESCRIPTION } from '../consts';
+
 export interface Props {
   title: string;
   description?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description = SITE_DESCRIPTION } = Astro.props;
 ---
 
 <!doctype html>

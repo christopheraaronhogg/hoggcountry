@@ -117,12 +117,6 @@
 
     return tips.slice(0, 3);
   }
-
-  function formatDateLong(dateStr) {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'short', month: 'long', day: 'numeric'
-    });
-  }
 </script>
 
 <div class="daylight-calc">
@@ -137,73 +131,100 @@
 
   <!-- Controls -->
   <div class="controls-section">
-    <div class="control-row">
-      <div class="control-group date-group">
-        <label class="control-label">Date</label>
+    <div class="controls-grid">
+      <!-- Date Input -->
+      <div class="control-group">
+        <label class="control-label">Planned Date</label>
         <input type="date" bind:value={date} class="date-input" />
       </div>
-      
-      <div class="control-group location-group">
-        <div class="loc-header">
+
+      <!-- Mile Slider -->
+      <div class="control-group">
+        <div class="pace-header">
           <label class="control-label">Trail Mile: {mile}</label>
-          <span class="loc-lat">{latitude.toFixed(1)}°N</span>
+          <span class="pace-val" style="font-size: 1rem;">
+            {currentSection.emoji} {currentSection.name}
+          </span>
         </div>
         <div class="slider-container">
-          <input type="range" min="0" max="2198" bind:value={mile} class="mile-slider" />
-          <div class="slider-track-bg"></div>
+          <input 
+            type="range" 
+            min="0" 
+            max="2198" 
+            bind:value={mile} 
+            class="pace-slider" 
+          />
         </div>
-        <div class="loc-detail">
-          <span class="loc-icon">{currentSection.emoji}</span>
-          <span class="loc-name">{currentSection.name}</span>
+        <div class="weight-zones">
+          <span>GA</span>
+          <span class="loc-lat">{latitude.toFixed(1)}°N</span>
+          <span>ME</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Sun Visualization -->
-  <div class="viz-section">
-    <div class="day-stats">
-      <div class="stat-box">
-        <span class="stat-icon">🌅</span>
-        <div class="stat-data">
-          <span class="stat-time">{sunTimes.sunrise || '--'}</span>
+  <!-- Big Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-label">Total Daylight</span>
+      <div class="stat-main">
+        <span class="stat-num">{sunTimes.daylightHours?.toFixed(1) || '--'}</span>
+        <span class="stat-unit">hours</span>
+      </div>
+      <div class="stat-badge" style="background: {dayQualityColor}15; color: {dayQualityColor}">
+        {dayQuality}
+      </div>
+    </div>
+    
+    <div class="stat-card highlight">
+      <div class="mini-stats">
+        <div class="mini-stat-row">
           <span class="stat-label">Sunrise</span>
+          <span class="mini-val">{sunTimes.sunrise || '--'}</span>
         </div>
-      </div>
-      
-      <div class="stat-box main">
-        <div class="stat-data">
-          <span class="stat-time large">{sunTimes.daylightHours?.toFixed(1) || '--'}h</span>
-          <span class="stat-label">Total Daylight</span>
-        </div>
-      </div>
-
-      <div class="stat-box">
-        <span class="stat-icon">🌇</span>
-        <div class="stat-data">
-          <span class="stat-time">{sunTimes.sunset || '--'}</span>
+        <div class="mini-stat-row">
           <span class="stat-label">Sunset</span>
+          <span class="mini-val">{sunTimes.sunset || '--'}</span>
+        </div>
+        <div class="mini-stat-row" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--stone);">
+          <span class="stat-label">Safe Window</span>
+          <span class="mini-val total">{hikingHours} hrs</span>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Timeline Bar -->
-    <div class="timeline-viz">
-      <div class="timeline-track">
+  <!-- Timeline Visual -->
+  <div class="timeline-container">
+    <h3 class="section-title">
+      <span class="title-blaze"></span>
+      <span>Solar Cycle</span>
+    </h3>
+    
+    <div class="solar-viz">
+      <div class="viz-track">
         <!-- Night (Morning) -->
         <div class="zone night" style="width: {startPct}%"></div>
         <!-- Day -->
         <div class="zone day" style="width: {dayPct}%">
-          <div class="sun-path"></div>
+          <div class="sun-arc"></div>
         </div>
         <!-- Night (Evening) -->
         <div class="zone night" style="width: {100 - endPct}%"></div>
-
+        
         <!-- Markers -->
-        <div class="marker start" style="left: {startPct}%"></div>
-        <div class="marker end" style="left: {endPct}%"></div>
+        <div class="viz-marker start" style="left: {startPct}%">
+          <div class="marker-line"></div>
+          <span class="marker-label">Rise</span>
+        </div>
+        <div class="viz-marker end" style="left: {endPct}%">
+          <div class="marker-line"></div>
+          <span class="marker-label">Set</span>
+        </div>
       </div>
-      <div class="timeline-labels">
+      
+      <div class="viz-labels">
         <span>12am</span>
         <span>6am</span>
         <span>12pm</span>
@@ -211,49 +232,18 @@
         <span>12am</span>
       </div>
     </div>
+
+    {#if tips.length > 0}
+      <div class="tips-grid">
+        {#each tips as tip}
+          <div class="tip-card">
+            <span class="tip-icon">{tip.icon}</span>
+            <span class="tip-text">{tip.text}</span>
+          </div>
+        {/each}
+      </div>
+    {/if}
   </div>
-
-  <!-- Safe Hiking Window -->
-  <div class="hiking-window">
-    <div class="window-header">
-      <h3 class="window-title">Safe Hiking Window</h3>
-      <span class="window-badge" style="background: {dayQualityColor}15; color: {dayQualityColor}">
-        {dayQuality}
-      </span>
-    </div>
-
-    <div class="window-card">
-      <div class="time-block">
-        <span class="time-label">Start Hiking</span>
-        <span class="time-val">{hikingStart}</span>
-        <span class="time-sub">Sunrise + 30m</span>
-      </div>
-      
-      <div class="window-duration">
-        <span class="duration-line"></span>
-        <span class="duration-val">{hikingHours} hrs</span>
-        <span class="duration-line"></span>
-      </div>
-
-      <div class="time-block">
-        <span class="time-label">Make Camp</span>
-        <span class="time-val">{hikingEnd}</span>
-        <span class="time-sub">Sunset - 30m</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tips -->
-  {#if tips.length > 0}
-    <div class="tips-list">
-      {#each tips as tip}
-        <div class="tip-item">
-          <span class="tip-icon">{tip.icon}</span>
-          <span class="tip-text">{tip.text}</span>
-        </div>
-      {/each}
-    </div>
-  {/if}
 </div>
 
 <style>
@@ -303,9 +293,9 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .control-row {
+  .controls-grid {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1fr 1fr;
     gap: 2rem;
   }
 
@@ -322,25 +312,27 @@
 
   .date-input {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.6rem;
     border: 1px solid var(--stone);
     border-radius: 8px;
     font-family: inherit;
     font-size: 1rem;
     color: var(--ink);
+    background: #fff;
   }
 
-  .loc-header {
+  /* Slider */
+  .pace-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     margin-bottom: 0.5rem;
   }
 
-  .loc-lat {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-family: monospace;
+  .pace-val {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    color: var(--pine);
   }
 
   .slider-container {
@@ -348,125 +340,163 @@
     height: 24px;
     display: flex;
     align-items: center;
-    margin-bottom: 0.5rem;
   }
 
-  .mile-slider {
+  .pace-slider {
     width: 100%;
-    position: absolute;
-    z-index: 2;
-    height: 24px;
-    opacity: 0;
+    opacity: 1;
+    -webkit-appearance: none;
+    background: transparent;
     cursor: pointer;
     margin: 0;
   }
 
-  .slider-track-bg {
+  .pace-slider::-webkit-slider-runnable-track {
     width: 100%;
     height: 6px;
     background: linear-gradient(90deg, var(--alpine), var(--pine));
     border-radius: 3px;
   }
 
-  .mile-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 24px;
-    width: 24px;
-    cursor: grab;
-  }
-
-  /* We need a visible thumb since we hid the input */
-  .slider-container::after {
-    content: '';
-    position: absolute;
-    left: var(--thumb-pos, 0%); /* JS would need to set this, but let's stick to standard styling for simplicity in Svelte */
-    display: none; 
-  }
-  
-  /* Revert to standard styling for slider to avoid complexity with custom thumbs without JS binding for position */
-  .mile-slider {
-    opacity: 1;
-    -webkit-appearance: none;
-    background: transparent;
-  }
-  
-  .mile-slider::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 6px;
-    background: linear-gradient(90deg, var(--alpine), var(--pine));
-    border-radius: 3px;
-  }
-  
-  .mile-slider::-webkit-slider-thumb {
+  .pace-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     height: 24px;
     width: 24px;
     border-radius: 50%;
     background: #fff;
-    border: 2px solid var(--terra);
+    border: 2px solid var(--pine);
     margin-top: -9px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     cursor: grab;
   }
 
-  .loc-detail {
+  .weight-zones {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--ink);
-    font-weight: 500;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 600;
   }
+  
+  .loc-lat { font-family: monospace; font-weight: 400; }
 
-  /* Visual Section */
-  .viz-section {
-    padding: 2rem;
-    background: linear-gradient(to bottom, #fff, var(--bg));
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     border-bottom: 1px solid var(--border);
   }
 
-  .day-stats {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 2rem;
-  }
-
-  .stat-box {
-    text-align: center;
+  .stat-card {
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    border-right: 1px solid var(--border);
   }
 
-  .stat-time {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .stat-time.large {
-    font-size: 2rem;
-    color: var(--terra);
-  }
+  .stat-card:last-child { border-right: none; }
+  .stat-card.highlight { background: #fdfdfc; }
 
   .stat-label {
     font-size: 0.75rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
   }
 
-  .timeline-track {
-    height: 40px;
+  .stat-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .stat-num {
+    font-family: Oswald, sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .stat-unit {
+    font-size: 1rem;
+    color: var(--muted);
+  }
+
+  .stat-badge {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .mini-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mini-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .mini-val {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--ink);
+  }
+  
+  .mini-val.total { color: var(--terra); }
+
+  /* Solar Viz */
+  .timeline-container {
+    padding: 2rem;
+    background: var(--bg);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--pine);
+    margin: 0 0 1.5rem;
+  }
+
+  .title-blaze {
+    width: 8px;
+    height: 16px;
+    background: var(--marker);
+    border-radius: 2px;
+  }
+
+  .solar-viz {
+    margin-bottom: 2rem;
+  }
+
+  .viz-track {
+    height: 32px;
     background: #1e293b;
-    border-radius: 20px;
+    border-radius: 16px;
     position: relative;
     overflow: hidden;
     display: flex;
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
   }
 
   .zone { height: 100%; transition: width 0.3s ease; }
@@ -474,133 +504,73 @@
   .zone.day { 
     background: linear-gradient(180deg, #fbbf24, #d97706);
     position: relative;
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
   }
 
-  .timeline-labels {
+  .viz-labels {
     display: flex;
     justify-content: space-between;
     margin-top: 0.5rem;
     font-size: 0.7rem;
     color: var(--muted);
-    padding: 0 0.5rem;
+    padding: 0 0.25rem;
   }
 
-  /* Hiking Window */
-  .hiking-window {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .window-header {
+  .viz-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    margin-bottom: 1rem;
+    transform: translateX(-50%);
+    pointer-events: none;
   }
 
-  .window-title {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--pine);
-    margin: 0;
+  .marker-line {
+    width: 2px;
+    height: 100%;
+    background: rgba(255,255,255,0.8);
   }
 
-  .window-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.2rem 0.6rem;
-    border-radius: 99px;
-  }
-
-  .window-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg);
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-  }
-
-  .time-block {
-    text-align: center;
-  }
-
-  .time-label {
-    display: block;
-    font-size: 0.7rem;
+  .marker-label {
+    position: absolute;
+    top: -1.2rem;
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 0.25rem;
-  }
-
-  .time-val {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .time-sub {
-    font-size: 0.7rem;
-    color: var(--muted);
-    opacity: 0.8;
-  }
-
-  .window-duration {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0 1rem;
-  }
-
-  .duration-line {
-    flex: 1;
-    height: 1px;
-    background: var(--stone);
-  }
-
-  .duration-val {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--pine);
     white-space: nowrap;
-    background: #fff;
-    padding: 0.2rem 0.6rem;
-    border-radius: 99px;
-    border: 1px solid var(--border);
   }
 
   /* Tips */
-  .tips-list {
-    padding: 1.5rem 2rem;
-    background: #fafaf9;
+  .tips-grid {
     display: grid;
     gap: 0.75rem;
   }
 
-  .tip-item {
+  .tip-card {
     display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.05);
+    font-size: 0.9rem;
     align-items: flex-start;
-    gap: 0.75rem;
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.5;
   }
 
-  .tip-icon { font-size: 1.1rem; }
+  .tip-icon { font-size: 1.25rem; }
+  .tip-text { color: var(--muted); line-height: 1.5; }
 
   @media (max-width: 600px) {
     .calc-header { padding: 1.5rem; }
     .controls-section { padding: 1.5rem; }
-    .control-row { grid-template-columns: 1fr; gap: 1.5rem; }
-    .viz-section { padding: 1.5rem; }
-    .window-card { flex-direction: column; gap: 1.5rem; }
-    .window-duration { transform: rotate(90deg); width: 40px; }
-    .duration-line { width: 20px; }
+    .controls-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-card:last-child { border-bottom: none; }
+    .timeline-container { padding: 1.5rem 1rem; }
   }
 </style>

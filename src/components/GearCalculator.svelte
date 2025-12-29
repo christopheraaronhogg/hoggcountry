@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { slide } from 'svelte/transition';
   import gearData from '../data/gear.json';
 
   // State
@@ -63,8 +64,8 @@
     : 'Heavy';
 
   $: weightClassColor = baseWeightLbs < 10 ? '#22c55e'
-    : baseWeightLbs < 15 ? '#a6b589'
-    : baseWeightLbs < 20 ? '#d97706'
+    : baseWeightLbs < 15 ? 'var(--alpine)'
+    : baseWeightLbs < 20 ? 'var(--terra)'
     : '#dc2626';
 
   // Group items by category
@@ -141,150 +142,135 @@
 
   <!-- Controls -->
   <div class="controls-section">
-    <!-- Season Selector -->
-    <div class="control-block">
-      <label class="block-label">Season</label>
-      <div class="toggle-group">
-        <button
-          class="toggle-option"
-          class:active={season === 'winter'}
-          on:click={() => season = 'winter'}
-        >
-          <span class="opt-icon">❄️</span>
-          <div class="opt-text">
-            <span class="opt-name">Winter Start</span>
-            <span class="opt-desc">Feb/Mar in GA</span>
-          </div>
-        </button>
-        <button
-          class="toggle-option"
-          class:active={season === 'summer'}
-          on:click={() => season = 'summer'}
-        >
-          <span class="opt-icon">☀️</span>
-          <div class="opt-text">
-            <span class="opt-name">Summer Mode</span>
-            <span class="opt-desc">Post-Damascus</span>
-          </div>
-        </button>
+    <div class="controls-grid">
+      <!-- Season Selector -->
+      <div class="control-group">
+        <label class="control-label">Season Profile</label>
+        <div class="toggle-container">
+          <button 
+            class="toggle-btn" 
+            class:active={season === 'winter'} 
+            on:click={() => season = 'winter'}
+          >
+            <span class="toggle-icon">❄️</span>
+            <span>Winter Start</span>
+          </button>
+          <button 
+            class="toggle-btn" 
+            class:active={season === 'summer'} 
+            on:click={() => season = 'summer'}
+          >
+            <span class="toggle-icon">☀️</span>
+            <span>Summer</span>
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- Target Weight Slider -->
-    <div class="control-block">
-      <div class="slider-header">
-        <label class="block-label">Target Base Weight</label>
-        <span class="slider-value">{targetWeight} lbs</span>
-      </div>
-      <div class="slider-container">
-        <input
-          type="range"
-          min="8"
-          max="30"
-          step="0.5"
-          bind:value={targetWeight}
-          class="weight-slider"
-        />
-        <div class="slider-track-bg"></div>
-      </div>
-      <div class="weight-zones">
-        <span class="zone ul">Ultralight</span>
-        <span class="zone lw">Lightweight</span>
-        <span class="zone trad">Traditional</span>
+      <!-- Target Weight Slider -->
+      <div class="control-group">
+        <div class="pace-header">
+          <label class="control-label">Target Base Weight</label>
+          <span class="pace-val">{targetWeight} <small>lbs</small></span>
+        </div>
+        <div class="slider-container">
+          <input
+            type="range"
+            min="8"
+            max="30"
+            step="0.5"
+            bind:value={targetWeight}
+            class="pace-slider"
+          />
+        </div>
+        <div class="weight-zones">
+          <span class="zone-label" style="color: #22c55e">Ultralight</span>
+          <span class="zone-label" style="color: var(--alpine)">Light</span>
+          <span class="zone-label" style="color: var(--terra)">Trad</span>
+          <span class="zone-label" style="color: #dc2626">Heavy</span>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Big Stats -->
   <div class="stats-grid">
-    <div class="stat-card base">
-      <span class="stat-label">Base Weight</span>
-      <div class="stat-number" style="color: {weightClassColor}">
-        {baseWeightLbs.toFixed(1)}<span class="unit">lbs</span>
+    <div class="stat-card">
+      <span class="stat-label">Current Base Weight</span>
+      <div class="stat-main">
+        <span class="stat-num" style="color: {weightClassColor}">{baseWeightLbs.toFixed(1)}</span>
+        <span class="stat-unit">lbs</span>
       </div>
       <div class="stat-badge" style="background: {weightClassColor}15; color: {weightClassColor}">
         {weightClass}
       </div>
     </div>
-    
-    <div class="stat-card other">
-      <div class="mini-stat">
-        <span class="mini-label">Worn</span>
-        <span class="mini-val">{wornWeightLbs.toFixed(1)} lbs</span>
-      </div>
-      <div class="mini-stat">
-        <span class="mini-label">Total</span>
-        <span class="mini-val">{totalWeightLbs.toFixed(1)} lbs</span>
+    <div class="stat-card highlight">
+      <div class="mini-stats">
+        <div class="mini-stat-row">
+          <span class="stat-label">Worn</span>
+          <span class="mini-val">{wornWeightLbs.toFixed(1)} lbs</span>
+        </div>
+        <div class="mini-stat-row">
+          <span class="stat-label">Total Pack</span>
+          <span class="mini-val total">{(baseWeightLbs + 2.2 + 2).toFixed(1)}* lbs</span>
+        </div>
+        <p class="stat-note">*Includes estimated food (2lb) & water (2.2lb)</p>
       </div>
     </div>
   </div>
 
-  <!-- Target Indicator -->
-  <div class="target-status">
-    {#if baseWeightLbs <= targetWeight}
-      <div class="status-message success">
-        <span class="icon">✓</span>
-        <span>You are <strong>{(targetWeight - baseWeightLbs).toFixed(1)} lbs</strong> under your target.</span>
-      </div>
-    {:else}
-      <div class="status-message warning">
-        <span class="icon">⚠️</span>
-        <span>You are <strong>{(baseWeightLbs - targetWeight).toFixed(1)} lbs</strong> over your target.</span>
-      </div>
-    {/if}
-  </div>
-
   <!-- Category List -->
-  <div class="categories-list">
-    {#each categoryWeights as cat, i}
-      <div class="category-item" class:expanded={expandedCategory === cat.id}>
-        <button class="category-main" on:click={() => toggleCategory(cat.id)}>
-          <div class="cat-icon">{cat.icon}</div>
-          <div class="cat-info">
-            <div class="cat-header-row">
-              <span class="cat-name">{cat.name}</span>
-              <span class="cat-weight">{formatWeight(cat.weight)}</span>
-            </div>
-            <div class="cat-bar-track">
-              <div 
-                class="cat-bar-fill"
-                style="width: {(cat.weight / maxCategoryWeight) * 100}%; background: {cat.color}"
-              ></div>
-            </div>
-          </div>
-          <div class="cat-arrow" class:rotated={expandedCategory === cat.id}>▼</div>
-        </button>
+  <div class="timeline-container">
+    <h3 class="section-title">
+      <span class="title-blaze"></span>
+      <span>Gear Breakdown</span>
+    </h3>
 
-        {#if expandedCategory === cat.id}
-          <div class="cat-details" transition:slide>
-            <div class="items-list">
+    <div class="timeline-list">
+      {#each categoryWeights as cat}
+        <div class="category-card" class:expanded={expandedCategory === cat.id}>
+          <button class="category-header" on:click={() => toggleCategory(cat.id)}>
+            <span class="cat-icon">{cat.icon}</span>
+            <div class="cat-info">
+              <div class="cat-top">
+                <span class="cat-name">{cat.name}</span>
+                <span class="cat-weight">{formatWeight(cat.weight)}</span>
+              </div>
+              <div class="cat-bar-bg">
+                <div class="cat-bar-fill" style="width: {(cat.weight / maxCategoryWeight) * 100}%; background: {cat.color}"></div>
+              </div>
+            </div>
+            <span class="cat-arrow">▼</span>
+          </button>
+
+          {#if expandedCategory === cat.id}
+            <div class="cat-items" transition:slide>
               {#each cat.items as item}
                 {@const status = itemFitStatus[item.id] || { fits: true, essential: false }}
                 <div class="gear-row" class:dimmed={!status.fits}>
-                  <div class="gear-name">
-                    {item.name}
+                  <div class="gear-col-name">
+                    <span class="item-name">{item.name}</span>
                     {#if status.essential}<span class="tag essential">Essential</span>{/if}
                   </div>
-                  <div class="gear-weight">{formatWeight(item.weight)}</div>
+                  <span class="item-weight">{formatWeight(item.weight)}</span>
                 </div>
               {/each}
               {#each cat.wornItems as item}
                 <div class="gear-row worn">
-                  <div class="gear-name">{item.name} <span class="tag worn">Worn</span></div>
-                  <div class="gear-weight">{formatWeight(item.weight)}</div>
+                  <div class="gear-col-name">
+                    <span class="item-name">{item.name}</span>
+                    <span class="tag worn">Worn</span>
+                  </div>
+                  <span class="item-weight">{formatWeight(item.weight)}</span>
                 </div>
               {/each}
             </div>
-          </div>
-        {/if}
-      </div>
-    {/each}
+          {/if}
+        </div>
+      {/each}
+    </div>
   </div>
 </div>
-
-<script context="module">
-  import { slide } from 'svelte/transition';
-</script>
 
 <style>
   .gear-calc {
@@ -300,12 +286,6 @@
     padding: 2rem 2rem 1.5rem;
     background: linear-gradient(to bottom, #fdfcf9, #f5f2e8);
     border-bottom: 1px solid var(--border);
-    position: relative;
-  }
-  
-  .header-inner {
-    position: relative;
-    z-index: 1;
   }
 
   .header-badge {
@@ -337,11 +317,15 @@
   .controls-section {
     padding: 1.5rem 2rem;
     border-bottom: 1px solid var(--border);
-    display: grid;
-    gap: 1.5rem;
   }
 
-  .block-label {
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .control-label {
     display: block;
     font-family: Oswald, sans-serif;
     font-size: 0.75rem;
@@ -349,75 +333,60 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--muted);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
-  .toggle-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+  /* Toggle Button Group */
+  .toggle-container {
+    display: flex;
+    background: #f5f5f5;
+    padding: 0.25rem;
+    border-radius: 8px;
+    gap: 0.25rem;
   }
 
-  .toggle-option {
+  .toggle-btn {
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: #fff;
-    border: 1px solid var(--stone);
-    border-radius: 10px;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    color: var(--muted);
     cursor: pointer;
-    text-align: left;
     transition: all 0.2s ease;
   }
 
-  .toggle-option:hover {
-    border-color: var(--pine);
-    background: rgba(166, 181, 137, 0.05);
-  }
-
-  .toggle-option.active {
-    background: var(--pine);
-    border-color: var(--pine);
-    color: #fff;
-  }
-  
-  .toggle-option.active .opt-desc {
-    color: rgba(255,255,255,0.8);
-  }
-
-  .opt-icon { font-size: 1.5rem; }
-  
-  .opt-name {
-    display: block;
-    font-family: Oswald, sans-serif;
+  .toggle-btn.active {
+    background: #fff;
+    color: var(--pine);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     font-weight: 600;
-    font-size: 0.9rem;
-    line-height: 1.2;
   }
 
-  .opt-desc {
-    font-size: 0.75rem;
-    color: var(--muted);
-    line-height: 1.2;
-  }
+  .toggle-icon { font-size: 1rem; }
 
-  /* Slider */
-  .slider-header {
+  /* Slider (Matching MilestoneCalculator) */
+  .pace-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
-  .slider-header .block-label { margin: 0; }
-
-  .slider-value {
+  .pace-val {
     font-family: Oswald, sans-serif;
-    font-weight: 700;
     font-size: 1.25rem;
+    font-weight: 600;
     color: var(--pine);
   }
+
+  .pace-val small { font-size: 0.8rem; font-weight: 400; color: var(--muted); }
 
   .slider-container {
     position: relative;
@@ -426,40 +395,23 @@
     align-items: center;
   }
 
-  .weight-slider {
+  .pace-slider {
     width: 100%;
-    position: absolute;
-    z-index: 2;
-    height: 24px;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  .slider-track-bg {
-    width: 100%;
-    height: 6px;
-    background: linear-gradient(90deg, #22c55e 0%, var(--alpine) 40%, var(--terra) 70%, #dc2626 100%);
-    border-radius: 3px;
-  }
-
-  /* Custom thumb styling needs to be simulated if we hide the input, 
-     but keeping the native input visible is more accessible/robust. 
-     Let's style the native input instead. */
-  .weight-slider {
     opacity: 1;
     -webkit-appearance: none;
     background: transparent;
+    cursor: pointer;
     margin: 0;
   }
 
-  .weight-slider::-webkit-slider-runnable-track {
+  .pace-slider::-webkit-slider-runnable-track {
     width: 100%;
     height: 6px;
     background: linear-gradient(90deg, #22c55e 0%, var(--alpine) 40%, var(--terra) 70%, #dc2626 100%);
     border-radius: 3px;
   }
 
-  .weight-slider::-webkit-slider-thumb {
+  .pace-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     height: 24px;
     width: 24px;
@@ -475,80 +427,81 @@
     display: flex;
     justify-content: space-between;
     margin-top: 0.5rem;
-    font-size: 0.7rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    font-weight: 600;
   }
 
-  .zone.ul { color: #22c55e; }
-  .zone.lw { color: var(--alpine); }
-  .zone.trad { color: var(--terra); }
+  .zone-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
 
   /* Stats Grid */
   .stats-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 1fr 1fr;
     border-bottom: 1px solid var(--border);
   }
 
   .stat-card {
-    padding: 1.5rem 2rem;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    border-right: 1px solid var(--border);
   }
 
-  .stat-card.base {
-    border-right: 1px solid var(--border);
-    align-items: flex-start;
-  }
+  .stat-card:last-child { border-right: none; }
+  .stat-card.highlight { background: #fdfdfc; }
 
   .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
   }
 
-  .stat-number {
+  .stat-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .stat-num {
     font-family: Oswald, sans-serif;
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
+    color: var(--ink);
     line-height: 1;
   }
 
-  .stat-number .unit {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-left: 0.25rem;
+  .stat-unit {
+    font-size: 1rem;
+    color: var(--muted);
   }
 
   .stat-badge {
+    align-self: flex-start;
     margin-top: 0.5rem;
     padding: 0.25rem 0.75rem;
     border-radius: 99px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
-  .stat-card.other {
-    gap: 1rem;
-    background: var(--bg);
+  .mini-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .mini-stat {
+  .mini-stat-row {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-  }
-
-  .mini-label {
-    font-size: 0.8rem;
-    color: var(--muted);
   }
 
   .mini-val {
@@ -558,49 +511,59 @@
     color: var(--ink);
   }
 
-  /* Target Status */
-  .target-status {
-    padding: 1rem 2rem;
-    background: #fdfcf9;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.9rem;
-    color: var(--ink);
+  .mini-val.total {
+    color: var(--terra);
   }
 
-  .status-message {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .stat-note {
+    font-size: 0.7rem;
+    color: var(--stone);
+    margin: 0.5rem 0 0;
+    font-style: italic;
   }
 
-  .status-message.success .icon { color: #22c55e; }
-  .status-message.warning .icon { color: var(--terra); }
-
-  /* Categories */
-  .categories-list {
-    padding: 1rem;
+  /* Gear List */
+  .timeline-container {
+    padding: 2rem;
     background: var(--bg);
   }
 
-  .category-item {
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--pine);
+    margin: 0 0 1.5rem;
+  }
+
+  .title-blaze {
+    width: 8px;
+    height: 16px;
+    background: var(--marker);
+    border-radius: 2px;
+  }
+
+  .category-card {
     background: #fff;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    margin-bottom: 0.5rem;
-    transition: all 0.2s ease;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 0.75rem;
     overflow: hidden;
-  }
-  
-  .category-item:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    transition: all 0.2s ease;
   }
 
-  .category-item.expanded {
+  .category-card.expanded {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     border-color: var(--alpine);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   }
 
-  .category-main {
+  .category-header {
     width: 100%;
     display: flex;
     align-items: center;
@@ -618,11 +581,9 @@
     text-align: center;
   }
 
-  .cat-info {
-    flex: 1;
-  }
+  .cat-info { flex: 1; }
 
-  .cat-header-row {
+  .cat-top {
     display: flex;
     justify-content: space-between;
     margin-bottom: 0.35rem;
@@ -642,7 +603,7 @@
     font-size: 0.9rem;
   }
 
-  .cat-bar-track {
+  .cat-bar-bg {
     height: 4px;
     background: #f0f0f0;
     border-radius: 2px;
@@ -660,44 +621,38 @@
     transition: transform 0.2s ease;
   }
 
-  .cat-arrow.rotated {
+  .category-card.expanded .cat-arrow {
     transform: rotate(180deg);
     color: var(--pine);
   }
 
-  .cat-details {
-    border-top: 1px solid var(--border);
-    background: #fcfcfc;
-  }
-
-  .items-list {
-    padding: 0.5rem 1rem 1rem;
+  .cat-items {
+    padding: 0 1rem 1rem;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    background: #fafaf9;
   }
 
   .gear-row {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem 0;
-    font-size: 0.85rem;
+    align-items: center;
+    padding: 0.6rem 0;
     border-bottom: 1px dashed rgba(0,0,0,0.05);
+    font-size: 0.85rem;
   }
 
-  .gear-row:last-child {
-    border-bottom: none;
-  }
+  .gear-row:last-child { border-bottom: none; }
+  .gear-row.dimmed { opacity: 0.4; }
 
-  .gear-row.dimmed {
-    opacity: 0.5;
-  }
-
-  .gear-name {
-    color: var(--ink);
+  .gear-col-name {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  .gear-weight {
+  .item-name { color: var(--ink); }
+
+  .item-weight {
     font-family: Oswald, sans-serif;
     color: var(--muted);
     font-size: 0.8rem;
@@ -709,24 +664,19 @@
     border-radius: 4px;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
-  .tag.essential {
-    background: var(--pine);
-    color: #fff;
-  }
-
-  .tag.worn {
-    background: var(--stone);
-    color: #fff;
-  }
+  .tag.essential { background: var(--pine); color: #fff; }
+  .tag.worn { background: var(--stone); color: #fff; }
 
   @media (max-width: 600px) {
     .calc-header { padding: 1.5rem; }
-    .controls-section { padding: 1.5rem; grid-template-columns: 1fr; }
-    .toggle-group { grid-template-columns: 1fr; }
+    .controls-section { padding: 1.5rem; }
+    .controls-grid { grid-template-columns: 1fr; gap: 1.5rem; }
     .stats-grid { grid-template-columns: 1fr; }
-    .stat-card.base { border-right: none; border-bottom: 1px solid var(--border); padding: 1.5rem; }
-    .stat-card.other { padding: 1.5rem; }
+    .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-card:last-child { border-bottom: none; }
+    .timeline-container { padding: 1rem; }
   }
 </style>

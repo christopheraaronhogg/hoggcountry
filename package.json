@@ -12,6 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.6",
     "@astrojs/mdx": "^4.3.3",
     "@astrojs/rss": "^4.0.12",
     "@astrojs/sitemap": "^3.4.2",
@@ -23,7 +24,7 @@
     "sharp": "^0.34.2",
     "svelte": "^5.37.3",
     "tailwindcss": "^4.1.11",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "puppeteer": "^24.34.0"
