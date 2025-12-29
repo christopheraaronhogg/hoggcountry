@@ -4,6 +4,7 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import FullGuideNav from '../../components/FullGuideNav.svelte';
 import GuideInlineSearch from '../../components/GuideInlineSearch.svelte';
+import DownloadGuideButton from '../../components/DownloadGuideButton.svelte';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -1027,14 +1028,9 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
             </>
           )}
 
-          <!-- Download buttons -->
+          <!-- Download button -->
           <div class="toc-downloads">
-            <a href="/AT-Field-Guide-2026.pdf" download class="toc-download-btn">
-              <span>📄</span> Download PDF
-            </a>
-            <button class="toc-download-btn secondary" id="download-md-btn">
-              <span>📝</span> Download Markdown
-            </button>
+            <DownloadGuideButton client:load variant="toc" markdownContent={markdownContent} />
           </div>
         </nav>
 
@@ -1079,22 +1075,14 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
       </div>
     </div>
 
-    <script define:vars={{ markdownContent }}>
-      // Markdown download handlers (TOC button and header button)
-      function downloadMarkdown() {
-        const blob = new Blob([markdownContent], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'AT-Field-Guide-2026.md';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
+    <!-- Hidden download button for header trigger -->
+    <DownloadGuideButton client:load variant="header" markdownContent={markdownContent} />
 
-      document.getElementById('download-md-btn')?.addEventListener('click', downloadMarkdown);
-      document.getElementById('download-md-header')?.addEventListener('click', downloadMarkdown);
+    <script>
+      // Header download button triggers modal via custom event
+      document.getElementById('download-guide-btn')?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('open-download-modal'));
+      });
 
       // Header only visible at very top of page
       const headerWrapper = document.querySelector('.guide-header-wrapper');

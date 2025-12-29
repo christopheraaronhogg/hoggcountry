@@ -77,26 +77,9 @@
     }
   }
 
-  function downloadPDF() {
-    // Direct download of pre-generated PDF
-    const a = document.createElement('a');
-    a.href = '/AT-Field-Guide-2026.pdf';
-    a.download = 'AT-Field-Guide-2026.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
-  function downloadMarkdown() {
-    const blob = new Blob([markdownContent], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'AT-Field-Guide-2026.md';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  function openDownloadModal() {
+    window.dispatchEvent(new CustomEvent('open-download-modal'));
+    showMobileNav = false;
   }
 
   // Separate main chapters from quick refs
@@ -162,16 +145,10 @@
   </div>
 
   <div class="sidebar-footer">
-    <div class="download-buttons">
-      <button class="download-btn" on:click={downloadPDF} title="Download as PDF">
-        <span class="download-icon">📄</span>
-        <span>PDF</span>
-      </button>
-      <button class="download-btn" on:click={downloadMarkdown} title="Download as Markdown">
-        <span class="download-icon">📝</span>
-        <span>MD</span>
-      </button>
-    </div>
+    <button class="download-btn full-width" on:click={openDownloadModal} title="Download Field Guide">
+      <span class="download-icon">↓</span>
+      <span>Download</span>
+    </button>
     <button class="toc-link" on:click={scrollToTOC}>
       <span>↑ Table of Contents</span>
     </button>
@@ -198,13 +175,10 @@
       <button class="drawer-close" on:click={() => showMobileNav = false}>×</button>
     </div>
     <div class="drawer-scroll">
-      <!-- Download buttons at top of mobile drawer -->
+      <!-- Download button at top of mobile drawer -->
       <div class="drawer-downloads">
-        <button class="drawer-download-btn" on:click={downloadPDF}>
-          <span>📄</span> Download PDF
-        </button>
-        <button class="drawer-download-btn" on:click={downloadMarkdown}>
-          <span>📝</span> Download Markdown
+        <button class="drawer-download-btn" on:click={openDownloadModal}>
+          <span>↓</span> Download Guide
         </button>
       </div>
       <div class="drawer-divider"></div>
@@ -444,23 +418,17 @@
     gap: 0.5rem;
   }
 
-  .download-buttons {
-    display: flex;
-    gap: 0.5rem;
-  }
-
   .download-btn {
-    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
-    padding: 0.5rem;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
     background: var(--pine, #4d594a);
     color: #fff;
     border: none;
     border-radius: 6px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -471,8 +439,12 @@
     transform: translateY(-1px);
   }
 
+  .download-btn.full-width {
+    width: 100%;
+  }
+
   .download-icon {
-    font-size: 0.85rem;
+    font-size: 1rem;
   }
 
   .toc-link {
