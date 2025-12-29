@@ -70,6 +70,12 @@ Before committing:
 - Content schemas validate (`npm run astro -- check`)
 - Timeline layout works on mobile and desktop
 
+## Commit Rule
+
+- Always commit and push to `main` immediately after a successful change.
+- Do not wait for permission.
+- We can always revert changes if needed.
+
 ## Additional Documentation
 
 - `cursor.md` — Detailed AI assistant guidelines and common tasks
