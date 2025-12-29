@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import FullGuideNav from '../../components/FullGuideNav.svelte';
+import GuideInlineSearch from '../../components/GuideInlineSearch.svelte';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -26,11 +27,12 @@ const renderedChapters = await Promise.all(
   })
 );
 
-// Prepare nav data
+// Prepare nav data (includes description for search)
 const navChapters = sortedGuides.map(ch => ({
   id: ch.id,
   data: {
     title: ch.data.title,
+    description: ch.data.description,
     part: ch.data.part,
     order: ch.data.order,
     quickRef: ch.data.quickRef
@@ -189,6 +191,11 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
         height: 2px;
         background: linear-gradient(90deg, transparent, var(--alpine), transparent);
         margin: 1.5rem auto;
+      }
+
+      /* Search in TOC */
+      .toc-search {
+        margin: 1.5rem 0;
       }
 
       /* Chapter entries with leader dots */
@@ -659,6 +666,8 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
       @media print {
         body.guide-page {
           background: #fff;
+          font-size: 11pt;
+          line-height: 1.5;
         }
 
         .guide-wrapper {
@@ -668,45 +677,123 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
 
         .guide-content-area {
           max-width: none;
-          padding: 0;
+          padding: 0.5in;
         }
 
+        /* Masthead: keep compact, no forced page break */
+        .guide-masthead {
+          padding: 0.25in 0 0.5in;
+          border-bottom: 2pt solid #333;
+          margin-bottom: 0.25in;
+        }
+
+        .masthead-badge {
+          background: none;
+          border: 1pt solid #333;
+        }
+
+        .masthead-divider {
+          display: none;
+        }
+
+        /* TOC: compact, flows naturally */
         .book-toc {
-          page-break-after: always;
-          border: 2px solid #333;
+          border: 1pt solid #666;
+          padding: 0.25in;
+          margin-bottom: 0.5in;
+          background: #f9f9f9 !important;
         }
 
         .book-toc::before {
           display: none;
         }
 
+        .toc-search,
         .toc-downloads {
-          display: none;
+          display: none !important;
         }
 
-        .guide-masthead {
-          page-break-after: always;
+        .toc-entry {
+          padding: 0.15in 0;
         }
 
+        .toc-entry-desc {
+          display: none; /* Compact print */
+        }
+
+        .toc-quick-grid {
+          gap: 0.1in;
+        }
+
+        .toc-quick-card {
+          padding: 0.1in;
+          border: 1pt solid #999;
+          background: #fff !important;
+        }
+
+        /* Chapters: flow naturally, avoid breaks mid-paragraph */
         .chapter-section {
+          padding: 0.25in 0;
+          border-bottom: 0.5pt solid #ccc;
+          page-break-inside: auto; /* Allow breaks within long chapters */
+        }
+
+        .chapter-section:last-child {
+          border-bottom: none;
+        }
+
+        .chapter-section.quick-ref {
+          background: none !important;
+          margin: 0;
+          padding: 0.25in 0;
+        }
+
+        /* Avoid orphans/widows and breaking inside key elements */
+        .chapter-prose :global(h1),
+        .chapter-prose :global(h2),
+        .chapter-prose :global(h3) {
+          page-break-after: avoid;
           page-break-inside: avoid;
+        }
+
+        .chapter-prose :global(p) {
+          orphans: 3;
+          widows: 3;
+        }
+
+        .chapter-prose :global(ul),
+        .chapter-prose :global(ol) {
+          page-break-inside: avoid;
+        }
+
+        .chapter-prose :global(table) {
+          font-size: 9pt;
+          page-break-inside: avoid;
+        }
+
+        .chapter-prose :global(blockquote) {
+          background: #f5f5f5 !important;
+          border-left: 3pt solid #666;
+          page-break-inside: avoid;
+        }
+
+        .chapter-header {
+          page-break-after: avoid;
         }
 
         .chapter-number-bg {
           display: none;
         }
 
+        .chapter-label {
+          border-bottom: 1pt solid #ccc;
+          padding-bottom: 0.1in;
+          margin-bottom: 0.15in;
+        }
+
+        /* Hide footer and nav */
         .guide-footer {
           display: none;
-        }
-
-        .chapter-prose :global(table) {
-          font-size: 0.8rem;
-        }
-
-        .chapter-prose :global(blockquote) {
-          background: #f5f5f5;
-          border-left-color: #666;
         }
       }
 
@@ -809,6 +896,11 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
           <div class="book-toc-header">
             <h2 class="book-toc-title">Table of Contents</h2>
             <p class="book-toc-subtitle">18 Chapters + 5 Quick Reference Cards</p>
+          </div>
+
+          <!-- Search -->
+          <div class="toc-search">
+            <GuideInlineSearch client:load chapters={navChapters} />
           </div>
 
           <div class="book-toc-divider"></div>
