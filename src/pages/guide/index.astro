@@ -74,6 +74,13 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
 <html lang="en">
   <head>
     <BaseHead title={title} description={description} />
+    <!-- PWA manifest for offline-capable field guide -->
+    <link rel="manifest" href="/guide-manifest.json" />
+    <meta name="theme-color" content="#4d594a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AT Guide" />
+    <link rel="apple-touch-icon" href="/guide-icon-192.svg" />
     <style is:global>
       /* ===== Full Guide Layout ===== */
       body.guide-page {
@@ -1124,6 +1131,28 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
 
       window.addEventListener('scroll', handleScroll, { passive: true });
       handleScroll(); // Check initial state
+
+      // Register service worker for offline functionality
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('[Guide] Service Worker registered:', registration.scope);
+
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker?.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New version available - could show update prompt here
+                  console.log('[Guide] New version available');
+                }
+              });
+            });
+          })
+          .catch((err) => {
+            console.warn('[Guide] Service Worker registration failed:', err);
+          });
+      }
     </script>
   </body>
 </html>

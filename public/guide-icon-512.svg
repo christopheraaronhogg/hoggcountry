@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#4d594a"/>
+
+  <!-- White AT trail blaze (classic rectangle) -->
+  <rect x="192" y="128" width="128" height="256" rx="10" fill="#ffffff"/>
+
+  <!-- Subtle tree silhouettes -->
+  <path d="M107 427 L149 320 L128 320 L171 213 L149 213 L192 128" fill="none" stroke="#3a4238" stroke-width="5" opacity="0.3"/>
+  <path d="M405 427 L363 320 L384 320 L341 213 L363 213 L320 128" fill="none" stroke="#3a4238" stroke-width="5" opacity="0.3"/>
+</svg>

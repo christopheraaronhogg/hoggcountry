@@ -8,30 +8,55 @@
   let results = [];
   let selectedIndex = 0;
   let inputEl;
+  let indexLoaded = false;
+  let offlineReady = false;
 
-  // Build searchable index from DOM content on mount
+  // Search index loaded from pre-built JSON (works offline)
   let contentIndex = [];
 
-  onMount(() => {
-    // Build content index from rendered chapters
-    chapters.forEach(ch => {
-      const section = document.getElementById(ch.id);
-      if (section) {
-        const text = section.textContent || '';
-        contentIndex.push({
-          id: ch.id,
-          title: ch.data.title,
-          description: ch.data.description || '',
-          quickRef: ch.data.quickRef,
-          content: text.toLowerCase()
-        });
-      }
-    });
+  onMount(async () => {
+    // Load pre-built search index (cached by service worker for offline use)
+    try {
+      const response = await fetch('/guide-search-index.json');
+      const index = await response.json();
+
+      // Transform to match expected format
+      contentIndex = index.map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || '',
+        quickRef: item.quickRef || false,
+        content: item.content.toLowerCase(),
+        headers: (item.headers || '').toLowerCase()
+      }));
+
+      indexLoaded = true;
+      offlineReady = true;
+    } catch (err) {
+      console.warn('[Search] Failed to load index, falling back to DOM:', err);
+
+      // Fallback: build from DOM (online only)
+      chapters.forEach(ch => {
+        const section = document.getElementById(ch.id);
+        if (section) {
+          const text = section.textContent || '';
+          contentIndex.push({
+            id: ch.id,
+            title: ch.data.title,
+            description: ch.data.description || '',
+            quickRef: ch.data.quickRef,
+            content: text.toLowerCase(),
+            headers: ''
+          });
+        }
+      });
+      indexLoaded = true;
+    }
   });
 
   // Search function
   function search(q) {
-    if (q.length < 2) {
+    if (!indexLoaded || q.length < 2) {
       results = [];
       isOpen = false;
       return;
@@ -54,6 +79,11 @@
           // Description match
           if (item.description.toLowerCase().includes(term)) {
             score += 50;
+            matchedTerms.push(term);
+          }
+          // Headers match (section titles)
+          if (item.headers && item.headers.includes(term)) {
+            score += 30;
             matchedTerms.push(term);
           }
           // Content match
@@ -144,7 +174,7 @@
     <span class="search-icon">🔍</span>
     <input
       type="text"
-      placeholder="Search the guide..."
+      placeholder={offlineReady ? "Search (works offline)" : "Search the guide..."}
       bind:value={query}
       bind:this={inputEl}
       on:keydown={handleKeydown}
@@ -152,6 +182,9 @@
       class="search-input"
       aria-label="Search guide content"
     />
+    {#if offlineReady}
+      <span class="offline-badge" title="Search works offline">✓</span>
+    {/if}
     {#if query}
       <button class="clear-btn" on:click={() => { query = ''; isOpen = false; }} aria-label="Clear search">×</button>
     {/if}
@@ -245,6 +278,13 @@
 
   .clear-btn:hover {
     color: var(--fg, #333);
+  }
+
+  .offline-badge {
+    font-size: 0.75rem;
+    color: var(--alpine, #a6b589);
+    margin-right: 0.5rem;
+    font-weight: 600;
   }
 
   .search-results {
