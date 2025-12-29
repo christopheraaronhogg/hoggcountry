@@ -27,49 +27,33 @@
 
   onMount(() => {
     mounted = true;
-    // Set default date to today
     const today = new Date();
     date = today.toISOString().split('T')[0];
   });
 
-  // Latitude interpolation: Georgia (34.6°N) to Maine (45.9°N)
+  // Latitude interpolation
   const GEORGIA_LAT = 34.6;
   const MAINE_LAT = 45.9;
   const TOTAL_MILES = 2198;
 
   $: latitude = GEORGIA_LAT + (mile / TOTAL_MILES) * (MAINE_LAT - GEORGIA_LAT);
-
-  // Get current section
   $: currentSection = sections.find(s => mile >= s.startMile && mile < s.endMile) || sections[sections.length - 1];
 
   // Solar calculations
   function calculateSunTimes(dateStr, lat) {
     const d = new Date(dateStr);
     const dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
-
-    // Solar declination
     const declination = 23.45 * Math.sin((360 / 365) * (dayOfYear - 81) * Math.PI / 180);
-
-    // Hour angle at sunrise/sunset
     const latRad = lat * Math.PI / 180;
     const decRad = declination * Math.PI / 180;
-
     const cosHourAngle = -Math.tan(latRad) * Math.tan(decRad);
 
-    // Handle polar day/night
-    if (cosHourAngle > 1) {
-      return { sunrise: null, sunset: null, daylightHours: 0, polarNight: true };
-    }
-    if (cosHourAngle < -1) {
-      return { sunrise: null, sunset: null, daylightHours: 24, polarDay: true };
-    }
+    if (cosHourAngle > 1) return { sunrise: null, sunset: null, daylightHours: 0 };
+    if (cosHourAngle < -1) return { sunrise: null, sunset: null, daylightHours: 24 };
 
     const hourAngle = Math.acos(cosHourAngle) * 180 / Math.PI;
     const daylightHours = 2 * hourAngle / 15;
-
-    // Solar noon (approximate - ignoring longitude/timezone complexity)
-    const solarNoon = 12; // Simplified to noon
-
+    const solarNoon = 12; // Simplified
     const sunriseHours = solarNoon - (daylightHours / 2);
     const sunsetHours = solarNoon + (daylightHours / 2);
 
@@ -78,9 +62,7 @@
       sunset: hoursToTime(sunsetHours),
       sunriseHours,
       sunsetHours,
-      daylightHours,
-      polarDay: false,
-      polarNight: false
+      daylightHours
     };
   }
 
@@ -97,822 +79,528 @@
   }
 
   $: sunTimes = calculateSunTimes(date, latitude);
-
-  // Hiking window: sunrise + 30min to sunset - 30min
+  
+  // Safe hiking window (sunrise+30m to sunset-30m)
   $: hikingStart = sunTimes.sunriseHours ? hoursToTime(addMinutesToHours(sunTimes.sunriseHours, 30)) : '--';
   $: hikingEnd = sunTimes.sunsetHours ? hoursToTime(addMinutesToHours(sunTimes.sunsetHours, -30)) : '--';
   $: hikingHours = sunTimes.daylightHours ? (sunTimes.daylightHours - 1).toFixed(1) : 0;
 
-  // Day quality
+  // Day quality logic
   $: dayQuality = sunTimes.daylightHours >= 14 ? 'Long Summer Day'
-    : sunTimes.daylightHours >= 12 ? 'Good Hiking Day'
-    : sunTimes.daylightHours >= 10 ? 'Shorter Day'
-    : 'Short Winter Day';
+    : sunTimes.daylightHours >= 12 ? 'Solid Hiking Day'
+    : sunTimes.daylightHours >= 10 ? 'Short Day'
+    : 'Winter Day';
 
   $: dayQualityColor = sunTimes.daylightHours >= 14 ? '#22c55e'
     : sunTimes.daylightHours >= 12 ? 'var(--alpine)'
     : sunTimes.daylightHours >= 10 ? 'var(--terra)'
     : '#6b8cae';
 
-  $: dayQualityIcon = sunTimes.daylightHours >= 14 ? '☀️'
-    : sunTimes.daylightHours >= 12 ? '🌤️'
-    : sunTimes.daylightHours >= 10 ? '⛅'
-    : '🌙';
+  // Visual percentages
+  $: startPct = (sunTimes.sunriseHours / 24) * 100;
+  $: endPct = (sunTimes.sunsetHours / 24) * 100;
+  $: dayPct = endPct - startPct;
 
-  // Visual day/night percentages
-  $: daylightPercent = (sunTimes.daylightHours / 24) * 100;
-  $: nightPercent = 100 - daylightPercent;
-
-  // Planning tips based on conditions
+  // Planning tips
   $: tips = generateTips(sunTimes.daylightHours, mile, date);
 
   function generateTips(daylight, currentMile, currentDate) {
     const tips = [];
     const month = new Date(currentDate).getMonth();
 
-    if (daylight >= 14) {
-      tips.push({ icon: '🌅', text: 'Long days! Consider starting early to beat afternoon heat and thunderstorms.' });
-    } else if (daylight < 10) {
-      tips.push({ icon: '🔦', text: 'Short days - headlamp hiking may be needed. Start at first light.' });
-    }
+    if (daylight >= 14.5) tips.push({ icon: '🌅', text: 'Consider a siesta or split day to avoid peak afternoon heat.' });
+    else if (daylight < 10.5) tips.push({ icon: '🔦', text: 'Headlamp hiking likely needed. Camp near water to save time.' });
 
-    if (currentMile > 1750 && currentMile < 1912) {
-      tips.push({ icon: '⛰️', text: 'White Mountains require extra time. Budget 1.5x normal hiking pace.' });
-    }
-
-    if (month >= 5 && month <= 7 && currentMile > 500) {
-      tips.push({ icon: '⛈️', text: 'Summer storm season. Plan to be below treeline by 2 PM.' });
-    }
-
-    if (daylight >= 12 && daylight < 14) {
-      tips.push({ icon: '⏰', text: 'Balanced daylight. Aim for early starts to maximize afternoon flexibility.' });
-    }
-
-    if (currentMile > 1912) {
-      tips.push({ icon: '🎯', text: 'Maine\'s 100-Mile Wilderness - longer hiking days, resupply carries.' });
-    }
+    if (currentMile > 1750 && currentMile < 1912) tips.push({ icon: '⛰️', text: 'White Mountains: Reduce planned mileage by 40-50%.' });
+    if (month >= 5 && month <= 7 && currentMile > 500) tips.push({ icon: '⛈️', text: 'Summer storms: Aim to be below treeline by 2 PM.' });
+    if (currentMile > 1912) tips.push({ icon: '🌲', text: '100-Mile Wilderness: Plan for slower terrain and heavier carries.' });
 
     return tips.slice(0, 3);
   }
 
-  // Format date nicely
   function formatDateLong(dateStr) {
     return new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
+      weekday: 'short', month: 'long', day: 'numeric'
     });
   }
 </script>
 
 <div class="daylight-calc">
   <!-- Header -->
-  <div class="calc-header">
-    <div class="header-topo"></div>
-    <div class="header-content">
+  <header class="calc-header">
+    <div class="header-inner">
       <span class="header-badge">SOLAR DATA</span>
       <h2 class="header-title">Daylight Calculator</h2>
-      <p class="header-sub">Plan your hiking day with sunrise and sunset times</p>
+      <p class="header-sub">Sunrise and sunset planning for the trail</p>
     </div>
-  </div>
+  </header>
 
   <!-- Controls -->
-  <div class="controls">
-    <div class="control-group">
-      <label class="control-label">
-        <span class="label-icon">📅</span>
-        <span class="label-text">Date</span>
-      </label>
-      <input
-        type="date"
-        bind:value={date}
-        class="date-input"
-      />
-    </div>
-
-    <div class="control-group">
-      <label class="control-label">
-        <span class="label-icon">📍</span>
-        <span class="label-text">Trail Mile</span>
-      </label>
-      <div class="mile-control">
-        <input
-          type="range"
-          min="0"
-          max="2198"
-          bind:value={mile}
-          class="mile-slider"
-        />
-        <span class="mile-value">{mile.toLocaleString()}</span>
+  <div class="controls-section">
+    <div class="control-row">
+      <div class="control-group date-group">
+        <label class="control-label">Date</label>
+        <input type="date" bind:value={date} class="date-input" />
+      </div>
+      
+      <div class="control-group location-group">
+        <div class="loc-header">
+          <label class="control-label">Trail Mile: {mile}</label>
+          <span class="loc-lat">{latitude.toFixed(1)}°N</span>
+        </div>
+        <div class="slider-container">
+          <input type="range" min="0" max="2198" bind:value={mile} class="mile-slider" />
+          <div class="slider-track-bg"></div>
+        </div>
+        <div class="loc-detail">
+          <span class="loc-icon">{currentSection.emoji}</span>
+          <span class="loc-name">{currentSection.name}</span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Location Info -->
-  <div class="location-bar">
-    <div class="location-main">
-      <span class="location-emoji">{currentSection.emoji}</span>
-      <div class="location-info">
-        <span class="location-name">{currentSection.name}</span>
-        <span class="location-lat">{latitude.toFixed(2)}°N latitude</span>
+  <!-- Sun Visualization -->
+  <div class="viz-section">
+    <div class="day-stats">
+      <div class="stat-box">
+        <span class="stat-icon">🌅</span>
+        <div class="stat-data">
+          <span class="stat-time">{sunTimes.sunrise || '--'}</span>
+          <span class="stat-label">Sunrise</span>
+        </div>
       </div>
-    </div>
-    <div class="location-date">{formatDateLong(date)}</div>
-  </div>
-
-  <!-- Sun Times Summary -->
-  <div class="sun-summary">
-    <div class="sun-stat sunrise">
-      <span class="sun-icon">🌅</span>
-      <div class="sun-info">
-        <span class="sun-time">{sunTimes.sunrise || '--'}</span>
-        <span class="sun-label">Sunrise</span>
+      
+      <div class="stat-box main">
+        <div class="stat-data">
+          <span class="stat-time large">{sunTimes.daylightHours?.toFixed(1) || '--'}h</span>
+          <span class="stat-label">Total Daylight</span>
+        </div>
       </div>
-    </div>
 
-    <div class="sun-stat daylight">
-      <span class="sun-icon">{dayQualityIcon}</span>
-      <div class="sun-info">
-        <span class="sun-time">{sunTimes.daylightHours?.toFixed(1) || '--'}h</span>
-        <span class="sun-label">Daylight</span>
+      <div class="stat-box">
+        <span class="stat-icon">🌇</span>
+        <div class="stat-data">
+          <span class="stat-time">{sunTimes.sunset || '--'}</span>
+          <span class="stat-label">Sunset</span>
+        </div>
       </div>
     </div>
 
-    <div class="sun-stat sunset">
-      <span class="sun-icon">🌇</span>
-      <div class="sun-info">
-        <span class="sun-time">{sunTimes.sunset || '--'}</span>
-        <span class="sun-label">Sunset</span>
-      </div>
-    </div>
-  </div>
+    <!-- Timeline Bar -->
+    <div class="timeline-viz">
+      <div class="timeline-track">
+        <!-- Night (Morning) -->
+        <div class="zone night" style="width: {startPct}%"></div>
+        <!-- Day -->
+        <div class="zone day" style="width: {dayPct}%">
+          <div class="sun-path"></div>
+        </div>
+        <!-- Night (Evening) -->
+        <div class="zone night" style="width: {100 - endPct}%"></div>
 
-  <!-- Day/Night Visual Bar -->
-  <div class="daynight-section">
-    <h3 class="section-title">
-      <span class="title-blaze"></span>
-      <span>Day & Night</span>
-    </h3>
-
-    <div class="daynight-bar">
-      <div class="night-segment morning" style="width: {(sunTimes.sunriseHours / 24) * 100}%">
-        <span class="segment-label">Night</span>
+        <!-- Markers -->
+        <div class="marker start" style="left: {startPct}%"></div>
+        <div class="marker end" style="left: {endPct}%"></div>
       </div>
-      <div class="day-segment" style="width: {daylightPercent}%">
-        <span class="segment-label">{sunTimes.daylightHours?.toFixed(1)}h daylight</span>
+      <div class="timeline-labels">
+        <span>12am</span>
+        <span>6am</span>
+        <span>12pm</span>
+        <span>6pm</span>
+        <span>12am</span>
       </div>
-      <div class="night-segment evening" style="width: {((24 - sunTimes.sunsetHours) / 24) * 100}%">
-        <span class="segment-label">Night</span>
-      </div>
-    </div>
-
-    <div class="daynight-times">
-      <span class="time-marker">12 AM</span>
-      <span class="time-marker">6 AM</span>
-      <span class="time-marker">12 PM</span>
-      <span class="time-marker">6 PM</span>
-      <span class="time-marker">12 AM</span>
     </div>
   </div>
 
-  <!-- Hiking Window -->
+  <!-- Safe Hiking Window -->
   <div class="hiking-window">
-    <h3 class="section-title">
-      <span class="title-blaze"></span>
-      <span>Safe Hiking Window</span>
-    </h3>
+    <div class="window-header">
+      <h3 class="window-title">Safe Hiking Window</h3>
+      <span class="window-badge" style="background: {dayQualityColor}15; color: {dayQualityColor}">
+        {dayQuality}
+      </span>
+    </div>
 
     <div class="window-card">
-      <div class="window-times">
-        <div class="window-time start">
-          <span class="window-icon">🥾</span>
-          <span class="window-value">{hikingStart}</span>
-          <span class="window-label">Start hiking</span>
-          <span class="window-note">30 min after sunrise</span>
-        </div>
-
-        <div class="window-arrow">
-          <span class="arrow-line"></span>
-          <span class="arrow-duration">{hikingHours}h</span>
-          <span class="arrow-line"></span>
-        </div>
-
-        <div class="window-time end">
-          <span class="window-icon">🏕️</span>
-          <span class="window-value">{hikingEnd}</span>
-          <span class="window-label">Make camp</span>
-          <span class="window-note">30 min before sunset</span>
-        </div>
+      <div class="time-block">
+        <span class="time-label">Start Hiking</span>
+        <span class="time-val">{hikingStart}</span>
+        <span class="time-sub">Sunrise + 30m</span>
+      </div>
+      
+      <div class="window-duration">
+        <span class="duration-line"></span>
+        <span class="duration-val">{hikingHours} hrs</span>
+        <span class="duration-line"></span>
       </div>
 
-      <div class="window-quality" style="background: {dayQualityColor}20; border-color: {dayQualityColor}">
-        <span class="quality-icon">{dayQualityIcon}</span>
-        <span class="quality-text" style="color: {dayQualityColor}">{dayQuality}</span>
+      <div class="time-block">
+        <span class="time-label">Make Camp</span>
+        <span class="time-val">{hikingEnd}</span>
+        <span class="time-sub">Sunset - 30m</span>
       </div>
     </div>
   </div>
 
-  <!-- Planning Tips -->
+  <!-- Tips -->
   {#if tips.length > 0}
-    <div class="tips-section">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Planning Tips</span>
-      </h3>
-
-      <div class="tips-list">
-        {#each tips as tip, i}
-          <div
-            class="tip-card"
-            class:mounted
-            style="animation-delay: {i * 100}ms"
-          >
-            <span class="tip-icon">{tip.icon}</span>
-            <p class="tip-text">{tip.text}</p>
-          </div>
-        {/each}
-      </div>
+    <div class="tips-list">
+      {#each tips as tip}
+        <div class="tip-item">
+          <span class="tip-icon">{tip.icon}</span>
+          <span class="tip-text">{tip.text}</span>
+        </div>
+      {/each}
     </div>
   {/if}
-
-  <!-- Mile Progress -->
-  <div class="progress-section">
-    <div class="progress-bar">
-      <div class="progress-fill" style="width: {(mile / TOTAL_MILES) * 100}%"></div>
-      <div class="progress-marker" style="left: {(mile / TOTAL_MILES) * 100}%"></div>
-    </div>
-    <div class="progress-endpoints">
-      <span class="endpoint">
-        <span class="endpoint-icon">🏕️</span>
-        Springer
-      </span>
-      <span class="endpoint-mile">Mile {mile.toLocaleString()} of {TOTAL_MILES.toLocaleString()}</span>
-      <span class="endpoint">
-        Katahdin
-        <span class="endpoint-icon">🏔️</span>
-      </span>
-    </div>
-  </div>
 </div>
 
 <style>
   .daylight-calc {
-    background: var(--card, #fff);
+    background: #fff;
     border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
     overflow: hidden;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   }
 
   /* Header */
   .calc-header {
-    position: relative;
-    padding: 2.5rem 2rem 2rem;
-    background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
-    color: #fff;
-    overflow: hidden;
-  }
-
-  .header-topo {
-    position: absolute;
-    inset: 0;
-    opacity: 0.06;
-    background-image:
-      radial-gradient(circle at 20% 50%, rgba(255,200,100,0.3) 0%, transparent 50%),
-      radial-gradient(circle at 80% 50%, rgba(255,150,50,0.2) 0%, transparent 40%);
-  }
-
-  .header-content {
-    position: relative;
+    padding: 2rem 2rem 1.5rem;
+    background: linear-gradient(to bottom, #fdfcf9, #f5f2e8);
+    border-bottom: 1px solid var(--border);
   }
 
   .header-badge {
-    display: inline-block;
     font-family: Oswald, sans-serif;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--terra);
     text-transform: uppercase;
-    letter-spacing: 0.2em;
-    background: var(--terra, #d97706);
-    color: #fff;
-    padding: 0.25rem 0.6rem;
-    border-radius: 3px;
-    margin-bottom: 0.75rem;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 0.5rem;
   }
 
   .header-title {
     font-family: Oswald, sans-serif;
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 0.25rem;
-    letter-spacing: -0.01em;
+    font-size: 2rem;
+    margin: 0;
+    color: var(--ink);
+    line-height: 1.1;
   }
 
   .header-sub {
-    font-size: 0.9rem;
-    opacity: 0.8;
-    margin: 0;
+    margin: 0.5rem 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
   }
 
   /* Controls */
-  .controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+  .controls-section {
     padding: 1.5rem 2rem;
-    background: linear-gradient(to bottom, rgba(217, 119, 6, 0.05), transparent);
-    border-bottom: 1px solid var(--border, #e6e1d4);
+    border-bottom: 1px solid var(--border);
   }
 
-  @media (max-width: 600px) {
-    .controls {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-      padding: 1.25rem 1rem;
-    }
-  }
-
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  .control-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
   }
 
   .control-label {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--pine, #4d594a);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-  }
-
-  .label-icon {
-    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
   }
 
   .date-input {
-    padding: 0.75rem 1rem;
-    border: 2px solid var(--border, #e6e1d4);
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--stone);
     border-radius: 8px;
     font-family: inherit;
     font-size: 1rem;
-    background: #fff;
-    color: var(--ink, #2b2f26);
-    transition: border-color 0.15s ease;
+    color: var(--ink);
   }
 
-  .date-input:focus {
-    outline: none;
-    border-color: var(--terra, #d97706);
+  .loc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
   }
 
-  .mile-control {
+  .loc-lat {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: monospace;
+  }
+
+  .slider-container {
+    position: relative;
+    height: 24px;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    margin-bottom: 0.5rem;
   }
 
   .mile-slider {
-    flex: 1;
-    height: 8px;
-    -webkit-appearance: none;
-    background: linear-gradient(90deg, var(--alpine, #a6b589), var(--pine, #4d594a));
-    border-radius: 4px;
+    width: 100%;
+    position: absolute;
+    z-index: 2;
+    height: 24px;
+    opacity: 0;
     cursor: pointer;
+    margin: 0;
+  }
+
+  .slider-track-bg {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, var(--alpine), var(--pine));
+    border-radius: 3px;
   }
 
   .mile-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 24px;
     height: 24px;
-    background: var(--terra, #d97706);
-    border: 3px solid #fff;
-    border-radius: 50%;
-    cursor: grab;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  }
-
-  .mile-slider::-moz-range-thumb {
     width: 24px;
-    height: 24px;
-    background: var(--terra, #d97706);
-    border: 3px solid #fff;
-    border-radius: 50%;
     cursor: grab;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
 
-  .mile-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--pine, #4d594a);
-    min-width: 3.5rem;
-    text-align: right;
+  /* We need a visible thumb since we hid the input */
+  .slider-container::after {
+    content: '';
+    position: absolute;
+    left: var(--thumb-pos, 0%); /* JS would need to set this, but let's stick to standard styling for simplicity in Svelte */
+    display: none; 
+  }
+  
+  /* Revert to standard styling for slider to avoid complexity with custom thumbs without JS binding for position */
+  .mile-slider {
+    opacity: 1;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+  
+  .mile-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, var(--alpine), var(--pine));
+    border-radius: 3px;
+  }
+  
+  .mile-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--terra);
+    margin-top: -9px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    cursor: grab;
   }
 
-  /* Location Bar */
-  .location-bar {
+  .loc-detail {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
-    background: var(--bg, #f5f2e8);
-    border-bottom: 1px solid var(--border, #e6e1d4);
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--ink);
+    font-weight: 500;
   }
 
-  .location-main {
+  /* Visual Section */
+  .viz-section {
+    padding: 2rem;
+    background: linear-gradient(to bottom, #fff, var(--bg));
+    border-bottom: 1px solid var(--border);
+  }
+
+  .day-stats {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    justify-content: space-around;
+    margin-bottom: 2rem;
   }
 
-  .location-emoji {
-    font-size: 1.75rem;
-  }
-
-  .location-info {
+  .stat-box {
+    text-align: center;
     display: flex;
     flex-direction: column;
-  }
-
-  .location-name {
-    font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--ink, #2b2f26);
-  }
-
-  .location-lat {
-    font-size: 0.75rem;
-    color: var(--muted, #5c665a);
-  }
-
-  .location-date {
-    font-size: 0.85rem;
-    color: var(--muted, #5c665a);
-  }
-
-  /* Sun Summary */
-  .sun-summary {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0;
-    border-bottom: 1px solid var(--border, #e6e1d4);
-  }
-
-  .sun-stat {
-    display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 1.25rem 1rem;
+    gap: 0.5rem;
   }
 
-  .sun-stat.sunrise {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.02));
-  }
-
-  .sun-stat.daylight {
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.1), rgba(166, 181, 137, 0.02));
-  }
-
-  .sun-stat.sunset {
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.1), rgba(217, 119, 6, 0.02));
-  }
-
-  .sun-icon {
-    font-size: 1.75rem;
-  }
-
-  .sun-info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .sun-time {
+  .stat-time {
+    display: block;
     font-family: Oswald, sans-serif;
     font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--ink, #2b2f26);
-    line-height: 1;
-  }
-
-  .sun-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted, #5c665a);
-    margin-top: 0.2rem;
-  }
-
-  @media (max-width: 600px) {
-    .sun-summary {
-      grid-template-columns: 1fr;
-    }
-
-    .sun-stat {
-      border-bottom: 1px solid var(--border, #e6e1d4);
-    }
-
-    .sun-stat:last-child {
-      border-bottom: none;
-    }
-  }
-
-  /* Day/Night Section */
-  .daynight-section {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border, #e6e1d4);
-  }
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--pine, #4d594a);
-    margin: 0 0 1.25rem;
+    color: var(--ink);
   }
 
-  .title-blaze {
-    width: 8px;
-    height: 16px;
-    background: var(--terra, #d97706);
-    border-radius: 2px;
+  .stat-time.large {
+    font-size: 2rem;
+    color: var(--terra);
   }
 
-  .daynight-bar {
-    display: flex;
-    height: 40px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-  }
-
-  .night-segment {
-    background: linear-gradient(180deg, #1e3a5f 0%, #0f2744 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .day-segment {
-    background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .segment-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: #fff;
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 0 0.5rem;
   }
 
-  .daynight-times {
+  .timeline-track {
+    height: 40px;
+    background: #1e293b;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  .zone { height: 100%; transition: width 0.3s ease; }
+  .zone.night { background: #1e293b; }
+  .zone.day { 
+    background: linear-gradient(180deg, #fbbf24, #d97706);
+    position: relative;
+  }
+
+  .timeline-labels {
     display: flex;
     justify-content: space-between;
     margin-top: 0.5rem;
-  }
-
-  .time-marker {
-    font-size: 0.65rem;
-    color: var(--muted, #5c665a);
+    font-size: 0.7rem;
+    color: var(--muted);
+    padding: 0 0.5rem;
   }
 
   /* Hiking Window */
   .hiking-window {
     padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border, #e6e1d4);
+    border-bottom: 1px solid var(--border);
   }
 
-  .window-card {
-    background: var(--bg, #f5f2e8);
-    border-radius: 12px;
-    padding: 1.25rem;
-  }
-
-  .window-times {
+  .window-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
-  }
-
-  .window-time {
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    text-align: center;
+    margin-bottom: 1rem;
   }
 
-  .window-icon {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .window-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--ink, #2b2f26);
-  }
-
-  .window-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--pine, #4d594a);
-    text-transform: uppercase;
-  }
-
-  .window-note {
-    font-size: 0.65rem;
-    color: var(--muted, #5c665a);
-    margin-top: 0.1rem;
-  }
-
-  .window-arrow {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0 0.5rem;
-  }
-
-  .arrow-line {
-    flex: 1;
-    height: 2px;
-    background: linear-gradient(90deg, var(--alpine, #a6b589), var(--terra, #d97706));
-  }
-
-  .arrow-duration {
+  .window-title {
     font-family: Oswald, sans-serif;
     font-size: 1rem;
-    font-weight: 600;
-    color: var(--pine, #4d594a);
-    white-space: nowrap;
-  }
-
-  .window-quality {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 8px;
-    border: 2px solid;
-  }
-
-  .quality-icon {
-    font-size: 1.1rem;
-  }
-
-  .quality-text {
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    color: var(--pine);
+    margin: 0;
   }
 
-  /* Tips Section */
-  .tips-section {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border, #e6e1d4);
+  .window-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
   }
 
-  .tips-list {
+  .window-card {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+  }
+
+  .time-block {
+    text-align: center;
+  }
+
+  .time-label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .time-val {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .time-sub {
+    font-size: 0.7rem;
+    color: var(--muted);
+    opacity: 0.8;
+  }
+
+  .window-duration {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1rem;
+  }
+
+  .duration-line {
+    flex: 1;
+    height: 1px;
+    background: var(--stone);
+  }
+
+  .duration-val {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--pine);
+    white-space: nowrap;
+    background: #fff;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+  }
+
+  /* Tips */
+  .tips-list {
+    padding: 1.5rem 2rem;
+    background: #fafaf9;
+    display: grid;
     gap: 0.75rem;
   }
 
-  .tip-card {
+  .tip-item {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: var(--bg, #f5f2e8);
-    border-radius: 10px;
-    opacity: 0;
-    transform: translateX(-10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-  }
-
-  .tip-card.mounted {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .tip-icon {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
-
-  .tip-text {
     font-size: 0.85rem;
-    color: var(--muted, #5c665a);
-    margin: 0;
-    line-height: 1.4;
+    color: var(--muted);
+    line-height: 1.5;
   }
 
-  /* Progress Section */
-  .progress-section {
-    padding: 1.5rem 2rem 2rem;
-  }
+  .tip-icon { font-size: 1.1rem; }
 
-  .progress-bar {
-    position: relative;
-    height: 10px;
-    background: var(--stone, #d4d0c4);
-    border-radius: 5px;
-    overflow: visible;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--alpine, #a6b589), var(--pine, #4d594a));
-    border-radius: 5px;
-    transition: width 0.3s ease;
-  }
-
-  .progress-marker {
-    position: absolute;
-    top: 50%;
-    width: 16px;
-    height: 16px;
-    background: var(--terra, #d97706);
-    border: 3px solid #fff;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    transition: left 0.3s ease;
-  }
-
-  .progress-endpoints {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 0.75rem;
-    font-size: 0.75rem;
-    color: var(--muted, #5c665a);
-  }
-
-  .endpoint {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .endpoint-icon {
-    font-size: 1rem;
-  }
-
-  .endpoint-mile {
-    font-family: Oswald, sans-serif;
-    font-weight: 600;
-    color: var(--pine, #4d594a);
-  }
-
-  /* Mobile */
   @media (max-width: 600px) {
-    .calc-header,
-    .location-bar,
-    .daynight-section,
-    .hiking-window,
-    .tips-section,
-    .progress-section {
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-
-    .window-times {
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .window-arrow {
-      transform: rotate(90deg);
-      width: 60px;
-      padding: 0;
-    }
+    .calc-header { padding: 1.5rem; }
+    .controls-section { padding: 1.5rem; }
+    .control-row { grid-template-columns: 1fr; gap: 1.5rem; }
+    .viz-section { padding: 1.5rem; }
+    .window-card { flex-direction: column; gap: 1.5rem; }
+    .window-duration { transform: rotate(90deg); width: 40px; }
+    .duration-line { width: 20px; }
   }
 </style>

@@ -27,14 +27,12 @@
         }
         swapGroups[item.swapGroup].push(item);
       } else {
-        // Non-swap items: include if season matches or is 'all'
         if (item.season === 'all' || item.season === currentSeason) {
           result.push(item);
         }
       }
     });
 
-    // Process swap groups - pick the item matching current season
     Object.values(swapGroups).forEach(group => {
       const match = group.find(i => i.season === currentSeason) || group.find(i => i.season === 'all');
       if (match) result.push(match);
@@ -95,12 +93,11 @@
   // Target weight in oz
   $: targetWeightOz = targetWeight * 16;
 
-  // Calculate cumulative weight to determine which items "fit"
+  // Calculate fit status
   $: itemFitStatus = (() => {
     const status = {};
     let cumulative = 0;
 
-    // Sort by tier (essential first) then by weight
     const sorted = [...seasonItems]
       .filter(i => !i.worn)
       .sort((a, b) => {
@@ -134,47 +131,52 @@
 
 <div class="gear-calc">
   <!-- Header -->
-  <div class="calc-header">
-    <div class="header-topo"></div>
-    <div class="header-content">
+  <header class="calc-header">
+    <div class="header-inner">
       <span class="header-badge">PACK WEIGHT</span>
       <h2 class="header-title">Gear Calculator</h2>
-      <p class="header-sub">Optimize your base weight for the trail</p>
+      <p class="header-sub">Dial in your base weight strategy</p>
     </div>
-  </div>
+  </header>
 
-  <!-- Season Toggle -->
-  <div class="season-toggle-section">
-    <div class="toggle-container">
-      <button
-        class="toggle-btn"
-        class:active={season === 'winter'}
-        onclick={() => season = 'winter'}
-      >
-        <span class="toggle-icon">❄️</span>
-        <span class="toggle-label">Winter Start</span>
-        <span class="toggle-sub">February in Georgia</span>
-      </button>
-      <button
-        class="toggle-btn"
-        class:active={season === 'summer'}
-        onclick={() => season = 'summer'}
-      >
-        <span class="toggle-icon">☀️</span>
-        <span class="toggle-label">Post-Damascus</span>
-        <span class="toggle-sub">Summer configuration</span>
-      </button>
+  <!-- Controls -->
+  <div class="controls-section">
+    <!-- Season Selector -->
+    <div class="control-block">
+      <label class="block-label">Season</label>
+      <div class="toggle-group">
+        <button
+          class="toggle-option"
+          class:active={season === 'winter'}
+          on:click={() => season = 'winter'}
+        >
+          <span class="opt-icon">❄️</span>
+          <div class="opt-text">
+            <span class="opt-name">Winter Start</span>
+            <span class="opt-desc">Feb/Mar in GA</span>
+          </div>
+        </button>
+        <button
+          class="toggle-option"
+          class:active={season === 'summer'}
+          on:click={() => season = 'summer'}
+        >
+          <span class="opt-icon">☀️</span>
+          <div class="opt-text">
+            <span class="opt-name">Summer Mode</span>
+            <span class="opt-desc">Post-Damascus</span>
+          </div>
+        </button>
+      </div>
     </div>
-  </div>
 
-  <!-- Target Weight Slider -->
-  <div class="controls">
-    <div class="control-group">
-      <label class="control-label">
-        <span class="label-icon">🎯</span>
-        <span class="label-text">Target Base Weight</span>
-      </label>
-      <div class="weight-control">
+    <!-- Target Weight Slider -->
+    <div class="control-block">
+      <div class="slider-header">
+        <label class="block-label">Target Base Weight</label>
+        <span class="slider-value">{targetWeight} lbs</span>
+      </div>
+      <div class="slider-container">
         <input
           type="range"
           min="8"
@@ -183,685 +185,548 @@
           bind:value={targetWeight}
           class="weight-slider"
         />
-        <span class="weight-value">{targetWeight} lbs</span>
+        <div class="slider-track-bg"></div>
       </div>
-      <div class="weight-scale">
-        <span class="scale-label ultralight">Ultralight</span>
-        <span class="scale-label lightweight">Lightweight</span>
-        <span class="scale-label traditional">Traditional</span>
-        <span class="scale-label heavy">Heavy</span>
+      <div class="weight-zones">
+        <span class="zone ul">Ultralight</span>
+        <span class="zone lw">Lightweight</span>
+        <span class="zone trad">Traditional</span>
       </div>
     </div>
   </div>
 
-  <!-- Weight Summary -->
-  <div class="summary-bar">
-    <div class="stat">
-      <span class="stat-value" style="color: {weightClassColor}">{baseWeightLbs.toFixed(1)}</span>
-      <span class="stat-label">Base (lbs)</span>
-    </div>
-    <div class="stat">
-      <span class="stat-value">{wornWeightLbs.toFixed(1)}</span>
-      <span class="stat-label">Worn (lbs)</span>
-    </div>
-    <div class="stat">
-      <span class="stat-value">{totalWeightLbs.toFixed(1)}</span>
-      <span class="stat-label">Total (lbs)</span>
-    </div>
-    <div class="stat class-stat">
-      <span class="stat-badge" style="background: {weightClassColor}">{weightClass}</span>
-      <span class="stat-label">Weight Class</span>
-    </div>
-  </div>
-
-  <!-- Weight vs Target Indicator -->
-  <div class="target-indicator">
-    <div class="target-bar">
-      <div
-        class="target-fill"
-        style="width: {Math.min((baseWeightLbs / targetWeight) * 100, 100)}%; background: {baseWeightLbs <= targetWeight ? 'var(--alpine)' : 'var(--terra)'}"
-      ></div>
-      <div class="target-marker" style="left: {Math.min((targetWeight / 30) * 100, 100)}%">
-        <span class="marker-line"></span>
-        <span class="marker-label">Target</span>
+  <!-- Big Stats -->
+  <div class="stats-grid">
+    <div class="stat-card base">
+      <span class="stat-label">Base Weight</span>
+      <div class="stat-number" style="color: {weightClassColor}">
+        {baseWeightLbs.toFixed(1)}<span class="unit">lbs</span>
+      </div>
+      <div class="stat-badge" style="background: {weightClassColor}15; color: {weightClassColor}">
+        {weightClass}
       </div>
     </div>
-    <div class="target-status">
-      {#if baseWeightLbs <= targetWeight}
-        <span class="status-icon">✓</span>
-        <span class="status-text">{(targetWeight - baseWeightLbs).toFixed(1)} lbs under target</span>
-      {:else}
-        <span class="status-icon over">⚠</span>
-        <span class="status-text over">{(baseWeightLbs - targetWeight).toFixed(1)} lbs over target</span>
-      {/if}
+    
+    <div class="stat-card other">
+      <div class="mini-stat">
+        <span class="mini-label">Worn</span>
+        <span class="mini-val">{wornWeightLbs.toFixed(1)} lbs</span>
+      </div>
+      <div class="mini-stat">
+        <span class="mini-label">Total</span>
+        <span class="mini-val">{totalWeightLbs.toFixed(1)} lbs</span>
+      </div>
     </div>
   </div>
 
-  <!-- Category Breakdown -->
-  <div class="categories-section">
-    <h3 class="section-title">
-      <span class="title-blaze"></span>
-      <span>Weight by Category</span>
-    </h3>
+  <!-- Target Indicator -->
+  <div class="target-status">
+    {#if baseWeightLbs <= targetWeight}
+      <div class="status-message success">
+        <span class="icon">✓</span>
+        <span>You are <strong>{(targetWeight - baseWeightLbs).toFixed(1)} lbs</strong> under your target.</span>
+      </div>
+    {:else}
+      <div class="status-message warning">
+        <span class="icon">⚠️</span>
+        <span>You are <strong>{(baseWeightLbs - targetWeight).toFixed(1)} lbs</strong> over your target.</span>
+      </div>
+    {/if}
+  </div>
 
-    <div class="categories-list">
-      {#each categoryWeights as cat, i}
-        <button
-          class="category-row"
-          class:expanded={expandedCategory === cat.id}
-          class:mounted
-          style="animation-delay: {i * 40}ms"
-          onclick={() => toggleCategory(cat.id)}
-        >
-          <div class="cat-header">
-            <span class="cat-icon">{cat.icon}</span>
-            <span class="cat-name">{cat.name}</span>
-            <span class="cat-weight">{formatWeight(cat.weight)}</span>
-            <span class="cat-expand">{expandedCategory === cat.id ? '−' : '+'}</span>
+  <!-- Category List -->
+  <div class="categories-list">
+    {#each categoryWeights as cat, i}
+      <div class="category-item" class:expanded={expandedCategory === cat.id}>
+        <button class="category-main" on:click={() => toggleCategory(cat.id)}>
+          <div class="cat-icon">{cat.icon}</div>
+          <div class="cat-info">
+            <div class="cat-header-row">
+              <span class="cat-name">{cat.name}</span>
+              <span class="cat-weight">{formatWeight(cat.weight)}</span>
+            </div>
+            <div class="cat-bar-track">
+              <div 
+                class="cat-bar-fill"
+                style="width: {(cat.weight / maxCategoryWeight) * 100}%; background: {cat.color}"
+              ></div>
+            </div>
           </div>
+          <div class="cat-arrow" class:rotated={expandedCategory === cat.id}>▼</div>
+        </button>
 
-          <div class="cat-bar-container">
-            <div
-              class="cat-bar"
-              style="width: {(cat.weight / maxCategoryWeight) * 100}%; background: {cat.color}"
-            ></div>
-          </div>
-
-          {#if expandedCategory === cat.id}
-            <div class="cat-items">
+        {#if expandedCategory === cat.id}
+          <div class="cat-details" transition:slide>
+            <div class="items-list">
               {#each cat.items as item}
                 {@const status = itemFitStatus[item.id] || { fits: true, essential: false }}
-                <div class="item-row" class:faded={!status.fits} class:essential={status.essential}>
-                  <span class="item-name">
+                <div class="gear-row" class:dimmed={!status.fits}>
+                  <div class="gear-name">
                     {item.name}
-                    {#if status.essential}<span class="essential-badge">Essential</span>{/if}
-                  </span>
-                  <span class="item-weight">{formatWeight(item.weight)}</span>
+                    {#if status.essential}<span class="tag essential">Essential</span>{/if}
+                  </div>
+                  <div class="gear-weight">{formatWeight(item.weight)}</div>
                 </div>
               {/each}
               {#each cat.wornItems as item}
-                <div class="item-row worn">
-                  <span class="item-name">{item.name} <span class="worn-badge">Worn</span></span>
-                  <span class="item-weight">{formatWeight(item.weight)}</span>
+                <div class="gear-row worn">
+                  <div class="gear-name">{item.name} <span class="tag worn">Worn</span></div>
+                  <div class="gear-weight">{formatWeight(item.weight)}</div>
                 </div>
               {/each}
             </div>
-          {/if}
-        </button>
-      {/each}
-    </div>
-  </div>
-
-  <!-- Tips Section -->
-  <div class="tips-section">
-    <h3 class="section-title">
-      <span class="title-blaze"></span>
-      <span>Weight-Saving Tips</span>
-    </h3>
-    <div class="tips-grid">
-      <div class="tip-card">
-        <span class="tip-icon">🎒</span>
-        <p class="tip-text">Your pack is often the easiest big weight cut. Frameless packs work under 15lb base weight.</p>
+          </div>
+        {/if}
       </div>
-      <div class="tip-card">
-        <span class="tip-icon">🛏️</span>
-        <p class="tip-text">Sleep system is the "Big 3" - tent, quilt, pad. Premium down quilts save 10+ oz.</p>
-      </div>
-      <div class="tip-card">
-        <span class="tip-icon">📱</span>
-        <p class="tip-text">Electronics add up fast. Question each device - do you really need it on trail?</p>
-      </div>
-    </div>
+    {/each}
   </div>
 </div>
 
+<script context="module">
+  import { slide } from 'svelte/transition';
+</script>
+
 <style>
   .gear-calc {
-    background: var(--card, #fff);
+    background: #fff;
     border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
     overflow: hidden;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   }
 
   /* Header */
   .calc-header {
+    padding: 2rem 2rem 1.5rem;
+    background: linear-gradient(to bottom, #fdfcf9, #f5f2e8);
+    border-bottom: 1px solid var(--border);
     position: relative;
-    padding: 2.5rem 2rem 2rem;
-    background: linear-gradient(135deg, var(--pine, #4d594a) 0%, #3a4238 100%);
-    color: #fff;
-    overflow: hidden;
   }
-
-  .header-topo {
-    position: absolute;
-    inset: 0;
-    opacity: 0.08;
-    background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(255,255,255,0.5) 20px, rgba(255,255,255,0.5) 21px),
-      repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(255,255,255,0.3) 20px, rgba(255,255,255,0.3) 21px);
-  }
-
-  .header-content {
+  
+  .header-inner {
     position: relative;
+    z-index: 1;
   }
 
   .header-badge {
-    display: inline-block;
     font-family: Oswald, sans-serif;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--terra);
     text-transform: uppercase;
-    letter-spacing: 0.2em;
-    background: var(--marker, #f0e000);
-    color: #2b2f26;
-    padding: 0.25rem 0.6rem;
-    border-radius: 3px;
-    margin-bottom: 0.75rem;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 0.5rem;
   }
 
   .header-title {
     font-family: Oswald, sans-serif;
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 0.25rem;
-    letter-spacing: -0.01em;
+    font-size: 2rem;
+    margin: 0;
+    color: var(--ink);
+    line-height: 1.1;
   }
 
   .header-sub {
-    font-size: 0.9rem;
-    opacity: 0.8;
-    margin: 0;
-  }
-
-  /* Season Toggle */
-  .season-toggle-section {
-    padding: 1.5rem 2rem;
-    background: linear-gradient(to bottom, rgba(166, 181, 137, 0.08), transparent);
-    border-bottom: 1px solid var(--border, #e6e1d4);
-  }
-
-  .toggle-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-
-  .toggle-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 1rem;
-    background: var(--bg, #f5f2e8);
-    border: 2px solid var(--border, #e6e1d4);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .toggle-btn:hover {
-    border-color: var(--alpine, #a6b589);
-  }
-
-  .toggle-btn.active {
-    background: var(--pine, #4d594a);
-    border-color: var(--pine, #4d594a);
-    color: #fff;
-  }
-
-  .toggle-icon {
-    font-size: 1.75rem;
-  }
-
-  .toggle-label {
-    font-family: Oswald, sans-serif;
+    margin: 0.5rem 0 0;
+    color: var(--muted);
     font-size: 0.95rem;
-    font-weight: 600;
-  }
-
-  .toggle-sub {
-    font-size: 0.7rem;
-    opacity: 0.7;
   }
 
   /* Controls */
-  .controls {
+  .controls-section {
     padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border, #e6e1d4);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    gap: 1.5rem;
   }
 
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .control-label {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
+  .block-label {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--pine, #4d594a);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
   }
 
-  .label-icon {
-    font-size: 1rem;
-  }
-
-  .weight-control {
-    display: flex;
-    align-items: center;
+  .toggle-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
   }
 
-  .weight-slider {
-    flex: 1;
-    height: 8px;
-    -webkit-appearance: none;
-    background: linear-gradient(90deg, #22c55e 0%, var(--alpine, #a6b589) 35%, var(--terra, #d97706) 70%, #dc2626 100%);
-    border-radius: 4px;
+  .toggle-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border: 1px solid var(--stone);
+    border-radius: 10px;
     cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+  }
+
+  .toggle-option:hover {
+    border-color: var(--pine);
+    background: rgba(166, 181, 137, 0.05);
+  }
+
+  .toggle-option.active {
+    background: var(--pine);
+    border-color: var(--pine);
+    color: #fff;
+  }
+  
+  .toggle-option.active .opt-desc {
+    color: rgba(255,255,255,0.8);
+  }
+
+  .opt-icon { font-size: 1.5rem; }
+  
+  .opt-name {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+
+  .opt-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.2;
+  }
+
+  /* Slider */
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.75rem;
+  }
+
+  .slider-header .block-label { margin: 0; }
+
+  .slider-value {
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--pine);
+  }
+
+  .slider-container {
+    position: relative;
+    height: 24px;
+    display: flex;
+    align-items: center;
+  }
+
+  .weight-slider {
+    width: 100%;
+    position: absolute;
+    z-index: 2;
+    height: 24px;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .slider-track-bg {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, #22c55e 0%, var(--alpine) 40%, var(--terra) 70%, #dc2626 100%);
+    border-radius: 3px;
+  }
+
+  /* Custom thumb styling needs to be simulated if we hide the input, 
+     but keeping the native input visible is more accessible/robust. 
+     Let's style the native input instead. */
+  .weight-slider {
+    opacity: 1;
+    -webkit-appearance: none;
+    background: transparent;
+    margin: 0;
+  }
+
+  .weight-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, #22c55e 0%, var(--alpine) 40%, var(--terra) 70%, #dc2626 100%);
+    border-radius: 3px;
   }
 
   .weight-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 24px;
     height: 24px;
-    background: var(--card, #fff);
-    border: 3px solid var(--pine, #4d594a);
-    border-radius: 50%;
-    cursor: grab;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  }
-
-  .weight-slider::-moz-range-thumb {
     width: 24px;
-    height: 24px;
-    background: var(--card, #fff);
-    border: 3px solid var(--pine, #4d594a);
     border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--pine);
+    margin-top: -9px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     cursor: grab;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
 
-  .weight-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--pine, #4d594a);
-    min-width: 4rem;
-    text-align: right;
-  }
-
-  .weight-scale {
+  .weight-zones {
     display: flex;
     justify-content: space-between;
-    margin-top: 0.25rem;
-  }
-
-  .scale-label {
-    font-size: 0.6rem;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.7;
+    font-weight: 600;
   }
 
-  .scale-label.ultralight { color: #22c55e; }
-  .scale-label.lightweight { color: var(--alpine, #a6b589); }
-  .scale-label.traditional { color: var(--terra, #d97706); }
-  .scale-label.heavy { color: #dc2626; }
+  .zone.ul { color: #22c55e; }
+  .zone.lw { color: var(--alpine); }
+  .zone.trad { color: var(--terra); }
 
-  /* Summary Bar */
-  .summary-bar {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    padding: 1.25rem 2rem;
-    background: var(--bg, #f5f2e8);
-    border-bottom: 1px solid var(--border, #e6e1d4);
-    flex-wrap: wrap;
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    border-bottom: 1px solid var(--border);
   }
 
-  .stat {
+  .stat-card {
+    padding: 1.5rem 2rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.1rem;
+    justify-content: center;
   }
 
-  .stat-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--pine, #4d594a);
-    line-height: 1;
+  .stat-card.base {
+    border-right: 1px solid var(--border);
+    align-items: flex-start;
   }
 
   .stat-label {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
+    color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted, #5c665a);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-number {
+    font-family: Oswald, sans-serif;
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-number .unit {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-left: 0.25rem;
   }
 
   .stat-badge {
-    font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #fff;
-    padding: 0.3rem 0.75rem;
-    border-radius: 6px;
-  }
-
-  .class-stat {
-    padding-left: 1.5rem;
-    border-left: 2px solid var(--border, #e6e1d4);
-  }
-
-  /* Target Indicator */
-  .target-indicator {
-    padding: 1.25rem 2rem;
-    border-bottom: 1px solid var(--border, #e6e1d4);
-  }
-
-  .target-bar {
-    position: relative;
-    height: 12px;
-    background: var(--stone, #d4d0c4);
-    border-radius: 6px;
-    overflow: visible;
-  }
-
-  .target-fill {
-    height: 100%;
-    border-radius: 6px;
-    transition: width 0.3s ease, background 0.3s ease;
-  }
-
-  .target-marker {
-    position: absolute;
-    top: -4px;
-    transform: translateX(-50%);
-  }
-
-  .marker-line {
-    display: block;
-    width: 3px;
-    height: 20px;
-    background: var(--ink, #2b2f26);
-    border-radius: 2px;
-  }
-
-  .marker-label {
-    position: absolute;
-    top: 22px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.6rem;
-    font-weight: 600;
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
     text-transform: uppercase;
-    color: var(--muted, #5c665a);
-    white-space: nowrap;
+    letter-spacing: 0.05em;
   }
 
+  .stat-card.other {
+    gap: 1rem;
+    background: var(--bg);
+  }
+
+  .mini-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .mini-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .mini-val {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--ink);
+  }
+
+  /* Target Status */
   .target-status {
+    padding: 1rem 2rem;
+    background: #fdfcf9;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+
+  .status-message {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.5rem;
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    color: var(--pine, #4d594a);
   }
 
-  .status-icon {
-    font-size: 1rem;
-    color: #22c55e;
-  }
+  .status-message.success .icon { color: #22c55e; }
+  .status-message.warning .icon { color: var(--terra); }
 
-  .status-icon.over {
-    color: var(--terra, #d97706);
-  }
-
-  .status-text.over {
-    color: var(--terra, #d97706);
-  }
-
-  /* Categories Section */
-  .categories-section {
-    padding: 1.5rem 2rem;
-  }
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--pine, #4d594a);
-    margin: 0 0 1.25rem;
-  }
-
-  .title-blaze {
-    width: 8px;
-    height: 16px;
-    background: var(--marker, #f0e000);
-    border-radius: 2px;
-  }
-
+  /* Categories */
   .categories-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--bg);
   }
 
-  .category-row {
+  .category-item {
+    background: #fff;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    overflow: hidden;
+  }
+  
+  .category-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+
+  .category-item.expanded {
+    border-color: var(--alpine);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .category-main {
     width: 100%;
-    text-align: left;
-    background: var(--bg, #f5f2e8);
-    border: none;
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    cursor: pointer;
-    opacity: 0;
-    transform: translateX(-10px);
-    transition: opacity 0.3s ease, transform 0.3s ease, background 0.15s ease;
-  }
-
-  .category-row.mounted {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .category-row:hover {
-    background: rgba(166, 181, 137, 0.15);
-  }
-
-  .category-row.expanded {
-    background: rgba(166, 181, 137, 0.2);
-  }
-
-  .cat-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1rem;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
   }
 
   .cat-icon {
-    font-size: 1.1rem;
+    font-size: 1.5rem;
+    width: 2rem;
+    text-align: center;
+  }
+
+  .cat-info {
+    flex: 1;
+  }
+
+  .cat-header-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.35rem;
   }
 
   .cat-name {
-    flex: 1;
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
     font-weight: 500;
-    color: var(--ink, #2b2f26);
+    color: var(--ink);
+    font-size: 0.95rem;
   }
 
   .cat-weight {
     font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
     font-weight: 600;
-    color: var(--pine, #4d594a);
-    min-width: 3.5rem;
-    text-align: right;
+    color: var(--pine);
+    font-size: 0.9rem;
   }
 
-  .cat-expand {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--muted, #5c665a);
-  }
-
-  .cat-bar-container {
-    height: 6px;
-    background: rgba(0,0,0,0.08);
-    border-radius: 3px;
-    margin-top: 0.5rem;
+  .cat-bar-track {
+    height: 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
     overflow: hidden;
   }
 
-  .cat-bar {
+  .cat-bar-fill {
     height: 100%;
-    border-radius: 3px;
-    transition: width 0.3s ease;
+    border-radius: 2px;
   }
 
-  .cat-items {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px dashed var(--border, #e6e1d4);
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+  .cat-arrow {
+    font-size: 0.7rem;
+    color: var(--stone);
+    transition: transform 0.2s ease;
   }
 
-  .item-row {
+  .cat-arrow.rotated {
+    transform: rotate(180deg);
+    color: var(--pine);
+  }
+
+  .cat-details {
+    border-top: 1px solid var(--border);
+    background: #fcfcfc;
+  }
+
+  .items-list {
+    padding: 0.5rem 1rem 1rem;
+  }
+
+  .gear-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 0.25rem 0;
-    font-size: 0.8rem;
-    transition: opacity 0.2s ease;
+    padding: 0.5rem 0;
+    font-size: 0.85rem;
+    border-bottom: 1px dashed rgba(0,0,0,0.05);
   }
 
-  .item-row.faded {
-    opacity: 0.35;
+  .gear-row:last-child {
+    border-bottom: none;
   }
 
-  .item-row.essential {
-    opacity: 1;
+  .gear-row.dimmed {
+    opacity: 0.5;
   }
 
-  .item-row.worn {
-    opacity: 0.6;
-    font-style: italic;
-  }
-
-  .item-name {
-    color: var(--ink, #2b2f26);
+  .gear-name {
+    color: var(--ink);
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-
-  .item-weight {
-    color: var(--muted, #5c665a);
-    font-family: Oswald, sans-serif;
-  }
-
-  .essential-badge {
-    font-size: 0.55rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    background: var(--pine, #4d594a);
-    color: #fff;
-    padding: 0.1rem 0.35rem;
-    border-radius: 3px;
-  }
-
-  .worn-badge {
-    font-size: 0.55rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    background: var(--stone, #d4d0c4);
-    color: var(--muted, #5c665a);
-    padding: 0.1rem 0.35rem;
-    border-radius: 3px;
-    font-style: normal;
-  }
-
-  /* Tips Section */
-  .tips-section {
-    padding: 1.5rem 2rem 2rem;
-    background: linear-gradient(to bottom, transparent, rgba(166, 181, 137, 0.05));
-  }
-
-  .tips-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .tip-card {
-    background: var(--bg, #f5f2e8);
-    border-radius: 10px;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
     gap: 0.5rem;
   }
 
-  .tip-icon {
-    font-size: 1.5rem;
-  }
-
-  .tip-text {
+  .gear-weight {
+    font-family: Oswald, sans-serif;
+    color: var(--muted);
     font-size: 0.8rem;
-    color: var(--muted, #5c665a);
-    margin: 0;
-    line-height: 1.4;
   }
 
-  /* Mobile */
+  .tag {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .tag.essential {
+    background: var(--pine);
+    color: #fff;
+  }
+
+  .tag.worn {
+    background: var(--stone);
+    color: #fff;
+  }
+
   @media (max-width: 600px) {
-    .calc-header,
-    .season-toggle-section,
-    .controls,
-    .summary-bar,
-    .target-indicator,
-    .categories-section,
-    .tips-section {
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-
-    .toggle-container {
-      grid-template-columns: 1fr;
-    }
-
-    .summary-bar {
-      gap: 1rem;
-    }
-
-    .stat-value {
-      font-size: 1.4rem;
-    }
-
-    .class-stat {
-      padding-left: 1rem;
-    }
+    .calc-header { padding: 1.5rem; }
+    .controls-section { padding: 1.5rem; grid-template-columns: 1fr; }
+    .toggle-group { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .stat-card.base { border-right: none; border-bottom: 1px solid var(--border); padding: 1.5rem; }
+    .stat-card.other { padding: 1.5rem; }
   }
 </style>
