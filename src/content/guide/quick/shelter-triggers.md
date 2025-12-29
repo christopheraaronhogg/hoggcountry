@@ -37,6 +37,21 @@ quickRef: true
 
 ---
 
+## Winter Decision Scoring
+
+**Score 3+ → Shelter. Score 2 → Consider. Score 0-1 → Tent OK.**
+
+| Condition | Points |
+|-----------|--------|
+| Temp below 25°F | +1 |
+| Sustained wind 15+ mph | +1 |
+| Wet clothes at day's end | +1 |
+| Freezing rain / ice forecast | +2 |
+| Ground unfit for tent | +1 |
+| Mental / physical exhaustion | +1 |
+
+---
+
 **NOT a shelter trigger:**
 - Cold but dry and calm
 - Tired but functional

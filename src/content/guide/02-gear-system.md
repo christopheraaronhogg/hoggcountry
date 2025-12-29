@@ -2,40 +2,43 @@
 title: "Gear System"
 part: 2
 order: 2
-description: "Base weight philosophy, complete gear breakdown, and transitions"
+description: "Complete base weight breakdown, gear transitions, and shakedown principles"
 icon: "backpack"
 ---
 
 # Gear System
 
-## Chapter 1: Base Weight Philosophy
+## Base Weight Philosophy
 
 Base weight is the foundation of sustainable long-distance hiking. Every ounce carried compounds over thousands of miles into joint stress, fatigue, and potential injury. However, ultralight ideology taken too far sacrifices sleep quality, safety, and morale—the very things that enable trail completion.
 
-This gear system prioritizes:
-- **Sleep quality and recovery above all else**
+**This gear system prioritizes:**
+
+- Sleep quality and recovery above all else
 - Safety systems that function in worst-case conditions
 - Durability over marginal weight savings
 - Realistic winter capability for February start
 
-## Chapter 2: Complete Base Weight Breakdown
+---
 
-**Pack System (No Food/Water): 24.76 lb**
+## Complete Base Weight Breakdown
 
-### Backpack & Carry
+### Pack System (No Food/Water): 24.76 lb
+
+#### Backpack & Carry
 | Item | Weight |
 |------|--------|
 | Osprey Atmos AG LT 50 | 67.0 oz |
 | Scrubba Wash Bag | 5.3 oz |
 
-### Shelter System
+#### Shelter System
 | Item | Weight |
 |------|--------|
 | Durston 1+ Tent (body + fly + poles) | 36.8 oz |
 | Tent stakes (10) | 3.5 oz |
 | Guylines | 2.5 oz |
 
-### Sleep System
+#### Sleep System
 | Item | Weight |
 |------|--------|
 | Zenbivy 10° Down Quilt | 29.5 oz |
@@ -43,20 +46,20 @@ This gear system prioritizes:
 | Sleeping Pad (R ≈ 8) | 25.0 oz |
 | Pillow | 4.8 oz |
 
-### Sleep Clothing
+#### Sleep Clothing
 | Item | Weight |
 |------|--------|
 | Smartwool Merino 250 Sleep Top | 8.5 oz |
 | Smartwool Merino 250 Sleep Pants | 8.7 oz |
 | Sleep Socks | 3.7 oz |
 
-### Insulation & Shells
+#### Insulation & Shells
 | Item | Weight |
 |------|--------|
 | Mountain Hardwear Down Puffy | 8.5 oz |
 | Outdoor Research Rain Jacket | 12.9 oz |
 
-### Kitchen
+#### Kitchen
 | Item | Weight |
 |------|--------|
 | Stove | 3.0 oz |
@@ -67,7 +70,7 @@ This gear system prioritizes:
 | Fuel Canister (full) | 7.0 oz |
 | Lighter + Backup | 0.8 oz |
 
-### Electronics (Fanny Pack)
+#### Electronics (Fanny Pack)
 | Item | Weight |
 |------|--------|
 | iPhone | 7.9 oz |
@@ -78,6 +81,7 @@ This gear system prioritizes:
 | Headlamp | 1.5 oz |
 
 ### Worn Weight: 2.76 lb
+
 | Item | Weight |
 |------|--------|
 | Rab Proflex Rain Pants | 11.6 oz |
@@ -87,12 +91,14 @@ This gear system prioritizes:
 | Buff | 2.3 oz |
 | Bauerfeind Hinged Knee Brace | 10.6 oz |
 
-**Total Carried (No Food/Water): 27.52 lb**
-**Typical Trail Weight: ~36.7 lb**
+### Totals
+
+- **Total Carried (No Food/Water):** 27.52 lb
+- **Typical Trail Weight (7 lb food + 1L water):** ~36.7 lb
 
 ---
 
-## Chapter 3: Gear Transitions
+## Gear Transitions
 
 This gear system is designed to evolve with trail conditions. Carrying winter gear through summer is unnecessary weight; arriving in the Whites without proper equipment is dangerous.
 
@@ -124,36 +130,47 @@ This gear system is designed to evolve with trail conditions. Carrying winter ge
 
 ---
 
-## Chapter 4: Hard Shakedown Principles
+## Hard Shakedown Principles
 
 Weight reduction is achieved through discipline and redundancy removal—not by sacrificing sleep, safety, or morale.
 
 ### Zone 1: Electronics Discipline
+
 Electronics creep is the single biggest silent weight problem for experienced hikers.
 
 - **Keep:** 1 primary charging cable, 1 backup cable, 1 wall charger, 1 battery bank
 - **Cut:** Duplicate adapters, long cables, 'maybe I'll need it' electronics
-- **Expected Savings:** 6-10 oz
+
+**Expected Savings:** 6-10 oz
 
 ### Zone 2: Clothing
+
 Cut clothing that doesn't get used, not insulation.
 
 - **Allowed roles:** Hiking, Sleeping/Dry, Insulation
 - **Hard limit:** 1 hiking set, 1 sleep set, 1 insulation system
-- **Expected Savings:** 8-16 oz
+
+**Expected Savings:** 8-16 oz
 
 ### Zone 3: Cook System
+
 - **Keep:** One pot, one spoon, one mini Bic
 - **Cut if present:** Backup lighter, extra utensil, windscreen (unless required)
-- **Expected Savings:** 4-8 oz
+
+**Expected Savings:** 4-8 oz
 
 ### Zone 4: Consumables
+
 Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 
-- **Rule:** Refill in town. Do not carry fear weight.
-- **Expected Savings:** 6-10 oz
+**Rule:** Refill in town. Do not carry fear weight.
+
+**Expected Savings:** 6-10 oz
 
 ### Zone 5: Tools & Just-in-Case Items
+
 - **Cut:** Overbuilt repair kits, excess cordage, multi-tools doing single jobs
-- **Rule:** If unused for 7 trail days, it goes in a hiker box.
-- **Expected Savings:** 4-6 oz
+
+**Rule:** If unused for 7 trail days, it goes in a hiker box.
+
+**Expected Savings:** 4-6 oz

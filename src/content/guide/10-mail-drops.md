@@ -1,7 +1,7 @@
 ---
 title: "USPS Mail Drop System"
-part: 10
-order: 10
+part: 11
+order: 11
 description: "General delivery rules, box labeling, recommended locations"
 icon: "mail"
 ---
@@ -11,11 +11,13 @@ icon: "mail"
 ## General Delivery Rules
 
 ### Hold Times
+
 - Official USPS rule: Up to 30 days
 - Large AT towns: Usually 30 days
 - Small/rural offices: Often 7-14 days
 
 ### Best Practice
+
 - Ship packages 7-10 days before arrival
 - Never ship earlier than 14 days
 - Always include an ETA
@@ -36,6 +38,7 @@ ETA: MM/DD/YYYY
 ```
 
 ### Rules
+
 - Write your name on all six sides
 - Use Sharpie
 - ETA matters
@@ -46,10 +49,12 @@ ETA: MM/DD/YYYY
 
 | Location | Mile | Notes |
 |----------|------|-------|
-| **Hot Springs, NC** | ~274.6 | One of the most reliable mail drops on the AT |
-| **Damascus, VA** | ~470.7 | AT hub, dependable, generous hold times |
-| **Daleville, VA** | ~685.3 | Easy access, grocery nearby |
-| **Harpers Ferry, WV** | ~860.6 | Psychological halfway point, very reliable |
-| **Duncannon, PA** | ~1090.5 | Excellent PO + hostel logistics |
-| **Hanover, NH** | ~1460.4 | Key resupply before the Whites |
-| **Monson, ME** | ~1893.1 | Gateway to 100-Mile Wilderness. Hold time often 14 days max. |
+| Hot Springs, NC | ~274 | One of the most reliable mail drops on the AT |
+| Damascus, VA | ~469 | AT hub, dependable, generous hold times |
+| Daleville, VA | ~727-729 | Easy access, grocery nearby |
+| Harpers Ferry, WV | ~1,023-1,026 | Psychological halfway point, very reliable |
+| Duncannon, PA | ~1,140-1,150 | Excellent PO + hostel logistics |
+| Hanover, NH | ~1,747 | Key resupply before the Whites |
+| Monson, ME | ~2,074-2,079 | Gateway to 100-Mile Wilderness. Hold time often 14 days max. |
+
+*Note: Shaw's Hiker Hostel in Monson offers food drop services for the 100-Mile Wilderness—a useful option if you want to lighten your initial carry.*

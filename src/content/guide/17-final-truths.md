@@ -1,7 +1,7 @@
 ---
 title: "The Path to Katahdin"
-part: 17
-order: 17
+part: 18
+order: 18
 description: "Final trail truths and the one-line trail rule"
 icon: "flag"
 ---
@@ -16,7 +16,7 @@ The Appalachian Trail will challenge you in ways you cannot fully anticipate. We
 
 ## Final Trail Truths
 
-- Heavy packs don't end hikes—**bad sleep and injury do**
+- Heavy packs don't end hikes—bad sleep and injury do
 - Water planning matters more than mileage
 - Small injuries ignored become hike-enders
 - Weather humility keeps you alive
@@ -35,4 +35,11 @@ Every system in this guide exists for one purpose: to put you on top of Katahdin
 
 The preparation is complete. Focus now shifts to execution, pacing, and decision-making.
 
+---
+
 **See you on Katahdin, Theman.**
+
+---
+
+*Guide last updated: December 2024*
+*Fact-checked and corrected for 2026 thru-hiking season*

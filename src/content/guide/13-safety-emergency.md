@@ -1,7 +1,7 @@
 ---
 title: "Safety & Emergency Procedures"
-part: 13
-order: 13
+part: 14
+order: 14
 description: "Weather recognition, hypothermia indicators, emergency protocols, InReach bail-out"
 icon: "alert"
 ---
@@ -10,7 +10,7 @@ icon: "alert"
 
 ## Core Principle
 
-> **Act early. Most trail emergencies are not sudden disasters—they are delayed decisions.**
+**Act early.** Most trail emergencies are not sudden disasters—they are delayed decisions.
 
 ---
 
@@ -39,7 +39,8 @@ icon: "alert"
 
 ## Hypothermia Indicators
 
-Shelter or bail immediately if:
+**Shelter or bail immediately if:**
+
 - Wet + cold + wind present
 - Hands stop working normally
 - Violent shivering OR shivering stops
@@ -50,7 +51,8 @@ Shelter or bail immediately if:
 
 ## Terrain-Based Abort Signals
 
-Turn around if:
+**Turn around if:**
+
 - Ice on rocks or roots
 - Snow covering trail tread
 - Fast-rising streams after rain
@@ -61,38 +63,48 @@ Turn around if:
 ## Emergency Exit Strategy
 
 ### Emergency Call Priority
-1. Call 911 (life, limb, weather danger)
-2. National Park Service dispatch: 1-866-677-6677
+
+1. **Call 911 FIRST** — Always the primary emergency number for life, limb, or weather danger
+2. National Park Service dispatch: 1-866-677-6677 — For non-emergency follow-up or coordination within NPS lands (Smokies, Shenandoah)
 3. If no service: 3 short whistle blasts, repeat
+
+*Note: 911 dispatchers can coordinate with local SAR teams. The NPS number is supplementary, not a replacement for 911.*
 
 ### Emergency Location Script
 
 **Use this verbatim when calling:**
 
-> "I am on the Appalachian Trail."
-> "State: [STATE]"
-> "Nearest named point: [ROAD/SHELTER/LANDMARK]"
-> "I am hiking northbound."
-> "Approximate mile marker: [MILE]"
-> "GPS coordinates: [LAT/LONG]"
-> "Can I walk: Yes/No/Limited"
-> "Nature of problem: [ISSUE]"
+```
+"I am on the Appalachian Trail."
+"State: [STATE]"
+"Nearest named point: [ROAD/SHELTER/LANDMARK]"
+"I am hiking northbound."
+"Approximate mile marker: [MILE]"
+"GPS coordinates: [LAT/LONG]"
+"Can I walk: Yes/No/Limited"
+"Nature of problem: [ISSUE]"
+```
 
 ---
 
 ## InReach Bail-Out Method
 
 ### Primary Method: Relay Through Logistics Contact
+
 Message a trusted person at home. They:
 - Call hostels
 - Call shuttle drivers
 - Coordinate rides
 - Message instructions back to you
 
-**Example Message:**
-> "Bad weather. Need off-trail help. I'm near AT mile 705 (McAfee Knob area)."
+### Example Message
+
+```
+"Bad weather. Need off-trail help. I'm near AT mile 725 (McAfee Knob area)."
+```
 
 ### When to Press SOS
+
 - Injury prevents movement
 - Hypothermia risk is real
 - Flooding traps you

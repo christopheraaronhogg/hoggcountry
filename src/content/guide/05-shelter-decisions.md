@@ -2,7 +2,7 @@
 title: "Shelter vs. Tent Decision System"
 part: 5
 order: 5
-description: "When to use shelters, shelter night protocol, objective triggers"
+description: "When to use shelters, winter decision framework, shelter night protocol"
 icon: "home"
 ---
 
@@ -19,33 +19,34 @@ icon: "home"
 
 ## When Shelter Becomes the Right Decision
 
-Go to a shelter if **ANY ONE** of the following is true:
+**Go to a shelter if ANY ONE of the following is true:**
 
-### Wind + Cold Combination
+### 1. Wind + Cold Combination
 - Temps below ~25°F
 - Sustained wind 15+ mph or gusts 20+ mph
 - Exposed ridge or saddle
 - You feel cold before stopping
 
-### Freezing Rain or Heavy Wet Snow
+### 2. Freezing Rain or Heavy Wet Snow
 **Automatic shelter night. No debate.**
 
-### Ground Conditions You Cannot Mitigate
+### 3. Ground Conditions You Cannot Mitigate
 - Solid ice
 - Snow too deep to anchor
 - No flat or drained tent sites
 
-### You Are Wet and Can't Get Dry Before Dark
+### 4. You Are Wet and Can't Get Dry Before Dark
 - Damp clothing
 - Temps dropping
 - No sun left
 - Hands losing dexterity
 
-### Mental or Physical Exhaustion
+### 5. Mental or Physical Exhaustion
 - Foggy thinking
 - Irritation during setup
 - Skipping food or water steps
-- **Shelter reduces complexity when judgment is compromised.**
+
+*Shelter reduces complexity when judgment is compromised.*
 
 ---
 
@@ -60,14 +61,73 @@ Go to a shelter if **ANY ONE** of the following is true:
 
 ---
 
-## Shelter Night Protocol
+## Winter Decision Framework
+
+### Winter Tent-Site Scoring Checklist
+
+Score each category 0-2. Total possible: 10 points.
+
+**Interpretation:**
+- 7-10 → Tent is correct
+- 4-6 → Tent only if weather is stable
+- 0-3 → Shelter is the smart move
+
+#### 1. Wind Protection
+- 2: Fully protected, calm
+- 1: Partial protection
+- 0: Exposed, funneling wind
+
+#### 2. Ground Quality
+- 2: Flat, drains well, stakes hold
+- 1: Minor slope or frozen top layer
+- 0: Ice, pooled water, unusable ground
+
+#### 3. Moisture Risk
+- 2: Dry ground, stable weather
+- 1: Damp but manageable
+- 0: Freezing rain or heavy wet snow
+
+#### 4. Setup Control
+- 2: Calm, deliberate setup
+- 1: Minor fumbling
+- 0: Hands failing, rushing, irritation
+
+#### 5. Overnight Confidence
+
+Ask: "Will this still work if conditions worsen at 3 a.m.?"
+
+- 2: Yes, confidently
+- 1: Maybe, thin margin
+- 0: No, hoping it holds
+
+**Hope is not a winter strategy.**
+
+---
+
+## One-Minute Decision Prompt
+
+Before committing to camp, ask:
+
+1. Am I dry right now?
+2. Is wind increasing or decreasing?
+3. Can I pitch cleanly without rushing?
+4. Will this setup keep me warm at 3 a.m.?
+
+**If any answer feels shaky, shelter is the correct call.**
+
+---
+
+## Shelter Night Protocol (When You Go In)
+
+Once shelter is chosen, you switch modes.
 
 ### Arrival
 - Scan for mice
 - Choose sleeping spot away from walls and corners
 - Identify food hang or bear box immediately
 
-### Food & Scent Lockdown (First Action)
+### Food & Scent Lockdown (FIRST ACTION)
+
 - Food, trash, toothpaste, lip balm, sanitizer, wrappers — all together
 - Hang or box immediately
 - Nothing scented touches the floor
@@ -89,14 +149,16 @@ Go to a shelter if **ANY ONE** of the following is true:
 - Hip belt pockets
 
 ### Night Behavior
+
 - No food after final hang
 - No wrappers opened
 - Ignore mice unless contacting gear
 - Shoes upright, not flat
 
 ### Morning Exit
-- Pack sleep system
-- Pack all non-food gear
-- Retrieve food last
-- Eat outside if possible
-- Visual sweep for crumbs
+
+1. Pack sleep system
+2. Pack all non-food gear
+3. Retrieve food last
+4. Eat outside if possible
+5. Visual sweep for crumbs

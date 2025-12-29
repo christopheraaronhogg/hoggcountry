@@ -38,3 +38,4 @@ quickRef: true
 - **Wet + cold + static = dangerous**
 - **Sleep layers are sacred — never hike in them**
 - **Calories are heat**
+- **Down puffy: Never hike in it. Put it on IMMEDIATELY when stopped.**

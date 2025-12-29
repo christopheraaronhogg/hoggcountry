@@ -37,6 +37,7 @@ quickRef: true
 | Duncannon, PA | ~1090.5 | Great PO + hostel |
 | Hanover, NH | ~1460.4 | Before the Whites |
 | Monson, ME | ~1893.1 | 100-Mile gateway (14-day max) |
+| Shaw's Hiker Hostel, ME | ~1893 | Full resupply + gear ship |
 
 ---
 

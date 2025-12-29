@@ -11,9 +11,11 @@ quickRef: true
 
 ## Call Priority
 
-1. **911** (life, limb, weather danger)
-2. **NPS Dispatch:** 1-866-677-6677
+1. **Call 911 FIRST** — Always primary for life, limb, or weather danger
+2. **NPS Dispatch:** 1-866-677-6677 — Non-emergency follow-up within NPS lands
 3. **No service:** 3 short whistle blasts, repeat
+
+*911 dispatchers coordinate with local SAR. NPS number is supplementary.*
 
 ---
 

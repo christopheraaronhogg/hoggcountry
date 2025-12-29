@@ -2,90 +2,204 @@
 title: "Hiker Profile & Experience"
 part: 1
 order: 1
-description: "Trail resume, completed thru-hikes, and core competencies"
+description: "Trail resume, mountain climb readiness, weather rules, and readiness assessment"
 icon: "mountain"
 ---
 
 # Hiker Profile & Experience
 
-**Trail Name: THEMAN**
-
-> Long-distance backpacker with 840+ miles of completed thru-hiking across three major trail systems and 130,000+ feet of cumulative elevation gain. Recipient of rare historical recognition for multi-trail completion. Proven in cold weather, remote and under-maintained terrain, sustained climbs, and multi-week self-supported efforts. Prior Appalachian Trail experience. **Fully prepared for successful Appalachian Trail completion.**
-
----
-
-## Signature Achievement
-
-### Sassafras Award — Ozark Society
-Among the first recipients to complete the Ouachita Trail, Ozark Highlands Trail, and Ozark Trail. **6th person in history to receive this award.**
+This section documents verified long-distance completions, prior AT experience, and the skills that directly translate to Appalachian Trail readiness.
 
 ---
 
 ## Completed Thru-Hikes
 
-### Ouachita Trail — Full Thru-Hike
-- **223 miles** | ~45,000 ft cumulative elevation gain
-- Arkansas–Oklahoma | Remote Ozark/Ouachita terrain, limited services
+| Trail | Distance | Elevation Gain | Location |
+|-------|----------|----------------|----------|
+| Ouachita Trail | ~223 miles | ~45,000 ft | Arkansas-Oklahoma |
+| Ozark Highlands Trail | ~270 miles | ~35,000-40,000 ft | Northern Arkansas |
+| Ozark Trail | ~230 miles | ~40,000 ft | Missouri |
 
-### Ozark Highlands Trail — Full Thru-Hike
-- **270 miles** (entire built route) | ~35,000–40,000 ft cumulative elevation gain
-- Northern Arkansas | Includes Buffalo River region
+**Total Completed Mileage:** ~720+ miles
+**Estimated Cumulative Elevation Gain:** ~120,000+ feet
 
-### Ozark Trail — Full Thru-Hike
-- **350+ miles** | ~50,000–55,000 ft cumulative elevation gain
-- Missouri | Rocky, sustained tread, long resupply gaps
+### Recognition
 
-| Metric | Total |
-|--------|-------|
-| **Completed Thru-Hike Mileage** | 840+ miles |
-| **Cumulative Elevation Gain** | 130,000–140,000 ft |
-| **Trail Systems Completed** | 3 |
+**Sassafras Award — Ozark Society**
+Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark Trail. *6th person in history to receive this award.*
 
 ---
 
 ## Prior Appalachian Trail Experience
 
-### Standing Bear Farm Hostel → Hot Springs, NC
-- **~35 miles** | ~9,000 ft elevation gain
-- Full pack, winter conditions
+- **Standing Bear Farm to Hot Springs, NC** — ~35 miles | ~9,000 ft elevation gain | Full pack, winter conditions
+- **Newfound Gap to Kuwohi (Overnight)** — ~16 miles round trip | ~3,300 ft elevation gain | Shelter stay in ~17°F conditions | Summit: 6,643 ft (highest point on the AT)
 
-### Newfound Gap → Clingmans Dome (Overnight)
-- **~16 miles** round trip | ~3,300 ft elevation gain
-- Shelter stay in **~17°F conditions**
-- Summit: **6,643 ft** (highest point on the AT)
+*Note: Clingmans Dome was officially renamed to "Kuwohi" in 2024, restoring its Cherokee name meaning "mulberry place."*
 
----
+### High-Elevation Experience (Comparison Benchmark)
 
-## High-Elevation & Endurance
+**Pikes Peak, Colorado — Crags Trail**
+~13 miles round trip | ~4,300 ft elevation gain | Summit elevation: 14,115 ft
 
-### Pikes Peak, Colorado — Crags Trail
-- **~13 miles** round trip | ~4,300 ft elevation gain
-- Summit elevation: **14,115 ft**
-
----
-
-## Technical & Endurance Hikes
-
-### Eagle Rock Loop
-- **26.8 miles** | ~5,500 ft elevation gain
-- **Completed in a single day**
-- Arkansas | Challenging terrain, sustained effort
-
-### Sleeping Giant, Hawaii
-- ~3.6 miles | ~1,200 ft elevation gain
-- Technical ridge trail with exposure
+*Note: Pikes Peak is located in Colorado, not on the Appalachian Trail. This entry is included as a cardiovascular and altitude benchmark demonstrating capability for AT climbs.*
 
 ---
 
 ## Core Competencies
 
-| Skill | Demonstrated |
-|-------|--------------|
-| Multi-week self-supported backpacking | 3 thru-hikes |
-| Cold-weather camping & shelter living | 17°F overnight, winter sections |
-| Sustained elevation gain/loss | 130,000+ ft cumulative |
-| Rugged, under-maintained trail systems | Ozark region expertise |
-| Resupply planning & execution | Remote trail logistics |
-| High-altitude performance | 14,115 ft summit |
-| Single-day endurance | 26.8 mi Eagle Rock Loop |
-| Physical & mental endurance | Proven across 840+ miles |
+- Multi-week self-supported backpacking
+- Cold-weather camping and shelter living
+- Sustained elevation gain/loss over long distances
+- Rugged, rocky, under-maintained trail systems
+- River crossings and navigation
+- Resupply planning and execution
+- Proven physical and mental endurance
+
+---
+
+## Mountain Climb Readiness & Assessment
+
+### AT Miles Completed to Date
+
+| Section | Distance | Conditions | Key Features |
+|---------|----------|------------|--------------|
+| Standing Bear Farm → Hot Springs, NC | ~33 miles | Winter, ~35 lb pack | Snowbird Mountain, High difficulty |
+| Newfound Gap ↔ Kuwohi | ~15.6 miles RT | ~17°F, winter Smokies | Entirely high-altitude AT miles |
+
+**TOTAL AT MILES HIKED: ~49 miles** ✓
+
+*These are hard miles, not summer or low-grade terrain.*
+
+### Major AT Climbs with Start Elevation
+
+#### GEORGIA
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Springer Mountain | ~3,200 ft | 3,782 ft | ~580 ft |
+| Blood Mountain | ~3,100 ft (Neels Gap) | 4,458 ft | ~1,350 ft |
+
+#### NORTH CAROLINA / TENNESSEE
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Standing Indian Mountain | ~3,500 ft | 5,499 ft | ~2,000 ft |
+| Wayah Bald | ~3,800 ft | 5,342 ft | ~1,540 ft |
+| Cheoah Bald | ~1,700 ft | 5,062 ft | ~3,300 ft |
+| Kuwohi (Clingmans Dome) | ~5,000 ft | 6,643 ft | ~1,640 ft |
+| Snowbird Mountain ✓ | ~2,200 ft | ~4,260 ft | ~2,060 ft |
+
+#### VIRGINIA
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Mount Rogers Area | ~4,000 ft | 5,729 ft | ~1,700 ft |
+| The Priest | ~650 ft | 4,063 ft | ~3,400 ft |
+| Three Ridges | ~1,500 ft | ~3,970 ft | ~2,470 ft |
+
+#### NEW ENGLAND
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Mount Greylock | ~1,800 ft | 3,491 ft | ~1,700 ft |
+| Mount Moosilauke | ~2,000 ft | 4,802 ft | ~2,800 ft |
+| Franconia Ridge (Mt. Lafayette) | ~3,000 ft | 5,249 ft | ~2,250 ft |
+| Mount Washington | ~2,400 ft | 6,288 ft | ~3,900 ft |
+
+#### MAINE
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Bigelow Range | ~1,300 ft | 4,145 ft | ~2,800 ft |
+| Mount Katahdin | ~1,200 ft | 5,269 ft | ~4,000 ft |
+
+### Ranked Difficulty (Reality-Based)
+
+**TIER 1 — LEGENDARY**
+- Mount Washington
+- Mount Katahdin
+- The Priest
+
+**TIER 2 — MAJOR GRINDERS**
+- Snowbird Mountain
+- Cheoah Bald
+- Mount Moosilauke
+- Franconia Ridge
+
+**TIER 3 — HARD BUT MANAGEABLE**
+- Blood Mountain
+- Kuwohi (Clingmans Dome)
+- Bigelow Range
+
+---
+
+## Weather & Elevation Rules
+
+### Temperature Rule
+
+**Temperature Lapse Rates by Condition:**
+- **Standard (dry air):** -3.5°F per 1,000 ft gained
+- **Moist air:** -3.3°F per 1,000 ft gained
+- **Worst-case (dry, windy):** -5.5°F per 1,000 ft gained
+
+*Use worst-case for safety planning on exposed ridges and balds.*
+
+### Wind Chill Guidelines
+
+| Wind Speed | Feels Like |
+|------------|------------|
+| 10 mph | ~9°F colder |
+| 20 mph | ~15°F colder |
+| 30 mph | ~19°F colder |
+| 40+ mph | ~22°F+ colder |
+
+### Hard Bail Conditions
+
+- Wind >30 mph above treeline
+- Ice on rock
+- Freezing rain
+- Visibility <100 ft
+- Rapid temperature drop (>15°F/hour)
+
+### Month-by-Month Risk Overview (NOBO)
+
+| Month | Region | Conditions | Risk Level |
+|-------|--------|------------|------------|
+| February | GA → Southern NC | Cold, ice risk, short daylight | Moderate-High |
+| March | Smokies | High elevation, severe wind chill | High |
+| April | NC → VA | Wet, improving temps | Moderate |
+| May | Central VA | Heat + steep climbs | Moderate |
+| June | Shenandoahs → PA | Rocks, fatigue | Low-Moderate |
+| July | NY → VT | Heat, storms, mud | Moderate |
+| August | Whites (NH) | Exposure, extreme weather | Very High |
+| September | Maine | Cold, wet rock, fatigue | High |
+
+---
+
+## Readiness Assessment
+
+| Category | Score | Notes |
+|----------|-------|-------|
+| Physical Readiness | 9/10 | Long climbs proven, cold conditions proven |
+| Mental Readiness | 10/10 | You've already hiked when it sucked, you know when to back off |
+| Logistics Readiness | 8.5/10 | Trail rhythm still develops on-trail |
+| **OVERALL NOBO READINESS** | **9/10** | |
+
+### What Your 49 AT Miles Mean
+
+- You are ahead of the average NOBO at Springer
+- Georgia and NC will not shock you
+- Virginia will annoy you, not break you
+- Whites and Maine demand respect, not fear
+
+*Most hikers learn these lessons in the first 200 miles. You already own them.*
+
+### Daily GO / NO-GO Check
+
+1. What's today's summit elevation?
+2. Town temp minus (3.5°F × elevation gain in thousands)
+3. Wind forecast?
+4. Any exposure above treeline?
+
+**If wind >30 mph or ice on rock: → Delay or bail**

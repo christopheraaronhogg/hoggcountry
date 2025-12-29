@@ -1,7 +1,7 @@
 ---
 title: "Medical Planning"
-part: 12
-order: 12
+part: 13
+order: 13
 description: "First aid kit philosophy, contents, foot care, trail medical rules"
 icon: "first-aid"
 ---
@@ -14,8 +14,9 @@ icon: "first-aid"
 - Treat common injuries efficiently
 - Stabilize serious issues and walk to town
 - Resupply in towns—do not overcarry
-- **Feet are the highest priority**
-- Target weight: 3-6 oz
+- Feet are the highest priority
+
+**Target weight:** 3-6 oz
 
 ---
 
@@ -35,7 +36,7 @@ icon: "first-aid"
 - Benzoin tincture wipe
 - Anti-chafe stick or balm
 
-> **Tape early. Do not wait for pain.**
+**Tape early. Do not wait for pain.**
 
 ### Medications
 - Ibuprofen (6-10 tablets)
