@@ -1,19 +1,28 @@
 ---
 import { SITE_TITLE } from '../consts';
+
+const pathname = Astro.url.pathname;
+const isHome = pathname === '/';
+const isGuide = pathname.startsWith('/guide');
 ---
 
 <header class="header" style="min-height: 52px; display:flex; align-items:center;">
   <nav class="container nav" style="display:flex; align-items:center; justify-content:space-between; gap:.75rem;">
-    <h2 class="brand" style="margin:0;">
-      <a href="/" aria-label="Hogg Country" class="font-display">{SITE_TITLE}</a>
-    </h2>
-
-    <div id="filters" class="filters" style="display:flex; gap:.5rem; align-items:center; margin: 0;">
-      <button class="pill is-active" data-filter="all" aria-pressed="true">All</button>
-      <button class="pill" data-filter="trip" aria-pressed="false">Trips</button>
-      <button class="pill" data-filter="video" aria-pressed="false">Videos</button>
-      <button class="pill" data-filter="post" aria-pressed="false">Posts</button>
+    <div class="nav-left" style="display:flex; align-items:center; gap:1rem;">
+      <h2 class="brand" style="margin:0;">
+        <a href="/" aria-label="Hogg Country" class="font-display">{SITE_TITLE}</a>
+      </h2>
+      <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
     </div>
+
+    {isHome && (
+      <div id="filters" class="filters" style="display:flex; gap:.5rem; align-items:center; margin: 0;">
+        <button class="pill is-active" data-filter="all" aria-pressed="true">All</button>
+        <button class="pill" data-filter="trip" aria-pressed="false">Trips</button>
+        <button class="pill" data-filter="video" aria-pressed="false">Videos</button>
+        <button class="pill" data-filter="post" aria-pressed="false">Posts</button>
+      </div>
+    )}
   </nav>
 </header>
 
@@ -43,4 +52,23 @@ import { SITE_TITLE } from '../consts';
   /* Ensure brand/title is vertically centered within the bar */
   .brand { display: flex; align-items: center; }
   .brand a { line-height: 1; display: inline-flex; align-items: center; }
+
+  /* Navigation links */
+  .nav-link {
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    transition: color 0.12s ease, background-color 0.12s ease;
+  }
+  .nav-link:hover {
+    color: var(--pine);
+    background: rgba(77, 89, 74, 0.08);
+  }
+  .nav-link.is-active {
+    color: var(--pine);
+    font-weight: 600;
+    background: rgba(166, 181, 137, 0.2);
+  }
 </style>

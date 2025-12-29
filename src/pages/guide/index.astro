@@ -1,0 +1,216 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const allGuides = await getCollection('guide');
+
+// Separate main chapters from quick reference
+const mainChapters = allGuides
+  .filter(g => !g.data.quickRef)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const quickRefs = allGuides
+  .filter(g => g.data.quickRef)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const title = "AT Field Guide — Hogg Country";
+const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ miles of trail-tested knowledge for a February start.";
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero">
+    <span class="chapter font-chapter">AT 2026</span>
+    <h1 class="font-display">Field Guide</h1>
+    <p>The Complete Appalachian Trail NOBO Field Guide<br/>Springer Mountain, Georgia — Mount Katahdin, Maine</p>
+  </section>
+
+  <div class="container guide-container">
+    <!-- Quick Reference Section -->
+    <section class="quick-ref-section">
+      <h2 class="section-title">Quick Reference</h2>
+      <p class="section-desc">Fast-access field cards for on-trail decisions</p>
+      <div class="quick-grid">
+        {quickRefs.map((ref) => (
+          <a href={`/guide/${ref.id}`} class="quick-card">
+            <span class="quick-title">{ref.data.title}</span>
+            {ref.data.description && <span class="quick-desc">{ref.data.description}</span>}
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- Main Chapters -->
+    <section class="chapters-section">
+      <h2 class="section-title">Full Guide</h2>
+      <div class="toc">
+        {mainChapters.map((chapter, index) => (
+          <a href={`/guide/${chapter.id}`} class="toc-item">
+            <span class="toc-number">{String(index).padStart(2, '0')}</span>
+            <div class="toc-content">
+              <span class="toc-title">{chapter.data.title}</span>
+              {chapter.data.description && (
+                <span class="toc-desc">{chapter.data.description}</span>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- Core Principles -->
+    <section class="principles-section">
+      <h2 class="section-title">Core Principles</h2>
+      <ul class="principles">
+        <li>Prevention beats treatment — in gear, health, and decision-making</li>
+        <li>Consistency beats intensity — sustainable systems finish trails</li>
+        <li>Sleep and recovery are non-negotiable</li>
+        <li>Weight reduction comes from discipline, not deprivation</li>
+        <li>Every decision should serve one goal: reaching Katahdin</li>
+      </ul>
+      <blockquote class="trail-rule">
+        "Slow early. Strong later. Never break the 5-day rule."
+      </blockquote>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .guide-container {
+    padding-bottom: 4rem;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    color: var(--pine);
+    margin: 2.5rem 0 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .section-desc {
+    color: var(--muted);
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* Quick Reference Grid */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .quick-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background: var(--marker);
+    border: 2px solid #e0d400;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .quick-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  }
+
+  .quick-title {
+    font-weight: 700;
+    color: #2b2f26;
+    font-size: 0.95rem;
+  }
+
+  .quick-desc {
+    font-size: 0.8rem;
+    color: #4a4a40;
+    margin-top: 0.25rem;
+  }
+
+  /* Table of Contents */
+  .toc {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .toc-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .toc-item:hover {
+    transform: translateX(4px);
+    border-color: var(--alpine);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+
+  .toc-number {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.9rem;
+    min-width: 1.5rem;
+  }
+
+  .toc-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .toc-title {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .toc-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.125rem;
+  }
+
+  /* Principles */
+  .principles {
+    margin: 1rem 0;
+    padding-left: 1.25rem;
+  }
+
+  .principles li {
+    margin: 0.5rem 0;
+    color: var(--fg);
+  }
+
+  .trail-rule {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    background: var(--card);
+    border-left: 4px solid var(--alpine);
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--pine);
+  }
+
+  /* Mobile optimization */
+  @media (max-width: 600px) {
+    .quick-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .toc-item {
+      padding: 0.75rem;
+    }
+
+    .toc-number {
+      display: none;
+    }
+  }
+</style>

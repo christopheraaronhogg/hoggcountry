@@ -64,4 +64,17 @@ schema: ({ image }) =>
 		}),
 });
 
-export const collections = { blog, trips, posts };
+// AT Field Guide chapters
+const guide = defineCollection({
+	loader: glob({ base: './src/content/guide', pattern: '**/*.md' }),
+	schema: z.object({
+		title: z.string(),
+		part: z.number(),
+		order: z.number(),
+		description: z.string().optional(),
+		icon: z.string().optional(), // emoji or icon identifier
+		quickRef: z.boolean().default(false), // true for quick-reference pages
+	}),
+});
+
+export const collections = { blog, trips, posts, guide };
