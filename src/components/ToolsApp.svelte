@@ -5,12 +5,14 @@
   import GearCalculator from './GearCalculator.svelte';
   import DaylightCalculator from './DaylightCalculator.svelte';
   import ResupplyCalculator from './ResupplyCalculator.svelte';
+  import BudgetCalculator from './BudgetCalculator.svelte';
 
   const tools = [
     { id: 'milestone', name: 'Milestones', icon: '📍', desc: 'Plan your journey timeline' },
     { id: 'gear', name: 'Gear', icon: '⚖️', desc: 'Optimize pack weight' },
     { id: 'daylight', name: 'Daylight', icon: '🌅', desc: 'Sunrise & sunset times' },
     { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Town & food planner' },
+    { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
   ];
 
   let activeTool = 'milestone';
@@ -83,6 +85,9 @@
       <div class="tool-panel" class:hidden={activeTool !== 'resupply'}>
         <ResupplyCalculator />
       </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'budget'}>
+        <BudgetCalculator />
+      </div>
     </div>
   </div>
 
@@ -118,7 +123,7 @@
   /* Navigation */
   .tools-nav {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;
