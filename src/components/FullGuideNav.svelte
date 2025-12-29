@@ -235,9 +235,16 @@
     z-index: 999;
     background: linear-gradient(to bottom, rgba(245, 242, 232, 0.98), rgba(245, 242, 232, 0.95));
     backdrop-filter: blur(8px);
-    padding: 0.5rem 1rem 0.4rem;
+    padding: 0.65rem 1rem 0.4rem;
     border-bottom: 1px solid var(--border, #e6e1d4);
     transition: top 0.3s ease;
+  }
+
+  /* Mobile: extra top padding to prevent marker clipping */
+  @media (max-width: 600px) {
+    .progress-container {
+      padding-top: 0.75rem;
+    }
   }
 
   .progress-track {

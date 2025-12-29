@@ -2,29 +2,20 @@
 import { SITE_TITLE } from '../consts';
 
 const pathname = Astro.url.pathname;
-const isGuide = pathname.startsWith('/guide') && !pathname.includes('/guide/quick') && !pathname.match(/\/guide\/\d/);
-const isGuidePage = pathname === '/guide' || pathname === '/guide/';
+const isGuide = pathname.startsWith('/guide');
 const isTools = pathname.startsWith('/tools');
 ---
 
 <header class="header" id="site-header">
   <nav class="container nav">
-    <div class="nav-left">
-      <h2 class="brand">
-        <a href="/" aria-label="Hogg Country" class="font-display">{SITE_TITLE}</a>
-      </h2>
+    <h2 class="brand">
+      <a href="/" aria-label="Hogg Country" class="font-display">{SITE_TITLE}</a>
+    </h2>
+
+    <div class="nav-right">
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
       <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
     </div>
-
-    {isGuidePage && (
-      <div class="guide-actions">
-        <button id="download-guide-btn" class="action-btn">
-          <span class="action-icon">↓</span>
-          <span class="action-label">Download</span>
-        </button>
-      </div>
-    )}
   </nav>
 </header>
 
@@ -52,12 +43,6 @@ const isTools = pathname.startsWith('/tools');
     gap: 0.75rem;
   }
 
-  .nav-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
   .brand {
     margin: 0;
     display: flex;
@@ -68,6 +53,12 @@ const isTools = pathname.startsWith('/tools');
     line-height: 1;
     display: inline-flex;
     align-items: center;
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   /* Navigation links */
@@ -91,50 +82,10 @@ const isTools = pathname.startsWith('/tools');
     background: rgba(166, 181, 137, 0.2);
   }
 
-  /* Guide page actions */
-  .guide-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.65rem;
-    background: var(--pine);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .action-btn:hover {
-    background: var(--ink);
-    transform: translateY(-1px);
-  }
-
-  .action-icon {
-    font-size: 0.9rem;
-  }
-
-  /* Mobile: hide labels, show only icons */
+  /* Mobile */
   @media (max-width: 600px) {
-    .action-label {
-      display: none;
-    }
-
-    .action-btn {
-      padding: 0.4rem 0.5rem;
-    }
-
-    .nav-left {
-      gap: 0.5rem;
+    .nav-right {
+      gap: 0.25rem;
     }
 
     .nav-link {
