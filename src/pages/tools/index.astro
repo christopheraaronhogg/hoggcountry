@@ -1,0 +1,248 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GearCalculator from '../../components/GearCalculator.svelte';
+
+const title = "Trail Tools — Hogg Country";
+const description = "Interactive tools for AT thru-hiking: gear calculator, weight optimization, and more.";
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero">
+    <span class="chapter font-chapter">AT 2026</span>
+    <h1 class="font-display">Trail Tools</h1>
+    <p>Interactive planning tools for the Appalachian Trail</p>
+  </section>
+
+  <div class="container tools-container">
+    <!-- Gear Calculator Section -->
+    <section class="tool-section">
+      <div class="tool-header">
+        <h2>Gear Weight Calculator</h2>
+        <p class="tool-desc">
+          Slide to see exactly what HoggCountry would carry at any base weight.
+          Based on the February start gear list with seasonal transitions.
+        </p>
+      </div>
+
+      <GearCalculator client:load />
+
+      <div class="gear-philosophy">
+        <blockquote>
+          "Base weight is the foundation of sustainable long-distance hiking. Every ounce
+          carried compounds over thousands of miles into joint stress, fatigue, and potential
+          injury. However, ultralight ideology taken too far sacrifices sleep quality,
+          safety, and morale—the very things that enable trail completion."
+        </blockquote>
+        <p class="source">— <a href="/guide/02-gear-system">Gear System Chapter</a></p>
+      </div>
+    </section>
+
+    <!-- Downloads Section -->
+    <section class="tool-section downloads-section">
+      <div class="tool-header">
+        <h2>Download Field Guide</h2>
+        <p class="tool-desc">
+          Take the guide offline for field reference. Multiple formats available.
+        </p>
+      </div>
+
+      <div class="download-grid">
+        <a href="/downloads/at-field-guide.pdf" class="download-card" download>
+          <span class="download-icon">📄</span>
+          <span class="download-format">PDF</span>
+          <span class="download-desc">Print-friendly, single file</span>
+        </a>
+        <a href="/downloads/at-field-guide.md" class="download-card" download>
+          <span class="download-icon">📋</span>
+          <span class="download-format">Markdown</span>
+          <span class="download-desc">Full guide in markdown</span>
+        </a>
+        <a href="/downloads/at-field-guide.txt" class="download-card" download>
+          <span class="download-icon">📃</span>
+          <span class="download-format">Plain Text</span>
+          <span class="download-desc">Maximum compatibility</span>
+        </a>
+        <a href="/downloads/at-field-guide-quick-ref.pdf" class="download-card" download>
+          <span class="download-icon">⚡</span>
+          <span class="download-format">Quick Ref PDF</span>
+          <span class="download-desc">Just the field cards</span>
+        </a>
+      </div>
+
+      <p class="coming-soon">Downloads coming soon — guide content is available at <a href="/guide">/guide</a></p>
+    </section>
+
+    <!-- More Tools Coming -->
+    <section class="tool-section future-tools">
+      <h2>More Tools Coming</h2>
+      <div class="future-grid">
+        <div class="future-card">
+          <span class="future-icon">📍</span>
+          <span class="future-name">Mile Planner</span>
+          <span class="future-desc">Input start date, see projected milestones</span>
+        </div>
+        <div class="future-card">
+          <span class="future-icon">🔍</span>
+          <span class="future-name">Guide Search</span>
+          <span class="future-desc">Full-text search across all chapters</span>
+        </div>
+        <div class="future-card">
+          <span class="future-icon">🥾</span>
+          <span class="future-name">Resupply Calculator</span>
+          <span class="future-desc">Food carry math by section</span>
+        </div>
+        <div class="future-card">
+          <span class="future-icon">📊</span>
+          <span class="future-name">Progress Tracker</span>
+          <span class="future-desc">Live AT progress during the hike</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .tools-container {
+    padding-bottom: 4rem;
+  }
+
+  .tool-section {
+    margin-bottom: 3rem;
+  }
+
+  .tool-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .tool-header h2 {
+    font-size: 1.5rem;
+    color: var(--pine);
+    margin-bottom: 0.5rem;
+  }
+
+  .tool-desc {
+    color: var(--muted);
+    max-width: 60ch;
+  }
+
+  .gear-philosophy {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--card);
+    border-left: 4px solid var(--alpine);
+    border-radius: 0 10px 10px 0;
+  }
+
+  .gear-philosophy blockquote {
+    margin: 0;
+    font-style: italic;
+    color: var(--pine);
+    line-height: 1.6;
+  }
+
+  .gear-philosophy .source {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .gear-philosophy .source a {
+    color: var(--pine);
+  }
+
+  /* Downloads */
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .download-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.25rem 1rem;
+    background: var(--card);
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .download-card:hover {
+    border-style: solid;
+    border-color: var(--alpine);
+    transform: translateY(-2px);
+  }
+
+  .download-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .download-format {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .download-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .coming-soon {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .coming-soon a {
+    color: var(--pine);
+  }
+
+  /* Future Tools */
+  .future-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .future-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+    background: var(--bg);
+    border: 1px dashed var(--stone);
+    border-radius: 10px;
+  }
+
+  .future-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .future-name {
+    font-weight: 600;
+    color: var(--pine);
+    margin-bottom: 0.25rem;
+  }
+
+  .future-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 600px) {
+    .download-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .future-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

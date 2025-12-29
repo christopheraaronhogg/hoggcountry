@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GuideSearch from '../../components/GuideSearch.svelte';
 
 const allGuides = await getCollection('guide');
 
@@ -12,6 +13,16 @@ const mainChapters = allGuides
 const quickRefs = allGuides
   .filter(g => g.data.quickRef)
   .sort((a, b) => a.data.order - b.data.order);
+
+// Prepare searchable data (strip to essentials for client)
+const searchableChapters = allGuides.map(ch => ({
+  id: ch.id,
+  data: {
+    title: ch.data.title,
+    description: ch.data.description,
+    quickRef: ch.data.quickRef
+  }
+}));
 
 const title = "AT Field Guide — Hogg Country";
 const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ miles of trail-tested knowledge for a February start.";
@@ -25,6 +36,11 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
   </section>
 
   <div class="container guide-container">
+    <!-- Search -->
+    <section class="search-section">
+      <GuideSearch client:load chapters={searchableChapters} />
+    </section>
+
     <!-- Quick Reference Section -->
     <section class="quick-ref-section">
       <h2 class="section-title">Quick Reference</h2>
@@ -77,6 +93,12 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
 <style>
   .guide-container {
     padding-bottom: 4rem;
+  }
+
+  .search-section {
+    margin: 1.5rem 0 2rem;
+    display: flex;
+    justify-content: center;
   }
 
   .section-title {

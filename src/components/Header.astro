@@ -4,6 +4,7 @@ import { SITE_TITLE } from '../consts';
 const pathname = Astro.url.pathname;
 const isHome = pathname === '/';
 const isGuide = pathname.startsWith('/guide');
+const isTools = pathname.startsWith('/tools');
 ---
 
 <header class="header" style="min-height: 52px; display:flex; align-items:center;">
@@ -13,6 +14,7 @@ const isGuide = pathname.startsWith('/guide');
         <a href="/" aria-label="Hogg Country" class="font-display">{SITE_TITLE}</a>
       </h2>
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
+      <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
     </div>
 
     {isHome && (
