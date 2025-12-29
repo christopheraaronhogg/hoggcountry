@@ -67,16 +67,19 @@
     {/each}
   </nav>
 
-  <!-- Tool Content -->
+  <!-- Tool Content - All tools render for SSR CSS extraction, hidden via CSS -->
   <div class="tool-viewport">
     <div class="tool-container" class:transitioning={isTransitioning}>
-      {#if activeTool === 'milestone'}
+      <div class="tool-panel" class:hidden={activeTool !== 'milestone'}>
         <MilestoneCalculator />
-      {:else if activeTool === 'gear'}
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'gear'}>
         <GearCalculator />
-      {:else if activeTool === 'daylight'}
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'daylight'}>
         <DaylightCalculator />
-      {:else if activeTool === 'resupply'}
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'resupply'}>
         <div class="coming-soon">
           <div class="coming-soon-content">
             <span class="coming-soon-icon">🍽️</span>
@@ -85,7 +88,7 @@
             <span class="coming-soon-badge">In Development</span>
           </div>
         </div>
-      {/if}
+      </div>
     </div>
   </div>
 
@@ -224,6 +227,10 @@
     opacity: 0;
     transform: translateY(10px);
     pointer-events: none;
+  }
+
+  .tool-panel.hidden {
+    display: none;
   }
 
   /* Coming Soon */
