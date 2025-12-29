@@ -15,33 +15,39 @@
     isModalOpen = false;
   }
 
-  // Listen for external trigger (from header button)
+  function triggerModal() {
+    // Dispatch event so the single modal instance (header variant) opens
+    window.dispatchEvent(new CustomEvent('open-download-modal'));
+  }
+
+  // Only the header variant listens for the event and owns the modal
   onMount(() => {
-    const handler = () => openModal();
-    window.addEventListener('open-download-modal', handler);
-    return () => window.removeEventListener('open-download-modal', handler);
+    if (variant === 'header') {
+      const handler = () => openModal();
+      window.addEventListener('open-download-modal', handler);
+      return () => window.removeEventListener('open-download-modal', handler);
+    }
   });
 </script>
 
 {#if variant === 'toc'}
-  <button class="toc-download-btn" on:click={openModal}>
+  <button class="toc-download-btn" on:click={triggerModal}>
     <span class="btn-icon">↓</span>
     <span>Download Guide</span>
   </button>
 {:else if variant === 'header'}
-  <!-- Header button is rendered in Astro, this just handles the modal -->
+  <!-- Header button is rendered in Astro, this variant owns the single modal instance -->
+  <DownloadModal
+    isOpen={isModalOpen}
+    onClose={closeModal}
+    {markdownContent}
+  />
 {:else}
-  <button class="download-btn" on:click={openModal}>
+  <button class="download-btn" on:click={triggerModal}>
     <span class="btn-icon">↓</span>
     <span>Download</span>
   </button>
 {/if}
-
-<DownloadModal
-  isOpen={isModalOpen}
-  onClose={closeModal}
-  {markdownContent}
-/>
 
 <style>
   .download-btn {
