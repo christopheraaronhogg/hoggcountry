@@ -91,6 +91,46 @@
   // Max category weight for bar scaling
   $: maxCategoryWeight = Math.max(...categoryWeights.map(c => c.weight), 1);
 
+  // Big 3 calculation (shelter, sleep, pack)
+  $: big3Categories = ['shelter', 'sleep', 'pack'];
+  $: big3Weight = categoryWeights
+    .filter(c => big3Categories.includes(c.id))
+    .reduce((sum, c) => sum + c.weight, 0);
+  $: big3WeightLbs = big3Weight / 16;
+  $: big3Breakdown = big3Categories.map(catId => {
+    const cat = categoryWeights.find(c => c.id === catId);
+    return cat || { id: catId, name: categories[catId]?.name || catId, weight: 0, icon: categories[catId]?.icon || '?' };
+  });
+  $: big3Percent = baseWeightOz > 0 ? (big3Weight / baseWeightOz) * 100 : 0;
+
+  // Weight tips based on current weights
+  $: weightTips = (() => {
+    const tips = [];
+    const shelterCat = categoryWeights.find(c => c.id === 'shelter');
+    const sleepCat = categoryWeights.find(c => c.id === 'sleep');
+    const packCat = categoryWeights.find(c => c.id === 'pack');
+
+    if (shelterCat && shelterCat.weight > 48) { // > 3 lbs
+      tips.push({ icon: '🏕️', text: 'Shelter over 3 lbs—consider a tarp/hammock setup or DCF tent' });
+    }
+    if (sleepCat && sleepCat.weight > 56) { // > 3.5 lbs
+      tips.push({ icon: '😴', text: 'Sleep system over 3.5 lbs—a quilt + inflatable pad can save weight' });
+    }
+    if (packCat && packCat.weight > 48) { // > 3 lbs
+      tips.push({ icon: '🎒', text: 'Pack over 3 lbs—frameless packs work once base weight drops below 15 lbs' });
+    }
+    if (big3WeightLbs > 12) {
+      tips.push({ icon: '⚖️', text: 'Big 3 total over 12 lbs—focus here for biggest weight savings' });
+    }
+    if (baseWeightLbs < 10 && tips.length === 0) {
+      tips.push({ icon: '🏆', text: 'Ultralight achieved! Focus on durability and comfort now' });
+    }
+    if (tips.length === 0 && baseWeightLbs < 15) {
+      tips.push({ icon: '✅', text: 'Solid lightweight setup—enjoy the miles!' });
+    }
+    return tips;
+  })();
+
   // Target weight in oz
   $: targetWeightOz = targetWeight * 16;
 
@@ -217,6 +257,44 @@
         <p class="stat-note">*Includes estimated food (2lb) & water (2.2lb)</p>
       </div>
     </div>
+  </div>
+
+  <!-- Big 3 Section -->
+  <div class="big3-section">
+    <h3 class="section-title">
+      <span class="title-blaze"></span>
+      <span>The Big 3</span>
+      <span class="big3-tag">Focus Area</span>
+    </h3>
+
+    <div class="big3-grid">
+      {#each big3Breakdown as cat}
+        <div class="big3-item">
+          <span class="big3-icon">{cat.icon}</span>
+          <span class="big3-name">{cat.name}</span>
+          <span class="big3-weight">{(cat.weight / 16).toFixed(1)} lb</span>
+        </div>
+      {/each}
+    </div>
+
+    <div class="big3-total">
+      <div class="big3-total-info">
+        <span class="big3-total-label">Big 3 Total</span>
+        <span class="big3-total-pct">{big3Percent.toFixed(0)}% of base weight</span>
+      </div>
+      <span class="big3-total-val">{big3WeightLbs.toFixed(1)} lbs</span>
+    </div>
+
+    {#if weightTips.length > 0}
+      <div class="weight-tips">
+        {#each weightTips as tip}
+          <div class="weight-tip">
+            <span class="tip-icon">{tip.icon}</span>
+            <span class="tip-text">{tip.text}</span>
+          </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 
   <!-- Category List -->
@@ -522,6 +600,131 @@
     font-style: italic;
   }
 
+  /* Big 3 Section */
+  .big3-section {
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.1), rgba(166, 181, 137, 0.02));
+    border-bottom: 1px solid var(--border);
+  }
+
+  .big3-section .section-title {
+    margin-bottom: 1rem;
+  }
+
+  .big3-tag {
+    margin-left: auto;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    background: var(--alpine);
+    color: #fff;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .big3-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .big3-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .big3-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .big3-name {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .big3-weight {
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .big3-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 2px solid var(--alpine);
+    margin-bottom: 1rem;
+  }
+
+  .big3-total-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .big3-total-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .big3-total-pct {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .big3-total-val {
+    font-family: Oswald, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .weight-tips {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .weight-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .tip-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .tip-text {
+    font-size: 0.85rem;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+
   /* Gear List */
   .timeline-container {
     padding: 2rem;
@@ -677,6 +880,11 @@
     .stats-grid { grid-template-columns: 1fr; }
     .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
     .stat-card:last-child { border-bottom: none; }
+    .big3-section { padding: 1rem; }
+    .big3-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+    .big3-item { flex-direction: row; justify-content: space-between; padding: 0.75rem 1rem; }
+    .big3-icon { margin-bottom: 0; margin-right: 0.75rem; }
+    .big3-name { margin-bottom: 0; }
     .timeline-container { padding: 1rem; }
   }
 </style>

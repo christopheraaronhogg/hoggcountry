@@ -62,11 +62,13 @@
   // Planning mode state
   let startDate = '2026-02-15';
   let pace = 15;
+  let zeroDaysPerMonth = 4; // Expected zero days (full rest) per month
 
   // Trail mode state
   let currentMile = 500;
   let tripStartDate = '2026-02-15';
   let targetPace = 15; // original planned pace
+  let zeroDaysTaken = 5; // Actual zero days taken so far
 
   let mounted = false;
 
@@ -148,13 +150,31 @@
   }
 
   // ========== PLANNING MODE CALCULATIONS ==========
+  // Convert zero days per month to zero days per hiking day ratio
+  // Assuming ~30 days/month and ~25 hiking days/month at average pace
+  $: zeroDayRatio = zeroDaysPerMonth / 30; // Fraction of days that are zeros
+
+  // Calculate total calendar days including zeros
+  // hikingDays = TOTAL_MILES / pace
+  // calendarDays = hikingDays / (1 - zeroDayRatio)
+  $: hikingDaysOnly = Math.ceil(TOTAL_MILES / pace);
+  $: totalDays = Math.ceil(hikingDaysOnly / (1 - zeroDayRatio));
+  $: totalZeroDays = totalDays - hikingDaysOnly;
+
+  // Helper to get calendar day for a given mile marker (accounting for zeros spread throughout)
+  function getCalendarDayForMile(miles) {
+    const hikingDay = Math.ceil(miles / pace);
+    return Math.ceil(hikingDay / (1 - zeroDayRatio));
+  }
+
   $: calculatedSections = sections.map((section, i) => {
-    const daysToStart = Math.ceil(section.startMile / pace);
-    const daysToEnd = Math.ceil(section.endMile / pace);
+    const daysToStart = getCalendarDayForMile(section.startMile);
+    const daysToEnd = getCalendarDayForMile(section.endMile);
     const arrivalDate = addDays(startDate, daysToStart);
     const completionDate = addDays(startDate, daysToEnd);
     const sectionMiles = section.endMile - section.startMile;
-    const sectionDays = Math.ceil(sectionMiles / pace);
+    const sectionHikingDays = Math.ceil(sectionMiles / pace);
+    const sectionCalendarDays = daysToEnd - daysToStart;
     const season = getSeason(arrivalDate);
     const progress = (section.endMile / TOTAL_MILES) * 100;
 
@@ -166,36 +186,48 @@
       arrivalDate,
       completionDate,
       sectionMiles,
-      sectionDays,
+      sectionDays: sectionCalendarDays,
+      sectionHikingDays,
       season,
       progress,
     };
   });
 
-  $: totalDays = Math.ceil(TOTAL_MILES / pace);
   $: summitDate = addDays(startDate, totalDays);
 
   $: calculatedMilestones = milestones.map(m => ({
     ...m,
-    date: addDays(startDate, Math.ceil(m.miles / pace)),
-    day: Math.ceil(m.miles / pace),
+    date: addDays(startDate, getCalendarDayForMile(m.miles)),
+    day: getCalendarDayForMile(m.miles),
   }));
 
   // ========== TRAIL MODE CALCULATIONS ==========
   $: todayStr = getTodayStr();
   $: daysOnTrail = Math.max(1, daysBetween(tripStartDate, todayStr));
-  $: actualPace = currentMile / daysOnTrail;
+  $: hikingDaysActual = Math.max(1, daysOnTrail - zeroDaysTaken);
+
+  // Two pace metrics: overall (calendar) and hiking-only
+  $: actualPaceOverall = currentMile / daysOnTrail; // Calendar pace (lower)
+  $: actualPaceHiking = currentMile / hikingDaysActual; // Hiking day pace (true pace)
+  $: actualPace = actualPaceOverall; // For display compatibility
+
   $: milesRemaining = TOTAL_MILES - currentMile;
   $: percentComplete = (currentMile / TOTAL_MILES) * 100;
 
-  // Projected finish at current pace
-  $: daysRemaining = actualPace > 0 ? Math.ceil(milesRemaining / actualPace) : 999;
+  // Zero day frequency so far
+  $: zeroDayFrequency = daysOnTrail > 0 ? (zeroDaysTaken / daysOnTrail) * 30 : 0; // zeros per 30 days
+
+  // Projected finish at current pace (assuming same zero day pattern continues)
+  $: hikingDaysRemaining = actualPaceHiking > 0 ? Math.ceil(milesRemaining / actualPaceHiking) : 999;
+  $: projectedZeroDaysRemaining = Math.round(hikingDaysRemaining * (zeroDaysTaken / hikingDaysActual));
+  $: daysRemaining = hikingDaysRemaining + projectedZeroDaysRemaining;
   $: projectedFinish = addDays(todayStr, daysRemaining);
 
-  // Original plan finish
-  $: originalTotalDays = Math.ceil(TOTAL_MILES / targetPace);
+  // Original plan finish (using same zero day assumption from planning)
+  $: originalHikingDays = Math.ceil(TOTAL_MILES / targetPace);
+  $: originalTotalDays = Math.ceil(originalHikingDays * 1.15); // Assume ~4 zeros/month
   $: originalFinish = addDays(tripStartDate, originalTotalDays);
-  $: originalDayForCurrentMile = Math.ceil(currentMile / targetPace);
+  $: originalDayForCurrentMile = Math.ceil(Math.ceil(currentMile / targetPace) * 1.15);
 
   // Ahead or behind
   $: daysAheadBehind = originalDayForCurrentMile - daysOnTrail;
@@ -342,16 +374,50 @@ Generated at hoggcountry.com/tools`;
           </div>
         </div>
       </div>
+
+      <!-- Zero Days Row -->
+      <div class="zero-days-row">
+        <div class="zero-header">
+          <label class="control-label">Zero Days</label>
+          <span class="zero-val">{zeroDaysPerMonth} <small>/month</small></span>
+        </div>
+        <div class="zero-slider-wrap">
+          <input
+            type="range"
+            min="0"
+            max="10"
+            step="1"
+            bind:value={zeroDaysPerMonth}
+            class="zero-slider"
+          />
+          <div class="zero-labels">
+            <span>0</span>
+            <span class="zero-context">typical: 4-6</span>
+            <span>10</span>
+          </div>
+        </div>
+        <p class="zero-tip">
+          Zero days = full rest days in town. Most hikers take 4-6 per month. This adds <strong>{totalZeroDays}</strong> days to your trip.
+        </p>
+      </div>
     </div>
 
     <!-- Big Stats -->
-    <div class="stats-grid">
+    <div class="stats-grid-3">
+      <div class="stat-card">
+        <span class="stat-label">Hiking Days</span>
+        <div class="stat-main">
+          <span class="stat-num">{hikingDaysOnly}</span>
+          <span class="stat-unit">days</span>
+        </div>
+      </div>
       <div class="stat-card">
         <span class="stat-label">Total Duration</span>
         <div class="stat-main">
           <span class="stat-num">{totalDays}</span>
           <span class="stat-unit">days</span>
         </div>
+        <span class="stat-sub">(+{totalZeroDays} zeros)</span>
       </div>
       <div class="stat-card highlight">
         <span class="stat-label">Summit Date</span>
@@ -492,6 +558,20 @@ Generated at hoggcountry.com/tools`;
             <span>mi/day</span>
           </div>
         </div>
+        <div class="control-group">
+          <label class="control-label">Zero Days Taken</label>
+          <div class="mini-pace">
+            <input
+              type="number"
+              min="0"
+              max="50"
+              step="1"
+              bind:value={zeroDaysTaken}
+              class="zero-input"
+            />
+            <span>rest days</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -518,13 +598,34 @@ Generated at hoggcountry.com/tools`;
             <span class="hs-label">Days on trail</span>
           </div>
           <div class="hero-stat">
-            <span class="hs-val">{actualPace.toFixed(1)}</span>
-            <span class="hs-label">Avg mi/day</span>
+            <span class="hs-val">{hikingDaysActual}</span>
+            <span class="hs-label">Hiking days</span>
           </div>
           <div class="hero-stat status-indicator" style="--status-color: {statusColor}">
             <span class="hs-val">{daysAheadBehind >= 0 ? '+' : ''}{daysAheadBehind}</span>
             <span class="hs-label">{statusLabel}</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Pace Breakdown -->
+      <div class="pace-breakdown">
+        <div class="pb-item">
+          <div class="pb-val">{actualPaceHiking.toFixed(1)}</div>
+          <div class="pb-label">mi/hiking day</div>
+          <div class="pb-sub">Your true pace</div>
+        </div>
+        <div class="pb-divider"></div>
+        <div class="pb-item">
+          <div class="pb-val">{actualPaceOverall.toFixed(1)}</div>
+          <div class="pb-label">mi/calendar day</div>
+          <div class="pb-sub">Includes {zeroDaysTaken} zero{zeroDaysTaken !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="pb-divider"></div>
+        <div class="pb-item">
+          <div class="pb-val">{zeroDayFrequency.toFixed(1)}</div>
+          <div class="pb-label">zeros/month</div>
+          <div class="pb-sub">{zeroDayFrequency <= 4 ? 'Efficient' : zeroDayFrequency <= 6 ? 'Normal' : 'Relaxed'}</div>
         </div>
       </div>
 
@@ -850,10 +951,126 @@ Generated at hoggcountry.com/tools`;
     cursor: grab;
   }
 
+  /* Zero Days Row */
+  .zero-days-row {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .zero-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+  }
+
+  .zero-val {
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--terra);
+  }
+
+  .zero-val small { font-size: 0.8rem; font-weight: 400; color: var(--muted); }
+
+  .zero-slider-wrap {
+    position: relative;
+  }
+
+  .zero-slider {
+    width: 100%;
+    height: 24px;
+    cursor: pointer;
+    margin: 0;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+
+  .zero-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, var(--alpine), var(--terra));
+    border-radius: 3px;
+  }
+
+  .zero-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--terra);
+    margin-top: -9px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+
+  .zero-slider::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, var(--alpine), var(--terra));
+    border-radius: 3px;
+    border: none;
+  }
+
+  .zero-slider::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--terra);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+
+  .zero-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
+  .zero-context {
+    color: var(--alpine);
+    font-weight: 600;
+  }
+
+  .zero-tip {
+    margin: 0.75rem 0 0;
+    padding: 0.75rem;
+    background: rgba(196, 93, 44, 0.08);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .zero-tip strong {
+    color: var(--terra);
+  }
+
+  .zero-input {
+    width: 60px;
+    padding: 0.75rem;
+    border: 1px solid var(--stone, #ccc);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1rem;
+    text-align: center;
+  }
+
   /* Stats Grid */
   .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stats-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
     border-bottom: 1px solid var(--border);
   }
 
@@ -867,6 +1084,12 @@ Generated at hoggcountry.com/tools`;
 
   .stat-card:last-child { border-right: none; }
   .stat-card.highlight { background: #fdfdfc; }
+
+  .stat-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
 
   .stat-label {
     font-size: 0.75rem;
@@ -1325,6 +1548,54 @@ Generated at hoggcountry.com/tools`;
     color: var(--status-color);
   }
 
+  /* Pace Breakdown */
+  .pace-breakdown {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .pb-item {
+    text-align: center;
+    flex: 1;
+  }
+
+  .pb-val {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pine);
+    line-height: 1;
+  }
+
+  .pb-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+  }
+
+  .pb-sub {
+    font-size: 0.7rem;
+    color: var(--alpine);
+    margin-top: 0.15rem;
+  }
+
+  .pb-divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    margin: 0 0.5rem;
+  }
+
   .quick-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1668,6 +1939,9 @@ Generated at hoggcountry.com/tools`;
     .calc-header { padding: 1.5rem; }
     .controls-section { padding: 1.5rem; }
     .controls-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .stats-grid-3 { grid-template-columns: 1fr; }
+    .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-card:last-child { border-bottom: none; }
     .timeline-container { padding: 1.5rem 1rem; }
     .timeline-row { grid-template-columns: 60px 30px 1fr; }
     .time-date { font-size: 0.75rem; }
@@ -1675,6 +1949,8 @@ Generated at hoggcountry.com/tools`;
     .status-hero { flex-direction: column; gap: 1.5rem; }
     .hero-stats { flex-direction: row; flex-wrap: wrap; gap: 1rem; }
     .hero-stat { flex: 1; min-width: 80px; }
+    .pace-breakdown { flex-direction: column; gap: 1rem; padding: 1rem; }
+    .pb-divider { width: 100%; height: 1px; margin: 0; }
     .quick-stats { grid-template-columns: 1fr; }
     .trail-config { grid-template-columns: 1fr; }
     .projection-cards { grid-template-columns: 1fr; }

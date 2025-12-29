@@ -1,44 +1,45 @@
 <script>
   import { onMount } from 'svelte';
 
-  // Resupply towns with details
+  // Resupply towns with details and cost estimates
+  // Costs: hostel = cheap bunk, motel = budget motel, meal = restaurant meal, resupply = groceries/day
   const towns = [
-    { mile: 0, name: 'Springer Mountain', type: 'trailhead', services: ['start'], mailDrop: false },
-    { mile: 31, name: 'Neels Gap', type: 'outfitter', services: ['outfitter', 'snacks'], mailDrop: true },
-    { mile: 69, name: 'Hiawassee', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 110, name: 'Franklin', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 165, name: 'Fontana Dam', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true },
-    { mile: 206, name: 'Gatlinburg', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 274, name: 'Hot Springs', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 342, name: 'Erwin', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 473, name: 'Damascus', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 509, name: 'Atkins', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: false },
-    { mile: 636, name: 'Pearisburg', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 726, name: 'Daleville', type: 'limited', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 864, name: 'Waynesboro', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 942, name: 'Front Royal', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 1025, name: 'Harpers Ferry', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 1141, name: 'Duncannon', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true },
-    { mile: 1207, name: 'Port Clinton', type: 'limited', services: ['convenience'], mailDrop: true },
-    { mile: 1290, name: 'Delaware Water Gap', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 1353, name: 'Unionville', type: 'limited', services: ['convenience'], mailDrop: false },
-    { mile: 1409, name: 'Bear Mountain', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: false },
-    { mile: 1479, name: 'Kent', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 1521, name: 'Salisbury', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 1566, name: 'Great Barrington', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 1595, name: 'Dalton', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true },
-    { mile: 1650, name: 'Bennington', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 1699, name: 'Manchester', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 1742, name: 'Killington', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true },
-    { mile: 1773, name: 'Hanover', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 1823, name: 'Lincoln', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 1862, name: 'Franconia', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true },
-    { mile: 1897, name: 'Gorham', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true },
-    { mile: 1940, name: 'Andover', type: 'limited', services: ['convenience'], mailDrop: true },
-    { mile: 1976, name: 'Stratton', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true },
-    { mile: 2010, name: 'Caratunk', type: 'limited', services: ['convenience'], mailDrop: true },
-    { mile: 2090, name: 'Monson', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
-    { mile: 2198, name: 'Millinocket', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true },
+    { mile: 0, name: 'Springer Mountain', type: 'trailhead', services: ['start'], mailDrop: false, costs: null },
+    { mile: 31, name: 'Neels Gap', type: 'outfitter', services: ['outfitter', 'snacks'], mailDrop: true, costs: { resupply: 25, meal: 12 } },
+    { mile: 69, name: 'Hiawassee', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 30, motel: 70, resupply: 15, meal: 12, laundry: 6 } },
+    { mile: 110, name: 'Franklin', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 28, motel: 65, resupply: 14, meal: 11, laundry: 6 } },
+    { mile: 165, name: 'Fontana Dam', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true, costs: { resupply: 20, meal: 14 } },
+    { mile: 206, name: 'Gatlinburg', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 35, motel: 90, resupply: 16, meal: 15, laundry: 7 } },
+    { mile: 274, name: 'Hot Springs', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 30, motel: 75, resupply: 15, meal: 13, laundry: 6 } },
+    { mile: 342, name: 'Erwin', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 25, motel: 60, resupply: 13, meal: 10, laundry: 5 } },
+    { mile: 473, name: 'Damascus', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 28, motel: 65, resupply: 14, meal: 11, laundry: 5 } },
+    { mile: 509, name: 'Atkins', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: false, costs: { resupply: 18, meal: 10 } },
+    { mile: 636, name: 'Pearisburg', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { hostel: 25, motel: 60, resupply: 13, meal: 10, laundry: 5 } },
+    { mile: 726, name: 'Daleville', type: 'limited', services: ['grocery', 'restaurant'], mailDrop: true, costs: { motel: 70, resupply: 14, meal: 12, laundry: 6 } },
+    { mile: 864, name: 'Waynesboro', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 30, motel: 65, resupply: 14, meal: 11, laundry: 6 } },
+    { mile: 942, name: 'Front Royal', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { motel: 75, resupply: 15, meal: 12, laundry: 6 } },
+    { mile: 1025, name: 'Harpers Ferry', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 35, motel: 85, resupply: 16, meal: 14, laundry: 7 } },
+    { mile: 1141, name: 'Duncannon', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true, costs: { hostel: 25, resupply: 15, meal: 10 } },
+    { mile: 1207, name: 'Port Clinton', type: 'limited', services: ['convenience'], mailDrop: true, costs: { hostel: 25, resupply: 15 } },
+    { mile: 1290, name: 'Delaware Water Gap', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 35, motel: 80, resupply: 16, meal: 14, laundry: 7 } },
+    { mile: 1353, name: 'Unionville', type: 'limited', services: ['convenience'], mailDrop: false, costs: { resupply: 18 } },
+    { mile: 1409, name: 'Bear Mountain', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: false, costs: { resupply: 20, meal: 15 } },
+    { mile: 1479, name: 'Kent', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { motel: 100, resupply: 18, meal: 16, laundry: 8 } },
+    { mile: 1521, name: 'Salisbury', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { motel: 95, resupply: 17, meal: 15, laundry: 7 } },
+    { mile: 1566, name: 'Great Barrington', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { motel: 100, resupply: 18, meal: 16, laundry: 8 } },
+    { mile: 1595, name: 'Dalton', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true, costs: { resupply: 16, meal: 12 } },
+    { mile: 1650, name: 'Bennington', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { motel: 85, resupply: 16, meal: 14, laundry: 7 } },
+    { mile: 1699, name: 'Manchester', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 40, motel: 110, resupply: 18, meal: 16, laundry: 8 } },
+    { mile: 1742, name: 'Killington', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true, costs: { motel: 90, resupply: 18, meal: 15 } },
+    { mile: 1773, name: 'Hanover', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { motel: 120, resupply: 18, meal: 17, laundry: 8 } },
+    { mile: 1823, name: 'Lincoln', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { hostel: 35, motel: 100, resupply: 17, meal: 15, laundry: 7 } },
+    { mile: 1862, name: 'Franconia', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true, costs: { hostel: 35, resupply: 18, meal: 14 } },
+    { mile: 1897, name: 'Gorham', type: 'town', services: ['grocery', 'outfitter', 'restaurant'], mailDrop: true, costs: { hostel: 35, motel: 85, resupply: 16, meal: 14, laundry: 7 } },
+    { mile: 1940, name: 'Andover', type: 'limited', services: ['convenience'], mailDrop: true, costs: { hostel: 30, resupply: 16 } },
+    { mile: 1976, name: 'Stratton', type: 'limited', services: ['convenience', 'restaurant'], mailDrop: true, costs: { hostel: 32, resupply: 18, meal: 14 } },
+    { mile: 2010, name: 'Caratunk', type: 'limited', services: ['convenience'], mailDrop: true, costs: { hostel: 30, resupply: 18 } },
+    { mile: 2090, name: 'Monson', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { hostel: 35, motel: 80, resupply: 16, meal: 14, laundry: 7 } },
+    { mile: 2198, name: 'Millinocket', type: 'town', services: ['grocery', 'restaurant'], mailDrop: true, costs: { motel: 75, resupply: 15, meal: 12, laundry: 6 } },
   ];
 
   const serviceIcons = {
@@ -84,6 +85,21 @@
   // Weight class
   $: weightClass = foodWeight <= 15 ? 'light' : foodWeight <= 25 ? 'medium' : 'heavy';
   $: weightLabel = weightClass === 'light' ? 'Light Carry' : weightClass === 'medium' ? 'Moderate Carry' : 'Heavy Carry';
+
+  // Town cost estimates for destination
+  $: destCosts = endTown.costs || {};
+  $: cheapestLodging = destCosts.hostel || destCosts.motel || 0;
+  $: hasLodging = destCosts.hostel || destCosts.motel;
+
+  // Estimate a typical town stop: resupply + 2 meals + lodging option
+  $: townStopCostBudget = (destCosts.resupply || 15) * daysToCarry +
+    (destCosts.meal || 12) * 2 +
+    (destCosts.hostel || 30) +
+    (destCosts.laundry || 5);
+  $: townStopCostComfort = (destCosts.resupply || 15) * daysToCarry +
+    (destCosts.meal || 12) * 3 +
+    (destCosts.motel || destCosts.hostel || 50) +
+    (destCosts.laundry || 5);
 
   // Trail mode: next resupply options
   $: nextTowns = towns.filter(t => t.mile > currentMile).slice(0, 4);
@@ -318,6 +334,83 @@
         </div>
       </div>
     </div>
+
+    <!-- Town Cost Estimates -->
+    {#if endTown.costs}
+      <div class="costs-section">
+        <h3 class="section-title">
+          <span class="title-blaze"></span>
+          <span>Town Costs: {endTown.name}</span>
+        </h3>
+
+        <div class="costs-grid">
+          {#if destCosts.hostel}
+            <div class="cost-item">
+              <span class="cost-icon">🛏️</span>
+              <div class="cost-info">
+                <span class="cost-label">Hostel</span>
+                <span class="cost-value">${destCosts.hostel}</span>
+              </div>
+            </div>
+          {/if}
+          {#if destCosts.motel}
+            <div class="cost-item">
+              <span class="cost-icon">🏨</span>
+              <div class="cost-info">
+                <span class="cost-label">Motel</span>
+                <span class="cost-value">${destCosts.motel}</span>
+              </div>
+            </div>
+          {/if}
+          {#if destCosts.resupply}
+            <div class="cost-item">
+              <span class="cost-icon">🛒</span>
+              <div class="cost-info">
+                <span class="cost-label">Resupply/day</span>
+                <span class="cost-value">${destCosts.resupply}</span>
+              </div>
+            </div>
+          {/if}
+          {#if destCosts.meal}
+            <div class="cost-item">
+              <span class="cost-icon">🍽️</span>
+              <div class="cost-info">
+                <span class="cost-label">Meal</span>
+                <span class="cost-value">${destCosts.meal}</span>
+              </div>
+            </div>
+          {/if}
+          {#if destCosts.laundry}
+            <div class="cost-item">
+              <span class="cost-icon">🧺</span>
+              <div class="cost-info">
+                <span class="cost-label">Laundry</span>
+                <span class="cost-value">${destCosts.laundry}</span>
+              </div>
+            </div>
+          {/if}
+        </div>
+
+        <div class="total-estimates">
+          <div class="estimate-card budget">
+            <div class="est-header">
+              <span class="est-label">Budget Stop</span>
+              <span class="est-desc">Hostel + 2 meals + laundry</span>
+            </div>
+            <span class="est-total">${townStopCostBudget}</span>
+          </div>
+          <div class="estimate-card comfort">
+            <div class="est-header">
+              <span class="est-label">Comfort Stop</span>
+              <span class="est-desc">Motel + 3 meals + laundry</span>
+            </div>
+            <span class="est-total">${townStopCostComfort}</span>
+          </div>
+        </div>
+
+        <p class="costs-note">Includes ${(destCosts.resupply || 15) * daysToCarry} food for {daysToCarry}-day carry. Prices are 2024 estimates.</p>
+      </div>
+    {/if}
 
   {:else}
     <!-- Trail Mode -->
@@ -957,6 +1050,115 @@
     color: var(--pine);
   }
 
+  /* Cost Estimates Section */
+  .costs-section {
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.08), rgba(166, 181, 137, 0.02));
+    border-top: 1px solid var(--border);
+  }
+
+  .costs-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .cost-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    text-align: center;
+  }
+
+  .cost-icon {
+    font-size: 1.25rem;
+  }
+
+  .cost-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .cost-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .cost-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .total-estimates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .estimate-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+  }
+
+  .estimate-card.budget {
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+
+  .estimate-card.comfort {
+    background: #fff;
+    border: 2px solid var(--alpine);
+  }
+
+  .est-header {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .est-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .est-desc {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .est-total {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .costs-note {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    font-style: italic;
+  }
+
   /* Trail Mode */
   .trail-mode {
     padding-bottom: 2rem;
@@ -1243,6 +1445,10 @@
     .carry-stats { align-items: center; }
     .carry-details { grid-template-columns: 1fr; }
     .tips-grid { grid-template-columns: 1fr; }
+    .costs-section { padding: 1.5rem; }
+    .costs-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .cost-item { padding: 0.75rem 0.25rem; }
+    .total-estimates { grid-template-columns: 1fr; }
     .resupply-options { grid-template-columns: 1fr; }
     .ref-cards { grid-template-columns: 1fr; }
     .route-section { padding: 1.5rem; }

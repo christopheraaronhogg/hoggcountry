@@ -23,6 +23,7 @@
   // State
   let date = '2026-04-15';
   let mile = 500;
+  let targetMiles = 15; // Target daily mileage
   let mounted = false;
 
   onMount(() => {
@@ -100,6 +101,41 @@
   $: startPct = (sunTimes.sunriseHours / 24) * 100;
   $: endPct = (sunTimes.sunsetHours / 24) * 100;
   $: dayPct = endPct - startPct;
+
+  // Mileage planning calculations
+  // Adjust pace based on terrain (White Mountains = slower)
+  $: terrainMultiplier = (mile > 1750 && mile < 1912) ? 0.6 : 1.0;
+
+  // Hiking paces in mph
+  $: paces = [
+    { label: 'Easy', mph: 2.0 * terrainMultiplier, desc: '2.0 mph' },
+    { label: 'Normal', mph: 2.5 * terrainMultiplier, desc: '2.5 mph' },
+    { label: 'Fast', mph: 3.0 * terrainMultiplier, desc: '3.0 mph' }
+  ];
+
+  // Calculate hiking time and required start times
+  $: mileagePlan = paces.map(p => {
+    const hikingHours = targetMiles / p.mph;
+    // Need to finish 30 min before sunset
+    const latestStart = sunTimes.sunsetHours ? sunTimes.sunsetHours - 0.5 - hikingHours : null;
+    // Wake time = 1 hour before starting to pack up
+    const wakeTime = latestStart ? latestStart - 1 : null;
+    // Can they make it with available daylight?
+    const feasible = latestStart && latestStart >= sunTimes.sunriseHours + 0.5;
+
+    return {
+      ...p,
+      hikingHours: hikingHours.toFixed(1),
+      latestStart: latestStart ? hoursToTime(latestStart) : '--',
+      wakeTime: wakeTime ? hoursToTime(wakeTime) : '--',
+      feasible
+    };
+  });
+
+  // Quick mileage estimate based on available hiking window
+  $: maxMilesEasy = hikingHours * 2.0 * terrainMultiplier;
+  $: maxMilesNormal = hikingHours * 2.5 * terrainMultiplier;
+  $: maxMilesFast = hikingHours * 3.0 * terrainMultiplier;
 
   // Planning tips
   $: tips = generateTips(sunTimes.daylightHours, mile, date);
@@ -243,6 +279,92 @@
         {/each}
       </div>
     {/if}
+  </div>
+
+  <!-- Mileage Planner -->
+  <div class="mileage-section">
+    <h3 class="section-title">
+      <span class="title-blaze"></span>
+      <span>Mileage Planner</span>
+      {#if terrainMultiplier < 1}
+        <span class="terrain-warning">Terrain Adjusted</span>
+      {/if}
+    </h3>
+
+    <!-- Target Miles Input -->
+    <div class="target-input">
+      <div class="target-header">
+        <label class="control-label">Target Miles Today</label>
+        <span class="target-val">{targetMiles} mi</span>
+      </div>
+      <div class="slider-container">
+        <input
+          type="range"
+          min="5"
+          max="30"
+          step="1"
+          bind:value={targetMiles}
+          class="target-slider"
+        />
+      </div>
+      <div class="target-labels">
+        <span>Easy Day</span>
+        <span>Normal</span>
+        <span>Big Miles</span>
+      </div>
+    </div>
+
+    <!-- Schedule Grid -->
+    <div class="schedule-grid">
+      {#each mileagePlan as plan}
+        <div class="schedule-card" class:infeasible={!plan.feasible}>
+          <div class="sched-header">
+            <span class="sched-pace">{plan.label}</span>
+            <span class="sched-mph">{plan.desc}</span>
+          </div>
+          <div class="sched-body">
+            <div class="sched-row">
+              <span class="sched-label">Hiking Time</span>
+              <span class="sched-time">{plan.hikingHours} hrs</span>
+            </div>
+            <div class="sched-row">
+              <span class="sched-label">Latest Start</span>
+              <span class="sched-time highlight">{plan.latestStart}</span>
+            </div>
+            <div class="sched-row">
+              <span class="sched-label">Wake Up</span>
+              <span class="sched-time">{plan.wakeTime}</span>
+            </div>
+          </div>
+          {#if !plan.feasible}
+            <div class="sched-warning">Not enough daylight</div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+
+    <!-- Max Miles Context -->
+    <div class="max-miles-card">
+      <div class="max-header">
+        <span class="max-icon">📊</span>
+        <span class="max-title">Max Miles Today</span>
+      </div>
+      <div class="max-grid">
+        <div class="max-item">
+          <span class="max-val">{maxMilesEasy.toFixed(0)}</span>
+          <span class="max-label">Easy Pace</span>
+        </div>
+        <div class="max-item highlight">
+          <span class="max-val">{maxMilesNormal.toFixed(0)}</span>
+          <span class="max-label">Normal</span>
+        </div>
+        <div class="max-item">
+          <span class="max-val">{maxMilesFast.toFixed(0)}</span>
+          <span class="max-label">Fast Pace</span>
+        </div>
+      </div>
+      <p class="max-note">Based on {hikingHours} hrs hiking window{terrainMultiplier < 1 ? ' (terrain adjusted)' : ''}</p>
+    </div>
   </div>
 </div>
 
@@ -564,6 +686,237 @@
   .tip-icon { font-size: 1.25rem; }
   .tip-text { color: var(--muted); line-height: 1.5; }
 
+  /* Mileage Planner Section */
+  .mileage-section {
+    padding: 2rem;
+    background: #fff;
+    border-top: 1px solid var(--border);
+  }
+
+  .mileage-section .section-title {
+    margin-bottom: 1.5rem;
+  }
+
+  .terrain-warning {
+    margin-left: auto;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    background: var(--terra);
+    color: #fff;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .target-input {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: var(--bg);
+    border-radius: 12px;
+  }
+
+  .target-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.75rem;
+  }
+
+  .target-val {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .target-slider {
+    width: 100%;
+    height: 24px;
+    cursor: pointer;
+    margin: 0;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+
+  .target-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, var(--alpine), var(--pine), var(--terra));
+    border-radius: 3px;
+  }
+
+  .target-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--pine);
+    margin-top: -9px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+
+  .target-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* Schedule Grid */
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .schedule-card {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+  }
+
+  .schedule-card.infeasible {
+    opacity: 0.6;
+    background: #f5f5f5;
+  }
+
+  .sched-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .sched-pace {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+
+  .sched-mph {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .sched-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sched-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .sched-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .sched-time {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .sched-time.highlight {
+    color: var(--pine);
+    font-size: 1rem;
+  }
+
+  .sched-warning {
+    margin-top: 0.5rem;
+    padding: 0.35rem;
+    background: rgba(196, 93, 44, 0.1);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--terra);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Max Miles Card */
+  .max-miles-card {
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.15), rgba(166, 181, 137, 0.05));
+    border: 1px solid var(--alpine);
+    border-radius: 12px;
+  }
+
+  .max-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .max-icon {
+    font-size: 1.25rem;
+  }
+
+  .max-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink);
+  }
+
+  .max-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .max-item {
+    text-align: center;
+    padding: 0.75rem;
+    background: #fff;
+    border-radius: 8px;
+  }
+
+  .max-item.highlight {
+    border: 2px solid var(--alpine);
+  }
+
+  .max-val {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--pine);
+    line-height: 1;
+  }
+
+  .max-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .max-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
   @media (max-width: 600px) {
     .calc-header { padding: 1.5rem; }
     .controls-section { padding: 1.5rem; }
@@ -572,5 +925,9 @@
     .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
     .stat-card:last-child { border-bottom: none; }
     .timeline-container { padding: 1.5rem 1rem; }
+    .mileage-section { padding: 1.5rem 1rem; }
+    .schedule-grid { grid-template-columns: 1fr; }
+    .max-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .max-val { font-size: 1.25rem; }
   }
 </style>
