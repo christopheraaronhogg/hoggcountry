@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:pdf": "node scripts/generate-pdf.js",
+    "build:all": "astro build && node scripts/generate-pdf.js",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -21,5 +23,8 @@
     "svelte": "^5.37.3",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.9.2"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.34.0"
   }
 }

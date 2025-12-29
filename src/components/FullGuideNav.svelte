@@ -68,7 +68,13 @@
   }
 
   function downloadPDF() {
-    window.print();
+    // Direct download of pre-generated PDF
+    const a = document.createElement('a');
+    a.href = '/AT-Field-Guide-2026.pdf';
+    a.download = 'AT-Field-Guide-2026.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   function downloadMarkdown() {
