@@ -145,12 +145,12 @@
   </div>
 
   <div class="sidebar-footer">
+    <button class="toc-link" on:click={scrollToTOC}>
+      <span>↑ Table of Contents</span>
+    </button>
     <button class="download-btn full-width" on:click={openDownloadModal} title="Download Field Guide">
       <span class="download-icon">↓</span>
       <span>Download</span>
-    </button>
-    <button class="toc-link" on:click={scrollToTOC}>
-      <span>↑ Table of Contents</span>
     </button>
   </div>
 </nav>
