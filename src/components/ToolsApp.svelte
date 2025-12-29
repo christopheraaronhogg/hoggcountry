@@ -1,11 +1,34 @@
 <script>
   import { onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
   import MilestoneCalculator from './MilestoneCalculator.svelte';
   import GearCalculator from './GearCalculator.svelte';
   import DaylightCalculator from './DaylightCalculator.svelte';
   import ResupplyCalculator from './ResupplyCalculator.svelte';
   import BudgetCalculator from './BudgetCalculator.svelte';
+
+  // Trail landmarks for mile context
+  const landmarks = [
+    { mile: 0, name: 'Springer Mountain' },
+    { mile: 31, name: 'Neels Gap' },
+    { mile: 78, name: 'NC Border' },
+    { mile: 110, name: 'Franklin' },
+    { mile: 166, name: 'Fontana Dam' },
+    { mile: 206, name: 'Newfound Gap' },
+    { mile: 274, name: 'Hot Springs' },
+    { mile: 386, name: 'Damascus' },
+    { mile: 550, name: 'Pearisburg' },
+    { mile: 702, name: 'Waynesboro' },
+    { mile: 1025, name: 'Harpers Ferry' },
+    { mile: 1099, name: 'Halfway Point' },
+    { mile: 1290, name: 'Delaware Water Gap' },
+    { mile: 1525, name: 'CT Border' },
+    { mile: 1630, name: 'VT Border' },
+    { mile: 1791, name: 'White Mountains' },
+    { mile: 1912, name: 'Maine Border' },
+    { mile: 2090, name: 'Monson' },
+    { mile: 2198, name: 'Katahdin' },
+  ];
 
   const tools = [
     { id: 'milestone', name: 'Milestones', icon: '📍', desc: 'Plan your journey timeline' },
@@ -15,6 +38,22 @@
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
   ];
 
+  // ========== GLOBAL TRAIL CONTEXT ==========
+  let mode = 'planning'; // 'planning' or 'trail'
+  let contextExpanded = true;
+
+  // Planning mode state
+  let startDate = '2026-02-15';
+  let pace = 15;
+  let zeroDaysPerMonth = 4;
+
+  // Trail mode state
+  let currentMile = 500;
+  let tripStartDate = '2026-02-15';
+  let zeroDaysTaken = 5;
+  let targetPace = 15;
+
+  // Tool navigation state
   let activeTool = 'milestone';
   let isTransitioning = false;
   let mounted = false;
@@ -25,14 +64,72 @@
     if (tools.some(t => t.id === hash && !t.disabled)) {
       activeTool = hash;
     }
+    // Load saved context from localStorage
+    const saved = localStorage.getItem('trailContext');
+    if (saved) {
+      try {
+        const ctx = JSON.parse(saved);
+        mode = ctx.mode || 'planning';
+        startDate = ctx.startDate || startDate;
+        pace = ctx.pace || pace;
+        zeroDaysPerMonth = ctx.zeroDaysPerMonth || zeroDaysPerMonth;
+        currentMile = ctx.currentMile || currentMile;
+        tripStartDate = ctx.tripStartDate || tripStartDate;
+        zeroDaysTaken = ctx.zeroDaysTaken || zeroDaysTaken;
+        targetPace = ctx.targetPace || targetPace;
+        contextExpanded = ctx.contextExpanded ?? true;
+      } catch (e) {}
+    }
   });
+
+  // Save context to localStorage when it changes
+  $: if (mounted) {
+    localStorage.setItem('trailContext', JSON.stringify({
+      mode, startDate, pace, zeroDaysPerMonth,
+      currentMile, tripStartDate, zeroDaysTaken, targetPace,
+      contextExpanded
+    }));
+  }
+
+  // Get nearest landmark
+  function getNearestLandmark(mile) {
+    let closest = landmarks[0];
+    let minDist = Math.abs(mile - landmarks[0].mile);
+    for (const lm of landmarks) {
+      const dist = Math.abs(mile - lm.mile);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = lm;
+      }
+    }
+    return closest;
+  }
+
+  // Trail mode calculations
+  function getTodayStr() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function daysBetween(date1, date2) {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
+  }
+
+  $: nearestLandmark = getNearestLandmark(currentMile);
+  $: daysOnTrail = Math.max(1, daysBetween(tripStartDate, getTodayStr()));
+  $: hikingDays = Math.max(1, daysOnTrail - zeroDaysTaken);
+  $: actualPace = (currentMile / hikingDays).toFixed(1);
+  $: percentComplete = ((currentMile / 2198) * 100).toFixed(0);
+
+  // Planning mode calculations
+  $: hikingDaysPlanned = Math.ceil(2198 / pace);
+  $: totalDaysPlanned = Math.ceil(hikingDaysPlanned / (1 - zeroDaysPerMonth / 30));
 
   function switchTool(toolId) {
     if (toolId === activeTool || tools.find(t => t.id === toolId)?.disabled) return;
-
     isTransitioning = true;
     window.history.replaceState(null, '', `#${toolId}`);
-
     setTimeout(() => {
       activeTool = toolId;
       setTimeout(() => {
@@ -42,9 +139,216 @@
   }
 
   $: activeToolData = tools.find(t => t.id === activeTool);
+
+  // Build context object for child components
+  $: trailContext = {
+    mode,
+    // Planning
+    startDate,
+    pace,
+    zeroDaysPerMonth,
+    // Trail
+    currentMile,
+    tripStartDate,
+    zeroDaysTaken,
+    targetPace,
+    // Computed
+    daysOnTrail,
+    hikingDays,
+    actualPace: parseFloat(actualPace),
+    percentComplete: parseFloat(percentComplete),
+    nearestLandmark,
+  };
 </script>
 
 <div class="tools-app" class:mounted>
+  <!-- Trail Context Bar -->
+  <div class="context-bar" class:expanded={contextExpanded}>
+    <!-- Topographic texture overlay -->
+    <div class="topo-texture"></div>
+
+    <!-- Mode Toggle -->
+    <div class="context-header">
+      <div class="mode-switch">
+        <button
+          class="mode-btn"
+          class:active={mode === 'planning'}
+          on:click={() => mode = 'planning'}
+        >
+          <span class="mode-icon">📋</span>
+          <span class="mode-text">Planning</span>
+        </button>
+        <div class="mode-indicator" class:trail={mode === 'trail'}></div>
+        <button
+          class="mode-btn"
+          class:active={mode === 'trail'}
+          on:click={() => mode = 'trail'}
+        >
+          <span class="mode-icon">🥾</span>
+          <span class="mode-text">On Trail</span>
+        </button>
+      </div>
+
+      <button class="expand-toggle" on:click={() => contextExpanded = !contextExpanded}>
+        <span class="toggle-chevron" class:flipped={contextExpanded}>▼</span>
+      </button>
+    </div>
+
+    <!-- Collapsed Summary -->
+    {#if !contextExpanded}
+      <div class="context-summary" transition:fade={{ duration: 150 }}>
+        {#if mode === 'planning'}
+          <span class="summary-item">
+            <span class="sum-icon">📅</span>
+            <span class="sum-val">{new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+          </span>
+          <span class="summary-divider">•</span>
+          <span class="summary-item">
+            <span class="sum-val">{pace}</span>
+            <span class="sum-unit">mi/day</span>
+          </span>
+          <span class="summary-divider">•</span>
+          <span class="summary-item">
+            <span class="sum-val">{totalDaysPlanned}</span>
+            <span class="sum-unit">days total</span>
+          </span>
+        {:else}
+          <span class="summary-item primary">
+            <span class="sum-val">{currentMile}</span>
+            <span class="sum-unit">mi</span>
+          </span>
+          <span class="summary-divider">•</span>
+          <span class="summary-item">
+            <span class="sum-val">{percentComplete}%</span>
+          </span>
+          <span class="summary-divider">•</span>
+          <span class="summary-item">
+            <span class="sum-val">Day {daysOnTrail}</span>
+          </span>
+          <span class="summary-divider">•</span>
+          <span class="summary-item">
+            <span class="sum-val">{actualPace}</span>
+            <span class="sum-unit">mi/day</span>
+          </span>
+        {/if}
+      </div>
+    {/if}
+
+    <!-- Expanded Settings Panel -->
+    {#if contextExpanded}
+      <div class="context-panel" transition:slide={{ duration: 200 }}>
+        {#if mode === 'planning'}
+          <!-- Planning Mode Controls -->
+          <div class="control-grid planning">
+            <div class="ctrl-item">
+              <label class="ctrl-label">Start Date</label>
+              <input type="date" bind:value={startDate} class="ctrl-date" />
+            </div>
+
+            <div class="ctrl-item">
+              <div class="ctrl-header">
+                <label class="ctrl-label">Target Pace</label>
+                <span class="ctrl-val">{pace} <small>mi/day</small></span>
+              </div>
+              <input type="range" min="8" max="25" step="0.5" bind:value={pace} class="ctrl-slider" />
+            </div>
+
+            <div class="ctrl-item">
+              <div class="ctrl-header">
+                <label class="ctrl-label">Zero Days</label>
+                <span class="ctrl-val">{zeroDaysPerMonth} <small>/month</small></span>
+              </div>
+              <input type="range" min="0" max="10" step="1" bind:value={zeroDaysPerMonth} class="ctrl-slider zero" />
+            </div>
+          </div>
+
+          <div class="context-stat-row">
+            <div class="ctx-stat">
+              <span class="ctx-stat-val">{hikingDaysPlanned}</span>
+              <span class="ctx-stat-label">Hiking Days</span>
+            </div>
+            <div class="ctx-stat">
+              <span class="ctx-stat-val">{totalDaysPlanned}</span>
+              <span class="ctx-stat-label">Total Days</span>
+            </div>
+            <div class="ctx-stat">
+              <span class="ctx-stat-val">{totalDaysPlanned - hikingDaysPlanned}</span>
+              <span class="ctx-stat-label">Zero Days</span>
+            </div>
+          </div>
+
+        {:else}
+          <!-- Trail Mode Controls -->
+          <div class="mile-display">
+            <div class="mile-main">
+              <span class="mile-num">{currentMile}</span>
+              <span class="mile-landmark">near {nearestLandmark.name}</span>
+            </div>
+            <div class="mile-pct">
+              <svg viewBox="0 0 36 36" class="progress-ring-small">
+                <circle cx="18" cy="18" r="15.5" class="ring-bg-small" />
+                <circle cx="18" cy="18" r="15.5" class="ring-fill-small"
+                  style="stroke-dasharray: {97.4 * (percentComplete / 100)} 97.4" />
+              </svg>
+              <span class="pct-text">{percentComplete}%</span>
+            </div>
+          </div>
+
+          <div class="mile-slider-container">
+            <input type="range" min="0" max="2198" step="1" bind:value={currentMile} class="mile-slider" />
+            <div class="mile-progress-bar" style="width: {(currentMile / 2198) * 100}%"></div>
+          </div>
+          <div class="mile-endpoints">
+            <span>Springer</span>
+            <span>Katahdin</span>
+          </div>
+
+          <div class="control-grid trail">
+            <div class="ctrl-item">
+              <label class="ctrl-label">Trip Start</label>
+              <input type="date" bind:value={tripStartDate} class="ctrl-date" />
+            </div>
+
+            <div class="ctrl-item">
+              <label class="ctrl-label">Zero Days Taken</label>
+              <div class="ctrl-num-wrap">
+                <input type="number" min="0" max="100" bind:value={zeroDaysTaken} class="ctrl-num" />
+                <span class="ctrl-num-unit">rest days</span>
+              </div>
+            </div>
+
+            <div class="ctrl-item">
+              <label class="ctrl-label">Target Pace</label>
+              <div class="ctrl-num-wrap">
+                <input type="number" min="8" max="30" step="0.5" bind:value={targetPace} class="ctrl-num" />
+                <span class="ctrl-num-unit">mi/day</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="context-stat-row">
+            <div class="ctx-stat">
+              <span class="ctx-stat-val">{daysOnTrail}</span>
+              <span class="ctx-stat-label">Days Out</span>
+            </div>
+            <div class="ctx-stat">
+              <span class="ctx-stat-val">{hikingDays}</span>
+              <span class="ctx-stat-label">Hiking Days</span>
+            </div>
+            <div class="ctx-stat highlight">
+              <span class="ctx-stat-val">{actualPace}</span>
+              <span class="ctx-stat-label">Actual Pace</span>
+            </div>
+            <div class="ctx-stat">
+              <span class="ctx-stat-val">{2198 - currentMile}</span>
+              <span class="ctx-stat-label">Miles Left</span>
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
+  </div>
+
   <!-- Tool Navigation -->
   <nav class="tools-nav">
     {#each tools as tool}
@@ -74,19 +378,19 @@
   <div class="tool-viewport">
     <div class="tool-container" class:transitioning={isTransitioning}>
       <div class="tool-panel" class:hidden={activeTool !== 'milestone'}>
-        <MilestoneCalculator />
+        <MilestoneCalculator {trailContext} />
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'gear'}>
-        <GearCalculator />
+        <GearCalculator {trailContext} />
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'daylight'}>
-        <DaylightCalculator />
+        <DaylightCalculator {trailContext} />
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'resupply'}>
-        <ResupplyCalculator />
+        <ResupplyCalculator {trailContext} />
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'budget'}>
-        <BudgetCalculator />
+        <BudgetCalculator {trailContext} />
       </div>
     </div>
   </div>
@@ -120,7 +424,437 @@
     transform: translateY(0);
   }
 
-  /* Navigation */
+  /* ========== TRAIL CONTEXT BAR ========== */
+  .context-bar {
+    position: relative;
+    background: linear-gradient(135deg, #3d4a38 0%, #2c362a 100%);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .topo-texture {
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 Q25 30 50 50 T100 50' stroke='%23fff' fill='none' stroke-width='0.5'/%3E%3Cpath d='M0 30 Q25 10 50 30 T100 30' stroke='%23fff' fill='none' stroke-width='0.5'/%3E%3Cpath d='M0 70 Q25 50 50 70 T100 70' stroke='%23fff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E");
+    background-size: 80px 80px;
+    pointer-events: none;
+  }
+
+  .context-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Mode Switch */
+  .mode-switch {
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 0.25rem;
+    position: relative;
+  }
+
+  .mode-indicator {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+    width: calc(50% - 0.25rem);
+    height: calc(100% - 0.5rem);
+    background: var(--marker);
+    border-radius: 8px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 2px 8px rgba(240, 224, 0, 0.3);
+  }
+
+  .mode-indicator.trail {
+    transform: translateX(100%);
+  }
+
+  .mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    transition: all 0.2s ease;
+  }
+
+  .mode-icon {
+    font-size: 1rem;
+  }
+
+  .mode-text {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.6);
+    transition: color 0.2s ease;
+  }
+
+  .mode-btn.active .mode-text {
+    color: var(--ink);
+  }
+
+  .expand-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .expand-toggle:hover {
+    background: rgba(255,255,255,0.15);
+  }
+
+  .toggle-chevron {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.7);
+    transition: transform 0.3s ease;
+  }
+
+  .toggle-chevron.flipped {
+    transform: rotate(180deg);
+  }
+
+  /* Context Summary (collapsed) */
+  .context-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0 1.25rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .summary-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+  }
+
+  .summary-item.primary .sum-val {
+    font-size: 1.25rem;
+    color: var(--marker);
+  }
+
+  .sum-icon {
+    font-size: 0.85rem;
+    margin-right: 0.15rem;
+  }
+
+  .sum-val {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .sum-unit {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .summary-divider {
+    color: rgba(255,255,255,0.2);
+    font-size: 0.8rem;
+  }
+
+  /* Context Panel (expanded) */
+  .context-panel {
+    padding: 0 1.25rem 1.25rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .control-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .control-grid.planning {
+    grid-template-columns: 1fr 1.5fr 1fr;
+  }
+
+  .control-grid.trail {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .ctrl-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .ctrl-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .ctrl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .ctrl-val {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--marker);
+  }
+
+  .ctrl-val small {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .ctrl-date {
+    padding: 0.5rem 0.75rem;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  .ctrl-date::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+
+  .ctrl-slider {
+    width: 100%;
+    height: 24px;
+    -webkit-appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .ctrl-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+  }
+
+  .ctrl-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--marker);
+    margin-top: -7px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    cursor: grab;
+  }
+
+  .ctrl-slider.zero::-webkit-slider-thumb {
+    background: var(--terra);
+  }
+
+  .ctrl-num-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ctrl-num {
+    width: 70px;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .ctrl-num-unit {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* Mile Display (Trail Mode) */
+  .mile-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .mile-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+
+  .mile-num {
+    font-family: Oswald, sans-serif;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .mile-landmark {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+  }
+
+  .mile-pct {
+    position: relative;
+    width: 48px;
+    height: 48px;
+  }
+
+  .progress-ring-small {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .ring-bg-small {
+    fill: none;
+    stroke: rgba(255,255,255,0.1);
+    stroke-width: 3;
+  }
+
+  .ring-fill-small {
+    fill: none;
+    stroke: var(--marker);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.3s ease;
+  }
+
+  .pct-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .mile-slider-container {
+    position: relative;
+    height: 32px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .mile-slider {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-appearance: none;
+    background: transparent;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .mile-slider::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .mile-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 28px;
+    border-radius: 4px;
+    background: #fff;
+    margin-top: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    cursor: grab;
+  }
+
+  .mile-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--alpine), var(--pine));
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .mile-endpoints {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.35rem;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Context Stats Row */
+  .context-stat-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .ctx-stat {
+    text-align: center;
+  }
+
+  .ctx-stat.highlight .ctx-stat-val {
+    color: var(--marker);
+  }
+
+  .ctx-stat-val {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
+
+  .ctx-stat-label {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ========== NAVIGATION ========== */
   .tools-nav {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -232,58 +966,6 @@
     display: none;
   }
 
-  /* Coming Soon */
-  .coming-soon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.04);
-  }
-
-  .coming-soon-content {
-    text-align: center;
-    padding: 3rem 2rem;
-  }
-
-  .coming-soon-icon {
-    font-size: 4rem;
-    display: block;
-    margin-bottom: 1.5rem;
-    filter: grayscale(1) opacity(0.5);
-  }
-
-  .coming-soon h3 {
-    font-family: Oswald, sans-serif;
-    font-size: 1.75rem;
-    color: var(--ink);
-    margin: 0 0 0.75rem;
-  }
-
-  .coming-soon p {
-    color: var(--muted);
-    max-width: 32ch;
-    margin: 0 auto 1.5rem;
-    line-height: 1.6;
-  }
-
-  .coming-soon-badge {
-    display: inline-block;
-    padding: 0.4rem 0.8rem;
-    background: var(--bg);
-    border: 1px dashed var(--pine);
-    border-radius: 6px;
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--pine);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
   /* Quick Links */
   .quick-links {
     margin-top: 3rem;
@@ -352,7 +1034,44 @@
     transform: translateX(4px);
   }
 
+  /* ========== RESPONSIVE ========== */
   @media (max-width: 640px) {
+    .context-header {
+      padding: 0.75rem 1rem;
+    }
+
+    .mode-btn {
+      padding: 0.5rem 0.75rem;
+    }
+
+    .mode-text {
+      font-size: 0.7rem;
+    }
+
+    .context-panel {
+      padding: 0 1rem 1rem;
+    }
+
+    .control-grid.planning,
+    .control-grid.trail {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .mile-num {
+      font-size: 2.25rem;
+    }
+
+    .context-stat-row {
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .ctx-stat {
+      flex: 1;
+      min-width: 70px;
+    }
+
     .tools-nav {
       grid-template-columns: repeat(2, 1fr);
       gap: 0.25rem;

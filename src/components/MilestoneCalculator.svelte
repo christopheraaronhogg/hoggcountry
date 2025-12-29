@@ -1,6 +1,9 @@
 <script>
   import { onMount } from 'svelte';
 
+  // Accept global trail context from parent
+  export let trailContext = {};
+
   // Trail sections data
   const sections = [
     { name: 'Georgia', startMile: 0, endMile: 78.5, highlight: 'Sharp climbs, Blood Mountain', emoji: '🏔️' },
@@ -56,26 +59,20 @@
 
   const TOTAL_MILES = 2198;
 
-  // Mode: 'planning' or 'trail'
-  let mode = 'planning';
-
-  // Planning mode state
-  let startDate = '2026-02-15';
-  let pace = 15;
-  let zeroDaysPerMonth = 4; // Expected zero days (full rest) per month
-
-  // Trail mode state
-  let currentMile = 500;
-  let tripStartDate = '2026-02-15';
-  let targetPace = 15; // original planned pace
-  let zeroDaysTaken = 5; // Actual zero days taken so far
+  // Extract values from global trail context (with defaults for SSR)
+  $: mode = trailContext.mode || 'planning';
+  $: startDate = trailContext.startDate || '2026-02-15';
+  $: pace = trailContext.pace || 15;
+  $: zeroDaysPerMonth = trailContext.zeroDaysPerMonth || 4;
+  $: currentMile = trailContext.currentMile || 500;
+  $: tripStartDate = trailContext.tripStartDate || '2026-02-15';
+  $: targetPace = trailContext.targetPace || 15;
+  $: zeroDaysTaken = trailContext.zeroDaysTaken || 5;
 
   let mounted = false;
 
   onMount(() => {
     mounted = true;
-    // In trail mode, default to today's date for trip start calculation
-    // (user can adjust if they want)
   });
 
   // Helper to add days to a date
@@ -315,7 +312,7 @@ Generated at hoggcountry.com/tools`;
 </script>
 
 <div class="milestone-calc">
-  <!-- Header with Mode Toggle -->
+  <!-- Header -->
   <header class="calc-header">
     <div class="header-inner">
       <span class="header-badge">AT 2026 NOBO</span>
@@ -324,84 +321,10 @@ Generated at hoggcountry.com/tools`;
         {mode === 'planning' ? 'Plan your journey from Springer to Katahdin' : 'Track your progress on the trail'}
       </p>
     </div>
-    <div class="mode-toggle">
-      <button
-        class="mode-btn"
-        class:active={mode === 'planning'}
-        on:click={() => mode = 'planning'}
-      >
-        <span class="mode-icon">📋</span>
-        <span class="mode-label">Planning</span>
-      </button>
-      <button
-        class="mode-btn"
-        class:active={mode === 'trail'}
-        on:click={() => mode = 'trail'}
-      >
-        <span class="mode-icon">🥾</span>
-        <span class="mode-label">On Trail</span>
-      </button>
-    </div>
   </header>
 
   {#if mode === 'planning'}
     <!-- ========== PLANNING MODE ========== -->
-    <div class="controls-section">
-      <div class="controls-grid">
-        <div class="control-group">
-          <label class="control-label">Start Date</label>
-          <input
-            type="date"
-            bind:value={startDate}
-            class="date-input"
-          />
-        </div>
-
-        <div class="control-group">
-          <div class="pace-header">
-            <label class="control-label">Avg Pace</label>
-            <span class="pace-val">{pace} <small>mi/day</small></span>
-          </div>
-          <div class="slider-container">
-            <input
-              type="range"
-              min="8"
-              max="25"
-              step="0.5"
-              bind:value={pace}
-              class="pace-slider"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- Zero Days Row -->
-      <div class="zero-days-row">
-        <div class="zero-header">
-          <label class="control-label">Zero Days</label>
-          <span class="zero-val">{zeroDaysPerMonth} <small>/month</small></span>
-        </div>
-        <div class="zero-slider-wrap">
-          <input
-            type="range"
-            min="0"
-            max="10"
-            step="1"
-            bind:value={zeroDaysPerMonth}
-            class="zero-slider"
-          />
-          <div class="zero-labels">
-            <span>0</span>
-            <span class="zero-context">typical: 4-6</span>
-            <span>10</span>
-          </div>
-        </div>
-        <p class="zero-tip">
-          Zero days = full rest days in town. Most hikers take 4-6 per month. This adds <strong>{totalZeroDays}</strong> days to your trip.
-        </p>
-      </div>
-    </div>
-
     <!-- Big Stats -->
     <div class="stats-grid-3">
       <div class="stat-card">
@@ -511,70 +434,6 @@ Generated at hoggcountry.com/tools`;
 
   {:else}
     <!-- ========== TRAIL MODE ========== -->
-    <div class="controls-section trail-controls">
-      <div class="position-input">
-        <label class="control-label">Current Mile Marker</label>
-        <div class="mile-display">
-          <span class="mile-num">{currentMile.toFixed(0)}</span>
-          <span class="mile-landmark">near {nearestLandmark.name}</span>
-        </div>
-        <div class="slider-container mile-slider-wrap">
-          <input
-            type="range"
-            min="0"
-            max="2198"
-            step="1"
-            bind:value={currentMile}
-            class="mile-slider"
-          />
-          <div class="mile-progress" style="width: {percentComplete}%"></div>
-        </div>
-        <div class="mile-labels">
-          <span>Springer</span>
-          <span>Katahdin</span>
-        </div>
-      </div>
-
-      <div class="trail-config">
-        <div class="control-group">
-          <label class="control-label">Trip Start Date</label>
-          <input
-            type="date"
-            bind:value={tripStartDate}
-            class="date-input"
-          />
-        </div>
-        <div class="control-group">
-          <label class="control-label">Original Target Pace</label>
-          <div class="mini-pace">
-            <input
-              type="number"
-              min="8"
-              max="25"
-              step="0.5"
-              bind:value={targetPace}
-              class="pace-input"
-            />
-            <span>mi/day</span>
-          </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label">Zero Days Taken</label>
-          <div class="mini-pace">
-            <input
-              type="number"
-              min="0"
-              max="50"
-              step="1"
-              bind:value={zeroDaysTaken}
-              class="zero-input"
-            />
-            <span>rest days</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Status Dashboard -->
     <div class="trail-dashboard">
       <div class="status-hero">

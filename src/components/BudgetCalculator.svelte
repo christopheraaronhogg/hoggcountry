@@ -1,6 +1,9 @@
 <script>
   import { onMount } from 'svelte';
 
+  // Accept global trail context from parent
+  export let trailContext = {};
+
   const categories = [
     { id: 'food', name: 'Food & Resupply', icon: '🛒', color: '#a6b589' },
     { id: 'lodging', name: 'Lodging', icon: '🏨', color: '#6b8cae' },
@@ -22,7 +25,7 @@
   let newCategory = 'food';
   let newNote = '';
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount, use context startDate as default if available
   onMount(() => {
     mounted = true;
     const saved = localStorage.getItem('at-budget-data');
@@ -30,11 +33,14 @@
       try {
         const data = JSON.parse(saved);
         totalBudget = data.totalBudget || 5000;
-        startDate = data.startDate || '2026-02-15';
+        startDate = data.startDate || trailContext.tripStartDate || trailContext.startDate || '2026-02-15';
         expenses = data.expenses || [];
       } catch (e) {
         console.error('Failed to load budget data:', e);
       }
+    } else if (trailContext.tripStartDate || trailContext.startDate) {
+      // No saved data, use context date as default
+      startDate = trailContext.tripStartDate || trailContext.startDate;
     }
   });
 

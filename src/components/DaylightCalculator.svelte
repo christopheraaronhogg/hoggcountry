@@ -1,6 +1,9 @@
 <script>
   import { onMount } from 'svelte';
 
+  // Accept global trail context from parent (optional)
+  export let trailContext = {};
+
   // Trail sections with mile ranges
   const sections = [
     { name: 'Georgia', startMile: 0, endMile: 78.5, emoji: '🏔️' },
@@ -20,11 +23,18 @@
     { name: 'Maine', startMile: 1912, endMile: 2198, emoji: '🎯' },
   ];
 
-  // State
+  // State - mile initializes from context if in trail mode
   let date = '2026-04-15';
   let mile = 500;
   let targetMiles = 15; // Target daily mileage
   let mounted = false;
+  let initializedFromContext = false;
+
+  // Sync mile from context when in trail mode (one-time init)
+  $: if (!initializedFromContext && trailContext.mode === 'trail' && trailContext.currentMile) {
+    mile = trailContext.currentMile;
+    initializedFromContext = true;
+  }
 
   onMount(() => {
     mounted = true;

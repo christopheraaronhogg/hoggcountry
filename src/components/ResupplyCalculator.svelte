@@ -1,6 +1,9 @@
 <script>
   import { onMount } from 'svelte';
 
+  // Accept global trail context from parent
+  export let trailContext = {};
+
   // Resupply towns with details and cost estimates
   // Costs: hostel = cheap bunk, motel = budget motel, meal = restaurant meal, resupply = groceries/day
   const towns = [
@@ -53,18 +56,17 @@
 
   const TOTAL_MILES = 2198;
 
-  // Mode and state
-  let mode = 'planning'; // 'planning' or 'trail'
+  // Extract values from global trail context (with defaults for SSR)
+  $: mode = trailContext.mode || 'planning';
+  $: pace = trailContext.pace || trailContext.targetPace || 15;
+  $: currentMile = trailContext.currentMile || 200;
+
   let mounted = false;
 
-  // Planning mode state
+  // Planning mode state (local - not in global context)
   let startTownIndex = 0;
   let endTownIndex = 3;
-  let pace = 15;
   let caloriesPerDay = 4000;
-
-  // Trail mode state
-  let currentMile = 200;
 
   onMount(() => {
     mounted = true;
@@ -137,24 +139,6 @@
       <p class="header-sub">
         {mode === 'planning' ? 'Plan your food carries between towns' : 'Find your next resupply'}
       </p>
-    </div>
-    <div class="mode-toggle">
-      <button
-        class="mode-btn"
-        class:active={mode === 'planning'}
-        on:click={() => mode = 'planning'}
-      >
-        <span class="mode-icon">📋</span>
-        <span class="mode-label">Planning</span>
-      </button>
-      <button
-        class="mode-btn"
-        class:active={mode === 'trail'}
-        on:click={() => mode = 'trail'}
-      >
-        <span class="mode-icon">🥾</span>
-        <span class="mode-label">On Trail</span>
-      </button>
     </div>
   </header>
 
@@ -414,37 +398,6 @@
 
   {:else}
     <!-- Trail Mode -->
-    <div class="controls-section trail-mode">
-      <div class="mile-input-section">
-        <label class="control-label">Current Mile</label>
-        <div class="mile-display">
-          <span class="mile-value">{currentMile}</span>
-          <span class="mile-context">near {currentSection.name}</span>
-        </div>
-        <div class="mile-slider-wrap">
-          <input
-            type="range"
-            min="0"
-            max="2198"
-            step="1"
-            bind:value={currentMile}
-            class="mile-slider"
-          />
-          <div class="mile-progress" style="width: {(currentMile / TOTAL_MILES) * 100}%"></div>
-        </div>
-      </div>
-
-      <div class="config-row single">
-        <div class="config-item">
-          <label class="control-label">Your Pace</label>
-          <div class="config-value">
-            <input type="number" bind:value={pace} min="8" max="30" class="num-input" />
-            <span class="config-unit">mi/day</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Next Resupply Options -->
     <div class="next-resupply-section">
       <h3 class="section-title">

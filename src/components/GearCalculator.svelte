@@ -3,6 +3,9 @@
   import { slide } from 'svelte/transition';
   import gearData from '../data/gear.json';
 
+  // Accept global trail context from parent (for future use)
+  export let trailContext = {};
+
   // State
   let season = 'winter'; // 'winter' or 'summer'
   let targetWeight = 18; // Target base weight in lbs
