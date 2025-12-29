@@ -1132,27 +1132,7 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
       window.addEventListener('scroll', handleScroll, { passive: true });
       handleScroll(); // Check initial state
 
-      // Register service worker for offline functionality
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('[Guide] Service Worker registered:', registration.scope);
-
-            // Check for updates
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              newWorker?.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New version available - could show update prompt here
-                  console.log('[Guide] New version available');
-                }
-              });
-            });
-          })
-          .catch((err) => {
-            console.warn('[Guide] Service Worker registration failed:', err);
-          });
-      }
+      // Service worker now registered globally in BaseLayout
     </script>
   </body>
 </html>

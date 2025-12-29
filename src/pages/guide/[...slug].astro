@@ -286,15 +286,4 @@ const description = entry.data.description || `AT Field Guide: ${entry.data.titl
   }
 </style>
 
-<script>
-  // Register service worker for offline functionality
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('[Guide] Service Worker registered');
-      })
-      .catch((err) => {
-        console.warn('[Guide] Service Worker registration failed:', err);
-      });
-  }
-</script>
+<!-- Service worker registered globally in BaseLayout -->

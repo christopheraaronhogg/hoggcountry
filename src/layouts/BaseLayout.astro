@@ -19,6 +19,13 @@ const { title, description = SITE_DESCRIPTION } = Astro.props;
 <html lang="en">
   <head>
     <BaseHead title={title} description={description} />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#4d594a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Hogg Country" />
+    <link rel="apple-touch-icon" href="/guide-icon-192.svg" />
   </head>
   <body>
     <Header />
@@ -26,6 +33,30 @@ const { title, description = SITE_DESCRIPTION } = Astro.props;
       <slot />
     </main>
     <Footer />
-<BackgroundWidget client:only='svelte' />
+    <BackgroundWidget client:only='svelte' />
+
+    <!-- Global Service Worker Registration -->
+    <script is:inline>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('[SW] Registered globally');
+
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // Show subtle update notification
+                    console.log('[SW] New version available - refresh to update');
+                  }
+                });
+              });
+            })
+            .catch((err) => console.warn('[SW] Registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>
