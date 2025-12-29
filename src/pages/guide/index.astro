@@ -644,43 +644,103 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
       /* ===== Guide Footer ===== */
       .guide-footer {
         text-align: center;
-        padding: 4rem 0 2rem;
-        border-top: 2px solid var(--border);
-        margin-top: 3rem;
+        padding: 5rem 0 3rem;
+        margin-top: 4rem;
+        position: relative;
       }
 
-      .footer-blaze {
-        width: 50px;
-        height: 6px;
+      .guide-footer::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 200px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--alpine), transparent);
+      }
+
+      .footer-trail {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+      }
+
+      .trail-blaze {
+        width: 12px;
+        height: 20px;
         background: var(--marker);
-        margin: 0 auto 1.5rem;
-        border-radius: 3px;
+        border-radius: 2px;
+        opacity: 0.9;
+        transform: rotate(-2deg);
+      }
+
+      .trail-blaze:nth-child(2) {
+        transform: rotate(1deg);
+        opacity: 0.7;
+      }
+
+      .trail-blaze:nth-child(3) {
+        transform: rotate(-1deg);
+        opacity: 0.5;
       }
 
       .footer-text {
         font-family: Caveat, cursive;
-        font-size: 1.75rem;
+        font-size: 2.25rem;
         color: var(--pine);
-        margin: 0 0 1rem;
+        margin: 0 0 0.25rem;
+        line-height: 1.2;
       }
 
-      .footer-home {
+      .footer-subtext {
+        font-family: Caveat, cursive;
+        font-size: 1.35rem;
+        color: var(--muted);
+        margin: 0 0 2rem;
+        opacity: 0.8;
+      }
+
+      .footer-divider {
+        width: 40px;
+        height: 2px;
+        background: var(--stone);
+        margin: 0 auto 1.5rem;
+        border-radius: 1px;
+      }
+
+      .footer-link {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.75rem 1.25rem;
-        background: var(--pine);
-        color: #fff;
+        color: var(--muted);
         text-decoration: none;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.02em;
         transition: all 0.2s ease;
       }
 
-      .footer-home:hover {
-        background: var(--ink);
-        transform: translateY(-2px);
+      .footer-link:hover {
+        color: var(--pine);
+      }
+
+      .footer-link:hover .link-arrow {
+        transform: translateX(-3px);
+      }
+
+      .link-arrow {
+        font-size: 1rem;
+        transition: transform 0.2s ease;
+      }
+
+      .link-text {
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.2s ease;
+      }
+
+      .footer-link:hover .link-text {
+        border-bottom-color: var(--alpine);
       }
 
       /* ===== Print Styles ===== */
@@ -1003,11 +1063,17 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
 
         <!-- Footer -->
         <footer class="guide-footer">
-          <div class="footer-blaze"></div>
+          <div class="footer-trail">
+            <span class="trail-blaze"></span>
+            <span class="trail-blaze"></span>
+            <span class="trail-blaze"></span>
+          </div>
           <p class="footer-text">See you on Katahdin.</p>
-          <a href="/" class="footer-home">
-            <span>←</span>
-            <span>Back to Hogg Country</span>
+          <p class="footer-subtext">Happy trails, Dad.</p>
+          <div class="footer-divider"></div>
+          <a href="/" class="footer-link">
+            <span class="link-arrow">←</span>
+            <span class="link-text">hoggcountry.com</span>
           </a>
         </footer>
       </div>
