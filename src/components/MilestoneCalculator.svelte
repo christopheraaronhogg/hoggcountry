@@ -1,8 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
-
   // Accept global trail context from parent
-  export let trailContext = {};
+  let { trailContext = {} } = $props();
 
   // Trail sections data
   const sections = [
@@ -60,18 +58,18 @@
   const TOTAL_MILES = 2198;
 
   // Extract values from global trail context (with defaults for SSR)
-  $: mode = trailContext.mode || 'planning';
-  $: startDate = trailContext.startDate || '2026-02-15';
-  $: pace = trailContext.pace || 15;
-  $: zeroDaysPerMonth = trailContext.zeroDaysPerMonth || 4;
-  $: currentMile = trailContext.currentMile || 500;
-  $: tripStartDate = trailContext.tripStartDate || '2026-02-15';
-  $: targetPace = trailContext.targetPace || 15;
-  $: zeroDaysTaken = trailContext.zeroDaysTaken || 5;
+  let mode = $derived(trailContext.mode || 'planning');
+  let startDate = $derived(trailContext.startDate || '2026-02-15');
+  let pace = $derived(trailContext.pace || 15);
+  let zeroDaysPerMonth = $derived(trailContext.zeroDaysPerMonth || 4);
+  let currentMile = $derived(trailContext.currentMile || 500);
+  let tripStartDate = $derived(trailContext.tripStartDate || '2026-02-15');
+  let targetPace = $derived(trailContext.targetPace || 15);
+  let zeroDaysTaken = $derived(trailContext.zeroDaysTaken || 5);
 
-  let mounted = false;
+  let mounted = $state(false);
 
-  onMount(() => {
+  $effect(() => {
     mounted = true;
   });
 
@@ -149,14 +147,14 @@
   // ========== PLANNING MODE CALCULATIONS ==========
   // Convert zero days per month to zero days per hiking day ratio
   // Assuming ~30 days/month and ~25 hiking days/month at average pace
-  $: zeroDayRatio = zeroDaysPerMonth / 30; // Fraction of days that are zeros
+  let zeroDayRatio = $derived(zeroDaysPerMonth / 30); // Fraction of days that are zeros
 
   // Calculate total calendar days including zeros
   // hikingDays = TOTAL_MILES / pace
   // calendarDays = hikingDays / (1 - zeroDayRatio)
-  $: hikingDaysOnly = Math.ceil(TOTAL_MILES / pace);
-  $: totalDays = Math.ceil(hikingDaysOnly / (1 - zeroDayRatio));
-  $: totalZeroDays = totalDays - hikingDaysOnly;
+  let hikingDaysOnly = $derived(Math.ceil(TOTAL_MILES / pace));
+  let totalDays = $derived(Math.ceil(hikingDaysOnly / (1 - zeroDayRatio)));
+  let totalZeroDays = $derived(totalDays - hikingDaysOnly);
 
   // Helper to get calendar day for a given mile marker (accounting for zeros spread throughout)
   function getCalendarDayForMile(miles) {
@@ -164,7 +162,7 @@
     return Math.ceil(hikingDay / (1 - zeroDayRatio));
   }
 
-  $: calculatedSections = sections.map((section, i) => {
+  let calculatedSections = $derived(sections.map((section, i) => {
     const daysToStart = getCalendarDayForMile(section.startMile);
     const daysToEnd = getCalendarDayForMile(section.endMile);
     const arrivalDate = addDays(startDate, daysToStart);
@@ -188,68 +186,68 @@
       season,
       progress,
     };
-  });
+  }));
 
-  $: summitDate = addDays(startDate, totalDays);
+  let summitDate = $derived(addDays(startDate, totalDays));
 
-  $: calculatedMilestones = milestones.map(m => ({
+  let calculatedMilestones = $derived(milestones.map(m => ({
     ...m,
     date: addDays(startDate, getCalendarDayForMile(m.miles)),
     day: getCalendarDayForMile(m.miles),
-  }));
+  })));
 
   // ========== TRAIL MODE CALCULATIONS ==========
-  $: todayStr = getTodayStr();
-  $: daysOnTrail = Math.max(1, daysBetween(tripStartDate, todayStr));
-  $: hikingDaysActual = Math.max(1, daysOnTrail - zeroDaysTaken);
+  let todayStr = $derived(getTodayStr());
+  let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, todayStr)));
+  let hikingDaysActual = $derived(Math.max(1, daysOnTrail - zeroDaysTaken));
 
   // Two pace metrics: overall (calendar) and hiking-only
-  $: actualPaceOverall = currentMile / daysOnTrail; // Calendar pace (lower)
-  $: actualPaceHiking = currentMile / hikingDaysActual; // Hiking day pace (true pace)
-  $: actualPace = actualPaceOverall; // For display compatibility
+  let actualPaceOverall = $derived(currentMile / daysOnTrail); // Calendar pace (lower)
+  let actualPaceHiking = $derived(currentMile / hikingDaysActual); // Hiking day pace (true pace)
+  let actualPace = $derived(actualPaceOverall); // For display compatibility
 
-  $: milesRemaining = TOTAL_MILES - currentMile;
-  $: percentComplete = (currentMile / TOTAL_MILES) * 100;
+  let milesRemaining = $derived(TOTAL_MILES - currentMile);
+  let percentComplete = $derived((currentMile / TOTAL_MILES) * 100);
 
   // Zero day frequency so far
-  $: zeroDayFrequency = daysOnTrail > 0 ? (zeroDaysTaken / daysOnTrail) * 30 : 0; // zeros per 30 days
+  let zeroDayFrequency = $derived(daysOnTrail > 0 ? (zeroDaysTaken / daysOnTrail) * 30 : 0); // zeros per 30 days
 
   // Projected finish at current pace (assuming same zero day pattern continues)
-  $: hikingDaysRemaining = actualPaceHiking > 0 ? Math.ceil(milesRemaining / actualPaceHiking) : 999;
-  $: projectedZeroDaysRemaining = Math.round(hikingDaysRemaining * (zeroDaysTaken / hikingDaysActual));
-  $: daysRemaining = hikingDaysRemaining + projectedZeroDaysRemaining;
-  $: projectedFinish = addDays(todayStr, daysRemaining);
+  let hikingDaysRemaining = $derived(actualPaceHiking > 0 ? Math.ceil(milesRemaining / actualPaceHiking) : 999);
+  let projectedZeroDaysRemaining = $derived(Math.round(hikingDaysRemaining * (zeroDaysTaken / hikingDaysActual)));
+  let daysRemaining = $derived(hikingDaysRemaining + projectedZeroDaysRemaining);
+  let projectedFinish = $derived(addDays(todayStr, daysRemaining));
 
   // Original plan finish (using same zero day assumption from planning)
-  $: originalHikingDays = Math.ceil(TOTAL_MILES / targetPace);
-  $: originalTotalDays = Math.ceil(originalHikingDays * 1.15); // Assume ~4 zeros/month
-  $: originalFinish = addDays(tripStartDate, originalTotalDays);
-  $: originalDayForCurrentMile = Math.ceil(Math.ceil(currentMile / targetPace) * 1.15);
+  let originalHikingDays = $derived(Math.ceil(TOTAL_MILES / targetPace));
+  let originalTotalDays = $derived(Math.ceil(originalHikingDays * 1.15)); // Assume ~4 zeros/month
+  let originalFinish = $derived(addDays(tripStartDate, originalTotalDays));
+  let originalDayForCurrentMile = $derived(Math.ceil(Math.ceil(currentMile / targetPace) * 1.15));
 
   // Ahead or behind
-  $: daysAheadBehind = originalDayForCurrentMile - daysOnTrail;
-  $: statusLabel = daysAheadBehind > 0
+  let daysAheadBehind = $derived(originalDayForCurrentMile - daysOnTrail);
+  let statusLabel = $derived(daysAheadBehind > 0
     ? `${daysAheadBehind} day${daysAheadBehind !== 1 ? 's' : ''} ahead`
     : daysAheadBehind < 0
       ? `${Math.abs(daysAheadBehind)} day${Math.abs(daysAheadBehind) !== 1 ? 's' : ''} behind`
-      : 'Right on schedule';
-  $: statusColor = daysAheadBehind > 0 ? 'var(--alpine)' : daysAheadBehind < 0 ? 'var(--terra)' : 'var(--pine)';
+      : 'Right on schedule');
+  let statusColor = $derived(daysAheadBehind > 0 ? 'var(--alpine)' : daysAheadBehind < 0 ? 'var(--terra)' : 'var(--pine)');
 
   // Pace needed to hit original target date
-  $: daysUntilTarget = daysBetween(todayStr, originalFinish.toISOString().split('T')[0]);
-  $: paceToHitTarget = daysUntilTarget > 0 ? (milesRemaining / daysUntilTarget).toFixed(1) : '—';
+  let daysUntilTarget = $derived(daysBetween(todayStr, originalFinish.toISOString().split('T')[0]));
+  let paceToHitTarget = $derived(daysUntilTarget > 0 ? (milesRemaining / daysUntilTarget).toFixed(1) : '—');
 
   // Current section and next milestone
-  $: currentSection = getCurrentSection(currentMile);
-  $: milesToSectionEnd = currentSection.endMile - currentMile;
-  $: nearestLandmark = getNearestLandmark(currentMile);
+  let currentSection = $derived(getCurrentSection(currentMile));
+  let milesToSectionEnd = $derived(currentSection.endMile - currentMile);
+  let nearestLandmark = $derived(getNearestLandmark(currentMile));
 
   // Next upcoming milestone
-  $: nextMilestone = milestones.find(m => m.miles > currentMile) || null;
-  $: milesToNextMilestone = nextMilestone ? nextMilestone.miles - currentMile : 0;
+  let nextMilestone = $derived(milestones.find(m => m.miles > currentMile) || null);
+  let milesToNextMilestone = $derived(nextMilestone ? nextMilestone.miles - currentMile : 0);
 
   // Remaining sections (including current, partially)
-  $: remainingSections = sections.filter(s => s.endMile > currentMile).map((section, i) => {
+  let remainingSections = $derived(sections.filter(s => s.endMile > currentMile).map((section, i) => {
     const effectiveStart = Math.max(section.startMile, currentMile);
     const milesInSection = section.endMile - effectiveStart;
     const daysToComplete = Math.ceil(milesInSection / actualPace);
@@ -264,7 +262,7 @@
       season,
       isCurrent: currentMile >= section.startMile && currentMile < section.endMile,
     };
-  });
+  }));
 
   // Generate shareable text (works for both modes)
   function generateShareText() {
@@ -616,7 +614,7 @@ Generated at hoggcountry.com/tools`;
 
   <!-- Action Footer -->
   <div class="action-footer">
-    <button class="share-btn" on:click={generateShareText}>
+    <button class="share-btn" onclick={generateShareText}>
       {mode === 'planning' ? 'Copy Plan to Clipboard' : 'Share Trail Update'}
     </button>
   </div>

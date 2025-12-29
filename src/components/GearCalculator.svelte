@@ -3,14 +3,14 @@
   import { slide } from 'svelte/transition';
   import gearData from '../data/gear.json';
 
-  // Accept global trail context from parent (for future use)
-  export let trailContext = {};
+  // Accept global trail context from parent
+  let { trailContext = {} } = $props();
 
-  // State
-  let season = 'winter'; // 'winter' or 'summer'
-  let targetWeight = 18; // Target base weight in lbs
-  let mounted = false;
-  let expandedCategory = null;
+  // State (Svelte 5 $state)
+  let season = $state('winter'); // 'winter' or 'summer'
+  let targetWeight = $state(18); // Target base weight in lbs
+  let mounted = $state(false);
+  let expandedCategory = $state(null);
 
   onMount(() => {
     mounted = true;
@@ -45,69 +45,85 @@
     return result;
   }
 
-  // Calculate weights
-  $: seasonItems = getSeasonItems(gearData.items, season);
+  // Derived values (Svelte 5 $derived)
+  let seasonItems = $derived(getSeasonItems(gearData.items, season));
 
-  $: baseWeightOz = seasonItems
-    .filter(item => !item.worn)
-    .reduce((sum, item) => sum + item.weight, 0);
+  let baseWeightOz = $derived(
+    seasonItems
+      .filter(item => !item.worn)
+      .reduce((sum, item) => sum + item.weight, 0)
+  );
 
-  $: wornWeightOz = seasonItems
-    .filter(item => item.worn)
-    .reduce((sum, item) => sum + item.weight, 0);
+  let wornWeightOz = $derived(
+    seasonItems
+      .filter(item => item.worn)
+      .reduce((sum, item) => sum + item.weight, 0)
+  );
 
-  $: baseWeightLbs = baseWeightOz / 16;
-  $: wornWeightLbs = wornWeightOz / 16;
-  $: totalWeightLbs = baseWeightLbs + wornWeightLbs;
+  let baseWeightLbs = $derived(baseWeightOz / 16);
+  let wornWeightLbs = $derived(wornWeightOz / 16);
+  let totalWeightLbs = $derived(baseWeightLbs + wornWeightLbs);
 
   // Weight class
-  $: weightClass = baseWeightLbs < 10 ? 'Ultralight'
+  let weightClass = $derived(
+    baseWeightLbs < 10 ? 'Ultralight'
     : baseWeightLbs < 15 ? 'Lightweight'
     : baseWeightLbs < 20 ? 'Traditional'
-    : 'Heavy';
+    : 'Heavy'
+  );
 
-  $: weightClassColor = baseWeightLbs < 10 ? '#22c55e'
+  let weightClassColor = $derived(
+    baseWeightLbs < 10 ? '#22c55e'
     : baseWeightLbs < 15 ? 'var(--alpine)'
     : baseWeightLbs < 20 ? 'var(--terra)'
-    : '#dc2626';
+    : '#dc2626'
+  );
 
   // Group items by category
-  $: itemsByCategory = seasonItems.reduce((acc, item) => {
-    if (!acc[item.category]) acc[item.category] = [];
-    acc[item.category].push(item);
-    return acc;
-  }, {});
+  let itemsByCategory = $derived(
+    seasonItems.reduce((acc, item) => {
+      if (!acc[item.category]) acc[item.category] = [];
+      acc[item.category].push(item);
+      return acc;
+    }, {})
+  );
 
   // Category weights
-  $: categoryWeights = Object.entries(itemsByCategory).map(([catId, items]) => {
-    const weight = items.filter(i => !i.worn).reduce((sum, i) => sum + i.weight, 0);
-    return {
-      id: catId,
-      ...categories[catId],
-      weight,
-      weightLbs: weight / 16,
-      items: items.filter(i => !i.worn),
-      wornItems: items.filter(i => i.worn)
-    };
-  }).filter(c => c.weight > 0 || c.wornItems.length > 0).sort((a, b) => b.weight - a.weight);
+  let categoryWeights = $derived(
+    Object.entries(itemsByCategory).map(([catId, items]) => {
+      const weight = items.filter(i => !i.worn).reduce((sum, i) => sum + i.weight, 0);
+      return {
+        id: catId,
+        ...categories[catId],
+        weight,
+        weightLbs: weight / 16,
+        items: items.filter(i => !i.worn),
+        wornItems: items.filter(i => i.worn)
+      };
+    }).filter(c => c.weight > 0 || c.wornItems.length > 0).sort((a, b) => b.weight - a.weight)
+  );
 
   // Max category weight for bar scaling
-  $: maxCategoryWeight = Math.max(...categoryWeights.map(c => c.weight), 1);
+  let maxCategoryWeight = $derived(Math.max(...categoryWeights.map(c => c.weight), 1));
 
   // Big 3 calculation (shelter, sleep, pack)
-  $: big3Categories = ['shelter', 'sleep', 'pack'];
-  $: big3Weight = categoryWeights
-    .filter(c => big3Categories.includes(c.id))
-    .reduce((sum, c) => sum + c.weight, 0);
-  $: big3WeightLbs = big3Weight / 16;
-  $: big3Breakdown = big3Categories.map(catId => {
-    const cat = categoryWeights.find(c => c.id === catId);
-    return cat || { id: catId, name: categories[catId]?.name || catId, weight: 0, icon: categories[catId]?.icon || '?' };
-  });
-  $: big3Percent = baseWeightOz > 0 ? (big3Weight / baseWeightOz) * 100 : 0;
+  const big3Categories = ['shelter', 'sleep', 'pack'];
+  let big3Weight = $derived(
+    categoryWeights
+      .filter(c => big3Categories.includes(c.id))
+      .reduce((sum, c) => sum + c.weight, 0)
+  );
+  let big3WeightLbs = $derived(big3Weight / 16);
+  let big3Breakdown = $derived(
+    big3Categories.map(catId => {
+      const cat = categoryWeights.find(c => c.id === catId);
+      return cat || { id: catId, name: categories[catId]?.name || catId, weight: 0, icon: categories[catId]?.icon || '?' };
+    })
+  );
+  let big3Percent = $derived(baseWeightOz > 0 ? (big3Weight / baseWeightOz) * 100 : 0);
 
   // Weight tips based on current weights
-  $: weightTips = (() => {
+  let weightTips = $derived.by(() => {
     const tips = [];
     const shelterCat = categoryWeights.find(c => c.id === 'shelter');
     const sleepCat = categoryWeights.find(c => c.id === 'sleep');
@@ -132,13 +148,13 @@
       tips.push({ icon: '✅', text: 'Solid lightweight setup—enjoy the miles!' });
     }
     return tips;
-  })();
+  });
 
   // Target weight in oz
-  $: targetWeightOz = targetWeight * 16;
+  let targetWeightOz = $derived(targetWeight * 16);
 
   // Calculate fit status
-  $: itemFitStatus = (() => {
+  let itemFitStatus = $derived.by(() => {
     const status = {};
     let cumulative = 0;
 
@@ -159,7 +175,7 @@
     });
 
     return status;
-  })();
+  });
 
   function toggleCategory(catId) {
     expandedCategory = expandedCategory === catId ? null : catId;
@@ -190,18 +206,18 @@
       <div class="control-group">
         <label class="control-label">Season Profile</label>
         <div class="toggle-container">
-          <button 
-            class="toggle-btn" 
-            class:active={season === 'winter'} 
-            on:click={() => season = 'winter'}
+          <button
+            class="toggle-btn"
+            class:active={season === 'winter'}
+            onclick={() => season = 'winter'}
           >
             <span class="toggle-icon">❄️</span>
             <span>Winter Start</span>
           </button>
-          <button 
-            class="toggle-btn" 
-            class:active={season === 'summer'} 
-            on:click={() => season = 'summer'}
+          <button
+            class="toggle-btn"
+            class:active={season === 'summer'}
+            onclick={() => season = 'summer'}
           >
             <span class="toggle-icon">☀️</span>
             <span>Summer</span>
@@ -310,7 +326,7 @@
     <div class="timeline-list">
       {#each categoryWeights as cat}
         <div class="category-card" class:expanded={expandedCategory === cat.id}>
-          <button class="category-header" on:click={() => toggleCategory(cat.id)}>
+          <button class="category-header" onclick={() => toggleCategory(cat.id)}>
             <span class="cat-icon">{cat.icon}</span>
             <div class="cat-info">
               <div class="cat-top">

@@ -2,10 +2,9 @@
   import { onMount } from 'svelte';
   import DownloadModal from './DownloadModal.svelte';
 
-  export let markdownContent = '';
-  export let variant = 'default'; // 'default' | 'header' | 'toc'
+  let { markdownContent = '', variant = 'default' } = $props(); // 'default' | 'header' | 'toc'
 
-  let isModalOpen = false;
+  let isModalOpen = $state(false);
 
   function openModal() {
     isModalOpen = true;
@@ -31,7 +30,7 @@
 </script>
 
 {#if variant === 'toc'}
-  <button class="toc-download-btn" on:click={triggerModal}>
+  <button class="toc-download-btn" onclick={triggerModal}>
     <span class="btn-icon">↓</span>
     <span>Download Guide</span>
   </button>
@@ -43,7 +42,7 @@
     {markdownContent}
   />
 {:else}
-  <button class="download-btn" on:click={triggerModal}>
+  <button class="download-btn" onclick={triggerModal}>
     <span class="btn-icon">↓</span>
     <span>Download</span>
   </button>

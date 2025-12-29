@@ -1,14 +1,13 @@
 <script>
   import { onMount } from 'svelte';
 
-  export let chapters = [];
-  export let markdownContent = '';
+  let { chapters = [], markdownContent = '' } = $props();
 
-  let activeChapter = '';
-  let progress = 0;
-  let showMobileNav = false;
-  let showBackToTop = false;
-  let headerHidden = false;
+  let activeChapter = $state('');
+  let progress = $state(0);
+  let showMobileNav = $state(false);
+  let showBackToTop = $state(false);
+  let headerHidden = $state(false);
 
   onMount(() => {
     // Watch for header wrapper visibility changes
@@ -83,8 +82,8 @@
   }
 
   // Separate main chapters from quick refs
-  $: mainChapters = chapters.filter(c => !c.data.quickRef);
-  $: quickRefs = chapters.filter(c => c.data.quickRef);
+  let mainChapters = $derived(chapters.filter(c => !c.data.quickRef));
+  let quickRefs = $derived(chapters.filter(c => c.data.quickRef));
 </script>
 
 <!-- Progress Bar -->
@@ -116,7 +115,7 @@
           <button
             class="toc-item"
             class:active={activeChapter === chapter.id}
-            on:click={() => scrollToChapter(chapter.id)}
+            onclick={() => scrollToChapter(chapter.id)}
           >
             <span class="toc-number">{String(i).padStart(2, '0')}</span>
             <span class="toc-text">{chapter.data.title}</span>
@@ -134,7 +133,7 @@
             <button
               class="toc-item toc-item-quick"
               class:active={activeChapter === ref.id}
-              on:click={() => scrollToChapter(ref.id)}
+              onclick={() => scrollToChapter(ref.id)}
             >
               <span class="toc-text">{ref.data.title}</span>
             </button>
@@ -145,10 +144,10 @@
   </div>
 
   <div class="sidebar-footer">
-    <button class="toc-link" on:click={scrollToTOC}>
+    <button class="toc-link" onclick={scrollToTOC}>
       <span>↑ Table of Contents</span>
     </button>
-    <button class="download-btn full-width" on:click={openDownloadModal} title="Download Field Guide">
+    <button class="download-btn full-width" onclick={openDownloadModal} title="Download Field Guide">
       <span class="download-icon">↓</span>
       <span>Download</span>
     </button>
@@ -159,7 +158,7 @@
 <button
   class="mobile-nav-toggle"
   class:open={showMobileNav}
-  on:click={() => showMobileNav = !showMobileNav}
+  onclick={() => showMobileNav = !showMobileNav}
   aria-label="Toggle navigation"
 >
   <span class="toggle-icon">☰</span>
@@ -168,16 +167,16 @@
 
 <!-- Mobile Nav Drawer -->
 {#if showMobileNav}
-  <div class="mobile-overlay" on:click={() => showMobileNav = false}></div>
+  <div class="mobile-overlay" onclick={() => showMobileNav = false}></div>
   <div class="mobile-drawer">
     <div class="drawer-header">
       <span>Field Guide Contents</span>
-      <button class="drawer-close" on:click={() => showMobileNav = false}>×</button>
+      <button class="drawer-close" onclick={() => showMobileNav = false}>×</button>
     </div>
     <div class="drawer-scroll">
       <!-- Download button at top of mobile drawer -->
       <div class="drawer-downloads">
-        <button class="drawer-download-btn" on:click={openDownloadModal}>
+        <button class="drawer-download-btn" onclick={openDownloadModal}>
           <span>↓</span> Download Guide
         </button>
       </div>
@@ -189,7 +188,7 @@
             <button
               class="drawer-item"
               class:active={activeChapter === chapter.id}
-              on:click={() => scrollToChapter(chapter.id)}
+              onclick={() => scrollToChapter(chapter.id)}
             >
               <span class="drawer-number">{String(i).padStart(2, '0')}</span>
               <span class="drawer-text">{chapter.data.title}</span>
@@ -206,7 +205,7 @@
               <button
                 class="drawer-item"
                 class:active={activeChapter === ref.id}
-                on:click={() => scrollToChapter(ref.id)}
+                onclick={() => scrollToChapter(ref.id)}
               >
                 <span class="drawer-text">{ref.data.title}</span>
               </button>
@@ -220,7 +219,7 @@
 
 <!-- Back to Top -->
 {#if showBackToTop}
-  <button class="back-to-top" on:click={scrollToTop} aria-label="Back to top">
+  <button class="back-to-top" onclick={scrollToTop} aria-label="Back to top">
     <span class="top-arrow">↑</span>
     <span class="top-label">Top</span>
   </button>

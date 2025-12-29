@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
 
   // Accept global trail context from parent
-  export let trailContext = {};
+  let { trailContext = {} } = $props();
 
   // Resupply towns with details and cost estimates
   // Costs: hostel = cheap bunk, motel = budget motel, meal = restaurant meal, resupply = groceries/day
@@ -57,58 +57,58 @@
   const TOTAL_MILES = 2198;
 
   // Extract values from global trail context (with defaults for SSR)
-  $: mode = trailContext.mode || 'planning';
-  $: pace = trailContext.pace || trailContext.targetPace || 15;
-  $: currentMile = trailContext.currentMile || 200;
+  let mode = $derived(trailContext.mode || 'planning');
+  let pace = $derived(trailContext.pace || trailContext.targetPace || 15);
+  let currentMile = $derived(trailContext.currentMile || 200);
 
-  let mounted = false;
+  let mounted = $state(false);
 
   // Planning mode state (local - not in global context)
-  let startTownIndex = 0;
-  let endTownIndex = 3;
-  let caloriesPerDay = 4000;
+  let startTownIndex = $state(0);
+  let endTownIndex = $state(3);
+  let caloriesPerDay = $state(4000);
 
   onMount(() => {
     mounted = true;
   });
 
   // Calculations
-  $: lbsPerDay = (caloriesPerDay / 1000) * 1.5; // ~1.5 lbs per 1000 calories
-  $: costPerDay = 12; // Average $12/day for food
+  let lbsPerDay = $derived((caloriesPerDay / 1000) * 1.5); // ~1.5 lbs per 1000 calories
+  let costPerDay = $derived(12); // Average $12/day for food
 
   // Planning mode calculations
-  $: startTown = towns[startTownIndex];
-  $: endTown = towns[endTownIndex];
-  $: distance = endTown.mile - startTown.mile;
-  $: daysToCarry = Math.ceil(distance / pace);
-  $: foodWeight = (daysToCarry * lbsPerDay).toFixed(1);
-  $: estimatedCost = (daysToCarry * costPerDay).toFixed(0);
+  let startTown = $derived(towns[startTownIndex]);
+  let endTown = $derived(towns[endTownIndex]);
+  let distance = $derived(endTown.mile - startTown.mile);
+  let daysToCarry = $derived(Math.ceil(distance / pace));
+  let foodWeight = $derived((daysToCarry * lbsPerDay).toFixed(1));
+  let estimatedCost = $derived((daysToCarry * costPerDay).toFixed(0));
 
   // Weight class
-  $: weightClass = foodWeight <= 15 ? 'light' : foodWeight <= 25 ? 'medium' : 'heavy';
-  $: weightLabel = weightClass === 'light' ? 'Light Carry' : weightClass === 'medium' ? 'Moderate Carry' : 'Heavy Carry';
+  let weightClass = $derived(foodWeight <= 15 ? 'light' : foodWeight <= 25 ? 'medium' : 'heavy');
+  let weightLabel = $derived(weightClass === 'light' ? 'Light Carry' : weightClass === 'medium' ? 'Moderate Carry' : 'Heavy Carry');
 
   // Town cost estimates for destination
-  $: destCosts = endTown.costs || {};
-  $: cheapestLodging = destCosts.hostel || destCosts.motel || 0;
-  $: hasLodging = destCosts.hostel || destCosts.motel;
+  let destCosts = $derived(endTown.costs || {});
+  let cheapestLodging = $derived(destCosts.hostel || destCosts.motel || 0);
+  let hasLodging = $derived(destCosts.hostel || destCosts.motel);
 
   // Estimate a typical town stop: resupply + 2 meals + lodging option
-  $: townStopCostBudget = (destCosts.resupply || 15) * daysToCarry +
+  let townStopCostBudget = $derived((destCosts.resupply || 15) * daysToCarry +
     (destCosts.meal || 12) * 2 +
     (destCosts.hostel || 30) +
-    (destCosts.laundry || 5);
-  $: townStopCostComfort = (destCosts.resupply || 15) * daysToCarry +
+    (destCosts.laundry || 5));
+  let townStopCostComfort = $derived((destCosts.resupply || 15) * daysToCarry +
     (destCosts.meal || 12) * 3 +
     (destCosts.motel || destCosts.hostel || 50) +
-    (destCosts.laundry || 5);
+    (destCosts.laundry || 5));
 
   // Trail mode: next resupply options
-  $: nextTowns = towns.filter(t => t.mile > currentMile).slice(0, 4);
-  $: currentSection = towns.filter(t => t.mile <= currentMile).pop() || towns[0];
+  let nextTowns = $derived(towns.filter(t => t.mile > currentMile).slice(0, 4));
+  let currentSection = $derived(towns.filter(t => t.mile <= currentMile).pop() || towns[0]);
 
   // Get towns between start and end for planning visualization
-  $: townsBetween = towns.filter(t => t.mile > startTown.mile && t.mile < endTown.mile);
+  let townsBetween = $derived(towns.filter(t => t.mile > startTown.mile && t.mile < endTown.mile));
 
   function getTypeColor(type) {
     switch(type) {

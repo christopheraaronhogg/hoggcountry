@@ -1,18 +1,18 @@
 <script>
   import { onMount } from 'svelte';
 
-  export let chapters = [];
+  let { chapters = [] } = $props();
 
-  let query = '';
-  let isOpen = false;
-  let results = [];
-  let selectedIndex = 0;
-  let inputEl;
-  let indexLoaded = false;
-  let offlineReady = false;
+  let query = $state('');
+  let isOpen = $state(false);
+  let results = $state([]);
+  let selectedIndex = $state(0);
+  let inputEl = $state(null);
+  let indexLoaded = $state(false);
+  let offlineReady = $state(false);
 
   // Search index loaded from pre-built JSON (works offline)
-  let contentIndex = [];
+  let contentIndex = $state([]);
 
   onMount(async () => {
     // Load pre-built search index (cached by service worker for offline use)
@@ -119,7 +119,7 @@
     selectedIndex = 0;
   }
 
-  $: search(query);
+  $effect(() => { search(query); });
 
   function scrollToResult(result) {
     const element = document.getElementById(result.id);
@@ -167,7 +167,7 @@
   }
 </script>
 
-<svelte:window on:click={handleClickOutside} />
+<svelte:window onclick={handleClickOutside} />
 
 <div class="guide-search-container">
   <div class="search-input-wrapper">
@@ -177,8 +177,8 @@
       placeholder={offlineReady ? "Search (works offline)" : "Search the guide..."}
       bind:value={query}
       bind:this={inputEl}
-      on:keydown={handleKeydown}
-      on:focus={() => query.length >= 2 && (isOpen = true)}
+      onkeydown={handleKeydown}
+      onfocus={() => query.length >= 2 && (isOpen = true)}
       class="search-input"
       aria-label="Search guide content"
     />
@@ -186,7 +186,7 @@
       <span class="offline-badge" title="Search works offline">✓</span>
     {/if}
     {#if query}
-      <button class="clear-btn" on:click={() => { query = ''; isOpen = false; }} aria-label="Clear search">×</button>
+      <button class="clear-btn" onclick={() => { query = ''; isOpen = false; }} aria-label="Clear search">×</button>
     {/if}
   </div>
 
@@ -197,8 +197,8 @@
           <button
             class="result-item"
             class:selected={i === selectedIndex}
-            on:click={() => scrollToResult(result)}
-            on:mouseenter={() => selectedIndex = i}
+            onclick={() => scrollToResult(result)}
+            onmouseenter={() => selectedIndex = i}
           >
             <div class="result-header">
               <span class="result-title">{@html highlightMatch(result.title, result.matchedTerms)}</span>

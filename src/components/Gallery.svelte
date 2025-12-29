@@ -1,6 +1,7 @@
 <script lang="ts">
-  export let images: { src: string; alt?: string }[] = [];
-  let lightboxIndex: number | null = null;
+  let { images = [] }: { images: { src: string; alt?: string }[] } = $props();
+  let lightboxIndex: number | null = $state(null);
+
   function open(i: number) { lightboxIndex = i; }
   function close() { lightboxIndex = null; }
   function next() { if (lightboxIndex !== null) lightboxIndex = (lightboxIndex + 1) % images.length; }
@@ -9,18 +10,18 @@
 
 <div class="grid">
   {#each images as img, i}
-    <button class="thumb" on:click={() => open(i)}>
+    <button class="thumb" onclick={() => open(i)}>
       <img loading="lazy" src={img.src} alt={img.alt || ''} />
     </button>
   {/each}
 </div>
 
 {#if lightboxIndex !== null}
-  <div class="overlay" role="dialog" aria-modal="true" on:click|self={close}>
-    <button class="close" on:click={close} aria-label="Close">×</button>
-    <button class="nav left" on:click={prev} aria-label="Previous">‹</button>
+  <div class="overlay" role="dialog" aria-modal="true" onclick={(e) => e.target === e.currentTarget && close()}>
+    <button class="close" onclick={close} aria-label="Close">×</button>
+    <button class="nav left" onclick={prev} aria-label="Previous">‹</button>
     <img class="large" src={images[lightboxIndex].src} alt={images[lightboxIndex].alt || ''} />
-    <button class="nav right" on:click={next} aria-label="Next">›</button>
+    <button class="nav right" onclick={next} aria-label="Next">›</button>
   </div>
 {/if}
 

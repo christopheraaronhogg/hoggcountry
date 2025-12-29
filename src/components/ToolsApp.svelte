@@ -38,25 +38,25 @@
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
   ];
 
-  // ========== GLOBAL TRAIL CONTEXT ==========
-  let mode = 'planning'; // 'planning' or 'trail'
-  let contextExpanded = true;
+  // ========== GLOBAL TRAIL CONTEXT (Svelte 5 $state) ==========
+  let mode = $state('planning'); // 'planning' or 'trail'
+  let contextExpanded = $state(true);
 
   // Planning mode state
-  let startDate = '2026-02-15';
-  let pace = 15;
-  let zeroDaysPerMonth = 4;
+  let startDate = $state('2026-02-15');
+  let pace = $state(15);
+  let zeroDaysPerMonth = $state(4);
 
   // Trail mode state
-  let currentMile = 500;
-  let tripStartDate = '2026-02-15';
-  let zeroDaysTaken = 5;
-  let targetPace = 15;
+  let currentMile = $state(500);
+  let tripStartDate = $state('2026-02-15');
+  let zeroDaysTaken = $state(5);
+  let targetPace = $state(15);
 
   // Tool navigation state
-  let activeTool = 'milestone';
-  let isTransitioning = false;
-  let mounted = false;
+  let activeTool = $state('milestone');
+  let isTransitioning = $state(false);
+  let mounted = $state(false);
 
   onMount(() => {
     mounted = true;
@@ -83,13 +83,15 @@
   });
 
   // Save context to localStorage when it changes
-  $: if (mounted) {
-    localStorage.setItem('trailContext', JSON.stringify({
-      mode, startDate, pace, zeroDaysPerMonth,
-      currentMile, tripStartDate, zeroDaysTaken, targetPace,
-      contextExpanded
-    }));
-  }
+  $effect(() => {
+    if (mounted) {
+      localStorage.setItem('trailContext', JSON.stringify({
+        mode, startDate, pace, zeroDaysPerMonth,
+        currentMile, tripStartDate, zeroDaysTaken, targetPace,
+        contextExpanded
+      }));
+    }
+  });
 
   // Get nearest landmark
   function getNearestLandmark(mile) {
@@ -116,15 +118,16 @@
     return Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
   }
 
-  $: nearestLandmark = getNearestLandmark(currentMile);
-  $: daysOnTrail = Math.max(1, daysBetween(tripStartDate, getTodayStr()));
-  $: hikingDays = Math.max(1, daysOnTrail - zeroDaysTaken);
-  $: actualPace = (currentMile / hikingDays).toFixed(1);
-  $: percentComplete = ((currentMile / 2198) * 100).toFixed(0);
+  // Derived values (Svelte 5 $derived)
+  let nearestLandmark = $derived(getNearestLandmark(currentMile));
+  let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, getTodayStr())));
+  let hikingDays = $derived(Math.max(1, daysOnTrail - zeroDaysTaken));
+  let actualPace = $derived((currentMile / hikingDays).toFixed(1));
+  let percentComplete = $derived(((currentMile / 2198) * 100).toFixed(0));
 
   // Planning mode calculations
-  $: hikingDaysPlanned = Math.ceil(2198 / pace);
-  $: totalDaysPlanned = Math.ceil(hikingDaysPlanned / (1 - zeroDaysPerMonth / 30));
+  let hikingDaysPlanned = $derived(Math.ceil(2198 / pace));
+  let totalDaysPlanned = $derived(Math.ceil(hikingDaysPlanned / (1 - zeroDaysPerMonth / 30)));
 
   function switchTool(toolId) {
     if (toolId === activeTool || tools.find(t => t.id === toolId)?.disabled) return;
@@ -138,10 +141,10 @@
     }, 200);
   }
 
-  $: activeToolData = tools.find(t => t.id === activeTool);
+  let activeToolData = $derived(tools.find(t => t.id === activeTool));
 
   // Build context object for child components
-  $: trailContext = {
+  let trailContext = $derived({
     mode,
     // Planning
     startDate,
@@ -158,7 +161,7 @@
     actualPace: parseFloat(actualPace),
     percentComplete: parseFloat(percentComplete),
     nearestLandmark,
-  };
+  });
 </script>
 
 <div class="tools-app" class:mounted>
@@ -173,7 +176,7 @@
         <button
           class="mode-btn"
           class:active={mode === 'planning'}
-          on:click={() => mode = 'planning'}
+          onclick={() => mode = 'planning'}
         >
           <span class="mode-icon">📋</span>
           <span class="mode-text">Planning</span>
@@ -182,14 +185,14 @@
         <button
           class="mode-btn"
           class:active={mode === 'trail'}
-          on:click={() => mode = 'trail'}
+          onclick={() => mode = 'trail'}
         >
           <span class="mode-icon">🥾</span>
           <span class="mode-text">On Trail</span>
         </button>
       </div>
 
-      <button class="expand-toggle" on:click={() => contextExpanded = !contextExpanded}>
+      <button class="expand-toggle" onclick={() => contextExpanded = !contextExpanded}>
         <span class="toggle-chevron" class:flipped={contextExpanded}>▼</span>
       </button>
     </div>
@@ -356,7 +359,7 @@
         class="nav-tab"
         class:active={activeTool === tool.id}
         class:disabled={tool.disabled}
-        on:click={() => switchTool(tool.id)}
+        onclick={() => switchTool(tool.id)}
         disabled={tool.disabled}
         aria-label={tool.name}
       >

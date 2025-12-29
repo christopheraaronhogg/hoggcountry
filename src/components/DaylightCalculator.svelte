@@ -1,8 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
-
   // Accept global trail context from parent (optional)
-  export let trailContext = {};
+  let { trailContext = {} } = $props();
 
   // Trail sections with mile ranges
   const sections = [
@@ -24,20 +22,21 @@
   ];
 
   // State - mile initializes from context if in trail mode
-  let date = '2026-04-15';
-  let mile = 500;
-  let targetMiles = 15; // Target daily mileage
-  let mounted = false;
-  let initializedFromContext = false;
+  let date = $state('2026-04-15');
+  let mile = $state(500);
+  let targetMiles = $state(15); // Target daily mileage
+  let initializedFromContext = $state(false);
 
   // Sync mile from context when in trail mode (one-time init)
-  $: if (!initializedFromContext && trailContext.mode === 'trail' && trailContext.currentMile) {
-    mile = trailContext.currentMile;
-    initializedFromContext = true;
-  }
+  $effect(() => {
+    if (!initializedFromContext && trailContext.mode === 'trail' && trailContext.currentMile) {
+      mile = trailContext.currentMile;
+      initializedFromContext = true;
+    }
+  });
 
-  onMount(() => {
-    mounted = true;
+  // Initialize date on mount
+  $effect(() => {
     const today = new Date();
     date = today.toISOString().split('T')[0];
   });
@@ -47,8 +46,8 @@
   const MAINE_LAT = 45.9;
   const TOTAL_MILES = 2198;
 
-  $: latitude = GEORGIA_LAT + (mile / TOTAL_MILES) * (MAINE_LAT - GEORGIA_LAT);
-  $: currentSection = sections.find(s => mile >= s.startMile && mile < s.endMile) || sections[sections.length - 1];
+  let latitude = $derived(GEORGIA_LAT + (mile / TOTAL_MILES) * (MAINE_LAT - GEORGIA_LAT));
+  let currentSection = $derived(sections.find(s => mile >= s.startMile && mile < s.endMile) || sections[sections.length - 1]);
 
   // Solar calculations
   function calculateSunTimes(dateStr, lat) {
@@ -89,42 +88,42 @@
     return hours + minutes / 60;
   }
 
-  $: sunTimes = calculateSunTimes(date, latitude);
-  
+  let sunTimes = $derived(calculateSunTimes(date, latitude));
+
   // Safe hiking window (sunrise+30m to sunset-30m)
-  $: hikingStart = sunTimes.sunriseHours ? hoursToTime(addMinutesToHours(sunTimes.sunriseHours, 30)) : '--';
-  $: hikingEnd = sunTimes.sunsetHours ? hoursToTime(addMinutesToHours(sunTimes.sunsetHours, -30)) : '--';
-  $: hikingHours = sunTimes.daylightHours ? (sunTimes.daylightHours - 1).toFixed(1) : 0;
+  let hikingStart = $derived(sunTimes.sunriseHours ? hoursToTime(addMinutesToHours(sunTimes.sunriseHours, 30)) : '--');
+  let hikingEnd = $derived(sunTimes.sunsetHours ? hoursToTime(addMinutesToHours(sunTimes.sunsetHours, -30)) : '--');
+  let hikingHours = $derived(sunTimes.daylightHours ? (sunTimes.daylightHours - 1).toFixed(1) : 0);
 
   // Day quality logic
-  $: dayQuality = sunTimes.daylightHours >= 14 ? 'Long Summer Day'
+  let dayQuality = $derived(sunTimes.daylightHours >= 14 ? 'Long Summer Day'
     : sunTimes.daylightHours >= 12 ? 'Solid Hiking Day'
     : sunTimes.daylightHours >= 10 ? 'Short Day'
-    : 'Winter Day';
+    : 'Winter Day');
 
-  $: dayQualityColor = sunTimes.daylightHours >= 14 ? '#22c55e'
+  let dayQualityColor = $derived(sunTimes.daylightHours >= 14 ? '#22c55e'
     : sunTimes.daylightHours >= 12 ? 'var(--alpine)'
     : sunTimes.daylightHours >= 10 ? 'var(--terra)'
-    : '#6b8cae';
+    : '#6b8cae');
 
   // Visual percentages
-  $: startPct = (sunTimes.sunriseHours / 24) * 100;
-  $: endPct = (sunTimes.sunsetHours / 24) * 100;
-  $: dayPct = endPct - startPct;
+  let startPct = $derived((sunTimes.sunriseHours / 24) * 100);
+  let endPct = $derived((sunTimes.sunsetHours / 24) * 100);
+  let dayPct = $derived(endPct - startPct);
 
   // Mileage planning calculations
   // Adjust pace based on terrain (White Mountains = slower)
-  $: terrainMultiplier = (mile > 1750 && mile < 1912) ? 0.6 : 1.0;
+  let terrainMultiplier = $derived((mile > 1750 && mile < 1912) ? 0.6 : 1.0);
 
   // Hiking paces in mph
-  $: paces = [
+  let paces = $derived([
     { label: 'Easy', mph: 2.0 * terrainMultiplier, desc: '2.0 mph' },
     { label: 'Normal', mph: 2.5 * terrainMultiplier, desc: '2.5 mph' },
     { label: 'Fast', mph: 3.0 * terrainMultiplier, desc: '3.0 mph' }
-  ];
+  ]);
 
   // Calculate hiking time and required start times
-  $: mileagePlan = paces.map(p => {
+  let mileagePlan = $derived(paces.map(p => {
     const hikingHours = targetMiles / p.mph;
     // Need to finish 30 min before sunset
     const latestStart = sunTimes.sunsetHours ? sunTimes.sunsetHours - 0.5 - hikingHours : null;
@@ -140,15 +139,15 @@
       wakeTime: wakeTime ? hoursToTime(wakeTime) : '--',
       feasible
     };
-  });
+  }));
 
   // Quick mileage estimate based on available hiking window
-  $: maxMilesEasy = hikingHours * 2.0 * terrainMultiplier;
-  $: maxMilesNormal = hikingHours * 2.5 * terrainMultiplier;
-  $: maxMilesFast = hikingHours * 3.0 * terrainMultiplier;
+  let maxMilesEasy = $derived(hikingHours * 2.0 * terrainMultiplier);
+  let maxMilesNormal = $derived(hikingHours * 2.5 * terrainMultiplier);
+  let maxMilesFast = $derived(hikingHours * 3.0 * terrainMultiplier);
 
   // Planning tips
-  $: tips = generateTips(sunTimes.daylightHours, mile, date);
+  let tips = $derived(generateTips(sunTimes.daylightHours, mile, date));
 
   function generateTips(daylight, currentMile, currentDate) {
     const tips = [];
@@ -193,12 +192,12 @@
           </span>
         </div>
         <div class="slider-container">
-          <input 
-            type="range" 
-            min="0" 
-            max="2198" 
-            bind:value={mile} 
-            class="pace-slider" 
+          <input
+            type="range"
+            min="0"
+            max="2198"
+            bind:value={mile}
+            class="pace-slider"
           />
         </div>
         <div class="weight-zones">
@@ -222,7 +221,7 @@
         {dayQuality}
       </div>
     </div>
-    
+
     <div class="stat-card highlight">
       <div class="mini-stats">
         <div class="mini-stat-row">
@@ -247,7 +246,7 @@
       <span class="title-blaze"></span>
       <span>Solar Cycle</span>
     </h3>
-    
+
     <div class="solar-viz">
       <div class="viz-track">
         <!-- Night (Morning) -->
@@ -258,7 +257,7 @@
         </div>
         <!-- Night (Evening) -->
         <div class="zone night" style="width: {100 - endPct}%"></div>
-        
+
         <!-- Markers -->
         <div class="viz-marker start" style="left: {startPct}%">
           <div class="marker-line"></div>
@@ -269,7 +268,7 @@
           <span class="marker-label">Set</span>
         </div>
       </div>
-      
+
       <div class="viz-labels">
         <span>12am</span>
         <span>6am</span>
@@ -511,7 +510,7 @@
     text-transform: uppercase;
     font-weight: 600;
   }
-  
+
   .loc-lat { font-family: monospace; font-weight: 400; }
 
   /* Stats */
@@ -588,7 +587,7 @@
     font-size: 1.1rem;
     color: var(--ink);
   }
-  
+
   .mini-val.total { color: var(--terra); }
 
   /* Solar Viz */
@@ -633,7 +632,7 @@
 
   .zone { height: 100%; transition: width 0.3s ease; }
   .zone.night { background: #1e293b; }
-  .zone.day { 
+  .zone.day {
     background: linear-gradient(180deg, #fbbf24, #d97706);
     position: relative;
     box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);

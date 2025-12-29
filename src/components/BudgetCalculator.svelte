@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
 
   // Accept global trail context from parent
-  export let trailContext = {};
+  let { trailContext = {} } = $props();
 
   const categories = [
     { id: 'food', name: 'Food & Resupply', icon: '🛒', color: '#a6b589' },
@@ -15,15 +15,15 @@
   ];
 
   // State
-  let mounted = false;
-  let totalBudget = 5000;
-  let startDate = '2026-02-15';
-  let expenses = [];
+  let mounted = $state(false);
+  let totalBudget = $state(5000);
+  let startDate = $state('2026-02-15');
+  let expenses = $state([]);
 
   // New expense form
-  let newAmount = '';
-  let newCategory = 'food';
-  let newNote = '';
+  let newAmount = $state('');
+  let newCategory = $state('food');
+  let newNote = $state('');
 
   // Load from localStorage on mount, use context startDate as default if available
   onMount(() => {
@@ -100,40 +100,42 @@
   }
 
   // Reactive calculations
-  $: daysOnTrail = getDaysOnTrail();
-  $: totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
-  $: remaining = totalBudget - totalSpent;
-  $: percentSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-  $: dailyAverage = daysOnTrail > 0 ? totalSpent / daysOnTrail : 0;
-  $: monthlyRate = dailyAverage * 30;
+  let daysOnTrail = $derived(getDaysOnTrail());
+  let totalSpent = $derived(expenses.reduce((sum, e) => sum + e.amount, 0));
+  let remaining = $derived(totalBudget - totalSpent);
+  let percentSpent = $derived(totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0);
+  let dailyAverage = $derived(daysOnTrail > 0 ? totalSpent / daysOnTrail : 0);
+  let monthlyRate = $derived(dailyAverage * 30);
 
   // Projected total (assuming 150 days typical thru-hike)
-  $: projectedTotal = dailyAverage * 150;
+  let projectedTotal = $derived(dailyAverage * 150);
 
   // Days of budget remaining at current rate
-  $: daysRemaining = dailyAverage > 0 ? Math.floor(remaining / dailyAverage) : 999;
+  let daysRemaining = $derived(dailyAverage > 0 ? Math.floor(remaining / dailyAverage) : 999);
 
   // Budget status
-  $: budgetStatus = percentSpent < 60 ? 'good' : percentSpent < 85 ? 'caution' : 'over';
-  $: statusLabel = budgetStatus === 'good' ? 'On Track' : budgetStatus === 'caution' ? 'Watch Spending' : 'Over Budget';
+  let budgetStatus = $derived(percentSpent < 60 ? 'good' : percentSpent < 85 ? 'caution' : 'over');
+  let statusLabel = $derived(budgetStatus === 'good' ? 'On Track' : budgetStatus === 'caution' ? 'Watch Spending' : 'Over Budget');
 
   // Category breakdown
-  $: categoryTotals = categories.map(cat => {
+  let categoryTotals = $derived(categories.map(cat => {
     const total = expenses.filter(e => e.category === cat.id).reduce((sum, e) => sum + e.amount, 0);
     const percent = totalSpent > 0 ? (total / totalSpent) * 100 : 0;
     return { ...cat, total, percent };
-  }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
+  }).filter(c => c.total > 0).sort((a, b) => b.total - a.total));
 
   // Recent expenses (last 10)
-  $: recentExpenses = expenses.slice(0, 10);
+  let recentExpenses = $derived(expenses.slice(0, 10));
 
   // Trail context - where does user fall in typical range
-  $: trailRangePercent = Math.min(100, Math.max(0, ((projectedTotal - 4000) / 3000) * 100));
+  let trailRangePercent = $derived(Math.min(100, Math.max(0, ((projectedTotal - 4000) / 3000) * 100)));
 
   // Watch for changes to save
-  $: if (mounted && (totalBudget || startDate)) {
-    saveData();
-  }
+  $effect(() => {
+    if (mounted && (totalBudget || startDate)) {
+      saveData();
+    }
+  });
 
   function getCategoryById(id) {
     return categories.find(c => c.id === id) || categories[categories.length - 1];
@@ -243,7 +245,7 @@
               step="0.01"
               placeholder="0"
               class="money-input"
-              on:keydown={(e) => e.key === 'Enter' && addExpense()}
+              onkeydown={(e) => e.key === 'Enter' && addExpense()}
             />
           </div>
         </div>
@@ -264,10 +266,10 @@
             bind:value={newNote}
             placeholder="e.g., Resupply at Walmart"
             class="note-input"
-            on:keydown={(e) => e.key === 'Enter' && addExpense()}
+            onkeydown={(e) => e.key === 'Enter' && addExpense()}
           />
         </div>
-        <button class="add-btn" on:click={addExpense} disabled={!newAmount}>
+        <button class="add-btn" onclick={addExpense} disabled={!newAmount}>
           + Add
         </button>
       </div>
@@ -300,7 +302,7 @@
               <span class="expense-amount">{formatMoney(expense.amount)}</span>
               <span class="expense-date">{formatDateShort(expense.date)}</span>
             </div>
-            <button class="delete-btn" on:click={() => deleteExpense(expense.id)} title="Delete">
+            <button class="delete-btn" onclick={() => deleteExpense(expense.id)} title="Delete">
               ×
             </button>
           </div>
@@ -386,7 +388,7 @@
 
   <!-- Data Management -->
   <div class="data-section">
-    <button class="clear-btn" on:click={() => { if(confirm('Clear all expense data?')) { expenses = []; saveData(); }}}>
+    <button class="clear-btn" onclick={() => { if(confirm('Clear all expense data?')) { expenses = []; saveData(); }}}>
       Clear All Data
     </button>
   </div>

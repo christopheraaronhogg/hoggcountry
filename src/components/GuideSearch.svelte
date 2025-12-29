@@ -1,12 +1,12 @@
 <script>
-  export let chapters = [];
+  let { chapters = [] } = $props();
 
-  let query = '';
-  let isOpen = false;
-  let results = [];
+  let query = $state('');
+  let isOpen = $state(false);
+  let results = $state([]);
 
   // Simple search - matches title, description, or content preview
-  $: {
+  $effect(() => {
     if (query.length >= 2) {
       const q = query.toLowerCase();
       results = chapters
@@ -21,7 +21,7 @@
       results = [];
       isOpen = false;
     }
-  }
+  });
 
   function handleSelect(chapter) {
     query = '';
@@ -43,7 +43,7 @@
   }
 </script>
 
-<svelte:window on:click={handleClickOutside} />
+<svelte:window onclick={handleClickOutside} />
 
 <div class="search-container">
   <div class="search-input-wrapper">
@@ -52,19 +52,19 @@
       type="text"
       placeholder="Search guide..."
       bind:value={query}
-      on:keydown={handleKeydown}
-      on:focus={() => query.length >= 2 && (isOpen = true)}
+      onkeydown={handleKeydown}
+      onfocus={() => query.length >= 2 && (isOpen = true)}
       class="search-input"
     />
     {#if query}
-      <button class="clear-btn" on:click={() => { query = ''; isOpen = false; }}>×</button>
+      <button class="clear-btn" onclick={() => { query = ''; isOpen = false; }}>×</button>
     {/if}
   </div>
 
   {#if isOpen && results.length > 0}
     <div class="search-results">
       {#each results as chapter}
-        <button class="result-item" on:click={() => handleSelect(chapter)}>
+        <button class="result-item" onclick={() => handleSelect(chapter)}>
           <span class="result-title">{chapter.data.title}</span>
           {#if chapter.data.description}
             <span class="result-desc">{chapter.data.description}</span>

@@ -1,14 +1,14 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-    
-let isOpen = false;
-    let seed = 'hogg-country';
-    let noiseScale = 98;
-    let gridSize = 184;
-    let contourLevels = 28;
-    let falloff = 3.8;
-    let colorScheme = 'hogg-country';
-    let currentSvgContent = '';
+
+    let isOpen = $state(false);
+    let seed = $state('hogg-country');
+    let noiseScale = $state(98);
+    let gridSize = $state(184);
+    let contourLevels = $state(28);
+    let falloff = $state(3.8);
+    let colorScheme = $state('hogg-country');
+    let currentSvgContent = $state('');
 
     // --- PERLIN NOISE GENERATOR ---
     const PerlinNoise = new function() {
@@ -187,13 +187,12 @@ let isOpen = false;
     }
 
     // Persist settings whenever they change
-    function saveSettings() {
+    $effect(() => {
         try {
             const settings = { seed, noiseScale, gridSize, contourLevels, falloff, colorScheme };
             localStorage.setItem('hc-bg-settings', JSON.stringify(settings));
         } catch (_) { /* ignore */ }
-    }
-    $: saveSettings();
+    });
 
     // Generate on mount, loading saved settings and applying saved SVG if available
     onMount(() => {
@@ -251,8 +250,8 @@ let isOpen = false;
 </script>
 
 <!-- Controls Toggle Button -->
-<button 
-    on:click={toggleWidget}
+<button
+    onclick={toggleWidget}
     class="toggle-btn"
     title="Background Generator"
 >
@@ -264,14 +263,14 @@ let isOpen = false;
 
 {#if isOpen}
   <!-- Click-outside backdrop to close panel -->
-  <div class="controls-backdrop" on:click={toggleWidget} aria-hidden="true"></div>
+  <div class="controls-backdrop" onclick={toggleWidget} aria-hidden="true"></div>
 {/if}
 
 <!-- Controls Panel -->
 <div class="controls-panel" class:open={isOpen}>
     <div class="panel-header">
         <h3>Background Generator</h3>
-        <button on:click={toggleWidget} class="close-btn">×</button>
+        <button onclick={toggleWidget} class="close-btn">×</button>
     </div>
 
     <div class="panel-content">
@@ -315,8 +314,8 @@ let isOpen = false;
 
         <!-- Buttons -->
         <div class="actions">
-            <button on:click={generateMap} class="btn btn-primary">Generate</button>
-            <button on:click={downloadSVG} class="btn">Download SVG</button>
+            <button onclick={generateMap} class="btn btn-primary">Generate</button>
+            <button onclick={downloadSVG} class="btn">Download SVG</button>
         </div>
     </div>
 </div>

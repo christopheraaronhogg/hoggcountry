@@ -1,11 +1,9 @@
 <script>
   import { onMount } from 'svelte';
 
-  export let isOpen = false;
-  export let onClose = () => {};
-  export let markdownContent = '';
+  let { isOpen = false, onClose = () => {}, markdownContent = '' } = $props();
 
-  let modalRef;
+  let modalRef = $state(null);
 
   function handleKeydown(e) {
     if (e.key === 'Escape' && isOpen) {
@@ -48,20 +46,22 @@
   });
 
   // Handle body scroll lock (only in browser)
-  $: if (typeof document !== 'undefined') {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+  $effect(() => {
+    if (typeof document !== 'undefined') {
+      if (isOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
     }
-  }
+  });
 </script>
 
 {#if isOpen}
-  <div class="modal-backdrop" on:click={handleBackdropClick} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-backdrop" onclick={handleBackdropClick} role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal" bind:this={modalRef}>
       <!-- Close button -->
-      <button class="close-btn" on:click={onClose} aria-label="Close modal">
+      <button class="close-btn" onclick={onClose} aria-label="Close modal">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12"/>
         </svg>
@@ -80,7 +80,7 @@
       <!-- Format options -->
       <div class="format-grid">
         <!-- PDF Option -->
-        <button class="format-card" on:click={downloadPDF}>
+        <button class="format-card" onclick={downloadPDF}>
           <div class="format-icon pdf-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -99,7 +99,7 @@
         </button>
 
         <!-- Markdown Option -->
-        <button class="format-card" on:click={downloadMarkdown}>
+        <button class="format-card" onclick={downloadMarkdown}>
           <div class="format-icon md-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
