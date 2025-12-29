@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
 
   export let chapters = [];
+  export let markdownContent = '';
 
   let activeChapter = '';
   let progress = 0;
@@ -55,6 +56,31 @@
 
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function scrollToTOC() {
+    const toc = document.getElementById('table-of-contents');
+    if (toc) {
+      const offset = 80;
+      const top = toc.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  }
+
+  function downloadPDF() {
+    window.print();
+  }
+
+  function downloadMarkdown() {
+    const blob = new Blob([markdownContent], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'AT-Field-Guide-2026.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // Separate main chapters from quick refs
@@ -120,10 +146,19 @@
   </div>
 
   <div class="sidebar-footer">
-    <a href="/guide" class="view-toggle">
-      <span>View as Chapters</span>
-      <span class="arrow">→</span>
-    </a>
+    <div class="download-buttons">
+      <button class="download-btn" on:click={downloadPDF} title="Download as PDF">
+        <span class="download-icon">📄</span>
+        <span>PDF</span>
+      </button>
+      <button class="download-btn" on:click={downloadMarkdown} title="Download as Markdown">
+        <span class="download-icon">📝</span>
+        <span>MD</span>
+      </button>
+    </div>
+    <button class="toc-link" on:click={scrollToTOC}>
+      <span>↑ Table of Contents</span>
+    </button>
   </div>
 </nav>
 
@@ -147,6 +182,17 @@
       <button class="drawer-close" on:click={() => showMobileNav = false}>×</button>
     </div>
     <div class="drawer-scroll">
+      <!-- Download buttons at top of mobile drawer -->
+      <div class="drawer-downloads">
+        <button class="drawer-download-btn" on:click={downloadPDF}>
+          <span>📄</span> Download PDF
+        </button>
+        <button class="drawer-download-btn" on:click={downloadMarkdown}>
+          <span>📝</span> Download Markdown
+        </button>
+      </div>
+      <div class="drawer-divider"></div>
+
       <ul class="drawer-list">
         {#each mainChapters as chapter, i}
           <li>
@@ -375,31 +421,61 @@
   }
 
   .sidebar-footer {
-    padding: 1rem;
+    padding: 0.75rem;
     border-top: 1px solid var(--border, #e6e1d4);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
-  .view-toggle {
+  .download-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .download-btn {
+    flex: 1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.5rem 0.75rem;
-    background: var(--card, #fff);
-    border: 1px solid var(--border, #e6e1d4);
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.5rem;
+    background: var(--pine, #4d594a);
+    color: #fff;
+    border: none;
     border-radius: 6px;
     font-size: 0.75rem;
-    color: var(--pine, #4d594a);
-    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
     transition: all 0.15s ease;
   }
 
-  .view-toggle:hover {
-    border-color: var(--alpine, #a6b589);
-    background: rgba(166, 181, 137, 0.1);
+  .download-btn:hover {
+    background: var(--ink, #2b2f26);
+    transform: translateY(-1px);
   }
 
-  .arrow {
-    opacity: 0.5;
+  .download-icon {
+    font-size: 0.85rem;
+  }
+
+  .toc-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border, #e6e1d4);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    color: var(--muted, #5c665a);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .toc-link:hover {
+    border-color: var(--alpine, #a6b589);
+    color: var(--pine, #4d594a);
   }
 
   /* ===== Mobile Nav Toggle ===== */
@@ -515,6 +591,33 @@
     flex: 1;
     overflow-y: auto;
     padding: 1rem 0;
+  }
+
+  .drawer-downloads {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .drawer-download-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--pine, #4d594a);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .drawer-download-btn:active {
+    transform: scale(0.98);
   }
 
   .drawer-list {

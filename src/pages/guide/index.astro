@@ -1,11 +1,13 @@
 ---
-import { getCollection } from 'astro:content';
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import GuideSearch from '../../components/GuideSearch.svelte';
+import { getCollection, render } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import FullGuideNav from '../../components/FullGuideNav.svelte';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const allGuides = await getCollection('guide');
 
-// Separate main chapters from quick reference
+// Sort: main chapters by order, then quick refs
 const mainChapters = allGuides
   .filter(g => !g.data.quickRef)
   .sort((a, b) => a.data.order - b.data.order);
@@ -14,283 +16,899 @@ const quickRefs = allGuides
   .filter(g => g.data.quickRef)
   .sort((a, b) => a.data.order - b.data.order);
 
-// Prepare searchable data (strip to essentials for client)
-const searchableChapters = allGuides.map(ch => ({
+const sortedGuides = [...mainChapters, ...quickRefs];
+
+// Render all chapters
+const renderedChapters = await Promise.all(
+  sortedGuides.map(async (chapter) => {
+    const { Content } = await render(chapter);
+    return { chapter, Content };
+  })
+);
+
+// Prepare nav data
+const navChapters = sortedGuides.map(ch => ({
   id: ch.id,
   data: {
     title: ch.data.title,
-    description: ch.data.description,
+    part: ch.data.part,
+    order: ch.data.order,
     quickRef: ch.data.quickRef
   }
 }));
 
-const title = "AT Field Guide — Hogg Country";
-const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ miles of trail-tested knowledge for a February start.";
+// Generate markdown content for download
+const guideDir = path.join(process.cwd(), 'src/content/guide');
+let markdownContent = `# Appalachian Trail Field Guide 2026
+## Springer Mountain, Georgia — Mount Katahdin, Maine
+### February Start Edition
+
 ---
 
-<BaseLayout title={title} description={description}>
-  <section class="hero">
-    <span class="chapter font-chapter">AT 2026</span>
-    <h1 class="font-display">Field Guide</h1>
-    <p>The Complete Appalachian Trail NOBO Field Guide<br/>Springer Mountain, Georgia — Mount Katahdin, Maine</p>
-  </section>
+`;
 
-  <div class="container guide-container">
-    <!-- View Toggle + Search Row -->
-    <section class="guide-toolbar">
-      <div class="view-toggle-group">
-        <span class="view-label">View:</span>
-        <a href="/guide" class="view-btn active">Chapters</a>
-        <a href="/guide/full" class="view-btn">Full Document</a>
-      </div>
-      <GuideSearch client:load chapters={searchableChapters} />
-    </section>
+// Read all markdown files and concatenate
+for (const chapter of sortedGuides) {
+  try {
+    const filePath = chapter.data.quickRef
+      ? path.join(guideDir, 'quick', `${chapter.id.replace('quick/', '')}.md`)
+      : path.join(guideDir, `${chapter.id}.md`);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    // Remove frontmatter
+    const withoutFrontmatter = content.replace(/^---[\s\S]*?---\n/, '');
+    markdownContent += withoutFrontmatter + '\n\n---\n\n';
+  } catch (e) {
+    // Skip if file not found
+  }
+}
 
-    <!-- Quick Reference Section -->
-    <section class="quick-ref-section">
-      <h2 class="section-title">Quick Reference</h2>
-      <p class="section-desc">Fast-access field cards for on-trail decisions</p>
-      <div class="quick-grid">
-        {quickRefs.map((ref) => (
-          <a href={`/guide/${ref.id}`} class="quick-card">
-            <span class="quick-title">{ref.data.title}</span>
-            {ref.data.description && <span class="quick-desc">{ref.data.description}</span>}
-          </a>
-        ))}
-      </div>
-    </section>
+const title = "AT Field Guide — Hogg Country";
+const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ miles of trail-tested knowledge for a February 2026 start.";
+---
 
-    <!-- Main Chapters -->
-    <section class="chapters-section">
-      <h2 class="section-title">Full Guide</h2>
-      <div class="toc">
-        {mainChapters.map((chapter, index) => (
-          <a href={`/guide/${chapter.id}`} class="toc-item">
-            <span class="toc-number">{String(index).padStart(2, '0')}</span>
-            <div class="toc-content">
-              <span class="toc-title">{chapter.data.title}</span>
-              {chapter.data.description && (
-                <span class="toc-desc">{chapter.data.description}</span>
-              )}
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={title} description={description} />
+    <style is:global>
+      /* ===== Full Guide Layout ===== */
+      body.guide-page {
+        background: var(--bg);
+      }
+
+      .guide-wrapper {
+        padding-top: 65px;
+      }
+
+      @media (min-width: 1025px) {
+        .guide-wrapper {
+          margin-left: 220px;
+        }
+      }
+
+      .guide-content-area {
+        max-width: 750px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 6rem;
+      }
+
+      /* ===== Guide Header / Masthead ===== */
+      .guide-masthead {
+        text-align: center;
+        padding: 3rem 0 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .masthead-badge {
+        display: inline-block;
+        font-family: Oswald, sans-serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--terra);
+        background: rgba(217, 119, 6, 0.1);
+        padding: 0.35rem 0.75rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+      }
+
+      .masthead-title {
+        font-family: Oswald, sans-serif;
+        font-size: clamp(2.25rem, 5vw, 3.5rem);
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--ink);
+        margin: 0 0 0.5rem;
+      }
+
+      .masthead-subtitle {
+        font-family: Caveat, cursive;
+        font-size: 1.5rem;
+        color: var(--pine);
+        margin: 0 0 1.5rem;
+      }
+
+      .masthead-meta {
+        font-size: 0.85rem;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .masthead-divider {
+        width: 60px;
+        height: 3px;
+        background: var(--alpine);
+        margin: 2rem auto 0;
+        border-radius: 2px;
+      }
+
+      /* ===== Book-Style Table of Contents ===== */
+      .book-toc {
+        background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(245,242,232,0.9));
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 2.5rem 2rem;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .book-toc::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--alpine), var(--pine), var(--terra));
+      }
+
+      .book-toc-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .book-toc-title {
+        font-family: Oswald, sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--pine);
+        margin: 0 0 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+      }
+
+      .book-toc-subtitle {
+        font-family: Caveat, cursive;
+        font-size: 1.1rem;
+        color: var(--muted);
+      }
+
+      .book-toc-divider {
+        width: 100px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--alpine), transparent);
+        margin: 1.5rem auto;
+      }
+
+      /* Chapter entries with leader dots */
+      .toc-entries {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .toc-entry {
+        display: flex;
+        align-items: baseline;
+        padding: 0.6rem 0;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border-radius: 6px;
+        margin: 0 -0.5rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+
+      .toc-entry:hover {
+        background: rgba(166, 181, 137, 0.1);
+      }
+
+      .toc-entry:hover .toc-entry-title {
+        color: var(--pine);
+      }
+
+      .toc-entry-number {
+        font-family: Oswald, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--alpine);
+        min-width: 2.5rem;
+        flex-shrink: 0;
+      }
+
+      .toc-entry-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .toc-entry-title {
+        font-family: Oswald, sans-serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--ink);
+        transition: color 0.15s ease;
+      }
+
+      .toc-entry-desc {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-top: 0.15rem;
+        line-height: 1.4;
+      }
+
+      .toc-entry-leader {
+        flex: 1;
+        border-bottom: 1px dotted var(--stone);
+        margin: 0 0.75rem;
+        min-width: 20px;
+        align-self: center;
+        margin-bottom: 0.3rem;
+      }
+
+      .toc-entry-page {
+        font-family: Oswald, sans-serif;
+        font-size: 0.8rem;
+        color: var(--muted);
+        flex-shrink: 0;
+      }
+
+      /* Quick Reference Section in TOC */
+      .toc-section-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 2rem 0 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .toc-section-label {
+        font-family: Oswald, sans-serif;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--terra);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .toc-section-line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, var(--terra), transparent);
+      }
+
+      .toc-quick-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      .toc-quick-card {
+        display: flex;
+        flex-direction: column;
+        padding: 0.75rem 1rem;
+        background: var(--marker);
+        border: 2px solid #e0d400;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .toc-quick-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+
+      .toc-quick-title {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #2b2f26;
+      }
+
+      .toc-quick-desc {
+        font-size: 0.75rem;
+        color: #4a4a40;
+        margin-top: 0.15rem;
+      }
+
+      /* Download buttons in TOC */
+      .toc-downloads {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .toc-download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        background: var(--pine);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-decoration: none;
+      }
+
+      .toc-download-btn:hover {
+        background: var(--ink);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+
+      .toc-download-btn.secondary {
+        background: transparent;
+        color: var(--pine);
+        border: 1px solid var(--border);
+      }
+
+      .toc-download-btn.secondary:hover {
+        background: rgba(166, 181, 137, 0.1);
+        border-color: var(--alpine);
+      }
+
+      /* ===== Chapter Sections ===== */
+      .chapter-section {
+        scroll-margin-top: 80px;
+        padding: 3rem 0;
+        border-bottom: 1px dashed var(--border);
+        position: relative;
+      }
+
+      .chapter-section:last-child {
+        border-bottom: none;
+      }
+
+      .chapter-section.quick-ref {
+        background: linear-gradient(to right, rgba(240, 224, 0, 0.03), transparent);
+        margin: 0 -1.5rem;
+        padding: 3rem 1.5rem;
+      }
+
+      /* Chapter number watermark */
+      .chapter-number-bg {
+        position: absolute;
+        top: 2rem;
+        right: 0;
+        font-family: Oswald, sans-serif;
+        font-size: 8rem;
+        font-weight: 700;
+        color: var(--pine);
+        opacity: 0.03;
+        line-height: 1;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .chapter-header {
+        margin-bottom: 2rem;
+        position: relative;
+      }
+
+      .chapter-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: Oswald, sans-serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--muted);
+        margin-bottom: 0.5rem;
+      }
+
+      .chapter-label-line {
+        width: 30px;
+        height: 1px;
+        background: var(--stone);
+      }
+
+      .quick-ref-label {
+        color: var(--terra);
+      }
+
+      .quick-ref-label .chapter-label-line {
+        background: var(--terra);
+      }
+
+      /* ===== Prose Typography ===== */
+      .chapter-prose {
+        font-size: 1.05rem;
+        line-height: 1.85;
+        color: var(--fg);
+      }
+
+      .chapter-prose :global(h1) {
+        font-family: Oswald, sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0 0 1.5rem;
+        line-height: 1.2;
+      }
+
+      .chapter-prose :global(h2) {
+        font-family: Oswald, sans-serif;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--pine);
+        margin: 2.5rem 0 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .chapter-prose :global(h2:first-of-type) {
+        border-top: none;
+        padding-top: 0;
+      }
+
+      .chapter-prose :global(h3) {
+        font-family: Oswald, sans-serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--pine);
+        margin: 2rem 0 0.75rem;
+      }
+
+      .chapter-prose :global(h4) {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin: 1.5rem 0 0.5rem;
+      }
+
+      .chapter-prose :global(p) {
+        margin: 1.25rem 0;
+      }
+
+      .chapter-prose :global(ul),
+      .chapter-prose :global(ol) {
+        margin: 1.25rem 0;
+        padding-left: 1.5rem;
+      }
+
+      .chapter-prose :global(li) {
+        margin: 0.5rem 0;
+      }
+
+      .chapter-prose :global(li::marker) {
+        color: var(--alpine);
+      }
+
+      /* Blockquotes - styled as trail notes */
+      .chapter-prose :global(blockquote) {
+        position: relative;
+        margin: 2rem 0;
+        padding: 1.25rem 1.5rem 1.25rem 2rem;
+        background: linear-gradient(135deg, rgba(166, 181, 137, 0.08), rgba(166, 181, 137, 0.03));
+        border-left: 4px solid var(--alpine);
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+        color: var(--pine);
+      }
+
+      .chapter-prose :global(blockquote::before) {
+        content: '"';
+        position: absolute;
+        top: 0.5rem;
+        left: 0.75rem;
+        font-family: Georgia, serif;
+        font-size: 2rem;
+        color: var(--alpine);
+        opacity: 0.3;
+        line-height: 1;
+      }
+
+      .chapter-prose :global(blockquote p) {
+        margin: 0;
+      }
+
+      /* Strong/emphasis */
+      .chapter-prose :global(strong) {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .chapter-prose :global(em) {
+        font-style: italic;
+      }
+
+      /* Tables */
+      .chapter-prose :global(table) {
+        width: 100%;
+        margin: 2rem 0;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+
+      .chapter-prose :global(thead) {
+        background: var(--pine);
+        color: #fff;
+      }
+
+      .chapter-prose :global(th) {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-family: Oswald, sans-serif;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .chapter-prose :global(td) {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      .chapter-prose :global(tr:nth-child(even)) {
+        background: rgba(166, 181, 137, 0.05);
+      }
+
+      /* Code */
+      .chapter-prose :global(code) {
+        font-family: 'SF Mono', Menlo, Monaco, monospace;
+        font-size: 0.85em;
+        background: rgba(77, 89, 74, 0.08);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        color: var(--pine);
+      }
+
+      .chapter-prose :global(pre) {
+        margin: 2rem 0;
+        padding: 1.25rem;
+        background: #2b2f26;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+
+      .chapter-prose :global(pre code) {
+        background: none;
+        padding: 0;
+        color: #e8e6e1;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+
+      /* Horizontal rules */
+      .chapter-prose :global(hr) {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border), transparent);
+        margin: 3rem 0;
+      }
+
+      /* Links */
+      .chapter-prose :global(a) {
+        color: var(--pine);
+        text-decoration: underline;
+        text-decoration-color: var(--alpine);
+        text-underline-offset: 3px;
+        transition: color 0.15s ease;
+      }
+
+      .chapter-prose :global(a:hover) {
+        color: var(--terra);
+      }
+
+      /* ===== Guide Footer ===== */
+      .guide-footer {
+        text-align: center;
+        padding: 4rem 0 2rem;
+        border-top: 2px solid var(--border);
+        margin-top: 3rem;
+      }
+
+      .footer-blaze {
+        width: 50px;
+        height: 6px;
+        background: var(--marker);
+        margin: 0 auto 1.5rem;
+        border-radius: 3px;
+      }
+
+      .footer-text {
+        font-family: Caveat, cursive;
+        font-size: 1.75rem;
+        color: var(--pine);
+        margin: 0 0 1rem;
+      }
+
+      .footer-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        background: var(--pine);
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .footer-home:hover {
+        background: var(--ink);
+        transform: translateY(-2px);
+      }
+
+      /* ===== Print Styles ===== */
+      @media print {
+        body.guide-page {
+          background: #fff;
+        }
+
+        .guide-wrapper {
+          margin-left: 0;
+          padding-top: 0;
+        }
+
+        .guide-content-area {
+          max-width: none;
+          padding: 0;
+        }
+
+        .book-toc {
+          page-break-after: always;
+          border: 2px solid #333;
+        }
+
+        .book-toc::before {
+          display: none;
+        }
+
+        .toc-downloads {
+          display: none;
+        }
+
+        .guide-masthead {
+          page-break-after: always;
+        }
+
+        .chapter-section {
+          page-break-inside: avoid;
+        }
+
+        .chapter-number-bg {
+          display: none;
+        }
+
+        .guide-footer {
+          display: none;
+        }
+
+        .chapter-prose :global(table) {
+          font-size: 0.8rem;
+        }
+
+        .chapter-prose :global(blockquote) {
+          background: #f5f5f5;
+          border-left-color: #666;
+        }
+      }
+
+      /* ===== Responsive ===== */
+      @media (max-width: 600px) {
+        .guide-content-area {
+          padding: 1.5rem 1rem 5rem;
+        }
+
+        .guide-masthead {
+          padding: 2rem 0 1.5rem;
+        }
+
+        .masthead-title {
+          font-size: 2rem;
+        }
+
+        .masthead-subtitle {
+          font-size: 1.25rem;
+        }
+
+        .book-toc {
+          padding: 1.5rem 1rem;
+        }
+
+        .toc-entry-leader {
+          display: none;
+        }
+
+        .toc-entry-page {
+          display: none;
+        }
+
+        .toc-entry {
+          flex-direction: column;
+          gap: 0.15rem;
+        }
+
+        .toc-entry-number {
+          font-size: 0.75rem;
+        }
+
+        .toc-downloads {
+          flex-direction: column;
+        }
+
+        .chapter-section {
+          padding: 2rem 0;
+        }
+
+        .chapter-number-bg {
+          font-size: 5rem;
+          top: 1.5rem;
+        }
+
+        .chapter-prose {
+          font-size: 1rem;
+        }
+
+        .chapter-prose :global(h1) {
+          font-size: 1.6rem;
+        }
+
+        .chapter-prose :global(h2) {
+          font-size: 1.25rem;
+        }
+
+        .chapter-prose :global(table) {
+          font-size: 0.8rem;
+        }
+
+        .chapter-prose :global(th),
+        .chapter-prose :global(td) {
+          padding: 0.5rem 0.6rem;
+        }
+      }
+    </style>
+  </head>
+  <body class="guide-page">
+    <FullGuideNav client:load chapters={navChapters} markdownContent={markdownContent} />
+
+    <div class="guide-wrapper">
+      <div class="guide-content-area">
+        <!-- Masthead -->
+        <header class="guide-masthead">
+          <span class="masthead-badge">AT 2026 • February Start</span>
+          <h1 class="masthead-title">
+            Appalachian Trail<br/>Field Guide
+          </h1>
+          <p class="masthead-subtitle">Springer Mountain → Mount Katahdin</p>
+          <p class="masthead-meta">
+            2,190+ Miles of Trail-Tested Knowledge<br/>
+            Prepared for HoggCountry
+          </p>
+          <div class="masthead-divider"></div>
+        </header>
+
+        <!-- Book-Style Table of Contents -->
+        <nav id="table-of-contents" class="book-toc">
+          <div class="book-toc-header">
+            <h2 class="book-toc-title">Table of Contents</h2>
+            <p class="book-toc-subtitle">18 Chapters + 5 Quick Reference Cards</p>
+          </div>
+
+          <div class="book-toc-divider"></div>
+
+          <ol class="toc-entries">
+            {mainChapters.map((chapter, index) => (
+              <li>
+                <a href={`#${chapter.id}`} class="toc-entry" onclick="event.preventDefault(); document.getElementById(this.getAttribute('href').slice(1)).scrollIntoView({behavior: 'smooth', block: 'start'})">
+                  <span class="toc-entry-number">{String(index).padStart(2, '0')}</span>
+                  <div class="toc-entry-content">
+                    <div class="toc-entry-title">{chapter.data.title}</div>
+                    {chapter.data.description && (
+                      <div class="toc-entry-desc">{chapter.data.description}</div>
+                    )}
+                  </div>
+                  <span class="toc-entry-leader"></span>
+                  <span class="toc-entry-page">Ch. {index}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+
+          <!-- Quick Reference Section -->
+          {quickRefs.length > 0 && (
+            <>
+              <div class="toc-section-header">
+                <span class="toc-section-label">Quick Reference Cards</span>
+                <span class="toc-section-line"></span>
+              </div>
+              <div class="toc-quick-grid">
+                {quickRefs.map((ref) => (
+                  <a href={`#${ref.id}`} class="toc-quick-card" onclick="event.preventDefault(); document.getElementById(this.getAttribute('href').slice(1)).scrollIntoView({behavior: 'smooth', block: 'start'})">
+                    <span class="toc-quick-title">{ref.data.title}</span>
+                    {ref.data.description && (
+                      <span class="toc-quick-desc">{ref.data.description}</span>
+                    )}
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+
+          <!-- Download buttons -->
+          <div class="toc-downloads">
+            <button class="toc-download-btn" onclick="window.print()">
+              <span>📄</span> Download PDF
+            </button>
+            <button class="toc-download-btn secondary" id="download-md-btn">
+              <span>📝</span> Download Markdown
+            </button>
+          </div>
+        </nav>
+
+        <!-- Chapters -->
+        {renderedChapters.map(({ chapter, Content }, index) => (
+          <section
+            id={chapter.id}
+            class={`chapter-section ${chapter.data.quickRef ? 'quick-ref' : ''}`}
+          >
+            {!chapter.data.quickRef && (
+              <span class="chapter-number-bg">{String(mainChapters.findIndex(c => c.id === chapter.id)).padStart(2, '0')}</span>
+            )}
+
+            <div class="chapter-header">
+              <div class={`chapter-label ${chapter.data.quickRef ? 'quick-ref-label' : ''}`}>
+                <span class="chapter-label-line"></span>
+                <span>{chapter.data.quickRef ? 'Quick Reference' : `Chapter ${String(mainChapters.findIndex(c => c.id === chapter.id)).padStart(2, '0')}`}</span>
+              </div>
             </div>
-          </a>
+
+            <div class="chapter-prose">
+              <Content />
+            </div>
+          </section>
         ))}
+
+        <!-- Footer -->
+        <footer class="guide-footer">
+          <div class="footer-blaze"></div>
+          <p class="footer-text">See you on Katahdin.</p>
+          <a href="/" class="footer-home">
+            <span>←</span>
+            <span>Back to Hogg Country</span>
+          </a>
+        </footer>
       </div>
-    </section>
+    </div>
 
-    <!-- Core Principles -->
-    <section class="principles-section">
-      <h2 class="section-title">Core Principles</h2>
-      <ul class="principles">
-        <li>Prevention beats treatment — in gear, health, and decision-making</li>
-        <li>Consistency beats intensity — sustainable systems finish trails</li>
-        <li>Sleep and recovery are non-negotiable</li>
-        <li>Weight reduction comes from discipline, not deprivation</li>
-        <li>Every decision should serve one goal: reaching Katahdin</li>
-      </ul>
-      <blockquote class="trail-rule">
-        "Slow early. Strong later. Never break the 5-day rule."
-      </blockquote>
-    </section>
-  </div>
-</BaseLayout>
-
-<style>
-  .guide-container {
-    padding-bottom: 4rem;
-  }
-
-  .guide-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin: 1.5rem 0 2rem;
-    padding: 1rem;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-  }
-
-  .view-toggle-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .view-label {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-right: 0.25rem;
-  }
-
-  .view-btn {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
-    text-decoration: none;
-    color: var(--pine);
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    transition: all 0.15s ease;
-  }
-
-  .view-btn:hover {
-    border-color: var(--alpine);
-    background: rgba(166, 181, 137, 0.1);
-  }
-
-  .view-btn.active {
-    background: var(--alpine);
-    border-color: var(--pine);
-    color: #fff;
-    font-weight: 600;
-  }
-
-  @media (max-width: 600px) {
-    .guide-toolbar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .view-toggle-group {
-      justify-content: center;
-    }
-  }
-
-  .section-title {
-    font-size: 1.25rem;
-    color: var(--pine);
-    margin: 2.5rem 0 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--border);
-  }
-
-  .section-desc {
-    color: var(--muted);
-    margin-bottom: 1rem;
-    font-size: 0.95rem;
-  }
-
-  /* Quick Reference Grid */
-  .quick-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .quick-card {
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-    background: var(--marker);
-    border: 2px solid #e0d400;
-    border-radius: 10px;
-    text-decoration: none;
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
-  }
-
-  .quick-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  }
-
-  .quick-title {
-    font-weight: 700;
-    color: #2b2f26;
-    font-size: 0.95rem;
-  }
-
-  .quick-desc {
-    font-size: 0.8rem;
-    color: #4a4a40;
-    margin-top: 0.25rem;
-  }
-
-  /* Table of Contents */
-  .toc {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-
-  .toc-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 0.875rem 1rem;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    text-decoration: none;
-    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
-  }
-
-  .toc-item:hover {
-    transform: translateX(4px);
-    border-color: var(--alpine);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  }
-
-  .toc-number {
-    font-family: Oswald, sans-serif;
-    font-weight: 600;
-    color: var(--muted);
-    font-size: 0.9rem;
-    min-width: 1.5rem;
-  }
-
-  .toc-content {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .toc-title {
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .toc-desc {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-top: 0.125rem;
-  }
-
-  /* Principles */
-  .principles {
-    margin: 1rem 0;
-    padding-left: 1.25rem;
-  }
-
-  .principles li {
-    margin: 0.5rem 0;
-    color: var(--fg);
-  }
-
-  .trail-rule {
-    margin: 1.5rem 0;
-    padding: 1rem 1.25rem;
-    background: var(--card);
-    border-left: 4px solid var(--alpine);
-    font-size: 1.1rem;
-    font-style: italic;
-    color: var(--pine);
-  }
-
-  /* Mobile optimization */
-  @media (max-width: 600px) {
-    .quick-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .toc-item {
-      padding: 0.75rem;
-    }
-
-    .toc-number {
-      display: none;
-    }
-  }
-</style>
+    <script define:vars={{ markdownContent }}>
+      document.getElementById('download-md-btn')?.addEventListener('click', function() {
+        const blob = new Blob([markdownContent], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'AT-Field-Guide-2026.md';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    </script>
+  </body>
+</html>
