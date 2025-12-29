@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
+import GuideHeader from '../../components/GuideHeader.svelte';
 import FullGuideNav from '../../components/FullGuideNav.svelte';
 import GuideInlineSearch from '../../components/GuideInlineSearch.svelte';
 import fs from 'node:fs';
@@ -79,7 +80,7 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
       }
 
       .guide-wrapper {
-        padding-top: 65px;
+        padding-top: 100px; /* Header (44px) + Progress bar (45px) + breathing room */
       }
 
       @media (min-width: 1025px) {
@@ -376,7 +377,7 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
 
       /* ===== Chapter Sections ===== */
       .chapter-section {
-        scroll-margin-top: 80px;
+        scroll-margin-top: 110px; /* Account for header + progress bar */
         padding: 3rem 0;
         border-bottom: 1px dashed var(--border);
         position: relative;
@@ -873,6 +874,7 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
     </style>
   </head>
   <body class="guide-page">
+    <GuideHeader client:load />
     <FullGuideNav client:load chapters={navChapters} markdownContent={markdownContent} />
 
     <div class="guide-wrapper">

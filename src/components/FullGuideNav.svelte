@@ -8,8 +8,17 @@
   let progress = 0;
   let showMobileNav = false;
   let showBackToTop = false;
+  let headerVisible = true;
 
   onMount(() => {
+    // Watch for header visibility changes
+    const header = document.querySelector('.guide-header');
+    if (header) {
+      const observer = new MutationObserver(() => {
+        headerVisible = !header.classList.contains('hidden');
+      });
+      observer.observe(header, { attributes: true, attributeFilter: ['class'] });
+    }
     const sections = document.querySelectorAll('.chapter-section');
     const observerOptions = {
       root: null,
@@ -47,7 +56,7 @@
   function scrollToChapter(id) {
     const element = document.getElementById(id);
     if (element) {
-      const offset = 80;
+      const offset = headerVisible ? 100 : 55; // Account for header + progress bar
       const top = element.getBoundingClientRect().top + window.scrollY - offset;
       window.scrollTo({ top, behavior: 'smooth' });
       showMobileNav = false;
@@ -95,7 +104,7 @@
 </script>
 
 <!-- Progress Bar -->
-<div class="progress-container">
+<div class="progress-container" style="top: {headerVisible ? '44px' : '0'}">
   <div class="progress-track">
     <div class="progress-fill" style="width: {progress}%"></div>
     <div class="progress-marker" style="left: {progress}%">
@@ -110,7 +119,7 @@
 </div>
 
 <!-- Desktop Sidebar -->
-<nav class="sidebar" aria-label="Table of Contents">
+<nav class="sidebar" style="top: {headerVisible ? '89px' : '45px'}" aria-label="Table of Contents">
   <div class="sidebar-header">
     <span class="sidebar-icon">📖</span>
     <span class="sidebar-title">Contents</span>
@@ -246,14 +255,14 @@
   /* ===== Progress Bar ===== */
   .progress-container {
     position: fixed;
-    top: 0;
     left: 0;
     right: 0;
-    z-index: 1000;
+    z-index: 999;
     background: linear-gradient(to bottom, rgba(245, 242, 232, 0.98), rgba(245, 242, 232, 0.95));
     backdrop-filter: blur(8px);
     padding: 0.5rem 1rem 0.4rem;
     border-bottom: 1px solid var(--border, #e6e1d4);
+    transition: top 0.3s ease;
   }
 
   .progress-track {
@@ -316,9 +325,9 @@
   .sidebar {
     position: fixed;
     left: 0;
-    top: 60px;
     bottom: 0;
     width: 220px;
+    transition: top 0.3s ease;
     background: rgba(245, 242, 232, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid var(--border, #e6e1d4);
