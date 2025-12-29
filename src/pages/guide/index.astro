@@ -156,6 +156,29 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
         font-size: 0.85rem;
         color: var(--muted);
         line-height: 1.8;
+        margin: 0;
+      }
+
+      .masthead-hiker {
+        margin: 1rem 0 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.15rem;
+      }
+
+      .hiker-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--muted);
+      }
+
+      .hiker-name {
+        font-size: 1.75rem;
+        color: var(--pine);
+        font-weight: 600;
+        letter-spacing: 0.05em;
       }
 
       .masthead-divider {
@@ -970,8 +993,11 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
           </h1>
           <p class="masthead-subtitle">Springer Mountain → Mount Katahdin</p>
           <p class="masthead-meta">
-            2,190+ Miles of Trail-Tested Knowledge<br/>
-            Prepared for HoggCountry
+            2,190+ Miles of Trail-Tested Knowledge
+          </p>
+          <p class="masthead-hiker">
+            <span class="hiker-label">Prepared for</span>
+            <span class="hiker-name hand">THEMAN</span>
           </p>
           <div class="masthead-divider"></div>
         </header>
