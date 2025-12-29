@@ -1096,32 +1096,20 @@ const description = "The Complete Appalachian Trail NOBO Field Guide. 2,190+ mil
       document.getElementById('download-md-btn')?.addEventListener('click', downloadMarkdown);
       document.getElementById('download-md-header')?.addEventListener('click', downloadMarkdown);
 
-      // Scroll-based header hide/show
-      let lastScrollY = 0;
+      // Header only visible at very top of page
       const headerWrapper = document.querySelector('.guide-header-wrapper');
-      const scrollThreshold = 100;
+      const scrollThreshold = 50;
 
       function handleScroll() {
-        const currentScrollY = window.scrollY;
-
-        // Always show at top of page
-        if (currentScrollY < scrollThreshold) {
+        if (window.scrollY < scrollThreshold) {
           headerWrapper?.classList.remove('is-hidden');
-          lastScrollY = currentScrollY;
-          return;
-        }
-
-        // Hide on scroll down, show on scroll up
-        if (currentScrollY > lastScrollY + 10) {
+        } else {
           headerWrapper?.classList.add('is-hidden');
-        } else if (currentScrollY < lastScrollY - 10) {
-          headerWrapper?.classList.remove('is-hidden');
         }
-
-        lastScrollY = currentScrollY;
       }
 
       window.addEventListener('scroll', handleScroll, { passive: true });
+      handleScroll(); // Check initial state
     </script>
   </body>
 </html>
