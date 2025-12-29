@@ -83,17 +83,7 @@
       </div>
     {:else if activeTool === 'gear'}
       <div class="tool-panel">
-        <div class="gear-wrapper">
-          <GearCalculator />
-        </div>
-        <div class="gear-philosophy">
-          <blockquote>
-            "Base weight is the foundation of sustainable long-distance hiking. Every ounce
-            carried compounds over thousands of miles into joint stress, fatigue, and potential
-            injury."
-          </blockquote>
-          <p class="source">— <a href="/guide/02-gear-system">Gear System Chapter</a></p>
-        </div>
+        <GearCalculator />
       </div>
     {:else if activeTool === 'daylight'}
       <div class="tool-panel">
@@ -299,44 +289,6 @@
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  /* Gear Calculator Wrapper */
-  .gear-wrapper {
-    background: var(--card, #fff);
-    border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    margin-bottom: 1.5rem;
-  }
-
-  .gear-philosophy {
-    padding: 1.25rem 1.5rem;
-    background: var(--card, #fff);
-    border-left: 4px solid var(--alpine, #a6b589);
-    border-radius: 0 12px 12px 0;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-  }
-
-  .gear-philosophy blockquote {
-    margin: 0;
-    font-style: italic;
-    color: var(--pine, #4d594a);
-    line-height: 1.6;
-    font-size: 0.95rem;
-  }
-
-  .gear-philosophy .source {
-    margin: 0.75rem 0 0;
-    font-size: 0.85rem;
-    color: var(--muted, #5c665a);
-  }
-
-  .gear-philosophy .source a {
-    color: var(--pine, #4d594a);
-    text-decoration: underline;
-    text-decoration-color: var(--alpine, #a6b589);
-    text-underline-offset: 2px;
   }
 
   /* Coming Soon */
