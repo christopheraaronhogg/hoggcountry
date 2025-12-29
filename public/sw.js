@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v2';
+const CACHE_NAME = 'hogg-country-v3';
 
 // Core pages to precache on install
 const CORE_PAGES = [
@@ -55,15 +55,36 @@ const STATIC_ASSETS = [
   '/fonts/atkinson-bold.woff',
 ];
 
-// Install event - precache core resources
+// Install event - precache core resources + JS/CSS chunks
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing v2...');
+  console.log('[SW] Installing v3...');
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] Precaching core pages and assets');
 
-      // Cache static assets first (they won't fail)
+      // Cache static assets first
       await cache.addAll(STATIC_ASSETS);
+
+      // Fetch and cache the asset manifest (JS/CSS chunks)
+      try {
+        const manifestResponse = await fetch('/asset-manifest.json');
+        if (manifestResponse.ok) {
+          const manifest = await manifestResponse.json();
+          console.log(`[SW] Caching ${manifest.assets.length} JS/CSS chunks`);
+
+          // Cache all JS/CSS assets in parallel
+          const assetPromises = manifest.assets.map(async (url) => {
+            try {
+              await cache.add(url);
+            } catch (err) {
+              console.warn(`[SW] Failed to cache asset ${url}:`, err.message);
+            }
+          });
+          await Promise.all(assetPromises);
+        }
+      } catch (err) {
+        console.warn('[SW] Could not load asset manifest:', err.message);
+      }
 
       // Cache core pages
       const pagePromises = [...CORE_PAGES, ...GUIDE_CHAPTERS].map(async (url) => {
@@ -75,7 +96,7 @@ self.addEventListener('install', (event) => {
       });
 
       await Promise.all(pagePromises);
-      console.log('[SW] Precache complete');
+      console.log('[SW] Precache complete - site ready for offline use');
       return self.skipWaiting();
     })
   );
