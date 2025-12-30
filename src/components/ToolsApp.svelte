@@ -1,14 +1,22 @@
 <script>
   import { onMount } from 'svelte';
   import { fade, slide } from 'svelte/transition';
+  // Core 14 tools (consolidated from 22)
+  import LayeringAdvisor from './LayeringAdvisor.svelte';
+  import ShelterDecision from './ShelterDecision.svelte';
+  import WeatherAssessor from './WeatherAssessor.svelte';
   import MilestoneCalculator from './MilestoneCalculator.svelte';
-  import GearCalculator from './GearCalculator.svelte';
-  import DaylightCalculator from './DaylightCalculator.svelte';
+  import PackBuilder from './PackBuilder.svelte';
   import ResupplyCalculator from './ResupplyCalculator.svelte';
+  import WaterTracker from './WaterTracker.svelte';
   import BudgetCalculator from './BudgetCalculator.svelte';
+  import MailDropPlanner from './MailDropPlanner.svelte';
+  import PowerManager from './PowerManager.svelte';
+  import FoodCalculator from './FoodCalculator.svelte';
+  import GearTransitionTracker from './GearTransitionTracker.svelte';
+  import TrainingPlanner from './TrainingPlanner.svelte';
   import EmergencyCard from './EmergencyCard.svelte';
   import QuickLog from './QuickLog.svelte';
-  import WaterTracker from './WaterTracker.svelte';
 
   // Trail landmarks for mile context
   const landmarks = [
@@ -33,13 +41,21 @@
     { mile: 2198, name: 'Katahdin' },
   ];
 
+  // Consolidated 14 high-leverage tools
   const tools = [
+    { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
+    { id: 'shelter', name: 'Shelter', icon: '🏠', desc: 'Tent vs shelter decision' },
+    { id: 'weather', name: 'Weather', icon: '🌤️', desc: 'Weather, heat zones & daylight' },
     { id: 'milestone', name: 'Milestones', icon: '📍', desc: 'Plan your journey timeline' },
-    { id: 'gear', name: 'Gear', icon: '⚖️', desc: 'Optimize pack weight' },
-    { id: 'daylight', name: 'Daylight', icon: '🌅', desc: 'Sunrise & sunset times' },
-    { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Town & food planner' },
+    { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
+    { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Towns, food & mail drops' },
     { id: 'water', name: 'Water', icon: '💧', desc: 'Water sources & carry calc' },
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
+    { id: 'mail', name: 'Mail', icon: '📬', desc: 'Plan resupply mail drops' },
+    { id: 'power', name: 'Power', icon: '🔋', desc: 'Manage battery & devices' },
+    { id: 'food', name: 'Food', icon: '🍽️', desc: 'Calorie & weight calculator' },
+    { id: 'geartrans', name: 'Swap', icon: '🔄', desc: 'Gear transition planner' },
+    { id: 'training', name: 'Train', icon: '🏋️', desc: 'Pre-trail preparation' },
     { id: 'emergency', name: 'Emergency', icon: '🆘', desc: 'Emergency info & bailouts' },
   ];
 
@@ -59,7 +75,7 @@
   let targetPace = $state(15);
 
   // Tool navigation state
-  let activeTool = $state('milestone');
+  let activeTool = $state('layers');
   let isTransitioning = $state(false);
   let mounted = $state(false);
 
@@ -391,17 +407,23 @@
     {/each}
   </nav>
 
-  <!-- Tool Content - All tools render for SSR CSS extraction, hidden via CSS -->
+  <!-- Tool Content - 14 consolidated tools, hidden via CSS -->
   <div class="tool-viewport">
     <div class="tool-container" class:transitioning={isTransitioning}>
+      <div class="tool-panel" class:hidden={activeTool !== 'layers'}>
+        <LayeringAdvisor {trailContext} />
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'shelter'}>
+        <ShelterDecision {trailContext} />
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'weather'}>
+        <WeatherAssessor {trailContext} />
+      </div>
       <div class="tool-panel" class:hidden={activeTool !== 'milestone'}>
         <MilestoneCalculator {trailContext} />
       </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'gear'}>
-        <GearCalculator {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'daylight'}>
-        <DaylightCalculator {trailContext} />
+      <div class="tool-panel" class:hidden={activeTool !== 'pack'}>
+        <PackBuilder {trailContext} />
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'resupply'}>
         <ResupplyCalculator {trailContext} />
@@ -411,6 +433,21 @@
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'budget'}>
         <BudgetCalculator {trailContext} />
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'mail'}>
+        <MailDropPlanner {trailContext} />
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'power'}>
+        <PowerManager {trailContext} />
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'food'}>
+        <FoodCalculator {trailContext} />
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'geartrans'}>
+        <GearTransitionTracker {trailContext} />
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'training'}>
+        <TrainingPlanner {trailContext} />
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'emergency'}>
         <EmergencyCard {trailContext} />
@@ -896,7 +933,7 @@
   /* ========== NAVIGATION ========== */
   .tools-nav {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(14, 1fr);
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -1215,7 +1252,7 @@
     }
 
     .tools-nav {
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 0.2rem;
       padding: 0.25rem;
       border-radius: 10px;

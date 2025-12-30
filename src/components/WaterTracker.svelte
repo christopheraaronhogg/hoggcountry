@@ -5,6 +5,9 @@
 
   let mounted = $state(false);
 
+  // Active section tab
+  let activeSection = $state('sources'); // 'sources', 'types', 'protocol'
+
   // User settings
   let consumptionRate = $state(0.5); // liters per mile (typical: 0.4-0.8)
   let carryCapacity = $state(3); // max liters you can carry
@@ -379,6 +382,76 @@
     return icons[type] || '💧';
   }
 
+  // Water type classification system (green/yellow/red light)
+  const waterTypeClassification = {
+    green: {
+      label: 'Best Water',
+      icon: '🟢',
+      color: '#16a34a',
+      treatment: 'Filter or drops work well. Filter + drops is ideal.',
+      types: [
+        { name: 'Piped springs', desc: 'Controlled, reliable flow' },
+        { name: 'Flowing springs', desc: 'Natural ground water pushing up' },
+        { name: 'Rock-fed hillside trickles', desc: 'Clean runoff from rock' },
+        { name: 'Waterfalls', desc: 'Aerated, fast-moving water' },
+        { name: 'Fast, cold creeks', desc: 'Flowing mountain streams' },
+      ]
+    },
+    yellow: {
+      label: 'Acceptable with Caution',
+      icon: '🟡',
+      color: '#ca8a04',
+      treatment: 'Use full treatment protocol.',
+      types: [
+        { name: 'Clear pooled spring seeps', desc: 'Standing but spring-fed' },
+        { name: 'Large rivers', desc: 'Upstream of human activity' },
+        { name: 'Large, cold lakes', desc: 'Prefer inflow streams' },
+        { name: 'Fresh, clean snow', desc: 'Must be melted and treated' },
+      ]
+    },
+    red: {
+      label: 'Avoid Even With Treatment',
+      icon: '🔴',
+      color: '#dc2626',
+      treatment: 'Treatment does not make these safe.',
+      types: [
+        { name: 'Rain puddles', desc: 'Surface runoff, contaminated' },
+        { name: 'Beaver ponds', desc: 'High giardia risk' },
+        { name: 'Warm stagnant pools', desc: 'Bacterial growth zone' },
+        { name: 'Algae-covered water', desc: 'Toxin risk' },
+        { name: 'Road or farm runoff', desc: 'Chemical contamination' },
+        { name: 'Water with chemical/rotten smell', desc: 'Trust your nose' },
+      ]
+    }
+  };
+
+  // Map source types to light classification
+  function getWaterLight(type) {
+    const greenTypes = ['spring', 'piped', 'stream', 'creek'];
+    const yellowTypes = ['river', 'pond', 'town'];
+    if (greenTypes.includes(type)) return 'green';
+    if (yellowTypes.includes(type)) return 'yellow';
+    return 'green'; // default for unknown
+  }
+
+  // Questionable Water Protocol
+  const questionableProtocol = {
+    questions: [
+      { q: 'Cold or warm?', bad: 'Warm water = higher contamination risk' },
+      { q: 'Moving or pooled?', bad: 'Pooled water = more time for pathogens' },
+      { q: 'Rock source or dirt runoff?', bad: 'Dirt runoff = surface contamination' },
+      { q: 'Any smell, algae, or animal tracks?', bad: 'Visible contamination signs' },
+    ],
+    ifForced: [
+      'Pre-filter through bandana/cloth',
+      'Filter through hollow fiber',
+      'Add chemical drops',
+      'Full or double contact time',
+      'Don\'t chug immediately',
+    ],
+    warning: 'This reduces risk — it does not erase it.'
+  };
+
   // Select target source for calculator
   function selectTarget(mile) {
     targetMile = mile;
@@ -415,6 +488,23 @@
     {/if}
   </div>
 
+  <!-- Section Tabs -->
+  <div class="section-tabs">
+    <button class="stab" class:active={activeSection === 'sources'} onclick={() => activeSection = 'sources'}>
+      <span class="stab-icon">📍</span>
+      <span class="stab-text">Sources</span>
+    </button>
+    <button class="stab" class:active={activeSection === 'types'} onclick={() => activeSection = 'types'}>
+      <span class="stab-icon">🚦</span>
+      <span class="stab-text">Types</span>
+    </button>
+    <button class="stab" class:active={activeSection === 'protocol'} onclick={() => activeSection = 'protocol'}>
+      <span class="stab-icon">⚠️</span>
+      <span class="stab-text">Protocol</span>
+    </button>
+  </div>
+
+  {#if activeSection === 'sources'}
   <!-- Quick Settings -->
   <div class="settings-bar">
     <div class="setting-item">
@@ -460,7 +550,10 @@
           onclick={() => selectTarget(source.mile)}
         >
           <div class="source-main">
-            <div class="source-icon">{typeIcon(source.type)}</div>
+            <div class="source-icon-wrap">
+              <div class="source-icon">{typeIcon(source.type)}</div>
+              <span class="water-light-indicator" class:green={getWaterLight(source.type) === 'green'} class:yellow={getWaterLight(source.type) === 'yellow'}></span>
+            </div>
             <div class="source-info">
               <div class="source-name">{source.name}</div>
               <div class="source-meta">
@@ -631,6 +724,100 @@
       <li><strong>Town water</strong> — Fill up at every opportunity</li>
     </ul>
   </div>
+  {/if}
+
+  <!-- Water Types Section -->
+  {#if activeSection === 'types'}
+  <div class="types-content">
+    <div class="types-intro">
+      <p><strong>Not all water is equal.</strong> Even with treatment, some sources are safer than others.</p>
+    </div>
+
+    {#each Object.entries(waterTypeClassification) as [key, classification]}
+      <div class="type-category" style="--type-color: {classification.color}">
+        <div class="type-header">
+          <span class="type-light">{classification.icon}</span>
+          <h3 class="type-label">{classification.label}</h3>
+        </div>
+        <div class="type-treatment">{classification.treatment}</div>
+        <div class="type-list">
+          {#each classification.types as type}
+            <div class="type-item">
+              <span class="type-name">{type.name}</span>
+              <span class="type-desc">{type.desc}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/each}
+
+    <div class="types-rules">
+      <h4>Water Planning Rules</h4>
+      <div class="rules-grid">
+        <div class="rule-item trust"><span class="rule-icon">✓</span> Creeks = Trust</div>
+        <div class="rule-item verify"><span class="rule-icon">?</span> Springs = Verify</div>
+        <div class="rule-item ignore"><span class="rule-icon">✗</span> Seeps = Ignore</div>
+      </div>
+      <ul class="rules-list">
+        <li>Never skip water before a ridge</li>
+        <li>Carry extra when shelter water is spring-fed</li>
+        <li>Ask: "What's my next guaranteed creek?"</li>
+      </ul>
+    </div>
+  </div>
+  {/if}
+
+  <!-- Questionable Water Protocol -->
+  {#if activeSection === 'protocol'}
+  <div class="protocol-content">
+    <div class="protocol-intro">
+      <div class="protocol-icon">⚠️</div>
+      <div class="protocol-text">
+        <h3>When You Hesitate at a Source</h3>
+        <p>If any answer is wrong, treatment alone is not enough.</p>
+      </div>
+    </div>
+
+    <div class="protocol-questions">
+      <h4>Ask These Questions</h4>
+      {#each questionableProtocol.questions as item, i}
+        <div class="question-item">
+          <div class="question-number">{i + 1}</div>
+          <div class="question-content">
+            <div class="question-text">{item.q}</div>
+            <div class="question-bad">{item.bad}</div>
+          </div>
+        </div>
+      {/each}
+    </div>
+
+    <div class="protocol-forced">
+      <h4>If Forced to Use Questionable Water</h4>
+      <div class="forced-steps">
+        {#each questionableProtocol.ifForced as step, i}
+          <div class="forced-step">
+            <span class="step-number">{i + 1}</span>
+            <span class="step-text">{step}</span>
+          </div>
+        {/each}
+      </div>
+      <div class="protocol-warning">
+        <span class="warning-icon">⚠️</span>
+        <span>{questionableProtocol.warning}</span>
+      </div>
+    </div>
+
+    <div class="protocol-visual">
+      <h4>Visual Red Flags — Skip or Move Upstream</h4>
+      <div class="red-flags">
+        <span class="flag">Algae/green film</span>
+        <span class="flag">Strong odor</span>
+        <span class="flag">Heavy animal activity</span>
+        <span class="flag">Flood runoff after rain</span>
+      </div>
+    </div>
+  </div>
+  {/if}
 </div>
 
 <style>
@@ -913,8 +1100,30 @@
     min-width: 200px;
   }
 
+  .source-icon-wrap {
+    position: relative;
+  }
+
   .source-icon {
     font-size: 1.5rem;
+  }
+
+  .water-light-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+  }
+
+  .water-light-indicator.green {
+    background: #16a34a;
+  }
+
+  .water-light-indicator.yellow {
+    background: #ca8a04;
   }
 
   .source-info {
@@ -1267,6 +1476,390 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 0.5rem;
+    }
+  }
+
+  /* Section Tabs */
+  .section-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.9rem 0.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .stab:hover {
+    background: rgba(14, 165, 233, 0.05);
+    color: var(--ink);
+  }
+
+  .stab.active {
+    color: #0284c7;
+    border-bottom-color: #0284c7;
+    background: rgba(14, 165, 233, 0.08);
+  }
+
+  .stab-icon {
+    font-size: 1rem;
+  }
+
+  .stab-text {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* Types Content */
+  .types-content {
+    padding: 1.5rem;
+  }
+
+  .types-intro {
+    padding: 1rem;
+    background: #f0f9ff;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .types-intro p {
+    margin: 0;
+  }
+
+  .type-category {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--type-color);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+
+  .type-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(90deg, rgba(0,0,0,0.02), transparent);
+  }
+
+  .type-light {
+    font-size: 1.5rem;
+  }
+
+  .type-label {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--type-color);
+  }
+
+  .type-treatment {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .type-list {
+    padding: 0.75rem 1rem;
+  }
+
+  .type-item {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .type-item:last-child {
+    border-bottom: none;
+  }
+
+  .type-name {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.9rem;
+  }
+
+  .type-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .types-rules {
+    background: #fefce8;
+    border: 1px solid #fbbf24;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .types-rules h4 {
+    margin: 0 0 1rem;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    color: #92400e;
+  }
+
+  .rules-grid {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .rule-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .rule-item.trust {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .rule-item.verify {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .rule-item.ignore {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .rule-icon {
+    font-size: 0.9rem;
+  }
+
+  .rules-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+
+  .rules-list li {
+    margin-bottom: 0.35rem;
+  }
+
+  /* Protocol Content */
+  .protocol-content {
+    padding: 1.5rem;
+  }
+
+  .protocol-intro {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .protocol-icon {
+    font-size: 2rem;
+  }
+
+  .protocol-text h3 {
+    margin: 0 0 0.35rem;
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    color: #991b1b;
+  }
+
+  .protocol-text p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #7f1d1d;
+  }
+
+  .protocol-questions {
+    margin-bottom: 1.5rem;
+  }
+
+  .protocol-questions h4, .protocol-forced h4, .protocol-visual h4 {
+    margin: 0 0 1rem;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    color: var(--pine);
+  }
+
+  .question-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+  }
+
+  .question-number {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0ea5e9;
+    color: #fff;
+    border-radius: 50%;
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .question-content {
+    flex: 1;
+  }
+
+  .question-text {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .question-bad {
+    font-size: 0.8rem;
+    color: var(--terra);
+  }
+
+  .protocol-forced {
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .forced-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .forced-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #fff;
+    border-radius: 8px;
+  }
+
+  .step-number {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f59e0b;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .step-text {
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+
+  .protocol-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #fee2e2;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #991b1b;
+  }
+
+  .protocol-visual {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .red-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .flag {
+    padding: 0.5rem 0.75rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  @media (max-width: 640px) {
+    .section-tabs {
+      overflow-x: auto;
+    }
+
+    .stab {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .stab-icon {
+      font-size: 0.9rem;
+    }
+
+    .protocol-intro {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .question-item {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .question-number {
+      margin: 0 auto;
+    }
+
+    .rules-grid {
+      flex-direction: column;
     }
   }
 </style>

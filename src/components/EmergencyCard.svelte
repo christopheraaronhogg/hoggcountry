@@ -5,6 +5,7 @@
 
   let mounted = $state(false);
   let editMode = $state(false);
+  let activeSection = $state('exits'); // 'exits', 'medical', 'script', 'personal'
 
   // Emergency contacts
   let contacts = $state([
@@ -20,6 +21,43 @@
     insurance: '',
     doctorPhone: '',
   });
+
+  // Medical & Dental Access Points from guide (Chapter 13)
+  const medicalAccess = [
+    { mile: 69, town: 'Hiawassee, GA', distance: 11, urgentCare: true, dental: true, hospital: false, notes: 'First strong medical/dental access after Springer' },
+    { mile: 110, town: 'Franklin, NC', distance: 10, urgentCare: true, dental: true, hospital: false, notes: 'Excellent for infections, joint injuries' },
+    { mile: 275, town: 'Hot Springs, NC', distance: 0, urgentCare: false, dental: true, hospital: false, notes: 'Minor issues only—Asheville (~35 mi) for serious' },
+    { mile: 342, town: 'Erwin / Johnson City, TN', distance: 5, urgentCare: true, dental: true, hospital: true, notes: 'One of the strongest early-trail medical zones' },
+    { mile: 469, town: 'Damascus / Abingdon, VA', distance: 0, urgentCare: true, dental: true, hospital: false, notes: 'Ideal location to fix problems before they escalate' },
+    { mile: 728, town: 'Daleville / Roanoke, VA', distance: 1, urgentCare: true, dental: true, hospital: true, notes: 'TOP-TIER medical/dental zone. Strongly recommended.' },
+    { mile: 880, town: 'Waynesboro, VA', distance: 5, urgentCare: true, dental: true, hospital: true, notes: 'Last major fix-it stop before Shenandoah' },
+    { mile: 999, town: 'Front Royal, VA', distance: 5, urgentCare: true, dental: true, hospital: false, notes: 'Excellent care before Mid-Atlantic terrain' },
+    { mile: 1025, town: 'Harpers Ferry, WV', distance: 0, urgentCare: true, dental: true, hospital: true, notes: 'Major hub with reliable transportation and care' },
+    { mile: 1145, town: 'Duncannon, PA', distance: 0, urgentCare: false, dental: false, hospital: false, notes: 'Regional (Harrisburg area). PA is hard on feet!' },
+    { mile: 1298, town: 'Delaware Water Gap, PA', distance: 0, urgentCare: true, dental: true, hospital: true, notes: 'Strong overlap of urgent care, dental, and hospital' },
+    { mile: 1410, town: 'Bear Mountain, NY', distance: 3, urgentCare: true, dental: true, hospital: false, notes: 'Hudson Valley clinics' },
+    { mile: 1538, town: 'Great Barrington, MA', distance: 5, urgentCare: true, dental: true, hospital: false, notes: 'Fairview Hospital Walk-In Care' },
+    { mile: 1570, town: 'Dalton, MA', distance: 0, urgentCare: true, dental: true, hospital: false, notes: 'Last reliable access before Vermont' },
+    { mile: 1600, town: 'Bennington, VT', distance: 5, urgentCare: true, dental: false, hospital: true, notes: 'First major medical hub in Vermont' },
+    { mile: 1700, town: 'Killington, VT', distance: 5, urgentCare: true, dental: true, hospital: false, notes: 'Last significant access before the Whites' },
+    { mile: 1747, town: 'Hanover / Lebanon, NH', distance: 0, urgentCare: true, dental: true, hospital: true, notes: 'CRITICAL stop before White Mountains. Fix everything here.' },
+    { mile: 1898, town: 'Gorham, NH', distance: 2, urgentCare: false, dental: false, hospital: false, notes: 'Limited—Conway (~30 mi). Do not ignore dental pain!' },
+    { mile: 1975, town: 'Andover, ME', distance: 1, urgentCare: false, dental: false, hospital: false, notes: 'Very limited; Rumford (~20 mi). Last before Monson' },
+    { mile: 2077, town: 'Monson, ME', distance: 0, urgentCare: false, dental: false, hospital: false, notes: 'ENTER 100-MILE WILDERNESS WITH ZERO ISSUES' },
+    { mile: 2183, town: 'Millinocket, ME', distance: 15, urgentCare: true, dental: true, hospital: true, notes: 'Primary medical hub for final stretch' },
+  ];
+
+  // Emergency Call Script
+  const emergencyScript = [
+    'I am on the Appalachian Trail.',
+    'State: [STATE]',
+    'Nearest named point: [ROAD/SHELTER/LANDMARK]',
+    'I am hiking northbound.',
+    'Approximate mile marker: [MILE]',
+    'GPS coordinates: [LAT/LONG]',
+    'Can I walk: Yes/No/Limited',
+    'Nature of problem: [ISSUE]'
+  ];
 
   // Road crossings with bailout info (comprehensive AT data)
   const roadCrossings = [
@@ -134,6 +172,20 @@
     return behind.length > 0 ? behind[behind.length - 1] : roadCrossings[0];
   });
 
+  // Find nearest medical access points
+  let nearestMedical = $derived.by(() => {
+    return medicalAccess
+      .map(m => ({ ...m, milesAway: Math.abs(m.mile - currentMile), direction: m.mile >= currentMile ? 'ahead' : 'behind' }))
+      .sort((a, b) => a.milesAway - b.milesAway)
+      .slice(0, 5);
+  });
+
+  // Next medical access with full services
+  let nextFullMedical = $derived(
+    medicalAccess.find(m => m.mile > currentMile && m.urgentCare && m.dental) ||
+    medicalAccess[medicalAccess.length - 1]
+  );
+
   // Format phone for tel: link
   function formatPhone(phone) {
     return phone.replace(/[^0-9+]/g, '');
@@ -187,6 +239,27 @@
     {/if}
   </div>
 
+  <!-- Section Tabs -->
+  <div class="section-tabs">
+    <button class="stab" class:active={activeSection === 'exits'} onclick={() => activeSection = 'exits'}>
+      <span class="stab-icon">🚗</span>
+      <span class="stab-text">Exits</span>
+    </button>
+    <button class="stab" class:active={activeSection === 'medical'} onclick={() => activeSection = 'medical'}>
+      <span class="stab-icon">🏥</span>
+      <span class="stab-text">Medical</span>
+    </button>
+    <button class="stab" class:active={activeSection === 'script'} onclick={() => activeSection = 'script'}>
+      <span class="stab-icon">📋</span>
+      <span class="stab-text">Script</span>
+    </button>
+    <button class="stab" class:active={activeSection === 'personal'} onclick={() => activeSection = 'personal'}>
+      <span class="stab-icon">👤</span>
+      <span class="stab-text">Info</span>
+    </button>
+  </div>
+
+  {#if activeSection === 'exits'}
   <!-- Nearest Bailouts -->
   <section class="section bailout-section">
     <h3 class="section-title">
@@ -220,7 +293,131 @@
       <span>Nearest hospital: <strong>{nextRoad.hospital}</strong> (~{nextRoad.hospitalDist + Math.round((nextRoad.mile - currentMile))} mi from here)</span>
     </div>
   </section>
+  {/if}
 
+  {#if activeSection === 'medical'}
+  <!-- Medical Access Points -->
+  <section class="section medical-access-section">
+    <h3 class="section-title">
+      <span class="title-icon">🏥</span>
+      Medical & Dental Access
+    </h3>
+
+    <!-- Next Full-Service Location -->
+    {#if nextFullMedical}
+    <div class="next-medical-banner">
+      <div class="nmb-header">
+        <span class="nmb-icon">➡️</span>
+        <span class="nmb-label">Next Full Medical/Dental</span>
+      </div>
+      <div class="nmb-town">{nextFullMedical.town}</div>
+      <div class="nmb-distance">Mile {nextFullMedical.mile} • {(nextFullMedical.mile - currentMile).toFixed(0)} mi ahead</div>
+      <div class="nmb-services">
+        {#if nextFullMedical.urgentCare}<span class="service-badge uc">Urgent Care</span>{/if}
+        {#if nextFullMedical.dental}<span class="service-badge dental">Dental</span>{/if}
+        {#if nextFullMedical.hospital}<span class="service-badge hosp">Hospital</span>{/if}
+      </div>
+      {#if nextFullMedical.notes}
+        <div class="nmb-notes">{nextFullMedical.notes}</div>
+      {/if}
+    </div>
+    {/if}
+
+    <!-- All Medical Access Points -->
+    <div class="medical-list">
+      {#each nearestMedical as access}
+        <div class="medical-item" class:behind={access.direction === 'behind'}>
+          <div class="mi-header">
+            <span class="mi-town">{access.town}</span>
+            <span class="mi-distance" class:ahead={access.direction === 'ahead'}>
+              {access.milesAway.toFixed(0)} mi {access.direction}
+            </span>
+          </div>
+          <div class="mi-services">
+            {#if access.urgentCare}<span class="service-badge uc sm">UC</span>{/if}
+            {#if access.dental}<span class="service-badge dental sm">Dental</span>{/if}
+            {#if access.hospital}<span class="service-badge hosp sm">ER</span>{/if}
+            {#if !access.urgentCare && !access.dental && !access.hospital}
+              <span class="service-badge limited sm">Limited</span>
+            {/if}
+          </div>
+          {#if access.notes}
+            <div class="mi-notes">{access.notes}</div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+
+    <div class="medical-tips">
+      <h4>Trail Medical Rules</h4>
+      <div class="tips-grid">
+        <div class="tip-item">
+          <strong>Urgent Care For:</strong>
+          <span>Sprains, cuts needing stitches, infections, dehydration</span>
+        </div>
+        <div class="tip-item alert">
+          <strong>Dental Red Flags (Don't Wait):</strong>
+          <span>Swelling, tooth fracture, abscess, persistent pain</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  {/if}
+
+  {#if activeSection === 'script'}
+  <!-- Emergency Script -->
+  <section class="section script-section">
+    <h3 class="section-title">
+      <span class="title-icon">📋</span>
+      Emergency Call Script
+    </h3>
+
+    <div class="script-intro">
+      <p><strong>Use this verbatim when calling 911 or rescue services:</strong></p>
+    </div>
+
+    <div class="script-card">
+      {#each emergencyScript as line, i}
+        <div class="script-line" class:editable={line.includes('[')}>
+          <span class="line-num">{i + 1}</span>
+          <span class="line-text">{line}</span>
+        </div>
+      {/each}
+    </div>
+
+    <div class="script-contacts">
+      <h4>Emergency Numbers</h4>
+      <div class="contact-grid">
+        <a href="tel:911" class="contact-card primary">
+          <span class="cc-icon">📞</span>
+          <span class="cc-name">911</span>
+          <span class="cc-desc">Primary emergency</span>
+        </a>
+        <a href="tel:18666776677" class="contact-card secondary">
+          <span class="cc-icon">🏞️</span>
+          <span class="cc-name">NPS</span>
+          <span class="cc-desc">1-866-677-6677</span>
+        </a>
+      </div>
+      <p class="contact-note">911 dispatchers can coordinate with local SAR teams. The NPS number is supplementary.</p>
+    </div>
+
+    <div class="inreach-section">
+      <h4>InReach Bail-Out Method</h4>
+      <p>Message a trusted person at home. They can:</p>
+      <ul>
+        <li>Call hostels and shuttle drivers</li>
+        <li>Coordinate rides</li>
+        <li>Message instructions back to you</li>
+      </ul>
+      <div class="example-msg">
+        <strong>Example:</strong> "Bad weather. Need off-trail help. I'm near AT mile {currentMile} ({trailContext.nearestLandmark?.name || 'current location'})."
+      </div>
+    </div>
+  </section>
+  {/if}
+
+  {#if activeSection === 'personal'}
   <!-- Emergency Contacts -->
   <section class="section contacts-section">
     <h3 class="section-title">
@@ -380,6 +577,7 @@
         ✓ Save Emergency Info
       </button>
     </div>
+  {/if}
   {/if}
 
   <!-- Important Note -->
@@ -895,6 +1093,388 @@
     .contact-edit-row {
       position: relative;
       padding-right: 40px;
+    }
+  }
+
+  /* Section Tabs */
+  .section-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.75rem 0.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .stab:hover {
+    background: rgba(220, 38, 38, 0.05);
+    color: var(--ink);
+  }
+
+  .stab.active {
+    color: #dc2626;
+    border-bottom-color: #dc2626;
+    background: rgba(220, 38, 38, 0.08);
+  }
+
+  .stab-icon {
+    font-size: 1rem;
+  }
+
+  .stab-text {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* Medical Access Styles */
+  .next-medical-banner {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    border: 1px solid #86efac;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .nmb-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #166534;
+    margin-bottom: 0.5rem;
+  }
+
+  .nmb-town {
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #166534;
+  }
+
+  .nmb-distance {
+    font-size: 0.85rem;
+    color: #15803d;
+    margin-bottom: 0.5rem;
+  }
+
+  .nmb-services {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .nmb-notes {
+    font-size: 0.8rem;
+    color: #166534;
+    font-style: italic;
+  }
+
+  .service-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .service-badge.uc {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .service-badge.dental {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .service-badge.hosp {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .service-badge.limited {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  .service-badge.sm {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.35rem;
+  }
+
+  .medical-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .medical-item {
+    padding: 0.75rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .medical-item.behind {
+    opacity: 0.7;
+  }
+
+  .mi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+  }
+
+  .mi-town {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.9rem;
+  }
+
+  .mi-distance {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .mi-distance.ahead {
+    color: #16a34a;
+    font-weight: 600;
+  }
+
+  .mi-services {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .mi-notes {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .medical-tips {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .medical-tips h4 {
+    margin: 0 0 0.75rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    color: #991b1b;
+  }
+
+  .tips-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tip-item {
+    font-size: 0.8rem;
+    color: var(--ink);
+  }
+
+  .tip-item strong {
+    display: block;
+    color: var(--pine);
+    margin-bottom: 0.15rem;
+  }
+
+  .tip-item.alert strong {
+    color: #991b1b;
+  }
+
+  /* Script Section */
+  .script-intro {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+
+  .script-intro p {
+    margin: 0;
+  }
+
+  .script-card {
+    background: #1e293b;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 0.8rem;
+  }
+
+  .script-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    color: #e2e8f0;
+  }
+
+  .script-line.editable {
+    color: #fbbf24;
+  }
+
+  .line-num {
+    color: #64748b;
+    font-size: 0.7rem;
+    min-width: 16px;
+  }
+
+  .line-text {
+    flex: 1;
+  }
+
+  .script-contacts h4, .inreach-section h4 {
+    margin: 0 0 0.75rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    color: var(--pine);
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .contact-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 1rem;
+    border-radius: 10px;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .contact-card.primary {
+    background: #dc2626;
+    color: #fff;
+  }
+
+  .contact-card.primary:hover {
+    background: #b91c1c;
+    transform: scale(1.02);
+  }
+
+  .contact-card.secondary {
+    background: var(--pine);
+    color: #fff;
+  }
+
+  .contact-card.secondary:hover {
+    background: var(--ink);
+    transform: scale(1.02);
+  }
+
+  .cc-icon {
+    font-size: 1.5rem;
+  }
+
+  .cc-name {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .cc-desc {
+    font-size: 0.7rem;
+    opacity: 0.9;
+  }
+
+  .contact-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0 0 1rem;
+  }
+
+  .inreach-section {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .inreach-section p {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+
+  .inreach-section ul {
+    margin: 0 0 0.75rem;
+    padding-left: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .inreach-section li {
+    margin-bottom: 0.25rem;
+  }
+
+  .example-msg {
+    background: #fff;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+
+  .example-msg strong {
+    color: var(--pine);
+  }
+
+  @media (max-width: 600px) {
+    .section-tabs {
+      overflow-x: auto;
+    }
+
+    .stab {
+      padding: 0.6rem 0.35rem;
+      font-size: 0.7rem;
+    }
+
+    .stab-icon {
+      font-size: 0.9rem;
+    }
+
+    .contact-grid {
+      grid-template-columns: 1fr;
     }
   }
 </style>
