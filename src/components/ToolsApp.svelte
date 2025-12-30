@@ -8,6 +8,7 @@
   import BudgetCalculator from './BudgetCalculator.svelte';
   import EmergencyCard from './EmergencyCard.svelte';
   import QuickLog from './QuickLog.svelte';
+  import WaterTracker from './WaterTracker.svelte';
 
   // Trail landmarks for mile context
   const landmarks = [
@@ -37,6 +38,7 @@
     { id: 'gear', name: 'Gear', icon: '⚖️', desc: 'Optimize pack weight' },
     { id: 'daylight', name: 'Daylight', icon: '🌅', desc: 'Sunrise & sunset times' },
     { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Town & food planner' },
+    { id: 'water', name: 'Water', icon: '💧', desc: 'Water sources & carry calc' },
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
     { id: 'emergency', name: 'Emergency', icon: '🆘', desc: 'Emergency info & bailouts' },
   ];
@@ -403,6 +405,9 @@
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'resupply'}>
         <ResupplyCalculator {trailContext} />
+      </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'water'}>
+        <WaterTracker {trailContext} />
       </div>
       <div class="tool-panel" class:hidden={activeTool !== 'budget'}>
         <BudgetCalculator {trailContext} />
@@ -891,7 +896,7 @@
   /* ========== NAVIGATION ========== */
   .tools-nav {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -1210,11 +1215,23 @@
     }
 
     .tools-nav {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 0.2rem;
       padding: 0.25rem;
       border-radius: 10px;
       margin-bottom: 1.5rem;
+    }
+
+    .nav-tab {
+      padding: 0.5rem 0.2rem;
+    }
+
+    .tab-icon {
+      font-size: 1rem;
+    }
+
+    .tab-name {
+      font-size: 0.55rem;
     }
 
     .quick-log-fab {
