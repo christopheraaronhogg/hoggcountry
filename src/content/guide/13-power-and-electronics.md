@@ -1,7 +1,7 @@
 ---
 title: "Power & Electronics"
-part: 12
-order: 12
+part: 13
+order: 13
 description: "Used in towns only. Allows rapid recharge. Minimizes town time."
 icon: "battery"
 ---

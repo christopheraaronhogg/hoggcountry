@@ -1,7 +1,7 @@
 ---
 title: "Food & Resupply"
-part: 7
-order: 7
+part: 8
+order: 8
 description: "This is the dominant norm across the entire trail."
 icon: "utensils"
 ---
@@ -157,7 +157,7 @@ Bears follow scent plumes. Odor reduction reduces investigation time.
 1. Bring 2-2½ cups water to rolling boil
 2. Turn stove OFF
 3. Add noodles
-4. Cover pot immediately
+4. Cover cup immediately with lid
 5. Let sit 5-7 minutes (7-8 minutes below freezing)
 6. Add seasoning packet
 7. Stir thoroughly

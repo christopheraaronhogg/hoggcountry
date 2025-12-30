@@ -1,7 +1,7 @@
 ---
 title: "Trail Resources & Navigation"
-part: 9
-order: 9
+part: 10
+order: 10
 description: "The primary guidebook most Appalachian Trail thru-hikers use and carry is the A.T. Guide (formerly known as AWOL's Ap..."
 icon: "map"
 ---

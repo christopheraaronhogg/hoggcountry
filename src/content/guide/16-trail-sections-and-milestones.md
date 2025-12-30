@@ -1,7 +1,7 @@
 ---
 title: "Trail Sections & Milestones"
-part: 15
-order: 15
+part: 16
+order: 16
 description: "Sharp climbs early, Blood Mountain. First state down."
 icon: "flag"
 ---

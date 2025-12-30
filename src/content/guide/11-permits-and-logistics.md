@@ -1,7 +1,7 @@
 ---
 title: "Permits & Logistics"
-part: 10
-order: 10
+part: 11
+order: 11
 description: "Additional Fee: $15 park entrance fee may be required at staffed entry points. AT thru-hikers entering via trail typi..."
 icon: "clipboard"
 ---

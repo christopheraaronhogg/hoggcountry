@@ -1,7 +1,7 @@
 ---
 title: "Shelter Vs. Tent Decision System"
-part: 5
-order: 5
+part: 6
+order: 6
 description: "Bottom line: Blood Mountain is not taller, but it hits harder sooner. You already handled equal or harder terrain in NC."
 icon: "home"
 ---

@@ -1,7 +1,7 @@
 ---
 title: "Financial Planning"
-part: 17
-order: 17
+part: 18
+order: 18
 description: "Hiking day total: $5,044"
 icon: "dollar"
 ---

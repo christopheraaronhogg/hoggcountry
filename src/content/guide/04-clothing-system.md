@@ -1,8 +1,8 @@
 ---
 title: "Clothing System"
-part: 3
-order: 3
-description: "Primary role: Sleep + camp"
+part: 4
+order: 4
+description: "Primary role: Primary hiking shirt for all conditions"
 icon: "shirt"
 ---
 
@@ -18,27 +18,34 @@ icon: "shirt"
 
 ## Layer Definitions
 
+### Base Hiking Layer
+- Sun Hoodie - long-sleeve (7.0 oz)
+
+**Primary role:** Primary hiking shirt for all conditions  
+**Secondary:** Sun protection, base layer under Alpha Freak in cold
+
+**Purpose:** Moisture wicking, sun protection, base warmth layer
+
 ### Base Layer (Next-to-Skin)
-- Smartwool merino long-sleeve top
-- Smartwool merino long johns
+- Smartwool merino long johns (8.7 oz)
 
 **Primary role:** Sleep + camp  
 **Secondary:** Rare, brief emergency daytime use only
 
 ### Active Mid Layer
-- Lightweight fleece / grid fleece
-- Hiking pants
+- **Top:** Rab Alpha Freak - Polartec Alpha Direct (12.7 oz)
+- **Bottom:** Rab Tights (8.0 oz)
 
-**Purpose:** Warmth while moving. Breathable insulation.
+**Purpose:** Warmth while moving, breathable insulation, primary hiking warmth layer in cold conditions
 
 ### Shell Layer
-- Waterproof rain jacket (also wind shell)
-- Rain pants
+- Waterproof rain jacket (12.9 oz)
+- Rab Proflex Rain Pants (11.6 oz)
 
 **Purpose:** Wind and precipitation protection. Critical on ridges and during stops.
 
 ### Insulation Layer (Static Only)
-- Down puffy jacket
+- Mountain Hardwear Down Puffy (8.5 oz)
 
 **Purpose:** Camp warmth. Emergency heat retention. Not used while hiking except in emergencies.
 
@@ -46,10 +53,11 @@ icon: "shirt"
 
 | Conditions | Layers |
 |------------|--------|
-| 45-60°F, Moving/Dry | Hiking shirt only, pants if windy |
-| 35-45°F, Moving/Dry | Hiking hoodie, Alpha Freak, hiking pants, Buff optional |
-| 25-35°F, Moving/Dry | All mid layers, Buff, shell for wind only |
-| 20-30°F, Moving/Snow/Wind | Full layering including shell, Buff, gloves |
+| 60°F+, Moving/Dry | Short-sleeve shirt or sun hoodie, tights or tights + rain pants if windy |
+| 45-60°F, Moving/Dry | Sun hoodie, tights or tights + rain pants if windy |
+| 35-45°F, Moving/Dry | Sun hoodie + Alpha Freak, tights + rain pants, Buff optional |
+| 25-35°F, Moving/Dry | Sun hoodie + Alpha Freak, tights + rain pants, Buff, shell for wind only |
+| 20-30°F, Moving/Snow/Wind | Sun hoodie + Alpha Freak + shell, tights + rain pants, Buff, gloves |
 | Camp/Static (Any Temp) | Down puffy ON immediately, shell over puffy if windy, never rely on Alpha for static warmth |
 | Sleep (Every Night) | Smartwool 250 sleep top and pants, dry socks, puffy inside quilt if temps drop |
 
@@ -71,7 +79,7 @@ icon: "shirt"
 
 ### End-of-Day (Non-Negotiable)
 - Strip wet clothes immediately
-- Put on dry Smartwool sleep layers
+- Put on dry Smartwool sleep top and pants
 - Puffy on immediately
 - Eat calories
 - Get into quilt early
@@ -90,44 +98,42 @@ icon: "shirt"
 These definitions are fixed and used consistently throughout this plan.
 
 #### Base Layer (Next-to-Skin)
-- **Base Top:** Smartwool merino long-sleeve
-- **Base Bottom:** Smartwool merino long johns
+- **Base Bottom:** Smartwool merino long johns (8.7 oz)
 - **Primary role:** sleep + camp
 - **Secondary role:** rare, brief emergency daytime use only
 
 **Purpose:** Moisture management, sleep insulation, odor control
 
 #### Active Mid Layer
-- **Top:** Lightweight fleece / grid fleece
-- **Bottom:** Hiking pants
+- **Top:** Rab Alpha Freak - Polartec Alpha Direct (12.7 oz)
 
 **Purpose:** Warmth while moving, breathable insulation, primary hiking warmth layer in cold conditions
 
 #### Shell Layer
-- **Top:** Waterproof rain jacket (also wind shell)
-- **Bottom:** Rain pants
+- **Top:** Outdoor Research Rain Jacket (12.9 oz)
+- **Bottom:** Rab Proflex Rain Pants (11.6 oz)
 
 **Purpose:** Wind protection, rain/snow/sleet protection, critical on ridges and during stops
 
 #### Insulation Layer (Static Only)
-- Down puffy jacket
+- Mountain Hardwear Down Puffy (8.5 oz)
 
 **Purpose:** Camp warmth, emergency heat retention, not used while hiking except in emergencies
 
 #### Head & Neck System
-- **Beanie:** Smartwool Merino 150 Beanie
-- **Neck Gaiter:** Smartwool Thermal Merino Reversible Neck Gaiter
+- **Beanie:** Smartwool Merino 150 Beanie (0.6 oz)
+- **Neck Gaiter:** Buff (2.3 oz)
 - **Hood Integration:** Shell and puffy jackets both have hoods for additional protection
 
 **Purpose:** Prevent convective heat loss, wind protection on ridges, sleep system efficiency, cold rain and snow protection
 
 #### Hands & Feet (Supporting System)
-- Liner gloves
-- Waterproof shell mitts
-- Wool hiking socks (2 pairs)
-- Dedicated dry sleep socks
-- Gaiters
-- Microspikes (as conditions require)
+- Liner gloves (1.5 oz)
+- Waterproof shell mitts (1.0 oz)
+- Smartwool Hiking Socks - 2 pairs (3.7 oz each)
+- Dedicated dry sleep socks (3.7 oz)
+- Gaiters (2.0 oz)
+- Microspikes - Kahtoola (11.9 oz, as conditions require)
 
 #### Sleep System (Context)
 - High-R-value pad (R-8)

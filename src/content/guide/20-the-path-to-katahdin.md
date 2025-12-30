@@ -1,7 +1,7 @@
 ---
 title: "The Path to Katahdin"
 part: 999
-order: 18
+order: 20
 description: "This guide represents everything learned from 840+ miles of thru-hiking, hundreds of hours of research, and the hard-..."
 icon: "mountain"
 ---

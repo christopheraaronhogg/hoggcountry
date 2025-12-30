@@ -1,7 +1,7 @@
 ---
 title: "Safety & Emergency Procedures"
-part: 14
-order: 14
+part: 15
+order: 15
 description: "Act early. Most trail emergencies are not sudden disasters—they are delayed decisions."
 icon: "alert"
 ---

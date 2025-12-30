@@ -1,7 +1,7 @@
 ---
 title: "Content Creation"
-part: 16
-order: 16
+part: 17
+order: 17
 description: "Each video serves three goals:"
 icon: "home"
 ---
