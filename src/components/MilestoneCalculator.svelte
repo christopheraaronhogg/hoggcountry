@@ -1,8 +1,6 @@
 <script>
-  // Accept global trail context from parent
   let { trailContext = {} } = $props();
 
-  // Trail sections data
   const sections = [
     { name: 'Georgia', startMile: 0, endMile: 78.5, highlight: 'Sharp climbs, Blood Mountain', emoji: '🏔️' },
     { name: 'Southern NC', startMile: 78.5, endMile: 165.7, highlight: 'Long ridge walks', emoji: '🌲' },
@@ -20,7 +18,6 @@
     { name: 'Maine', startMile: 1912, endMile: 2198, highlight: 'Katahdin awaits!', emoji: '🎯' },
   ];
 
-  // Milestones to celebrate
   const milestones = [
     { miles: 100, label: 'First Century', note: 'Triple digits!' },
     { miles: 500, label: '500 Club', note: 'Quarter done' },
@@ -29,7 +26,6 @@
     { miles: 2000, label: '2000 Miles', note: 'Almost home' },
   ];
 
-  // Trail towns for mile marker context
   const landmarks = [
     { mile: 0, name: 'Springer Mountain' },
     { mile: 31, name: 'Neels Gap' },
@@ -57,7 +53,6 @@
 
   const TOTAL_MILES = 2198;
 
-  // Extract values from global trail context (with defaults for SSR)
   let mode = $derived(trailContext.mode || 'planning');
   let startDate = $derived(trailContext.startDate || '2026-02-15');
   let pace = $derived(trailContext.pace || 15);
@@ -73,54 +68,38 @@
     mounted = true;
   });
 
-  // Helper to add days to a date
   function addDays(dateStr, days) {
     const date = new Date(dateStr);
     date.setDate(date.getDate() + days);
     return date;
   }
 
-  // Days between two dates
   function daysBetween(date1Str, date2Str) {
     const d1 = new Date(date1Str);
     const d2 = new Date(date2Str);
-    const diff = d2 - d1;
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
+    return Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
   }
 
-  // Format date nicely
   function formatDate(date) {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  // Format date short
   function formatDateShort(date) {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
-  // Get today as YYYY-MM-DD
   function getTodayStr() {
-    const d = new Date();
-    return d.toISOString().split('T')[0];
+    return new Date().toISOString().split('T')[0];
   }
 
-  // Get season for a date
   function getSeason(date) {
     const month = date.getMonth();
-    if (month >= 2 && month <= 4) return { name: 'Spring', color: '#a6b589', icon: '🌸' };
-    if (month >= 5 && month <= 7) return { name: 'Summer', color: '#d97706', icon: '☀️' };
-    if (month >= 8 && month <= 10) return { name: 'Fall', color: '#c45d2c', icon: '🍂' };
-    return { name: 'Winter', color: '#6b8cae', icon: '❄️' };
+    if (month >= 2 && month <= 4) return { name: 'Spring', color: '#22c55e', icon: '🌸' };
+    if (month >= 5 && month <= 7) return { name: 'Summer', color: '#f59e0b', icon: '☀️' };
+    if (month >= 8 && month <= 10) return { name: 'Fall', color: '#ea580c', icon: '🍂' };
+    return { name: 'Winter', color: '#3b82f6', icon: '❄️' };
   }
 
-  // Get nearest landmark for a mile
   function getNearestLandmark(mile) {
     let closest = landmarks[0];
     let minDist = Math.abs(mile - landmarks[0].mile);
@@ -134,29 +113,19 @@
     return closest;
   }
 
-  // Get current section for a mile
   function getCurrentSection(mile) {
     for (const section of sections) {
-      if (mile >= section.startMile && mile < section.endMile) {
-        return section;
-      }
+      if (mile >= section.startMile && mile < section.endMile) return section;
     }
-    return sections[sections.length - 1]; // Maine if past all
+    return sections[sections.length - 1];
   }
 
-  // ========== PLANNING MODE CALCULATIONS ==========
-  // Convert zero days per month to zero days per hiking day ratio
-  // Assuming ~30 days/month and ~25 hiking days/month at average pace
-  let zeroDayRatio = $derived(zeroDaysPerMonth / 30); // Fraction of days that are zeros
-
-  // Calculate total calendar days including zeros
-  // hikingDays = TOTAL_MILES / pace
-  // calendarDays = hikingDays / (1 - zeroDayRatio)
+  // Planning calculations
+  let zeroDayRatio = $derived(zeroDaysPerMonth / 30);
   let hikingDaysOnly = $derived(Math.ceil(TOTAL_MILES / pace));
   let totalDays = $derived(Math.ceil(hikingDaysOnly / (1 - zeroDayRatio)));
   let totalZeroDays = $derived(totalDays - hikingDaysOnly);
 
-  // Helper to get calendar day for a given mile marker (accounting for zeros spread throughout)
   function getCalendarDayForMile(miles) {
     const hikingDay = Math.ceil(miles / pace);
     return Math.ceil(hikingDay / (1 - zeroDayRatio));
@@ -168,11 +137,8 @@
     const arrivalDate = addDays(startDate, daysToStart);
     const completionDate = addDays(startDate, daysToEnd);
     const sectionMiles = section.endMile - section.startMile;
-    const sectionHikingDays = Math.ceil(sectionMiles / pace);
     const sectionCalendarDays = daysToEnd - daysToStart;
     const season = getSeason(arrivalDate);
-    const progress = (section.endMile / TOTAL_MILES) * 100;
-
     return {
       ...section,
       index: i + 1,
@@ -182,9 +148,7 @@
       completionDate,
       sectionMiles,
       sectionDays: sectionCalendarDays,
-      sectionHikingDays,
       season,
-      progress,
     };
   }));
 
@@ -196,64 +160,41 @@
     day: getCalendarDayForMile(m.miles),
   })));
 
-  // ========== TRAIL MODE CALCULATIONS ==========
+  // Trail mode calculations
   let todayStr = $derived(getTodayStr());
   let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, todayStr)));
   let hikingDaysActual = $derived(Math.max(1, daysOnTrail - zeroDaysTaken));
-
-  // Two pace metrics: overall (calendar) and hiking-only
-  let actualPaceOverall = $derived(currentMile / daysOnTrail); // Calendar pace (lower)
-  let actualPaceHiking = $derived(currentMile / hikingDaysActual); // Hiking day pace (true pace)
-  let actualPace = $derived(actualPaceOverall); // For display compatibility
-
+  let actualPaceOverall = $derived(currentMile / daysOnTrail);
+  let actualPaceHiking = $derived(currentMile / hikingDaysActual);
+  let actualPace = $derived(actualPaceOverall);
   let milesRemaining = $derived(TOTAL_MILES - currentMile);
   let percentComplete = $derived((currentMile / TOTAL_MILES) * 100);
-
-  // Zero day frequency so far
-  let zeroDayFrequency = $derived(daysOnTrail > 0 ? (zeroDaysTaken / daysOnTrail) * 30 : 0); // zeros per 30 days
-
-  // Projected finish at current pace (assuming same zero day pattern continues)
+  let zeroDayFrequency = $derived(daysOnTrail > 0 ? (zeroDaysTaken / daysOnTrail) * 30 : 0);
   let hikingDaysRemaining = $derived(actualPaceHiking > 0 ? Math.ceil(milesRemaining / actualPaceHiking) : 999);
   let projectedZeroDaysRemaining = $derived(Math.round(hikingDaysRemaining * (zeroDaysTaken / hikingDaysActual)));
   let daysRemaining = $derived(hikingDaysRemaining + projectedZeroDaysRemaining);
   let projectedFinish = $derived(addDays(todayStr, daysRemaining));
-
-  // Original plan finish (using same zero day assumption from planning)
   let originalHikingDays = $derived(Math.ceil(TOTAL_MILES / targetPace));
-  let originalTotalDays = $derived(Math.ceil(originalHikingDays * 1.15)); // Assume ~4 zeros/month
+  let originalTotalDays = $derived(Math.ceil(originalHikingDays * 1.15));
   let originalFinish = $derived(addDays(tripStartDate, originalTotalDays));
   let originalDayForCurrentMile = $derived(Math.ceil(Math.ceil(currentMile / targetPace) * 1.15));
-
-  // Ahead or behind
   let daysAheadBehind = $derived(originalDayForCurrentMile - daysOnTrail);
-  let statusLabel = $derived(daysAheadBehind > 0
-    ? `${daysAheadBehind} day${daysAheadBehind !== 1 ? 's' : ''} ahead`
-    : daysAheadBehind < 0
-      ? `${Math.abs(daysAheadBehind)} day${Math.abs(daysAheadBehind) !== 1 ? 's' : ''} behind`
-      : 'Right on schedule');
-  let statusColor = $derived(daysAheadBehind > 0 ? 'var(--alpine)' : daysAheadBehind < 0 ? 'var(--terra)' : 'var(--pine)');
-
-  // Pace needed to hit original target date
+  let statusLabel = $derived(daysAheadBehind > 0 ? `${daysAheadBehind} day${daysAheadBehind !== 1 ? 's' : ''} ahead` : daysAheadBehind < 0 ? `${Math.abs(daysAheadBehind)} day${Math.abs(daysAheadBehind) !== 1 ? 's' : ''} behind` : 'On schedule');
+  let statusColor = $derived(daysAheadBehind > 0 ? '#22c55e' : daysAheadBehind < 0 ? '#ef4444' : '#3b82f6');
   let daysUntilTarget = $derived(daysBetween(todayStr, originalFinish.toISOString().split('T')[0]));
   let paceToHitTarget = $derived(daysUntilTarget > 0 ? (milesRemaining / daysUntilTarget).toFixed(1) : '—');
-
-  // Current section and next milestone
   let currentSection = $derived(getCurrentSection(currentMile));
   let milesToSectionEnd = $derived(currentSection.endMile - currentMile);
   let nearestLandmark = $derived(getNearestLandmark(currentMile));
-
-  // Next upcoming milestone
   let nextMilestone = $derived(milestones.find(m => m.miles > currentMile) || null);
   let milesToNextMilestone = $derived(nextMilestone ? nextMilestone.miles - currentMile : 0);
 
-  // Remaining sections (including current, partially)
   let remainingSections = $derived(sections.filter(s => s.endMile > currentMile).map((section, i) => {
     const effectiveStart = Math.max(section.startMile, currentMile);
     const milesInSection = section.endMile - effectiveStart;
     const daysToComplete = Math.ceil(milesInSection / actualPace);
     const arrivalDate = i === 0 ? new Date() : addDays(todayStr, Math.ceil((section.startMile - currentMile) / actualPace));
     const season = getSeason(arrivalDate);
-
     return {
       ...section,
       milesRemaining: milesInSection,
@@ -264,301 +205,260 @@
     };
   }));
 
-  // Generate shareable text (works for both modes)
   function generateShareText() {
     if (mode === 'planning') {
-      const start = new Date(startDate);
-      const text = `🥾 My AT NOBO 2026 Plan
-
-📅 Start: ${formatDate(start)} at Springer Mountain
-🎯 Summit: ${formatDate(summitDate)} at Katahdin
-📊 Pace: ${pace} miles/day
-⏱️ Duration: ${totalDays} days
-
-Key Milestones:
-${calculatedMilestones.map(m => `• ${m.label}: Day ${m.day} (${formatDateShort(m.date)})`).join('\n')}
-
-Generated at hoggcountry.com/tools`;
-
-      if (navigator.share) {
-        navigator.share({ title: 'My AT Thru-Hike Plan', text });
-      } else {
-        navigator.clipboard.writeText(text);
-        alert('Plan copied to clipboard!');
-      }
+      const text = `🥾 My AT NOBO 2026 Plan\n\n📅 Start: ${formatDate(new Date(startDate))}\n🎯 Summit: ${formatDate(summitDate)}\n📊 Pace: ${pace} mi/day\n⏱️ Duration: ${totalDays} days\n\nGenerated at hoggcountry.com/tools`;
+      if (navigator.share) navigator.share({ title: 'My AT Plan', text });
+      else { navigator.clipboard.writeText(text); alert('Copied!'); }
     } else {
-      const text = `🥾 AT NOBO Trail Update - Day ${daysOnTrail}
-
-📍 Mile ${currentMile.toFixed(0)} near ${nearestLandmark.name}
-📊 Pace: ${actualPace.toFixed(1)} mi/day
-✅ ${percentComplete.toFixed(1)}% complete
-${daysAheadBehind >= 0 ? '🟢' : '🟠'} ${statusLabel}
-
-📈 ${milesRemaining.toFixed(0)} miles to Katahdin
-🎯 Projected summit: ${formatDate(projectedFinish)}
-
-Generated at hoggcountry.com/tools`;
-
-      if (navigator.share) {
-        navigator.share({ title: 'AT Trail Update', text });
-      } else {
-        navigator.clipboard.writeText(text);
-        alert('Update copied to clipboard!');
-      }
+      const text = `🥾 AT Trail Update - Day ${daysOnTrail}\n\n📍 Mile ${currentMile.toFixed(0)}\n✅ ${percentComplete.toFixed(1)}% complete\n${daysAheadBehind >= 0 ? '🟢' : '🟠'} ${statusLabel}\n\n🎯 Projected: ${formatDate(projectedFinish)}\n\nGenerated at hoggcountry.com/tools`;
+      if (navigator.share) navigator.share({ title: 'AT Update', text });
+      else { navigator.clipboard.writeText(text); alert('Copied!'); }
     }
   }
 </script>
 
-<div class="milestone-calc">
+<div class="milestone-calc" class:mounted>
   <!-- Header -->
   <header class="calc-header">
-    <div class="header-inner">
-      <span class="header-badge">AT 2026 NOBO</span>
-      <h2 class="header-title">Milestone Planner</h2>
-      <p class="header-sub">
-        {mode === 'planning' ? 'Plan your journey from Springer to Katahdin' : 'Track your progress on the trail'}
-      </p>
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+        <path d="M12 8l3 4-3 4-3-4z" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="header-content">
+      <h2>JOURNEY NAVIGATOR</h2>
+      <p>{mode === 'planning' ? 'Plan your path from Springer to Katahdin' : 'Track your progress on the AT'}</p>
+    </div>
+    <div class="header-badge">
+      <span>{mode === 'planning' ? 'PLANNING' : 'ON TRAIL'}</span>
     </div>
   </header>
 
   {#if mode === 'planning'}
-    <!-- ========== PLANNING MODE ========== -->
+    <!-- PLANNING MODE -->
+
     <!-- Big Stats -->
-    <div class="stats-grid-3">
-      <div class="stat-card">
-        <span class="stat-label">Hiking Days</span>
-        <div class="stat-main">
-          <span class="stat-num">{hikingDaysOnly}</span>
-          <span class="stat-unit">days</span>
+    <section class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-label">HIKING DAYS</span>
+          <div class="stat-value">{hikingDaysOnly}</div>
+          <span class="stat-sub">days on trail</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">TOTAL DURATION</span>
+          <div class="stat-value">{totalDays}</div>
+          <span class="stat-sub">+{totalZeroDays} zero days</span>
+        </div>
+        <div class="stat-box summit">
+          <span class="stat-label">SUMMIT DATE</span>
+          <div class="stat-value summit-date">
+            <span class="summit-icon">🏔️</span>
+            {formatDate(summitDate)}
+          </div>
         </div>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Total Duration</span>
-        <div class="stat-main">
-          <span class="stat-num">{totalDays}</span>
-          <span class="stat-unit">days</span>
-        </div>
-        <span class="stat-sub">(+{totalZeroDays} zeros)</span>
-      </div>
-      <div class="stat-card highlight">
-        <span class="stat-label">Summit Date</span>
-        <div class="stat-main">
-          <span class="stat-icon">🏔️</span>
-          <span class="stat-text">{formatDate(summitDate)}</span>
-        </div>
-      </div>
-    </div>
+    </section>
 
-    <!-- Timeline Visual -->
-    <div class="timeline-container">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Section Breakdown</span>
+    <!-- Timeline -->
+    <section class="timeline-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        SECTION BREAKDOWN
       </h3>
-
-      <div class="timeline-list">
+      <div class="timeline">
         {#each calculatedSections as section, i}
-          <div class="timeline-row" class:mounted style="animation-delay: {i * 30}ms">
-            <div class="time-col">
-              <span class="time-date">{formatDateShort(section.arrivalDate)}</span>
-              <span class="time-day">Day {section.daysToStart}</span>
+          <div class="timeline-item" style="animation-delay: {i * 40}ms">
+            <div class="item-date">
+              <span class="date-main">{formatDateShort(section.arrivalDate)}</span>
+              <span class="date-day">Day {section.daysToStart}</span>
             </div>
-
-            <div class="marker-col">
-              <div class="marker-line" class:first={i===0} class:last={i===calculatedSections.length-1}></div>
-              <div class="marker-dot" style="background: {section.season.color}">
-                {#if i === 0}S{:else}{section.index}{/if}
-              </div>
+            <div class="item-marker">
+              <div class="marker-line" class:first={i===0}></div>
+              <div class="marker-dot" style="background: {section.season.color}">{i === 0 ? 'S' : section.index}</div>
+              <div class="marker-line" class:last={i===calculatedSections.length-1}></div>
             </div>
-
-            <div class="content-col">
+            <div class="item-content">
               <div class="section-card">
-                <div class="card-head">
-                  <span class="card-icon">{section.emoji}</span>
+                <div class="card-top">
+                  <span class="card-emoji">{section.emoji}</span>
                   <span class="card-name">{section.name}</span>
                   <span class="card-miles">{section.sectionMiles.toFixed(0)} mi</span>
                 </div>
-                <div class="card-meta">
-                  <span class="meta-tag">{section.highlight}</span>
-                  <span class="meta-season" style="color: {section.season.color}">
-                    {section.season.icon} {section.season.name}
-                  </span>
+                <div class="card-bottom">
+                  <span class="card-highlight">{section.highlight}</span>
+                  <span class="card-season" style="color: {section.season.color}">{section.season.icon} {section.season.name}</span>
                 </div>
               </div>
             </div>
           </div>
         {/each}
 
-        <!-- Summit Row -->
-        <div class="timeline-row summit" class:mounted style="animation-delay: {calculatedSections.length * 30}ms">
-          <div class="time-col">
-            <span class="time-date">{formatDateShort(summitDate)}</span>
-            <span class="time-day">Day {totalDays}</span>
+        <!-- Summit -->
+        <div class="timeline-item summit" style="animation-delay: {calculatedSections.length * 40}ms">
+          <div class="item-date">
+            <span class="date-main">{formatDateShort(summitDate)}</span>
+            <span class="date-day">Day {totalDays}</span>
           </div>
-          <div class="marker-col">
-            <div class="marker-line top"></div>
+          <div class="item-marker">
+            <div class="marker-line top-only"></div>
             <div class="marker-dot summit">★</div>
           </div>
-          <div class="content-col">
+          <div class="item-content">
             <div class="summit-card">
-              <div class="summit-content">
-                <h4>Katahdin</h4>
-                <p>The Northern Terminus</p>
-              </div>
+              <h4>KATAHDIN</h4>
+              <p>The Northern Terminus</p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Milestones Grid -->
-    <div class="milestones-container">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Key Milestones</span>
+    <!-- Milestones -->
+    <section class="milestones-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        KEY MILESTONES
       </h3>
       <div class="milestones-grid">
-        {#each calculatedMilestones as milestone}
-          <div class="milestone-box">
-            <div class="ms-miles">{milestone.miles}</div>
-            <div class="ms-content">
-              <span class="ms-label">{milestone.label}</span>
-              <span class="ms-date">{formatDateShort(milestone.date)}</span>
+        {#each calculatedMilestones as ms}
+          <div class="milestone-card">
+            <div class="ms-miles">{ms.miles}</div>
+            <div class="ms-info">
+              <span class="ms-label">{ms.label}</span>
+              <span class="ms-date">{formatDateShort(ms.date)}</span>
             </div>
           </div>
         {/each}
       </div>
-    </div>
+    </section>
 
   {:else}
-    <!-- ========== TRAIL MODE ========== -->
-    <!-- Status Dashboard -->
-    <div class="trail-dashboard">
-      <div class="status-hero">
-        <div class="hero-progress">
+    <!-- TRAIL MODE -->
+
+    <!-- Progress Dashboard -->
+    <section class="dashboard-section">
+      <div class="dashboard-hero">
+        <div class="progress-ring-container">
           <svg viewBox="0 0 120 120" class="progress-ring">
-            <circle cx="60" cy="60" r="52" class="ring-bg" />
-            <circle
-              cx="60" cy="60" r="52"
-              class="ring-fill"
-              style="stroke-dasharray: {326.7 * (percentComplete / 100)} 326.7"
-            />
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#22c55e"/>
+                <stop offset="100%" style="stop-color:#3b82f6"/>
+              </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="52" class="ring-bg"/>
+            <circle cx="60" cy="60" r="52" class="ring-fill" style="stroke-dasharray: {326.7 * (percentComplete / 100)} 326.7"/>
           </svg>
-          <div class="hero-center">
-            <span class="hero-pct">{percentComplete.toFixed(0)}%</span>
-            <span class="hero-label">complete</span>
+          <div class="ring-center">
+            <span class="ring-percent">{percentComplete.toFixed(0)}%</span>
+            <span class="ring-label">complete</span>
           </div>
         </div>
+
         <div class="hero-stats">
           <div class="hero-stat">
-            <span class="hs-val">{daysOnTrail}</span>
-            <span class="hs-label">Days on trail</span>
+            <span class="hs-value">{daysOnTrail}</span>
+            <span class="hs-label">Days on Trail</span>
           </div>
           <div class="hero-stat">
-            <span class="hs-val">{hikingDaysActual}</span>
-            <span class="hs-label">Hiking days</span>
+            <span class="hs-value">{hikingDaysActual}</span>
+            <span class="hs-label">Hiking Days</span>
           </div>
-          <div class="hero-stat status-indicator" style="--status-color: {statusColor}">
-            <span class="hs-val">{daysAheadBehind >= 0 ? '+' : ''}{daysAheadBehind}</span>
+          <div class="hero-stat status" style="--status-color: {statusColor}">
+            <span class="hs-value">{daysAheadBehind >= 0 ? '+' : ''}{daysAheadBehind}</span>
             <span class="hs-label">{statusLabel}</span>
           </div>
         </div>
       </div>
 
-      <!-- Pace Breakdown -->
-      <div class="pace-breakdown">
-        <div class="pb-item">
-          <div class="pb-val">{actualPaceHiking.toFixed(1)}</div>
-          <div class="pb-label">mi/hiking day</div>
-          <div class="pb-sub">Your true pace</div>
+      <!-- Pace Cards -->
+      <div class="pace-grid">
+        <div class="pace-card">
+          <span class="pace-value">{actualPaceHiking.toFixed(1)}</span>
+          <span class="pace-unit">mi/hiking day</span>
+          <span class="pace-note">True pace</span>
         </div>
-        <div class="pb-divider"></div>
-        <div class="pb-item">
-          <div class="pb-val">{actualPaceOverall.toFixed(1)}</div>
-          <div class="pb-label">mi/calendar day</div>
-          <div class="pb-sub">Includes {zeroDaysTaken} zero{zeroDaysTaken !== 1 ? 's' : ''}</div>
+        <div class="pace-card">
+          <span class="pace-value">{actualPaceOverall.toFixed(1)}</span>
+          <span class="pace-unit">mi/calendar day</span>
+          <span class="pace-note">+{zeroDaysTaken} zeros</span>
         </div>
-        <div class="pb-divider"></div>
-        <div class="pb-item">
-          <div class="pb-val">{zeroDayFrequency.toFixed(1)}</div>
-          <div class="pb-label">zeros/month</div>
-          <div class="pb-sub">{zeroDayFrequency <= 4 ? 'Efficient' : zeroDayFrequency <= 6 ? 'Normal' : 'Relaxed'}</div>
+        <div class="pace-card">
+          <span class="pace-value">{zeroDayFrequency.toFixed(1)}</span>
+          <span class="pace-unit">zeros/month</span>
+          <span class="pace-note">{zeroDayFrequency <= 4 ? 'Efficient' : zeroDayFrequency <= 6 ? 'Normal' : 'Relaxed'}</span>
         </div>
       </div>
 
-      <!-- Quick Stats Row -->
-      <div class="quick-stats">
-        <div class="qs-card">
-          <span class="qs-icon">📍</span>
-          <div class="qs-content">
-            <span class="qs-val">{currentMile.toFixed(0)}</span>
-            <span class="qs-label">Miles hiked</span>
-          </div>
+      <!-- Quick Stats -->
+      <div class="quick-grid">
+        <div class="quick-card">
+          <span class="qc-icon">📍</span>
+          <span class="qc-value">{currentMile.toFixed(0)}</span>
+          <span class="qc-label">miles hiked</span>
         </div>
-        <div class="qs-card">
-          <span class="qs-icon">🎯</span>
-          <div class="qs-content">
-            <span class="qs-val">{milesRemaining.toFixed(0)}</span>
-            <span class="qs-label">Miles to go</span>
-          </div>
+        <div class="quick-card">
+          <span class="qc-icon">🎯</span>
+          <span class="qc-value">{milesRemaining.toFixed(0)}</span>
+          <span class="qc-label">miles to go</span>
         </div>
-        <div class="qs-card">
-          <span class="qs-icon">📅</span>
-          <div class="qs-content">
-            <span class="qs-val">{daysRemaining}</span>
-            <span class="qs-label">Days remaining</span>
-          </div>
+        <div class="quick-card">
+          <span class="qc-icon">📅</span>
+          <span class="qc-value">{daysRemaining}</span>
+          <span class="qc-label">days remaining</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Current Position Card -->
-    <div class="current-section-card">
-      <div class="csc-header">
-        <span class="csc-icon">{currentSection.emoji}</span>
-        <div class="csc-title">
-          <span class="csc-name">{currentSection.name}</span>
-          <span class="csc-sub">{currentSection.highlight}</span>
+    <!-- Current Section -->
+    <section class="current-section">
+      <div class="current-card">
+        <div class="current-header">
+          <span class="current-emoji">{currentSection.emoji}</span>
+          <div class="current-info">
+            <span class="current-name">{currentSection.name}</span>
+            <span class="current-highlight">{currentSection.highlight}</span>
+          </div>
+        </div>
+        <div class="current-progress">
+          <div class="progress-track">
+            <div class="progress-fill" style="width: {((currentMile - currentSection.startMile) / (currentSection.endMile - currentSection.startMile)) * 100}%"></div>
+          </div>
+          <span class="progress-label">{milesToSectionEnd.toFixed(0)} mi to next section</span>
         </div>
       </div>
-      <div class="csc-progress">
-        <div class="csc-bar">
-          <div
-            class="csc-fill"
-            style="width: {((currentMile - currentSection.startMile) / (currentSection.endMile - currentSection.startMile)) * 100}%"
-          ></div>
-        </div>
-        <div class="csc-miles">
-          <span>{milesToSectionEnd.toFixed(0)} mi to {sections[sections.indexOf(currentSection) + 1]?.name || 'finish'}</span>
-        </div>
-      </div>
-    </div>
+    </section>
 
     <!-- Next Milestone -->
     {#if nextMilestone}
-      <div class="next-milestone-card">
-        <div class="nmc-label">Next Milestone</div>
-        <div class="nmc-content">
-          <div class="nmc-info">
-            <span class="nmc-name">{nextMilestone.label}</span>
-            <span class="nmc-note">{nextMilestone.note}</span>
-          </div>
-          <div class="nmc-distance">
-            <span class="nmc-miles">{milesToNextMilestone.toFixed(0)}</span>
-            <span class="nmc-unit">mi away</span>
+      <section class="next-milestone">
+        <div class="nm-card">
+          <span class="nm-label">NEXT MILESTONE</span>
+          <div class="nm-content">
+            <div class="nm-info">
+              <span class="nm-name">{nextMilestone.label}</span>
+              <span class="nm-note">{nextMilestone.note}</span>
+            </div>
+            <div class="nm-distance">
+              <span class="nm-miles">{milesToNextMilestone.toFixed(0)}</span>
+              <span class="nm-unit">mi away</span>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     {/if}
 
-    <!-- Projected Finish -->
-    <div class="projection-section">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Projections</span>
+    <!-- Projections -->
+    <section class="projections-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        PROJECTIONS
       </h3>
-
-      <div class="projection-cards">
+      <div class="proj-grid">
         <div class="proj-card current">
           <div class="proj-header">
             <span class="proj-label">At Current Pace</span>
@@ -567,402 +467,199 @@ Generated at hoggcountry.com/tools`;
           <div class="proj-date">{formatDate(projectedFinish)}</div>
           <div class="proj-days">{daysRemaining} days remaining</div>
         </div>
-
         <div class="proj-card target">
           <div class="proj-header">
-            <span class="proj-label">To Hit Original Target</span>
-            <span class="proj-date-sm">{formatDateShort(originalFinish)}</span>
+            <span class="proj-label">To Hit Target</span>
+            <span class="proj-target-date">{formatDateShort(originalFinish)}</span>
           </div>
           <div class="proj-pace-needed">
-            <span class="ppn-val">{paceToHitTarget}</span>
+            <span class="ppn-value">{paceToHitTarget}</span>
             <span class="ppn-unit">mi/day needed</span>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- Remaining Sections -->
-    <div class="remaining-sections">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Sections Ahead</span>
+    <section class="remaining-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        SECTIONS AHEAD
       </h3>
-
       <div class="remaining-list">
-        {#each remainingSections as section, i}
-          <div class="rem-row" class:current={section.isCurrent}>
-            <div class="rem-marker">
-              <span class="rem-emoji">{section.emoji}</span>
-            </div>
-            <div class="rem-content">
-              <div class="rem-head">
+        {#each remainingSections as section}
+          <div class="rem-item" class:current={section.isCurrent}>
+            <span class="rem-emoji">{section.emoji}</span>
+            <div class="rem-info">
+              <div class="rem-top">
                 <span class="rem-name">{section.name}</span>
                 {#if section.isCurrent}
-                  <span class="rem-badge">You are here</span>
+                  <span class="rem-badge">HERE</span>
                 {/if}
               </div>
               <div class="rem-meta">
-                <span class="rem-miles">{section.milesRemaining.toFixed(0)} mi</span>
-                <span class="rem-days">~{section.daysToComplete} days</span>
+                <span>{section.milesRemaining.toFixed(0)} mi</span>
+                <span>~{section.daysToComplete} days</span>
               </div>
             </div>
           </div>
         {/each}
       </div>
-    </div>
+    </section>
   {/if}
 
-  <!-- Action Footer -->
-  <div class="action-footer">
+  <!-- Footer -->
+  <footer class="calc-footer">
     <button class="share-btn" onclick={generateShareText}>
-      {mode === 'planning' ? 'Copy Plan to Clipboard' : 'Share Trail Update'}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>
+      </svg>
+      {mode === 'planning' ? 'Share Plan' : 'Share Update'}
     </button>
-  </div>
+  </footer>
+
+  <!-- Guide Link -->
+  <a href="/guide/trail-section-breakdown" class="guide-link">
+    <span>Read the Trail Section Guide</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </a>
 </div>
 
 <style>
   .milestone-calc {
-    background: #fff;
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    border: 1px solid var(--border);
     overflow: hidden;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .milestone-calc.mounted {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* Header */
   .calc-header {
-    padding: 2rem 2rem 1.5rem;
-    background: linear-gradient(to bottom, #fdfcf9, #f5f2e8);
-    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    border-bottom: 2px solid #1e3a5f;
+  }
+
+  .header-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bfdbfe;
+  }
+
+  .header-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .header-content {
+    flex: 1;
+  }
+
+  .header-content h2 {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+  }
+
+  .header-content p {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: #bfdbfe;
   }
 
   .header-badge {
+    padding: 0.35rem 0.75rem;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+  }
+
+  .header-badge span {
     font-family: Oswald, sans-serif;
     font-size: 0.7rem;
     font-weight: 700;
-    color: var(--terra);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-
-  .header-title {
-    font-family: Oswald, sans-serif;
-    font-size: 2rem;
-    margin: 0;
-    color: var(--ink);
-    line-height: 1.1;
-  }
-
-  .header-sub {
-    margin: 0.5rem 0 0;
-    color: var(--muted);
-    font-size: 0.95rem;
-  }
-
-  /* Mode Toggle */
-  .mode-toggle {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1.25rem;
-  }
-
-  .mode-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    background: #fff;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: Oswald, sans-serif;
-  }
-
-  .mode-btn:hover:not(.active) {
-    border-color: var(--alpine);
-    background: rgba(166, 181, 137, 0.05);
-  }
-
-  .mode-btn.active {
-    background: var(--pine);
-    border-color: var(--pine);
     color: #fff;
+    letter-spacing: 0.1em;
   }
 
-  .mode-icon {
-    font-size: 1.1rem;
-  }
-
-  .mode-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  /* Controls */
-  .controls-section {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .controls-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-  }
-
-  .control-label {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
-  }
-
-  .date-input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--stone, #ccc);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 1rem;
-    color: var(--ink);
-    box-sizing: border-box;
-  }
-
-  .pace-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 0.5rem;
-  }
-
-  .pace-val {
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--pine);
-  }
-
-  .pace-val small { font-size: 0.8rem; font-weight: 400; color: var(--muted); }
-
-  .slider-container {
-    position: relative;
-    height: 24px;
+  /* Section Headers */
+  .section-header {
     display: flex;
     align-items: center;
-  }
-
-  .pace-slider {
-    width: 100%;
-    height: 24px;
-    cursor: pointer;
-    margin: 0;
-    -webkit-appearance: none;
-    background: transparent;
-  }
-
-  .pace-slider::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 6px;
-    background: linear-gradient(90deg, var(--alpine), var(--pine));
-    border-radius: 3px;
-  }
-
-  .pace-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 24px;
-    width: 24px;
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid var(--marker);
-    margin-top: -9px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    cursor: grab;
-  }
-
-  .pace-slider::-moz-range-track {
-    width: 100%;
-    height: 6px;
-    background: linear-gradient(90deg, var(--alpine), var(--pine));
-    border-radius: 3px;
-    border: none;
-  }
-
-  .pace-slider::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid var(--marker);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    cursor: grab;
-  }
-
-  /* Zero Days Row */
-  .zero-days-row {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px dashed var(--border);
-  }
-
-  .zero-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 0.5rem;
-  }
-
-  .zero-val {
+    gap: 0.75rem;
+    margin: 0 0 1.25rem;
     font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--terra);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--pine);
+    letter-spacing: 0.08em;
   }
 
-  .zero-val small { font-size: 0.8rem; font-weight: 400; color: var(--muted); }
-
-  .zero-slider-wrap {
-    position: relative;
+  .header-bar {
+    width: 4px;
+    height: 16px;
+    background: var(--marker);
+    border-radius: 2px;
   }
 
-  .zero-slider {
-    width: 100%;
-    height: 24px;
-    cursor: pointer;
-    margin: 0;
-    -webkit-appearance: none;
-    background: transparent;
-  }
-
-  .zero-slider::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 6px;
-    background: linear-gradient(90deg, var(--alpine), var(--terra));
-    border-radius: 3px;
-  }
-
-  .zero-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 24px;
-    width: 24px;
-    border-radius: 50%;
+  /* Stats Section */
+  .stats-section {
+    padding: 1.5rem;
     background: #fff;
-    border: 2px solid var(--terra);
-    margin-top: -9px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    cursor: grab;
+    border-bottom: 2px solid var(--border);
   }
 
-  .zero-slider::-moz-range-track {
-    width: 100%;
-    height: 6px;
-    background: linear-gradient(90deg, var(--alpine), var(--terra));
-    border-radius: 3px;
-    border: none;
-  }
-
-  .zero-slider::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid var(--terra);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    cursor: grab;
-  }
-
-  .zero-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.7rem;
-    color: var(--muted);
-    margin-top: 0.25rem;
-  }
-
-  .zero-context {
-    color: var(--alpine);
-    font-weight: 600;
-  }
-
-  .zero-tip {
-    margin: 0.75rem 0 0;
-    padding: 0.75rem;
-    background: rgba(196, 93, 44, 0.08);
-    border-radius: 8px;
-    font-size: 0.8rem;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-
-  .zero-tip strong {
-    color: var(--terra);
-  }
-
-  .zero-input {
-    width: 60px;
-    padding: 0.75rem;
-    border: 1px solid var(--stone, #ccc);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 1rem;
-    text-align: center;
-  }
-
-  /* Stats Grid */
   .stats-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-bottom: 1px solid var(--border);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
   }
 
-  .stats-grid-3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    border-bottom: 1px solid var(--border);
+  .stat-box {
+    text-align: center;
+    padding: 1.25rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 12px;
   }
 
-  .stat-card {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    border-right: 1px solid var(--border);
-  }
-
-  .stat-card:last-child { border-right: none; }
-  .stat-card.highlight { background: #fdfdfc; }
-
-  .stat-sub {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 0.25rem;
+  .stat-box.summit {
+    border-color: var(--marker);
+    background: rgba(240, 224, 0, 0.08);
   }
 
   .stat-label {
-    font-size: 0.75rem;
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
     color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     margin-bottom: 0.5rem;
   }
 
-  .stat-main {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-  }
-
-  .stat-num {
+  .stat-value {
     font-family: Oswald, sans-serif;
     font-size: 2.5rem;
     font-weight: 700;
@@ -970,205 +667,216 @@ Generated at hoggcountry.com/tools`;
     line-height: 1;
   }
 
-  .stat-unit { font-size: 1rem; color: var(--muted); }
-  .stat-text {
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 600;
+  .stat-value.summit-date {
+    font-size: 1.25rem;
     color: var(--terra);
-  }
-  .stat-icon { font-size: 1.5rem; }
-
-  /* Timeline */
-  .timeline-container {
-    padding: 2rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
-  }
-
-  .section-title {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--pine, #4d594a);
-    margin: 0 0 1.5rem;
+    justify-content: center;
+    gap: 0.5rem;
   }
 
-  .title-blaze {
-    width: 8px;
-    height: 16px;
-    background: var(--marker, #f0e000);
-    border-radius: 2px;
+  .summit-icon {
+    font-size: 1.5rem;
   }
 
-  .timeline-list { position: relative; }
+  .stat-sub {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
+  }
 
-  .timeline-row {
+  /* Timeline */
+  .timeline-section {
+    padding: 1.5rem;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .timeline {
+    position: relative;
+  }
+
+  .timeline-item {
     display: grid;
-    grid-template-columns: 80px 40px 1fr;
-    margin-bottom: 0;
+    grid-template-columns: 70px 40px 1fr;
+    gap: 0;
     opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.4s ease;
+    transform: translateY(8px);
+    animation: fadeIn 0.4s ease forwards;
   }
 
-  .timeline-row.mounted {
-    opacity: 1;
-    transform: translateY(0);
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
-  .time-col {
+  .item-date {
     text-align: right;
-    padding-top: 0.5rem;
     padding-right: 0.5rem;
+    padding-top: 0.5rem;
   }
 
-  .time-date {
+  .date-main {
     display: block;
     font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--pine);
   }
 
-  .time-day {
+  .date-day {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--muted);
   }
 
-  .marker-col {
-    position: relative;
+  .item-marker {
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
   }
 
   .marker-line {
     width: 2px;
-    background: var(--stone, #ccc);
     flex: 1;
-    opacity: 0.3;
+    background: var(--border);
   }
 
-  .marker-line.first { margin-top: 1rem; flex: 1; }
-  .marker-line.last { margin-bottom: auto; height: 1rem; flex: 0; }
-  .marker-line.top { height: 1rem; flex: 0; }
+  .marker-line.first {
+    background: transparent;
+  }
+
+  .marker-line.last,
+  .marker-line.top-only {
+    flex: 0;
+    height: 12px;
+  }
 
   .marker-dot {
-    position: absolute;
-    top: 1rem;
     width: 24px;
     height: 24px;
     border-radius: 50%;
     background: var(--alpine);
     color: #fff;
     font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
     border: 2px solid #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    z-index: 2;
+    flex-shrink: 0;
   }
 
   .marker-dot.summit {
     background: var(--marker);
     color: var(--ink);
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
-  .content-col {
-    padding-bottom: 1.5rem;
-    padding-left: 0.5rem;
+  .item-content {
+    padding: 0.5rem 0 1.25rem 0.5rem;
   }
 
   .section-card {
     background: #fff;
-    padding: 0.75rem 1rem;
+    border: 2px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-    border: 1px solid rgba(0,0,0,0.05);
+    padding: 0.75rem 1rem;
   }
 
-  .card-head {
+  .card-top {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.25rem;
   }
 
-  .card-icon { font-size: 1.2rem; }
+  .card-emoji {
+    font-size: 1.1rem;
+  }
 
   .card-name {
-    font-family: Oswald, sans-serif;
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: var(--ink);
     flex: 1;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
   }
 
   .card-miles {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--muted);
-    background: #f5f5f5;
-    padding: 0.1rem 0.4rem;
+    background: var(--bg);
+    padding: 0.15rem 0.4rem;
     border-radius: 4px;
   }
 
-  .card-meta {
+  .card-bottom {
     display: flex;
     justify-content: space-between;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 
-  .meta-tag { color: var(--muted); font-style: italic; }
-  .meta-season { font-weight: 600; }
+  .card-highlight {
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .card-season {
+    font-weight: 600;
+  }
 
   .summit-card {
-    background: linear-gradient(135deg, var(--pine), #2c362a);
-    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--pine), #1a2e1a);
     border-radius: 12px;
+    padding: 1rem 1.25rem;
     color: #fff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
 
-  .summit-content h4 {
+  .summit-card h4 {
     margin: 0;
     font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    letter-spacing: 0.05em;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
   }
 
-  .summit-content p {
-    margin: 0;
-    font-size: 0.85rem;
+  .summit-card p {
+    margin: 0.25rem 0 0;
+    font-size: 0.8rem;
     opacity: 0.8;
   }
 
   /* Milestones */
-  .milestones-container { padding: 2rem; }
+  .milestones-section {
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+  }
 
   .milestones-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
   }
 
-  .milestone-box {
-    background: linear-gradient(135deg, rgba(240, 224, 0, 0.1), rgba(240, 224, 0, 0.02));
-    border: 1px solid rgba(240, 224, 0, 0.4);
-    border-radius: 10px;
+  .milestone-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     padding: 1rem;
-    text-align: center;
+    background: linear-gradient(135deg, rgba(240, 224, 0, 0.1), rgba(240, 224, 0, 0.02));
+    border: 2px solid rgba(240, 224, 0, 0.4);
+    border-radius: 10px;
   }
 
   .ms-miles {
@@ -1176,156 +884,40 @@ Generated at hoggcountry.com/tools`;
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--pine);
-    margin-bottom: 0.25rem;
+    min-width: 50px;
   }
 
-  .ms-content { display: flex; flex-direction: column; }
-  .ms-label { font-size: 0.8rem; font-weight: 600; color: var(--ink); }
-  .ms-date { font-size: 0.75rem; color: var(--muted); }
-
-  /* ========== TRAIL MODE STYLES ========== */
-  .trail-controls {
-    padding: 1.5rem 2rem 2rem;
-  }
-
-  .position-input {
-    margin-bottom: 1.5rem;
-  }
-
-  .mile-display {
+  .ms-info {
     display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    flex-direction: column;
   }
 
-  .mile-num {
-    font-family: Oswald, sans-serif;
-    font-size: 3rem;
-    font-weight: 700;
-    color: var(--pine);
-    line-height: 1;
+  .ms-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink);
   }
 
-  .mile-landmark {
-    font-size: 1rem;
+  .ms-date {
+    font-size: 0.7rem;
     color: var(--muted);
-    font-style: italic;
   }
 
-  .mile-slider-wrap {
-    position: relative;
-    height: 32px;
-    background: var(--bg);
-    border-radius: 8px;
-    overflow: hidden;
+  /* Dashboard */
+  .dashboard-section {
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
-  .mile-slider {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    -webkit-appearance: none;
-    background: transparent;
-    cursor: pointer;
-    z-index: 2;
-  }
-
-  .mile-slider::-webkit-slider-runnable-track {
-    height: 100%;
-    background: transparent;
-  }
-
-  .mile-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 28px;
-    width: 12px;
-    border-radius: 4px;
-    background: var(--pine);
-    margin-top: 2px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    cursor: grab;
-  }
-
-  .mile-slider::-moz-range-track {
-    height: 100%;
-    background: transparent;
-    border: none;
-  }
-
-  .mile-slider::-moz-range-thumb {
-    height: 24px;
-    width: 10px;
-    border-radius: 4px;
-    background: var(--pine);
-    border: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    cursor: grab;
-  }
-
-  .mile-progress {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: linear-gradient(90deg, var(--alpine), var(--pine));
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  .mile-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 0.5rem;
-  }
-
-  .trail-config {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  .mini-pace {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .pace-input {
-    width: 80px;
-    padding: 0.75rem;
-    border: 1px solid var(--stone, #ccc);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 1rem;
-    text-align: center;
-  }
-
-  .mini-pace span {
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
-
-  /* Trail Dashboard */
-  .trail-dashboard {
-    padding: 2rem;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .status-hero {
+  .dashboard-hero {
     display: flex;
     gap: 2rem;
     align-items: center;
     margin-bottom: 1.5rem;
   }
 
-  .hero-progress {
+  .progress-ring-container {
     position: relative;
     width: 120px;
     height: 120px;
@@ -1340,19 +932,19 @@ Generated at hoggcountry.com/tools`;
 
   .ring-bg {
     fill: none;
-    stroke: #e0ddd4;
-    stroke-width: 8;
+    stroke: var(--border);
+    stroke-width: 10;
   }
 
   .ring-fill {
     fill: none;
-    stroke: var(--pine);
-    stroke-width: 8;
+    stroke: url(#ringGrad);
+    stroke-width: 10;
     stroke-linecap: round;
-    transition: stroke-dasharray 0.5s ease;
+    transition: stroke-dasharray 0.6s ease;
   }
 
-  .hero-center {
+  .ring-center {
     position: absolute;
     inset: 0;
     display: flex;
@@ -1361,7 +953,7 @@ Generated at hoggcountry.com/tools`;
     justify-content: center;
   }
 
-  .hero-pct {
+  .ring-percent {
     font-family: Oswald, sans-serif;
     font-size: 1.75rem;
     font-weight: 700;
@@ -1369,8 +961,8 @@ Generated at hoggcountry.com/tools`;
     line-height: 1;
   }
 
-  .hero-label {
-    font-size: 0.7rem;
+  .ring-label {
+    font-size: 0.65rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -1388,42 +980,40 @@ Generated at hoggcountry.com/tools`;
     flex-direction: column;
   }
 
-  .hs-val {
+  .hs-value {
     font-family: Oswald, sans-serif;
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--ink);
-    line-height: 1.1;
+    line-height: 1;
   }
 
   .hs-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--muted);
   }
 
-  .status-indicator .hs-val {
+  .hero-stat.status .hs-value {
     color: var(--status-color);
   }
 
-  /* Pace Breakdown */
-  .pace-breakdown {
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    background: #fff;
-    border-radius: 12px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.05);
+  .pace-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
   }
 
-  .pb-item {
+  .pace-card {
     text-align: center;
-    flex: 1;
+    padding: 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
   }
 
-  .pb-val {
+  .pace-value {
+    display: block;
     font-family: Oswald, sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
@@ -1431,171 +1021,176 @@ Generated at hoggcountry.com/tools`;
     line-height: 1;
   }
 
-  .pb-label {
-    font-size: 0.7rem;
+  .pace-unit {
+    display: block;
+    font-size: 0.65rem;
     font-weight: 600;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     margin-top: 0.25rem;
   }
 
-  .pb-sub {
+  .pace-note {
+    display: block;
     font-size: 0.7rem;
     color: var(--alpine);
     margin-top: 0.15rem;
   }
 
-  .pb-divider {
-    width: 1px;
-    height: 40px;
-    background: var(--border);
-    margin: 0 0.5rem;
-  }
-
-  .quick-stats {
+  .quick-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
-  .qs-card {
+  .quick-card {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem;
-    background: #fff;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.05);
   }
 
-  .qs-icon { font-size: 1.25rem; }
-
-  .qs-content {
-    display: flex;
-    flex-direction: column;
+  .qc-icon {
+    font-size: 1.25rem;
   }
 
-  .qs-val {
+  .qc-value {
     font-family: Oswald, sans-serif;
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--ink);
-    line-height: 1.1;
+    line-height: 1;
   }
 
-  .qs-label {
-    font-size: 0.7rem;
+  .qc-label {
+    font-size: 0.65rem;
     color: var(--muted);
   }
 
-  /* Current Section Card */
-  .current-section-card {
-    margin: 0 2rem;
+  /* Current Section */
+  .current-section {
+    padding: 0 1.5rem 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .current-card {
     padding: 1.25rem;
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.15), rgba(166, 181, 137, 0.05));
-    border: 1px solid var(--alpine);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.02));
+    border: 2px solid #22c55e;
     border-radius: 12px;
   }
 
-  .csc-header {
+  .current-header {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 1rem;
   }
 
-  .csc-icon { font-size: 1.75rem; }
+  .current-emoji {
+    font-size: 1.75rem;
+  }
 
-  .csc-title {
+  .current-info {
     display: flex;
     flex-direction: column;
   }
 
-  .csc-name {
+  .current-name {
     font-family: Oswald, sans-serif;
     font-size: 1.1rem;
     font-weight: 600;
     color: var(--ink);
   }
 
-  .csc-sub {
+  .current-highlight {
     font-size: 0.85rem;
     color: var(--muted);
     font-style: italic;
   }
 
-  .csc-progress { margin-top: 0.5rem; }
+  .current-progress {
+    margin-top: 0.5rem;
+  }
 
-  .csc-bar {
-    height: 8px;
+  .progress-track {
+    height: 10px;
     background: rgba(0,0,0,0.1);
-    border-radius: 4px;
+    border-radius: 5px;
     overflow: hidden;
   }
 
-  .csc-fill {
+  .progress-fill {
     height: 100%;
-    background: var(--pine);
-    border-radius: 4px;
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 5px;
+    transition: width 0.4s ease;
   }
 
-  .csc-miles {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
+  .progress-label {
+    display: block;
+    text-align: right;
+    font-size: 0.75rem;
     color: var(--muted);
+    margin-top: 0.5rem;
   }
 
-  /* Next Milestone Card */
-  .next-milestone-card {
-    margin: 1.5rem 2rem 0;
+  /* Next Milestone */
+  .next-milestone {
+    padding: 0 1.5rem 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .nm-card {
     padding: 1rem 1.25rem;
-    background: linear-gradient(135deg, rgba(240, 224, 0, 0.15), rgba(240, 224, 0, 0.05));
-    border: 1px solid rgba(240, 224, 0, 0.5);
+    background: linear-gradient(135deg, rgba(240, 224, 0, 0.12), rgba(240, 224, 0, 0.02));
+    border: 2px solid rgba(240, 224, 0, 0.5);
     border-radius: 10px;
   }
 
-  .nmc-label {
+  .nm-label {
     font-family: Oswald, sans-serif;
     font-size: 0.7rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
     color: var(--muted);
+    letter-spacing: 0.1em;
     margin-bottom: 0.5rem;
   }
 
-  .nmc-content {
+  .nm-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  .nmc-info {
+  .nm-info {
     display: flex;
     flex-direction: column;
   }
 
-  .nmc-name {
+  .nm-name {
     font-family: Oswald, sans-serif;
     font-size: 1.1rem;
     font-weight: 600;
     color: var(--ink);
   }
 
-  .nmc-note {
-    font-size: 0.85rem;
+  .nm-note {
+    font-size: 0.8rem;
     color: var(--muted);
   }
 
-  .nmc-distance {
+  .nm-distance {
     text-align: right;
   }
 
-  .nmc-miles {
+  .nm-miles {
     font-family: Oswald, sans-serif;
     font-size: 1.75rem;
     font-weight: 700;
@@ -1603,20 +1198,20 @@ Generated at hoggcountry.com/tools`;
     line-height: 1;
   }
 
-  .nmc-unit {
+  .nm-unit {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--muted);
   }
 
   /* Projections */
-  .projection-section {
-    padding: 2rem;
-    border-top: 1px solid var(--border);
+  .projections-section {
+    padding: 1.5rem;
     background: var(--bg);
+    border-bottom: 2px solid var(--border);
   }
 
-  .projection-cards {
+  .proj-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
@@ -1625,13 +1220,12 @@ Generated at hoggcountry.com/tools`;
   .proj-card {
     padding: 1.25rem;
     background: #fff;
+    border: 2px solid var(--border);
     border-radius: 12px;
-    border: 1px solid var(--border);
   }
 
   .proj-card.current {
     border-color: var(--pine);
-    border-width: 2px;
   }
 
   .proj-header {
@@ -1643,15 +1237,14 @@ Generated at hoggcountry.com/tools`;
 
   .proj-label {
     font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--muted);
+    letter-spacing: 0.05em;
   }
 
   .proj-pace {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--pine);
     font-weight: 600;
   }
@@ -1664,13 +1257,13 @@ Generated at hoggcountry.com/tools`;
   }
 
   .proj-days {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--muted);
     margin-top: 0.25rem;
   }
 
-  .proj-date-sm {
-    font-size: 0.8rem;
+  .proj-target-date {
+    font-size: 0.75rem;
     color: var(--terra);
     font-weight: 600;
   }
@@ -1681,7 +1274,7 @@ Generated at hoggcountry.com/tools`;
     gap: 0.5rem;
   }
 
-  .ppn-val {
+  .ppn-value {
     font-family: Oswald, sans-serif;
     font-size: 1.75rem;
     font-weight: 700;
@@ -1690,51 +1283,47 @@ Generated at hoggcountry.com/tools`;
   }
 
   .ppn-unit {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--muted);
   }
 
   /* Remaining Sections */
-  .remaining-sections {
-    padding: 2rem;
-    border-top: 1px solid var(--border);
+  .remaining-section {
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
   .remaining-list {
     display: flex;
     flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .rem-item {
+    display: flex;
+    align-items: center;
     gap: 0.75rem;
-  }
-
-  .rem-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
     padding: 0.75rem 1rem;
-    background: #fff;
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.05);
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
   }
 
-  .rem-row.current {
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.1), rgba(166, 181, 137, 0.02));
-    border-color: var(--alpine);
+  .rem-item.current {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.05);
   }
 
-  .rem-marker {
-    flex-shrink: 0;
+  .rem-emoji {
+    font-size: 1.25rem;
   }
 
-  .rem-emoji { font-size: 1.25rem; }
-
-  .rem-content {
+  .rem-info {
     flex: 1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
   }
 
-  .rem-head {
+  .rem-top {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1742,16 +1331,16 @@ Generated at hoggcountry.com/tools`;
 
   .rem-name {
     font-family: Oswald, sans-serif;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--ink);
   }
 
   .rem-badge {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 700;
-    padding: 0.15rem 0.4rem;
-    background: var(--alpine);
+    padding: 0.1rem 0.35rem;
+    background: #22c55e;
     color: #fff;
     border-radius: 4px;
     text-transform: uppercase;
@@ -1761,109 +1350,131 @@ Generated at hoggcountry.com/tools`;
   .rem-meta {
     display: flex;
     gap: 1rem;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--muted);
   }
 
-  .rem-miles { font-weight: 600; }
-
   /* Footer */
-  .action-footer {
-    padding: 1.5rem;
-    background: #fafaf9;
-    border-top: 1px solid var(--border);
+  .calc-footer {
+    padding: 1.25rem 1.5rem;
+    background: var(--bg);
     text-align: center;
+    border-bottom: 2px solid var(--border);
   }
 
   .share-btn {
-    background: var(--pine);
-    color: #fff;
-    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.75rem 1.5rem;
+    background: var(--pine);
+    border: 2px solid var(--pine);
     border-radius: 8px;
+    color: #fff;
     font-family: Oswald, sans-serif;
-    font-size: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
+  }
+
+  .share-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .share-btn:hover {
-    background: var(--ink);
-    transform: translateY(-2px);
+    background: var(--alpine);
+    border-color: var(--alpine);
   }
 
-  @media (max-width: 600px) {
-    .milestone-calc {
-      overflow-x: hidden;
-      border-radius: 12px;
+  /* Guide Link */
+  .guide-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--pine);
+    color: #fff;
+    text-decoration: none;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: all 0.2s;
+  }
+
+  .guide-link:hover {
+    background: var(--alpine);
+  }
+
+  .guide-link svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
     }
-    .calc-header { padding: 1.5rem; }
-    .header-title { font-size: 1.5rem; }
-    .controls-section { padding: 1.5rem; }
-    .controls-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-    .stats-grid-3 { grid-template-columns: 1fr; }
-    .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
-    .stat-card:last-child { border-bottom: none; }
-    .stat-num { font-size: 2rem; }
-    .stat-text { font-size: 1.1rem; }
-    .timeline-container { padding: 1.5rem 0.75rem; }
-    .timeline-row { grid-template-columns: 55px 28px 1fr; }
-    .time-col { padding-right: 0.25rem; }
-    .time-date { font-size: 0.7rem; }
-    .time-day { font-size: 0.65rem; }
-    .marker-dot { width: 20px; height: 20px; font-size: 0.6rem; }
-    .content-col { padding-left: 0.35rem; padding-bottom: 1rem; }
-    .section-card { padding: 0.6rem 0.75rem; }
-    .card-head { flex-wrap: wrap; gap: 0.35rem; }
-    .card-name { font-size: 0.85rem; }
-    .card-miles { font-size: 0.7rem; padding: 0.1rem 0.3rem; }
-    .card-meta { flex-direction: column; gap: 0.25rem; font-size: 0.7rem; }
-    .summit-card { padding: 0.75rem 1rem; }
-    .summit-content h4 { font-size: 1rem; }
-    .milestones-container { padding: 1.5rem 1rem; }
-    .milestones-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-    .milestone-box { padding: 0.75rem; }
-    .ms-miles { font-size: 1rem; }
-    .ms-label { font-size: 0.7rem; }
-    .ms-date { font-size: 0.65rem; }
-    .status-hero { flex-direction: column; gap: 1.5rem; }
-    .hero-progress { width: 100px; height: 100px; }
-    .hero-pct { font-size: 1.5rem; }
-    .hero-stats { flex-direction: row; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
-    .hero-stat { flex: 0 0 auto; min-width: 70px; text-align: center; }
-    .hs-val { font-size: 1.25rem; }
-    .hs-label { font-size: 0.65rem; }
-    .trail-dashboard { padding: 1.5rem 1rem; }
-    .pace-breakdown { flex-direction: column; gap: 0.75rem; padding: 1rem; }
-    .pb-val { font-size: 1.25rem; }
-    .pb-label { font-size: 0.6rem; }
-    .pb-divider { width: 100%; height: 1px; margin: 0; }
-    .quick-stats { grid-template-columns: 1fr; gap: 0.75rem; }
-    .qs-card { padding: 0.75rem; }
-    .qs-val { font-size: 1.1rem; }
-    .trail-config { grid-template-columns: 1fr; }
-    .projection-section { padding: 1.5rem 1rem; }
-    .projection-cards { grid-template-columns: 1fr; gap: 0.75rem; }
-    .proj-card { padding: 1rem; }
-    .proj-date { font-size: 1.1rem; }
-    .ppn-val { font-size: 1.5rem; }
-    .current-section-card { margin: 0 1rem; padding: 1rem; }
-    .csc-icon { font-size: 1.5rem; }
-    .csc-name { font-size: 1rem; }
-    .next-milestone-card { margin: 1rem; padding: 0.75rem 1rem; }
-    .nmc-miles { font-size: 1.5rem; }
-    .remaining-sections { padding: 1.5rem 1rem; }
-    .rem-row { padding: 0.6rem 0.75rem; gap: 0.75rem; }
-    .rem-name { font-size: 0.85rem; }
-    .rem-meta { flex-direction: column; gap: 0.15rem; align-items: flex-end; font-size: 0.7rem; }
-    .action-footer { padding: 1rem; }
-    .share-btn { padding: 0.6rem 1.25rem; font-size: 0.9rem; }
-  }
 
-  @media (max-width: 380px) {
-    .timeline-row { grid-template-columns: 48px 24px 1fr; }
-    .time-date { font-size: 0.6rem; }
-    .marker-dot { width: 18px; height: 18px; font-size: 0.55rem; }
-    .milestones-grid { grid-template-columns: 1fr; }
+    .stat-box {
+      padding: 1rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+    }
+
+    .timeline-item {
+      grid-template-columns: 55px 32px 1fr;
+    }
+
+    .date-main {
+      font-size: 0.7rem;
+    }
+
+    .marker-dot {
+      width: 20px;
+      height: 20px;
+      font-size: 0.6rem;
+    }
+
+    .milestones-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-hero {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .hero-stats {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .hero-stat {
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .pace-grid,
+    .quick-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .proj-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .header-badge {
+      display: none;
+    }
   }
 </style>
