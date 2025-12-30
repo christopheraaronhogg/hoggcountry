@@ -1,22 +1,32 @@
 <script>
   import { onMount } from 'svelte';
   import { fade, slide } from 'svelte/transition';
-  // Core 14 tools (consolidated from 22)
+
+  // Static import for default tool (ensures CSS is in SSR output)
   import LayeringAdvisor from './LayeringAdvisor.svelte';
-  import ShelterDecision from './ShelterDecision.svelte';
-  import WeatherAssessor from './WeatherAssessor.svelte';
-  import MilestoneCalculator from './MilestoneCalculator.svelte';
-  import PackBuilder from './PackBuilder.svelte';
-  import ResupplyCalculator from './ResupplyCalculator.svelte';
-  import WaterTracker from './WaterTracker.svelte';
-  import BudgetCalculator from './BudgetCalculator.svelte';
-  import MailDropPlanner from './MailDropPlanner.svelte';
-  import PowerManager from './PowerManager.svelte';
-  import FoodCalculator from './FoodCalculator.svelte';
-  import GearTransitionTracker from './GearTransitionTracker.svelte';
-  import TrainingPlanner from './TrainingPlanner.svelte';
-  import EmergencyCard from './EmergencyCard.svelte';
   import QuickLog from './QuickLog.svelte';
+
+  // Dynamic loaders for other tools (code-split with CSS)
+  const toolLoaders = {
+    layers: null, // Static import above
+    shelter: () => import('./ShelterDecision.svelte'),
+    weather: () => import('./WeatherAssessor.svelte'),
+    milestone: () => import('./MilestoneCalculator.svelte'),
+    pack: () => import('./PackBuilder.svelte'),
+    resupply: () => import('./ResupplyCalculator.svelte'),
+    water: () => import('./WaterTracker.svelte'),
+    budget: () => import('./BudgetCalculator.svelte'),
+    mail: () => import('./MailDropPlanner.svelte'),
+    power: () => import('./PowerManager.svelte'),
+    food: () => import('./FoodCalculator.svelte'),
+    geartrans: () => import('./GearTransitionTracker.svelte'),
+    training: () => import('./TrainingPlanner.svelte'),
+    emergency: () => import('./EmergencyCard.svelte'),
+  };
+
+  // Cache for loaded components
+  let loadedTools = $state({ layers: LayeringAdvisor });
+  let isToolLoading = $state(false);
 
   // Trail landmarks for mile context
   const landmarks = [
@@ -82,10 +92,21 @@
   // QuickLog modal state
   let showQuickLog = $state(false);
 
-  onMount(() => {
+  onMount(async () => {
     mounted = true;
     const hash = window.location.hash.slice(1);
     if (tools.some(t => t.id === hash && !t.disabled)) {
+      // Load the tool from hash if it's not the default
+      if (hash !== 'layers' && toolLoaders[hash]) {
+        isToolLoading = true;
+        try {
+          const module = await toolLoaders[hash]();
+          loadedTools = { ...loadedTools, [hash]: module.default };
+        } catch (e) {
+          console.error('Failed to load tool from hash:', hash, e);
+        }
+        isToolLoading = false;
+      }
       activeTool = hash;
     }
     // Load saved context from localStorage
@@ -153,16 +174,35 @@
   let hikingDaysPlanned = $derived(Math.ceil(2198 / pace));
   let totalDaysPlanned = $derived(Math.ceil(hikingDaysPlanned / (1 - zeroDaysPerMonth / 30)));
 
-  function switchTool(toolId) {
+  async function switchTool(toolId) {
     if (toolId === activeTool || tools.find(t => t.id === toolId)?.disabled) return;
+
+    // Start transition
     isTransitioning = true;
     window.history.replaceState(null, '', `#${toolId}`);
+
+    // Load tool if not already loaded
+    if (!loadedTools[toolId] && toolLoaders[toolId]) {
+      isToolLoading = true;
+      try {
+        const module = await toolLoaders[toolId]();
+        loadedTools = { ...loadedTools, [toolId]: module.default };
+      } catch (e) {
+        console.error('Failed to load tool:', toolId, e);
+        isToolLoading = false;
+        isTransitioning = false;
+        return;
+      }
+      isToolLoading = false;
+    }
+
+    // Switch after brief transition
     setTimeout(() => {
       activeTool = toolId;
       setTimeout(() => {
         isTransitioning = false;
       }, 50);
-    }, 200);
+    }, 150);
   }
 
   // Handle QuickLog save - update currentMile
@@ -407,37 +447,18 @@
     {/each}
   </nav>
 
-  <!-- Tool Content - Only active tool renders (lazy loading) -->
+  <!-- Tool Content - Dynamic loading with code-split CSS -->
   <div class="tool-viewport">
     <div class="tool-container" class:transitioning={isTransitioning}>
-      {#if activeTool === 'layers'}
-        <div class="tool-panel"><LayeringAdvisor {trailContext} /></div>
-      {:else if activeTool === 'shelter'}
-        <div class="tool-panel"><ShelterDecision {trailContext} /></div>
-      {:else if activeTool === 'weather'}
-        <div class="tool-panel"><WeatherAssessor {trailContext} /></div>
-      {:else if activeTool === 'milestone'}
-        <div class="tool-panel"><MilestoneCalculator {trailContext} /></div>
-      {:else if activeTool === 'pack'}
-        <div class="tool-panel"><PackBuilder {trailContext} /></div>
-      {:else if activeTool === 'resupply'}
-        <div class="tool-panel"><ResupplyCalculator {trailContext} /></div>
-      {:else if activeTool === 'water'}
-        <div class="tool-panel"><WaterTracker {trailContext} /></div>
-      {:else if activeTool === 'budget'}
-        <div class="tool-panel"><BudgetCalculator {trailContext} /></div>
-      {:else if activeTool === 'mail'}
-        <div class="tool-panel"><MailDropPlanner {trailContext} /></div>
-      {:else if activeTool === 'power'}
-        <div class="tool-panel"><PowerManager {trailContext} /></div>
-      {:else if activeTool === 'food'}
-        <div class="tool-panel"><FoodCalculator {trailContext} /></div>
-      {:else if activeTool === 'geartrans'}
-        <div class="tool-panel"><GearTransitionTracker {trailContext} /></div>
-      {:else if activeTool === 'training'}
-        <div class="tool-panel"><TrainingPlanner {trailContext} /></div>
-      {:else if activeTool === 'emergency'}
-        <div class="tool-panel"><EmergencyCard {trailContext} /></div>
+      {#if isToolLoading}
+        <div class="tool-loading">
+          <div class="loading-spinner"></div>
+          <span class="loading-text">Loading tool...</span>
+        </div>
+      {:else if loadedTools[activeTool]}
+        <div class="tool-panel">
+          <svelte:component this={loadedTools[activeTool]} {trailContext} />
+        </div>
       {/if}
     </div>
   </div>
@@ -1025,7 +1046,36 @@
     pointer-events: none;
   }
 
-  /* Removed .tool-panel.hidden - using {#if} conditional rendering */
+  /* Loading state for dynamic tool loading */
+  .tool-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 300px;
+    color: var(--muted);
+  }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--alpine);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-text {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
 
   /* Quick Links */
   .quick-links {
