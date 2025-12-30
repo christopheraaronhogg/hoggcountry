@@ -407,51 +407,38 @@
     {/each}
   </nav>
 
-  <!-- Tool Content - 14 consolidated tools, hidden via CSS -->
+  <!-- Tool Content - Only active tool renders (lazy loading) -->
   <div class="tool-viewport">
     <div class="tool-container" class:transitioning={isTransitioning}>
-      <div class="tool-panel" class:hidden={activeTool !== 'layers'}>
-        <LayeringAdvisor {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'shelter'}>
-        <ShelterDecision {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'weather'}>
-        <WeatherAssessor {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'milestone'}>
-        <MilestoneCalculator {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'pack'}>
-        <PackBuilder {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'resupply'}>
-        <ResupplyCalculator {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'water'}>
-        <WaterTracker {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'budget'}>
-        <BudgetCalculator {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'mail'}>
-        <MailDropPlanner {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'power'}>
-        <PowerManager {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'food'}>
-        <FoodCalculator {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'geartrans'}>
-        <GearTransitionTracker {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'training'}>
-        <TrainingPlanner {trailContext} />
-      </div>
-      <div class="tool-panel" class:hidden={activeTool !== 'emergency'}>
-        <EmergencyCard {trailContext} />
-      </div>
+      {#if activeTool === 'layers'}
+        <div class="tool-panel"><LayeringAdvisor {trailContext} /></div>
+      {:else if activeTool === 'shelter'}
+        <div class="tool-panel"><ShelterDecision {trailContext} /></div>
+      {:else if activeTool === 'weather'}
+        <div class="tool-panel"><WeatherAssessor {trailContext} /></div>
+      {:else if activeTool === 'milestone'}
+        <div class="tool-panel"><MilestoneCalculator {trailContext} /></div>
+      {:else if activeTool === 'pack'}
+        <div class="tool-panel"><PackBuilder {trailContext} /></div>
+      {:else if activeTool === 'resupply'}
+        <div class="tool-panel"><ResupplyCalculator {trailContext} /></div>
+      {:else if activeTool === 'water'}
+        <div class="tool-panel"><WaterTracker {trailContext} /></div>
+      {:else if activeTool === 'budget'}
+        <div class="tool-panel"><BudgetCalculator {trailContext} /></div>
+      {:else if activeTool === 'mail'}
+        <div class="tool-panel"><MailDropPlanner {trailContext} /></div>
+      {:else if activeTool === 'power'}
+        <div class="tool-panel"><PowerManager {trailContext} /></div>
+      {:else if activeTool === 'food'}
+        <div class="tool-panel"><FoodCalculator {trailContext} /></div>
+      {:else if activeTool === 'geartrans'}
+        <div class="tool-panel"><GearTransitionTracker {trailContext} /></div>
+      {:else if activeTool === 'training'}
+        <div class="tool-panel"><TrainingPlanner {trailContext} /></div>
+      {:else if activeTool === 'emergency'}
+        <div class="tool-panel"><EmergencyCard {trailContext} /></div>
+      {/if}
     </div>
   </div>
 
@@ -1038,9 +1025,7 @@
     pointer-events: none;
   }
 
-  .tool-panel.hidden {
-    display: none;
-  }
+  /* Removed .tool-panel.hidden - using {#if} conditional rendering */
 
   /* Quick Links */
   .quick-links {
