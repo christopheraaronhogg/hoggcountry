@@ -6,6 +6,8 @@
   import DaylightCalculator from './DaylightCalculator.svelte';
   import ResupplyCalculator from './ResupplyCalculator.svelte';
   import BudgetCalculator from './BudgetCalculator.svelte';
+  import EmergencyCard from './EmergencyCard.svelte';
+  import QuickLog from './QuickLog.svelte';
 
   // Trail landmarks for mile context
   const landmarks = [
@@ -36,6 +38,7 @@
     { id: 'daylight', name: 'Daylight', icon: '🌅', desc: 'Sunrise & sunset times' },
     { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Town & food planner' },
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
+    { id: 'emergency', name: 'Emergency', icon: '🆘', desc: 'Emergency info & bailouts' },
   ];
 
   // ========== GLOBAL TRAIL CONTEXT (Svelte 5 $state) ==========
@@ -57,6 +60,9 @@
   let activeTool = $state('milestone');
   let isTransitioning = $state(false);
   let mounted = $state(false);
+
+  // QuickLog modal state
+  let showQuickLog = $state(false);
 
   onMount(() => {
     mounted = true;
@@ -139,6 +145,12 @@
         isTransitioning = false;
       }, 50);
     }, 200);
+  }
+
+  // Handle QuickLog save - update currentMile
+  function handleQuickLogSave(newMile) {
+    currentMile = newMile;
+    showQuickLog = false;
   }
 
   let activeToolData = $derived(tools.find(t => t.id === activeTool));
@@ -395,8 +407,27 @@
       <div class="tool-panel" class:hidden={activeTool !== 'budget'}>
         <BudgetCalculator {trailContext} />
       </div>
+      <div class="tool-panel" class:hidden={activeTool !== 'emergency'}>
+        <EmergencyCard {trailContext} />
+      </div>
     </div>
   </div>
+
+  <!-- Quick Log FAB (Trail Mode Only) -->
+  {#if mode === 'trail'}
+    <button class="quick-log-fab" onclick={() => showQuickLog = true} transition:fade>
+      <span class="fab-icon">📝</span>
+      <span class="fab-label">Log Day</span>
+    </button>
+  {/if}
+
+  <!-- Quick Log Modal -->
+  <QuickLog
+    isOpen={showQuickLog}
+    {currentMile}
+    onClose={() => showQuickLog = false}
+    onSave={handleQuickLogSave}
+  />
 
   <!-- Quick Links -->
   <div class="quick-links">
@@ -860,7 +891,7 @@
   /* ========== NAVIGATION ========== */
   .tools-nav {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -1037,6 +1068,46 @@
     transform: translateX(4px);
   }
 
+  /* ========== QUICK LOG FAB ========== */
+  .quick-log-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, var(--pine), #3a4538);
+    border: none;
+    border-radius: 50px;
+    color: #fff;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 100;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .quick-log-fab:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  .quick-log-fab:active {
+    transform: scale(0.98);
+  }
+
+  .fab-icon {
+    font-size: 1.25rem;
+  }
+
+  .fab-label {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
   /* ========== RESPONSIVE ========== */
   @media (max-width: 640px) {
     .tools-app {
@@ -1146,6 +1217,20 @@
       margin-bottom: 1.5rem;
     }
 
+    .quick-log-fab {
+      bottom: 16px;
+      right: 16px;
+      padding: 0.75rem 1.25rem;
+    }
+
+    .fab-icon {
+      font-size: 1.1rem;
+    }
+
+    .fab-label {
+      font-size: 0.9rem;
+    }
+
     .nav-tab {
       padding: 0.6rem 0.25rem;
     }
@@ -1190,8 +1275,11 @@
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .nav-tab:nth-child(5) {
-      grid-column: 1 / -1;
+    .quick-log-fab {
+      bottom: 12px;
+      right: 12px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
     }
   }
 </style>
