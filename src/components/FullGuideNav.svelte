@@ -40,7 +40,7 @@
     const updateProgress = () => {
       const scrollTop = window.scrollY;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      progress = Math.min((scrollTop / docHeight) * 100, 100);
+      progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0;
       showBackToTop = scrollTop > 500;
     };
 
