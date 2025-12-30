@@ -109,8 +109,29 @@
     };
   });
 
-  // Wind action based on speed
+  // Wind action based on speed AND temperature (guide trigger: cold + wind = shelter)
   let windAction = $derived.by(() => {
+    const isCold = summitTemp <= 25; // Guide threshold: ~25°F
+    const isWindy = windSpeed >= 15; // Guide threshold: 15+ mph sustained
+
+    // GUIDE TRIGGER: Wind + Cold = SHELTER (setup danger)
+    if (isCold && isWindy) {
+      return {
+        level: 'shelter-trigger',
+        action: 'SHELTER',
+        color: 'var(--terra)',
+        tips: [
+          'Wind + Cold trigger activated',
+          'Tent setup dangerous — hands fail fast',
+          'Shelter reduces complexity',
+          'Walk in, drop pack, done'
+        ],
+        warning: true,
+        trigger: true,
+      };
+    }
+
+    // Light wind (0-10 mph) — either option fine
     if (windSpeed < 10) {
       return {
         level: 'light',
@@ -119,27 +140,62 @@
         tips: ['Normal camping conditions', 'Either option fine'],
       };
     }
+
+    // Moderate wind (10-20 mph)
     if (windSpeed < 20) {
+      if (summitTemp <= 35) {
+        // Cool + moderate wind — caution
+        return {
+          level: 'moderate',
+          action: 'Tent OK (watch temp)',
+          color: 'var(--marker)',
+          tips: [
+            'Find wind-protected site',
+            'If temp drops below 25°F → shelter trigger',
+            'Have shelter backup plan'
+          ],
+        };
+      }
+      // Warm + moderate wind — tent is fine
       return {
         level: 'moderate',
-        action: 'Lean TENT',
+        action: 'Tent OK',
         color: 'var(--marker)',
-        tips: ['Shelter only if deep woods', 'Shelter must have calm interior', 'Tent gives more control'],
+        tips: ['Wind is cooling in warm temps', 'Choose protected terrain', 'Tent gives control'],
       };
     }
+
+    // Strong wind (20-30 mph)
     if (windSpeed < 30) {
+      if (summitTemp <= 35) {
+        // Cool + strong wind — strongly consider shelter
+        return {
+          level: 'strong',
+          action: 'Lean SHELTER',
+          color: '#e67e22',
+          tips: [
+            'Near cold+wind trigger threshold',
+            'Setup will be very difficult',
+            'Shelter strongly recommended'
+          ],
+          warning: true,
+        };
+      }
+      // Warm + strong wind — tent in protected terrain
       return {
         level: 'strong',
-        action: 'TENT ONLY',
+        action: 'TENT — Protected terrain',
         color: '#e67e22',
-        tips: ['Below ridges', 'Protected terrain', 'Dense trees', 'Use all stakes'],
+        tips: ['Below ridges', 'Dense trees', 'Use all stakes', 'Low pitch'],
       };
     }
+
+    // Severe (30+ mph) — always seek cover
     return {
       level: 'severe',
-      action: 'IMMEDIATE PROTECTION',
-      color: 'var(--terra)',
-      tips: ['Find protected site NOW', 'Tight low pitch', 'Drop elevation if possible', 'All guy points required'],
+      action: 'SEEK COVER',
+      color: '#c0392b',
+      tips: ['Do not camp exposed', 'Shelter or bail to lower elevation', 'Emergency conditions'],
       warning: true,
     };
   });
@@ -449,34 +505,64 @@
         </ul>
       </div>
 
+      <!-- Guide Shelter Trigger Alert -->
+      {#if windAction.trigger}
+        <div class="shelter-trigger-alert">
+          <div class="sta-header">
+            <span class="sta-icon">🏠</span>
+            <span class="sta-title">SHELTER TRIGGER ACTIVE</span>
+          </div>
+          <div class="sta-body">
+            <p><strong>Wind + Cold combination detected</strong></p>
+            <p>Summit temp {summitTemp.toFixed(0)}°F + {windSpeed} mph wind</p>
+            <p class="sta-reason">Tent setup is dangerous when hands fail fast. Shelter reduces complexity.</p>
+          </div>
+        </div>
+      {/if}
+
       <div class="wind-table">
-        <h4>Wind Thresholds</h4>
+        <h4>Guide Logic: Wind + Temperature</h4>
         <div class="wt-grid">
           <div class="wt-row" class:active={windSpeed < 10}>
             <span class="wt-speed">0-10 mph</span>
             <span class="wt-label">Light</span>
-            <span class="wt-action">Shelter or tent OK</span>
+            <span class="wt-action">Either OK (any temp)</span>
           </div>
-          <div class="wt-row" class:active={windSpeed >= 10 && windSpeed < 20}>
+          <div class="wt-row" class:active={windSpeed >= 10 && windSpeed < 20 && summitTemp > 35}>
             <span class="wt-speed">10-20 mph</span>
-            <span class="wt-label">Moderate</span>
-            <span class="wt-action">Lean TENT</span>
+            <span class="wt-label">Moderate + Warm</span>
+            <span class="wt-action">Tent OK</span>
           </div>
-          <div class="wt-row" class:active={windSpeed >= 20 && windSpeed < 30}>
+          <div class="wt-row" class:active={windSpeed >= 10 && windSpeed < 20 && summitTemp <= 35}>
+            <span class="wt-speed">10-20 mph</span>
+            <span class="wt-label">Moderate + Cool</span>
+            <span class="wt-action">Tent OK (watch temp)</span>
+          </div>
+          <div class="wt-row" class:active={windSpeed >= 20 && windSpeed < 30 && summitTemp > 35}>
             <span class="wt-speed">20-30 mph</span>
-            <span class="wt-label">Strong</span>
-            <span class="wt-action">TENT ONLY — protected terrain</span>
+            <span class="wt-label">Strong + Warm</span>
+            <span class="wt-action">Tent — protected terrain</span>
+          </div>
+          <div class="wt-row caution" class:active={windSpeed >= 20 && windSpeed < 30 && summitTemp <= 35}>
+            <span class="wt-speed">20-30 mph</span>
+            <span class="wt-label">Strong + Cool</span>
+            <span class="wt-action">Lean SHELTER</span>
+          </div>
+          <div class="wt-row trigger" class:active={windSpeed >= 15 && summitTemp <= 25}>
+            <span class="wt-speed">15+ mph + ≤25°F</span>
+            <span class="wt-label">TRIGGER</span>
+            <span class="wt-action">SHELTER — setup danger</span>
           </div>
           <div class="wt-row severe" class:active={windSpeed >= 30}>
             <span class="wt-speed">30+ mph</span>
             <span class="wt-label">Severe</span>
-            <span class="wt-action">Immediate protection, low pitch</span>
+            <span class="wt-action">Seek cover immediately</span>
           </div>
         </div>
       </div>
 
       <div class="wind-tips-card">
-        <h4>🎪 Tent Setup in Wind</h4>
+        <h4>🎪 Tent Setup in Wind (when appropriate)</h4>
         <div class="tips-grid">
           <div class="tip-item">
             <span class="tip-icon">🧭</span>
@@ -495,7 +581,7 @@
             <span class="tip-text">High wind = LOW pitch</span>
           </div>
         </div>
-        <p class="wind-rule"><strong>Wind + rain = tent every time</strong></p>
+        <p class="wind-rule"><strong>Wind + Cold = SHELTER (setup danger)</strong></p>
       </div>
     </div>
   {/if}
@@ -1281,6 +1367,55 @@
   }
 
   .wt-row.severe { background: rgba(201, 115, 58, 0.1); }
+  .wt-row.caution { background: rgba(230, 190, 0, 0.1); }
+  .wt-row.trigger {
+    background: rgba(217, 119, 6, 0.15);
+    border-color: var(--terra);
+  }
+  .wt-row.trigger.active {
+    background: rgba(217, 119, 6, 0.25);
+    border-color: var(--terra);
+  }
+
+  /* Shelter Trigger Alert */
+  .shelter-trigger-alert {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(217, 119, 6, 0.08) 100%);
+    border: 2px solid var(--terra);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .sta-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .sta-icon {
+    font-size: 1.5rem;
+  }
+
+  .sta-title {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--terra);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .sta-body p {
+    margin: 0 0 0.35rem 0;
+    font-size: 0.9rem;
+  }
+
+  .sta-reason {
+    font-style: italic;
+    color: var(--muted);
+    font-size: 0.85rem !important;
+  }
   .wt-row.severe.active { border-color: var(--terra); }
 
   .wt-speed { font-weight: 600; }
