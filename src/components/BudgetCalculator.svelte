@@ -50,13 +50,16 @@
     localStorage.setItem('at-budget-data', JSON.stringify(data));
   }
 
-  // Calculate days on trail
+  // Calculate days on trail (returns 0 if start date is in the future)
   function getDaysOnTrail() {
     const start = new Date(startDate);
     const today = new Date();
     const diff = today - start;
     return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
   }
+
+  // Check if trail has started
+  let trailStarted = $derived(new Date(startDate) <= new Date());
 
   // Add expense
   function addExpense() {
@@ -104,17 +107,54 @@
   let totalSpent = $derived(expenses.reduce((sum, e) => sum + e.amount, 0));
   let remaining = $derived(totalBudget - totalSpent);
   let percentSpent = $derived(totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0);
-  let dailyAverage = $derived(daysOnTrail > 0 ? totalSpent / daysOnTrail : 0);
+
+  // Daily average: different calculation based on whether trail has started
+  // - Trail started: actual spending / actual days
+  // - Planning mode: use budget-based estimate or expense-based if they've added items
+  let dailyAverage = $derived.by(() => {
+    if (trailStarted && daysOnTrail > 0) {
+      // Actual daily average from real spending
+      return totalSpent / daysOnTrail;
+    } else if (expenses.length > 0) {
+      // Planning mode with expenses: estimate based on expense frequency
+      // Assume they're planning ~25 town stops over 150 days (every 6 days)
+      // So each expense represents ~6 days of budget
+      const avgPerExpense = totalSpent / expenses.length;
+      return avgPerExpense / 6; // rough estimate per day
+    } else {
+      // No data: use budget-based default estimate
+      return totalBudget / 150;
+    }
+  });
+
   let monthlyRate = $derived(dailyAverage * 30);
 
   // Projected total (assuming 150 days typical thru-hike)
-  let projectedTotal = $derived(dailyAverage * 150);
+  // - If trail started: extrapolate from current daily average
+  // - If planning: use actual entered expenses if any, otherwise budget
+  let projectedTotal = $derived.by(() => {
+    if (trailStarted && daysOnTrail > 0) {
+      return dailyAverage * 150;
+    } else if (expenses.length > 0) {
+      // Planning mode: project based on expenses entered
+      return dailyAverage * 150;
+    } else {
+      // No expenses entered: projected equals budget
+      return totalBudget;
+    }
+  });
 
   // Days of budget remaining at current rate
   let daysRemaining = $derived(dailyAverage > 0 ? Math.floor(remaining / dailyAverage) : 999);
 
-  // Budget status
-  let budgetStatus = $derived(percentSpent < 60 ? 'good' : percentSpent < 85 ? 'caution' : 'over');
+  // Budget status - compare projected vs budget
+  let budgetStatus = $derived.by(() => {
+    if (!trailStarted && expenses.length === 0) return 'good'; // No data yet
+    const ratio = projectedTotal / totalBudget;
+    if (ratio <= 1) return 'good';
+    if (ratio <= 1.15) return 'caution';
+    return 'over';
+  });
   let statusLabel = $derived(budgetStatus === 'good' ? 'On Track' : budgetStatus === 'caution' ? 'Watch Spending' : 'Over Budget');
 
   // Category breakdown
@@ -194,32 +234,42 @@
     </div>
 
     <div class="stats-row">
-      <div class="stat-card">
-        <span class="stat-icon">📅</span>
-        <div class="stat-content">
-          <span class="stat-value">{daysOnTrail}</span>
-          <span class="stat-label">Days on Trail</span>
+      {#if trailStarted}
+        <div class="stat-card">
+          <span class="stat-icon">📅</span>
+          <div class="stat-content">
+            <span class="stat-value">{daysOnTrail}</span>
+            <span class="stat-label">Days on Trail</span>
+          </div>
         </div>
-      </div>
+      {:else}
+        <div class="stat-card">
+          <span class="stat-icon">📋</span>
+          <div class="stat-content">
+            <span class="stat-value">{expenses.length}</span>
+            <span class="stat-label">Planned Expenses</span>
+          </div>
+        </div>
+      {/if}
       <div class="stat-card">
         <span class="stat-icon">📊</span>
         <div class="stat-content">
           <span class="stat-value">{formatMoney(dailyAverage)}</span>
-          <span class="stat-label">Daily Average</span>
+          <span class="stat-label">{trailStarted ? 'Daily Average' : 'Est. Daily'}</span>
         </div>
       </div>
       <div class="stat-card">
         <span class="stat-icon">📈</span>
         <div class="stat-content">
           <span class="stat-value">{formatMoney(monthlyRate)}</span>
-          <span class="stat-label">Monthly Rate</span>
+          <span class="stat-label">{trailStarted ? 'Monthly Rate' : 'Est. Monthly'}</span>
         </div>
       </div>
       <div class="stat-card status-card {budgetStatus}">
         <span class="stat-icon">{budgetStatus === 'good' ? '✅' : budgetStatus === 'caution' ? '⚠️' : '🚨'}</span>
         <div class="stat-content">
-          <span class="stat-value">{daysRemaining}</span>
-          <span class="stat-label">Days Left at Pace</span>
+          <span class="stat-value">{daysRemaining < 999 ? daysRemaining : '—'}</span>
+          <span class="stat-label">{trailStarted ? 'Days Left at Pace' : 'Budget Days'}</span>
         </div>
       </div>
     </div>
@@ -341,39 +391,52 @@
   <div class="context-section">
     <h3 class="section-title">
       <span class="title-blaze"></span>
-      <span>Trail Spending Context</span>
+      <span>{trailStarted ? 'Trail Spending Context' : 'Budget Planning'}</span>
     </h3>
 
     <div class="context-card">
       <div class="context-header">
-        <span class="context-label">Your Projected Total</span>
+        <span class="context-label">{trailStarted ? 'Your Projected Total' : 'Projected Trail Spending'}</span>
         <span class="context-value">{formatMoney(projectedTotal)}</span>
       </div>
 
-      <div class="range-viz">
-        <div class="range-bar">
-          <div class="range-fill"></div>
-          <div class="range-marker" style="left: {trailRangePercent}%">
-            <span class="marker-label">You</span>
+      {#if !trailStarted && expenses.length === 0}
+        <div class="planning-hint">
+          <span class="hint-icon">💡</span>
+          <p>Add expected expenses (gear, lodging estimates, etc.) to see how your plans compare to your budget. Each expense you add helps estimate your projected trail spending.</p>
+        </div>
+      {:else}
+        <div class="range-viz">
+          <div class="range-bar">
+            <div class="range-fill"></div>
+            <div class="range-marker" style="left: {Math.max(0, Math.min(100, trailRangePercent))}%">
+              <span class="marker-label">You</span>
+            </div>
+          </div>
+          <div class="range-labels">
+            <div class="range-point">
+              <span class="point-value">$4,000</span>
+              <span class="point-label">Budget</span>
+            </div>
+            <div class="range-point center">
+              <span class="point-value">$5,500</span>
+              <span class="point-label">Average</span>
+            </div>
+            <div class="range-point">
+              <span class="point-value">$7,000</span>
+              <span class="point-label">Comfortable</span>
+            </div>
           </div>
         </div>
-        <div class="range-labels">
-          <div class="range-point">
-            <span class="point-value">$4,000</span>
-            <span class="point-label">Budget</span>
-          </div>
-          <div class="range-point center">
-            <span class="point-value">$5,500</span>
-            <span class="point-label">Average</span>
-          </div>
-          <div class="range-point">
-            <span class="point-value">$7,000</span>
-            <span class="point-label">Comfortable</span>
-          </div>
-        </div>
-      </div>
+      {/if}
 
       <div class="context-tips">
+        {#if !trailStarted}
+          <div class="tip">
+            <span class="tip-icon">📅</span>
+            <span>Trail starts {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          </div>
+        {/if}
         <div class="tip">
           <span class="tip-icon">💡</span>
           <span>Typical AT thru-hike: $1,000–$1,500/month</span>
@@ -1002,6 +1065,28 @@
   }
 
   .tip-icon { font-size: 1rem; }
+
+  /* Planning Hint */
+  .planning-hint {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(240, 224, 0, 0.1);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .hint-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .planning-hint p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
 
   /* Data Section */
   .data-section {
