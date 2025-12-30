@@ -1,31 +1,27 @@
 <script>
   import { onMount } from 'svelte';
 
-  // Accept global trail context from parent
   let { trailContext = {} } = $props();
 
   const categories = [
-    { id: 'food', name: 'Food & Resupply', icon: '🛒', color: '#a6b589' },
-    { id: 'lodging', name: 'Lodging', icon: '🏨', color: '#6b8cae' },
-    { id: 'gear', name: 'Gear & Repairs', icon: '🎒', color: '#d97706' },
-    { id: 'services', name: 'Town Services', icon: '🧺', color: '#9f7aea' },
-    { id: 'transport', name: 'Transportation', icon: '🚗', color: '#e53e3e' },
-    { id: 'entertainment', name: 'Entertainment', icon: '🍺', color: '#ed8936' },
-    { id: 'other', name: 'Other', icon: '📦', color: '#718096' },
+    { id: 'food', name: 'Food & Resupply', icon: '🛒', color: '#22c55e' },
+    { id: 'lodging', name: 'Lodging', icon: '🏨', color: '#3b82f6' },
+    { id: 'gear', name: 'Gear & Repairs', icon: '🎒', color: '#f59e0b' },
+    { id: 'services', name: 'Town Services', icon: '🧺', color: '#a855f7' },
+    { id: 'transport', name: 'Transportation', icon: '🚗', color: '#ef4444' },
+    { id: 'entertainment', name: 'Entertainment', icon: '🍺', color: '#ec4899' },
+    { id: 'other', name: 'Other', icon: '📦', color: '#6b7280' },
   ];
 
-  // State
   let mounted = $state(false);
   let totalBudget = $state(5000);
   let startDate = $state('2026-02-15');
   let expenses = $state([]);
 
-  // New expense form
   let newAmount = $state('');
   let newCategory = $state('food');
   let newNote = $state('');
 
-  // Load from localStorage on mount, use context startDate as default if available
   onMount(() => {
     mounted = true;
     const saved = localStorage.getItem('at-budget-data');
@@ -39,18 +35,15 @@
         console.error('Failed to load budget data:', e);
       }
     } else if (trailContext.tripStartDate || trailContext.startDate) {
-      // No saved data, use context date as default
       startDate = trailContext.tripStartDate || trailContext.startDate;
     }
   });
 
-  // Save to localStorage whenever data changes
   function saveData() {
     const data = { totalBudget, startDate, expenses };
     localStorage.setItem('at-budget-data', JSON.stringify(data));
   }
 
-  // Calculate days on trail (returns 0 if start date is in the future)
   function getDaysOnTrail() {
     const start = new Date(startDate);
     const today = new Date();
@@ -58,10 +51,8 @@
     return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
   }
 
-  // Check if trail has started
   let trailStarted = $derived(new Date(startDate) <= new Date());
 
-  // Add expense
   function addExpense() {
     const amount = parseFloat(newAmount);
     if (isNaN(amount) || amount <= 0) return;
@@ -80,13 +71,11 @@
     saveData();
   }
 
-  // Delete expense
   function deleteExpense(id) {
     expenses = expenses.filter(e => e.id !== id);
     saveData();
   }
 
-  // Format currency
   function formatMoney(amount) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -96,81 +85,65 @@
     }).format(amount);
   }
 
-  // Format date short
   function formatDateShort(dateStr) {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
-  // Reactive calculations
   let daysOnTrail = $derived(getDaysOnTrail());
   let totalSpent = $derived(expenses.reduce((sum, e) => sum + e.amount, 0));
   let remaining = $derived(totalBudget - totalSpent);
   let percentSpent = $derived(totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0);
 
-  // Daily average: different calculation based on whether trail has started
-  // - Trail started: actual spending / actual days
-  // - Planning mode: use budget-based estimate or expense-based if they've added items
   let dailyAverage = $derived.by(() => {
     if (trailStarted && daysOnTrail > 0) {
-      // Actual daily average from real spending
       return totalSpent / daysOnTrail;
     } else if (expenses.length > 0) {
-      // Planning mode with expenses: estimate based on expense frequency
-      // Assume they're planning ~25 town stops over 150 days (every 6 days)
-      // So each expense represents ~6 days of budget
       const avgPerExpense = totalSpent / expenses.length;
-      return avgPerExpense / 6; // rough estimate per day
+      return avgPerExpense / 6;
     } else {
-      // No data: use budget-based default estimate
       return totalBudget / 150;
     }
   });
 
   let monthlyRate = $derived(dailyAverage * 30);
 
-  // Projected total (assuming 150 days typical thru-hike)
-  // - If trail started: extrapolate from current daily average
-  // - If planning: use actual entered expenses if any, otherwise budget
   let projectedTotal = $derived.by(() => {
     if (trailStarted && daysOnTrail > 0) {
       return dailyAverage * 150;
     } else if (expenses.length > 0) {
-      // Planning mode: project based on expenses entered
       return dailyAverage * 150;
     } else {
-      // No expenses entered: projected equals budget
       return totalBudget;
     }
   });
 
-  // Days of budget remaining at current rate
   let daysRemaining = $derived(dailyAverage > 0 ? Math.floor(remaining / dailyAverage) : 999);
 
-  // Budget status - compare projected vs budget
   let budgetStatus = $derived.by(() => {
-    if (!trailStarted && expenses.length === 0) return 'good'; // No data yet
+    if (!trailStarted && expenses.length === 0) return 'good';
     const ratio = projectedTotal / totalBudget;
     if (ratio <= 1) return 'good';
     if (ratio <= 1.15) return 'caution';
     return 'over';
   });
-  let statusLabel = $derived(budgetStatus === 'good' ? 'On Track' : budgetStatus === 'caution' ? 'Watch Spending' : 'Over Budget');
 
-  // Category breakdown
+  let statusConfig = $derived.by(() => {
+    if (budgetStatus === 'good') return { label: 'ON TRACK', color: '#22c55e', icon: '✓' };
+    if (budgetStatus === 'caution') return { label: 'WATCH IT', color: '#f59e0b', icon: '!' };
+    return { label: 'OVER BUDGET', color: '#ef4444', icon: '✗' };
+  });
+
   let categoryTotals = $derived(categories.map(cat => {
     const total = expenses.filter(e => e.category === cat.id).reduce((sum, e) => sum + e.amount, 0);
     const percent = totalSpent > 0 ? (total / totalSpent) * 100 : 0;
     return { ...cat, total, percent };
   }).filter(c => c.total > 0).sort((a, b) => b.total - a.total));
 
-  // Recent expenses (last 10)
-  let recentExpenses = $derived(expenses.slice(0, 10));
+  let recentExpenses = $derived(expenses.slice(0, 8));
 
-  // Trail context - where does user fall in typical range
   let trailRangePercent = $derived(Math.min(100, Math.max(0, ((projectedTotal - 4000) / 3000) * 100)));
 
-  // Watch for changes to save
   $effect(() => {
     if (mounted && (totalBudget || startDate)) {
       saveData();
@@ -180,37 +153,50 @@
   function getCategoryById(id) {
     return categories.find(c => c.id === id) || categories[categories.length - 1];
   }
+
+  // Donut chart calculations
+  let donutRadius = 70;
+  let donutStroke = 20;
+  let donutCircumference = $derived(2 * Math.PI * donutRadius);
+  let spentOffset = $derived(donutCircumference - (percentSpent / 100) * donutCircumference);
 </script>
 
 <div class="budget-calc" class:mounted>
   <!-- Header -->
   <header class="calc-header">
-    <div class="header-inner">
-      <span class="header-badge">AT 2026 NOBO</span>
-      <h2 class="header-title">Budget Tracker</h2>
-      <p class="header-sub">Track your spending on the trail</p>
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
+      </svg>
+    </div>
+    <div class="header-content">
+      <h2>TRAIL LEDGER</h2>
+      <p>Track every dollar on the AT</p>
+    </div>
+    <div class="header-status" style="--status-color: {statusConfig.color}">
+      <span class="status-icon">{statusConfig.icon}</span>
+      <span class="status-text">{statusConfig.label}</span>
     </div>
   </header>
 
   <!-- Budget Setup -->
-  <div class="setup-section">
+  <section class="setup-section">
     <div class="setup-grid">
-      <div class="setup-item">
-        <label class="control-label">Total Budget</label>
-        <div class="money-input-wrap">
-          <span class="money-prefix">$</span>
+      <div class="setup-field">
+        <label>TOTAL BUDGET</label>
+        <div class="money-input">
+          <span class="currency">$</span>
           <input
             type="number"
             bind:value={totalBudget}
             min="1000"
             max="20000"
             step="100"
-            class="money-input"
           />
         </div>
       </div>
-      <div class="setup-item">
-        <label class="control-label">Trail Start Date</label>
+      <div class="setup-field">
+        <label>START DATE</label>
         <input
           type="date"
           bind:value={startDate}
@@ -218,90 +204,115 @@
         />
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Budget Overview -->
-  <div class="overview-section">
-    <div class="budget-bar-wrap">
-      <div class="budget-bar">
-        <div class="budget-fill {budgetStatus}" style="width: {Math.min(100, percentSpent)}%"></div>
-        <div class="budget-marker" style="left: {Math.min(100, percentSpent)}%"></div>
+  <!-- Main Dashboard -->
+  <section class="dashboard-section">
+    <div class="dashboard-grid">
+      <!-- Donut Chart -->
+      <div class="donut-container">
+        <svg viewBox="0 0 180 180" class="donut-chart">
+          <!-- Background circle -->
+          <circle
+            cx="90"
+            cy="90"
+            r={donutRadius}
+            fill="none"
+            stroke="var(--border)"
+            stroke-width={donutStroke}
+          />
+          <!-- Spent arc -->
+          <circle
+            cx="90"
+            cy="90"
+            r={donutRadius}
+            fill="none"
+            stroke={statusConfig.color}
+            stroke-width={donutStroke}
+            stroke-dasharray={donutCircumference}
+            stroke-dashoffset={spentOffset}
+            stroke-linecap="round"
+            transform="rotate(-90 90 90)"
+            class="spent-arc"
+          />
+        </svg>
+        <div class="donut-center">
+          <span class="donut-spent">{formatMoney(totalSpent)}</span>
+          <span class="donut-label">of {formatMoney(totalBudget)}</span>
+          <span class="donut-percent">{percentSpent.toFixed(0)}%</span>
+        </div>
       </div>
-      <div class="budget-labels">
-        <span>{formatMoney(totalSpent)} spent</span>
-        <span>{formatMoney(remaining)} remaining</span>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-data">
+            <span class="stat-value">{trailStarted ? daysOnTrail : expenses.length}</span>
+            <span class="stat-label">{trailStarted ? 'Days On Trail' : 'Planned Items'}</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-data">
+            <span class="stat-value">{formatMoney(dailyAverage)}</span>
+            <span class="stat-label">{trailStarted ? 'Daily Avg' : 'Est. Daily'}</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-data">
+            <span class="stat-value">{formatMoney(monthlyRate)}</span>
+            <span class="stat-label">{trailStarted ? 'Monthly Rate' : 'Est. Monthly'}</span>
+          </div>
+        </div>
+        <div class="stat-card accent" style="--accent: {statusConfig.color}">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-data">
+            <span class="stat-value">{daysRemaining < 999 ? daysRemaining : '—'}</span>
+            <span class="stat-label">Budget Days Left</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="stats-row">
-      {#if trailStarted}
-        <div class="stat-card">
-          <span class="stat-icon">📅</span>
-          <div class="stat-content">
-            <span class="stat-value">{daysOnTrail}</span>
-            <span class="stat-label">Days on Trail</span>
-          </div>
-        </div>
-      {:else}
-        <div class="stat-card">
-          <span class="stat-icon">📋</span>
-          <div class="stat-content">
-            <span class="stat-value">{expenses.length}</span>
-            <span class="stat-label">Planned Expenses</span>
-          </div>
-        </div>
-      {/if}
-      <div class="stat-card">
-        <span class="stat-icon">📊</span>
-        <div class="stat-content">
-          <span class="stat-value">{formatMoney(dailyAverage)}</span>
-          <span class="stat-label">{trailStarted ? 'Daily Average' : 'Est. Daily'}</span>
-        </div>
+    <!-- Remaining Bar -->
+    <div class="remaining-bar">
+      <div class="bar-track">
+        <div class="bar-fill" style="width: {Math.min(100, percentSpent)}%; background: {statusConfig.color}"></div>
       </div>
-      <div class="stat-card">
-        <span class="stat-icon">📈</span>
-        <div class="stat-content">
-          <span class="stat-value">{formatMoney(monthlyRate)}</span>
-          <span class="stat-label">{trailStarted ? 'Monthly Rate' : 'Est. Monthly'}</span>
-        </div>
-      </div>
-      <div class="stat-card status-card {budgetStatus}">
-        <span class="stat-icon">{budgetStatus === 'good' ? '✅' : budgetStatus === 'caution' ? '⚠️' : '🚨'}</span>
-        <div class="stat-content">
-          <span class="stat-value">{daysRemaining < 999 ? daysRemaining : '—'}</span>
-          <span class="stat-label">{trailStarted ? 'Days Left at Pace' : 'Budget Days'}</span>
-        </div>
+      <div class="bar-labels">
+        <span class="spent-label">{formatMoney(totalSpent)} spent</span>
+        <span class="remain-label">{formatMoney(remaining)} remaining</span>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Quick Add Expense -->
-  <div class="add-section">
-    <h3 class="section-title">
-      <span class="title-blaze"></span>
-      <span>Add Expense</span>
+  <!-- Add Expense -->
+  <section class="add-section">
+    <h3 class="section-header">
+      <span class="header-bar"></span>
+      ADD EXPENSE
     </h3>
-
     <div class="add-form">
       <div class="form-row">
-        <div class="form-field amount-field">
-          <label class="field-label">Amount</label>
-          <div class="money-input-wrap small">
-            <span class="money-prefix">$</span>
+        <div class="form-field amount">
+          <label>Amount</label>
+          <div class="money-input small">
+            <span class="currency">$</span>
             <input
               type="number"
               bind:value={newAmount}
               min="0"
               step="0.01"
               placeholder="0"
-              class="money-input"
               onkeydown={(e) => e.key === 'Enter' && addExpense()}
             />
           </div>
         </div>
-        <div class="form-field category-field">
-          <label class="field-label">Category</label>
-          <select bind:value={newCategory} class="category-select">
+        <div class="form-field category">
+          <label>Category</label>
+          <select bind:value={newCategory}>
             {#each categories as cat}
               <option value={cat.id}>{cat.icon} {cat.name}</option>
             {/each}
@@ -309,145 +320,139 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="form-field note-field">
-          <label class="field-label">Note (optional)</label>
+        <div class="form-field note">
+          <label>Note</label>
           <input
             type="text"
             bind:value={newNote}
             placeholder="e.g., Resupply at Walmart"
-            class="note-input"
             onkeydown={(e) => e.key === 'Enter' && addExpense()}
           />
         </div>
         <button class="add-btn" onclick={addExpense} disabled={!newAmount}>
-          + Add
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Add
         </button>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- Recent Expenses -->
   {#if recentExpenses.length > 0}
-    <div class="recent-section">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Recent Expenses</span>
-        <span class="expense-count">{expenses.length} total</span>
+    <section class="expenses-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        RECENT EXPENSES
+        <span class="count-badge">{expenses.length}</span>
       </h3>
-
       <div class="expense-list">
         {#each recentExpenses as expense (expense.id)}
           {@const cat = getCategoryById(expense.category)}
-          <div class="expense-row">
-            <div class="expense-icon" style="background: {cat.color}20; color: {cat.color}">
+          <div class="expense-item">
+            <div class="expense-cat" style="--cat-color: {cat.color}">
               {cat.icon}
             </div>
             <div class="expense-info">
-              <span class="expense-cat">{cat.name}</span>
+              <span class="expense-name">{cat.name}</span>
               {#if expense.note}
                 <span class="expense-note">{expense.note}</span>
               {/if}
             </div>
-            <div class="expense-meta">
-              <span class="expense-amount">{formatMoney(expense.amount)}</span>
-              <span class="expense-date">{formatDateShort(expense.date)}</span>
-            </div>
-            <button class="delete-btn" onclick={() => deleteExpense(expense.id)} title="Delete">
-              ×
+            <div class="expense-amount">{formatMoney(expense.amount)}</div>
+            <div class="expense-date">{formatDateShort(expense.date)}</div>
+            <button class="delete-btn" onclick={() => deleteExpense(expense.id)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
             </button>
           </div>
         {/each}
       </div>
-    </div>
+    </section>
   {/if}
 
   <!-- Category Breakdown -->
   {#if categoryTotals.length > 0}
-    <div class="breakdown-section">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Spending by Category</span>
+    <section class="breakdown-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        SPENDING BY CATEGORY
       </h3>
-
       <div class="category-list">
         {#each categoryTotals as cat}
-          <div class="category-row">
+          <div class="category-item">
             <div class="cat-header">
-              <span class="cat-icon" style="background: {cat.color}20">{cat.icon}</span>
+              <span class="cat-icon" style="background: {cat.color}">{cat.icon}</span>
               <span class="cat-name">{cat.name}</span>
               <span class="cat-amount">{formatMoney(cat.total)}</span>
             </div>
-            <div class="cat-bar-wrap">
-              <div class="cat-bar" style="width: {cat.percent}%; background: {cat.color}"></div>
+            <div class="cat-bar">
+              <div class="cat-fill" style="width: {cat.percent}%; background: {cat.color}"></div>
             </div>
             <span class="cat-percent">{cat.percent.toFixed(0)}%</span>
           </div>
         {/each}
       </div>
-    </div>
+    </section>
   {/if}
 
   <!-- Trail Context -->
-  <div class="context-section">
-    <h3 class="section-title">
-      <span class="title-blaze"></span>
-      <span>{trailStarted ? 'Trail Spending Context' : 'Budget Planning'}</span>
+  <section class="context-section">
+    <h3 class="section-header">
+      <span class="header-bar"></span>
+      TRAIL SPENDING CONTEXT
     </h3>
-
     <div class="context-card">
-      <div class="context-header">
-        <span class="context-label">{trailStarted ? 'Your Projected Total' : 'Projected Trail Spending'}</span>
-        <span class="context-value">{formatMoney(projectedTotal)}</span>
+      <div class="context-top">
+        <div class="projected-label">Projected Total</div>
+        <div class="projected-value">{formatMoney(projectedTotal)}</div>
       </div>
 
-      {#if !trailStarted && expenses.length === 0}
-        <div class="planning-hint">
-          <span class="hint-icon">💡</span>
-          <p>Add expected expenses (gear, lodging estimates, etc.) to see how your plans compare to your budget. Each expense you add helps estimate your projected trail spending.</p>
-        </div>
-      {:else}
-        <div class="range-viz">
-          <div class="range-bar">
-            <div class="range-fill"></div>
-            <div class="range-marker" style="left: {Math.max(0, Math.min(100, trailRangePercent))}%">
+      {#if trailStarted || expenses.length > 0}
+        <div class="range-section">
+          <div class="range-track">
+            <div class="range-gradient"></div>
+            <div class="range-marker" style="left: {trailRangePercent}%">
+              <span class="marker-dot"></span>
               <span class="marker-label">You</span>
             </div>
           </div>
           <div class="range-labels">
             <div class="range-point">
-              <span class="point-value">$4,000</span>
-              <span class="point-label">Budget</span>
-            </div>
-            <div class="range-point center">
-              <span class="point-value">$5,500</span>
-              <span class="point-label">Average</span>
+              <span class="pt-value">$4K</span>
+              <span class="pt-label">Budget</span>
             </div>
             <div class="range-point">
-              <span class="point-value">$7,000</span>
-              <span class="point-label">Comfortable</span>
+              <span class="pt-value">$5.5K</span>
+              <span class="pt-label">Average</span>
+            </div>
+            <div class="range-point">
+              <span class="pt-value">$7K</span>
+              <span class="pt-label">Comfortable</span>
             </div>
           </div>
+        </div>
+      {:else}
+        <div class="planning-note">
+          <span class="note-icon">💡</span>
+          <p>Add expected expenses to see how your plans compare to your budget.</p>
         </div>
       {/if}
 
       <div class="context-tips">
-        {#if !trailStarted}
-          <div class="tip">
-            <span class="tip-icon">📅</span>
-            <span>Trail starts {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-          </div>
-        {/if}
         <div class="tip">
-          <span class="tip-icon">💡</span>
+          <span>💰</span>
           <span>Typical AT thru-hike: $1,000–$1,500/month</span>
         </div>
         <div class="tip">
-          <span class="tip-icon">🏨</span>
-          <span>Lodging is usually the biggest variable cost</span>
+          <span>🏨</span>
+          <span>Lodging is usually the biggest variable</span>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- Data Management -->
   <div class="data-section">
@@ -455,18 +460,25 @@
       Clear All Data
     </button>
   </div>
+
+  <!-- Guide Link -->
+  <a href="/guide/thru-hike-financial-planning" class="guide-link">
+    <span>Read the Financial Planning Guide</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </a>
 </div>
 
 <style>
   .budget-calc {
-    background: var(--card, #fff);
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    border: 1px solid var(--border);
     overflow: hidden;
     opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.5s ease;
+    transform: translateY(12px);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .budget-calc.mounted {
@@ -476,40 +488,85 @@
 
   /* Header */
   .calc-header {
-    padding: 2rem 2rem 1.5rem;
-    background: linear-gradient(to bottom, #fdfcf9, #f5f2e8);
-    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+    border-bottom: 2px solid #14532d;
   }
 
-  .header-badge {
+  .header-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bbf7d0;
+  }
+
+  .header-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .header-content {
+    flex: 1;
+  }
+
+  .header-content h2 {
+    margin: 0;
     font-family: Oswald, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+  }
+
+  .header-content p {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: #bbf7d0;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    border: 2px solid var(--status-color);
+  }
+
+  .status-icon {
+    width: 20px;
+    height: 20px;
+    background: var(--status-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 0.7rem;
     font-weight: 700;
-    color: var(--terra);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    display: block;
-    margin-bottom: 0.5rem;
+    color: #fff;
   }
 
-  .header-title {
+  .status-text {
     font-family: Oswald, sans-serif;
-    font-size: 2rem;
-    margin: 0;
-    color: var(--ink);
-    line-height: 1.1;
-  }
-
-  .header-sub {
-    margin: 0.5rem 0 0;
-    color: var(--muted);
-    font-size: 0.95rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--status-color);
+    letter-spacing: 0.05em;
   }
 
   /* Setup Section */
   .setup-section {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
   .setup-grid {
@@ -518,192 +575,235 @@
     gap: 1.5rem;
   }
 
-  .control-label, .field-label {
+  .setup-field label {
     display: block;
     font-family: Oswald, sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--muted);
+    letter-spacing: 0.08em;
     margin-bottom: 0.5rem;
   }
 
-  .money-input-wrap {
+  .money-input {
     display: flex;
     align-items: center;
-    background: #fff;
-    border: 1px solid var(--border);
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
   }
 
-  .money-input-wrap.small {
-    max-width: 140px;
-  }
-
-  .money-prefix {
+  .money-input .currency {
     padding: 0.75rem;
-    background: var(--bg);
+    background: var(--border);
     color: var(--muted);
     font-weight: 600;
-    border-right: 1px solid var(--border);
+    font-size: 1rem;
   }
 
-  .money-input {
+  .money-input input {
     flex: 1;
     padding: 0.75rem;
     border: none;
+    background: transparent;
     font-family: Oswald, sans-serif;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--ink);
-    width: 100%;
     min-width: 0;
   }
 
-  .money-input:focus {
+  .money-input input:focus {
     outline: none;
+  }
+
+  .money-input.small {
+    max-width: 140px;
   }
 
   .date-input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid var(--border);
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 8px;
-    font-family: inherit;
     font-size: 1rem;
     color: var(--ink);
     box-sizing: border-box;
   }
 
-  /* Overview Section */
-  .overview-section {
-    padding: 2rem;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+  /* Dashboard Section */
+  .dashboard-section {
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
-  .budget-bar-wrap {
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 1.5rem;
     margin-bottom: 1.5rem;
   }
 
-  .budget-bar {
-    height: 24px;
-    background: #e0ddd4;
-    border-radius: 12px;
+  /* Donut Chart */
+  .donut-container {
     position: relative;
-    overflow: hidden;
+    width: 180px;
+    height: 180px;
   }
 
-  .budget-fill {
+  .donut-chart {
+    width: 100%;
     height: 100%;
-    border-radius: 12px;
-    transition: width 0.5s ease;
   }
 
-  .budget-fill.good { background: linear-gradient(90deg, var(--alpine), var(--pine)); }
-  .budget-fill.caution { background: linear-gradient(90deg, var(--terra), #f59e0b); }
-  .budget-fill.over { background: linear-gradient(90deg, #ef4444, #dc2626); }
+  .spent-arc {
+    transition: stroke-dashoffset 0.6s ease;
+  }
 
-  .budget-marker {
+  .donut-center {
     position: absolute;
-    top: -4px;
-    width: 4px;
-    height: 32px;
-    background: var(--ink);
-    border-radius: 2px;
-    transform: translateX(-50%);
-    transition: left 0.5s ease;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
-  .budget-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
+  .donut-spent {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .donut-label {
+    font-size: 0.7rem;
     color: var(--muted);
   }
 
-  .stats-row {
+  .donut-percent {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--alpine);
+    margin-top: 0.25rem;
+  }
+
+  /* Stats Grid */
+  .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 
   .stat-card {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem;
-    background: #fff;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.05);
   }
 
-  .stat-card.status-card.good { border-color: var(--alpine); background: rgba(166, 181, 137, 0.05); }
-  .stat-card.status-card.caution { border-color: var(--terra); background: rgba(217, 119, 6, 0.05); }
-  .stat-card.status-card.over { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+  .stat-card.accent {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 5%, white);
+  }
 
-  .stat-icon { font-size: 1.25rem; }
+  .stat-icon {
+    font-size: 1.25rem;
+  }
 
-  .stat-content {
+  .stat-data {
     display: flex;
     flex-direction: column;
   }
 
   .stat-value {
     font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--ink);
     line-height: 1.1;
   }
 
   .stat-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Remaining Bar */
+  .remaining-bar {
+    margin-top: 0.5rem;
+  }
+
+  .bar-track {
+    height: 12px;
+    background: var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+  }
+
+  .bar-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
     color: var(--muted);
   }
 
-  /* Section Title */
-  .section-title {
+  /* Section Headers */
+  .section-header {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--pine);
     margin: 0 0 1.25rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--pine);
+    letter-spacing: 0.08em;
   }
 
-  .title-blaze {
-    width: 8px;
+  .header-bar {
+    width: 4px;
     height: 16px;
     background: var(--marker);
     border-radius: 2px;
   }
 
-  .expense-count {
+  .count-badge {
     margin-left: auto;
-    font-size: 0.75rem;
-    font-weight: 400;
+    padding: 0.15rem 0.5rem;
+    background: var(--border);
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
     color: var(--muted);
-    text-transform: none;
-    letter-spacing: normal;
   }
 
   /* Add Section */
   .add-section {
-    padding: 2rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
   }
 
   .add-form {
     background: #fff;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
   }
@@ -722,51 +822,58 @@
     flex: 1;
   }
 
-  .amount-field {
+  .form-field.amount {
     flex: 0 0 140px;
   }
 
-  .category-select {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.95rem;
-    color: var(--ink);
-    background: #fff;
-    cursor: pointer;
+  .form-field label {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
   }
 
-  .note-input {
+  .form-field select,
+  .form-field.note input {
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--border);
+    padding: 0.7rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--ink);
     box-sizing: border-box;
   }
 
   .add-btn {
-    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.7rem 1.25rem;
     background: var(--pine);
-    color: #fff;
-    border: none;
+    border: 2px solid var(--pine);
     border-radius: 8px;
+    color: #fff;
     font-family: Oswald, sans-serif;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+    transition: all 0.2s;
     align-self: flex-end;
+    white-space: nowrap;
+  }
+
+  .add-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   .add-btn:hover:not(:disabled) {
-    background: var(--ink);
-    transform: translateY(-2px);
+    background: var(--alpine);
+    border-color: var(--alpine);
   }
 
   .add-btn:disabled {
@@ -774,11 +881,11 @@
     cursor: not-allowed;
   }
 
-  /* Recent Expenses */
-  .recent-section {
-    padding: 2rem;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+  /* Expenses Section */
+  .expenses-section {
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
   .expense-list {
@@ -787,24 +894,26 @@
     gap: 0.5rem;
   }
 
-  .expense-row {
+  .expense-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    background: #fff;
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 8px;
-    border: 1px solid rgba(0,0,0,0.05);
   }
 
-  .expense-icon {
+  .expense-cat {
     width: 36px;
     height: 36px;
+    background: color-mix(in srgb, var(--cat-color) 15%, white);
+    border: 2px solid var(--cat-color);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     flex-shrink: 0;
   }
 
@@ -813,7 +922,7 @@
     min-width: 0;
   }
 
-  .expense-cat {
+  .expense-name {
     display: block;
     font-size: 0.85rem;
     font-weight: 600;
@@ -829,39 +938,38 @@
     text-overflow: ellipsis;
   }
 
-  .expense-meta {
-    text-align: right;
+  .expense-amount {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
     flex-shrink: 0;
   }
 
-  .expense-amount {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--ink);
-  }
-
   .expense-date {
-    display: block;
     font-size: 0.7rem;
     color: var(--muted);
+    flex-shrink: 0;
   }
 
   .delete-btn {
     width: 28px;
     height: 28px;
-    border-radius: 6px;
     border: none;
     background: transparent;
     color: var(--muted);
-    font-size: 1.25rem;
     cursor: pointer;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
     flex-shrink: 0;
+  }
+
+  .delete-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   .delete-btn:hover {
@@ -869,10 +977,11 @@
     color: #ef4444;
   }
 
-  /* Category Breakdown */
+  /* Breakdown Section */
   .breakdown-section {
-    padding: 2rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
   }
 
   .category-list {
@@ -881,9 +990,9 @@
     gap: 1rem;
   }
 
-  .category-row {
+  .category-item {
     display: grid;
-    grid-template-columns: 1fr 120px 50px;
+    grid-template-columns: 1fr 100px 45px;
     gap: 1rem;
     align-items: center;
   }
@@ -895,36 +1004,36 @@
   }
 
   .cat-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .cat-name {
-    font-size: 0.9rem;
-    color: var(--ink);
     flex: 1;
+    font-size: 0.85rem;
+    color: var(--ink);
   }
 
   .cat-amount {
     font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.95rem;
+    font-weight: 700;
     color: var(--ink);
   }
 
-  .cat-bar-wrap {
+  .cat-bar {
     height: 8px;
-    background: #e0ddd4;
+    background: var(--border);
     border-radius: 4px;
     overflow: hidden;
   }
 
-  .cat-bar {
+  .cat-fill {
     height: 100%;
     border-radius: 4px;
     transition: width 0.5s ease;
@@ -932,92 +1041,94 @@
 
   .cat-percent {
     font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--muted);
     text-align: right;
   }
 
   /* Context Section */
   .context-section {
-    padding: 2rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
   .context-card {
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.1), rgba(166, 181, 137, 0.02));
-    border: 1px solid var(--alpine);
+    background: linear-gradient(135deg, rgba(22, 101, 52, 0.08) 0%, rgba(22, 101, 52, 0.02) 100%);
+    border: 2px solid var(--alpine);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1.25rem;
   }
 
-  .context-header {
+  .context-top {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
   }
 
-  .context-label {
+  .projected-label {
     font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--muted);
   }
 
-  .context-value {
+  .projected-value {
     font-family: Oswald, sans-serif;
     font-size: 1.75rem;
     font-weight: 700;
     color: var(--pine);
   }
 
-  .range-viz {
-    margin-bottom: 1.5rem;
+  .range-section {
+    margin-bottom: 1.25rem;
   }
 
-  .range-bar {
+  .range-track {
     height: 12px;
-    background: linear-gradient(90deg, var(--alpine), var(--pine), var(--terra));
+    background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
     border-radius: 6px;
     position: relative;
     margin-bottom: 0.75rem;
   }
 
-  .range-fill {
+  .range-gradient {
     position: absolute;
     inset: 0;
-    background: transparent;
+    border-radius: 6px;
   }
 
   .range-marker {
     position: absolute;
-    top: -6px;
-    transform: translateX(-50%);
+    top: 50%;
+    transform: translate(-50%, -50%);
     display: flex;
     flex-direction: column;
     align-items: center;
   }
 
-  .range-marker::before {
-    content: '';
-    width: 4px;
-    height: 24px;
-    background: var(--ink);
-    border-radius: 2px;
+  .marker-dot {
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   }
 
   .marker-label {
+    margin-top: 0.35rem;
     font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.65rem;
+    font-weight: 700;
     color: var(--ink);
-    margin-top: 4px;
     background: #fff;
     padding: 0.1rem 0.4rem;
     border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
 
   .range-labels {
@@ -1029,7 +1140,7 @@
     text-align: left;
   }
 
-  .range-point.center {
+  .range-point:nth-child(2) {
     text-align: center;
   }
 
@@ -1037,17 +1148,38 @@
     text-align: right;
   }
 
-  .point-value {
+  .pt-value {
     display: block;
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 700;
     color: var(--ink);
   }
 
-  .point-label {
-    font-size: 0.7rem;
+  .pt-label {
+    font-size: 0.65rem;
     color: var(--muted);
+  }
+
+  .planning-note {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(250, 204, 21, 0.1);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .note-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .planning-note p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
   }
 
   .context-tips {
@@ -1060,49 +1192,27 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--muted);
-  }
-
-  .tip-icon { font-size: 1rem; }
-
-  /* Planning Hint */
-  .planning-hint {
-    display: flex;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: rgba(240, 224, 0, 0.1);
-    border-radius: 8px;
-    margin-bottom: 1rem;
-  }
-
-  .hint-icon {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
-
-  .planning-hint p {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--muted);
-    line-height: 1.5;
   }
 
   /* Data Section */
   .data-section {
-    padding: 1.5rem 2rem;
+    padding: 1rem 1.5rem;
     text-align: center;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
   }
 
   .clear-btn {
     padding: 0.5rem 1rem;
     background: transparent;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 6px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--muted);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
   }
 
   .clear-btn:hover {
@@ -1110,39 +1220,76 @@
     color: #ef4444;
   }
 
-  /* Responsive */
-  @media (max-width: 640px) {
-    .budget-calc {
-      overflow-x: hidden;
-      border-radius: 12px;
-    }
-    .calc-header { padding: 1.5rem 1rem; }
-    .header-title { font-size: 1.5rem; }
-    .setup-section { padding: 1.5rem 1rem; }
-    .setup-grid { grid-template-columns: 1fr; gap: 1rem; }
-    .overview-section { padding: 1.5rem 1rem; }
-    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-    .stat-card { padding: 1rem; }
-    .stat-num { font-size: 1.75rem; }
-    .add-section { padding: 1.5rem 1rem; }
-    .form-row { flex-direction: column; gap: 0.75rem; }
-    .amount-field { flex: 1; width: 100%; }
-    .money-input-wrap.small { max-width: none; width: 100%; }
-    .add-btn { width: 100%; }
-    .recent-section { padding: 1.5rem 1rem; }
-    .expense-item { padding: 0.75rem 1rem; gap: 0.75rem; }
-    .breakdown-section { padding: 1.5rem 1rem; }
-    .category-row { grid-template-columns: 1fr 70px 35px; gap: 0.5rem; padding: 0.75rem 1rem; }
-    .cat-name { font-size: 0.85rem; }
-    .cat-amount { font-size: 0.9rem; }
-    .context-section { padding: 1.5rem 1rem; }
-    .context-card { padding: 1rem; }
-    .ctx-val { font-size: 1.25rem; }
-    .comparison-bar { height: 10px; }
+  /* Guide Link */
+  .guide-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--pine);
+    color: #fff;
+    text-decoration: none;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: all 0.2s;
   }
 
-  @media (max-width: 380px) {
-    .stats-row { grid-template-columns: 1fr; }
-    .category-row { grid-template-columns: 1fr 60px 30px; }
+  .guide-link:hover {
+    background: var(--alpine);
+  }
+
+  .guide-link svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .setup-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .donut-container {
+      margin: 0 auto;
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-row {
+      flex-direction: column;
+    }
+
+    .form-field.amount {
+      flex: 1;
+    }
+
+    .money-input.small {
+      max-width: none;
+    }
+
+    .add-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .category-item {
+      grid-template-columns: 1fr 80px 40px;
+      gap: 0.75rem;
+    }
+
+    .header-status {
+      display: none;
+    }
   }
 </style>
