@@ -497,7 +497,7 @@
   {/if}
 
   <!-- Guide Link -->
-  <a href="/guide/12-power-and-electronics" class="guide-link">
+  <a href="/guide/13-power-and-electronics" class="guide-link">
     <span class="guide-icon">📖</span>
     <span class="guide-text">Full Power & Electronics Guide</span>
     <span class="guide-arrow">→</span>

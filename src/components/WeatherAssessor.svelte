@@ -685,7 +685,7 @@
   {/if}
 
   <!-- Guide Link -->
-  <a href="/guide/06-weather-strategy" class="guide-link">
+  <a href="/guide/07-weather-strategy" class="guide-link">
     <span class="gl-icon">📖</span>
     <span class="gl-text">Read Full Chapter: Weather Strategy</span>
     <span class="gl-arrow">→</span>

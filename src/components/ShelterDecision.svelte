@@ -531,7 +531,7 @@
   </button>
 
   <!-- Guide Link -->
-  <a href="/guide/05-shelter-vs-tent-decision-system" class="guide-link">
+  <a href="/guide/06-shelter-vs-tent-decision-system" class="guide-link">
     <span class="gl-icon">📖</span>
     <span class="gl-text">Read Full Chapter: Shelter vs. Tent Decision</span>
     <span class="gl-arrow">→</span>

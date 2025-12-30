@@ -485,7 +485,7 @@
   </div>
 
   <!-- Guide Link -->
-  <a href="/guide/03-clothing-system" class="guide-link">
+  <a href="/guide/04-clothing-system" class="guide-link">
     <span class="gl-icon">📖</span>
     <span class="gl-text">Read Full Chapter: Clothing System</span>
     <span class="gl-arrow">→</span>
