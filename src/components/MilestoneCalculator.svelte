@@ -1793,26 +1793,77 @@ Generated at hoggcountry.com/tools`;
   }
 
   @media (max-width: 600px) {
+    .milestone-calc {
+      overflow-x: hidden;
+      border-radius: 12px;
+    }
     .calc-header { padding: 1.5rem; }
+    .header-title { font-size: 1.5rem; }
     .controls-section { padding: 1.5rem; }
     .controls-grid { grid-template-columns: 1fr; gap: 1.5rem; }
     .stats-grid-3 { grid-template-columns: 1fr; }
     .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
     .stat-card:last-child { border-bottom: none; }
-    .timeline-container { padding: 1.5rem 1rem; }
-    .timeline-row { grid-template-columns: 60px 30px 1fr; }
-    .time-date { font-size: 0.75rem; }
-    .card-meta { flex-direction: column; gap: 0.25rem; }
+    .stat-num { font-size: 2rem; }
+    .stat-text { font-size: 1.1rem; }
+    .timeline-container { padding: 1.5rem 0.75rem; }
+    .timeline-row { grid-template-columns: 55px 28px 1fr; }
+    .time-col { padding-right: 0.25rem; }
+    .time-date { font-size: 0.7rem; }
+    .time-day { font-size: 0.65rem; }
+    .marker-dot { width: 20px; height: 20px; font-size: 0.6rem; }
+    .content-col { padding-left: 0.35rem; padding-bottom: 1rem; }
+    .section-card { padding: 0.6rem 0.75rem; }
+    .card-head { flex-wrap: wrap; gap: 0.35rem; }
+    .card-name { font-size: 0.85rem; }
+    .card-miles { font-size: 0.7rem; padding: 0.1rem 0.3rem; }
+    .card-meta { flex-direction: column; gap: 0.25rem; font-size: 0.7rem; }
+    .summit-card { padding: 0.75rem 1rem; }
+    .summit-content h4 { font-size: 1rem; }
+    .milestones-container { padding: 1.5rem 1rem; }
+    .milestones-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .milestone-box { padding: 0.75rem; }
+    .ms-miles { font-size: 1rem; }
+    .ms-label { font-size: 0.7rem; }
+    .ms-date { font-size: 0.65rem; }
     .status-hero { flex-direction: column; gap: 1.5rem; }
-    .hero-stats { flex-direction: row; flex-wrap: wrap; gap: 1rem; }
-    .hero-stat { flex: 1; min-width: 80px; }
-    .pace-breakdown { flex-direction: column; gap: 1rem; padding: 1rem; }
+    .hero-progress { width: 100px; height: 100px; }
+    .hero-pct { font-size: 1.5rem; }
+    .hero-stats { flex-direction: row; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+    .hero-stat { flex: 0 0 auto; min-width: 70px; text-align: center; }
+    .hs-val { font-size: 1.25rem; }
+    .hs-label { font-size: 0.65rem; }
+    .trail-dashboard { padding: 1.5rem 1rem; }
+    .pace-breakdown { flex-direction: column; gap: 0.75rem; padding: 1rem; }
+    .pb-val { font-size: 1.25rem; }
+    .pb-label { font-size: 0.6rem; }
     .pb-divider { width: 100%; height: 1px; margin: 0; }
-    .quick-stats { grid-template-columns: 1fr; }
+    .quick-stats { grid-template-columns: 1fr; gap: 0.75rem; }
+    .qs-card { padding: 0.75rem; }
+    .qs-val { font-size: 1.1rem; }
     .trail-config { grid-template-columns: 1fr; }
-    .projection-cards { grid-template-columns: 1fr; }
-    .current-section-card { margin: 0 1rem; }
-    .next-milestone-card { margin: 1rem; }
+    .projection-section { padding: 1.5rem 1rem; }
+    .projection-cards { grid-template-columns: 1fr; gap: 0.75rem; }
+    .proj-card { padding: 1rem; }
+    .proj-date { font-size: 1.1rem; }
+    .ppn-val { font-size: 1.5rem; }
+    .current-section-card { margin: 0 1rem; padding: 1rem; }
+    .csc-icon { font-size: 1.5rem; }
+    .csc-name { font-size: 1rem; }
+    .next-milestone-card { margin: 1rem; padding: 0.75rem 1rem; }
+    .nmc-miles { font-size: 1.5rem; }
     .remaining-sections { padding: 1.5rem 1rem; }
+    .rem-row { padding: 0.6rem 0.75rem; gap: 0.75rem; }
+    .rem-name { font-size: 0.85rem; }
+    .rem-meta { flex-direction: column; gap: 0.15rem; align-items: flex-end; font-size: 0.7rem; }
+    .action-footer { padding: 1rem; }
+    .share-btn { padding: 0.6rem 1.25rem; font-size: 0.9rem; }
+  }
+
+  @media (max-width: 380px) {
+    .timeline-row { grid-template-columns: 48px 24px 1fr; }
+    .time-date { font-size: 0.6rem; }
+    .marker-dot { width: 18px; height: 18px; font-size: 0.55rem; }
+    .milestones-grid { grid-template-columns: 1fr; }
   }
 </style>

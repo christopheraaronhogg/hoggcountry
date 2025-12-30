@@ -1027,20 +1027,37 @@
 
   /* Responsive */
   @media (max-width: 640px) {
-    .calc-header { padding: 1.5rem; }
-    .setup-section { padding: 1.5rem; }
-    .setup-grid { grid-template-columns: 1fr; }
-    .overview-section { padding: 1.5rem; }
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
-    .add-section { padding: 1.5rem; }
+    .budget-calc {
+      overflow-x: hidden;
+      border-radius: 12px;
+    }
+    .calc-header { padding: 1.5rem 1rem; }
+    .header-title { font-size: 1.5rem; }
+    .setup-section { padding: 1.5rem 1rem; }
+    .setup-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .overview-section { padding: 1.5rem 1rem; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .stat-card { padding: 1rem; }
+    .stat-num { font-size: 1.75rem; }
+    .add-section { padding: 1.5rem 1rem; }
     .form-row { flex-direction: column; gap: 0.75rem; }
-    .amount-field { flex: 1; }
-    .money-input-wrap.small { max-width: none; }
+    .amount-field { flex: 1; width: 100%; }
+    .money-input-wrap.small { max-width: none; width: 100%; }
     .add-btn { width: 100%; }
-    .recent-section { padding: 1.5rem; }
-    .breakdown-section { padding: 1.5rem; }
-    .category-row { grid-template-columns: 1fr 80px 40px; }
-    .context-section { padding: 1.5rem; }
+    .recent-section { padding: 1.5rem 1rem; }
+    .expense-item { padding: 0.75rem 1rem; gap: 0.75rem; }
+    .breakdown-section { padding: 1.5rem 1rem; }
+    .category-row { grid-template-columns: 1fr 70px 35px; gap: 0.5rem; padding: 0.75rem 1rem; }
+    .cat-name { font-size: 0.85rem; }
+    .cat-amount { font-size: 0.9rem; }
+    .context-section { padding: 1.5rem 1rem; }
     .context-card { padding: 1rem; }
+    .ctx-val { font-size: 1.25rem; }
+    .comparison-bar { height: 10px; }
+  }
+
+  @media (max-width: 380px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .category-row { grid-template-columns: 1fr 60px 30px; }
   }
 </style>

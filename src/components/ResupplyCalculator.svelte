@@ -1388,24 +1388,64 @@
 
   /* Responsive */
   @media (max-width: 640px) {
-    .calc-header { padding: 1.5rem; }
-    .controls-section { padding: 1.5rem; }
+    .resupply-calc {
+      overflow-x: hidden;
+      border-radius: 12px;
+    }
+    .calc-header { padding: 1.5rem 1rem; }
+    .header-title { font-size: 1.5rem; }
+    .controls-section { padding: 1.5rem 1rem; }
     .town-selectors { flex-direction: column; gap: 0.5rem; }
-    .selector-arrow { text-align: center; padding: 0.25rem 0; }
+    .selector-arrow { text-align: center; padding: 0.25rem 0; font-size: 1.25rem; }
+    .town-select { font-size: 0.9rem; padding: 0.65rem; }
     .config-row { flex-direction: column; gap: 1rem; }
-    .config-item { max-width: none; }
+    .config-item { max-width: none; width: 100%; }
+    .config-value { width: 100%; }
+    .num-input { flex: 1; max-width: 100px; }
+    .carry-summary { padding: 1.5rem 1rem; }
     .carry-hero { flex-direction: column; gap: 1rem; }
     .carry-stats { align-items: center; }
-    .carry-details { grid-template-columns: 1fr; }
-    .tips-grid { grid-template-columns: 1fr; }
-    .costs-section { padding: 1.5rem; }
-    .costs-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-    .cost-item { padding: 0.75rem 0.25rem; }
-    .total-estimates { grid-template-columns: 1fr; }
-    .resupply-options { grid-template-columns: 1fr; }
-    .ref-cards { grid-template-columns: 1fr; }
-    .route-section { padding: 1.5rem; }
-    .next-resupply-section { padding: 1.5rem; }
-    .quick-ref-section { padding: 1.5rem; }
+    .carry-weight { font-size: 2rem; }
+    .carry-details { grid-template-columns: 1fr; gap: 0.75rem; }
+    .detail-card { padding: 0.75rem; }
+    .tips-section { padding: 1.5rem 1rem; }
+    .tips-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .tip-card { padding: 0.75rem; }
+    .costs-section { padding: 1.5rem 1rem; }
+    .costs-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+    .cost-item { padding: 0.6rem 0.25rem; }
+    .cost-icon { font-size: 1rem; }
+    .cost-label { font-size: 0.55rem; }
+    .cost-value { font-size: 0.95rem; }
+    .total-estimates { grid-template-columns: 1fr; gap: 0.75rem; }
+    .estimate-card { padding: 0.75rem 1rem; }
+    .est-label { font-size: 0.75rem; }
+    .est-total { font-size: 1.25rem; }
+    .resupply-options { grid-template-columns: 1fr; gap: 0.75rem; }
+    .resupply-card { padding: 1rem; }
+    .card-name { font-size: 1rem; }
+    .card-stats { flex-wrap: wrap; gap: 0.75rem; }
+    .ref-cards { grid-template-columns: 1fr; gap: 0.75rem; }
+    .route-section { padding: 1.5rem 1rem; }
+    .route-town { padding: 0.75rem; }
+    .town-name { font-size: 1rem; }
+    .path-stats { padding: 0.4rem 0.75rem; gap: 0.75rem; }
+    .path-distance, .path-days { font-size: 0.8rem; }
+    .skip-towns { gap: 0.35rem; }
+    .skip-town { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
+    .next-resupply-section { padding: 1.5rem 1rem; }
+    .quick-ref-section { padding: 1.5rem 1rem; }
+  }
+
+  @media (max-width: 380px) {
+    .costs-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .cost-item:nth-child(5) {
+      grid-column: 1 / -1;
+    }
   }
 </style>

@@ -1039,16 +1039,35 @@
 
   /* ========== RESPONSIVE ========== */
   @media (max-width: 640px) {
+    .tools-app {
+      overflow-x: hidden;
+    }
+
+    .context-bar {
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
+
     .context-header {
       padding: 0.75rem 1rem;
     }
 
+    .mode-switch {
+      flex: 1;
+      max-width: 280px;
+    }
+
     .mode-btn {
-      padding: 0.5rem 0.75rem;
+      padding: 0.5rem 0.6rem;
+      flex: 1;
+    }
+
+    .mode-icon {
+      font-size: 0.9rem;
     }
 
     .mode-text {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
     }
 
     .context-panel {
@@ -1061,27 +1080,118 @@
       gap: 0.75rem;
     }
 
+    .ctrl-date,
+    .ctrl-num {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .ctrl-num-wrap {
+      width: 100%;
+    }
+
+    .mile-display {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .mile-main {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
     .mile-num {
       font-size: 2.25rem;
     }
 
+    .mile-landmark {
+      font-size: 0.85rem;
+    }
+
     .context-stat-row {
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
+      justify-content: space-around;
     }
 
     .ctx-stat {
-      flex: 1;
-      min-width: 70px;
+      flex: 0 0 auto;
+      min-width: 60px;
+    }
+
+    .ctx-stat-val {
+      font-size: 1.1rem;
+    }
+
+    .ctx-stat-label {
+      font-size: 0.6rem;
+    }
+
+    .context-summary {
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      padding: 0 1rem 0.75rem;
+    }
+
+    .sum-val {
+      font-size: 0.9rem;
+    }
+
+    .tools-nav {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.2rem;
+      padding: 0.25rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .nav-tab {
+      padding: 0.6rem 0.25rem;
+    }
+
+    .tab-icon {
+      font-size: 1.1rem;
+    }
+
+    .tab-name {
+      font-size: 0.6rem;
+    }
+
+    .tool-viewport {
+      min-height: 400px;
+    }
+
+    .quick-links {
+      margin-top: 2rem;
+    }
+
+    .quick-link {
+      padding: 0.75rem 1rem;
+      gap: 1rem;
+    }
+  }
+
+  /* Extra small screens */
+  @media (max-width: 380px) {
+    .mode-text {
+      display: none;
+    }
+
+    .mode-btn {
+      padding: 0.5rem 0.75rem;
+    }
+
+    .mode-icon {
+      font-size: 1.1rem;
     }
 
     .tools-nav {
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.25rem;
     }
 
-    .nav-tab {
-      padding: 1rem;
+    .nav-tab:nth-child(5) {
+      grid-column: 1 / -1;
     }
   }
 </style>

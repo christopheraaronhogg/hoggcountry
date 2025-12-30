@@ -893,17 +893,27 @@
   .tag.worn { background: var(--stone); color: #fff; }
 
   @media (max-width: 600px) {
-    .calc-header { padding: 1.5rem; }
-    .controls-section { padding: 1.5rem; }
-    .controls-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .gear-calc {
+      overflow-x: hidden;
+      border-radius: 12px;
+    }
+    .calc-header { padding: 1.5rem 1rem; }
+    .header-title { font-size: 1.5rem; }
+    .controls-section { padding: 1.5rem 1rem; }
+    .controls-grid { grid-template-columns: 1fr; gap: 1rem; }
     .stats-grid { grid-template-columns: 1fr; }
-    .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-card { border-right: none; border-bottom: 1px solid var(--border); padding: 1rem; }
     .stat-card:last-child { border-bottom: none; }
+    .stat-num { font-size: 2rem; }
     .big3-section { padding: 1rem; }
     .big3-grid { grid-template-columns: 1fr; gap: 0.5rem; }
     .big3-item { flex-direction: row; justify-content: space-between; padding: 0.75rem 1rem; }
-    .big3-icon { margin-bottom: 0; margin-right: 0.75rem; }
-    .big3-name { margin-bottom: 0; }
+    .big3-icon { margin-bottom: 0; margin-right: 0.75rem; font-size: 1.25rem; }
+    .big3-name { margin-bottom: 0; font-size: 0.85rem; }
+    .big3-weight { font-size: 1rem; }
     .timeline-container { padding: 1rem; }
+    .category-header { padding: 0.75rem 1rem; }
+    .cat-name { font-size: 0.85rem; }
+    .item-row { padding: 0.5rem 1rem; }
   }
 </style>

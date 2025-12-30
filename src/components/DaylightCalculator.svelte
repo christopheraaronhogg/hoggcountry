@@ -927,16 +927,31 @@
   }
 
   @media (max-width: 600px) {
-    .calc-header { padding: 1.5rem; }
-    .controls-section { padding: 1.5rem; }
-    .controls-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .daylight-calc {
+      overflow-x: hidden;
+      border-radius: 12px;
+    }
+    .calc-header { padding: 1.5rem 1rem; }
+    .header-title { font-size: 1.5rem; }
+    .controls-section { padding: 1.5rem 1rem; }
+    .controls-grid { grid-template-columns: 1fr; gap: 1rem; }
     .stats-grid { grid-template-columns: 1fr; }
-    .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-card { border-right: none; border-bottom: 1px solid var(--border); padding: 1rem; }
     .stat-card:last-child { border-bottom: none; }
+    .stat-num { font-size: 2rem; }
     .timeline-container { padding: 1.5rem 1rem; }
     .mileage-section { padding: 1.5rem 1rem; }
-    .schedule-grid { grid-template-columns: 1fr; }
+    .schedule-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .schedule-block { padding: 0.75rem; }
+    .block-time { font-size: 1rem; }
     .max-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-    .max-val { font-size: 1.25rem; }
+    .max-card { padding: 0.75rem 0.5rem; }
+    .max-val { font-size: 1.1rem; }
+    .max-label { font-size: 0.55rem; }
+  }
+
+  @media (max-width: 380px) {
+    .max-grid { grid-template-columns: 1fr 1fr; }
+    .max-card:last-child { grid-column: 1 / -1; }
   }
 </style>
