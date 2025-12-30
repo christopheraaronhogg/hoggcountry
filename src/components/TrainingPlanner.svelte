@@ -7,9 +7,9 @@
 
   // User inputs
   let startDate = $state(trailContext?.startDate || '2026-02-15');
-  let currentFitness = $state('moderate'); // sedentary, light, moderate, active, athlete
-  let hikingExperience = $state('some'); // none, some, experienced, expert
-  let weeklyHours = $state(10); // available training hours per week
+  let currentFitness = $state('moderate');
+  let hikingExperience = $state('some');
+  let weeklyHours = $state(10);
 
   // Sync with trail context
   $effect(() => {
@@ -20,7 +20,6 @@
 
   onMount(() => {
     mounted = true;
-    // Load saved data
     const saved = localStorage.getItem('at-training-planner');
     if (saved) {
       try {
@@ -32,7 +31,6 @@
     }
   });
 
-  // Save when changed
   $effect(() => {
     if (mounted) {
       localStorage.setItem('at-training-planner', JSON.stringify({
@@ -43,7 +41,6 @@
     }
   });
 
-  // Calculate weeks until start
   let weeksUntilStart = $derived.by(() => {
     const start = new Date(startDate);
     const now = new Date();
@@ -51,13 +48,13 @@
     return Math.max(0, diff);
   });
 
-  // Training phases
   const phases = [
     {
       id: 'base',
       name: 'Base Building',
       weeks: 8,
       focus: 'Aerobic foundation',
+      color: '#3b82f6',
       description: 'Build cardiovascular endurance and basic leg strength',
       activities: [
         { name: 'Walking/Hiking', duration: '3-5 hours', frequency: '3-4x/week', priority: 'high' },
@@ -75,6 +72,7 @@
       name: 'Build Phase',
       weeks: 8,
       focus: 'Strength & endurance',
+      color: '#f59e0b',
       description: 'Increase load, duration, and intensity',
       activities: [
         { name: 'Loaded hiking', duration: '4-6 hours', frequency: '2-3x/week', priority: 'high' },
@@ -93,6 +91,7 @@
       name: 'Peak Training',
       weeks: 4,
       focus: 'Trail simulation',
+      color: '#dc2626',
       description: 'Maximum volume and intensity before taper',
       activities: [
         { name: 'Long hikes (15-20mi)', duration: '8+ hours', frequency: '1-2x/week', priority: 'high' },
@@ -110,6 +109,7 @@
       name: 'Taper',
       weeks: 2,
       focus: 'Recovery & prep',
+      color: '#22c55e',
       description: 'Reduce volume, maintain intensity, rest up',
       activities: [
         { name: 'Light hiking', duration: '2-3 hours', frequency: '2-3x/week', priority: 'medium' },
@@ -125,97 +125,74 @@
     },
   ];
 
-  // Current phase based on weeks until start
   let currentPhase = $derived.by(() => {
-    if (weeksUntilStart > 22) return null; // Too far out
-    if (weeksUntilStart > 14) return phases[0]; // Base
-    if (weeksUntilStart > 6) return phases[1];  // Build
-    if (weeksUntilStart > 2) return phases[2];  // Peak
-    return phases[3]; // Taper
+    if (weeksUntilStart > 22) return null;
+    if (weeksUntilStart > 14) return phases[0];
+    if (weeksUntilStart > 6) return phases[1];
+    if (weeksUntilStart > 2) return phases[2];
+    return phases[3];
   });
 
-  // Recommended weekly schedule based on available hours
   let weeklySchedule = $derived.by(() => {
     const schedule = [];
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
     if (weeklyHours >= 15) {
-      // Full schedule
-      schedule.push({ day: 'Monday', activity: 'Strength + Core', duration: '45 min' });
-      schedule.push({ day: 'Tuesday', activity: 'Hike/Walk', duration: '1-2 hours' });
-      schedule.push({ day: 'Wednesday', activity: 'Rest or Yoga', duration: '30 min' });
-      schedule.push({ day: 'Thursday', activity: 'Stair climbing', duration: '30 min' });
-      schedule.push({ day: 'Friday', activity: 'Light hike', duration: '1 hour' });
-      schedule.push({ day: 'Saturday', activity: 'Long hike', duration: '4-6 hours' });
-      schedule.push({ day: 'Sunday', activity: 'Recovery hike or rest', duration: '1-2 hours' });
+      schedule.push({ day: 'Mon', activity: 'Strength + Core', duration: '45m', type: 'strength' });
+      schedule.push({ day: 'Tue', activity: 'Hike/Walk', duration: '1-2h', type: 'cardio' });
+      schedule.push({ day: 'Wed', activity: 'Rest or Yoga', duration: '30m', type: 'rest' });
+      schedule.push({ day: 'Thu', activity: 'Stair climbing', duration: '30m', type: 'cardio' });
+      schedule.push({ day: 'Fri', activity: 'Light hike', duration: '1h', type: 'cardio' });
+      schedule.push({ day: 'Sat', activity: 'Long hike', duration: '4-6h', type: 'long' });
+      schedule.push({ day: 'Sun', activity: 'Recovery', duration: '1-2h', type: 'rest' });
     } else if (weeklyHours >= 10) {
-      // Moderate schedule
-      schedule.push({ day: 'Monday', activity: 'Core + Flexibility', duration: '30 min' });
-      schedule.push({ day: 'Tuesday', activity: 'Hike/Walk', duration: '1 hour' });
-      schedule.push({ day: 'Wednesday', activity: 'Rest', duration: '-' });
-      schedule.push({ day: 'Thursday', activity: 'Stairs or hills', duration: '30 min' });
-      schedule.push({ day: 'Friday', activity: 'Rest or light walk', duration: '30 min' });
-      schedule.push({ day: 'Saturday', activity: 'Long hike', duration: '3-5 hours' });
-      schedule.push({ day: 'Sunday', activity: 'Easy walk', duration: '1 hour' });
+      schedule.push({ day: 'Mon', activity: 'Core + Flex', duration: '30m', type: 'strength' });
+      schedule.push({ day: 'Tue', activity: 'Hike/Walk', duration: '1h', type: 'cardio' });
+      schedule.push({ day: 'Wed', activity: 'Rest', duration: '-', type: 'rest' });
+      schedule.push({ day: 'Thu', activity: 'Stairs/Hills', duration: '30m', type: 'cardio' });
+      schedule.push({ day: 'Fri', activity: 'Light walk', duration: '30m', type: 'cardio' });
+      schedule.push({ day: 'Sat', activity: 'Long hike', duration: '3-5h', type: 'long' });
+      schedule.push({ day: 'Sun', activity: 'Easy walk', duration: '1h', type: 'rest' });
     } else {
-      // Minimal schedule
-      schedule.push({ day: 'Monday', activity: 'Walk', duration: '30 min' });
-      schedule.push({ day: 'Tuesday', activity: 'Rest', duration: '-' });
-      schedule.push({ day: 'Wednesday', activity: 'Stairs', duration: '20 min' });
-      schedule.push({ day: 'Thursday', activity: 'Rest', duration: '-' });
-      schedule.push({ day: 'Friday', activity: 'Walk', duration: '30 min' });
-      schedule.push({ day: 'Saturday', activity: 'Hike', duration: '2-3 hours' });
-      schedule.push({ day: 'Sunday', activity: 'Rest', duration: '-' });
+      schedule.push({ day: 'Mon', activity: 'Walk', duration: '30m', type: 'cardio' });
+      schedule.push({ day: 'Tue', activity: 'Rest', duration: '-', type: 'rest' });
+      schedule.push({ day: 'Wed', activity: 'Stairs', duration: '20m', type: 'cardio' });
+      schedule.push({ day: 'Thu', activity: 'Rest', duration: '-', type: 'rest' });
+      schedule.push({ day: 'Fri', activity: 'Walk', duration: '30m', type: 'cardio' });
+      schedule.push({ day: 'Sat', activity: 'Hike', duration: '2-3h', type: 'long' });
+      schedule.push({ day: 'Sun', activity: 'Rest', duration: '-', type: 'rest' });
     }
-
     return schedule;
   });
 
-  // Fitness level adjustments
-  const fitnessMultipliers = {
-    sedentary: 1.5,   // Need more time
-    light: 1.25,
-    moderate: 1.0,
-    active: 0.85,
-    athlete: 0.7,
-  };
-
   let readinessScore = $derived.by(() => {
-    // Base score from fitness and experience
     let score = 50;
-
-    // Fitness contribution
     if (currentFitness === 'active') score += 20;
     else if (currentFitness === 'athlete') score += 30;
     else if (currentFitness === 'moderate') score += 10;
     else if (currentFitness === 'light') score += 0;
-    else score -= 10; // sedentary
+    else score -= 10;
 
-    // Experience contribution
     if (hikingExperience === 'expert') score += 20;
     else if (hikingExperience === 'experienced') score += 15;
     else if (hikingExperience === 'some') score += 5;
-    else score -= 5; // none
+    else score -= 5;
 
-    // Time contribution (more time = better prepared)
     if (weeksUntilStart > 20) score += 15;
     else if (weeksUntilStart > 12) score += 10;
     else if (weeksUntilStart > 6) score += 5;
     else if (weeksUntilStart > 2) score += 0;
-    else score -= 10; // very little time
+    else score -= 10;
 
     return Math.min(100, Math.max(0, score));
   });
 
   let readinessLevel = $derived.by(() => {
-    if (readinessScore >= 80) return { label: 'Well Prepared', color: '#16a34a' };
-    if (readinessScore >= 60) return { label: 'On Track', color: '#84cc16' };
-    if (readinessScore >= 40) return { label: 'Needs Work', color: '#f59e0b' };
-    if (readinessScore >= 20) return { label: 'Behind Schedule', color: '#f97316' };
-    return { label: 'Significant Concern', color: '#dc2626' };
+    if (readinessScore >= 80) return { label: 'Well Prepared', color: '#16a34a', bg: '#dcfce7' };
+    if (readinessScore >= 60) return { label: 'On Track', color: '#65a30d', bg: '#ecfccb' };
+    if (readinessScore >= 40) return { label: 'Needs Work', color: '#d97706', bg: '#fef3c7' };
+    if (readinessScore >= 20) return { label: 'Behind Schedule', color: '#ea580c', bg: '#ffedd5' };
+    return { label: 'Significant Concern', color: '#dc2626', bg: '#fef2f2' };
   });
 
-  // Key benchmarks to hit before starting
   const benchmarks = [
     { id: 'b1', text: 'Complete a 15+ mile day with full pack', category: 'endurance' },
     { id: 'b2', text: 'Hike back-to-back 10+ mile days', category: 'endurance' },
@@ -229,7 +206,6 @@
 
   let completedBenchmarks = $state({});
 
-  // Load benchmarks
   $effect(() => {
     if (mounted) {
       const saved = localStorage.getItem('at-training-benchmarks');
@@ -241,7 +217,6 @@
     }
   });
 
-  // Save benchmarks
   $effect(() => {
     if (mounted && Object.keys(completedBenchmarks).length > 0) {
       localStorage.setItem('at-training-benchmarks', JSON.stringify(completedBenchmarks));
@@ -258,84 +233,133 @@
   let benchmarkProgress = $derived(
     Math.round((Object.values(completedBenchmarks).filter(Boolean).length / benchmarks.length) * 100)
   );
+
+  // SVG arc helpers
+  function describeArc(cx, cy, r, startAngle, endAngle) {
+    const start = polarToCartesian(cx, cy, r, endAngle);
+    const end = polarToCartesian(cx, cy, r, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+  }
+
+  function polarToCartesian(cx, cy, r, angleDeg) {
+    const angleRad = (angleDeg - 90) * Math.PI / 180;
+    return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) };
+  }
+
+  let gaugeAngle = $derived(-135 + (readinessScore / 100) * 270);
 </script>
 
 <div class="training-planner" class:mounted>
   <!-- Header -->
   <header class="planner-header">
-    <div class="header-icon">🏋️</div>
-    <div class="header-content">
-      <h2>Training Planner</h2>
-      <p>Prepare your body for the trail</p>
+    <div class="header-left">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+          <line x1="6" y1="1" x2="6" y2="4"/>
+          <line x1="10" y1="1" x2="10" y2="4"/>
+          <line x1="14" y1="1" x2="14" y2="4"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h2>TRAIL ATHLETE</h2>
+        <p>Physical Preparation Program</p>
+      </div>
     </div>
-    <div class="countdown">
-      <span class="cd-value">{weeksUntilStart}</span>
-      <span class="cd-label">weeks to go</span>
+    <div class="countdown-badge">
+      <span class="cd-number">{weeksUntilStart}</span>
+      <span class="cd-text">WEEKS</span>
     </div>
   </header>
 
-  <!-- Profile Section -->
-  <section class="profile-section">
-    <h3>Your Profile</h3>
-    <div class="profile-grid">
-      <div class="profile-item">
-        <label>Current Fitness Level</label>
-        <select bind:value={currentFitness}>
-          <option value="sedentary">Sedentary (desk job, little exercise)</option>
-          <option value="light">Light Activity (walks, occasional exercise)</option>
-          <option value="moderate">Moderate (3-4x/week exercise)</option>
-          <option value="active">Active (daily exercise, some hiking)</option>
-          <option value="athlete">Athlete (intense training, regular hiking)</option>
-        </select>
+  <!-- Readiness Gauge -->
+  <section class="readiness-section">
+    <div class="gauge-container">
+      <svg viewBox="0 0 200 130" class="readiness-gauge">
+        <defs>
+          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#dc2626"/>
+            <stop offset="50%" style="stop-color:#f59e0b"/>
+            <stop offset="100%" style="stop-color:#22c55e"/>
+          </linearGradient>
+        </defs>
+        <!-- Background arc -->
+        <path
+          d={describeArc(100, 100, 70, -135, 135)}
+          fill="none"
+          stroke="var(--border)"
+          stroke-width="14"
+          stroke-linecap="round"
+        />
+        <!-- Progress arc -->
+        <path
+          d={describeArc(100, 100, 70, -135, gaugeAngle)}
+          fill="none"
+          stroke="url(#gaugeGrad)"
+          stroke-width="14"
+          stroke-linecap="round"
+          class="gauge-fill"
+        />
+        <!-- Tick marks -->
+        {#each [0, 25, 50, 75, 100] as tick}
+          {@const tickAngle = -135 + (tick / 100) * 270}
+          {@const innerPos = polarToCartesian(100, 100, 58, tickAngle)}
+          {@const outerPos = polarToCartesian(100, 100, 54, tickAngle)}
+          <line x1={innerPos.x} y1={innerPos.y} x2={outerPos.x} y2={outerPos.y} stroke="var(--muted)" stroke-width="2"/>
+        {/each}
+      </svg>
+      <div class="gauge-center">
+        <span class="gauge-score">{readinessScore}</span>
+        <span class="gauge-label">READINESS</span>
       </div>
-
-      <div class="profile-item">
-        <label>Hiking Experience</label>
-        <select bind:value={hikingExperience}>
-          <option value="none">None (never hiked)</option>
-          <option value="some">Some (day hikes, occasional overnights)</option>
-          <option value="experienced">Experienced (multi-day trips)</option>
-          <option value="expert">Expert (long-distance trails)</option>
-        </select>
-      </div>
-
-      <div class="profile-item">
-        <label>Weekly Training Hours Available</label>
-        <div class="hours-input">
-          <input type="range" min="5" max="20" bind:value={weeklyHours} />
-          <span class="hours-value">{weeklyHours} hrs/week</span>
-        </div>
-      </div>
+    </div>
+    <div class="readiness-status" style="background: {readinessLevel.bg}; border-color: {readinessLevel.color}">
+      <span class="status-label" style="color: {readinessLevel.color}">{readinessLevel.label}</span>
+      <p class="status-desc">
+        {#if readinessScore >= 80}
+          You're in great shape. Stay consistent and don't overtrain.
+        {:else if readinessScore >= 60}
+          Good progress! Focus on consistency and building volume.
+        {:else if readinessScore >= 40}
+          More training needed. Prioritize weekly long hikes.
+        {:else}
+          Significant preparation required. Start immediately.
+        {/if}
+      </p>
     </div>
   </section>
 
-  <!-- Readiness Score -->
-  <section class="readiness-section">
-    <div class="readiness-card">
-      <div class="readiness-ring">
-        <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" class="ring-bg" />
-          <circle cx="50" cy="50" r="45" class="ring-fill"
-            style="stroke: {readinessLevel.color}; stroke-dasharray: {readinessScore * 2.83} 283" />
-        </svg>
-        <div class="readiness-score">
-          <span class="score-value">{readinessScore}</span>
-          <span class="score-label">Readiness</span>
-        </div>
+  <!-- Profile Inputs -->
+  <section class="profile-section">
+    <h3 class="section-label">YOUR PROFILE</h3>
+    <div class="profile-grid">
+      <div class="profile-field">
+        <label>Fitness Level</label>
+        <select bind:value={currentFitness}>
+          <option value="sedentary">Sedentary</option>
+          <option value="light">Light Activity</option>
+          <option value="moderate">Moderate (3-4x/week)</option>
+          <option value="active">Active (daily exercise)</option>
+          <option value="athlete">Athlete</option>
+        </select>
       </div>
-      <div class="readiness-info">
-        <span class="readiness-level" style="color: {readinessLevel.color}">{readinessLevel.label}</span>
-        <p class="readiness-desc">
-          {#if readinessScore >= 80}
-            You're in great shape to start. Stay consistent and don't overtrain.
-          {:else if readinessScore >= 60}
-            Good progress! Focus on consistency and building volume.
-          {:else if readinessScore >= 40}
-            More training needed. Prioritize weekly long hikes.
-          {:else}
-            Significant preparation required. Start immediately with base training.
-          {/if}
-        </p>
+      <div class="profile-field">
+        <label>Hiking Experience</label>
+        <select bind:value={hikingExperience}>
+          <option value="none">None</option>
+          <option value="some">Some (day hikes)</option>
+          <option value="experienced">Experienced (multi-day)</option>
+          <option value="expert">Expert (long-distance)</option>
+        </select>
+      </div>
+      <div class="profile-field hours-field">
+        <label>Weekly Training Hours</label>
+        <div class="hours-control">
+          <input type="range" min="5" max="20" bind:value={weeklyHours} />
+          <span class="hours-badge">{weeklyHours}h</span>
+        </div>
       </div>
     </div>
   </section>
@@ -343,30 +367,32 @@
   <!-- Current Phase -->
   {#if currentPhase}
   <section class="phase-section">
-    <h3>Current Training Phase</h3>
-    <div class="phase-card" style="--phase-color: {currentPhase.id === 'base' ? '#3b82f6' : currentPhase.id === 'build' ? '#f59e0b' : currentPhase.id === 'peak' ? '#dc2626' : '#22c55e'}">
+    <h3 class="section-label">CURRENT PHASE</h3>
+    <div class="phase-card" style="--phase-color: {currentPhase.color}">
       <div class="phase-header">
-        <span class="phase-name">{currentPhase.name}</span>
-        <span class="phase-weeks">{currentPhase.weeks} weeks</span>
+        <div class="phase-title">
+          <span class="phase-name">{currentPhase.name}</span>
+          <span class="phase-focus">{currentPhase.focus}</span>
+        </div>
+        <div class="phase-weeks-badge">{currentPhase.weeks}W</div>
       </div>
-      <div class="phase-focus">{currentPhase.focus}</div>
       <p class="phase-desc">{currentPhase.description}</p>
 
-      <div class="activities-list">
-        <h4>Key Activities</h4>
+      <div class="activities-block">
+        <h4>KEY ACTIVITIES</h4>
         {#each currentPhase.activities as activity}
-          <div class="activity-item" class:high={activity.priority === 'high'}>
-            <div class="activity-main">
+          <div class="activity-row" class:priority={activity.priority === 'high'}>
+            <div class="activity-info">
               <span class="activity-name">{activity.name}</span>
               <span class="activity-freq">{activity.frequency}</span>
             </div>
-            <span class="activity-duration">{activity.duration}</span>
+            <span class="activity-time">{activity.duration}</span>
           </div>
         {/each}
       </div>
 
-      <div class="phase-tips">
-        <h4>Tips</h4>
+      <div class="tips-block">
+        <h4>TIPS</h4>
         <ul>
           {#each currentPhase.tips as tip}
             <li>{tip}</li>
@@ -377,104 +403,126 @@
   </section>
   {:else}
   <section class="phase-section">
-    <div class="too-far">
-      <span class="too-far-icon">📅</span>
-      <h3>Training starts when you're 22 weeks out</h3>
-      <p>Your start date is more than 22 weeks away. Enjoy general fitness activities and start focused training closer to your departure.</p>
+    <div class="phase-placeholder">
+      <div class="placeholder-icon">📅</div>
+      <h3>Training begins at 22 weeks out</h3>
+      <p>Your start date is more than 22 weeks away. Enjoy general fitness and start focused training closer to departure.</p>
     </div>
   </section>
   {/if}
 
   <!-- Weekly Schedule -->
   <section class="schedule-section">
-    <h3>Sample Weekly Schedule</h3>
-    <div class="schedule-grid">
+    <h3 class="section-label">WEEKLY SCHEDULE</h3>
+    <div class="schedule-row">
       {#each weeklySchedule as day}
-        <div class="schedule-day" class:rest={day.activity === 'Rest'}>
-          <span class="day-name">{day.day.slice(0, 3)}</span>
+        <div class="day-card" class:rest={day.type === 'rest'} class:long={day.type === 'long'}>
+          <span class="day-name">{day.day}</span>
           <span class="day-activity">{day.activity}</span>
           <span class="day-duration">{day.duration}</span>
         </div>
       {/each}
     </div>
-    <p class="schedule-note">Adjust based on your schedule. The key is consistency.</p>
+    <p class="schedule-note">Adjust based on your schedule. Consistency is key.</p>
   </section>
 
   <!-- Benchmarks -->
   <section class="benchmarks-section">
     <div class="benchmarks-header">
-      <h3>Pre-Trail Benchmarks</h3>
-      <div class="benchmark-progress">
-        <span class="bp-value">{benchmarkProgress}%</span>
-        <div class="bp-bar">
-          <div class="bp-fill" style="width: {benchmarkProgress}%"></div>
+      <h3 class="section-label">PRE-TRAIL BENCHMARKS</h3>
+      <div class="benchmark-meter">
+        <div class="meter-bar">
+          <div class="meter-fill" style="width: {benchmarkProgress}%"></div>
         </div>
+        <span class="meter-value">{benchmarkProgress}%</span>
       </div>
     </div>
-
-    <div class="benchmarks-list">
+    <div class="benchmarks-grid">
       {#each benchmarks as bm}
-        <label class="benchmark-item" class:done={completedBenchmarks[bm.id]}>
-          <input type="checkbox" checked={completedBenchmarks[bm.id]} onchange={() => toggleBenchmark(bm.id)} />
+        <button
+          class="benchmark-item"
+          class:done={completedBenchmarks[bm.id]}
+          onclick={() => toggleBenchmark(bm.id)}
+        >
+          <div class="bm-check">
+            {#if completedBenchmarks[bm.id]}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            {/if}
+          </div>
           <span class="bm-text">{bm.text}</span>
-          <span class="bm-category">{bm.category}</span>
-        </label>
+          <span class="bm-tag">{bm.category}</span>
+        </button>
       {/each}
     </div>
   </section>
 
   <!-- Training Timeline -->
   <section class="timeline-section">
-    <h3>22-Week Training Timeline</h3>
-    <div class="training-timeline">
-      {#each phases as phase, i}
-        <div class="tl-phase" class:active={currentPhase?.id === phase.id} style="flex: {phase.weeks}">
-          <div class="tl-bar" style="background: {phase.id === 'base' ? '#3b82f6' : phase.id === 'build' ? '#f59e0b' : phase.id === 'peak' ? '#dc2626' : '#22c55e'}"></div>
-          <span class="tl-name">{phase.name}</span>
-          <span class="tl-weeks">{phase.weeks}w</span>
+    <h3 class="section-label">22-WEEK PROGRAM</h3>
+    <div class="phase-timeline">
+      {#each phases as phase}
+        <div class="timeline-phase" class:active={currentPhase?.id === phase.id} style="flex: {phase.weeks}">
+          <div class="phase-bar" style="background: {phase.color}"></div>
+          <div class="phase-info">
+            <span class="phase-label">{phase.name}</span>
+            <span class="phase-duration">{phase.weeks} weeks</span>
+          </div>
         </div>
       {/each}
     </div>
   </section>
 
-  <!-- Key Resources -->
+  <!-- Resources -->
   <section class="resources-section">
-    <h3>Training Resources</h3>
+    <h3 class="section-label">TRAINING FOCUS AREAS</h3>
     <div class="resources-grid">
       <div class="resource-card">
-        <span class="resource-icon">🦵</span>
+        <div class="resource-icon">🦵</div>
         <h4>Leg Strength</h4>
         <p>Squats, lunges, step-ups, calf raises. 2-3 sets of 12-15 reps.</p>
       </div>
       <div class="resource-card">
-        <span class="resource-icon">🏔️</span>
-        <h4>Elevation Training</h4>
+        <div class="resource-icon">🏔️</div>
+        <h4>Elevation</h4>
         <p>Stair machine, hill repeats, loaded stair climbing.</p>
       </div>
       <div class="resource-card">
-        <span class="resource-icon">🎒</span>
+        <div class="resource-icon">🎒</div>
         <h4>Load Training</h4>
-        <p>Start at 15lb, add 2-3lb weekly until reaching 25-30lb.</p>
+        <p>Start 15lb, add 2-3lb weekly to 25-30lb.</p>
       </div>
       <div class="resource-card">
-        <span class="resource-icon">🧘</span>
+        <div class="resource-icon">🧘</div>
         <h4>Flexibility</h4>
-        <p>Hip flexors, hamstrings, calves. 15 min daily stretching.</p>
+        <p>Hip flexors, hamstrings, calves. 15 min daily.</p>
       </div>
     </div>
   </section>
+
+  <!-- Guide Link -->
+  <a href="/guide/03-physical-preparation/" class="guide-link">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+    <span>Read Physical Preparation Guide</span>
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>
+  </a>
 </div>
 
 <style>
   .training-planner {
-    background: var(--card, #fff);
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    border: 1px solid var(--border);
+    background: var(--bg, #f8f5f0);
+    border: 2px solid var(--border, #d4c5b0);
+    border-radius: 12px;
     overflow: hidden;
     opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.5s ease;
+    transform: translateY(12px);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .training-planner.mounted {
@@ -486,97 +534,200 @@
   .planner-header {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: #fff;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+    border-bottom: 2px solid #047857;
   }
 
-  .header-icon {
-    font-size: 2.5rem;
-  }
-
-  .header-content h2 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
-
-  .header-content p {
-    margin: 0.25rem 0 0;
-    font-size: 0.9rem;
-    opacity: 0.9;
-  }
-
-  .countdown {
-    margin-left: auto;
-    text-align: center;
-    background: rgba(255,255,255,0.2);
-    padding: 0.5rem 1rem;
-    border-radius: 12px;
-  }
-
-  .cd-value {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .cd-label {
-    font-size: 0.7rem;
-    opacity: 0.9;
-  }
-
-  /* Profile Section */
-  .profile-section {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .profile-section h3 {
-    margin: 0 0 1rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .profile-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-  }
-
-  .profile-item label {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .profile-item select {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.85rem;
-    background: #fff;
-    color: var(--ink);
-  }
-
-  .hours-input {
+  .header-left {
     display: flex;
     align-items: center;
     gap: 1rem;
   }
 
-  .hours-input input {
+  .header-icon {
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.25);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+
+  .header-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .header-text h2 {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.08em;
+  }
+
+  .header-text p {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .countdown-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+  }
+
+  .cd-number {
+    font-family: Oswald, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .cd-text {
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.9);
+    letter-spacing: 0.1em;
+  }
+
+  /* Readiness Section */
+  .readiness-section {
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .gauge-container {
+    position: relative;
+    width: 180px;
+    height: 120px;
+    flex-shrink: 0;
+  }
+
+  .readiness-gauge {
+    width: 100%;
+    height: 100%;
+  }
+
+  .gauge-fill {
+    transition: all 0.6s ease-out;
+  }
+
+  .gauge-center {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+
+  .gauge-score {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .gauge-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .readiness-status {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    border: 2px solid;
+  }
+
+  .status-label {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+
+  .status-desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  /* Profile Section */
+  .profile-section {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .section-label {
+    margin: 0 0 1rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .profile-field label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .profile-field select {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    background: #fff;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .profile-field select:focus {
+    outline: none;
+    border-color: var(--alpine);
+  }
+
+  .hours-control {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .hours-control input[type="range"] {
     flex: 1;
     height: 8px;
     -webkit-appearance: none;
@@ -584,294 +735,219 @@
     border-radius: 4px;
   }
 
-  .hours-input input::-webkit-slider-thumb {
+  .hours-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: var(--pine);
+    background: #059669;
+    border: 2px solid #047857;
     cursor: pointer;
   }
 
-  .hours-value {
+  .hours-badge {
     font-family: Oswald, sans-serif;
+    font-size: 1rem;
     font-weight: 600;
-    color: var(--pine);
-    white-space: nowrap;
-  }
-
-  /* Readiness Section */
-  .readiness-section {
-    padding: 1.5rem;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .readiness-card {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-  }
-
-  .readiness-ring {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    flex-shrink: 0;
-  }
-
-  .readiness-ring svg {
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);
-  }
-
-  .ring-bg {
-    fill: none;
-    stroke: var(--border);
-    stroke-width: 8;
-  }
-
-  .ring-fill {
-    fill: none;
-    stroke-width: 8;
-    stroke-linecap: round;
-    transition: stroke-dasharray 0.5s ease;
-  }
-
-  .readiness-score {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .score-value {
-    font-family: Oswald, sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1;
-  }
-
-  .score-label {
-    font-size: 0.65rem;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-
-  .readiness-info {
-    flex: 1;
-  }
-
-  .readiness-level {
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 700;
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-
-  .readiness-desc {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--ink);
-    line-height: 1.5;
+    color: #059669;
+    background: rgba(5, 150, 105, 0.1);
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    border: 2px solid rgba(5, 150, 105, 0.3);
   }
 
   /* Phase Section */
   .phase-section {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .phase-section h3 {
-    margin: 0 0 1rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 2px solid var(--border);
   }
 
   .phase-card {
     background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.25rem;
+    border: 2px solid var(--border);
     border-left: 4px solid var(--phase-color);
+    border-radius: 10px;
+    padding: 1.25rem;
   }
 
   .phase-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
   }
 
   .phase-name {
+    display: block;
     font-family: Oswald, sans-serif;
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--ink);
   }
 
-  .phase-weeks {
-    font-size: 0.8rem;
-    color: var(--muted);
-    background: var(--bg);
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-  }
-
   .phase-focus {
-    font-size: 0.85rem;
+    display: block;
+    font-size: 0.8rem;
     color: var(--phase-color);
     font-weight: 600;
-    margin-bottom: 0.5rem;
+  }
+
+  .phase-weeks-badge {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--phase-color);
+    background: rgba(0,0,0,0.05);
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    border: 2px solid var(--border);
   }
 
   .phase-desc {
     margin: 0 0 1rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--muted);
+    line-height: 1.5;
   }
 
-  .activities-list h4,
-  .phase-tips h4 {
+  .activities-block h4,
+  .tips-block h4 {
     margin: 0 0 0.5rem;
     font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    font-weight: 600;
     color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
   }
 
-  .activity-item {
+  .activity-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem;
+    padding: 0.6rem 0.75rem;
     background: var(--bg);
     border-radius: 6px;
     margin-bottom: 0.35rem;
-    font-size: 0.85rem;
+    border: 1px solid var(--border);
   }
 
-  .activity-item.high {
-    background: rgba(34, 197, 94, 0.1);
-    border-left: 3px solid #22c55e;
+  .activity-row.priority {
+    background: rgba(5, 150, 105, 0.08);
+    border-color: rgba(5, 150, 105, 0.3);
+    border-left: 3px solid #059669;
   }
 
-  .activity-main {
+  .activity-info {
     display: flex;
     flex-direction: column;
   }
 
   .activity-name {
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--ink);
   }
 
   .activity-freq {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--muted);
   }
 
-  .activity-duration {
+  .activity-time {
     font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: var(--pine);
+    color: #059669;
   }
 
-  .phase-tips {
+  .tips-block {
     margin-top: 1rem;
   }
 
-  .phase-tips ul {
+  .tips-block ul {
     margin: 0;
     padding-left: 1.25rem;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--ink);
   }
 
-  .phase-tips li {
+  .tips-block li {
     margin-bottom: 0.25rem;
   }
 
-  .too-far {
+  .phase-placeholder {
     text-align: center;
     padding: 2rem;
-    background: var(--bg);
-    border-radius: 12px;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 10px;
   }
 
-  .too-far-icon {
-    font-size: 3rem;
-    display: block;
-    margin-bottom: 1rem;
+  .placeholder-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
   }
 
-  .too-far h3 {
+  .phase-placeholder h3 {
     margin: 0 0 0.5rem;
     font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    color: var(--ink);
   }
 
-  .too-far p {
+  .phase-placeholder p {
     margin: 0;
+    font-size: 0.85rem;
     color: var(--muted);
   }
 
   /* Schedule Section */
   .schedule-section {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 2px solid var(--border);
   }
 
-  .schedule-section h3 {
-    margin: 0 0 1rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .schedule-grid {
+  .schedule-row {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.5rem;
   }
 
-  .schedule-day {
+  .day-card {
     text-align: center;
     padding: 0.75rem 0.5rem;
-    background: var(--bg);
+    background: #fff;
+    border: 2px solid var(--border);
     border-radius: 8px;
-    border: 1px solid var(--border);
+    transition: all 0.2s ease;
   }
 
-  .schedule-day.rest {
-    opacity: 0.5;
+  .day-card.rest {
+    background: var(--bg);
+    opacity: 0.6;
+  }
+
+  .day-card.long {
+    background: rgba(5, 150, 105, 0.08);
+    border-color: rgba(5, 150, 105, 0.3);
   }
 
   .day-name {
     display: block;
     font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--muted);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
   }
 
   .day-activity {
     display: block;
     font-size: 0.7rem;
-    color: var(--ink);
     font-weight: 600;
-    margin-bottom: 0.15rem;
+    color: var(--ink);
+    margin-bottom: 0.2rem;
+    line-height: 1.3;
   }
 
   .day-duration {
@@ -881,15 +957,15 @@
 
   .schedule-note {
     margin: 0.75rem 0 0;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--muted);
     text-align: center;
   }
 
   /* Benchmarks */
   .benchmarks-section {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 2px solid var(--border);
   }
 
   .benchmarks-header {
@@ -899,42 +975,34 @@
     margin-bottom: 1rem;
   }
 
-  .benchmarks-header h3 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .benchmark-progress {
+  .benchmark-meter {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
-  .bp-value {
-    font-family: Oswald, sans-serif;
-    font-weight: 600;
-    color: var(--pine);
-  }
-
-  .bp-bar {
-    width: 80px;
-    height: 6px;
+  .meter-bar {
+    width: 100px;
+    height: 8px;
     background: var(--border);
-    border-radius: 3px;
+    border-radius: 4px;
     overflow: hidden;
   }
 
-  .bp-fill {
+  .meter-fill {
     height: 100%;
-    background: var(--pine);
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, #059669, #22c55e);
+    transition: width 0.4s ease;
   }
 
-  .benchmarks-list {
+  .meter-value {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #059669;
+  }
+
+  .benchmarks-grid {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -944,30 +1012,52 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem;
-    background: var(--bg);
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border: 2px solid var(--border);
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
   }
 
   .benchmark-item:hover {
-    background: rgba(34, 197, 94, 0.05);
+    border-color: var(--alpine);
   }
 
   .benchmark-item.done {
-    background: rgba(34, 197, 94, 0.1);
+    background: rgba(5, 150, 105, 0.05);
+    border-color: rgba(5, 150, 105, 0.3);
   }
 
-  .benchmark-item input {
-    width: 20px;
-    height: 20px;
-    accent-color: var(--pine);
+  .bm-check {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #fff;
+    transition: all 0.2s ease;
+  }
+
+  .benchmark-item.done .bm-check {
+    background: #059669;
+    border-color: #059669;
+    color: #fff;
+  }
+
+  .bm-check svg {
+    width: 14px;
+    height: 14px;
   }
 
   .bm-text {
     flex: 1;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--ink);
   }
 
@@ -976,136 +1066,165 @@
     color: var(--muted);
   }
 
-  .bm-category {
-    font-size: 0.65rem;
+  .bm-tag {
+    font-size: 0.6rem;
     padding: 0.2rem 0.5rem;
-    background: var(--border);
-    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     color: var(--muted);
     text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   /* Timeline */
   .timeline-section {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 2px solid var(--border);
   }
 
-  .timeline-section h3 {
-    margin: 0 0 1rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .training-timeline {
+  .phase-timeline {
     display: flex;
     gap: 4px;
-    height: 60px;
   }
 
-  .tl-phase {
+  .timeline-phase {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    opacity: 0.5;
+    opacity: 0.4;
     transition: opacity 0.2s;
   }
 
-  .tl-phase.active {
+  .timeline-phase.active {
     opacity: 1;
   }
 
-  .tl-bar {
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    margin-bottom: 0.35rem;
+  .phase-bar {
+    height: 10px;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
   }
 
-  .tl-name {
+  .phase-info {
+    text-align: center;
+  }
+
+  .phase-label {
+    display: block;
     font-size: 0.65rem;
     font-weight: 600;
     color: var(--ink);
   }
 
-  .tl-weeks {
+  .phase-duration {
     font-size: 0.55rem;
     color: var(--muted);
   }
 
   /* Resources */
   .resources-section {
-    padding: 1.5rem;
-    background: #f0fdf4;
-  }
-
-  .resources-section h3 {
-    margin: 0 0 1rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-bottom: 2px solid var(--border);
   }
 
   .resources-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .resource-card {
     text-align: center;
-    padding: 1rem;
+    padding: 1rem 0.75rem;
     background: #fff;
+    border: 2px solid rgba(5, 150, 105, 0.2);
     border-radius: 10px;
-    border: 1px solid #86efac;
   }
 
   .resource-icon {
-    font-size: 2rem;
-    display: block;
+    font-size: 1.75rem;
     margin-bottom: 0.5rem;
   }
 
   .resource-card h4 {
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.35rem;
     font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--ink);
   }
 
   .resource-card p {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--muted);
     line-height: 1.4;
   }
 
+  /* Guide Link */
+  .guide-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--pine, #3d5a46);
+    color: #fff;
+    text-decoration: none;
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: background 0.2s ease;
+  }
+
+  .guide-link:hover {
+    background: var(--alpine, #2d4a36);
+  }
+
   /* Responsive */
   @media (max-width: 640px) {
+    .readiness-section {
+      flex-direction: column;
+    }
+
     .profile-grid {
       grid-template-columns: 1fr;
     }
 
-    .readiness-card {
-      flex-direction: column;
-      text-align: center;
+    .schedule-row {
+      grid-template-columns: repeat(4, 1fr);
     }
 
-    .schedule-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .schedule-day:nth-child(n+4) {
+    .day-card:nth-child(n+5) {
       display: none;
     }
 
     .resources-grid {
       grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-left {
+      gap: 0.75rem;
+    }
+
+    .header-icon {
+      width: 38px;
+      height: 38px;
+    }
+
+    .header-text h2 {
+      font-size: 1.2rem;
+    }
+
+    .schedule-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .day-card:nth-child(n+4) {
+      display: none;
     }
   }
 </style>
