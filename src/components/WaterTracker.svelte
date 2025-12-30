@@ -15,7 +15,6 @@
   let temperatureMode = $state('moderate'); // cool, moderate, hot
 
   // Comprehensive AT water source database
-  // Sources compiled from AWOL guide, Guthook data, and trail reports
   const waterSources = [
     // Georgia - Mile 0-78
     { mile: 0.6, name: 'Springer Mountain Spring', type: 'spring', reliability: 'reliable', offTrail: 0.2, notes: 'Down blue-blazed trail' },
@@ -39,7 +38,6 @@
     { mile: 62.3, name: 'Addis Gap Spring', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 69.4, name: 'Dicks Creek Gap', type: 'stream', reliability: 'reliable', offTrail: 0 },
     { mile: 73.8, name: 'Plumorchard Gap Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
-
     // NC Border to Fontana - Mile 78-166
     { mile: 83.1, name: 'Muskrat Creek Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 88.7, name: 'Standing Indian Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.2 },
@@ -57,7 +55,6 @@
     { mile: 157.4, name: 'Yellow Creek Gap Stream', type: 'stream', reliability: 'reliable', offTrail: 0 },
     { mile: 164.2, name: 'Fontana Dam Shelter', type: 'piped', reliability: 'reliable', offTrail: 0, notes: 'Fontana Hilton - showers available!' },
     { mile: 165.7, name: 'Fontana Dam Visitor Center', type: 'town', reliability: 'reliable', offTrail: 0.3 },
-
     // Great Smoky Mountains - Mile 166-241 (CRITICAL SECTION)
     { mile: 170.5, name: 'Birch Spring Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 176.0, name: 'Mollies Ridge Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.2, notes: 'Can be unreliable - carry extra' },
@@ -73,7 +70,6 @@
     { mile: 228.1, name: 'Cosby Knob Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.2 },
     { mile: 234.3, name: 'Davenport Gap Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 241.0, name: 'Davenport Gap - Stream', type: 'stream', reliability: 'reliable', offTrail: 0 },
-
     // NC/TN Border Section - Mile 241-340
     { mile: 245.8, name: 'Groundhog Creek Shelter', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
     { mile: 255.5, name: 'Max Patch Stream', type: 'stream', reliability: 'seasonal', offTrail: 0.5, notes: 'Long carry to/from Max Patch summit' },
@@ -88,7 +84,6 @@
     { mile: 320.7, name: 'Hogback Ridge Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 328.3, name: 'Nolichucky River', type: 'river', reliability: 'reliable', offTrail: 0, notes: 'Large river - Uncle Johnnys nearby' },
     { mile: 342.3, name: 'Erwin - Town', type: 'town', reliability: 'reliable', offTrail: 0.5 },
-
     // TN/VA Section - Mile 340-470
     { mile: 350.3, name: 'Curley Maple Gap Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 357.5, name: 'Cherry Gap Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.2 },
@@ -102,13 +97,12 @@
     { mile: 439.4, name: 'Old Orchard Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 454.2, name: 'Chatfield Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.2, notes: 'Check conditions in summer' },
     { mile: 466.0, name: 'VA 16 - Stream', type: 'stream', reliability: 'reliable', offTrail: 0 },
-
     // Virginia - Mile 470-700 (LONG DRY STRETCHES)
     { mile: 477.8, name: 'Settlers Museum Spring', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 491.0, name: 'Jenkins Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.2, notes: 'Virginia can be DRY in summer' },
     { mile: 508.7, name: 'Atkins - Town', type: 'town', reliability: 'reliable', offTrail: 0.2, notes: 'Small town, limited resupply' },
-    { mile: 520.8, name: 'Davis Path Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.3, notes: '⚠️ OFTEN DRY - plan ahead' },
-    { mile: 533.7, name: 'Chestnut Knob Shelter', type: 'spring', reliability: 'unreliable', offTrail: 0.5, notes: '⚠️ UNRELIABLE - carry extra water' },
+    { mile: 520.8, name: 'Davis Path Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.3, notes: 'OFTEN DRY - plan ahead' },
+    { mile: 533.7, name: 'Chestnut Knob Shelter', type: 'spring', reliability: 'unreliable', offTrail: 0.5, notes: 'UNRELIABLE - carry extra water' },
     { mile: 550.6, name: 'Pearisburg - Town', type: 'town', reliability: 'reliable', offTrail: 0.3, notes: 'Good resupply town' },
     { mile: 563.5, name: 'War Spur Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 580.5, name: 'Laurel Creek Shelter', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
@@ -120,7 +114,6 @@
     { mile: 675.5, name: 'Cove Mountain Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 687.3, name: 'Seeley-Woodworth Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.2 },
     { mile: 702.3, name: 'Waynesboro - Town', type: 'town', reliability: 'reliable', offTrail: 0.3, notes: 'Major resupply before Shenandoah' },
-
     // Shenandoah NP - Mile 702-960 (Waysides!)
     { mile: 710.5, name: 'Calf Mountain Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.1 },
     { mile: 725.4, name: 'Blackrock Hut', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
@@ -133,7 +126,6 @@
     { mile: 826.0, name: 'Pass Mountain Hut', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 838.5, name: 'Elkwallow Wayside', type: 'town', reliability: 'reliable', offTrail: 0.2, notes: 'Last Shenandoah wayside' },
     { mile: 858.8, name: 'Tom Floyd Wayside', type: 'spring', reliability: 'reliable', offTrail: 0.2 },
-
     // Northern VA / WV / MD - Mile 860-1025
     { mile: 876.8, name: 'Manassas Gap - Stream', type: 'stream', reliability: 'reliable', offTrail: 0 },
     { mile: 891.3, name: 'Rod Hollow Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
@@ -145,9 +137,8 @@
     { mile: 999.1, name: 'Ed Garvey Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1007.2, name: 'Crampton Gap Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1025.0, name: 'Harpers Ferry - Town', type: 'town', reliability: 'reliable', offTrail: 0, notes: 'ATC HQ - psychological halfway!' },
-
     // Pennsylvania - Mile 1025-1230 (ROCKY + DRY RIDGES!)
-    { mile: 1035.5, name: 'Pine Knob Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.3, notes: '⚠️ PA ridge springs often unreliable' },
+    { mile: 1035.5, name: 'Pine Knob Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.3, notes: 'PA ridge springs often unreliable' },
     { mile: 1048.9, name: 'Tumbling Run Shelters', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1066.1, name: 'Rocky Mountain Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.2 },
     { mile: 1078.5, name: 'Antietam Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
@@ -155,12 +146,11 @@
     { mile: 1108.5, name: 'Quarry Gap Shelters', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1123.0, name: 'Birch Run Shelter', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1141.0, name: 'Duncannon - Town', type: 'town', reliability: 'reliable', offTrail: 0, notes: 'Doyle Hotel - classic trail town' },
-    { mile: 1160.5, name: 'Peters Mountain Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.3, notes: '⚠️ Often dry - carry from Duncannon' },
+    { mile: 1160.5, name: 'Peters Mountain Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.3, notes: 'Often dry - carry from Duncannon' },
     { mile: 1178.0, name: 'Rausch Gap Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1194.0, name: '501 Shelter', type: 'piped', reliability: 'reliable', offTrail: 0, notes: 'Enclosed shelter with solar shower' },
     { mile: 1207.3, name: 'Port Clinton - Town', type: 'town', reliability: 'reliable', offTrail: 0, notes: 'Small town, limited services' },
     { mile: 1220.0, name: 'Windsor Furnace Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.2, notes: 'Check recent reports' },
-
     // PA/NJ/NY - Mile 1230-1435
     { mile: 1238.0, name: 'Lehigh Gap - Stream', type: 'stream', reliability: 'reliable', offTrail: 0 },
     { mile: 1253.4, name: 'Leroy Smith Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
@@ -176,7 +166,6 @@
     { mile: 1395.2, name: 'Wawayanda Shelter', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1409.6, name: 'Bear Mountain - Facilities', type: 'piped', reliability: 'reliable', offTrail: 0.1, notes: 'Zoo, pool, concessions' },
     { mile: 1433.5, name: 'Arden Valley Road - Stream', type: 'stream', reliability: 'reliable', offTrail: 0 },
-
     // NY/CT/MA - Mile 1435-1600
     { mile: 1446.0, name: 'William Brien Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1460.5, name: 'RPH Shelter', type: 'piped', reliability: 'reliable', offTrail: 0.1, notes: 'Piped spring - excellent' },
@@ -189,7 +178,6 @@
     { mile: 1566.4, name: 'Great Barrington - Access', type: 'town', reliability: 'reliable', offTrail: 2.0, notes: 'Hitch required' },
     { mile: 1579.7, name: 'Upper Goose Pond Cabin', type: 'stream', reliability: 'reliable', offTrail: 0.5, notes: 'Caretaker cabin, pancakes!' },
     { mile: 1595.3, name: 'Dalton - Town', type: 'town', reliability: 'reliable', offTrail: 0, notes: 'Trail goes through town' },
-
     // Vermont - Mile 1600-1775
     { mile: 1610.2, name: 'Cheshire - Town', type: 'town', reliability: 'reliable', offTrail: 0.3 },
     { mile: 1621.5, name: 'Wilbur Clearing Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
@@ -204,7 +192,6 @@
     { mile: 1741.8, name: 'Killington - Access', type: 'town', reliability: 'reliable', offTrail: 0.5, notes: 'Inn at Long Trail' },
     { mile: 1755.0, name: 'Stony Brook Shelter', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
     { mile: 1773.3, name: 'Hanover - Town', type: 'town', reliability: 'reliable', offTrail: 0, notes: 'Dartmouth! Great resupply' },
-
     // New Hampshire - Mile 1773-1912 (WHITE MOUNTAINS!)
     { mile: 1784.0, name: 'Moose Mountain Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.2 },
     { mile: 1797.5, name: 'Hexacuba Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
@@ -222,7 +209,6 @@
     { mile: 1890.0, name: 'Pinkham Notch - AMC', type: 'town', reliability: 'reliable', offTrail: 0, notes: 'Major AMC facility, full services' },
     { mile: 1897.0, name: 'Gorham - Access', type: 'town', reliability: 'reliable', offTrail: 0.5, notes: 'Last major resupply before Maine' },
     { mile: 1905.0, name: 'Gentian Pond Campsite', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
-
     // Maine - Mile 1912-2198 (INCLUDING 100-MILE WILDERNESS!)
     { mile: 1920.4, name: 'Carlo Col Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.2 },
     { mile: 1932.7, name: 'Full Goose Shelter', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
@@ -236,10 +222,9 @@
     { mile: 2032.5, name: 'Bald Mountain Stream', type: 'stream', reliability: 'reliable', offTrail: 0 },
     { mile: 2049.5, name: 'Moxie Bald Lean-to', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
     { mile: 2063.0, name: 'Horseshoe Canyon Lean-to', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
-
     // 100-Mile Wilderness - Mile 2075-2175 (CRITICAL!)
-    { mile: 2075.0, name: 'Leeman Brook Lean-to', type: 'stream', reliability: 'reliable', offTrail: 0.1, notes: '⚠️ ENTERING 100-MILE WILDERNESS' },
-    { mile: 2090.0, name: 'Monson - LAST RESUPPLY', type: 'town', reliability: 'reliable', offTrail: 0.3, notes: '⚠️ LAST RESUPPLY - stock up!' },
+    { mile: 2075.0, name: 'Leeman Brook Lean-to', type: 'stream', reliability: 'reliable', offTrail: 0.1, notes: 'ENTERING 100-MILE WILDERNESS' },
+    { mile: 2090.0, name: 'Monson - LAST RESUPPLY', type: 'town', reliability: 'reliable', offTrail: 0.3, notes: 'LAST RESUPPLY - stock up!' },
     { mile: 2095.0, name: 'Spectacle Pond', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
     { mile: 2105.0, name: 'Little Wilson Falls', type: 'stream', reliability: 'reliable', offTrail: 0, notes: 'Beautiful falls' },
     { mile: 2115.5, name: 'Long Pond Stream Lean-to', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
@@ -249,14 +234,13 @@
     { mile: 2158.5, name: 'White House Landing', type: 'town', reliability: 'reliable', offTrail: 1.0, notes: 'Boat taxi to wilderness lodge - burgers!' },
     { mile: 2168.0, name: 'Nahmakanta Stream Campsite', type: 'stream', reliability: 'reliable', offTrail: 0.1 },
     { mile: 2178.5, name: 'Rainbow Spring Campsite', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
-    { mile: 2186.0, name: 'Hurd Brook Lean-to', type: 'stream', reliability: 'reliable', offTrail: 0.1, notes: '⚠️ Last shelter before Katahdin' },
+    { mile: 2186.0, name: 'Hurd Brook Lean-to', type: 'stream', reliability: 'reliable', offTrail: 0.1, notes: 'Last shelter before Katahdin' },
     { mile: 2192.5, name: 'Katahdin Stream Campground', type: 'piped', reliability: 'reliable', offTrail: 0, notes: 'Ranger station, last water before summit' },
-    { mile: 2198.0, name: 'Katahdin Summit', type: 'none', reliability: 'none', offTrail: 0, notes: '🏔️ NO WATER ON SUMMIT - carry enough!' },
+    { mile: 2198.0, name: 'Katahdin Summit', type: 'none', reliability: 'none', offTrail: 0, notes: 'NO WATER ON SUMMIT - carry enough!' },
   ];
 
   onMount(() => {
     mounted = true;
-    // Load saved settings
     const saved = localStorage.getItem('at-water-settings');
     if (saved) {
       try {
@@ -269,7 +253,6 @@
     }
   });
 
-  // Save settings
   $effect(() => {
     if (mounted) {
       localStorage.setItem('at-water-settings', JSON.stringify({
@@ -278,19 +261,15 @@
     }
   });
 
-  // Current mile from context
   let currentMile = $derived(trailContext.currentMile || 0);
 
-  // Temperature multiplier
   let tempMultiplier = $derived(
     temperatureMode === 'cool' ? 0.8 :
     temperatureMode === 'hot' ? 1.4 : 1.0
   );
 
-  // Adjusted consumption rate
   let adjustedRate = $derived(consumptionRate * tempMultiplier);
 
-  // Find nearby water sources
   let upcomingSources = $derived.by(() => {
     return waterSources
       .filter(s => s.mile > currentMile && s.reliability !== 'none')
@@ -304,27 +283,22 @@
       .reverse();
   });
 
-  // Next reliable source
   let nextReliable = $derived(
     upcomingSources.find(s => s.reliability === 'reliable') || upcomingSources[0]
   );
 
-  // Distance to next source
   let distanceToNext = $derived(
     upcomingSources[0] ? (upcomingSources[0].mile - currentMile).toFixed(1) : 0
   );
 
-  // Water needed to reach next source
   let waterNeededNext = $derived.by(() => {
     if (!upcomingSources[0]) return 0;
     const dist = upcomingSources[0].mile - currentMile;
     return (dist * adjustedRate).toFixed(1);
   });
 
-  // Can reach next source?
   let canReachNext = $derived(parseFloat(currentWater) >= parseFloat(waterNeededNext));
 
-  // Water carry calculator
   let targetMile = $state(null);
 
   let waterForTarget = $derived.by(() => {
@@ -339,14 +313,13 @@
     };
   });
 
-  // Find long water carries ahead
   let longCarries = $derived.by(() => {
     const carries = [];
     for (let i = 0; i < upcomingSources.length - 1; i++) {
       const from = upcomingSources[i];
       const to = upcomingSources[i + 1];
       const distance = to.mile - from.mile;
-      if (distance > 8) { // Flag carries over 8 miles
+      if (distance > 8) {
         carries.push({
           from: from.name,
           fromMile: from.mile,
@@ -360,14 +333,14 @@
     return carries.slice(0, 3);
   });
 
-  // Reliability badge color
+  let waterPercent = $derived(Math.min(100, (currentWater / carryCapacity) * 100));
+
   function reliabilityColor(rel) {
     if (rel === 'reliable') return 'reliable';
     if (rel === 'seasonal') return 'seasonal';
     return 'unreliable';
   }
 
-  // Type icon
   function typeIcon(type) {
     const icons = {
       spring: '💧',
@@ -382,7 +355,6 @@
     return icons[type] || '💧';
   }
 
-  // Water type classification system (green/yellow/red light)
   const waterTypeClassification = {
     green: {
       label: 'Best Water',
@@ -425,16 +397,14 @@
     }
   };
 
-  // Map source types to light classification
   function getWaterLight(type) {
     const greenTypes = ['spring', 'piped', 'stream', 'creek'];
     const yellowTypes = ['river', 'pond', 'town'];
     if (greenTypes.includes(type)) return 'green';
     if (yellowTypes.includes(type)) return 'yellow';
-    return 'green'; // default for unknown
+    return 'green';
   }
 
-  // Questionable Water Protocol
   const questionableProtocol = {
     questions: [
       { q: 'Cold or warm?', bad: 'Warm water = higher contamination risk' },
@@ -452,82 +422,131 @@
     warning: 'This reduces risk — it does not erase it.'
   };
 
-  // Select target source for calculator
   function selectTarget(mile) {
     targetMile = mile;
   }
 </script>
 
 <div class="water-tracker" class:mounted>
-  <!-- Header -->
-  <header class="tracker-header">
-    <div class="header-icon">💧</div>
-    <div class="header-content">
-      <h2>Water Tracker</h2>
-      <p>Plan your water carries</p>
+  <!-- Hero Header -->
+  <header class="hydro-header">
+    <div class="wave-bg">
+      <svg viewBox="0 0 400 80" preserveAspectRatio="none">
+        <path class="wave wave1" d="M0,40 Q50,20 100,40 T200,40 T300,40 T400,40 V80 H0 Z" />
+        <path class="wave wave2" d="M0,50 Q50,30 100,50 T200,50 T300,50 T400,50 V80 H0 Z" />
+      </svg>
     </div>
-    <div class="current-water">
-      <span class="water-amount">{currentWater}L</span>
-      <span class="water-label">carrying</span>
+    <div class="header-content">
+      <div class="header-left">
+        <div class="drop-icon">
+          <svg viewBox="0 0 40 50" width="40" height="50">
+            <path d="M20,2 Q35,20 35,32 A15,15 0 1,1 5,32 Q5,20 20,2" fill="#fff" fill-opacity="0.2" stroke="#fff" stroke-width="2"/>
+            <path d="M12,35 Q15,30 20,35" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>Water Tracker</h2>
+          <p>Hydration & Source Planning</p>
+        </div>
+      </div>
+      <div class="water-gauge">
+        <div class="gauge-container">
+          <div class="gauge-fill" style="height: {waterPercent}%"></div>
+          <div class="gauge-bubbles">
+            <span class="bubble b1"></span>
+            <span class="bubble b2"></span>
+            <span class="bubble b3"></span>
+          </div>
+          <div class="gauge-reading">{currentWater}</div>
+        </div>
+        <span class="gauge-label">LITERS</span>
+      </div>
     </div>
   </header>
 
-  <!-- Current Status Bar -->
+  <!-- Status Bar -->
   <div class="status-bar" class:warning={!canReachNext}>
-    <div class="status-location">
-      <span class="loc-icon">📍</span>
+    <div class="status-loc">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12,2C8.13,2 5,5.13 5,9c0,5.25 7,13 7,13s7-7.75 7-13C19,5.13 15.87,2 12,2zm0,9.5c-1.38,0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5,1.12 2.5,2.5-1.12,2.5-2.5,2.5z"/>
+      </svg>
       <span>Mile {currentMile}</span>
     </div>
+    <div class="status-divider"></div>
     <div class="status-next">
-      <span class="next-label">Next water:</span>
-      <span class="next-distance">{distanceToNext} mi</span>
-      <span class="next-need">({waterNeededNext}L needed)</span>
+      <span class="next-text">Next source in</span>
+      <span class="next-dist">{distanceToNext} mi</span>
+      <span class="next-need">({waterNeededNext}L)</span>
     </div>
     {#if !canReachNext}
-      <div class="status-warning">⚠️ Need more water!</div>
+      <div class="status-alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M1,21h22L12,2 1,21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+        </svg>
+        Low Water
+      </div>
     {/if}
   </div>
 
-  <!-- Section Tabs -->
-  <div class="section-tabs">
-    <button class="stab" class:active={activeSection === 'sources'} onclick={() => activeSection = 'sources'}>
-      <span class="stab-icon">📍</span>
-      <span class="stab-text">Sources</span>
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <button class="tab-btn" class:active={activeSection === 'sources'} onclick={() => activeSection = 'sources'}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      <span>Sources</span>
     </button>
-    <button class="stab" class:active={activeSection === 'types'} onclick={() => activeSection = 'types'}>
-      <span class="stab-icon">🚦</span>
-      <span class="stab-text">Types</span>
+    <button class="tab-btn" class:active={activeSection === 'types'} onclick={() => activeSection = 'types'}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+      <span>Quality</span>
     </button>
-    <button class="stab" class:active={activeSection === 'protocol'} onclick={() => activeSection = 'protocol'}>
-      <span class="stab-icon">⚠️</span>
-      <span class="stab-text">Protocol</span>
+    <button class="tab-btn" class:active={activeSection === 'protocol'} onclick={() => activeSection = 'protocol'}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span>Protocol</span>
     </button>
-  </div>
+  </nav>
 
   {#if activeSection === 'sources'}
-  <!-- Quick Settings -->
-  <div class="settings-bar">
-    <div class="setting-item">
-      <label>Carrying</label>
-      <div class="input-group">
-        <button onclick={() => currentWater = Math.max(0, currentWater - 0.5)}>−</button>
-        <input type="number" bind:value={currentWater} min="0" max="6" step="0.5" />
-        <button onclick={() => currentWater = Math.min(6, currentWater + 0.5)}>+</button>
-        <span class="unit">L</span>
+  <!-- Settings Panel -->
+  <div class="settings-panel">
+    <div class="setting-group">
+      <label class="setting-label">Carrying</label>
+      <div class="stepper">
+        <button class="step-btn" onclick={() => currentWater = Math.max(0, currentWater - 0.5)}>−</button>
+        <input type="number" bind:value={currentWater} min="0" max="6" step="0.5" class="step-input" />
+        <button class="step-btn" onclick={() => currentWater = Math.min(6, currentWater + 0.5)}>+</button>
+        <span class="step-unit">L</span>
       </div>
     </div>
-    <div class="setting-item">
-      <label>Conditions</label>
-      <select bind:value={temperatureMode}>
-        <option value="cool">Cool (−20%)</option>
-        <option value="moderate">Moderate</option>
-        <option value="hot">Hot (+40%)</option>
-      </select>
+    <div class="setting-group">
+      <label class="setting-label">Conditions</label>
+      <div class="temp-btns">
+        <button class="temp-btn" class:active={temperatureMode === 'cool'} onclick={() => temperatureMode = 'cool'}>
+          <span class="temp-icon">❄️</span>
+          <span class="temp-txt">Cool</span>
+        </button>
+        <button class="temp-btn" class:active={temperatureMode === 'moderate'} onclick={() => temperatureMode = 'moderate'}>
+          <span class="temp-icon">☀️</span>
+          <span class="temp-txt">Mod</span>
+        </button>
+        <button class="temp-btn" class:active={temperatureMode === 'hot'} onclick={() => temperatureMode = 'hot'}>
+          <span class="temp-icon">🔥</span>
+          <span class="temp-txt">Hot</span>
+        </button>
+      </div>
     </div>
-    <div class="setting-item">
-      <label>Rate</label>
-      <div class="rate-display">
-        <span class="rate-value">{adjustedRate.toFixed(2)}</span>
+    <div class="setting-group rate-group">
+      <label class="setting-label">Rate</label>
+      <div class="rate-box">
+        <span class="rate-num">{adjustedRate.toFixed(2)}</span>
         <span class="rate-unit">L/mi</span>
       </div>
     </div>
@@ -535,111 +554,135 @@
 
   <!-- Upcoming Sources -->
   <section class="sources-section">
-    <h3 class="section-title">
-      <span class="title-icon">⬆️</span>
-      Upcoming Water Sources
-    </h3>
+    <div class="section-header">
+      <div class="section-icon up">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4,12l1.41,1.41L11,7.83V20h2V7.83l5.58,5.59L20,12l-8-8L4,12z"/>
+        </svg>
+      </div>
+      <h3>Upcoming Sources</h3>
+      <span class="source-count">{upcomingSources.length}</span>
+    </div>
 
-    <div class="sources-list">
+    <div class="source-list">
       {#each upcomingSources as source, i}
         {@const distance = (source.mile - currentMile).toFixed(1)}
         {@const waterNeeded = (distance * adjustedRate).toFixed(1)}
+        {@const light = getWaterLight(source.type)}
         <button
           class="source-card"
           class:selected={targetMile === source.mile}
           onclick={() => selectTarget(source.mile)}
         >
-          <div class="source-main">
-            <div class="source-icon-wrap">
-              <div class="source-icon">{typeIcon(source.type)}</div>
-              <span class="water-light-indicator" class:green={getWaterLight(source.type) === 'green'} class:yellow={getWaterLight(source.type) === 'yellow'}></span>
-            </div>
-            <div class="source-info">
-              <div class="source-name">{source.name}</div>
-              <div class="source-meta">
-                <span class="source-mile">Mile {source.mile}</span>
-                {#if source.offTrail > 0}
-                  <span class="off-trail">+{source.offTrail} mi off trail</span>
-                {/if}
-              </div>
-            </div>
+          <div class="source-icon-box" class:green={light === 'green'} class:yellow={light === 'yellow'}>
+            <span class="src-emoji">{typeIcon(source.type)}</span>
+            <span class="src-light" class:green={light === 'green'} class:yellow={light === 'yellow'}></span>
           </div>
-          <div class="source-right">
-            <div class="source-distance">{distance} mi</div>
-            <div class="source-water">{waterNeeded}L needed</div>
-            <span class="reliability-badge {reliabilityColor(source.reliability)}">
+          <div class="source-info">
+            <div class="source-name">{source.name}</div>
+            <div class="source-meta">
+              <span class="meta-mile">Mile {source.mile}</span>
+              {#if source.offTrail > 0}
+                <span class="meta-detour">+{source.offTrail}mi off</span>
+              {/if}
+            </div>
+            {#if source.notes}
+              <div class="source-note">{source.notes}</div>
+            {/if}
+          </div>
+          <div class="source-stats">
+            <div class="stat-dist">
+              <span class="stat-val">{distance}</span>
+              <span class="stat-unit">mi</span>
+            </div>
+            <div class="stat-water">
+              <span class="stat-val">{waterNeeded}</span>
+              <span class="stat-unit">L</span>
+            </div>
+            <span class="reliability-tag {reliabilityColor(source.reliability)}">
               {source.reliability}
             </span>
           </div>
-          {#if source.notes}
-            <div class="source-notes">{source.notes}</div>
-          {/if}
         </button>
       {/each}
     </div>
   </section>
 
-  <!-- Water Carry Calculator -->
+  <!-- Calculator -->
   {#if waterForTarget}
-    <section class="calculator-section">
-      <h3 class="section-title">
-        <span class="title-icon">🧮</span>
-        Water Carry Calculator
-      </h3>
-      <div class="calc-card" class:danger={!waterForTarget.canCarry}>
-        <div class="calc-target">
-          To reach Mile {targetMile}
+    <section class="calc-section">
+      <div class="section-header">
+        <div class="section-icon calc">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z M13.03,7.06L14.09,6l1.41,1.41 L16.91,6l1.06,1.06l-1.41,1.41l1.41,1.41l-1.06,1.06L15.5,9.53l-1.41,1.41l-1.06-1.06l1.41-1.41L13.03,7.06z M6.25,7.72h5v1.5h-5 V7.72z M11.5,16h-2v2H8v-2H6v-1.5h2v-2h1.5v2h2V16z M18,17.25h-5v-1.5h5V17.25z M18,14.75h-5v-1.5h5V14.75z"/>
+          </svg>
         </div>
-        <div class="calc-stats">
-          <div class="calc-stat">
-            <span class="stat-value">{waterForTarget.distance}</span>
-            <span class="stat-label">miles</span>
+        <h3>Water Calculator</h3>
+      </div>
+      <div class="calc-card" class:danger={!waterForTarget.canCarry}>
+        <div class="calc-target">To Mile {targetMile}</div>
+        <div class="calc-metrics">
+          <div class="calc-metric">
+            <span class="metric-val">{waterForTarget.distance}</span>
+            <span class="metric-label">miles</span>
           </div>
-          <div class="calc-stat primary">
-            <span class="stat-value">{waterForTarget.litersNeeded}</span>
-            <span class="stat-label">liters needed</span>
+          <div class="calc-metric primary">
+            <span class="metric-val">{waterForTarget.litersNeeded}</span>
+            <span class="metric-label">liters</span>
           </div>
-          <div class="calc-stat">
-            <span class="stat-value">{waterForTarget.weight}</span>
-            <span class="stat-label">lbs of water</span>
+          <div class="calc-metric">
+            <span class="metric-val">{waterForTarget.weight}</span>
+            <span class="metric-label">lbs</span>
           </div>
         </div>
         {#if !waterForTarget.canCarry}
-          <div class="calc-warning">
-            ⚠️ Exceeds your {carryCapacity}L carry capacity!
-            Consider stopping at an earlier source.
+          <div class="calc-alert danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M1,21h22L12,2 1,21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            Exceeds {carryCapacity}L capacity — stop earlier
           </div>
         {:else if parseFloat(currentWater) < parseFloat(waterForTarget.litersNeeded)}
-          <div class="calc-info">
-            💡 Fill up to at least {waterForTarget.litersNeeded}L before leaving
+          <div class="calc-alert warning">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9,22H7V9H2V7h7V22z M22,22h-2v-7h-5v-2h7V22z"/>
+            </svg>
+            Fill to {waterForTarget.litersNeeded}L before leaving
           </div>
         {:else}
-          <div class="calc-ok">
-            ✓ You have enough water ({currentWater}L)
+          <div class="calc-alert ok">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9,16.17L4.83,12l-1.42,1.41L9,19 21,7l-1.41-1.41L9,16.17z"/>
+            </svg>
+            Sufficient water ({currentWater}L)
           </div>
         {/if}
       </div>
     </section>
   {/if}
 
-  <!-- Long Carries Warning -->
+  <!-- Long Carries -->
   {#if longCarries.length > 0}
     <section class="warning-section">
-      <h3 class="section-title">
-        <span class="title-icon">⚠️</span>
-        Long Water Carries Ahead
-      </h3>
+      <div class="section-header">
+        <div class="section-icon warn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M1,21h22L12,2 1,21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+          </svg>
+        </div>
+        <h3>Long Carries Ahead</h3>
+      </div>
       <div class="carries-list">
         {#each longCarries as carry}
-          <div class="carry-card">
+          <div class="carry-item">
             <div class="carry-route">
               <span class="carry-from">{carry.from}</span>
               <span class="carry-arrow">→</span>
               <span class="carry-to">{carry.to}</span>
             </div>
-            <div class="carry-stats">
-              <span class="carry-distance">{carry.distance} mi</span>
-              <span class="carry-water">{carry.litersNeeded}L needed</span>
+            <div class="carry-data">
+              <span class="carry-dist">{carry.distance} mi</span>
+              <span class="carry-water">{carry.litersNeeded}L</span>
             </div>
           </div>
         {/each}
@@ -647,28 +690,30 @@
     </section>
   {/if}
 
-  <!-- Previous Sources (for backtracking) -->
+  <!-- Behind You -->
   {#if previousSources.length > 0}
-    <section class="sources-section previous">
-      <h3 class="section-title">
-        <span class="title-icon">⬇️</span>
-        Behind You
-      </h3>
-      <div class="sources-list compact">
+    <section class="sources-section past">
+      <div class="section-header">
+        <div class="section-icon down">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20,12l-1.41-1.41L13,16.17V4h-2v12.17l-5.58-5.59L4,12l8,8L20,12z"/>
+          </svg>
+        </div>
+        <h3>Behind You</h3>
+      </div>
+      <div class="source-list compact">
         {#each previousSources as source}
           {@const distance = (currentMile - source.mile).toFixed(1)}
           <div class="source-card compact">
-            <div class="source-main">
-              <div class="source-icon">{typeIcon(source.type)}</div>
-              <div class="source-info">
-                <div class="source-name">{source.name}</div>
-                <span class="reliability-badge {reliabilityColor(source.reliability)}">
-                  {source.reliability}
-                </span>
-              </div>
+            <div class="source-icon-box">
+              <span class="src-emoji">{typeIcon(source.type)}</span>
             </div>
-            <div class="source-right">
-              <div class="source-distance">{distance} mi back</div>
+            <div class="source-info">
+              <div class="source-name">{source.name}</div>
+              <span class="reliability-tag {reliabilityColor(source.reliability)}">{source.reliability}</span>
+            </div>
+            <div class="source-stats">
+              <span class="stat-back">{distance} mi back</span>
             </div>
           </div>
         {/each}
@@ -676,89 +721,88 @@
     </section>
   {/if}
 
-  <!-- Settings Panel -->
-  <section class="settings-section">
-    <h3 class="section-title">
-      <span class="title-icon">⚙️</span>
-      Your Settings
-    </h3>
+  <!-- Settings -->
+  <section class="advanced-settings">
+    <div class="section-header">
+      <div class="section-icon gear">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.14,12.94c0.04-0.31,0.06-0.63,0.06-0.94c0-0.31-0.02-0.63-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.37,4.82,11.69,4.82,12s0.02,0.63,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+        </svg>
+      </div>
+      <h3>Settings</h3>
+    </div>
     <div class="settings-grid">
       <div class="setting-row">
-        <label>Base Consumption Rate</label>
-        <div class="setting-control">
-          <input
-            type="range"
-            bind:value={consumptionRate}
-            min="0.3"
-            max="1.0"
-            step="0.05"
-          />
-          <span class="setting-value">{consumptionRate} L/mi</span>
+        <label>Base Consumption</label>
+        <div class="slider-wrap">
+          <input type="range" bind:value={consumptionRate} min="0.3" max="1.0" step="0.05" />
+          <span class="slider-val">{consumptionRate} L/mi</span>
         </div>
-        <p class="setting-hint">Typical: 0.4-0.6 L/mi flat, 0.6-0.8 L/mi mountainous</p>
+        <p class="setting-hint">Typical: 0.4-0.6 flat, 0.6-0.8 mountains</p>
       </div>
       <div class="setting-row">
-        <label>Max Carry Capacity</label>
-        <div class="setting-control">
-          <input
-            type="range"
-            bind:value={carryCapacity}
-            min="1"
-            max="6"
-            step="0.5"
-          />
-          <span class="setting-value">{carryCapacity} L ({(carryCapacity * 2.2).toFixed(1)} lbs)</span>
+        <label>Max Capacity</label>
+        <div class="slider-wrap">
+          <input type="range" bind:value={carryCapacity} min="1" max="6" step="0.5" />
+          <span class="slider-val">{carryCapacity}L ({(carryCapacity * 2.2).toFixed(1)} lbs)</span>
         </div>
-        <p class="setting-hint">Most hikers carry 2-4L capacity</p>
+        <p class="setting-hint">Most hikers carry 2-4L</p>
       </div>
     </div>
   </section>
 
   <!-- Tips -->
-  <div class="tips-section">
-    <h4>💡 Water Tips</h4>
-    <ul>
-      <li><strong>1 liter = 2.2 lbs</strong> — Water is your heaviest consumable</li>
-      <li><strong>Camel up</strong> at sources — drink extra before leaving</li>
-      <li><strong>Seasonal sources</strong> may be dry in summer/drought</li>
-      <li><strong>Town water</strong> — Fill up at every opportunity</li>
+  <div class="tips-box">
+    <div class="tips-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9,21c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-1H9V21zM12,2C8.14,2 5,5.14 5,9c0,2.38 1.19,4.47 3,5.74V17c0,0.55 0.45,1 1,1h6c0.55,0 1,-0.45 1,-1v-2.26c1.81,-1.27 3,-3.36 3,-5.74C19,5.14 15.86,2 12,2z"/>
+      </svg>
+      <span>Quick Tips</span>
+    </div>
+    <ul class="tips-list">
+      <li><strong>1L = 2.2 lbs</strong> — heaviest consumable</li>
+      <li><strong>Camel up</strong> — drink extra before leaving sources</li>
+      <li><strong>Seasonal</strong> may be dry in summer</li>
+      <li><strong>Town water</strong> — always fill up</li>
     </ul>
   </div>
   {/if}
 
-  <!-- Water Types Section -->
+  <!-- Water Types Tab -->
   {#if activeSection === 'types'}
   <div class="types-content">
     <div class="types-intro">
-      <p><strong>Not all water is equal.</strong> Even with treatment, some sources are safer than others.</p>
+      <strong>Not all water is equal.</strong> Even with treatment, some sources are safer than others.
     </div>
 
     {#each Object.entries(waterTypeClassification) as [key, classification]}
-      <div class="type-category" style="--type-color: {classification.color}">
+      <div class="type-card" style="--type-color: {classification.color}">
         <div class="type-header">
           <span class="type-light">{classification.icon}</span>
-          <h3 class="type-label">{classification.label}</h3>
+          <div class="type-title">
+            <h4>{classification.label}</h4>
+            <p>{classification.treatment}</p>
+          </div>
         </div>
-        <div class="type-treatment">{classification.treatment}</div>
         <div class="type-list">
           {#each classification.types as type}
             <div class="type-item">
-              <span class="type-name">{type.name}</span>
-              <span class="type-desc">{type.desc}</span>
+              <span class="item-name">{type.name}</span>
+              <span class="item-desc">{type.desc}</span>
             </div>
           {/each}
         </div>
       </div>
     {/each}
 
-    <div class="types-rules">
+    <div class="rules-panel">
       <h4>Water Planning Rules</h4>
-      <div class="rules-grid">
-        <div class="rule-item trust"><span class="rule-icon">✓</span> Creeks = Trust</div>
-        <div class="rule-item verify"><span class="rule-icon">?</span> Springs = Verify</div>
-        <div class="rule-item ignore"><span class="rule-icon">✗</span> Seeps = Ignore</div>
+      <div class="rule-chips">
+        <span class="rule-chip trust">✓ Creeks = Trust</span>
+        <span class="rule-chip verify">? Springs = Verify</span>
+        <span class="rule-chip avoid">✗ Seeps = Ignore</span>
       </div>
-      <ul class="rules-list">
+      <ul class="rule-list">
         <li>Never skip water before a ridge</li>
         <li>Carry extra when shelter water is spring-fed</li>
         <li>Ask: "What's my next guaranteed creek?"</li>
@@ -767,66 +811,81 @@
   </div>
   {/if}
 
-  <!-- Questionable Water Protocol -->
+  <!-- Protocol Tab -->
   {#if activeSection === 'protocol'}
   <div class="protocol-content">
-    <div class="protocol-intro">
-      <div class="protocol-icon">⚠️</div>
-      <div class="protocol-text">
-        <h3>When You Hesitate at a Source</h3>
+    <div class="protocol-banner">
+      <div class="banner-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M1,21h22L12,2 1,21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+        </svg>
+      </div>
+      <div class="banner-text">
+        <h3>Questionable Water Protocol</h3>
         <p>If any answer is wrong, treatment alone is not enough.</p>
       </div>
     </div>
 
-    <div class="protocol-questions">
+    <div class="question-section">
       <h4>Ask These Questions</h4>
       {#each questionableProtocol.questions as item, i}
-        <div class="question-item">
-          <div class="question-number">{i + 1}</div>
-          <div class="question-content">
-            <div class="question-text">{item.q}</div>
-            <div class="question-bad">{item.bad}</div>
+        <div class="question-row">
+          <span class="q-num">{i + 1}</span>
+          <div class="q-content">
+            <span class="q-text">{item.q}</span>
+            <span class="q-bad">{item.bad}</span>
           </div>
         </div>
       {/each}
     </div>
 
-    <div class="protocol-forced">
-      <h4>If Forced to Use Questionable Water</h4>
+    <div class="forced-section">
+      <h4>If Forced to Use</h4>
       <div class="forced-steps">
         {#each questionableProtocol.ifForced as step, i}
           <div class="forced-step">
-            <span class="step-number">{i + 1}</span>
-            <span class="step-text">{step}</span>
+            <span class="step-num">{i + 1}</span>
+            <span class="step-txt">{step}</span>
           </div>
         {/each}
       </div>
-      <div class="protocol-warning">
-        <span class="warning-icon">⚠️</span>
-        <span>{questionableProtocol.warning}</span>
+      <div class="forced-warning">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M1,21h22L12,2 1,21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+        </svg>
+        {questionableProtocol.warning}
       </div>
     </div>
 
-    <div class="protocol-visual">
-      <h4>Visual Red Flags — Skip or Move Upstream</h4>
-      <div class="red-flags">
-        <span class="flag">Algae/green film</span>
-        <span class="flag">Strong odor</span>
-        <span class="flag">Heavy animal activity</span>
-        <span class="flag">Flood runoff after rain</span>
+    <div class="red-flags-section">
+      <h4>Visual Red Flags</h4>
+      <div class="flags-grid">
+        <span class="flag-chip">Algae/green film</span>
+        <span class="flag-chip">Strong odor</span>
+        <span class="flag-chip">Heavy animal activity</span>
+        <span class="flag-chip">Flood runoff</span>
       </div>
     </div>
   </div>
   {/if}
+
+  <!-- Guide Link -->
+  <a href="/guide/05-water-treatment-system" class="guide-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+    Water Treatment Guide
+  </a>
 </div>
 
 <style>
   .water-tracker {
-    background: var(--card, #fff);
+    background: var(--bg, #faf9f6);
+    border: 2px solid var(--border);
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    border: 1px solid var(--border);
     overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     opacity: 0;
     transform: translateY(10px);
     transition: all 0.5s ease;
@@ -838,55 +897,162 @@
   }
 
   /* Header */
-  .tracker-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  .hydro-header {
+    position: relative;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%);
     padding: 1.5rem;
-    background: linear-gradient(135deg, #0ea5e9, #0284c7);
-    color: #fff;
+    overflow: hidden;
   }
 
-  .header-icon {
-    font-size: 2rem;
+  .wave-bg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    overflow: hidden;
+  }
+
+  .wave-bg svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .wave {
+    fill: rgba(255,255,255,0.1);
+  }
+
+  .wave1 {
+    animation: wave1 8s ease-in-out infinite;
+  }
+
+  .wave2 {
+    animation: wave2 6s ease-in-out infinite;
+    animation-delay: -2s;
+  }
+
+  @keyframes wave1 {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-20px); }
+  }
+
+  @keyframes wave2 {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(20px); }
   }
 
   .header-content {
-    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    z-index: 1;
   }
 
-  .header-content h2 {
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .drop-icon {
+    animation: dropBounce 3s ease-in-out infinite;
+  }
+
+  @keyframes dropBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
+  .header-text h2 {
     margin: 0;
     font-family: Oswald, sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
-  .header-content p {
+  .header-text p {
     margin: 0.25rem 0 0;
-    font-size: 0.9rem;
-    opacity: 0.9;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.8);
   }
 
-  .current-water {
-    text-align: center;
-    background: rgba(255,255,255,0.2);
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
+  .water-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
   }
 
-  .water-amount {
-    display: block;
+  .gauge-container {
+    position: relative;
+    width: 50px;
+    height: 70px;
+    background: rgba(0,0,0,0.3);
+    border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 0 0 25px 25px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    overflow: hidden;
+  }
+
+  .gauge-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, #38bdf8, #7dd3fc);
+    transition: height 0.4s ease;
+  }
+
+  .gauge-bubbles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .bubble {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+    animation: bubble 3s ease-in-out infinite;
+  }
+
+  .b1 { left: 10px; animation-delay: 0s; }
+  .b2 { left: 25px; animation-delay: 1s; }
+  .b3 { left: 35px; animation-delay: 2s; }
+
+  @keyframes bubble {
+    0%, 100% { bottom: 5px; opacity: 0; }
+    50% { bottom: 50px; opacity: 0.6; }
+  }
+
+  .gauge-reading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: Oswald, sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    z-index: 1;
   }
 
-  .water-label {
-    font-size: 0.7rem;
+  .gauge-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.8;
+    letter-spacing: 0.1em;
   }
 
   /* Status Bar */
@@ -894,22 +1060,37 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
-    padding: 0.75rem 1.5rem;
-    background: #f0f9ff;
-    border-bottom: 1px solid var(--border);
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: #e0f2fe;
+    border-bottom: 2px solid #bae6fd;
   }
 
   .status-bar.warning {
     background: #fef2f2;
+    border-color: #fca5a5;
   }
 
-  .status-location {
+  .status-loc {
     display: flex;
     align-items: center;
     gap: 0.35rem;
     font-weight: 600;
-    color: var(--ink);
+    color: #0369a1;
+  }
+
+  .status-bar.warning .status-loc {
+    color: #b91c1c;
+  }
+
+  .status-divider {
+    width: 1px;
+    height: 20px;
+    background: #bae6fd;
+  }
+
+  .status-bar.warning .status-divider {
+    background: #fca5a5;
   }
 
   .status-next {
@@ -919,13 +1100,19 @@
     font-size: 0.9rem;
   }
 
-  .next-label {
+  .next-text {
     color: var(--muted);
   }
 
-  .next-distance {
-    font-weight: 600;
+  .next-dist {
+    font-weight: 700;
     color: #0284c7;
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+  }
+
+  .status-bar.warning .next-dist {
+    color: #dc2626;
   }
 
   .next-need {
@@ -933,98 +1120,198 @@
     font-size: 0.85rem;
   }
 
-  .status-warning {
-    color: #dc2626;
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
-
-  /* Settings Bar */
-  .settings-bar {
+  .status-alert {
     display: flex;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    padding: 0.35rem 0.75rem;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 20px;
+    animation: pulse 2s infinite;
   }
 
-  .setting-item {
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Tabs */
+  .tab-nav {
+    display: flex;
+    background: #f0f9ff;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--muted);
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover {
+    background: rgba(2, 132, 199, 0.05);
+    color: var(--ink);
+  }
+
+  .tab-btn.active {
+    color: #0284c7;
+    border-bottom-color: #0284c7;
+    background: rgba(2, 132, 199, 0.1);
+  }
+
+  /* Settings Panel */
+  .settings-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .setting-group {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
   }
 
-  .setting-item label {
-    font-size: 0.7rem;
-    font-weight: 600;
+  .setting-label {
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--muted);
   }
 
-  .input-group {
+  .stepper {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 0.25rem;
   }
 
-  .input-group button {
+  .step-btn {
     width: 28px;
     height: 28px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    color: var(--pine);
-  }
-
-  .input-group button:hover {
-    background: var(--alpine);
-    color: #fff;
-    border-color: var(--alpine);
-  }
-
-  .input-group input {
-    width: 50px;
-    padding: 0.35rem;
     border: 1px solid var(--border);
     border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0284c7;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .step-btn:hover {
+    background: #0284c7;
+    color: #fff;
+    border-color: #0284c7;
+  }
+
+  .step-input {
+    width: 45px;
+    padding: 0.25rem;
+    border: none;
+    background: transparent;
     text-align: center;
     font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
   }
 
-  .input-group .unit {
-    font-size: 0.85rem;
+  .step-unit {
+    font-size: 0.8rem;
     color: var(--muted);
-    margin-left: 0.25rem;
+    margin-right: 0.25rem;
   }
 
-  .settings-bar select {
+  .temp-btns {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .temp-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
     padding: 0.4rem 0.6rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.85rem;
     background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
   }
 
-  .rate-display {
+  .temp-btn:hover {
+    border-color: #0284c7;
+  }
+
+  .temp-btn.active {
+    background: #e0f2fe;
+    border-color: #0284c7;
+  }
+
+  .temp-icon {
+    font-size: 1rem;
+  }
+
+  .temp-txt {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .temp-btn.active .temp-txt {
+    color: #0284c7;
+  }
+
+  .rate-group {
+    margin-left: auto;
+  }
+
+  .rate-box {
     display: flex;
     align-items: baseline;
     gap: 0.25rem;
-    padding: 0.35rem 0.6rem;
-    background: #e0f2fe;
-    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+    border: 2px solid #7dd3fc;
+    border-radius: 8px;
   }
 
-  .rate-value {
+  .rate-num {
     font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #0284c7;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0369a1;
   }
 
   .rate-unit {
@@ -1034,33 +1321,73 @@
 
   /* Sections */
   section {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.25rem;
+    border-bottom: 2px solid var(--border);
   }
 
-  section:last-of-type {
-    border-bottom: none;
-  }
-
-  .section-title {
+  .section-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin: 0 0 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+  }
+
+  .section-icon.up {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .section-icon.down {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  .section-icon.calc {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  .section-icon.warn {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .section-icon.gear {
+    background: #f3f4f6;
+    color: #4b5563;
+  }
+
+  .section-header h3 {
+    margin: 0;
     font-family: Oswald, sans-serif;
     font-size: 1rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     color: var(--pine);
   }
 
-  .title-icon {
-    font-size: 1.1rem;
+  .source-count {
+    margin-left: auto;
+    padding: 0.2rem 0.5rem;
+    background: var(--alpine);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 10px;
   }
 
   /* Source Cards */
-  .sources-list {
+  .source-list {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -1068,12 +1395,11 @@
 
   .source-card {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
+    align-items: flex-start;
+    gap: 0.75rem;
     padding: 1rem;
     background: #fff;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
@@ -1089,51 +1415,68 @@
   .source-card.selected {
     border-color: #0284c7;
     background: #e0f2fe;
-    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
   }
 
-  .source-main {
+  .source-card.compact {
+    padding: 0.75rem;
+  }
+
+  .source-icon-box {
+    position: relative;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex: 1;
-    min-width: 200px;
+    justify-content: center;
+    background: #f0f9ff;
+    border: 2px solid #bae6fd;
+    border-radius: 10px;
+    flex-shrink: 0;
   }
 
-  .source-icon-wrap {
-    position: relative;
+  .source-icon-box.green {
+    background: #dcfce7;
+    border-color: #86efac;
   }
 
-  .source-icon {
-    font-size: 1.5rem;
+  .source-icon-box.yellow {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .water-light-indicator {
+  .src-emoji {
+    font-size: 1.25rem;
+  }
+
+  .src-light {
     position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 10px;
-    height: 10px;
+    bottom: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     border: 2px solid #fff;
   }
 
-  .water-light-indicator.green {
-    background: #16a34a;
+  .src-light.green {
+    background: #22c55e;
   }
 
-  .water-light-indicator.yellow {
-    background: #ca8a04;
+  .src-light.yellow {
+    background: #f59e0b;
   }
 
   .source-info {
     flex: 1;
+    min-width: 0;
   }
 
   .source-name {
     font-weight: 600;
     color: var(--ink);
     font-size: 0.95rem;
+    line-height: 1.3;
   }
 
   .source-meta {
@@ -1145,110 +1488,119 @@
     color: var(--muted);
   }
 
-  .off-trail {
+  .meta-detour {
     color: #ea580c;
     font-weight: 500;
   }
 
-  .source-right {
-    text-align: right;
+  .source-note {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
   }
 
-  .source-distance {
+  .source-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .stat-dist, .stat-water {
+    display: flex;
+    align-items: baseline;
+    gap: 0.15rem;
+  }
+
+  .stat-dist .stat-val {
     font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-size: 1.2rem;
+    font-weight: 700;
     color: #0284c7;
   }
 
-  .source-water {
-    font-size: 0.8rem;
+  .stat-water .stat-val {
+    font-family: Oswald, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
     color: var(--muted);
   }
 
-  .reliability-badge {
-    display: inline-block;
-    padding: 0.2rem 0.5rem;
-    border-radius: 20px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin-top: 0.35rem;
+  .stat-unit {
+    font-size: 0.7rem;
+    color: var(--muted);
   }
 
-  .reliability-badge.reliable {
+  .stat-back {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .reliability-tag {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-radius: 4px;
+  }
+
+  .reliability-tag.reliable {
     background: #dcfce7;
     color: #166534;
   }
 
-  .reliability-badge.seasonal {
+  .reliability-tag.seasonal {
     background: #fef3c7;
     color: #92400e;
   }
 
-  .reliability-badge.unreliable {
+  .reliability-tag.unreliable {
     background: #fee2e2;
     color: #991b1b;
   }
 
-  .source-notes {
-    width: 100%;
-    font-size: 0.8rem;
-    color: var(--muted);
-    font-style: italic;
-    padding-top: 0.5rem;
-    border-top: 1px dashed var(--border);
-    margin-top: 0.5rem;
-  }
-
-  /* Compact source cards */
-  .sources-list.compact .source-card {
-    padding: 0.75rem;
-  }
-
-  .source-card.compact .source-icon {
-    font-size: 1.2rem;
-  }
-
-  .previous .section-title {
-    color: var(--muted);
-  }
-
   /* Calculator */
   .calc-card {
-    background: #f0f9ff;
-    border: 1px solid #bae6fd;
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 2px solid #7dd3fc;
     border-radius: 12px;
     padding: 1.25rem;
   }
 
   .calc-card.danger {
-    background: #fef2f2;
-    border-color: #fca5a5;
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border-color: #f87171;
   }
 
   .calc-target {
+    text-align: center;
     font-family: Oswald, sans-serif;
     font-size: 1rem;
     font-weight: 600;
     color: #0369a1;
     margin-bottom: 1rem;
-    text-align: center;
   }
 
-  .calc-stats {
+  .calc-card.danger .calc-target {
+    color: #b91c1c;
+  }
+
+  .calc-metrics {
     display: flex;
     justify-content: center;
     gap: 2rem;
     margin-bottom: 1rem;
   }
 
-  .calc-stat {
+  .calc-metric {
     text-align: center;
   }
 
-  .calc-stat .stat-value {
+  .metric-val {
     display: block;
     font-family: Oswald, sans-serif;
     font-size: 1.75rem;
@@ -1257,36 +1609,45 @@
     line-height: 1;
   }
 
-  .calc-stat.primary .stat-value {
+  .calc-metric.primary .metric-val {
+    font-size: 2.25rem;
     color: #0284c7;
-    font-size: 2rem;
   }
 
-  .calc-stat .stat-label {
-    font-size: 0.7rem;
-    color: var(--muted);
+  .calc-card.danger .calc-metric.primary .metric-val {
+    color: #dc2626;
+  }
+
+  .metric-label {
+    font-size: 0.65rem;
+    font-weight: 600;
     text-transform: uppercase;
+    color: var(--muted);
     letter-spacing: 0.03em;
   }
 
-  .calc-warning, .calc-info, .calc-ok {
-    text-align: center;
+  .calc-alert {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     padding: 0.75rem;
     border-radius: 8px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
   }
 
-  .calc-warning {
+  .calc-alert.danger {
     background: #fee2e2;
     color: #991b1b;
   }
 
-  .calc-info {
+  .calc-alert.warning {
     background: #fef3c7;
     color: #92400e;
   }
 
-  .calc-ok {
+  .calc-alert.ok {
     background: #dcfce7;
     color: #166534;
   }
@@ -1295,24 +1656,24 @@
   .carries-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
-  .carry-card {
+  .carry-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
-    background: #fef3c7;
-    border: 1px solid #fbbf24;
-    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(90deg, #fef3c7, #fef9c3);
+    border: 2px solid #fcd34d;
+    border-radius: 8px;
   }
 
   .carry-route {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   .carry-from, .carry-to {
@@ -1321,25 +1682,39 @@
   }
 
   .carry-arrow {
-    color: var(--muted);
+    color: #d97706;
   }
 
-  .carry-stats {
+  .carry-data {
     display: flex;
     gap: 1rem;
-    font-size: 0.85rem;
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
   }
 
-  .carry-distance {
-    font-weight: 600;
-    color: #92400e;
+  .carry-dist {
+    color: #b45309;
   }
 
   .carry-water {
-    color: var(--muted);
+    color: #0369a1;
   }
 
-  /* Settings Section */
+  /* Past Sources */
+  .sources-section.past {
+    background: #f9fafb;
+  }
+
+  .sources-section.past .source-card {
+    background: #fff;
+    opacity: 0.8;
+  }
+
+  /* Advanced Settings */
+  .advanced-settings {
+    background: #f9fafb;
+  }
+
   .settings-grid {
     display: flex;
     flex-direction: column;
@@ -1350,204 +1725,99 @@
     display: block;
     font-weight: 600;
     color: var(--ink);
+    font-size: 0.9rem;
     margin-bottom: 0.5rem;
   }
 
-  .setting-control {
+  .slider-wrap {
     display: flex;
     align-items: center;
     gap: 1rem;
   }
 
-  .setting-control input[type="range"] {
+  .slider-wrap input[type="range"] {
     flex: 1;
-    height: 6px;
+    height: 8px;
     -webkit-appearance: none;
-    background: #e5e7eb;
-    border-radius: 3px;
+    background: linear-gradient(to right, #bae6fd, #0284c7);
+    border-radius: 4px;
   }
 
-  .setting-control input[type="range"]::-webkit-slider-thumb {
+  .slider-wrap input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     background: #0284c7;
+    border: 3px solid #fff;
     border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     cursor: pointer;
   }
 
-  .setting-value {
-    min-width: 100px;
+  .slider-val {
+    min-width: 90px;
     font-family: Oswald, sans-serif;
     font-weight: 600;
     color: #0284c7;
   }
 
   .setting-hint {
-    margin: 0.5rem 0 0;
-    font-size: 0.8rem;
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
     color: var(--muted);
   }
 
   /* Tips */
-  .tips-section {
-    padding: 1.25rem 1.5rem;
+  .tips-box {
+    padding: 1rem 1.25rem;
     background: #f0f9ff;
-    border-top: 1px solid var(--border);
+    border-top: 2px solid #bae6fd;
   }
 
-  .tips-section h4 {
-    margin: 0 0 0.75rem;
+  .tips-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
+    font-weight: 600;
     color: #0369a1;
   }
 
-  .tips-section ul {
+  .tips-list {
     margin: 0;
     padding-left: 1.25rem;
     font-size: 0.85rem;
     color: var(--muted);
   }
 
-  .tips-section li {
+  .tips-list li {
     margin-bottom: 0.35rem;
   }
 
-  .tips-section strong {
+  .tips-list strong {
     color: var(--ink);
-  }
-
-  /* Responsive */
-  @media (max-width: 640px) {
-    .tracker-header {
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      padding: 1.25rem;
-    }
-
-    .header-content h2 {
-      font-size: 1.25rem;
-    }
-
-    .status-bar {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-
-    .settings-bar {
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .setting-item {
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-    }
-
-    .source-card {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .source-right {
-      text-align: left;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .calc-stats {
-      gap: 1rem;
-    }
-
-    .calc-stat .stat-value {
-      font-size: 1.5rem;
-    }
-
-    .calc-stat.primary .stat-value {
-      font-size: 1.75rem;
-    }
-
-    .carry-card {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-  }
-
-  /* Section Tabs */
-  .section-tabs {
-    display: flex;
-    gap: 0;
-    padding: 0;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .stab {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    padding: 0.9rem 0.5rem;
-    background: none;
-    border: none;
-    border-bottom: 3px solid transparent;
-    color: var(--muted);
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .stab:hover {
-    background: rgba(14, 165, 233, 0.05);
-    color: var(--ink);
-  }
-
-  .stab.active {
-    color: #0284c7;
-    border-bottom-color: #0284c7;
-    background: rgba(14, 165, 233, 0.08);
-  }
-
-  .stab-icon {
-    font-size: 1rem;
-  }
-
-  .stab-text {
-    font-family: Oswald, sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.02em;
   }
 
   /* Types Content */
   .types-content {
-    padding: 1.5rem;
+    padding: 1.25rem;
   }
 
   .types-intro {
     padding: 1rem;
-    background: #f0f9ff;
+    background: #e0f2fe;
+    border: 2px solid #7dd3fc;
     border-radius: 10px;
-    margin-bottom: 1.5rem;
-    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
     color: var(--ink);
   }
 
-  .types-intro p {
-    margin: 0;
-  }
-
-  .type-category {
+  .type-card {
     background: #fff;
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--type-color);
+    border: 2px solid var(--border);
+    border-left: 5px solid var(--type-color);
     border-radius: 10px;
     margin-bottom: 1rem;
     overflow: hidden;
@@ -1555,17 +1825,17 @@
 
   .type-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.75rem;
     padding: 1rem;
     background: linear-gradient(90deg, rgba(0,0,0,0.02), transparent);
   }
 
   .type-light {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
 
-  .type-label {
+  .type-title h4 {
     margin: 0;
     font-family: Oswald, sans-serif;
     font-size: 1.1rem;
@@ -1573,16 +1843,16 @@
     color: var(--type-color);
   }
 
-  .type-treatment {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
+  .type-title p {
+    margin: 0.25rem 0 0;
+    font-size: 0.8rem;
     color: var(--muted);
     font-style: italic;
-    border-bottom: 1px solid var(--border);
   }
 
   .type-list {
     padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
   }
 
   .type-item {
@@ -1596,169 +1866,163 @@
     border-bottom: none;
   }
 
-  .type-name {
+  .item-name {
     font-weight: 600;
     color: var(--ink);
     font-size: 0.9rem;
   }
 
-  .type-desc {
-    font-size: 0.8rem;
+  .item-desc {
+    font-size: 0.75rem;
     color: var(--muted);
   }
 
-  .types-rules {
+  .rules-panel {
     background: #fefce8;
-    border: 1px solid #fbbf24;
+    border: 2px solid #fbbf24;
     border-radius: 10px;
     padding: 1.25rem;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
   }
 
-  .types-rules h4 {
+  .rules-panel h4 {
     margin: 0 0 1rem;
     font-family: Oswald, sans-serif;
     font-size: 1rem;
     color: #92400e;
   }
 
-  .rules-grid {
+  .rule-chips {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 1rem;
-    flex-wrap: wrap;
   }
 
-  .rule-item {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
+  .rule-chip {
     padding: 0.5rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
+    border-radius: 20px;
   }
 
-  .rule-item.trust {
+  .rule-chip.trust {
     background: #dcfce7;
     color: #166534;
   }
 
-  .rule-item.verify {
+  .rule-chip.verify {
     background: #fef3c7;
     color: #92400e;
   }
 
-  .rule-item.ignore {
+  .rule-chip.avoid {
     background: #fee2e2;
     color: #991b1b;
   }
 
-  .rule-icon {
-    font-size: 0.9rem;
-  }
-
-  .rules-list {
+  .rule-list {
     margin: 0;
     padding-left: 1.25rem;
     font-size: 0.85rem;
     color: var(--ink);
   }
 
-  .rules-list li {
+  .rule-list li {
     margin-bottom: 0.35rem;
   }
 
   /* Protocol Content */
   .protocol-content {
-    padding: 1.5rem;
+    padding: 1.25rem;
   }
 
-  .protocol-intro {
+  .protocol-banner {
     display: flex;
     align-items: flex-start;
     gap: 1rem;
     padding: 1.25rem;
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border: 2px solid #f87171;
     border-radius: 12px;
     margin-bottom: 1.5rem;
   }
 
-  .protocol-icon {
-    font-size: 2rem;
+  .banner-icon {
+    color: #dc2626;
   }
 
-  .protocol-text h3 {
-    margin: 0 0 0.35rem;
+  .banner-text h3 {
+    margin: 0;
     font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     color: #991b1b;
   }
 
-  .protocol-text p {
-    margin: 0;
+  .banner-text p {
+    margin: 0.35rem 0 0;
     font-size: 0.9rem;
     color: #7f1d1d;
   }
 
-  .protocol-questions {
+  .question-section, .forced-section, .red-flags-section {
     margin-bottom: 1.5rem;
   }
 
-  .protocol-questions h4, .protocol-forced h4, .protocol-visual h4 {
+  .question-section h4, .forced-section h4, .red-flags-section h4 {
     margin: 0 0 1rem;
     font-family: Oswald, sans-serif;
     font-size: 1rem;
     color: var(--pine);
   }
 
-  .question-item {
+  .question-row {
     display: flex;
-    gap: 1rem;
-    padding: 1rem;
+    gap: 0.75rem;
+    padding: 0.75rem;
     background: #fff;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 10px;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
-  .question-number {
-    width: 32px;
-    height: 32px;
+  .q-num {
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #0ea5e9;
+    background: #0284c7;
     color: #fff;
-    border-radius: 50%;
     font-family: Oswald, sans-serif;
     font-weight: 700;
+    border-radius: 50%;
     flex-shrink: 0;
   }
 
-  .question-content {
+  .q-content {
     flex: 1;
   }
 
-  .question-text {
+  .q-text {
+    display: block;
     font-weight: 600;
     color: var(--ink);
     font-size: 0.95rem;
-    margin-bottom: 0.25rem;
   }
 
-  .question-bad {
+  .q-bad {
+    display: block;
     font-size: 0.8rem;
-    color: var(--terra);
+    color: #b91c1c;
+    margin-top: 0.2rem;
   }
 
-  .protocol-forced {
+  .forced-section {
     background: #fffbeb;
-    border: 1px solid #fbbf24;
+    border: 2px solid #fbbf24;
     border-radius: 12px;
     padding: 1.25rem;
-    margin-bottom: 1.5rem;
   }
 
   .forced-steps {
@@ -1772,12 +2036,12 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem;
+    padding: 0.6rem;
     background: #fff;
     border-radius: 8px;
   }
 
-  .step-number {
+  .step-num {
     width: 24px;
     height: 24px;
     display: flex;
@@ -1785,18 +2049,18 @@
     justify-content: center;
     background: #f59e0b;
     color: #fff;
-    border-radius: 50%;
     font-size: 0.75rem;
     font-weight: 700;
+    border-radius: 50%;
     flex-shrink: 0;
   }
 
-  .step-text {
+  .step-txt {
     font-size: 0.9rem;
     color: var(--ink);
   }
 
-  .protocol-warning {
+  .forced-warning {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1808,58 +2072,139 @@
     color: #991b1b;
   }
 
-  .protocol-visual {
+  .red-flags-section {
     background: #fff;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
   }
 
-  .red-flags {
+  .flags-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
 
-  .flag {
+  .flag-chip {
     padding: 0.5rem 0.75rem;
     background: #fee2e2;
     color: #991b1b;
-    border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 500;
+    border-radius: 20px;
   }
 
+  /* Guide Link */
+  .guide-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--pine);
+    color: #fff;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .guide-link:hover {
+    background: var(--alpine);
+  }
+
+  /* Responsive */
   @media (max-width: 640px) {
-    .section-tabs {
-      overflow-x: auto;
+    .hydro-header {
+      padding: 1.25rem;
     }
 
-    .stab {
-      padding: 0.75rem 0.5rem;
-      font-size: 0.75rem;
+    .header-left {
+      gap: 0.75rem;
     }
 
-    .stab-icon {
-      font-size: 0.9rem;
+    .header-text h2 {
+      font-size: 1.25rem;
     }
 
-    .protocol-intro {
+    .gauge-container {
+      width: 40px;
+      height: 56px;
+    }
+
+    .gauge-reading {
+      font-size: 1.25rem;
+    }
+
+    .status-bar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .status-divider {
+      display: none;
+    }
+
+    .status-alert {
+      margin-left: 0;
+    }
+
+    .settings-panel {
+      flex-direction: column;
+    }
+
+    .rate-group {
+      margin-left: 0;
+    }
+
+    .source-card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .source-stats {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.5rem;
+      border-top: 1px dashed var(--border);
+      margin-top: 0.5rem;
+    }
+
+    .calc-metrics {
+      gap: 1rem;
+    }
+
+    .metric-val {
+      font-size: 1.5rem;
+    }
+
+    .calc-metric.primary .metric-val {
+      font-size: 1.75rem;
+    }
+
+    .carry-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .protocol-banner {
       flex-direction: column;
       text-align: center;
     }
 
-    .question-item {
+    .question-row {
       flex-direction: column;
       text-align: center;
     }
 
-    .question-number {
+    .q-num {
       margin: 0 auto;
-    }
-
-    .rules-grid {
-      flex-direction: column;
     }
   }
 </style>
