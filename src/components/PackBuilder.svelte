@@ -5,13 +5,10 @@
 
   let { trailContext = {} } = $props();
 
-  // State
   let season = $state('winter');
   let mounted = $state(false);
   let expandedCategory = $state(null);
-  let activeTab = $state('builder'); // 'builder' or 'loadout'
-
-  // Consumables state
+  let activeTab = $state('builder');
   let foodDays = $state(4);
   let waterLiters = $state(2);
   let foodWeightPerDay = $state(1.75);
@@ -41,11 +38,9 @@
   const categories = gearData.categories;
   const WATER_WEIGHT_PER_LITER = 2.2;
 
-  // Get items for current season
   function getSeasonItems(items, currentSeason) {
     const swapGroups = {};
     const result = [];
-
     items.forEach(item => {
       if (item.swapGroup) {
         if (!swapGroups[item.swapGroup]) swapGroups[item.swapGroup] = [];
@@ -54,51 +49,37 @@
         if (item.season === 'all' || item.season === currentSeason) result.push(item);
       }
     });
-
     Object.values(swapGroups).forEach(group => {
       const match = group.find(i => i.season === currentSeason) || group.find(i => i.season === 'all');
       if (match) result.push(match);
     });
-
     return result;
   }
 
-  // Derived values
   let seasonItems = $derived(getSeasonItems(gearData.items, season));
-
-  let baseWeightOz = $derived(
-    seasonItems.filter(item => !item.worn).reduce((sum, item) => sum + item.weight, 0)
-  );
-
-  let wornWeightOz = $derived(
-    seasonItems.filter(item => item.worn).reduce((sum, item) => sum + item.weight, 0)
-  );
-
+  let baseWeightOz = $derived(seasonItems.filter(item => !item.worn).reduce((sum, item) => sum + item.weight, 0));
+  let wornWeightOz = $derived(seasonItems.filter(item => item.worn).reduce((sum, item) => sum + item.weight, 0));
   let baseWeightLbs = $derived(baseWeightOz / 16);
   let wornWeightLbs = $derived(wornWeightOz / 16);
-
-  // Consumables
   let foodWeight = $derived(foodDays * foodWeightPerDay);
   let waterWeight = $derived(waterLiters * WATER_WEIGHT_PER_LITER);
   let totalPackWeight = $derived(baseWeightLbs + foodWeight + waterWeight);
 
-  // Weight classes
   let baseWeightClass = $derived(
     baseWeightLbs < 10 ? { label: 'Ultralight', color: '#22c55e' }
-    : baseWeightLbs < 15 ? { label: 'Lightweight', color: 'var(--alpine)' }
-    : baseWeightLbs < 20 ? { label: 'Traditional', color: 'var(--terra)' }
-    : { label: 'Heavy', color: '#dc2626' }
+    : baseWeightLbs < 15 ? { label: 'Lightweight', color: '#84cc16' }
+    : baseWeightLbs < 20 ? { label: 'Traditional', color: '#eab308' }
+    : { label: 'Heavy', color: '#ef4444' }
   );
 
   let totalWeightClass = $derived.by(() => {
-    if (totalPackWeight <= 20) return { label: 'Ultralight', color: '#16a34a', icon: '🪶', desc: 'Exceptional. Your joints will thank you.' };
-    if (totalPackWeight <= 28) return { label: 'Light', color: '#22c55e', icon: '✓', desc: 'Great weight. Sustainable for big miles.' };
-    if (totalPackWeight <= 35) return { label: 'Moderate', color: '#ca8a04', icon: '⚖️', desc: 'Average pack. Watch knees on descents.' };
-    if (totalPackWeight <= 42) return { label: 'Heavy', color: '#ea580c', icon: '⚠️', desc: 'Above average. Consider reducing.' };
-    return { label: 'Very Heavy', color: '#dc2626', icon: '🚨', desc: 'Risk of injury over time.' };
+    if (totalPackWeight <= 20) return { label: 'ULTRALIGHT', color: '#22c55e', icon: '🪶', desc: 'Exceptional. Your joints will thank you.' };
+    if (totalPackWeight <= 28) return { label: 'LIGHT', color: '#84cc16', icon: '✓', desc: 'Great weight. Sustainable for big miles.' };
+    if (totalPackWeight <= 35) return { label: 'MODERATE', color: '#eab308', icon: '⚖️', desc: 'Average pack. Watch knees on descents.' };
+    if (totalPackWeight <= 42) return { label: 'HEAVY', color: '#f97316', icon: '⚠️', desc: 'Above average. Consider reducing.' };
+    return { label: 'VERY HEAVY', color: '#ef4444', icon: '🚨', desc: 'Risk of injury over time.' };
   });
 
-  // Joint stress
   let jointStress = $derived.by(() => {
     const overBase = Math.max(0, totalPackWeight - 20);
     const stressLevel = Math.min(100, (overBase / 30) * 100);
@@ -108,14 +89,12 @@
     };
   });
 
-  // Weight percentages
   let weightPercents = $derived({
     base: (baseWeightLbs / totalPackWeight) * 100,
     food: (foodWeight / totalPackWeight) * 100,
     water: (waterWeight / totalPackWeight) * 100,
   });
 
-  // Category breakdown
   let itemsByCategory = $derived(
     seasonItems.reduce((acc, item) => {
       if (!acc[item.category]) acc[item.category] = [];
@@ -140,11 +119,8 @@
 
   let maxCategoryWeight = $derived(Math.max(...categoryWeights.map(c => c.weight), 1));
 
-  // Big 3
   const big3Categories = ['shelter', 'sleep', 'pack'];
-  let big3Weight = $derived(
-    categoryWeights.filter(c => big3Categories.includes(c.id)).reduce((sum, c) => sum + c.weight, 0)
-  );
+  let big3Weight = $derived(categoryWeights.filter(c => big3Categories.includes(c.id)).reduce((sum, c) => sum + c.weight, 0));
   let big3WeightLbs = $derived(big3Weight / 16);
   let big3Breakdown = $derived(
     big3Categories.map(catId => {
@@ -154,18 +130,16 @@
   );
   let big3Percent = $derived(baseWeightOz > 0 ? (big3Weight / baseWeightOz) * 100 : 0);
 
-  // Weight tips
   let weightTips = $derived.by(() => {
     const tips = [];
     const shelterCat = categoryWeights.find(c => c.id === 'shelter');
     const sleepCat = categoryWeights.find(c => c.id === 'sleep');
     const packCat = categoryWeights.find(c => c.id === 'pack');
-
-    if (shelterCat && shelterCat.weight > 48) tips.push({ icon: '🏕️', text: 'Shelter over 3 lbs—consider a tarp/hammock setup or DCF tent' });
-    if (sleepCat && sleepCat.weight > 56) tips.push({ icon: '😴', text: 'Sleep system over 3.5 lbs—a quilt + inflatable pad can save weight' });
-    if (packCat && packCat.weight > 48) tips.push({ icon: '🎒', text: 'Pack over 3 lbs—frameless packs work once base weight drops below 15 lbs' });
-    if (big3WeightLbs > 12) tips.push({ icon: '⚖️', text: 'Big 3 total over 12 lbs—focus here for biggest weight savings' });
-    if (baseWeightLbs < 10 && tips.length === 0) tips.push({ icon: '🏆', text: 'Ultralight achieved! Focus on durability and comfort now' });
+    if (shelterCat && shelterCat.weight > 48) tips.push({ icon: '🏕️', text: 'Shelter over 3 lbs—consider a tarp/hammock or DCF tent' });
+    if (sleepCat && sleepCat.weight > 56) tips.push({ icon: '😴', text: 'Sleep system over 3.5 lbs—quilt + inflatable pad saves weight' });
+    if (packCat && packCat.weight > 48) tips.push({ icon: '🎒', text: 'Pack over 3 lbs—frameless packs work under 15 lb base' });
+    if (big3WeightLbs > 12) tips.push({ icon: '⚖️', text: 'Big 3 over 12 lbs—focus here for biggest savings' });
+    if (baseWeightLbs < 10 && tips.length === 0) tips.push({ icon: '🏆', text: 'Ultralight achieved! Focus on durability now' });
     if (tips.length === 0 && baseWeightLbs < 15) tips.push({ icon: '✅', text: 'Solid lightweight setup—enjoy the miles!' });
     return tips;
   });
@@ -182,11 +156,19 @@
 
 <div class="pack-builder" class:mounted>
   <!-- Header -->
-  <header class="builder-header">
-    <div class="header-inner">
-      <span class="header-badge">GEAR SYSTEM</span>
-      <h2 class="header-title">Pack Builder</h2>
-      <p class="header-sub">Build your kit, know your weight</p>
+  <header class="calc-header">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17 6V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-3zM9 4h6v2H9V4zm11 15H4V8h3v2h2V8h6v2h2V8h3v11z"/>
+      </svg>
+    </div>
+    <div class="header-content">
+      <h2>LOAD MASTER</h2>
+      <p>Build your kit, know your weight</p>
+    </div>
+    <div class="header-stat">
+      <span class="stat-val">{seasonItems.length}</span>
+      <span class="stat-lbl">items</span>
     </div>
   </header>
 
@@ -194,124 +176,136 @@
   <div class="tab-nav">
     <button class="tab-btn" class:active={activeTab === 'builder'} onclick={() => activeTab = 'builder'}>
       <span class="tab-icon">🎒</span>
-      <span>Loadout</span>
+      Loadout
     </button>
     <button class="tab-btn" class:active={activeTab === 'loadout'} onclick={() => activeTab = 'loadout'}>
       <span class="tab-icon">⚖️</span>
-      <span>Weight</span>
+      Weight
     </button>
   </div>
 
-  <!-- Main Weight Display -->
-  <div class="weight-hero">
-    <div class="weight-main">
-      <span class="weight-num" style="color: {totalWeightClass.color}">{totalPackWeight.toFixed(1)}</span>
-      <span class="weight-unit">lbs</span>
+  <!-- Weight Hero -->
+  <section class="weight-hero">
+    <div class="weight-display">
+      <div class="weight-ring" style="--ring-color: {totalWeightClass.color}">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" class="ring-bg"/>
+          <circle cx="60" cy="60" r="52" class="ring-fill" style="stroke-dasharray: {Math.min(100, totalPackWeight / 50 * 100) * 3.267} 326.7"/>
+        </svg>
+        <div class="weight-center">
+          <span class="weight-num">{totalPackWeight.toFixed(1)}</span>
+          <span class="weight-unit">lbs</span>
+        </div>
+      </div>
+      <div class="weight-meta">
+        <div class="weight-class" style="background: {totalWeightClass.color}">
+          <span class="class-icon">{totalWeightClass.icon}</span>
+          <span class="class-label">{totalWeightClass.label}</span>
+        </div>
+        <p class="weight-desc">{totalWeightClass.desc}</p>
+      </div>
     </div>
-    <div class="weight-class" style="background: {totalWeightClass.color}15; color: {totalWeightClass.color}">
-      {totalWeightClass.icon} {totalWeightClass.label}
-    </div>
-    <p class="weight-desc">{totalWeightClass.desc}</p>
 
     <!-- Weight Bar -->
     <div class="weight-bar">
-      <div class="bar-seg base" style="width: {weightPercents.base}%"></div>
-      <div class="bar-seg food" style="width: {weightPercents.food}%"></div>
-      <div class="bar-seg water" style="width: {weightPercents.water}%"></div>
+      <div class="bar-track">
+        <div class="bar-seg base" style="width: {weightPercents.base}%"></div>
+        <div class="bar-seg food" style="width: {weightPercents.food}%"></div>
+        <div class="bar-seg water" style="width: {weightPercents.water}%"></div>
+      </div>
+      <div class="bar-legend">
+        <span class="legend-item"><span class="dot base"></span>Base {baseWeightLbs.toFixed(1)} lb</span>
+        <span class="legend-item"><span class="dot food"></span>Food {foodWeight.toFixed(1)} lb</span>
+        <span class="legend-item"><span class="dot water"></span>Water {waterWeight.toFixed(1)} lb</span>
+      </div>
     </div>
-    <div class="bar-legend">
-      <span><span class="dot base"></span>Base {baseWeightLbs.toFixed(1)} lb</span>
-      <span><span class="dot food"></span>Food {foodWeight.toFixed(1)} lb</span>
-      <span><span class="dot water"></span>Water {waterWeight.toFixed(1)} lb</span>
-    </div>
-  </div>
+  </section>
 
   {#if activeTab === 'builder'}
     <!-- Season Toggle -->
-    <div class="controls-row">
-      <div class="toggle-container">
+    <section class="controls-section">
+      <div class="season-toggle">
         <button class="toggle-btn" class:active={season === 'winter'} onclick={() => season = 'winter'}>
-          <span class="toggle-icon">❄️</span>
-          <span>Winter Start</span>
+          <span>❄️</span> Winter Start
         </button>
         <button class="toggle-btn" class:active={season === 'summer'} onclick={() => season = 'summer'}>
-          <span class="toggle-icon">☀️</span>
-          <span>Summer</span>
+          <span>☀️</span> Summer
         </button>
       </div>
-      <div class="base-weight-pill" style="background: {baseWeightClass.color}15; color: {baseWeightClass.color}">
+      <div class="base-pill" style="--pill-color: {baseWeightClass.color}">
         Base: {baseWeightLbs.toFixed(1)} lb ({baseWeightClass.label})
       </div>
-    </div>
+    </section>
 
     <!-- Big 3 Section -->
-    <div class="big3-section">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>The Big 3</span>
-        <span class="big3-tag">{big3Percent.toFixed(0)}% of base</span>
+    <section class="big3-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        THE BIG 3
+        <span class="big3-badge">{big3Percent.toFixed(0)}% of base</span>
       </h3>
       <div class="big3-grid">
         {#each big3Breakdown as cat}
-          <div class="big3-item">
+          <div class="big3-card">
             <span class="big3-icon">{cat.icon}</span>
             <span class="big3-name">{cat.name}</span>
             <span class="big3-weight">{(cat.weight / 16).toFixed(1)} lb</span>
           </div>
         {/each}
-        <div class="big3-item total">
+        <div class="big3-card total">
           <span class="big3-icon">🎯</span>
           <span class="big3-name">Total</span>
           <span class="big3-weight">{big3WeightLbs.toFixed(1)} lb</span>
         </div>
       </div>
+
       {#if weightTips.length > 0}
-        <div class="weight-tips">
+        <div class="tips-grid">
           {#each weightTips as tip}
-            <div class="weight-tip">
+            <div class="tip-card">
               <span class="tip-icon">{tip.icon}</span>
               <span class="tip-text">{tip.text}</span>
             </div>
           {/each}
         </div>
       {/if}
-    </div>
+    </section>
 
     <!-- Category Breakdown -->
-    <div class="gear-breakdown">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Gear Breakdown</span>
+    <section class="categories-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        GEAR BREAKDOWN
       </h3>
       <div class="category-list">
         {#each categoryWeights as cat}
           <div class="category-card" class:expanded={expandedCategory === cat.id}>
-            <button class="category-header" onclick={() => toggleCategory(cat.id)}>
+            <button class="cat-header" onclick={() => toggleCategory(cat.id)}>
               <span class="cat-icon">{cat.icon}</span>
               <div class="cat-info">
                 <div class="cat-top">
                   <span class="cat-name">{cat.name}</span>
                   <span class="cat-weight">{formatWeight(cat.weight)}</span>
                 </div>
-                <div class="cat-bar-bg">
-                  <div class="cat-bar-fill" style="width: {(cat.weight / maxCategoryWeight) * 100}%; background: {cat.color}"></div>
+                <div class="cat-bar">
+                  <div class="cat-fill" style="width: {(cat.weight / maxCategoryWeight) * 100}%; background: {cat.color}"></div>
                 </div>
               </div>
-              <span class="cat-arrow">▼</span>
+              <span class="cat-chevron">▼</span>
             </button>
             {#if expandedCategory === cat.id}
               <div class="cat-items" transition:slide>
                 {#each cat.items as item}
-                  <div class="gear-row">
+                  <div class="gear-item">
                     <span class="item-name">{item.name}</span>
-                    {#if item.tier === 1}<span class="tag essential">Essential</span>{/if}
+                    {#if item.tier === 1}<span class="item-tag essential">Essential</span>{/if}
                     <span class="item-weight">{formatWeight(item.weight)}</span>
                   </div>
                 {/each}
                 {#each cat.wornItems as item}
-                  <div class="gear-row worn">
+                  <div class="gear-item worn">
                     <span class="item-name">{item.name}</span>
-                    <span class="tag worn">Worn</span>
+                    <span class="item-tag worn">Worn</span>
                     <span class="item-weight">{formatWeight(item.weight)}</span>
                   </div>
                 {/each}
@@ -320,76 +314,90 @@
           </div>
         {/each}
       </div>
-    </div>
+    </section>
 
   {:else}
     <!-- Consumables Controls -->
-    <div class="consumables-section">
-      <h3 class="section-title">
-        <span class="title-blaze"></span>
-        <span>Consumables</span>
+    <section class="consumables-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        CONSUMABLES
       </h3>
-      <div class="consumable-row">
-        <div class="consumable-item">
-          <label>Food (days)</label>
+      <div class="consumables-grid">
+        <div class="consumable-card">
+          <label>FOOD (days)</label>
           <div class="stepper">
             <button onclick={() => foodDays = Math.max(0, foodDays - 1)}>−</button>
-            <span class="stepper-value">{foodDays}</span>
+            <span class="stepper-val">{foodDays}</span>
             <button onclick={() => foodDays = Math.min(10, foodDays + 1)}>+</button>
           </div>
           <span class="consumable-hint">{foodWeight.toFixed(1)} lbs @ {foodWeightPerDay} lb/day</span>
         </div>
-        <div class="consumable-item">
-          <label>Water (liters)</label>
+        <div class="consumable-card">
+          <label>WATER (liters)</label>
           <div class="stepper">
             <button onclick={() => waterLiters = Math.max(0, waterLiters - 0.5)}>−</button>
-            <span class="stepper-value">{waterLiters}</span>
+            <span class="stepper-val">{waterLiters}</span>
             <button onclick={() => waterLiters = Math.min(6, waterLiters + 0.5)}>+</button>
           </div>
           <span class="consumable-hint">{waterWeight.toFixed(1)} lbs</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Joint Stress Indicator -->
-    <div class="stress-section">
+    <!-- Joint Stress -->
+    <section class="stress-section">
       <div class="stress-header">
-        <h4>Joint Stress</h4>
-        <span class="stress-risk {jointStress.risk}">{jointStress.risk}</span>
+        <h4>JOINT STRESS</h4>
+        <span class="stress-badge {jointStress.risk}">{jointStress.risk}</span>
       </div>
-      <div class="stress-bar">
-        <div class="stress-fill" style="width: {jointStress.level}%"></div>
+      <div class="stress-gauge">
+        <div class="gauge-track">
+          <div class="gauge-fill" style="width: {jointStress.level}%"></div>
+        </div>
+        <div class="gauge-labels">
+          <span>Low</span>
+          <span>Moderate</span>
+          <span>High</span>
+        </div>
       </div>
       <p class="stress-note">
         {#if jointStress.risk === 'low'}Good weight for sustained miles
         {:else if jointStress.risk === 'moderate'}Take care on descents, especially rocky terrain
         {:else}Consider reducing weight to prevent long-term injury{/if}
       </p>
-    </div>
+    </section>
 
-    <!-- Quick Tips -->
-    <div class="tips-section">
-      <h4>Weight Reduction Tips</h4>
-      <ul>
+    <!-- Tips -->
+    <section class="tips-section">
+      <h4>WEIGHT REDUCTION TIPS</h4>
+      <ul class="tips-list">
         <li><strong>Consumables first</strong> — Carry 3-4 days food, not 5-6</li>
         <li><strong>Camel up</strong> — Drink at sources, carry less water</li>
         <li><strong>Worn weight</strong> — Heavy items on body, not in pack</li>
         <li><strong>Multi-use items</strong> — Puffy is pillow, bandana is towel</li>
       </ul>
-    </div>
+    </section>
   {/if}
+
+  <!-- Guide Link -->
+  <a href="/guide/gear-philosophy-and-big-decisions" class="guide-link">
+    <span>Read the Gear Philosophy Guide</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </a>
 </div>
 
 <style>
   .pack-builder {
-    background: #fff;
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    border: 1px solid var(--border);
     overflow: hidden;
     opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.5s ease;
+    transform: translateY(12px);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .pack-builder.mounted {
@@ -398,41 +406,76 @@
   }
 
   /* Header */
-  .builder-header {
-    padding: 2rem 2rem 1.5rem;
-    background: linear-gradient(to bottom, #fdfcf9, #f5f2e8);
-    border-bottom: 1px solid var(--border);
+  .calc-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    border-bottom: 2px solid #1f2937;
   }
 
-  .header-badge {
-    font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--terra);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    display: block;
-    margin-bottom: 0.5rem;
+  .header-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d1d5db;
   }
 
-  .header-title {
-    font-family: Oswald, sans-serif;
-    font-size: 2rem;
+  .header-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .header-content {
+    flex: 1;
+  }
+
+  .header-content h2 {
     margin: 0;
-    color: var(--ink);
-    line-height: 1.1;
+    font-family: Oswald, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
   }
 
-  .header-sub {
-    margin: 0.5rem 0 0;
-    color: var(--muted);
-    font-size: 0.95rem;
+  .header-content p {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: #9ca3af;
+  }
+
+  .header-stat {
+    text-align: center;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+  }
+
+  .stat-val {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .stat-lbl {
+    font-size: 0.65rem;
+    color: #9ca3af;
+    text-transform: uppercase;
   }
 
   /* Tab Nav */
   .tab-nav {
     display: flex;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    background: #fff;
   }
 
   .tab-btn {
@@ -449,260 +492,331 @@
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--muted);
-    transition: all 0.2s ease;
     border-bottom: 3px solid transparent;
-    margin-bottom: -1px;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover {
+    color: var(--ink);
   }
 
   .tab-btn.active {
     color: var(--pine);
-    border-bottom-color: var(--alpine);
-    background: rgba(166, 181, 137, 0.05);
+    border-bottom-color: var(--pine);
+    background: rgba(77, 89, 74, 0.05);
   }
 
-  .tab-icon { font-size: 1.1rem; }
+  .tab-icon {
+    font-size: 1rem;
+  }
 
   /* Weight Hero */
   .weight-hero {
-    padding: 1.5rem 2rem;
-    text-align: center;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
-  .weight-main {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.25rem;
+  .weight-display {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .weight-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+  }
+
+  .weight-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .ring-bg {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 10;
+  }
+
+  .ring-fill {
+    fill: none;
+    stroke: var(--ring-color);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.5s ease;
+  }
+
+  .weight-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
   .weight-num {
     font-family: Oswald, sans-serif;
-    font-size: 3.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
+    color: var(--ink);
     line-height: 1;
   }
 
   .weight-unit {
-    font-size: 1.25rem;
+    font-size: 0.7rem;
     color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .weight-meta {
+    flex: 1;
   }
 
   .weight-class {
-    display: inline-block;
-    margin-top: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 99px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    color: #fff;
+  }
+
+  .class-icon {
+    font-size: 0.9rem;
+  }
+
+  .class-label {
     font-family: Oswald, sans-serif;
     font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
   }
 
   .weight-desc {
-    margin: 0.5rem 0 1rem;
-    font-size: 0.9rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
     color: var(--muted);
   }
 
+  /* Weight Bar */
   .weight-bar {
+    margin-top: 1rem;
+  }
+
+  .bar-track {
     display: flex;
-    height: 24px;
-    border-radius: 6px;
+    height: 20px;
+    border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 0.5rem;
+    border: 2px solid var(--border);
   }
 
   .bar-seg {
-    transition: width 0.3s ease;
+    transition: width 0.4s ease;
   }
 
   .bar-seg.base { background: var(--pine); }
   .bar-seg.food { background: var(--terra); }
-  .bar-seg.water { background: var(--alpine); }
+  .bar-seg.water { background: #3b82f6; }
 
   .bar-legend {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     font-size: 0.75rem;
     color: var(--muted);
   }
 
-  .bar-legend span {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
-
   .dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
   }
 
   .dot.base { background: var(--pine); }
   .dot.food { background: var(--terra); }
-  .dot.water { background: var(--alpine); }
+  .dot.water { background: #3b82f6; }
 
-  /* Controls Row */
-  .controls-row {
+  /* Section Headers */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 1.25rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--pine);
+    letter-spacing: 0.08em;
+  }
+
+  .header-bar {
+    width: 4px;
+    height: 16px;
+    background: var(--marker);
+    border-radius: 2px;
+  }
+
+  /* Controls Section */
+  .controls-section {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1rem 2rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
     flex-wrap: wrap;
   }
 
-  .toggle-container {
+  .season-toggle {
     display: flex;
-    background: #f5f5f5;
-    padding: 0.25rem;
-    border-radius: 8px;
-    gap: 0.25rem;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
   }
 
   .toggle-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 1rem;
     border: none;
     background: transparent;
-    border-radius: 6px;
     font-family: Oswald, sans-serif;
     font-size: 0.8rem;
+    font-weight: 600;
     color: var(--muted);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
+  }
+
+  .toggle-btn:first-child {
+    border-right: 2px solid var(--border);
   }
 
   .toggle-btn.active {
-    background: #fff;
-    color: var(--pine);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    font-weight: 600;
+    background: var(--pine);
+    color: #fff;
   }
 
-  .toggle-icon { font-size: 0.9rem; }
-
-  .base-weight-pill {
-    padding: 0.35rem 0.75rem;
-    border-radius: 99px;
+  .base-pill {
+    padding: 0.4rem 0.75rem;
+    background: color-mix(in srgb, var(--pill-color) 15%, white);
+    border: 2px solid var(--pill-color);
+    border-radius: 20px;
     font-family: Oswald, sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
-  }
-
-  /* Section Titles */
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--pine);
-    margin: 0 0 1rem;
-  }
-
-  .title-blaze {
-    width: 6px;
-    height: 14px;
-    background: var(--marker);
-    border-radius: 2px;
+    color: var(--pill-color);
   }
 
   /* Big 3 Section */
   .big3-section {
-    padding: 1.5rem 2rem;
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.08), rgba(166, 181, 137, 0.02));
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
-  .big3-tag {
+  .big3-badge {
     margin-left: auto;
-    font-size: 0.6rem;
     padding: 0.2rem 0.5rem;
     background: var(--alpine);
     color: #fff;
     border-radius: 4px;
-    letter-spacing: 0.05em;
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
   }
 
   .big3-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
-  .big3-item {
+  .big3-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.75rem;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.05);
+    gap: 0.25rem;
+    padding: 1rem 0.5rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
   }
 
-  .big3-item.total {
+  .big3-card.total {
     background: var(--pine);
+    border-color: var(--pine);
   }
 
-  .big3-item.total .big3-name,
-  .big3-item.total .big3-weight {
+  .big3-card.total .big3-name,
+  .big3-card.total .big3-weight {
     color: #fff;
   }
 
-  .big3-icon { font-size: 1.25rem; }
+  .big3-icon {
+    font-size: 1.35rem;
+  }
 
   .big3-name {
     font-family: Oswald, sans-serif;
     font-size: 0.65rem;
     font-weight: 600;
+    color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--muted);
   }
 
   .big3-weight {
     font-family: Oswald, sans-serif;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--pine);
   }
 
-  .weight-tips {
+  .tips-grid {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 1.25rem;
   }
 
-  .weight-tip {
+  .tip-card {
     display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: #fff;
-    border-radius: 6px;
-    border: 1px solid rgba(0,0,0,0.05);
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
     font-size: 0.8rem;
     color: var(--ink);
   }
 
-  .tip-icon { flex-shrink: 0; }
+  .tip-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
 
-  /* Gear Breakdown */
-  .gear-breakdown {
-    padding: 1.5rem 2rem;
+  /* Categories Section */
+  .categories-section {
+    padding: 1.5rem;
     background: var(--bg);
   }
 
@@ -714,19 +828,17 @@
 
   .category-card {
     background: #fff;
+    border: 2px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-    border: 1px solid rgba(0,0,0,0.05);
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
   }
 
   .category-card.expanded {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     border-color: var(--alpine);
   }
 
-  .category-header {
+  .cat-header {
     width: 100%;
     display: flex;
     align-items: center;
@@ -738,110 +850,129 @@
     text-align: left;
   }
 
-  .cat-icon { font-size: 1.25rem; width: 1.5rem; text-align: center; }
-  .cat-info { flex: 1; }
+  .cat-icon {
+    font-size: 1.25rem;
+    width: 1.5rem;
+    text-align: center;
+  }
+
+  .cat-info {
+    flex: 1;
+  }
 
   .cat-top {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
   }
 
   .cat-name {
     font-family: Oswald, sans-serif;
-    font-weight: 500;
-    color: var(--ink);
     font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
   }
 
   .cat-weight {
     font-family: Oswald, sans-serif;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 700;
     color: var(--pine);
-    font-size: 0.8rem;
   }
 
-  .cat-bar-bg {
-    height: 3px;
-    background: #f0f0f0;
-    border-radius: 2px;
+  .cat-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
     overflow: hidden;
   }
 
-  .cat-bar-fill {
+  .cat-fill {
     height: 100%;
-    border-radius: 2px;
+    border-radius: 3px;
+    transition: width 0.4s ease;
   }
 
-  .cat-arrow {
+  .cat-chevron {
     font-size: 0.6rem;
-    color: var(--stone);
-    transition: transform 0.2s ease;
+    color: var(--muted);
+    transition: transform 0.2s;
   }
 
-  .category-card.expanded .cat-arrow {
+  .category-card.expanded .cat-chevron {
     transform: rotate(180deg);
     color: var(--pine);
   }
 
   .cat-items {
     padding: 0 1rem 0.75rem;
-    border-top: 1px solid rgba(0,0,0,0.05);
-    background: #fafaf9;
+    border-top: 2px solid var(--border);
+    background: var(--bg);
   }
 
-  .gear-row {
+  .gear-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 0.4rem 0;
-    border-bottom: 1px dashed rgba(0,0,0,0.05);
-    font-size: 0.8rem;
     gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.8rem;
   }
 
-  .gear-row:last-child { border-bottom: none; }
+  .gear-item:last-child {
+    border-bottom: none;
+  }
 
-  .item-name { color: var(--ink); flex: 1; }
+  .item-name {
+    flex: 1;
+    color: var(--ink);
+  }
 
   .item-weight {
     font-family: Oswald, sans-serif;
-    color: var(--muted);
     font-size: 0.75rem;
+    color: var(--muted);
   }
 
-  .tag {
+  .item-tag {
     font-size: 0.55rem;
-    padding: 0.1rem 0.25rem;
-    border-radius: 3px;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    flex-shrink: 0;
+    letter-spacing: 0.03em;
   }
 
-  .tag.essential { background: var(--pine); color: #fff; }
-  .tag.worn { background: var(--stone); color: #fff; }
+  .item-tag.essential {
+    background: var(--pine);
+    color: #fff;
+  }
+
+  .item-tag.worn {
+    background: var(--muted);
+    color: #fff;
+  }
 
   /* Consumables Section */
   .consumables-section {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
-  .consumable-row {
+  .consumables-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
   }
 
-  .consumable-item label {
+  .consumable-card label {
     display: block;
     font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    text-transform: uppercase;
     color: var(--muted);
+    letter-spacing: 0.08em;
     margin-bottom: 0.5rem;
   }
 
@@ -849,14 +980,14 @@
     display: flex;
     align-items: center;
     background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
     overflow: hidden;
   }
 
   .stepper button {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: none;
     background: transparent;
     font-size: 1.25rem;
@@ -870,11 +1001,11 @@
     color: #fff;
   }
 
-  .stepper-value {
+  .stepper-val {
     flex: 1;
     text-align: center;
     font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--ink);
   }
@@ -888,99 +1019,167 @@
 
   /* Stress Section */
   .stress-section {
-    padding: 1.25rem 2rem;
+    padding: 1.5rem;
     background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
   }
 
   .stress-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
   }
 
   .stress-header h4 {
     margin: 0;
     font-family: Oswald, sans-serif;
     font-size: 0.8rem;
+    font-weight: 700;
     color: var(--ink);
+    letter-spacing: 0.05em;
   }
 
-  .stress-risk {
+  .stress-badge {
+    font-family: Oswald, sans-serif;
     font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    padding: 0.2rem 0.5rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
     border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
-  .stress-risk.low { background: #dcfce7; color: #166534; }
-  .stress-risk.moderate { background: #fef3c7; color: #92400e; }
-  .stress-risk.high { background: #fee2e2; color: #991b1b; }
+  .stress-badge.low {
+    background: #dcfce7;
+    color: #166534;
+  }
 
-  .stress-bar {
-    height: 10px;
-    background: linear-gradient(90deg, #22c55e, #eab308, #dc2626);
-    border-radius: 5px;
+  .stress-badge.moderate {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .stress-badge.high {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .stress-gauge {
+    margin-bottom: 0.75rem;
+  }
+
+  .gauge-track {
+    height: 12px;
+    background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+    border-radius: 6px;
+    border: 2px solid var(--border);
     position: relative;
-    margin-bottom: 0.5rem;
+    overflow: hidden;
   }
 
-  .stress-fill {
+  .gauge-fill {
     position: absolute;
     top: 0;
     left: 0;
     height: 100%;
-    background: rgba(0,0,0,0.3);
-    border-radius: 5px;
-    transition: width 0.3s ease;
+    background: rgba(0,0,0,0.2);
+    transition: width 0.4s ease;
+  }
+
+  .gauge-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
   }
 
   .stress-note {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: var(--muted);
   }
 
   /* Tips Section */
   .tips-section {
-    padding: 1.25rem 2rem;
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.08), rgba(166, 181, 137, 0.02));
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
   .tips-section h4 {
-    margin: 0 0 0.75rem;
+    margin: 0 0 1rem;
     font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 700;
     color: var(--pine);
-    text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
-  .tips-section ul {
+  .tips-list {
     margin: 0;
     padding-left: 1.25rem;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--ink);
   }
 
-  .tips-section li { margin-bottom: 0.35rem; }
-  .tips-section strong { color: var(--pine); }
+  .tips-list li {
+    margin-bottom: 0.5rem;
+  }
+
+  .tips-list strong {
+    color: var(--pine);
+  }
+
+  /* Guide Link */
+  .guide-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--pine);
+    color: #fff;
+    text-decoration: none;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: all 0.2s;
+  }
+
+  .guide-link:hover {
+    background: var(--alpine);
+  }
+
+  .guide-link svg {
+    width: 18px;
+    height: 18px;
+  }
 
   /* Responsive */
   @media (max-width: 640px) {
-    .builder-header { padding: 1.5rem 1rem; }
-    .header-title { font-size: 1.5rem; }
-    .weight-hero { padding: 1.25rem 1rem; }
-    .weight-num { font-size: 2.75rem; }
-    .controls-row { padding: 1rem; flex-direction: column; align-items: stretch; }
-    .big3-section { padding: 1rem; }
-    .big3-grid { grid-template-columns: repeat(2, 1fr); }
-    .gear-breakdown { padding: 1rem; }
-    .consumables-section { padding: 1rem; }
-    .consumable-row { grid-template-columns: 1fr; gap: 1rem; }
-    .stress-section, .tips-section { padding: 1rem; }
+    .weight-display {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .controls-section {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .big3-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .consumables-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .header-stat {
+      display: none;
+    }
   }
 </style>
