@@ -8,8 +8,8 @@
   // Core inputs
   let daysUntilResupply = $state(4);
   let dailyMileage = $state(15);
-  let effortLevel = $state('moderate'); // easy, moderate, hard, extreme
-  let calorieEfficiency = $state(110); // calories per ounce target
+  let effortLevel = $state('moderate');
+  let calorieEfficiency = $state(110);
 
   // Sync with trail context
   $effect(() => {
@@ -20,7 +20,6 @@
 
   onMount(() => {
     mounted = true;
-    // Load saved preferences
     const saved = localStorage.getItem('at-food-calculator');
     if (saved) {
       try {
@@ -31,7 +30,6 @@
     }
   });
 
-  // Save preferences when changed
   $effect(() => {
     if (mounted) {
       localStorage.setItem('at-food-calculator', JSON.stringify({
@@ -47,282 +45,361 @@
       name: 'Easy',
       desc: 'Flat terrain, low mileage, good weather',
       baseCalories: 2500,
-      icon: '🟢',
+      color: '#22c55e',
     },
     moderate: {
       name: 'Moderate',
       desc: 'Typical trail day, some climbs',
       baseCalories: 3000,
-      icon: '🟡',
+      color: '#eab308',
     },
     hard: {
       name: 'Hard',
       desc: 'Big climbs, long days, rough terrain',
       baseCalories: 3500,
-      icon: '🟠',
+      color: '#f97316',
     },
     extreme: {
       name: 'Extreme',
       desc: 'Whites/Maine terrain, 20+ miles, bad weather',
       baseCalories: 4000,
-      icon: '🔴',
+      color: '#ef4444',
     },
   };
 
-  // Calculate mileage adjustment (+100 cal per mile over 12)
+  // Calculations
   let mileageBonus = $derived(Math.max(0, (dailyMileage - 12) * 100));
-
-  // Daily calories needed
   let dailyCalories = $derived(effortLevels[effortLevel].baseCalories + mileageBonus);
-
-  // Total calories for carry
   let totalCalories = $derived(dailyCalories * daysUntilResupply);
-
-  // Food weight calculations
   let foodOunces = $derived(totalCalories / calorieEfficiency);
   let foodPounds = $derived(foodOunces / 16);
-
-  // Weight per day
   let weightPerDay = $derived(foodPounds / daysUntilResupply);
+
+  // Gauge calculation (0-20 lbs scale)
+  let gaugePercent = $derived(Math.min(100, (foodPounds / 20) * 100));
+  let gaugeColor = $derived.by(() => {
+    if (foodPounds <= 6) return '#22c55e';
+    if (foodPounds <= 10) return '#eab308';
+    if (foodPounds <= 14) return '#f97316';
+    return '#ef4444';
+  });
 
   // Efficiency rating
   let efficiencyRating = $derived.by(() => {
-    if (calorieEfficiency >= 125) return { label: 'Excellent', color: '#16a34a', desc: 'Dense, efficient food choices' };
-    if (calorieEfficiency >= 110) return { label: 'Good', color: '#ca8a04', desc: 'Balanced mix of foods' };
-    if (calorieEfficiency >= 100) return { label: 'Average', color: '#ea580c', desc: 'Some heavy items included' };
-    return { label: 'Heavy', color: '#dc2626', desc: 'Too much water weight in food' };
+    if (calorieEfficiency >= 125) return { label: 'EXCELLENT', color: '#22c55e', pct: 100 };
+    if (calorieEfficiency >= 110) return { label: 'GOOD', color: '#84cc16', pct: 75 };
+    if (calorieEfficiency >= 100) return { label: 'AVERAGE', color: '#eab308', pct: 50 };
+    return { label: 'HEAVY', color: '#ef4444', pct: 25 };
   });
 
-  // Weight warning
-  let weightWarning = $derived.by(() => {
-    if (foodPounds > 14) return { level: 'danger', msg: 'Very heavy carry - consider shorter resupply' };
-    if (foodPounds > 10) return { level: 'warning', msg: 'Heavy carry - normal for 100-Mile Wilderness' };
-    if (foodPounds < 4) return { level: 'caution', msg: 'Light carry - make sure you have enough' };
-    return null;
+  // Weight status
+  let weightStatus = $derived.by(() => {
+    if (foodPounds > 14) return { label: 'OVERLOADED', color: '#ef4444', msg: 'Consider shorter resupply interval' };
+    if (foodPounds > 10) return { label: 'HEAVY', color: '#f97316', msg: 'Normal for 100-Mile Wilderness' };
+    if (foodPounds < 4) return { label: 'LIGHT', color: '#3b82f6', msg: 'Make sure you have enough' };
+    return { label: 'OPTIMAL', color: '#22c55e', msg: 'Good balance of weight and fuel' };
   });
 
-  // Trail food reference (calories per ounce)
+  // Food reference
   const foodReference = [
     { name: 'Olive oil', cal: 250, category: 'fat' },
     { name: 'Peanut butter', cal: 170, category: 'fat' },
     { name: 'Nutella', cal: 155, category: 'fat' },
     { name: 'Snickers', cal: 135, category: 'snack' },
-    { name: 'Trail mix (nuts heavy)', cal: 130, category: 'snack' },
+    { name: 'Trail mix', cal: 130, category: 'snack' },
     { name: 'Tortillas', cal: 125, category: 'carb' },
     { name: 'Instant oatmeal', cal: 110, category: 'carb' },
     { name: 'Ramen noodles', cal: 105, category: 'carb' },
-    { name: 'Knorr pasta sides', cal: 100, category: 'carb' },
-    { name: 'Energy bars (avg)', cal: 100, category: 'snack' },
-    { name: 'Instant mashed potatoes', cal: 95, category: 'carb' },
+    { name: 'Knorr sides', cal: 100, category: 'carb' },
+    { name: 'Energy bars', cal: 100, category: 'snack' },
+    { name: 'Mashed potatoes', cal: 95, category: 'carb' },
     { name: 'Summer sausage', cal: 90, category: 'protein' },
     { name: 'Jerky', cal: 80, category: 'protein' },
     { name: 'Tuna packet', cal: 45, category: 'protein' },
-    { name: 'Fresh fruit', cal: 15, category: 'fresh' },
   ];
 
-  // Meal breakdown suggestion
+  const categoryColors = {
+    fat: '#f59e0b',
+    snack: '#a855f7',
+    carb: '#3b82f6',
+    protein: '#ef4444',
+  };
+
+  // Meal breakdown
   let mealBreakdown = $derived.by(() => {
     const dailyCal = dailyCalories;
-    return {
-      breakfast: Math.round(dailyCal * 0.20),
-      lunch: Math.round(dailyCal * 0.25),
-      dinner: Math.round(dailyCal * 0.30),
-      snacks: Math.round(dailyCal * 0.25),
-    };
+    return [
+      { name: 'Breakfast', pct: 20, cal: Math.round(dailyCal * 0.20), icon: 'B' },
+      { name: 'Lunch', pct: 25, cal: Math.round(dailyCal * 0.25), icon: 'L' },
+      { name: 'Dinner', pct: 30, cal: Math.round(dailyCal * 0.30), icon: 'D' },
+      { name: 'Snacks', pct: 25, cal: Math.round(dailyCal * 0.25), icon: 'S' },
+    ];
   });
 
-  // Category colors
-  function categoryColor(cat) {
-    const colors = {
-      fat: '#f59e0b',
-      snack: '#8b5cf6',
-      carb: '#3b82f6',
-      protein: '#ef4444',
-      fresh: '#22c55e',
+  // SVG gauge arc calculation
+  function describeArc(x, y, radius, startAngle, endAngle) {
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    return [
+      "M", start.x, start.y,
+      "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
+    ].join(" ");
+  }
+
+  function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+    return {
+      x: centerX + (radius * Math.cos(angleInRadians)),
+      y: centerY + (radius * Math.sin(angleInRadians))
     };
-    return colors[cat] || '#6b7280';
   }
 </script>
 
 <div class="food-calculator" class:mounted>
   <!-- Header -->
   <header class="calc-header">
-    <div class="header-icon">🍽️</div>
+    <div class="header-flame">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 23c-3.9 0-7-3.1-7-7 0-2.8 1.6-5.5 4.2-7.2-.4 1.3-.2 2.7.6 3.8 1-2.9 3.2-5.1 5.8-6.6-.6 2.1-.2 4.4 1.2 6.2.4-1.1 1-2.1 1.8-3 1.5 2.4 2.4 5.1 2.4 7.8 0 3.9-3.1 7-7 7z"/>
+      </svg>
+    </div>
     <div class="header-content">
-      <h2>Food Calculator</h2>
-      <p>Plan your resupply by calories and weight</p>
+      <h2>TRAIL FUEL STATION</h2>
+      <p>Calculate your caloric payload</p>
+    </div>
+    <div class="header-stat">
+      <span class="stat-value">{dailyCalories.toLocaleString()}</span>
+      <span class="stat-label">cal/day</span>
     </div>
   </header>
 
-  <!-- Main Inputs -->
-  <section class="inputs-section">
-    <div class="input-row">
-      <div class="input-group">
-        <label>Days Until Resupply</label>
-        <div class="stepper">
-          <button onclick={() => daysUntilResupply = Math.max(1, daysUntilResupply - 1)}>−</button>
-          <span class="stepper-value">{daysUntilResupply}</span>
-          <button onclick={() => daysUntilResupply = Math.min(10, daysUntilResupply + 1)}>+</button>
+  <!-- Main Grid: Gauge + Inputs -->
+  <div class="main-grid">
+    <!-- Gauge Column -->
+    <div class="gauge-column">
+      <div class="gauge-container">
+        <svg viewBox="0 0 200 130" class="weight-gauge">
+          <!-- Background arc -->
+          <path
+            d={describeArc(100, 100, 80, -135, 135)}
+            fill="none"
+            stroke="var(--border)"
+            stroke-width="16"
+            stroke-linecap="round"
+          />
+          <!-- Colored arc -->
+          <path
+            d={describeArc(100, 100, 80, -135, -135 + (gaugePercent * 2.7))}
+            fill="none"
+            stroke={gaugeColor}
+            stroke-width="16"
+            stroke-linecap="round"
+            class="gauge-fill"
+          />
+          <!-- Center reading -->
+          <text x="100" y="85" text-anchor="middle" class="gauge-value">{foodPounds.toFixed(1)}</text>
+          <text x="100" y="105" text-anchor="middle" class="gauge-unit">LBS</text>
+          <!-- Scale markers -->
+          <text x="35" y="115" class="gauge-marker">0</text>
+          <text x="100" y="25" class="gauge-marker">10</text>
+          <text x="165" y="115" class="gauge-marker">20</text>
+        </svg>
+        <div class="gauge-status" style="--status-color: {weightStatus.color}">
+          <span class="status-label">{weightStatus.label}</span>
+          <span class="status-msg">{weightStatus.msg}</span>
         </div>
       </div>
-      <div class="input-group">
-        <label>Daily Mileage</label>
-        <div class="stepper">
-          <button onclick={() => dailyMileage = Math.max(5, dailyMileage - 1)}>−</button>
-          <span class="stepper-value">{dailyMileage}</span>
-          <button onclick={() => dailyMileage = Math.min(30, dailyMileage + 1)}>+</button>
+
+      <!-- Secondary Stats -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="stat-num">{foodOunces.toFixed(0)}</span>
+          <span class="stat-lbl">oz total</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">{weightPerDay.toFixed(1)}</span>
+          <span class="stat-lbl">lbs/day</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">{totalCalories.toLocaleString()}</span>
+          <span class="stat-lbl">total cal</span>
         </div>
       </div>
     </div>
 
-    <div class="effort-selector">
-      <label>Terrain Effort</label>
-      <div class="effort-options">
-        {#each Object.entries(effortLevels) as [key, level]}
-          <button
-            class="effort-btn"
-            class:active={effortLevel === key}
-            onclick={() => effortLevel = key}
-          >
-            <span class="effort-icon">{level.icon}</span>
-            <span class="effort-name">{level.name}</span>
+    <!-- Inputs Column -->
+    <div class="inputs-column">
+      <div class="input-block">
+        <label class="input-label">DAYS UNTIL RESUPPLY</label>
+        <div class="stepper">
+          <button class="step-btn" onclick={() => daysUntilResupply = Math.max(1, daysUntilResupply - 1)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/></svg>
           </button>
-        {/each}
-      </div>
-      <p class="effort-desc">{effortLevels[effortLevel].desc}</p>
-    </div>
-  </section>
-
-  <!-- Results -->
-  <section class="results-section">
-    <div class="result-card primary">
-      <div class="result-header">
-        <span class="result-label">Total Food Weight</span>
-        {#if weightWarning}
-          <span class="weight-warning {weightWarning.level}">{weightWarning.level === 'danger' ? '⚠️' : '⚡'}</span>
-        {/if}
-      </div>
-      <div class="result-value">
-        <span class="big-number">{foodPounds.toFixed(1)}</span>
-        <span class="unit">lbs</span>
-      </div>
-      <div class="result-sub">
-        {weightPerDay.toFixed(1)} lbs/day • {foodOunces.toFixed(0)} oz total
-      </div>
-      {#if weightWarning}
-        <div class="warning-msg {weightWarning.level}">{weightWarning.msg}</div>
-      {/if}
-    </div>
-
-    <div class="result-row">
-      <div class="result-card">
-        <span class="result-label">Daily Calories</span>
-        <div class="result-value">
-          <span class="medium-number">{dailyCalories.toLocaleString()}</span>
-          <span class="unit">cal</span>
+          <span class="step-value">{daysUntilResupply}</span>
+          <button class="step-btn" onclick={() => daysUntilResupply = Math.min(10, daysUntilResupply + 1)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
         </div>
       </div>
-      <div class="result-card">
-        <span class="result-label">Total Calories</span>
-        <div class="result-value">
-          <span class="medium-number">{totalCalories.toLocaleString()}</span>
-          <span class="unit">cal</span>
+
+      <div class="input-block">
+        <label class="input-label">DAILY MILEAGE</label>
+        <div class="stepper">
+          <button class="step-btn" onclick={() => dailyMileage = Math.max(5, dailyMileage - 1)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/></svg>
+          </button>
+          <span class="step-value">{dailyMileage}</span>
+          <button class="step-btn" onclick={() => dailyMileage = Math.min(30, dailyMileage + 1)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- Calorie Efficiency -->
+      <div class="input-block">
+        <label class="input-label">TERRAIN EFFORT</label>
+        <div class="effort-grid">
+          {#each Object.entries(effortLevels) as [key, level]}
+            <button
+              class="effort-btn"
+              class:active={effortLevel === key}
+              style="--effort-color: {level.color}"
+              onclick={() => effortLevel = key}
+            >
+              <span class="effort-dot"></span>
+              <span class="effort-name">{level.name}</span>
+            </button>
+          {/each}
+        </div>
+        <p class="effort-desc">{effortLevels[effortLevel].desc}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Efficiency Section -->
   <section class="efficiency-section">
     <div class="efficiency-header">
-      <h3>Calorie Efficiency Target</h3>
-      <div class="efficiency-rating" style="color: {efficiencyRating.color}">
+      <h3>CALORIE EFFICIENCY</h3>
+      <div class="efficiency-badge" style="background: {efficiencyRating.color}">
         {efficiencyRating.label}
       </div>
     </div>
-    <div class="efficiency-slider">
+    <div class="efficiency-gauge">
+      <div class="eff-track">
+        <div class="eff-fill" style="width: {((calorieEfficiency - 80) / 70) * 100}%; background: {efficiencyRating.color}"></div>
+        <div class="eff-thumb" style="left: {((calorieEfficiency - 80) / 70) * 100}%">
+          <span class="thumb-value">{calorieEfficiency}</span>
+        </div>
+      </div>
       <input
         type="range"
         bind:value={calorieEfficiency}
         min="80"
         max="150"
         step="5"
+        class="eff-slider"
       />
-      <div class="slider-labels">
-        <span>80</span>
-        <span class="current-val">{calorieEfficiency} cal/oz</span>
-        <span>150</span>
+      <div class="eff-labels">
+        <span>80 cal/oz</span>
+        <span>Heavy foods</span>
+        <span class="eff-divider">|</span>
+        <span>Dense foods</span>
+        <span>150 cal/oz</span>
       </div>
     </div>
-    <p class="efficiency-desc">{efficiencyRating.desc}</p>
   </section>
 
   <!-- Meal Breakdown -->
   <section class="meals-section">
-    <h3>Daily Meal Targets</h3>
+    <h3>DAILY FUEL BREAKDOWN</h3>
+    <div class="meals-bar">
+      {#each mealBreakdown as meal, i}
+        <div
+          class="meal-segment"
+          style="flex: {meal.pct}; --meal-hue: {i * 60}"
+          title="{meal.name}: {meal.cal} cal"
+        >
+          <span class="segment-icon">{meal.icon}</span>
+        </div>
+      {/each}
+    </div>
     <div class="meals-grid">
-      <div class="meal-card">
-        <span class="meal-icon">🌅</span>
-        <span class="meal-name">Breakfast</span>
-        <span class="meal-cal">{mealBreakdown.breakfast} cal</span>
-      </div>
-      <div class="meal-card">
-        <span class="meal-icon">☀️</span>
-        <span class="meal-name">Lunch</span>
-        <span class="meal-cal">{mealBreakdown.lunch} cal</span>
-      </div>
-      <div class="meal-card">
-        <span class="meal-icon">🌙</span>
-        <span class="meal-name">Dinner</span>
-        <span class="meal-cal">{mealBreakdown.dinner} cal</span>
-      </div>
-      <div class="meal-card">
-        <span class="meal-icon">🍫</span>
-        <span class="meal-name">Snacks</span>
-        <span class="meal-cal">{mealBreakdown.snacks} cal</span>
-      </div>
+      {#each mealBreakdown as meal, i}
+        <div class="meal-card" style="--meal-hue: {i * 60}">
+          <span class="meal-icon">{meal.icon}</span>
+          <span class="meal-name">{meal.name}</span>
+          <span class="meal-cal">{meal.cal} cal</span>
+          <span class="meal-pct">{meal.pct}%</span>
+        </div>
+      {/each}
     </div>
   </section>
 
   <!-- Food Reference -->
   <section class="reference-section">
-    <h3>Calorie Density Reference</h3>
-    <p class="ref-intro">Choose foods at or above your target ({calorieEfficiency} cal/oz) to hit weight goals.</p>
-    <div class="food-list">
+    <div class="ref-header">
+      <h3>CALORIE DENSITY REFERENCE</h3>
+      <div class="ref-legend">
+        {#each Object.entries(categoryColors) as [cat, color]}
+          <span class="legend-item" style="--cat-color: {color}">{cat}</span>
+        {/each}
+      </div>
+    </div>
+    <p class="ref-target">Target: {calorieEfficiency}+ cal/oz for optimal weight</p>
+    <div class="food-grid">
       {#each foodReference as food}
-        <div class="food-item" class:good={food.cal >= calorieEfficiency} class:poor={food.cal < calorieEfficiency - 20}>
+        {@const isGood = food.cal >= calorieEfficiency}
+        {@const isBad = food.cal < calorieEfficiency - 20}
+        <div
+          class="food-item"
+          class:good={isGood}
+          class:bad={isBad}
+          style="--cat-color: {categoryColors[food.category]}"
+        >
+          <span class="food-cat"></span>
           <span class="food-name">{food.name}</span>
-          <div class="food-stats">
-            <span class="food-cal" style="color: {categoryColor(food.category)}">{food.cal}</span>
-            <span class="food-unit">cal/oz</span>
-          </div>
+          <span class="food-cal">{food.cal}</span>
         </div>
       {/each}
     </div>
   </section>
 
   <!-- Tips -->
-  <div class="tips-section">
-    <h4>Resupply Tips</h4>
-    <ul>
-      <li><strong>Target 1.5-2 lbs/day</strong> for most hikers</li>
-      <li><strong>Add calorie-dense fats</strong> (oil, peanut butter) to boost efficiency</li>
-      <li><strong>Fresh food on day 1</strong> only — weight penalty is real</li>
-      <li><strong>Don't fear hunger</strong> — towns always come faster than expected</li>
-    </ul>
-  </div>
+  <section class="tips-section">
+    <div class="tip-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+      </svg>
+    </div>
+    <div class="tips-content">
+      <strong>Resupply Strategy</strong>
+      <ul>
+        <li>Target 1.5-2 lbs/day for most thru-hikers</li>
+        <li>Add calorie-dense fats to boost efficiency</li>
+        <li>Fresh food on day 1 only — weight penalty is real</li>
+        <li>Don't fear hunger — towns come faster than expected</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Guide Link -->
+  <a href="/guide/food-and-resupply-strategy" class="guide-link">
+    <span>Read the full Food & Resupply Guide</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </a>
 </div>
 
 <style>
   .food-calculator {
-    background: var(--card, #fff);
+    background: var(--bg);
+    border: 2px solid var(--border);
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    border: 1px solid var(--border);
     overflow: hidden;
     opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.5s ease;
+    transform: translateY(12px);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .food-calculator.mounted {
@@ -335,244 +412,289 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #fff;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+    border-bottom: 2px solid #92400e;
   }
 
-  .header-icon {
-    font-size: 2rem;
+  .header-flame {
+    width: 48px;
+    height: 48px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fef3c7;
+  }
+
+  .header-flame svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .header-content {
+    flex: 1;
   }
 
   .header-content h2 {
     margin: 0;
     font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
   }
 
   .header-content p {
-    margin: 0.25rem 0 0;
-    font-size: 0.9rem;
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: #fef3c7;
     opacity: 0.9;
   }
 
-  /* Inputs */
-  .inputs-section {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
+  .header-stat {
+    text-align: right;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0,0,0,0.15);
+    border-radius: 8px;
   }
 
-  .input-row {
+  .header-stat .stat-value {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .header-stat .stat-label {
+    font-size: 0.7rem;
+    color: #fef3c7;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Main Grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  /* Gauge Column */
+  .gauge-column {
+    padding: 1.5rem;
+    background: #fff;
+    border-right: 2px solid var(--border);
+  }
+
+  .gauge-container {
+    text-align: center;
+  }
+
+  .weight-gauge {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+  }
+
+  .gauge-fill {
+    transition: all 0.5s ease;
+  }
+
+  .gauge-value {
+    font-family: Oswald, sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    fill: var(--ink);
+  }
+
+  .gauge-unit {
+    font-family: Oswald, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    fill: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .gauge-marker {
+    font-size: 10px;
+    fill: var(--muted);
+  }
+
+  .gauge-status {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: color-mix(in srgb, var(--status-color) 10%, transparent);
+    border: 2px solid var(--status-color);
+    border-radius: 8px;
+    display: inline-block;
+  }
+
+  .status-label {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--status-color);
+    letter-spacing: 0.05em;
+  }
+
+  .status-msg {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .stats-row {
     display: flex;
-    gap: 1.5rem;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .stat-box {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .stat-num {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .stat-lbl {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* Inputs Column */
+  .inputs-column {
+    padding: 1.5rem;
+    background: #fff;
+  }
+
+  .input-block {
     margin-bottom: 1.25rem;
   }
 
-  .input-group {
-    flex: 1;
+  .input-block:last-child {
+    margin-bottom: 0;
   }
 
-  .input-group label {
+  .input-label {
     display: block;
-    font-size: 0.8rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--muted);
+    letter-spacing: 0.08em;
     margin-bottom: 0.5rem;
   }
 
   .stepper {
     display: flex;
     align-items: center;
-    gap: 0;
     background: var(--bg);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
   }
 
-  .stepper button {
+  .step-btn {
     width: 44px;
     height: 44px;
     border: none;
     background: transparent;
-    font-size: 1.25rem;
-    color: var(--pine);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pine);
     transition: all 0.2s;
   }
 
-  .stepper button:hover {
+  .step-btn:hover {
     background: var(--alpine);
     color: #fff;
   }
 
-  .stepper-value {
+  .step-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .step-value {
     flex: 1;
     text-align: center;
     font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--ink);
   }
 
-  .effort-selector label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
-  }
-
-  .effort-options {
-    display: flex;
+  .effort-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 0.5rem;
   }
 
   .effort-btn {
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.75rem 0.5rem;
+    gap: 0.35rem;
+    padding: 0.6rem 0.4rem;
     border: 2px solid var(--border);
-    border-radius: 10px;
+    border-radius: 8px;
     background: #fff;
     cursor: pointer;
     transition: all 0.2s;
   }
 
   .effort-btn:hover {
-    border-color: var(--alpine);
+    border-color: var(--effort-color);
   }
 
   .effort-btn.active {
-    border-color: var(--pine);
-    background: rgba(61, 90, 70, 0.08);
+    border-color: var(--effort-color);
+    background: color-mix(in srgb, var(--effort-color) 10%, white);
   }
 
-  .effort-icon {
-    font-size: 1.25rem;
+  .effort-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--effort-color);
   }
 
   .effort-name {
     font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--ink);
   }
 
   .effort-desc {
-    margin: 0.75rem 0 0;
-    font-size: 0.85rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
     color: var(--muted);
     text-align: center;
   }
 
-  /* Results */
-  .results-section {
-    padding: 1.5rem;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .result-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem;
-  }
-
-  .result-card.primary {
-    margin-bottom: 1rem;
-    border-color: var(--pine);
-    border-width: 2px;
-  }
-
-  .result-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .result-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .weight-warning {
-    font-size: 1rem;
-  }
-
-  .result-value {
-    display: flex;
-    align-items: baseline;
-    gap: 0.35rem;
-  }
-
-  .big-number {
-    font-family: Oswald, sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--pine);
-  }
-
-  .medium-number {
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--ink);
-  }
-
-  .unit {
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-
-  .result-sub {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-top: 0.25rem;
-  }
-
-  .warning-msg {
-    margin-top: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-
-  .warning-msg.danger {
-    background: #fef2f2;
-    color: #991b1b;
-  }
-
-  .warning-msg.warning {
-    background: #fffbeb;
-    color: #92400e;
-  }
-
-  .warning-msg.caution {
-    background: #f0f9ff;
-    color: #0369a1;
-  }
-
-  .result-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-
-  /* Efficiency */
+  /* Efficiency Section */
   .efficiency-section {
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    background: #fffbeb;
+    border-top: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
   }
 
   .efficiency-header {
@@ -585,84 +707,160 @@
   .efficiency-header h3 {
     margin: 0;
     font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    color: var(--ink);
-  }
-
-  .efficiency-rating {
-    font-family: Oswald, sans-serif;
-    font-weight: 700;
     font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.05em;
   }
 
-  .efficiency-slider input[type="range"] {
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
+  .efficiency-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+  }
+
+  .efficiency-gauge {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+
+  .eff-track {
+    height: 24px;
     background: var(--border);
-    -webkit-appearance: none;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
   }
 
-  .efficiency-slider input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
+  .eff-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .eff-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    background: #fff;
+    border: 3px solid var(--ink);
     border-radius: 50%;
-    background: var(--pine);
-    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 2;
   }
 
-  .slider-labels {
+  .thumb-value {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .eff-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 24px;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 3;
+  }
+
+  .eff-labels {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-top: 0.5rem;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--muted);
   }
 
-  .current-val {
-    font-weight: 700;
-    color: var(--pine);
+  .eff-divider {
+    color: var(--border);
   }
 
-  .efficiency-desc {
-    margin: 0.75rem 0 0;
-    font-size: 0.85rem;
-    color: var(--muted);
-    text-align: center;
-  }
-
-  /* Meals */
+  /* Meals Section */
   .meals-section {
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    background: #fff;
+    border-bottom: 2px solid var(--border);
   }
 
   .meals-section h3 {
     margin: 0 0 1rem;
     font-family: Oswald, sans-serif;
-    font-size: 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
     color: var(--ink);
+    letter-spacing: 0.05em;
+  }
+
+  .meals-bar {
+    display: flex;
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    border: 2px solid var(--border);
+  }
+
+  .meal-segment {
+    background: hsl(var(--meal-hue), 65%, 55%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .meal-segment:hover {
+    filter: brightness(1.1);
+  }
+
+  .segment-icon {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
   }
 
   .meals-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .meal-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.75rem 0.5rem;
+    gap: 0.15rem;
+    padding: 0.6rem;
     background: var(--bg);
-    border-radius: 10px;
+    border: 2px solid hsl(var(--meal-hue), 50%, 75%);
+    border-radius: 8px;
   }
 
   .meal-icon {
-    font-size: 1.25rem;
+    width: 24px;
+    height: 24px;
+    background: hsl(var(--meal-hue), 65%, 55%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
   }
 
   .meal-name {
@@ -673,126 +871,217 @@
   .meal-cal {
     font-family: Oswald, sans-serif;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--ink);
   }
 
-  /* Reference */
-  .reference-section {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .reference-section h3 {
-    margin: 0 0 0.5rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    color: var(--ink);
-  }
-
-  .ref-intro {
-    margin: 0 0 1rem;
-    font-size: 0.85rem;
+  .meal-pct {
+    font-size: 0.65rem;
     color: var(--muted);
   }
 
-  .food-list {
+  /* Reference Section */
+  .reference-section {
+    padding: 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .ref-header {
     display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .ref-header h3 {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.05em;
+  }
+
+  .ref-legend {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .legend-item {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--cat-color);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .legend-item::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--cat-color);
+    border-radius: 2px;
+    margin-right: 0.25rem;
+    vertical-align: middle;
+  }
+
+  .ref-target {
+    margin: 0 0 1rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .food-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
   }
 
   .food-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 6px;
     transition: all 0.2s;
   }
 
   .food-item.good {
     border-color: #86efac;
-    background: rgba(34, 197, 94, 0.05);
+    background: rgba(34, 197, 94, 0.08);
   }
 
-  .food-item.poor {
+  .food-item.bad {
     opacity: 0.5;
   }
 
-  .food-name {
-    font-size: 0.85rem;
-    color: var(--ink);
+  .food-cat {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--cat-color);
+    flex-shrink: 0;
   }
 
-  .food-stats {
-    display: flex;
-    align-items: baseline;
-    gap: 0.25rem;
+  .food-name {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--ink);
   }
 
   .food-cal {
     font-family: Oswald, sans-serif;
-    font-weight: 700;
     font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--cat-color);
   }
 
-  .food-unit {
-    font-size: 0.65rem;
-    color: var(--muted);
-  }
-
-  /* Tips */
+  /* Tips Section */
   .tips-section {
+    display: flex;
+    gap: 1rem;
     padding: 1.25rem 1.5rem;
-    background: #fffbeb;
+    background: #f0fdf4;
+    border-bottom: 2px solid var(--border);
   }
 
-  .tips-section h4 {
-    margin: 0 0 0.75rem;
+  .tip-icon {
+    width: 32px;
+    height: 32px;
+    color: #16a34a;
+    flex-shrink: 0;
+  }
+
+  .tip-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .tips-content {
+    flex: 1;
+  }
+
+  .tips-content strong {
+    display: block;
     font-family: Oswald, sans-serif;
     font-size: 0.9rem;
-    color: #92400e;
-  }
-
-  .tips-section ul {
-    margin: 0;
-    padding-left: 1.25rem;
-    font-size: 0.85rem;
-    color: var(--ink);
-  }
-
-  .tips-section li {
+    color: #166534;
     margin-bottom: 0.35rem;
   }
 
-  .tips-section strong {
-    color: #92400e;
+  .tips-content ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.8rem;
+    color: var(--ink);
+  }
+
+  .tips-content li {
+    margin-bottom: 0.2rem;
+  }
+
+  /* Guide Link */
+  .guide-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--pine);
+    color: #fff;
+    text-decoration: none;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: all 0.2s;
+  }
+
+  .guide-link:hover {
+    background: var(--alpine);
+  }
+
+  .guide-link svg {
+    width: 18px;
+    height: 18px;
   }
 
   /* Responsive */
   @media (max-width: 640px) {
-    .input-row {
-      flex-direction: column;
-      gap: 1rem;
+    .main-grid {
+      grid-template-columns: 1fr;
     }
 
-    .effort-options {
-      flex-wrap: wrap;
+    .gauge-column {
+      border-right: none;
+      border-bottom: 2px solid var(--border);
     }
 
-    .effort-btn {
-      flex: 1 1 45%;
+    .effort-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
 
     .meals-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .result-row {
+    .food-grid {
       grid-template-columns: 1fr;
+    }
+
+    .header-stat {
+      display: none;
+    }
+
+    .ref-legend {
+      width: 100%;
+      justify-content: flex-start;
     }
   }
 </style>
