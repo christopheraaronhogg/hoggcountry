@@ -25,20 +25,16 @@ This guide represents hundreds of hours of research, planning, and real-world tr
 
 The Appalachian Trail demands respect. It is 2,197.9 miles of variable terrain, unpredictable weather, and constant decision-making. Success requires more than fitness—it requires systems, knowledge, and the discipline to apply both consistently.
 
-## Core Principles
+### Core Principles
 
-- **Prevention beats treatment** — in gear, health, and decision-making
-- **Consistency beats intensity** — sustainable systems finish trails
-- **Sleep and recovery are non-negotiable**
-- **Weight reduction comes from discipline, not deprivation**
-- **Every decision should serve one goal: reaching Katahdin**
+- Prevention beats treatment—in gear, health, and decision-making
+- Consistency beats intensity—sustainable systems finish trails
+- Sleep and recovery are non-negotiable
+- Weight reduction comes from discipline, not deprivation
+- Every decision should serve one goal: reaching Katahdin
 
-## How to Use This Guide
+### How to Use This Guide
 
-This guide is organized by system rather than chronology. Each chapter addresses a critical aspect of thru-hiking and provides both the reasoning behind decisions and the specific protocols to follow.
-
-- Read it before your hike
-- Reference it during planning
-- Carry the key sections digitally for field use
+This guide is organized by system rather than chronology. Each chapter addresses a critical aspect of thru-hiking and provides both the reasoning behind decisions and the specific protocols to follow. Read it before your hike, reference it during planning, and carry the key sections digitally for field use.
 
 > *"The hikers who finish are not the strongest—they are the ones who listen, adapt, and stay patient."*

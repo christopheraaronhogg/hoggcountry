@@ -2,8 +2,8 @@
 title: "Trail Sections & Milestones"
 part: 15
 order: 15
-description: "The 14 major NOBO sections from Georgia to Maine"
-icon: "map-pin"
+description: "Section-by-section overview and key milestones"
+icon: "flag"
 ---
 
 # Trail Sections & Milestones
@@ -53,3 +53,5 @@ Hardest terrain on AT. Alpine travel. **If you finish this, you WILL finish.**
 Roots, rocks, ladders. Katahdin is inevitable.
 
 > *"I'm not hiking 2,197.9 miles—I'm hiking 14 victories."*
+
+---

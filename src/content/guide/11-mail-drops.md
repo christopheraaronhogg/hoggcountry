@@ -2,7 +2,7 @@
 title: "USPS Mail Drop System"
 part: 11
 order: 11
-description: "General delivery rules, box labeling, recommended locations"
+description: "Mail drop strategy and post office logistics"
 icon: "mail"
 ---
 
@@ -23,9 +23,7 @@ icon: "mail"
 - Always include an ETA
 - If delayed, call the post office
 
----
-
-## Box Labeling Format
+### Box Labeling Format
 
 **Do not deviate from this format:**
 
@@ -37,13 +35,10 @@ PLEASE HOLD FOR AT HIKER
 ETA: MM/DD/YYYY
 ```
 
-### Rules
-
+**Rules:**
 - Write your name on all six sides
 - Use Sharpie
 - ETA matters
-
----
 
 ## Recommended Mail Drop Locations
 
@@ -58,3 +53,5 @@ ETA: MM/DD/YYYY
 | Monson, ME | ~2,074-2,079 | Gateway to 100-Mile Wilderness. Hold time often 14 days max. |
 
 *Note: Shaw's Hiker Hostel in Monson offers food drop services for the 100-Mile Wilderness—a useful option if you want to lighten your initial carry.*
+
+---

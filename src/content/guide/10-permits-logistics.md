@@ -2,7 +2,7 @@
 title: "Permits & Logistics"
 part: 10
 order: 10
-description: "Required permits for GSMNP, Shenandoah, Baxter State Park, and 2026 detours"
+description: "Required permits, reservations, and logistics"
 icon: "clipboard"
 ---
 
@@ -59,8 +59,6 @@ Voluntary identifier, NOT a permit. NOT required to hike.
 - Available at Amicalola Falls (mid-Feb through mid-April)
 - Also available at Damascus, Harpers Ferry, Monson
 
----
-
 ## Known Detours (2025-2026)
 
 | Detour | Distance | Status |
@@ -72,4 +70,6 @@ Voluntary identifier, NOT a permit. NOT required to hike.
 
 *Note: Virginia Creeper closure affects NOBO miles 476.6-485.8. Official detour uses Iron Mountain Trail, Flat Top Trail, and Mount Rogers Trail.*
 
-**IMPORTANT: Kennebec River Ferry (Maine)** — The ferry across the Kennebec River will **NOT operate in 2026**. Plan for the road-walk alternative. Check current guidance before reaching this section.
+**⚠️ IMPORTANT: Kennebec River Ferry (Maine)** — The ferry across the Kennebec River will **NOT operate in 2026**. Plan for the road-walk alternative. Check current guidance before reaching this section.
+
+---

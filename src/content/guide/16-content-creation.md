@@ -2,8 +2,8 @@
 title: "Content Creation"
 part: 16
 order: 16
-description: "Daily video structure, scripture integration, and LumaFusion editing"
-icon: "video"
+description: "Documentation, photography, and video strategy"
+icon: "camera"
 ---
 
 # Content Creation
@@ -52,8 +52,6 @@ Each video serves three goals:
 - One lesson learned
 - What tomorrow looks like
 
----
-
 ## Scripture Integration System
 
 Each verse reflects the day—it does not explain it.
@@ -77,8 +75,6 @@ Each verse reflects the day—it does not explain it.
 - Fade in → hold → fade out
 - Never more than 10 seconds
 
----
-
 ## LumaFusion Video Editing Guide
 
 ### What LumaFusion Is
@@ -87,15 +83,22 @@ LumaFusion is a professional, timeline-based video editing application originall
 
 It is a **true nonlinear editor**, not a template or preset editor.
 
+LumaFusion is widely used by:
+- Journalists
+- Documentary filmmakers
+- Travel and adventure creators
+- Solo shooters
+- Mobile-only production teams
+
 ### Platforms — Where It Runs
 
 | Platform | Support |
 |----------|---------|
 | **iPhone** | Fully supported, complete feature set. Best suited for short to medium edits (5-10 minutes). Excellent for field editing and daily videos. |
-| **iPad** | The platform LumaFusion was designed for. Best overall experience. Supports Apple Pencil, keyboards, and external drives. |
-| **Mac (Apple Silicon Only)** | Runs on M1, M2, M3, and M4 Macs. Uses the iPad version of the app. Interface remains touch-optimized, not mouse-first. |
+| **iPad** | The platform LumaFusion was designed for. Best overall experience. Supports Apple Pencil, keyboards, and external drives. Many professionals use iPad-only workflows. |
+| **Mac (Apple Silicon Only)** | Runs on M1, M2, M3, and M4 Macs. Uses the iPad version of the app. Performs well. Interface remains touch-optimized, not mouse-first. No native macOS-specific UI. |
 | **Android / ChromeOS** | Supported as of recent versions. |
-| **Windows** | Not supported. No official version. |
+| **Windows** | Not supported. No official version. No reliable workaround. |
 
 ### What LumaFusion Is Best At
 
@@ -109,6 +112,69 @@ LumaFusion excels at:
 
 *It is especially strong for consistent, repeatable daily videos, such as long-distance hiking documentation.*
 
+### Timeline and Track Capabilities
+
+LumaFusion provides:
+- Up to 6 video tracks (base); up to 12 video tracks with Creator Pass or Speed Ramping add-on
+- Up to 6 audio tracks (base); up to 12 audio tracks with Creator Pass or Speed Ramping add-on
+- Magnetic timeline (optional)
+- Frame-accurate trimming
+- Ripple, roll, slip, and overwrite edits
+
+This allows:
+- B-roll layering
+- Map and elevation overlays
+- Shelter and campsite shots
+- Title cards and graphics
+- Consistent storytelling structure
+
+### Audio Capabilities
+
+Audio is a strong point of LumaFusion.
+
+Features include:
+- Keyframeable audio levels
+- Automatic ducking (music lowers under voice)
+- Equalizer presets
+- Pan control
+- Fade curves
+- Direct voiceover recording
+
+*These tools are sufficient for clean narration and environmental sound capture, which is critical for outdoor and trail videos.*
+
+### Color and Image Control
+
+LumaFusion supports:
+- Exposure and contrast adjustment
+- Highlight and shadow recovery
+- Manual white balance
+- LUT application
+- Custom preset saving
+- Visual clip matching
+
+*This allows consistent color across changing outdoor lighting conditions.*
+
+### Titles, Graphics, and Overlays
+
+Included tools support:
+- Lower thirds
+- Location titles
+- Basic animations
+- Custom fonts
+- PNG overlays (maps, icons, elevation profiles)
+
+*Reusable templates can be built for daily video consistency.*
+
+### Export Options
+
+LumaFusion supports:
+- 1080p and 4K exports
+- Multiple aspect ratios (16:9, vertical, square)
+- Optimized compression for online platforms
+- Export to Files, Photos, or external storage
+
+*Exports are stable and reliable, even on mobile devices.*
+
 ### Why LumaFusion Fits a Long-Distance Hiking Workflow
 
 For a multi-month hike with daily videos, LumaFusion enables:
@@ -119,3 +185,5 @@ For a multi-month hike with daily videos, LumaFusion enables:
 - Maintaining consistent video structure across months
 
 *It removes the dependency on a full laptop-based workflow while preserving professional results.*
+
+---

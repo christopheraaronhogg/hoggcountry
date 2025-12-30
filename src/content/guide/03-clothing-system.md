@@ -2,8 +2,8 @@
 title: "Clothing System"
 part: 3
 order: 3
-description: "Layering strategy, temperature protocols, and cold weather system"
-icon: "layers"
+description: "Layering strategy and clothing choices by season"
+icon: "shirt"
 ---
 
 # Clothing System
@@ -16,15 +16,13 @@ icon: "layers"
 - Sleep layers are sacred and never hiked in.
 - Calories are heat.
 
----
-
 ## Layer Definitions
 
 ### Base Layer (Next-to-Skin)
 - Smartwool merino long-sleeve top
 - Smartwool merino long johns
 
-**Primary role:** Sleep + camp
+**Primary role:** Sleep + camp  
 **Secondary:** Rare, brief emergency daytime use only
 
 ### Active Mid Layer
@@ -44,8 +42,6 @@ icon: "layers"
 
 **Purpose:** Camp warmth. Emergency heat retention. Not used while hiking except in emergencies.
 
----
-
 ## Layering by Temperature
 
 | Conditions | Layers |
@@ -56,8 +52,6 @@ icon: "layers"
 | 20-30°F, Moving/Snow/Wind | Full layering including shell, Buff, gloves |
 | Camp/Static (Any Temp) | Down puffy ON immediately, shell over puffy if windy, never rely on Alpha for static warmth |
 | Sleep (Every Night) | Smartwool 250 sleep top and pants, dry socks, puffy inside quilt if temps drop |
-
----
 
 ## 72-Hour Cold/Wet Survival Protocol
 
@@ -88,8 +82,6 @@ icon: "layers"
 - Buff + gloves on
 - Get off the ground
 - Preserve heat first
-
----
 
 ## Cold Weather Clothing System - Comprehensive Details
 
@@ -172,3 +164,5 @@ At this point:
 - This setup is appropriate for early-season Appalachian Trail hiking
 
 **Stop buying gear. This system is complete.**
+
+---

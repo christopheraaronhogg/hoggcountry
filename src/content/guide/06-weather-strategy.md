@@ -2,7 +2,7 @@
 title: "Weather Strategy"
 part: 6
 order: 6
-description: "Temperature planning, heat timeline, multi-day rain, off-grid awareness"
+description: "Weather patterns, forecasting, and response protocols"
 icon: "cloud"
 ---
 
@@ -55,13 +55,13 @@ If you plan for this document's numbers:
 - You will never be surprised
 - You will always have margin
 
----
+*This is exactly how experienced winter and shoulder-season AT hikers think.*
 
 ## Heat Timeline & Strategy
 
-**Start Date:** February 1
-**Direction:** Northbound (NOBO)
-**Daily Pace:** 8-10 miles per hiking day
+**Start Date:** February 1  
+**Direction:** Northbound (NOBO)  
+**Daily Pace:** 8-10 miles per hiking day  
 **Realistic Calendar Pace:** ~7-8 trail miles/day including zero/nero days
 
 ### When Heat STARTS to Matter
@@ -79,6 +79,8 @@ If you plan for this document's numbers:
 - Humidity becomes persistent
 - Sweating increases dramatically
 - Water and electrolyte planning becomes mandatory
+
+**Bottom Line:** You begin actively managing heat in late April, and by early May, summer conditions are established.
 
 ### Where Heat Is WORST (Primary Heat Grind)
 
@@ -114,6 +116,8 @@ If you plan for this document's numbers:
 - Fewer oppressive humidity days
 - Heat stops being the primary daily stressor
 
+*Heat does not disappear entirely, but it is no longer the dominant challenge.*
+
 ### Summary Table
 
 | Phase | Mile Markers | Approximate Dates |
@@ -128,8 +132,6 @@ If you plan for this document's numbers:
 - You encounter heat with strong legs and lower injury risk
 - The worst heat is predictable and finite
 - You exit oppressive heat before September
-
----
 
 ## Multi-Day Rain Strategy
 
@@ -149,13 +151,13 @@ If you plan for this document's numbers:
 
 ### Rain Camp Sequence
 
-**Step 1: Pitch tent FIRST (wet phase)**
+**Step 1: Pitch tent FIRST (wet phase)**  
 Pitch immediately on arrival. Do NOT open dry bags.
 
-**Step 2: Cook & Eat (wet phase)**
+**Step 2: Cook & Eat (wet phase)**  
 Cook outside or at vestibule edge. Rain gear stays ON.
 
-**Step 3: Bear Hang IMMEDIATELY (wet phase)**
+**Step 3: Bear Hang IMMEDIATELY (wet phase)**  
 Do not enter tent before this step.
 
 **Step 4: Dry Phase Transition (inside tent)**
@@ -166,7 +168,116 @@ Do not enter tent before this step.
 
 **If you forgot something outside — it waits.**
 
----
+### Morning Reset in Continued Rain
+
+1. Pack quilt + sleep clothes FIRST
+2. Seal them inside pack liner
+3. Put wet clothes back on
+4. Exit tent
+5. Retrieve food
+6. Eat, pack, hike
+
+*You only endure the wet once per cycle.*
+
+## Wind Thresholds (Field Reality)
+
+| Wind Speed | Action |
+|------------|--------|
+| 0–10 mph (light) | Shelter or tent OK |
+| 10–20 mph (moderate) | Lean TENT; shelter only if deep woods and calm interior |
+| 20–30 mph (strong) | **TENT ONLY** — Below ridges, protected terrain |
+| 30+ mph (severe) | Immediate protected site, tight low pitch, drop elevation if possible |
+
+**Wind + rain = tent every time.**
+
+## Campsite Selection in Wind
+
+### Choose:
+- Dense trees
+- Slightly downhill from ridgeline
+- Natural wind breaks
+- Soil that accepts stakes
+
+### Avoid:
+- Ridges
+- Gaps and saddles
+- Balds
+- Obvious wind funnels
+- Creek bottoms in storms
+
+*If wind accelerates as you walk — don't camp there.*
+
+## Tent Orientation (Critical)
+
+Point the **NARROW end of the tent INTO the wind**.
+
+- Never broadside
+- Never door-first into wind
+
+*Think aircraft nose, not billboard.*
+
+## Stake Strategy
+
+### Number of Stakes
+
+| Conditions | Stakes |
+|------------|--------|
+| Calm | 6 |
+| Moderate wind | 8 |
+| Strong/gusty wind | 10–12 (use ALL guy points) |
+
+### Stake Angle
+
+**Angle stakes ~30–45° AWAY from the tent**, aligned with the direction of pull.
+
+In wind:
+- Angled stakes resist rotation
+- Vertical stakes walk loose
+- Real-world holding is greater when angled
+
+### Order of Staking
+
+1. Windward corners FIRST
+2. Leeward corners second
+3. Side panels and guy lines last
+
+### Guy Lines & Tensioning
+
+- Use every guy point in wind
+- Fabric should be flat, not drum-tight
+- No flapping = no heat loss
+
+**Noise means movement. Movement means cold.**
+
+### Pitch Height (Your Wind Dial)
+
+**High wind = LOW pitch**
+- Shorten poles slightly
+- Reduce ground gap
+- Lower profile = stronger tent
+
+**Venting:**
+- Windward vent CLOSED
+- Leeward vent OPEN
+
+### Bad Soil Solutions
+
+If stakes won't hold:
+- Add rocks on guy lines
+- Wrap lines around roots/logs
+- Use buried "deadman" anchors in mud
+
+*Weight + angle beats soil quality.*
+
+### Night Check (Do This Once)
+
+Before dry phase:
+- Walk perimeter
+- Tug each guy line
+- Listen for flapping
+- Adjust now, not at 2 AM
+
+*Wind usually increases overnight.*
 
 ## Off-Grid Weather Awareness
 
@@ -202,3 +313,5 @@ Trail elevation changes while hiking are meaningless for weather detection. Elev
 3. Clouds thickening or lowering
 4. Garmin forecast worsens
 5. Sudden temperature drop
+
+---

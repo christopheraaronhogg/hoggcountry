@@ -9,6 +9,7 @@
     "postbuild": "node scripts/generate-asset-manifest.js",
     "build:pdf": "node scripts/generate-pdf.js",
     "build:all": "astro build && node scripts/generate-pdf.js",
+    "update-guide": "node scripts/parse-master-guide.js",
     "preview": "astro preview",
     "astro": "astro"
   },

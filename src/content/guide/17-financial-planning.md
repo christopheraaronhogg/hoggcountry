@@ -2,7 +2,7 @@
 title: "Financial Planning"
 part: 17
 order: 17
-description: "Worst-case funding plan, cost model, offsets"
+description: "Budget planning and cost management"
 icon: "dollar"
 ---
 
@@ -18,8 +18,6 @@ icon: "dollar"
 - Zero days: One every 5 days (48 total)
 - Hiking days: 194
 - Lodging: Private rooms preferred
-
----
 
 ## Cost Model
 
@@ -49,9 +47,7 @@ icon: "dollar"
 
 **$14,644** (worst case, 242 days)
 
----
-
-## Offsets
+### Offsets
 
 | Item | Amount |
 |------|--------|
@@ -60,10 +56,10 @@ icon: "dollar"
 | Starting food carry | $110 |
 | **Total offsets** | **$9,943** |
 
----
-
-## Net Household Impact
+### Net Household Impact
 
 **$4,701 total** (~$590/month)
 
 > *Money will not be the reason the hike becomes unsafe, rushed, or miserable.*
+
+---

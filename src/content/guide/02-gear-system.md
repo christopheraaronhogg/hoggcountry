@@ -2,13 +2,13 @@
 title: "Gear System"
 part: 2
 order: 2
-description: "Complete base weight breakdown, gear transitions, and shakedown principles"
+description: "Complete gear philosophy, packing strategies, and weight management"
 icon: "backpack"
 ---
 
 # Gear System
 
-## Base Weight Philosophy
+## Chapter 1: Base Weight Philosophy
 
 Base weight is the foundation of sustainable long-distance hiking. Every ounce carried compounds over thousands of miles into joint stress, fatigue, and potential injury. However, ultralight ideology taken too far sacrifices sleep quality, safety, and morale—the very things that enable trail completion.
 
@@ -19,9 +19,7 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 - Durability over marginal weight savings
 - Realistic winter capability for February start
 
----
-
-## Complete Base Weight Breakdown
+## Chapter 2: Complete Base Weight Breakdown
 
 ### Pack System (No Food/Water): 24.76 lb
 
@@ -96,9 +94,7 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 - **Total Carried (No Food/Water):** 27.52 lb
 - **Typical Trail Weight (7 lb food + 1L water):** ~36.7 lb
 
----
-
-## Gear Transitions
+## Chapter 3: Gear Transitions
 
 This gear system is designed to evolve with trail conditions. Carrying winter gear through summer is unnecessary weight; arriving in the Whites without proper equipment is dangerous.
 
@@ -128,9 +124,7 @@ This gear system is designed to evolve with trail conditions. Carrying winter ge
 
 **Rationale:** Daytime temps consistently 50s-60s. Nights rarely below freezing. Sleep warmth becomes comfort-based, not survival-based.
 
----
-
-## Hard Shakedown Principles
+## Chapter 4: Hard Shakedown Principles
 
 Weight reduction is achieved through discipline and redundancy removal—not by sacrificing sleep, safety, or morale.
 
@@ -174,3 +168,5 @@ Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 **Rule:** If unused for 7 trail days, it goes in a hiker box.
 
 **Expected Savings:** 4-6 oz
+
+---

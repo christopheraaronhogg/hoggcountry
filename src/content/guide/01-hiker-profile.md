@@ -2,17 +2,17 @@
 title: "Hiker Profile & Experience"
 part: 1
 order: 1
-description: "Trail resume, mountain climb readiness, weather rules, and readiness assessment"
-icon: "mountain"
+description: "Trail resume and mountain readiness assessment"
+icon: "user"
 ---
 
 # Hiker Profile & Experience
 
+## Hiking Resume
+
 This section documents verified long-distance completions, prior AT experience, and the skills that directly translate to Appalachian Trail readiness.
 
----
-
-## Completed Thru-Hikes
+### Completed Thru-Hikes
 
 | Trail | Distance | Elevation Gain | Location |
 |-------|----------|----------------|----------|
@@ -20,17 +20,15 @@ This section documents verified long-distance completions, prior AT experience, 
 | Ozark Highlands Trail | ~270 miles | ~35,000-40,000 ft | Northern Arkansas |
 | Ozark Trail | ~230 miles | ~40,000 ft | Missouri |
 
-**Total Completed Mileage:** ~720+ miles
+**Total Completed Mileage:** ~720+ miles  
 **Estimated Cumulative Elevation Gain:** ~120,000+ feet
 
 ### Recognition
 
-**Sassafras Award — Ozark Society**
+**Sassafras Award — Ozark Society**  
 Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark Trail. *6th person in history to receive this award.*
 
----
-
-## Prior Appalachian Trail Experience
+### Prior Appalachian Trail Experience
 
 - **Standing Bear Farm to Hot Springs, NC** — ~35 miles | ~9,000 ft elevation gain | Full pack, winter conditions
 - **Newfound Gap to Kuwohi (Overnight)** — ~16 miles round trip | ~3,300 ft elevation gain | Shelter stay in ~17°F conditions | Summit: 6,643 ft (highest point on the AT)
@@ -39,14 +37,12 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 
 ### High-Elevation Experience (Comparison Benchmark)
 
-**Pikes Peak, Colorado — Crags Trail**
+**Pikes Peak, Colorado — Crags Trail**  
 ~13 miles round trip | ~4,300 ft elevation gain | Summit elevation: 14,115 ft
 
 *Note: Pikes Peak is located in Colorado, not on the Appalachian Trail. This entry is included as a cardiovascular and altitude benchmark demonstrating capability for AT climbs.*
 
----
-
-## Core Competencies
+### Core Competencies
 
 - Multi-week self-supported backpacking
 - Cold-weather camping and shelter living
@@ -55,8 +51,6 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 - River crossings and navigation
 - Resupply planning and execution
 - Proven physical and mental endurance
-
----
 
 ## Mountain Climb Readiness & Assessment
 
@@ -67,7 +61,7 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 | Standing Bear Farm → Hot Springs, NC | ~33 miles | Winter, ~35 lb pack | Snowbird Mountain, High difficulty |
 | Newfound Gap ↔ Kuwohi | ~15.6 miles RT | ~17°F, winter Smokies | Entirely high-altitude AT miles |
 
-**TOTAL AT MILES HIKED: ~49 miles** ✓
+**TOTAL AT MILES HIKED: ~49 miles** ✅
 
 *These are hard miles, not summer or low-grade terrain.*
 
@@ -97,6 +91,12 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 | Mount Rogers Area | ~4,000 ft | 5,729 ft | ~1,700 ft |
 | The Priest | ~650 ft | 4,063 ft | ~3,400 ft |
 | Three Ridges | ~1,500 ft | ~3,970 ft | ~2,470 ft |
+
+#### MID-ATLANTIC
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Blue Mountain (PA) | ~800 ft | ~2,300 ft | ~1,500 ft |
 
 #### NEW ENGLAND
 
@@ -132,7 +132,20 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 - Kuwohi (Clingmans Dome)
 - Bigelow Range
 
----
+### Experience Benchmark: Pikes Peak (Colorado)
+
+**Crags Trail → Summit**
+- Start elevation: ~10,000 ft
+- Summit: 14,115 ft
+- Net gain: ~4,100 ft
+- Distance: ~6.5 miles
+
+**What This Proves:**
+- You've already matched Katahdin-level vertical
+- You started higher than any AT climb
+- Cardiovascularly, the AT holds no surprises
+
+*Note: This benchmark is for fitness comparison only—Pikes Peak is not on the Appalachian Trail.*
 
 ## Weather & Elevation Rules
 
@@ -175,8 +188,6 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 | August | Whites (NH) | Exposure, extreme weather | Very High |
 | September | Maine | Cold, wet rock, fatigue | High |
 
----
-
 ## Readiness Assessment
 
 | Category | Score | Notes |
@@ -203,3 +214,5 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 4. Any exposure above treeline?
 
 **If wind >30 mph or ice on rock: → Delay or bail**
+
+---

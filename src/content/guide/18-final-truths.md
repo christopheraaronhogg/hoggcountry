@@ -2,8 +2,8 @@
 title: "The Path to Katahdin"
 part: 18
 order: 18
-description: "Final trail truths and the one-line trail rule"
-icon: "flag"
+description: "Final trail truths and the one-line rule"
+icon: "mountain"
 ---
 
 # The Path to Katahdin
@@ -11,8 +11,6 @@ icon: "flag"
 This guide represents everything learned from 840+ miles of thru-hiking, hundreds of hours of research, and the hard-won wisdom of countless hikers who came before. It is not theoretical—it is tested.
 
 The Appalachian Trail will challenge you in ways you cannot fully anticipate. Weather will test your systems. Terrain will test your body. The sheer length will test your mind. But with proper preparation, disciplined execution, and the humility to adapt, you will stand on Katahdin.
-
----
 
 ## Final Trail Truths
 
@@ -23,13 +21,9 @@ The Appalachian Trail will challenge you in ways you cannot fully anticipate. We
 - Mental discipline finishes the trail—not strength
 - The trail is not conquered; it is negotiated daily
 
----
-
 ## One-Line Trail Rule
 
 > **Slow early. Strong later. Never break the 5-day rule.**
-
----
 
 Every system in this guide exists for one purpose: to put you on top of Katahdin, healthy and strong, before the snow flies.
 
@@ -41,5 +35,7 @@ The preparation is complete. Focus now shifts to execution, pacing, and decision
 
 ---
 
-*Guide last updated: December 2024*
-*Fact-checked and corrected for 2026 thru-hiking season*
+*Guide last updated: December 2024*  
+*Fact-checked and corrected for 2026 thru-hiking season*  
+*Includes: Emergency Exit Points, Medical Access by State, Enhanced Weather/Camp Strategy, Complete Water Source Mile Markers*  
+*Total corrections and additions applied: 35+*

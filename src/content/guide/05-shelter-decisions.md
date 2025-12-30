@@ -2,7 +2,7 @@
 title: "Shelter vs. Tent Decision System"
 part: 5
 order: 5
-description: "When to use shelters, winter decision framework, shelter night protocol"
+description: "When to use shelters vs tent camping"
 icon: "home"
 ---
 
@@ -10,12 +10,10 @@ icon: "home"
 
 ## Core Philosophy
 
-- **Tent is the default**
+- Tent is the default
 - Shelters are a safety tool, not a comfort choice
 - Poor sleep and mouse exposure are accepted costs only when risk outweighs discomfort
 - Decisions are made using objective triggers, not mood or convenience
-
----
 
 ## When Shelter Becomes the Right Decision
 
@@ -48,8 +46,6 @@ icon: "home"
 
 *Shelter reduces complexity when judgment is compromised.*
 
----
-
 ## What Is NOT a Shelter Trigger
 
 - It's cold but dry and calm
@@ -59,11 +55,26 @@ icon: "home"
 
 **Tent handles those conditions fine.**
 
----
+## Winter Decision Framework - Comprehensive
 
-## Winter Decision Framework
+### Georgia vs NC Terrain Comparison (Reality)
 
-### Winter Tent-Site Scoring Checklist
+**Blood Mountain (Georgia)**
+- Shorter but steeper
+- Elevation gain is compressed
+- Switchbacks exist but are aggressive
+- Descent into Neel Gap is harder than the climb
+- Punishes pacing mistakes early
+
+**Snowbird / Walnut / Max Patch (NC)**
+- Longer, sustained climbs
+- Easier to find rhythm
+- Weather exposure lasts longer
+- More endurance-based suffering
+
+**Bottom line:** Blood Mountain is not taller, but it hits harder sooner. You already handled equal or harder terrain in NC.
+
+## Winter Tent-Site Scoring Checklist
 
 Score each category 0-2. Total possible: 10 points.
 
@@ -72,27 +83,27 @@ Score each category 0-2. Total possible: 10 points.
 - 4-6 → Tent only if weather is stable
 - 0-3 → Shelter is the smart move
 
-#### 1. Wind Protection
+### 1. Wind Protection
 - 2: Fully protected, calm
 - 1: Partial protection
 - 0: Exposed, funneling wind
 
-#### 2. Ground Quality
+### 2. Ground Quality
 - 2: Flat, drains well, stakes hold
 - 1: Minor slope or frozen top layer
 - 0: Ice, pooled water, unusable ground
 
-#### 3. Moisture Risk
+### 3. Moisture Risk
 - 2: Dry ground, stable weather
 - 1: Damp but manageable
 - 0: Freezing rain or heavy wet snow
 
-#### 4. Setup Control
+### 4. Setup Control
 - 2: Calm, deliberate setup
 - 1: Minor fumbling
 - 0: Hands failing, rushing, irritation
 
-#### 5. Overnight Confidence
+### 5. Overnight Confidence
 
 Ask: "Will this still work if conditions worsen at 3 a.m.?"
 
@@ -101,8 +112,6 @@ Ask: "Will this still work if conditions worsen at 3 a.m.?"
 - 0: No, hoping it holds
 
 **Hope is not a winter strategy.**
-
----
 
 ## One-Minute Decision Prompt
 
@@ -114,8 +123,6 @@ Before committing to camp, ask:
 4. Will this setup keep me warm at 3 a.m.?
 
 **If any answer feels shaky, shelter is the correct call.**
-
----
 
 ## Shelter Night Protocol (When You Go In)
 
@@ -162,3 +169,5 @@ Once shelter is chosen, you switch modes.
 3. Retrieve food last
 4. Eat outside if possible
 5. Visual sweep for crumbs
+
+---

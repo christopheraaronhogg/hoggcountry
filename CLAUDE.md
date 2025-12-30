@@ -56,6 +56,27 @@ npm run astro -- check # Validate content collections
 - Don't remove Tailwind layers or design tokens
 - Keep Svelte islands minimal; prefer vanilla JS for simple interactivity
 
+## AT Field Guide
+
+The Field Guide (`/guide/`) is built from a master markdown document. To update:
+
+1. Replace `MASTER_NOBO_FIELD_GUIDE.md` with the new version
+2. Run `npm run update-guide` to parse and regenerate chapter files
+3. Run `npm run build` to rebuild the site
+
+**Structure:**
+- Master doc: `MASTER_NOBO_FIELD_GUIDE.md` (source of truth)
+- Parser: `scripts/parse-master-guide.js` (splits into chapters)
+- Chapters: `src/content/guide/*.md` (auto-generated from master)
+- Quick refs: `src/content/guide/quick/*.md` (manually maintained)
+
+The parser extracts:
+- Introduction (before PART I)
+- Parts I–XVII (main chapters)
+- Conclusion (The Path to Katahdin)
+
+Quick reference cards in `quick/` are NOT overwritten by the parser.
+
 ## Configuration
 
 - `astro.config.mjs`: Update `site` for production domain (affects canonical URLs, RSS, sitemaps)

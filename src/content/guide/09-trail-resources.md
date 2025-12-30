@@ -2,7 +2,7 @@
 title: "Trail Resources & Navigation"
 part: 9
 order: 9
-description: "Primary guidebook reference, A.T. Guide, FarOut app, and navigation tools"
+description: "Apps, maps, and navigation tools for the AT"
 icon: "map"
 ---
 
@@ -16,9 +16,7 @@ The primary guidebook most Appalachian Trail thru-hikers use and carry is the **
 
 This guide is instantly recognizable by its long, narrow, spiral-bound format, a shape intentionally designed for backpack use. Many hikers tear out completed sections as they progress northbound, while others keep the full book intact. A large number of hikers now carry the electronic version instead of the physical book.
 
----
-
-## Why the A.T. Guide Is the Gold Standard
+### Why the A.T. Guide Is the Gold Standard
 
 The A.T. Guide is considered the most complete single reference for the AT because it combines essential planning and navigation information into one resource:
 
@@ -37,9 +35,7 @@ This makes the guide ideal for:
 - Anticipating difficult climbs before reaching them
 - Overall trail logistics from Georgia to Maine
 
----
-
-## Latest Physical Edition
+### Latest Physical Edition
 
 **A.T. Guide 2026 (Spiral-Bound)**
 
@@ -48,9 +44,7 @@ This makes the guide ideal for:
 - The most common physical guide seen on trail
 - Formerly known as "AWOL's Guide"
 
----
-
-## Electronic / Digital Versions
+### Electronic / Digital Versions
 
 Many thru-hikers now choose the digital version rather than carrying the paper book.
 
@@ -61,9 +55,7 @@ Many thru-hikers now choose the digital version rather than carrying the paper b
 - Works offline once downloaded
 - No added pack weight
 
----
-
-## How Most Thru-Hikers Actually Use It on Trail
+### How Most Thru-Hikers Actually Use It on Trail
 
 Most experienced Appalachian Trail hikers rely on a tool combination, not just one resource:
 
@@ -73,9 +65,7 @@ Most experienced Appalachian Trail hikers rely on a tool combination, not just o
 
 *The A.T. Guide provides structure and predictability. FarOut provides live, crowdsourced intelligence.*
 
----
-
-## Practical Recommendation
+### Practical Recommendation
 
 For an efficient, modern thru-hike setup:
 
@@ -84,3 +74,5 @@ For an efficient, modern thru-hike setup:
 - Carrying the paper guide is optional and mainly for redundancy or personal preference
 
 *If electronics fail, the paper A.T. Guide becomes invaluable. If conditions change rapidly, FarOut fills the gaps.*
+
+---
