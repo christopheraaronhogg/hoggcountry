@@ -56,9 +56,7 @@
   function scrollToChapter(id) {
     const element = document.getElementById(id);
     if (element) {
-      const offset = headerHidden ? 60 : 110; // Account for header + progress bar
-      const top = element.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top, behavior: 'smooth' });
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       showMobileNav = false;
     }
   }
