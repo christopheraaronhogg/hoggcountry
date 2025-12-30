@@ -10,6 +10,8 @@
     "build:pdf": "node scripts/generate-pdf.js",
     "build:all": "astro build && node scripts/generate-pdf.js",
     "update-guide": "node scripts/parse-master-guide.js",
+    "test": "node --test scripts/parse-master-guide.test.js",
+    "test:guide": "node --test scripts/parse-master-guide.test.js",
     "preview": "astro preview",
     "astro": "astro"
   },

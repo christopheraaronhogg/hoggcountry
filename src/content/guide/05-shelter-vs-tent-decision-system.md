@@ -1,12 +1,12 @@
 ---
-title: "Shelter vs. Tent Decision System"
+title: "Shelter Vs. Tent Decision System"
 part: 5
 order: 5
-description: "When to use shelters vs tent camping"
+description: "Bottom line: Blood Mountain is not taller, but it hits harder sooner. You already handled equal or harder terrain in NC."
 icon: "home"
 ---
 
-# Shelter vs. Tent Decision System
+# Shelter Vs. Tent Decision System
 
 ## Core Philosophy
 

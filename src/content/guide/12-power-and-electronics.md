@@ -2,7 +2,7 @@
 title: "Power & Electronics"
 part: 12
 order: 12
-description: "Battery strategy, charging, and electronics management"
+description: "Used in towns only. Allows rapid recharge. Minimizes town time."
 icon: "battery"
 ---
 

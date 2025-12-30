@@ -2,7 +2,7 @@
 title: "Safety & Emergency Procedures"
 part: 14
 order: 14
-description: "Emergency protocols, bailout points, and safety systems"
+description: "Act early. Most trail emergencies are not sudden disasters—they are delayed decisions."
 icon: "alert"
 ---
 

@@ -1,8 +1,8 @@
 ---
 title: "The Path to Katahdin"
-part: 18
+part: 999
 order: 18
-description: "Final trail truths and the one-line rule"
+description: "This guide represents everything learned from 840+ miles of thru-hiking, hundreds of hours of research, and the hard-..."
 icon: "mountain"
 ---
 

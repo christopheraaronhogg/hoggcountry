@@ -2,7 +2,7 @@
 title: "Food & Resupply"
 part: 7
 order: 7
-description: "Nutrition, meal planning, and resupply strategy"
+description: "This is the dominant norm across the entire trail."
 icon: "utensils"
 ---
 

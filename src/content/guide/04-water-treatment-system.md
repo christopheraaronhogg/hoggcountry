@@ -2,7 +2,7 @@
 title: "Water Treatment System"
 part: 4
 order: 4
-description: "Water sources, treatment methods, and carry strategy"
+description: "Primary: Hollow-fiber filter (BeFree or Platypus QuickDraw class)"
 icon: "droplet"
 ---
 

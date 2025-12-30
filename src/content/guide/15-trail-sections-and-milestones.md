@@ -2,7 +2,7 @@
 title: "Trail Sections & Milestones"
 part: 15
 order: 15
-description: "Section-by-section overview and key milestones"
+description: "Sharp climbs early, Blood Mountain. First state down."
 icon: "flag"
 ---
 

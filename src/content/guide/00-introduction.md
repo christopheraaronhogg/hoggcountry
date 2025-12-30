@@ -2,7 +2,7 @@
 title: "Introduction"
 part: 0
 order: 0
-description: "The philosophy behind this guide and how to use it"
+description: "Prepared by: Theman"
 icon: "compass"
 ---
 

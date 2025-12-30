@@ -2,7 +2,7 @@
 title: "Clothing System"
 part: 3
 order: 3
-description: "Layering strategy and clothing choices by season"
+description: "Primary role: Sleep + camp"
 icon: "shirt"
 ---
 

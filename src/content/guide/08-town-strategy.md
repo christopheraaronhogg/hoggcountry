@@ -2,7 +2,7 @@
 title: "Town Strategy"
 part: 8
 order: 8
-description: "Town stops, zero days, and town efficiency"
+description: "Partial day in town:"
 icon: "building"
 ---
 

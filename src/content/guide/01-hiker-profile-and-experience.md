@@ -2,7 +2,7 @@
 title: "Hiker Profile & Experience"
 part: 1
 order: 1
-description: "Trail resume and mountain readiness assessment"
+description: "This section documents verified long-distance completions, prior AT experience, and the skills that directly translat..."
 icon: "user"
 ---
 

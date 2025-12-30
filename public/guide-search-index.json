@@ -2,7 +2,7 @@
   {
     "id": "00-introduction",
     "title": "Introduction",
-    "description": "The philosophy behind this guide and how to use it",
+    "description": "Prepared by: Theman",
     "quickRef": false,
     "part": 0,
     "order": 0,
@@ -10,9 +10,9 @@
     "headers": "The Philosophy Behind This Guide | Core Principles | How to Use This Guide"
   },
   {
-    "id": "01-hiker-profile",
+    "id": "01-hiker-profile-and-experience",
     "title": "Hiker Profile & Experience",
-    "description": "Trail resume and mountain readiness assessment",
+    "description": "This section documents verified long-distance completions, prior AT experience, and the skills that directly translat...",
     "quickRef": false,
     "part": 1,
     "order": 1,
@@ -22,7 +22,7 @@
   {
     "id": "02-gear-system",
     "title": "Gear System",
-    "description": "Complete gear philosophy, packing strategies, and weight management",
+    "description": "Base weight is the foundation of sustainable long-distance hiking. Every ounce carried compounds over thousands of mi...",
     "quickRef": false,
     "part": 2,
     "order": 2,
@@ -32,7 +32,7 @@
   {
     "id": "03-clothing-system",
     "title": "Clothing System",
-    "description": "Layering strategy and clothing choices by season",
+    "description": "Primary role: Sleep + camp",
     "quickRef": false,
     "part": 3,
     "order": 3,
@@ -40,9 +40,9 @@
     "headers": "Core Principles | Layer Definitions | Base Layer (Next-to-Skin) | Active Mid Layer | Shell Layer | Insulation Layer (Static Only) | Layering by Temperature | 72-Hour Cold/Wet Survival Protocol | Morning | Moving in Rain/Sleet/Snow | End-of-Day (Non-Negotiable) | If Forced to Stop (Injury/Delay) | Cold Weather Clothing System - Comprehensive Details | Definitive Layer Definitions | Core Principles (Non-Negotiable Rules) | Final System Verdict | Final Confidence Statement"
   },
   {
-    "id": "04-water-treatment",
+    "id": "04-water-treatment-system",
     "title": "Water Treatment System",
-    "description": "Water sources, treatment methods, and carry strategy",
+    "description": "Primary: Hollow-fiber filter (BeFree or Platypus QuickDraw class)",
     "quickRef": false,
     "part": 4,
     "order": 4,
@@ -50,19 +50,19 @@
     "headers": "Final System Decision | Why This Combination | Tablet Selection | Supply Math | Winter Workflow | Step 1 — Collect | Step 2 — Filter | Step 3 — Purify | Step 4 — Wait | Step 5 — Drink | Freeze Protection Rules | Night Rule (Non-Negotiable) | Day Rule | What Does NOT Work | Comprehensive Water Sources Guide | What \"Reliable\" Means | Treatment Rule (Non-Negotiable) | When to Pause Even at a Listed Source | Quick Legend (Field Use) | Reliable Water Sources — Northbound | GEORGIA (Springer Mountain to NC Border) | NORTH CAROLINA / TENNESSEE (Fontana Dam to Hot Springs) | TENNESSEE / VIRGINIA HIGHLANDS (Hot Springs to Damascus) | VIRGINIA (Damascus to Shenandoah National Park) | SHENANDOAH NATIONAL PARK | MID-ATLANTIC (WV / MD / PA / NJ / NY) | NEW ENGLAND (CT / MA / VT / NH / ME) | Water Types — What to Use & What to Avoid | 🟢 BEST WATER (GREEN LIGHT) | 🟡 ACCEPTABLE WITH CAUTION (YELLOW LIGHT) | 🔴 AVOID EVEN WITH TREATMENT (RED LIGHT) | Questionable Water Protocol | Winter vs Summer Reality | The 1-Liter Rule (Realistic) | Section-Specific Water Reliability | Standing Bear Farm to Hot Springs, NC | Why AWOL Shows Water That Isn't Reliable | FarOut Water Icons — How Reliable Are They? | Real-World Water Planning Rules"
   },
   {
-    "id": "05-shelter-decisions",
-    "title": "Shelter vs. Tent Decision System",
-    "description": "When to use shelters vs tent camping",
+    "id": "05-shelter-vs-tent-decision-system",
+    "title": "Shelter Vs. Tent Decision System",
+    "description": "Bottom line: Blood Mountain is not taller, but it hits harder sooner. You already handled equal or harder terrain in NC.",
     "quickRef": false,
     "part": 5,
     "order": 5,
-    "content": "Shelter vs. Tent Decision System Core Philosophy - Tent is the default - Shelters are a safety tool, not a comfort choice - Poor sleep and mouse exposure are accepted costs only when risk outweighs discomfort - Decisions are made using objective triggers, not mood or convenience When Shelter Becomes the Right Decision Go to a shelter if ANY ONE of the following is true: 1. Wind + Cold Combination - Temps below ~25°F - Sustained wind 15+ mph or gusts 20+ mph - Exposed ridge or saddle - You feel cold before stopping 2. Freezing Rain or Heavy Wet Snow Automatic shelter night. No debate. 3. Ground Conditions You Cannot Mitigate - Solid ice - Snow too deep to anchor - No flat or drained tent sites 4. You Are Wet and Can't Get Dry Before Dark - Damp clothing - Temps dropping - No sun left - Hands losing dexterity 5. Mental or Physical Exhaustion - Foggy thinking - Irritation during setup - Skipping food or water steps Shelter reduces complexity when judgment is compromised. What Is NOT a Shelter Trigger - It's cold but dry and calm - You're tired but functional - Others are staying there - You want convenience Tent handles those conditions fine. Winter Decision Framework - Comprehensive Georgia vs NC Terrain Comparison (Reality) Blood Mountain (Georgia) - Shorter but steeper - Elevation gain is compressed - Switchbacks exist but are aggressive - Descent into Neel Gap is harder than the climb - Punishes pacing mistakes early Snowbird / Walnut / Max Patch (NC) - Longer, sustained climbs - Easier to find rhythm - Weather exposure lasts longer - More endurance-based suffering Bottom line: Blood Mountain is not taller, but it hits harder sooner. You already handled equal or harder terrain in NC. Winter Tent-Site Scoring Checklist Score each category 0-2. Total possible: 10 points. Interpretation: - 7-10 → Tent is correct - 4-6 → Tent only if weather is stable - 0-3 → Shelter is the smart move 1. Wind Protection - 2: Fully protected, calm - 1: Partial protection - 0: Exposed, funneling wind 2. Ground Quality - 2: Flat, drains well, stakes hold - 1: Minor slope or frozen top layer - 0: Ice, pooled water, unusable ground 3. Moisture Risk - 2: Dry ground, stable weather - 1: Damp but manageable - 0: Freezing rain or heavy wet snow 4. Setup Control - 2: Calm, deliberate setup - 1: Minor fumbling - 0: Hands failing, rushing, irritation 5. Overnight Confidence Ask: \"Will this still work if conditions worsen at 3 a.m.?\" - 2: Yes, confidently - 1: Maybe, thin margin - 0: No, hoping it holds Hope is not a winter strategy. One-Minute Decision Prompt Before committing to camp, ask: 1. Am I dry right now? 2. Is wind increasing or decreasing? 3. Can I pitch cleanly without rushing? 4. Will this setup keep me warm at 3 a.m.? If any answer feels shaky, shelter is the correct call. Shelter Night Protocol (When You Go In) Once shelter is chosen, you switch modes. Arrival - Scan for mice - Choose sleeping spot away from walls and corners - Identify food hang or bear box immediately Food & Scent Lockdown (FIRST ACTION) - Food, trash, toothpaste, lip balm, sanitizer, wrappers — all together - Hang or box immediately - Nothing scented touches the floor - Pack stays closed Gear Control Keep with you: - Headlamp - Phone - Filter (inside bag) - Battery bank - Water bottle Never leave loose: - Gloves - Socks - Trek pole handles - Hip belt pockets Night Behavior - No food after final hang - No wrappers opened - Ignore mice unless contacting gear - Shoes upright, not flat Morning Exit 1. Pack sleep system 2. Pack all non-food gear 3. Retrieve food last 4. Eat outside if possible 5. Visual sweep for crumbs",
+    "content": "Shelter Vs. Tent Decision System Core Philosophy - Tent is the default - Shelters are a safety tool, not a comfort choice - Poor sleep and mouse exposure are accepted costs only when risk outweighs discomfort - Decisions are made using objective triggers, not mood or convenience When Shelter Becomes the Right Decision Go to a shelter if ANY ONE of the following is true: 1. Wind + Cold Combination - Temps below ~25°F - Sustained wind 15+ mph or gusts 20+ mph - Exposed ridge or saddle - You feel cold before stopping 2. Freezing Rain or Heavy Wet Snow Automatic shelter night. No debate. 3. Ground Conditions You Cannot Mitigate - Solid ice - Snow too deep to anchor - No flat or drained tent sites 4. You Are Wet and Can't Get Dry Before Dark - Damp clothing - Temps dropping - No sun left - Hands losing dexterity 5. Mental or Physical Exhaustion - Foggy thinking - Irritation during setup - Skipping food or water steps Shelter reduces complexity when judgment is compromised. What Is NOT a Shelter Trigger - It's cold but dry and calm - You're tired but functional - Others are staying there - You want convenience Tent handles those conditions fine. Winter Decision Framework - Comprehensive Georgia vs NC Terrain Comparison (Reality) Blood Mountain (Georgia) - Shorter but steeper - Elevation gain is compressed - Switchbacks exist but are aggressive - Descent into Neel Gap is harder than the climb - Punishes pacing mistakes early Snowbird / Walnut / Max Patch (NC) - Longer, sustained climbs - Easier to find rhythm - Weather exposure lasts longer - More endurance-based suffering Bottom line: Blood Mountain is not taller, but it hits harder sooner. You already handled equal or harder terrain in NC. Winter Tent-Site Scoring Checklist Score each category 0-2. Total possible: 10 points. Interpretation: - 7-10 → Tent is correct - 4-6 → Tent only if weather is stable - 0-3 → Shelter is the smart move 1. Wind Protection - 2: Fully protected, calm - 1: Partial protection - 0: Exposed, funneling wind 2. Ground Quality - 2: Flat, drains well, stakes hold - 1: Minor slope or frozen top layer - 0: Ice, pooled water, unusable ground 3. Moisture Risk - 2: Dry ground, stable weather - 1: Damp but manageable - 0: Freezing rain or heavy wet snow 4. Setup Control - 2: Calm, deliberate setup - 1: Minor fumbling - 0: Hands failing, rushing, irritation 5. Overnight Confidence Ask: \"Will this still work if conditions worsen at 3 a.m.?\" - 2: Yes, confidently - 1: Maybe, thin margin - 0: No, hoping it holds Hope is not a winter strategy. One-Minute Decision Prompt Before committing to camp, ask: 1. Am I dry right now? 2. Is wind increasing or decreasing? 3. Can I pitch cleanly without rushing? 4. Will this setup keep me warm at 3 a.m.? If any answer feels shaky, shelter is the correct call. Shelter Night Protocol (When You Go In) Once shelter is chosen, you switch modes. Arrival - Scan for mice - Choose sleeping spot away from walls and corners - Identify food hang or bear box immediately Food & Scent Lockdown (FIRST ACTION) - Food, trash, toothpaste, lip balm, sanitizer, wrappers — all together - Hang or box immediately - Nothing scented touches the floor - Pack stays closed Gear Control Keep with you: - Headlamp - Phone - Filter (inside bag) - Battery bank - Water bottle Never leave loose: - Gloves - Socks - Trek pole handles - Hip belt pockets Night Behavior - No food after final hang - No wrappers opened - Ignore mice unless contacting gear - Shoes upright, not flat Morning Exit 1. Pack sleep system 2. Pack all non-food gear 3. Retrieve food last 4. Eat outside if possible 5. Visual sweep for crumbs",
     "headers": "Core Philosophy | When Shelter Becomes the Right Decision | 1. Wind + Cold Combination | 2. Freezing Rain or Heavy Wet Snow | 3. Ground Conditions You Cannot Mitigate | 4. You Are Wet and Can't Get Dry Before Dark | 5. Mental or Physical Exhaustion | What Is NOT a Shelter Trigger | Winter Decision Framework - Comprehensive | Georgia vs NC Terrain Comparison (Reality) | Winter Tent-Site Scoring Checklist | 1. Wind Protection | 2. Ground Quality | 3. Moisture Risk | 4. Setup Control | 5. Overnight Confidence | One-Minute Decision Prompt | Shelter Night Protocol (When You Go In) | Arrival | Food & Scent Lockdown (FIRST ACTION) | Gear Control | Night Behavior | Morning Exit"
   },
   {
     "id": "06-weather-strategy",
     "title": "Weather Strategy",
-    "description": "Weather patterns, forecasting, and response protocols",
+    "description": "Worst-case planning: 5.5°F colder per 1,000 feet of elevation gain",
     "quickRef": false,
     "part": 6,
     "order": 6,
@@ -70,9 +70,9 @@
     "headers": "Temperature Planning | Elevation Temperature Drop | Example: Hot Springs to Max Patch | Wind Chill Impact | Field-Use Mental Shortcut | Bottom Line (Planning Truth) | Heat Timeline & Strategy | When Heat STARTS to Matter | Where Heat Is WORST (Primary Heat Grind) | When Heat STARTS to Ease | Summary Table | Strategic Takeaways | Multi-Day Rain Strategy | Core Principles | Movement Strategy | Rain Camp Sequence | Morning Reset in Continued Rain | Wind Thresholds (Field Reality) | Campsite Selection in Wind | Choose: | Avoid: | Tent Orientation (Critical) | Stake Strategy | Number of Stakes | Stake Angle | Order of Staking | Guy Lines & Tensioning | Pitch Height (Your Wind Dial) | Bad Soil Solutions | Night Check (Do This Once) | Off-Grid Weather Awareness | Core Principle | Morning Baseline (5 minutes) | How to Interpret Elevation Drift (While Still) | The 2-Out-of-5 Rule"
   },
   {
-    "id": "07-food-resupply",
+    "id": "07-food-and-resupply",
     "title": "Food & Resupply",
-    "description": "Nutrition, meal planning, and resupply strategy",
+    "description": "This is the dominant norm across the entire trail.",
     "quickRef": false,
     "part": 7,
     "order": 7,
@@ -82,7 +82,7 @@
   {
     "id": "08-town-strategy",
     "title": "Town Strategy",
-    "description": "Town stops, zero days, and town efficiency",
+    "description": "Partial day in town:",
     "quickRef": false,
     "part": 8,
     "order": 8,
@@ -90,9 +90,9 @@
     "headers": "Town Rhythm | Standard Pattern | Nero Days | Zero Days | 5-Day Hike + Zero Day Schedule | Planning Assumptions | Phase 1: Winter Start (Feb) | Phase 2: Trail Legs Arrive (Mar-May) | Phase 3: Strong & Efficient (May-Jun) | Phase 4: Long Daylight (Jul-Aug) | Phase 5: Maine Reality (Aug-Sep) | Laundry System | Core Reality | Standard Laundry Outfit | Correct Laundry Order | Walk-Only Resupply: Dollar General | Walkable Dollar General Locations"
   },
   {
-    "id": "09-trail-resources",
+    "id": "09-trail-resources-and-navigation",
     "title": "Trail Resources & Navigation",
-    "description": "Apps, maps, and navigation tools for the AT",
+    "description": "The primary guidebook most Appalachian Trail thru-hikers use and carry is the A.T. Guide (formerly known as AWOL's Ap...",
     "quickRef": false,
     "part": 9,
     "order": 9,
@@ -100,9 +100,9 @@
     "headers": "Primary Guidebook Reference | A.T. Guide (The Standard AT Guide) | Why the A.T. Guide Is the Gold Standard | Latest Physical Edition | Electronic / Digital Versions | How Most Thru-Hikers Actually Use It on Trail | Practical Recommendation"
   },
   {
-    "id": "10-permits-logistics",
+    "id": "10-permits-and-logistics",
     "title": "Permits & Logistics",
-    "description": "Required permits, reservations, and logistics",
+    "description": "Additional Fee: $15 park entrance fee may be required at staffed entry points. AT thru-hikers entering via trail typi...",
     "quickRef": false,
     "part": 10,
     "order": 10,
@@ -110,19 +110,19 @@
     "headers": "Required Permits | Great Smoky Mountains National Park | Shenandoah National Park | Baxter State Park / Katahdin | ATC Hang Tag | Known Detours (2025-2026)"
   },
   {
-    "id": "11-mail-drops",
-    "title": "USPS Mail Drop System",
-    "description": "Mail drop strategy and post office logistics",
+    "id": "11-usps-mail-drop-system",
+    "title": "Usps Mail Drop System",
+    "description": "```",
     "quickRef": false,
     "part": 11,
     "order": 11,
-    "content": "USPS Mail Drop System General Delivery Rules Hold Times - Official USPS rule: Up to 30 days - Large AT towns: Usually 30 days - Small/rural offices: Often 7-14 days Best Practice - Ship packages 7-10 days before arrival - Never ship earlier than 14 days - Always include an ETA - If delayed, call the post office Box Labeling Format Do not deviate from this format: Rules: - Write your name on all six sides - Use Sharpie - ETA matters Recommended Mail Drop Locations Location Mile Notes ---------- ------ ------- Hot Springs, NC ~274 One of the most reliable mail drops on the AT Damascus, VA ~469 AT hub, dependable, generous hold times Daleville, VA ~727-729 Easy access, grocery nearby Harpers Ferry, WV ~1,023-1,026 Psychological halfway point, very reliable Duncannon, PA ~1,140-1,150 Excellent PO + hostel logistics Hanover, NH ~1,747 Key resupply before the Whites Monson, ME ~2,074-2,079 Gateway to 100-Mile Wilderness. Hold time often 14 days max. Note: Shaw's Hiker Hostel in Monson offers food drop services for the 100-Mile Wilderness—a useful option if you want to lighten your initial carry.",
+    "content": "Usps Mail Drop System General Delivery Rules Hold Times - Official USPS rule: Up to 30 days - Large AT towns: Usually 30 days - Small/rural offices: Often 7-14 days Best Practice - Ship packages 7-10 days before arrival - Never ship earlier than 14 days - Always include an ETA - If delayed, call the post office Box Labeling Format Do not deviate from this format: Rules: - Write your name on all six sides - Use Sharpie - ETA matters Recommended Mail Drop Locations Location Mile Notes ---------- ------ ------- Hot Springs, NC ~274 One of the most reliable mail drops on the AT Damascus, VA ~469 AT hub, dependable, generous hold times Daleville, VA ~727-729 Easy access, grocery nearby Harpers Ferry, WV ~1,023-1,026 Psychological halfway point, very reliable Duncannon, PA ~1,140-1,150 Excellent PO + hostel logistics Hanover, NH ~1,747 Key resupply before the Whites Monson, ME ~2,074-2,079 Gateway to 100-Mile Wilderness. Hold time often 14 days max. Note: Shaw's Hiker Hostel in Monson offers food drop services for the 100-Mile Wilderness—a useful option if you want to lighten your initial carry.",
     "headers": "General Delivery Rules | Hold Times | Best Practice | Box Labeling Format | Recommended Mail Drop Locations"
   },
   {
-    "id": "12-power-electronics",
+    "id": "12-power-and-electronics",
     "title": "Power & Electronics",
-    "description": "Battery strategy, charging, and electronics management",
+    "description": "Used in towns only. Allows rapid recharge. Minimizes town time.",
     "quickRef": false,
     "part": 12,
     "order": 12,
@@ -132,7 +132,7 @@
   {
     "id": "13-medical-planning",
     "title": "Medical Planning",
-    "description": "Health management, first aid, and injury prevention",
+    "description": "Target weight: 3-6 oz",
     "quickRef": false,
     "part": 13,
     "order": 13,
@@ -140,9 +140,9 @@
     "headers": "First Aid Kit Philosophy | Kit Contents | Wound Care | Foot & Blister Management (Critical) | Medications | Winter Add-Ons | Trail Medical Rules | Use Urgent Care For: | Dental Red Flags (Do Not Wait): | Carry at All Times: | Medical & Dental Access Points (NOBO) | GEORGIA | NORTH CAROLINA | TENNESSEE | VIRGINIA | WEST VIRGINIA / MARYLAND | PENNSYLVANIA | NEW YORK | MASSACHUSETTS | VERMONT | NEW HAMPSHIRE | MAINE"
   },
   {
-    "id": "14-safety-emergency",
+    "id": "14-safety-and-emergency-procedures",
     "title": "Safety & Emergency Procedures",
-    "description": "Emergency protocols, bailout points, and safety systems",
+    "description": "Act early. Most trail emergencies are not sudden disasters—they are delayed decisions.",
     "quickRef": false,
     "part": 14,
     "order": 14,
@@ -150,9 +150,9 @@
     "headers": "Core Principle | Rapid Weather Change Recognition | Visual Warning Signs | Wind-Based Warnings | Sound & Sensory Warnings | Hypothermia Indicators | Terrain-Based Abort Signals | Emergency Exit Strategy | Emergency Call Priority | Emergency Location Script | InReach Bail-Out Method | Primary Method: Relay Through Logistics Contact | Example Message | When to Press SOS | Primary Emergency Exit Points (NOBO) | GEORGIA (Mile 0 – ~78) | NORTH CAROLINA / TENNESSEE (Mile ~78 – ~470) | VIRGINIA (Mile ~470 – ~1,020) | WEST VIRGINIA / MARYLAND (Mile ~1,020 – ~1,100) | PENNSYLVANIA (Mile ~1,100 – ~1,350) | NEW JERSEY / NEW YORK (Mile ~1,350 – ~1,550) | CONNECTICUT / MASSACHUSETTS (Mile ~1,550 – ~1,650) | VERMONT (Mile ~1,650 – ~1,750) | NEW HAMPSHIRE (Mile ~1,750 – ~1,905) | MAINE (Mile ~1,905 – 2,197.9)"
   },
   {
-    "id": "15-trail-sections",
+    "id": "15-trail-sections-and-milestones",
     "title": "Trail Sections & Milestones",
-    "description": "Section-by-section overview and key milestones",
+    "description": "Sharp climbs early, Blood Mountain. First state down.",
     "quickRef": false,
     "part": 15,
     "order": 15,
@@ -162,7 +162,7 @@
   {
     "id": "16-content-creation",
     "title": "Content Creation",
-    "description": "Documentation, photography, and video strategy",
+    "description": "Each video serves three goals:",
     "quickRef": false,
     "part": 16,
     "order": 16,
@@ -172,22 +172,12 @@
   {
     "id": "17-financial-planning",
     "title": "Financial Planning",
-    "description": "Budget planning and cost management",
+    "description": "Hiking day total: $5,044",
     "quickRef": false,
     "part": 17,
     "order": 17,
     "content": "Financial Planning Worst-Case Funding Plan Locked Assumptions - Total trail time: 242 days - Start: February 1 - Finish: End of September - Zero days: One every 5 days (48 total) - Hiking days: 194 - Lodging: Private rooms preferred Cost Model Hiking Days (194 days) Item Cost/Day ------ ---------- Trail food + snacks $22 Small incidentals $4 Total per hiking day $26 Hiking day total: $5,044 Zero Days (48 days) Item Cost/Day ------ ---------- Private lodging $110 Town food (2-3 meals) $55 Laundry/resupply incidentals $20 Shuttles/local transport $15 Total per zero day $200 Zero day total: $9,600 Total Gross Trail Cost $14,644 (worst case, 242 days) Offsets Item Amount ------ -------- Weekly allowance ($150 × 34.5 weeks) $5,175 Household expense savings $4,658 Starting food carry $110 Total offsets $9,943 Net Household Impact $4,701 total (~$590/month) Money will not be the reason the hike becomes unsafe, rushed, or miserable.",
     "headers": "Worst-Case Funding Plan | Locked Assumptions | Cost Model | Hiking Days (194 days) | Zero Days (48 days) | Total Gross Trail Cost | Offsets | Net Household Impact"
-  },
-  {
-    "id": "18-final-truths",
-    "title": "The Path to Katahdin",
-    "description": "Final trail truths and the one-line rule",
-    "quickRef": false,
-    "part": 18,
-    "order": 18,
-    "content": "The Path to Katahdin This guide represents everything learned from 840+ miles of thru-hiking, hundreds of hours of research, and the hard-won wisdom of countless hikers who came before. It is not theoretical—it is tested. The Appalachian Trail will challenge you in ways you cannot fully anticipate. Weather will test your systems. Terrain will test your body. The sheer length will test your mind. But with proper preparation, disciplined execution, and the humility to adapt, you will stand on Katahdin. Final Trail Truths - Heavy packs don't end hikes—bad sleep and injury do - Water planning matters more than mileage - Small injuries ignored become hike-enders - Weather humility keeps you alive - Mental discipline finishes the trail—not strength - The trail is not conquered; it is negotiated daily One-Line Trail Rule Slow early. Strong later. Never break the 5-day rule. Every system in this guide exists for one purpose: to put you on top of Katahdin, healthy and strong, before the snow flies. The preparation is complete. Focus now shifts to execution, pacing, and decision-making. See you on Katahdin, Theman. Guide last updated: December 2024 Fact-checked and corrected for 2026 thru-hiking season Includes: Emergency Exit Points, Medical Access by State, Enhanced Weather/Camp Strategy, Complete Water Source Mile Markers Total corrections and additions applied: 35+",
-    "headers": "Final Trail Truths | One-Line Trail Rule"
   },
   {
     "id": "quick/shelter-triggers",
@@ -238,5 +228,15 @@
     "order": 5,
     "content": "Weather Warning Signs Visual Warnings - Dark clouds moving quickly (especially low/rolling) - Clouds dropping into ridges or saddles - White haze on ridgelines - Sudden visibility loss - Fast temperature drop Wind Warnings - Sudden direction change - Rapid speed increase - Funneling through gaps/saddles Sound & Sensory - Any thunder (even distant) - Metallic or sharp smell - Tingling, buzzing, hair standing up → Lightning protocol immediately. Get off ridges and summits. 2-Out-of-5 Rule If ANY TWO occur, act conservatively: 1. Pressure dropping (watch elevation drift) 2. Wind increasing or shifting 3. Clouds thickening or lowering 4. Garmin forecast worsens 5. Sudden temperature drop Pressure Reading (Stationary Only) Elevation Drift Meaning ----------------- --------- ±3-5 ft, settles Stable Drops 10-20 ft over 3-6 hrs Weather in 12-24 hrs Drops 20-30+ ft in 1-3 hrs Weather imminent",
     "headers": "Visual Warnings | Wind Warnings | Sound & Sensory | 2-Out-of-5 Rule | Pressure Reading (Stationary Only)"
+  },
+  {
+    "id": "18-the-path-to-katahdin",
+    "title": "The Path to Katahdin",
+    "description": "This guide represents everything learned from 840+ miles of thru-hiking, hundreds of hours of research, and the hard-...",
+    "quickRef": false,
+    "part": 999,
+    "order": 18,
+    "content": "The Path to Katahdin This guide represents everything learned from 840+ miles of thru-hiking, hundreds of hours of research, and the hard-won wisdom of countless hikers who came before. It is not theoretical—it is tested. The Appalachian Trail will challenge you in ways you cannot fully anticipate. Weather will test your systems. Terrain will test your body. The sheer length will test your mind. But with proper preparation, disciplined execution, and the humility to adapt, you will stand on Katahdin. Final Trail Truths - Heavy packs don't end hikes—bad sleep and injury do - Water planning matters more than mileage - Small injuries ignored become hike-enders - Weather humility keeps you alive - Mental discipline finishes the trail—not strength - The trail is not conquered; it is negotiated daily One-Line Trail Rule Slow early. Strong later. Never break the 5-day rule. Every system in this guide exists for one purpose: to put you on top of Katahdin, healthy and strong, before the snow flies. The preparation is complete. Focus now shifts to execution, pacing, and decision-making. See you on Katahdin, Theman. Guide last updated: December 2024 Fact-checked and corrected for 2026 thru-hiking season Includes: Emergency Exit Points, Medical Access by State, Enhanced Weather/Camp Strategy, Complete Water Source Mile Markers Total corrections and additions applied: 35+",
+    "headers": "Final Trail Truths | One-Line Trail Rule"
   }
 ]

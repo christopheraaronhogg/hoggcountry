@@ -2,8 +2,8 @@
 title: "Content Creation"
 part: 16
 order: 16
-description: "Documentation, photography, and video strategy"
-icon: "camera"
+description: "Each video serves three goals:"
+icon: "home"
 ---
 
 # Content Creation

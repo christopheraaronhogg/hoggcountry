@@ -1,12 +1,12 @@
 ---
-title: "USPS Mail Drop System"
+title: "Usps Mail Drop System"
 part: 11
 order: 11
-description: "Mail drop strategy and post office logistics"
+description: "```"
 icon: "mail"
 ---
 
-# USPS Mail Drop System
+# Usps Mail Drop System
 
 ## General Delivery Rules
 

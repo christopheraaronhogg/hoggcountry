@@ -2,7 +2,7 @@
 title: "Financial Planning"
 part: 17
 order: 17
-description: "Budget planning and cost management"
+description: "Hiking day total: $5,044"
 icon: "dollar"
 ---
 

@@ -2,7 +2,7 @@
 title: "Gear System"
 part: 2
 order: 2
-description: "Complete gear philosophy, packing strategies, and weight management"
+description: "Base weight is the foundation of sustainable long-distance hiking. Every ounce carried compounds over thousands of mi..."
 icon: "backpack"
 ---
 

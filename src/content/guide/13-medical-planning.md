@@ -2,7 +2,7 @@
 title: "Medical Planning"
 part: 13
 order: 13
-description: "Health management, first aid, and injury prevention"
+description: "Target weight: 3-6 oz"
 icon: "heart"
 ---
 
