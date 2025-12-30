@@ -83,9 +83,9 @@
 
   // Power bank status
   let bankStatus = $derived.by(() => {
-    if (powerBankCurrent >= 70) return { level: 'good', color: 'var(--alpine)', label: 'Good' };
-    if (powerBankCurrent >= 35) return { level: 'moderate', color: 'var(--marker)', label: 'Moderate' };
-    return { level: 'low', color: 'var(--terra)', label: 'Low' };
+    if (powerBankCurrent >= 70) return { level: 'good', color: '#4ade80', label: 'Good' };
+    if (powerBankCurrent >= 35) return { level: 'moderate', color: '#fbbf24', label: 'Moderate' };
+    return { level: 'low', color: '#ef4444', label: 'Critical' };
   });
 
   // Should trigger power save mode?
@@ -152,206 +152,279 @@
     { device: 'Garmin', actions: ['Tracking interval → 30 min', 'Disable weather updates'] },
     { device: 'Camera', actions: ['No video unless exceptional', 'Reduce photo frequency'] }
   ];
+
+  // Animated segments for power gauge
+  let gaugeSegments = $derived.by(() => {
+    const segments = [];
+    const total = 20;
+    const filled = Math.round((powerBankCurrent / 100) * total);
+    for (let i = 0; i < total; i++) {
+      segments.push({
+        filled: i < filled,
+        critical: i < 7 && filled <= 7,
+        warning: i >= 7 && i < 14 && filled <= 14 && filled > 7
+      });
+    }
+    return segments;
+  });
 </script>
 
 <div class="power-manager">
-  <!-- Header with Bank Status -->
-  <div class="manager-header">
-    <div class="bank-visual">
-      <div class="bank-icon">
-        <div class="battery-outline">
-          <div
-            class="battery-fill"
-            style="width: {powerBankCurrent}%; background: {bankStatus.color}"
-          ></div>
-        </div>
-        <div class="battery-cap"></div>
+  <!-- Industrial Header with Power Gauge -->
+  <header class="power-header">
+    <div class="header-top">
+      <div class="header-badge">
+        <span class="badge-icon">⚡</span>
+        <span class="badge-text">POWER STATION</span>
       </div>
-      <div class="bank-info">
-        <span class="bank-pct">{powerBankCurrent}%</span>
-        <span class="bank-mah">{availablePower.toLocaleString()} mAh</span>
+      <div class="header-status" class:critical={bankStatus.level === 'low'} class:warning={bankStatus.level === 'moderate'}>
+        <span class="status-dot"></span>
+        <span class="status-text">{bankStatus.label}</span>
       </div>
     </div>
-    <div class="bank-stats">
-      <div class="stat-item">
-        <span class="stat-value">{daysRemaining}</span>
-        <span class="stat-label">Days Left</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-value">{dailyDraw.toLocaleString()}</span>
-        <span class="stat-label">mAh/day</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-value">{daysSinceTown}</span>
-        <span class="stat-label">Days Out</span>
-      </div>
-    </div>
-  </div>
 
-  <!-- Power Bank Slider -->
-  <div class="bank-slider-section">
+    <!-- Main Power Display -->
+    <div class="power-display">
+      <div class="gauge-section">
+        <div class="gauge-ring">
+          <svg viewBox="0 0 100 100" class="gauge-svg">
+            <circle cx="50" cy="50" r="42" class="gauge-track" />
+            <circle
+              cx="50"
+              cy="50"
+              r="42"
+              class="gauge-fill"
+              style="stroke-dashoffset: {264 - (powerBankCurrent / 100) * 264}; stroke: {bankStatus.color}"
+            />
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-value">{powerBankCurrent}</span>
+            <span class="gauge-unit">%</span>
+          </div>
+        </div>
+        <div class="gauge-label">BANK CHARGE</div>
+      </div>
+
+      <div class="stats-panel">
+        <div class="stat-block">
+          <div class="stat-number">{availablePower.toLocaleString()}</div>
+          <div class="stat-unit">mAh</div>
+          <div class="stat-desc">Available</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block highlight">
+          <div class="stat-number">{daysRemaining}</div>
+          <div class="stat-unit">days</div>
+          <div class="stat-desc">Remaining</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block">
+          <div class="stat-number">{dailyDraw.toLocaleString()}</div>
+          <div class="stat-unit">mAh/day</div>
+          <div class="stat-desc">Draw Rate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LED Segment Display -->
+    <div class="segment-display">
+      {#each gaugeSegments as seg, i}
+        <div
+          class="segment"
+          class:filled={seg.filled}
+          class:critical={seg.critical}
+          class:warning={seg.warning}
+          style="animation-delay: {i * 20}ms"
+        ></div>
+      {/each}
+    </div>
+  </header>
+
+  <!-- Power Bank Slider Control -->
+  <div class="slider-control">
     <div class="slider-header">
-      <span class="slider-label">Power Bank Level</span>
+      <span class="slider-label">Adjust Power Level</span>
       <span class="slider-value">{powerBankCurrent}%</span>
     </div>
-    <input
-      type="range"
-      min="0"
-      max="100"
-      bind:value={powerBankCurrent}
-      class="bank-slider"
-      style="--fill-color: {bankStatus.color}"
-    />
-    <div class="slider-marks">
-      <span>Empty</span>
-      <span class="mark-warning">35%</span>
-      <span>Full</span>
+    <div class="slider-track-wrap">
+      <input
+        type="range"
+        min="0"
+        max="100"
+        bind:value={powerBankCurrent}
+        class="power-slider"
+      />
+      <div class="slider-fill" style="width: {powerBankCurrent}%; background: {bankStatus.color}"></div>
+      <div class="slider-markers">
+        <span class="marker critical">35%</span>
+        <span class="marker warning">70%</span>
+      </div>
     </div>
   </div>
 
   <!-- Power Save Alert -->
   {#if shouldPowerSave && !powerSaveMode}
-    <button class="power-save-alert" onclick={() => { powerSaveMode = true; activeSection = 'save'; }}>
-      <span class="alert-icon">⚡</span>
-      <span class="alert-text">Low power - Enable Power Save Mode</span>
-      <span class="alert-arrow">→</span>
+    <button class="alert-banner" onclick={() => { powerSaveMode = true; activeSection = 'save'; }}>
+      <div class="alert-pulse"></div>
+      <span class="alert-icon">⚠️</span>
+      <span class="alert-content">
+        <span class="alert-title">LOW POWER WARNING</span>
+        <span class="alert-desc">Enable Power Save Mode to extend battery life</span>
+      </span>
+      <span class="alert-action">ACTIVATE →</span>
     </button>
   {/if}
 
-  <!-- Section Tabs -->
-  <div class="section-tabs">
+  <!-- Section Navigation -->
+  <nav class="section-nav">
     <button
-      class="section-tab"
+      class="nav-btn"
       class:active={activeSection === 'budget'}
       onclick={() => activeSection = 'budget'}
     >
-      <span class="tab-icon">📊</span>
-      <span class="tab-text">Budget</span>
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">Budget</span>
     </button>
     <button
-      class="section-tab"
+      class="nav-btn"
       class:active={activeSection === 'devices'}
       onclick={() => activeSection = 'devices'}
     >
-      <span class="tab-icon">📱</span>
-      <span class="tab-text">Devices</span>
+      <span class="nav-icon">📱</span>
+      <span class="nav-label">Devices</span>
     </button>
     <button
-      class="section-tab"
+      class="nav-btn"
       class:active={activeSection === 'tonight'}
       onclick={() => activeSection = 'tonight'}
     >
-      <span class="tab-icon">🌙</span>
-      <span class="tab-text">Tonight</span>
+      <span class="nav-icon">🌙</span>
+      <span class="nav-label">Tonight</span>
     </button>
     <button
-      class="section-tab"
+      class="nav-btn"
       class:active={activeSection === 'save'}
       class:alert={shouldPowerSave}
       onclick={() => activeSection = 'save'}
     >
-      <span class="tab-icon">⚡</span>
-      <span class="tab-text">Save</span>
+      <span class="nav-icon">⚡</span>
+      <span class="nav-label">Save</span>
+      {#if shouldPowerSave}
+        <span class="nav-alert-dot"></span>
+      {/if}
     </button>
-  </div>
+  </nav>
 
   <!-- Budget Section -->
   {#if activeSection === 'budget'}
-    <div class="budget-section">
-      <div class="budget-card">
-        <h4 class="card-title">Power Budget Summary</h4>
-
-        <div class="budget-row">
-          <span class="budget-label">Bank Capacity</span>
-          <div class="budget-input-wrap">
-            <input
-              type="number"
-              bind:value={powerBankCapacity}
-              min="5000"
-              max="50000"
-              step="1000"
-              class="budget-input"
-            />
-            <span class="budget-unit">mAh</span>
-          </div>
+    <section class="content-section">
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Power Budget</h3>
+          <span class="panel-badge">Summary</span>
         </div>
 
-        <div class="budget-row">
-          <span class="budget-label">Daily Draw</span>
-          <span class="budget-value">{dailyDraw.toLocaleString()} mAh</span>
-        </div>
-
-        <div class="budget-row highlight">
-          <span class="budget-label">Normal Use</span>
-          <span class="budget-value big">{daysRemaining} days</span>
-        </div>
-
-        <div class="budget-row save">
-          <span class="budget-label">Power Save Mode</span>
-          <span class="budget-value">{daysRemainingSave} days <small>(+{daysRemainingSave - daysRemaining})</small></span>
-        </div>
-      </div>
-
-      <div class="device-breakdown">
-        <h4 class="card-title">Daily Power by Device</h4>
-        {#each devices as device}
-          <div class="breakdown-item">
-            <span class="breakdown-icon">{device.icon}</span>
-            <span class="breakdown-name">{device.name}</span>
-            <div class="breakdown-bar-wrap">
-              <div
-                class="breakdown-bar"
-                style="width: {(device.dailyDraw / dailyDraw) * 100}%"
-              ></div>
+        <div class="budget-grid">
+          <div class="budget-item">
+            <span class="budget-label">Bank Capacity</span>
+            <div class="budget-input-group">
+              <input
+                type="number"
+                bind:value={powerBankCapacity}
+                min="5000"
+                max="50000"
+                step="1000"
+                class="budget-input"
+              />
+              <span class="budget-suffix">mAh</span>
             </div>
-            <span class="breakdown-value">{device.dailyDraw.toLocaleString()}</span>
           </div>
-        {/each}
-        <div class="breakdown-total">
-          <span>Total Daily</span>
-          <span>{dailyDraw.toLocaleString()} mAh</span>
+
+          <div class="budget-item">
+            <span class="budget-label">Daily Draw</span>
+            <span class="budget-value">{dailyDraw.toLocaleString()} mAh</span>
+          </div>
+
+          <div class="budget-item highlight">
+            <span class="budget-label">Normal Use</span>
+            <span class="budget-value big">{daysRemaining} days</span>
+          </div>
+
+          <div class="budget-item save-mode">
+            <span class="budget-label">With Power Save</span>
+            <span class="budget-value">{daysRemainingSave} days <small class="bonus">+{daysRemainingSave - daysRemaining}</small></span>
+          </div>
         </div>
       </div>
 
-      <div class="budget-tip">
-        <span class="tip-icon">💡</span>
-        <span class="tip-text">
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Power Breakdown</h3>
+          <span class="panel-badge">By Device</span>
+        </div>
+
+        <div class="breakdown-list">
+          {#each devices as device}
+            <div class="breakdown-row">
+              <span class="breakdown-icon">{device.icon}</span>
+              <span class="breakdown-name">{device.name}</span>
+              <div class="breakdown-bar">
+                <div
+                  class="breakdown-fill"
+                  style="width: {(device.dailyDraw / dailyDraw) * 100}%"
+                ></div>
+              </div>
+              <span class="breakdown-value">{device.dailyDraw}</span>
+            </div>
+          {/each}
+        </div>
+
+        <div class="breakdown-footer">
+          <span class="footer-label">Total Daily Draw</span>
+          <span class="footer-value">{dailyDraw.toLocaleString()} mAh</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <span class="info-icon">💡</span>
+        <p class="info-text">
           At your current draw, a full 20,000 mAh bank lasts ~{Math.floor(20000 / dailyDraw)} days.
           With power save mode, that extends to ~{Math.floor(20000 / dailyDrawSave)} days.
-        </span>
+        </p>
       </div>
-    </div>
+    </section>
   {/if}
 
   <!-- Devices Section -->
   {#if activeSection === 'devices'}
-    <div class="devices-section">
-      <p class="section-intro">Select the devices you carry and track their battery levels.</p>
+    <section class="content-section">
+      <p class="section-intro">Select your devices and track their battery levels</p>
 
       <div class="device-grid">
         {#each defaultDevices as device}
           <div
             class="device-card"
-            class:selected={hasDevice(device.id)}
+            class:active={hasDevice(device.id)}
             class:essential={device.essential}
           >
-            <button
-              class="device-toggle"
-              onclick={() => toggleDevice(device.id)}
-            >
-              <span class="device-icon">{device.icon}</span>
+            <button class="device-toggle" onclick={() => toggleDevice(device.id)}>
+              <div class="device-header">
+                <span class="device-icon">{device.icon}</span>
+                {#if device.essential}
+                  <span class="essential-tag">ESSENTIAL</span>
+                {/if}
+              </div>
               <span class="device-name">{device.name}</span>
-              {#if device.essential}
-                <span class="essential-badge">Essential</span>
-              {/if}
-              <span class="toggle-check">{hasDevice(device.id) ? '✓' : '+'}</span>
+              <div class="device-check" class:checked={hasDevice(device.id)}>
+                {hasDevice(device.id) ? '✓' : '+'}
+              </div>
             </button>
 
             {#if hasDevice(device.id)}
-              <div class="device-level">
-                <div class="level-header">
+              <div class="device-controls">
+                <div class="level-display">
                   <span class="level-label">Battery</span>
-                  <span class="level-value">{deviceLevels[device.id]}%</span>
+                  <span class="level-percent">{deviceLevels[device.id]}%</span>
                 </div>
                 <input
                   type="range"
@@ -359,431 +432,722 @@
                   max="100"
                   value={deviceLevels[device.id]}
                   oninput={(e) => updateLevel(device.id, parseInt(e.target.value))}
-                  class="level-slider"
+                  class="device-slider"
                 />
-              </div>
-              <div class="device-meta">
-                <span class="meta-item">{device.dailyDraw} mAh/day</span>
-                <span class="meta-item">Charge: {device.chargeFreq}</span>
+                <div class="device-stats">
+                  <span>{device.dailyDraw} mAh/day</span>
+                  <span>Charge: {device.chargeFreq}</span>
+                </div>
               </div>
             {/if}
           </div>
         {/each}
       </div>
-    </div>
+    </section>
   {/if}
 
   <!-- Tonight Section -->
   {#if activeSection === 'tonight'}
-    <div class="tonight-section">
-      <div class="tonight-header">
-        <h4 class="card-title">Tonight's Charging Plan</h4>
-        <div class="days-input">
-          <label>Day</label>
-          <input
-            type="number"
-            bind:value={daysSinceTown}
-            min="0"
-            max="14"
-            class="days-num"
-          />
+    <section class="content-section">
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Tonight's Charging Plan</h3>
+          <div class="day-counter">
+            <label class="day-label">Day</label>
+            <input
+              type="number"
+              bind:value={daysSinceTown}
+              min="0"
+              max="14"
+              class="day-input"
+            />
+          </div>
         </div>
-      </div>
 
-      <div class="priority-list">
-        {#each chargingPriorities as device, i}
-          <div
-            class="priority-item"
-            class:needs-charge={device.needsCharge}
-            class:low={device.level < 30}
-          >
-            <span class="priority-rank">#{i + 1}</span>
-            <span class="priority-icon">{device.icon}</span>
-            <div class="priority-info">
-              <span class="priority-name">{device.name}</span>
-              <span class="priority-freq">{device.chargeFreq}</span>
-            </div>
-            <div class="priority-level">
-              <div class="mini-battery">
-                <div
-                  class="mini-fill"
-                  style="width: {device.level}%"
-                  class:low={device.level < 30}
-                  class:mid={device.level >= 30 && device.level < 60}
-                ></div>
+        <div class="priority-queue">
+          {#each chargingPriorities as device, i}
+            <div
+              class="priority-card"
+              class:needs-charge={device.needsCharge}
+              class:critical={device.level < 30}
+            >
+              <div class="priority-rank">#{i + 1}</div>
+              <span class="priority-icon">{device.icon}</span>
+              <div class="priority-info">
+                <span class="priority-name">{device.name}</span>
+                <span class="priority-freq">{device.chargeFreq}</span>
               </div>
-              <span class="level-text">{device.level}%</span>
-            </div>
-            {#if device.needsCharge}
-              <span class="charge-badge">Charge</span>
-            {:else}
-              <span class="skip-badge">Skip</span>
-            {/if}
-          </div>
-        {/each}
-      </div>
-
-      <div class="charging-rules">
-        <h5 class="rules-title">Charging Priority Rules</h5>
-        <div class="rule-tier never">
-          <span class="tier-label">NEVER SACRIFICE</span>
-          <span class="tier-devices">Phone, Garmin inReach</span>
-        </div>
-        <div class="rule-tier limit">
-          <span class="tier-label">LIMIT IF NECESSARY</span>
-          <span class="tier-devices">Smartwatch, Headlamp</span>
-        </div>
-        <div class="rule-tier drop">
-          <span class="tier-label">FIRST TO DROP</span>
-          <span class="tier-devices">Camera, Earbuds, Extras</span>
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Power Save Section -->
-  {#if activeSection === 'save'}
-    <div class="save-section">
-      <div class="save-toggle-card" class:active={powerSaveMode}>
-        <div class="save-toggle-info">
-          <span class="save-icon">⚡</span>
-          <div class="save-text">
-            <span class="save-title">Power Save Mode</span>
-            <span class="save-desc">
-              {powerSaveMode ? 'Active - Extends battery +1 day' : 'Reduces power consumption ~30%'}
-            </span>
-          </div>
-        </div>
-        <button
-          class="save-btn"
-          class:on={powerSaveMode}
-          onclick={() => powerSaveMode = !powerSaveMode}
-        >
-          {powerSaveMode ? 'ON' : 'OFF'}
-        </button>
-      </div>
-
-      <div class="triggers-card">
-        <h4 class="card-title">When to Activate</h4>
-        <div class="triggers-list">
-          {#each powerSaveTriggers as trigger}
-            <div class="trigger-item" class:triggered={trigger.check()}>
-              <span class="trigger-indicator">{trigger.check() ? '⚠️' : '○'}</span>
-              <span class="trigger-label">{trigger.label}</span>
+              <div class="priority-battery">
+                <div class="battery-visual">
+                  <div
+                    class="battery-level"
+                    class:low={device.level < 30}
+                    class:mid={device.level >= 30 && device.level < 60}
+                    style="width: {device.level}%"
+                  ></div>
+                </div>
+                <span class="battery-pct">{device.level}%</span>
+              </div>
+              <div class="priority-action">
+                {#if device.needsCharge}
+                  <span class="action-tag charge">CHARGE</span>
+                {:else}
+                  <span class="action-tag skip">SKIP</span>
+                {/if}
+              </div>
             </div>
           {/each}
         </div>
       </div>
 
-      <div class="actions-card">
-        <h4 class="card-title">Power Save Actions</h4>
-        {#each powerSaveActions as category}
-          <div class="action-category">
-            <h5 class="action-device">{category.device}</h5>
-            <ul class="action-list">
-              {#each category.actions as action}
-                <li class="action-item">{action}</li>
-              {/each}
-            </ul>
+      <div class="rules-panel">
+        <h4 class="rules-title">Charging Priority Rules</h4>
+        <div class="rule-row critical">
+          <span class="rule-badge">NEVER SACRIFICE</span>
+          <span class="rule-devices">Phone, Garmin inReach</span>
+        </div>
+        <div class="rule-row warning">
+          <span class="rule-badge">LIMIT IF NEEDED</span>
+          <span class="rule-devices">Smartwatch, Headlamp</span>
+        </div>
+        <div class="rule-row optional">
+          <span class="rule-badge">FIRST TO DROP</span>
+          <span class="rule-devices">Camera, Earbuds, Extras</span>
+        </div>
+      </div>
+    </section>
+  {/if}
+
+  <!-- Power Save Section -->
+  {#if activeSection === 'save'}
+    <section class="content-section">
+      <div class="save-master-toggle" class:active={powerSaveMode}>
+        <div class="toggle-info">
+          <span class="toggle-icon">⚡</span>
+          <div class="toggle-text">
+            <span class="toggle-title">Power Save Mode</span>
+            <span class="toggle-desc">
+              {powerSaveMode ? 'Active — extends battery +' + (daysRemainingSave - daysRemaining) + ' day' : 'Reduces power consumption ~30%'}
+            </span>
           </div>
-        {/each}
+        </div>
+        <button
+          class="toggle-switch"
+          class:on={powerSaveMode}
+          onclick={() => powerSaveMode = !powerSaveMode}
+        >
+          <span class="switch-track"></span>
+          <span class="switch-thumb"></span>
+          <span class="switch-label">{powerSaveMode ? 'ON' : 'OFF'}</span>
+        </button>
       </div>
 
-      <div class="save-result">
-        <span class="result-label">Power Save Result:</span>
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Activation Triggers</h3>
+        </div>
+        <div class="triggers-grid">
+          {#each powerSaveTriggers as trigger}
+            <div class="trigger-card" class:triggered={trigger.check()}>
+              <span class="trigger-indicator">{trigger.check() ? '⚠️' : '○'}</span>
+              <span class="trigger-text">{trigger.label}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Power Save Actions</h3>
+        </div>
+        <div class="actions-grid">
+          {#each powerSaveActions as category}
+            <div class="action-group">
+              <h5 class="action-title">{category.device}</h5>
+              <ul class="action-list">
+                {#each category.actions as action}
+                  <li class="action-item">{action}</li>
+                {/each}
+              </ul>
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <div class="result-display">
+        <span class="result-label">Power Save Bonus:</span>
         <span class="result-value">+{daysRemainingSave - daysRemaining} extra day{daysRemainingSave - daysRemaining !== 1 ? 's' : ''}</span>
       </div>
-    </div>
+    </section>
   {/if}
 
   <!-- Guide Link -->
   <a href="/guide/13-power-and-electronics" class="guide-link">
-    <span class="guide-icon">📖</span>
-    <span class="guide-text">Full Power & Electronics Guide</span>
-    <span class="guide-arrow">→</span>
+    <span class="link-icon">📖</span>
+    <span class="link-text">Full Power & Electronics Guide</span>
+    <span class="link-arrow">→</span>
   </a>
 </div>
 
 <style>
   .power-manager {
     font-family: system-ui, -apple-system, sans-serif;
+    max-width: 100%;
   }
 
-  /* Header */
-  .manager-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #2d3436 0%, #1a1d1e 100%);
+  /* Industrial Header */
+  .power-header {
+    background: linear-gradient(145deg, #1a1f2e 0%, #0d1117 100%);
     border-radius: 16px;
+    padding: 1.5rem;
     margin-bottom: 1rem;
-    color: #fff;
+    border: 2px solid #2d3748;
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
-  .bank-visual {
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .header-badge {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .bank-icon {
+  .badge-icon {
+    font-size: 1rem;
+  }
+
+  .badge-text {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .header-status {
     display: flex;
     align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 12px;
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.3);
   }
 
-  .battery-outline {
-    width: 60px;
-    height: 28px;
-    border: 3px solid rgba(255, 255, 255, 0.8);
-    border-radius: 6px;
-    padding: 3px;
-    position: relative;
+  .header-status.warning {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.3);
   }
 
-  .battery-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.3s ease, background 0.3s ease;
+  .header-status.critical {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
   }
 
-  .battery-cap {
-    width: 6px;
-    height: 12px;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 0 3px 3px 0;
-    margin-left: 2px;
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4ade80;
+    animation: pulse 2s ease-in-out infinite;
   }
 
-  .bank-info {
+  .header-status.warning .status-dot { background: #fbbf24; }
+  .header-status.critical .status-dot { background: #ef4444; animation: pulse 0.8s ease-in-out infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .status-text {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #4ade80;
+  }
+
+  .header-status.warning .status-text { color: #fbbf24; }
+  .header-status.critical .status-text { color: #ef4444; }
+
+  /* Power Display */
+  .power-display {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .gauge-section {
     display: flex;
     flex-direction: column;
+    align-items: center;
   }
 
-  .bank-pct {
+  .gauge-ring {
+    position: relative;
+    width: 110px;
+    height: 110px;
+  }
+
+  .gauge-svg {
+    transform: rotate(-90deg);
+  }
+
+  .gauge-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 8;
+  }
+
+  .gauge-fill {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 264;
+    transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+  }
+
+  .gauge-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gauge-value {
     font-family: Oswald, sans-serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 700;
+    color: #fff;
     line-height: 1;
   }
 
-  .bank-mah {
-    font-size: 0.75rem;
-    opacity: 0.6;
+  .gauge-unit {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
   }
 
-  .bank-stats {
+  .gauge-label {
+    margin-top: 0.5rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+  }
+
+  .stats-panel {
+    flex: 1;
     display: flex;
-    gap: 1.5rem;
+    justify-content: space-around;
+    align-items: center;
   }
 
-  .stat-item {
+  .stat-block {
     text-align: center;
   }
 
-  .stat-value {
-    display: block;
+  .stat-number {
     font-family: Oswald, sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
+    color: #fff;
     line-height: 1;
   }
 
-  .stat-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.6;
+  .stat-block.highlight .stat-number {
+    font-size: 2rem;
+    color: #4ade80;
   }
 
-  /* Bank Slider */
-  .bank-slider-section {
+  .stat-unit {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+  }
+
+  .stat-desc {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* LED Segment Display */
+  .segment-display {
+    display: flex;
+    gap: 3px;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+  }
+
+  .segment {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    transition: all 0.2s ease;
+  }
+
+  .segment.filled {
+    background: #4ade80;
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+  }
+
+  .segment.warning {
+    background: #fbbf24;
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+  }
+
+  .segment.critical {
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+    animation: blink 0.8s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Slider Control */
+  .slider-control {
     background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
     margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 
   .slider-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
   }
 
   .slider-label {
+    font-family: Oswald, sans-serif;
     font-size: 0.8rem;
+    font-weight: 500;
     color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .slider-value {
     font-family: Oswald, sans-serif;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--ink);
   }
 
-  .bank-slider {
+  .slider-track-wrap {
+    position: relative;
+    padding-bottom: 1.5rem;
+  }
+
+  .power-slider {
     width: 100%;
-    height: 8px;
+    height: 10px;
     -webkit-appearance: none;
     background: var(--bg);
-    border-radius: 4px;
-    outline: none;
+    border-radius: 5px;
+    position: relative;
+    z-index: 2;
   }
 
-  .bank-slider::-webkit-slider-thumb {
+  .power-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: var(--fill-color, var(--alpine));
+    background: #fff;
+    border: 3px solid var(--pine);
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
-  .slider-marks {
+  .slider-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 10px;
+    border-radius: 5px;
+    pointer-events: none;
+    z-index: 1;
+    transition: width 0.1s ease, background 0.2s ease;
+  }
+
+  .slider-markers {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: space-between;
-    margin-top: 0.25rem;
+  }
+
+  .marker {
     font-size: 0.65rem;
+    font-weight: 600;
     color: var(--muted);
   }
 
-  .mark-warning {
-    color: var(--terra);
+  .marker.critical {
+    position: absolute;
+    left: 35%;
+    transform: translateX(-50%);
+    color: #ef4444;
   }
 
-  /* Power Save Alert */
-  .power-save-alert {
+  .marker.warning {
+    position: absolute;
+    left: 70%;
+    transform: translateX(-50%);
+    color: #fbbf24;
+  }
+
+  /* Alert Banner */
+  .alert-banner {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
     width: 100%;
-    padding: 0.75rem 1rem;
-    background: linear-gradient(135deg, rgba(200, 100, 50, 0.15) 0%, rgba(200, 100, 50, 0.08) 100%);
-    border: 1px solid var(--terra);
-    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.06) 100%);
+    border: 2px solid #ef4444;
+    border-radius: 14px;
     margin-bottom: 1rem;
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
     transition: all 0.2s ease;
   }
 
-  .power-save-alert:hover {
-    background: linear-gradient(135deg, rgba(200, 100, 50, 0.2) 0%, rgba(200, 100, 50, 0.12) 100%);
+  .alert-banner:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.1) 100%);
+    transform: translateY(-1px);
+  }
+
+  .alert-pulse {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #ef4444;
+    animation: alertPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes alertPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
   }
 
   .alert-icon {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
   }
 
-  .alert-text {
+  .alert-content {
     flex: 1;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--terra);
+    display: flex;
+    flex-direction: column;
     text-align: left;
   }
 
-  .alert-arrow {
-    color: var(--terra);
+  .alert-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #ef4444;
+    letter-spacing: 0.05em;
   }
 
-  /* Section Tabs */
-  .section-tabs {
+  .alert-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .alert-action {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ef4444;
+    white-space: nowrap;
+  }
+
+  /* Section Navigation */
+  .section-nav {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1.5rem;
     background: var(--bg);
-    padding: 0.35rem;
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 0.4rem;
+    margin-bottom: 1.5rem;
   }
 
-  .section-tab {
+  .nav-btn {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem;
+    padding: 0.75rem 0.5rem;
     background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+
+  .nav-btn:hover {
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .nav-btn.active {
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  }
+
+  .nav-btn.alert .nav-icon {
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  .nav-icon {
+    font-size: 1.1rem;
+  }
+
+  .nav-label {
     font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--muted);
-    transition: all 0.2s ease;
   }
 
-  .section-tab:hover {
+  .nav-btn.active .nav-label {
     color: var(--pine);
-    background: rgba(166, 181, 137, 0.1);
   }
 
-  .section-tab.active {
-    background: #fff;
-    color: var(--pine);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  .nav-alert-dot {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: pulse 1s ease-in-out infinite;
   }
 
-  .section-tab.alert {
-    color: var(--terra);
-  }
-
-  .section-tab.alert.active {
-    background: rgba(200, 100, 50, 0.1);
-    color: var(--terra);
-  }
-
-  .tab-icon {
-    font-size: 1rem;
-  }
-
-  /* Budget Section */
-  .budget-section {
+  /* Content Sections */
+  .content-section {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  .budget-card, .device-breakdown {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem;
+  .section-intro {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
   }
 
-  .card-title {
+  /* Panel Cards */
+  .panel {
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.08) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
     font-family: Oswald, sans-serif;
     font-size: 1rem;
     font-weight: 600;
     color: var(--ink);
-    margin: 0 0 1rem;
+    margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
 
-  .budget-row {
+  .panel-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.25rem 0.6rem;
+    background: var(--alpine);
+    color: #fff;
+    border-radius: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Budget Grid */
+  .budget-grid {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.25rem;
+  }
+
+  .budget-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem;
+    padding: 0.85rem 1rem;
     background: var(--bg);
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
+    border-radius: 10px;
   }
 
-  .budget-row.highlight {
+  .budget-item.highlight {
     background: linear-gradient(135deg, rgba(166, 181, 137, 0.2) 0%, rgba(166, 181, 137, 0.1) 100%);
+    border: 1px solid var(--alpine);
   }
 
-  .budget-row.save {
-    background: linear-gradient(135deg, rgba(240, 224, 0, 0.15) 0%, rgba(240, 224, 0, 0.08) 100%);
+  .budget-item.save-mode {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.08) 100%);
   }
 
   .budget-label {
@@ -803,47 +1167,59 @@
     color: var(--pine);
   }
 
-  .budget-value small {
+  .bonus {
     font-size: 0.75rem;
     color: var(--alpine);
+    margin-left: 0.25rem;
   }
 
-  .budget-input-wrap {
+  .budget-input-group {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
   .budget-input {
-    width: 100px;
-    padding: 0.4rem 0.6rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    width: 90px;
+    padding: 0.5rem 0.6rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
     font-family: Oswald, sans-serif;
     font-size: 1rem;
     text-align: right;
+    background: #fff;
   }
 
-  .budget-unit {
+  .budget-input:focus {
+    outline: none;
+    border-color: var(--alpine);
+  }
+
+  .budget-suffix {
     font-size: 0.8rem;
     color: var(--muted);
   }
 
-  .breakdown-item {
+  /* Breakdown List */
+  .breakdown-list {
+    padding: 1rem 1.25rem;
+  }
+
+  .breakdown-row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.5rem 0;
+    padding: 0.6rem 0;
     border-bottom: 1px solid var(--bg);
   }
 
-  .breakdown-item:last-of-type {
+  .breakdown-row:last-child {
     border-bottom: none;
   }
 
   .breakdown-icon {
     font-size: 1.25rem;
-    width: 30px;
+    width: 32px;
     text-align: center;
   }
 
@@ -853,7 +1229,7 @@
     color: var(--ink);
   }
 
-  .breakdown-bar-wrap {
+  .breakdown-bar {
     width: 80px;
     height: 8px;
     background: var(--bg);
@@ -861,10 +1237,11 @@
     overflow: hidden;
   }
 
-  .breakdown-bar {
+  .breakdown-fill {
     height: 100%;
-    background: var(--alpine);
+    background: linear-gradient(90deg, var(--alpine), var(--pine));
     border-radius: 4px;
+    transition: width 0.3s ease;
   }
 
   .breakdown-value {
@@ -875,41 +1252,51 @@
     text-align: right;
   }
 
-  .breakdown-total {
+  .breakdown-footer {
     display: flex;
     justify-content: space-between;
-    padding-top: 0.75rem;
-    margin-top: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg);
     border-top: 2px solid var(--border);
-    font-family: Oswald, sans-serif;
-    font-weight: 600;
-    color: var(--ink);
   }
 
-  .budget-tip {
+  .footer-label {
+    font-size: 0.85rem;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .footer-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  /* Info Card */
+  .info-card {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background: var(--bg);
-    border-radius: 10px;
-    font-size: 0.8rem;
-    color: var(--muted);
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.1) 0%, rgba(166, 181, 137, 0.05) 100%);
+    border: 1px solid var(--alpine);
+    border-radius: 12px;
   }
 
-  /* Devices Section */
-  .devices-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+  .info-icon {
+    font-size: 1.25rem;
+    line-height: 1;
   }
 
-  .section-intro {
-    font-size: 0.9rem;
+  .info-text {
+    font-size: 0.85rem;
     color: var(--muted);
+    line-height: 1.5;
     margin: 0;
   }
 
+  /* Device Grid */
   .device-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -919,16 +1306,17 @@
   .device-card {
     background: #fff;
     border: 2px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
     transition: all 0.2s ease;
   }
 
-  .device-card.selected {
+  .device-card.active {
     border-color: var(--alpine);
+    box-shadow: 0 4px 16px rgba(166, 181, 137, 0.15);
   }
 
-  .device-card.essential {
+  .device-card.essential.active {
     border-color: var(--pine);
   }
 
@@ -936,17 +1324,33 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
     width: 100%;
-    padding: 1rem;
+    padding: 1.25rem 1rem;
     background: transparent;
     border: none;
     cursor: pointer;
-    position: relative;
+  }
+
+  .device-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
 
   .device-icon {
     font-size: 2rem;
+  }
+
+  .essential-tag {
+    font-size: 0.5rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    background: var(--pine);
+    color: #fff;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .device-name {
@@ -955,46 +1359,35 @@
     font-weight: 500;
     color: var(--ink);
     text-transform: uppercase;
+    margin-bottom: 0.75rem;
   }
 
-  .essential-badge {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    font-size: 0.5rem;
-    font-weight: 700;
-    padding: 0.15rem 0.35rem;
-    background: var(--pine);
-    color: #fff;
-    border-radius: 4px;
-    text-transform: uppercase;
-  }
-
-  .toggle-check {
-    width: 24px;
-    height: 24px;
+  .device-check {
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
     background: var(--bg);
-    font-size: 0.85rem;
+    border-radius: 50%;
+    font-size: 0.9rem;
     color: var(--muted);
+    transition: all 0.2s ease;
   }
 
-  .device-card.selected .toggle-check {
+  .device-check.checked {
     background: var(--alpine);
     color: #fff;
   }
 
-  .device-level {
-    padding: 0 1rem;
+  .device-controls {
+    padding: 0 1rem 1rem;
   }
 
-  .level-header {
+  .level-display {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
   }
 
   .level-label {
@@ -1003,97 +1396,70 @@
     color: var(--muted);
   }
 
-  .level-value {
+  .level-percent {
     font-family: Oswald, sans-serif;
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--ink);
   }
 
-  .level-slider {
+  .device-slider {
     width: 100%;
     height: 6px;
     -webkit-appearance: none;
     background: var(--bg);
     border-radius: 3px;
+    margin-bottom: 0.5rem;
   }
 
-  .level-slider::-webkit-slider-thumb {
+  .device-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: var(--alpine);
     cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   }
 
-  .device-meta {
+  .device-stats {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem 1rem;
+    padding: 0.6rem;
     background: var(--bg);
-    margin-top: 0.5rem;
-  }
-
-  .meta-item {
+    border-radius: 8px;
     font-size: 0.65rem;
     color: var(--muted);
   }
 
-  /* Tonight Section */
-  .tonight-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .tonight-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .days-input {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  .days-num {
-    width: 50px;
-    padding: 0.4rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    text-align: center;
-    font-family: Oswald, sans-serif;
-  }
-
-  .priority-list {
+  /* Priority Queue */
+  .priority-queue {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    padding: 1rem 1.25rem;
   }
 
-  .priority-item {
+  .priority-card {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem;
-    background: #fff;
+    padding: 0.85rem 1rem;
+    background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
   }
 
-  .priority-item.needs-charge {
+  .priority-card.needs-charge {
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.1) 0%, #fff 100%);
     border-color: var(--alpine);
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.08) 0%, #fff 100%);
   }
 
-  .priority-item.low {
-    border-color: var(--terra);
-    background: linear-gradient(135deg, rgba(200, 100, 50, 0.08) 0%, #fff 100%);
+  .priority-card.critical {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, #fff 100%);
+    border-color: #ef4444;
   }
 
   .priority-rank {
@@ -1101,7 +1467,7 @@
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--muted);
-    width: 24px;
+    width: 28px;
   }
 
   .priority-icon {
@@ -1125,224 +1491,320 @@
     color: var(--muted);
   }
 
-  .priority-level {
+  .priority-battery {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  .mini-battery {
-    width: 30px;
-    height: 12px;
+  .battery-visual {
+    width: 36px;
+    height: 14px;
     background: var(--bg);
-    border-radius: 3px;
-    overflow: hidden;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    padding: 2px;
+    position: relative;
   }
 
-  .mini-fill {
+  .battery-visual::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .battery-level {
     height: 100%;
     background: var(--alpine);
+    border-radius: 2px;
     transition: width 0.2s ease;
   }
 
-  .mini-fill.low {
-    background: var(--terra);
-  }
+  .battery-level.low { background: #ef4444; }
+  .battery-level.mid { background: #fbbf24; }
 
-  .mini-fill.mid {
-    background: var(--marker);
-  }
-
-  .level-text {
+  .battery-pct {
     font-family: Oswald, sans-serif;
     font-size: 0.8rem;
     color: var(--muted);
     width: 35px;
   }
 
-  .charge-badge, .skip-badge {
+  .priority-action {
+    margin-left: auto;
+  }
+
+  .action-tag {
     font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
   }
 
-  .charge-badge {
+  .action-tag.charge {
     background: var(--alpine);
     color: #fff;
   }
 
-  .skip-badge {
+  .action-tag.skip {
     background: var(--bg);
     color: var(--muted);
+    border: 1px solid var(--border);
   }
 
-  .charging-rules {
+  /* Rules Panel */
+  .rules-panel {
     background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   .rules-title {
     font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--ink);
-    margin: 0 0 0.75rem;
+    margin: 0 0 1rem;
     text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
-  .rule-tier {
+  .rule-row {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem;
-    border-radius: 6px;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
     margin-bottom: 0.5rem;
-    font-size: 0.75rem;
   }
 
-  .rule-tier.never {
-    background: rgba(200, 100, 50, 0.1);
+  .rule-row.critical {
+    background: rgba(239, 68, 68, 0.1);
   }
 
-  .rule-tier.limit {
-    background: rgba(240, 224, 0, 0.15);
+  .rule-row.warning {
+    background: rgba(251, 191, 36, 0.1);
   }
 
-  .rule-tier.drop {
+  .rule-row.optional {
     background: var(--bg);
   }
 
-  .tier-label {
+  .rule-badge {
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
 
-  .rule-tier.never .tier-label { color: var(--terra); }
-  .rule-tier.limit .tier-label { color: #8b7500; }
-  .rule-tier.drop .tier-label { color: var(--muted); }
+  .rule-row.critical .rule-badge { color: #ef4444; }
+  .rule-row.warning .rule-badge { color: #b45309; }
+  .rule-row.optional .rule-badge { color: var(--muted); }
 
-  .tier-devices {
+  .rule-devices {
+    font-size: 0.8rem;
     color: var(--ink);
   }
 
-  /* Power Save Section */
-  .save-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .save-toggle-card {
+  /* Day Counter */
+  .day-counter {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+  }
+
+  .day-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .day-input {
+    width: 50px;
+    padding: 0.4rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .day-input:focus {
+    outline: none;
+    border-color: var(--alpine);
+  }
+
+  /* Power Save Master Toggle */
+  .save-master-toggle {
+    display: flex;
     justify-content: space-between;
-    padding: 1rem 1.25rem;
+    align-items: center;
+    padding: 1.25rem;
     background: #fff;
     border: 2px solid var(--border);
-    border-radius: 14px;
+    border-radius: 16px;
     transition: all 0.2s ease;
   }
 
-  .save-toggle-card.active {
-    border-color: var(--marker);
-    background: linear-gradient(135deg, rgba(240, 224, 0, 0.1) 0%, #fff 100%);
+  .save-master-toggle.active {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, #fff 100%);
+    border-color: #fbbf24;
   }
 
-  .save-toggle-info {
+  .toggle-info {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
   }
 
-  .save-icon {
-    font-size: 1.75rem;
+  .toggle-icon {
+    font-size: 2rem;
   }
 
-  .save-text {
+  .toggle-text {
     display: flex;
     flex-direction: column;
   }
 
-  .save-title {
+  .toggle-title {
     font-family: Oswald, sans-serif;
     font-size: 1.1rem;
     font-weight: 600;
     color: var(--ink);
   }
 
-  .save-desc {
+  .toggle-desc {
     font-size: 0.8rem;
     color: var(--muted);
   }
 
-  .save-btn {
-    padding: 0.5rem 1.25rem;
+  .toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
     background: var(--bg);
     border: 2px solid var(--border);
-    border-radius: 20px;
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--muted);
+    border-radius: 24px;
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
-  .save-btn.on {
-    background: var(--marker);
-    border-color: var(--marker);
+  .toggle-switch.on {
+    background: #fbbf24;
+    border-color: #fbbf24;
+  }
+
+  .switch-track {
+    width: 36px;
+    height: 20px;
+    background: var(--border);
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s ease;
+  }
+
+  .toggle-switch.on .switch-track {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  .switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .toggle-switch.on .switch-thumb {
+    transform: translateX(16px);
+  }
+
+  .switch-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    min-width: 28px;
+  }
+
+  .toggle-switch.on .switch-label {
     color: var(--ink);
   }
 
-  .triggers-card, .actions-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem;
-  }
-
-  .triggers-list {
-    display: flex;
-    flex-direction: column;
+  /* Triggers Grid */
+  .triggers-grid {
+    display: grid;
     gap: 0.5rem;
+    padding: 1rem 1.25rem;
   }
 
-  .trigger-item {
+  .trigger-card {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.5rem;
+    padding: 0.75rem 1rem;
     background: var(--bg);
-    border-radius: 8px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+  }
+
+  .trigger-card.triggered {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .trigger-indicator {
+    font-size: 1rem;
+    width: 24px;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .trigger-card.triggered .trigger-indicator {
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  .trigger-text {
     font-size: 0.85rem;
     color: var(--muted);
   }
 
-  .trigger-item.triggered {
-    background: rgba(200, 100, 50, 0.1);
-    color: var(--terra);
+  .trigger-card.triggered .trigger-text {
+    color: #ef4444;
+    font-weight: 500;
   }
 
-  .trigger-indicator {
-    width: 20px;
-    text-align: center;
+  /* Actions Grid */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding: 1rem 1.25rem;
   }
 
-  .action-category {
-    margin-bottom: 1rem;
+  .action-group {
+    padding: 0.75rem;
+    background: var(--bg);
+    border-radius: 10px;
   }
 
-  .action-category:last-child {
-    margin-bottom: 0;
-  }
-
-  .action-device {
+  .action-title {
     font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--ink);
     margin: 0 0 0.5rem;
@@ -1351,64 +1813,67 @@
 
   .action-list {
     margin: 0;
-    padding-left: 1.25rem;
+    padding-left: 1rem;
     list-style: disc;
   }
 
   .action-item {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--muted);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
+    line-height: 1.4;
   }
 
-  .save-result {
+  /* Result Display */
+  .result-display {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.15) 0%, rgba(166, 181, 137, 0.08) 100%);
-    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(74, 222, 128, 0.08) 100%);
+    border: 2px solid #4ade80;
+    border-radius: 14px;
   }
 
   .result-label {
     font-size: 0.9rem;
     color: var(--ink);
+    font-weight: 500;
   }
 
   .result-value {
     font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.35rem;
     font-weight: 700;
-    color: var(--pine);
+    color: #16a34a;
   }
 
   /* Guide Link */
   .guide-link {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 0.75rem;
     padding: 1rem 1.25rem;
     margin-top: 1.5rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 14px;
     text-decoration: none;
     transition: all 0.2s ease;
   }
 
   .guide-link:hover {
-    background: #fff;
     border-color: var(--alpine);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
   }
 
-  .guide-icon {
+  .link-icon {
     font-size: 1.25rem;
   }
 
-  .guide-text {
+  .link-text {
     flex: 1;
-    margin-left: 0.75rem;
     font-family: Oswald, sans-serif;
     font-size: 0.9rem;
     font-weight: 500;
@@ -1417,58 +1882,52 @@
     letter-spacing: 0.03em;
   }
 
-  .guide-arrow {
-    color: var(--alpine);
+  .link-arrow {
     font-size: 1.25rem;
+    color: var(--alpine);
     transition: transform 0.2s ease;
   }
 
-  .guide-link:hover .guide-arrow {
+  .guide-link:hover .link-arrow {
     transform: translateX(4px);
   }
 
-  /* Mobile */
+  /* Mobile Responsive */
   @media (max-width: 640px) {
-    .manager-header {
+    .power-display {
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.25rem;
     }
 
-    .bank-stats {
+    .stats-panel {
       width: 100%;
-      justify-content: space-around;
     }
 
-    .section-tabs {
-      gap: 0.25rem;
-    }
-
-    .section-tab {
-      padding: 0.6rem 0.5rem;
-      font-size: 0.75rem;
-    }
-
-    .tab-text {
+    .nav-label {
       display: none;
     }
 
-    .tab-icon {
-      font-size: 1.25rem;
+    .nav-icon {
+      font-size: 1.35rem;
     }
 
     .device-grid {
       grid-template-columns: 1fr;
     }
 
-    .priority-item {
-      flex-wrap: wrap;
-      gap: 0.5rem;
+    .actions-grid {
+      grid-template-columns: 1fr;
     }
 
-    .priority-level {
+    .priority-card {
+      flex-wrap: wrap;
+    }
+
+    .priority-battery {
       order: 5;
       width: 100%;
       justify-content: flex-end;
+      margin-top: 0.5rem;
     }
   }
 </style>
