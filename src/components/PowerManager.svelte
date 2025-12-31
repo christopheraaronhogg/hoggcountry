@@ -17,7 +17,7 @@
 
   // User's device setup (localStorage)
   let devices = $state([...defaultDevices.slice(0, 4)]); // Start with phone, garmin, watch, headlamp
-  let powerBankCapacity = $state(20000); // mAh
+  let powerBankCapacity = $state(30000); // mAh (Anker Nano 20K + Nitecore 10K)
   let powerBankCurrent = $state(100); // percentage
 
   // Device battery levels
@@ -388,8 +388,8 @@
       <div class="info-card">
         <span class="info-icon">💡</span>
         <p class="info-text">
-          At your current draw, a full 20,000 mAh bank lasts ~{Math.floor(20000 / dailyDraw)} days.
-          With power save mode, that extends to ~{Math.floor(20000 / dailyDrawSave)} days.
+          At your current draw, a full {powerBankCapacity.toLocaleString()} mAh bank lasts ~{Math.floor(powerBankCapacity / dailyDraw)} days.
+          With power save mode, that extends to ~{Math.floor(powerBankCapacity / dailyDrawSave)} days.
         </p>
       </div>
     </section>

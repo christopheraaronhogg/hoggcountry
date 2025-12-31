@@ -82,7 +82,7 @@
     { mile: 302.4, name: 'Flint Mountain Shelter', type: 'spring', reliability: 'seasonal', offTrail: 0.2, notes: 'Check recent reports' },
     { mile: 313.9, name: 'Devils Fork Gap Stream', type: 'stream', reliability: 'reliable', offTrail: 0 },
     { mile: 320.7, name: 'Hogback Ridge Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
-    { mile: 328.3, name: 'Nolichucky River', type: 'river', reliability: 'reliable', offTrail: 0, notes: 'Large river - Uncle Johnnys nearby' },
+    { mile: 328.3, name: 'Nolichucky River', type: 'river', reliability: 'reliable', offTrail: 0, notes: '⚠️ 2026: No ferry - 3.6mi road walk or shuttle. Uncle Johnnys nearby.' },
     { mile: 342.3, name: 'Erwin - Town', type: 'town', reliability: 'reliable', offTrail: 0.5 },
     // TN/VA Section - Mile 340-470
     { mile: 350.3, name: 'Curley Maple Gap Shelter', type: 'spring', reliability: 'reliable', offTrail: 0.1 },
