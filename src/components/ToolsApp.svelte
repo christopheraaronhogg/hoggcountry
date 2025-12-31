@@ -1207,11 +1207,14 @@
   @media (max-width: 640px) {
     .tools-app {
       overflow-x: hidden;
+      max-width: 100%;
+      width: 100%;
     }
 
     .context-bar {
       border-radius: 12px;
       margin-bottom: 1rem;
+      max-width: 100%;
     }
 
     .context-header {
@@ -1327,11 +1330,7 @@
       padding: 0.25rem;
       border-radius: 10px;
       margin-bottom: 1.5rem;
-      margin-left: -1rem;
-      margin-right: -1rem;
-      padding-left: 1rem;
-      padding-right: 1rem;
-      width: calc(100% + 2rem);
+      max-width: 100%;
     }
 
     .tools-nav::-webkit-scrollbar {
