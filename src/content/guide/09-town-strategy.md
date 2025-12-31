@@ -73,6 +73,96 @@ Maine terrain is slower; final push is realistic and safe.
 
 **Expected Finish: September 17-20**
 
+---
+
+## 🏔️ LATE-TRAIL REALITY CHECK: WHITES → MAINE
+
+**The final 400+ miles (White Mountains → Katahdin) require different planning than the rest of the trail.**
+
+### **White Mountains: AMC Hut System**
+
+**What You Need to Know:**
+- **8 AMC huts** along ridgeline (Lakes of the Clouds, Mizpah, Zealand Falls, etc.)
+- **NOT shelters** - these are staffed lodges with bunks and meals
+- **Reservations:** $150+ per night for bunk + dinner + breakfast
+- **Work-for-Stay:** Limited spots (2-4 per hut), arrive early afternoon, crew assigns tasks
+- **Strategy:** Don't rely on work-for-stay - have tent as backup
+- **Peak Season:** July-August = busiest, hardest to get work-for-stay
+
+**Action:** Research AMC huts before entering Whites. Decide: pay, work-for-stay attempt, or tent/stealth.
+
+---
+
+### **Katahdin Weather: Bail Plan Required**
+
+**Reality:** Katahdin summit attempts can be delayed by weather (wind, rain, lightning).
+
+**The Problem:**
+- Baxter State Park rangers WILL turn hikers around in unsafe conditions
+- August-September weather can be unpredictable
+- You might wait 1-3 days for a summit window
+
+**Your Bail Plan:**
+- **Buffer days:** Build 2-3 extra days into your schedule before Katahdin
+- **Lodging:** Identify where you'll stay if delayed (Millinocket, Katahdin Stream Campground)
+- **Mental prep:** Expect possible delays, don't push finish date promises
+- **Weather check:** Monitor Baxter State Park weather forecasts starting 100 miles out
+
+**Action:** Arrive at Katahdin with flexible timeline, not a hard deadline.
+
+---
+
+### **Baxter Permit Process**
+
+**What You Need to Know:**
+- **Day-use permits:** Required for Katahdin summit
+- **Katahdin Stream Campground:** Popular base for summit attempts
+- **Reservation system:** Baxter uses online reservation system
+- **2026 Note:** Online reservations open at 6 AM EST (not midnight); extended multi-night booking available
+- **Peak season:** August = heavily booked
+- **Walk-up permits:** Sometimes available, but not guaranteed
+
+**Action:** Research Baxter permit requirements in August. Book Katahdin Stream Campground or have backup plan.
+
+---
+
+### **100-Mile Wilderness: Food Carry Math**
+
+**The Reality:**
+- 100 miles with NO resupply (Mile ~2,093 to ~2,193)
+- Most hikers: 7-10 days
+- Your pace (11-12 mpd in Maine): ~8-9 days
+- **Food weight:** 8-9 days × 1.5 lb/day = **12-14 lb of food**
+- Plus full fuel canisters
+
+**Planning:**
+- Resupply at Monson, ME (Mile ~2,093)
+- Carry 8-9 days of food + 2 fuel canisters
+- **White's Crossing optional resupply (Mile ~2,133):** Shaw's Lodging offers food drop-off service (can reduce carry)
+- Water is plentiful (lakes, streams)
+
+**Action:** Plan 100-Mile food carry in Monson. Consider White's Crossing resupply if you want to split the carry.
+
+---
+
+### **Mental Game: You're Almost There**
+
+By the time you reach the Whites, you've hiked 1,700+ miles. Fatigue is real.
+
+**Common Late-Trail Mistakes:**
+- Rushing to finish (injuries increase)
+- Skipping zeros (body is tired)
+- Poor weather decisions (summit fever)
+- Underestimating final terrain (Whites and Maine are HARD)
+
+**Strategy:**
+- Maintain your zero-day schedule (every 5-7 days)
+- Respect the terrain (Whites are technical, Maine is slow)
+- Don't skip meals or sleep
+- Finish strong, not broken
+
+---
+
 ## Comprehensive AT Town & Services Guide (NOBO)
 
 ### Walkable Towns With Full Services
@@ -482,7 +572,7 @@ You do NOT carry extra clothes. Laundry is done while you are still dressed and 
 ### Standard Laundry Outfit
 
 - Smartwool long johns (bottom)
-- Flip-flops
+- Xero Z-Trail sandals (camp shoes)
 - Rain jacket (puffy if cold)
 
 ### Correct Laundry Order

@@ -12,6 +12,39 @@
 
 ---
 
+## ⚠️ 2026 HELENE ADDENDUM — CRITICAL TRAIL UPDATES
+
+**Hurricane Helene (September 2024) caused significant infrastructure damage in North Carolina and Tennessee. Trail conditions differ from pre-2024 guidebooks.**
+
+### **Known Changes for 2026 NOBOs:**
+
+**1. Nolichucky River Crossing (TN/NC Border - Mile ~350)**
+- **Status:** No planned 2026 ferry service (2025 service ended; bridge rebuild starts 2026)
+- **Solution:** 3.6-mile road walk OR shuttle
+- **Impact:** Plan logistics in Erwin, TN before this section
+- **Updates:** Check ATC website and FarOut comments for current status
+
+**2. Iron Mountain Gap Area (Near Roan Highlands - Mile ~360-365)**
+- **Status:** ~6-mile detour likely active through early 2026
+- **Possible reopening:** Fall 2025; confirm status via ATC alert before section
+- **Check:** ATC trail updates before reaching this section
+- **Note:** Adds mileage to daily plans in this area
+
+**3. General Trail Conditions (Georgia → Virginia)**
+- **Water sources:** Southern water sources and tread may differ from pre-2024 data
+- **Strategy:** Rely on recent FarOut comments (2025-2026) over older guidebook data
+- **Campsites:** Some established sites may have changed; verify current conditions
+
+### **Action Items:**
+- ✅ Check ATC.org trail updates monthly before your start
+- ✅ Download latest FarOut updates before each town stop
+- ✅ Ask NOBOs you meet about recent conditions ahead
+- ✅ Build flexibility into daily mileage plans (detours add miles)
+
+**This addendum reflects conditions as of January 2025. Trail restoration is ongoing.**
+
+---
+
 ## TABLE OF CONTENTS
 
 ### INTRODUCTION
@@ -425,7 +458,7 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 | Item | Weight |
 |------|--------|
 | Osprey Atmos AG LT 50 | 67.0 oz |
-| 8L Dry Bag | 2.2 oz |
+| 8L Dry Bags (4 total: clothes, sleep system x2, misc) | 8.8 oz |
 
 #### Shelter System
 | Item | Weight |
@@ -440,7 +473,7 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 | Zenbivy 10° Down Quilt | 29.5 oz |
 | Zenbivy Down Sheet | 19.0 oz |
 | Sleeping Pad (R ≈ 8) | 25.0 oz |
-| Pillow | 4.8 oz |
+| Pillow (inflatable) | 3.0 oz |
 
 *Note: The Zenbivy Down Sheet is required as part of the integrated Zenbivy sleep system - it works with the quilt to provide draft protection and complete the footbox design.*
 
@@ -468,6 +501,8 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 | Waterproof Shell Mitts | 1.0 oz |
 | Gaiters | 2.0 oz |
 | Smartwool Merino 150 Beanie | 0.6 oz |
+| Ball Cap | 2.0 oz |
+| Apple Watch Ultra + charging cable | 2.4 oz |
 
 #### Kitchen System
 | Item | Weight |
@@ -485,13 +520,18 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 | Item | Weight |
 |------|--------|
 | iPhone | 7.9 oz |
-| Anker Prime 26,000 mAh Battery | 23.5 oz |
-| Anker 140W Fast Charger | 8.8 oz |
+| Anker Nano Power Bank 20K (20,000 mAh) | 11.0 oz |
+| Nitecore NB10000 Gen 3 (10,000 mAh) | 5.3 oz |
+| UGREEN Nexode 65W GaN Charger (3-port) | 4.5 oz |
 | Garmin inReach Mini 2 | 3.5 oz |
 | Ray-Ban Meta Gen 2 Smart Glasses + Case | 6.4 oz |
 | Headlamp | 1.5 oz |
 
 *Note: Ray-Ban Meta glasses tested and confirmed functional in freezing temperatures for winter content creation.*
+
+**Total Battery Capacity:** 30,000 mAh (20k + 10k)  
+**Charging Strategy:** Both batteries charge overnight during zero days (every 6 days). Anker Nano has built-in USB-C cable; Nitecore NB10000 also has built-in cable.  
+**Advantage:** Dual battery system provides redundancy and 30k mAh total capacity - sufficient for 5-day stretches with Ray-Ban Meta content creation.
 
 #### Tools & Safety
 | Item | Weight |
@@ -499,6 +539,22 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 | Knife | 4.5 oz |
 | BeFree 1L Water Filter | 2.3 oz |
 | Microspikes - Kahtoola (winter only) | 11.9 oz |
+| Xero Z-Trail Sandals (camp shoes) | 7.0 oz |
+| Opsack 12L (odor-proof food bag) | 0.5 oz |
+
+#### First Aid Kit
+| Item | Weight |
+|------|--------|
+| First aid kit (emergency blanket, tape, bandages, bandaids, Advil, ankle brace) | 4.5 oz |
+
+#### Toiletries Kit
+| Item | Weight |
+|------|--------|
+| Toothpaste (travel size) | 1.0 oz |
+| Toothbrush (cut handle) | 0.3 oz |
+| Dr. Bronner's soap (2 oz) | 2.0 oz |
+| Hand sanitizer (2 oz) | 2.0 oz |
+| Toiletries bag | 0.5 oz |
 
 #### Gear Worn While Hiking
 | Item | Weight |
@@ -510,15 +566,22 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 
 ### WEIGHT TOTALS
 
-- **Total Base Weight (Carried in Pack):** 26.33 lb
-- **Worn Weight (On Body):** 4.70 lb
-- **Total Pack + Worn Weight:** 31.03 lb
-- **Typical Trail Weight (+ 7 lb food + 1L water):** ~40.2 lb
+- **Total Base Weight (Carried in Pack):** 21.49 lb
+- **Worn Weight (On Body):** 4.97 lb
+- **Total Pack + Worn Weight:** 26.47 lb
+- **Typical Trail Weight (+ 7 lb food + 1L water):** ~35.7 lb
 
 **After Microspikes Drop (Hot Springs, NC - Mile 274):**
-- **Base Weight (Carried):** 25.58 lb
-- **Total Pack + Worn:** 30.28 lb
-- **Typical Trail Weight (+ food/water):** ~39.5 lb
+- **Base Weight (Carried):** 20.75 lb
+- **Total Pack + Worn:** 25.73 lb
+- **Typical Trail Weight (+ food/water):** ~34.9 lb
+
+**Recent Updates:**
+- Battery system: Anker Nano 20K (11 oz) + Nitecore NB10000 (5.3 oz) = 16.3 oz total, 30,000 mAh capacity
+- 4x 8L dry bags for organization (8.8 oz total)
+- Opsack (0.5 oz), First Aid Kit (4.5 oz), Toiletries (5.8 oz)
+- Apple Watch Ultra + cable (2.4 oz worn), Ball cap (2.0 oz worn)
+- Xero Z-Trail sandals (7 oz), 3 oz pillow upgrade
 
 ## Chapter 3: Gear Transitions
 
@@ -532,24 +595,74 @@ This gear system is designed to evolve with trail conditions. Carrying winter ge
 
 **Changes Made:**
 - Switch from chemical treatment to filter-only
-- Base weight drops from 29.91 lb to 29.17 lb
-- Trail weight: ~38.3 lb
+- Base weight drops from 21.72 lb to 20.98 lb
+- Trail weight: ~35.2 lb
 
 **Rationale:** Elevation drops after Hot Springs. Freeze-thaw risk largely ends. Filter freeze risk becomes manageable. Ice/snow risk ends.
 
 ### Damascus, VA — Major Transition
 
 **Items Dropped:**
-- Smartwool 250 Sleep Pants
-- Heavy Winter Quilt
-- R-8 Sleeping Pad
+- Osprey Atmos AG LT 50 (67 oz)
+- Smartwool 250 Sleep Pants (8.7 oz)
+- Zenbivy 10° Down Quilt (29.5 oz)
+- R-8 Sleeping Pad (25.0 oz)
+- **Total dropped: 130.2 oz (8.14 lb)**
 
 **Items Added/Switched:**
+- Hyperlite Mountain Gear Southwest 55L (29 oz)
 - Lightweight sleep layers
-- Vesper Quilt (lighter)
-- R-3-4 Sleeping Pad
+- Vesper Quilt 20-30°F (estimated 20 oz)
+- R-3.5 Sleeping Pad (estimated 15 oz)
+- **Total added: 64 oz (4.0 lb)**
 
-**Rationale:** Daytime temps consistently 50s-60s. Nights rarely below freezing. Sleep warmth becomes comfort-based, not survival-based.
+**Net Weight Savings: 66.2 oz (4.14 lb)**
+
+**Post-Damascus Base Weight:**
+- Before Damascus: 20.75 lb (after dropping microspikes at Hot Springs)
+- After Damascus transition: **16.61 lb**
+- Total Pack + Worn: **21.59 lb**
+- Trail Weight: **~30.8 lb**
+
+**Rationale:** 
+- Daytime temps consistently 50s-60s. Nights rarely below freezing. Sleep warmth becomes comfort-based, not survival-based.
+- With lighter gear, the Osprey's heavy-duty suspension is no longer needed. Hyperlite Southwest 55L's waterproof Dyneema construction handles lighter loads efficiently.
+- Pack change enables significant weight reduction (38 oz savings) while maintaining adequate capacity. Dyneema is bombproof and fully waterproof.
+
+**Summer Strategy Notes (Miles 469+):**
+- **Water carry increases:** Hot/humid conditions require 2-3L total capacity (vs 1-2L in winter). Carry 2L in pack + 1L in bottle on hot days.
+- **Bug season:** May-July peak. Permethrin-treat all clothing before Damascus. Consider adding headnet if bugs are severe.
+- **Humidity:** Sleep clothes dry slower. Air out gear daily. Consider switching to synthetic base layers if Merino takes too long to dry.
+- **Thunderstorms:** Summer = daily afternoon storms. Start early, get miles done by 2-3pm when possible.
+- **Sun exposure:** Longer days = more sun. Reapply sunscreen frequently, use sun hoodie.
+
+---
+
+### Complete Weight Progression Summary
+
+**Phase 1: Winter Survival (Miles 0-274)**
+- Base Weight: 21.49 lb
+- Total Pack + Worn: 26.47 lb
+- Trail Weight: ~35.7 lb
+- Gear: Full winter kit (Osprey Atmos, Zenbivy 10°, R-8 pad, microspikes, dual battery system)
+
+**Phase 2: Spring Transition (Miles 274-469)**
+- Base Weight: 20.75 lb (dropped microspikes)
+- Total Pack + Worn: 25.73 lb
+- Trail Weight: ~34.9 lb
+- Gear: Winter sleep system, transitioning out of extreme cold
+
+**Phase 3: Summer Lightweight (Miles 469+)**
+- Base Weight: **16.61 lb** (after Damascus transition)
+- Total Pack + Worn: **21.59 lb**
+- Trail Weight: **~30.8 lb**
+- Gear: Hyperlite Mountain Gear Southwest 55L, Vesper Quilt, R-3.5 pad
+
+**Total Weight Reduction: 4.88 lb (21.49 → 16.61 lb base weight)**
+
+This represents a 24% reduction in base weight from winter to summer configuration, achieved through strategic gear transitions rather than compromising safety or comfort. The Hyperlite Southwest's waterproof Dyneema construction eliminates the need for a pack liner while saving 2.38 lb compared to the Osprey Atmos.
+
+---
 
 ## Chapter 4: Hard Shakedown Principles
 
@@ -1904,6 +2017,96 @@ Maine terrain is slower; final push is realistic and safe.
 
 **Expected Finish: September 17-20**
 
+---
+
+## 🏔️ LATE-TRAIL REALITY CHECK: WHITES → MAINE
+
+**The final 400+ miles (White Mountains → Katahdin) require different planning than the rest of the trail.**
+
+### **White Mountains: AMC Hut System**
+
+**What You Need to Know:**
+- **8 AMC huts** along ridgeline (Lakes of the Clouds, Mizpah, Zealand Falls, etc.)
+- **NOT shelters** - these are staffed lodges with bunks and meals
+- **Reservations:** $150+ per night for bunk + dinner + breakfast
+- **Work-for-Stay:** Limited spots (2-4 per hut), arrive early afternoon, crew assigns tasks
+- **Strategy:** Don't rely on work-for-stay - have tent as backup
+- **Peak Season:** July-August = busiest, hardest to get work-for-stay
+
+**Action:** Research AMC huts before entering Whites. Decide: pay, work-for-stay attempt, or tent/stealth.
+
+---
+
+### **Katahdin Weather: Bail Plan Required**
+
+**Reality:** Katahdin summit attempts can be delayed by weather (wind, rain, lightning).
+
+**The Problem:**
+- Baxter State Park rangers WILL turn hikers around in unsafe conditions
+- August-September weather can be unpredictable
+- You might wait 1-3 days for a summit window
+
+**Your Bail Plan:**
+- **Buffer days:** Build 2-3 extra days into your schedule before Katahdin
+- **Lodging:** Identify where you'll stay if delayed (Millinocket, Katahdin Stream Campground)
+- **Mental prep:** Expect possible delays, don't push finish date promises
+- **Weather check:** Monitor Baxter State Park weather forecasts starting 100 miles out
+
+**Action:** Arrive at Katahdin with flexible timeline, not a hard deadline.
+
+---
+
+### **Baxter Permit Process**
+
+**What You Need to Know:**
+- **Day-use permits:** Required for Katahdin summit
+- **Katahdin Stream Campground:** Popular base for summit attempts
+- **Reservation system:** Baxter uses online reservation system
+- **2026 Note:** Online reservations open at 6 AM EST (not midnight); extended multi-night booking available
+- **Peak season:** August = heavily booked
+- **Walk-up permits:** Sometimes available, but not guaranteed
+
+**Action:** Research Baxter permit requirements in August. Book Katahdin Stream Campground or have backup plan.
+
+---
+
+### **100-Mile Wilderness: Food Carry Math**
+
+**The Reality:**
+- 100 miles with NO resupply (Mile ~2,093 to ~2,193)
+- Most hikers: 7-10 days
+- Your pace (11-12 mpd in Maine): ~8-9 days
+- **Food weight:** 8-9 days × 1.5 lb/day = **12-14 lb of food**
+- Plus full fuel canisters
+
+**Planning:**
+- Resupply at Monson, ME (Mile ~2,093)
+- Carry 8-9 days of food + 2 fuel canisters
+- **White's Crossing optional resupply (Mile ~2,133):** Shaw's Lodging offers food drop-off service (can reduce carry)
+- Water is plentiful (lakes, streams)
+
+**Action:** Plan 100-Mile food carry in Monson. Consider White's Crossing resupply if you want to split the carry.
+
+---
+
+### **Mental Game: You're Almost There**
+
+By the time you reach the Whites, you've hiked 1,700+ miles. Fatigue is real.
+
+**Common Late-Trail Mistakes:**
+- Rushing to finish (injuries increase)
+- Skipping zeros (body is tired)
+- Poor weather decisions (summit fever)
+- Underestimating final terrain (Whites and Maine are HARD)
+
+**Strategy:**
+- Maintain your zero-day schedule (every 5-7 days)
+- Respect the terrain (Whites are technical, Maine is slow)
+- Don't skip meals or sleep
+- Finish strong, not broken
+
+---
+
 ## Comprehensive AT Town & Services Guide (NOBO)
 
 ### Walkable Towns With Full Services
@@ -2313,7 +2516,7 @@ You do NOT carry extra clothes. Laundry is done while you are still dressed and 
 ### Standard Laundry Outfit
 
 - Smartwool long johns (bottom)
-- Flip-flops
+- Xero Z-Trail sandals (camp shoes)
 - Rain jacket (puffy if cold)
 
 ### Correct Laundry Order
