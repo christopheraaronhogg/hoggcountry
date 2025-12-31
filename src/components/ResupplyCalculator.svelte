@@ -65,7 +65,10 @@
     mounted = true;
   });
 
-  let lbsPerDay = $derived((caloriesPerDay / 1000) * 1.5);
+  // Food weight: 0.6 oz per 100 calories (calorie-dense trail food standard)
+  // 4000 cal/day = 24 oz = 1.5 lbs/day
+  let ozPerDay = $derived((caloriesPerDay / 100) * 0.6);
+  let lbsPerDay = $derived(ozPerDay / 16);
   let costPerDay = $derived(12);
 
   let startTown = $derived(towns[startTownIndex]);
@@ -333,18 +336,18 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
         <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
       </svg>
-      Food Tips
+      Methodology
     </h3>
     <div class="tips-grid">
       <div class="tip-box">
         <span class="tip-emoji">⚖️</span>
-        <span class="tip-title">Daily Need</span>
-        <span class="tip-val">{lbsPerDay.toFixed(1)} lbs</span>
+        <span class="tip-title">Weight Ratio</span>
+        <span class="tip-val">0.6 oz/100 cal</span>
       </div>
       <div class="tip-box">
         <span class="tip-emoji">🔥</span>
-        <span class="tip-title">Target Density</span>
-        <span class="tip-val">125+ cal/oz</span>
+        <span class="tip-title">Calorie Density</span>
+        <span class="tip-val">~167 cal/oz</span>
       </div>
       <div class="tip-box">
         <span class="tip-emoji">📦</span>
@@ -352,6 +355,7 @@
         <span class="tip-val">3-5 days</span>
       </div>
     </div>
+    <p class="method-note">Assumes calorie-dense trail food (nuts, bars, dehydrated meals). Real weight varies by food choices.</p>
   </section>
 
   <!-- Town Costs -->
@@ -1070,6 +1074,14 @@
     font-size: 1rem;
     font-weight: 600;
     color: var(--pine);
+  }
+
+  .method-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: center;
+    font-style: italic;
   }
 
   /* Costs Section */
