@@ -1220,6 +1220,8 @@
     -webkit-appearance: none;
     background: transparent;
     margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
   }
 
   .mile-slider::-webkit-slider-thumb {
@@ -1229,9 +1231,23 @@
     background: #fff;
     border: 3px solid var(--pine);
     border-radius: 50%;
-    cursor: pointer;
+    cursor: grab;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     margin-top: -7px;
+  }
+
+  .mile-slider::-webkit-slider-thumb:active {
+    cursor: grabbing;
+  }
+
+  .mile-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: #fff;
+    border: 3px solid var(--pine);
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
   .mile-track {
@@ -1240,6 +1256,8 @@
     background: linear-gradient(90deg, #22c55e 0%, #22c55e 27%, #fbbf24 27%, #fbbf24 32%, #f97316 32%, #f97316 41%, #ef4444 41%, #ef4444 66%, #fbbf24 66%, #fbbf24 80%, #22c55e 80%);
     border-radius: 5px;
     margin-top: -20px;
+    z-index: 1;
+    pointer-events: none;
   }
 
   .track-progress {
