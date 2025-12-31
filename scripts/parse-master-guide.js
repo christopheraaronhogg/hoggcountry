@@ -302,6 +302,13 @@ function cleanIntroContent(content) {
     .replace(/^\*Based on.*?\*\s*/m, '')
     .trim();
 
+  // Remove the TABLE OF CONTENTS section (from ## TABLE OF CONTENTS to ## Introduction:)
+  // This prevents duplicate TOC since the site has its own navigation
+  cleaned = cleaned.replace(
+    /## TABLE OF CONTENTS[\s\S]*?(?=## Introduction:)/i,
+    ''
+  );
+
   // Convert "## Introduction: ..." to proper structure
   cleaned = cleaned.replace(
     /^## Introduction:\s*(.*)$/mi,
