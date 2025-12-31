@@ -74,13 +74,13 @@
   let contextExpanded = $state(true);
 
   // Planning mode state
-  let startDate = $state('2026-02-15');
+  let startDate = $state('2026-02-01');
   let pace = $state(15);
   let zeroDaysPerMonth = $state(4);
 
   // Trail mode state
   let currentMile = $state(500);
-  let tripStartDate = $state('2026-02-15');
+  let tripStartDate = $state('2026-02-01');
   let zeroDaysTaken = $state(5);
   let targetPace = $state(15);
 
@@ -710,6 +710,8 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25rem;
   }
 
   .ctrl-val {
@@ -1244,6 +1246,16 @@
       gap: 0.75rem;
     }
 
+    .ctrl-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.15rem;
+    }
+
+    .ctrl-val {
+      font-size: 1.1rem;
+    }
+
     .ctrl-date,
     .ctrl-num {
       width: 100%;
@@ -1253,6 +1265,10 @@
 
     .ctrl-num-wrap {
       width: 100%;
+    }
+
+    .context-panel {
+      overflow-x: hidden;
     }
 
     .mile-display {
@@ -1311,6 +1327,11 @@
       padding: 0.25rem;
       border-radius: 10px;
       margin-bottom: 1.5rem;
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      width: calc(100% + 2rem);
     }
 
     .tools-nav::-webkit-scrollbar {
@@ -1319,11 +1340,8 @@
 
     .nav-tab {
       flex: 0 0 auto;
-      min-width: 60px;
-    }
-
-    .nav-tab {
-      padding: 0.5rem 0.2rem;
+      min-width: 56px;
+      padding: 0.5rem 0.25rem;
     }
 
     .tab-icon {
@@ -1331,7 +1349,7 @@
     }
 
     .tab-name {
-      font-size: 0.55rem;
+      font-size: 0.6rem;
     }
 
     .quick-log-fab {
@@ -1346,18 +1364,6 @@
 
     .fab-label {
       font-size: 0.9rem;
-    }
-
-    .nav-tab {
-      padding: 0.6rem 0.25rem;
-    }
-
-    .tab-icon {
-      font-size: 1.1rem;
-    }
-
-    .tab-name {
-      font-size: 0.6rem;
     }
 
     .tool-viewport {
@@ -1388,8 +1394,12 @@
       font-size: 1.1rem;
     }
 
-    .tools-nav {
-      grid-template-columns: repeat(2, 1fr);
+    .nav-tab {
+      min-width: 50px;
+    }
+
+    .tab-name {
+      font-size: 0.55rem;
     }
 
     .quick-log-fab {
