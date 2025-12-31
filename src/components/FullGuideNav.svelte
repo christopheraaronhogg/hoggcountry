@@ -91,15 +91,6 @@
   let quickRefs = $derived(chapters.filter(c => c.data.quickRef));
 </script>
 
-<!-- DEBUG PANEL - Remove after fixing -->
-<div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background: #000; color: #0f0; padding: 8px 16px; border-radius: 8px; font-family: monospace; font-size: 12px; z-index: 9999; display: flex; gap: 16px;">
-  <span>scrollY: {Math.round(scrollY)}</span>
-  <span>innerH: {innerHeight}</span>
-  <span>scrollH: {scrollHeight}</span>
-  <span>docH: {Math.round(docHeight)}</span>
-  <span style="color: #ff0;">progress: {Math.round(progress)}%</span>
-</div>
-
 <!-- Progress Bar -->
 <div class="progress-container" style="top: {headerHidden ? '0' : '52px'}">
   <div class="progress-track">
