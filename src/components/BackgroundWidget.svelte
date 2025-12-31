@@ -186,12 +186,21 @@
         }
     }
 
-    // Persist settings whenever they change
+    // Debounced localStorage write to avoid UI stutter on slider drag
+    let saveTimeout = null;
+
+    // Persist settings whenever they change (debounced)
     $effect(() => {
-        try {
-            const settings = { seed, noiseScale, gridSize, contourLevels, falloff, colorScheme };
-            localStorage.setItem('hc-bg-settings', JSON.stringify(settings));
-        } catch (_) { /* ignore */ }
+        // Access all reactive vars to track them
+        const settings = { seed, noiseScale, gridSize, contourLevels, falloff, colorScheme };
+
+        // Debounce the write
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            try {
+                localStorage.setItem('hc-bg-settings', JSON.stringify(settings));
+            } catch (_) { /* ignore */ }
+        }, 300);
     });
 
     // Generate on mount, loading saved settings and applying saved SVG if available

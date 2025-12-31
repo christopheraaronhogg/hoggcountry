@@ -12,19 +12,33 @@
   let innerHeight = $state(0);
   let scrollHeight = $state(1);
 
+  // Throttle flag for scroll height updates
+  let scrollHeightPending = false;
+
   // Derived values for progress bar
   let docHeight = $derived(scrollHeight - innerHeight);
   let progress = $derived(docHeight > 0 ? Math.min((scrollY / docHeight) * 100, 100) : 0);
   let showBackToTop = $derived(scrollY > 500);
+
+  // Throttled scroll height update using rAF
+  function updateScrollHeightThrottled() {
+    if (scrollHeightPending) return;
+    scrollHeightPending = true;
+    requestAnimationFrame(() => {
+      scrollHeight = document.documentElement.scrollHeight;
+      scrollHeightPending = false;
+    });
+  }
 
   onMount(() => {
     // Get initial scroll height
     scrollHeight = document.documentElement.scrollHeight;
 
     // Watch for header wrapper visibility changes
+    let mutationObserver = null;
     const headerWrapper = document.querySelector('.guide-header-wrapper');
     if (headerWrapper) {
-      const mutationObserver = new MutationObserver(() => {
+      mutationObserver = new MutationObserver(() => {
         headerHidden = headerWrapper.classList.contains('is-hidden');
       });
       mutationObserver.observe(headerWrapper, { attributes: true, attributeFilter: ['class'] });
@@ -56,6 +70,7 @@
 
     return () => {
       intersectionObserver.disconnect();
+      mutationObserver?.disconnect();
       window.removeEventListener('resize', updateScrollHeight);
     };
   });
@@ -234,7 +249,7 @@
 <svelte:window
   bind:scrollY={scrollY}
   bind:innerHeight={innerHeight}
-  onscroll={() => { scrollHeight = document.documentElement.scrollHeight; }}
+  onscroll={updateScrollHeightThrottled}
 />
 
 <style>
