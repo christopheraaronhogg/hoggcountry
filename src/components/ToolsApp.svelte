@@ -1287,11 +1287,23 @@
     }
 
     .tools-nav {
-      grid-template-columns: repeat(6, 1fr);
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
       gap: 0.2rem;
       padding: 0.25rem;
       border-radius: 10px;
       margin-bottom: 1.5rem;
+    }
+
+    .tools-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-tab {
+      flex: 0 0 auto;
+      min-width: 60px;
     }
 
     .nav-tab {
