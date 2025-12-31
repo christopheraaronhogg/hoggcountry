@@ -729,20 +729,48 @@
 
   .hours-control input[type="range"] {
     flex: 1;
-    height: 8px;
+    height: 28px;
     -webkit-appearance: none;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .hours-control input[type="range"]::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 8px;
     background: var(--border);
     border-radius: 4px;
+    transform: translateY(-50%);
+    pointer-events: none;
   }
 
   .hours-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: #059669;
-    border: 2px solid #047857;
-    cursor: pointer;
+    border: 3px solid #047857;
+    cursor: grab;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .hours-control input[type="range"]::-webkit-slider-thumb:active {
+    cursor: grabbing;
+  }
+
+  .hours-control input[type="range"]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #059669;
+    border: 3px solid #047857;
+    cursor: grab;
   }
 
   .hours-badge {

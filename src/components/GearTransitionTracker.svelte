@@ -1271,18 +1271,22 @@
   }
 
   /* Responsive */
-  @media (max-width: 480px) {
+  @media (max-width: 640px) {
     .header-left {
       gap: 0.75rem;
     }
 
     .header-icon {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
     }
 
     .header-text h2 {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
+    }
+
+    .header-text p {
+      font-size: 0.8rem;
     }
 
     .intel-grid {
@@ -1293,6 +1297,23 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 0.5rem;
+    }
+
+    .phase-arc-container {
+      max-width: 280px;
+    }
+
+    .phase-legend {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .checklist-grid {
+      gap: 0.5rem;
+    }
+
+    .completed-item {
+      padding: 0.6rem 0.75rem;
     }
   }
 </style>

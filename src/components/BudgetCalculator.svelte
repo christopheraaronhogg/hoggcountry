@@ -953,8 +953,8 @@
   }
 
   .delete-btn {
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
     border: none;
     background: transparent;
     color: var(--muted);
@@ -962,14 +962,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
+    border-radius: 8px;
     transition: all 0.2s;
     flex-shrink: 0;
   }
 
   .delete-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
   }
 
   .delete-btn:hover {

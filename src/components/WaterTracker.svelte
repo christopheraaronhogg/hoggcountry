@@ -1213,15 +1213,15 @@
   }
 
   .step-btn {
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 1.1rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 1.25rem;
     font-weight: 600;
     color: #0284c7;
     cursor: pointer;

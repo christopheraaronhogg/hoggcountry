@@ -1258,9 +1258,9 @@
   .edit-field.phone { flex: 1.5; }
 
   .remove-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     border: 2px solid var(--border);
     background: #fff;
     color: var(--muted);
@@ -1490,7 +1490,7 @@
   }
 
   /* Responsive */
-  @media (max-width: 600px) {
+  @media (max-width: 640px) {
     .exits-grid {
       grid-template-columns: 1fr;
     }
@@ -1510,13 +1510,21 @@
     }
 
     .nav-tab {
-      padding: 0.6rem 0.35rem;
-      font-size: 0.55rem;
+      padding: 0.75rem 0.5rem;
+      font-size: 0.7rem;
     }
 
     .nav-tab svg {
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
+    }
+
+    .dial-btn {
+      padding: 1rem;
+    }
+
+    .content-section {
+      padding: 1rem;
     }
   }
 </style>

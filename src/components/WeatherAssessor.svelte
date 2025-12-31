@@ -2173,9 +2173,14 @@
 
   /* Responsive */
   @media (max-width: 640px) {
-    .wx-nav { flex-wrap: wrap; }
-    .nav-tab { flex: 0 0 calc(33.33% - 0.35rem); }
-    .tab-label { font-size: 0.55rem; }
+    .wx-nav { flex-wrap: wrap; gap: 0.5rem; }
+    .nav-tab {
+      flex: 0 0 calc(33.33% - 0.35rem);
+      padding: 0.75rem 0.35rem;
+      min-height: 60px;
+    }
+    .tab-label { font-size: 0.65rem; }
+    .tab-icon { font-size: 1.25rem; }
 
     .thermometer-visual { gap: 0.5rem; }
     .thermo-tube { height: 80px; }
@@ -2194,5 +2199,7 @@
     .sun-times { flex-direction: column; gap: 0.75rem; }
     .sun-center { width: 100%; }
     .dl-stats { grid-template-columns: 1fr; }
+
+    .num-input { min-height: 44px; }
   }
 </style>
