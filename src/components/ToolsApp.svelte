@@ -89,6 +89,11 @@
   let isTransitioning = $state(false);
   let mounted = $state(false);
 
+  // Track pending transition timeouts to cancel on rapid switching
+  let transitionTimeoutId = null;
+  let completeTimeoutId = null;
+  let pendingToolId = null; // Track which tool we're actually trying to switch to
+
   // QuickLog modal state
   let showQuickLog = $state(false);
 
@@ -177,6 +182,19 @@
   async function switchTool(toolId) {
     if (toolId === activeTool || tools.find(t => t.id === toolId)?.disabled) return;
 
+    // Cancel any pending transitions from previous rapid clicks
+    if (transitionTimeoutId) {
+      clearTimeout(transitionTimeoutId);
+      transitionTimeoutId = null;
+    }
+    if (completeTimeoutId) {
+      clearTimeout(completeTimeoutId);
+      completeTimeoutId = null;
+    }
+
+    // Track which tool we're switching to (for stale async detection)
+    pendingToolId = toolId;
+
     // Start transition
     isTransitioning = true;
     window.history.replaceState(null, '', `#${toolId}`);
@@ -186,21 +204,36 @@
       isToolLoading = true;
       try {
         const module = await toolLoaders[toolId]();
+        // Check if we're still trying to switch to this tool (user may have clicked another)
+        if (pendingToolId !== toolId) {
+          // User clicked a different tool while loading - abort this transition
+          return;
+        }
         loadedTools = { ...loadedTools, [toolId]: module.default };
       } catch (e) {
         console.error('Failed to load tool:', toolId, e);
-        isToolLoading = false;
-        isTransitioning = false;
+        if (pendingToolId === toolId) {
+          isToolLoading = false;
+          isTransitioning = false;
+        }
         return;
       }
-      isToolLoading = false;
+      if (pendingToolId === toolId) {
+        isToolLoading = false;
+      }
     }
 
-    // Switch after brief transition
-    setTimeout(() => {
-      activeTool = toolId;
-      setTimeout(() => {
+    // Switch after brief transition (with cancellable timeouts)
+    transitionTimeoutId = setTimeout(() => {
+      // Double-check we're still switching to this tool
+      if (pendingToolId === toolId) {
+        activeTool = toolId;
+        pendingToolId = null;
+      }
+      transitionTimeoutId = null;
+      completeTimeoutId = setTimeout(() => {
         isTransitioning = false;
+        completeTimeoutId = null;
       }, 50);
     }, 150);
   }

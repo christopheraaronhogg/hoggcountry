@@ -1,9 +1,12 @@
 <script>
+  import { onMount } from 'svelte';
+
   /** @type {{ trailContext: any }} */
   let { trailContext } = $props();
 
   // Active section
   let activeSection = $state('budget');
+  let mounted = $state(false);
 
   // Common trail devices with typical power consumption
   const defaultDevices = [
@@ -15,20 +18,23 @@
     { id: 'earbuds', name: 'Earbuds', icon: '🎧', dailyDraw: 50, capacity: 250, priority: 6, essential: false, chargeFreq: '4-5 days' },
   ];
 
-  // User's device setup (localStorage)
-  let devices = $state([...defaultDevices.slice(0, 4)]); // Start with phone, garmin, watch, headlamp
-  let powerBankCapacity = $state(30000); // mAh (Anker Nano 20K + Nitecore 10K)
-  let powerBankCurrent = $state(100); // percentage
-
-  // Device battery levels
-  let deviceLevels = $state({
+  // Default device levels
+  const defaultDeviceLevels = {
     phone: 85,
     garmin: 70,
     watch: 60,
     headlamp: 80,
     camera: 100,
     earbuds: 100
-  });
+  };
+
+  // User's device setup (localStorage)
+  let devices = $state([...defaultDevices.slice(0, 4)]); // Start with phone, garmin, watch, headlamp
+  let powerBankCapacity = $state(30000); // mAh (Anker Nano 20K + Nitecore 10K)
+  let powerBankCurrent = $state(100); // percentage
+
+  // Device battery levels
+  let deviceLevels = $state({ ...defaultDeviceLevels });
 
   // Days since last town charge
   let daysSinceTown = $state(2);
@@ -36,27 +42,54 @@
   // Power save mode
   let powerSaveMode = $state(false);
 
-  // Load from localStorage
-  $effect(() => {
-    if (typeof window !== 'undefined') {
+  // Reset to defaults function
+  function resetToDefaults() {
+    devices = [...defaultDevices.slice(0, 4)];
+    powerBankCapacity = 30000;
+    powerBankCurrent = 100;
+    deviceLevels = { ...defaultDeviceLevels };
+    daysSinceTown = 2;
+    powerSaveMode = false;
+    localStorage.removeItem('powerManager');
+  }
+
+  // Load from localStorage on mount (runs once, before save effect)
+  onMount(() => {
+    try {
       const saved = localStorage.getItem('powerManager');
       if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.devices) devices = parsed.devices;
-          if (parsed.powerBankCapacity) powerBankCapacity = parsed.powerBankCapacity;
-          if (parsed.powerBankCurrent !== undefined) powerBankCurrent = parsed.powerBankCurrent;
-          if (parsed.deviceLevels) deviceLevels = { ...deviceLevels, ...parsed.deviceLevels };
-          if (parsed.daysSinceTown !== undefined) daysSinceTown = parsed.daysSinceTown;
-          if (parsed.powerSaveMode !== undefined) powerSaveMode = parsed.powerSaveMode;
-        } catch (e) {}
+        const parsed = JSON.parse(saved);
+        // Validate devices array
+        if (Array.isArray(parsed.devices) && parsed.devices.length > 0 && parsed.devices.every(d => d && d.id && typeof d.dailyDraw === 'number')) {
+          devices = parsed.devices;
+        }
+        if (typeof parsed.powerBankCapacity === 'number' && parsed.powerBankCapacity > 0) {
+          powerBankCapacity = parsed.powerBankCapacity;
+        }
+        if (typeof parsed.powerBankCurrent === 'number' && parsed.powerBankCurrent >= 0 && parsed.powerBankCurrent <= 100) {
+          powerBankCurrent = parsed.powerBankCurrent;
+        }
+        if (parsed.deviceLevels && typeof parsed.deviceLevels === 'object') {
+          deviceLevels = { ...defaultDeviceLevels, ...parsed.deviceLevels };
+        }
+        if (typeof parsed.daysSinceTown === 'number') {
+          daysSinceTown = parsed.daysSinceTown;
+        }
+        if (typeof parsed.powerSaveMode === 'boolean') {
+          powerSaveMode = parsed.powerSaveMode;
+        }
       }
+    } catch (e) {
+      // If localStorage is corrupted, reset to defaults
+      console.warn('PowerManager: Corrupted localStorage, resetting to defaults');
+      resetToDefaults();
     }
+    mounted = true;
   });
 
-  // Save to localStorage
+  // Save to localStorage (only after mounted to prevent overwriting on init)
   $effect(() => {
-    if (typeof window !== 'undefined') {
+    if (mounted) {
       localStorage.setItem('powerManager', JSON.stringify({
         devices,
         powerBankCapacity,
@@ -581,12 +614,17 @@
     </section>
   {/if}
 
-  <!-- Guide Link -->
-  <a href="/guide/13-power-and-electronics" class="guide-link">
-    <span class="link-icon">📖</span>
-    <span class="link-text">Full Power & Electronics Guide</span>
-    <span class="link-arrow">→</span>
-  </a>
+  <!-- Footer with Guide Link and Reset -->
+  <div class="footer-row">
+    <a href="/guide/13-power-and-electronics" class="guide-link">
+      <span class="link-icon">📖</span>
+      <span class="link-text">Full Power & Electronics Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+    <button class="reset-btn" onclick={() => { if (confirm('Reset all power settings to defaults?')) resetToDefaults(); }}>
+      Reset
+    </button>
+  </div>
 </div>
 
 <style>
@@ -1848,13 +1886,21 @@
     color: #16a34a;
   }
 
+  /* Footer Row */
+  .footer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
   /* Guide Link */
   .guide-link {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     padding: 1rem 1.25rem;
-    margin-top: 1.5rem;
+    flex: 1;
     background: #fff;
     border: 2px solid var(--border);
     border-radius: 14px;
@@ -1890,6 +1936,27 @@
 
   .guide-link:hover .link-arrow {
     transform: translateX(4px);
+  }
+
+  .reset-btn {
+    padding: 1rem 1.25rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .reset-btn:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
   }
 
   /* Mobile Responsive */

@@ -747,6 +747,7 @@
     border-radius: 4px;
     transform: translateY(-50%);
     pointer-events: none;
+    z-index: 1;
   }
 
   .hours-control input[type="range"]::-webkit-slider-thumb {
@@ -758,6 +759,8 @@
     border: 3px solid #047857;
     cursor: grab;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 2;
   }
 
   .hours-control input[type="range"]::-webkit-slider-thumb:active {
@@ -771,6 +774,8 @@
     background: #059669;
     border: 3px solid #047857;
     cursor: grab;
+    position: relative;
+    z-index: 2;
   }
 
   .hours-badge {
