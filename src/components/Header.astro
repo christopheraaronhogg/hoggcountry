@@ -3,6 +3,7 @@ import { SITE_TITLE } from '../consts';
 
 const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
+const isGenerate = pathname.startsWith('/generate');
 const isTools = pathname.startsWith('/tools');
 ---
 
@@ -14,6 +15,7 @@ const isTools = pathname.startsWith('/tools');
 
     <div class="nav-right">
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
+      <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a>
       <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
       <span id="offline-status" class="offline-badge" title="Offline status" style="display: none;"></span>
     </div>
