@@ -1,6 +1,6 @@
-# AGENTS.md — Hogg Country
+# CLAUDE.md
 
-This file provides guidance to coding agents (Codex CLI, Claude Code, etc.) when working in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -9,16 +9,16 @@ Hogg Country is a digital hiking logbook built with Astro 5 (SSG). It displays t
 ## Development Commands
 
 ```bash
-npm install            # Install dependencies
-npm run dev            # Start dev server at localhost:4321
-npm run build          # Build to ./dist/
-npm run preview        # Preview production build
+npm install           # Install dependencies
+npm run dev           # Start dev server at localhost:4321
+npm run build         # Build to ./dist/
+npm run preview       # Preview production build
 npm run astro -- check # Validate content collections
 ```
 
 ## Architecture
 
-**Stack:** Astro 5 + Svelte islands + Tailwind CSS 4 + TypeScript
+**Stack:** Astro 5 + Svelte 5 islands + Tailwind CSS 4 + TypeScript
 
 **Content Sources:**
 - Trips: `src/content/trips/*.md` (schema in `src/content.config.ts`)
@@ -27,35 +27,61 @@ npm run astro -- check # Validate content collections
 - Videos: YouTube RSS feed, fetched at build time with 10-minute cache (`src/lib/youtube.ts`)
 
 **Timeline Data Flow:**
-1. `src/pages/index.astro` fetches trips (content collections) + videos (YouTube RSS)
-2. Transforms to a common shape with `kind` (trip/video)
+1. `index.astro` fetches trips (content collections) + videos (YouTube RSS)
+2. Transforms to common shape with `kind` (trip/video)
 3. Merges and sorts by date descending
 4. Client-side filter pills filter by `data-kind` attribute
 
 **Key Components:**
-- `src/components/BaseHead.astro` — single source of truth for meta tags, fonts, canonical URLs
-- `src/components/Timeline.astro` / `src/components/TimelineItem.astro` — timeline layout system
-- `src/components/YouTubeEmbed.astro` — privacy-friendly click-to-play embeds (youtube-nocookie.com)
-- `src/components/Gallery.svelte` — lightbox island for trip photos
+- `BaseHead.astro` — Single source of truth for meta tags, fonts, canonical URLs
+- `Timeline.astro` / `TimelineItem.astro` — Timeline layout system
+- `YouTubeEmbed.astro` — Privacy-friendly click-to-play embeds (youtube-nocookie.com)
+- `Gallery.svelte` — Lightbox island for trip photos
 
 ## Key Conventions
 
-**Content**
+**Content:**
 - Use ISO dates: `YYYY-MM-DD`
 - Images go in `src/assets/` or `public/`
 - Respect Zod schemas; update schemas if frontmatter changes
 
-**Code**
-- TypeScript first; keep `any` to a minimum
-- Astro for pages/layout; Svelte only for interactivity (islands)
-- Prefer semantic classes from `src/styles/global.css` (e.g. `.card`, `.badge`, `.timeline-*`)
-- Use design tokens (CSS variables) defined in `src/styles/global.css`
+**Code:**
+- TypeScript first, minimal `any`
+- Astro for pages, Svelte only for interactivity (islands)
+- Use semantic CSS classes from `src/styles/global.css` (`.card`, `.badge`, `.timeline-*`)
+- Design tokens are CSS variables in `global.css`
 
-## What To Avoid
-
-- Don’t introduce new build tools or frameworks
-- Don’t remove Tailwind layers or design tokens
+**What to Avoid:**
+- Don't introduce new build tools or frameworks
+- Don't remove Tailwind layers or design tokens
 - Keep Svelte islands minimal; prefer vanilla JS for simple interactivity
+
+## AT Field Guide
+
+The Field Guide (`/guide/`) is built from a master markdown document. To update:
+
+1. Replace `MASTER_NOBO_FIELD_GUIDE.md` with the new version
+2. Run `npm run update-guide` to parse and regenerate chapter files
+3. Run `npm run build` to rebuild the site
+
+**Structure:**
+- Master doc: `MASTER_NOBO_FIELD_GUIDE.md` (source of truth)
+- Parser: `scripts/parse-master-guide.js` (splits into chapters)
+- Chapters: `src/content/guide/*.md` (auto-generated from master)
+- Quick refs: `src/content/guide/quick/*.md` (manually maintained)
+
+The parser extracts:
+- Introduction (before PART I)
+- Parts I–XVII (main chapters)
+- Conclusion (The Path to Katahdin)
+
+Quick reference cards in `quick/` are NOT overwritten by the parser.
+
+## Configuration
+
+- `astro.config.mjs`: Update `site` for production domain (affects canonical URLs, RSS, sitemaps)
+- `src/lib/config.ts`: YouTube channel ID
+- `src/consts.ts`: SITE_TITLE, SITE_DESCRIPTION
 
 ## Validation Checklist
 
@@ -73,8 +99,7 @@ Before committing:
 
 ## Additional Documentation
 
-- `cursor.md` — AI assistant guidelines and common tasks
-- `architecture.md` — high-level architecture and routes
-- `design.md` — visual design system, colors, typography
-- `content-model.md` — content schema examples
-
+- `cursor.md` — Detailed AI assistant guidelines and common tasks
+- `architecture.md` — High-level architecture and routes
+- `design.md` — Visual design system, colors, typography
+- `content-model.md` — Content schema examples

@@ -497,10 +497,18 @@
 <style>
   .tools-app {
     max-width: 960px;
+    width: 100%;
     margin: 0 auto;
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+  }
+
+  .tools-app *,
+  .tools-app *::before,
+  .tools-app *::after {
+    box-sizing: border-box;
   }
 
   .tools-app.mounted {
@@ -1034,10 +1042,18 @@
   /* Viewport */
   .tool-viewport {
     min-height: 600px;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .tool-container {
     transition: opacity 0.2s ease, transform 0.2s ease;
+    max-width: 100%;
+  }
+
+  .tool-panel {
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .tool-container.transitioning {
