@@ -729,16 +729,30 @@
   }
 
   .eff-track {
-    height: 24px;
-    background: var(--border);
-    border-radius: 12px;
+    height: 32px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+  }
+
+  .eff-track::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 12px;
+    transform: translateY(-50%);
+    background: var(--border);
+    border-radius: 6px;
   }
 
   .eff-fill {
-    height: 100%;
-    border-radius: 12px;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 12px;
+    transform: translateY(-50%);
+    border-radius: 6px;
     transition: all 0.3s ease;
   }
 
@@ -769,7 +783,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 24px;
+    height: 32px;
     opacity: 0;
     cursor: pointer;
     z-index: 3;
