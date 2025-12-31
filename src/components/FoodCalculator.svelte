@@ -383,7 +383,7 @@
   </section>
 
   <!-- Guide Link -->
-  <a href="/guide/food-and-resupply-strategy" class="guide-link">
+  <a href="/guide/08-food-and-resupply" class="guide-link">
     <span>Read the full Food & Resupply Guide</span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M5 12h14M12 5l7 7-7 7"/>
