@@ -749,30 +749,35 @@
   .temp-track {
     flex: 1;
     position: relative;
+    height: 28px;
+    display: flex;
+    align-items: center;
+  }
+
+  .temp-track::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
     height: 12px;
     background: linear-gradient(to right, #dc2626, #f97316, #eab308, #22c55e, #16a34a);
     border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .track-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: transparent;
     pointer-events: none;
   }
 
+  .track-fill {
+    display: none;
+  }
+
   .temp-range {
-    position: absolute;
-    inset: 0;
+    position: relative;
     width: 100%;
-    height: 100%;
+    height: 28px;
     -webkit-appearance: none;
     background: transparent;
     cursor: pointer;
     margin: 0;
+    z-index: 1;
   }
 
   .temp-range::-webkit-slider-thumb {
@@ -783,6 +788,22 @@
     border: 3px solid var(--pine);
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+
+  .temp-range::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.1);
+  }
+
+  .temp-range::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: #fff;
+    border: 3px solid var(--pine);
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: grab;
   }
 
   .temp-readout {
