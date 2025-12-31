@@ -8,15 +8,28 @@
   let showMobileNav = $state(false);
   let showBackToTop = $state(false);
   let headerHidden = $state(false);
+  let scrollY = $state(0);
+  let docHeight = $state(1);
+
+  // Derived progress from scroll state
+  let computedProgress = $derived(
+    docHeight > 0 ? Math.min((scrollY / docHeight) * 100, 100) : 0
+  );
+
+  // Sync computed to progress state for template use
+  $effect(() => {
+    progress = computedProgress;
+    showBackToTop = scrollY > 500;
+  });
 
   onMount(() => {
     // Watch for header wrapper visibility changes
     const headerWrapper = document.querySelector('.guide-header-wrapper');
     if (headerWrapper) {
-      const observer = new MutationObserver(() => {
+      const mutationObserver = new MutationObserver(() => {
         headerHidden = headerWrapper.classList.contains('is-hidden');
       });
-      observer.observe(headerWrapper, { attributes: true, attributeFilter: ['class'] });
+      mutationObserver.observe(headerWrapper, { attributes: true, attributeFilter: ['class'] });
     }
 
     const sections = document.querySelectorAll('.chapter-section');
@@ -26,7 +39,7 @@
       threshold: 0
     };
 
-    const observer = new IntersectionObserver((entries) => {
+    const intersectionObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           activeChapter = entry.target.id;
@@ -34,22 +47,20 @@
       });
     }, observerOptions);
 
-    sections.forEach(section => observer.observe(section));
+    sections.forEach(section => intersectionObserver.observe(section));
 
-    // Progress tracking
-    const updateProgress = () => {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0;
-      showBackToTop = scrollTop > 500;
+    // Progress tracking - update reactive state
+    const updateScroll = () => {
+      scrollY = window.scrollY;
+      docHeight = document.documentElement.scrollHeight - window.innerHeight;
     };
 
-    window.addEventListener('scroll', updateProgress, { passive: true });
-    updateProgress();
+    window.addEventListener('scroll', updateScroll, { passive: true });
+    updateScroll(); // Initial call
 
     return () => {
-      observer.disconnect();
-      window.removeEventListener('scroll', updateProgress);
+      intersectionObserver.disconnect();
+      window.removeEventListener('scroll', updateScroll);
     };
   });
 
