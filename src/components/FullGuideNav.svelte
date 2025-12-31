@@ -4,25 +4,23 @@
   let { chapters = [], markdownContent = '' } = $props();
 
   let activeChapter = $state('');
-  let progress = $state(0);
   let showMobileNav = $state(false);
-  let showBackToTop = $state(false);
   let headerHidden = $state(false);
+
+  // Use svelte:window binding for scroll position (most reliable in Svelte 5)
   let scrollY = $state(0);
-  let docHeight = $state(1);
+  let innerHeight = $state(0);
+  let scrollHeight = $state(1);
 
-  // Derived progress from scroll state
-  let computedProgress = $derived(
-    docHeight > 0 ? Math.min((scrollY / docHeight) * 100, 100) : 0
-  );
-
-  // Sync computed to progress state for template use
-  $effect(() => {
-    progress = computedProgress;
-    showBackToTop = scrollY > 500;
-  });
+  // Derived values for progress bar
+  let docHeight = $derived(scrollHeight - innerHeight);
+  let progress = $derived(docHeight > 0 ? Math.min((scrollY / docHeight) * 100, 100) : 0);
+  let showBackToTop = $derived(scrollY > 500);
 
   onMount(() => {
+    // Get initial scroll height
+    scrollHeight = document.documentElement.scrollHeight;
+
     // Watch for header wrapper visibility changes
     const headerWrapper = document.querySelector('.guide-header-wrapper');
     if (headerWrapper) {
@@ -49,18 +47,16 @@
 
     sections.forEach(section => intersectionObserver.observe(section));
 
-    // Progress tracking - update reactive state
-    const updateScroll = () => {
-      scrollY = window.scrollY;
-      docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    // Update scrollHeight on resize (in case content changes)
+    const updateScrollHeight = () => {
+      scrollHeight = document.documentElement.scrollHeight;
     };
 
-    window.addEventListener('scroll', updateScroll, { passive: true });
-    updateScroll(); // Initial call
+    window.addEventListener('resize', updateScrollHeight, { passive: true });
 
     return () => {
       intersectionObserver.disconnect();
-      window.removeEventListener('scroll', updateScroll);
+      window.removeEventListener('resize', updateScrollHeight);
     };
   });
 
@@ -233,6 +229,13 @@
     <span class="top-label">Top</span>
   </button>
 {/if}
+
+<!-- Svelte window bindings for scroll tracking -->
+<svelte:window
+  bind:scrollY={scrollY}
+  bind:innerHeight={innerHeight}
+  onscroll={() => { scrollHeight = document.documentElement.scrollHeight; }}
+/>
 
 <style>
   /* ===== Progress Bar ===== */
