@@ -471,8 +471,6 @@ const entries = combined.map((e, index) => {
       display: flex;
       flex-direction: column;
       gap: 0;
-      max-width: 100%;
-      overflow: hidden;
     }
 
     .journal-entry {
@@ -483,8 +481,6 @@ const entries = combined.map((e, index) => {
       border-bottom: 1px dashed var(--border);
       position: relative;
       transition: background 0.15s ease;
-      max-width: 100%;
-      overflow: hidden;
     }
 
     .journal-entry:hover {
@@ -556,7 +552,6 @@ const entries = combined.map((e, index) => {
     /* Entry content */
     .entry-content {
       min-width: 0;
-      overflow: hidden;
     }
 
     .entry-link {
@@ -613,7 +608,7 @@ const entries = combined.map((e, index) => {
     /* Video entry */
     .video-entry {
       display: grid;
-      grid-template-columns: minmax(140px, 200px) 1fr;
+      grid-template-columns: 200px 1fr;
       gap: 1rem;
       align-items: start;
     }
