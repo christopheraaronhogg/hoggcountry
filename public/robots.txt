@@ -1,0 +1,11 @@
+# Hogg Country - hoggcountry.com
+# Jimmy Hogg's hiking logbook and AT thru-hike resources
+
+User-agent: *
+Allow: /
+
+# Placeholder content (template blog posts)
+Disallow: /blog/
+
+# Sitemap
+Sitemap: https://hoggcountry.com/sitemap-index.xml
