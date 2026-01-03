@@ -482,30 +482,11 @@
     --radius-xl: 20px;
 
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background:
-      url('/topo.svg'),
-      radial-gradient(1200px 800px at 15% -5%, rgba(255,255,255,0.02), transparent 65%),
-      radial-gradient(1000px 600px at 85% 15%, rgba(255,255,255,0.015), transparent 60%),
-      var(--bg);
-    background-size: 2400px 1600px, auto, auto, auto;
-    background-attachment: fixed;
+    background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
-  }
-
-  /* Invert topo for dark theme */
-  .dashboard-page::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: url('/topo.svg');
-    background-size: 2400px 1600px;
-    filter: invert(1);
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 0;
   }
 
   /* Ambient glows */

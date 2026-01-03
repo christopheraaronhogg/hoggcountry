@@ -1,5 +1,6 @@
 ---
 import HomepagePrototypes from '../components/HomepagePrototypes.svelte';
+import BackgroundWidget from '../components/BackgroundWidget.svelte';
 
 const title = "Homepage Prototypes — Hogg Country";
 ---
@@ -22,6 +23,7 @@ const title = "Homepage Prototypes — Hogg Country";
         margin: 0;
         font-family: system-ui, -apple-system, sans-serif;
         -webkit-font-smoothing: antialiased;
+        background-color: #f5f2e8;
       }
 
       :root {
@@ -31,10 +33,14 @@ const title = "Homepage Prototypes — Hogg Country";
         --marker: #f0e000;
         --bg: #f5f2e8;
         --ink: #2b2f26;
+        --stone: #cccccc;
+        --border: #e6e1d4;
+        --muted: #5c665a;
       }
     </style>
   </head>
   <body>
     <HomepagePrototypes client:load />
+    <BackgroundWidget client:only="svelte" />
   </body>
 </html>

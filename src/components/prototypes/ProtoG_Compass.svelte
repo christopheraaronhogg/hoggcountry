@@ -527,14 +527,7 @@
     --muted: #5c665a;
 
     min-height: 100vh;
-    background:
-      url('/topo.svg'),
-      radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.03), transparent 65%),
-      radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.025), transparent 60%),
-      radial-gradient(800px 500px at 50% 90%, rgba(0,0,0,0.02), transparent 50%),
-      var(--bg);
-    background-size: 2400px 1600px, auto, auto, auto, auto;
-    background-attachment: fixed;
+    background: transparent;
     color: var(--fg);
     font-family: system-ui, -apple-system, sans-serif;
     position: relative;

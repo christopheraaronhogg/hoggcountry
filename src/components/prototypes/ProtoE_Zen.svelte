@@ -153,13 +153,7 @@
     --zen-card: #ffffff;
 
     min-height: 100vh;
-    background:
-      url('/topo.svg'),
-      radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.02), transparent 65%),
-      radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.018), transparent 60%),
-      var(--zen-bg);
-    background-size: 2400px 1600px, auto, auto, auto;
-    background-attachment: fixed;
+    background: transparent;
     color: var(--zen-fg);
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.7;
