@@ -3,12 +3,20 @@
   let { trailContext } = $props();
 
   // Active section
-  let activeSection = $state('schedule');
+  let activeSection = $state('overview');
 
-  // User's name for labels
+  // Hiker info
   let hikerName = $state('');
 
-  // Recommended mail drop locations
+  // Support person info
+  let supportName = $state('');
+  let supportPhone = $state('');
+  let returnAddress = $state('');
+
+  // Current trail position (from context or manual)
+  let currentMile = $derived(trailContext?.currentMile || 0);
+
+  // Recommended mail drop locations with trigger miles
   const mailDrops = [
     {
       id: 'hotsprings',
@@ -16,11 +24,12 @@
       state: 'NC',
       zip: '28743',
       mile: 274,
+      triggerMile: 150, // When to notify support
       holdTime: 30,
-      reliability: 'excellent',
-      notes: 'One of the most reliable mail drops on the AT. Hiker-friendly post office.',
       poAddress: '170 Bridge St, Hot Springs, NC 28743',
-      poHours: 'M-F 8:30-12:00, 12:30-4:00; Sat 9:00-11:00'
+      poHours: 'M-F 8:30-12, 12:30-4; Sat 9-11',
+      poPhone: '(828) 622-3242',
+      notes: 'Excellent hiker-friendly PO. Town has good resupply.'
     },
     {
       id: 'damascus',
@@ -28,11 +37,12 @@
       state: 'VA',
       zip: '24236',
       mile: 469,
+      triggerMile: 350,
       holdTime: 30,
-      reliability: 'excellent',
-      notes: 'AT hub town. Very hiker-friendly, generous hold times. Trail Days in May.',
       poAddress: '206 W Laurel Ave, Damascus, VA 24236',
-      poHours: 'M-F 8:00-12:00, 1:00-4:00; Sat 9:00-11:00'
+      poHours: 'M-F 8-12, 1-4; Sat 9-11',
+      poPhone: '(276) 475-3411',
+      notes: 'Trail Days in May. Very hiker-friendly town.'
     },
     {
       id: 'daleville',
@@ -40,11 +50,12 @@
       state: 'VA',
       zip: '24083',
       mile: 728,
+      triggerMile: 600,
       holdTime: 30,
-      reliability: 'good',
-      notes: 'Easy access from trail. Grocery and restaurants nearby.',
       poAddress: '138 Roanoke Rd, Daleville, VA 24083',
-      poHours: 'M-F 8:30-12:00, 1:00-4:30; Sat 9:00-11:00'
+      poHours: 'M-F 8:30-12, 1-4:30; Sat 9-11',
+      poPhone: '(540) 992-4422',
+      notes: 'Easy trail access. Kroger nearby.'
     },
     {
       id: 'harpersferry',
@@ -52,11 +63,12 @@
       state: 'WV',
       zip: '25425',
       mile: 1025,
+      triggerMile: 900,
       holdTime: 30,
-      reliability: 'excellent',
-      notes: 'Psychological halfway point. ATC headquarters. Very reliable.',
       poAddress: '1000 Washington St, Harpers Ferry, WV 25425',
-      poHours: 'M-F 8:00-4:00; Sat 9:00-12:00'
+      poHours: 'M-F 8-4; Sat 9-12',
+      poPhone: '(304) 535-2479',
+      notes: 'Psychological halfway! ATC HQ here.'
     },
     {
       id: 'duncannon',
@@ -64,11 +76,12 @@
       state: 'PA',
       zip: '17020',
       mile: 1145,
+      triggerMile: 1020,
       holdTime: 30,
-      reliability: 'good',
-      notes: 'Excellent PO + hostel logistics. Doyle Hotel nearby.',
       poAddress: '2 N High St, Duncannon, PA 17020',
-      poHours: 'M-F 8:00-12:00, 1:00-4:30; Sat 8:00-11:00'
+      poHours: 'M-F 8-12, 1-4:30; Sat 8-11',
+      poPhone: '(717) 834-3332',
+      notes: 'Doyle Hotel is legendary.'
     },
     {
       id: 'hanover',
@@ -76,11 +89,12 @@
       state: 'NH',
       zip: '03755',
       mile: 1747,
+      triggerMile: 1620,
       holdTime: 30,
-      reliability: 'excellent',
-      notes: 'Key resupply before the Whites. Dartmouth College town.',
       poAddress: '52 S Main St, Hanover, NH 03755',
-      poHours: 'M-F 8:30-5:00; Sat 8:30-12:00'
+      poHours: 'M-F 8:30-5; Sat 8:30-12',
+      poPhone: '(603) 643-4544',
+      notes: 'Last major resupply before the Whites.'
     },
     {
       id: 'monson',
@@ -88,27 +102,31 @@
       state: 'ME',
       zip: '04464',
       mile: 2077,
+      triggerMile: 1950,
       holdTime: 14,
-      reliability: 'good',
-      notes: 'Gateway to 100-Mile Wilderness. Hold time often 14 days max. Shaw\'s offers food drop services.',
       poAddress: '5 Greenville Rd, Monson, ME 04464',
-      poHours: 'M-F 7:30-11:30, 12:30-4:00; Sat 8:00-11:00',
-      warning: 'Shorter hold time - plan carefully!'
+      poHours: 'M-F 7:30-11:30, 12:30-4; Sat 8-11',
+      poPhone: '(207) 997-3975',
+      notes: 'Gateway to 100-Mile Wilderness. SHORTER HOLD TIME!',
+      warning: true
     }
   ];
 
-  // User's planned mail drops (localStorage)
+  // User's planned drops with contents
   let plannedDrops = $state({});
 
   // Load from localStorage
   $effect(() => {
     if (typeof window !== 'undefined') {
-      const savedDrops = localStorage.getItem('mailDropPlanner');
-      if (savedDrops) {
+      const saved = localStorage.getItem('mailDropPlannerV2');
+      if (saved) {
         try {
-          const parsed = JSON.parse(savedDrops);
+          const parsed = JSON.parse(saved);
           plannedDrops = parsed.drops || {};
           hikerName = parsed.hikerName || '';
+          supportName = parsed.supportName || '';
+          supportPhone = parsed.supportPhone || '';
+          returnAddress = parsed.returnAddress || '';
         } catch (e) {}
       }
     }
@@ -117,1492 +135,1160 @@
   // Save to localStorage
   $effect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('mailDropPlanner', JSON.stringify({
+      localStorage.setItem('mailDropPlannerV2', JSON.stringify({
         drops: plannedDrops,
-        hikerName
+        hikerName,
+        supportName,
+        supportPhone,
+        returnAddress
       }));
     }
   });
 
-  // Calculate arrival date for a mile marker
-  function getArrivalDate(mile) {
-    if (trailContext?.mode === 'planning') {
-      const startDate = new Date(trailContext.startDate);
-      const pace = trailContext.pace || 15;
-      const daysToMile = Math.floor(mile / pace);
-      const arrivalDate = new Date(startDate);
-      arrivalDate.setDate(arrivalDate.getDate() + daysToMile);
-      return arrivalDate;
-    } else {
-      const currentMile = trailContext?.currentMile || 0;
-      const pace = trailContext?.actualPace || 15;
-      const milesRemaining = Math.max(0, mile - currentMile);
-      const daysUntil = Math.ceil(milesRemaining / pace);
-      const arrivalDate = new Date();
-      arrivalDate.setDate(arrivalDate.getDate() + daysUntil);
-      return arrivalDate;
-    }
+  // Get or create drop data
+  function getDropData(dropId) {
+    return plannedDrops[dropId] || {
+      enabled: false,
+      contents: '',
+      packed: false,
+      notified: false,
+      shipped: false,
+      trackingNumber: '',
+      received: false
+    };
   }
 
-  // Calculate recommended ship date (7-10 days before arrival)
-  function getShipDate(arrivalDate) {
-    const shipDate = new Date(arrivalDate);
-    shipDate.setDate(shipDate.getDate() - 10);
-    return shipDate;
+  // Update a drop field
+  function updateDrop(dropId, field, value) {
+    const current = getDropData(dropId);
+    plannedDrops = {
+      ...plannedDrops,
+      [dropId]: { ...current, [field]: value }
+    };
   }
 
-  // Format date for display
-  function formatDate(date) {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-    });
-  }
-
-  // Format date for label (MM/DD/YYYY)
-  function formatLabelDate(date) {
-    return date.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
-    });
-  }
-
-  // Toggle drop planning status
+  // Toggle a boolean field
   function toggleDrop(dropId, field) {
-    if (!plannedDrops[dropId]) {
-      plannedDrops[dropId] = { planned: false, shipped: false, received: false };
-    }
-    plannedDrops[dropId][field] = !plannedDrops[dropId][field];
-    plannedDrops = { ...plannedDrops };
+    const current = getDropData(dropId);
+    plannedDrops = {
+      ...plannedDrops,
+      [dropId]: { ...current, [field]: !current[field] }
+    };
   }
 
-  // Generate label text
-  function generateLabel(drop) {
-    const arrivalDate = getArrivalDate(drop.mile);
-    const name = hikerName.trim() || 'YOUR NAME';
-    return `${name.toUpperCase()}
+  // Get status for a drop based on current mile
+  function getDropStatus(drop) {
+    const data = getDropData(drop.id);
+    if (!data.enabled) return 'disabled';
+    if (data.received) return 'received';
+    if (data.shipped) return 'shipped';
+    if (currentMile >= drop.triggerMile && !data.notified) return 'notify-now';
+    if (data.notified) return 'notified';
+    if (data.packed) return 'packed';
+    return 'planning';
+  }
+
+  // Generate notification message for support person
+  function generateNotifyMessage(drop) {
+    const name = hikerName.trim() || '[HIKER NAME]';
+    const ret = returnAddress.trim() || '[YOUR ADDRESS]';
+    return `📦 MAIL DROP REQUEST
+
+Hi${supportName ? ' ' + supportName : ''}! Please ship my ${drop.town} box.
+
+SHIP TO:
+${name.toUpperCase()}
 GENERAL DELIVERY
 ${drop.town.toUpperCase()}, ${drop.state} ${drop.zip}
 PLEASE HOLD FOR AT HIKER
-ETA: ${formatLabelDate(arrivalDate)}`;
+
+RETURN ADDRESS:
+${ret}
+
+📍 PO Info:
+${drop.poAddress}
+${drop.poHours}
+📞 ${drop.poPhone}
+
+⏱️ Hold time: ${drop.holdTime} days
+📬 Use Priority Mail (2-3 days)
+
+Thanks! 🥾`;
   }
 
-  // Copy label to clipboard
-  async function copyLabel(drop) {
-    const label = generateLabel(drop);
+  // Copy message to clipboard
+  let copiedId = $state(null);
+  async function copyMessage(drop) {
+    const msg = generateNotifyMessage(drop);
     try {
-      await navigator.clipboard.writeText(label);
+      await navigator.clipboard.writeText(msg);
       copiedId = drop.id;
       setTimeout(() => copiedId = null, 2000);
     } catch (e) {
-      console.error('Failed to copy:', e);
+      console.error('Copy failed:', e);
     }
   }
 
-  let copiedId = $state(null);
+  // Open USPS tracking
+  function openTracking(trackingNumber) {
+    if (trackingNumber) {
+      window.open(`https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`, '_blank');
+    }
+  }
 
-  // Get current mile from context
-  let currentMile = $derived(trailContext?.currentMile || 0);
-
-  // Count stats
-  let plannedCount = $derived(Object.values(plannedDrops).filter(d => d.planned).length);
+  // Stats
+  let enabledCount = $derived(Object.values(plannedDrops).filter(d => d.enabled).length);
+  let packedCount = $derived(Object.values(plannedDrops).filter(d => d.enabled && d.packed).length);
   let shippedCount = $derived(Object.values(plannedDrops).filter(d => d.shipped).length);
   let receivedCount = $derived(Object.values(plannedDrops).filter(d => d.received).length);
 
-  // Get status for a drop
-  function getDropStatus(drop) {
-    const status = plannedDrops[drop.id] || { planned: false, shipped: false, received: false };
-    if (status.received) return 'received';
-    if (status.shipped) return 'shipped';
-    if (status.planned) return 'planned';
-    if (drop.mile < currentMile - 50) return 'passed';
-    if (drop.mile >= currentMile - 50 && drop.mile < currentMile + 200) return 'upcoming';
-    return 'future';
-  }
+  // Get next action needed
+  let nextAction = $derived(() => {
+    for (const drop of mailDrops) {
+      const status = getDropStatus(drop);
+      if (status === 'notify-now') {
+        return { type: 'notify', drop };
+      }
+    }
+    for (const drop of mailDrops) {
+      const data = getDropData(drop.id);
+      if (data.enabled && !data.packed) {
+        return { type: 'pack', drop };
+      }
+    }
+    return null;
+  });
 </script>
 
-<div class="maildrop-planner">
-  <!-- Header with postal aesthetic -->
-  <header class="postal-header">
-    <div class="postal-stamp">
-      <span class="stamp-icon">📬</span>
-    </div>
+<div class="mail-planner">
+  <!-- Header -->
+  <header class="planner-header">
+    <div class="header-icon">📦</div>
     <div class="header-content">
       <h2 class="header-title">Mail Drop Planner</h2>
-      <p class="header-tagline">USPS General Delivery Tracking</p>
+      <p class="header-sub">Ship-ahead resupply system</p>
     </div>
-    <div class="tracking-stats">
-      <div class="stat-badge" class:active={plannedCount > 0}>
-        <span class="stat-num">{plannedCount}</span>
-        <span class="stat-label">Planned</span>
+    <div class="header-stats">
+      <div class="stat" class:active={packedCount > 0}>
+        <span class="stat-num">{packedCount}/{enabledCount}</span>
+        <span class="stat-label">Packed</span>
       </div>
-      <div class="stat-badge shipped" class:active={shippedCount > 0}>
+      <div class="stat shipped" class:active={shippedCount > 0}>
         <span class="stat-num">{shippedCount}</span>
-        <span class="stat-label">In Transit</span>
+        <span class="stat-label">Shipped</span>
       </div>
-      <div class="stat-badge received" class:active={receivedCount > 0}>
+      <div class="stat received" class:active={receivedCount > 0}>
         <span class="stat-num">{receivedCount}</span>
         <span class="stat-label">Received</span>
       </div>
     </div>
   </header>
 
-  <!-- Hiker Name Input -->
-  <div class="name-field">
-    <label class="field-label">
-      <span class="label-icon">👤</span>
-      Your Legal Name (required for pickup)
-    </label>
-    <input
-      type="text"
-      bind:value={hikerName}
-      placeholder="Enter your full legal name as shown on ID"
-      class="name-input"
-    />
-  </div>
+  <!-- Alert Banner if action needed -->
+  {#if nextAction()}
+    {@const action = nextAction()}
+    <div class="action-banner" class:urgent={action.type === 'notify'}>
+      {#if action.type === 'notify'}
+        <span class="banner-icon">🚨</span>
+        <span class="banner-text">
+          <strong>Time to notify support!</strong> You're approaching {action.drop.town}
+        </span>
+        <button class="banner-btn" onclick={() => { activeSection = 'drops'; }}>
+          Send Now →
+        </button>
+      {:else}
+        <span class="banner-icon">📋</span>
+        <span class="banner-text">
+          Next: Pack your <strong>{action.drop.town}</strong> box
+        </span>
+      {/if}
+    </div>
+  {/if}
 
-  <!-- Navigation Tabs -->
-  <nav class="section-nav">
-    <button
-      class="nav-btn"
-      class:active={activeSection === 'schedule'}
-      onclick={() => activeSection = 'schedule'}
-    >
-      <span class="nav-icon">📦</span>
-      <span class="nav-text">Schedule</span>
+  <!-- Navigation -->
+  <nav class="nav-tabs">
+    <button class="nav-tab" class:active={activeSection === 'overview'} onclick={() => activeSection = 'overview'}>
+      <span class="tab-icon">📋</span>
+      <span class="tab-text">Overview</span>
     </button>
-    <button
-      class="nav-btn"
-      class:active={activeSection === 'labels'}
-      onclick={() => activeSection = 'labels'}
-    >
-      <span class="nav-icon">🏷️</span>
-      <span class="nav-text">Labels</span>
+    <button class="nav-tab" class:active={activeSection === 'setup'} onclick={() => activeSection = 'setup'}>
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-text">Setup</span>
     </button>
-    <button
-      class="nav-btn"
-      class:active={activeSection === 'rules'}
-      onclick={() => activeSection = 'rules'}
-    >
-      <span class="nav-icon">📋</span>
-      <span class="nav-text">Rules</span>
+    <button class="nav-tab" class:active={activeSection === 'drops'} onclick={() => activeSection = 'drops'}>
+      <span class="tab-icon">📦</span>
+      <span class="tab-text">Drops</span>
+    </button>
+    <button class="nav-tab" class:active={activeSection === 'howto'} onclick={() => activeSection = 'howto'}>
+      <span class="tab-icon">❓</span>
+      <span class="tab-text">How It Works</span>
     </button>
   </nav>
 
-  <!-- Schedule Section -->
-  {#if activeSection === 'schedule'}
-    <div class="schedule-panel">
-      <div class="pace-banner">
-        <span class="pace-icon">🚶</span>
-        <span class="pace-text">
-          {#if trailContext?.mode === 'planning'}
-            Dates based on <strong>{new Date(trailContext.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</strong> start at <strong>{trailContext.pace} mi/day</strong>
-          {:else}
-            Dates based on <strong>{trailContext?.actualPace || 15} mi/day</strong> pace from mile <strong>{currentMile}</strong>
-          {/if}
-        </span>
+  <!-- OVERVIEW SECTION -->
+  {#if activeSection === 'overview'}
+    <div class="overview-section">
+      <div class="overview-intro">
+        <h3 class="intro-title">Your Mail Drop System</h3>
+        <p class="intro-text">
+          Pre-pack boxes at home. When you reach each trigger point on trail, text your support person to ship.
+          No guessing dates—ship on demand.
+        </p>
       </div>
 
-      <div class="drops-grid">
-        {#each mailDrops as drop}
-          {@const arrivalDate = getArrivalDate(drop.mile)}
-          {@const shipDate = getShipDate(arrivalDate)}
-          {@const status = plannedDrops[drop.id] || { planned: false, shipped: false, received: false }}
-          {@const dropStatus = getDropStatus(drop)}
-
-          <article class="package-card status-{dropStatus}">
-            <!-- Status Ribbon -->
-            {#if dropStatus === 'received'}
-              <div class="status-ribbon received">Received</div>
-            {:else if dropStatus === 'shipped'}
-              <div class="status-ribbon shipped">In Transit</div>
-            {:else if dropStatus === 'upcoming'}
-              <div class="status-ribbon upcoming">Coming Up</div>
-            {/if}
-
-            <div class="card-body">
-              <!-- Location Header -->
-              <div class="location-row">
-                <div class="location-info">
-                  <h3 class="town-name">{drop.town}</h3>
-                  <span class="state-badge">{drop.state}</span>
-                </div>
-                <div class="mile-marker">
-                  <span class="mile-value">{drop.mile}</span>
-                  <span class="mile-unit">mi</span>
-                </div>
-              </div>
-
-              <!-- Date Timeline -->
-              <div class="date-timeline">
-                <div class="timeline-point ship">
-                  <div class="point-marker"></div>
-                  <div class="point-info">
-                    <span class="point-label">Ship By</span>
-                    <span class="point-date">{formatDate(shipDate)}</span>
-                  </div>
-                </div>
-                <div class="timeline-track"></div>
-                <div class="timeline-point arrive">
-                  <div class="point-marker"></div>
-                  <div class="point-info">
-                    <span class="point-label">Arrive</span>
-                    <span class="point-date">{formatDate(arrivalDate)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Meta Tags -->
-              <div class="meta-tags">
-                <span class="tag hold-tag" class:warning={drop.holdTime < 30}>
-                  <span class="tag-icon">⏱️</span>
-                  {drop.holdTime} day hold
-                </span>
-                <span class="tag reliability-tag {drop.reliability}">
-                  {#if drop.reliability === 'excellent'}★★★{:else}★★☆{/if}
-                  {drop.reliability}
-                </span>
-              </div>
-
-              <!-- Warning -->
-              {#if drop.warning}
-                <div class="warning-banner">
-                  <span class="warn-icon">⚠️</span>
-                  <span class="warn-text">{drop.warning}</span>
-                </div>
-              {/if}
-
-              <!-- Notes -->
-              <p class="drop-notes">{drop.notes}</p>
-
-              <!-- Action Buttons -->
-              <div class="action-row">
-                <button
-                  class="track-btn plan"
-                  class:checked={status.planned}
-                  onclick={() => toggleDrop(drop.id, 'planned')}
-                >
-                  <span class="btn-check">{status.planned ? '✓' : '○'}</span>
-                  <span class="btn-label">Plan</span>
-                </button>
-                <button
-                  class="track-btn ship"
-                  class:checked={status.shipped}
-                  onclick={() => toggleDrop(drop.id, 'shipped')}
-                  disabled={!status.planned}
-                >
-                  <span class="btn-check">{status.shipped ? '✓' : '○'}</span>
-                  <span class="btn-label">Ship</span>
-                </button>
-                <button
-                  class="track-btn receive"
-                  class:checked={status.received}
-                  onclick={() => toggleDrop(drop.id, 'received')}
-                  disabled={!status.shipped}
-                >
-                  <span class="btn-check">{status.received ? '✓' : '○'}</span>
-                  <span class="btn-label">Receive</span>
-                </button>
-              </div>
-            </div>
-          </article>
-        {/each}
-      </div>
-    </div>
-  {/if}
-
-  <!-- Labels Section -->
-  {#if activeSection === 'labels'}
-    <div class="labels-panel">
-      {#if !hikerName.trim()}
-        <div class="name-alert">
-          <span class="alert-icon">☝️</span>
-          <span class="alert-text">Enter your name above to generate shipping labels</span>
+      <!-- Current Position -->
+      {#if trailContext?.mode === 'trail'}
+        <div class="position-card">
+          <div class="position-label">Current Position</div>
+          <div class="position-mile">Mile {currentMile}</div>
         </div>
       {/if}
 
-      <div class="format-card">
-        <div class="format-header">
-          <span class="format-icon">📋</span>
-          <h4 class="format-title">Required Label Format</h4>
-        </div>
-        <div class="format-preview">
-          <pre class="label-preview">{hikerName.trim().toUpperCase() || 'YOUR NAME'}
-GENERAL DELIVERY
-CITY, STATE ZIP
-PLEASE HOLD FOR AT HIKER
-ETA: MM/DD/YYYY</pre>
-        </div>
-        <div class="format-rules">
-          <div class="format-rule">
-            <span class="rule-bullet">●</span>
-            Write on <strong>ALL SIX sides</strong> of box
-          </div>
-          <div class="format-rule">
-            <span class="rule-bullet">●</span>
-            Use <strong>permanent marker</strong> (Sharpie)
-          </div>
-          <div class="format-rule">
-            <span class="rule-bullet">●</span>
-            <strong>ETA is critical</strong> - always include it
-          </div>
-        </div>
-      </div>
-
-      <div class="labels-list">
-        {#each mailDrops.filter(d => plannedDrops[d.id]?.planned) as drop}
-          {@const arrivalDate = getArrivalDate(drop.mile)}
-          <div class="label-card">
-            <div class="label-header">
-              <div class="label-location">
-                <span class="label-town">{drop.town}, {drop.state}</span>
-                <span class="label-mile">Mile {drop.mile}</span>
-              </div>
-              <div class="label-eta">ETA {formatDate(arrivalDate)}</div>
+      <!-- Timeline View -->
+      <div class="timeline-overview">
+        {#each mailDrops as drop}
+          {@const data = getDropData(drop.id)}
+          {@const status = getDropStatus(drop)}
+          <div class="timeline-item status-{status}" class:enabled={data.enabled}>
+            <div class="timeline-marker">
+              {#if status === 'received'}✓
+              {:else if status === 'shipped'}📬
+              {:else if status === 'notify-now'}🔔
+              {:else if data.enabled}○
+              {:else}–{/if}
             </div>
-            <pre class="label-content">{generateLabel(drop)}</pre>
-            <button
-              class="copy-button"
-              class:copied={copiedId === drop.id}
-              onclick={() => copyLabel(drop)}
-            >
-              {#if copiedId === drop.id}
-                <span class="copy-icon">✓</span> Copied!
+            <div class="timeline-info">
+              <div class="timeline-town">{drop.town}, {drop.state}</div>
+              <div class="timeline-meta">
+                <span class="meta-mile">Mile {drop.mile}</span>
+                {#if data.enabled}
+                  <span class="meta-trigger">Trigger: {drop.triggerMile}</span>
+                {/if}
+              </div>
+            </div>
+            <div class="timeline-status">
+              {#if status === 'received'}
+                <span class="status-badge received">Received</span>
+              {:else if status === 'shipped'}
+                <span class="status-badge shipped">In Transit</span>
+              {:else if status === 'notify-now'}
+                <span class="status-badge urgent">NOTIFY NOW</span>
+              {:else if status === 'notified'}
+                <span class="status-badge notified">Notified</span>
+              {:else if status === 'packed'}
+                <span class="status-badge packed">Packed</span>
+              {:else if !data.enabled}
+                <span class="status-badge disabled">Not using</span>
               {:else}
-                <span class="copy-icon">📋</span> Copy to Clipboard
+                <span class="status-badge planning">Planning</span>
               {/if}
-            </button>
-          </div>
-        {:else}
-          <div class="empty-state">
-            <span class="empty-icon">📭</span>
-            <p class="empty-text">No drops planned yet</p>
-            <p class="empty-hint">Go to Schedule tab to plan your mail drops</p>
+            </div>
           </div>
         {/each}
       </div>
     </div>
   {/if}
 
-  <!-- Rules Section -->
-  {#if activeSection === 'rules'}
-    <div class="rules-panel">
-      <div class="rule-block">
-        <div class="rule-header">
-          <span class="rule-icon">⏰</span>
-          <h4 class="rule-name">Hold Times</h4>
-        </div>
-        <div class="rule-grid">
-          <div class="rule-row">
-            <span class="rule-key">Official USPS rule</span>
-            <span class="rule-value">Up to 30 days</span>
-          </div>
-          <div class="rule-row">
-            <span class="rule-key">Large AT towns</span>
-            <span class="rule-value">Usually 30 days</span>
-          </div>
-          <div class="rule-row warning">
-            <span class="rule-key">Small/rural offices</span>
-            <span class="rule-value warn">Often 7-14 days</span>
-          </div>
+  <!-- SETUP SECTION -->
+  {#if activeSection === 'setup'}
+    <div class="setup-section">
+      <div class="setup-card">
+        <h3 class="card-title">
+          <span class="card-icon">👤</span>
+          Hiker Info
+        </h3>
+        <div class="field-group">
+          <label class="field-label">Your Legal Name (for pickup ID)</label>
+          <input type="text" class="field-input" bind:value={hikerName} placeholder="As shown on your ID" />
         </div>
       </div>
 
-      <div class="rule-block highlight">
-        <div class="rule-header">
-          <span class="rule-icon">📦</span>
-          <h4 class="rule-name">Shipping Timeline</h4>
+      <div class="setup-card">
+        <h3 class="card-title">
+          <span class="card-icon">🏠</span>
+          Support Person
+        </h3>
+        <p class="card-desc">Who will ship your boxes from home?</p>
+        <div class="field-group">
+          <label class="field-label">Name</label>
+          <input type="text" class="field-input" bind:value={supportName} placeholder="Mom, spouse, friend..." />
         </div>
-        <div class="rule-grid">
-          <div class="rule-row success">
-            <span class="rule-key">Ship packages</span>
-            <span class="rule-value good">7-10 days before arrival</span>
-          </div>
-          <div class="rule-row warning">
-            <span class="rule-key">Never ship earlier than</span>
-            <span class="rule-value warn">14 days before</span>
-          </div>
-          <div class="rule-row">
-            <span class="rule-key">Always include</span>
-            <span class="rule-value">Your ETA on the box</span>
-          </div>
-          <div class="rule-row">
-            <span class="rule-key">If delayed</span>
-            <span class="rule-value">Call the post office</span>
-          </div>
+        <div class="field-group">
+          <label class="field-label">Phone</label>
+          <input type="tel" class="field-input" bind:value={supportPhone} placeholder="For the copy/paste message" />
         </div>
       </div>
 
-      <div class="rule-block">
-        <div class="rule-header">
-          <span class="rule-icon">✍️</span>
-          <h4 class="rule-name">Labeling Requirements</h4>
+      <div class="setup-card">
+        <h3 class="card-title">
+          <span class="card-icon">📮</span>
+          Return Address
+        </h3>
+        <p class="card-desc">Required on all packages</p>
+        <div class="field-group">
+          <textarea class="field-textarea" bind:value={returnAddress} rows="3" placeholder="Your home address&#10;City, State ZIP"></textarea>
         </div>
-        <ul class="rule-list">
-          <li>Write your name on <strong>all six sides</strong></li>
-          <li>Use <strong>Sharpie</strong> (permanent marker)</li>
-          <li><strong>ETA matters</strong> - POs use it to prioritize</li>
-          <li>Use your <strong>legal name</strong> (must match ID)</li>
+      </div>
+
+      {#if !hikerName || !returnAddress}
+        <div class="setup-warning">
+          <span class="warn-icon">⚠️</span>
+          <span class="warn-text">Complete setup to generate shipping labels</span>
+        </div>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- DROPS SECTION -->
+  {#if activeSection === 'drops'}
+    <div class="drops-section">
+      {#each mailDrops as drop}
+        {@const data = getDropData(drop.id)}
+        {@const status = getDropStatus(drop)}
+
+        <div class="drop-card status-{status}">
+          <!-- Header Row -->
+          <div class="drop-header">
+            <label class="enable-toggle">
+              <input type="checkbox" checked={data.enabled} onchange={() => toggleDrop(drop.id, 'enabled')} />
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="drop-location">
+              <h4 class="drop-town">{drop.town}</h4>
+              <span class="drop-state">{drop.state}</span>
+            </div>
+            <div class="drop-miles">
+              <div class="mile-badge">
+                <span class="mile-num">{drop.mile}</span>
+                <span class="mile-label">mi</span>
+              </div>
+            </div>
+          </div>
+
+          {#if data.enabled}
+            <!-- Trigger Info -->
+            <div class="trigger-row">
+              <span class="trigger-icon">🔔</span>
+              <span class="trigger-text">
+                Notify support at <strong>mile {drop.triggerMile}</strong>
+                {#if currentMile > 0}
+                  ({drop.triggerMile - currentMile > 0 ? `${drop.triggerMile - currentMile} mi away` : 'NOW!'})
+                {/if}
+              </span>
+            </div>
+
+            <!-- Contents -->
+            <div class="contents-section">
+              <label class="contents-label">Box Contents:</label>
+              <textarea
+                class="contents-input"
+                placeholder="Food, gear, meds..."
+                value={data.contents || ''}
+                oninput={(e) => updateDrop(drop.id, 'contents', e.target.value)}
+                rows="2"
+              ></textarea>
+            </div>
+
+            <!-- Status Checkboxes -->
+            <div class="status-row">
+              <label class="status-check" class:checked={data.packed}>
+                <input type="checkbox" checked={data.packed} onchange={() => toggleDrop(drop.id, 'packed')} />
+                <span class="check-icon">{data.packed ? '✓' : '○'}</span>
+                <span class="check-label">Packed</span>
+              </label>
+              <label class="status-check" class:checked={data.notified}>
+                <input type="checkbox" checked={data.notified} onchange={() => toggleDrop(drop.id, 'notified')} />
+                <span class="check-icon">{data.notified ? '✓' : '○'}</span>
+                <span class="check-label">Notified</span>
+              </label>
+              <label class="status-check shipped" class:checked={data.shipped}>
+                <input type="checkbox" checked={data.shipped} onchange={() => toggleDrop(drop.id, 'shipped')} />
+                <span class="check-icon">{data.shipped ? '✓' : '○'}</span>
+                <span class="check-label">Shipped</span>
+              </label>
+              <label class="status-check received" class:checked={data.received}>
+                <input type="checkbox" checked={data.received} onchange={() => toggleDrop(drop.id, 'received')} />
+                <span class="check-icon">{data.received ? '✓' : '○'}</span>
+                <span class="check-label">Got it</span>
+              </label>
+            </div>
+
+            <!-- Tracking Number -->
+            {#if data.shipped && !data.received}
+              <div class="tracking-row">
+                <input
+                  type="text"
+                  class="tracking-input"
+                  placeholder="USPS Tracking #"
+                  value={data.trackingNumber || ''}
+                  oninput={(e) => updateDrop(drop.id, 'trackingNumber', e.target.value)}
+                />
+                {#if data.trackingNumber}
+                  <button class="tracking-btn" onclick={() => openTracking(data.trackingNumber)}>
+                    Track →
+                  </button>
+                {/if}
+              </div>
+            {/if}
+
+            <!-- Notify Button (prominent when triggered) -->
+            {#if status === 'notify-now' || (data.packed && !data.notified)}
+              <button
+                class="notify-btn"
+                class:urgent={status === 'notify-now'}
+                onclick={() => copyMessage(drop)}
+              >
+                {#if copiedId === drop.id}
+                  ✓ Copied to clipboard!
+                {:else}
+                  📱 Copy Message for {supportName || 'Support'}
+                {/if}
+              </button>
+            {/if}
+
+            <!-- PO Info (collapsible) -->
+            <details class="po-details">
+              <summary class="po-summary">📍 Post Office Info</summary>
+              <div class="po-info">
+                <div class="po-line"><strong>Address:</strong> {drop.poAddress}</div>
+                <div class="po-line"><strong>Hours:</strong> {drop.poHours}</div>
+                <div class="po-line">
+                  <strong>Phone:</strong>
+                  <a href="tel:{drop.poPhone.replace(/\D/g, '')}" class="po-phone">{drop.poPhone}</a>
+                </div>
+                <div class="po-line"><strong>Hold Time:</strong> {drop.holdTime} days {drop.warning ? '⚠️' : ''}</div>
+              </div>
+            </details>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- HOW IT WORKS SECTION -->
+  {#if activeSection === 'howto'}
+    <div class="howto-section">
+      <div class="howto-card highlight">
+        <h3 class="howto-title">🎯 The Problem with Traditional Mail Drops</h3>
+        <p>Calculating arrival dates months ahead doesn't work. Your pace changes, zeros happen, weather delays you. Packages arrive too early and get returned, or too late and you've moved on.</p>
+      </div>
+
+      <div class="howto-card">
+        <h3 class="howto-title">✅ The Solution: Trigger-Based Shipping</h3>
+        <ol class="howto-steps">
+          <li>
+            <strong>Before your hike:</strong> Pack all your mail drop boxes at home. Label them clearly (HOT SPRINGS, DAMASCUS, etc.). Store them ready-to-ship.
+          </li>
+          <li>
+            <strong>On trail:</strong> When you reach a trigger point (about 100-150 miles before the PO), text your support person.
+          </li>
+          <li>
+            <strong>Support ships:</strong> They grab the labeled box, use the address from your message, and ship Priority Mail (2-3 day delivery).
+          </li>
+          <li>
+            <strong>You arrive:</strong> Package is waiting. No guesswork, no returned packages.
+          </li>
+        </ol>
+      </div>
+
+      <div class="howto-card">
+        <h3 class="howto-title">📦 What to Put in Each Box</h3>
+        <ul class="howto-list">
+          <li><strong>Food:</strong> Favorite snacks, bars, freeze-dried meals</li>
+          <li><strong>Toiletries:</strong> Sunscreen refill, chapstick, foot powder</li>
+          <li><strong>Meds:</strong> Prescription refills, vitamins, ibuprofen</li>
+          <li><strong>Gear:</strong> Fresh socks, batteries, headlamp bulb</li>
+          <li><strong>Morale:</strong> Letters, photos, small treats</li>
         </ul>
       </div>
 
-      <div class="rule-block tip">
-        <div class="rule-header">
-          <span class="rule-icon">💡</span>
-          <h4 class="rule-name">Pro Tips</h4>
-        </div>
-        <ul class="rule-list">
-          <li>Priority Mail is trackable and includes insurance</li>
+      <div class="howto-card">
+        <h3 class="howto-title">📬 Shipping Tips</h3>
+        <ul class="howto-list">
+          <li>Use <strong>USPS Priority Mail</strong> - trackable, 2-3 days, includes insurance</li>
+          <li>Write your name on <strong>ALL SIX SIDES</strong> of the box</li>
+          <li>Always include <strong>"PLEASE HOLD FOR AT HIKER"</strong></li>
           <li>Flat Rate boxes are often the best value</li>
-          <li>Some hostels accept packages (often with fee)</li>
-          <li>Shaw's in Monson offers 100-Mile Wilderness food drops</li>
-          <li>Consider shipping non-perishables only</li>
+          <li>If delayed, <strong>call the PO</strong> - they'll usually extend hold time</li>
         </ul>
       </div>
     </div>
   {/if}
 
   <!-- Guide Link -->
-  <a href="/guide/15-resupply-logistics" class="guide-link">
-    <span class="gl-icon">📖</span>
-    <span class="gl-text">Full Mail Drop System Guide</span>
-    <span class="gl-arrow">→</span>
+  <a href="/guide#15-resupply-logistics" class="guide-link">
+    📖 Full Resupply Guide →
   </a>
 </div>
 
 <style>
-  .maildrop-planner {
-    font-family: Lato, system-ui, -apple-system, sans-serif;
+  .mail-planner {
+    font-family: system-ui, -apple-system, sans-serif;
   }
 
-  /* ========== POSTAL HEADER ========== */
-  .postal-header {
+  /* ========== HEADER ========== */
+  .planner-header {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1.5rem;
-    background: linear-gradient(145deg, #5d4e37 0%, #3d3428 50%, #2a231a 100%);
-    border-radius: 16px;
-    margin-bottom: 1.25rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #5d4e37 0%, #3d3428 100%);
+    border-radius: 14px;
     color: #fff;
-    box-shadow:
-      0 8px 24px rgba(61, 52, 40, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    position: relative;
-    overflow: hidden;
+    margin-bottom: 1rem;
   }
 
-  .postal-header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M30 5L35 15H25L30 5z' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E");
-    pointer-events: none;
-  }
-
-  .postal-stamp {
-    width: 56px;
-    height: 56px;
+  .header-icon {
+    font-size: 2rem;
+    width: 52px;
+    height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #c9a45c 0%, #a07c3a 100%);
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    font-size: 1.75rem;
-    box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transform: rotate(-3deg);
-    flex-shrink: 0;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
   }
 
-  .header-content {
-    flex: 1;
-    min-width: 0;
-  }
+  .header-content { flex: 1; }
 
   .header-title {
     font-family: Oswald, sans-serif;
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 700;
     margin: 0;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.03em;
   }
 
-  .header-tagline {
-    font-size: 0.75rem;
-    margin: 0.25rem 0 0;
+  .header-sub {
+    font-size: 0.8rem;
     opacity: 0.7;
-    letter-spacing: 0.02em;
+    margin: 0.2rem 0 0;
   }
 
-  .tracking-stats {
+  .header-stats {
     display: flex;
     gap: 0.5rem;
   }
 
-  .stat-badge {
+  .stat {
     text-align: center;
-    padding: 0.5rem 0.75rem;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    min-width: 54px;
-    transition: all 0.2s ease;
+    padding: 0.4rem 0.6rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    min-width: 48px;
   }
 
-  .stat-badge.active {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.25);
-  }
-
-  .stat-badge.shipped.active {
-    background: rgba(230, 190, 80, 0.25);
-    border-color: rgba(230, 190, 80, 0.4);
-  }
-
-  .stat-badge.received.active {
-    background: rgba(120, 180, 120, 0.25);
-    border-color: rgba(120, 180, 120, 0.4);
-  }
+  .stat.active { background: rgba(255,255,255,0.15); }
+  .stat.shipped.active { background: rgba(201,164,92,0.3); }
+  .stat.received.active { background: rgba(120,180,120,0.3); }
 
   .stat-num {
     display: block;
     font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     line-height: 1;
   }
 
   .stat-label {
-    display: block;
     font-size: 0.55rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    opacity: 0.7;
-    margin-top: 0.2rem;
-  }
-
-  /* ========== NAME FIELD ========== */
-  .name-field {
-    margin-bottom: 1.25rem;
-  }
-
-  .field-label {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--pine);
-    margin-bottom: 0.5rem;
-  }
-
-  .label-icon {
-    font-size: 0.9rem;
-  }
-
-  .name-input {
-    width: 100%;
-    padding: 0.875rem 1rem;
-    background: #fff;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--ink);
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  }
-
-  .name-input::placeholder {
-    color: var(--muted);
-    font-weight: 400;
-  }
-
-  .name-input:focus {
-    outline: none;
-    border-color: var(--pine);
-    box-shadow: 0 0 0 4px rgba(77, 89, 74, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
-  }
-
-  /* ========== NAVIGATION ========== */
-  .section-nav {
-    display: flex;
-    gap: 0.35rem;
-    margin-bottom: 1.5rem;
-    padding: 0.35rem;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  }
-
-  .nav-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.875rem 0.75rem;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--muted);
-    transition: all 0.2s ease;
+    opacity: 0.7;
   }
 
-  .nav-btn:hover {
-    color: var(--pine);
-    background: rgba(77, 89, 74, 0.08);
-  }
-
-  .nav-btn.active {
-    background: var(--pine);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(77, 89, 74, 0.3);
-  }
-
-  .nav-icon {
-    font-size: 1.1rem;
-  }
-
-  /* ========== SCHEDULE PANEL ========== */
-  .schedule-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .pace-banner {
+  /* ========== ACTION BANNER ========== */
+  .action-banner {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.75rem;
     padding: 0.875rem 1rem;
-    background: linear-gradient(135deg, rgba(77, 89, 74, 0.08) 0%, rgba(166, 181, 137, 0.08) 100%);
-    border: 1px solid rgba(77, 89, 74, 0.15);
+    background: linear-gradient(135deg, rgba(166,181,137,0.15) 0%, rgba(166,181,137,0.08) 100%);
+    border: 2px solid var(--alpine);
     border-radius: 12px;
-    font-size: 0.85rem;
-    color: var(--pine);
-  }
-
-  .pace-icon {
-    font-size: 1.1rem;
-  }
-
-  .pace-text strong {
-    color: var(--ink);
-  }
-
-  .drops-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  /* ========== PACKAGE CARD ========== */
-  .package-card {
-    position: relative;
-    background: #fff;
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    transition: all 0.25s ease;
-  }
-
-  .package-card:hover {
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-  }
-
-  .package-card.status-passed {
-    border-color: #d0ccc4;
-    background: #faf9f7;
-  }
-
-  .package-card.status-passed .card-body {
-    opacity: 0.65;
-  }
-
-  .package-card.status-upcoming {
-    border-color: var(--marker);
-    box-shadow: 0 4px 20px rgba(240, 224, 0, 0.2);
-  }
-
-  .package-card.status-planned {
-    border-color: var(--alpine);
-    background: linear-gradient(145deg, rgba(166, 181, 137, 0.06) 0%, #fff 100%);
-  }
-
-  .package-card.status-shipped {
-    border-color: #c9a45c;
-    background: linear-gradient(145deg, rgba(201, 164, 92, 0.08) 0%, #fff 100%);
-  }
-
-  .package-card.status-received {
-    border-color: #78b478;
-    background: linear-gradient(145deg, rgba(120, 180, 120, 0.06) 0%, #fff 100%);
-  }
-
-  /* Status Ribbon */
-  .status-ribbon {
-    position: absolute;
-    top: 12px;
-    right: -32px;
-    padding: 0.25rem 2.5rem;
-    font-family: Oswald, sans-serif;
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    transform: rotate(45deg);
-    z-index: 2;
-  }
-
-  .status-ribbon.upcoming {
-    background: var(--marker);
-    color: var(--ink);
-  }
-
-  .status-ribbon.shipped {
-    background: linear-gradient(90deg, #c9a45c, #dbb86a);
-    color: #3d3428;
-  }
-
-  .status-ribbon.received {
-    background: linear-gradient(90deg, #78b478, #8cc98c);
-    color: #2a4a2a;
-  }
-
-  .card-body {
-    padding: 1.25rem;
-  }
-
-  /* Location Row */
-  .location-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
     margin-bottom: 1rem;
   }
 
-  .location-info {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
+  .action-banner.urgent {
+    background: linear-gradient(135deg, rgba(217,119,6,0.15) 0%, rgba(217,119,6,0.08) 100%);
+    border-color: var(--terra);
+    animation: pulse 2s ease-in-out infinite;
   }
 
-  .town-name {
-    font-family: Oswald, sans-serif;
-    font-size: 1.35rem;
-    font-weight: 700;
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+
+  .banner-icon { font-size: 1.25rem; }
+
+  .banner-text {
+    flex: 1;
+    font-size: 0.9rem;
     color: var(--ink);
-    margin: 0;
-    line-height: 1;
   }
 
-  .state-badge {
-    padding: 0.2rem 0.5rem;
+  .banner-btn {
+    padding: 0.5rem 1rem;
     background: var(--pine);
     color: #fff;
-    font-size: 0.65rem;
-    font-weight: 700;
-    border-radius: 4px;
-    letter-spacing: 0.04em;
-  }
-
-  .mile-marker {
-    text-align: right;
-    padding: 0.4rem 0.75rem;
-    background: linear-gradient(135deg, var(--pine) 0%, #3a4538 100%);
-    border-radius: 10px;
-  }
-
-  .mile-value {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-    line-height: 1;
-  }
-
-  .mile-unit {
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.7);
-    letter-spacing: 0.05em;
-  }
-
-  /* Date Timeline */
-  .date-timeline {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    background: linear-gradient(135deg, #f8f6f2 0%, #f5f2e8 100%);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: 12px;
-    margin-bottom: 0.875rem;
-  }
-
-  .timeline-point {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-  }
-
-  .timeline-point.arrive {
-    flex-direction: row-reverse;
-    text-align: right;
-  }
-
-  .point-marker {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 3px solid;
-    flex-shrink: 0;
-  }
-
-  .timeline-point.ship .point-marker {
-    border-color: var(--terra);
-    background: rgba(217, 119, 6, 0.2);
-  }
-
-  .timeline-point.arrive .point-marker {
-    border-color: var(--alpine);
-    background: rgba(166, 181, 137, 0.2);
-  }
-
-  .point-label {
-    display: block;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-  }
-
-  .point-date {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-  }
-
-  .timeline-point.ship .point-date {
-    color: var(--terra);
-  }
-
-  .timeline-point.arrive .point-date {
-    color: var(--pine);
-  }
-
-  .timeline-track {
-    flex: 0 0 auto;
-    width: 40px;
-    height: 3px;
-    background: linear-gradient(90deg, var(--terra), var(--alpine));
-    border-radius: 2px;
-    position: relative;
-  }
-
-  .timeline-track::after {
-    content: '→';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  /* Meta Tags */
-  .meta-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.65rem;
+    border: none;
     border-radius: 8px;
-    font-size: 0.75rem;
     font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
   }
 
-  .tag-icon {
-    font-size: 0.85rem;
-  }
+  .banner-btn:hover { background: #3a4538; }
 
-  .hold-tag {
-    background: rgba(77, 89, 74, 0.1);
-    color: var(--pine);
-  }
-
-  .hold-tag.warning {
-    background: rgba(217, 119, 6, 0.12);
-    color: var(--terra);
-  }
-
-  .reliability-tag {
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-size: 0.7rem;
-  }
-
-  .reliability-tag.excellent {
-    background: rgba(166, 181, 137, 0.2);
-    color: #3a5a3a;
-  }
-
-  .reliability-tag.good {
-    background: rgba(201, 164, 92, 0.2);
-    color: #7a6030;
-  }
-
-  /* Warning Banner */
-  .warning-banner {
+  /* ========== NAV TABS ========== */
+  .nav-tabs {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.65rem 0.875rem;
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
-    border: 1px solid rgba(217, 119, 6, 0.25);
-    border-radius: 10px;
-    margin-bottom: 0.75rem;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
   }
 
-  .warn-icon {
-    font-size: 1rem;
-  }
-
-  .warn-text {
-    font-size: 0.8rem;
-    color: var(--terra);
-    font-weight: 500;
-  }
-
-  /* Drop Notes */
-  .drop-notes {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.5;
-    margin: 0 0 1rem;
-  }
-
-  /* Action Row */
-  .action-row {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .track-btn {
+  .nav-tab {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
     padding: 0.75rem 0.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .nav-tab:hover { color: var(--pine); background: rgba(77,89,74,0.06); }
+  .nav-tab.active { background: var(--pine); color: #fff; }
+
+  .tab-icon { font-size: 1rem; }
+
+  @media (max-width: 480px) {
+    .tab-text { display: none; }
+    .tab-icon { font-size: 1.25rem; }
+  }
+
+  /* ========== OVERVIEW SECTION ========== */
+  .overview-intro {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .intro-title {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 0.5rem;
+  }
+
+  .intro-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .position-card {
+    text-align: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--pine) 0%, #3a4538 100%);
+    border-radius: 12px;
+    color: #fff;
+    margin-bottom: 1.25rem;
+  }
+
+  .position-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+  }
+
+  .position-mile {
+    font-family: Oswald, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+
+  /* Timeline Overview */
+  .timeline-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
     background: #fff;
     border: 2px solid var(--border);
     border-radius: 10px;
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
   }
 
-  .track-btn:hover:not(:disabled) {
-    border-color: var(--alpine);
-    color: var(--pine);
-    background: rgba(166, 181, 137, 0.08);
-  }
+  .timeline-item:not(.enabled) { opacity: 0.5; }
+  .timeline-item.status-notify-now { border-color: var(--terra); background: rgba(217,119,6,0.05); }
+  .timeline-item.status-shipped { border-color: #c9a45c; }
+  .timeline-item.status-received { border-color: #78b478; background: rgba(120,180,120,0.05); }
 
-  .track-btn.checked {
-    color: #fff;
-    border-color: transparent;
-  }
-
-  .track-btn.plan.checked {
-    background: linear-gradient(135deg, var(--alpine) 0%, #8fa87a 100%);
-  }
-
-  .track-btn.ship.checked {
-    background: linear-gradient(135deg, #c9a45c 0%, #b8934d 100%);
-  }
-
-  .track-btn.receive.checked {
-    background: linear-gradient(135deg, #78b478 0%, #68a468 100%);
-  }
-
-  .track-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .btn-check {
-    font-size: 0.9rem;
-  }
-
-  /* ========== LABELS PANEL ========== */
-  .labels-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .name-alert {
+  .timeline-marker {
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
-    padding: 1rem;
-    background: linear-gradient(135deg, rgba(240, 224, 0, 0.15) 0%, rgba(240, 224, 0, 0.08) 100%);
-    border: 2px dashed rgba(200, 180, 0, 0.4);
-    border-radius: 12px;
-    font-size: 0.9rem;
-    color: #7a6a00;
-    font-weight: 500;
-  }
-
-  .format-card {
-    background: #fff;
+    background: var(--bg);
     border: 2px solid var(--border);
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  }
-
-  .format-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .format-icon {
-    font-size: 1.25rem;
-  }
-
-  .format-title {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
+    border-radius: 50%;
+    font-size: 0.8rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink);
-    margin: 0;
-  }
-
-  .format-preview {
-    margin-bottom: 1rem;
-  }
-
-  .label-preview {
-    padding: 1rem 1.25rem;
-    background: linear-gradient(135deg, #f8f6f2 0%, #f0ede5 100%);
-    border: 2px solid #e0dcd2;
-    border-radius: 10px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.9rem;
-    font-weight: 600;
-    line-height: 1.6;
-    color: var(--ink);
-    white-space: pre-wrap;
-    margin: 0;
-  }
-
-  .format-rules {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .format-rule {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
     color: var(--muted);
   }
 
-  .rule-bullet {
-    color: var(--alpine);
-    font-size: 0.6rem;
+  .timeline-item.status-received .timeline-marker { background: #78b478; color: #fff; border-color: #78b478; }
+  .timeline-item.status-shipped .timeline-marker { background: #c9a45c; color: #fff; border-color: #c9a45c; }
+  .timeline-item.status-notify-now .timeline-marker { background: var(--terra); color: #fff; border-color: var(--terra); }
+
+  .timeline-info { flex: 1; }
+
+  .timeline-town {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    color: var(--ink);
   }
 
-  .labels-list {
+  .timeline-meta {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .status-badge.disabled { background: #eee; color: #999; }
+  .status-badge.planning { background: rgba(77,89,74,0.1); color: var(--pine); }
+  .status-badge.packed { background: rgba(166,181,137,0.2); color: #3a5a3a; }
+  .status-badge.notified { background: rgba(240,224,0,0.2); color: #7a6a00; }
+  .status-badge.urgent { background: var(--terra); color: #fff; animation: pulse 1s ease-in-out infinite; }
+  .status-badge.shipped { background: rgba(201,164,92,0.25); color: #7a6030; }
+  .status-badge.received { background: rgba(120,180,120,0.25); color: #2a5a2a; }
+
+  /* ========== SETUP SECTION ========== */
+  .setup-section {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  .label-card {
+  .setup-card {
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+  }
+
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 0.75rem;
+  }
+
+  .card-icon { font-size: 1.1rem; }
+
+  .card-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0 0 1rem;
+  }
+
+  .field-group { margin-bottom: 0.875rem; }
+  .field-group:last-child { margin-bottom: 0; }
+
+  .field-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--pine);
+    margin-bottom: 0.4rem;
+  }
+
+  .field-input, .field-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    color: var(--ink);
+    transition: all 0.2s;
+    box-sizing: border-box;
+  }
+
+  .field-input:focus, .field-textarea:focus {
+    outline: none;
+    border-color: var(--pine);
+  }
+
+  .field-textarea { resize: vertical; font-family: inherit; }
+
+  .setup-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.875rem 1rem;
+    background: rgba(217,119,6,0.1);
+    border: 2px dashed rgba(217,119,6,0.3);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: var(--terra);
+  }
+
+  /* ========== DROPS SECTION ========== */
+  .drops-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .drop-card {
     background: #fff;
     border: 2px solid var(--border);
     border-radius: 14px;
     padding: 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
   }
 
-  .label-header {
+  .drop-card.status-notify-now { border-color: var(--terra); box-shadow: 0 4px 20px rgba(217,119,6,0.15); }
+  .drop-card.status-shipped { border-color: #c9a45c; }
+  .drop-card.status-received { border-color: #78b478; opacity: 0.7; }
+
+  .drop-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.875rem;
+    gap: 0.75rem;
   }
 
-  .label-town {
+  /* Toggle Switch */
+  .enable-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+  }
+
+  .enable-toggle input { display: none; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #ccc;
+    border-radius: 24px;
+    transition: 0.3s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+
+  .enable-toggle input:checked + .toggle-slider { background: var(--pine); }
+  .enable-toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+  .drop-location { flex: 1; }
+
+  .drop-town {
     font-family: Oswald, sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--ink);
+    margin: 0;
+    display: inline;
   }
 
-  .label-mile {
+  .drop-state {
     font-size: 0.8rem;
     color: var(--muted);
-    margin-top: 0.15rem;
+    margin-left: 0.35rem;
   }
 
-  .label-eta {
-    padding: 0.3rem 0.6rem;
-    background: var(--alpine);
-    color: #fff;
-    font-size: 0.7rem;
-    font-weight: 700;
-    border-radius: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .label-content {
-    padding: 0.875rem 1rem;
-    background: linear-gradient(135deg, #f8f6f2 0%, #f0ede5 100%);
-    border: 1px solid #e0dcd2;
+  .mile-badge {
+    text-align: center;
+    padding: 0.35rem 0.6rem;
+    background: var(--pine);
     border-radius: 8px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.85rem;
-    font-weight: 600;
-    line-height: 1.5;
-    color: var(--ink);
-    white-space: pre-wrap;
-    margin: 0 0 0.875rem;
   }
 
-  .copy-button {
+  .mile-num {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .mile-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .trigger-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.875rem;
+    background: rgba(240,224,0,0.1);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #7a6a00;
+  }
+
+  .contents-section { margin-top: 0.875rem; }
+
+  .contents-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .contents-input {
     width: 100%;
+    padding: 0.6rem 0.875rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    resize: vertical;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .status-row {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.875rem;
+  }
+
+  .status-check {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 0.3rem;
+    padding: 0.6rem 0.4rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .status-check input { display: none; }
+
+  .status-check:hover { border-color: var(--alpine); }
+
+  .status-check.checked { background: var(--alpine); color: #fff; border-color: var(--alpine); }
+  .status-check.shipped.checked { background: #c9a45c; border-color: #c9a45c; }
+  .status-check.received.checked { background: #78b478; border-color: #78b478; }
+
+  .check-icon { font-size: 0.9rem; }
+  .check-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+
+  .tracking-row {
+    display: flex;
     gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .tracking-input {
+    flex: 1;
+    padding: 0.6rem 0.875rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: monospace;
+  }
+
+  .tracking-btn {
+    padding: 0.6rem 1rem;
+    background: var(--pine);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .notify-btn {
+    width: 100%;
+    margin-top: 0.875rem;
     padding: 0.875rem;
-    background: linear-gradient(135deg, var(--pine) 0%, #3a4538 100%);
+    background: var(--alpine);
+    color: #fff;
     border: none;
     border-radius: 10px;
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #fff;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(77, 89, 74, 0.25);
+    transition: all 0.2s;
   }
 
-  .copy-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(77, 89, 74, 0.35);
+  .notify-btn.urgent {
+    background: var(--terra);
+    animation: pulse 1.5s ease-in-out infinite;
   }
 
-  .copy-button.copied {
-    background: linear-gradient(135deg, #78b478 0%, #68a468 100%);
-    box-shadow: 0 4px 12px rgba(120, 180, 120, 0.3);
+  .notify-btn:hover { transform: translateY(-1px); }
+
+  .po-details {
+    margin-top: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
   }
 
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2.5rem 1.5rem;
-    background: linear-gradient(135deg, #f8f6f2 0%, #f5f2e8 100%);
-    border: 2px dashed var(--border);
-    border-radius: 16px;
-    text-align: center;
-  }
-
-  .empty-icon {
-    font-size: 3rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .empty-text {
-    font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
+  .po-summary {
+    padding: 0.6rem 0.875rem;
+    background: var(--bg);
+    font-size: 0.8rem;
     font-weight: 600;
-    color: var(--ink);
-    margin: 0 0 0.25rem;
-  }
-
-  .empty-hint {
-    font-size: 0.85rem;
     color: var(--muted);
-    margin: 0;
+    cursor: pointer;
   }
 
-  /* ========== RULES PANEL ========== */
-  .rules-panel {
+  .po-info {
+    padding: 0.875rem;
+    font-size: 0.8rem;
+    color: var(--ink);
+  }
+
+  .po-line { margin-bottom: 0.35rem; }
+  .po-line:last-child { margin-bottom: 0; }
+
+  .po-phone {
+    color: var(--pine);
+    text-decoration: none;
+  }
+
+  /* ========== HOW IT WORKS ========== */
+  .howto-section {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  .rule-block {
+  .howto-card {
     background: #fff;
     border: 2px solid var(--border);
-    border-radius: 16px;
+    border-radius: 14px;
     padding: 1.25rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
 
-  .rule-block.highlight {
-    border-color: var(--alpine);
-    background: linear-gradient(145deg, rgba(166, 181, 137, 0.06) 0%, #fff 100%);
+  .howto-card.highlight {
+    border-color: var(--terra);
+    background: rgba(217,119,6,0.03);
   }
 
-  .rule-block.tip {
-    border-color: var(--marker);
-    background: linear-gradient(145deg, rgba(240, 224, 0, 0.06) 0%, #fff 100%);
-  }
-
-  .rule-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.875rem;
-  }
-
-  .rule-icon {
-    font-size: 1.25rem;
-  }
-
-  .rule-name {
+  .howto-title {
     font-family: Oswald, sans-serif;
     font-size: 1rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: var(--ink);
+    margin: 0 0 0.75rem;
+  }
+
+  .howto-card p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.6;
     margin: 0;
   }
 
-  .rule-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .rule-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.6rem 0.875rem;
-    background: linear-gradient(135deg, #f8f6f2 0%, #f5f2e8 100%);
-    border-radius: 8px;
-    font-size: 0.85rem;
-  }
-
-  .rule-row.success {
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.15) 0%, rgba(166, 181, 137, 0.08) 100%);
-  }
-
-  .rule-row.warning {
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
-  }
-
-  .rule-key {
-    color: var(--muted);
-  }
-
-  .rule-value {
-    font-weight: 700;
-    color: var(--ink);
-  }
-
-  .rule-value.good {
-    color: var(--pine);
-  }
-
-  .rule-value.warn {
-    color: var(--terra);
-  }
-
-  .rule-list {
+  .howto-steps {
     margin: 0;
     padding: 0 0 0 1.25rem;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--muted);
     line-height: 1.7;
   }
 
-  .rule-list li {
-    margin-bottom: 0.35rem;
+  .howto-steps li { margin-bottom: 0.75rem; }
+  .howto-steps li:last-child { margin-bottom: 0; }
+  .howto-steps strong { color: var(--ink); }
+
+  .howto-list {
+    margin: 0;
+    padding: 0 0 0 1.25rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
   }
 
-  .rule-list strong {
-    color: var(--ink);
-  }
+  .howto-list li { margin-bottom: 0.35rem; }
+  .howto-list strong { color: var(--ink); }
 
   /* ========== GUIDE LINK ========== */
   .guide-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.25rem;
+    display: block;
     margin-top: 1.5rem;
+    padding: 1rem;
     background: #fff;
     border: 2px solid var(--border);
-    border-radius: 14px;
+    border-radius: 12px;
+    text-align: center;
     text-decoration: none;
-    transition: all 0.25s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    color: var(--pine);
+    transition: all 0.2s;
   }
 
   .guide-link:hover {
     border-color: var(--alpine);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
-  }
-
-  .gl-icon {
-    font-size: 1.35rem;
-  }
-
-  .gl-text {
-    flex: 1;
-    font-family: Oswald, sans-serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .gl-arrow {
-    font-size: 1.35rem;
-    color: var(--alpine);
-    transition: transform 0.25s ease;
-  }
-
-  .guide-link:hover .gl-arrow {
-    transform: translateX(4px);
-  }
-
-  /* ========== MOBILE ========== */
-  @media (max-width: 640px) {
-    .postal-header {
-      flex-wrap: wrap;
-      gap: 1rem;
-      padding: 1.25rem;
-    }
-
-    .postal-stamp {
-      width: 48px;
-      height: 48px;
-      font-size: 1.5rem;
-    }
-
-    .header-title {
-      font-size: 1.15rem;
-    }
-
-    .tracking-stats {
-      width: 100%;
-      justify-content: space-around;
-    }
-
-    .stat-badge {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .nav-btn {
-      padding: 0.75rem 0.5rem;
-    }
-
-    .nav-text {
-      display: none;
-    }
-
-    .nav-icon {
-      font-size: 1.35rem;
-    }
-
-    .location-row {
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .mile-marker {
-      align-self: flex-start;
-    }
-
-    .date-timeline {
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 0.875rem;
-    }
-
-    .timeline-point,
-    .timeline-point.arrive {
-      flex-direction: row;
-      text-align: left;
-      width: 100%;
-    }
-
-    .timeline-track {
-      width: 3px;
-      height: 20px;
-      background: linear-gradient(180deg, var(--terra), var(--alpine));
-    }
-
-    .timeline-track::after {
-      content: '↓';
-    }
-
-    .action-row {
-      flex-direction: column;
-    }
-
-    .track-btn {
-      padding: 0.875rem;
-    }
   }
 </style>
