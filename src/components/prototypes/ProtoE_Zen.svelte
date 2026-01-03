@@ -156,16 +156,11 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Fade Animation */
+  /* Fade Animation - starts visible, observer adds extra animation on scroll */
   .fade-section {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
-  }
-
-  .fade-section.visible {
     opacity: 1;
     transform: translateY(0);
+    transition: opacity 0.8s ease, transform 0.8s ease;
   }
 
   /* Header */
