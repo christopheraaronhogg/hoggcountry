@@ -1,23 +1,54 @@
 <script>
   // Hiker's Compass - Navigation/Wayfinding Homepage
   // A compass rose and map-inspired design for hoggcountry.com
+  // Navigator: Chris Hogg (son, built this site)
+  // Explorer: Jimmy "Triple-O" Hogg (dad, the hiker)
 
-  // Current trail status
-  const trailStats = {
-    totalMiles: 2194,
-    startDate: 'February 2026',
-    chapters: 20,
-    tools: 12
+  // The Expedition
+  const expedition = {
+    name: 'AT NOBO 2026',
+    distance: 2194,
+    launch: 'February 2026',
+    bearing: 'NORTH',
+    currentPosition: 'Pre-Trail'
+  };
+
+  // Jimmy's Credentials (styled as waypoints)
+  const hikerWaypoints = [
+    { label: 'Miles Logged', value: '840+', coord: 'WPT-001' },
+    { label: 'Award', value: 'Sassafras (6th)', coord: 'WPT-002' },
+    { label: 'Trails Mapped', value: 'OUA / OHT / OZK', coord: 'WPT-003' },
+    { label: 'AT Cleared', value: '49 mi', coord: 'WPT-004' },
+    { label: 'Peak Altitude', value: "14,115'", coord: 'WPT-005' },
+    { label: 'Readiness', value: '9/10', coord: 'WPT-006' }
+  ];
+
+  // Terminal waypoints (real coordinates)
+  const terminals = {
+    start: {
+      name: 'Springer Mountain',
+      state: 'GA',
+      lat: '34.6269',
+      lon: '84.1939',
+      mile: 0
+    },
+    finish: {
+      name: 'Katahdin',
+      state: 'ME',
+      lat: '45.9044',
+      lon: '68.9213',
+      mile: 2194
+    }
   };
 
   // Key trail coordinates
   const coordinates = [
-    { name: 'Springer Mountain', state: 'GA', lat: '34.6267', lon: '84.1938', mile: 0, type: 'start' },
+    { name: 'Springer Mountain', state: 'GA', lat: '34.6269', lon: '84.1939', mile: 0, type: 'start' },
     { name: 'Fontana Dam', state: 'NC', lat: '35.4449', lon: '83.8129', mile: 165.7, type: 'waypoint' },
     { name: 'Damascus', state: 'VA', lat: '36.6337', lon: '81.7837', mile: 469.1, type: 'waypoint' },
     { name: 'Harpers Ferry', state: 'WV', lat: '39.3251', lon: '77.7286', mile: 1025.4, type: 'midpoint' },
     { name: 'Delaware Water Gap', state: 'PA', lat: '40.9673', lon: '75.1261', mile: 1294.5, type: 'waypoint' },
-    { name: 'Katahdin', state: 'ME', lat: '45.9044', lon: '68.9214', mile: 2194, type: 'end' }
+    { name: 'Katahdin', state: 'ME', lat: '45.9044', lon: '68.9213', mile: 2194, type: 'end' }
   ];
 
   // Featured content for "You Are Here"
@@ -109,32 +140,67 @@
             <div class="needle-center"></div>
           </div>
 
-          <!-- Center content -->
+          <!-- Center content: Current Position -->
           <div class="compass-center">
-            <span class="center-coord">35.7796 N</span>
-            <span class="center-coord">84.1938 W</span>
+            <span class="center-status">{expedition.currentPosition}</span>
           </div>
         </div>
       </div>
 
       <div class="hero-content">
-        <p class="hero-eyebrow">AT NOBO 2026</p>
-        <h1 class="hero-headline">Find Your<br/>True North</h1>
+        <p class="hero-eyebrow">EXPEDITION: {expedition.name} | BEARING: {expedition.bearing}</p>
+        <h1 class="hero-headline">Set Your<br/>Course</h1>
         <p class="hero-sub">
-          2,194 miles from Georgia to Maine. 20 chapters of trail wisdom.
-          12 interactive tools. Everything you need to navigate the Appalachian Trail.
+          {expedition.distance.toLocaleString()} miles from Georgia to Maine. Jimmy "Triple-O" Hogg sets out
+          to conquer the Appalachian Trail. Follow the journey from Springer to Katahdin.
         </p>
         <div class="hero-coords">
-          <span class="coord-badge">
+          <span class="coord-badge start-badge">
             <span class="coord-icon">START</span>
-            <span class="coord-value">Springer Mtn, GA</span>
+            <span class="coord-value">{terminals.start.name}, {terminals.start.state}</span>
+            <span class="coord-latlon">{terminals.start.lat}N, {terminals.start.lon}W</span>
           </span>
-          <span class="coord-arrow">→</span>
-          <span class="coord-badge">
+          <span class="coord-arrow">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="coord-badge finish-badge">
             <span class="coord-icon">FINISH</span>
-            <span class="coord-value">Mt. Katahdin, ME</span>
+            <span class="coord-value">{terminals.finish.name}, {terminals.finish.state}</span>
+            <span class="coord-latlon">{terminals.finish.lat}N, {terminals.finish.lon}W</span>
           </span>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== THE EXPLORER: Jimmy's Waypoints ===== -->
+  <section class="explorer-section">
+    <div class="section-inner">
+      <div class="section-header centered">
+        <span class="section-coord">THE EXPLORER</span>
+        <h2>Jimmy "Triple-O" Hogg</h2>
+        <p class="section-desc">Journey Coordinates Logged</p>
+      </div>
+
+      <div class="waypoints-grid">
+        {#each hikerWaypoints as waypoint}
+          <div class="waypoint-card">
+            <span class="waypoint-coord">{waypoint.coord}</span>
+            <span class="waypoint-value">{waypoint.value}</span>
+            <span class="waypoint-label">{waypoint.label}</span>
+          </div>
+        {/each}
+      </div>
+
+      <div class="trails-mapped">
+        <span class="trails-label">TRAILS MAPPED:</span>
+        <span class="trail-name">Ouachita Trail</span>
+        <span class="trail-sep">|</span>
+        <span class="trail-name">Ozark Highlands Trail</span>
+        <span class="trail-sep">|</span>
+        <span class="trail-name">Ozark Trail</span>
       </div>
     </div>
   </section>
@@ -145,7 +211,7 @@
       <div class="section-header">
         <span class="section-coord">SEC. 01</span>
         <h2>The Journey Ahead</h2>
-        <p class="section-desc">2,194 miles through 14 states, from Springer Mountain to Katahdin</p>
+        <p class="section-desc">{expedition.distance.toLocaleString()} miles through 14 states, from Springer Mountain to Katahdin</p>
       </div>
 
       <div class="journey-arc">
@@ -202,7 +268,7 @@
 
         <div class="journey-stats">
           <div class="journey-stat">
-            <span class="stat-value">{trailStats.totalMiles.toLocaleString()}</span>
+            <span class="stat-value">{expedition.distance.toLocaleString()}</span>
             <span class="stat-label">Trail Miles</span>
           </div>
           <div class="journey-stat">
@@ -227,7 +293,7 @@
     <div class="section-inner">
       <div class="section-header centered">
         <span class="section-coord">SEC. 02</span>
-        <h2>Navigate Your Path</h2>
+        <h2>Find Your Bearing</h2>
         <p class="section-desc">Four directions to explore. One destination: the summit.</p>
       </div>
 
@@ -244,7 +310,11 @@
             <p>20 chapters of comprehensive thru-hike knowledge. Gear, nutrition, weather, resupply, and everything in between.</p>
             <span class="dir-stat">20 chapters</span>
           </div>
-          <div class="dir-arrow">→</div>
+          <div class="dir-arrow">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </a>
 
         <!-- EAST: Tools -->
@@ -259,7 +329,11 @@
             <p>Interactive calculators and planners. Milestones, resupply, weather assessment, budget tracking, and more.</p>
             <span class="dir-stat">12 tools</span>
           </div>
-          <div class="dir-arrow">→</div>
+          <div class="dir-arrow">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </a>
 
         <!-- SOUTH: Trips -->
@@ -274,7 +348,11 @@
             <p>Training hikes and adventures. Building endurance and testing gear on trails across Arkansas and beyond.</p>
             <span class="dir-stat">Trip logs</span>
           </div>
-          <div class="dir-arrow">→</div>
+          <div class="dir-arrow">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </a>
 
         <!-- WEST: Videos -->
@@ -289,7 +367,11 @@
             <p>Gear reviews, trail updates, and the journey to Springer. Subscribe for the full AT experience.</p>
             <span class="dir-stat">YouTube</span>
           </div>
-          <div class="dir-arrow">→</div>
+          <div class="dir-arrow">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </a>
       </div>
     </div>
@@ -340,7 +422,7 @@
           <span class="yah-dot"></span>
           <span class="yah-text">YOU ARE HERE</span>
         </div>
-        <h2>Current Position</h2>
+        <h2>Current Position: {expedition.currentPosition}</h2>
         <p class="section-desc">Start your exploration with these featured resources</p>
       </div>
 
@@ -356,30 +438,44 @@
               <h3>{item.title}</h3>
               <p>{item.desc}</p>
             </div>
-            <span class="featured-explore">Explore →</span>
+            <span class="featured-explore">Explore
+              <svg viewBox="0 0 24 24" width="14" height="14" style="display: inline; vertical-align: middle; margin-left: 4px;">
+                <path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
           </a>
         {/each}
       </div>
     </div>
   </section>
 
-  <!-- ===== HIKER INFO ===== -->
-  <section class="hiker-section">
+  <!-- ===== MISSION CARD ===== -->
+  <section class="mission-section">
     <div class="section-inner">
-      <div class="hiker-card">
-        <div class="hiker-compass">
+      <div class="mission-card">
+        <div class="mission-compass">
           <div class="mini-compass">
             <div class="mini-needle"></div>
           </div>
         </div>
-        <div class="hiker-info">
-          <span class="hiker-label">The Navigator</span>
-          <span class="hiker-name">Chris "Triple-O" Hogg</span>
-          <span class="hiker-titles">Triple O Crowner | Sassafras Award | AT NOBO 2026</span>
+        <div class="mission-details">
+          <span class="mission-label">THE MISSION</span>
+          <span class="mission-name">AT NOBO 2026</span>
+          <span class="mission-route">{terminals.start.lat}N, {terminals.start.lon}W
+            <svg viewBox="0 0 24 24" width="16" height="16" style="display: inline; vertical-align: middle; margin: 0 4px;">
+              <path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {terminals.finish.lat}N, {terminals.finish.lon}W</span>
         </div>
-        <div class="hiker-mission">
-          <span class="mission-date">February 2026</span>
-          <span class="mission-route">Springer → Katahdin</span>
+        <div class="mission-stats">
+          <div class="mission-stat">
+            <span class="mission-stat-value">{expedition.distance.toLocaleString()}</span>
+            <span class="mission-stat-label">Miles</span>
+          </div>
+          <div class="mission-stat">
+            <span class="mission-stat-value">{expedition.launch}</span>
+            <span class="mission-stat-label">Launch</span>
+          </div>
         </div>
       </div>
     </div>
@@ -398,7 +494,16 @@
       </div>
       <div class="footer-content">
         <p class="footer-tagline">The trail awaits.</p>
-        <p class="footer-coords">35.7796 N, 84.1938 W → 45.9044 N, 68.9214 W</p>
+        <p class="footer-coords">{terminals.start.lat}N, {terminals.start.lon}W
+          <svg viewBox="0 0 24 24" width="12" height="12" style="display: inline; vertical-align: middle; margin: 0 6px; opacity: 0.5;">
+            <path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {terminals.finish.lat}N, {terminals.finish.lon}W</p>
+      </div>
+      <div class="footer-credits">
+        <span class="credit-line">Navigator: <strong>Chris Hogg</strong></span>
+        <span class="credit-sep">|</span>
+        <span class="credit-line">Explorer: <strong>Jimmy "Triple-O" Hogg</strong></span>
       </div>
       <div class="footer-brand">
         <span class="brand-text">HOGG COUNTRY</span>
@@ -422,7 +527,14 @@
     --muted: #5c665a;
 
     min-height: 100vh;
-    background: var(--bg);
+    background:
+      url('/topo.svg'),
+      radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.03), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.025), transparent 60%),
+      radial-gradient(800px 500px at 50% 90%, rgba(0,0,0,0.02), transparent 50%),
+      var(--bg);
+    background-size: 2400px 1600px, auto, auto, auto, auto;
+    background-attachment: fixed;
     color: var(--fg);
     font-family: system-ui, -apple-system, sans-serif;
     position: relative;
@@ -670,11 +782,15 @@
     gap: 0;
   }
 
-  .center-coord {
+  .center-status {
     font-family: 'Courier New', monospace;
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 0.05em;
+    font-size: 0.65rem;
+    color: var(--terra);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(217, 119, 6, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
   }
 
   .hero-content {
@@ -683,8 +799,8 @@
 
   .hero-eyebrow {
     font-family: 'Courier New', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 0.2em;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
     color: var(--terra);
     margin: 0 0 1rem;
     text-transform: uppercase;
@@ -723,6 +839,14 @@
     border-radius: 6px;
   }
 
+  .coord-badge.start-badge {
+    border-left: 3px solid var(--alpine);
+  }
+
+  .coord-badge.finish-badge {
+    border-left: 3px solid var(--terra);
+  }
+
   .coord-icon {
     font-family: 'Courier New', monospace;
     font-size: 0.6rem;
@@ -738,9 +862,114 @@
     font-weight: 600;
   }
 
+  .coord-badge .coord-latlon {
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
   .coord-arrow {
-    font-size: 1.25rem;
     color: var(--border);
+    display: flex;
+    align-items: center;
+  }
+
+  /* ===== EXPLORER SECTION ===== */
+  .explorer-section {
+    position: relative;
+    z-index: 1;
+    padding: 4rem 1.5rem;
+    background: linear-gradient(135deg, var(--pine), #3d4a3a);
+  }
+
+  .explorer-section .section-coord {
+    color: var(--alpine);
+  }
+
+  .explorer-section .section-header h2 {
+    color: white;
+    font-size: 2.5rem;
+  }
+
+  .explorer-section .section-desc {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .waypoints-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .waypoint-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.25rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .waypoint-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .waypoint-coord {
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--alpine);
+    margin-bottom: 0.5rem;
+  }
+
+  .waypoint-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.25rem;
+  }
+
+  .waypoint-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .trails-mapped {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .trails-label {
+    font-family: 'Courier New', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--alpine);
+  }
+
+  .trail-name {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    color: white;
+    font-weight: 500;
+  }
+
+  .trail-sep {
+    color: rgba(255, 255, 255, 0.3);
   }
 
   /* ===== JOURNEY SECTION ===== */
@@ -984,9 +1213,10 @@
   }
 
   .dir-arrow {
-    font-size: 1.5rem;
     color: var(--border);
     transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
   }
 
   .direction-card:hover .dir-arrow {
@@ -1232,37 +1462,38 @@
     color: var(--terra);
   }
 
-  /* ===== HIKER SECTION ===== */
-  .hiker-section {
+  /* ===== MISSION SECTION ===== */
+  .mission-section {
     position: relative;
     z-index: 1;
     padding: 3rem 1.5rem;
   }
 
-  .hiker-card {
-    max-width: 700px;
+  .mission-card {
+    max-width: 800px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: auto 1fr auto;
-    gap: 1.5rem;
+    gap: 2rem;
     align-items: center;
-    padding: 1.5rem 2rem;
-    background: linear-gradient(135deg, var(--pine), #3d4a3a);
+    padding: 2rem 2.5rem;
+    background: var(--parchment);
+    border: 2px solid var(--pine);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(77, 89, 74, 0.3);
+    box-shadow: 0 8px 32px rgba(77, 89, 74, 0.15);
   }
 
-  .hiker-compass {
-    width: 60px;
-    height: 60px;
+  .mission-compass {
+    width: 70px;
+    height: 70px;
   }
 
   .mini-compass {
     width: 100%;
     height: 100%;
-    background: var(--parchment);
+    background: white;
     border-radius: 50%;
-    border: 2px solid var(--alpine);
+    border: 2px solid var(--pine);
     position: relative;
     display: flex;
     align-items: center;
@@ -1271,7 +1502,7 @@
 
   .mini-needle {
     width: 8px;
-    height: 30px;
+    height: 36px;
     position: relative;
   }
 
@@ -1297,51 +1528,58 @@
     clip-path: polygon(0% 0%, 50% 100%, 100% 0%);
   }
 
-  .hiker-info {
+  .mission-details {
     display: flex;
     flex-direction: column;
   }
 
-  .hiker-label {
+  .mission-label {
     font-family: 'Courier New', monospace;
     font-size: 0.65rem;
     letter-spacing: 0.15em;
-    color: var(--alpine);
+    color: var(--terra);
     text-transform: uppercase;
   }
 
-  .hiker-name {
+  .mission-name {
     font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
-    color: white;
+    color: var(--ink);
     margin: 0.25rem 0;
-  }
-
-  .hiker-titles {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  .hiker-mission {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    text-align: right;
-  }
-
-  .mission-date {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--alpine);
   }
 
   .mission-route {
     font-family: 'Courier New', monospace;
     font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
-    letter-spacing: 0.05em;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  .mission-stats {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .mission-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .mission-stat-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .mission-stat-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   /* ===== FOOTER ===== */
@@ -1390,6 +1628,28 @@
     color: rgba(255, 255, 255, 0.4);
     letter-spacing: 0.05em;
     margin: 0;
+  }
+
+  .footer-credits {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .credit-line {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .credit-line strong {
+    color: white;
+    font-weight: 600;
+  }
+
+  .credit-sep {
+    color: rgba(255, 255, 255, 0.2);
   }
 
   .footer-brand {
@@ -1459,19 +1719,22 @@
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .hiker-card {
-      grid-template-columns: 1fr;
-      text-align: center;
-      gap: 1rem;
+    .waypoints-grid {
+      grid-template-columns: repeat(3, 1fr);
     }
 
-    .hiker-compass {
+    .mission-card {
+      grid-template-columns: 1fr;
+      text-align: center;
+      gap: 1.5rem;
+    }
+
+    .mission-compass {
       margin: 0 auto;
     }
 
-    .hiker-mission {
-      align-items: center;
-      text-align: center;
+    .mission-stats {
+      justify-content: center;
     }
   }
 
@@ -1528,6 +1791,28 @@
     }
 
     .coord-data {
+      display: none;
+    }
+
+    .waypoints-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .trails-mapped {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .trail-sep {
+      display: none;
+    }
+
+    .footer-credits {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .credit-sep {
       display: none;
     }
   }

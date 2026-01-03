@@ -1,12 +1,10 @@
 <script lang="ts">
   // Trail Hub - Magazine Editorial Homepage
   // A sophisticated, content-first design inspired by Outside Magazine and NYT Outdoors
+  // The story of Jimmy "Triple-O" Hogg's AT thru-hike, supported by his son Chris
 </script>
 
 <div class="trail-hub">
-  <!-- Topographic texture overlay -->
-  <div class="topo-texture" aria-hidden="true"></div>
-
   <!-- ========================================== -->
   <!-- HEADER                                      -->
   <!-- ========================================== -->
@@ -50,30 +48,31 @@
         </div>
 
         <h1 class="hero-headline">
-          <span class="headline-pre">One Father.</span>
+          <span class="headline-pre">A Father's Journey.</span>
           <span class="headline-main">2,194 Miles.</span>
           <span class="headline-accent">Springer to Katahdin.</span>
         </h1>
 
         <p class="hero-subhead">
-          Follow Chris "Triple-O" Hogg's February 2026 NOBO thru-hike of the Appalachian Trail.
-          Five months. Fourteen states. A lifetime of preparation condensed into every step.
+          Follow Jimmy "Triple-O" Hogg's February 2026 NOBO thru-hike of the Appalachian Trail.
+          840+ miles of completed thru-hikes. The 6th person in history to receive the Ozark Society's Sassafras Award.
+          Now, at 62, he takes on the big one.
         </p>
 
         <div class="hero-stats">
           <div class="stat">
-            <span class="stat-value">2,194</span>
-            <span class="stat-label">Miles</span>
+            <span class="stat-value">840+</span>
+            <span class="stat-label">Miles Hiked</span>
           </div>
           <div class="stat-divider"></div>
           <div class="stat">
-            <span class="stat-value">14</span>
-            <span class="stat-label">States</span>
+            <span class="stat-value">3</span>
+            <span class="stat-label">Thru-Hikes</span>
           </div>
           <div class="stat-divider"></div>
           <div class="stat">
-            <span class="stat-value">Feb</span>
-            <span class="stat-label">2026 Start</span>
+            <span class="stat-value">6th</span>
+            <span class="stat-label">Sassafras Award</span>
           </div>
         </div>
 
@@ -128,6 +127,99 @@
   </section>
 
   <!-- ========================================== -->
+  <!-- CREDENTIALS: Jimmy's Trail Resume           -->
+  <!-- ========================================== -->
+  <section class="credentials-section">
+    <div class="section-container">
+      <header class="credentials-header">
+        <span class="section-label">Trail Resume</span>
+        <h2 class="section-title">Jimmy's Credentials</h2>
+        <p class="credentials-intro">
+          The name "Triple-O" isn't just a trail name. It represents three completed thru-hikes
+          of the Ozark region's most demanding long trails.
+        </p>
+      </header>
+
+      <div class="credentials-grid">
+        <div class="credential-card featured">
+          <div class="credential-icon sassafras">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26z"/>
+            </svg>
+          </div>
+          <span class="credential-stat">6th Person</span>
+          <h3 class="credential-title">Sassafras Award</h3>
+          <p class="credential-desc">The Ozark Society's highest honor for completing all three major Ozark-region thru-hikes</p>
+        </div>
+
+        <div class="credential-card">
+          <div class="credential-icon ouachita">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+              <line x1="4" y1="22" x2="4" y2="15"/>
+            </svg>
+          </div>
+          <span class="credential-stat">223 mi</span>
+          <h3 class="credential-title">Ouachita Trail</h3>
+          <p class="credential-desc">Oklahoma to Arkansas</p>
+        </div>
+
+        <div class="credential-card">
+          <div class="credential-icon oht">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+              <line x1="4" y1="22" x2="4" y2="15"/>
+            </svg>
+          </div>
+          <span class="credential-stat">270 mi</span>
+          <h3 class="credential-title">Ozark Highlands Trail</h3>
+          <p class="credential-desc">Arkansas backcountry</p>
+        </div>
+
+        <div class="credential-card">
+          <div class="credential-icon ozark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+              <line x1="4" y1="22" x2="4" y2="15"/>
+            </svg>
+          </div>
+          <span class="credential-stat">230 mi</span>
+          <h3 class="credential-title">Ozark Trail</h3>
+          <p class="credential-desc">Missouri wilderness</p>
+        </div>
+
+        <div class="credential-card">
+          <div class="credential-icon at-preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 22h20L12 2z"/>
+            </svg>
+          </div>
+          <span class="credential-stat">49 mi</span>
+          <h3 class="credential-title">AT Preview</h3>
+          <p class="credential-desc">Standing Bear to Hot Springs, Newfound Gap to Kuwohi</p>
+        </div>
+
+        <div class="credential-card">
+          <div class="credential-icon pikes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 22h20L12 2z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <span class="credential-stat">14,115 ft</span>
+          <h3 class="credential-title">Pikes Peak Summit</h3>
+          <p class="credential-desc">Cardiovascular benchmark</p>
+        </div>
+      </div>
+
+      <div class="readiness-badge">
+        <span class="readiness-label">Overall NOBO Readiness</span>
+        <span class="readiness-score">9/10</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
   <!-- FROM THE TRAIL: Latest Content              -->
   <!-- ========================================== -->
   <section class="trail-updates">
@@ -160,8 +252,8 @@
             </div>
             <div class="card-content">
               <time class="card-date" datetime="2025-12-15">December 2025</time>
-              <h3 class="card-title">Final Gear Shakedown: Pack Weight Under 20 Pounds</h3>
-              <p class="card-excerpt">After months of testing and countless miles of training, here's the complete kit heading to Springer Mountain.</p>
+              <h3 class="card-title">Final Gear Shakedown: Jimmy's Sub-20 Pound Kit</h3>
+              <p class="card-excerpt">After 840+ miles of training and three thru-hikes, here's the complete kit heading to Springer Mountain.</p>
               <span class="card-cta">Watch Now</span>
             </div>
           </a>
@@ -203,12 +295,79 @@
             </div>
             <div class="card-content">
               <time class="card-date" datetime="2025-11-10">November 2025</time>
-              <h3 class="card-title">The Mental Game: Preparing for 5 Months on Trail</h3>
-              <p class="card-excerpt">It's not just physical. Here's how I'm training my mind.</p>
+              <h3 class="card-title">The Mental Game: 5 Months on Trail at 62</h3>
+              <p class="card-excerpt">It's not just physical. Here's how Jimmy is training his mind for the long haul.</p>
               <span class="card-cta">Read Article</span>
             </div>
           </a>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- THE MISSION: AT 2026 Plan                   -->
+  <!-- ========================================== -->
+  <section class="mission-section">
+    <div class="section-container">
+      <header class="mission-header">
+        <span class="section-label">The Mission</span>
+        <h2 class="section-title">AT NOBO 2026</h2>
+      </header>
+
+      <div class="mission-grid">
+        <div class="mission-card timeline">
+          <h3>The Timeline</h3>
+          <ul class="timeline-list">
+            <li>
+              <span class="timeline-date">February 2026</span>
+              <span class="timeline-event">Springer Mountain Start</span>
+            </li>
+            <li>
+              <span class="timeline-date">Early Phase</span>
+              <span class="timeline-event">8-9 miles per day, building base</span>
+            </li>
+            <li>
+              <span class="timeline-date">Summer</span>
+              <span class="timeline-event">13-14 miles per day cruising speed</span>
+            </li>
+            <li>
+              <span class="timeline-date">Sept 17-20</span>
+              <span class="timeline-event">Katahdin Summit Target</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="mission-card strategy">
+          <h3>The Strategy</h3>
+          <p class="strategy-highlight">5-Day Rule</p>
+          <p class="strategy-desc">
+            Never more than 5 consecutive hiking days without a zero or nero day.
+            This sustainable pace protects against injury and burnout over 5+ months on trail.
+          </p>
+          <div class="strategy-stats">
+            <div class="strategy-stat">
+              <span class="stat-num">2,194</span>
+              <span class="stat-text">Total Miles</span>
+            </div>
+            <div class="strategy-stat">
+              <span class="stat-num">14</span>
+              <span class="stat-text">States</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mission-card story">
+          <h3>A Father-Son Story</h3>
+          <p class="story-text">
+            This site was built by Chris Hogg as a gift for his dad Jimmy.
+            A comprehensive 20-chapter field guide, 12 interactive planning tools,
+            and a place to document every mile of the journey ahead.
+          </p>
+          <p class="story-signature">
+            Built with love by Chris. Hiked with grit by Jimmy.
+          </p>
+        </div>
       </div>
     </div>
   </section>
@@ -224,7 +383,7 @@
         <p class="guide-description">
           Everything a thru-hiker needs to know, organized into 20 comprehensive chapters.
           From gear selection to resupply strategy, weather patterns to trail culture.
-          Built over months of research, tested on hundreds of training miles.
+          Written by Chris and tested across Jimmy's 840+ miles of training.
         </p>
 
         <div class="guide-chapters">
@@ -256,7 +415,7 @@
             </svg>
             Start Reading
           </a>
-          <a href="/guide/quick-reference" class="guide-btn-secondary">Quick Reference Cards</a>
+          <a href="/guide/quick-reference" class="guide-btn-secondary">5 Quick Reference Cards</a>
         </div>
       </div>
 
@@ -288,7 +447,7 @@
         <div class="tools-header-content">
           <span class="tools-label">Interactive Planning</span>
           <h2 class="tools-title">Hiker Tools</h2>
-          <p class="tools-subtitle">12 purpose-built calculators and planners to dial in every aspect of your thru-hike.</p>
+          <p class="tools-subtitle">12 purpose-built calculators and planners to dial in every aspect of the thru-hike.</p>
         </div>
       </header>
 
@@ -452,7 +611,7 @@
           </svg>
           HOGG COUNTRY
         </span>
-        <p class="footer-tagline">See you on Katahdin.</p>
+        <p class="footer-tagline">See you on Katahdin, Dad.</p>
       </div>
 
       <nav class="footer-nav">
@@ -469,7 +628,7 @@
     </div>
 
     <div class="footer-bottom">
-      <p class="copyright">Built with love for the trail ahead. Hogg Country 2024-2026.</p>
+      <p class="copyright">Built by Chris for Jimmy. Hogg Country 2024-2026.</p>
     </div>
   </footer>
 </div>
@@ -491,22 +650,18 @@
     --border: #e6e1d4;
 
     min-height: 100vh;
-    background: var(--bg);
+    background:
+      url('/topo.svg'),
+      radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.03), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.025), transparent 60%),
+      radial-gradient(800px 500px at 50% 90%, rgba(0,0,0,0.02), transparent 50%),
+      var(--bg);
+    background-size: 2400px 1600px, auto, auto, auto, auto;
+    background-attachment: fixed;
     color: var(--ink);
     font-family: system-ui, -apple-system, sans-serif;
     position: relative;
     overflow-x: hidden;
-  }
-
-  /* Topographic texture background */
-  .topo-texture {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%234d594a' stroke-width='0.5' opacity='0.06'%3E%3Cpath d='M0 50 Q100 30 200 50 T400 45'/%3E%3Cpath d='M0 100 Q80 70 180 90 T400 95'/%3E%3Cpath d='M0 150 Q120 120 220 140 T400 145'/%3E%3Cpath d='M0 200 Q90 170 190 190 T400 195'/%3E%3Cpath d='M0 250 Q110 220 210 240 T400 245'/%3E%3Cpath d='M0 300 Q70 270 170 290 T400 295'/%3E%3Cpath d='M0 350 Q130 320 230 340 T400 345'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 400px 400px;
-    opacity: 1;
   }
 
   /* ============================================ */
@@ -942,6 +1097,157 @@
   }
 
   /* ============================================ */
+  /* CREDENTIALS SECTION                           */
+  /* ============================================ */
+  .credentials-section {
+    position: relative;
+    z-index: 1;
+    padding: 4rem 1.5rem;
+    background: linear-gradient(180deg, rgba(166, 181, 137, 0.08) 0%, transparent 100%);
+  }
+
+  .credentials-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .credentials-intro {
+    font-size: 1.0625rem;
+    color: var(--muted);
+    max-width: 600px;
+    margin: 0.75rem auto 0;
+    line-height: 1.6;
+  }
+
+  .credentials-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .credential-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: all 0.25s ease;
+  }
+
+  .credential-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(77, 89, 74, 0.1);
+  }
+
+  .credential-card.featured {
+    grid-column: span 2;
+    background: linear-gradient(135deg, var(--terra) 0%, #b45309 100%);
+    border-color: transparent;
+    color: var(--card);
+  }
+
+  .credential-card.featured .credential-desc {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .credential-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    margin: 0 auto 0.75rem;
+  }
+
+  .credential-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .credential-icon.sassafras {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--card);
+  }
+
+  .credential-icon.ouachita,
+  .credential-icon.oht,
+  .credential-icon.ozark {
+    background: rgba(166, 181, 137, 0.2);
+    color: var(--pine);
+  }
+
+  .credential-icon.at-preview {
+    background: rgba(217, 119, 6, 0.12);
+    color: var(--terra);
+  }
+
+  .credential-icon.pikes {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+  }
+
+  .credential-stat {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .credential-card.featured .credential-stat {
+    color: var(--card);
+    font-size: 1.75rem;
+  }
+
+  .credential-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 0.375rem;
+  }
+
+  .credential-card.featured .credential-title {
+    color: var(--card);
+    font-size: 1rem;
+  }
+
+  .credential-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .readiness-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.25rem 2rem;
+    background: var(--ink);
+    border-radius: 8px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .readiness-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .readiness-score {
+    font-family: Oswald, sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--alpine);
+  }
+
+  /* ============================================ */
   /* FROM THE TRAIL SECTION                        */
   /* ============================================ */
   .trail-updates {
@@ -1150,6 +1456,131 @@
 
   .update-card:hover .card-cta {
     color: var(--pine);
+  }
+
+  /* ============================================ */
+  /* MISSION SECTION                               */
+  /* ============================================ */
+  .mission-section {
+    position: relative;
+    z-index: 1;
+    padding: 4rem 1.5rem;
+    background: var(--bg);
+  }
+
+  .mission-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .mission-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .mission-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+
+  .mission-card h3 {
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .timeline-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .timeline-list li {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .timeline-list li:last-child {
+    border-bottom: none;
+  }
+
+  .timeline-date {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--terra);
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-event {
+    font-size: 0.9375rem;
+    color: var(--ink);
+  }
+
+  .strategy-highlight {
+    font-family: Oswald, sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--pine);
+    margin: 0 0 0.75rem;
+  }
+
+  .strategy-desc {
+    font-size: 0.9375rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+  }
+
+  .strategy-stats {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .strategy-stat {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-num {
+    font-family: Oswald, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .stat-text {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
+  .story-text {
+    font-size: 0.9375rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 0 0 1.5rem;
+  }
+
+  .story-signature {
+    font-family: Caveat, cursive;
+    font-size: 1.375rem;
+    color: var(--pine);
+    margin: 0;
+    font-style: italic;
   }
 
   /* ============================================ */
@@ -1701,6 +2132,19 @@
       display: none;
     }
 
+    .credentials-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .credential-card.featured {
+      grid-column: span 3;
+    }
+
+    .mission-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
     .guide-inner {
       grid-template-columns: 1fr;
       gap: 3rem;
@@ -1774,6 +2218,14 @@
       justify-content: center;
     }
 
+    .credentials-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .credential-card.featured {
+      grid-column: span 2;
+    }
+
     .updates-grid {
       grid-template-columns: 1fr;
     }
@@ -1814,6 +2266,14 @@
       font-size: 2.5rem;
     }
 
+    .credentials-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .credential-card.featured {
+      grid-column: span 1;
+    }
+
     .tools-grid {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -1830,6 +2290,11 @@
 
     .guide-description {
       font-size: 1rem;
+    }
+
+    .strategy-stats {
+      flex-direction: column;
+      gap: 1rem;
     }
   }
 </style>

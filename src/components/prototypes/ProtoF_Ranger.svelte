@@ -1,6 +1,7 @@
 <script>
   // ProtoF: Ranger Station - Vintage National Parks Homepage
   // WPA poster aesthetic inspired by 1930s-40s national park posters
+  // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "Triple-O" Hogg
 </script>
 
 <div class="ranger-station">
@@ -127,18 +128,18 @@
     <!-- Hero content -->
     <div class="hero-content">
       <div class="hero-stamp">
-        <span class="stamp-text">NORTHBOUND</span>
-        <span class="stamp-year">2026</span>
+        <span class="stamp-text">OFFICIAL EXPEDITION</span>
+        <span class="stamp-year">FEBRUARY 1926</span>
       </div>
 
       <h1 class="hero-title">
         <span class="title-prefix">THE</span>
         <span class="title-main">APPALACHIAN TRAIL</span>
-        <span class="title-suffix">FIELD STATION</span>
+        <span class="title-suffix">EXPEDITION HANDBOOK</span>
       </h1>
 
       <p class="hero-subtitle">
-        Your Complete Guide to 2,194 Miles of America's Footpath
+        An Official Trail Guide to 2,194 Miles of America's Footpath
       </p>
 
       <div class="hero-route">
@@ -193,10 +194,11 @@
   </section>
 
   <!-- ========================================== -->
-  <!-- MISSION BADGE - Circular Shield Design    -->
+  <!-- HIKER CERTIFICATE - Vintage Badge Style   -->
   <!-- ========================================== -->
   <section class="ranger-mission">
     <div class="mission-container">
+      <!-- Official Hiker Badge -->
       <div class="mission-badge">
         <div class="badge-ring badge-ring-outer"></div>
         <div class="badge-ring badge-ring-middle"></div>
@@ -208,51 +210,154 @@
             </svg>
           </div>
           <div class="badge-title">TRIPLE-O</div>
-          <div class="badge-subtitle">THRU-HIKER</div>
+          <div class="badge-subtitle">CERTIFIED THRU-HIKER</div>
           <div class="badge-divider"></div>
-          <div class="badge-hiker">CHRIS HOGG</div>
-          <div class="badge-mission-text">FEBRUARY 2026</div>
+          <div class="badge-hiker">JIMMY HOGG</div>
+          <div class="badge-mission-text">NOBO EXPEDITION</div>
           <div class="badge-footer">
-            <span>NOBO</span>
+            <span>FEB 1926</span>
             <span class="badge-dot"></span>
-            <span>GEORGIA TO MAINE</span>
+            <span>GA TO ME</span>
           </div>
         </div>
       </div>
 
+      <!-- Mission Details & Credentials -->
       <div class="mission-details">
-        <h2 class="mission-heading">The Mission Ahead</h2>
+        <div class="mission-seal">
+          <span class="seal-text">OFFICIAL TRAIL GUIDE</span>
+        </div>
+        <h2 class="mission-heading">The Expedition Ahead</h2>
         <p class="mission-text">
-          In February 2026, Chris "Triple-O" Hogg begins his northbound thru-hike of the Appalachian Trail.
-          A seasoned Arkansas hiker, Triple Crowner of the Ozarks, and Sassafras Award recipient, he's
-          documented everything he's learned to help fellow hikers reach Katahdin.
+          In February 1926, Jimmy "Triple-O" Hogg commences his northbound expedition of the Appalachian Trail.
+          A distinguished Arkansas trail veteran and holder of multiple certifications, he has prepared
+          this comprehensive handbook to assist fellow hikers in reaching the summit of Mt. Katahdin.
         </p>
-        <div class="mission-credentials">
-          <div class="credential">
-            <span class="credential-icon">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            </span>
-            <span class="credential-text">Triple "O" Crowner</span>
+
+        <!-- Vintage Credentials Certificates -->
+        <div class="credentials-panel">
+          <div class="credentials-header">
+            <span class="credentials-label">OFFICIAL CERTIFICATIONS</span>
           </div>
-          <div class="credential">
-            <span class="credential-icon">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </span>
-            <span class="credential-text">Sassafras Award Recipient</span>
-          </div>
-          <div class="credential">
-            <span class="credential-icon">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-            </span>
-            <span class="credential-text">Arkansas Trail Ambassador</span>
+
+          <div class="mission-credentials">
+            <div class="credential credential-featured">
+              <span class="credential-badge">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              </span>
+              <div class="credential-info">
+                <span class="credential-title">840+ Trail Miles Certified</span>
+                <span class="credential-subtitle">Verified Distance Record</span>
+              </div>
+            </div>
+
+            <div class="credential credential-award">
+              <span class="credential-badge">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </span>
+              <div class="credential-info">
+                <span class="credential-title">Sassafras Award Recipient</span>
+                <span class="credential-subtitle">6th in History to Receive</span>
+              </div>
+            </div>
+
+            <div class="credential credential-trails">
+              <span class="credential-badge">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </span>
+              <div class="credential-info">
+                <span class="credential-title">Triple "O" Crowner</span>
+                <span class="credential-subtitle">Ouachita - Ozark Highlands - Ozark</span>
+              </div>
+            </div>
+
+            <div class="credential credential-at">
+              <span class="credential-badge">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+              </span>
+              <div class="credential-info">
+                <span class="credential-title">AT Experience: 49 Miles Logged</span>
+                <span class="credential-subtitle">Preliminary Reconnaissance</span>
+              </div>
+            </div>
+
+            <div class="credential credential-summit">
+              <span class="credential-badge">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 20 L12 4 L20 20 Z" />
+                  <circle cx="12" cy="8" r="2" fill="#f5f2e8" />
+                </svg>
+              </span>
+              <div class="credential-info">
+                <span class="credential-title">Summit Verified: Pikes Peak</span>
+                <span class="credential-subtitle">Elevation 14,115 ft</span>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- EXPEDITION DETAILS - Vintage Dispatch     -->
+  <!-- ========================================== -->
+  <section class="ranger-expedition">
+    <div class="expedition-container">
+      <div class="expedition-header">
+        <div class="expedition-seal">
+          <svg viewBox="0 0 80 80" fill="none">
+            <circle cx="40" cy="40" r="38" stroke="currentColor" stroke-width="2" />
+            <circle cx="40" cy="40" r="32" stroke="currentColor" stroke-width="1" stroke-dasharray="4 2" />
+            <path d="M40 15 L45 30 L60 30 L48 40 L52 55 L40 45 L28 55 L32 40 L20 30 L35 30 Z" fill="currentColor" />
+          </svg>
+        </div>
+        <h2 class="expedition-title">EXPEDITION DISPATCH</h2>
+        <p class="expedition-subtitle">Official Mission Parameters</p>
+      </div>
+
+      <div class="expedition-grid">
+        <div class="expedition-card">
+          <div class="card-stamp">DEPARTURE</div>
+          <div class="card-value">February 1926</div>
+          <div class="card-label">Commencement Date</div>
+        </div>
+
+        <div class="expedition-card">
+          <div class="card-stamp">DISTANCE</div>
+          <div class="card-value">2,194</div>
+          <div class="card-label">Total Trail Miles</div>
+        </div>
+
+        <div class="expedition-card">
+          <div class="card-stamp">DIRECTION</div>
+          <div class="card-value">NOBO</div>
+          <div class="card-label">Northbound Traverse</div>
+        </div>
+
+        <div class="expedition-card">
+          <div class="card-stamp">TERMINUS</div>
+          <div class="card-value">Springer to Katahdin</div>
+          <div class="card-label">Georgia to Maine</div>
+        </div>
+      </div>
+
+      <div class="expedition-footer">
+        <p class="footer-notice">
+          This guide has been field-tested and approved for distribution to all aspiring thru-hikers.
+        </p>
+        <p class="footer-prepared">
+          Prepared by C. Hogg for J. "Triple-O" Hogg
+        </p>
       </div>
     </div>
   </section>
@@ -289,8 +394,8 @@
           </div>
           <h3 class="panel-title">THE FIELD GUIDE</h3>
           <p class="panel-desc">
-            20 chapters of trail-tested wisdom covering gear, resupply, weather patterns,
-            and the mental game of thru-hiking.
+            18 chapters of trail-tested wisdom covering gear, resupply, weather patterns,
+            and the mental fortitude required for thru-hiking.
           </p>
           <div class="panel-meta">
             <span class="meta-item">
@@ -298,7 +403,7 @@
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
               </svg>
-              20 Chapters
+              18 Chapters
             </span>
             <span class="meta-item">
               <svg viewBox="0 0 24 24" fill="currentColor" class="meta-icon">
@@ -308,7 +413,7 @@
               5 Quick Cards
             </span>
           </div>
-          <span class="panel-cta">Start Reading</span>
+          <span class="panel-cta">Commence Reading</span>
         </div>
         <div class="panel-wood-edge"></div>
       </a>
@@ -324,10 +429,10 @@
               <path d="M32 8v8M32 48v8M8 32h8M48 32h8M14 14l6 6M44 44l6 6M14 50l6-6M44 14l6 6" stroke="currentColor" stroke-width="2" />
             </svg>
           </div>
-          <h3 class="panel-title">TRAIL TOOLS</h3>
+          <h3 class="panel-title">TRAIL INSTRUMENTS</h3>
           <p class="panel-desc">
             12 interactive calculators and planners for milestones, resupply strategy,
-            weather decisions, and budget tracking.
+            weather decisions, and expedition budget tracking.
           </p>
           <div class="panel-meta">
             <span class="meta-item">
@@ -335,7 +440,7 @@
                 <circle cx="12" cy="12" r="3" />
                 <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24" />
               </svg>
-              12 Tools
+              12 Instruments
             </span>
             <span class="meta-item">
               <svg viewBox="0 0 24 24" fill="currentColor" class="meta-icon">
@@ -362,7 +467,7 @@
           </div>
           <h3 class="panel-title">THE JOURNEY</h3>
           <p class="panel-desc">
-            Training hikes, trip reports, and video logs documenting the path from
+            Training expeditions, field reports, and moving picture logs documenting the path from
             Arkansas trails to the AT's white blazes.
           </p>
           <div class="panel-meta">
@@ -378,7 +483,7 @@
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              Trip Reports
+              Field Reports
             </span>
           </div>
           <span class="panel-cta">Follow Along</span>
@@ -502,7 +607,7 @@
           </svg>
         </div>
         <h2 class="bulletin-title">RANGER'S RECOMMENDATION</h2>
-        <p class="bulletin-subtitle">Essential reading before you hit the trail</p>
+        <p class="bulletin-subtitle">Essential reading before you commence your expedition</p>
       </div>
 
       <div class="bulletin-board">
@@ -512,11 +617,11 @@
         <div class="bulletin-featured">
           <div class="featured-pin"></div>
           <div class="featured-content">
-            <span class="featured-tag">START HERE</span>
+            <span class="featured-tag">COMMENCE HERE</span>
             <h3 class="featured-title">Chapter 1: Before the First Step</h3>
             <p class="featured-desc">
-              Everything you need to know before committing to a thru-hike. Physical prep,
-              mental readiness, permit requirements, and building your support network.
+              All requisite knowledge before committing to a thru-hike expedition. Physical preparation,
+              mental fortitude, permit requirements, and establishing your support network.
             </p>
             <a href="/guide/chapter-1" class="featured-link">
               Read Chapter
@@ -592,7 +697,7 @@
           </span>
           <span class="footer-brand">HOGG COUNTRY</span>
         </div>
-        <span class="footer-est">Established 2024</span>
+        <span class="footer-est">Est. 2024</span>
       </div>
 
       <div class="footer-nav">
@@ -607,7 +712,7 @@
 
       <div class="footer-tagline">
         <p class="tagline-main">See you on Katahdin.</p>
-        <p class="tagline-sub">Built with love for the trail ahead.</p>
+        <p class="tagline-sub">Prepared with care for the trail ahead.</p>
       </div>
 
       <div class="footer-blaze">
@@ -617,7 +722,8 @@
     </div>
 
     <div class="footer-bottom">
-      <p>Made in Arkansas for hikers everywhere</p>
+      <p>Est. 2024 - Prepared with care for the trail ahead</p>
+      <p class="footer-credit">Compiled by C. Hogg for J. "Triple-O" Hogg</p>
     </div>
   </footer>
 </div>
@@ -638,9 +744,18 @@
     --marker: #f0e000;
     --ink: #2b2f26;
     --muted: #5c665a;
+    --gold: #c9a227;
+    --gold-dark: #96751a;
 
     font-family: Lato, system-ui, -apple-system, sans-serif;
-    background: var(--cream);
+    background:
+      url('/topo.svg'),
+      radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.03), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.025), transparent 60%),
+      radial-gradient(800px 500px at 50% 90%, rgba(0,0,0,0.02), transparent 50%),
+      var(--cream);
+    background-size: 2400px 1600px, auto, auto, auto, auto;
+    background-attachment: fixed;
     color: var(--ink);
     min-height: 100vh;
     overflow-x: hidden;
@@ -873,18 +988,19 @@
 
   .stamp-text {
     font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: 0.25em;
     color: var(--marker);
   }
 
   .stamp-year {
     font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--marker);
-    line-height: 1;
+    line-height: 1.2;
+    letter-spacing: 0.1em;
   }
 
   .hero-title {
@@ -1073,12 +1189,12 @@
   }
 
   .mission-container {
-    max-width: 1000px;
+    max-width: 1100px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 4rem;
-    align-items: center;
+    align-items: start;
   }
 
   .mission-badge {
@@ -1141,9 +1257,9 @@
 
   .badge-subtitle {
     font-family: Oswald, sans-serif;
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     font-weight: 600;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.15em;
     color: var(--brown);
     margin-top: 0.25rem;
   }
@@ -1165,7 +1281,7 @@
 
   .badge-mission-text {
     font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.1em;
     color: var(--muted);
@@ -1193,7 +1309,23 @@
   }
 
   .mission-details {
-    max-width: 500px;
+    max-width: 600px;
+  }
+
+  .mission-seal {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border: 2px solid var(--gold);
+    background: linear-gradient(180deg, rgba(201, 162, 39, 0.1) 0%, rgba(201, 162, 39, 0.05) 100%);
+    margin-bottom: 1rem;
+  }
+
+  .seal-text {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: var(--gold-dark);
   }
 
   .mission-heading {
@@ -1212,40 +1344,259 @@
     margin: 0 0 1.5rem;
   }
 
+  /* Credentials Panel - Vintage Certificate Style */
+  .credentials-panel {
+    background: linear-gradient(180deg, #faf9f5 0%, #f5f2e8 100%);
+    border: 3px solid var(--brown);
+    border-radius: 4px;
+    padding: 1.5rem;
+    position: relative;
+    box-shadow:
+      inset 0 0 0 1px var(--cream-dark),
+      0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .credentials-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    border: 1px dashed var(--brown-light);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .credentials-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+    position: relative;
+  }
+
+  .credentials-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--brown-dark);
+    background: var(--cream);
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--brown);
+  }
+
   .mission-credentials {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.875rem;
   }
 
   .credential {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.875rem;
+    padding: 0.75rem 1rem;
+    background: var(--cream);
+    border: 2px solid var(--cream-dark);
+    border-radius: 4px;
+    transition: all 0.2s ease;
   }
 
-  .credential-icon {
-    width: 20px;
-    height: 20px;
-    color: var(--terra);
+  .credential:hover {
+    border-color: var(--terra);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
-  .credential-icon svg {
+  .credential-badge {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    border-radius: 50%;
+    color: var(--cream);
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  .credential-badge svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .credential-featured .credential-badge {
+    background: linear-gradient(135deg, var(--terra) 0%, var(--terra-dark) 100%);
+  }
+
+  .credential-award .credential-badge {
+    background: linear-gradient(135deg, #e74c3c 0%, #a93226 100%);
+  }
+
+  .credential-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .credential-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--pine-dark);
+  }
+
+  .credential-subtitle {
+    font-family: Lato, sans-serif;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* ===== EXPEDITION DISPATCH SECTION ===== */
+  .ranger-expedition {
+    background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dark) 50%, var(--cream) 100%);
+    padding: 4rem 1.5rem;
+    position: relative;
+  }
+
+  .ranger-expedition::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--brown) 0px,
+      var(--brown) 30px,
+      transparent 30px,
+      transparent 40px
+    );
+  }
+
+  .expedition-container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .expedition-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .expedition-seal {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    color: var(--gold);
+  }
+
+  .expedition-seal svg {
     width: 100%;
     height: 100%;
   }
 
-  .credential-text {
+  .expedition-title {
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--pine-dark);
+    margin: 0 0 0.5rem;
+  }
+
+  .expedition-subtitle {
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
     font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--pine);
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .expedition-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .expedition-card {
+    background: var(--cream);
+    border: 3px solid var(--brown);
+    border-radius: 4px;
+    padding: 1.5rem 1rem;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .expedition-card::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border: 1px solid var(--cream-dark);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .card-stamp {
+    font-family: Oswald, sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--cream);
+    background: var(--brown);
+    padding: 0.2rem 0.5rem;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pine-dark);
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+  }
+
+  .card-label {
+    font-family: Lato, sans-serif;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .expedition-footer {
+    padding-top: 1.5rem;
+    border-top: 2px dashed var(--brown-light);
+  }
+
+  .footer-notice {
+    font-family: Lato, sans-serif;
+    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+  }
+
+  .footer-prepared {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--brown);
+    margin: 0;
   }
 
   /* ===== THREE PANELS SECTION ===== */
   .ranger-panels {
-    background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dark) 100%);
+    background: linear-gradient(180deg, var(--cream-dark) 0%, var(--cream) 100%);
     padding: 4rem 1.5rem 5rem;
   }
 
@@ -1898,10 +2249,24 @@
     margin: 0;
   }
 
+  .footer-credit {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--cream);
+    opacity: 0.4;
+    margin-top: 0.5rem;
+  }
+
   /* ===== RESPONSIVE STYLES ===== */
   @media (max-width: 1024px) {
     .facts-grid {
       grid-template-columns: repeat(3, 1fr);
+    }
+
+    .expedition-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
@@ -1931,7 +2296,11 @@
     }
 
     .mission-credentials {
-      align-items: center;
+      align-items: stretch;
+    }
+
+    .credential {
+      justify-content: center;
     }
 
     .panels-grid {
@@ -2011,6 +2380,13 @@
       width: 100%;
       max-width: 250px;
     }
+
+    .expedition-grid {
+      grid-template-columns: 1fr;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
   }
 
   @media (max-width: 480px) {
@@ -2032,7 +2408,7 @@
     }
 
     .stamp-year {
-      font-size: 1.25rem;
+      font-size: 1rem;
     }
 
     .title-main {

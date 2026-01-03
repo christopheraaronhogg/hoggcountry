@@ -33,12 +33,12 @@
         </span>
         <h1 class="hero-title">Welcome to<br/>the Trailhead</h1>
         <p class="hero-intro">
-          This is Hogg Country - a digital trail register where I'm documenting my journey
-          to the Appalachian Trail. After years of section hiking and completing Arkansas's
-          Triple O (Ouachita, Ozark Highlands, and Ozark Trails), I'm finally taking on
-          the big one: 2,194 miles from Georgia to Maine.
+          This is Hogg Country - a digital trail register built by a son for his dad.
+          After 840+ miles of thru-hikes and earning the rare Sassafras Award, my father
+          Jimmy is taking on his biggest challenge yet: 2,194 miles on the Appalachian Trail,
+          from Georgia to Maine.
         </p>
-        <p class="hero-tagline hand">The adventure begins at Springer Mountain.</p>
+        <p class="hero-tagline hand">A dream years in the making.</p>
       </div>
 
       <!-- Hiker Card -->
@@ -54,13 +54,21 @@
             <span class="card-label">Trail Name</span>
             <h3 class="trail-name hand">"Triple-O"</h3>
             <div class="card-meta">
-              <span>Chris Hogg</span>
+              <span>Jimmy Hogg</span>
               <span class="meta-dot"></span>
               <span>Arkansas</span>
             </div>
             <div class="card-credentials">
+              <span class="credential">840+ Trail Miles</span>
+              <span class="credential">Sassafras Award (6th Ever)</span>
+            </div>
+            <div class="card-credentials">
               <span class="credential">Triple O Crowner</span>
-              <span class="credential">Sassafras Award</span>
+              <span class="credential">49 AT Miles</span>
+            </div>
+            <div class="card-credentials">
+              <span class="credential">Pikes Peak Summit</span>
+              <span class="credential">NOBO Ready: 9/10</span>
             </div>
           </div>
         </div>
@@ -86,14 +94,15 @@
       <div class="quote-tape quote-tape-right"></div>
       <blockquote>
         <p class="quote-text hand">
-          "This guide started as a gift for my dad - a way to share everything I've learned
-          about long-distance hiking so he'd be prepared for his AT thru-hike. It grew into
-          something more: a complete resource for anyone chasing their own trail dreams."
+          "I built this guide for my dad - 20 chapters, 12 interactive tools, everything
+          I could find about long-distance hiking. He's been preparing for this dream for years.
+          Now it's time. I'll be following along from home, and I wanted him to have the
+          best resource I could create."
         </p>
         <cite class="quote-cite">
           <span class="cite-dash">-</span>
-          <span class="cite-name">Written with love,</span>
-          <span class="cite-who hand">from son to father</span>
+          <span class="cite-name">Chris Hogg</span>
+          <span class="cite-who hand">proud son & trail nerd</span>
         </cite>
       </blockquote>
     </div>
@@ -172,15 +181,21 @@
   <section class="th-stats">
     <div class="stats-inner">
       <div class="stat-item">
+        <span class="stat-number">840+</span>
+        <span class="stat-label">Miles Hiked</span>
+        <span class="stat-sub hand">Jimmy's experience</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
         <span class="stat-number">2,194</span>
-        <span class="stat-label">Miles to Hike</span>
+        <span class="stat-label">Miles Ahead</span>
         <span class="stat-sub hand">Georgia → Maine</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-item">
         <span class="stat-number">20</span>
         <span class="stat-label">Guide Chapters</span>
-        <span class="stat-sub hand">+ 5 quick cards</span>
+        <span class="stat-sub hand">Chris built for Dad</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-item">
@@ -197,19 +212,19 @@
       <div class="signoff-blaze">
         <div class="blaze-rect"></div>
       </div>
-      <h2 class="signoff-title hand">See you on Katahdin</h2>
+      <h2 class="signoff-title hand">See you on Katahdin, Dad</h2>
       <p class="signoff-text">
         Whether you're planning your own thru-hike, curious about long-distance hiking,
-        or just here to follow along - welcome to the trailhead. The white blazes
-        start here.
+        or just here to follow along with Jimmy's journey - welcome to the trailhead.
+        The white blazes start at Springer Mountain in February 2026.
       </p>
       <div class="signoff-cta">
         <a href="/guide" class="cta-primary">Read the Field Guide</a>
         <a href="/guide/chapter-1" class="cta-secondary">Chapter 1: The Dream →</a>
       </div>
       <p class="signoff-signature hand">
-        Happy Trails,<br/>
-        <span class="signature-name">Triple-O</span>
+        With love and trail magic,<br/>
+        <span class="signature-name">Chris</span>
       </p>
     </div>
   </section>
@@ -229,7 +244,7 @@
         <a href="/about">About</a>
       </nav>
       <div class="footer-meta">
-        <p class="footer-copy">&copy; 2024-2026 Chris Hogg. Made in Arkansas.</p>
+        <p class="footer-copy">&copy; 2024-2026 Chris Hogg. Built for Dad in Arkansas.</p>
         <p class="footer-trail hand">Follow the white blazes.</p>
       </div>
     </div>
@@ -255,7 +270,14 @@
 
     position: relative;
     min-height: 100vh;
-    background: var(--bg);
+    background:
+      url('/topo.svg'),
+      radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.03), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.025), transparent 60%),
+      radial-gradient(800px 500px at 50% 90%, rgba(0,0,0,0.02), transparent 50%),
+      var(--bg);
+    background-size: 2400px 1600px, auto, auto, auto, auto;
+    background-attachment: fixed;
     color: var(--ink);
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.6;

@@ -7,11 +7,28 @@
   let currentTime = $state(new Date());
   let activeFilter = $state('all');
 
+  // Hiker profile - Jimmy "Triple-O" Hogg
+  const hiker = {
+    name: 'Jimmy Hogg',
+    trailName: 'Triple-O',
+    completedMiles: 840,
+    atMilesHiked: 49,
+    sassafrasAwardHolder: true,
+    highPoint: 'Pikes Peak (14,115 ft)',
+    trails: [
+      { name: 'Ouachita Trail', miles: 223 },
+      { name: 'Ozark Highlands Trail', miles: 270 },
+      { name: 'Ozark Trail', miles: 230 }
+    ],
+    readinessScore: 9
+  };
+
   // Mission data
   const mission = {
     name: 'AT 2026 NOBO',
     distance: 2194,
     startDate: 'Feb 2026',
+    expectedFinish: 'Sep 17-20, 2026',
     chapters: 20,
     tools: 12,
     currentMile: 0,
@@ -79,7 +96,7 @@
     {
       type: 'guide',
       title: 'Field Guide Complete',
-      desc: '20 chapters of trail-tested knowledge ready',
+      desc: '20 chapters of trail-tested knowledge ready for Triple-O',
       time: 'Just now',
       icon: '📖'
     },
@@ -166,6 +183,53 @@
 
   <!-- Main Content -->
   <main class="main">
+    <!-- Hiker Profile Card -->
+    <section class="hiker-card">
+      <div class="hiker-header">
+        <div class="hiker-identity">
+          <span class="hiker-trail-name">{hiker.trailName}</span>
+          <h2 class="hiker-name">{hiker.name}</h2>
+        </div>
+        <div class="hiker-badge sassafras">
+          <span class="badge-icon">🏆</span>
+          <span class="badge-text">Sassafras Award #6</span>
+        </div>
+      </div>
+
+      <div class="credentials-grid">
+        <div class="credential">
+          <span class="credential-value">{hiker.completedMiles}+</span>
+          <span class="credential-label">THRU-HIKE MILES</span>
+        </div>
+        <div class="credential">
+          <span class="credential-value">3</span>
+          <span class="credential-label">COMPLETED TRAILS</span>
+        </div>
+        <div class="credential">
+          <span class="credential-value">{hiker.atMilesHiked}</span>
+          <span class="credential-label">AT MILES HIKED</span>
+        </div>
+        <div class="credential">
+          <span class="credential-value">{hiker.readinessScore}/10</span>
+          <span class="credential-label">NOBO READINESS</span>
+        </div>
+      </div>
+
+      <div class="trails-completed">
+        <span class="trails-label">Completed Thru-Hikes:</span>
+        <div class="trail-tags">
+          {#each hiker.trails as trail}
+            <span class="trail-tag">{trail.name} ({trail.miles} mi)</span>
+          {/each}
+        </div>
+      </div>
+
+      <div class="highpoint">
+        <span class="highpoint-icon">🏔️</span>
+        <span class="highpoint-text">High point: {hiker.highPoint}</span>
+      </div>
+    </section>
+
     <!-- Mission Card -->
     <section class="mission-card">
       <div class="mission-header">
@@ -224,14 +288,26 @@
       <div class="countdown">
         <div class="countdown-value">{mission.daysUntilStart}</div>
         <div class="countdown-label">days until trailhead</div>
+        <div class="countdown-finish">Expected finish: {mission.expectedFinish}</div>
       </div>
+    </section>
+
+    <!-- Story Context -->
+    <section class="story-card">
+      <div class="story-icon">❤️</div>
+      <p class="story-text">
+        This site was built by <strong>Chris Hogg</strong> as a gift for his dad
+        <strong>Jimmy "Triple-O" Hogg</strong> — a comprehensive field guide and toolkit
+        for his 2026 AT thru-hike. Everything here is designed to help Triple-O succeed
+        on his biggest adventure yet.
+      </p>
     </section>
 
     <!-- Quick Access Grid -->
     <section class="section">
       <div class="section-header">
         <h2 class="section-title">Quick Access</h2>
-        <span class="section-subtitle">Everything you need</span>
+        <span class="section-subtitle">Everything Triple-O needs</span>
       </div>
 
       <div class="quick-grid">
@@ -329,7 +405,7 @@
           <div class="feature-content">
             <span class="feature-badge">Complete</span>
             <h3 class="feature-title">AT Field Guide</h3>
-            <p class="feature-desc">20 chapters covering everything from gear to resupply strategy, water sources to shelter logistics.</p>
+            <p class="feature-desc">20 chapters covering everything from gear to resupply strategy, water sources to shelter logistics — built for Triple-O's NOBO journey.</p>
             <span class="feature-cta">
               Read the Guide
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -344,7 +420,7 @@
           <div class="feature-content">
             <span class="feature-badge">Interactive</span>
             <h3 class="feature-title">Trail Tools Suite</h3>
-            <p class="feature-desc">12 purpose-built tools: layering advisor, milestone planner, budget tracker, and more.</p>
+            <p class="feature-desc">12 purpose-built tools: layering advisor, milestone planner, budget tracker, and more — designed for real trail decisions.</p>
             <span class="feature-cta">
               Launch Tools
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -371,7 +447,7 @@
         <a href="/trips">Trips</a>
       </div>
       <div class="footer-meta">
-        <p>AT NOBO 2026 | Triple-O</p>
+        <p>AT NOBO 2026 | Triple-O | Built with love by Chris</p>
       </div>
     </div>
   </footer>
@@ -397,6 +473,8 @@
     --marker: #f0e000;
     --marker-glow: rgba(240, 224, 0, 0.12);
     --pine: #4d594a;
+    --gold: #fbbf24;
+    --gold-glow: rgba(251, 191, 36, 0.15);
 
     --radius-sm: 8px;
     --radius-md: 12px;
@@ -404,11 +482,30 @@
     --radius-xl: 20px;
 
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
+    background:
+      url('/topo.svg'),
+      radial-gradient(1200px 800px at 15% -5%, rgba(255,255,255,0.02), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(255,255,255,0.015), transparent 60%),
+      var(--bg);
+    background-size: 2400px 1600px, auto, auto, auto;
+    background-attachment: fixed;
     color: var(--text);
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
+  }
+
+  /* Invert topo for dark theme */
+  .dashboard-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url('/topo.svg');
+    background-size: 2400px 1600px;
+    filter: invert(1);
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
   }
 
   /* Ambient glows */
@@ -541,6 +638,157 @@
     padding: 2rem 1.5rem 4rem;
   }
 
+  /* ========== HIKER CARD ========== */
+  .hiker-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(26, 29, 33, 0.9) 100%);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: var(--radius-xl);
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .hiker-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--terra), var(--alpine));
+  }
+
+  .hiker-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .hiker-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .hiker-trail-name {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .hiker-name {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  .hiker-badge.sassafras {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.875rem;
+    background: var(--gold-glow);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--gold);
+  }
+
+  .credentials-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .credential {
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .credential-value {
+    display: block;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .credential-label {
+    display: block;
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-top: 0.2rem;
+  }
+
+  .trails-completed {
+    margin-bottom: 1rem;
+  }
+
+  .trails-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .trail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .trail-tag {
+    padding: 0.35rem 0.7rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .highpoint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.875rem;
+    background: rgba(166, 181, 137, 0.1);
+    border: 1px solid rgba(166, 181, 137, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    color: var(--alpine);
+  }
+
+  .highpoint-icon {
+    font-size: 1rem;
+  }
+
+  .highpoint-text {
+    font-weight: 500;
+  }
+
   /* ========== MISSION CARD ========== */
   .mission-card {
     position: relative;
@@ -548,7 +796,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     padding: 2rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     overflow: hidden;
   }
 
@@ -746,6 +994,41 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-top: 0.25rem;
+  }
+
+  .countdown-finish {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+  }
+
+  /* ========== STORY CARD ========== */
+  .story-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(26, 29, 33, 0.6) 100%);
+    border: 1px solid rgba(217, 119, 6, 0.2);
+    border-radius: var(--radius-lg);
+    margin-bottom: 2.5rem;
+  }
+
+  .story-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .story-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .story-text strong {
+    color: var(--text);
+    font-weight: 600;
   }
 
   /* ========== SECTIONS ========== */
@@ -1276,6 +1559,10 @@
       padding: 1.5rem 1rem 3rem;
     }
 
+    .credentials-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
     .stats-grid {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -1334,11 +1621,32 @@
     .activity-item {
       position: relative;
     }
+
+    .hiker-header {
+      flex-direction: column;
+    }
+
+    .hiker-badge.sassafras {
+      align-self: flex-start;
+    }
+
+    .story-card {
+      flex-direction: column;
+      text-align: center;
+    }
   }
 
   @media (max-width: 480px) {
     .header-inner {
       padding: 0.75rem 1rem;
+    }
+
+    .hiker-card {
+      padding: 1.25rem;
+    }
+
+    .hiker-name {
+      font-size: 1.5rem;
     }
 
     .mission-card {
@@ -1351,6 +1659,10 @@
 
     .stat-value {
       font-size: 1.25rem;
+    }
+
+    .credential-value {
+      font-size: 1.15rem;
     }
 
     .countdown-value {
@@ -1378,6 +1690,10 @@
     .live-text {
       font-size: 0.7rem;
     }
+
+    .trail-tags {
+      flex-direction: column;
+    }
   }
 
   /* ========== MOUNT ANIMATION ========== */
@@ -1390,7 +1706,9 @@
     opacity: 1;
   }
 
+  .hiker-card,
   .mission-card,
+  .story-card,
   .quick-card,
   .activity-item,
   .feature-card {
@@ -1400,7 +1718,9 @@
     transition-delay: var(--delay, 0s);
   }
 
+  .dashboard.mounted .hiker-card,
   .dashboard.mounted .mission-card,
+  .dashboard.mounted .story-card,
   .dashboard.mounted .quick-card,
   .dashboard.mounted .activity-item,
   .dashboard.mounted .feature-card {
@@ -1408,20 +1728,28 @@
     transform: translateY(0);
   }
 
+  .dashboard.mounted .hiker-card {
+    transition-delay: 0.05s;
+  }
+
   .dashboard.mounted .mission-card {
     transition-delay: 0.1s;
   }
 
-  .dashboard.mounted .quick-card:nth-child(1) { transition-delay: 0.15s; }
-  .dashboard.mounted .quick-card:nth-child(2) { transition-delay: 0.2s; }
-  .dashboard.mounted .quick-card:nth-child(3) { transition-delay: 0.25s; }
-  .dashboard.mounted .quick-card:nth-child(4) { transition-delay: 0.3s; }
+  .dashboard.mounted .story-card {
+    transition-delay: 0.15s;
+  }
 
-  .dashboard.mounted .activity-item:nth-child(1) { transition-delay: 0.35s; }
-  .dashboard.mounted .activity-item:nth-child(2) { transition-delay: 0.4s; }
-  .dashboard.mounted .activity-item:nth-child(3) { transition-delay: 0.45s; }
-  .dashboard.mounted .activity-item:nth-child(4) { transition-delay: 0.5s; }
+  .dashboard.mounted .quick-card:nth-child(1) { transition-delay: 0.2s; }
+  .dashboard.mounted .quick-card:nth-child(2) { transition-delay: 0.25s; }
+  .dashboard.mounted .quick-card:nth-child(3) { transition-delay: 0.3s; }
+  .dashboard.mounted .quick-card:nth-child(4) { transition-delay: 0.35s; }
 
-  .dashboard.mounted .feature-card:nth-child(1) { transition-delay: 0.55s; }
-  .dashboard.mounted .feature-card:nth-child(2) { transition-delay: 0.6s; }
+  .dashboard.mounted .activity-item:nth-child(1) { transition-delay: 0.4s; }
+  .dashboard.mounted .activity-item:nth-child(2) { transition-delay: 0.45s; }
+  .dashboard.mounted .activity-item:nth-child(3) { transition-delay: 0.5s; }
+  .dashboard.mounted .activity-item:nth-child(4) { transition-delay: 0.55s; }
+
+  .dashboard.mounted .feature-card:nth-child(1) { transition-delay: 0.6s; }
+  .dashboard.mounted .feature-card:nth-child(2) { transition-delay: 0.65s; }
 </style>

@@ -42,8 +42,9 @@
   <section class="zen-hero fade-section" bind:this={sections[0]}>
     <h1 class="hero-headline">One step at a time.</h1>
     <p class="hero-sub">
-      2,194 miles. Georgia to Maine. February 2026.
+      840 miles behind. 2,194 ahead.
     </p>
+    <p class="hero-context">AT NOBO &middot; February 2026 &middot; Springer to Katahdin</p>
     <a href="/guide" class="cta">Begin the Journey</a>
   </section>
 
@@ -53,12 +54,13 @@
   <!-- Mission -->
   <section class="zen-mission fade-section" bind:this={sections[1]}>
     <p class="mission-text">
-      In February 2026, I'll set out from Springer Mountain, Georgia
-      with nothing but a pack on my back and a dream ahead.
-      The Appalachian Trail stretches 2,194 miles north to Katahdin, Maine &mdash;
-      six months of ridgelines, river crossings, and quiet mornings in the woods.
-      This is Hogg Country, and every step is part of the story.
+      Jimmy "Triple-O" Hogg has walked 840 miles preparing for this moment.
+      Three trails completed. One trail awaits.
+      In February 2026, he sets out from Springer Mountain
+      with 49 AT miles already known &mdash;
+      and 2,194 stretching north to Katahdin.
     </p>
+    <p class="mission-credential">6th recipient of the Sassafras Award</p>
   </section>
 
   <!-- Divider -->
@@ -124,15 +126,17 @@
   <!-- Quote -->
   <section class="zen-quote fade-section" bind:this={sections[4]}>
     <blockquote>
-      <p>"The trail provides."</p>
-      <cite>Ancient Hiker Wisdom</cite>
+      <p>"A son's gift. A father's journey."</p>
     </blockquote>
   </section>
 
   <!-- Footer -->
   <footer class="zen-footer fade-section" bind:this={sections[5]}>
     <p class="footer-text">
-      Hogg Country &middot; Chris "Triple-O" Hogg &middot; AT NOBO 2026
+      Jimmy "Triple-O" Hogg &middot; AT NOBO 2026
+    </p>
+    <p class="footer-sub">
+      Built with love by Chris Hogg
     </p>
   </footer>
 </div>
@@ -149,7 +153,13 @@
     --zen-card: #ffffff;
 
     min-height: 100vh;
-    background: var(--zen-bg);
+    background:
+      url('/topo.svg'),
+      radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.02), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.018), transparent 60%),
+      var(--zen-bg);
+    background-size: 2400px 1600px, auto, auto, auto;
+    background-attachment: fixed;
     color: var(--zen-fg);
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.7;
@@ -229,7 +239,17 @@
     font-weight: 300;
     color: var(--zen-muted);
     letter-spacing: 0.03em;
+    margin: 0 0 0.75rem;
+  }
+
+  .hero-context {
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--zen-muted);
     margin: 0 0 2.5rem;
+    opacity: 0.8;
   }
 
   .cta {
@@ -272,8 +292,18 @@
     font-weight: 300;
     line-height: 1.9;
     color: var(--zen-fg);
-    margin: 0;
+    margin: 0 0 1.5rem;
     letter-spacing: 0.01em;
+  }
+
+  .mission-credential {
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--zen-pine);
+    margin: 0;
+    opacity: 0.7;
   }
 
   /* Three Paths */
@@ -455,7 +485,16 @@
     font-weight: 400;
     letter-spacing: 0.08em;
     color: var(--zen-muted);
+    margin: 0 0 0.5rem;
+  }
+
+  .footer-sub {
+    font-size: 0.7rem;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: var(--zen-muted);
     margin: 0;
+    opacity: 0.6;
   }
 
   /* Mobile adjustments */

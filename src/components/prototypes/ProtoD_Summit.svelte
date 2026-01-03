@@ -1,6 +1,7 @@
 <script>
   // Summit Vista - Bold Adventure Brand Homepage Prototype
   // Design: REI/Patagonia-inspired dramatic outdoor brand aesthetic
+  // Featuring Jimmy "Triple-O" Hogg - AT NOBO 2026
 </script>
 
 <div class="summit-vista">
@@ -48,13 +49,13 @@
       </div>
 
       <h1 class="hero-headline">
-        <span class="headline-top">2,194 MILES.</span>
-        <span class="headline-bottom">ONE STEP AT A TIME.</span>
+        <span class="headline-top">840 MILES PROVEN.</span>
+        <span class="headline-bottom">2,194 MILES OF DESTINY.</span>
       </h1>
 
       <p class="hero-sub">
-        Springer Mountain, Georgia to Katahdin, Maine.<br class="hide-mobile"/>
-        The adventure of a lifetime begins February 2026.
+        Jimmy "Triple-O" Hogg. Springer Mountain to Katahdin.<br class="hide-mobile"/>
+        <strong>The 6th person in history to earn the Sassafras Award.</strong>
       </p>
 
       <div class="hero-actions">
@@ -78,15 +79,61 @@
   </section>
 
   <!-- ========================================== -->
+  <!-- HIKER CREDENTIALS: Bold stats showcase -->
+  <!-- ========================================== -->
+  <section class="sv-credentials">
+    <div class="credentials-inner">
+      <span class="credentials-label">MEET THE HIKER</span>
+      <h2 class="credentials-name">JIMMY "TRIPLE-O" HOGG</h2>
+      <div class="credentials-grid">
+        <div class="credential-card featured">
+          <span class="credential-number">6th</span>
+          <span class="credential-text">PERSON IN HISTORY</span>
+          <span class="credential-detail">Sassafras Award Recipient</span>
+        </div>
+        <div class="credential-card">
+          <span class="credential-number">840+</span>
+          <span class="credential-text">MILES CONQUERED</span>
+          <span class="credential-detail">Proven thru-hiker</span>
+        </div>
+        <div class="credential-card">
+          <span class="credential-number">3</span>
+          <span class="credential-text">MAJOR TRAILS</span>
+          <span class="credential-detail">Ouachita, Ozark Highlands, Ozark Trail</span>
+        </div>
+        <div class="credential-card">
+          <span class="credential-number">14,115</span>
+          <span class="credential-text">FEET SUMMITED</span>
+          <span class="credential-detail">Pikes Peak conquered</span>
+        </div>
+        <div class="credential-card">
+          <span class="credential-number">49</span>
+          <span class="credential-text">AT MILES</span>
+          <span class="credential-detail">Already under his boots</span>
+        </div>
+        <div class="credential-card">
+          <span class="credential-number">9/10</span>
+          <span class="credential-text">NOBO READINESS</span>
+          <span class="credential-detail">Trail-tested & ready</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
   <!-- MISSION: Bold typography statement -->
   <!-- ========================================== -->
   <section class="sv-mission">
     <div class="mission-inner">
       <span class="mission-label">THE AT 2026 MISSION</span>
       <h2 class="mission-statement">
-        To walk every white blaze from Georgia to Maine. To embrace the challenge, the community, and the transformation that comes from
-        <span class="mission-highlight">six months on the trail.</span>
+        <strong>February 2026.</strong> One man. One trail.
+        <span class="mission-highlight">2,194 miles from Georgia to Maine.</span>
+        After 840+ miles of preparation across three legendary trails, Triple-O is ready for the ultimate challenge.
       </h2>
+      <p class="mission-subtext">
+        Expected summit: <strong>September 2026</strong>
+      </p>
       <div class="mission-divider">
         <svg viewBox="0 0 120 12" fill="currentColor">
           <path d="M0,6 L50,6 M70,6 L120,6" stroke="currentColor" stroke-width="1" fill="none"/>
@@ -115,7 +162,7 @@
         <span class="block-number">20</span>
         <span class="block-label">CHAPTERS</span>
         <h3 class="block-title">THE FIELD GUIDE</h3>
-        <p class="block-desc">Comprehensive trail knowledge from gear selection to mental preparation. Everything you need to conquer the AT.</p>
+        <p class="block-desc">Built by his son Chris. 20 chapters of comprehensive trail knowledge from gear selection to mental preparation.</p>
         <span class="block-cta">
           Start Reading
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -164,7 +211,7 @@
         <span class="block-number">6</span>
         <span class="block-label">MONTHS ON TRAIL</span>
         <h3 class="block-title">THE JOURNEY</h3>
-        <p class="block-desc">Follow along through trip reports, videos, and updates as the adventure unfolds from Springer to Katahdin.</p>
+        <p class="block-desc">Follow Triple-O through trip reports, videos, and updates as the adventure unfolds from Springer to Katahdin.</p>
         <span class="block-cta">
           Follow Along
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -204,6 +251,23 @@
         <span class="stat-number">~180</span>
         <span class="stat-label">DAYS</span>
       </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- THE STORY: Father & Son -->
+  <!-- ========================================== -->
+  <section class="sv-story">
+    <div class="story-inner">
+      <span class="story-label">THE STORY</span>
+      <h2 class="story-headline">A FATHER PREPARED.<br/>A SON'S GIFT.</h2>
+      <p class="story-text">
+        Jimmy "Triple-O" Hogg earned his trail name conquering the <strong>Ouachita, Ozark Highlands, and Ozark Trail</strong> -
+        three legendary paths that forged a true thru-hiker. Now, his son Chris has built this digital basecamp:
+        a 20-chapter field guide, 12 interactive planning tools, and everything a father needs
+        to tackle the <strong>Appalachian Trail</strong>.
+      </p>
+      <p class="story-tagline">One legendary trail remains.</p>
     </div>
   </section>
 
@@ -266,8 +330,8 @@
     </div>
     <div class="cta-inner">
       <span class="cta-label">STAY CONNECTED</span>
-      <h2 class="cta-headline">JOIN THE JOURNEY</h2>
-      <p class="cta-desc">Follow along as Triple-O tackles the Appalachian Trail. Updates, videos, and trail wisdom delivered to your inbox.</p>
+      <h2 class="cta-headline">JOIN TRIPLE-O'S JOURNEY</h2>
+      <p class="cta-desc">Follow along as Jimmy "Triple-O" Hogg tackles the Appalachian Trail. Updates, videos, and trail wisdom delivered to your inbox.</p>
 
       <div class="cta-actions">
         <a href="https://youtube.com/@hoggcountry" class="cta-btn youtube" target="_blank" rel="noopener">
@@ -299,7 +363,7 @@
         </svg>
         <span class="footer-name">HOGG COUNTRY</span>
       </div>
-      <p class="footer-tagline">See you on Katahdin.</p>
+      <p class="footer-tagline">See you on Katahdin, Triple-O.</p>
       <div class="footer-links">
         <a href="/guide">Guide</a>
         <span class="footer-dot"></span>
@@ -309,7 +373,7 @@
         <span class="footer-dot"></span>
         <a href="/about">About</a>
       </div>
-      <p class="footer-copy">&copy; 2026 Hogg Country. Built for the trail.</p>
+      <p class="footer-copy">&copy; 2026 Hogg Country. Built by Chris for his dad. Built for the trail.</p>
     </div>
   </footer>
 </div>
@@ -337,7 +401,14 @@
     --gradient-alpine: linear-gradient(135deg, #a6b589 0%, #8fa06e 100%);
 
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--sv-bg);
+    background:
+      url('/topo.svg'),
+      radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.03), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.025), transparent 60%),
+      radial-gradient(800px 500px at 50% 90%, rgba(0,0,0,0.02), transparent 50%),
+      var(--sv-bg);
+    background-size: 2400px 1600px, auto, auto, auto, auto;
+    background-attachment: fixed;
     color: var(--sv-ink);
     overflow-x: hidden;
   }
@@ -522,12 +593,12 @@
   }
 
   .headline-top {
-    font-size: clamp(3rem, 10vw, 7rem);
+    font-size: clamp(2.5rem, 8vw, 5.5rem);
     margin-bottom: 0.25rem;
   }
 
   .headline-bottom {
-    font-size: clamp(1.75rem, 5vw, 3.5rem);
+    font-size: clamp(1.5rem, 4.5vw, 3rem);
     color: var(--sv-alpine);
     letter-spacing: 0.08em;
   }
@@ -537,6 +608,10 @@
     color: rgba(245, 242, 232, 0.75);
     line-height: 1.7;
     margin: 0 0 2.5rem;
+  }
+
+  .hero-sub strong {
+    color: var(--sv-terra-light);
   }
 
   .hide-mobile {
@@ -636,6 +711,114 @@
   }
 
   /* ============================================
+     CREDENTIALS SECTION (NEW)
+     ============================================ */
+  .sv-credentials {
+    padding: 5rem 1.5rem;
+    background: var(--sv-ink-deep);
+    text-align: center;
+  }
+
+  .credentials-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .credentials-label {
+    display: inline-block;
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: var(--sv-alpine);
+    margin-bottom: 1rem;
+  }
+
+  .credentials-name {
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 6vw, 4rem);
+    letter-spacing: 0.02em;
+    color: var(--sv-bg);
+    margin: 0 0 3rem;
+  }
+
+  .credentials-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .credentials-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .credentials-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+  }
+
+  .credential-card {
+    background: rgba(77, 89, 74, 0.3);
+    border: 1px solid rgba(166, 181, 137, 0.2);
+    border-radius: 8px;
+    padding: 1.5rem 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .credential-card:hover {
+    background: rgba(77, 89, 74, 0.5);
+    transform: translateY(-4px);
+  }
+
+  .credential-card.featured {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.3) 0%, rgba(180, 83, 9, 0.3) 100%);
+    border-color: var(--sv-terra);
+    grid-column: span 2;
+  }
+
+  @media (min-width: 768px) {
+    .credential-card.featured {
+      grid-column: span 1;
+    }
+  }
+
+  .credential-number {
+    display: block;
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1;
+    color: var(--sv-bg);
+    margin-bottom: 0.5rem;
+  }
+
+  .credential-card.featured .credential-number {
+    color: var(--sv-terra-light);
+  }
+
+  .credential-text {
+    display: block;
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 600;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--sv-alpine);
+    margin-bottom: 0.5rem;
+  }
+
+  .credential-detail {
+    display: block;
+    font-size: 0.75rem;
+    color: rgba(245, 242, 232, 0.6);
+    line-height: 1.4;
+  }
+
+  /* ============================================
      MISSION STATEMENT
      ============================================ */
   .sv-mission {
@@ -665,10 +848,10 @@
   .mission-statement {
     font-family: 'Oswald', Impact, sans-serif;
     font-weight: 600;
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    line-height: 1.4;
+    font-size: clamp(1.25rem, 3.5vw, 2rem);
+    line-height: 1.5;
     color: var(--sv-ink);
-    margin: 0 0 2rem;
+    margin: 0 0 1.5rem;
   }
 
   .mission-highlight {
@@ -685,6 +868,17 @@
     height: 4px;
     background: var(--sv-alpine);
     opacity: 0.6;
+  }
+
+  .mission-subtext {
+    font-family: 'Oswald', Impact, sans-serif;
+    font-size: 1.1rem;
+    color: var(--sv-muted);
+    margin: 0 0 2rem;
+  }
+
+  .mission-subtext strong {
+    color: var(--sv-terra);
   }
 
   .mission-divider {
@@ -919,6 +1113,60 @@
   }
 
   /* ============================================
+     STORY SECTION (NEW)
+     ============================================ */
+  .sv-story {
+    padding: 5rem 1.5rem;
+    background: var(--sv-pine);
+    text-align: center;
+  }
+
+  .story-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .story-label {
+    display: inline-block;
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--sv-alpine);
+    margin-bottom: 1rem;
+  }
+
+  .story-headline {
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.75rem, 5vw, 3rem);
+    letter-spacing: 0.02em;
+    color: var(--sv-bg);
+    margin: 0 0 2rem;
+    line-height: 1.2;
+  }
+
+  .story-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: rgba(245, 242, 232, 0.85);
+    margin: 0 0 1.5rem;
+  }
+
+  .story-text strong {
+    color: var(--sv-terra-light);
+  }
+
+  .story-tagline {
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: var(--sv-alpine);
+    margin: 0;
+    letter-spacing: 0.05em;
+  }
+
+  /* ============================================
      TRAIL INFO CARDS
      ============================================ */
   .sv-trail-info {
@@ -1011,7 +1259,7 @@
   .sv-cta {
     position: relative;
     padding: 6rem 1.5rem;
-    background: var(--sv-pine);
+    background: var(--sv-ink);
     overflow: hidden;
     text-align: center;
   }
@@ -1031,7 +1279,7 @@
     left: 0;
     width: 100%;
     height: 50%;
-    fill: rgba(43, 47, 38, 0.4);
+    fill: rgba(77, 89, 74, 0.2);
   }
 
   .cta-inner {
@@ -1223,6 +1471,10 @@
       padding: 0.5rem 1rem;
     }
 
+    .sv-credentials {
+      padding: 3rem 1rem;
+    }
+
     .sv-mission {
       padding: 4rem 1rem;
     }
@@ -1233,6 +1485,10 @@
     }
 
     .sv-stats {
+      padding: 3rem 1rem;
+    }
+
+    .sv-story {
       padding: 3rem 1rem;
     }
 
@@ -1260,16 +1516,24 @@
     }
 
     .headline-top {
-      font-size: 2.5rem;
+      font-size: 2rem;
     }
 
     .headline-bottom {
-      font-size: 1.25rem;
+      font-size: 1.1rem;
     }
 
     .sv-btn {
       width: 100%;
       justify-content: center;
+    }
+
+    .credentials-name {
+      font-size: 1.75rem;
+    }
+
+    .credential-number {
+      font-size: 1.75rem;
     }
   }
 </style>
