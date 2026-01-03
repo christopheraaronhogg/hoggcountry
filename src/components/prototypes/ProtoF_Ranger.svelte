@@ -1,7 +1,7 @@
 <script>
   // ProtoF: Ranger Station - Vintage National Parks Homepage
   // WPA poster aesthetic inspired by 1930s-40s national park posters
-  // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "Triple-O" Hogg
+  // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 </script>
 
 <div class="ranger-station">
@@ -129,7 +129,7 @@
     <div class="hero-content">
       <div class="hero-stamp">
         <span class="stamp-text">OFFICIAL EXPEDITION</span>
-        <span class="stamp-year">FEBRUARY 1926</span>
+        <span class="stamp-year">FEBRUARY 2026</span>
       </div>
 
       <h1 class="hero-title">
@@ -209,13 +209,13 @@
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
           </div>
-          <div class="badge-title">TRIPLE-O</div>
+          <div class="badge-title">HOGGCOUNTRY</div>
           <div class="badge-subtitle">CERTIFIED THRU-HIKER</div>
           <div class="badge-divider"></div>
           <div class="badge-hiker">JIMMY HOGG</div>
           <div class="badge-mission-text">NOBO EXPEDITION</div>
           <div class="badge-footer">
-            <span>FEB 1926</span>
+            <span>FEB 2026</span>
             <span class="badge-dot"></span>
             <span>GA TO ME</span>
           </div>
@@ -229,7 +229,7 @@
         </div>
         <h2 class="mission-heading">The Expedition Ahead</h2>
         <p class="mission-text">
-          In February 1926, Jimmy "Triple-O" Hogg commences his northbound expedition of the Appalachian Trail.
+          In February 2026, Jimmy "HoggCountry" Hogg commences his northbound expedition of the Appalachian Trail.
           A distinguished Arkansas trail veteran and holder of multiple certifications, he has prepared
           this comprehensive handbook to assist fellow hikers in reaching the summit of Mt. Katahdin.
         </p>
@@ -328,7 +328,7 @@
       <div class="expedition-grid">
         <div class="expedition-card">
           <div class="card-stamp">DEPARTURE</div>
-          <div class="card-value">February 1926</div>
+          <div class="card-value">February 2026</div>
           <div class="card-label">Commencement Date</div>
         </div>
 
@@ -356,8 +356,282 @@
           This guide has been field-tested and approved for distribution to all aspiring thru-hikers.
         </p>
         <p class="footer-prepared">
-          Prepared by C. Hogg for J. "Triple-O" Hogg
+          Prepared by C. Hogg for J. "HoggCountry" Hogg
         </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- TRAIL TOOLS - Vintage Instrument Panel    -->
+  <!-- ========================================== -->
+  <section class="ranger-tools">
+    <div class="tools-container">
+      <div class="tools-header">
+        <div class="tools-seal">
+          <svg viewBox="0 0 60 60" fill="currentColor">
+            <circle cx="30" cy="30" r="28" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="30" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2" />
+            <circle cx="30" cy="30" r="8" />
+            <path d="M30 10v8M30 42v8M10 30h8M42 30h8" stroke="currentColor" stroke-width="2" />
+          </svg>
+        </div>
+        <span class="tools-label">INTERACTIVE PLANNING</span>
+        <h2 class="tools-title">TRAIL INSTRUMENTS</h2>
+        <p class="tools-subtitle">14 precision calculators to prepare your expedition</p>
+      </div>
+
+      <div class="tools-grid">
+        <a href="/tools#milestone" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="10" r="3"/>
+              <path d="M12 2a8 8 0 00-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 00-8-8z"/>
+            </svg>
+          </div>
+          <span class="tool-name">Milestone Calculator</span>
+          <span class="tool-desc">Track daily progress</span>
+        </a>
+
+        <a href="/tools#resupply" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+          </div>
+          <span class="tool-name">Resupply Planner</span>
+          <span class="tool-desc">Plan town stops</span>
+        </a>
+
+        <a href="/tools#weather" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/>
+              <circle cx="12" cy="12" r="4"/>
+            </svg>
+          </div>
+          <span class="tool-name">Weather Assessor</span>
+          <span class="tool-desc">Evaluate conditions</span>
+        </a>
+
+        <a href="/tools#budget" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </div>
+          <span class="tool-name">Budget Calculator</span>
+          <span class="tool-desc">Estimate total cost</span>
+        </a>
+
+        <a href="/tools#pack" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="4" width="16" height="18" rx="2"/>
+              <path d="M8 2v4M16 2v4"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          </div>
+          <span class="tool-name">Pack Builder</span>
+          <span class="tool-desc">Optimize base weight</span>
+        </a>
+
+        <a href="/tools#food" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8h1a4 4 0 010 8h-1"/>
+              <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+              <line x1="6" y1="1" x2="6" y2="4"/>
+              <line x1="10" y1="1" x2="10" y2="4"/>
+              <line x1="14" y1="1" x2="14" y2="4"/>
+            </svg>
+          </div>
+          <span class="tool-name">Food Calculator</span>
+          <span class="tool-desc">Plan daily calories</span>
+        </a>
+
+        <a href="/tools#water" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+            </svg>
+          </div>
+          <span class="tool-name">Water Tracker</span>
+          <span class="tool-desc">Source management</span>
+        </a>
+
+        <a href="/tools#layers" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="tool-name">Layering Advisor</span>
+          <span class="tool-desc">Dial in clothing</span>
+        </a>
+
+        <a href="/tools#shelter" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 18l9-9 9 9"/>
+              <path d="M5 21h14"/>
+            </svg>
+          </div>
+          <span class="tool-name">Shelter Decider</span>
+          <span class="tool-desc">Tent vs hammock</span>
+        </a>
+
+        <a href="/tools#power" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <span class="tool-name">Power Manager</span>
+          <span class="tool-desc">Electronics strategy</span>
+        </a>
+
+        <a href="/tools#mail" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-6l-2 3h-4l-2-3H2"/>
+              <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/>
+            </svg>
+          </div>
+          <span class="tool-name">Mail Drop Planner</span>
+          <span class="tool-desc">Ship-ahead logistics</span>
+        </a>
+
+        <a href="/tools#training" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <span class="tool-name">Training Planner</span>
+          <span class="tool-desc">Build fitness</span>
+        </a>
+
+        <a href="/tools#geartrans" class="tool-card">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 1l4 4-4 4"/>
+              <path d="M3 11V9a4 4 0 014-4h14"/>
+              <path d="M7 23l-4-4 4-4"/>
+              <path d="M21 13v2a4 4 0 01-4 4H3"/>
+            </svg>
+          </div>
+          <span class="tool-name">Gear Swap</span>
+          <span class="tool-desc">Transition planner</span>
+        </a>
+
+        <a href="/tools#emergency" class="tool-card">
+          <div class="tool-icon emergency">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <span class="tool-name">Emergency Card</span>
+          <span class="tool-desc">Bailout info</span>
+        </a>
+      </div>
+
+      <div class="tools-footer">
+        <a href="/tools" class="tools-cta">
+          <span>Open All Instruments</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- TRAIL DISPATCHES - Latest Videos          -->
+  <!-- ========================================== -->
+  <section class="ranger-dispatches">
+    <div class="dispatches-container">
+      <div class="dispatches-header">
+        <div class="dispatches-stamp">
+          <span class="stamp-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="23 7 16 12 23 17 23 7" />
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+          </span>
+        </div>
+        <span class="dispatches-label">MOVING PICTURES</span>
+        <h2 class="dispatches-title">TRAIL DISPATCHES</h2>
+        <p class="dispatches-subtitle">Field reports and preparations from the expedition</p>
+      </div>
+
+      <div class="dispatches-grid">
+        <a href="/videos" class="dispatch-card dispatch-featured">
+          <div class="dispatch-media">
+            <div class="media-placeholder">
+              <svg viewBox="0 0 48 48" fill="currentColor">
+                <path d="M20 14v20l14-10-14-10z"/>
+              </svg>
+            </div>
+            <span class="dispatch-badge">LATEST</span>
+            <span class="dispatch-duration">12:34</span>
+          </div>
+          <div class="dispatch-content">
+            <time class="dispatch-date">December 2025</time>
+            <h3 class="dispatch-title">Final Gear Shakedown: The Complete Kit</h3>
+            <p class="dispatch-desc">After 840+ miles of testing, the definitive gear list for Springer Mountain.</p>
+            <span class="dispatch-cta">View Dispatch</span>
+          </div>
+        </a>
+
+        <a href="/videos" class="dispatch-card">
+          <div class="dispatch-media small">
+            <div class="media-placeholder">
+              <svg viewBox="0 0 48 48" fill="currentColor">
+                <path d="M20 14v20l14-10-14-10z"/>
+              </svg>
+            </div>
+            <span class="dispatch-duration">8:45</span>
+          </div>
+          <div class="dispatch-content">
+            <time class="dispatch-date">November 2025</time>
+            <h3 class="dispatch-title">Ozark Training: Winter Conditions Test</h3>
+            <span class="dispatch-cta">View Dispatch</span>
+          </div>
+        </a>
+
+        <a href="/videos" class="dispatch-card">
+          <div class="dispatch-media small">
+            <div class="media-placeholder">
+              <svg viewBox="0 0 48 48" fill="currentColor">
+                <path d="M20 14v20l14-10-14-10z"/>
+              </svg>
+            </div>
+            <span class="dispatch-duration">15:22</span>
+          </div>
+          <div class="dispatch-content">
+            <time class="dispatch-date">October 2025</time>
+            <h3 class="dispatch-title">Sleep System Deep Dive</h3>
+            <span class="dispatch-cta">View Dispatch</span>
+          </div>
+        </a>
+      </div>
+
+      <div class="dispatches-footer">
+        <a href="/videos" class="dispatches-cta">
+          <span>View All Dispatches</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
       </div>
     </div>
   </section>
@@ -431,7 +705,7 @@
           </div>
           <h3 class="panel-title">TRAIL INSTRUMENTS</h3>
           <p class="panel-desc">
-            12 interactive calculators and planners for milestones, resupply strategy,
+            14 interactive calculators and planners for milestones, resupply strategy,
             weather decisions, and expedition budget tracking.
           </p>
           <div class="panel-meta">
@@ -440,7 +714,7 @@
                 <circle cx="12" cy="12" r="3" />
                 <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24" />
               </svg>
-              12 Instruments
+              14 Instruments
             </span>
             <span class="meta-item">
               <svg viewBox="0 0 24 24" fill="currentColor" class="meta-icon">
@@ -618,12 +892,12 @@
           <div class="featured-pin"></div>
           <div class="featured-content">
             <span class="featured-tag">COMMENCE HERE</span>
-            <h3 class="featured-title">Chapter 1: Before the First Step</h3>
+            <h3 class="featured-title">Part I: Hiker Profile & Experience</h3>
             <p class="featured-desc">
-              All requisite knowledge before committing to a thru-hike expedition. Physical preparation,
-              mental fortitude, permit requirements, and establishing your support network.
+              Trail credentials, completed thru-hikes, and the 840+ miles of experience that prepare
+              a hiker for 2,194 miles of the Appalachian Trail.
             </p>
-            <a href="/guide/chapter-1" class="featured-link">
+            <a href="/guide#01-hiker-profile-and-experience" class="featured-link">
               Read Chapter
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -634,7 +908,7 @@
 
         <!-- Quick Links -->
         <div class="bulletin-notes">
-          <div class="note note-1">
+          <a href="/guide#06-gear-system" class="note note-1">
             <div class="note-pin"></div>
             <span class="note-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -642,20 +916,20 @@
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
               </svg>
             </span>
-            <span class="note-text">Gear Guide</span>
-            <span class="note-chapter">Ch. 3</span>
-          </div>
-          <div class="note note-2">
+            <span class="note-text">Gear System</span>
+            <span class="note-chapter">Part VI</span>
+          </a>
+          <a href="/guide#15-resupply-logistics" class="note note-2">
             <div class="note-pin"></div>
             <span class="note-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               </svg>
             </span>
-            <span class="note-text">Resupply Strategy</span>
-            <span class="note-chapter">Ch. 7</span>
-          </div>
-          <div class="note note-3">
+            <span class="note-text">Resupply Logistics</span>
+            <span class="note-chapter">Part XV</span>
+          </a>
+          <a href="/guide#12-weather-strategy" class="note note-3">
             <div class="note-pin"></div>
             <span class="note-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -663,9 +937,9 @@
                 <polyline points="13 11 9 17 15 17 11 23" />
               </svg>
             </span>
-            <span class="note-text">Weather Wisdom</span>
-            <span class="note-chapter">Ch. 10</span>
-          </div>
+            <span class="note-text">Weather Strategy</span>
+            <span class="note-chapter">Part XII</span>
+          </a>
         </div>
 
         <!-- Decorative tacks -->
@@ -723,7 +997,7 @@
 
     <div class="footer-bottom">
       <p>Est. 2024 - Prepared with care for the trail ahead</p>
-      <p class="footer-credit">Compiled by C. Hogg for J. "Triple-O" Hogg</p>
+      <p class="footer-credit">Compiled by C. Hogg for J. "HoggCountry" Hogg</p>
     </div>
   </footer>
 </div>
@@ -1586,6 +1860,406 @@
     margin: 0;
   }
 
+  /* ===== TRAIL TOOLS SECTION ===== */
+  .ranger-tools {
+    background: var(--pine-dark);
+    padding: 4rem 1.5rem;
+    position: relative;
+  }
+
+  .ranger-tools::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--marker) 0px,
+      var(--marker) 15px,
+      transparent 15px,
+      transparent 30px
+    );
+  }
+
+  .tools-container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .tools-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .tools-seal {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    color: var(--marker);
+  }
+
+  .tools-seal svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .tools-label {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--marker);
+    margin-bottom: 0.5rem;
+  }
+
+  .tools-title {
+    font-family: Oswald, sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--cream);
+    margin: 0 0 0.5rem;
+  }
+
+  .tools-subtitle {
+    font-size: 1rem;
+    color: var(--cream);
+    opacity: 0.7;
+    margin: 0;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .tool-card {
+    background: rgba(245, 242, 232, 0.08);
+    border: 2px solid rgba(245, 242, 232, 0.15);
+    border-radius: 8px;
+    padding: 1.25rem 0.75rem;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.25s ease;
+  }
+
+  .tool-card:hover {
+    background: rgba(245, 242, 232, 0.12);
+    border-color: var(--marker);
+    transform: translateY(-4px);
+  }
+
+  .tool-icon {
+    width: 36px;
+    height: 36px;
+    margin: 0 auto 0.75rem;
+    color: var(--marker);
+    opacity: 0.9;
+  }
+
+  .tool-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .tool-icon.emergency {
+    color: #ef4444;
+  }
+
+  .tool-name {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--cream);
+    margin-bottom: 0.25rem;
+  }
+
+  .tool-desc {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--cream);
+    opacity: 0.5;
+  }
+
+  .tools-footer {
+    text-align: center;
+  }
+
+  .tools-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    background: var(--marker);
+    color: var(--ink);
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .tools-cta:hover {
+    background: #e6d600;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(240, 224, 0, 0.3);
+  }
+
+  .tools-cta svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* ===== TRAIL DISPATCHES (VIDEOS) SECTION ===== */
+  .ranger-dispatches {
+    padding: 4rem 1.5rem;
+    position: relative;
+  }
+
+  .ranger-dispatches::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--terra) 0px,
+      var(--terra) 20px,
+      transparent 20px,
+      transparent 40px
+    );
+  }
+
+  .dispatches-container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .dispatches-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .dispatches-stamp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: var(--terra);
+    border-radius: 50%;
+    margin-bottom: 1rem;
+  }
+
+  .stamp-icon {
+    width: 28px;
+    height: 28px;
+    color: var(--cream);
+  }
+
+  .stamp-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .dispatches-label {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--terra);
+    margin-bottom: 0.5rem;
+  }
+
+  .dispatches-title {
+    font-family: Oswald, sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--pine-dark);
+    margin: 0 0 0.5rem;
+  }
+
+  .dispatches-subtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .dispatches-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .dispatch-card {
+    background: var(--cream);
+    border: 3px solid var(--brown);
+    border-radius: 6px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: all 0.25s ease;
+  }
+
+  .dispatch-card:hover {
+    border-color: var(--terra);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .dispatch-card.dispatch-featured {
+    grid-column: 1;
+    grid-row: span 2;
+  }
+
+  .dispatch-media {
+    position: relative;
+    height: 200px;
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+  }
+
+  .dispatch-media.small {
+    height: 100px;
+  }
+
+  .dispatch-media .media-placeholder {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .dispatch-media .media-placeholder svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .dispatch-media.small .media-placeholder svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dispatch-badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    background: var(--marker);
+    color: var(--ink);
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-family: Oswald, sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .dispatch-duration {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .dispatch-content {
+    padding: 1.25rem;
+  }
+
+  .dispatch-date {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--terra);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+  }
+
+  .dispatch-title {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--pine-dark);
+    margin: 0 0 0.5rem;
+    line-height: 1.3;
+  }
+
+  .dispatch-featured .dispatch-title {
+    font-size: 1.35rem;
+  }
+
+  .dispatch-desc {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0 0 1rem;
+  }
+
+  .dispatch-cta {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--terra);
+    transition: color 0.2s ease;
+  }
+
+  .dispatch-card:hover .dispatch-cta {
+    color: var(--pine);
+  }
+
+  .dispatches-footer {
+    text-align: center;
+  }
+
+  .dispatches-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    background: var(--terra);
+    color: var(--cream);
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .dispatches-cta:hover {
+    background: var(--terra-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(217, 119, 6, 0.3);
+  }
+
+  .dispatches-cta svg {
+    width: 18px;
+    height: 18px;
+  }
+
   /* ===== THREE PANELS SECTION ===== */
   .ranger-panels {
     background: linear-gradient(180deg, var(--cream-dark) 0%, var(--cream) 100%);
@@ -2040,6 +2714,13 @@
     align-items: center;
     gap: 0.75rem;
     min-width: 180px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .note:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.18);
   }
 
   .note-1 { transform: rotate(2deg); }
@@ -2259,6 +2940,18 @@
     .expedition-grid {
       grid-template-columns: repeat(2, 1fr);
     }
+
+    .tools-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .dispatches-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .dispatch-card.dispatch-featured {
+      grid-row: span 1;
+    }
   }
 
   @media (max-width: 900px) {
@@ -2353,6 +3046,23 @@
       font-size: 1.5rem;
     }
 
+    .tools-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+
+    .tool-name {
+      font-size: 0.7rem;
+    }
+
+    .tool-desc {
+      display: none;
+    }
+
+    .dispatch-media {
+      height: 160px;
+    }
+
     .bulletin-board {
       padding: 1.5rem;
       border-width: 8px;
@@ -2421,6 +3131,15 @@
 
     .facts-grid {
       grid-template-columns: 1fr;
+    }
+
+    .tools-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tool-icon {
+      width: 28px;
+      height: 28px;
     }
 
     .footer-nav {
