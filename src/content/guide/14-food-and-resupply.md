@@ -1,34 +1,13 @@
 ---
 title: "Food & Resupply"
-part: 8
-order: 8
-description: "This is the dominant norm across the entire trail."
+part: 14
+order: 14
+description: "1. Bears — Strong, smart, food-conditioned in many AT areas"
 icon: "utensils"
 ---
 
 # Food & Resupply
 
-## Typical Carry Strategy
-
-### Standard Food Carry Range
-
-**3 to 5 days of food**
-
-This is the dominant norm across the entire trail.
-
-### By Section
-
-**Early Trail (Georgia through Southern NC)**
-- Common carry: 3-4 days
-- Frequent road crossings, hostels close together
-
-**Mid-Trail and Later**
-- Common carry: 4-5 days
-- Rhythm stabilizes
-
-### Long Carries (6-7+ Days)
-
-Exceptions only. Primarily the 100-Mile Wilderness in Maine.
 
 ## Trail Food Staples
 

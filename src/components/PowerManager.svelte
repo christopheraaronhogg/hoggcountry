@@ -616,7 +616,7 @@
 
   <!-- Footer with Guide Link and Reset -->
   <div class="footer-row">
-    <a href="/guide/13-power-and-electronics" class="guide-link">
+    <a href="/guide/10-power-and-electronics" class="guide-link">
       <span class="link-icon">📖</span>
       <span class="link-text">Full Power & Electronics Guide</span>
       <span class="link-arrow">→</span>

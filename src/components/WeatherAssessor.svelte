@@ -760,7 +760,7 @@
   {/if}
 
   <!-- Guide Link -->
-  <a href="/guide/07-weather-strategy" class="guide-link">
+  <a href="/guide/12-weather-strategy" class="guide-link">
     <span class="link-icon">📖</span>
     <span class="link-text">Full Weather Strategy Guide</span>
     <span class="link-arrow">→</span>

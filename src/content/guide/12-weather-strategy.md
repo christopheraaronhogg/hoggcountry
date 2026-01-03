@@ -1,12 +1,13 @@
 ---
 title: "Weather Strategy"
-part: 7
-order: 7
+part: 12
+order: 12
 description: "Worst-case planning: 5.5°F colder per 1,000 feet of elevation gain"
 icon: "cloud"
 ---
 
 # Weather Strategy
+
 
 ## Temperature Planning
 

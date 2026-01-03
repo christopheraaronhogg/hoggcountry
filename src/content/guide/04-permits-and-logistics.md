@@ -1,12 +1,13 @@
 ---
 title: "Permits & Logistics"
-part: 11
-order: 11
+part: 4
+order: 4
 description: "Additional Fee: $15 park entrance fee may be required at staffed entry points. AT thru-hikers entering via trail typi..."
 icon: "clipboard"
 ---
 
 # Permits & Logistics
+
 
 ## Required Permits
 
@@ -40,14 +41,35 @@ icon: "clipboard"
 
 ### Baxter State Park / Katahdin
 
-**AT Hiker Permit — REQUIRED**
+**AT Thru-Hiker Permit — REQUIRED**
 
-- IN PERSON ONLY
-- Katahdin Stream Campground Ranger Station
-- FREE
-- Can obtain up to 7 days before summit
-- **Permit valid for 7 days from issue** — plan your summit day accordingly
-- The Birches Campsite: $10/night (cash only), first-come first-served, one night maximum, 12 persons max
+**Critical Details:**
+- **In-person ONLY** — Get at Katahdin Stream Campground Ranger Station
+- **FREE** — No online booking or fees for AT thru-hikers
+- **Timing:** Can obtain up to 7 days before summit attempt
+- **Validity:** Permit valid for 7 days from issue date
+- **Weather dependent:** Rangers can deny summit attempts due to conditions
+
+**Planning Strategy:**
+- Arrive with 2-3 buffer days in your schedule
+- Get permit as soon as possible after arriving (up to 7 days out)
+- Monitor Baxter weather forecasts starting 100 miles before Katahdin
+- Have lodging backup plan (Millinocket, Katahdin Stream Campground)
+
+**Camping Options Near Katahdin:**
+- **Katahdin Stream Campground:** Main base for summit attempts (reservations recommended)
+- **The Birches Campsite:** $10/night (cash only), first-come first-served, one night maximum, 12 persons max
+
+**Important Notes:**
+- August-September weather is unpredictable
+- Expect possible 1-3 day summit delays
+- Park rangers WILL turn hikers around in unsafe conditions
+- Don't schedule hard commitments immediately after projected finish date
+
+**2026 Reservation System (for campground booking, NOT the AT permit):**
+- Online reservations open at 6 AM EST
+- August = heavily booked
+- Book Katahdin Stream Campground in advance OR have flexible backup plan
 
 ### ATC Hang Tag
 
@@ -58,18 +80,5 @@ Voluntary identifier, NOT a permit. NOT required to hike.
 - Participate in short Leave No Trace discussion
 - Available at Amicalola Falls (mid-Feb through mid-April)
 - Also available at Damascus, Harpers Ferry, Monson
-
-## Known Detours (2025-2026)
-
-| Detour | Distance | Status |
-|--------|----------|--------|
-| Nolichucky River Bridge Detour (TN) | ~3.6 mi | Active (Hurricane Helene damage) |
-| Iron Mountain Gap Detour (NC/TN) | ~6 mi | Active (debris removal near Cherry Gap Shelter) |
-| Virginia Creeper Trail Closure (Damascus area) | ~20.9 mi | Active through ~fall 2026 (Hurricane Helene destroyed 30+ trestles) |
-| Great Gulf Detour (NH) | ~6.4 mi | Active (Madison Gulf Bridge closed Nov 2024) |
-
-*Note: Virginia Creeper closure affects NOBO miles 476.6-485.8. Official detour uses Iron Mountain Trail, Flat Top Trail, and Mount Rogers Trail.*
-
-**⚠️ IMPORTANT: Kennebec River Ferry (Maine)** — The ferry across the Kennebec River will **NOT operate in 2026**. Plan for the road-walk alternative. Check current guidance before reaching this section.
 
 ---

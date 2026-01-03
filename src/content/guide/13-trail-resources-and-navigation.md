@@ -1,12 +1,13 @@
 ---
 title: "Trail Resources & Navigation"
-part: 10
-order: 10
+part: 13
+order: 13
 description: "The primary guidebook most Appalachian Trail thru-hikers use and carry is the A.T. Guide (formerly known as AWOL's Ap..."
 icon: "map"
 ---
 
 # Trail Resources & Navigation
+
 
 ## Primary Guidebook Reference
 
@@ -76,3 +77,39 @@ For an efficient, modern thru-hike setup:
 *If electronics fail, the paper A.T. Guide becomes invaluable. If conditions change rapidly, FarOut fills the gaps.*
 
 ---
+
+
+## Typical Carry Strategy
+
+### Standard Food Carry Range
+
+**3 to 5 days of food**
+
+This is the dominant norm across the entire trail.
+
+### By Section
+
+**Early Trail (Georgia through Southern NC)**
+- Common carry: 3-4 days
+- Frequent road crossings, hostels close together
+
+**Mid-Trail and Later**
+- Common carry: 4-5 days
+- Rhythm stabilizes
+
+### Long Carries (6-7+ Days)
+
+Exceptions only. Primarily the 100-Mile Wilderness in Maine.
+
+## Known Detours (2025-2026)
+
+| Detour | Distance | Status |
+|--------|----------|--------|
+| Nolichucky River Bridge Detour (TN) | ~3.6 mi | Active (Hurricane Helene damage) |
+| Iron Mountain Gap Detour (NC/TN) | ~6 mi | Active (debris removal near Cherry Gap Shelter) |
+| Virginia Creeper Trail Closure (Damascus area) | ~20.9 mi | Active through ~fall 2026 (Hurricane Helene destroyed 30+ trestles) |
+| Great Gulf Detour (NH) | ~6.4 mi | Active (Madison Gulf Bridge closed Nov 2024) |
+
+*Note: Virginia Creeper closure affects NOBO miles 476.6-485.8. Official detour uses Iron Mountain Trail, Flat Top Trail, and Mount Rogers Trail.*
+
+**⚠️ IMPORTANT: Kennebec River Ferry (Maine)** — The ferry across the Kennebec River will **NOT operate in 2026**. Plan for the road-walk alternative. Check current guidance before reaching this section.

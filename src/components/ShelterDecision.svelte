@@ -460,7 +460,7 @@
   </button>
 
   <!-- Guide Link -->
-  <a href="/guide/06-shelter-vs-tent-decision-system" class="guide-link">
+  <a href="/guide/08-shelter-vs-tent-decision-system" class="guide-link">
     <span class="link-icon">📖</span>
     <span class="link-text">Full Shelter vs. Tent Guide</span>
     <span class="link-arrow">→</span>

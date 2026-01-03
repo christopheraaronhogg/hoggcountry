@@ -565,7 +565,7 @@ ETA: MM/DD/YYYY</pre>
   {/if}
 
   <!-- Guide Link -->
-  <a href="/guide/12-usps-mail-drop-system" class="guide-link">
+  <a href="/guide/15-resupply-logistics" class="guide-link">
     <span class="gl-icon">📖</span>
     <span class="gl-text">Full Mail Drop System Guide</span>
     <span class="gl-arrow">→</span>

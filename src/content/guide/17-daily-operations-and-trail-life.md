@@ -1,12 +1,13 @@
 ---
 title: "Daily Operations & Trail Life"
-part: 19
-order: 19
+part: 17
+order: 17
 description: "A consistent morning routine prevents forgotten gear, reduces decision fatigue, and gets you moving efficiently even ..."
 icon: "book"
 ---
 
 # Daily Operations & Trail Life
+
 
 ## Morning Routine & Breakdown
 
@@ -31,9 +32,8 @@ A consistent morning routine prevents forgotten gear, reduces decision fatigue, 
 
 1. Roll quilt from foot to head (pushes air out)
 2. Stuff into pack liner or dry bag
-3. Add pillow
-4. Seal pack liner
-5. Add sleeping pad (outside liner, inside pack)
+3. Seal pack liner
+4. Add sleeping pad (outside liner, inside pack)
 
 **Why this order:** If it rains during breakdown, your sleep system is already protected.
 
@@ -77,7 +77,7 @@ A consistent morning routine prevents forgotten gear, reduces decision fatigue, 
 **When temps are below 30°F:**
 - Sleep in next day's base layers to pre-warm them
 - Pack everything you can the night before
-- Keep gloves, Buff, and beanie accessible
+- Keep gloves and Buff accessible
 - Eat and drink BEFORE breaking down tent (stay warm longer)
 - Use hand warmers if fingers lose dexterity
 
@@ -384,6 +384,89 @@ A disciplined evening routine prevents cold, hunger, and poor sleep.
 - Mind should be ready to hike
 
 **If you're not there, consider a second zero.** But if you're still not there after 48 hours, the problem isn't physical.
+
+---
+
+## 🏘️ PREFERRED ZERO-DAY TOWNS: Strategic Rest Stop Planning
+
+**Zero-day strategy: Every 5-7 hiking days = 1 full rest day in town**
+
+### ✅ **TIER 1 ZERO TOWNS** (Best Full-Service Options)
+
+These towns have EVERYTHING: lodging, laundry, grocery, restaurants, gear shop, easy trail access.
+
+**GEORGIA:**
+- **Hiawassee, GA** (Mile ~70) - Full services, hiker-friendly, good resupply
+
+**NORTH CAROLINA / TENNESSEE:**
+- **Hot Springs, NC** (Mile ~274) - Walkable, laundry, hostel, grocery
+- **Damascus, VA** (Mile ~469) - *"Trail Town USA"* - MAJOR zero town, full services, gear shop
+
+**VIRGINIA:**
+- **Waynesboro, VA** (Mile ~945) - Full services, good restaurants, near Shenandoah
+
+**MID-ATLANTIC:**
+- **Harpers Ferry, WV** (Mile ~1,024) - ATC HQ, historic town, full services
+- **Duncannon, PA** (Mile ~1,149) - Doyle Hotel (legendary), laundry, resupply
+
+**NEW ENGLAND:**
+- **Bennington, VT** (Mile ~1,568) - Larger town, full services, 5-mile hitch
+- **Hanover, NH** (Mile ~1,725) - College town, excellent services, walkable
+- **Monson, ME** (Mile ~2,093) - LAST TOWN before 100-Mile Wilderness, mandatory zero
+
+---
+
+### ⚠️ **TIER 2 ZERO TOWNS** (Good Options, Minor Limitations)
+
+Good for zeros but may lack one service (no gear shop, longer hitch, limited lodging).
+
+**GEORGIA / NORTH CAROLINA:**
+- Franklin, NC (Mile ~114) - Full services but 10-mile hitch
+- Fontana Dam / Fontana Village (Mile ~166) - Resort, pricey, limited grocery
+
+**VIRGINIA:**
+- Pearisburg, VA (Mile ~635) - Good services, walkable
+- Daleville, VA (Mile ~730) - Near Roanoke, good resupply
+
+**MID-ATLANTIC:**
+- Port Clinton, PA (Mile ~1,226) - Small but hiker-friendly
+- Delaware Water Gap, PA (Mile ~1,290) - Walkable, good food
+
+**NEW ENGLAND:**
+- Glencliff, NH (Mile ~1,745) - Small, entering Whites, last easy zero before AMC huts
+- Gorham, NH (Mile ~1,796) - White Mountains hub, full services
+
+---
+
+### 🛑 **MANDATORY ZERO LOCATIONS**
+
+**These zeros are REQUIRED for logistics, not optional:**
+
+1. **Damascus, VA (Mile ~469)** - Gear transition (pack swap, sleep system swap). Plan 1-2 days here.
+2. **Monson, ME (Mile ~2,093)** - Final resupply before 100-Mile Wilderness. Buy 8-9 days of food. Plan 1 full day.
+3. **Harpers Ferry, WV (Mile ~1,024)** - Register at ATC HQ, psychological halfway point. Even if just a nero.
+
+---
+
+### 📅 **SAMPLE ZERO-DAY SCHEDULE** (Based on Your Pace)
+
+| Hiking Days | Miles Hiked | Zero Town | Mile Marker |
+|-------------|-------------|-----------|-------------|
+| Days 1-7 | 0-70 | Hiawassee, GA | ~70 |
+| Days 8-14 | 70-140 | Franklin, NC (optional) | ~114 |
+| Days 15-28 | 140-274 | **Hot Springs, NC** | ~274 |
+| Days 29-42 | 274-469 | **Damascus, VA** (2 days) | ~469 |
+| Days 43-54 | 469-635 | Pearisburg, VA | ~635 |
+| Days 55-68 | 635-825 | Daleville, VA | ~730 |
+| Days 69-81 | 825-1,024 | **Harpers Ferry, WV** | ~1,024 |
+| Days 82-93 | 1,024-1,226 | Port Clinton or Duncannon | ~1,149-1,226 |
+| Days 94-112 | 1,226-1,568 | Bennington, VT | ~1,568 |
+| Days 113-125 | 1,568-1,725 | **Hanover, NH** | ~1,725 |
+| Days 126-138 | 1,725-1,900 | Gorham, NH | ~1,796 |
+| Days 139-154 | 1,900-2,093 | **Monson, ME** | ~2,093 |
+| Days 155-164 | 2,093-2,197 | 100-Mile Wilderness (no zero) | --- |
+
+**Flexibility Note:** This is a framework, not a mandate. Listen to your body. If you need a zero earlier, take it.
 
 ---
 
@@ -1098,5 +1181,38 @@ At the end of every day, ask yourself these questions:
 *The planning is done. The gear is chosen. Now it's about execution, adaptation, and staying patient enough to reach Katahdin.*
 
 **See you on the summit.**
+
+---
+
+## ⚠️ 2026 HELENE ADDENDUM — CRITICAL TRAIL UPDATES
+
+**Hurricane Helene (September 2024) caused significant infrastructure damage in North Carolina and Tennessee. Trail conditions differ from pre-2024 guidebooks.**
+
+### **Known Changes for 2026 NOBOs:**
+
+**1. Nolichucky River Crossing (TN/NC Border - Mile ~350)**
+- **Status:** No planned 2026 ferry service (2025 service ended; bridge rebuild starts 2026)
+- **Solution:** 3.6-mile road walk OR shuttle
+- **Impact:** Plan logistics in Erwin, TN before this section
+- **Updates:** Check ATC website and FarOut comments for current status
+
+**2. Iron Mountain Gap Area (Near Roan Highlands - Mile ~360-365)**
+- **Status:** ~6-mile detour likely active through early 2026
+- **Possible reopening:** Fall 2025; confirm status via ATC alert before section
+- **Check:** ATC trail updates before reaching this section
+- **Note:** Adds mileage to daily plans in this area
+
+**3. General Trail Conditions (Georgia → Virginia)**
+- **Water sources:** Southern water sources and tread may differ from pre-2024 data
+- **Strategy:** Rely on recent FarOut comments (2025-2026) over older guidebook data
+- **Campsites:** Some established sites may have changed; verify current conditions
+
+### **Action Items:**
+- ✅ Check ATC.org trail updates monthly before your start
+- ✅ Download latest FarOut updates before each town stop
+- ✅ Ask NOBOs you meet about recent conditions ahead
+- ✅ Build flexibility into daily mileage plans (detours add miles)
+
+**This addendum reflects conditions as of January 2025. Trail restoration is ongoing.**
 
 ---

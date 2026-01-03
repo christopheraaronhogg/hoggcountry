@@ -1,14 +1,17 @@
 ---
-title: "Usps Mail Drop System"
-part: 12
-order: 12
+title: "Resupply Logistics"
+part: 15
+order: 15
 description: "```"
-icon: "mail"
+icon: "utensils"
 ---
 
-# Usps Mail Drop System
+# Resupply Logistics
 
-## General Delivery Rules
+
+## USPS Mail Drop System
+
+### General Delivery Rules
 
 ### Hold Times
 
@@ -53,5 +56,26 @@ ETA: MM/DD/YYYY
 | Monson, ME | ~2,074-2,079 | Gateway to 100-Mile Wilderness. Hold time often 14 days max. |
 
 *Note: Shaw's Hiker Hostel in Monson offers food drop services for the 100-Mile Wilderness—a useful option if you want to lighten your initial carry.*
+
+---
+
+## Walk-Only Resupply: Dollar General
+
+**There are ZERO Walmart stores within 2 walking miles of the AT.** All Walmart resupplies require a ride.
+
+### Walkable Dollar General Locations
+
+| Location | Mile | Distance to DG |
+|----------|------|----------------|
+| Hot Springs, NC | ~274 | 0.3 miles |
+| Erwin, TN | ~342 | 0.6 miles |
+| Hampton, TN | ~420 | 1.0 mile |
+| Pearisburg, VA | ~634 | 0.9 miles |
+| Daleville, VA | ~728 | 0.7 miles |
+| Waynesboro, VA | ~880 | 1.1 miles |
+| Front Royal, VA | ~999 | 3.0 miles |
+| Palmerton, PA | ~1,275 | 1.5 miles |
+| Great Barrington, MA | ~1,538 | 1.4 miles |
+| Gorham, NH | ~1,898 | 1.2 miles |
 
 ---

@@ -1,167 +1,13 @@
 ---
 title: "Town Strategy"
-part: 9
-order: 9
-description: "Partial day in town:"
+part: 16
+order: 16
+description: "Walking Distance: ≤2 miles from trail"
 icon: "building"
 ---
 
 # Town Strategy
 
-## Town Rhythm
-
-### Standard Pattern
-
-- Town stop: Every 3-5 days
-- Nero (near-zero day): Every 5-7 days
-- Zero day: About every 7-14 days
-
-### Nero Days
-
-Partial day in town:
-- Eat
-- Shower
-- Laundry
-- Charge devices
-- Resupply
-- Then hike short distance (under 10 miles)
-
-### Zero Days
-
-Full 24 hours off trail:
-- Complete recovery
-- Gear checks
-- Physical and mental reset
-- Mail drops or gear replacement
-
-## 5-Day Hike + Zero Day Schedule
-
-**Never hike more than 5 days without a zero.**
-
-### Planning Assumptions
-
-- Start window: February 1-7
-- Hiking days per cycle: 5
-- Zero day per cycle: 1
-- Total cycle length: 6 calendar days
-
-### Phase 1: Winter Start (Feb)
-
-**Georgia → Southern NC** | Target: 8-9 miles/hiking day
-
-Cold weather, short daylight, cautious movement. Body-preservation phase.
-
-### Phase 2: Trail Legs Arrive (Mar-May)
-
-**NC/TN → Virginia** | Target: 10-11 miles/hiking day
-
-### Phase 3: Strong & Efficient (May-Jun)
-
-**Virginia** | Target: 12-13 miles/hiking day
-
-Schedule debt gets paid back—without breaking food limits.
-
-### Phase 4: Long Daylight (Jul-Aug)
-
-**NY → VT → NH** | Target: 13-14 miles/hiking day
-
-### Phase 5: Maine Reality (Aug-Sep)
-
-**NH → Katahdin** | Target: 11-12 miles/hiking day
-
-Maine terrain is slower; final push is realistic and safe.
-
-**Expected Finish: September 17-20**
-
----
-
-## 🏔️ LATE-TRAIL REALITY CHECK: WHITES → MAINE
-
-**The final 400+ miles (White Mountains → Katahdin) require different planning than the rest of the trail.**
-
-### **White Mountains: AMC Hut System**
-
-**What You Need to Know:**
-- **8 AMC huts** along ridgeline (Lakes of the Clouds, Mizpah, Zealand Falls, etc.)
-- **NOT shelters** - these are staffed lodges with bunks and meals
-- **Reservations:** $150+ per night for bunk + dinner + breakfast
-- **Work-for-Stay:** Limited spots (2-4 per hut), arrive early afternoon, crew assigns tasks
-- **Strategy:** Don't rely on work-for-stay - have tent as backup
-- **Peak Season:** July-August = busiest, hardest to get work-for-stay
-
-**Action:** Research AMC huts before entering Whites. Decide: pay, work-for-stay attempt, or tent/stealth.
-
----
-
-### **Katahdin Weather: Bail Plan Required**
-
-**Reality:** Katahdin summit attempts can be delayed by weather (wind, rain, lightning).
-
-**The Problem:**
-- Baxter State Park rangers WILL turn hikers around in unsafe conditions
-- August-September weather can be unpredictable
-- You might wait 1-3 days for a summit window
-
-**Your Bail Plan:**
-- **Buffer days:** Build 2-3 extra days into your schedule before Katahdin
-- **Lodging:** Identify where you'll stay if delayed (Millinocket, Katahdin Stream Campground)
-- **Mental prep:** Expect possible delays, don't push finish date promises
-- **Weather check:** Monitor Baxter State Park weather forecasts starting 100 miles out
-
-**Action:** Arrive at Katahdin with flexible timeline, not a hard deadline.
-
----
-
-### **Baxter Permit Process**
-
-**What You Need to Know:**
-- **Day-use permits:** Required for Katahdin summit
-- **Katahdin Stream Campground:** Popular base for summit attempts
-- **Reservation system:** Baxter uses online reservation system
-- **2026 Note:** Online reservations open at 6 AM EST (not midnight); extended multi-night booking available
-- **Peak season:** August = heavily booked
-- **Walk-up permits:** Sometimes available, but not guaranteed
-
-**Action:** Research Baxter permit requirements in August. Book Katahdin Stream Campground or have backup plan.
-
----
-
-### **100-Mile Wilderness: Food Carry Math**
-
-**The Reality:**
-- 100 miles with NO resupply (Mile ~2,093 to ~2,193)
-- Most hikers: 7-10 days
-- Your pace (11-12 mpd in Maine): ~8-9 days
-- **Food weight:** 8-9 days × 1.5 lb/day = **12-14 lb of food**
-- Plus full fuel canisters
-
-**Planning:**
-- Resupply at Monson, ME (Mile ~2,093)
-- Carry 8-9 days of food + 2 fuel canisters
-- **White's Crossing optional resupply (Mile ~2,133):** Shaw's Lodging offers food drop-off service (can reduce carry)
-- Water is plentiful (lakes, streams)
-
-**Action:** Plan 100-Mile food carry in Monson. Consider White's Crossing resupply if you want to split the carry.
-
----
-
-### **Mental Game: You're Almost There**
-
-By the time you reach the Whites, you've hiked 1,700+ miles. Fatigue is real.
-
-**Common Late-Trail Mistakes:**
-- Rushing to finish (injuries increase)
-- Skipping zeros (body is tired)
-- Poor weather decisions (summit fever)
-- Underestimating final terrain (Whites and Maine are HARD)
-
-**Strategy:**
-- Maintain your zero-day schedule (every 5-7 days)
-- Respect the terrain (Whites are technical, Maine is slow)
-- Don't skip meals or sleep
-- Finish strong, not broken
-
----
 
 ## Comprehensive AT Town & Services Guide (NOBO)
 
@@ -179,7 +25,6 @@ By the time you reach the Whites, you've hiked 1,700+ miles. Fatigue is real.
 **Walking Distance:** ≤2 miles from trail
 
 ---
-
 ### GEORGIA (Mile 0-78)
 
 **Amicalola Falls State Park (Mile 0)**
@@ -563,6 +408,155 @@ These towns have ALL services (lodging, shower, laundry, food, charging, resuppl
 
 **These are your guaranteed walkable full-service stops.**
 
+
+
+---
+
+
+## Medical & Dental Access Points (NOBO)
+
+### GEORGIA + NORTH CAROLINA
+
+**Franklin, NC** — Mile ~110 (via Winding Stair Gap)
+- Distance: ~10 miles
+- Urgent Care: Walk-in clinics available
+- Dental: Emergency and general (same-day common)
+- *Excellent for infections, swelling, cracked teeth, joint injuries*
+
+**Hot Springs, NC** — Mile ~275
+- Trail passes directly through town
+- Urgent Care: Limited locally; Asheville (~35 miles) for serious issues
+- Dental: General dentistry only
+- *Minor issues only—anything serious requires Asheville*
+
+### TENNESSEE
+
+**Erwin / Johnson City, TN** — Mile ~342
+- Distance: 5–15 miles
+- Urgent Care: Multiple centers
+- Dental: Emergency clinics in Johnson City
+- *One of the strongest early-trail medical zones*
+
+### VIRGINIA
+
+**Damascus / Abingdon, VA** — Mile ~469
+- Damascus walkable; Abingdon ~15 miles
+- Urgent Care: Multiple clinics
+- Dental: Emergency and general
+- *Ideal location to fix problems before they escalate*
+
+**Daleville / Roanoke, VA** — Mile ~728
+- Distance: 1–6 miles (some walkable)
+- Urgent Care: Multiple facilities
+- Dental: Extensive emergency and general
+- **Top-tier medical/dental zone. Strongly recommended for unresolved issues.**
+
+**Waynesboro, VA** — Mile ~880
+- Distance: ~5 miles
+- Urgent Care: Augusta Health Urgent Care
+- Dental: Emergency and general available
+- *Last major fix-it stop before Shenandoah*
+
+**Front Royal, VA** — Mile ~999
+- Distance: ~5 miles
+- Urgent Care: Valley Health Urgent Care
+- Dental: Emergency clinics available
+- *Excellent care access before Mid-Atlantic terrain*
+
+### WEST VIRGINIA / MARYLAND
+
+**Harpers Ferry, WV** — Mile ~1,025
+- Distance: Walkable
+- Urgent Care: Available locally and in nearby Maryland
+- Dental: Emergency in Hagerstown, MD
+- Hospital: Meritus Medical Center (ER)
+- *Major hub with reliable transportation and care*
+
+### PENNSYLVANIA
+
+**Duncannon, PA** — Mile ~1,145
+- Distance: Walkable
+- Urgent Care: Regional (Harrisburg area)
+- Dental: Emergency in Harrisburg
+- *PA is hard on feet and joints—do not delay treatment*
+
+**Delaware Water Gap, PA** — Mile ~1,298
+- Distance: Walkable
+- Urgent Care: St. Luke's (East Stroudsburg)
+- Dental: Emergency clinics nearby
+- Hospital: St. Luke's Hospital — Monroe Campus
+- *Strong overlap of urgent care, dental, and hospital*
+
+### NEW YORK
+
+**Bear Mountain / Fort Montgomery, NY** — Mile ~1,410
+- Distance: ~3–5 miles
+- Urgent Care: Hudson Valley clinics
+- Dental: Emergency and general
+
+### MASSACHUSETTS
+
+**Great Barrington, MA** — Mile ~1,538
+- Distance: ~5 miles
+- Urgent Care: Fairview Hospital Walk-In Care
+- Dental: Emergency and general available
+
+**Dalton, MA** — Mile ~1,570
+- Distance: Walkable
+- Urgent Care: BMC Hillcrest (Pittsfield, ~10 miles)
+- Dental: General in town
+- *Last reliable access before Vermont*
+
+### VERMONT
+
+**Bennington, VT** — Mile ~1,600
+- Distance: ~5 miles
+- Urgent Care: Southwestern Vermont Medical Center
+- Hospital: Southwestern Vermont Medical Center
+- *First major medical hub in Vermont*
+
+**Killington, VT** — Mile ~1,700
+- Distance: ~5 miles
+- Urgent Care: Rutland Regional (~15 miles)
+- Dental: Emergency in Rutland
+- *Last significant access before the Whites*
+
+### NEW HAMPSHIRE
+
+**Hanover / Lebanon, NH** — Mile ~1,747
+- Distance: Walkable
+- Urgent Care: Dartmouth-Hitchcock Urgent Care
+- Dental: Emergency clinics available
+- Hospital: Dartmouth-Hitchcock Medical Center
+- **Critical stop before White Mountains. Fix everything here.**
+
+**Gorham, NH** — Mile ~1,898
+- Distance: ~2–3 miles
+- Urgent Care: Limited; Conway (~30 miles)
+- Dental: Very limited
+- *Do not ignore dental pain at this point*
+
+### MAINE
+
+**Andover, ME** — Mile ~1,975
+- Distance: ~1 mile
+- Urgent Care: Very limited; Rumford (~20 miles)
+- *Last minor services before Monson*
+
+**Monson, ME** — Mile ~2,077
+- Distance: Walkable
+- Urgent Care: Limited; Bangor (~90 miles)
+- **Enter the 100-Mile Wilderness with zero medical or dental issues.**
+
+**Millinocket, ME** — Mile ~2,183
+- Distance: ~15 miles
+- Urgent Care: Regional available
+- Dental: General available
+- Hospital: Katahdin Region Hospital
+- *Primary medical hub for final stretch*
+
+---
+
 ## Laundry System
 
 ### Core Reality
@@ -588,24 +582,5 @@ You do NOT carry extra clothes. Laundry is done while you are still dressed and 
 9. Change into clean hiking clothes
 
 **Never shower first and then wear dirty clothes again.**
-
-## Walk-Only Resupply: Dollar General
-
-**There are ZERO Walmart stores within 2 walking miles of the AT.** All Walmart resupplies require a ride.
-
-### Walkable Dollar General Locations
-
-| Location | Mile | Distance to DG |
-|----------|------|----------------|
-| Hot Springs, NC | ~274 | 0.3 miles |
-| Erwin, TN | ~342 | 0.6 miles |
-| Hampton, TN | ~420 | 1.0 mile |
-| Pearisburg, VA | ~634 | 0.9 miles |
-| Daleville, VA | ~728 | 0.7 miles |
-| Waynesboro, VA | ~880 | 1.1 miles |
-| Front Royal, VA | ~999 | 3.0 miles |
-| Palmerton, PA | ~1,275 | 1.5 miles |
-| Great Barrington, MA | ~1,538 | 1.4 miles |
-| Gorham, NH | ~1,898 | 1.2 miles |
 
 ---

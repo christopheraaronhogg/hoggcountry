@@ -1,12 +1,13 @@
 ---
 title: "Water Treatment System"
-part: 5
-order: 5
+part: 9
+order: 9
 description: "Primary: Hollow-fiber filter (BeFree or Platypus QuickDraw class)"
 icon: "droplet"
 ---
 
 # Water Treatment System
+
 
 ## Final System Decision
 

@@ -1,12 +1,13 @@
 ---
 title: "Safety & Emergency Procedures"
-part: 15
-order: 15
+part: 18
+order: 18
 description: "Act early. Most trail emergencies are not sudden disasters—they are delayed decisions."
 icon: "alert"
 ---
 
 # Safety & Emergency Procedures
+
 
 ## Core Principle
 
@@ -100,6 +101,149 @@ Message a trusted person at home. They:
 - Flooding traps you
 - You are lost and disoriented
 - Self-rescue is no longer possible
+
+---
+
+## 📡 EMERGENCY CONTACT PROTOCOL: Using Your Garmin InReach Effectively
+
+### **DAILY CHECK-IN SYSTEM**
+
+**Your Home Contact:** 
+- Name: ______________________
+- Phone: ______________________
+- Email: ______________________
+
+**Daily Protocol:**
+- ✅ Send check-in message by 7 PM every day (even if brief)
+- ✅ Include: Location (shelter name or mile marker), status (good/tired/sore), plan for next day
+- ✅ Example: "Mile 327, Hot Springs tonight, all good, headed to Damascus next"
+
+**If You Miss Check-In:**
+- Home contact waits until 9 PM
+- If no message by 9 PM, you send: "Delayed but safe, checking in tomorrow"
+- If NO contact for 24 hours → home contact calls local ranger station
+
+---
+
+### 🚨 **SOS BUTTON: When to Press It**
+
+**PRESS SOS FOR:**
+- ❌ Life-threatening injury (can't move, severe bleeding, head trauma)
+- ❌ Medical emergency (chest pain, severe allergic reaction, hypothermia)
+- ❌ Immobilized (broken bone, can't walk)
+- ❌ Lost + no way to navigate (rare with GPS, but possible in whiteout)
+
+**DO NOT PRESS SOS FOR:**
+- ✅ Blisters, sore muscles, fatigue
+- ✅ Running low on food (you can always bail to a road)
+- ✅ Bad weather (unless GO/NO-GO says bail)
+- ✅ Feeling lonely or scared (use regular messaging)
+
+**What Happens When You Press SOS:**
+- GEOS (rescue coordination) receives alert with your GPS coordinates
+- They contact you via InReach to assess situation
+- They dispatch rescue (helicopter, ranger, SAR team) if needed
+- **Cost:** Rescue can cost $10,000+ if not life-threatening
+
+**Before Pressing SOS, Ask:**
+1. Can I self-rescue? (hike out, treat injury myself)
+2. Can I contact a friend/shuttle for pickup?
+3. Is this TRULY life-threatening?
+
+---
+
+### 💬 **MESSAGING PROTOCOL**
+
+**Types of Messages:**
+
+**1. Daily Check-In (Every Day by 7 PM):**
+- "Mile 327, Hot Springs, all good"
+- "Neels Gap, taking zero, knee sore but okay"
+
+**2. Itinerary Update (When Plans Change):**
+- "Staying extra day in Damascus for gear swap"
+- "Skipping Franklin, heading straight to Hot Springs"
+
+**3. Weather Delay:**
+- "Bailing to shelter, wind too high for ridge"
+- "Zero day due to ice storm, safe in town"
+
+**4. Injury/Issue (Non-Emergency):**
+- "Knee pain, taking nero tomorrow, will update"
+- "Blisters, hiking slow, still on track"
+
+**5. Emergency (Before SOS):**
+- "Injured but stable, need shuttle pickup at [road crossing]"
+- "Sick, hiking out to nearest town, will call"
+
+---
+
+### 📞 **ESCALATION PLAN**
+
+**Level 1: You're In Control**
+- Minor issue (blister, fatigue, weather delay)
+- You message home contact with update
+- You continue hiking or take nero/zero
+- Home contact does nothing unless you ask
+
+**Level 2: You Need Help But Not Rescue**
+- Injury that requires town visit (bad blister, knee pain)
+- You message home contact: "Need shuttle pickup at [location]"
+- Home contact arranges shuttle or advises on options
+- You hike to pickup point
+
+**Level 3: You Need Rescue**
+- Can't move, severe injury, medical emergency
+- You press SOS button
+- GEOS coordinates rescue
+- You message home contact: "Pressed SOS, [brief description]"
+- Home contact monitors situation, stays in touch with GEOS
+
+---
+
+### 📋 **PRE-TRAIL PREP WITH HOME CONTACT**
+
+**Before You Leave, Your Home Contact Needs:**
+
+1. ✅ **Copy of this guide** (so they understand your plan)
+2. ✅ **Your Garmin InReach login** (so they can see your tracking map)
+3. ✅ **Ranger station phone numbers** (from Field Quick-Reference Card)
+4. ✅ **Your insurance info** (health insurance card photo)
+5. ✅ **Emergency contact protocol** (this section)
+
+**Have a Conversation:**
+- "If I miss a check-in, wait until 9 PM, then try messaging me."
+- "If 24 hours with no contact, call [ranger station for my last known location]."
+- "If I press SOS, GEOS will contact you. Stay calm, follow their instructions."
+- "I'll check in every day by 7 PM. If I'm delayed, I'll say why."
+
+---
+
+### 🗺️ **BACKUP NAVIGATION PLAN**
+
+**Primary:** Garmin inReach Mini 2 (GPS + messaging)
+
+**If Garmin Fails:**
+- ✅ Download FarOut maps offline (on iPhone)
+- ✅ White blazes (follow the trail)
+- ✅ AT shelter signs (show mileage to next shelter)
+- ✅ Ask other hikers
+- ✅ Worst case: hike to nearest road, flag down car, ask for ride to town
+
+**You Won't Get Lost:**
+- AT is one of the most well-marked trails in the world
+- White blazes every 50-100 feet
+- Shelters every 8-15 miles
+- Other hikers (NOBO bubble) will be nearby
+
+**But If You DO Get Disoriented:**
+1. STOP. Don't keep walking.
+2. Look for white blazes (2.5" × 6" white rectangles)
+3. Check your last known location on Garmin
+4. Backtrack to last shelter or landmark
+5. Message home contact: "Disoriented but safe, backtracking"
+
+---
 
 ## Primary Emergency Exit Points (NOBO)
 

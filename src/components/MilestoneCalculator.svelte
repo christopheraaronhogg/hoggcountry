@@ -519,7 +519,7 @@
   </footer>
 
   <!-- Guide Link -->
-  <a href="/guide/16-trail-sections-and-milestones" class="guide-link">
+  <a href="/guide/02-trail-sections-and-milestones" class="guide-link">
     <span>Read the Trail Section Guide</span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M5 12h14M12 5l7 7-7 7"/>

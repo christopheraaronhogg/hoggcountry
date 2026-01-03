@@ -8,6 +8,7 @@ icon: "user"
 
 # Hiker Profile & Experience
 
+
 ## Hiking Resume
 
 This section documents verified long-distance completions, prior AT experience, and the skills that directly translate to Appalachian Trail readiness.

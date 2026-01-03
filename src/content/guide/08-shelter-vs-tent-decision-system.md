@@ -1,12 +1,13 @@
 ---
 title: "Shelter Vs. Tent Decision System"
-part: 6
-order: 6
+part: 8
+order: 8
 description: "Bottom line: Blood Mountain is not taller, but it hits harder sooner. You already handled equal or harder terrain in NC."
 icon: "home"
 ---
 
 # Shelter Vs. Tent Decision System
+
 
 ## Core Philosophy
 
@@ -14,6 +15,8 @@ icon: "home"
 - Shelters are a safety tool, not a comfort choice
 - Poor sleep and mouse exposure are accepted costs only when risk outweighs discomfort
 - Decisions are made using objective triggers, not mood or convenience
+
+---
 
 ## When Shelter Becomes the Right Decision
 
@@ -143,7 +146,7 @@ Once shelter is chosen, you switch modes.
 ### Gear Control
 
 **Keep with you:**
-- Headlamp
+- Nitecore NU25 headlamp
 - Phone
 - Filter (inside bag)
 - Battery bank
