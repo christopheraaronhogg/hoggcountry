@@ -1583,7 +1583,6 @@
     z-index: 1;
     background: var(--ink);
     padding: 5rem 1.5rem;
-    overflow: hidden;
   }
 
   .field-guide-section::before {
