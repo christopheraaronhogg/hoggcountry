@@ -1582,6 +1582,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    padding-left: 40px; /* Space for left-offset stacked pages */
   }
 
   .guide-preview {
@@ -2093,6 +2094,10 @@
     .preview-stack {
       width: 220px;
       height: 280px;
+    }
+
+    .guide-visual {
+      padding-left: 30px;
     }
 
     .footer-nav {
