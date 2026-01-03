@@ -44,23 +44,15 @@
     </div>
   </nav>
 
-  <!-- Prototype Content -->
+  <!-- Prototype Content - All rendered, CSS hides inactive -->
   <div class="prototype-content">
-    {#if activePrototype === 'A'}
-      <ProtoA />
-    {:else if activePrototype === 'B'}
-      <ProtoB />
-    {:else if activePrototype === 'C'}
-      <ProtoC />
-    {:else if activePrototype === 'D'}
-      <ProtoD />
-    {:else if activePrototype === 'E'}
-      <ProtoE />
-    {:else if activePrototype === 'F'}
-      <ProtoF />
-    {:else if activePrototype === 'G'}
-      <ProtoG />
-    {/if}
+    <div class="proto-wrapper" class:active={activePrototype === 'A'}><ProtoA /></div>
+    <div class="proto-wrapper" class:active={activePrototype === 'B'}><ProtoB /></div>
+    <div class="proto-wrapper" class:active={activePrototype === 'C'}><ProtoC /></div>
+    <div class="proto-wrapper" class:active={activePrototype === 'D'}><ProtoD /></div>
+    <div class="proto-wrapper" class:active={activePrototype === 'E'}><ProtoE /></div>
+    <div class="proto-wrapper" class:active={activePrototype === 'F'}><ProtoF /></div>
+    <div class="proto-wrapper" class:active={activePrototype === 'G'}><ProtoG /></div>
   </div>
 </div>
 
@@ -179,6 +171,14 @@
 
   .prototype-content {
     padding-top: 70px;
+  }
+
+  .proto-wrapper {
+    display: none;
+  }
+
+  .proto-wrapper.active {
+    display: block;
   }
 
   /* Mobile adjustments */
