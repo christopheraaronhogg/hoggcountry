@@ -1165,7 +1165,6 @@
 
   /* ===== MISSION BADGE SECTION ===== */
   .ranger-mission {
-    background: var(--cream);
     padding: 5rem 1.5rem;
     position: relative;
   }
@@ -1865,7 +1864,6 @@
 
   /* ===== RANGER'S BULLETIN SECTION ===== */
   .ranger-bulletin {
-    background: var(--cream);
     padding: 4rem 1.5rem 5rem;
   }
 

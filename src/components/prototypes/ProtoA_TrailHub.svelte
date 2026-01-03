@@ -1458,7 +1458,6 @@
     position: relative;
     z-index: 1;
     padding: 4rem 1.5rem;
-    background: var(--bg);
   }
 
   .mission-header {
@@ -1821,7 +1820,6 @@
     position: relative;
     z-index: 1;
     padding: 5rem 1.5rem;
-    background: var(--bg);
   }
 
   .tools-header {

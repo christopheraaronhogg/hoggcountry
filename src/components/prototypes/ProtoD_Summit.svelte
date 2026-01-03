@@ -816,7 +816,6 @@
      ============================================ */
   .sv-mission {
     padding: 6rem 1.5rem;
-    background: var(--sv-bg);
     text-align: center;
   }
 
@@ -1164,7 +1163,6 @@
      ============================================ */
   .sv-trail-info {
     padding: 5rem 1.5rem;
-    background: var(--sv-bg);
   }
 
   .trail-info-header {
