@@ -7,6 +7,7 @@
   import ProtoF from './prototypes/ProtoF_Ranger.svelte';
   import ProtoG from './prototypes/ProtoG_Compass.svelte';
 
+  let { videos = [] } = $props();
   let activePrototype = $state('A');
 
   const prototypes = [
@@ -51,7 +52,7 @@
     <div class="proto-wrapper" class:active={activePrototype === 'C'}><ProtoC /></div>
     <div class="proto-wrapper" class:active={activePrototype === 'D'}><ProtoD /></div>
     <div class="proto-wrapper" class:active={activePrototype === 'E'}><ProtoE /></div>
-    <div class="proto-wrapper" class:active={activePrototype === 'F'}><ProtoF /></div>
+    <div class="proto-wrapper" class:active={activePrototype === 'F'}><ProtoF {videos} /></div>
     <div class="proto-wrapper" class:active={activePrototype === 'G'}><ProtoG /></div>
   </div>
 </div>

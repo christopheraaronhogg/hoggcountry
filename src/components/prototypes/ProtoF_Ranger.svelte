@@ -2,6 +2,18 @@
   // ProtoF: Ranger Station - Vintage National Parks Homepage
   // WPA poster aesthetic inspired by 1930s-40s national park posters
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
+
+  let { videos = [] } = $props();
+
+  // Get first 3 videos for the dispatches section
+  const displayVideos = videos.slice(0, 3);
+
+  // Format date for display
+  function formatDate(isoDate) {
+    if (!isoDate) return '';
+    const date = new Date(isoDate);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
 </script>
 
 <div class="ranger-station">
@@ -574,55 +586,59 @@
       </div>
 
       <div class="dispatches-grid">
-        <a href="/videos" class="dispatch-card dispatch-featured">
-          <div class="dispatch-media">
-            <div class="media-placeholder">
-              <svg viewBox="0 0 48 48" fill="currentColor">
-                <path d="M20 14v20l14-10-14-10z"/>
-              </svg>
+        {#if displayVideos.length > 0}
+          <!-- Featured (first) video -->
+          <a href={displayVideos[0].link} target="_blank" rel="noopener" class="dispatch-card dispatch-featured">
+            <div class="dispatch-media">
+              <img src={displayVideos[0].thumbnail} alt={displayVideos[0].title} class="dispatch-thumb" />
+              <span class="dispatch-badge">LATEST</span>
+              <div class="dispatch-play">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
             </div>
-            <span class="dispatch-badge">LATEST</span>
-            <span class="dispatch-duration">12:34</span>
-          </div>
-          <div class="dispatch-content">
-            <time class="dispatch-date">December 2025</time>
-            <h3 class="dispatch-title">Final Gear Shakedown: The Complete Kit</h3>
-            <p class="dispatch-desc">After 840+ miles of testing, the definitive gear list for Springer Mountain.</p>
-            <span class="dispatch-cta">View Dispatch</span>
-          </div>
-        </a>
+            <div class="dispatch-content">
+              <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
+              <h3 class="dispatch-title">{displayVideos[0].title}</h3>
+              <span class="dispatch-cta">View Dispatch</span>
+            </div>
+          </a>
 
-        <a href="/videos" class="dispatch-card">
-          <div class="dispatch-media small">
-            <div class="media-placeholder">
-              <svg viewBox="0 0 48 48" fill="currentColor">
-                <path d="M20 14v20l14-10-14-10z"/>
-              </svg>
+          <!-- Secondary videos -->
+          {#each displayVideos.slice(1) as video}
+            <a href={video.link} target="_blank" rel="noopener" class="dispatch-card">
+              <div class="dispatch-media small">
+                <img src={video.thumbnail} alt={video.title} class="dispatch-thumb" />
+                <div class="dispatch-play small">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="dispatch-content">
+                <time class="dispatch-date">{formatDate(video.published)}</time>
+                <h3 class="dispatch-title">{video.title}</h3>
+                <span class="dispatch-cta">View Dispatch</span>
+              </div>
+            </a>
+          {/each}
+        {:else}
+          <!-- Fallback when no videos available -->
+          <div class="dispatch-card dispatch-featured dispatch-placeholder">
+            <div class="dispatch-media">
+              <div class="media-placeholder">
+                <svg viewBox="0 0 48 48" fill="currentColor">
+                  <path d="M20 14v20l14-10-14-10z"/>
+                </svg>
+              </div>
             </div>
-            <span class="dispatch-duration">8:45</span>
-          </div>
-          <div class="dispatch-content">
-            <time class="dispatch-date">November 2025</time>
-            <h3 class="dispatch-title">Ozark Training: Winter Conditions Test</h3>
-            <span class="dispatch-cta">View Dispatch</span>
-          </div>
-        </a>
-
-        <a href="/videos" class="dispatch-card">
-          <div class="dispatch-media small">
-            <div class="media-placeholder">
-              <svg viewBox="0 0 48 48" fill="currentColor">
-                <path d="M20 14v20l14-10-14-10z"/>
-              </svg>
+            <div class="dispatch-content">
+              <h3 class="dispatch-title">Trail Dispatches Coming Soon</h3>
+              <p class="dispatch-desc">Videos from the trail will appear here once the expedition begins.</p>
             </div>
-            <span class="dispatch-duration">15:22</span>
           </div>
-          <div class="dispatch-content">
-            <time class="dispatch-date">October 2025</time>
-            <h3 class="dispatch-title">Sleep System Deep Dive</h3>
-            <span class="dispatch-cta">View Dispatch</span>
-          </div>
-        </a>
+        {/if}
       </div>
 
       <div class="dispatches-footer">
@@ -1465,8 +1481,8 @@
 
   .mission-badge {
     position: relative;
-    width: 240px;
-    height: 240px;
+    width: 280px;
+    height: 280px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1499,7 +1515,7 @@
 
   .badge-content {
     text-align: center;
-    padding: 1rem;
+    padding: 1.5rem;
   }
 
   .badge-header {
@@ -2152,6 +2168,49 @@
   .dispatch-media.small .media-placeholder svg {
     width: 32px;
     height: 32px;
+  }
+
+  .dispatch-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .dispatch-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s ease;
+  }
+
+  .dispatch-play svg {
+    width: 24px;
+    height: 24px;
+    margin-left: 3px;
+  }
+
+  .dispatch-play.small {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dispatch-play.small svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .dispatch-card:hover .dispatch-play {
+    background: var(--terra);
+    transform: translate(-50%, -50%) scale(1.1);
   }
 
   .dispatch-badge {
@@ -3117,8 +3176,8 @@
     }
 
     .mission-badge {
-      width: 200px;
-      height: 200px;
+      width: 240px;
+      height: 240px;
     }
 
     .badge-title {

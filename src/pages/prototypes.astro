@@ -1,8 +1,13 @@
 ---
 import HomepagePrototypes from '../components/HomepagePrototypes.svelte';
 import BackgroundWidget from '../components/BackgroundWidget.svelte';
+import { fetchYouTubeRSS } from '../lib/youtube';
+import { YT_FEED_URL } from '../lib/config';
 
 const title = "Homepage Prototypes — Hogg Country";
+
+// Fetch videos at build time
+const videos = await fetchYouTubeRSS(YT_FEED_URL);
 ---
 
 <!doctype html>
@@ -47,7 +52,7 @@ const title = "Homepage Prototypes — Hogg Country";
     </style>
   </head>
   <body>
-    <HomepagePrototypes client:load />
+    <HomepagePrototypes client:load videos={videos} />
     <BackgroundWidget client:only="svelte" />
   </body>
 </html>
