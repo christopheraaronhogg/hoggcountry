@@ -1,7 +1,7 @@
 <script lang="ts">
   // Trail Hub - Magazine Editorial Homepage
   // A sophisticated, content-first design inspired by Outside Magazine and NYT Outdoors
-  // The story of Jimmy "Triple-O" Hogg's AT thru-hike, supported by his son Chris
+  // The story of Jimmy "HoggCountry" Hogg's AT thru-hike, supported by his son Chris
 </script>
 
 <div class="trail-hub">
@@ -54,7 +54,7 @@
         </h1>
 
         <p class="hero-subhead">
-          Follow Jimmy "Triple-O" Hogg's February 2026 NOBO thru-hike of the Appalachian Trail.
+          Follow Jimmy "HoggCountry" Hogg's February 2026 NOBO thru-hike of the Appalachian Trail.
           840+ miles of completed thru-hikes. The 6th person in history to receive the Ozark Society's Sassafras Award.
           Now, at 62, he takes on the big one.
         </p>
@@ -83,7 +83,7 @@
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </a>
-          <a href="/about" class="btn-secondary">Meet Triple-O</a>
+          <a href="/about" class="btn-secondary">Meet HoggCountry</a>
         </div>
       </div>
 
@@ -122,99 +122,6 @@
           <span class="blaze"></span>
           <span class="blaze"></span>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================== -->
-  <!-- CREDENTIALS: Jimmy's Trail Resume           -->
-  <!-- ========================================== -->
-  <section class="credentials-section">
-    <div class="section-container">
-      <header class="credentials-header">
-        <span class="section-label">Trail Resume</span>
-        <h2 class="section-title">Jimmy's Credentials</h2>
-        <p class="credentials-intro">
-          The name "Triple-O" isn't just a trail name. It represents three completed thru-hikes
-          of the Ozark region's most demanding long trails.
-        </p>
-      </header>
-
-      <div class="credentials-grid">
-        <div class="credential-card featured">
-          <div class="credential-icon sassafras">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26z"/>
-            </svg>
-          </div>
-          <span class="credential-stat">6th Person</span>
-          <h3 class="credential-title">Sassafras Award</h3>
-          <p class="credential-desc">The Ozark Society's highest honor for completing all three major Ozark-region thru-hikes</p>
-        </div>
-
-        <div class="credential-card">
-          <div class="credential-icon ouachita">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-              <line x1="4" y1="22" x2="4" y2="15"/>
-            </svg>
-          </div>
-          <span class="credential-stat">223 mi</span>
-          <h3 class="credential-title">Ouachita Trail</h3>
-          <p class="credential-desc">Oklahoma to Arkansas</p>
-        </div>
-
-        <div class="credential-card">
-          <div class="credential-icon oht">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-              <line x1="4" y1="22" x2="4" y2="15"/>
-            </svg>
-          </div>
-          <span class="credential-stat">270 mi</span>
-          <h3 class="credential-title">Ozark Highlands Trail</h3>
-          <p class="credential-desc">Arkansas backcountry</p>
-        </div>
-
-        <div class="credential-card">
-          <div class="credential-icon ozark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-              <line x1="4" y1="22" x2="4" y2="15"/>
-            </svg>
-          </div>
-          <span class="credential-stat">230 mi</span>
-          <h3 class="credential-title">Ozark Trail</h3>
-          <p class="credential-desc">Missouri wilderness</p>
-        </div>
-
-        <div class="credential-card">
-          <div class="credential-icon at-preview">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2L2 22h20L12 2z"/>
-            </svg>
-          </div>
-          <span class="credential-stat">49 mi</span>
-          <h3 class="credential-title">AT Preview</h3>
-          <p class="credential-desc">Standing Bear to Hot Springs, Newfound Gap to Kuwohi</p>
-        </div>
-
-        <div class="credential-card">
-          <div class="credential-icon pikes">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2L2 22h20L12 2z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-          </div>
-          <span class="credential-stat">14,115 ft</span>
-          <h3 class="credential-title">Pikes Peak Summit</h3>
-          <p class="credential-desc">Cardiovascular benchmark</p>
-        </div>
-      </div>
-
-      <div class="readiness-badge">
-        <span class="readiness-label">Overall NOBO Readiness</span>
-        <span class="readiness-score">9/10</span>
       </div>
     </div>
   </section>
@@ -301,6 +208,38 @@
             </div>
           </a>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- TRAIL RESUME: Jimmy's Stats                 -->
+  <!-- ========================================== -->
+  <section class="credentials-section">
+    <div class="credentials-bar">
+      <div class="credential-item">
+        <span class="cred-number">840+</span>
+        <span class="cred-label">Miles Completed</span>
+      </div>
+      <div class="credential-divider"></div>
+      <div class="credential-item">
+        <span class="cred-number">3</span>
+        <span class="cred-label">Thru-Hikes</span>
+      </div>
+      <div class="credential-divider"></div>
+      <div class="credential-item featured">
+        <span class="cred-number">6th</span>
+        <span class="cred-label">Sassafras Award Recipient</span>
+      </div>
+      <div class="credential-divider"></div>
+      <div class="credential-item">
+        <span class="cred-number">49</span>
+        <span class="cred-label">AT Miles Previewed</span>
+      </div>
+      <div class="credential-divider"></div>
+      <div class="credential-item">
+        <span class="cred-number">62</span>
+        <span class="cred-label">Years Young</span>
       </div>
     </div>
   </section>
@@ -1090,154 +1029,77 @@
   }
 
   /* ============================================ */
-  /* CREDENTIALS SECTION                           */
+  /* CREDENTIALS BAR                               */
   /* ============================================ */
   .credentials-section {
     position: relative;
     z-index: 1;
-    padding: 4rem 1.5rem;
-    background: linear-gradient(180deg, rgba(166, 181, 137, 0.08) 0%, transparent 100%);
+    padding: 2.5rem 1.5rem;
+    background: var(--pine);
   }
 
-  .credentials-header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-
-  .credentials-intro {
-    font-size: 1.0625rem;
-    color: var(--muted);
-    max-width: 600px;
-    margin: 0.75rem auto 0;
-    line-height: 1.6;
-  }
-
-  .credentials-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .credential-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.5rem 1rem;
-    text-align: center;
-    transition: all 0.25s ease;
-  }
-
-  .credential-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(77, 89, 74, 0.1);
-  }
-
-  .credential-card.featured {
-    grid-column: span 2;
-    background: linear-gradient(135deg, var(--terra) 0%, #b45309 100%);
-    border-color: transparent;
-    color: var(--card);
-  }
-
-  .credential-card.featured .credential-desc {
-    color: rgba(255, 255, 255, 0.8);
-  }
-
-  .credential-icon {
-    width: 48px;
-    height: 48px;
+  .credentials-bar {
+    max-width: 1100px;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
-    margin: 0 auto 0.75rem;
+    gap: 2rem;
+    flex-wrap: wrap;
   }
 
-  .credential-icon svg {
-    width: 24px;
-    height: 24px;
+  .credential-item {
+    text-align: center;
+    padding: 0 1rem;
   }
 
-  .credential-icon.sassafras {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--card);
+  .credential-item.featured .cred-number {
+    color: var(--marker);
   }
 
-  .credential-icon.ouachita,
-  .credential-icon.oht,
-  .credential-icon.ozark {
-    background: rgba(166, 181, 137, 0.2);
-    color: var(--pine);
-  }
-
-  .credential-icon.at-preview {
-    background: rgba(217, 119, 6, 0.12);
-    color: var(--terra);
-  }
-
-  .credential-icon.pikes {
-    background: rgba(59, 130, 246, 0.12);
-    color: #3b82f6;
-  }
-
-  .credential-stat {
+  .cred-number {
     font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
+    font-size: clamp(2rem, 4vw, 2.75rem);
     font-weight: 700;
-    color: var(--ink);
+    color: var(--card);
     display: block;
+    line-height: 1;
     margin-bottom: 0.25rem;
   }
 
-  .credential-card.featured .credential-stat {
-    color: var(--card);
-    font-size: 1.75rem;
-  }
-
-  .credential-title {
-    font-family: Oswald, sans-serif;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--ink);
-    margin: 0 0 0.375rem;
-  }
-
-  .credential-card.featured .credential-title {
-    color: var(--card);
-    font-size: 1rem;
-  }
-
-  .credential-desc {
+  .cred-label {
     font-size: 0.75rem;
-    color: var(--muted);
-    margin: 0;
-    line-height: 1.4;
-  }
-
-  .readiness-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    padding: 1.25rem 2rem;
-    background: var(--ink);
-    border-radius: 8px;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-
-  .readiness-label {
-    font-size: 0.875rem;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
-  .readiness-score {
-    font-family: Oswald, sans-serif;
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--alpine);
+  .credential-divider {
+    width: 1px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    .credentials-bar {
+      gap: 1.5rem;
+    }
+
+    .credential-divider {
+      display: none;
+    }
+
+    .credential-item {
+      flex: 1 1 calc(33% - 1rem);
+      min-width: 100px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .credential-item {
+      flex: 1 1 calc(50% - 1rem);
+    }
   }
 
   /* ============================================ */
