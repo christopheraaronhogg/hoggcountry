@@ -18,79 +18,6 @@
 
 <div class="ranger-station">
   <!-- ========================================== -->
-  <!-- HEADER - Vintage Badge Logo Navigation    -->
-  <!-- ========================================== -->
-  <header class="ranger-header">
-    <div class="ranger-header-inner">
-      <!-- Vintage Badge Logo -->
-      <a href="/" class="ranger-logo">
-        <div class="logo-badge">
-          <div class="badge-outer">
-            <div class="badge-inner">
-              <span class="badge-mountain">
-                <svg viewBox="0 0 60 30" fill="currentColor">
-                  <path d="M0 30 L15 8 L25 18 L35 5 L50 20 L60 30 Z" />
-                </svg>
-              </span>
-              <span class="badge-text">HOGG</span>
-              <span class="badge-text-sub">COUNTRY</span>
-            </div>
-          </div>
-          <span class="badge-est">EST. 2024</span>
-        </div>
-      </a>
-
-      <!-- Vintage Navigation -->
-      <nav class="ranger-nav">
-        <a href="/guide" class="nav-link">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
-          </span>
-          Field Guide
-        </a>
-        <a href="/tools" class="nav-link">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-            </svg>
-          </span>
-          Trail Tools
-        </a>
-        <a href="/trips" class="nav-link">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
-          </span>
-          Trip Reports
-        </a>
-        <a href="/videos" class="nav-link">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="23 7 16 12 23 17 23 7" />
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-            </svg>
-          </span>
-          Videos
-        </a>
-      </nav>
-
-      <!-- Mobile Menu Button -->
-      <button class="mobile-menu-btn" aria-label="Menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- ========================================== -->
   <!-- HERO - WPA Poster Style                   -->
   <!-- ========================================== -->
   <section class="ranger-hero">
@@ -1042,147 +969,6 @@
     color: var(--ink);
     min-height: 100vh;
     overflow-x: hidden;
-  }
-
-  /* ===== HEADER STYLES ===== */
-  .ranger-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: linear-gradient(180deg, var(--brown-dark) 0%, var(--pine-dark) 100%);
-    border-bottom: 4px solid var(--brown);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .ranger-header-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0.75rem 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .ranger-logo {
-    text-decoration: none;
-  }
-
-  .logo-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .badge-outer {
-    width: 48px;
-    height: 48px;
-    background: var(--cream);
-    border: 3px solid var(--marker);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .badge-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1;
-  }
-
-  .badge-mountain {
-    color: var(--pine);
-    width: 28px;
-    height: 14px;
-  }
-
-  .badge-mountain svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .badge-text {
-    font-family: Oswald, sans-serif;
-    font-size: 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    color: var(--pine-dark);
-    margin-top: 1px;
-  }
-
-  .badge-text-sub {
-    font-family: Oswald, sans-serif;
-    font-size: 0.4rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: var(--brown);
-  }
-
-  .badge-est {
-    font-family: Oswald, sans-serif;
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.15em;
-    color: var(--cream);
-    opacity: 0.8;
-  }
-
-  .ranger-nav {
-    display: flex;
-    gap: 0.25rem;
-  }
-
-  .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 0.75rem;
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--cream);
-    text-decoration: none;
-    border: 2px solid transparent;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-  }
-
-  .nav-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--marker);
-    color: var(--marker);
-  }
-
-  .nav-icon {
-    width: 16px;
-    height: 16px;
-    opacity: 0.8;
-  }
-
-  .nav-icon svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .mobile-menu-btn {
-    display: none;
-    width: 40px;
-    height: 40px;
-    background: transparent;
-    border: 2px solid var(--cream);
-    border-radius: 4px;
-    color: var(--cream);
-    cursor: pointer;
-    padding: 8px;
-  }
-
-  .mobile-menu-btn svg {
-    width: 100%;
-    height: 100%;
   }
 
   /* ===== HERO SECTION ===== */
@@ -3014,16 +2800,6 @@
   }
 
   @media (max-width: 900px) {
-    .ranger-nav {
-      display: none;
-    }
-
-    .mobile-menu-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     .mission-container {
       grid-template-columns: 1fr;
       gap: 2.5rem;
@@ -3150,19 +2926,6 @@
   }
 
   @media (max-width: 480px) {
-    .ranger-header-inner {
-      padding: 0.5rem 1rem;
-    }
-
-    .badge-outer {
-      width: 40px;
-      height: 40px;
-    }
-
-    .badge-est {
-      display: none;
-    }
-
     .hero-stamp {
       padding: 0.35rem 0.75rem;
     }
