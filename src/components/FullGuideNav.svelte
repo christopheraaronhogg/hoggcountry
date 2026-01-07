@@ -258,7 +258,7 @@
     position: fixed;
     left: 0;
     right: 0;
-    z-index: 999;
+    z-index: 1002; /* Above header (1001) so progress marker dot is visible */
     background: linear-gradient(to bottom, rgba(245, 242, 232, 0.98), rgba(245, 242, 232, 0.95));
     backdrop-filter: blur(8px);
     padding: 0.65rem 1rem 0.4rem;
