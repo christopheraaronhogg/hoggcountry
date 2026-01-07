@@ -170,7 +170,7 @@
         <p class="mission-text">
           In February 2026, Jimmy "HoggCountry" Hogg heads north from Springer Mountain.
           After 840+ miles on Arkansas trails and the rare Sassafras Award, he's ready for the AT's 2,194 miles to Katahdin.
-          This guide is everything he's learned—and everything he wishes he'd known sooner.
+          This guide captures what he's learned along the way—and what he wishes he'd known sooner.
         </p>
 
         <!-- Vintage Credentials Certificates -->
