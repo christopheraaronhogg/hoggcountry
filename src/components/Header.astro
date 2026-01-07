@@ -1,6 +1,4 @@
 ---
-import { SITE_TITLE } from '../consts';
-
 const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
 const isGenerate = pathname.startsWith('/generate');
@@ -9,9 +7,9 @@ const isTools = pathname.startsWith('/tools');
 
 <header class="header" id="site-header">
   <nav class="container nav">
-    <h2 class="brand">
-      <a href="/" aria-label="Hogg Country" class="font-display">{SITE_TITLE}</a>
-    </h2>
+    <a href="/" class="brand" aria-label="Hogg Country">
+      <img src="/logo.png" alt="Hogg Country" class="logo" />
+    </a>
 
     <div class="nav-right">
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
@@ -47,15 +45,13 @@ const isTools = pathname.startsWith('/tools');
   }
 
   .brand {
-    margin: 0;
     display: flex;
     align-items: center;
   }
 
-  .brand a {
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
+  .logo {
+    height: 40px;
+    width: auto;
   }
 
   .nav-right {
