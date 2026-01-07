@@ -168,9 +168,9 @@
         </div>
         <h2 class="mission-heading">The Expedition Ahead</h2>
         <p class="mission-text">
-          In February 2026, Jimmy "HoggCountry" Hogg commences his northbound expedition of the Appalachian Trail.
-          A distinguished Arkansas trail veteran and holder of multiple certifications, he has prepared
-          this comprehensive handbook to assist fellow hikers in reaching the summit of Mt. Katahdin.
+          In February 2026, Jimmy "HoggCountry" Hogg heads north from Springer Mountain.
+          After 840+ miles on Arkansas trails and the rare Sassafras Award, he's ready for the AT's 2,194 miles to Katahdin.
+          This guide is everything he's learned—and everything he wishes he'd known sooner.
         </p>
 
         <!-- Vintage Credentials Certificates -->
@@ -225,7 +225,7 @@
               </span>
               <div class="credential-info">
                 <span class="credential-title">AT Experience: 49 Miles Logged</span>
-                <span class="credential-subtitle">Preliminary Reconnaissance</span>
+                <span class="credential-subtitle">Section Hike Experience</span>
               </div>
             </div>
 
@@ -292,7 +292,7 @@
 
       <div class="expedition-footer">
         <p class="footer-notice">
-          This guide has been field-tested and approved for distribution to all aspiring thru-hikers.
+          Trail-tested. Ready to share.
         </p>
         <p class="footer-prepared">
           Prepared by C. Hogg for J. "HoggCountry" Hogg
@@ -612,7 +612,7 @@
           <h3 class="panel-title">THE FIELD GUIDE</h3>
           <p class="panel-desc">
             18 chapters of trail-tested wisdom covering gear, resupply, weather patterns,
-            and the mental fortitude required for thru-hiking.
+            and the mindset that gets hikers to Katahdin.
           </p>
           <div class="panel-meta">
             <span class="meta-item">
