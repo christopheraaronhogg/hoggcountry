@@ -302,10 +302,10 @@ function cleanIntroContent(content) {
     .replace(/^\*Based on.*?\*\s*/m, '')
     .trim();
 
-  // Remove the TABLE OF CONTENTS section (from ## TABLE OF CONTENTS to ## Introduction:)
+  // Remove the TABLE OF CONTENTS section (from ## TABLE OF CONTENTS to the next --- or # heading)
   // This prevents duplicate TOC since the site has its own navigation
   cleaned = cleaned.replace(
-    /## TABLE OF CONTENTS[\s\S]*?(?=## Introduction:)/i,
+    /## TABLE OF CONTENTS[\s\S]*?(?=---\s*\n\s*#|# The Philosophy)/i,
     ''
   );
 
