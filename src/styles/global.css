@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Anton:wght@400&family=Lato:wght@400;600&family=Caveat:wght@400;600&display=swap');
+/* Google Fonts loaded via preload in BaseHead.astro for better performance */
 
 @tailwind base;
 @tailwind components;

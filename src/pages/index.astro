@@ -9,5 +9,5 @@ import { fetchYouTubeRSS } from '../lib/youtube';
 const videos = await fetchYouTubeRSS(YT_FEED_URL);
 ---
 <BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
-  <ProtoF client:load videos={videos} />
+  <ProtoF client:visible videos={videos} />
 </BaseLayout>
