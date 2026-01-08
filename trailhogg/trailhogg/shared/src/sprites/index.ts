@@ -95,6 +95,24 @@ export { UI_GAME_SPRITES } from './ui-game';
 // Hot Springs buildings (layered system)
 export { HOT_SPRINGS_BUILDING_SPRITES } from './hot-springs-buildings';
 
+// Hot Springs town layout
+export {
+  HOT_SPRINGS_LAYOUT,
+  getAllBuildings,
+  getBuiltBuildings,
+  getPlaceholderBuildings,
+  getBuildingById,
+  getBuildingsByService,
+  getTownStats,
+} from './hot-springs-town-layout';
+export type {
+  BuildingServiceType,
+  BuildingInteractionPoint,
+  TownBuilding,
+  TrailPath,
+  TownLayout,
+} from './hot-springs-town-layout';
+
 // All sprites in one object for easy iteration
 import { HIKER_SPRITES } from './hiker';
 import { ENVIRONMENT_SPRITES } from './environment';
