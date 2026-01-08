@@ -480,6 +480,488 @@ export const alpineCourtRoof: PixelSprite = {
 };
 
 // ============================================
+// DOLLAR GENERAL
+// ============================================
+// Key resupply point - grocery, first aid, household items
+
+export const dollarGeneralBase: PixelSprite = {
+  name: 'dollar_general_base',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+    ...Array(40).fill([
+      0,0,0,0,0,0,0,0,
+      C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,
+      C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,
+      C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,
+      C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,C.grayLight,
+      0,0,0,0,0,0,0,0,
+    ]),
+  ],
+};
+
+export const dollarGeneralWallSouth: PixelSprite = {
+  name: 'dollar_general_wall_south',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+
+    // Yellow Dollar General sign
+    [0,0,0,0,0,0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0],
+    [0,0,0,0,0,C.warning,C.nearBlack,C.warning,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0],
+    [0,0,0,0,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0],
+    [0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0],
+
+    // White walls with large windows
+    ...Array(4).fill([
+      0,0,C.warning,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.warning,C.warning,0,0,0,0,0
+    ]),
+
+    // Large storefront windows
+    ...Array(14).fill([
+      0,0,C.warning,C.white,C.white,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.white,C.white,C.white,C.white,C.warning,C.warning,0,0,0,0,0
+    ]),
+
+    // Bottom wall
+    ...Array(4).fill([
+      0,0,C.warning,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.warning,C.warning,0,0,0,0,0
+    ]),
+
+    // Doors
+    ...Array(12).fill([
+      0,0,C.warning,C.white,C.white,C.white,C.white,C.white,C.white,C.grayMedium,C.grayMedium,C.grayMedium,C.grayMedium,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.grayMedium,C.grayMedium,C.grayMedium,C.grayMedium,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.warning,C.warning,0,0,0,0,0
+    ]),
+
+    [0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0],
+  ],
+};
+
+export const dollarGeneralInterior: PixelSprite = {
+  name: 'dollar_general_interior',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+
+    // Shelving aisles
+    ...Array(30).fill([
+      0,0,0,0,0,0,0,0,
+      C.grayMedium,C.grayMedium,C.grayMedium,0,0,0,0,0, // Aisle 1
+      C.grayMedium,C.grayMedium,C.grayMedium,0,0,0,0,0, // Aisle 2
+      C.grayMedium,C.grayMedium,C.grayMedium,0,0,0,0,0, // Aisle 3
+      C.grayMedium,C.grayMedium,C.grayMedium,0,0,0,0,0, // Aisle 4
+      0,0,0,0,0,0,0,0,
+    ]),
+
+    // Checkout counter (bottom)
+    ...Array(10).fill([
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,
+      C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark, // Counter
+      C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,
+    ]),
+  ],
+};
+
+export const dollarGeneralRoof: PixelSprite = {
+  name: 'dollar_general_roof',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+    ...Array(40).fill([
+      0,0,0,0,0,0,C.warning,C.warning,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.warning,C.warning,0,0,0,0,0,0
+    ]),
+  ],
+};
+
+// ============================================
+// ELMER'S SUNNYBANK INN
+// ============================================
+// Famous hiker hostel - 26 Walnut St
+
+export const sunnybankBase: PixelSprite = {
+  name: 'sunnybank_inn_base',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+    ...Array(40).fill([
+      0,0,0,0,0,0,0,0,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      0,0,0,0,0,0,0,0,
+    ]),
+  ],
+};
+
+export const sunnybankWallSouth: PixelSprite = {
+  name: 'sunnybank_inn_wall_south',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+
+    // Sign "SUNNYBANK INN"
+    [0,0,0,0,0,0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,C.warning,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.warning,C.warning,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,C.warning,C.white,C.forestDark,C.forestDark,C.forestDark,C.white,C.forestDark,C.forestDark,C.forestDark,C.white,C.forestDark,C.white,C.white,C.forestDark,C.white,C.forestDark,C.white,C.forestDark,C.forestDark,C.forestDark,C.white,C.forestDark,C.forestDark,C.forestDark,C.white,C.white,C.forestDark,C.white,C.white,C.forestDark,C.white,C.white,C.white,C.warning,C.warning,0,0,0,0,0,0,0],
+    [0,0,0,0,0,C.warning,C.white,C.forestDark,C.dirtLight,C.dirtLight,C.dirtLight,C.white,C.forestDark,C.dirtLight,C.forestDark,C.white,C.forestDark,C.white,C.white,C.forestDark,C.white,C.forestDark,C.white,C.forestDark,C.dirtLight,C.forestDark,C.white,C.forestDark,C.dirtLight,C.dirtLight,C.white,C.white,C.forestDark,C.white,C.white,C.forestDark,C.white,C.white,C.white,C.warning,C.warning,0,0,0,0,0,0],
+    [0,0,0,0,C.warning,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.warning,C.warning,0,0,0,0,0,0],
+
+    // Yellow house walls
+    ...Array(6).fill([
+      0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0
+    ]),
+
+    // Windows
+    ...Array(10).fill([
+      0,0,0,C.warning,C.warning,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.warning,C.warning,C.warning,C.warning,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.warning,C.warning,C.warning,C.warning,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0
+    ]),
+
+    // Bottom wall with porch
+    ...Array(6).fill([
+      0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0
+    ]),
+
+    // Front door
+    ...Array(10).fill([
+      0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0
+    ]),
+
+    [0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0],
+  ],
+};
+
+export const sunnybankInterior: PixelSprite = {
+  name: 'sunnybank_inn_interior',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+
+    // Bunk beds
+    ...Array(40).fill([
+      0,0,0,0,0,0,0,0,
+      C.bark,C.bark,C.bark,0,C.bark,C.bark,C.bark,0, // Bunk 1 & 2
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,
+      C.bark,C.bark,C.bark,0,C.bark,C.bark,C.bark,0, // Bunk 3 & 4
+      0,0,0,0,0,0,0,0,
+    ]),
+  ],
+};
+
+export const sunnybankRoof: PixelSprite = {
+  name: 'sunnybank_inn_roof',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+
+    // Pitched roof
+    ...Array(10).fill([
+      0,0,0,0,0,0,0,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,0,0,0,0,0,0,0
+    ]),
+
+    ...Array(30).fill([
+      0,0,0,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,C.danger,0,0,0,0,0,0
+    ]),
+  ],
+};
+
+// ============================================
+// HOT SPRINGS WELCOME CENTER
+// ============================================
+// 106 Bridge St - Info center
+
+export const welcomeCenterBase: PixelSprite = {
+  name: 'welcome_center_base',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+    ...Array(40).fill([
+      0,0,0,0,0,0,0,0,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      0,0,0,0,0,0,0,0,
+    ]),
+  ],
+};
+
+export const welcomeCenterWallSouth: PixelSprite = {
+  name: 'welcome_center_wall_south',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+
+    // Sign "WELCOME CENTER"
+    [0,0,0,0,0,0,0,0,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,C.forestGreen,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.forestGreen,C.forestGreen,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,C.forestGreen,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.forestGreen,C.forestGreen,0,0,0,0,0,0],
+    [0,0,0,0,0,C.forestGreen,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.forestGreen,C.forestGreen,0,0,0,0,0,0],
+    [0,0,0,0,C.forestGreen,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.forestGreen,C.forestGreen,0,0,0,0,0,0],
+
+    // White building
+    ...Array(8).fill([
+      0,0,0,C.forestGreen,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.forestGreen,C.forestGreen,0,0,0,0,0
+    ]),
+
+    // Large info windows
+    ...Array(12).fill([
+      0,0,0,C.forestGreen,C.white,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.white,C.white,C.white,C.white,C.white,C.forestGreen,C.forestGreen,0,0,0,0,0
+    ]),
+
+    // Bottom wall
+    ...Array(4).fill([
+      0,0,0,C.forestGreen,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.forestGreen,C.forestGreen,0,0,0,0,0
+    ]),
+
+    // Door
+    ...Array(12).fill([
+      0,0,0,C.forestGreen,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.white,C.forestGreen,C.forestGreen,0,0,0,0,0
+    ]),
+
+    [0,0,0,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,C.forestGreen,0,0,0,0,0],
+  ],
+};
+
+export const welcomeCenterInterior: PixelSprite = {
+  name: 'welcome_center_interior',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+
+    // Info desk and display racks
+    ...Array(20).fill([
+      0,0,0,0,0,0,0,0,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark, // Back wall displays
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      0,0,0,0,0,0,0,0,
+    ]),
+
+    // Front desk
+    ...Array(20).fill([
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark, // Desk
+      C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,
+    ]),
+  ],
+};
+
+export const welcomeCenterRoof: PixelSprite = {
+  name: 'welcome_center_roof',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+    ...Array(40).fill([
+      0,0,0,C.forestGreen,C.forestGreen,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.forestGreen,C.forestGreen,0,0,0,0,0
+    ]),
+  ],
+};
+
+// ============================================
+// HOT SPRINGS RESORT & SPA
+// ============================================
+// 315 Bridge Street - Famous natural hot mineral springs
+// Larger building (64x64px) with hot springs pools, lodging, camping
+
+/**
+ * Hot Springs Resort & Spa - Base/Floor Layer
+ * Stone tile floor with hot springs pool area
+ */
+export const hotSpringsResortBase: PixelSprite = {
+  name: 'hot_springs_resort_base',
+  width: 64,
+  height: 64,
+  pixels: [
+    // Row 1-8: Exterior ground
+    ...Array(8).fill(Array(64).fill(0)),
+
+    // Row 9-48: Main floor area (stone tile)
+    ...Array(40).fill([
+      0,0,0,0,0,0,0,0, // Left exterior
+      C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium, // Stone tiles
+      C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,
+      C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,
+      C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,
+      C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,
+      C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,C.grayMedium,C.grayLight,
+      0,0,0,0,0,0,0,0, // Right exterior
+    ]),
+  ],
+};
+
+/**
+ * Hot Springs Resort & Spa - South Wall (Front)
+ * Rustic lodge with "HOT SPRINGS" sign and large windows
+ */
+export const hotSpringsResortWallSouth: PixelSprite = {
+  name: 'hot_springs_resort_wall_south',
+  width: 64,
+  height: 64,
+  pixels: [
+    // Row 1-2: Sky/roof overhang
+    ...Array(2).fill(Array(64).fill(0)),
+
+    // Row 3-6: Large "HOT SPRINGS" sign (orange/warning color)
+    [0,0,0,0,0,0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,C.warning,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.warning,C.warning,C.nearBlack,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,C.warning,C.nearBlack,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.nearBlack,C.warning,C.nearBlack,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.nearBlack,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.nearBlack,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.nearBlack,C.nearBlack,C.warning,C.warning,C.warning,C.warning,C.nearBlack,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0,0,0],
+
+    // Row 7-8: Top trim
+    ...Array(2).fill([
+      0,0,0,0,0,0,C.forestGreen,C.forestGreen,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.forestGreen,C.forestGreen,0,0,0,0,0,0
+    ]),
+
+    // Row 9-20: Upper wall with windows
+    ...Array(12).fill([
+      0,0,0,0,0,0,C.forestGreen,C.forestGreen,
+      C.bark,C.bark,C.bark,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.skyBlue,C.bark,C.bark,
+      C.forestGreen,C.forestGreen,0,0,0,0,0,0
+    ]),
+
+    // Row 21-35: Middle wall section
+    ...Array(15).fill([
+      0,0,0,0,0,0,C.forestGreen,C.forestGreen,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.forestGreen,C.forestGreen,0,0,0,0,0,0
+    ]),
+
+    // Row 36-47: Lower wall with entrance door
+    ...Array(4).fill([
+      0,0,0,0,0,0,C.forestGreen,C.forestGreen,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,
+      C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.forestGreen,C.forestGreen,0,0,0,0,0,0
+    ]),
+    ...Array(8).fill([
+      0,0,0,0,0,0,C.forestGreen,C.forestGreen,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,
+      C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.forestGreen,C.forestGreen,0,0,0,0,0,0
+    ]),
+
+    // Row 48-56: Bottom base
+    ...Array(9).fill([
+      0,0,0,0,0,0,C.forestGreen,C.forestGreen,
+      C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,
+      C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,
+      C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,
+      C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,C.barkDark,
+      C.forestGreen,C.forestGreen,0,0,0,0,0,0
+    ]),
+
+    // Row 57-64: Ground
+    ...Array(8).fill(Array(64).fill(0)),
+  ],
+};
+
+/**
+ * Hot Springs Resort & Spa - Interior Layer
+ * Hot springs pools, changing benches, relaxation area
+ */
+export const hotSpringsResortInterior: PixelSprite = {
+  name: 'hot_springs_resort_interior',
+  width: 64,
+  height: 64,
+  pixels: [
+    // Row 1-8: Exterior
+    ...Array(8).fill(Array(64).fill(0)),
+
+    // Row 9-18: Upper area with benches
+    ...Array(10).fill([
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,
+      C.bark,C.barkDark,C.bark,C.barkDark,C.bark,C.barkDark,0,0,0,0,0,0, // Left bench
+      0,0,0,0,0,0,0,0,0,0,0,0,
+      C.bark,C.barkDark,C.bark,C.barkDark,C.bark,C.barkDark,0,0,0,0, // Right bench
+      0,0,0,0,0,0,0,0
+    ]),
+
+    // Row 19-35: Hot springs pool area (steamy blue water)
+    ...Array(17).fill([
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,
+      C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue, // Pool 1
+      C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue,C.waterBlue,C.skyBlue, // Pool 2
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0
+    ]),
+
+    // Row 36-48: Lower changing area with benches
+    ...Array(13).fill([
+      0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,
+      C.bark,C.barkDark,C.bark,C.barkDark,C.bark,C.barkDark,0,0,0,0,0,0, // Bench
+      0,0,0,0,0,0,0,0,0,0,0,0,
+      C.bark,C.barkDark,C.bark,C.barkDark,C.bark,C.barkDark,0,0,0,0, // Bench
+      0,0,0,0,0,0,0,0
+    ]),
+
+    // Row 49-64: Exterior
+    ...Array(16).fill(Array(64).fill(0)),
+  ],
+};
+
+/**
+ * Hot Springs Resort & Spa - Roof Layer
+ * Green pitched roof
+ */
+export const hotSpringsResortRoof: PixelSprite = {
+  name: 'hot_springs_resort_roof',
+  width: 64,
+  height: 64,
+  pixels: [
+    // Row 1-8: Above roof
+    ...Array(8).fill(Array(64).fill(0)),
+
+    // Row 9-56: Green roof covering the building
+    ...Array(48).fill([
+      0,0,0,0,C.forestGreen,C.forestGreen,C.leafGreen,C.leafGreen,
+      C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,
+      C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,
+      C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,
+      C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,C.leafGreen,
+      C.leafGreen,C.leafGreen,C.forestGreen,C.forestGreen,0,0,0,0
+    ]),
+
+    // Row 57-64: Below roof
+    ...Array(8).fill(Array(64).fill(0)),
+  ],
+};
+
+// ============================================
 // SPRITE COLLECTION
 // ============================================
 
@@ -501,4 +983,28 @@ export const HOT_SPRINGS_BUILDING_SPRITES = {
   alpineCourtWallSouth,
   alpineCourtInterior,
   alpineCourtRoof,
+
+  // Dollar General (layered)
+  dollarGeneralBase,
+  dollarGeneralWallSouth,
+  dollarGeneralInterior,
+  dollarGeneralRoof,
+
+  // Elmer's Sunnybank Inn (layered)
+  sunnybankBase,
+  sunnybankWallSouth,
+  sunnybankInterior,
+  sunnybankRoof,
+
+  // Hot Springs Welcome Center (layered)
+  welcomeCenterBase,
+  welcomeCenterWallSouth,
+  welcomeCenterInterior,
+  welcomeCenterRoof,
+
+  // Hot Springs Resort & Spa (layered)
+  hotSpringsResortBase,
+  hotSpringsResortWallSouth,
+  hotSpringsResortInterior,
+  hotSpringsResortRoof,
 };

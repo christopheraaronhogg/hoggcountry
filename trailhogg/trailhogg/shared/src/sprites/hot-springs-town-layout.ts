@@ -290,7 +290,7 @@ export const HOT_SPRINGS_LAYOUT: TownLayout = {
         x: 900,
         y: 350,
         sprites: {
-          base: 'welcomeCenterBase', // TODO: Build sprite
+          base: 'welcomeCenterBase',
           wallSouth: 'welcomeCenterWallSouth',
           interior: 'welcomeCenterInterior',
           roof: 'welcomeCenterRoof',
@@ -303,7 +303,7 @@ export const HOT_SPRINGS_LAYOUT: TownLayout = {
         ],
         hours: '9am - 5pm',
         priceLevel: 1,
-        status: 'placeholder',
+        status: 'built',
       },
 
       // ============================================
@@ -374,7 +374,7 @@ export const HOT_SPRINGS_LAYOUT: TownLayout = {
         x: 1400,
         y: 350,
         sprites: {
-          base: 'hotSpringsResortBase', // TODO: Build sprite
+          base: 'hotSpringsResortBase',
           wallSouth: 'hotSpringsResortWallSouth',
           interior: 'hotSpringsResortInterior',
           roof: 'hotSpringsResortRoof',
@@ -388,7 +388,7 @@ export const HOT_SPRINGS_LAYOUT: TownLayout = {
         ],
         hours: 'Daily (hours vary by season)',
         priceLevel: 2,
-        status: 'placeholder',
+        status: 'built',
       },
 
       // ============================================
@@ -402,7 +402,7 @@ export const HOT_SPRINGS_LAYOUT: TownLayout = {
         x: 1200,
         y: 350,
         sprites: {
-          base: 'dollarGeneralBase', // TODO: Build sprite
+          base: 'dollarGeneralBase',
           wallSouth: 'dollarGeneralWallSouth',
           interior: 'dollarGeneralInterior',
           roof: 'dollarGeneralRoof',
@@ -415,7 +415,7 @@ export const HOT_SPRINGS_LAYOUT: TownLayout = {
         ],
         hours: '8am - 9pm',
         priceLevel: 1,
-        status: 'placeholder',
+        status: 'built',
       },
 
       // ============================================
@@ -463,7 +463,7 @@ export const HOT_SPRINGS_LAYOUT: TownLayout = {
           x: 800,
           y: 200, // North of Bridge Street
           sprites: {
-            base: 'sunnybankBase', // TODO: Build sprite
+            base: 'sunnybankBase',
             wallSouth: 'sunnybankWallSouth',
             interior: 'sunnybankInterior',
             roof: 'sunnybankRoof',
@@ -476,7 +476,7 @@ export const HOT_SPRINGS_LAYOUT: TownLayout = {
           ],
           hours: '24/7 (Check-in after 3pm)',
           priceLevel: 1,
-          status: 'placeholder',
+          status: 'built',
         },
       ],
     },
