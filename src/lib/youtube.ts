@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import { YT_FEED_URL, MANUAL_VIDEOS, type ManualVideo } from './config';
 
 export type YtVideo = {
   id: string;
@@ -17,21 +18,21 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-    
-    const res = await fetch(feedUrl, { 
+
+    const res = await fetch(feedUrl, {
       signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; HoggCountry/1.0)'
       }
     });
-    
+
     clearTimeout(timeoutId);
-    
+
     if (!res.ok) {
       console.warn(`YouTube RSS fetch failed: ${res.status}`);
       return cache?.items || []; // Return cached data or empty array
     }
-    
+
     const xml = await res.text();
 
     const parser = new XMLParser({
@@ -73,9 +74,60 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
 
     cache = { items, ts: Date.now() };
     return items;
-    
+
   } catch (error) {
     console.warn('YouTube RSS fetch error:', error);
     return cache?.items || []; // Return cached data or empty array on error
   }
+}
+
+/**
+ * Convert a manual video entry to a full YtVideo object
+ */
+function manualToYtVideo(manual: ManualVideo): YtVideo {
+  return {
+    id: manual.id,
+    title: manual.title || 'Untitled',
+    published: manual.published || new Date().toISOString(),
+    link: `https://www.youtube.com/watch?v=${manual.id}`,
+    thumbnail: `https://i.ytimg.com/vi/${manual.id}/hqdefault.jpg`,
+  };
+}
+
+/**
+ * Get all videos - merges RSS feed with manual overrides
+ *
+ * - Manual videos take precedence (appear even if not in RSS yet)
+ * - Deduplicates by video ID
+ * - Sorts by published date (newest first)
+ */
+export async function getVideos(): Promise<YtVideo[]> {
+  // Fetch from RSS feed
+  const rssVideos = await fetchYouTubeRSS(YT_FEED_URL);
+
+  // Convert manual videos to full YtVideo objects
+  const manualVideos = MANUAL_VIDEOS.map(manualToYtVideo);
+
+  // Create a map for deduplication (manual videos take precedence)
+  const videoMap = new Map<string, YtVideo>();
+
+  // Add RSS videos first
+  for (const video of rssVideos) {
+    videoMap.set(video.id, video);
+  }
+
+  // Add manual videos (overwrites RSS if duplicate)
+  for (const video of manualVideos) {
+    videoMap.set(video.id, video);
+  }
+
+  // Convert back to array and sort by published date (newest first)
+  const allVideos = Array.from(videoMap.values());
+  allVideos.sort((a, b) => {
+    const dateA = new Date(a.published).getTime();
+    const dateB = new Date(b.published).getTime();
+    return dateB - dateA;
+  });
+
+  return allVideos;
 }

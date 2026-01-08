@@ -3,10 +3,9 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
-import { YT_FEED_URL } from '../../lib/config';
-import { fetchYouTubeRSS } from '../../lib/youtube';
+import { getVideos } from '../../lib/youtube';
 
-const videos = await fetchYouTubeRSS(YT_FEED_URL);
+const videos = await getVideos();
 ---
 <html lang="en">
   <head>
