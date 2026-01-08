@@ -2,6 +2,25 @@
 
 A comprehensive reference for assessing AT thru-hiking content accuracy, completeness, and safety.
 
+**Data Last Updated:** January 2026
+**Official 2026 AT Length:** 2,197.9 miles
+
+---
+
+## Companion Data Files
+
+This skill includes detailed data files for reference and verification:
+
+| File | Contents |
+|------|----------|
+| [shelters.md](shelters.md) | Complete list of ~260 AT shelters with mile markers, elevation, capacity |
+| [resupply-towns.md](resupply-towns.md) | All resupply points with services, distances, tips |
+| [permits.md](permits.md) | Official permit requirements (Baxter, GSMNP, AMC, Shenandoah) |
+| [hostels.md](hostels.md) | Hostel list with 2025 pricing and services |
+| [resources.md](resources.md) | Authoritative links for live verification |
+
+**Usage:** Reference these files for detailed data. Use WebSearch/WebFetch with links in `resources.md` to verify current information.
+
 ---
 
 ## Trail Overview
@@ -10,7 +29,7 @@ A comprehensive reference for assessing AT thru-hiking content accuracy, complet
 
 | Attribute | Value |
 |-----------|-------|
-| Total Length | ~2,197 miles (varies by year due to reroutes) |
+| Total Length | 2,197.9 miles (2026 official - varies yearly due to reroutes) |
 | States | 14 (GA, NC, TN, VA, WV, MD, PA, NJ, NY, CT, MA, VT, NH, ME) |
 | Highest Point | Clingmans Dome / Kuwohi, TN - 6,643 ft |
 | Lowest Point | Bear Mountain Bridge, NY - 124 ft |
@@ -56,7 +75,7 @@ A comprehensive reference for assessing AT thru-hiking content accuracy, complet
 - Fontana Dam (tallest dam east of Rockies)
 - Great Smoky Mountains National Park (71.6 miles)
 
-**Permits Required:** Great Smoky Mountains (free, self-registration at kiosks)
+**Permits Required:** Great Smoky Mountains ($40 thru-hiker permit, online at smokiespermits.nps.gov)
 **Shelters:** GSMNP requires shelter stays (no tenting except at designated sites)
 
 ### 3. Tennessee (shared with NC, ~296 miles total NC/TN)
@@ -345,9 +364,11 @@ Options:
 
 | Location | Permit | Cost | Notes |
 |----------|--------|------|-------|
-| **Baxter State Park** | AT Hiker Permit | Free | REQUIRED, register at park or online |
-| **Great Smoky Mountains NP** | Self-registration | Free | Must stay in designated shelters |
-| **Shenandoah NP** | Backcountry permit | Free | Self-registration |
+| **Baxter State Park** | Long-Distance Hiker Permit | Free | REQUIRED, in-person at Katahdin Stream Ranger Station |
+| **Great Smoky Mountains NP** | Thru-Hiker Permit | $40 | Online at smokiespermits.nps.gov, valid 38 days |
+| **Shenandoah NP** | Backcountry permit | Free | Self-registration at kiosks |
+
+*See [permits.md](permits.md) for complete details including AMC hut policies.*
 
 ### Baxter State Park (Katahdin) Rules
 
@@ -597,6 +618,8 @@ Watch for these common errors:
 
 ## Resources for Verification
 
+*See [resources.md](resources.md) for complete list with clickable links.*
+
 ### Official Sources
 - **ATC (Appalachian Trail Conservancy):** appalachiantrail.org
 - **NPS:** nps.gov/appa
@@ -607,9 +630,10 @@ Watch for these common errors:
 - **WhiteBlaze.net:** Largest AT forum
 - **The Trek:** thetrek.co (gear reviews, planning)
 - **AT Class Facebook Groups:** Real-time info from current hikers
-- **Guthook/FarOut app:** GPS trail data, comments
+- **FarOut app (formerly Guthook):** GPS trail data, real-time comments
 
 ### Data Sources
-- **ATC Mileage Charts:** Official distances
-- **AWOL AT Guide:** Most popular printed guide
-- **Guthook/FarOut:** GPS-verified waypoints
+- **ATC Data Book:** Official distances (updated annually)
+- **AWOL/A.T. Guide:** Most popular printed guide (~$22)
+- **FarOut app:** GPS-verified waypoints, user comments
+- **ATDB (sophiaknows.com):** 500+ waypoints with CSV download
