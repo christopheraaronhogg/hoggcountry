@@ -922,7 +922,7 @@
         <span class="footer-dot"></span>
         <a href="/tools">Trail Tools</a>
         <span class="footer-dot"></span>
-        <a href="/trips">Trip Reports</a>
+        <a href="/videos">Trip Reports</a>
         <span class="footer-dot"></span>
         <a href="/videos">Videos</a>
       </div>

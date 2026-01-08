@@ -444,7 +444,7 @@
         <a href="/guide">Field Guide</a>
         <a href="/tools">Tools</a>
         <a href="/videos">Videos</a>
-        <a href="/trips">Trips</a>
+        <a href="/videos">Trips</a>
       </div>
       <div class="footer-meta">
         <p>AT NOBO 2026 | Triple-O | Built with love by Chris</p>

@@ -20,7 +20,7 @@
       <nav class="sv-nav">
         <a href="/guide" class="nav-link">GUIDE</a>
         <a href="/tools" class="nav-link">TOOLS</a>
-        <a href="/trips" class="nav-link">JOURNEY</a>
+        <a href="/videos" class="nav-link">JOURNEY</a>
       </nav>
     </div>
   </header>
@@ -197,7 +197,7 @@
     </a>
 
     <!-- Journey Block -->
-    <a href="/trips" class="content-block journey-block">
+    <a href="/videos" class="content-block journey-block">
       <div class="block-bg"></div>
       <div class="block-inner">
         <div class="block-icon">
@@ -369,7 +369,7 @@
         <span class="footer-dot"></span>
         <a href="/tools">Tools</a>
         <span class="footer-dot"></span>
-        <a href="/trips">Trips</a>
+        <a href="/videos">Trips</a>
         <span class="footer-dot"></span>
         <a href="/about">About</a>
       </div>

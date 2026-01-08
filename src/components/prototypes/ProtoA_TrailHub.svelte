@@ -22,7 +22,7 @@
       <nav class="main-nav" aria-label="Main navigation">
         <a href="/guide" class="nav-link">Field Guide</a>
         <a href="/tools" class="nav-link">Tools</a>
-        <a href="/trips" class="nav-link">Trips</a>
+        <a href="/videos" class="nav-link">Trips</a>
         <a href="/videos" class="nav-link">Videos</a>
       </nav>
       <button class="mobile-menu-btn" aria-label="Open menu">
@@ -136,7 +136,7 @@
           <span class="section-label">From the Trail</span>
           <h2 class="section-title">Latest Updates</h2>
         </div>
-        <a href="/trips" class="view-all-link">
+        <a href="/videos" class="view-all-link">
           View All
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -168,7 +168,7 @@
 
         <!-- Trip Report Card -->
         <article class="update-card">
-          <a href="/trips" class="card-link">
+          <a href="/videos" class="card-link">
             <div class="card-media">
               <div class="media-placeholder trip">
                 <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2">
@@ -556,7 +556,7 @@
       <nav class="footer-nav">
         <a href="/guide">Field Guide</a>
         <a href="/tools">Tools</a>
-        <a href="/trips">Trips</a>
+        <a href="/videos">Trips</a>
         <a href="/videos">Videos</a>
         <a href="/about">About</a>
       </nav>
