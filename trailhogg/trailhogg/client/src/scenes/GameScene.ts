@@ -1,0 +1,533 @@
+import Phaser from 'phaser';
+import * as Colyseus from 'colyseus.js';
+
+interface GameData {
+  hikerName: string;
+  build: string;
+}
+
+export class GameScene extends Phaser.Scene {
+  private client!: Colyseus.Client;
+  private room!: Colyseus.Room;
+  private hiker!: Phaser.GameObjects.Sprite;
+  private hikerData: any = null;
+  private trees: Phaser.GameObjects.Sprite[] = [];
+  private blazes: Phaser.GameObjects.Sprite[] = [];
+  private trail!: Phaser.GameObjects.TileSprite;
+  private ground!: Phaser.GameObjects.TileSprite;
+  private rainEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private fogSprites: Phaser.GameObjects.Sprite[] = [];
+  
+  // Camera follow offset
+  private cameraTarget: number = 0;
+  
+  // Game state
+  private isConnected: boolean = false;
+  private gameState: any = null;
+  
+  constructor() {
+    super({ key: 'GameScene' });
+  }
+
+  init(data: GameData) {
+    this.registry.set('hikerName', data.hikerName);
+    this.registry.set('build', data.build);
+  }
+
+  create() {
+    const { width, height } = this.cameras.main;
+    
+    // Create ground layer
+    this.ground = this.add.tileSprite(0, 0, width * 3, height, 'ground');
+    this.ground.setOrigin(0, 0);
+    
+    // Create trail
+    this.trail = this.add.tileSprite(width * 0.3, 0, width * 0.4, height, 'trail');
+    this.trail.setOrigin(0, 0);
+    
+    // Generate trees on both sides
+    this.generateTrees();
+    
+    // Generate initial blazes
+    this.generateBlazes();
+    
+    // Create hiker sprite
+    this.hiker = this.add.sprite(width / 2, height * 0.6, 'hiker');
+    this.hiker.setScale(2);
+    this.hiker.setDepth(10);
+    
+    // Set up camera
+    this.cameras.main.setBackgroundColor(0x355E3B);
+    
+    // Connect to server
+    this.connectToServer();
+    
+    // Input handlers
+    this.setupInputHandlers();
+    
+    // Emit event that game scene is ready
+    this.events.emit('scene-ready');
+  }
+  
+  generateTrees() {
+    const { width, height } = this.cameras.main;
+    
+    // Left side trees
+    for (let i = 0; i < 15; i++) {
+      const x = Phaser.Math.Between(20, width * 0.25);
+      const y = Phaser.Math.Between(0, height);
+      const tree = this.add.sprite(x, y, 'tree');
+      tree.setScale(Phaser.Math.FloatBetween(0.8, 1.5));
+      tree.setDepth(y / height * 5); // Depth based on Y position
+      this.trees.push(tree);
+    }
+    
+    // Right side trees
+    for (let i = 0; i < 15; i++) {
+      const x = Phaser.Math.Between(width * 0.75, width - 20);
+      const y = Phaser.Math.Between(0, height);
+      const tree = this.add.sprite(x, y, 'tree');
+      tree.setScale(Phaser.Math.FloatBetween(0.8, 1.5));
+      tree.setDepth(y / height * 5);
+      this.trees.push(tree);
+    }
+  }
+  
+  generateBlazes() {
+    const { width, height } = this.cameras.main;
+    
+    // Create blazes at intervals along the visible trail
+    const blazeInterval = 80; // pixels between blazes
+    for (let y = 0; y < height; y += blazeInterval) {
+      // Randomly place on left or right tree
+      const side = Math.random() < 0.5 ? 'left' : 'right';
+      const x = side === 'left' ? width * 0.28 : width * 0.72;
+      
+      // Choose blaze type
+      const blazeType = Math.random() < 0.85 ? 'blaze_single' : 
+                        (Math.random() < 0.7 ? 'blaze_double' : 'blaze_blue');
+      
+      const blaze = this.add.sprite(x, y, blazeType);
+      blaze.setDepth(6);
+      blaze.setData('visible', true);
+      this.blazes.push(blaze);
+    }
+  }
+  
+  async connectToServer() {
+    try {
+      // Connect to Colyseus server
+      const serverUrl = window.location.hostname === 'localhost' 
+        ? 'ws://localhost:2567' 
+        : `wss://${window.location.hostname}`;
+      
+      this.client = new Colyseus.Client(serverUrl);
+      
+      // Join or create a room
+      this.room = await this.client.joinOrCreate('trail', {});
+      
+      console.log('Connected to room:', this.room.id);
+      this.isConnected = true;
+      
+      // Create our hiker
+      this.room.send('create_hiker', {
+        name: this.registry.get('hikerName'),
+        build: this.registry.get('build')
+      });
+      
+      // Listen for state changes
+      this.room.onStateChange((state) => {
+        this.gameState = state;
+        this.updateFromState(state);
+      });
+      
+      // Listen for events
+      this.room.onMessage('hiker_created', (data) => {
+        console.log('Hiker created:', data);
+      });
+      
+      this.room.onError((code, message) => {
+        console.error('Room error:', code, message);
+      });
+      
+      this.room.onLeave((code) => {
+        console.log('Left room:', code);
+        this.isConnected = false;
+      });
+      
+    } catch (error) {
+      console.error('Connection failed:', error);
+      // Run in offline mode with simulated state
+      this.runOfflineMode();
+    }
+  }
+  
+  runOfflineMode() {
+    console.log('Running in offline mode');
+    
+    // Create simulated state
+    this.hikerData = {
+      name: this.registry.get('hikerName'),
+      mile: 0,
+      elevation: 3782,
+      calories: 2000,
+      hydration: 100,
+      energy: 100,
+      health: 100,
+      pace: 'normal',
+      lostState: 'on_trail',
+      isHiking: false,
+      currentDayMiles: 0,
+      totalMilesHiked: 0,
+      daysOnTrail: 1,
+      skills: {
+        trailLegs: 10, navigation: 15, campCraft: 10,
+        firstAid: 10, mentalFortitude: 20
+      },
+      moodles: {
+        hunger: 0, thirst: 0, fatigue: 0, morale: 50, anxiety: 0
+      },
+      inventory: {
+        water: 2.0, waterCapacity: 3.0, money: 500
+      }
+    };
+    
+    this.gameState = {
+      time: { day: 1, hour: 6, minute: 0 },
+      phase: 'morning',
+      weather: 'clear',
+      temperature: 55,
+      events: []
+    };
+    
+    // Start offline simulation loop
+    this.time.addEvent({
+      delay: 100,
+      callback: this.offlineTick,
+      callbackScope: this,
+      loop: true
+    });
+    
+    // Emit initial state to UI
+    this.events.emit('state-update', {
+      hiker: this.hikerData,
+      game: this.gameState
+    });
+  }
+  
+  offlineTick() {
+    if (!this.hikerData) return;
+    
+    // Advance time
+    this.gameState.time.minute += 1;
+    if (this.gameState.time.minute >= 60) {
+      this.gameState.time.minute = 0;
+      this.gameState.time.hour++;
+      if (this.gameState.time.hour >= 24) {
+        this.gameState.time.hour = 0;
+        this.gameState.time.day++;
+        this.hikerData.daysOnTrail++;
+        this.hikerData.currentDayMiles = 0;
+      }
+    }
+    
+    // Update phase
+    const hour = this.gameState.time.hour;
+    if (hour >= 5 && hour < 8) this.gameState.phase = 'morning';
+    else if (hour >= 8 && hour < 18) this.gameState.phase = 'hiking';
+    else if (hour >= 18 && hour < 21) this.gameState.phase = 'evening';
+    else this.gameState.phase = 'night';
+    
+    // Process hiking
+    if (this.hikerData.isHiking) {
+      const paceSpeed: Record<string, number> = {
+        slow: 1.5, normal: 2.0, fast: 2.5, rush: 3.0
+      };
+      const speed = paceSpeed[this.hikerData.pace] || 2.0;
+      const distance = speed / 60; // miles per minute
+      
+      this.hikerData.mile = Math.min(30.7, this.hikerData.mile + distance);
+      this.hikerData.currentDayMiles += distance;
+      this.hikerData.totalMilesHiked += distance;
+      
+      // Consume resources
+      this.hikerData.calories -= 3;
+      this.hikerData.hydration -= 0.5;
+      this.hikerData.energy -= 0.1;
+      
+      // Clamp values
+      this.hikerData.calories = Math.max(0, this.hikerData.calories);
+      this.hikerData.hydration = Math.max(0, this.hikerData.hydration);
+      this.hikerData.energy = Math.max(0, this.hikerData.energy);
+      
+      // Update moodles based on values
+      this.hikerData.moodles.hunger = this.hikerData.calories < 1000 ? 
+        (this.hikerData.calories < 500 ? 3 : 2) : 
+        (this.hikerData.calories < 1500 ? 1 : 0);
+      this.hikerData.moodles.thirst = this.hikerData.hydration < 40 ? 
+        (this.hikerData.hydration < 20 ? 3 : 2) : 
+        (this.hikerData.hydration < 60 ? 1 : 0);
+      this.hikerData.moodles.fatigue = this.hikerData.energy < 40 ? 
+        (this.hikerData.energy < 20 ? 3 : 2) : 
+        (this.hikerData.energy < 60 ? 1 : 0);
+      
+      // Skill gain
+      this.hikerData.skills.trailLegs = Math.min(100, 
+        this.hikerData.skills.trailLegs + 0.01);
+      
+      // Check for end
+      if (this.hikerData.mile >= 30.7) {
+        this.hikerData.isHiking = false;
+        this.events.emit('game-event', {
+          type: 'milestone',
+          message: 'You reached Neels Gap! MVP Complete!'
+        });
+      }
+    }
+    
+    // Emit update
+    this.events.emit('state-update', {
+      hiker: this.hikerData,
+      game: this.gameState
+    });
+  }
+  
+  updateFromState(state: any) {
+    // Find our hiker in the state
+    const sessionId = this.room?.sessionId;
+    if (sessionId && state.hikers) {
+      const hiker = state.hikers.get(sessionId);
+      if (hiker) {
+        this.hikerData = hiker;
+      }
+    }
+    
+    // Emit to UI
+    this.events.emit('state-update', {
+      hiker: this.hikerData,
+      game: {
+        time: state.time,
+        phase: state.phase,
+        weather: state.weather,
+        temperature: state.temperature,
+        events: state.events
+      }
+    });
+    
+    // Update weather effects
+    this.updateWeatherEffects(state.weather);
+  }
+  
+  updateWeatherEffects(weather: string) {
+    // Clear existing effects
+    if (this.rainEmitter) {
+      this.rainEmitter.stop();
+      this.rainEmitter = null;
+    }
+    this.fogSprites.forEach(f => f.destroy());
+    this.fogSprites = [];
+    
+    const { width, height } = this.cameras.main;
+    
+    if (weather === 'rain_light' || weather === 'rain_heavy' || weather === 'storm') {
+      // Create rain particles
+      const particles = this.add.particles(0, 0, 'rain', {
+        x: { min: 0, max: width },
+        y: -10,
+        lifespan: 1000,
+        speedY: { min: 300, max: 500 },
+        quantity: weather === 'storm' ? 5 : (weather === 'rain_heavy' ? 3 : 1),
+        alpha: 0.6
+      });
+      this.rainEmitter = particles;
+    }
+    
+    if (weather === 'fog') {
+      // Create fog sprites
+      for (let i = 0; i < 20; i++) {
+        const fog = this.add.sprite(
+          Phaser.Math.Between(0, width),
+          Phaser.Math.Between(0, height),
+          'fog'
+        );
+        fog.setAlpha(0.3);
+        fog.setDepth(20);
+        this.fogSprites.push(fog);
+        
+        // Animate fog
+        this.tweens.add({
+          targets: fog,
+          x: fog.x + Phaser.Math.Between(-50, 50),
+          y: fog.y + Phaser.Math.Between(-30, 30),
+          alpha: { from: 0.2, to: 0.4 },
+          duration: 3000,
+          yoyo: true,
+          repeat: -1
+        });
+      }
+    }
+  }
+  
+  setupInputHandlers() {
+    // Keyboard controls
+    const cursors = this.input.keyboard?.createCursorKeys();
+    
+    // Space to toggle hiking
+    this.input.keyboard?.on('keydown-SPACE', () => {
+      this.toggleHiking();
+    });
+    
+    // Number keys for pace
+    this.input.keyboard?.on('keydown-ONE', () => this.setPace('slow'));
+    this.input.keyboard?.on('keydown-TWO', () => this.setPace('normal'));
+    this.input.keyboard?.on('keydown-THREE', () => this.setPace('fast'));
+    this.input.keyboard?.on('keydown-FOUR', () => this.setPace('rush'));
+    
+    // E to eat
+    this.input.keyboard?.on('keydown-E', () => this.eat());
+    
+    // D to drink
+    this.input.keyboard?.on('keydown-D', () => this.drink());
+    
+    // R to rest/camp
+    this.input.keyboard?.on('keydown-R', () => this.toggleCamp());
+    
+    // S to search for blaze (when lost)
+    this.input.keyboard?.on('keydown-S', () => this.searchBlaze());
+    
+    // B to backtrack (when lost)
+    this.input.keyboard?.on('keydown-B', () => this.backtrack());
+  }
+  
+  toggleHiking() {
+    if (this.isConnected && this.room) {
+      const isHiking = this.hikerData?.isHiking;
+      this.room.send(isHiking ? 'stop_hiking' : 'start_hiking');
+    } else if (this.hikerData) {
+      this.hikerData.isHiking = !this.hikerData.isHiking;
+      this.events.emit('game-event', {
+        type: 'info',
+        message: this.hikerData.isHiking ? 'Started hiking' : 'Stopped hiking'
+      });
+    }
+  }
+  
+  setPace(pace: string) {
+    if (this.isConnected && this.room) {
+      this.room.send('set_pace', { pace });
+    } else if (this.hikerData) {
+      this.hikerData.pace = pace;
+      this.events.emit('game-event', {
+        type: 'info',
+        message: `Pace set to ${pace}`
+      });
+    }
+  }
+  
+  eat() {
+    if (this.isConnected && this.room) {
+      // Eat first available food
+      this.room.send('eat', { foodId: 'oatmeal_1' });
+    } else if (this.hikerData) {
+      this.hikerData.calories = Math.min(3000, this.hikerData.calories + 300);
+      this.events.emit('game-event', {
+        type: 'info',
+        message: 'Ate some food (+300 calories)'
+      });
+    }
+  }
+  
+  drink() {
+    if (this.isConnected && this.room) {
+      this.room.send('drink', { amount: 0.5 });
+    } else if (this.hikerData && this.hikerData.inventory.water >= 0.5) {
+      this.hikerData.inventory.water -= 0.5;
+      this.hikerData.hydration = Math.min(100, this.hikerData.hydration + 15);
+      this.events.emit('game-event', {
+        type: 'info',
+        message: 'Drank water (+15 hydration)'
+      });
+    }
+  }
+  
+  toggleCamp() {
+    if (this.isConnected && this.room) {
+      const isResting = this.hikerData?.isResting;
+      this.room.send(isResting ? 'break_camp' : 'make_camp');
+    } else if (this.hikerData) {
+      this.events.emit('game-event', {
+        type: 'info',
+        message: 'Resting...'
+      });
+    }
+  }
+  
+  searchBlaze() {
+    if (this.isConnected && this.room) {
+      this.room.send('search_blaze');
+    } else if (this.hikerData && this.hikerData.lostState !== 'on_trail') {
+      // Offline blaze search
+      if (Math.random() < 0.3) {
+        this.hikerData.lostState = 'on_trail';
+        this.events.emit('game-event', {
+          type: 'success',
+          message: 'Found a white blaze! Back on trail!'
+        });
+      } else {
+        this.events.emit('game-event', {
+          type: 'warning',
+          message: 'Still searching for the trail...'
+        });
+      }
+    }
+  }
+  
+  backtrack() {
+    if (this.isConnected && this.room) {
+      this.room.send('backtrack');
+    } else if (this.hikerData && this.hikerData.lostState !== 'on_trail') {
+      this.hikerData.mile = Math.max(0, this.hikerData.mile - 0.1);
+      this.hikerData.energy -= 5;
+      this.events.emit('game-event', {
+        type: 'info',
+        message: 'Backtracking...'
+      });
+    }
+  }
+  
+  update(time: number, delta: number) {
+    // Scroll the trail to simulate forward movement
+    if (this.hikerData?.isHiking) {
+      const scrollSpeed = 0.5 * delta / 16; // Adjust for frame rate
+      this.ground.tilePositionY -= scrollSpeed;
+      this.trail.tilePositionY -= scrollSpeed;
+      
+      // Move trees up (parallax)
+      this.trees.forEach(tree => {
+        tree.y -= scrollSpeed * 0.8;
+        if (tree.y < -50) {
+          tree.y = this.cameras.main.height + 50;
+          tree.x = tree.x < this.cameras.main.width / 2 
+            ? Phaser.Math.Between(20, this.cameras.main.width * 0.25)
+            : Phaser.Math.Between(this.cameras.main.width * 0.75, this.cameras.main.width - 20);
+        }
+      });
+      
+      // Move blazes
+      this.blazes.forEach(blaze => {
+        blaze.y -= scrollSpeed;
+        if (blaze.y < -20) {
+          blaze.y = this.cameras.main.height + 20;
+        }
+      });
+      
+      // Hiker bob animation
+      this.hiker.y = this.cameras.main.height * 0.6 + Math.sin(time / 100) * 2;
+    }
+    
+    // Fog movement
+    this.fogSprites.forEach(fog => {
+      fog.x += Math.sin(time / 1000 + fog.y) * 0.2;
+    });
+  }
+}

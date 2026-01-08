@@ -1,0 +1,461 @@
+---
+/**
+ * Sprite Catalog - Visual browser for Trail Legs pixel art sprites
+ * Access at /cat (not linked from main navigation)
+ */
+
+// Import all sprites from the game's shared package
+import { ALL_SPRITES, TRAIL_LEGS_PALETTE } from '../../trailhogg/trailhogg/shared/src/sprites';
+
+const title = "Sprite Catalog — Trail Legs";
+
+// Get palette colors for rendering
+const colors = TRAIL_LEGS_PALETTE.colors;
+
+// Flatten all sprites into a categorized structure for display
+type SpriteEntry = {
+  name: string;
+  width: number;
+  height: number;
+  pixels: number[][];
+};
+
+type CategoryData = {
+  name: string;
+  key: string;
+  sprites: SpriteEntry[];
+  count: number;
+};
+
+const categories: CategoryData[] = Object.entries(ALL_SPRITES).map(([key, spriteCollection]) => {
+  // Filter to only include valid sprite objects with required properties
+  const sprites = Object.values(spriteCollection as Record<string, unknown>)
+    .filter((sprite): sprite is SpriteEntry => {
+      return sprite !== null &&
+        typeof sprite === 'object' &&
+        'name' in sprite &&
+        'width' in sprite &&
+        'height' in sprite &&
+        'pixels' in sprite &&
+        Array.isArray((sprite as SpriteEntry).pixels);
+    });
+  return {
+    name: key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim(),
+    key,
+    sprites,
+    count: sprites.length
+  };
+}).filter(cat => cat.count > 0);
+
+const totalSprites = categories.reduce((acc, cat) => acc + cat.count, 0);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+    <style is:global>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background-color: #1a1a2e;
+        color: #e8e8e8;
+      }
+
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      header {
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #333;
+        padding-bottom: 1rem;
+      }
+
+      h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2.5rem;
+        color: #7DBF6A;
+        font-weight: 700;
+      }
+
+      .stats {
+        color: #888;
+        font-size: 0.9rem;
+      }
+
+      .stats span {
+        color: #5A9AD4;
+        font-weight: 600;
+      }
+
+      /* Palette Section */
+      .palette-section {
+        background: #252540;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .palette-section h2 {
+        margin: 0 0 1rem 0;
+        font-size: 1.2rem;
+        color: #aaa;
+      }
+
+      .palette-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
+      }
+
+      .palette-swatch {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .swatch-color {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        border: 2px solid #444;
+      }
+
+      .swatch-color.transparent {
+        background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 50% / 10px 10px;
+      }
+
+      .swatch-label {
+        font-size: 0.65rem;
+        color: #888;
+        text-align: center;
+      }
+
+      .swatch-index {
+        font-size: 0.7rem;
+        color: #666;
+        font-weight: 600;
+      }
+
+      /* Filter controls */
+      .controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .search-box {
+        flex: 1;
+        min-width: 200px;
+        padding: 0.75rem 1rem;
+        border: 2px solid #333;
+        border-radius: 8px;
+        background: #252540;
+        color: #fff;
+        font-size: 1rem;
+      }
+
+      .search-box:focus {
+        outline: none;
+        border-color: #5A9AD4;
+      }
+
+      .scale-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #888;
+      }
+
+      .scale-control input[type="range"] {
+        width: 100px;
+      }
+
+      /* Category sections */
+      .category {
+        margin-bottom: 2rem;
+      }
+
+      .category-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .category-header:hover h2 {
+        color: #7DBF6A;
+      }
+
+      .category-header h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        color: #ccc;
+        transition: color 0.2s;
+      }
+
+      .category-count {
+        background: #333;
+        color: #888;
+        padding: 0.25rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+      }
+
+      .toggle-icon {
+        color: #666;
+        font-size: 0.8rem;
+      }
+
+      /* Sprite grid */
+      .sprite-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+      }
+
+      .sprite-card {
+        background: #252540;
+        border-radius: 10px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid transparent;
+      }
+
+      .sprite-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        border-color: #444;
+      }
+
+      .sprite-preview {
+        display: grid;
+        gap: 0;
+        background: repeating-conic-gradient(#2a2a40 0% 25%, #222238 0% 50%) 50% / 8px 8px;
+        border-radius: 4px;
+        padding: 4px;
+        image-rendering: pixelated;
+      }
+
+      .pixel-row {
+        display: contents;
+      }
+
+      .pixel {
+        aspect-ratio: 1;
+      }
+
+      .sprite-name {
+        font-size: 0.75rem;
+        color: #aaa;
+        text-align: center;
+        word-break: break-word;
+        font-weight: 500;
+      }
+
+      .sprite-size {
+        font-size: 0.65rem;
+        color: #666;
+      }
+
+      /* Collapsed state */
+      .category.collapsed .sprite-grid {
+        display: none;
+      }
+
+      .category.collapsed .toggle-icon {
+        transform: rotate(-90deg);
+      }
+
+      /* Hidden by search */
+      .sprite-card.hidden {
+        display: none;
+      }
+
+      .category.empty-search {
+        display: none;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+
+        h1 {
+          font-size: 1.8rem;
+        }
+
+        .sprite-grid {
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Trail Legs Sprite Catalog</h1>
+        <p class="stats">
+          <span>{totalSprites}</span> sprites across <span>{categories.length}</span> categories
+        </p>
+      </header>
+
+      <!-- Color Palette Reference -->
+      <section class="palette-section">
+        <h2>Color Palette ({colors.length} colors)</h2>
+        <div class="palette-grid">
+          {colors.map((color, index) => (
+            <div class="palette-swatch">
+              <div
+                class={`swatch-color ${color === 'transparent' ? 'transparent' : ''}`}
+                style={color !== 'transparent' ? `background-color: ${color}` : ''}
+              />
+              <span class="swatch-index">{index}</span>
+              <span class="swatch-label">{color === 'transparent' ? 'transparent' : color}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Controls -->
+      <div class="controls">
+        <input
+          type="text"
+          class="search-box"
+          placeholder="Search sprites..."
+          id="searchInput"
+        />
+        <div class="scale-control">
+          <label for="scaleSlider">Scale:</label>
+          <input type="range" id="scaleSlider" min="1" max="6" value="3" />
+          <span id="scaleValue">3x</span>
+        </div>
+        <button id="expandAll" style="padding: 0.5rem 1rem; background: #333; border: none; color: #aaa; border-radius: 6px; cursor: pointer;">
+          Expand All
+        </button>
+        <button id="collapseAll" style="padding: 0.5rem 1rem; background: #333; border: none; color: #aaa; border-radius: 6px; cursor: pointer;">
+          Collapse All
+        </button>
+      </div>
+
+      <!-- Sprite Categories -->
+      {categories.map((category) => (
+        <section class="category" data-category={category.key}>
+          <div class="category-header">
+            <span class="toggle-icon">▼</span>
+            <h2>{category.name}</h2>
+            <span class="category-count">{category.count}</span>
+          </div>
+          <div class="sprite-grid">
+            {category.sprites.map((sprite) => (
+              <div class="sprite-card" data-name={sprite.name.toLowerCase()}>
+                <div
+                  class="sprite-preview"
+                  style={`grid-template-columns: repeat(${sprite.width}, 1fr); width: ${sprite.width * 3}px;`}
+                  data-width={sprite.width}
+                  data-height={sprite.height}
+                >
+                  {sprite.pixels.flat().map((colorIndex) => (
+                    <div
+                      class="pixel"
+                      style={`background-color: ${colors[colorIndex] || 'transparent'};`}
+                    />
+                  ))}
+                </div>
+                <span class="sprite-name">{sprite.name}</span>
+                <span class="sprite-size">{sprite.width}x{sprite.height}px</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+
+    <script>
+      // Search functionality
+      const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+      const spriteCards = document.querySelectorAll('.sprite-card');
+      const categories = document.querySelectorAll('.category');
+
+      searchInput?.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase().trim();
+
+        spriteCards.forEach(card => {
+          const name = card.getAttribute('data-name') || '';
+          if (query === '' || name.includes(query)) {
+            card.classList.remove('hidden');
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+
+        // Hide empty categories
+        categories.forEach(cat => {
+          const visibleCards = cat.querySelectorAll('.sprite-card:not(.hidden)');
+          if (visibleCards.length === 0 && query !== '') {
+            cat.classList.add('empty-search');
+          } else {
+            cat.classList.remove('empty-search');
+          }
+        });
+      });
+
+      // Scale control
+      const scaleSlider = document.getElementById('scaleSlider') as HTMLInputElement;
+      const scaleValue = document.getElementById('scaleValue');
+      const spritePreviews = document.querySelectorAll('.sprite-preview') as NodeListOf<HTMLElement>;
+
+      scaleSlider?.addEventListener('input', () => {
+        const scale = parseInt(scaleSlider.value);
+        scaleValue!.textContent = `${scale}x`;
+
+        spritePreviews.forEach(preview => {
+          const width = parseInt(preview.getAttribute('data-width') || '16');
+          preview.style.width = `${width * scale}px`;
+        });
+      });
+
+      // Category toggle
+      document.querySelectorAll('.category-header').forEach(header => {
+        header.addEventListener('click', () => {
+          header.parentElement?.classList.toggle('collapsed');
+        });
+      });
+
+      // Expand/Collapse all
+      document.getElementById('expandAll')?.addEventListener('click', () => {
+        categories.forEach(cat => cat.classList.remove('collapsed'));
+      });
+
+      document.getElementById('collapseAll')?.addEventListener('click', () => {
+        categories.forEach(cat => cat.classList.add('collapsed'));
+      });
+    </script>
+  </body>
+</html>
