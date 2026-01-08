@@ -22,16 +22,16 @@ Started: 2026-01-07
 - [x] Change ProtoF from client:load to client:visible
 - [x] Add cache headers in netlify.toml
 
-## Phase 2: Security & Accessibility (Week 2)
+## Phase 2: Security & Accessibility (Week 2) - COMPLETE
 
-- [ ] Implement focus trap in Gallery lightbox
-- [ ] Add ARIA tabs pattern to Tools navigation
-- [ ] Add skip-to-content link
-- [ ] Add visible focus indicators to all interactive elements
-- [ ] Associate form labels with inputs (for/id)
-- [ ] Fix color contrast for muted text
-- [ ] Add prefers-reduced-motion support
-- [ ] Increase mobile touch targets to 44px minimum
+- [x] Implement focus trap in Gallery lightbox
+- [x] Add ARIA tabs pattern to Tools navigation
+- [x] Add skip-to-content link
+- [x] Add visible focus indicators to all interactive elements
+- [x] Associate form labels with inputs (for/id)
+- [x] Fix color contrast for muted text
+- [x] Add prefers-reduced-motion support
+- [x] Increase mobile touch targets to 44px minimum
 
 ## Phase 3: Performance & Quality (Week 3)
 
@@ -72,4 +72,5 @@ Started: 2026-01-07
 
 | Date | Phase | Task | Commit |
 |------|-------|------|--------|
-| 2026-01-07 | - | Started implementation | - |
+| 2026-01-07 | 0-1 | Security headers, XSS fix, font optimization | 2d4e8e0 |
+| 2026-01-07 | 2 | Accessibility: focus trap, ARIA tabs, skip link, contrast | pending |

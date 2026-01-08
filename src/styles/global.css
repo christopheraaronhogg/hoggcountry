@@ -179,3 +179,120 @@ a:hover { color: #093d7f; }
 .video-card .actions { margin-top: .25rem; font-size: .9rem; }
 .video-card .actions a { text-decoration: none; color: #0a4fa6; }
 .video-card .actions a:hover { text-decoration: underline; }
+
+/* ========== ACCESSIBILITY ========== */
+
+/* Visually hidden but accessible to screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip to content link (WCAG 2.4.1) */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
+  background: var(--pine);
+  color: #fff;
+  font-family: Oswald, sans-serif;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 8px 8px;
+  z-index: 9999;
+  transition: top 0.2s ease;
+}
+
+.skip-to-content:focus {
+  top: 0;
+  outline: 3px solid var(--marker);
+  outline-offset: 2px;
+}
+
+/* Global focus-visible styles (WCAG 2.4.7) */
+:focus-visible {
+  outline: 3px solid var(--alpine);
+  outline-offset: 2px;
+}
+
+/* Remove default focus for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Specific focus styles for interactive elements */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--alpine);
+  outline-offset: 2px;
+}
+
+/* High contrast focus for dark backgrounds */
+.header a:focus-visible,
+.nav a:focus-visible {
+  outline-color: var(--marker);
+}
+
+/* ========== COLOR CONTRAST FIX ========== */
+/* --muted was #5c665a which has 4.2:1 contrast on #f5f2e8 */
+/* Darkening to #4a5448 for 5.4:1 contrast ratio (WCAG AA) */
+:root {
+  --muted-accessible: #4a5448;
+}
+
+/* Apply accessible muted color where used */
+.entry-meta,
+.hero p,
+.link-desc {
+  color: var(--muted-accessible);
+}
+
+/* ========== REDUCED MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========== TOUCH TARGET SIZE ========== */
+/* Ensure minimum 44x44px touch targets (WCAG 2.5.5) */
+@media (pointer: coarse) {
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Navigation links need adequate spacing */
+  .nav a {
+    padding: 0.75rem 0.75rem;
+  }
+
+  /* Badges that are interactive */
+  .badge {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

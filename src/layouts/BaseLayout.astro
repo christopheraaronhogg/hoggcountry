@@ -28,8 +28,9 @@ const { title, description = SITE_DESCRIPTION } = Astro.props;
     <link rel="apple-touch-icon" href="/guide-icon-192.svg" />
   </head>
   <body>
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <Header />
-    <main>
+    <main id="main-content" tabindex="-1">
       <slot />
     </main>
     <Footer />

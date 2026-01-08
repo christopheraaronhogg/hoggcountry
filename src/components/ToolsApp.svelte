@@ -246,6 +246,47 @@
 
   let activeToolData = $derived(tools.find(t => t.id === activeTool));
 
+  // Arrow key navigation for tabs (WCAG 2.1.1)
+  function handleTabKeydown(e, currentIndex) {
+    const enabledTools = tools.filter(t => !t.disabled);
+    const currentEnabledIndex = enabledTools.findIndex(t => t.id === tools[currentIndex].id);
+    if (currentEnabledIndex === -1) return;
+
+    let nextIndex = -1;
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        nextIndex = currentEnabledIndex - 1;
+        if (nextIndex < 0) nextIndex = enabledTools.length - 1;
+        break;
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        nextIndex = currentEnabledIndex + 1;
+        if (nextIndex >= enabledTools.length) nextIndex = 0;
+        break;
+      case 'Home':
+        e.preventDefault();
+        nextIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        nextIndex = enabledTools.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    const nextTool = enabledTools[nextIndex];
+    switchTool(nextTool.id);
+    // Focus the new tab
+    requestAnimationFrame(() => {
+      const tabElement = document.getElementById(`tab-${nextTool.id}`);
+      if (tabElement) tabElement.focus();
+    });
+  }
+
   // Build context object for child components
   let trailContext = $derived({
     mode,
@@ -347,24 +388,24 @@
           <!-- Planning Mode Controls -->
           <div class="control-grid planning">
             <div class="ctrl-item">
-              <label class="ctrl-label">Start Date</label>
-              <input type="date" bind:value={startDate} class="ctrl-date" />
+              <label class="ctrl-label" for="planning-start-date">Start Date</label>
+              <input type="date" id="planning-start-date" bind:value={startDate} class="ctrl-date" />
             </div>
 
             <div class="ctrl-item">
               <div class="ctrl-header">
-                <label class="ctrl-label">Target Pace</label>
-                <span class="ctrl-val">{pace} <small>mi/day</small></span>
+                <label class="ctrl-label" for="planning-pace">Target Pace</label>
+                <span class="ctrl-val" aria-hidden="true">{pace} <small>mi/day</small></span>
               </div>
-              <input type="range" min="8" max="25" step="0.5" bind:value={pace} class="ctrl-slider" />
+              <input type="range" id="planning-pace" min="8" max="25" step="0.5" bind:value={pace} class="ctrl-slider" aria-valuemin="8" aria-valuemax="25" aria-valuenow={pace} aria-valuetext="{pace} miles per day" />
             </div>
 
             <div class="ctrl-item">
               <div class="ctrl-header">
-                <label class="ctrl-label">Zero Days</label>
-                <span class="ctrl-val">{zeroDaysPerMonth} <small>/month</small></span>
+                <label class="ctrl-label" for="planning-zero-days">Zero Days</label>
+                <span class="ctrl-val" aria-hidden="true">{zeroDaysPerMonth} <small>/month</small></span>
               </div>
-              <input type="range" min="0" max="10" step="1" bind:value={zeroDaysPerMonth} class="ctrl-slider zero" />
+              <input type="range" id="planning-zero-days" min="0" max="10" step="1" bind:value={zeroDaysPerMonth} class="ctrl-slider zero" aria-valuemin="0" aria-valuemax="10" aria-valuenow={zeroDaysPerMonth} aria-valuetext="{zeroDaysPerMonth} zero days per month" />
             </div>
           </div>
 
@@ -401,8 +442,9 @@
           </div>
 
           <div class="mile-slider-container">
-            <input type="range" min="0" max="2198" step="1" bind:value={currentMile} class="mile-slider" />
-            <div class="mile-progress-bar" style="width: {(currentMile / 2198) * 100}%"></div>
+            <label for="trail-current-mile" class="visually-hidden">Current mile marker</label>
+            <input type="range" id="trail-current-mile" min="0" max="2198" step="1" bind:value={currentMile} class="mile-slider" aria-valuemin="0" aria-valuemax="2198" aria-valuenow={currentMile} aria-valuetext="Mile {currentMile} of 2198" />
+            <div class="mile-progress-bar" style="width: {(currentMile / 2198) * 100}%" aria-hidden="true"></div>
           </div>
           <div class="mile-endpoints">
             <span>Springer</span>
@@ -411,23 +453,23 @@
 
           <div class="control-grid trail">
             <div class="ctrl-item">
-              <label class="ctrl-label">Trip Start</label>
-              <input type="date" bind:value={tripStartDate} class="ctrl-date" />
+              <label class="ctrl-label" for="trail-start-date">Trip Start</label>
+              <input type="date" id="trail-start-date" bind:value={tripStartDate} class="ctrl-date" />
             </div>
 
             <div class="ctrl-item">
-              <label class="ctrl-label">Zero Days Taken</label>
+              <label class="ctrl-label" for="trail-zero-days">Zero Days Taken</label>
               <div class="ctrl-num-wrap">
-                <input type="number" min="0" max="100" bind:value={zeroDaysTaken} class="ctrl-num" />
-                <span class="ctrl-num-unit">rest days</span>
+                <input type="number" id="trail-zero-days" min="0" max="100" bind:value={zeroDaysTaken} class="ctrl-num" aria-describedby="trail-zero-days-unit" />
+                <span id="trail-zero-days-unit" class="ctrl-num-unit">rest days</span>
               </div>
             </div>
 
             <div class="ctrl-item">
-              <label class="ctrl-label">Target Pace</label>
+              <label class="ctrl-label" for="trail-target-pace">Target Pace</label>
               <div class="ctrl-num-wrap">
-                <input type="number" min="8" max="30" step="0.5" bind:value={targetPace} class="ctrl-num" />
-                <span class="ctrl-num-unit">mi/day</span>
+                <input type="number" id="trail-target-pace" min="8" max="30" step="0.5" bind:value={targetPace} class="ctrl-num" aria-describedby="trail-target-pace-unit" />
+                <span id="trail-target-pace-unit" class="ctrl-num-unit">mi/day</span>
               </div>
             </div>
           </div>
@@ -456,22 +498,27 @@
   </div>
 
   <!-- Tool Navigation -->
-  <nav class="tools-nav">
-    {#each tools as tool}
+  <nav class="tools-nav" role="tablist" aria-label="Trail tools">
+    {#each tools as tool, index}
       <button
         class="nav-tab"
         class:active={activeTool === tool.id}
         class:disabled={tool.disabled}
         onclick={() => switchTool(tool.id)}
+        onkeydown={(e) => handleTabKeydown(e, index)}
         disabled={tool.disabled}
-        aria-label={tool.name}
+        role="tab"
+        id="tab-{tool.id}"
+        aria-selected={activeTool === tool.id}
+        aria-controls="tabpanel-{tool.id}"
+        tabindex={activeTool === tool.id ? 0 : -1}
       >
         <span class="tab-content">
-          <span class="tab-icon">{tool.icon}</span>
+          <span class="tab-icon" aria-hidden="true">{tool.icon}</span>
           <span class="tab-name">{tool.name}</span>
         </span>
         {#if tool.disabled}
-          <span class="tab-badge">Soon</span>
+          <span class="tab-badge" aria-label="Coming soon">Soon</span>
         {/if}
         {#if activeTool === tool.id}
           <div class="active-indicator" transition:fade></div>
@@ -481,11 +528,17 @@
   </nav>
 
   <!-- Tool Content - Dynamic loading with code-split CSS -->
-  <div class="tool-viewport">
+  <div
+    class="tool-viewport"
+    role="tabpanel"
+    id="tabpanel-{activeTool}"
+    aria-labelledby="tab-{activeTool}"
+    tabindex="0"
+  >
     <div class="tool-container" class:transitioning={isTransitioning}>
       {#if isToolLoading}
-        <div class="tool-loading">
-          <div class="loading-spinner"></div>
+        <div class="tool-loading" aria-live="polite">
+          <div class="loading-spinner" aria-hidden="true"></div>
           <span class="loading-text">Loading tool...</span>
         </div>
       {:else if loadedTools[activeTool]}
@@ -1012,6 +1065,12 @@
   .nav-tab:hover:not(.disabled):not(.active) {
     background: rgba(166, 181, 137, 0.1);
     color: var(--pine);
+  }
+
+  .nav-tab:focus-visible {
+    outline: 3px solid var(--alpine);
+    outline-offset: 2px;
+    z-index: 2;
   }
 
   .nav-tab.active {
