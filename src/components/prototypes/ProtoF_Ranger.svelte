@@ -672,7 +672,7 @@
       </a>
 
       <!-- Panel 3: The Journey -->
-      <a href="/trips" class="panel panel-journey">
+      <a href="/videos" class="panel panel-journey">
         <div class="panel-frame">
           <div class="panel-number">III</div>
           <div class="panel-icon">
