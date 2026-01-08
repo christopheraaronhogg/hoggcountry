@@ -369,6 +369,117 @@ export const smokyMountainDinerRoof: PixelSprite = {
 };
 
 // ============================================
+// ALPINE COURT MOTEL
+// ============================================
+// 50 Bridge Street - Budget hiker motel
+// Simple single-story motel with parking
+
+/**
+ * Alpine Court Motel - Base/Floor Layer
+ */
+export const alpineCourtBase: PixelSprite = {
+  name: 'alpine_court_motel_base',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+    ...Array(40).fill([
+      0,0,0,0,0,0,0,0,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,C.bark,
+      0,0,0,0,0,0,0,0,
+    ]),
+  ],
+};
+
+/**
+ * Alpine Court Motel - South Wall (Front)
+ * Simple motel facade with room doors
+ */
+export const alpineCourtWallSouth: PixelSprite = {
+  name: 'alpine_court_motel_wall_south',
+  width: 48,
+  height: 48,
+  pixels: [
+    // Top section
+    ...Array(8).fill(Array(48).fill(0)),
+
+    // Sign area - "ALPINE COURT"
+    [0,0,0,0,0,0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,C.warning,C.nearBlack,C.white,C.white,C.white,C.nearBlack,C.white,C.nearBlack,C.white,C.white,C.white,C.nearBlack,C.white,C.white,C.white,C.nearBlack,C.white,C.nearBlack,C.white,C.nearBlack,C.nearBlack,C.white,C.nearBlack,C.white,C.white,C.white,C.nearBlack,C.white,C.white,C.nearBlack,C.white,C.white,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0],
+    [0,0,0,0,0,C.warning,C.nearBlack,C.white,C.dirtLight,C.dirtLight,C.white,C.nearBlack,C.white,C.nearBlack,C.white,C.dirtLight,C.white,C.nearBlack,C.white,C.dirtLight,C.dirtLight,C.nearBlack,C.white,C.nearBlack,C.dirtLight,C.white,C.dirtLight,C.white,C.nearBlack,C.white,C.dirtLight,C.dirtLight,C.nearBlack,C.white,C.dirtLight,C.nearBlack,C.white,C.dirtLight,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0],
+    [0,0,0,0,C.warning,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.nearBlack,C.warning,C.warning,0,0,0,0,0,0],
+    [0,0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0,0],
+
+    // Main wall - light blue motel color
+    ...Array(4).fill([
+      0,0,C.warning,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.warning,C.warning,0,0,0,0,0
+    ]),
+
+    // Windows for rooms
+    ...Array(10).fill([
+      0,0,C.warning,C.skyLight,C.skyLight,C.skyBlue,C.skyBlue,C.skyBlue,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyBlue,C.skyBlue,C.skyBlue,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyBlue,C.skyBlue,C.skyBlue,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyBlue,C.skyBlue,C.skyBlue,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.warning,C.warning,0,0,0,0,0
+    ]),
+
+    // Bottom wall section
+    ...Array(4).fill([
+      0,0,C.warning,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.warning,C.warning,0,0,0,0,0
+    ]),
+
+    // Doors
+    ...Array(12).fill([
+      0,0,C.warning,C.skyLight,C.skyLight,C.pantsBrown,C.pantsBrown,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.pantsBrown,C.pantsBrown,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.pantsBrown,C.pantsBrown,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.pantsBrown,C.pantsBrown,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.skyLight,C.warning,C.warning,0,0,0,0,0
+    ]),
+
+    // Bottom trim
+    [0,0,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,C.warning,0,0,0,0,0],
+  ],
+};
+
+/**
+ * Alpine Court Motel - Interior Layer
+ * Simple motel rooms with beds
+ */
+export const alpineCourtInterior: PixelSprite = {
+  name: 'alpine_court_motel_interior',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+    ...Array(20).fill(Array(48).fill(0)), // Upper area
+
+    // Beds in rooms (simple rectangles)
+    ...Array(20).fill([
+      0,0,0,0,0,0,0,0,
+      C.danger,C.danger,C.danger,0,0,0,0,0, // Room 1 bed
+      0,0,0,0,C.danger,C.danger,C.danger,0, // Room 2 bed
+      0,0,0,0,0,0,0,0,
+      0,C.danger,C.danger,C.danger,0,0,0,0, // Room 3 bed
+      0,0,0,0,0,0,0,0,
+    ]),
+  ],
+};
+
+/**
+ * Alpine Court Motel - Roof Layer
+ * Simple flat motel roof
+ */
+export const alpineCourtRoof: PixelSprite = {
+  name: 'alpine_court_motel_roof',
+  width: 48,
+  height: 48,
+  pixels: [
+    ...Array(8).fill(Array(48).fill(0)),
+    ...Array(40).fill([
+      0,0,0,0,0,0,C.warning,C.warning,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.grayDark,C.warning,C.warning,0,0,0,0,0,0
+    ]),
+  ],
+};
+
+// ============================================
 // SPRITE COLLECTION
 // ============================================
 
@@ -384,4 +495,10 @@ export const HOT_SPRINGS_BUILDING_SPRITES = {
   smokyMountainDinerWallSouth,
   smokyMountainDinerInterior,
   smokyMountainDinerRoof,
+
+  // Alpine Court Motel (layered)
+  alpineCourtBase,
+  alpineCourtWallSouth,
+  alpineCourtInterior,
+  alpineCourtRoof,
 };
