@@ -92,6 +92,9 @@ export { CELEBRATION_SPRITES } from './celebrations';
 // Game UI elements
 export { UI_GAME_SPRITES } from './ui-game';
 
+// Hot Springs buildings (layered system)
+export { HOT_SPRINGS_BUILDING_SPRITES } from './hot-springs-buildings';
+
 // All sprites in one object for easy iteration
 import { HIKER_SPRITES } from './hiker';
 import { ENVIRONMENT_SPRITES } from './environment';
@@ -138,6 +141,7 @@ import { VISTA_SPRITES } from './vistas';
 import { RUINS_SPRITES } from './ruins';
 import { CELEBRATION_SPRITES } from './celebrations';
 import { UI_GAME_SPRITES } from './ui-game';
+import { HOT_SPRINGS_BUILDING_SPRITES } from './hot-springs-buildings';
 
 export const ALL_SPRITES = {
   // Core
@@ -222,4 +226,7 @@ export const ALL_SPRITES = {
 
   // Game UI
   uiGame: UI_GAME_SPRITES,
+
+  // Hot Springs, NC Buildings (layered system)
+  hotSpringsBuildings: HOT_SPRINGS_BUILDING_SPRITES,
 };
