@@ -90,7 +90,7 @@ async function selectBooks(question: string, apiKey: string): Promise<string[]> 
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'grok-3-mini-fast',
+      model: 'grok-4-1-fast',
       messages: [
         {
           role: 'system',
