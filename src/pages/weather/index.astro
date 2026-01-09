@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import StormWarning from '../../components/StormWarning.svelte';
+
+const title = 'Storm Warning — Hogg Country';
+const description = 'Track barometric pressure drift to predict incoming storms. A simple tool for backcountry weather awareness.';
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="weather-page">
+    <header class="page-header container">
+      <h1>Storm Warning</h1>
+      <p class="subtitle">
+        Your altimeter is an early warning system. Track pressure drift to predict incoming storms.
+      </p>
+    </header>
+
+    <div class="container">
+      <StormWarning client:load />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .weather-page {
+    padding-bottom: 3rem;
+  }
+
+  .page-header {
+    text-align: center;
+    padding: 2rem 1rem 1.5rem;
+  }
+
+  .page-header h1 {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    color: var(--ink);
+    margin: 0 0 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 50ch;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+</style>
