@@ -61,6 +61,95 @@
     finish: getDateAtMile(2198),
   });
 
+  // Duration calculations
+  function daysBetweenDates(date1, date2) {
+    return Math.ceil((date2 - date1) / (1000 * 60 * 60 * 24));
+  }
+
+  function getDaysFromNow(targetDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return daysBetweenDates(today, targetDate);
+  }
+
+  // Heat phase durations in days
+  let heatDurations = $derived({
+    preHeat: daysBetweenDates(getDateAtMile(0), getDateAtMile(600)),
+    onset: daysBetweenDates(getDateAtMile(600), getDateAtMile(700)),
+    building: daysBetweenDates(getDateAtMile(700), getDateAtMile(900)),
+    peak: daysBetweenDates(getDateAtMile(900), getDateAtMile(1450)),
+    taper: daysBetweenDates(getDateAtMile(1450), getDateAtMile(1750)),
+    postHeat: daysBetweenDates(getDateAtMile(1750), getDateAtMile(2198)),
+  });
+
+  // Hero stat: What's the key insight right now?
+  let heatHeroStat = $derived.by(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const peakStart = heatMilestones.peakStart;
+    const peakEnd = heatMilestones.peakEnd;
+    const startD = new Date(startDate);
+
+    // Before start
+    if (today < startD) {
+      const daysUntilPeak = getDaysFromNow(peakStart);
+      return {
+        icon: '🔥',
+        headline: `Peak Heat in ${daysUntilPeak} days`,
+        subline: `${formatDateShort(peakStart)} – ${formatDateShort(peakEnd)} (${heatDurations.peak} days)`,
+        status: 'upcoming',
+      };
+    }
+
+    // Use currentMile to determine where they are on trail
+    if (currentMile < 600) {
+      const daysUntilPeak = getDaysFromNow(peakStart);
+      return {
+        icon: '❄️',
+        headline: daysUntilPeak > 0 ? `Peak Heat in ${daysUntilPeak} days` : 'Approaching Peak Heat',
+        subline: `Currently in pre-heat phase at mile ${currentMile}`,
+        status: 'pre-heat',
+      };
+    }
+
+    if (currentMile < 900) {
+      const daysUntilPeak = getDaysFromNow(peakStart);
+      return {
+        icon: '🌡️',
+        headline: daysUntilPeak > 0 ? `Peak Heat in ${daysUntilPeak} days` : 'Peak Heat imminent',
+        subline: `Heat building. Start hydration discipline now.`,
+        status: 'building',
+      };
+    }
+
+    if (currentMile < 1450) {
+      const daysRemaining = getDaysFromNow(peakEnd);
+      const milesRemaining = 1450 - currentMile;
+      return {
+        icon: '🔥',
+        headline: `${daysRemaining > 0 ? daysRemaining : Math.ceil(milesRemaining / adjustedPace)} days of Peak Heat left`,
+        subline: `${milesRemaining} miles until you exit at mile 1,450`,
+        status: 'peak',
+      };
+    }
+
+    if (currentMile < 1750) {
+      return {
+        icon: '😮‍💨',
+        headline: 'Past Peak Heat',
+        subline: `Heat tapering. Focus shifting to terrain.`,
+        status: 'taper',
+      };
+    }
+
+    return {
+      icon: '🏔️',
+      headline: 'Post Heat Zone',
+      subline: `Cold weather prep for Whites & Maine`,
+      status: 'post',
+    };
+  });
+
   // Weather warning checkboxes (2-out-of-5 rule)
   let warnings = $state({
     pressureDropping: false,
@@ -453,120 +542,126 @@
   <!-- Heat Zone Section -->
   {#if activeSection === 'heat'}
     <section class="wx-section" transition:fade>
-      <!-- Context Explanation -->
-      <div class="heat-context">
-        <div class="context-header">
-          <span class="context-icon">📊</span>
-          <span class="context-title">Your Heat Timeline</span>
-        </div>
-        <div class="context-details">
-          <div class="context-item">
-            <span class="context-label">Start</span>
-            <span class="context-value">{formatDateShort(new Date(startDate))}</span>
-          </div>
-          <div class="context-item">
-            <span class="context-label">Pace</span>
-            <span class="context-value">{targetPace} mi/day</span>
-          </div>
-          <div class="context-item">
-            <span class="context-label">Zeros</span>
-            <span class="context-value">{zeroDaysPerMonth}/mo</span>
-          </div>
-          <div class="context-item">
-            <span class="context-label">Eff. Pace</span>
-            <span class="context-value">{adjustedPace.toFixed(1)} mi/day</span>
-          </div>
+      <!-- Hero Stat -->
+      <div class="heat-hero" class:peak={heatHeroStat.status === 'peak'} class:upcoming={heatHeroStat.status === 'upcoming'}>
+        <span class="hero-icon">{heatHeroStat.icon}</span>
+        <div class="hero-text">
+          <div class="hero-headline">{heatHeroStat.headline}</div>
+          <div class="hero-subline">{heatHeroStat.subline}</div>
         </div>
       </div>
 
-      <div class="mile-control">
-        <div class="mile-header">
-          <label class="field-label">Explore Mile Position</label>
-          <span class="mile-number">{currentMile}</span>
+      <!-- Compact Timeline -->
+      <div class="heat-timeline-compact">
+        <div class="timeline-bar">
+          <div class="tl-seg cold" style="width: {(600/2198)*100}%"></div>
+          <div class="tl-seg onset" style="width: {((700-600)/2198)*100}%"></div>
+          <div class="tl-seg build" style="width: {((900-700)/2198)*100}%"></div>
+          <div class="tl-seg peak" style="width: {((1450-900)/2198)*100}%"></div>
+          <div class="tl-seg taper" style="width: {((1750-1450)/2198)*100}%"></div>
+          <div class="tl-seg post" style="width: {((2198-1750)/2198)*100}%"></div>
+          <div class="tl-needle" style="left: {(currentMile/2198)*100}%"></div>
         </div>
-        <input type="range" bind:value={currentMile} min="0" max="2198" class="mile-slider" />
-        <div class="mile-track">
-          <div class="track-progress" style="width: {(currentMile / 2198) * 100}%"></div>
-          <div class="track-marker" style="left: {(currentMile / 2198) * 100}%"></div>
-        </div>
-        <div class="mile-labels">
+        <div class="timeline-legend">
           <span>GA</span>
-          <span style="left: {(600/2198)*100}%">600</span>
-          <span style="left: {(1450/2198)*100}%">1450</span>
+          <span class="tl-peak-marker">PEAK HEAT (mi 900-1450)</span>
           <span>ME</span>
         </div>
       </div>
 
-      <div class="heat-card" class:danger={heatZone.warning} style="--zone-color: {heatZone.color}">
-        <div class="heat-header">
-          <span class="heat-badge" style="background: {heatZone.color}">{heatZone.phase}</span>
-          <span class="heat-name">{heatZone.name}</span>
+      <!-- Phase Breakdown -->
+      <div class="phase-breakdown">
+        <div class="phase-title">Your Heat Phases</div>
+        <div class="phase-grid">
+          <div class="phase-row" class:active={currentMile < 600}>
+            <div class="phase-color cold"></div>
+            <div class="phase-info">
+              <span class="phase-name">Pre-Heat</span>
+              <span class="phase-range">Mile 0–600</span>
+            </div>
+            <div class="phase-dates">
+              <span class="phase-when">{formatDateShort(new Date(startDate))} – {formatDateShort(heatMilestones.onset)}</span>
+              <span class="phase-duration">{heatDurations.preHeat} days</span>
+            </div>
+          </div>
+          <div class="phase-row" class:active={currentMile >= 600 && currentMile < 900}>
+            <div class="phase-color building"></div>
+            <div class="phase-info">
+              <span class="phase-name">Heat Building</span>
+              <span class="phase-range">Mile 600–900</span>
+            </div>
+            <div class="phase-dates">
+              <span class="phase-when">{formatDateShort(heatMilestones.onset)} – {formatDateShort(heatMilestones.peakStart)}</span>
+              <span class="phase-duration">{heatDurations.onset + heatDurations.building} days</span>
+            </div>
+          </div>
+          <div class="phase-row peak" class:active={currentMile >= 900 && currentMile < 1450}>
+            <div class="phase-color peak"></div>
+            <div class="phase-info">
+              <span class="phase-name">PEAK HEAT</span>
+              <span class="phase-range">Mile 900–1,450</span>
+            </div>
+            <div class="phase-dates">
+              <span class="phase-when">{formatDateShort(heatMilestones.peakStart)} – {formatDateShort(heatMilestones.peakEnd)}</span>
+              <span class="phase-duration">{heatDurations.peak} days</span>
+            </div>
+          </div>
+          <div class="phase-row" class:active={currentMile >= 1450}>
+            <div class="phase-color post"></div>
+            <div class="phase-info">
+              <span class="phase-name">Post Heat</span>
+              <span class="phase-range">Mile 1,450+</span>
+            </div>
+            <div class="phase-dates">
+              <span class="phase-when">{formatDateShort(heatMilestones.peakEnd)} – {formatDateShort(heatMilestones.finish)}</span>
+              <span class="phase-duration">{heatDurations.taper + heatDurations.postHeat} days</span>
+            </div>
+          </div>
         </div>
-        <p class="heat-desc">{heatZone.desc}</p>
-        <div class="heat-meta">
-          <div class="heat-miles">📍 Mile {heatZone.mileRange}</div>
-          <div class="heat-dates">📅 {heatZone.dates}</div>
+      </div>
+
+      <!-- Action Tips based on current phase -->
+      <div class="heat-actions">
+        <div class="actions-title">
+          {#if currentMile < 600}
+            Pre-Heat Preparation
+          {:else if currentMile < 900}
+            Heat Building Strategy
+          {:else if currentMile < 1450}
+            Peak Heat Survival
+          {:else}
+            Post-Heat Focus
+          {/if}
         </div>
-        <ul class="heat-tips">
-          {#each heatZone.tips as tip}
-            <li>{tip}</li>
-          {/each}
+        <ul class="actions-list">
+          {#if currentMile < 600}
+            <li>Dial in hydration habits before you need them</li>
+            <li>Practice early starts (5-6am hiking)</li>
+            <li>Prepare electrolyte system</li>
+          {:else if currentMile < 900}
+            <li>Hydration discipline now mandatory</li>
+            <li>Start hiking at first light</li>
+            <li>Electrolytes with every water fill</li>
+          {:else if currentMile < 1450}
+            <li>Start hiking by 5:30am</li>
+            <li>Siesta during 11am-3pm if possible</li>
+            <li>2L minimum water carry</li>
+            <li>Wet bandana on neck</li>
+          {:else}
+            <li>Heat no longer primary challenge</li>
+            <li>Focus on Whites/Maine terrain</li>
+            <li>Watch for cold snaps</li>
+          {/if}
         </ul>
       </div>
 
-      <div class="heat-timeline">
-        <div class="timeline-title">Your Heat Timeline ({getStartMonth()} NOBO)</div>
-        <div class="timeline-bar">
-          <div class="tl-seg cold" style="width: {(600/2198)*100}%"><span>Cold</span></div>
-          <div class="tl-seg onset" style="width: {((700-600)/2198)*100}%"></div>
-          <div class="tl-seg build" style="width: {((900-700)/2198)*100}%"></div>
-          <div class="tl-seg peak" style="width: {((1450-900)/2198)*100}%"><span>PEAK</span></div>
-          <div class="tl-seg taper" style="width: {((1750-1450)/2198)*100}%"></div>
-          <div class="tl-seg post" style="width: {((2198-1750)/2198)*100}%"><span>Post</span></div>
-          <div class="tl-needle" style="left: {(currentMile/2198)*100}%"></div>
-        </div>
-        <div class="timeline-dates">
-          <span class="tl-date" style="left: 0%">{formatDateShort(new Date(startDate))}</span>
-          <span class="tl-date" style="left: {(600/2198)*100}%">{formatDateShort(heatMilestones.onset)}</span>
-          <span class="tl-date" style="left: {(900/2198)*100}%">{formatDateShort(heatMilestones.peakStart)}</span>
-          <span class="tl-date" style="left: {(1450/2198)*100}%">{formatDateShort(heatMilestones.peakEnd)}</span>
-          <span class="tl-date" style="left: 100%">{formatDateShort(heatMilestones.finish)}</span>
-        </div>
-      </div>
-
-      <!-- Key Milestones -->
-      <div class="heat-milestones">
-        <div class="milestone-row peak">
-          <span class="milestone-icon">🔥</span>
-          <div class="milestone-info">
-            <span class="milestone-label">Peak Heat Begins</span>
-            <span class="milestone-date">{formatDateShort(heatMilestones.peakStart)} @ Mile 900</span>
-          </div>
-        </div>
-        <div class="milestone-row peak">
-          <span class="milestone-icon">😮‍💨</span>
-          <div class="milestone-info">
-            <span class="milestone-label">Peak Heat Ends</span>
-            <span class="milestone-date">{formatDateShort(heatMilestones.peakEnd)} @ Mile 1,450</span>
-          </div>
-        </div>
-        <div class="milestone-row finish">
-          <span class="milestone-icon">🏔️</span>
-          <div class="milestone-info">
-            <span class="milestone-label">Katahdin Summit</span>
-            <span class="milestone-date">{formatDateShort(heatMilestones.finish)} @ Mile 2,198</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="truth-box">
-        <h4 class="truth-title">Strategic Truth</h4>
-        <ul class="truth-list">
-          <li>A {getStartMonth()} NOBO cannot avoid summer heat</li>
-          <li>You hit heat with strong legs and lower injury risk</li>
-          <li>The worst heat is predictable and finite</li>
-          <li>You exit oppressive heat before September</li>
-        </ul>
+      <!-- Strategic insight -->
+      <div class="heat-insight">
+        <span class="insight-icon">💡</span>
+        <p class="insight-text">
+          A {getStartMonth()} NOBO hits peak heat with strong trail legs (lower injury risk) and exits before September.
+          The heat is finite: <strong>{heatDurations.peak} days</strong> of peak conditions.
+        </p>
       </div>
     </section>
   {/if}
@@ -1320,7 +1415,246 @@
     color: var(--muted);
   }
 
-  /* Heat Section */
+  /* Heat Hero */
+  .heat-hero {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.15) 0%, rgba(166, 181, 137, 0.05) 100%);
+    border: 2px solid var(--alpine);
+    border-radius: 16px;
+    margin-bottom: 1.25rem;
+  }
+
+  .heat-hero.peak {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.05) 100%);
+    border-color: #ef4444;
+  }
+
+  .heat-hero.upcoming {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.05) 100%);
+    border-color: #fbbf24;
+  }
+
+  .hero-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+
+  .hero-text { flex: 1; }
+
+  .hero-headline {
+    font-family: Oswald, sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+  }
+
+  .hero-subline {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  /* Compact Timeline */
+  .heat-timeline-compact {
+    margin-bottom: 1.25rem;
+  }
+
+  .heat-timeline-compact .timeline-bar {
+    position: relative;
+    height: 12px;
+    display: flex;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .timeline-legend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .tl-peak-marker {
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Phase Breakdown */
+  .phase-breakdown {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .phase-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .phase-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .phase-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: #fff;
+    border-radius: 10px;
+    opacity: 0.6;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .phase-row.active {
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: scale(1.01);
+  }
+
+  .phase-row.peak {
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .phase-row.peak.active {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+  }
+
+  .phase-color {
+    width: 8px;
+    height: 32px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .phase-color.cold { background: #22c55e; }
+  .phase-color.building { background: #f97316; }
+  .phase-color.peak { background: #ef4444; }
+  .phase-color.post { background: #22c55e; }
+
+  .phase-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .phase-name {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .phase-range {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .phase-dates {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .phase-when {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--ink);
+  }
+
+  .phase-duration {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  /* Heat Actions */
+  .heat-actions {
+    background: #fff;
+    border: 2px solid var(--alpine);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .actions-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--pine);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .actions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .actions-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+
+  .actions-list li::before {
+    content: '→';
+    color: var(--alpine);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Heat Insight */
+  .heat-insight {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(166, 181, 137, 0.1);
+    border-radius: 12px;
+  }
+
+  .insight-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .insight-text {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .insight-text strong {
+    color: var(--ink);
+  }
+
+  /* Heat Section (legacy - keep for now) */
   .mile-control {
     margin-bottom: 1.5rem;
   }
