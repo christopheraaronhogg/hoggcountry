@@ -43,7 +43,7 @@
 
   <div class="messages">
     {#each messages as m}<div class="msg {m.role}">{m.content}</div>{/each}
-    {#if isLoading}<div class="msg assistant loading">...</div>{/if}
+    {#if isLoading}<div class="msg assistant loading"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>{/if}
   </div>
 
   {#if error}<div class="error">{error}</div>{/if}
@@ -68,6 +68,11 @@
   .msg.user { background: #2b3a2e; color: white; align-self: flex-end; }
   .msg.assistant { background: #f8f6f1; border: 1px solid #ddd; align-self: flex-start; }
   .error { background: #fee; border: 1px solid #fcc; color: #c33; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+  .loading { display: flex; gap: 0.3rem; align-items: center; padding: 1rem 1.2rem; }
+  .dot { width: 8px; height: 8px; background: #6b7c6e; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+  .dot:nth-child(1) { animation-delay: -0.32s; }
+  .dot:nth-child(2) { animation-delay: -0.16s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
   form { display: flex; gap: 0.5rem; }
   form input { flex: 1; padding: 0.75rem 1rem; border: 2px solid #ddd; border-radius: 24px; }
   form button { background: #2b3a2e; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 24px; cursor: pointer; }
