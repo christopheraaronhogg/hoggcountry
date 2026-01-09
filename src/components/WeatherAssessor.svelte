@@ -340,6 +340,98 @@
     return '#059669';
   }
 
+  // Pressure tracking
+  let currentPressure = $state(30.00);
+  let previousPressure = $state(30.10);
+  let hoursElapsed = $state(3);
+
+  // Calculate pressure change rate and assessment
+  let pressureChange = $derived(currentPressure - previousPressure);
+  let pressureChangePerHour = $derived(hoursElapsed > 0 ? pressureChange / hoursElapsed : 0);
+
+  let pressureAssessment = $derived.by(() => {
+    const change = pressureChange;
+    const ratePerHour = Math.abs(pressureChangePerHour);
+
+    // Determine trend
+    let trend, trendIcon;
+    if (change > 0.02) {
+      trend = 'rising';
+      trendIcon = '📈';
+    } else if (change < -0.02) {
+      trend = 'falling';
+      trendIcon = '📉';
+    } else {
+      trend = 'steady';
+      trendIcon = '➡️';
+    }
+
+    // Assess severity based on rate of fall
+    if (change >= 0) {
+      return {
+        trend,
+        trendIcon,
+        level: 'good',
+        color: '#22c55e',
+        headline: trend === 'rising' ? 'Improving Weather' : 'Stable Conditions',
+        message: 'High or steady pressure indicates fair weather ahead.',
+        action: 'Continue as planned',
+        urgency: 'none',
+      };
+    }
+
+    // Falling pressure - assess rate
+    if (ratePerHour < 0.02) {
+      return {
+        trend,
+        trendIcon,
+        level: 'watch',
+        color: '#fbbf24',
+        headline: 'Slow Pressure Drop',
+        message: 'Weather may change in 12-24 hours.',
+        action: 'Monitor conditions, have backup plan',
+        urgency: 'low',
+      };
+    }
+
+    if (ratePerHour < 0.05) {
+      return {
+        trend,
+        trendIcon,
+        level: 'caution',
+        color: '#f97316',
+        headline: 'Moderate Pressure Drop',
+        message: 'Weather change likely in 6-12 hours.',
+        action: 'Plan for shelter, reduce exposed time',
+        urgency: 'moderate',
+      };
+    }
+
+    if (ratePerHour < 0.10) {
+      return {
+        trend,
+        trendIcon,
+        level: 'warning',
+        color: '#ef4444',
+        headline: 'Rapid Pressure Drop',
+        message: 'Storm approaching in 2-6 hours.',
+        action: 'Seek shelter soon, avoid exposed ridges',
+        urgency: 'high',
+      };
+    }
+
+    return {
+      trend,
+      trendIcon,
+      level: 'emergency',
+      color: '#dc2626',
+      headline: 'PRESSURE CRASH',
+      message: 'Severe weather imminent. Act now.',
+      action: 'SHELTER IMMEDIATELY',
+      urgency: 'critical',
+    };
+  });
+
   // Daylight calculator
   let dlDate = $state(new Date().toISOString().split('T')[0]);
   let dlMile = $state(trailContext?.currentMile || 500);
@@ -430,6 +522,10 @@
     <button class="nav-tab" class:active={activeSection === 'heat'} onclick={() => activeSection = 'heat'}>
       <span class="tab-icon">🔥</span>
       <span class="tab-label">Heat</span>
+    </button>
+    <button class="nav-tab" class:active={activeSection === 'pressure'} class:alert={pressureAssessment.urgency === 'high' || pressureAssessment.urgency === 'critical'} onclick={() => activeSection = 'pressure'}>
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">Pressure</span>
     </button>
     <button class="nav-tab" class:active={activeSection === 'warning'} class:alert={warningTriggered} onclick={() => activeSection = 'warning'}>
       <span class="tab-icon">{warningTriggered ? '🚨' : '📡'}</span>
@@ -662,6 +758,140 @@
           A {getStartMonth()} NOBO hits peak heat with strong trail legs (lower injury risk) and exits before September.
           The heat is finite: <strong>{heatDurations.peak} days</strong> of peak conditions.
         </p>
+      </div>
+    </section>
+  {/if}
+
+  <!-- Pressure Section -->
+  {#if activeSection === 'pressure'}
+    <section class="wx-section" transition:fade>
+      <!-- Assessment Hero -->
+      <div class="pressure-hero" style="--pressure-color: {pressureAssessment.color}">
+        <div class="pressure-trend">
+          <span class="trend-icon">{pressureAssessment.trendIcon}</span>
+          <span class="trend-value" style="color: {pressureAssessment.color}">{pressureChange >= 0 ? '+' : ''}{pressureChange.toFixed(2)}"</span>
+        </div>
+        <div class="pressure-assessment">
+          <div class="assessment-headline" style="color: {pressureAssessment.color}">{pressureAssessment.headline}</div>
+          <div class="assessment-message">{pressureAssessment.message}</div>
+        </div>
+      </div>
+
+      <!-- Action Card -->
+      {#if pressureAssessment.urgency !== 'none'}
+        <div class="pressure-action" class:warning={pressureAssessment.urgency === 'high'} class:critical={pressureAssessment.urgency === 'critical'}>
+          <span class="action-icon">
+            {#if pressureAssessment.urgency === 'critical'}🚨
+            {:else if pressureAssessment.urgency === 'high'}⚠️
+            {:else if pressureAssessment.urgency === 'moderate'}📋
+            {:else}👁️
+            {/if}
+          </span>
+          <span class="action-text">{pressureAssessment.action}</span>
+        </div>
+      {/if}
+
+      <!-- Input Panel -->
+      <div class="pressure-inputs">
+        <div class="pressure-title">Your Readings</div>
+        <div class="pressure-grid">
+          <div class="pressure-input-group">
+            <label class="pressure-label">Current Pressure</label>
+            <div class="pressure-value-row">
+              <input type="number" bind:value={currentPressure} min="28.5" max="31.5" step="0.01" class="pressure-num" />
+              <span class="pressure-unit">inHg</span>
+            </div>
+            <input type="range" bind:value={currentPressure} min="28.5" max="31.5" step="0.01" class="pressure-slider" />
+          </div>
+          <div class="pressure-input-group">
+            <label class="pressure-label">Previous Reading</label>
+            <div class="pressure-value-row">
+              <input type="number" bind:value={previousPressure} min="28.5" max="31.5" step="0.01" class="pressure-num" />
+              <span class="pressure-unit">inHg</span>
+            </div>
+            <input type="range" bind:value={previousPressure} min="28.5" max="31.5" step="0.01" class="pressure-slider" />
+          </div>
+          <div class="pressure-input-group hours">
+            <label class="pressure-label">Hours Between Readings</label>
+            <div class="hours-options">
+              {#each [1, 2, 3, 6, 12] as h}
+                <button class="hour-btn" class:active={hoursElapsed === h} onclick={() => hoursElapsed = h}>{h}h</button>
+              {/each}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rate Display -->
+      <div class="rate-display">
+        <div class="rate-label">Rate of Change</div>
+        <div class="rate-value" style="color: {pressureAssessment.color}">
+          {pressureChangePerHour >= 0 ? '+' : ''}{pressureChangePerHour.toFixed(3)}" per hour
+        </div>
+      </div>
+
+      <!-- Reference Scale -->
+      <div class="pressure-reference">
+        <div class="ref-title">Pressure Guide</div>
+        <div class="ref-scale">
+          <div class="ref-zone low">
+            <span class="ref-range">&lt; 29.80"</span>
+            <span class="ref-name">Low</span>
+            <span class="ref-weather">Stormy</span>
+          </div>
+          <div class="ref-zone normal">
+            <span class="ref-range">29.80 - 30.20"</span>
+            <span class="ref-name">Normal</span>
+            <span class="ref-weather">Variable</span>
+          </div>
+          <div class="ref-zone high">
+            <span class="ref-range">&gt; 30.20"</span>
+            <span class="ref-name">High</span>
+            <span class="ref-weather">Fair</span>
+          </div>
+        </div>
+        <div class="ref-current" style="left: {Math.min(100, Math.max(0, (currentPressure - 28.5) / 3 * 100))}%">
+          <span class="ref-needle"></span>
+          <span class="ref-reading">{currentPressure.toFixed(2)}"</span>
+        </div>
+      </div>
+
+      <!-- Drop Rate Reference -->
+      <div class="drop-rates">
+        <div class="drop-title">Drop Rate Thresholds</div>
+        <div class="drop-grid">
+          <div class="drop-row">
+            <span class="drop-rate">&lt; 0.02"/hr</span>
+            <span class="drop-timing">12-24 hours</span>
+            <span class="drop-action good">Monitor</span>
+          </div>
+          <div class="drop-row">
+            <span class="drop-rate">0.02-0.05"/hr</span>
+            <span class="drop-timing">6-12 hours</span>
+            <span class="drop-action caution">Prepare</span>
+          </div>
+          <div class="drop-row">
+            <span class="drop-rate">0.05-0.10"/hr</span>
+            <span class="drop-timing">2-6 hours</span>
+            <span class="drop-action warning">Shelter Soon</span>
+          </div>
+          <div class="drop-row">
+            <span class="drop-rate">&gt; 0.10"/hr</span>
+            <span class="drop-timing">Imminent</span>
+            <span class="drop-action critical">SHELTER NOW</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- How to Check -->
+      <div class="pressure-tips">
+        <div class="tips-title">How to Check Pressure</div>
+        <ul class="tips-list">
+          <li><strong>Phone/Watch:</strong> Most show barometric pressure in weather apps</li>
+          <li><strong>Morning check:</strong> Note pressure when you wake up</li>
+          <li><strong>Evening check:</strong> Compare to morning reading</li>
+          <li><strong>Trend matters:</strong> Direction of change is more important than absolute value</li>
+        </ul>
       </div>
     </section>
   {/if}
@@ -1651,6 +1881,381 @@
   }
 
   .insight-text strong {
+    color: var(--ink);
+  }
+
+  /* Pressure Section */
+  .pressure-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.12) 0%, rgba(166, 181, 137, 0.05) 100%);
+    border: 2px solid var(--pressure-color, var(--alpine));
+    border-radius: 16px;
+    margin-bottom: 1rem;
+  }
+
+  .pressure-trend {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .trend-icon { font-size: 2rem; }
+
+  .trend-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .pressure-assessment { flex: 1; }
+
+  .assessment-headline {
+    font-family: Oswald, sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .assessment-message {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .pressure-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(251, 191, 36, 0.1);
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+  }
+
+  .pressure-action.warning {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+  }
+
+  .pressure-action.critical {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: #dc2626;
+    animation: pulse-border 1s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: #dc2626; }
+    50% { border-color: #ef4444; }
+  }
+
+  .action-icon { font-size: 1.5rem; }
+
+  .action-text {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .pressure-inputs {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .pressure-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .pressure-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .pressure-input-group {
+    background: #fff;
+    padding: 0.75rem;
+    border-radius: 10px;
+  }
+
+  .pressure-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .pressure-value-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .pressure-num {
+    width: 80px;
+    padding: 0.4rem 0.5rem;
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: center;
+    border: 2px solid var(--alpine);
+    border-radius: 8px;
+    color: var(--ink);
+  }
+
+  .pressure-unit {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .pressure-slider {
+    width: 100%;
+    height: 8px;
+    -webkit-appearance: none;
+    background: linear-gradient(90deg, #ef4444 0%, #fbbf24 30%, #22c55e 50%, #22c55e 100%);
+    border-radius: 4px;
+  }
+
+  .pressure-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border: 3px solid var(--pine);
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .hours-options {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .hour-btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .hour-btn.active {
+    background: var(--pine);
+    border-color: var(--pine);
+    color: #fff;
+  }
+
+  .rate-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border: 2px solid var(--alpine);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .rate-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .rate-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .pressure-reference {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+  }
+
+  .ref-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .ref-scale {
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .ref-zone {
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .ref-zone.low { background: rgba(239, 68, 68, 0.15); }
+  .ref-zone.normal { background: rgba(251, 191, 36, 0.15); }
+  .ref-zone.high { background: rgba(34, 197, 94, 0.15); }
+
+  .ref-range {
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .ref-name {
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .ref-weather {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .ref-current {
+    position: absolute;
+    bottom: 1rem;
+    transform: translateX(-50%);
+  }
+
+  .ref-needle {
+    display: block;
+    width: 2px;
+    height: 12px;
+    background: var(--pine);
+    margin: 0 auto 0.25rem;
+  }
+
+  .ref-reading {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .drop-rates {
+    background: #fff;
+    border: 2px solid var(--alpine);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .drop-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--pine);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .drop-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .drop-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg);
+    border-radius: 8px;
+  }
+
+  .drop-rate {
+    font-family: monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink);
+    min-width: 90px;
+  }
+
+  .drop-timing {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .drop-action {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .drop-action.good { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+  .drop-action.caution { background: rgba(251, 191, 36, 0.15); color: #d97706; }
+  .drop-action.warning { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+  .drop-action.critical { background: #dc2626; color: #fff; }
+
+  .pressure-tips {
+    background: rgba(166, 181, 137, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+
+  .tips-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--pine);
+    margin-bottom: 0.75rem;
+  }
+
+  .tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tips-list li {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .tips-list li strong {
     color: var(--ink);
   }
 
