@@ -269,21 +269,11 @@
 
   // Trail mode calculations
   let todayStr = $derived(getTodayStr());
-  let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, todayStr)));
-  let actualPaceOverall = $derived(daysOnTrail > 0 ? currentMile / daysOnTrail : 0); // For display only
   let milesRemaining = $derived(TOTAL_MILES - currentMile);
   let percentComplete = $derived((currentMile / TOTAL_MILES) * 100);
-  // Use TARGET pace for projections, not actual pace
+  // Summit projection: today + (remaining miles at target pace with zeros)
   let daysRemaining = $derived(getCalendarDaysForMiles(milesRemaining));
   let projectedFinish = $derived(addDays(todayStr, daysRemaining));
-
-  // Compare to target pace (planning estimate)
-  let originalTotalDays = $derived(Math.ceil((TOTAL_MILES / targetPace) / (1 - zeroDaysPerMonth / 30)));
-  let originalFinish = $derived(addDays(tripStartDate, originalTotalDays));
-  let expectedMileToday = $derived(daysOnTrail * targetPace * (1 - zeroDaysPerMonth / 30));
-  let daysAheadBehind = $derived(Math.round((currentMile - expectedMileToday) / targetPace));
-  let statusLabel = $derived(daysAheadBehind > 0 ? `${daysAheadBehind} day${daysAheadBehind !== 1 ? 's' : ''} ahead` : daysAheadBehind < 0 ? `${Math.abs(daysAheadBehind)} day${Math.abs(daysAheadBehind) !== 1 ? 's' : ''} behind` : 'On schedule');
-  let statusColor = $derived(daysAheadBehind > 0 ? '#22c55e' : daysAheadBehind < 0 ? '#ef4444' : '#3b82f6');
   let currentSection = $derived(getCurrentSection(currentMile));
   let nearestLandmark = $derived(getNearestLandmark(currentMile));
 
@@ -304,14 +294,14 @@ ${calculatedSections.map(s => `• ${s.name} (Mi ${s.startMile.toFixed(0)}-${s.e
 
 hoggcountry.com/tools`;
     } else {
-      text = `🥾 AT Trail Update - Day ${daysOnTrail}
+      text = `🥾 AT Trail Update
 
 📍 Mile ${currentMile.toFixed(0)} - near ${nearestLandmark.name}
 ✅ ${percentComplete.toFixed(1)}% complete
-${daysAheadBehind >= 0 ? '🟢' : '🟠'} ${statusLabel}
+📊 ${milesRemaining.toFixed(0)} miles to go
 
-📊 Target: ${targetPace} mi/day
-🎯 Projected Summit: ${formatDate(projectedFinish)}
+🎯 Summit: ${formatDate(projectedFinish)}
+   at ${targetPace} mi/day + ${zeroDaysPerMonth} zeros/mo
 
 hoggcountry.com/tools`;
     }
@@ -485,18 +475,18 @@ hoggcountry.com/tools`;
           <span class="ss-label">complete</span>
         </div>
         <div class="summary-stat">
-          <span class="ss-value">{daysOnTrail}</span>
-          <span class="ss-label">days on trail</span>
+          <span class="ss-value">{milesRemaining.toFixed(0)}</span>
+          <span class="ss-label">miles to go</span>
         </div>
-        <div class="summary-stat status" style="--status-color: {statusColor}">
-          <span class="ss-value">{daysAheadBehind >= 0 ? '+' : ''}{daysAheadBehind}</span>
-          <span class="ss-label">{statusLabel}</span>
+        <div class="summary-stat">
+          <span class="ss-value">{daysRemaining}</span>
+          <span class="ss-label">days to go</span>
         </div>
       </div>
       <div class="summary-projection">
-        <span class="proj-label">Summit projection:</span>
+        <span class="proj-label">Summit:</span>
         <span class="proj-date">{formatDate(projectedFinish)}</span>
-        <span class="proj-pace">at {targetPace} mi/day target</span>
+        <span class="proj-pace">at {targetPace} mi/day + {zeroDaysPerMonth} zeros/mo</span>
       </div>
     </section>
 
