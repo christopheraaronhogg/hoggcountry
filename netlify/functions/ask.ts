@@ -45,9 +45,10 @@ RULES:
 - If info isn't in context, say so honestly
 
 FORMATTING:
-- Use markdown: **bold** for key terms, bullet lists for multiple items
-- Use headers (##) to organize longer answers
-- Keep paragraphs short and scannable
+- Write naturally in short paragraphs - conversational, not an outline
+- Use bullets only when listing 3+ distinct items (gear lists, town services, etc.)
+- Use **bold** sparingly for key warnings or important terms
+- Headers only for long multi-section answers
 
 CONTEXT FROM AT FIELD GUIDE:
 ${guideContext || 'No specific context found.'}`;
