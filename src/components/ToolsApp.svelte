@@ -174,13 +174,27 @@
   let hikingDaysPlanned = $derived(Math.ceil(2198 / targetPace));
   let totalDaysPlanned = $derived(Math.ceil(hikingDaysPlanned / (1 - zeroDaysPerMonth / 30)));
 
+  // Effective date for projections: use today if start date has passed, otherwise use start date
+  let effectiveDate = $derived(isPastDate(startDate) ? getTodayStr() : startDate);
+
+  // Miles remaining (for on-trail projections)
+  let milesRemaining = $derived(2198 - currentMile);
+
+  // Days needed for remaining miles
+  function getCalendarDaysForMiles(miles) {
+    const hikingDays = Math.ceil(miles / targetPace);
+    return Math.ceil(hikingDays / (1 - zeroDaysPerMonth / 30));
+  }
+  let daysToFinish = $derived(isOnTrail ? getCalendarDaysForMiles(milesRemaining) : totalDaysPlanned);
+
   // Projected finish date
   function addDaysToDate(dateStr, days) {
     const date = new Date(dateStr);
     date.setDate(date.getDate() + days);
     return date;
   }
-  let projectedFinish = $derived(addDaysToDate(startDate, totalDaysPlanned));
+  // Use effective date + days to finish
+  let projectedFinish = $derived(addDaysToDate(effectiveDate, daysToFinish));
 
   async function switchTool(toolId) {
     if (toolId === activeTool || tools.find(t => t.id === toolId)?.disabled) return;
@@ -300,6 +314,7 @@
     targetPace,
     zeroDaysPerMonth,
     // Computed
+    effectiveDate, // Today if past start date, otherwise start date
     daysOnTrail,
     actualPace: parseFloat(actualPace), // Calendar pace (includes zeros implicitly)
     percentComplete: parseFloat(percentComplete),
@@ -307,6 +322,8 @@
     projectedFinish,
     hikingDaysPlanned,
     totalDaysPlanned,
+    milesRemaining,
+    daysToFinish,
     // Legacy aliases for compatibility
     pace: targetPace,
     tripStartDate: startDate,
@@ -319,26 +336,35 @@
     <!-- Topographic texture overlay -->
     <div class="topo-texture"></div>
 
-    <!-- Header with mile display -->
+    <!-- Header with mile + landmark -->
     <div class="context-header">
       <div class="mile-quick">
         <span class="mile-current">{currentMile}</span>
         <span class="mile-label">mi</span>
+        <span class="mile-landmark-quick">
+          {#if currentMile === 0}
+            at Springer
+          {:else}
+            near {nearestLandmark.name}
+          {/if}
+        </span>
         {#if isOnTrail}
-          <span class="mile-status on-trail">on trail</span>
+          <span class="mile-status on-trail">hiking</span>
         {:else}
           <span class="mile-status planning">planning</span>
         {/if}
       </div>
 
-      <div class="projected-finish">
-        <span class="finish-icon">🏔️</span>
-        <span class="finish-date">{projectedFinish.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-      </div>
+      <div class="header-right">
+        <div class="projected-finish">
+          <span class="finish-icon">🏔️</span>
+          <span class="finish-date">{projectedFinish.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+        </div>
 
-      <button class="expand-toggle" onclick={() => contextExpanded = !contextExpanded}>
-        <span class="toggle-chevron" class:flipped={contextExpanded}>▼</span>
-      </button>
+        <button class="expand-toggle" onclick={() => contextExpanded = !contextExpanded}>
+          <span class="toggle-chevron" class:flipped={contextExpanded}>▼</span>
+        </button>
+      </div>
     </div>
 
     <!-- Collapsed Summary -->
@@ -371,18 +397,8 @@
     <!-- Expanded Settings Panel -->
     {#if contextExpanded}
       <div class="context-panel" transition:slide={{ duration: 200 }}>
-        <!-- Mile slider - always visible -->
-        <div class="mile-display">
-          <div class="mile-main">
-            <span class="mile-num">{currentMile}</span>
-            <span class="mile-landmark">
-              {#if currentMile === 0}
-                starting at Springer
-              {:else}
-                near {nearestLandmark.name}
-              {/if}
-            </span>
-          </div>
+        <!-- Mile slider with progress ring -->
+        <div class="mile-slider-row">
           <div class="mile-pct">
             <svg viewBox="0 0 36 36" class="progress-ring-small">
               <circle cx="18" cy="18" r="15.5" class="ring-bg-small" />
@@ -391,16 +407,17 @@
             </svg>
             <span class="pct-text">{percentComplete}%</span>
           </div>
-        </div>
-
-        <div class="mile-slider-container">
-          <label for="current-mile" class="visually-hidden">Current mile marker</label>
-          <input type="range" id="current-mile" min="0" max="2198" step="1" bind:value={currentMile} class="mile-slider" aria-valuemin="0" aria-valuemax="2198" aria-valuenow={currentMile} aria-valuetext="Mile {currentMile} of 2198" />
-          <div class="mile-progress-bar" style="width: {(currentMile / 2198) * 100}%" aria-hidden="true"></div>
-        </div>
-        <div class="mile-endpoints">
-          <span>Springer</span>
-          <span>Katahdin</span>
+          <div class="mile-slider-wrap">
+            <div class="mile-slider-container">
+              <label for="current-mile" class="visually-hidden">Current mile marker</label>
+              <input type="range" id="current-mile" min="0" max="2198" step="1" bind:value={currentMile} class="mile-slider" aria-valuemin="0" aria-valuemax="2198" aria-valuenow={currentMile} aria-valuetext="Mile {currentMile} of 2198" />
+              <div class="mile-progress-bar" style="width: {(currentMile / 2198) * 100}%" aria-hidden="true"></div>
+            </div>
+            <div class="mile-endpoints">
+              <span>Springer</span>
+              <span>Katahdin</span>
+            </div>
+          </div>
         </div>
 
         <!-- Unified controls -->
@@ -434,13 +451,13 @@
               <span class="ctx-stat-val">{daysOnTrail}</span>
               <span class="ctx-stat-label">Days Out</span>
             </div>
-            <div class="ctx-stat highlight">
-              <span class="ctx-stat-val">{actualPace}</span>
-              <span class="ctx-stat-label">Actual Pace</span>
-            </div>
             <div class="ctx-stat">
-              <span class="ctx-stat-val">{2198 - currentMile}</span>
+              <span class="ctx-stat-val">{milesRemaining}</span>
               <span class="ctx-stat-label">Miles Left</span>
+            </div>
+            <div class="ctx-stat highlight">
+              <span class="ctx-stat-val">{daysToFinish}</span>
+              <span class="ctx-stat-label">Days to Go</span>
             </div>
           {:else}
             <div class="ctx-stat">
@@ -635,6 +652,19 @@
   .mile-status.on-trail {
     background: rgba(34, 197, 94, 0.2);
     color: #4ade80;
+  }
+
+  .mile-landmark-quick {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+    margin-left: 0.25rem;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .projected-finish {
@@ -853,32 +883,16 @@
     color: rgba(255,255,255,0.4);
   }
 
-  /* Mile Display (Trail Mode) */
-  .mile-display {
+  /* Mile Slider Row */
+  .mile-slider-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
   }
 
-  .mile-main {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-  }
-
-  .mile-num {
-    font-family: Oswald, sans-serif;
-    font-size: 3rem;
-    font-weight: 700;
-    color: #fff;
-    line-height: 1;
-  }
-
-  .mile-landmark {
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.5);
-    font-style: italic;
+  .mile-slider-wrap {
+    flex: 1;
   }
 
   .mile-pct {
