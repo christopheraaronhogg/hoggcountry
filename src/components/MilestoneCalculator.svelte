@@ -205,10 +205,11 @@
           // Past - already passed this point
           return null; // We'll show "Done" instead of a date
         } else {
-          // Future - project from current position using TARGET pace
+          // Future - project from effectiveDate using TARGET pace
+          // effectiveDate = today if start date passed, otherwise start date
           const milesAhead = mile - currentMile;
           const daysAhead = getCalendarDaysForMiles(milesAhead);
-          return addDays(todayStr, daysAhead);
+          return addDays(effectiveDate, daysAhead);
         }
       } else {
         return addDays(startDate, getCalendarDayForMile(mile));
@@ -273,9 +274,10 @@
   let todayStr = $derived(getTodayStr());
   let milesRemaining = $derived(TOTAL_MILES - currentMile);
   let percentComplete = $derived((currentMile / TOTAL_MILES) * 100);
-  // Summit projection: today + (remaining miles at target pace with zeros)
+  // Summit projection: effectiveDate + (remaining miles at target pace with zeros)
+  // effectiveDate = today if start date has passed, otherwise start date
   let daysRemaining = $derived(getCalendarDaysForMiles(milesRemaining));
-  let projectedFinish = $derived(addDays(todayStr, daysRemaining));
+  let projectedFinish = $derived(addDays(effectiveDate, daysRemaining));
   let currentSection = $derived(getCurrentSection(currentMile));
   let nearestLandmark = $derived(getNearestLandmark(currentMile));
 
