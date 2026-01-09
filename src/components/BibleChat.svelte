@@ -1,23 +1,24 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
 
-  interface Verse { reference: string; text: string }
-  interface AssistantContent { note: string | null; verses: Verse[] }
-  interface Message { role: 'user' | 'assistant'; content: string | AssistantContent }
-
-  // Handle legacy string content (old saved conversations)
-  function isStructuredContent(content: string | AssistantContent): content is AssistantContent {
-    return typeof content === 'object' && content !== null && 'verses' in content;
-  }
-
-  // Convert legacy string to structured format for display
-  function legacyToStructured(content: string): AssistantContent {
-    return { note: content, verses: [] };
-  }
+  interface Message { role: 'user' | 'assistant'; content: string; books?: string[] }
   interface Conversation { id: string; createdAt: string; title: string; messages: Message[] }
 
-  const STORAGE_KEY = 'proverbs-ai-conversations';
+  const STORAGE_KEY = 'kjv-ai-conversations';
   const SHOW_RECENT_COUNT = 5;
+
+  // Convert markdown-style response to HTML
+  function formatResponse(text: string): string {
+    return text
+      // Bold references like **Psalm 4:8**
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      // Paragraph breaks
+      .replace(/\n\n/g, '</p><p>')
+      // Single line breaks
+      .replace(/\n/g, '<br>')
+      // Wrap in paragraph
+      .replace(/^(.*)$/, '<p>$1</p>');
+  }
 
   let question = $state('');
   let messages = $state<Message[]>([]);
@@ -111,12 +112,8 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
 
-      // Store structured response: note (AI-generated) + verses (verified from DB)
-      const assistantContent: AssistantContent = {
-        note: data.note || null,
-        verses: data.verses || [],
-      };
-      messages = [...messages, { role: 'assistant', content: assistantContent }];
+      // Store response with optional books info
+      messages = [...messages, { role: 'assistant', content: data.answer || 'No response', books: data.books }];
       saveCurrentConvo();
       scrollToBottom();
     } catch (e) {
@@ -133,21 +130,21 @@
   }
 
   const examples = [
-    "What does Proverbs say about wisdom?",
-    "Verses about money and wealth",
-    "What does Solomon say about the tongue?"
+    "I can't sleep and I'm worried",
+    "Help me with grief and loss",
+    "What does the Bible say about fear?"
   ];
 </script>
 
-<div class="chat" role="main" aria-label="Proverbs AI Chat">
+<div class="chat" role="main" aria-label="Bible Chat">
   <header class="header">
     {#if messages.length > 0}
       <button class="back-btn" onclick={newChat} aria-label="Start new conversation">
         ← New Search
       </button>
     {/if}
-    <h1>Proverbs</h1>
-    <p>Wisdom from Solomon - King James Version</p>
+    <h1>Scripture Guide</h1>
+    <p>King James Version · Wisdom from across the Bible</p>
   </header>
 
   {#if messages.length === 0}
@@ -199,36 +196,23 @@
         {#if m.role === 'user'}
           <div class="msg user">{m.content}</div>
         {:else}
-          {@const content = isStructuredContent(m.content) ? m.content : legacyToStructured(m.content)}
           <div class="msg assistant">
-            {#if content.note}
-              <div class="ai-note">
-                <span class="ai-label">AI insight</span>
-                <p>{content.note}</p>
-              </div>
-            {/if}
-            {#if content.verses && content.verses.length > 0}
-              <div class="verses">
-                {#each content.verses as verse}
-                  <blockquote class="scripture">
-                    <div class="scripture-header">
-                      <span class="verse-ref">{verse.reference}</span>
-                      <span class="verified-badge">✓ KJV</span>
-                    </div>
-                    <p class="verse-text">{verse.text}</p>
-                  </blockquote>
+            {#if m.books && m.books.length > 0}
+              <div class="books-used">
+                <span class="books-label">Drawing from:</span>
+                {#each m.books as book, i}
+                  <span class="book-tag">{book}</span>
                 {/each}
               </div>
-            {:else if !content.note}
-              <p class="no-results">No relevant verses found in Proverbs for this topic.</p>
             {/if}
+            <div class="response-content">{@html formatResponse(m.content)}</div>
           </div>
         {/if}
       {/each}
       {#if isLoading}
         <div class="msg assistant loading" role="status">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="sr-only">Searching Proverbs...</span>
+          <span class="sr-only">Searching Scripture...</span>
         </div>
       {/if}
     </div>
@@ -245,7 +229,7 @@
     <input
       bind:this={inputRef}
       bind:value={question}
-      placeholder="Search Proverbs..."
+      placeholder="Ask for scripture guidance..."
       disabled={isLoading}
       aria-label="Your question"
     />
@@ -330,79 +314,44 @@
   .msg.user { background: #4a3728; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
   .msg.assistant { background: #faf8f5; border: 1px solid #e8e2d8; align-self: flex-start; border-bottom-left-radius: 4px; }
 
-  /* AI-generated note styling */
-  .ai-note {
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background: #f5f3f0;
-    border-radius: 8px;
-    border-left: 3px solid #b8a898;
-  }
-  .ai-label {
-    display: inline-block;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #8a7a6a;
-    background: #e8e2d8;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    margin-bottom: 0.4rem;
-  }
-  .ai-note p {
-    margin: 0;
-    font-style: italic;
-    color: #5a4a3a;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
-  /* Verified scripture styling */
-  .verses {
+  /* Books used indicator */
+  .books-used {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  .scripture {
-    margin: 0;
-    padding: 1rem;
-    background: linear-gradient(135deg, #fdfcfa 0%, #f9f6f1 100%);
-    border: 1px solid #e8e2d8;
-    border-left: 4px solid #8b7355;
-    border-radius: 0 8px 8px 0;
-    box-shadow: 0 1px 3px rgba(74, 55, 40, 0.08);
-  }
-  .scripture-header {
-    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e8e2d8;
   }
-  .verse-ref {
-    font-weight: 700;
+  .books-label {
+    font-size: 0.75rem;
+    color: #7a6a5a;
+  }
+  .book-tag {
+    font-size: 0.7rem;
+    background: #e8e2d8;
     color: #4a3728;
-    font-size: 0.9rem;
-  }
-  .verified-badge {
-    font-size: 0.65rem;
-    color: #2d6a4f;
-    background: #d8f3dc;
     padding: 0.2rem 0.5rem;
     border-radius: 10px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-weight: 500;
   }
-  .verse-text {
-    margin: 0;
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 1rem;
+
+  /* Response content styling */
+  .response-content {
+    font-size: 0.95rem;
     line-height: 1.7;
     color: #3a2a1a;
   }
-  .no-results {
-    margin: 0;
-    color: #7a6a5a;
-    font-style: italic;
+  .response-content p {
+    margin: 0 0 0.75rem;
+  }
+  .response-content p:last-child {
+    margin-bottom: 0;
+  }
+  .response-content strong {
+    color: #4a3728;
+    font-weight: 700;
   }
 
   .error {
