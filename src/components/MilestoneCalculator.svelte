@@ -70,10 +70,9 @@
   let startDate = $derived(trailContext.startDate || '2026-02-15');
   let pace = $derived(trailContext.pace || 15);
   let zeroDaysPerMonth = $derived(trailContext.zeroDaysPerMonth || 4);
-  let currentMile = $derived(trailContext.currentMile || 500);
+  let currentMile = $derived(trailContext.currentMile || 0);
   let tripStartDate = $derived(trailContext.tripStartDate || '2026-02-15');
   let targetPace = $derived(trailContext.targetPace || 15);
-  let zeroDaysTaken = $derived(trailContext.zeroDaysTaken || 5);
 
   let mounted = $state(false);
 
@@ -265,50 +264,24 @@
     });
   });
 
-  // Trail mode calculations
+  // Trail mode calculations - uses derived calendar pace (inherently includes zeros)
   let todayStr = $derived(getTodayStr());
   let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, todayStr)));
-  let hikingDaysActual = $derived(Math.max(1, daysOnTrail - zeroDaysTaken));
-  let actualPaceOverall = $derived(currentMile / daysOnTrail);
-  let actualPaceHiking = $derived(currentMile / hikingDaysActual);
-  let actualPace = $derived(actualPaceOverall);
+  let actualPaceOverall = $derived(currentMile / daysOnTrail); // Calendar pace includes zeros
   let milesRemaining = $derived(TOTAL_MILES - currentMile);
   let percentComplete = $derived((currentMile / TOTAL_MILES) * 100);
-  let zeroDayFrequency = $derived(daysOnTrail > 0 ? (zeroDaysTaken / daysOnTrail) * 30 : 0);
-  let hikingDaysRemaining = $derived(actualPaceHiking > 0 ? Math.ceil(milesRemaining / actualPaceHiking) : 999);
-  let projectedZeroDaysRemaining = $derived(Math.round(hikingDaysRemaining * (zeroDaysTaken / hikingDaysActual)));
-  let daysRemaining = $derived(hikingDaysRemaining + projectedZeroDaysRemaining);
+  let daysRemaining = $derived(actualPaceOverall > 0 ? Math.ceil(milesRemaining / actualPaceOverall) : 999);
   let projectedFinish = $derived(addDays(todayStr, daysRemaining));
-  let originalHikingDays = $derived(Math.ceil(TOTAL_MILES / targetPace));
-  let originalTotalDays = $derived(Math.ceil(originalHikingDays * 1.15));
+
+  // Compare to target pace (planning estimate)
+  let originalTotalDays = $derived(Math.ceil((TOTAL_MILES / targetPace) / (1 - zeroDaysPerMonth / 30)));
   let originalFinish = $derived(addDays(tripStartDate, originalTotalDays));
-  let originalDayForCurrentMile = $derived(Math.ceil(Math.ceil(currentMile / targetPace) * 1.15));
-  let daysAheadBehind = $derived(originalDayForCurrentMile - daysOnTrail);
+  let expectedMileToday = $derived(daysOnTrail * targetPace * (1 - zeroDaysPerMonth / 30));
+  let daysAheadBehind = $derived(Math.round((currentMile - expectedMileToday) / targetPace));
   let statusLabel = $derived(daysAheadBehind > 0 ? `${daysAheadBehind} day${daysAheadBehind !== 1 ? 's' : ''} ahead` : daysAheadBehind < 0 ? `${Math.abs(daysAheadBehind)} day${Math.abs(daysAheadBehind) !== 1 ? 's' : ''} behind` : 'On schedule');
   let statusColor = $derived(daysAheadBehind > 0 ? '#22c55e' : daysAheadBehind < 0 ? '#ef4444' : '#3b82f6');
-  let daysUntilTarget = $derived(daysBetween(todayStr, originalFinish.toISOString().split('T')[0]));
-  let paceToHitTarget = $derived(daysUntilTarget > 0 ? (milesRemaining / daysUntilTarget).toFixed(1) : '—');
   let currentSection = $derived(getCurrentSection(currentMile));
-  let milesToSectionEnd = $derived(currentSection.endMile - currentMile);
   let nearestLandmark = $derived(getNearestLandmark(currentMile));
-  let nextMilestone = $derived(milestones.find(m => m.miles > currentMile) || null);
-  let milesToNextMilestone = $derived(nextMilestone ? nextMilestone.miles - currentMile : 0);
-
-  let remainingSections = $derived(sections.filter(s => s.endMile > currentMile).map((section, i) => {
-    const effectiveStart = Math.max(section.startMile, currentMile);
-    const milesInSection = section.endMile - effectiveStart;
-    const daysToComplete = Math.ceil(milesInSection / actualPace);
-    const arrivalDate = i === 0 ? new Date() : addDays(todayStr, Math.ceil((section.startMile - currentMile) / actualPace));
-    const season = getSeason(arrivalDate);
-    return {
-      ...section,
-      milesRemaining: milesInSection,
-      daysToComplete,
-      arrivalDate,
-      season,
-      isCurrent: currentMile >= section.startMile && currentMile < section.endMile,
-    };
-  }));
 
   let copyNotification = $state('');
 
@@ -333,7 +306,7 @@ hoggcountry.com/tools`;
 ✅ ${percentComplete.toFixed(1)}% complete
 ${daysAheadBehind >= 0 ? '🟢' : '🟠'} ${statusLabel}
 
-📊 Pace: ${actualPaceHiking.toFixed(1)} mi/day
+📊 Pace: ${actualPaceOverall.toFixed(1)} mi/day
 🎯 Projected Summit: ${formatDate(projectedFinish)}
 
 hoggcountry.com/tools`;
@@ -412,18 +385,18 @@ hoggcountry.com/tools`;
               </div>
               <div class="item-content">
                 <div class="section-card">
-                  <div class="card-top">
+                  <div class="card-header">
                     <span class="card-emoji">{item.emoji}</span>
                     <span class="card-name">{item.name}</span>
-                    <span class="card-miles">{item.sectionMiles.toFixed(0)} mi</span>
+                    <span class="card-mile-badge">Mile {item.startMile.toFixed(0)}</span>
                   </div>
-                  <div class="card-mile-range">
-                    <span class="mile-marker">Mile {item.startMile.toFixed(0)}</span>
-                    <span class="mile-arrow">→</span>
-                    <span class="mile-marker">Mile {item.endMile.toFixed(0)}</span>
-                  </div>
-                  <div class="card-bottom">
+                  <div class="card-details">
+                    <span class="card-length">{item.sectionMiles.toFixed(0)} mi</span>
+                    <span class="card-separator">•</span>
                     <span class="card-highlight">{item.highlight}</span>
+                  </div>
+                  <div class="card-footer">
+                    <span class="card-end-mile">ends Mile {item.endMile.toFixed(0)}</span>
                     <span class="card-season" style="color: {item.season.color}">{item.season.icon} {item.season.name}</span>
                   </div>
                 </div>
@@ -555,17 +528,17 @@ hoggcountry.com/tools`;
               </div>
               <div class="item-content">
                 <div class="section-card {item.status}">
-                  <div class="card-top">
+                  <div class="card-header">
                     <span class="card-emoji">{item.emoji}</span>
                     <span class="card-name">{item.name}</span>
-                    <span class="card-miles">{item.sectionMiles.toFixed(0)} mi</span>
-                  </div>
-                  <div class="card-mile-range">
-                    <span class="mile-marker">Mile {item.startMile.toFixed(0)}</span>
-                    <span class="mile-arrow">→</span>
-                    <span class="mile-marker">Mile {item.endMile.toFixed(0)}</span>
+                    <span class="card-mile-badge">Mile {item.startMile.toFixed(0)}</span>
                   </div>
                   {#if item.status === 'current'}
+                    <div class="card-details">
+                      <span class="card-length">{item.sectionMiles.toFixed(0)} mi section</span>
+                      <span class="card-separator">•</span>
+                      <span class="card-highlight">ends Mile {item.endMile.toFixed(0)}</span>
+                    </div>
                     <div class="current-progress-inline">
                       <div class="progress-track-inline">
                         <div class="progress-fill-inline" style="width: {((currentMile - item.startMile) / (item.endMile - item.startMile)) * 100}%"></div>
@@ -573,12 +546,17 @@ hoggcountry.com/tools`;
                       <span class="progress-label-inline">{(item.endMile - currentMile).toFixed(0)} mi to go</span>
                     </div>
                   {:else}
-                    <div class="card-bottom">
+                    <div class="card-details">
+                      <span class="card-length">{item.sectionMiles.toFixed(0)} mi</span>
+                      <span class="card-separator">•</span>
                       <span class="card-highlight">{item.highlight}</span>
-                      {#if item.status !== 'completed'}
-                        <span class="card-season" style="color: {item.season.color}">{item.season.icon} {item.season.name}</span>
-                      {/if}
                     </div>
+                    {#if item.status !== 'completed'}
+                      <div class="card-footer">
+                        <span class="card-end-mile">ends Mile {item.endMile.toFixed(0)}</span>
+                        <span class="card-season" style="color: {item.season.color}">{item.season.icon} {item.season.name}</span>
+                      </div>
+                    {/if}
                   {/if}
                 </div>
               </div>
@@ -945,11 +923,11 @@ hoggcountry.com/tools`;
     padding: 0.75rem 1rem;
   }
 
-  .card-top {
+  .card-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
   }
 
   .card-emoji {
@@ -959,48 +937,55 @@ hoggcountry.com/tools`;
   .card-name {
     flex: 1;
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--ink);
   }
 
-  .card-miles {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--muted);
-    background: var(--bg);
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-  }
-
-  .card-mile-range {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin: 0.25rem 0;
-    font-size: 0.7rem;
-  }
-
-  .mile-marker {
+  .card-mile-badge {
     font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--alpine);
+    background: rgba(30, 58, 95, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(30, 58, 95, 0.2);
   }
 
-  .mile-arrow {
-    color: var(--muted);
-    font-size: 0.6rem;
-  }
-
-  .card-bottom {
+  .card-details {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
     font-size: 0.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .card-length {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    color: var(--pine);
+  }
+
+  .card-separator {
+    color: var(--muted);
   }
 
   .card-highlight {
     color: var(--muted);
     font-style: italic;
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+  }
+
+  .card-end-mile {
+    color: var(--muted);
+    font-family: Oswald, sans-serif;
   }
 
   .card-season {
