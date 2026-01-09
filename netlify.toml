@@ -7,10 +7,10 @@
   node_bundler = "esbuild"
 
 [functions."ask"]
-  timeout = 60  # Extended timeout for AI responses
+  timeout = 120
 
 [functions."ask-kjv"]
-  timeout = 60  # Extended timeout for Bible AI responses
+  timeout = 120
 
 [build.environment]
   NODE_VERSION = "20"
