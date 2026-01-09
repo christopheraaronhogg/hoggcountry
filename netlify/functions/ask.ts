@@ -59,7 +59,7 @@ ${guideContext || 'No specific context found.'}`;
         },
         body: JSON.stringify({
           model: 'gpt-5-nano',
-          reasoning_effort: 'low',
+          reasoning: { effort: 'minimal' },
           messages: [
             { role: 'system', content: systemPrompt },
             ...history.map((m: { role: string; content: string }) => ({
