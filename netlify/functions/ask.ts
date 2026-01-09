@@ -13,9 +13,9 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       return { statusCode: 400, body: JSON.stringify({ error: 'Question is required' }) };
     }
 
-    const apiKey = process.env.XAI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'API key not configured' }) };
+      return { statusCode: 500, body: JSON.stringify({ error: 'OpenAI API key not configured' }) };
     }
 
     const systemPrompt = `You are the AT Trail AI, an expert assistant for Appalachian Trail thru-hikers.
@@ -32,14 +32,14 @@ ${guideContext || 'No specific context found.'}`;
     let lastError = '';
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'grok-4-1-fast-non-reasoning',
+          model: 'gpt-5-nano',
           messages: [
             { role: 'system', content: systemPrompt },
             ...history.map((m: { role: string; content: string }) => ({
@@ -60,7 +60,7 @@ ${guideContext || 'No specific context found.'}`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             answer: data.choices?.[0]?.message?.content || 'No response',
-            model: 'grok-4-1-fast-non-reasoning',
+            model: 'gpt-5-nano',
             tokens: data.usage,
           }),
         };
