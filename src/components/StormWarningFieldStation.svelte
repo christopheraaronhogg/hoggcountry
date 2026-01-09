@@ -333,45 +333,47 @@
     {#if showDataView}
       <div class="chart-panel">
         <svg viewBox="0 0 300 120" class="drift-chart">
-          {@const firstDrift = readings[0].drift}
-          {@const points = readings.map(r => r.drift - firstDrift)}
-          {@const minY = Math.min(...points, 0)}
-          {@const maxY = Math.max(...points, 25)}
-          {@const range = maxY - minY || 25}
+          {#if readings.length > 0}
+            {@const firstDrift = readings[0].drift}
+            {@const points = readings.map(r => r.drift - firstDrift)}
+            {@const minY = Math.min(...points, 0)}
+            {@const maxY = Math.max(...points, 25)}
+            {@const range = maxY - minY || 25}
+            {@const zeroY = 15 + ((maxY - 0) / range) * 90}
 
-          <!-- Grid -->
-          {#each [0, 0.5, 1] as y}
-            <line x1="40" y1={15 + y * 90} x2="290" y2={15 + y * 90} stroke="#e5e5e5" stroke-width="1" />
-          {/each}
+            <!-- Grid -->
+            {#each [0, 0.5, 1] as y}
+              <line x1="40" y1={15 + y * 90} x2="290" y2={15 + y * 90} stroke="#e5e5e5" stroke-width="1" />
+            {/each}
 
-          <!-- Zero line -->
-          {@const zeroY = 15 + ((maxY - 0) / range) * 90}
-          <line x1="40" y1={zeroY} x2="290" y2={zeroY} stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,2" />
+            <!-- Zero line -->
+            <line x1="40" y1={zeroY} x2="290" y2={zeroY} stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,2" />
 
-          <!-- Data line -->
-          <polyline
-            fill="none"
-            stroke={warningDisplay.color}
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            points={readings.map((r, i) => {
-              const x = 50 + (i / Math.max(readings.length - 1, 1)) * 230;
-              const y = 15 + ((maxY - (r.drift - firstDrift)) / range) * 90;
-              return `${x},${y}`;
-            }).join(' ')}
-          />
+            <!-- Data line -->
+            <polyline
+              fill="none"
+              stroke={warningDisplay.color}
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              points={readings.map((r, i) => {
+                const x = 50 + (i / Math.max(readings.length - 1, 1)) * 230;
+                const y = 15 + ((maxY - (r.drift - firstDrift)) / range) * 90;
+                return `${x},${y}`;
+              }).join(' ')}
+            />
 
-          <!-- Points -->
-          {#each readings as r, i}
-            {@const x = 50 + (i / Math.max(readings.length - 1, 1)) * 230}
-            {@const y = 15 + ((maxY - (r.drift - firstDrift)) / range) * 90}
-            <circle cx={x} cy={y} r="4" fill={warningDisplay.color} />
-          {/each}
+            <!-- Points -->
+            {#each readings as r, i}
+              {@const x = 50 + (i / Math.max(readings.length - 1, 1)) * 230}
+              {@const y = 15 + ((maxY - (r.drift - firstDrift)) / range) * 90}
+              <circle cx={x} cy={y} r="4" fill={warningDisplay.color} />
+            {/each}
 
-          <!-- Labels -->
-          <text x="35" y="20" class="axis-label" text-anchor="end">+{Math.round(maxY)}</text>
-          <text x="35" y="110" class="axis-label" text-anchor="end">{Math.round(minY)}</text>
+            <!-- Labels -->
+            <text x="35" y="20" class="axis-label" text-anchor="end">+{Math.round(maxY)}</text>
+            <text x="35" y="110" class="axis-label" text-anchor="end">{Math.round(minY)}</text>
+          {/if}
         </svg>
         <div class="chart-legend">
           <span>Cumulative drift (ft) over time</span>
