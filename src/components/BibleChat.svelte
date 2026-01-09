@@ -1,15 +1,19 @@
 <script lang="ts">
-  import { marked } from 'marked';
   import { onMount, tick } from 'svelte';
 
-  marked.setOptions({ breaks: true, gfm: true });
+  interface Verse { reference: string; text: string }
+  interface AssistantContent { note: string | null; verses: Verse[] }
+  interface Message { role: 'user' | 'assistant'; content: string | AssistantContent }
 
-  function renderMarkdown(text: string): string {
-    if (!text) return '';
-    return marked.parse(text) as string;
+  // Handle legacy string content (old saved conversations)
+  function isStructuredContent(content: string | AssistantContent): content is AssistantContent {
+    return typeof content === 'object' && content !== null && 'verses' in content;
   }
 
-  interface Message { role: 'user' | 'assistant'; content: string }
+  // Convert legacy string to structured format for display
+  function legacyToStructured(content: string): AssistantContent {
+    return { note: content, verses: [] };
+  }
   interface Conversation { id: string; createdAt: string; title: string; messages: Message[] }
 
   const STORAGE_KEY = 'proverbs-ai-conversations';
@@ -106,7 +110,13 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
-      messages = [...messages, { role: 'assistant', content: data.answer }];
+
+      // Store structured response: note (AI-generated) + verses (verified from DB)
+      const assistantContent: AssistantContent = {
+        note: data.note || null,
+        verses: data.verses || [],
+      };
+      messages = [...messages, { role: 'assistant', content: assistantContent }];
       saveCurrentConvo();
       scrollToBottom();
     } catch (e) {
@@ -186,9 +196,34 @@
   {#if messages.length > 0}
     <div class="messages" role="log" aria-label="Scripture search" aria-live="polite">
       {#each messages as m}
-        <div class="msg {m.role}" class:markdown={m.role === 'assistant'}>
-          {#if m.role === 'assistant'}{@html renderMarkdown(m.content)}{:else}{m.content}{/if}
-        </div>
+        {#if m.role === 'user'}
+          <div class="msg user">{m.content}</div>
+        {:else}
+          {@const content = isStructuredContent(m.content) ? m.content : legacyToStructured(m.content)}
+          <div class="msg assistant">
+            {#if content.note}
+              <div class="ai-note">
+                <span class="ai-label">AI insight</span>
+                <p>{content.note}</p>
+              </div>
+            {/if}
+            {#if content.verses && content.verses.length > 0}
+              <div class="verses">
+                {#each content.verses as verse}
+                  <blockquote class="scripture">
+                    <div class="scripture-header">
+                      <span class="verse-ref">{verse.reference}</span>
+                      <span class="verified-badge">✓ KJV</span>
+                    </div>
+                    <p class="verse-text">{verse.text}</p>
+                  </blockquote>
+                {/each}
+              </div>
+            {:else if !content.note}
+              <p class="no-results">No relevant verses found in Proverbs for this topic.</p>
+            {/if}
+          </div>
+        {/if}
       {/each}
       {#if isLoading}
         <div class="msg assistant loading" role="status">
@@ -295,22 +330,80 @@
   .msg.user { background: #4a3728; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
   .msg.assistant { background: #faf8f5; border: 1px solid #e8e2d8; align-self: flex-start; border-bottom-left-radius: 4px; }
 
-  .markdown { white-space: normal; }
-  .markdown :global(h1), .markdown :global(h2), .markdown :global(h3) { margin: 0.5rem 0 0.25rem; font-weight: 600; }
-  .markdown :global(h1) { font-size: 1.1rem; }
-  .markdown :global(h2) { font-size: 1rem; }
-  .markdown :global(h3) { font-size: 0.95rem; }
-  .markdown :global(p) { margin: 0.4rem 0; }
-  .markdown :global(p:first-child) { margin-top: 0; }
-  .markdown :global(p:last-child) { margin-bottom: 0; }
-  .markdown :global(ul), .markdown :global(ol) { margin: 0.4rem 0; padding-left: 1.25rem; }
-  .markdown :global(li) { margin: 0.2rem 0; }
-  .markdown :global(code) { background: #e8e2d8; padding: 0.1rem 0.25rem; border-radius: 3px; font-size: 0.85em; }
-  .markdown :global(pre) { background: #4a3728; color: #fff; padding: 0.6rem; border-radius: 6px; overflow-x: auto; margin: 0.4rem 0; font-size: 0.85em; }
-  .markdown :global(pre code) { background: none; padding: 0; }
-  .markdown :global(strong) { font-weight: 600; }
-  .markdown :global(hr) { border: none; border-top: 1px solid #e8e2d8; margin: 0.5rem 0; }
-  .markdown :global(blockquote) { border-left: 3px solid #d4ccc4; margin: 0.4rem 0; padding-left: 0.6rem; color: #5a4a3a; }
+  /* AI-generated note styling */
+  .ai-note {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f5f3f0;
+    border-radius: 8px;
+    border-left: 3px solid #b8a898;
+  }
+  .ai-label {
+    display: inline-block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8a7a6a;
+    background: #e8e2d8;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    margin-bottom: 0.4rem;
+  }
+  .ai-note p {
+    margin: 0;
+    font-style: italic;
+    color: #5a4a3a;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  /* Verified scripture styling */
+  .verses {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .scripture {
+    margin: 0;
+    padding: 1rem;
+    background: linear-gradient(135deg, #fdfcfa 0%, #f9f6f1 100%);
+    border: 1px solid #e8e2d8;
+    border-left: 4px solid #8b7355;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 1px 3px rgba(74, 55, 40, 0.08);
+  }
+  .scripture-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .verse-ref {
+    font-weight: 700;
+    color: #4a3728;
+    font-size: 0.9rem;
+  }
+  .verified-badge {
+    font-size: 0.65rem;
+    color: #2d6a4f;
+    background: #d8f3dc;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .verse-text {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #3a2a1a;
+  }
+  .no-results {
+    margin: 0;
+    color: #7a6a5a;
+    font-style: italic;
+  }
 
   .error {
     background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;

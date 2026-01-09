@@ -59,25 +59,6 @@ function getVerseText(db: Record<string, string>, chapter: number, verse: number
   return db[key] || null;
 }
 
-// Format a single verse reference with text
-function formatVerse(db: Record<string, string>, chapter: number, verse: number): string | null {
-  const text = getVerseText(db, chapter, verse);
-  if (!text) return null;
-  return `**Proverbs ${chapter}:${verse}** ${text}`;
-}
-
-// Format a range of verses
-function formatVerseRange(db: Record<string, string>, chapter: number, startVerse: number, endVerse: number): string | null {
-  const verses: string[] = [];
-  for (let v = startVerse; v <= endVerse; v++) {
-    const text = getVerseText(db, chapter, v);
-    if (text) {
-      verses.push(`**Proverbs ${chapter}:${v}** ${text}`);
-    }
-  }
-  return verses.length > 0 ? verses.join('\n\n') : null;
-}
-
 interface VerseRef {
   chapter: number;
   verse?: number;
@@ -156,7 +137,7 @@ ${proverbsText}`;
       },
       body: JSON.stringify({
         model: 'gpt-5-nano',
-        reasoning_effort: 'low',
+        reasoning_effort: 'medium',
         messages: [
           { role: 'system', content: systemPrompt },
           ...history.slice(-4).map((m: { role: string; content: string }) => ({
@@ -186,36 +167,41 @@ ${proverbsText}`;
         statusCode: 200,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          answer: 'I had trouble finding relevant verses. Please try rephrasing your question.',
+          note: 'I had trouble finding relevant verses. Please try rephrasing your question.',
+          verses: [],
           model: 'gpt-5-nano',
         }),
       };
     }
 
-    // Build the formatted response with actual scripture text from verified database
-    const formattedVerses: string[] = [];
+    // Build structured response with separate note and verified verses
+    const verseObjects: { reference: string; text: string }[] = [];
 
     if (llmResponse.verses && Array.isArray(llmResponse.verses)) {
       for (const ref of llmResponse.verses) {
         if (ref.startVerse && ref.endVerse) {
-          // Range of verses
-          const text = formatVerseRange(db, ref.chapter, ref.startVerse, ref.endVerse);
-          if (text) formattedVerses.push(text);
+          // Range of verses - combine into one block
+          const texts: string[] = [];
+          for (let v = ref.startVerse; v <= ref.endVerse; v++) {
+            const text = getVerseText(db, ref.chapter, v);
+            if (text) texts.push(`[${v}] ${text}`);
+          }
+          if (texts.length > 0) {
+            verseObjects.push({
+              reference: `Proverbs ${ref.chapter}:${ref.startVerse}-${ref.endVerse}`,
+              text: texts.join(' '),
+            });
+          }
         } else if (ref.verse) {
           // Single verse
-          const text = formatVerse(db, ref.chapter, ref.verse);
-          if (text) formattedVerses.push(text);
+          const text = getVerseText(db, ref.chapter, ref.verse);
+          if (text) {
+            verseObjects.push({
+              reference: `Proverbs ${ref.chapter}:${ref.verse}`,
+              text,
+            });
+          }
         }
-      }
-    }
-
-    let answer: string;
-    if (formattedVerses.length === 0) {
-      answer = llmResponse.note || 'No relevant verses found in Proverbs for this topic.';
-    } else {
-      answer = formattedVerses.join('\n\n');
-      if (llmResponse.note) {
-        answer = `*${llmResponse.note}*\n\n${answer}`;
       }
     }
 
@@ -223,9 +209,9 @@ ${proverbsText}`;
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        answer,
+        note: llmResponse.note || null,
+        verses: verseObjects,
         model: 'gpt-5-nano',
-        versesFound: formattedVerses.length,
         tokens: data.usage,
       }),
     };
