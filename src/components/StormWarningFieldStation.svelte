@@ -420,8 +420,6 @@
 <style>
   .field-station {
     font-family: Lato, system-ui, -apple-system, sans-serif;
-    max-width: 480px;
-    margin: 0 auto;
   }
 
   .station-header {
