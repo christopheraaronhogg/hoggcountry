@@ -1,7 +1,8 @@
 import type { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 
-// Cache Proverbs database in memory
+// Cache Proverbs database and text in memory
 let cachedVerses: Record<string, string> | null = null;
+let cachedProverbsText: string | null = null;
 
 // Simple rate limiter
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -38,6 +39,18 @@ async function getProverbsDB(): Promise<Record<string, string>> {
     return cachedVerses!;
   }
   return {};
+}
+
+async function getProverbsText(): Promise<string> {
+  if (cachedProverbsText) return cachedProverbsText;
+
+  const siteUrl = process.env.URL || 'https://hoggcountry.com';
+  const res = await fetch(`${siteUrl}/proverbs-context.txt`);
+  if (res.ok) {
+    cachedProverbsText = await res.text();
+    return cachedProverbsText;
+  }
+  return '';
 }
 
 // Look up verse text from database
@@ -106,12 +119,15 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       return { statusCode: 500, body: JSON.stringify({ error: 'OpenAI API key not configured' }) };
     }
 
-    // Load Proverbs database
-    const db = await getProverbsDB();
+    // Load both the database and the full text
+    const [db, proverbsText] = await Promise.all([
+      getProverbsDB(),
+      getProverbsText(),
+    ]);
 
-    const systemPrompt = `You are a Proverbs reference assistant. Given a question, return ONLY the relevant verse references from the Book of Proverbs (KJV).
+    const systemPrompt = `You are a Proverbs reference assistant. Given a question, search the Book of Proverbs below and return the most relevant verse references.
 
-IMPORTANT: Return ONLY a JSON object with verse references. Do NOT quote the scripture text - just the references.
+IMPORTANT: Return ONLY a JSON object with verse references. Do NOT quote the scripture text - just return the chapter:verse references.
 
 JSON FORMAT:
 {
@@ -123,23 +139,14 @@ JSON FORMAT:
 }
 
 RULES:
-1. Only reference verses from Proverbs chapters 1-31
-2. Use "verse" for single verses, "startVerse"/"endVerse" for ranges
+1. Search the Proverbs text below to find relevant verses
+2. Use "verse" for single verses, "startVerse"/"endVerse" for consecutive verse ranges
 3. Return 1-10 most relevant verses/passages
-4. If the topic isn't covered in Proverbs, return: { "verses": [], "note": "This topic is not directly addressed in Proverbs" }
+4. If nothing is relevant, return: { "verses": [], "note": "This topic is not directly addressed in Proverbs" }
 5. Return ONLY valid JSON, no other text
 
-PROVERBS TOPICS REFERENCE:
-- Wisdom & Understanding: ch 1-9, 16:16, 24:3-4
-- The Tongue/Speech: 10:19-21, 12:18, 15:1-4, 18:21, 21:23
-- Money/Wealth: 3:9-10, 10:4, 11:4, 13:11, 22:1-7, 23:4-5, 28:6
-- Anger: 14:29, 15:1, 16:32, 19:11, 22:24-25, 29:11
-- Pride/Humility: 11:2, 13:10, 16:5,18, 18:12, 22:4, 29:23
-- Work/Laziness: 6:6-11, 10:4-5, 12:24, 13:4, 20:4, 24:30-34
-- Friends: 17:17, 18:24, 27:6,9,17
-- Marriage/Family: 5:18-19, 12:4, 18:22, 19:13-14, 21:9,19, 31:10-31
-- Children/Parenting: 13:24, 19:18, 22:6,15, 23:13-14, 29:15,17
-- Trust in God: 3:5-6, 16:3,9, 19:21, 20:24, 21:30-31`;
+BOOK OF PROVERBS (KJV):
+${proverbsText}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -185,7 +192,7 @@ PROVERBS TOPICS REFERENCE:
       };
     }
 
-    // Build the formatted response with actual scripture text
+    // Build the formatted response with actual scripture text from verified database
     const formattedVerses: string[] = [];
 
     if (llmResponse.verses && Array.isArray(llmResponse.verses)) {
