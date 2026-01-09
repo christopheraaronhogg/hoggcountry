@@ -77,7 +77,6 @@
   let startDate = $state('2026-03-01');
   let targetPace = $state(15);
   let zeroDaysPerMonth = $state(4);  // For planning projections
-  let zeroDaysTaken = $state(0);     // Actual count once hiking
 
   // Derived: are we on trail or planning?
   function isPastDate(dateStr) {
@@ -125,7 +124,6 @@
         startDate = ctx.startDate || ctx.tripStartDate || startDate;
         targetPace = ctx.targetPace || ctx.pace || targetPace;
         zeroDaysPerMonth = ctx.zeroDaysPerMonth ?? 4;
-        zeroDaysTaken = ctx.zeroDaysTaken ?? 0;
         contextExpanded = ctx.contextExpanded ?? true;
       } catch (e) {}
     }
@@ -136,7 +134,7 @@
     if (mounted) {
       localStorage.setItem('trailContext', JSON.stringify({
         currentMile, startDate, targetPace,
-        zeroDaysPerMonth, zeroDaysTaken, contextExpanded
+        zeroDaysPerMonth, contextExpanded
       }));
     }
   });
@@ -169,8 +167,7 @@
   // Derived values (Svelte 5 $derived)
   let nearestLandmark = $derived(getNearestLandmark(currentMile));
   let daysOnTrail = $derived(isOnTrail ? Math.max(1, daysBetween(startDate, getTodayStr())) : 0);
-  let hikingDays = $derived(Math.max(1, daysOnTrail - zeroDaysTaken));
-  let actualPace = $derived(isOnTrail && hikingDays > 0 ? (currentMile / hikingDays).toFixed(1) : targetPace);
+  let actualPace = $derived(isOnTrail && daysOnTrail > 0 ? (currentMile / daysOnTrail).toFixed(1) : targetPace); // Calendar pace includes zeros
   let percentComplete = $derived(((currentMile / 2198) * 100).toFixed(0));
 
   // Planning calculations (always available for projections)
@@ -302,11 +299,9 @@
     startDate,
     targetPace,
     zeroDaysPerMonth,
-    zeroDaysTaken,
     // Computed
     daysOnTrail,
-    hikingDays,
-    actualPace: parseFloat(actualPace),
+    actualPace: parseFloat(actualPace), // Calendar pace (includes zeros implicitly)
     percentComplete: parseFloat(percentComplete),
     nearestLandmark,
     projectedFinish,
@@ -423,23 +418,13 @@
             <input type="range" id="target-pace" min="8" max="25" step="0.5" bind:value={targetPace} class="ctrl-slider" aria-valuemin="8" aria-valuemax="25" aria-valuenow={targetPace} aria-valuetext="{targetPace} miles per day" />
           </div>
 
-          {#if isOnTrail}
-            <div class="ctrl-item">
-              <label class="ctrl-label" for="zeros-taken">Zero Days Taken</label>
-              <div class="ctrl-num-wrap">
-                <input type="number" id="zeros-taken" min="0" max="100" bind:value={zeroDaysTaken} class="ctrl-num" />
-                <span class="ctrl-num-unit">rest days</span>
-              </div>
+          <div class="ctrl-item">
+            <div class="ctrl-header">
+              <label class="ctrl-label" for="zeros-planned">Zero Days</label>
+              <span class="ctrl-val" aria-hidden="true">{zeroDaysPerMonth} <small>/month</small></span>
             </div>
-          {:else}
-            <div class="ctrl-item">
-              <div class="ctrl-header">
-                <label class="ctrl-label" for="zeros-planned">Zero Days</label>
-                <span class="ctrl-val" aria-hidden="true">{zeroDaysPerMonth} <small>/month</small></span>
-              </div>
-              <input type="range" id="zeros-planned" min="0" max="10" step="1" bind:value={zeroDaysPerMonth} class="ctrl-slider zero" aria-valuemin="0" aria-valuemax="10" aria-valuenow={zeroDaysPerMonth} aria-valuetext="{zeroDaysPerMonth} zero days per month" />
-            </div>
-          {/if}
+            <input type="range" id="zeros-planned" min="0" max="10" step="1" bind:value={zeroDaysPerMonth} class="ctrl-slider zero" aria-valuemin="0" aria-valuemax="10" aria-valuenow={zeroDaysPerMonth} aria-valuetext="{zeroDaysPerMonth} zero days per month" />
+          </div>
         </div>
 
         <!-- Stats row adapts to mode -->
