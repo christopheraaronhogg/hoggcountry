@@ -1,0 +1,5113 @@
+# AT Field Guide
+
+
+
+# The Philosophy Behind This Guide
+
+This guide represents hundreds of hours of research, planning, and real-world trail experience distilled into a single comprehensive resource. It is not a theoretical exercise—it is a battle-tested system built on 840+ miles of completed thru-hikes across three major trail systems, earning the rare Sassafras Award from the Ozark Society.
+
+The Appalachian Trail demands respect. It is 2,197.9 miles of variable terrain, unpredictable weather, and constant decision-making. Success requires more than fitness—it requires systems, knowledge, and the discipline to apply both consistently.
+
+## Core Principles
+
+- Prevention beats treatment—in gear, health, and decision-making
+- Consistency beats intensity—sustainable systems finish trails
+- Sleep and recovery are non-negotiable
+- Weight reduction comes from discipline, not deprivation
+- Every decision should serve one goal: reaching Katahdin
+
+## How to Use This Guide
+
+This guide is organized by system rather than chronology. Each chapter addresses a critical aspect of thru-hiking and provides both the reasoning behind decisions and the specific protocols to follow. Read it before your hike, reference it during planning, and carry the key sections digitally for field use.
+
+> *"The hikers who finish are not the strongest—they are the ones who listen, adapt, and stay patient."*
+
+---
+
+
+
+# Hiker Profile & Experience
+
+
+## Hiking Resume
+
+This section documents verified long-distance completions, prior AT experience, and the skills that directly translate to Appalachian Trail readiness.
+
+### Completed Thru-Hikes
+
+| Trail | Distance | Elevation Gain | Location |
+|-------|----------|----------------|----------|
+| Ouachita Trail | ~223 miles | ~45,000 ft | Arkansas-Oklahoma |
+| Ozark Highlands Trail | ~270 miles | ~35,000-40,000 ft | Northern Arkansas |
+| Ozark Trail | ~230 miles | ~40,000 ft | Missouri |
+
+**Total Completed Mileage:** ~720+ miles  
+**Estimated Cumulative Elevation Gain:** ~120,000+ feet
+
+### Recognition
+
+**Sassafras Award — Ozark Society**  
+Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark Trail. *6th person in history to receive this award.*
+
+### Prior Appalachian Trail Experience
+
+- **Standing Bear Farm to Hot Springs, NC** — ~35 miles | ~9,000 ft elevation gain | Full pack, winter conditions
+- **Newfound Gap to Kuwohi (Overnight)** — ~16 miles round trip | ~3,300 ft elevation gain | Shelter stay in ~17°F conditions | Summit: 6,643 ft (highest point on the AT)
+
+*Note: Clingmans Dome was officially renamed to "Kuwohi" in 2024, restoring its Cherokee name meaning "mulberry place."*
+
+### High-Elevation Experience (Comparison Benchmark)
+
+**Pikes Peak, Colorado — Crags Trail**  
+~13 miles round trip | ~4,300 ft elevation gain | Summit elevation: 14,115 ft
+
+*Note: Pikes Peak is located in Colorado, not on the Appalachian Trail. This entry is included as a cardiovascular and altitude benchmark demonstrating capability for AT climbs.*
+
+### Core Competencies
+
+- Multi-week self-supported backpacking
+- Cold-weather camping and shelter living
+- Sustained elevation gain/loss over long distances
+- Rugged, rocky, under-maintained trail systems
+- River crossings and navigation
+- Resupply planning and execution
+- Proven physical and mental endurance
+
+## Mountain Climb Readiness & Assessment
+
+### AT Miles Completed to Date
+
+| Section | Distance | Conditions | Key Features |
+|---------|----------|------------|--------------|
+| Standing Bear Farm → Hot Springs, NC | ~33 miles | Winter, ~35 lb pack | Snowbird Mountain, High difficulty |
+| Newfound Gap ↔ Kuwohi | ~15.6 miles RT | ~17°F, winter Smokies | Entirely high-altitude AT miles |
+
+**TOTAL AT MILES HIKED: ~49 miles** ✅
+
+*These are hard miles, not summer or low-grade terrain.*
+
+### Experience Benchmark: Pikes Peak (Colorado)
+
+**Crags Trail → Summit**
+- Start elevation: ~10,000 ft
+- Summit: 14,115 ft
+- Net gain: ~4,100 ft
+- Distance: ~6.5 miles
+
+**What This Proves:**
+- You've already matched Katahdin-level vertical
+- You started higher than any AT climb
+- Cardiovascularly, the AT holds no surprises
+
+*Note: This benchmark is for fitness comparison only—Pikes Peak is not on the Appalachian Trail.*
+
+### What Your 49 AT Miles Mean
+
+- You are ahead of the average NOBO at Springer
+- Georgia and NC will not shock you
+- Virginia will annoy you, not break you
+- Whites and Maine demand respect, not fear
+
+*Most hikers learn these lessons in the first 200 miles. You already own them.*
+
+### Readiness Assessment
+
+| Category | Score | Notes |
+|----------|-------|-------|
+| Physical Readiness | 9/10 | Long climbs proven, cold conditions proven |
+| Mental Readiness | 10/10 | You've already hiked when it sucked, you know when to back off |
+| Logistics Readiness | 8.5/10 | Trail rhythm still develops on-trail |
+| **OVERALL NOBO READINESS** | **9/10** | |
+
+---
+
+---
+
+
+
+# Trail Sections & Milestones
+
+
+## Town Rhythm
+
+### Standard Pattern
+
+- Town stop: Every 3-5 days
+- Nero (near-zero day): Every 5-7 days
+- Zero day: About every 7-14 days
+
+### Nero Days
+
+Partial day in town:
+- Eat
+- Shower
+- Laundry
+- Charge devices
+- Resupply
+- Then hike short distance (under 10 miles)
+
+### Zero Days
+
+Full 24 hours off trail:
+- Complete recovery
+- Gear checks
+- Physical and mental reset
+- Mail drops or gear replacement
+
+## 5-Day Hike + Zero Day Schedule
+
+**Never hike more than 5 days without a zero.**
+
+### Planning Assumptions
+
+- Start window: February 1-7
+- Hiking days per cycle: 5
+- Zero day per cycle: 1
+- Total cycle length: 6 calendar days
+
+### Phase 1: Winter Start (Feb)
+
+**Georgia → Southern NC** | Target: 8-9 miles/hiking day
+
+Cold weather, short daylight, cautious movement. Body-preservation phase.
+
+### Phase 2: Trail Legs Arrive (Mar-May)
+
+**NC/TN → Virginia** | Target: 10-11 miles/hiking day
+
+### Phase 3: Strong & Efficient (May-Jun)
+
+**Virginia** | Target: 12-13 miles/hiking day
+
+Schedule debt gets paid back—without breaking food limits.
+
+### Phase 4: Long Daylight (Jul-Aug)
+
+**NY → VT → NH** | Target: 13-14 miles/hiking day
+
+### Phase 5: Maine Reality (Aug-Sep)
+
+**NH → Katahdin** | Target: 11-12 miles/hiking day
+
+Maine terrain is slower; final push is realistic and safe.
+
+**Expected Finish: September 17-20**
+
+---
+
+## 🏔️ LATE-TRAIL REALITY CHECK: WHITES → MAINE
+
+**The final 400+ miles (White Mountains → Katahdin) require different planning than the rest of the trail.**
+
+### **White Mountains: AMC Hut System**
+
+**What You Need to Know:**
+- **8 AMC huts** along ridgeline (Lakes of the Clouds, Mizpah, Zealand Falls, etc.)
+- **NOT shelters** - these are staffed lodges with bunks and meals
+- **Reservations:** $150+ per night for bunk + dinner + breakfast
+- **Work-for-Stay:** Limited spots (2-4 per hut), arrive early afternoon, crew assigns tasks
+- **Strategy:** Don't rely on work-for-stay - have tent as backup
+- **Peak Season:** July-August = busiest, hardest to get work-for-stay
+
+**Action:** Research AMC huts before entering Whites. Decide: pay, work-for-stay attempt, or tent/stealth.
+
+---
+
+### **Katahdin Weather: Bail Plan Required**
+
+**Reality:** Katahdin summit attempts can be delayed by weather (wind, rain, lightning).
+
+**The Problem:**
+- Baxter State Park rangers WILL turn hikers around in unsafe conditions
+- August-September weather can be unpredictable
+- You might wait 1-3 days for a summit window
+
+**Your Bail Plan:**
+- **Buffer days:** Build 2-3 extra days into your schedule before Katahdin
+- **Lodging:** Identify where you'll stay if delayed (Millinocket, Katahdin Stream Campground)
+- **Mental prep:** Expect possible delays, don't push finish date promises
+- **Weather check:** Monitor Baxter State Park weather forecasts starting 100 miles out
+
+**Action:** Arrive at Katahdin with flexible timeline, not a hard deadline. See Part IV for Baxter permit requirements.
+
+---
+
+### **100-Mile Wilderness: Food Carry Math**
+
+**The Reality:**
+- 100 miles with NO resupply (Mile ~2,093 to ~2,193)
+- Most hikers: 7-10 days
+- Your pace (11-12 mpd in Maine): ~8-9 days
+- **Food weight:** 8-9 days × 1.5 lb/day = **12-14 lb of food**
+- Plus full fuel canisters
+
+**Planning:**
+- Resupply at Monson, ME (Mile ~2,093)
+- Carry 8-9 days of food + 2 fuel canisters
+- **White's Crossing optional resupply (Mile ~2,133):** Shaw's Lodging offers food drop-off service (can reduce carry)
+- Water is plentiful (lakes, streams)
+
+**Action:** Plan 100-Mile food carry in Monson. Consider White's Crossing resupply if you want to split the carry.
+
+---
+
+### **Mental Game: You're Almost There**
+
+By the time you reach the Whites, you've hiked 1,700+ miles. Fatigue is real.
+
+**Common Late-Trail Mistakes:**
+- Rushing to finish (injuries increase)
+- Skipping zeros (body is tired)
+- Poor weather decisions (summit fever)
+- Underestimating final terrain (Whites and Maine are HARD)
+
+**Strategy:**
+- Maintain your zero-day schedule (every 5-7 days)
+- Respect the terrain (Whites are technical, Maine is slow)
+- Don't skip meals or sleep
+- Finish strong, not broken
+
+---
+
+---
+
+
+
+# At Mountain & Weather Reference
+
+
+## Major Sections (NOBO)
+
+### 1. Georgia — Mile 0 to ~78.5
+Sharp climbs early, Blood Mountain. First state down.
+
+### 2. Southern North Carolina — Mile ~78.5 to ~165.7
+Long ridge walks. You're officially a real AT hiker.
+
+### 3. Great Smoky Mountains — Mile ~165.7 to ~241
+Highest sustained elevations. Kuwohi (Clingmans Dome) 6,643 ft.
+
+### 4. Northern NC & Tennessee — Mile ~241 to ~386
+Big balds, Roan Highlands. Damascus = Trail Town USA.
+
+### 5. Southern Virginia — Mile ~386 to ~550
+Grayson Highlands, wild ponies. You're cruising now.
+
+### 6. Central Virginia — Mile ~550 to ~785
+Longest state. Long ridge walks, manageable climbs.
+
+### 7. Shenandoah National Park — Mile ~785 to ~890
+Gentle grades, frequent services. Fast miles. (~101-108 miles through the park)
+
+### 8. Northern Virginia — Mile ~890 to ~1,025
+The Roller Coaster. Short, steep ups and downs.
+
+### 9. Mid-Atlantic — Mile ~1,025 to ~1,290
+Harpers Ferry, rocky PA. Halfway is behind you.
+
+### 10. NY-NJ Highlands — Mile ~1,290 to ~1,525
+Short climbs, frequent towns. States fall fast.
+
+### 11. Southern New England — Mile ~1,525 to ~1,630
+CT and MA. Rolling, humid. You're in the North.
+
+### 12. Vermont — Mile ~1,630 to ~1,791
+Green Mountains. Mud season. Last 'easy' state.
+
+### 13. White Mountains — Mile ~1,791 to ~1,912
+Hardest terrain on AT. Alpine travel. **If you finish this, you WILL finish.**
+
+### 14. Maine — Mile ~1,912 to ~2,198
+Roots, rocks, ladders. Katahdin is inevitable.
+
+> *"I'm not hiking 2,197.9 miles—I'm hiking 14 victories."*
+
+---
+
+
+## AT Mountain Reference & Field Decisions
+
+### Daily GO / NO-GO Check
+
+1. What's today's summit elevation?
+2. Town temp minus (3.5°F × elevation gain in thousands)
+3. Wind forecast?
+4. Any exposure above treeline?
+
+**If wind >30 mph or ice on rock: → Delay or bail**
+
+### Major AT Climbs with Start Elevation
+
+#### GEORGIA
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Springer Mountain | ~3,200 ft | 3,782 ft | ~580 ft |
+| Blood Mountain | ~3,100 ft (Neels Gap) | 4,458 ft | ~1,350 ft |
+
+#### NORTH CAROLINA / TENNESSEE
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Standing Indian Mountain | ~3,500 ft | 5,499 ft | ~2,000 ft |
+| Wayah Bald | ~3,800 ft | 5,342 ft | ~1,540 ft |
+| Cheoah Bald | ~1,700 ft | 5,062 ft | ~3,300 ft |
+| Kuwohi (Clingmans Dome) | ~5,000 ft | 6,643 ft | ~1,640 ft |
+| Snowbird Mountain ✓ | ~2,200 ft | ~4,260 ft | ~2,060 ft |
+
+#### VIRGINIA
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Mount Rogers Area | ~4,000 ft | 5,729 ft | ~1,700 ft |
+| The Priest | ~650 ft | 4,063 ft | ~3,400 ft |
+| Three Ridges | ~1,500 ft | ~3,970 ft | ~2,470 ft |
+
+#### MID-ATLANTIC
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Blue Mountain (PA) | ~800 ft | ~2,300 ft | ~1,500 ft |
+
+#### NEW ENGLAND
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Mount Greylock | ~1,800 ft | 3,491 ft | ~1,700 ft |
+| Mount Moosilauke | ~2,000 ft | 4,802 ft | ~2,800 ft |
+| Franconia Ridge (Mt. Lafayette) | ~3,000 ft | 5,249 ft | ~2,250 ft |
+| Mount Washington | ~2,400 ft | 6,288 ft | ~3,900 ft |
+
+#### MAINE
+
+| Peak | Start Elevation | Summit | Net Gain |
+|------|-----------------|--------|----------|
+| Bigelow Range | ~1,300 ft | 4,145 ft | ~2,800 ft |
+| Mount Katahdin | ~1,200 ft | 5,269 ft | ~4,000 ft |
+
+### Ranked Difficulty (Reality-Based)
+
+**TIER 1 — LEGENDARY**
+- Mount Washington
+- Mount Katahdin
+- The Priest
+
+**TIER 2 — MAJOR GRINDERS**
+- Snowbird Mountain
+- Cheoah Bald
+- Mount Moosilauke
+- Franconia Ridge
+
+**TIER 3 — HARD BUT MANAGEABLE**
+- Blood Mountain
+- Kuwohi (Clingmans Dome)
+- Bigelow Range
+
+## Weather & Elevation Rules
+
+### Temperature Rule
+
+**Temperature Lapse Rates by Condition:**
+- **Standard (dry air):** -3.5°F per 1,000 ft gained
+- **Moist air:** -3.3°F per 1,000 ft gained
+- **Worst-case (dry, windy):** -5.5°F per 1,000 ft gained
+
+*Use worst-case for safety planning on exposed ridges and balds.*
+
+### Wind Chill Guidelines
+
+| Wind Speed | Feels Like |
+|------------|------------|
+| 10 mph | ~9°F colder |
+| 20 mph | ~15°F colder |
+| 30 mph | ~19°F colder |
+| 40+ mph | ~22°F+ colder |
+
+### Hard Bail Conditions
+
+- Wind >30 mph above treeline
+- Ice on rock
+- Freezing rain
+- Visibility <100 ft
+- Rapid temperature drop (>15°F/hour)
+
+### Month-by-Month Risk Overview (NOBO)
+
+| Month | Region | Conditions | Risk Level |
+|-------|--------|------------|------------|
+| February | GA → Southern NC | Cold, ice risk, short daylight | Moderate-High |
+| March | Smokies | High elevation, severe wind chill | High |
+| April | NC → VA | Wet, improving temps | Moderate |
+| May | Central VA | Heat + steep climbs | Moderate |
+| June | Shenandoahs → PA | Rocks, fatigue | Low-Moderate |
+| July | NY → VT | Heat, storms, mud | Moderate |
+| August | Whites (NH) | Exposure, extreme weather | Very High |
+| September | Maine | Cold, wet rock, fatigue | High |
+
+---
+
+---
+
+
+
+# Permits & Logistics
+
+
+## Required Permits
+
+### Great Smoky Mountains National Park
+
+**Appalachian Trail Thru-Hiker Permit — REQUIRED**
+
+- Online only: smokiespermits.nps.gov
+- Cost: $40
+- Get 1-5 days before entering the Smokies
+- PDF permit generated immediately
+- Digital copy accepted (no print required)
+- Valid for 38 days from issue
+- Must begin/end hike at least 50 miles outside park
+- Four shelter spaces reserved for thru-hikers March 15–June 15
+
+### Shenandoah National Park
+
+**Backcountry Permit — REQUIRED**
+
+- Recreation.gov (online only as of January 2024)
+- Cost: $9 per person + $6 reservation fee = $15 total
+- Select 'Appalachian Trail' area for thru-hiker flexibility
+- Choose 14-day window
+- Get before entering Shenandoah
+- Digital copy sufficient
+
+**Additional Fee:** $15 park entrance fee may be required at staffed entry points. AT thru-hikers entering via trail typically bypass fee stations, but carry cash if entering via Skyline Drive.
+
+*Note: The previous free paper permit system was eliminated in January 2024. All permits must now be obtained through Recreation.gov.*
+
+### Baxter State Park / Katahdin
+
+**AT Thru-Hiker Permit — REQUIRED**
+
+**Critical Details:**
+- **In-person ONLY** — Get at Katahdin Stream Campground Ranger Station
+- **FREE** — No online booking or fees for AT thru-hikers
+- **Timing:** Can obtain up to 7 days before summit attempt
+- **Validity:** Permit valid for 7 days from issue date
+- **Weather dependent:** Rangers can deny summit attempts due to conditions
+
+**Planning Strategy:**
+- Arrive with 2-3 buffer days in your schedule
+- Get permit as soon as possible after arriving (up to 7 days out)
+- Monitor Baxter weather forecasts starting 100 miles before Katahdin
+- Have lodging backup plan (Millinocket, Katahdin Stream Campground)
+
+**Camping Options Near Katahdin:**
+- **Katahdin Stream Campground:** Main base for summit attempts (reservations recommended)
+- **The Birches Campsite:** $10/night (cash only), first-come first-served, one night maximum, 12 persons max
+
+**Important Notes:**
+- August-September weather is unpredictable
+- Expect possible 1-3 day summit delays
+- Park rangers WILL turn hikers around in unsafe conditions
+- Don't schedule hard commitments immediately after projected finish date
+
+**2026 Reservation System (for campground booking, NOT the AT permit):**
+- Online reservations open at 6 AM EST
+- August = heavily booked
+- Book Katahdin Stream Campground in advance OR have flexible backup plan
+
+### ATC Hang Tag
+
+Voluntary identifier, NOT a permit. NOT required to hike.
+
+**How to Get:**
+- Register on ATCamp (online) before pickup
+- Participate in short Leave No Trace discussion
+- Available at Amicalola Falls (mid-Feb through mid-April)
+- Also available at Damascus, Harpers Ferry, Monson
+
+---
+
+---
+
+
+
+# Financial Planning
+
+
+## Worst-Case Funding Plan
+
+This cost model provides a **worst-case scenario** baseline for budgeting purposes. Your actual costs will likely be lower depending on your choices and comfort level.
+
+### Planning Assumptions
+
+- Total trail time: 242 days
+- Start: February 1
+- Finish: End of September
+- Zero days: One every 5 days (48 total)
+- Hiking days: 194
+
+## Cost Model
+
+### Hiking Days (194 days)
+
+| Item | Cost/Day |
+|------|----------|
+| Trail food + snacks | $22 |
+| Small incidentals | $4 |
+| **Total per hiking day** | **$26** |
+
+**Hiking day total:** $5,044
+
+### Zero Days (48 days)
+
+| Item | Cost/Day |
+|------|----------|
+| Lodging | $110 |
+| Town food (2-3 meals) | $55 |
+| Laundry/resupply incidentals | $20 |
+| Shuttles/local transport | $15 |
+| **Total per zero day** | **$200** |
+
+**Zero day total:** $9,600
+
+### Total Gross Trail Cost
+
+**$14,644** (worst case, 242 days)
+
+---
+
+### 💡 Personalizing Your Budget
+
+**This budget reflects specific choices that may not match your preferences.** Your actual costs can vary significantly based on:
+
+**Lodging Strategy:**
+- Hostels ($30-50/night) vs. private rooms ($80-150/night)
+- Camping/sheltering when possible
+- Work-for-stay opportunities
+- Impact: Can reduce zero day costs by 50-70%
+
+**Food Approach:**
+- Cooking vs. eating out in towns
+- Mail drops vs. buying as you go
+- Bulk purchasing strategies
+- Trail food choices (freeze-dried vs. grocery store)
+
+**Resupply Frequency:**
+- Shorter carries = more town stops = higher costs
+- Longer carries = fewer zeros = lower costs
+- Some hikers zero every 3-4 days, others every 7-10 days
+
+**Personal Comfort Level:**
+- Gear replacements and upgrades
+- Entertainment, phone usage, luxury items
+- Emergency cushion preferences
+
+### Building Your Own Budget
+
+1. Decide your lodging preference (hostel/hotel/camping mix)
+2. Estimate your town food spending habits
+3. Determine your ideal resupply frequency
+4. Add 20-30% buffer for unexpected costs
+
+> *The goal is to fund your hike adequately so that money never becomes the reason your journey is unsafe, rushed, or miserable.*
+
+---
+
+---
+
+
+
+# Gear System
+
+
+## Chapter 1: Base Weight Philosophy
+
+Base weight is the foundation of sustainable long-distance hiking. Every ounce carried compounds over thousands of miles into joint stress, fatigue, and potential injury. However, ultralight ideology taken too far sacrifices sleep quality, safety, and morale—the very things that enable trail completion.
+
+**This gear system prioritizes:**
+
+- Sleep quality and recovery above all else
+- Safety systems that function in worst-case conditions
+- Durability over marginal weight savings
+- Realistic winter capability for February start
+
+## Chapter 2: Complete Base Weight Breakdown
+
+### CARRIED WEIGHT (In/On Pack): 22.58 lb (361.3 oz)
+
+#### Backpack & Organization
+| Item | Weight |
+|------|--------|
+| Osprey Atmos AG LT 50 | 67.0 oz |
+| 8L Dry Bags (4 total: clothes, sleep system x2, misc) | 8.8 oz |
+| **Category Total** | **75.8 oz (4.74 lb)** |
+
+#### Shelter System
+| Item | Weight |
+|------|--------|
+| Durston X-Dome 1+ Tent (body + fly + poles) | 36.8 oz |
+| Tent stakes (12) | 4.2 oz |
+| Guylines | 2.5 oz |
+| **Category Total** | **43.5 oz (2.72 lb)** |
+
+#### Sleep System
+| Item | Weight |
+|------|--------|
+| Zenbivy 10° Down Quilt | 29.5 oz |
+| Zenbivy Down Sheet | 19.0 oz |
+| Nemo Tensor Extreme Conditions (Regular Wide, R-8.5) | 22.0 oz |
+| **Category Total** | **70.5 oz (4.41 lb)** |
+
+*Note: The Zenbivy Down Sheet is required as part of the integrated Zenbivy sleep system - it works with the quilt to provide draft protection and complete the footbox design.*
+
+#### Clothing (Carried in Pack)
+| Item | Weight |
+|------|--------|
+| Smartwool Merino 250 Sleep Top | 8.5 oz |
+| Smartwool Merino 250 Sleep Pants | 8.7 oz |
+| Sleep Socks | 3.7 oz |
+| Sealskinz Waterproof Socks (1 pair backup) | 4.4 oz |
+| Rab Talus Tights | 6.6 oz |
+| Kuhl Engineered Polo (short-sleeve) | 6.0 oz |
+| Mountain Hardwear Down Puffy | 8.5 oz |
+| Outdoor Research Rain Jacket | 12.9 oz |
+| **Category Total** | **59.3 oz (3.71 lb)** |
+
+#### Clothing (Worn While Hiking)
+| Item | Weight |
+|------|--------|
+| Rab Proflex Rain Pants | 11.6 oz |
+| Rab Alpha Freak (Polartec Alpha Direct) | 12.7 oz |
+| Kuhl Engineered Hoody (long-sleeve sun hoodie) | 7.0 oz |
+| Smartwool Hiking Socks (worn) | 3.7 oz |
+| Smartwool Merino 150 Boxer Brief | 3.8 oz |
+| Buff | 2.3 oz |
+| Rab Vapor-Rise Gloves | 3.1 oz |
+| Outdoor Research Revel Shell Mitts (winter only - drop at Hot Springs/Damascus) | 3.7 oz |
+| Altra Trail Gaiters | 1.3 oz |
+| Faith Moves Mountains Cap | 2.0 oz |
+| Apple Watch Ultra + charging cable | 2.4 oz |
+| **Category Total** | **53.6 oz (3.35 lb)** |
+
+#### Kitchen System
+| Item | Weight |
+|------|--------|
+| MSR PocketRocket Deluxe Stove | 2.9 oz |
+| TOAKS 750ml Titanium Cup | 3.6 oz |
+| Cup Lid | 0.9 oz |
+| Titanium Spoon | 1.6 oz |
+| Fuel Canister (full) | 7.0 oz |
+| Mini Bic Lighter | 0.8 oz |
+| **Category Total** | **16.8 oz (1.05 lb)** |
+
+*Note: True minimalist system - TOAKS cup serves as both cooking vessel and eating vessel. No separate cook pot carried.*
+
+#### Fanny Pack System
+| Item | Weight |
+|------|--------|
+| Hilltop Packs Roll-Top Fanny Pack (ECOPAK) | 3.0 oz |
+| iPhone 17 Pro Max | 8.2 oz |
+| Anker Nano Power Bank 20K (20,000 mAh) | 11.0 oz |
+| Nitecore NB10000 Gen 3 (10,000 mAh) | 5.3 oz |
+| UGREEN Nexode 65W GaN Charger (3-port) | 4.5 oz |
+| Garmin inReach Mini 2 | 3.5 oz |
+| Ray-Ban Meta Gen 2 Smart Glasses + Case | 6.4 oz |
+| Nitecore NU25 Headlamp | 1.6 oz |
+| **Category Total** | **43.5 oz (2.72 lb)** |
+
+*Note: Fanny pack attaches to front hip belt of backpack and contains all electronics. Weight counted as pack weight since it's part of the pack system. Ray-Ban Meta glasses tested and confirmed functional in freezing temperatures for winter content creation.*
+
+**Total Battery Capacity:** 30,000 mAh (20k + 10k)  
+**Charging Strategy:** Both batteries charge overnight during zero days (every 6 days). Anker Nano has built-in USB-C cable; Nitecore NB10000 also has built-in cable.  
+**Advantage:** Dual battery system provides redundancy and 30k mAh total capacity - sufficient for 5-day stretches with Ray-Ban Meta content creation.
+
+#### Tools & Safety
+| Item | Weight |
+|------|--------|
+| Knife | 4.5 oz |
+| BeFree 1L Water Filter | 2.3 oz |
+| Cimkiz 19-Spike Ice Cleats Crampons (winter only) | 16.8 oz |
+| Xero Z-Trail Sandals (camp shoes) | 7.0 oz |
+| Opsack 12L (odor-proof food bag) | 0.5 oz |
+| **Category Total** | **31.1 oz (1.94 lb)** |
+
+#### Bear Hang System
+| Item | Weight |
+|------|--------|
+| Hilltop Packs ECOPAK Bear Bag (Large, 16"x19", 12-13L) | 3.1 oz |
+| Hilltop Packs Cord Winder (rope carrier) | 0.4 oz |
+| Dyneema throw rope (50 feet, 2.2mm) | 1.0 oz |
+| Mini carabiner | 0.3 oz |
+| **Category Total** | **4.8 oz (0.30 lb)** |
+
+*Note: Bear hang system uses PCT method. Opsack (above) serves as odor-proof liner inside bear bag.*
+
+#### First Aid Kit
+| Item | Weight |
+|------|--------|
+| First aid kit (emergency blanket, tape, bandages, bandaids, Advil, ankle brace) | 4.5 oz |
+| **Category Total** | **4.5 oz (0.28 lb)** |
+
+#### Toiletries Kit
+| Item | Weight |
+|------|--------|
+| Toothpaste (travel size) | 1.0 oz |
+| Toothbrush (cut handle) | 0.3 oz |
+| Dr. Bronner's soap (2 oz) | 2.0 oz |
+| Hand sanitizer (2 oz) | 2.0 oz |
+| Deuce #2 Ultralight Trowel | 0.6 oz |
+| Toilet paper (full roll, flattened, cardboard removed) | 5.1 oz |
+| Toiletries bag | 0.5 oz |
+| **Category Total** | **11.5 oz (0.72 lb)** |
+
+#### Gear Worn While Hiking
+| Item | Weight |
+|------|--------|
+| Altra Timp 5 BOA Trail Runners (pair) | 20.0 oz |
+| LEKI Makalu FX Carbon Trekking Poles (pair) | 18.0 oz |
+| Bauerfeind Hinged Knee Brace | 10.6 oz |
+| **Category Total** | **48.6 oz (3.04 lb)** |
+
+---
+
+### WEIGHT TOTALS
+
+- **Total Base Weight (Carried in/on Pack):** 22.58 lb (361.3 oz)
+- **Worn Weight (On Body):** 6.39 lb (102.2 oz)
+- **Total Pack + Worn Weight:** 28.97 lb (463.5 oz)
+
+**Typical Trail Weight (with consumables):**
+- Base + Worn: 28.97 lb
+- Food (5-day carry): +7.0 lb
+- Water (1L): +2.2 lb
+- **Total: ~38.2 lb**
+
+*Note: 1 liter of water = 2.2 lb. Food weight varies based on days between resupply (5-day carry shown as typical).*
+
+---
+
+**After Cimkiz Crampons Drop (Hot Springs, NC - Mile 274):**
+- **Base Weight (Carried):** 21.53 lb (344.5 oz)
+- **Total Pack + Worn:** 27.92 lb (446.7 oz)
+- **Typical Trail Weight:** ~37.1 lb (+ 7 lb food + 2.2 lb water)
+
+---
+
+## Chapter 3: Gear Transitions
+
+This gear system is designed to evolve with trail conditions. Carrying winter gear through summer is unnecessary weight; arriving in the Whites without proper equipment is dangerous.
+
+### Hot Springs, NC — First Transition
+
+**Items Dropped:**
+- Cimkiz Crampons (16.8 oz)
+- Chemical water treatment tablets
+- Outdoor Research Revel Shell Mitts (3.7 oz) - evaluate if unused
+
+**Changes Made:**
+- Switch from chemical treatment to filter-only
+- Drop mitts if not needed by this point
+- Base weight drops from 21.03 lb to 20.06 lb (if mitts dropped)
+- Trail weight: ~34.2 lb
+
+**Rationale:** Elevation drops after Hot Springs. Freeze-thaw risk largely ends. Filter freeze risk becomes manageable. Ice/snow risk ends. If mitts haven't been used by mile 274, they're unnecessary weight going forward.
+
+### Damascus, VA — Major Transition
+
+**Items Dropped:**
+- Osprey Atmos AG LT 50 (67.0 oz)
+- Smartwool 250 Sleep Top (8.5 oz)
+- Smartwool 250 Sleep Pants (8.7 oz)
+- Smartwool Base Layer Top (6.2 oz)
+- Smartwool Base Layer Bottom (5.5 oz)
+- Zenbivy Down Sheet (19.0 oz)
+- Nemo Tensor Extreme sleeping pad (22.0 oz)
+- Outdoor Research Revel Shell Mitts (3.7 oz)
+- **Total dropped: 140.6 oz (8.79 lb)**
+
+**Items Added:**
+- Hyperlite Mountain Gear Southwest 55L (29.0 oz)
+- Nemo Tensor All-Season sleeping pad (15.4 oz)
+- **Total added: 44.4 oz (2.77 lb)**
+
+**Net Weight Savings: 96.2 oz (6.01 lb)**
+
+**Post-Damascus Base Weight:**
+- Before Damascus: 21.53 lb (after dropping Cimkiz crampons at Hot Springs)
+- After Damascus transition: **15.52 lb**
+- Total Pack + Worn: **21.68 lb**
+- Typical Trail Weight: **~30.9 lb** (+ 7 lb food + 2.2 lb water)
+
+*Note: Trail weight = Total Pack + Worn + consumables. Food weight assumes 5-day carry between resupplies.*
+
+**Rationale:** 
+- Daytime temps consistently 50s-60s. Nights rarely below freezing. Sleep warmth becomes comfort-based, not survival-based.
+- Shell mitts no longer needed - Rab Vapor-Rise gloves sufficient for spring/summer conditions.
+- With lighter gear, the Osprey's heavy-duty suspension is no longer needed. Hyperlite Southwest 55L's waterproof Dyneema construction handles lighter loads efficiently.
+- Pack change enables significant weight reduction (38 oz savings) while maintaining adequate capacity. Dyneema is bombproof and fully waterproof.
+
+**Summer Strategy Notes (Miles 469+):**
+- **Water carry increases:** Hot/humid conditions require 2-3L total capacity (vs 1-2L in winter). Carry 2L in pack + 1L in bottle on hot days.
+- **Bug season:** May-July peak. Permethrin-treat all clothing before Damascus. Consider adding headnet if bugs are severe.
+- **Humidity:** Sleep clothes dry slower. Air out gear daily. Consider switching to synthetic base layers if Merino takes too long to dry.
+- **Thunderstorms:** Summer = daily afternoon storms. Start early, get miles done by 2-3pm when possible.
+- **Sun exposure:** Longer days = more sun. Reapply sunscreen frequently, use sun hoodie.
+
+---
+
+## Chapter 4: Hard Shakedown Principles
+
+Weight reduction is achieved through discipline and redundancy removal—not by sacrificing sleep, safety, or morale.
+
+### Zone 1: Electronics Discipline
+
+Electronics creep is the single biggest silent weight problem for experienced hikers.
+
+- **Keep:** 1 primary charging cable, 1 backup cable, 1 wall charger, 1 battery bank
+- **Cut:** Duplicate adapters, long cables, 'maybe I'll need it' electronics
+
+**Expected Savings:** 6-10 oz
+
+### Zone 2: Clothing
+
+Cut clothing that doesn't get used, not insulation.
+
+- **Allowed roles:** Hiking, Sleeping/Dry, Insulation
+- **Hard limit:** 1 hiking set, 1 sleep set, 1 insulation system
+
+**Expected Savings:** 8-16 oz
+
+### Zone 3: Cook System
+
+- **Keep:** One pot, one spoon, one mini Bic
+- **Cut if present:** Extra utensil, windscreen (unless required)
+
+**Expected Savings:** 4-8 oz
+
+### Zone 4: Consumables
+
+Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
+
+**Rule:** Refill in town. Do not carry fear weight.
+
+**Expected Savings:** 6-10 oz
+
+### Zone 5: Tools & Just-in-Case Items
+
+- **Cut:** Overbuilt repair kits, excess cordage, multi-tools doing single jobs
+
+**Rule:** If unused for 7 trail days, it goes in a hiker box.
+
+**Expected Savings:** 4-6 oz
+
+---
+
+---
+
+
+
+# Clothing System
+
+
+## Core Principles
+
+- Dry at night. Warm while moving. Block wind always.
+- Wet hiking clothes are acceptable.
+- Wet + cold + static is dangerous.
+- Sleep layers are sacred and never hiked in.
+- Calories are heat.
+
+## Layer Definitions
+
+### Base Hiking Layer
+- **Kuhl Engineered Hoody (long-sleeve sun hoodie)** - 7.0 oz
+
+**Primary role:** Primary hiking shirt for all conditions  
+**Secondary:** Sun protection, base layer under Alpha Freak in cold
+
+**Purpose:** Moisture wicking, sun protection, base warmth layer
+
+### Base Layer (Next-to-Skin)
+- **Smartwool Merino 250 Sleep Top** - 8.5 oz
+- **Smartwool Merino 250 Sleep Pants** - 8.7 oz
+
+**Primary role:** Sleep + camp only  
+**Secondary:** Rare, brief emergency daytime use only
+
+**Rule:** Never hike in sleep layers. They stay dry.
+
+### Active Mid Layer
+- **Top:** Rab Alpha Freak - Polartec Alpha Direct (12.7 oz)
+- **Bottom:** Rab Talus Tights (6.6 oz)
+
+**Purpose:** Warmth while moving, breathable insulation, primary hiking warmth layer in cold conditions
+
+### Shell Layer
+- **Outdoor Research Rain Jacket** - 12.9 oz
+- **Rab Proflex Rain Pants** - 11.6 oz
+
+**Purpose:** Wind and precipitation protection. Critical on ridges and during stops.
+
+### Insulation Layer (Static Only)
+- **Mountain Hardwear Down Puffy** - 8.5 oz
+
+**Purpose:** Camp warmth. Emergency heat retention. Not used while hiking except in emergencies.
+
+### Additional Clothing Items
+
+**Warm Season Shirt:**
+- **Kuhl Engineered Polo (short-sleeve)** - 6.0 oz (carried for temps 60°F+)
+
+**Socks:**
+- **Smartwool Hiking Socks** (worn) - 3.7 oz per pair
+- **Sleep Socks** - 3.7 oz
+- **Sealskinz Waterproof Socks** (1 pair backup) - 4.4 oz
+
+**Base Layer:**
+- **Smartwool Merino 150 Boxer Brief** - 3.8 oz
+
+**Head/Hands/Feet:**
+- **Buff** - 2.3 oz
+- **Rab Vapor-Rise Gloves** - 3.1 oz
+- **Outdoor Research Revel Shell Mitts** (winter only, drop at Hot Springs/Damascus) - 3.7 oz
+- **Altra Trail Gaiters** - 1.3 oz
+- **Faith Moves Mountains Cap** - 2.0 oz
+
+## Layering by Temperature
+
+### Core Layering Principles (Non-Negotiable)
+
+1. Start hiking slightly cold
+2. Prevent sweat at all costs
+3. Adjust early, not late
+4. Base bottoms are for sleep and camp (used while hiking only in extreme cold, briefly)
+5. Head and neck insulation is critical
+6. Cold is acceptable — heat loss is not
+7. If wet + cold = slow down or stop early
+
+### Temperature-Based Layering Guide
+
+| Conditions | Layers |
+|------------|--------|
+| 60°F+, Moving/Dry | Kuhl Polo (short-sleeve) or sun hoodie, Rab Talus Tights or tights + rain pants if windy |
+| 45-60°F, Moving/Dry | Kuhl sun hoodie, Rab Talus Tights or tights + rain pants if windy |
+| 35-45°F, Moving/Dry | Kuhl sun hoodie + Rab Alpha Freak, Rab Talus Tights + Rab rain pants, Buff optional |
+| 25-35°F, Moving/Dry | Kuhl sun hoodie + Rab Alpha Freak, Rab Talus Tights + Rab rain pants, Buff, OR rain jacket for wind only |
+| 20-30°F, Moving/Snow/Wind | Kuhl sun hoodie + Rab Alpha Freak + OR rain jacket, Rab Talus Tights + Rab rain pants, Buff, Rab gloves |
+| Camp/Static (Any Temp) | Mountain Hardwear puffy ON immediately, OR rain jacket over puffy if windy, never rely on Alpha Freak for static warmth |
+| Sleep (Every Night) | Smartwool 250 sleep top and sleep pants, sleep socks, puffy inside quilt if temps drop |
+
+## 72-Hour Cold/Wet Survival Protocol
+
+### Morning
+- Eat something
+- Pack sleep clothes first (dry bag)
+- Accept wet hiking clothes
+- Start slightly cool
+
+### Moving in Rain/Sleet/Snow
+- Rab Alpha Freak + OR rain jacket
+- Rab rain pants
+- Vent early to avoid sweat buildup
+- Eat every 60-90 minutes
+
+**Never hike in the Mountain Hardwear down puffy.**
+
+### End-of-Day (Non-Negotiable)
+- Strip wet clothes immediately
+- Put on dry Smartwool 250 sleep top and sleep pants
+- Mountain Hardwear puffy on immediately
+- Eat calories
+- Get into quilt early
+
+### If Forced to Stop (Injury/Delay)
+- Mountain Hardwear puffy on
+- OR rain jacket on
+- Buff + Rab gloves on
+- Get off the ground
+- Preserve heat first
+
+---
+
+---
+
+
+
+# Shelter Vs. Tent Decision System
+
+
+## Core Philosophy
+
+- Tent is the default
+- Shelters are a safety tool, not a comfort choice
+- Poor sleep and mouse exposure are accepted costs only when risk outweighs discomfort
+- Decisions are made using objective triggers, not mood or convenience
+
+---
+
+## When Shelter Becomes the Right Decision
+
+**Go to a shelter if ANY ONE of the following is true:**
+
+### 1. Wind + Cold Combination
+- Temps below ~25°F
+- Sustained wind 15+ mph or gusts 20+ mph
+- Exposed ridge or saddle
+- You feel cold before stopping
+
+### 2. Freezing Rain or Heavy Wet Snow
+**Automatic shelter night. No debate.**
+
+### 3. Ground Conditions You Cannot Mitigate
+- Solid ice
+- Snow too deep to anchor
+- No flat or drained tent sites
+
+### 4. You Are Wet and Can't Get Dry Before Dark
+- Damp clothing
+- Temps dropping
+- No sun left
+- Hands losing dexterity
+
+### 5. Mental or Physical Exhaustion
+- Foggy thinking
+- Irritation during setup
+- Skipping food or water steps
+
+*Shelter reduces complexity when judgment is compromised.*
+
+## What Is NOT a Shelter Trigger
+
+- It's cold but dry and calm
+- You're tired but functional
+- Others are staying there
+- You want convenience
+
+**Tent handles those conditions fine.**
+
+## Winter Decision Framework - Comprehensive
+
+### Georgia vs NC Terrain Comparison (Reality)
+
+**Blood Mountain (Georgia)**
+- Shorter but steeper
+- Elevation gain is compressed
+- Switchbacks exist but are aggressive
+- Descent into Neel Gap is harder than the climb
+- Punishes pacing mistakes early
+
+**Snowbird / Walnut / Max Patch (NC)**
+- Longer, sustained climbs
+- Easier to find rhythm
+- Weather exposure lasts longer
+- More endurance-based suffering
+
+**Bottom line:** Blood Mountain is not taller, but it hits harder sooner. You already handled equal or harder terrain in NC.
+
+## Winter Tent-Site Scoring Checklist
+
+Score each category 0-2. Total possible: 10 points.
+
+**Interpretation:**
+- 7-10 → Tent is correct
+- 4-6 → Tent only if weather is stable
+- 0-3 → Shelter is the smart move
+
+### 1. Wind Protection
+- 2: Fully protected, calm
+- 1: Partial protection
+- 0: Exposed, funneling wind
+
+### 2. Ground Quality
+- 2: Flat, drains well, stakes hold
+- 1: Minor slope or frozen top layer
+- 0: Ice, pooled water, unusable ground
+
+### 3. Moisture Risk
+- 2: Dry ground, stable weather
+- 1: Damp but manageable
+- 0: Freezing rain or heavy wet snow
+
+### 4. Setup Control
+- 2: Calm, deliberate setup
+- 1: Minor fumbling
+- 0: Hands failing, rushing, irritation
+
+### 5. Overnight Confidence
+
+Ask: "Will this still work if conditions worsen at 3 a.m.?"
+
+- 2: Yes, confidently
+- 1: Maybe, thin margin
+- 0: No, hoping it holds
+
+**Hope is not a winter strategy.**
+
+## One-Minute Decision Prompt
+
+Before committing to camp, ask:
+
+1. Am I dry right now?
+2. Is wind increasing or decreasing?
+3. Can I pitch cleanly without rushing?
+4. Will this setup keep me warm at 3 a.m.?
+
+**If any answer feels shaky, shelter is the correct call.**
+
+## Shelter Night Protocol (When You Go In)
+
+Once shelter is chosen, you switch modes.
+
+### Arrival
+- Scan for mice
+- Choose sleeping spot away from walls and corners
+- Identify food hang or bear box immediately
+
+### Food & Scent Lockdown (FIRST ACTION)
+
+- Food, trash, toothpaste, lip balm, sanitizer, wrappers — all together
+- Hang or box immediately
+- Nothing scented touches the floor
+- Pack stays closed
+
+### Gear Control
+
+**Keep with you:**
+- Nitecore NU25 headlamp
+- Phone
+- Filter (inside bag)
+- Battery bank
+- Water bottle
+
+**Never leave loose:**
+- Gloves
+- Socks
+- Trek pole handles
+- Hip belt pockets
+
+### Night Behavior
+
+- No food after final hang
+- No wrappers opened
+- Ignore mice unless contacting gear
+- Shoes upright, not flat
+
+### Morning Exit
+
+1. Pack sleep system
+2. Pack all non-food gear
+3. Retrieve food last
+4. Eat outside if possible
+5. Visual sweep for crumbs
+
+---
+
+---
+
+
+
+# Water Treatment System
+
+
+## Final System Decision
+
+**Primary:** Hollow-fiber filter (BeFree or Platypus QuickDraw class)  
+**Backup:** Chlorine dioxide tablets
+
+### Why This Combination
+
+- Filters cannot be reliably tested after possible freezing
+- Chemical drops provide guaranteed backup
+- Both systems require waiting time in cold water (30-45 minutes)
+- Filter + drops provides maximum margin
+
+## Tablet Selection
+
+**Potable Aqua — Chlorine Dioxide Water Purification Tablets**
+
+- Same chemistry as Aquamira drops
+- Kills bacteria, viruses, Giardia
+- Kills Cryptosporidium with extended time
+- Best taste among widely available tablets
+- Cannot freeze
+
+### Supply Math
+
+- Daily water use: 3 liters
+- 1 tablet = 1 liter
+- 60 days = 180 tablets
+- Buy 10 packs (20 tablets each) = 200 liters coverage
+
+## Winter Workflow
+
+### Step 1 — Collect
+Scoop water into dirty bottle or bag. Choose clearest source available.
+
+### Step 2 — Filter
+Filter into 1L Smartwater bottle. Removes sediment, improves taste. Water is NOT virus-safe yet.
+
+### Step 3 — Purify
+Drop 1 chlorine dioxide tablet into bottle. Cap and gently shake.
+
+### Step 4 — Wait
+- Normal filtered spring water: 30-45 minutes
+- Cold, questionable, high-use areas: up to 4 hours
+
+### Step 5 — Drink
+Water is now safe from bacteria, viruses, and protozoa.
+
+## Freeze Protection Rules
+
+### Night Rule (Non-Negotiable)
+
+**Liquids and lithium sleep with you.**
+
+Put these inside your sleeping bag every night:
+- Filter
+- Tablets
+- Batteries
+- Glasses
+- Phone / InReach
+
+### Day Rule
+
+After using the filter:
+- Shake out excess water
+- Put filter immediately against your body
+- Inner jacket pocket or fanny pack
+
+### What Does NOT Work
+
+- Backpack pockets
+- Wrapped in clothes inside pack
+- Insulated sleeves without body heat
+
+**Insulation without heat always loses overnight.**
+
+## Comprehensive Water Sources Guide
+
+### What "Reliable" Means
+
+**Reliable = dependable flow, not sterile water.**
+
+All listed sources:
+- Are spring-fed, major creeks, rivers, or established shelter sources
+- Are known to persist even in drier years
+- Still require treatment every time
+
+### Treatment Rule (Non-Negotiable)
+
+For all listed reliable sources:
+- Filter or chemical drops are sufficient
+- Filter + drops (your system) provides maximum margin
+
+**Treatment is assumed every time.**
+
+### When to Pause Even at a Listed Source
+
+Reassess or skip a listed source if you see:
+- Algae or green film
+- Strong odor
+- Heavy animal activity in the water
+- Obvious flood runoff immediately after heavy rain
+
+If that happens:
+- Move upstream if possible
+- Or walk on to the next reliable anchor
+
+*These situations are rare — but judgment still applies.*
+
+### Quick Legend (Field Use)
+
+| Source | Status |
+|--------|--------|
+| Listed source + treatment | 🟢 Safe to use |
+| Listed source + visual red flags | 🟡 Reassess / walk upstream |
+| Unlisted water (puddles, runoff, ponds) | 🔴 Treatment alone is not a guarantee |
+
+## Reliable Water Sources — Northbound
+
+### GEORGIA (Springer Mountain to NC Border)
+
+- Springer Shelter spring (mile 0.0)
+- Stover Creek (4.1)
+- Hawk Mountain Shelter spring (9.6)
+- Gooch Mountain Shelter spring (15.6)
+- Lance Creek (20.6)
+- Woods Hole Shelter spring (26.6)
+- Neels Gap / Mountain Crossings (31.7)
+- Low Gap Shelter spring (35.9)
+- Blue Mountain Shelter spring (40.6)
+- Tray Mountain Shelter spring (43.0)
+- Deep Gap Shelter spring (50.6)
+- Dick's Creek (53.7)
+- Plumorchard Gap Shelter spring (69.2)
+- Muskrat Creek Shelter spring (74.9)
+
+### NORTH CAROLINA / TENNESSEE (Fontana Dam to Hot Springs)
+
+- Fontana Dam spigot (164.6)
+- Cable Gap Shelter spring (170.7)
+- Brown Fork Gap Shelter spring (177.7)
+- Spence Field Shelter spring (186.9)
+- Derrick Knob Shelter spring (197.3)
+- Double Spring Gap Shelter spring (202.8)
+- Mt. Collins Shelter spring (207.7)
+- Newfound Gap (211.3)
+- Icewater Spring Shelter (219.4)
+- Peck's Corner Shelter spring (237.6)
+- Tricorner Knob Shelter spring (241.7)
+- Davenport Gap Shelter spring (252.9)
+- Standing Bear Farm (257.6)
+- Groundhog Creek Shelter spring (274.7)
+- Walnut Mountain Shelter spring (282.9)
+- Hot Springs town water (288.2)
+
+### TENNESSEE / VIRGINIA HIGHLANDS (Hot Springs to Damascus)
+
+- Rich Mountain Shelter spring (~292)
+- Hogback Ridge Shelter spring (~302)
+- Flint Mountain Shelter spring (~315)
+- Jerry Cabin Shelter spring (~324)
+- Little Laurel Shelter spring (~333)
+- Laurel Fork (~340)
+- Dennis Cove (~345)
+- Overmountain Shelter spring (~356)
+- Stan Murray Shelter spring (~368)
+- Roan High Knob Shelter spring (~375)
+- Ash Gap (~380)
+- Kincora Hostel (~388)
+- Vandeventer Shelter spring (~405)
+- Iron Mountain Shelter spring (~421)
+- Partnership Shelter (~442)
+- Wise Shelter spring (~451)
+- Old Orchard Shelter spring (~460)
+- Trimpi Shelter spring (~467)
+- Damascus town water (~469)
+
+### VIRGINIA (Damascus to Shenandoah National Park)
+
+- Saunders Shelter spring (~475)
+- Lost Mountain Shelter spring (~485)
+- Hurricane Mountain Shelter spring (~497)
+- Watauga Lake inlet (~508)
+- Chestnut Knob Shelter spring (~518)
+- Jenkins Shelter spring (~532)
+- Knot Maul Branch (~545)
+- Bryant Ridge Shelter spring (~559)
+- Jenny Knob Shelter spring (~574)
+- Cove Mountain Shelter spring (~588)
+- Fullhardt Knob Shelter spring (~604)
+- Brown Mountain Creek (~618)
+- Matts Creek Shelter (river source) (~633)
+- Johns Hollow Shelter spring (~652)
+- James River (~681)
+- Punchbowl Shelter spring (~698)
+- Seeley-Woodworth Shelter spring (~713)
+- Cow Camp Gap Shelter spring (~733)
+- Maupin Field Shelter spring (~754)
+- Rockfish Gap (Shenandoah NP) (~780)
+
+### SHENANDOAH NATIONAL PARK
+
+- Loft Mountain Camp (~792)
+- Big Meadows (~820)
+- Skyland (~844)
+- Pass Mountain Hut (~860)
+- Elkwallow (~872)
+- Front Royal town water (~887)
+
+*This is the most water-abundant section of the trail.*
+
+### MID-ATLANTIC (WV / MD / PA / NJ / NY)
+
+- Crampton Gap spring (~1,026)
+- Pine Grove Furnace (~1,102)
+- Quarry Gap Shelter spring (~1,126)
+- Wind Gap (~1,231)
+- High Point Shelter spring (~1,317)
+- Wildcat Shelter spring (~1,348)
+- Bear Mountain visitor area (~1,410)
+- Graymoor Monastery (~1,436)
+- Pawling town water (~1,463)
+
+### NEW ENGLAND (CT / MA / VT / NH / ME)
+
+- Upper Goose Pond Cabin (pump) (~1,527)
+- Dalton town water (~1,570)
+- Clarendon Gorge (river) (~1,663)
+- Killington Shelter spring (~1,699)
+- Hanover town water (~1,747)
+- Kinsman Notch Camp (~1,820)
+- AMC Hut system (NH Whites) (~1,830-1,888)
+- Carter Notch Hut (~1,863)
+- Gorham town water (~1,904)
+- Andover town water (~1,975)
+- Rangeley town water (~2,001)
+- Kennebec River ferry (~2,013)
+- Monson town water (~2,077)
+- Rainbow Stream (~2,095)
+- Antlers Campsite (lake outlet) (~2,144)
+- Hurd Brook (~2,153)
+- The Birches (ranger water) (~2,168)
+- Katahdin Stream (final source) (~2,193)
+
+## Water Types — What to Use & What to Avoid
+
+### 🟢 BEST WATER (GREEN LIGHT)
+
+- Piped springs
+- Flowing springs
+- Rock-fed hillside trickles
+- Waterfalls
+- Fast, cold creeks
+
+*Filter or drops work well. Filter + drops is ideal.*
+
+### 🟡 ACCEPTABLE WITH CAUTION (YELLOW LIGHT)
+
+- Clear pooled spring seeps
+- Large rivers (upstream of human activity)
+- Large, cold lakes (prefer inflow streams)
+- Fresh, clean snow (must be melted and treated)
+
+*Use full treatment protocol.*
+
+### 🔴 AVOID EVEN WITH TREATMENT (RED LIGHT)
+
+- Rain puddles
+- Beaver ponds
+- Warm stagnant pools
+- Algae-covered water
+- Road or farm runoff
+- Water with chemical or rotten smell
+
+*Treatment does not make these safe.*
+
+## Questionable Water Protocol
+
+When you hesitate at a source, ask:
+
+1. Cold or warm?
+2. Moving or pooled?
+3. Rock source or dirt runoff?
+4. Any smell, algae, or animal tracks?
+
+**If any answer is wrong, treatment alone is not enough.**
+
+If forced:
+- Pre-filter
+- Filter
+- Drops
+- Full or double contact time
+- Don't chug immediately
+
+*This reduces risk — it does not erase it.*
+
+## Winter vs Summer Reality
+
+| Season | Conditions |
+|--------|------------|
+| Winter | Fewer visible sources, cleaner water, lower biological risk |
+| Summer | More water, higher contamination risk, be more selective |
+
+## The 1-Liter Rule (Realistic)
+
+**1 liter works when:**
+- Sources are reliable
+- Quality is high
+- Temps are cool
+
+**Break the rule intentionally when:**
+- Long dry stretches
+- Questionable water ahead
+- High heat or exposure
+
+*Carrying extra temporarily is smart, not failure.*
+
+## Section-Specific Water Reliability
+
+### Standing Bear Farm to Hot Springs, NC
+
+**Distance:** ~33 miles  
+**Mile ~241 to ~274**
+
+#### Reliable Water Sources (What Actually Holds Up)
+
+**Standing Bear Farm Hostel (Mile ~241)**
+- Spigot / creek
+- Fully reliable
+- Last easy, guaranteed water before ridge travel
+
+**Groundhog Creek (Mile ~248)**
+- Creek crossing
+- Very reliable
+- One of the most dependable water sources in this entire stretch
+
+**Deer Park Mountain Shelter — Little Laurel Creek (Mile ~268-269)**
+- Creek-fed water source
+- Year-round reliability
+- This is the creek most hikers remember as "finally real water again"
+
+*Note: Little Laurel Creek is the creek beside Deer Park Shelter — many hikers never hear the name, they just know the water.*
+
+**Hot Springs, NC (Mile ~274)**
+- Town water
+- Unlimited treated sources
+- Psychological and logistical reset point
+
+#### Seasonal or Unreliable Sources (AWOL & FarOut Overstate These)
+
+**Garenflo Gap Area Spring (Mile ~244)**
+- Sometimes flowing
+- Often low or frozen
+- Do not plan around it without confirmation
+
+**Max Patch Area Springs (Mile ~250)**
+- Very low output
+- Often a trickle
+- Exists on paper more than in practice
+
+**Walnut Mountain Shelter Spring (Mile ~255)**
+- Spring-fed
+- Frequently low, frozen, or dry
+- One of the most misleading "reliable" listings in guides
+
+**Bluff Mountain Area Seeps (Mile ~260)**
+- Intermittent
+- Rain-dependent
+- Not reliable in cold or dry stretches
+
+### Why AWOL Shows Water That Isn't Reliable
+
+**AWOL marks water based on:**
+- Historical existence
+- Average-year assumptions
+- Warm-season bias
+
+**AWOL does not account for:**
+- Freeze
+- Low-flow springs
+- Drought cycles
+- Ridge exposure
+- Removed shelters
+
+> AWOL water icons mean: "This source exists sometimes."  
+> They do not mean: "You can rely on this today."
+
+### FarOut Water Icons — How Reliable Are They?
+
+**The truth:**
+- FarOut is more accurate than AWOL
+- FarOut is still not guaranteed
+
+**Why FarOut is better:**
+- Crowd-sourced updates
+- Recent comments (gold standard)
+- Freeze and dry reports
+
+**Why FarOut still fails:**
+- Early-season lack of comments
+- Springs marked as "available" even when barely flowing
+- No dynamic drought or freeze adjustment
+
+**How to use FarOut correctly:**
+1. Ignore the icon alone
+2. Read recent comments (last 7-10 days)
+3. Trust creeks, verify springs
+4. Always identify your next guaranteed source
+
+### Real-World Water Planning Rules
+
+- Creeks = trust
+- Springs = verify
+- Seeps = ignore
+- Never skip water before a ridge
+- Carry extra when shelter water is spring-fed
+- Ask: "What's my next guaranteed creek?"
+
+*You followed these instincts naturally — that's experienced hiker behavior.*
+
+---
+
+---
+
+
+
+# Power & Electronics
+
+
+## Battery System
+
+### Dual Battery Setup
+- **Anker Nano Power Bank 20K** (20,000 mAh) - 11.0 oz
+- **Nitecore NB10000 Gen 3** (10,000 mAh) - 5.3 oz
+- **Total Capacity:** 30,000 mAh
+
+### Wall Charger (Towns Only)
+- **UGREEN Nexode 65W GaN Charger** (3-port) - 4.5 oz
+
+**Advantage:** Both batteries have built-in USB-C cables. Dual system provides redundancy and 30k mAh total capacity - sufficient for 5-day stretches with Ray-Ban Meta content creation.
+
+## 5-Day Power Budget
+
+**Estimated Total Demand:** ~24,000-26,000 mAh over 5 days  
+**Available Capacity:** 30,000 mAh
+
+- 4 days: Comfortable margin (~6k mAh reserve)
+- 5 days: Achievable with normal use (~4k mAh reserve)
+- 6 days: Requires power discipline
+
+## Daily Charging Routine
+
+### Every Night (Non-Negotiable)
+Charge iPhone to ~90-95%
+
+### Every Other Night
+Charge Apple Watch Ultra to ~80-90%
+
+### As Needed
+- Garmin: charge if below 35%
+- Headlamp: charge if below 40%
+
+## Device Priority (Fail-Safe Order)
+
+### NEVER SACRIFICE
+1. **iPhone 17 Pro Max** — Navigation, communication, documentation
+2. **Garmin inReach Mini 2** — Emergency communication
+
+### LIMIT IF NECESSARY
+3. **Apple Watch Ultra** — Time, weather, backup navigation
+4. **Nitecore NU25 Headlamp** — Night hiking, camp tasks
+
+### FIRST TO DROP
+5. **Ray-Ban Meta Glasses** — Content creation only (non-essential)
+
+## Power-Save Mode
+
+### Trigger Power-Save Mode If:
+- Extended cold rain
+- No service for 24+ hours
+- Battery bank drops below 35%
+
+### Actions:
+- iPhone: Low Power Mode ON, brightness <40%, uploads delayed
+- Apple Watch: Disable activity tracking
+- Garmin Mini: Tracking interval → 30 minutes
+- Ray-Ban Glasses: No video unless exceptional
+
+**Result:** Gains approximately **+1 extra trail day**
+
+---
+
+
+---
+
+---
+
+
+
+# Medical Planning
+
+
+## First Aid Kit Philosophy
+
+- Prevent problems before they stop mileage
+- Treat common injuries efficiently
+- Stabilize serious issues and walk to town
+- Resupply in towns—do not overcarry
+- Feet are the highest priority
+
+**Target weight:** 3-6 oz
+
+## Kit Contents
+
+### Wound Care
+- Leukotape (wrapped around straw)
+- Alcohol wipes (2-4)
+- Non-stick gauze pads (2)
+- Medical tape
+- QuikClot or clotting gauze (1)
+- Neosporin or antibiotic ointment
+
+### Foot & Blister Management (Critical)
+- Pre-cut Leukotape strips
+- Sewing needle or safety pin
+- Benzoin tincture wipe
+- Anti-chafe stick or balm
+
+**Tape early. Do not wait for pain.**
+
+### Medications
+- Ibuprofen (6-10 tablets)
+- Antihistamine (4 tablets)
+- Anti-diarrheal (4 tablets)
+- Personal prescription meds
+
+### Winter Add-Ons
+- Lip balm with SPF
+- Hand cream
+- Extra Leukotape
+- Chemical hand warmers (2)
+
+## Trail Medical Rules
+
+### Use Urgent Care For:
+- Sprains, strains
+- Cuts needing stitches
+- Infections
+- Dehydration
+- Respiratory issues
+
+### Dental Red Flags (Do Not Wait):
+- Swelling
+- Tooth fracture
+- Abscess
+- Persistent pain
+
+### Carry at All Times:
+- Temporary dental filling material
+- Dental wax
+- Ibuprofen + acetaminophen
+- Salt packets (warm salt rinses)
+- Photos of insurance cards and ID
+
+---
+
+## 🏥 INJURY PREVENTION & FIELD TREATMENT
+## Common Trail Injuries + How to Avoid Them
+
+### 🦶 **BLISTERS** (Most Common Trail Injury)
+
+**Prevention:**
+- ✅ Properly fitted shoes (thumb's width at toe, snug heel)
+- ✅ Change socks daily (or twice daily if wet)
+- ✅ Air out feet during breaks (remove shoes + socks for 10 min)
+- ✅ Trim toenails SHORT before hike (prevents toe blisters)
+- ✅ Apply foot powder or BodyGlide to hot spots
+
+**Treatment (Drain vs Leave Intact):**
+- **Small blisters (<5mm):** Leave intact, cover with blister bandage (Compeed/moleskin)
+- **Large blisters (>5mm):** Drain carefully
+  1. Clean with soap/water or sanitizer
+  2. Sterilize needle with lighter
+  3. Puncture at edge, drain fluid
+  4. Leave skin intact (it's natural bandage)
+  5. Cover with blister bandage
+  6. Change bandage daily, monitor for infection
+
+**When to Take a Zero:**
+- Blisters on BOTH heels (can't walk without pain)
+- Signs of infection (red, hot, pus, increasing pain)
+- Blisters covering >30% of foot surface
+
+---
+
+### 🦵 **KNEE PAIN** (2nd Most Common)
+
+**Why You Have the Bauerfeind Brace:**
+- Provides stability for downhill hiking (where knee injuries happen)
+- Hinged design prevents lateral movement
+- You already know your knee is vulnerable - respect it
+
+**Prevention:**
+- ✅ Use trekking poles (take 25% of impact off knees)
+- ✅ Shorten stride on downhills (small steps = less impact)
+- ✅ Sidestep steep downhills (switchback even when trail doesn't)
+- ✅ Stretch IT band + quads during breaks
+- ✅ Wear knee brace on long descents
+
+**When to Take a Nero/Zero:**
+- Knee pain that doesn't improve with rest breaks
+- Swelling around kneecap
+- Pain that changes your gait (you start limping)
+- Pain on BOTH knees (overuse signal)
+
+**Red Flag - Bail to Town:**
+- Can't bear weight on knee
+- Knee buckles or feels unstable
+- Severe swelling (knee noticeably larger)
+
+---
+
+### 🦶 **ACHILLES TENDONITIS / HEEL PAIN**
+
+**Prevention:**
+- ✅ Calf stretches every morning before hiking
+- ✅ Proper shoe fit (not too tight around heel)
+- ✅ Gradual mileage increase (don't jump from 10 → 20 mpd)
+- ✅ Address it EARLY (don't "push through")
+
+**Treatment:**
+- Ice during town stops (frozen water bottle on heel)
+- Ibuprofen (200-400mg, 2-3x daily with food)
+- Reduce mileage by 30% for 2-3 days
+- Loosen laces around ankle
+
+**When to Zero:**
+- Pain that persists after 3 days of reduced mileage
+- Pain that worsens during rest (sign of tendon damage)
+
+---
+
+### 🩹 **CUTS, SCRAPES, TRAIL RASH**
+
+**Immediate Field Treatment:**
+1. Stop bleeding (pressure + elevation)
+2. Clean wound (water + soap if available, or just water)
+3. Apply antibiotic ointment if you have it
+4. Cover with bandage
+5. Change bandage daily
+
+**Watch For Infection:**
+- Red streaks extending from wound
+- Increased pain after 24 hours
+- Pus or bad smell
+- Fever or chills
+
+**When to Bail to Town:**
+- Signs of infection (above)
+- Deep cut that won't stop bleeding
+- Cut near joint that limits movement
+
+---
+
+### 🧊 **HYPOTHERMIA** (Winter-Specific Risk)
+
+**Early Signs (You Can Still Self-Rescue):**
+- Shivering
+- Cold, pale skin
+- Confusion or poor decision-making
+- Slurred speech
+- Fumbling hands (can't work zippers/buckles)
+
+**Immediate Action:**
+- STOP HIKING
+- Get out of wind (tent, shelter, behind rock)
+- Change into dry clothes
+- Get into sleeping bag
+- Drink warm liquids (hot water, soup)
+- Eat high-calorie food (your body needs fuel to warm up)
+
+**When Shivering Stops = EMERGENCY:**
+- This means body is shutting down
+- Activate Garmin InReach SOS
+- Do NOT let person fall asleep
+- Skin-to-skin warming in sleeping bag if with others
+
+**Prevention:**
+- Follow GO/NO-GO weather rules
+- Change out of wet clothes ASAP
+- Eat frequently in cold weather
+- Don't push through "I'll warm up when I move"
+
+---
+
+### 🌟 **NERO vs ZERO: When to Rest**
+
+**NERO (Near-Zero) - Half Day of Hiking:**
+- Mild soreness but no specific pain
+- Mental fatigue but body feels okay
+- Hike 5-8 miles to next shelter/town, then rest
+
+**ZERO (Full Rest Day):**
+- Specific injury that needs rest (knee pain, blister, etc.)
+- Extreme fatigue (can't get out of sleeping bag)
+- Sick (cold, stomach issues, etc.)
+- Scheduled town logistics (gear swap, major resupply)
+
+**PUSH THROUGH (Keep Hiking):**
+- General soreness (normal for thru-hiking)
+- Good spirits, eating well, sleeping well
+- No specific pain points
+- Weather is favorable
+
+**The Rule:** 
+- **Listen to pain, not discomfort.**
+- Discomfort is normal. Pain is a warning.
+- If you're asking "should I take a zero?" - you probably should.
+
+---
+
+---
+
+---
+
+
+
+# Weather Strategy
+
+
+## Temperature Planning
+
+### Elevation Temperature Drop
+
+**Worst-case planning:** 5.5°F colder per 1,000 feet of elevation gain
+
+This represents dry air, strong mixing, and cold-biased conditions.
+
+### Example: Hot Springs to Max Patch
+
+- Hot Springs: ~1,300 ft
+- Max Patch summit: ~4,629 ft
+- Elevation gain: ~3,329 ft
+
+**If 30°F in Hot Springs:**
+- 1,000 ft up: 24.5°F
+- 2,000 ft up: 19.0°F
+- Max Patch: ~12°F (before wind chill)
+
+### Wind Chill Impact
+
+At 12°F air temperature:
+| Wind Speed | Feels Like |
+|------------|------------|
+| 5 mph | ~4°F |
+| 10 mph | ~-1°F |
+| 15 mph | ~-4°F |
+| 20 mph | ~-6°F |
+
+### Field-Use Mental Shortcut
+
+When you're hiking and checking a town forecast:
+
+1. Subtract 5-6°F per 1,000 ft
+2. Add wind penalty:
+   - +5 mph ≈ feels 4-6°F colder
+   - +10 mph ≈ feels 8-12°F colder
+   - +20 mph ≈ feels 15-25°F colder
+3. If it's a bald, assume wind exists
+
+### Bottom Line (Planning Truth)
+
+If you plan for this document's numbers:
+- You will never be underdressed
+- You will never be surprised
+- You will always have margin
+
+*This is exactly how experienced winter and shoulder-season AT hikers think.*
+
+## Heat Timeline & Strategy
+
+**Start Date:** February 1  
+**Direction:** Northbound (NOBO)  
+**Daily Pace:** 8-10 miles per hiking day  
+**Realistic Calendar Pace:** ~7-8 trail miles/day including zero/nero days
+
+### When Heat STARTS to Matter
+
+**Heat Onset Zone**
+- Mile Markers: ~600-700
+- Region: Southern to Central Virginia
+
+**Calendar Timing (Feb 1 Start)**
+- Mile 600: ~Day 80-85 → April 20-25
+- Mile 700: ~Day 95-100 → May 5-10
+
+**Conditions You'll Notice:**
+- Daytime highs consistently in the 70s to low 80s
+- Humidity becomes persistent
+- Sweating increases dramatically
+- Water and electrolyte planning becomes mandatory
+
+**Bottom Line:** You begin actively managing heat in late April, and by early May, summer conditions are established.
+
+### Where Heat Is WORST (Primary Heat Grind)
+
+**Peak Heat & Humidity Zone**
+- Mile Markers: ~900-1450
+- Regions Covered: Central & Northern Virginia, West Virginia, Maryland, Southern Pennsylvania, Pennsylvania, New Jersey, New York
+
+**Calendar Timing:**
+- Mile 900: ~Late May
+- Mile 1200: ~Early July
+- Mile 1450: ~Early August
+
+**Typical Conditions:**
+- High humidity with limited airflow
+- "Green tunnel" effect trapping heat
+- Hot, sticky nights
+- Increased risk of dehydration and heat exhaustion
+
+**This is the most demanding heat stretch of the entire trail.** Success here depends on discipline: early starts, consistent hydration, electrolytes, shade management, and controlled pacing.
+
+### When Heat STARTS to Ease
+
+**Heat Taper Zone**
+- Mile Markers: ~1550-1750
+- Region: Vermont into New Hampshire
+
+**Calendar Timing:**
+- Mile 1550: ~Mid-August
+- Mile 1750: ~Late August
+
+**What Improves:**
+- Cooler overnight temperatures
+- Fewer oppressive humidity days
+- Heat stops being the primary daily stressor
+
+*Heat does not disappear entirely, but it is no longer the dominant challenge.*
+
+### Summary Table
+
+| Phase | Mile Markers | Approximate Dates |
+|-------|--------------|-------------------|
+| Heat begins | 600-700 | April 20 - May 10 |
+| Worst heat | 900-1450 | Late May - Early August |
+| Heat eases | 1550-1750 | Mid - Late August |
+
+### Strategic Takeaways
+
+- A February 1 NOBO cannot avoid summer heat
+- You encounter heat with strong legs and lower injury risk
+- The worst heat is predictable and finite
+- You exit oppressive heat before September
+
+## Multi-Day Rain Strategy
+
+### Core Principles
+
+- Rain alone is manageable. Wind + rain is the threat.
+- Your sleep system must stay dry at all costs.
+- You operate in two phases: WET PHASE → DRY PHASE.
+- Decisions are made early, not at dark.
+
+### Movement Strategy
+
+- Continue hiking in rain
+- Reduce mileage slightly if needed
+- Take short, infrequent breaks
+- Stay warm by movement, not by stopping
+
+### Rain Camp Sequence
+
+**Step 1: Pitch tent FIRST (wet phase)**  
+Pitch immediately on arrival. Do NOT open dry bags.
+
+**Step 2: Cook & Eat (wet phase)**  
+Cook outside or at vestibule edge. Rain gear stays ON.
+
+**Step 3: Bear Hang IMMEDIATELY (wet phase)**  
+Do not enter tent before this step.
+
+**Step 4: Dry Phase Transition (inside tent)**
+- Enter tent, close door
+- Strip wet clothes
+- Put on dry sleep clothes
+- Get into quilt
+
+**If you forgot something outside — it waits.**
+
+### Morning Reset in Continued Rain
+
+1. Pack quilt + sleep clothes FIRST
+2. Seal them inside pack liner
+3. Put wet clothes back on
+4. Exit tent
+5. Retrieve food
+6. Eat, pack, hike
+
+*You only endure the wet once per cycle.*
+
+## Wind Thresholds (Field Reality)
+
+| Wind Speed | Action |
+|------------|--------|
+| 0–10 mph (light) | Shelter or tent OK |
+| 10–20 mph (moderate) | Lean TENT; shelter only if deep woods and calm interior |
+| 20–30 mph (strong) | **TENT ONLY** — Below ridges, protected terrain |
+| 30+ mph (severe) | Immediate protected site, tight low pitch, drop elevation if possible |
+
+**Wind + rain = tent every time.**
+
+## Campsite Selection in Wind
+
+### Choose:
+- Dense trees
+- Slightly downhill from ridgeline
+- Natural wind breaks
+- Soil that accepts stakes
+
+### Avoid:
+- Ridges
+- Gaps and saddles
+- Balds
+- Obvious wind funnels
+- Creek bottoms in storms
+
+*If wind accelerates as you walk — don't camp there.*
+
+## Tent Orientation (Critical)
+
+Point the **NARROW end of the tent INTO the wind**.
+
+- Never broadside
+- Never door-first into wind
+
+*Think aircraft nose, not billboard.*
+
+## Stake Strategy
+
+### Number of Stakes
+
+| Conditions | Stakes |
+|------------|--------|
+| Calm | 6 |
+| Moderate wind | 8 |
+| Strong/gusty wind | 10–12 (use ALL guy points) |
+
+### Stake Angle
+
+**Angle stakes ~30–45° AWAY from the tent**, aligned with the direction of pull.
+
+In wind:
+- Angled stakes resist rotation
+- Vertical stakes walk loose
+- Real-world holding is greater when angled
+
+### Order of Staking
+
+1. Windward corners FIRST
+2. Leeward corners second
+3. Side panels and guy lines last
+
+### Guy Lines & Tensioning
+
+- Use every guy point in wind
+- Fabric should be flat, not drum-tight
+- No flapping = no heat loss
+
+**Noise means movement. Movement means cold.**
+
+### Pitch Height (Your Wind Dial)
+
+**High wind = LOW pitch**
+- Shorten poles slightly
+- Reduce ground gap
+- Lower profile = stronger tent
+
+**Venting:**
+- Windward vent CLOSED
+- Leeward vent OPEN
+
+### Bad Soil Solutions
+
+If stakes won't hold:
+- Add rocks on guy lines
+- Wrap lines around roots/logs
+- Use buried "deadman" anchors in mud
+
+*Weight + angle beats soil quality.*
+
+### Night Check (Do This Once)
+
+Before dry phase:
+- Walk perimeter
+- Tug each guy line
+- Listen for flapping
+- Adjust now, not at 2 AM
+
+*Wind usually increases overnight.*
+
+## Off-Grid Weather Awareness
+
+Using Apple Watch Ultra + Garmin inReach Mini 2 without internet.
+
+### Core Principle
+
+**You NEVER evaluate pressure while hiking. You ONLY evaluate pressure while STOPPED.**
+
+Trail elevation changes while hiking are meaningless for weather detection. Elevation drift while stationary = pressure change.
+
+### Morning Baseline (5 minutes)
+
+- Open Apple Watch → Compass → Elevation
+- Stand still 2-3 minutes
+- Note the elevation number
+- Pull Garmin weather forecast
+
+### How to Interpret Elevation Drift (While Still)
+
+| Pattern | Interpretation |
+|---------|----------------|
+| Elevation fluctuates ±3-5 ft, settles quickly | Normal/Stable — Pressure stable, weather stable |
+| Elevation drops 10-20 ft over 3-6 hours without moving | Caution — Weather likely in 12-24 hours |
+| Elevation drops 20-30+ ft in 1-3 hours | Danger — Weather imminent, adjust plans immediately |
+
+### The 2-Out-of-5 Rule
+
+**If ANY TWO occur together, act conservatively:**
+
+1. Pressure dropping (Ultra elevation drift)
+2. Wind increasing or shifting
+3. Clouds thickening or lowering
+4. Garmin forecast worsens
+5. Sudden temperature drop
+
+---
+
+---
+
+
+
+# Trail Resources & Navigation
+
+
+## Primary Guidebook Reference
+
+### A.T. Guide (The Standard AT Guide)
+
+The primary guidebook most Appalachian Trail thru-hikers use and carry is the **A.T. Guide** (formerly known as AWOL's Appalachian Trail Guide). When hikers on the trail refer to "the guide" or "the book," this is almost always what they mean.
+
+This guide is instantly recognizable by its long, narrow, spiral-bound format, a shape intentionally designed for backpack use. Many hikers tear out completed sections as they progress northbound, while others keep the full book intact. A large number of hikers now carry the electronic version instead of the physical book.
+
+### Why the A.T. Guide Is the Gold Standard
+
+The A.T. Guide is considered the most complete single reference for the AT because it combines essential planning and navigation information into one resource:
+
+- Strip maps showing the trail mile by mile
+- Elevation profiles that clearly display upcoming climbs and descents
+- Shelter locations and distances between shelters
+- Designated campsites and tenting areas
+- Reliable and seasonal water sources
+- Road crossings and trailheads
+- Trail towns, hostels, and resupply access
+- Northbound and southbound mileage listings
+
+This makes the guide ideal for:
+- Daily mileage planning
+- Camp and shelter decisions
+- Anticipating difficult climbs before reaching them
+- Overall trail logistics from Georgia to Maine
+
+### Latest Physical Edition
+
+**A.T. Guide 2026 (Spiral-Bound)**
+
+- Covers the entire Appalachian Trail from Springer Mountain, Georgia to Mount Katahdin, Maine
+- Updated annually
+- The most common physical guide seen on trail
+- Formerly known as "AWOL's Guide"
+
+### Electronic / Digital Versions
+
+Many thru-hikers now choose the digital version rather than carrying the paper book.
+
+**A.T. Guide Digital Edition (PDF / Kindle)**
+
+- Same maps, data, and content as the paper guide
+- Zoomable maps and elevation profiles
+- Works offline once downloaded
+- No added pack weight
+
+### How Most Thru-Hikers Actually Use It on Trail
+
+Most experienced Appalachian Trail hikers rely on a tool combination, not just one resource:
+
+- **A.T. Guide** — Primary reference for mileage, elevation, shelters, and camp planning
+- **FarOut App** — Used for real-time comments, current water reliability, trail closures, and on-the-ground updates
+- **AT Data Book (optional)** — Lightweight backup reference
+
+*The A.T. Guide provides structure and predictability. FarOut provides live, crowdsourced intelligence.*
+
+### Practical Recommendation
+
+For an efficient, modern thru-hike setup:
+
+- Use the A.T. Guide (digital PDF or Kindle) as your primary planning reference
+- Pair it with FarOut for up-to-date trail conditions
+- Carrying the paper guide is optional and mainly for redundancy or personal preference
+
+*If electronics fail, the paper A.T. Guide becomes invaluable. If conditions change rapidly, FarOut fills the gaps.*
+
+---
+
+
+## Typical Carry Strategy
+
+### Standard Food Carry Range
+
+**3 to 5 days of food**
+
+This is the dominant norm across the entire trail.
+
+### By Section
+
+**Early Trail (Georgia through Southern NC)**
+- Common carry: 3-4 days
+- Frequent road crossings, hostels close together
+
+**Mid-Trail and Later**
+- Common carry: 4-5 days
+- Rhythm stabilizes
+
+### Long Carries (6-7+ Days)
+
+Exceptions only. Primarily the 100-Mile Wilderness in Maine.
+
+## Known Detours (2025-2026)
+
+| Detour | Distance | Status |
+|--------|----------|--------|
+| Nolichucky River Bridge Detour (TN) | ~3.6 mi | Active (Hurricane Helene damage) |
+| Iron Mountain Gap Detour (NC/TN) | ~6 mi | Active (debris removal near Cherry Gap Shelter) |
+| Virginia Creeper Trail Closure (Damascus area) | ~20.9 mi | Active through ~fall 2026 (Hurricane Helene destroyed 30+ trestles) |
+| Great Gulf Detour (NH) | ~6.4 mi | Active (Madison Gulf Bridge closed Nov 2024) |
+
+*Note: Virginia Creeper closure affects NOBO miles 476.6-485.8. Official detour uses Iron Mountain Trail, Flat Top Trail, and Mount Rogers Trail.*
+
+**⚠️ IMPORTANT: Kennebec River Ferry (Maine)** — The ferry across the Kennebec River will **NOT operate in 2026**. Plan for the road-walk alternative. Check current guidance before reaching this section.
+
+---
+
+
+
+# Food & Resupply
+
+
+## Trail Food Staples
+
+### Breakfast
+- Instant oatmeal packets
+- Pop-Tarts
+- Granola or cereal
+- Carnation Breakfast Essentials
+
+### Lunch & All-Day Carry
+- Tortillas (won't crush like bread)
+- Peanut butter or Nutella
+- Summer sausage
+- Hard cheese
+- Tuna or chicken foil packets
+
+### Dinner (One-Pot Meals)
+- Instant ramen noodles
+- Knorr Pasta or Rice Sides
+- Instant mashed potatoes
+- Couscous or instant rice
+
+### Snacks
+- Snickers (unofficial AT currency)
+- M&Ms, Reese's
+- Trail mix
+- Jerky
+- Energy bars
+
+## Food Storage & Bear Protection
+
+### The Three Problems
+
+1. **Bears** — Strong, smart, food-conditioned in many AT areas
+2. **Mice / Rodents** — Everywhere shelters exist. Silent. Chew gear, not just food.
+3. **Humans** — Tired, lazy at night, cut corners. Cause most failures.
+
+## PCT Bear Hang (Gold Standard)
+
+### Required Geometry (Non-Negotiable)
+
+- Branch height: 18-20 feet
+- Bag height: ~12 feet off ground
+- Distance from trunk: ~6 feet
+- Distance below branch: ~6 feet
+
+### Step-by-Step
+
+1. Choose single strong horizontal branch
+2. Throw line over branch (use throw bag)
+3. Clip food bag to one end with carabiner
+4. Hoist bag to proper height
+5. Insert stick toggle into carabiner
+6. Slowly lower rope until toggle jams
+7. Let free end hang loose
+
+**Nothing is tied to the tree.**
+
+### Simple Decision Rule
+
+- Bear box available? → Use it
+- Bear cables or poles? → Use them
+- No system + tenting/shelter? → PCT hang
+- Sleeping in shelter (no bear system)? → Mouse line + odor control
+
+## Mouse Lines (Shelter Use)
+
+### What They Are
+- Rope or wire hanging from rafters with hooks or carabiners
+- Purpose: Rodents only (mice, chipmunks, squirrels)
+- NOT for bears
+
+### How to Use Correctly
+- One bag per hook
+- Bag hangs 12–18 inches below the line
+- Bag is 12+ inches away from walls, beams, or other bags
+- No loose knots or dangling loops
+- Smooth-sided bag only
+
+### Common Mouse Failures
+- Bag touching wall
+- Bags touching each other
+- Knots and loops as ladders
+- Food left out "for a minute"
+
+## Food Bag Setup (Bag Inside a Bag)
+
+### Why This Matters
+Bears follow scent plumes. Odor reduction reduces investigation time.
+
+### Correct Storage Stack (inside → out)
+
+**Layer 1:** Individual food packaging  
+**Layer 2:** Odor-resistant liner (all smellables together)  
+**Layer 3:** Outer bear hang sack (slick, strong)  
+**Layer 4:** Rope + carabiner + toggle
+
+### What Counts as "Smellables"
+- Food
+- Trash
+- Wrappers
+- Toothpaste
+- Chapstick
+- Flavored drink mixes
+
+**All of it goes inside the liner.**
+
+### What NOT to Do
+- ❌ Crumbs floating free
+- ❌ Trash outside liner
+- ❌ Toothpaste in side pockets
+- ❌ Open wrappers in the bag
+
+*Loose = odor leaks faster.*
+
+## Early NOBO Reality Check
+- Georgia → NC: More bear attention near shelters
+- Great Smoky Mountains: Cables are mandatory
+- Shelters: Mice guaranteed
+- Winter: Boxes may freeze, cables preferred
+
+## Ramen Cooking Guide
+
+### Trail/Fuel-Saving Method
+
+1. Bring 2-2½ cups water to rolling boil
+2. Turn stove OFF
+3. Add noodles
+4. Cover cup immediately with lid
+5. Let sit 5-7 minutes (7-8 minutes below freezing)
+6. Add seasoning packet
+7. Stir thoroughly
+8. Eat immediately
+
+**Key Rule:** Seasoning goes in AFTER soaking, not before.
+
+### Peanut Butter Ramen
+
+**Chicken broth + peanut butter does NOT taste good.**
+
+**Best Method: Noodles + Peanut Butter Only**
+
+1. Cook noodles using trail method
+2. Drain most water
+3. Add 1-2 tablespoons peanut butter
+4. Stir until fully coated
+5. Optional: Add pinch of seasoning for salt
+
+---
+
+---
+
+
+
+# Resupply Logistics
+
+
+## USPS Mail Drop System
+
+### General Delivery Rules
+
+### Hold Times
+
+- Official USPS rule: Up to 30 days
+- Large AT towns: Usually 30 days
+- Small/rural offices: Often 7-14 days
+
+### Best Practice
+
+- Ship packages 7-10 days before arrival
+- Never ship earlier than 14 days
+- Always include an ETA
+- If delayed, call the post office
+
+### Box Labeling Format
+
+**Do not deviate from this format:**
+
+```
+THEMAN HOGG
+GENERAL DELIVERY
+CITY, STATE ZIP
+PLEASE HOLD FOR AT HIKER
+ETA: MM/DD/YYYY
+```
+
+**Rules:**
+- Write your name on all six sides
+- Use Sharpie
+- ETA matters
+
+## Recommended Mail Drop Locations
+
+| Location | Mile | Notes |
+|----------|------|-------|
+| Hot Springs, NC | ~274 | One of the most reliable mail drops on the AT |
+| Damascus, VA | ~469 | AT hub, dependable, generous hold times |
+| Daleville, VA | ~727-729 | Easy access, grocery nearby |
+| Harpers Ferry, WV | ~1,023-1,026 | Psychological halfway point, very reliable |
+| Duncannon, PA | ~1,140-1,150 | Excellent PO + hostel logistics |
+| Hanover, NH | ~1,747 | Key resupply before the Whites |
+| Monson, ME | ~2,074-2,079 | Gateway to 100-Mile Wilderness. Hold time often 14 days max. |
+
+*Note: Shaw's Hiker Hostel in Monson offers food drop services for the 100-Mile Wilderness—a useful option if you want to lighten your initial carry.*
+
+---
+
+## Walk-Only Resupply: Dollar General
+
+**There are ZERO Walmart stores within 2 walking miles of the AT.** All Walmart resupplies require a ride.
+
+### Walkable Dollar General Locations
+
+| Location | Mile | Distance to DG |
+|----------|------|----------------|
+| Hot Springs, NC | ~274 | 0.3 miles |
+| Erwin, TN | ~342 | 0.6 miles |
+| Hampton, TN | ~420 | 1.0 mile |
+| Pearisburg, VA | ~634 | 0.9 miles |
+| Daleville, VA | ~728 | 0.7 miles |
+| Waynesboro, VA | ~880 | 1.1 miles |
+| Front Royal, VA | ~999 | 3.0 miles |
+| Palmerton, PA | ~1,275 | 1.5 miles |
+| Great Barrington, MA | ~1,538 | 1.4 miles |
+| Gorham, NH | ~1,898 | 1.2 miles |
+
+---
+
+---
+
+
+
+# Town Strategy
+
+
+## Comprehensive AT Town & Services Guide (NOBO)
+
+### Walkable Towns With Full Services
+
+**Legend:**
+- 🏨 Lodging (hostel/hotel/motel)
+- 🚿 Shower available
+- 🧺 Laundry
+- 🍔 Food (restaurant/grocery)
+- 🔌 Charging (reliable outlets)
+- 📦 Resupply (grocery store)
+- ✉️ Post Office
+
+**Walking Distance:** ≤2 miles from trail
+
+---
+### GEORGIA (Mile 0-78)
+
+**Amicalola Falls State Park (Mile 0)**
+- **Distance from Trail:** On trail (if starting at visitor center)
+- **Services:** 🏨 🚿 🍔 🔌 (Lodge & visitor center)
+- **Notes:** Common NOBO start point, not typical resupply
+
+**Neels Gap / Mountain Crossings (Mile ~31)**
+- **Distance from Trail:** On trail (US-19/129 crosses AT)
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 (limited) ✉️
+- **Lodging:** Hostel bunks at outfitter
+- **Resupply:** Small outfitter selection, limited grocery
+- **Notes:** First resupply stop for most NOBOs, outfitter does shakedowns
+
+**Hiawassee, GA (Mile ~69 via Dick's Creek Gap)**
+- **Distance from Trail:** ~11 miles (hitch required)
+- **Services:** Full town - NOT WALKABLE
+- **Notes:** Major resupply, but requires ride
+
+---
+
+### NORTH CAROLINA / TENNESSEE (Mile 78-470)
+
+**NOC - Nantahala Outdoor Center (Mile ~137)**
+- **Distance from Trail:** On trail (US-19/74 crosses AT)
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 (limited) ✉️
+- **Lodging:** Hostel bunks, bunkhouse
+- **Resupply:** Outfitter store (limited, expensive)
+- **Notes:** Popular stop, rafting company
+
+**Fontana Dam / Fontana Village (Mile ~165)**
+- **Distance from Trail:** ~1.5 miles from dam
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Fontana Village Resort (cabins, rooms)
+- **Resupply:** Small general store
+- **Notes:** "Fontana Hilton" shelter at dam, village requires short walk
+
+**Gatlinburg, TN (Mile ~200 from Newfound Gap)**
+- **Distance from Trail:** ~16 miles (hitch required)
+- **Services:** Full town - NOT WALKABLE
+- **Notes:** Major town, but significant hitch
+
+**Standing Bear Farm (Mile ~241)**
+- **Distance from Trail:** ~0.2 miles (hostel near trail)
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 (limited)
+- **Lodging:** Hostel, cabins
+- **Resupply:** Small hiker store
+- **Notes:** Classic hiker hostel, "museum" of trail history
+
+**Hot Springs, NC (Mile ~274)**
+- **Distance from Trail:** ON TRAIL (town main street is the AT)
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Multiple hostels, B&Bs, cabins
+- **Resupply:** Dollar General (0.3 mi), small grocery
+- **Notes:** Trail goes through downtown, major zero day stop
+
+**Erwin, TN (Mile ~342)**
+- **Distance from Trail:** ~0.5 miles from trail via Uncle Johnny's
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Uncle Johnny's Hostel, motels in town
+- **Resupply:** Dollar General (0.6 mi), grocery stores
+- **Notes:** Walkable with short road walk
+
+**Roan Mountain, TN (Mile ~365 via US-19E)**
+- **Distance from Trail:** ~5 miles (borderline walkable)
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦
+- **Notes:** Some hikers walk, most hitch
+
+**Damascus, VA (Mile ~469)**
+- **Distance from Trail:** ON TRAIL (AT goes through town center)
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Multiple hostels, motels, The Place (donation hostel)
+- **Resupply:** Dollar General, outfitter, small grocery
+- **Notes:** "Trail Town USA" - major hiker hub, Trail Days festival
+
+---
+
+### VIRGINIA (Mile 470-1,020)
+
+**Marion, VA (Mile ~500 from Atkins)**
+- **Distance from Trail:** ~5-6 miles (hitch typically required)
+- **Services:** Full town - BORDERLINE WALKABLE
+- **Notes:** Some hike, most hitch
+
+**Bland, VA (Mile ~508)**
+- **Distance from Trail:** ~0.5 miles
+- **Services:** 🏨 🚿 🍔 🔌 📦
+- **Lodging:** Big Walker Motel
+- **Resupply:** Small convenience store
+- **Notes:** Quiet town, limited services
+
+**Bastian, VA (Mile ~517)**
+- **Distance from Trail:** ~0.5 miles
+- **Services:** 🏨 🍔
+- **Lodging:** Four Pines Hostel
+- **Notes:** Small hostel, very limited town services
+
+**Pearisburg, VA (Mile ~635)**
+- **Distance from Trail:** ~0.8 miles
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Hostel, motels
+- **Resupply:** Dollar General (0.9 mi), small grocery
+- **Notes:** Walkable, decent resupply
+
+**Catawba, VA (Mile ~690)**
+- **Distance from Trail:** ~1 mile via VA-311
+- **Services:** 🏨 🚿 🍔 🔌
+- **Lodging:** Four Pines Hostel (different from Bastian)
+- **Resupply:** Very limited
+- **Notes:** Small community, hostel-focused
+
+**Daleville, VA (Mile ~729)**
+- **Distance from Trail:** ~0.5-1 mile
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Howard Johnson, Quality Inn
+- **Resupply:** Dollar General (0.7 mi), Kroger nearby
+- **Notes:** Good resupply, right off I-81
+
+**Glasgow, VA (Mile ~783 via VA-60)**
+- **Distance from Trail:** ~3 miles (borderline)
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Notes:** Some walk, some hitch
+
+**Waynesboro, VA (Mile ~880 from Rockfish Gap)**
+- **Distance from Trail:** ~1-2 miles via Rockfish Gap (I-64)
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Multiple motels, YMCA sometimes available
+- **Resupply:** Dollar General (1.1 mi), Walmart (requires ride), grocery
+- **Notes:** Major town, Shenandoah NP entrance, popular zero stop
+
+**SHENANDOAH NATIONAL PARK (Mile ~880-1,000)**
+- **Waysides:** Loft Mountain, Big Meadows, Skyland, Elkwallow
+- **Services:** 🍔 🔌 (limited hours, seasonal)
+- **Notes:** No lodging at waysides, camp stores only
+
+**Front Royal, VA (Mile ~999)**
+- **Distance from Trail:** ~1-3 miles depending on route
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Motels, hostels
+- **Resupply:** Dollar General (3 mi), groceries
+- **Notes:** Shenandoah north exit, popular stop
+
+---
+
+### WEST VIRGINIA / MARYLAND (Mile 1,020-1,100)
+
+**Harpers Ferry, WV (Mile ~1,024)**
+- **Distance from Trail:** ON TRAIL / 0.5 miles to town center
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Town's Inn, hostels nearby
+- **Resupply:** Small grocery, outfitters
+- **Notes:** "Psychological halfway point," ATC headquarters, major stop
+
+---
+
+### PENNSYLVANIA (Mile 1,100-1,350)
+
+**Pine Grove Furnace State Park (Mile ~1,103)**
+- **Distance from Trail:** ON TRAIL
+- **Services:** 🍔 🔌 (camp store)
+- **Lodging:** Camping only
+- **Notes:** "Half Gallon Challenge" ice cream stop, no lodging
+
+**Boiling Springs, PA (Mile ~1,136)**
+- **Distance from Trail:** ON TRAIL
+- **Services:** 🏨 🚿 🍔 🔌
+- **Lodging:** ATC Mid-Atlantic Office (limited), nearby B&Bs
+- **Resupply:** Very limited
+- **Notes:** Beautiful town, limited hiker services
+
+**Duncannon, PA (Mile ~1,149)**
+- **Distance from Trail:** ~0.5 miles
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Doyle Hotel (infamous hiker hotel), other options
+- **Resupply:** Small grocery, convenience stores
+- **Notes:** Classic trail town, Doyle is "an experience"
+
+**Port Clinton, PA (Mile ~1,217)**
+- **Distance from Trail:** ~0.3 miles
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** 2MP Hostel, Pavilion camping
+- **Resupply:** Small convenience store, limited
+- **Notes:** Small town, classic stop
+
+**Palmerton, PA (Mile ~1,278)**
+- **Distance from Trail:** ~1.5 miles
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Jail hostel (St. John's Evangelical Lutheran Church)
+- **Resupply:** Dollar General, small grocery
+- **Notes:** "Stay in jail" - church hostel
+
+**Delaware Water Gap, PA (Mile ~1,298)**
+- **Distance from Trail:** ON TRAIL
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Church of the Mountain hostel (donation), motels nearby
+- **Resupply:** Small convenience stores
+- **Notes:** PA/NJ border, trail goes through town
+
+---
+
+### NEW JERSEY / NEW YORK (Mile 1,300-1,470)
+
+**Unionville, NY (Mile ~1,342 via NJ-284)**
+- **Distance from Trail:** ~0.8 miles
+- **Services:** 🏨 🚿 🍔 🔌
+- **Lodging:** Horler's General Store (hostel upstairs)
+- **Resupply:** General store (limited)
+- **Notes:** Tiny town, classic stop
+
+**Greenwood Lake, NY (Mile ~1,359 via NY-17A)**
+- **Distance from Trail:** ~1.5 miles
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦
+- **Lodging:** Motels
+- **Resupply:** Small grocery
+- **Notes:** Borderline walkable
+
+**Fort Montgomery / Bear Mountain, NY (Mile ~1,410)**
+- **Distance from Trail:** ~0.5 miles
+- **Services:** 🏨 🚿 🍔 🔌
+- **Lodging:** Bear Mountain Inn (expensive)
+- **Resupply:** Very limited
+- **Notes:** Bear Mountain zoo area, limited hiker services
+
+**Kent, CT (Mile ~1,469)**
+- **Distance from Trail:** ~1.5-2 miles via CT-341
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Hostel, B&Bs
+- **Resupply:** Small grocery
+- **Notes:** Borderline walkable
+
+---
+
+### MASSACHUSETTS (Mile 1,470-1,630)
+
+**Great Barrington, MA (Mile ~1,538)**
+- **Distance from Trail:** ~1.5 miles via MA-23
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Motels, hostels
+- **Resupply:** Dollar General (1.4 mi), grocery stores
+- **Notes:** Good town, popular stop
+
+**Dalton, MA (Mile ~1,570)**
+- **Distance from Trail:** ON TRAIL / 0.5 miles to center
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Shamrock Village Inn, Tom Levardi's house (legendary)
+- **Resupply:** Small grocery, convenience stores
+- **Notes:** Trail goes through town, Tom's is donation-based
+
+**North Adams, MA (Mile ~1,590 via MA-2)**
+- **Distance from Trail:** ~3 miles (borderline)
+- **Services:** Full town services
+- **Notes:** Most hikers hitch or skip
+
+**Bennington, VT (Mile ~1,606 via VT-9)**
+- **Distance from Trail:** ~5 miles (hitch typically required)
+- **Services:** Full town - NOT WALKABLE
+- **Notes:** Major resupply, but requires ride
+
+---
+
+### VERMONT (Mile 1,630-1,790)
+
+**Manchester Center, VT (Mile ~1,645 via VT-11/30)**
+- **Distance from Trail:** ~5 miles (hitch required)
+- **Services:** Full town - NOT WALKABLE
+- **Notes:** Major town, but not walkable
+
+**Killington, VT (Mile ~1,700 via US-4)**
+- **Distance from Trail:** ~1-2 miles to Inn at Long Trail
+- **Services:** 🏨 🚿 🍔 🔌
+- **Lodging:** Inn at Long Trail (on trail), town further
+- **Resupply:** Limited at inn
+- **Notes:** Inn is walkable, full town requires ride
+
+**Hanover, NH (Mile ~1,747)**
+- **Distance from Trail:** ON TRAIL
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Motels, Dartmouth College area
+- **Resupply:** Co-op grocery, CVS, full services
+- **Notes:** Trail goes through Dartmouth campus, excellent town
+
+---
+
+### NEW HAMPSHIRE (Mile 1,790-1,905)
+
+**Glencliff, NH (Mile ~1,804 via NH-25)**
+- **Distance from Trail:** ~0.5 miles
+- **Services:** 🏨 🚿 🧺 🍔 🔌
+- **Lodging:** Hikers Welcome Hostel
+- **Resupply:** Very limited
+- **Notes:** Small, hostel-focused
+
+**Lincoln, NH / Woodstock, NH (Mile ~1,823 via NH-112)**
+- **Distance from Trail:** ~5-6 miles (hitch typically required)
+- **Services:** Full town - NOT WALKABLE
+- **Notes:** Last major resupply before Whites
+
+**Franconia Notch (Mile ~1,832)**
+- **Distance from Trail:** ON TRAIL
+- **Services:** 🍔 (limited, seasonal)
+- **Notes:** No lodging, just parking area
+
+**Crawford Notch (Mile ~1,869 via US-302)**
+- **Distance from Trail:** ON TRAIL
+- **Services:** 🏨 🍔 🔌
+- **Lodging:** Highland Center Lodge (AMC, expensive)
+- **Notes:** Limited services, AMC facility
+
+**Pinkham Notch (Mile ~1,888 via NH-16)**
+- **Distance from Trail:** ON TRAIL
+- **Services:** 🏨 🚿 🍔 🔌
+- **Lodging:** Joe Dodge Lodge (AMC, expensive)
+- **Resupply:** Very limited
+- **Notes:** AMC base, not a town
+
+**Gorham, NH (Mile ~1,898 via NH-16)**
+- **Distance from Trail:** ~1.5 miles
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Multiple hostels (Hiker's Paradise, Barn), motels
+- **Resupply:** Dollar General (1.2 mi), grocery, Shaw's
+- **Notes:** Major resupply after Whites, popular zero stop
+
+---
+
+### MAINE (Mile 1,905-2,197.9)
+
+**Andover, ME (Mile ~1,975 via ME-5)**
+- **Distance from Trail:** ~0.8 miles
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦
+- **Lodging:** Pine Ellis Hostel, Andover Arms
+- **Resupply:** Very small grocery
+- **Notes:** Small town, limited but walkable
+
+**Rangeley, ME (Mile ~2,001 via ME-4)**
+- **Distance from Trail:** ~9 miles (hitch required)
+- **Services:** Full town - NOT WALKABLE
+- **Notes:** Major resupply, but requires ride
+
+**Stratton, ME (Mile ~2,031 via ME-27)**
+- **Distance from Trail:** ~5 miles (hitch required)
+- **Services:** Full town - NOT WALKABLE
+- **Notes:** Last major resupply before 100-Mile Wilderness
+
+**Caratunk, ME (Mile ~2,013 via US-201)**
+- **Distance from Trail:** ~0.5 miles
+- **Services:** 🏨 🚿 🍔 🔌
+- **Lodging:** Hostel, limited options
+- **Resupply:** Very limited
+- **Notes:** Small, near Kennebec Ferry
+
+**Monson, ME (Mile ~2,078)**
+- **Distance from Trail:** ~0.5-1 mile
+- **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
+- **Lodging:** Shaw's Hostel, Lakeshore House, others
+- **Resupply:** Small grocery, Shaw's offers food drops
+- **Notes:** Gateway to 100-Mile Wilderness, last resupply
+
+**Millinocket, ME (Mile ~2,190 from Abol Bridge)**
+- **Distance from Trail:** ~15 miles (shuttle required)
+- **Services:** Full town - NOT WALKABLE
+- **Notes:** Closest town to Katahdin, post-finish celebration
+
+---
+
+### Summary: Truly Walkable Full-Service Towns
+
+These towns have ALL services (lodging, shower, laundry, food, charging, resupply) within reasonable walking distance (≤2 mi):
+
+1. **Hot Springs, NC** (Mile ~274) - ON TRAIL
+2. **Damascus, VA** (Mile ~469) - ON TRAIL
+3. **Pearisburg, VA** (Mile ~635) - 0.8 mi
+4. **Daleville, VA** (Mile ~729) - 0.5-1 mi
+5. **Waynesboro, VA** (Mile ~880) - 1-2 mi
+6. **Harpers Ferry, WV** (Mile ~1,024) - ON TRAIL
+7. **Duncannon, PA** (Mile ~1,149) - 0.5 mi
+8. **Delaware Water Gap, PA** (Mile ~1,298) - ON TRAIL
+9. **Dalton, MA** (Mile ~1,570) - ON TRAIL
+10. **Hanover, NH** (Mile ~1,747) - ON TRAIL
+11. **Gorham, NH** (Mile ~1,898) - 1.5 mi
+12. **Monson, ME** (Mile ~2,078) - 0.5-1 mi
+
+**These are your guaranteed walkable full-service stops.**
+
+
+
+---
+
+
+## Medical & Dental Access Points (NOBO)
+
+### GEORGIA + NORTH CAROLINA
+
+**Franklin, NC** — Mile ~110 (via Winding Stair Gap)
+- Distance: ~10 miles
+- Urgent Care: Walk-in clinics available
+- Dental: Emergency and general (same-day common)
+- *Excellent for infections, swelling, cracked teeth, joint injuries*
+
+**Hot Springs, NC** — Mile ~275
+- Trail passes directly through town
+- Urgent Care: Limited locally; Asheville (~35 miles) for serious issues
+- Dental: General dentistry only
+- *Minor issues only—anything serious requires Asheville*
+
+### TENNESSEE
+
+**Erwin / Johnson City, TN** — Mile ~342
+- Distance: 5–15 miles
+- Urgent Care: Multiple centers
+- Dental: Emergency clinics in Johnson City
+- *One of the strongest early-trail medical zones*
+
+### VIRGINIA
+
+**Damascus / Abingdon, VA** — Mile ~469
+- Damascus walkable; Abingdon ~15 miles
+- Urgent Care: Multiple clinics
+- Dental: Emergency and general
+- *Ideal location to fix problems before they escalate*
+
+**Daleville / Roanoke, VA** — Mile ~728
+- Distance: 1–6 miles (some walkable)
+- Urgent Care: Multiple facilities
+- Dental: Extensive emergency and general
+- **Top-tier medical/dental zone. Strongly recommended for unresolved issues.**
+
+**Waynesboro, VA** — Mile ~880
+- Distance: ~5 miles
+- Urgent Care: Augusta Health Urgent Care
+- Dental: Emergency and general available
+- *Last major fix-it stop before Shenandoah*
+
+**Front Royal, VA** — Mile ~999
+- Distance: ~5 miles
+- Urgent Care: Valley Health Urgent Care
+- Dental: Emergency clinics available
+- *Excellent care access before Mid-Atlantic terrain*
+
+### WEST VIRGINIA / MARYLAND
+
+**Harpers Ferry, WV** — Mile ~1,025
+- Distance: Walkable
+- Urgent Care: Available locally and in nearby Maryland
+- Dental: Emergency in Hagerstown, MD
+- Hospital: Meritus Medical Center (ER)
+- *Major hub with reliable transportation and care*
+
+### PENNSYLVANIA
+
+**Duncannon, PA** — Mile ~1,145
+- Distance: Walkable
+- Urgent Care: Regional (Harrisburg area)
+- Dental: Emergency in Harrisburg
+- *PA is hard on feet and joints—do not delay treatment*
+
+**Delaware Water Gap, PA** — Mile ~1,298
+- Distance: Walkable
+- Urgent Care: St. Luke's (East Stroudsburg)
+- Dental: Emergency clinics nearby
+- Hospital: St. Luke's Hospital — Monroe Campus
+- *Strong overlap of urgent care, dental, and hospital*
+
+### NEW YORK
+
+**Bear Mountain / Fort Montgomery, NY** — Mile ~1,410
+- Distance: ~3–5 miles
+- Urgent Care: Hudson Valley clinics
+- Dental: Emergency and general
+
+### MASSACHUSETTS
+
+**Great Barrington, MA** — Mile ~1,538
+- Distance: ~5 miles
+- Urgent Care: Fairview Hospital Walk-In Care
+- Dental: Emergency and general available
+
+**Dalton, MA** — Mile ~1,570
+- Distance: Walkable
+- Urgent Care: BMC Hillcrest (Pittsfield, ~10 miles)
+- Dental: General in town
+- *Last reliable access before Vermont*
+
+### VERMONT
+
+**Bennington, VT** — Mile ~1,600
+- Distance: ~5 miles
+- Urgent Care: Southwestern Vermont Medical Center
+- Hospital: Southwestern Vermont Medical Center
+- *First major medical hub in Vermont*
+
+**Killington, VT** — Mile ~1,700
+- Distance: ~5 miles
+- Urgent Care: Rutland Regional (~15 miles)
+- Dental: Emergency in Rutland
+- *Last significant access before the Whites*
+
+### NEW HAMPSHIRE
+
+**Hanover / Lebanon, NH** — Mile ~1,747
+- Distance: Walkable
+- Urgent Care: Dartmouth-Hitchcock Urgent Care
+- Dental: Emergency clinics available
+- Hospital: Dartmouth-Hitchcock Medical Center
+- **Critical stop before White Mountains. Fix everything here.**
+
+**Gorham, NH** — Mile ~1,898
+- Distance: ~2–3 miles
+- Urgent Care: Limited; Conway (~30 miles)
+- Dental: Very limited
+- *Do not ignore dental pain at this point*
+
+### MAINE
+
+**Andover, ME** — Mile ~1,975
+- Distance: ~1 mile
+- Urgent Care: Very limited; Rumford (~20 miles)
+- *Last minor services before Monson*
+
+**Monson, ME** — Mile ~2,077
+- Distance: Walkable
+- Urgent Care: Limited; Bangor (~90 miles)
+- **Enter the 100-Mile Wilderness with zero medical or dental issues.**
+
+**Millinocket, ME** — Mile ~2,183
+- Distance: ~15 miles
+- Urgent Care: Regional available
+- Dental: General available
+- Hospital: Katahdin Region Hospital
+- *Primary medical hub for final stretch*
+
+---
+
+## Laundry System
+
+### Core Reality
+
+You do NOT carry extra clothes. Laundry is done while you are still dressed and functional.
+
+### Standard Laundry Outfit
+
+- Smartwool long johns (bottom)
+- Xero Z-Trail sandals (camp shoes)
+- Rain jacket (puffy if cold)
+
+### Correct Laundry Order
+
+1. Enter town wearing hiking clothes
+2. Change into laundry outfit first
+3. Put all hiking clothes directly into washer
+4. Add detergent and start washer
+5. Shower while washer is running
+6. Put laundry outfit back on after shower
+7. Transfer clothes to dryer
+8. Dry fully (run twice if needed)
+9. Change into clean hiking clothes
+
+**Never shower first and then wear dirty clothes again.**
+
+---
+
+---
+
+
+
+# Daily Operations & Trail Life
+
+
+## Morning Routine & Breakdown
+
+### The 15-Minute Breakdown (Target Time)
+
+A consistent morning routine prevents forgotten gear, reduces decision fatigue, and gets you moving efficiently even on cold, unmotivated mornings.
+
+**Order matters. Follow this sequence every time.**
+
+### Step 1: Wake Up & Assess (2 minutes)
+
+- Check weather (iPhone or look outside)
+- Check body (pain, blisters, energy level)
+- Eat something immediately (Pop-Tart, bar, anything)
+- Drink 8-16 oz water
+
+**Rule:** Never break camp on an empty stomach.
+
+### Step 2: Pack Sleep System FIRST (3 minutes)
+
+**Critical:** Sleep system goes in pack liner before anything else touches it.
+
+1. Roll quilt from foot to head (pushes air out)
+2. Stuff into pack liner or dry bag
+3. Seal pack liner
+4. Add sleeping pad (outside liner, inside pack)
+
+**Why this order:** If it rains during breakdown, your sleep system is already protected.
+
+### Step 3: Change Into Hiking Clothes (2 minutes)
+
+**Inside the tent/shelter:**
+- Strip sleep layers
+- Put sleep top and pants directly into pack liner
+- Put on hiking layers (accept they may be damp)
+- Put on socks and shoes
+
+**Never pack damp hiking clothes from yesterday inside your pack liner.**
+
+### Step 4: Break Down Tent (5 minutes)
+
+**If dry:**
+1. Remove stakes (shake dirt off)
+2. Collapse poles
+3. Fold tent body
+4. Pack fly separately or wrapped around body
+5. Pack stakes and guylines
+
+**If wet:**
+1. Shake off excess water
+2. Wipe down with bandana if possible
+3. Pack tent wet (will dry during the day or in town)
+4. Put wet tent in outside pocket or top of pack
+
+**Rule:** Never wait for a wet tent to dry. You have miles to make.
+
+### Step 5: Final Sweep (3 minutes)
+
+**The STOP method:**
+- **S**can campsite 360° (look for dropped items)
+- **T**ouch all pockets (phone, InReach, filter, etc.)
+- **O**rganize food into hip belt pockets for easy access
+- **P**olice area (pack out all trash, even micro-trash)
+
+### Cold Morning Modifications
+
+**When temps are below 30°F:**
+- Sleep in next day's base layers to pre-warm them
+- Pack everything you can the night before
+- Keep gloves and Buff accessible
+- Eat and drink BEFORE breaking down tent (stay warm longer)
+- Use hand warmers if fingers lose dexterity
+
+### The One Non-Negotiable
+
+**Check for these 3 items before you walk away:**
+1. Phone
+2. InReach
+3. Water filter
+
+*Everything else can be replaced. Those three cannot.*
+
+---
+
+## Daily Hiking Rhythm & Pacing
+
+### The Sustainable Pace Framework
+
+**Goal:** Arrive in camp tired but functional, not destroyed.
+
+### The Talk Test (Primary Pace Monitor)
+
+- **Correct pace:** You can speak in full sentences without gasping
+- **Too fast:** Can only speak 3-4 words at a time
+- **Too slow:** Could easily carry on a conversation
+
+**Rule:** If you can't talk, you can't sustain the pace for 8 hours.
+
+### Break Strategy (The 50/10 Rule)
+
+**Standard rhythm:**
+- Hike 50 minutes
+- Break 10 minutes
+- Repeat
+
+**What to do on breaks:**
+1. Drop pack (take weight off immediately)
+2. Drink 8-16 oz water
+3. Eat something (bar, snack, trail mix)
+4. Check feet (hot spots = stop and tape NOW)
+5. Check weather and mileage
+
+**Break locations:**
+- Flat ground
+- Shade if hot
+- Shelter if available
+- NOT on steep climbs (rest at the top)
+
+### Eating While Hiking
+
+**Fuel strategy:** Eat something every 60-90 minutes minimum.
+
+**Easy hiking foods:**
+- Snickers (gold standard)
+- Bars (unwrapped, accessible)
+- Trail mix
+- Jerky
+- Pop-Tarts (half at a time)
+
+**Rule:** Calories = warmth = energy = miles. Never "save food for later."
+
+### Daily Mileage Reality Check
+
+| Terrain | Expected Pace |
+|---------|---------------|
+| Flat, smooth trail | 2.5-3 mph |
+| Rolling hills | 2 mph |
+| Steep climbs | 1-1.5 mph |
+| Rocky, rooty trail | 1.5 mph |
+| Maine terrain | 1 mph |
+
+**Example:**
+- 10 miles, flat: ~4 hours hiking + 1 hour breaks = 5 hours total
+- 10 miles, mountainous: ~6 hours hiking + 1.5 hours breaks = 7.5 hours total
+
+### When to Slow Down (Listen to These Signals)
+
+- Stumbling increases
+- Mind wanders excessively
+- Irritation rises
+- Feet hurt
+- Hunger is intense
+
+**Response:** Stop, eat, drink, assess. Do NOT push through.
+
+### When to Stop for the Day (Hard Stops)
+
+- 2 PM and good campsite available (take it)
+- Feet develop blisters (stop, treat, camp)
+- Weather deteriorating (camp early, don't gamble)
+- Injury that worsens with miles
+- Mental fog or confusion (sign of bonking or dehydration)
+
+**Rule:** Tomorrow's miles are cheaper than today's injury.
+
+---
+
+## Evening Setup Sequence
+
+### The 30-Minute Camp Setup (Target Time)
+
+A disciplined evening routine prevents cold, hunger, and poor sleep.
+
+### Step 1: Choose Campsite (Included in hiking time)
+
+**Site selection priority:**
+1. Flat, drains well
+2. Protected from wind
+3. Near water (but not TOO close)
+4. No widow makers (dead trees/branches overhead)
+5. Legal/designated if required
+
+**Rule:** If you hesitate, keep walking to the next option.
+
+### Step 2: Drop Pack & Assess (1 minute)
+
+- Set pack down
+- Scan campsite for hazards
+- Confirm water source location
+- Check weather (any changes?)
+
+### Step 3: Pitch Tent IMMEDIATELY (5 minutes)
+
+**Before doing anything else:**
+1. Lay out tent body
+2. Stake corners
+3. Insert poles
+4. Attach fly
+5. Guy out if windy
+6. Throw in sleeping pad and quilt (still in stuff sacks)
+
+**Why first:** If weather turns or you bonk, you have shelter.
+
+### Step 4: Get Water (5 minutes)
+
+- Take dirty bottles/bags
+- Walk to source
+- Filter immediately OR
+- Fill bottles and filter at camp
+
+**Camp or source filtering:**
+- Filter at source if safe and convenient
+- Filter at camp if source is sketchy or far
+
+**Rule:** Get water before dark. Always.
+
+### Step 5: Bear Hang or Food Storage (5 minutes)
+
+**Immediately after water:**
+- Identify hang tree or bear box
+- Execute bear hang (PCT method)
+- Or place in bear box
+- Do NOT delay this step
+
+**Why now:** Prevents "I'll do it after dinner" failure mode.
+
+### Step 6: Cook & Eat (10 minutes)
+
+**Cooking workflow:**
+1. Set up stove on flat, stable surface
+2. Boil water
+3. Add to meal
+4. Stir and cover (let sit 5-7 minutes)
+5. Eat immediately
+6. Clean pot/cup with small amount of water
+
+**Rule:** Eat even if not hungry. Your body needs fuel to recover.
+
+### Step 7: Evening Hygiene (4 minutes)
+
+- Brush teeth (away from camp)
+- Wipe down with wet wipes (face, pits, groin)
+- Apply any medications or treatments
+- Check feet for hot spots or blisters
+
+**All hygiene water and toothpaste 200 feet from camp and water.**
+
+### Step 8: Transition to Sleep Mode (5 minutes)
+
+1. Strip hiking clothes (wet or not)
+2. Hang or drape to air out
+3. Put on dry sleep layers
+4. Get into sleeping bag/quilt
+5. Put on puffy if cold
+6. Organize gear for morning (headlamp, phone accessible)
+
+**Rule:** Enter sleep mode by dark or within 30 minutes of stopping, whichever comes first.
+
+### Cold Evening Modifications
+
+**When temps drop below freezing:**
+- Set up tent in last available sun
+- Put tomorrow's filter, batteries, phone inside sleep system
+- Fill water bottles and take into tent
+- Cook inside vestibule if safe (never inside tent body)
+- Get into quilt earlier
+
+---
+
+## Zero Day Protocols
+
+### What a Zero Day Actually Is
+
+**Definition:** 24 hours without forward progress on the trail.
+
+**Purpose:** Physical recovery, gear maintenance, mental reset, resupply.
+
+**Not:** A day to sit around doing nothing.
+
+### The Zero Day Checklist
+
+### Physical Recovery (Priority #1)
+
+**Morning:**
+- Sleep in (8-10 hours minimum)
+- Eat huge breakfast (2-3x normal)
+- Assess injuries and pain points
+
+**Afternoon:**
+- Gentle stretching (hips, calves, feet, back)
+- Elevate feet for 30-60 minutes
+- Ice any hot spots or swelling (bags of ice from gas station)
+- Shower + full body inspection
+
+**Evening:**
+- Light walk (15-20 minutes, no pack)
+- Foam roll if available (tennis ball works)
+- Early bed (catch up on sleep debt)
+
+### Gear Maintenance (Priority #2)
+
+**Required tasks:**
+- Check all stakes and guylines (bent? missing?)
+- Inspect tent for tears or holes
+- Check sleeping pad for leaks (inflate and listen)
+- Examine shoes (tread wear, sole separation, upper tears)
+- Test water filter (flow rate normal?)
+- Clean stove and check fuel
+
+**Clothing check:**
+- Repair any tears with duct tape or needle/thread
+- Check zippers on jackets and pants
+- Inspect stitching on pack straps
+
+**Electronics:**
+- Charge everything to 100%
+- Clean phone screen and camera lens
+- Test inReach message send/receive
+- Check headlamp battery
+
+### Resupply (Priority #3)
+
+**Food:**
+- Calculate days to next resupply (add 1 buffer day)
+- Buy food for that many days
+- Repackage bulk items into daily amounts
+- Discard excess packaging
+
+**Consumables:**
+- Refill: wet wipes, TP, hand sanitizer, toothpaste
+- Restock: Leukotape, ibuprofen, bandaids
+- Evaluate: sunscreen, bug spray, lip balm
+
+### Nutrition Maximization
+
+**Zero-day eating strategy:**
+- Breakfast: Large, protein-heavy (eggs, bacon, pancakes)
+- Lunch: High-calorie (burger, pizza, whatever you want)
+- Dinner: Same as lunch
+- Snacks: Constant throughout day
+- Goal: 4,000-5,000 calories minimum
+
+**Rule:** If you're not slightly uncomfortable, you didn't eat enough.
+
+### Mental Reset (Often Forgotten)
+
+**Activities that actually help:**
+- Call family/friends (voice, not just text)
+- Journal about the last section
+- Review upcoming section in guidebook
+- Watch something funny (not trail content)
+- Read something non-trail related
+
+**Activities that don't help:**
+- Doomscrolling social media
+- Watching other hikers' content (breeds comparison)
+- Obsessing over gear or mileage
+- Planning too far ahead
+
+### Common Zero Day Mistakes
+
+❌ Sleeping all day (recover actively, not passively)
+❌ Eating only one huge meal (spread calories across day)
+❌ Skipping gear maintenance (small problems become hike-enders)
+❌ Staying in town too long (momentum is real)
+❌ Partying/drinking heavily (recovery requires actual recovery)
+
+### The 24-Hour Rule
+
+**By hour 24 of your zero:**
+- Body should feel ~70% recovered
+- Gear should be clean and functional
+- Food bag should be full
+- Mind should be ready to hike
+
+**If you're not there, consider a second zero.** But if you're still not there after 48 hours, the problem isn't physical.
+
+---
+
+## 🏘️ PREFERRED ZERO-DAY TOWNS: Strategic Rest Stop Planning
+
+**Zero-day strategy: Every 5-7 hiking days = 1 full rest day in town**
+
+### ✅ **TIER 1 ZERO TOWNS** (Best Full-Service Options)
+
+These towns have EVERYTHING: lodging, laundry, grocery, restaurants, gear shop, easy trail access.
+
+**GEORGIA:**
+- **Hiawassee, GA** (Mile ~70) - Full services, hiker-friendly, good resupply
+
+**NORTH CAROLINA / TENNESSEE:**
+- **Hot Springs, NC** (Mile ~274) - Walkable, laundry, hostel, grocery
+- **Damascus, VA** (Mile ~469) - *"Trail Town USA"* - MAJOR zero town, full services, gear shop
+
+**VIRGINIA:**
+- **Waynesboro, VA** (Mile ~945) - Full services, good restaurants, near Shenandoah
+
+**MID-ATLANTIC:**
+- **Harpers Ferry, WV** (Mile ~1,024) - ATC HQ, historic town, full services
+- **Duncannon, PA** (Mile ~1,149) - Doyle Hotel (legendary), laundry, resupply
+
+**NEW ENGLAND:**
+- **Bennington, VT** (Mile ~1,568) - Larger town, full services, 5-mile hitch
+- **Hanover, NH** (Mile ~1,725) - College town, excellent services, walkable
+- **Monson, ME** (Mile ~2,093) - LAST TOWN before 100-Mile Wilderness, mandatory zero
+
+---
+
+### ⚠️ **TIER 2 ZERO TOWNS** (Good Options, Minor Limitations)
+
+Good for zeros but may lack one service (no gear shop, longer hitch, limited lodging).
+
+**GEORGIA / NORTH CAROLINA:**
+- Franklin, NC (Mile ~114) - Full services but 10-mile hitch
+- Fontana Dam / Fontana Village (Mile ~166) - Resort, pricey, limited grocery
+
+**VIRGINIA:**
+- Pearisburg, VA (Mile ~635) - Good services, walkable
+- Daleville, VA (Mile ~730) - Near Roanoke, good resupply
+
+**MID-ATLANTIC:**
+- Port Clinton, PA (Mile ~1,226) - Small but hiker-friendly
+- Delaware Water Gap, PA (Mile ~1,290) - Walkable, good food
+
+**NEW ENGLAND:**
+- Glencliff, NH (Mile ~1,745) - Small, entering Whites, last easy zero before AMC huts
+- Gorham, NH (Mile ~1,796) - White Mountains hub, full services
+
+---
+
+### 🛑 **MANDATORY ZERO LOCATIONS**
+
+**These zeros are REQUIRED for logistics, not optional:**
+
+1. **Damascus, VA (Mile ~469)** - Gear transition (pack swap, sleep system swap). Plan 1-2 days here.
+2. **Monson, ME (Mile ~2,093)** - Final resupply before 100-Mile Wilderness. Buy 8-9 days of food. Plan 1 full day.
+3. **Harpers Ferry, WV (Mile ~1,024)** - Register at ATC HQ, psychological halfway point. Even if just a nero.
+
+---
+
+### 📅 **SAMPLE ZERO-DAY SCHEDULE** (Based on Your Pace)
+
+| Hiking Days | Miles Hiked | Zero Town | Mile Marker |
+|-------------|-------------|-----------|-------------|
+| Days 1-7 | 0-70 | Hiawassee, GA | ~70 |
+| Days 8-14 | 70-140 | Franklin, NC (optional) | ~114 |
+| Days 15-28 | 140-274 | **Hot Springs, NC** | ~274 |
+| Days 29-42 | 274-469 | **Damascus, VA** (2 days) | ~469 |
+| Days 43-54 | 469-635 | Pearisburg, VA | ~635 |
+| Days 55-68 | 635-825 | Daleville, VA | ~730 |
+| Days 69-81 | 825-1,024 | **Harpers Ferry, WV** | ~1,024 |
+| Days 82-93 | 1,024-1,226 | Port Clinton or Duncannon | ~1,149-1,226 |
+| Days 94-112 | 1,226-1,568 | Bennington, VT | ~1,568 |
+| Days 113-125 | 1,568-1,725 | **Hanover, NH** | ~1,725 |
+| Days 126-138 | 1,725-1,900 | Gorham, NH | ~1,796 |
+| Days 139-154 | 1,900-2,093 | **Monson, ME** | ~2,093 |
+| Days 155-164 | 2,093-2,197 | 100-Mile Wilderness (no zero) | --- |
+
+**Flexibility Note:** This is a framework, not a mandate. Listen to your body. If you need a zero earlier, take it.
+
+---
+
+## Physical Maintenance
+
+### Daily Foot Care (Non-Negotiable)
+
+**Every single day, without exception:**
+
+### Morning Foot Check (Before Hiking)
+
+1. Inspect both feet visually
+2. Check between toes (moisture, fungus)
+3. Apply Leukotape to known hot spots BEFORE they hurt
+4. Put on clean, dry socks (or least-damp pair)
+
+**Pre-taping locations:**
+- Back of heels
+- Ball of foot
+- Between toes (if prone to blisters)
+
+### During-Hike Foot Monitoring
+
+**STOP immediately if you feel:**
+- Hot spot developing
+- Rubbing or friction
+- Burning sensation
+- Toe pain
+
+**Response:**
+1. Remove shoe and sock
+2. Identify problem area
+3. Apply Leukotape over problem spot
+4. Apply benzoin if available (better adhesion)
+5. Put sock back on
+6. Continue hiking
+
+**Rule:** 2 minutes of taping now saves 2 days of misery later.
+
+### Evening Foot Care
+
+1. Remove shoes and socks as soon as you stop
+2. Air feet out for 15-30 minutes
+3. Wipe with wet wipe or rinse in stream
+4. Dry thoroughly (especially between toes)
+5. Apply foot powder or anti-fungal if needed
+6. Put on dry sleep socks
+7. Elevate feet while cooking/eating
+
+### Blister Management (If Prevention Fails)
+
+**Small blister (< dime size):**
+- Leave intact if possible
+- Tape over with Leukotape
+- Monitor daily
+
+**Large blister (> dime size):**
+1. Sterilize needle with lighter
+2. Puncture at edge (not center)
+3. Drain fluid
+4. Do NOT remove skin
+5. Apply antibiotic ointment
+6. Cover with non-stick gauze
+7. Tape over with Leukotape
+
+**Infected blister (red, hot, pus):**
+- Do NOT pop
+- See medical professional immediately
+- This can end your hike
+
+### Joint & Tendon Care
+
+**Daily maintenance:**
+
+**Knees:**
+- Wear brace during downhills (you already have this)
+- Use trekking poles to reduce impact
+- Ice at night if swollen (cold stream water works)
+- Ibuprofen if inflamed (follow dosing limits)
+
+**Ankles:**
+- Gentle ankle circles morning and evening
+- Compression socks if swelling occurs
+- Elevate in camp
+
+**Hips:**
+- Hip flexor stretches nightly
+- Pigeon pose if comfortable
+- Loosen hip belt during breaks
+
+### Stretching Routine (10 minutes, every evening)
+
+**Post-hike stretches (hold each 30-60 seconds):**
+
+1. **Calf stretch:** Step forward, back leg straight, lean into it
+2. **Quad stretch:** Grab foot behind you, pull to butt
+3. **Hip flexor:** Lunge position, push hips forward
+4. **Hamstring:** Sit, legs straight, reach for toes
+5. **IT band:** Cross legs, lean to side
+6. **Lower back:** Knees to chest, gentle rock
+
+**Rule:** Stretch AFTER hiking, never before (cold muscles tear easily).
+
+### Pain Management Philosophy
+
+**Acceptable pain:**
+- General muscle soreness
+- Mild joint achiness
+- Tired, heavy legs
+
+**Unacceptable pain:**
+- Sharp, stabbing sensations
+- Pain that worsens with every step
+- Pain that doesn't improve overnight
+- Pain that alters your gait
+
+**Response to unacceptable pain:**
+1. Stop immediately
+2. Ice if possible
+3. Take ibuprofen
+4. Evaluate: Can this heal while hiking?
+5. If no: Take zero day or see medical professional
+
+**Rule:** Limping to save mileage creates injuries that end hikes.
+
+---
+
+## Trail Culture & Etiquette
+
+### The Unwritten Rules
+
+Trail culture has evolved over decades. Following these norms prevents conflict and builds community.
+
+### Passing Faster Hikers
+
+**When someone overtakes you:**
+- Step aside at the next wide spot
+- Let them pass without making them ask
+- Brief greeting is fine, don't force conversation
+
+**When you overtake someone:**
+- Announce "Hiker coming up behind you"
+- Wait for them to step aside
+- Say "Thanks" as you pass
+- Don't judge their pace
+
+**Rule:** Uphill hiker has right of way (they're working harder).
+
+### Shelter Etiquette
+
+**Arrival:**
+- Greet others already there
+- Choose sleeping spot away from others if possible
+- Don't spread gear everywhere (keep it contained)
+- Hang food immediately
+
+**Conversation:**
+- Respect quiet hours (typically after 9 PM)
+- Ask before playing music (even with headphones leaking)
+- Don't force conversation on others
+- No phone calls on speaker (step away from shelter)
+
+**Morning:**
+- Pack quietly if others are sleeping
+- Leave shelter area cleaner than you found it
+- Don't wake others by accident
+
+**Snoring:**
+- Earplugs are YOUR responsibility, not theirs
+- Everyone snores sometimes
+- Don't complain about it
+
+### Trail Magic Etiquette
+
+**Trail magic:** Unexpected help/food/drinks from non-hikers
+
+**When you encounter trail magic:**
+- Say thank you (enthusiastically)
+- Take only your fair share
+- Don't linger if others are waiting
+- Offer to help clean up
+- NEVER expect trail magic
+
+**What NOT to do:**
+- Complain about what's offered
+- Take extras "for later"
+- Leave trash behind
+- Ask for rides or favors
+
+### Trail Names
+
+**How trail names happen:**
+- Someone gives you one based on something you did/said
+- You don't choose your own (that's the point)
+- It sticks if it's good, fades if it's forced
+
+**Using trail names:**
+- Introduce yourself by real name first time
+- Adopt trail name if one emerges organically
+- Don't force it or make one up for yourself
+- Don't be offended if you never get one
+
+### Hiker Boxes
+
+**What they are:** Free-for-all boxes of abandoned gear/food in hostels and outfitters
+
+**Hiker box etiquette:**
+- Take what you need
+- Leave what you don't need
+- Don't take just to resell
+- Don't dump trash in hiker boxes
+
+**Good hiker box items:**
+- Unopened food you won't eat
+- Working gear that doesn't fit you
+- Extra fuel canisters
+
+**Bad hiker box items:**
+- Opened/partial food
+- Broken gear
+- Trash
+
+### Town Behavior
+
+**In hiker-friendly towns:**
+- Respect the locals (they tolerate thousands of hikers)
+- Don't loiter or panhandle
+- Clean up after yourself in restaurants
+- Tip service workers well (they deal with dirty hikers all day)
+- Don't bring your full pack into small shops
+
+### The "Code"
+
+**Unspoken agreements most thru-hikers follow:**
+- Help other hikers in need
+- Share trail intel (water sources, hazards)
+- Leave no trace (always)
+- Don't be a mile-braggart
+- Celebrate others' successes
+
+**What breaks the code:**
+- Littering (instant pariah status)
+- Being loud/obnoxious in shelters
+- Taking more than your share
+- Lying about your mileage or experience
+- Drama and negativity
+
+---
+
+## Navigation & Trail Finding
+
+### Reading White Blazes
+
+**The AT is marked with white paint blazes:**
+- 2" x 6" vertical rectangles
+- Painted on trees, rocks, posts
+- Typically every 50-100 yards
+
+### Blaze Types & Meanings
+
+| Blaze Pattern | Meaning |
+|---------------|---------|
+| Single white blaze | Trail continues straight |
+| Double white blaze (stacked) | Turn or important change coming |
+| Double blaze (offset right) | Turn right ahead |
+| Double blaze (offset left) | Turn left ahead |
+| Blue blaze | Side trail (water, shelter, viewpoint) |
+| Yellow blaze | Road or alternate route |
+
+### When You Lose the Trail
+
+**If you haven't seen a blaze in 5 minutes:**
+
+1. **STOP immediately** (don't keep going)
+2. Look back the way you came (see the last blaze?)
+3. Mark your current location (mentally or drop pack)
+4. Search in a 30-foot radius
+5. If no blaze found, backtrack to last confirmed blaze
+6. Re-read the terrain (did you miss a turn?)
+
+**Rule:** Going forward when lost makes you more lost.
+
+### Common Places to Lose the Trail
+
+- Road crossings (look for blazes on both sides)
+- Stream crossings (blazes may be on far side)
+- Open fields or balds (look for rock cairns)
+- Dense forest after snowfall (blazes covered)
+- Logging roads or old woods roads (many intersections)
+
+### FarOut App Usage
+
+**FarOut is your trail brain:** Real-time comments from hikers ahead of you.
+
+### How to Use FarOut Effectively
+
+**Daily use:**
+- Check comments for next 10 miles each morning
+- Look for: water reports, shelter status, hazards, trail conditions
+- Filter comments by date (last 7 days most relevant)
+
+**What to look for:**
+- "Water source at mile X is dry"
+- "Trail rerouted at mile Y"
+- "Shelter full, camp elsewhere"
+- "Ice on rocks at Z summit"
+
+**Contributing to FarOut:**
+- Report water status (flowing, dry, sketchy)
+- Report hazards (downed trees, washouts, wildlife)
+- Update shelter conditions
+- Keep it factual (not social media)
+
+### GPS Coordinates (Backup Navigation)
+
+Your iPhone and inReach both have GPS:
+
+**How to use:**
+1. Screenshot FarOut map sections before hiking
+2. Phone will show your location even without service
+3. Cross-reference with paper maps if confused
+
+**Emergency use:**
+- If completely lost, get GPS coordinates
+- Share with emergency services if needed
+- Coordinates work even without cell service
+
+### Night Hiking (When Necessary)
+
+**When you might night hike:**
+- Running late to shelter
+- Heat forces evening hiking
+- Emergency situation
+
+**Night hiking rules:**
+1. Slow down to 1 mph maximum
+2. Use headlamp on high beam
+3. Watch for blazes more carefully (easy to miss)
+4. Listen for streams/roads (auditory navigation)
+5. Don't rush (injuries spike at night)
+
+**Rule:** Avoid night hiking if possible. It's dangerous and exhausting.
+
+---
+
+## Gear Maintenance & Field Repairs
+
+### Tent Repairs
+
+**Small tear in tent body (< 1 inch):**
+1. Clean area with wet wipe
+2. Dry completely
+3. Apply Tenacious Tape or Duct Tape (both sides if possible)
+4. Press firmly and smooth out bubbles
+
+**Torn guy line or shock cord:**
+1. Cut damaged section
+2. Tie back together with overhand bend knot
+3. Or replace with paracord section
+
+**Broken tent stake:**
+- Replace with stick if needed
+- Trade at hiker box in next town
+- Buy replacements at outfitter
+
+**Broken tent pole:**
+1. Use pole repair sleeve (if you carry one)
+2. Or wrap with duct tape
+3. Or splint with tent stake and tape
+4. Order replacement section in town
+
+### Sleeping Pad Repairs
+
+**Finding the leak:**
+1. Inflate pad fully
+2. Submerge in water (stream, bathtub)
+3. Look for bubbles
+4. Mark leak location with marker
+
+**Patching:**
+1. Deflate pad
+2. Dry area completely
+3. Apply patch from repair kit
+4. Press firmly for 30 seconds
+5. Wait 15 minutes before inflating
+
+**No patch kit:**
+- Duct tape works temporarily
+- Sleep on clothes to add insulation
+- Replace pad in next town
+
+### Pack Repairs
+
+**Torn pack body:**
+- Duct tape both sides
+- Sew if you have needle/thread
+- Replace in town if structural
+
+**Broken hip belt buckle:**
+- Tie with paracord temporarily
+- Buy replacement buckle at outfitter
+- Most common pack failure
+
+**Strap slider failure:**
+- Knot strap to hold temporarily
+- Replace slider at outfitter
+- Duct tape backup
+
+### Shoe Failures
+
+**Sole delamination (sole separating from upper):**
+1. Clean both surfaces
+2. Apply Shoe Goo or Gorilla Glue
+3. Clamp with duct tape wrap
+4. Let dry 24 hours
+5. This is temporary - replace shoes
+
+**Lace breakage:**
+- Replace with paracord temporarily
+- Buy new laces at outfitter or gear shop
+
+**Upper tear:**
+- Duct tape patch
+- Replace shoes in town
+- Tears usually indicate end of shoe life
+
+### Clothing Repairs
+
+**Zipper failure:**
+- Try pulling slider closed with pliers
+- Rub pencil graphite on zipper (lubrication)
+- Safety pin garment closed if zipper is dead
+- Replace in town
+
+**Seam tear:**
+- Hand sew with needle/thread (carry in first aid kit)
+- Or use Tenacious Tape over tear
+- Reinforce high-stress areas preventatively
+
+**Rain jacket delamination:**
+- No field fix exists
+- Use as wind layer only
+- Replace in town
+
+### Stove Issues
+
+**Stove won't light:**
+- Check fuel level
+- Clean burner with toothpick or needle
+- Verify canister connection is tight
+- Try different canister (old one may be defective)
+
+**Weak flame:**
+- Fuel canister may be too cold (warm with hands)
+- Blocked burner (clean with wire or needle)
+- Low fuel (switch to fresh canister)
+
+### Water Filter Problems
+
+**Slow flow:**
+- Backflush filter (reverse flow method)
+- Clean pre-filter screen
+- If still slow, filter may be clogged/damaged
+- Use backup chemical treatment
+
+**Filter frozen:**
+- Filter is likely destroyed internally
+- Switch to backup tablets immediately
+- Replace filter in next town
+
+### Field Repair Kit (What to Carry)
+
+**Minimal kit (4-6 oz):**
+- Duct tape (wrapped on trekking pole)
+- Tenacious Tape (small patch)
+- Needle and thread
+- Safety pins (2-3)
+- Zip ties (2-3)
+- Small lighter (for melting cord ends)
+
+**Optional additions:**
+- Spare tent stake
+- Pole repair sleeve
+- Gorilla Glue single-use packet
+- Sleeping pad patch kit
+
+---
+
+## Common Problems & Solutions
+
+### "I Can't Wake Up"
+
+**Causes:**
+- Sleep debt accumulation
+- Insufficient calories
+- Overtraining (too many miles, not enough rest)
+
+**Solutions:**
+- Take an unplanned zero immediately
+- Sleep 10-12 hours
+- Eat 4,000+ calories
+- Reduce daily mileage by 20%
+
+### "My Feet Hurt Every Morning"
+
+**Causes:**
+- Shoes too small (feet swell over time)
+- Shoes worn out (no support left)
+- Insufficient foot care
+
+**Solutions:**
+- Size up half size or full size
+- Replace shoes if > 500 miles
+- Ice feet every evening
+- Elevate feet in camp
+- Take ibuprofen before bed
+
+### "I'm Always Hungry"
+
+**Cause:** You're not carrying enough food (classic thru-hiker error).
+
+**Solution:**
+- Increase daily food carry by 25%
+- Add calorie-dense items (nut butter, oils, candy)
+- Eat constantly, not just at meals
+- Town-stop more frequently
+
+### "I'm Lonely / Homesick"
+
+**Normal at these points:**
+- Week 2-3 (initial enthusiasm fades)
+- After big towns or rest
+- Bad weather stretches
+
+**Solutions:**
+- Call someone from home (don't just text)
+- Take a nero day instead of pushing
+- Camp near other hikers
+- Remember why you started
+- Journal about what you're grateful for
+
+**Not normal:**
+- Persistent, doesn't improve after zero
+- Physical symptoms (chest pain, can't eat)
+- Thoughts of self-harm
+
+**If not normal:** Get off trail, talk to someone, take care of yourself. The trail will wait.
+
+### "I Lost Motivation"
+
+**Common at:**
+- Pennsylvania rocks
+- Mid-Virginia (endless)
+- Before the Whites (intimidation)
+
+**Solutions:**
+- Break hike into smaller goals (next town, not Katahdin)
+- Change something (camp earlier, sleep later, skip shelter)
+- Take an unscheduled zero
+- Reconnect with trail friends
+- Remember: This is temporary. Keep moving.
+
+### "Everyone is Faster Than Me"
+
+**Reality check:** You only see fast hikers because they pass you. Slower hikers are behind you (you never see them).
+
+**Solutions:**
+- Stop comparing (hike YOUR hike)
+- Focus on finish, not speed
+- Remember: 80% of starters quit. Finishing is the goal.
+
+### "My Gear is Falling Apart"
+
+**Normal gear lifespan:**
+- Shoes: 400-600 miles (expect 3-4 pairs)
+- Socks: 200-300 miles
+- Tent: 1,000+ miles (should finish hike)
+- Pack: 2,000+ miles (should finish hike)
+- Rain jacket: 500-1,000 miles
+
+**Solutions:**
+- Budget for gear replacement
+- Don't baby gear (it's meant to be used)
+- Replace before catastrophic failure
+
+### "I Got Behind Schedule"
+
+**Cause:** Injuries, weather, zeros, slower pace than planned.
+
+**Solutions:**
+- Recalculate finish date realistically
+- Adjust daily mileage goals
+- Skip planned zeros if weather is good
+- Remember: Flexible finish dates prevent rushing and injury
+
+---
+
+## Mental Game & Motivation
+
+### The Stages of a Thru-Hike
+
+**Week 1-2: Honeymoon Phase**
+- Everything is exciting
+- Enthusiasm is high
+- Pain is novel, not chronic
+- Danger: Overconfidence, overtraining
+
+**Week 3-5: The Grind Begins**
+- Body aches constantly
+- Routine becomes boring
+- Weather challenges accumulate
+- Danger: Quitting from discouragement
+
+**Month 2-3: Trail Legs Arrive**
+- Body adapts
+- Hiking feels easier
+- Community forms
+- Danger: Complacency, injury from overconfidence
+
+**Month 4-5: The Long Middle**
+- Miles blur together
+- Katahdin still seems far
+- Motivation fluctuates
+- Danger: Quitting from monotony
+
+**Final Month: The Push**
+- Katahdin feels real
+- Energy returns
+- Urgency builds
+- Danger: Injury from rushing, weather risk
+
+### Reasons People Quit (And How to Prevent)
+
+**#1: Injury**
+- Prevention: Listen to pain early, take zeros, don't push through
+- Response: Rest, recover, or accept trail might wait until next year
+
+**#2: Money**
+- Prevention: Budget realistically (you did this)
+- Response: Find work-for-stay, skip hostels, resupply cheaper
+
+**#3: Loneliness**
+- Prevention: Camp near others, engage in trail community
+- Response: Call home, take nero near other hikers, remember the goal
+
+**#4: Weather**
+- Prevention: Start prepared (you did this)
+- Response: Wait it out, adjust schedule, remember it's temporary
+
+**#5: "It's Not What I Expected"**
+- Prevention: Research (you did this too)
+- Response: Adjust expectations, focus on what IS good
+
+### The Mental Toolkit
+
+**Daily affirmations that work:**
+- "I can do hard things"
+- "Slow progress is still progress"
+- "This pain is temporary"
+- "I've handled worse"
+- "Forward is the only way out"
+
+**When to use:**
+- Mornings when motivation is low
+- Climbs that feel impossible
+- Rain days that test patience
+- When comparing yourself to others
+
+### Trail Mantras from Successful Hikers
+
+- "Embrace the suck"
+- "Hike your own hike"
+- "The trail provides"
+- "It's supposed to be hard"
+- "Pain is temporary, quitting is forever"
+
+### The Decision Framework
+
+**When debating whether to continue:**
+
+Ask these three questions:
+1. Is my body safe to continue? (Injury vs. discomfort)
+2. Am I experiencing temporary hardship or chronic misery?
+3. If I quit now, will I regret it in 6 months?
+
+**If answers are:**
+- Yes, temporary, yes → Keep hiking
+- No, chronic, no → Stopping might be right
+
+**Remember:** Stopping isn't failure. Finishing injured is failure.
+
+---
+
+## The Daily Contract
+
+At the end of every day, ask yourself these questions:
+
+1. Did I eat enough? (Honest answer)
+2. Did I drink enough water?
+3. Did I take care of my feet?
+4. Am I in worse shape than yesterday, or recovering?
+5. Did I enjoy at least one moment today?
+
+**If you answer yes to 4 out of 5:** You're on track to finish.
+
+**If you answer no to 3 or more:** Adjust immediately. Tomorrow will be worse if you don't.
+
+---
+
+*This part covers what happens between shelter and town, between sunrise and sunset. These are the hours that define your hike.*
+
+*The planning is done. The gear is chosen. Now it's about execution, adaptation, and staying patient enough to reach Katahdin.*
+
+**See you on the summit.**
+
+---
+
+## ⚠️ 2026 HELENE ADDENDUM — CRITICAL TRAIL UPDATES
+
+**Hurricane Helene (September 2024) caused significant infrastructure damage in North Carolina and Tennessee. Trail conditions differ from pre-2024 guidebooks.**
+
+### **Known Changes for 2026 NOBOs:**
+
+**1. Nolichucky River Crossing (TN/NC Border - Mile ~350)**
+- **Status:** No planned 2026 ferry service (2025 service ended; bridge rebuild starts 2026)
+- **Solution:** 3.6-mile road walk OR shuttle
+- **Impact:** Plan logistics in Erwin, TN before this section
+- **Updates:** Check ATC website and FarOut comments for current status
+
+**2. Iron Mountain Gap Area (Near Roan Highlands - Mile ~360-365)**
+- **Status:** ~6-mile detour likely active through early 2026
+- **Possible reopening:** Fall 2025; confirm status via ATC alert before section
+- **Check:** ATC trail updates before reaching this section
+- **Note:** Adds mileage to daily plans in this area
+
+**3. General Trail Conditions (Georgia → Virginia)**
+- **Water sources:** Southern water sources and tread may differ from pre-2024 data
+- **Strategy:** Rely on recent FarOut comments (2025-2026) over older guidebook data
+- **Campsites:** Some established sites may have changed; verify current conditions
+
+### **Action Items:**
+- ✅ Check ATC.org trail updates monthly before your start
+- ✅ Download latest FarOut updates before each town stop
+- ✅ Ask NOBOs you meet about recent conditions ahead
+- ✅ Build flexibility into daily mileage plans (detours add miles)
+
+**This addendum reflects conditions as of January 2025. Trail restoration is ongoing.**
+
+---
+
+---
+
+
+
+# Safety & Emergency Procedures
+
+
+## Core Principle
+
+**Act early.** Most trail emergencies are not sudden disasters—they are delayed decisions.
+
+## Rapid Weather Change Recognition
+
+### Visual Warning Signs
+- Dark clouds moving quickly, especially low and rolling
+- Clouds dropping into ridges or saddles
+- White haze forming on ridgelines
+- Sudden loss of visibility
+- Fast temperature drop over minutes
+
+### Wind-Based Warnings
+- Sudden wind direction change
+- Rapid increase in wind speed
+- Wind funneling hard through gaps or saddles
+
+### Sound & Sensory Warnings
+- Any thunder (even distant)
+- Metallic or sharp smell in the air
+- Tingling, buzzing, or hair standing up
+
+**Lightning protocol immediately. Get off ridges and summits.**
+
+## Hypothermia Indicators
+
+**Shelter or bail immediately if:**
+
+- Wet + cold + wind present
+- Hands stop working normally
+- Violent shivering OR shivering stops
+- Slurred speech or slowed thinking
+- Loss of coordination
+
+## Terrain-Based Abort Signals
+
+**Turn around if:**
+
+- Ice on rocks or roots
+- Snow covering trail tread
+- Fast-rising streams after rain
+- Slips increasing in frequency
+
+## Emergency Exit Strategy
+
+### Emergency Call Priority
+
+1. **Call 911 FIRST** — Always the primary emergency number for life, limb, or weather danger
+2. National Park Service dispatch: 1-866-677-6677 — For non-emergency follow-up or coordination within NPS lands (Smokies, Shenandoah)
+3. If no service: 3 short whistle blasts, repeat
+
+*Note: 911 dispatchers can coordinate with local SAR teams. The NPS number is supplementary, not a replacement for 911.*
+
+### Emergency Location Script
+
+**Use this verbatim when calling:**
+
+```
+'I am on the Appalachian Trail.'
+'State: [STATE]'
+'Nearest named point: [ROAD/SHELTER/LANDMARK]'
+'I am hiking northbound.'
+'Approximate mile marker: [MILE]'
+'GPS coordinates: [LAT/LONG]'
+'Can I walk: Yes/No/Limited'
+'Nature of problem: [ISSUE]'
+```
+
+## InReach Bail-Out Method
+
+### Primary Method: Relay Through Logistics Contact
+
+Message a trusted person at home. They:
+- Call hostels
+- Call shuttle drivers
+- Coordinate rides
+- Message instructions back to you
+
+### Example Message
+
+```
+'Bad weather. Need off-trail help. I'm near AT mile 725 (McAfee Knob area).'
+```
+
+### When to Press SOS
+
+- Injury prevents movement
+- Hypothermia risk is real
+- Flooding traps you
+- You are lost and disoriented
+- Self-rescue is no longer possible
+
+---
+
+## 📡 EMERGENCY CONTACT PROTOCOL: Using Your Garmin InReach Effectively
+
+### **DAILY CHECK-IN SYSTEM**
+
+**Your Home Contact:** 
+- Name: ______________________
+- Phone: ______________________
+- Email: ______________________
+
+**Daily Protocol:**
+- ✅ Send check-in message by 7 PM every day (even if brief)
+- ✅ Include: Location (shelter name or mile marker), status (good/tired/sore), plan for next day
+- ✅ Example: "Mile 327, Hot Springs tonight, all good, headed to Damascus next"
+
+**If You Miss Check-In:**
+- Home contact waits until 9 PM
+- If no message by 9 PM, you send: "Delayed but safe, checking in tomorrow"
+- If NO contact for 24 hours → home contact calls local ranger station
+
+---
+
+### 🚨 **SOS BUTTON: When to Press It**
+
+**PRESS SOS FOR:**
+- ❌ Life-threatening injury (can't move, severe bleeding, head trauma)
+- ❌ Medical emergency (chest pain, severe allergic reaction, hypothermia)
+- ❌ Immobilized (broken bone, can't walk)
+- ❌ Lost + no way to navigate (rare with GPS, but possible in whiteout)
+
+**DO NOT PRESS SOS FOR:**
+- ✅ Blisters, sore muscles, fatigue
+- ✅ Running low on food (you can always bail to a road)
+- ✅ Bad weather (unless GO/NO-GO says bail)
+- ✅ Feeling lonely or scared (use regular messaging)
+
+**What Happens When You Press SOS:**
+- GEOS (rescue coordination) receives alert with your GPS coordinates
+- They contact you via InReach to assess situation
+- They dispatch rescue (helicopter, ranger, SAR team) if needed
+- **Cost:** Rescue can cost $10,000+ if not life-threatening
+
+**Before Pressing SOS, Ask:**
+1. Can I self-rescue? (hike out, treat injury myself)
+2. Can I contact a friend/shuttle for pickup?
+3. Is this TRULY life-threatening?
+
+---
+
+### 💬 **MESSAGING PROTOCOL**
+
+**Types of Messages:**
+
+**1. Daily Check-In (Every Day by 7 PM):**
+- "Mile 327, Hot Springs, all good"
+- "Neels Gap, taking zero, knee sore but okay"
+
+**2. Itinerary Update (When Plans Change):**
+- "Staying extra day in Damascus for gear swap"
+- "Skipping Franklin, heading straight to Hot Springs"
+
+**3. Weather Delay:**
+- "Bailing to shelter, wind too high for ridge"
+- "Zero day due to ice storm, safe in town"
+
+**4. Injury/Issue (Non-Emergency):**
+- "Knee pain, taking nero tomorrow, will update"
+- "Blisters, hiking slow, still on track"
+
+**5. Emergency (Before SOS):**
+- "Injured but stable, need shuttle pickup at [road crossing]"
+- "Sick, hiking out to nearest town, will call"
+
+---
+
+### 📞 **ESCALATION PLAN**
+
+**Level 1: You're In Control**
+- Minor issue (blister, fatigue, weather delay)
+- You message home contact with update
+- You continue hiking or take nero/zero
+- Home contact does nothing unless you ask
+
+**Level 2: You Need Help But Not Rescue**
+- Injury that requires town visit (bad blister, knee pain)
+- You message home contact: "Need shuttle pickup at [location]"
+- Home contact arranges shuttle or advises on options
+- You hike to pickup point
+
+**Level 3: You Need Rescue**
+- Can't move, severe injury, medical emergency
+- You press SOS button
+- GEOS coordinates rescue
+- You message home contact: "Pressed SOS, [brief description]"
+- Home contact monitors situation, stays in touch with GEOS
+
+---
+
+### 📋 **PRE-TRAIL PREP WITH HOME CONTACT**
+
+**Before You Leave, Your Home Contact Needs:**
+
+1. ✅ **Copy of this guide** (so they understand your plan)
+2. ✅ **Your Garmin InReach login** (so they can see your tracking map)
+3. ✅ **Ranger station phone numbers** (from Field Quick-Reference Card)
+4. ✅ **Your insurance info** (health insurance card photo)
+5. ✅ **Emergency contact protocol** (this section)
+
+**Have a Conversation:**
+- "If I miss a check-in, wait until 9 PM, then try messaging me."
+- "If 24 hours with no contact, call [ranger station for my last known location]."
+- "If I press SOS, GEOS will contact you. Stay calm, follow their instructions."
+- "I'll check in every day by 7 PM. If I'm delayed, I'll say why."
+
+---
+
+### 🗺️ **BACKUP NAVIGATION PLAN**
+
+**Primary:** Garmin inReach Mini 2 (GPS + messaging)
+
+**If Garmin Fails:**
+- ✅ Download FarOut maps offline (on iPhone)
+- ✅ White blazes (follow the trail)
+- ✅ AT shelter signs (show mileage to next shelter)
+- ✅ Ask other hikers
+- ✅ Worst case: hike to nearest road, flag down car, ask for ride to town
+
+**You Won't Get Lost:**
+- AT is one of the most well-marked trails in the world
+- White blazes every 50-100 feet
+- Shelters every 8-15 miles
+- Other hikers (NOBO bubble) will be nearby
+
+**But If You DO Get Disoriented:**
+1. STOP. Don't keep walking.
+2. Look for white blazes (2.5" × 6" white rectangles)
+3. Check your last known location on Garmin
+4. Backtrack to last shelter or landmark
+5. Message home contact: "Disoriented but safe, backtracking"
+
+---
+
+## Primary Emergency Exit Points (NOBO)
+
+**Always know the next exit ahead and the last exit behind. Road name + gap name matters more than mile number.**
+
+### GEORGIA (Mile 0 – ~78)
+
+| Mile | Exit Point |
+|------|------------|
+| 0.0 | Springer Mountain / FS 42–58 access |
+| ~8.8 | Nimblewill Gap Rd |
+| ~20.6 | Woody Gap (GA-60) |
+| ~30.7 | Jarrard Gap Rd |
+| ~31.3 | Neels Gap (US-19 / US-129) |
+| ~42.1 | Hogpen Gap (GA-348) |
+| ~52.9 | Unicoi Gap (GA-75) |
+| ~60.6 | Indian Grave Gap Rd |
+| ~69.4 | Dick's Creek Gap (GA-76) |
+
+### NORTH CAROLINA / TENNESSEE (Mile ~78 – ~470)
+
+| Mile | Exit Point |
+|------|------------|
+| ~86.7 | Winding Stair Gap (US-64) |
+| ~102.7 | Nantahala Outdoor Center (US-19 / US-74) |
+| ~135.7 | Fontana Dam Road |
+| ~164.6 | Newfound Gap (US-441) |
+| ~198.6 | Davenport Gap (I-40) |
+| ~241.3 | Standing Bear / Green Corner Rd |
+| ~274.4 | Hot Springs (NC-209) |
+| ~299.1 | Allen Gap (NC-212) |
+| ~321.3 | Sam's Gap (US-19W) |
+
+### VIRGINIA (Mile ~470 – ~1,020)
+
+| Mile | Exit Point |
+|------|------------|
+| ~469.1 | Damascus (US-58) |
+| ~500.5 | Elk Garden (VA-600) |
+| ~534.6 | Kimberling Creek Rd |
+| ~635.3 | Pearisburg (VA-460) |
+| ~639.8 | New River Bridge (US-460) |
+| ~726.3 | VA-311 (McAfee Knob / Catawba) |
+| ~785.9 | James River (US-501) |
+| ~863.7 | Rockfish Gap (I-64 / US-250) |
+| ~909.6 | Swift Run Gap (US-33) |
+| ~934.5 | Thornton Gap (US-211) |
+| ~971.1 | Front Royal (US-522) |
+
+### WEST VIRGINIA / MARYLAND (Mile ~1,020 – ~1,100)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,024.4 | Harpers Ferry (US-340) |
+| ~1,040.6 | Weverton Road |
+| ~1,061.0 | Gathland State Park |
+| ~1,067.3 | Pen-Mar Park (MD-550) |
+
+### PENNSYLVANIA (Mile ~1,100 – ~1,350)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,136.5 | Caledonia (PA-16) |
+| ~1,166.5 | US-30 |
+| ~1,195.8 | Pine Grove Furnace (PA-233) |
+| ~1,249.3 | PA-34 |
+| ~1,309.4 | Port Clinton (PA-61) |
+| ~1,343.0 | Wind Gap (PA-33) |
+
+### NEW JERSEY / NEW YORK (Mile ~1,350 – ~1,550)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,368.5 | Delaware Water Gap (I-80) |
+| ~1,390.7 | Culvers Gap (NJ-206) |
+| ~1,421.1 | Bear Mountain Bridge (US-202) |
+| ~1,455.7 | NY-22 |
+
+### CONNECTICUT / MASSACHUSETTS (Mile ~1,550 – ~1,650)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,545.0 | US-7 (CT) |
+| ~1,591.6 | MA-23 |
+| ~1,640.6 | MA-2 (North Adams) |
+
+### VERMONT (Mile ~1,650 – ~1,750)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,651.8 | VT-9 (Bennington) |
+| ~1,706.4 | VT-4 (Killington) |
+| ~1,747.4 | VT-11 / VT-30 |
+
+### NEW HAMPSHIRE (Mile ~1,750 – ~1,905)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,796.6 | Glencliff (NH-25) |
+| ~1,820.7 | Kinsman Notch (NH-112) |
+| ~1,869.2 | Crawford Notch (US-302) |
+| ~1,888.1 | Pinkham Notch (NH-16) |
+| ~1,904.8 | Gorham (US-2) |
+
+### MAINE (Mile ~1,905 – 2,197.9)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,964.5 | ME-27 (Stratton) |
+| ~2,012.3 | Kennebec River (ME-201) |
+| ~2,089.6 | Jo-Mary Road |
+| ~2,197.4 | Katahdin Stream Campground Road |
+
+*Note: Some forest roads may be seasonally gated—verify with FarOut when conditions matter.*
+
+---
+
+---
+
+
+
+# Content Creation
+
+
+## Daily Video Structure
+
+Each video serves three goals:
+- Document the Appalachian Trail honestly
+- Provide practical information future hikers want
+- Capture the emotional, physical, and spiritual reality
+
+**Total length:** 5-10 minutes max
+
+### Section 1: Quick Context (30-45 sec)
+- Where the day started
+- Weather or expectations
+- One concern or unknown
+
+### Section 2: On-Trail Movement (1-2 min)
+- Trail tread (rocks, roots, mud, ice)
+- Steep climbs and descents
+- Confusing turns
+- White blazes
+
+### Section 3: Significant Sites (1-2 min)
+- Summits and viewpoints
+- Shelters (inside and outside)
+- Water crossings
+- Trail magic locations
+
+### Section 4: Practical Trail Intel (2-3 min)
+- Weather report
+- Water report (source name, flow, filtering notes)
+- Shelter report (water, bear systems, mice, crowding)
+
+### Section 5: Gear in Real Use (1-2 min)
+- Water filtering
+- Cooking meals
+- Cold-weather layering
+- Camp setup
+
+### Section 6: End-of-Day Wrap (1-2 min)
+- Total miles hiked
+- Hardest part of the day
+- Best moment
+- One lesson learned
+- What tomorrow looks like
+
+## Scripture Integration System
+
+Each verse reflects the day—it does not explain it.
+
+### The Six Trail Categories
+
+| Category | Scripture |
+|----------|-----------|
+| Fear / Uncertainty / Wildlife | Isaiah 41:10 — *'Fear thou not; for I am with thee…'* |
+| Cold / Rain / Suffering | James 1:12 — *'Blessed is the man that endureth temptation…'* |
+| Long Miles / Fatigue / Grind Days | Galatians 6:9 — *'And let us not be weary in well doing…'* |
+| Decisions / Route Finding | Proverbs 3:5-6 — *'Trust in the LORD with all thine heart…'* |
+| Provision / Help / Right Place Right Time | Matthew 6:11 — *'Give us this day our daily bread.'* |
+| Gratitude / Victory / Quiet Days | Psalm 118:24 — *'This is the day which the LORD hath made…'* |
+
+### Scripture Presentation
+
+- King James Version text only
+- Clean on-screen text
+- Soft or ambient audio underneath
+- Fade in → hold → fade out
+- Never more than 10 seconds
+
+---
+
+# The Path to Katahdin
+
+This guide represents everything learned from 840+ miles of thru-hiking, hundreds of hours of research, and the hard-won wisdom of countless hikers who came before. It is not theoretical—it is tested.
+
+The Appalachian Trail will challenge you in ways you cannot fully anticipate. Weather will test your systems. Terrain will test your body. The sheer length will test your mind. But with proper preparation, disciplined execution, and the humility to adapt, you will stand on Katahdin.
+
+## Final Trail Truths
+
+- Heavy packs don't end hikes—bad sleep and injury do
+- Water planning matters more than mileage
+- Small injuries ignored become hike-enders
+- Weather humility keeps you alive
+- Mental discipline finishes the trail—not strength
+- The trail is not conquered; it is negotiated daily
+
+## One-Line Trail Rule
+
+> **Slow early. Strong later. Never break the 5-day rule.**
+
+Every system in this guide exists for one purpose: to put you on top of Katahdin, healthy and strong, before the snow flies.
+
+The preparation is complete. Focus now shifts to execution, pacing, and decision-making.
+
+---
+
+**See you on Katahdin, Theman.**
+
+---
+
+*Guide last updated: December 2024*  
+*Fact-checked and corrected for 2026 thru-hiking season*  
+*Includes: Emergency Exit Points, Medical Access by State, Enhanced Weather/Camp Strategy, Complete Water Source Mile Markers*  
+*Total corrections and additions applied: 35+*
+
+---
+
+
+
+# Emergency Protocol
+
+## Call Priority
+
+1. **Call 911 FIRST** — Always primary for life, limb, or weather danger
+2. **NPS Dispatch:** 1-866-677-6677 — Non-emergency follow-up within NPS lands
+3. **No service:** 3 short whistle blasts, repeat
+
+*911 dispatchers coordinate with local SAR. NPS number is supplementary.*
+
+---
+
+## Location Script
+
+Use this verbatim:
+
+> "I am on the Appalachian Trail."
+>
+> "State: ___"
+>
+> "Nearest named point: ___"
+>
+> "I am hiking northbound."
+>
+> "Approximate mile marker: ___"
+>
+> "GPS coordinates: ___"
+>
+> "Can I walk: Yes / No / Limited"
+>
+> "Nature of problem: ___"
+
+---
+
+## InReach Bail-Out
+
+Message your logistics contact:
+> "Bad weather. Need off-trail help. I'm near AT mile ___ (landmark)."
+
+They call hostels/shuttles and message back.
+
+---
+
+## Press SOS When:
+
+- Injury prevents movement
+- Hypothermia risk is real
+- Flooding traps you
+- Lost and disoriented
+- Self-rescue is no longer possible
+
+
+---
+
+
+
+# Layering Chart
+
+## While Moving
+
+| Temp | Layers |
+|------|--------|
+| **45-60°F** | Hiking shirt only, pants if windy |
+| **35-45°F** | Hiking hoodie, Alpha Freak, hiking pants, Buff optional |
+| **25-35°F** | All mid layers, Buff, shell for wind only |
+| **20-30°F** | Full layering including shell, Buff, gloves |
+
+## Static / Camp
+
+- **Down puffy ON immediately**
+- Shell over puffy if windy
+- Never rely on Alpha for static warmth
+
+## Sleep (Every Night)
+
+- Smartwool 250 sleep top and pants
+- Dry socks
+- Puffy inside quilt if temps drop
+
+---
+
+## Core Rules
+
+- **Wet hiking clothes = acceptable**
+- **Wet + cold + static = dangerous**
+- **Sleep layers are sacred — never hike in them**
+- **Calories are heat**
+- **Down puffy: Never hike in it. Put it on IMMEDIATELY when stopped.**
+
+
+---
+
+
+
+# Resupply Locations
+
+## Walkable Dollar General
+
+| Town | Mile | Distance |
+|------|------|----------|
+| Hot Springs, NC | ~274.5 | 0.3 mi |
+| Erwin, TN | ~343.8 | 0.6 mi |
+| Hampton, TN | ~421.9 | 0.8 mi |
+| Pearisburg, VA | ~635.7 | 0.9 mi |
+| Daleville, VA | ~727.3 | 0.7 mi |
+| Waynesboro, VA | ~861.7 | 1.1 mi |
+| Front Royal, VA | ~971.1 | 1.0 mi |
+| Palmerton, PA | ~1266.6 | 0.9 mi |
+| Great Barrington, MA | ~1518.8 | 1.4 mi |
+| Gorham, NH | ~1890.7 | 1.2 mi |
+
+---
+
+## Recommended Mail Drops
+
+| Location | Mile | Notes |
+|----------|------|-------|
+| Hot Springs, NC | ~274.6 | Most reliable on AT |
+| Damascus, VA | ~470.7 | AT hub, generous hold |
+| Daleville, VA | ~685.3 | Easy access |
+| Harpers Ferry, WV | ~860.6 | Halfway, very reliable |
+| Duncannon, PA | ~1090.5 | Great PO + hostel |
+| Hanover, NH | ~1460.4 | Before the Whites |
+| Monson, ME | ~1893.1 | 100-Mile gateway (14-day max) |
+| Shaw's Hiker Hostel, ME | ~1893 | Full resupply + gear ship |
+
+---
+
+## Box Format
+
+```
+THEMAN HOGG
+GENERAL DELIVERY
+CITY, STATE ZIP
+PLEASE HOLD FOR AT HIKER
+ETA: MM/DD/YYYY
+```
+
+
+---
+
+
+
+# Shelter Triggers
+
+**Go to a shelter if ANY ONE is true:**
+
+## 1. Wind + Cold
+- Temps below ~25°F
+- Sustained wind 15+ mph or gusts 20+ mph
+- Exposed ridge or saddle
+- You feel cold before stopping
+
+## 2. Freezing Rain or Heavy Wet Snow
+**Automatic shelter night. No debate.**
+
+## 3. Ground Conditions
+- Solid ice
+- Snow too deep to anchor
+- No flat or drained tent sites
+
+## 4. Wet and Can't Dry Before Dark
+- Damp clothing + temps dropping
+- No sun left
+- Hands losing dexterity
+
+## 5. Mental/Physical Exhaustion
+- Foggy thinking
+- Irritation during setup
+- Skipping food or water steps
+
+---
+
+## Winter Decision Scoring
+
+**Score 3+ → Shelter. Score 2 → Consider. Score 0-1 → Tent OK.**
+
+| Condition | Points |
+|-----------|--------|
+| Temp below 25°F | +1 |
+| Sustained wind 15+ mph | +1 |
+| Wet clothes at day's end | +1 |
+| Freezing rain / ice forecast | +2 |
+| Ground unfit for tent | +1 |
+| Mental / physical exhaustion | +1 |
+
+---
+
+**NOT a shelter trigger:**
+- Cold but dry and calm
+- Tired but functional
+- Others are staying there
+- Convenience
+
+
+---
+
+
+
+# Weather Warning Signs
+
+## Visual Warnings
+
+- Dark clouds moving quickly (especially low/rolling)
+- Clouds dropping into ridges or saddles
+- White haze on ridgelines
+- Sudden visibility loss
+- Fast temperature drop
+
+## Wind Warnings
+
+- Sudden direction change
+- Rapid speed increase
+- Funneling through gaps/saddles
+
+## Sound & Sensory
+
+- Any thunder (even distant)
+- Metallic or sharp smell
+- Tingling, buzzing, hair standing up
+
+**→ Lightning protocol immediately. Get off ridges and summits.**
+
+---
+
+## 2-Out-of-5 Rule
+
+If **ANY TWO** occur, act conservatively:
+
+1. Pressure dropping (watch elevation drift)
+2. Wind increasing or shifting
+3. Clouds thickening or lowering
+4. Garmin forecast worsens
+5. Sudden temperature drop
+
+---
+
+## Pressure Reading (Stationary Only)
+
+| Elevation Drift | Meaning |
+|-----------------|---------|
+| ±3-5 ft, settles | Stable |
+| Drops 10-20 ft over 3-6 hrs | Weather in 12-24 hrs |
+| Drops 20-30+ ft in 1-3 hrs | **Weather imminent** |
+
+
+---
+

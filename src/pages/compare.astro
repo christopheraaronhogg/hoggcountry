@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TrailCompare from '../components/TrailCompare.svelte';
+---
+<BaseLayout title="RAG vs Full Context" description="Compare AI response methods">
+  <main class="container" style="padding: 2rem 1rem;">
+    <TrailCompare client:load />
+  </main>
+</BaseLayout>
