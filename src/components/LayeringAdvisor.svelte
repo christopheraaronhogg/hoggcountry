@@ -336,7 +336,8 @@
         <div class="weather-btns">
           {#each ['none', 'light_rain', 'heavy_rain', 'snow'] as p}
             <button class="wx-btn" class:active={precipitation === p} onclick={() => precipitation = p}>
-              {#if p === 'none'}☀️{:else if p === 'light_rain'}🌧️{:else if p === 'heavy_rain'}⛈️{:else}❄️{/if}
+              <span class="wx-icon">{#if p === 'none'}☀️{:else if p === 'light_rain'}🌧️{:else if p === 'heavy_rain'}⛈️{:else}❄️{/if}</span>
+              <span class="wx-label">{#if p === 'none'}Clear{:else if p === 'light_rain'}Light{:else if p === 'heavy_rain'}Heavy{:else}Snow{/if}</span>
             </button>
           {/each}
         </div>
@@ -346,7 +347,8 @@
         <div class="weather-btns">
           {#each ['none', 'light', 'moderate', 'strong'] as w}
             <button class="wx-btn" class:active={wind === w} onclick={() => wind = w}>
-              {#if w === 'none'}🍃{:else if w === 'light'}💨{:else if w === 'moderate'}🌬️{:else}🌪️{/if}
+              <span class="wx-icon">{#if w === 'none'}🍃{:else if w === 'light'}💨{:else if w === 'moderate'}🌬️{:else}🌪️{/if}</span>
+              <span class="wx-label">{#if w === 'none'}Calm{:else if w === 'light'}Light{:else if w === 'moderate'}Moderate{:else}Strong{/if}</span>
             </button>
           {/each}
         </div>
@@ -882,13 +884,30 @@
 
   .wx-btn {
     flex: 1;
-    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.4rem 0.25rem;
     background: var(--bg);
     border: 2px solid var(--border);
     border-radius: 8px;
-    font-size: 1.1rem;
     cursor: pointer;
     transition: all 0.2s;
+  }
+
+  .wx-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .wx-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
   }
 
   .wx-btn:hover {
@@ -900,6 +919,10 @@
     background: var(--pine);
     border-color: var(--pine);
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .wx-btn.active .wx-label {
+    color: #fff;
   }
 
   /* Wet Section */

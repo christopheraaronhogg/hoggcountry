@@ -54,7 +54,6 @@
   // Consolidated 14 high-leverage tools - Milestone is foundational
   const tools = [
     { id: 'milestone', name: 'Journey', icon: '🗺️', desc: 'Plan your timeline & track progress' },
-    { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
     { id: 'shelter', name: 'Shelter', icon: '🏠', desc: 'Tent vs shelter decision' },
     { id: 'weather', name: 'Weather', icon: '🌤️', desc: 'Weather, heat zones & daylight' },
     { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
@@ -66,6 +65,7 @@
     { id: 'food', name: 'Food', icon: '🍽️', desc: 'Calorie & weight calculator' },
     { id: 'geartrans', name: 'Swap', icon: '🔄', desc: 'Gear transition planner' },
     { id: 'training', name: 'Train', icon: '🏋️', desc: 'Pre-trail preparation' },
+    { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
     { id: 'emergency', name: 'Emergency', icon: '🆘', desc: 'Emergency info & bailouts' },
   ];
 
