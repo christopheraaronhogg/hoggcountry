@@ -75,6 +75,8 @@
   let currentMile = $derived(trailContext.currentMile || 0);
   let tripStartDate = $derived(trailContext.tripStartDate || '2026-02-15');
   let targetPace = $derived(trailContext.targetPace || 15);
+  let daysOnTrail = $derived(trailContext.daysOnTrail || 0);
+  let effectiveDate = $derived(trailContext.effectiveDate || startDate);
 
   let mounted = $state(false);
 
