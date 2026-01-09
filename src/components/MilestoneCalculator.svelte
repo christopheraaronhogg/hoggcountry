@@ -1,6 +1,7 @@
 <script>
   let { trailContext = {} } = $props();
 
+  // Original 14 trail sections
   const sections = [
     { name: 'Georgia', startMile: 0, endMile: 78.5, highlight: 'Sharp climbs, Blood Mountain', emoji: '🏔️' },
     { name: 'Southern NC', startMile: 78.5, endMile: 165.7, highlight: 'Long ridge walks', emoji: '🌲' },
@@ -18,18 +19,24 @@
     { name: 'Maine', startMile: 1912, endMile: 2198, highlight: 'Katahdin awaits!', emoji: '🎯' },
   ];
 
-  // Meaningful waypoints that hikers actually celebrate
+  // Key trail towns that appear as markers in the timeline
+  const trailTowns = [
+    { mile: 31, name: 'Neels Gap', highlight: 'First outfitter, first test', emoji: '🏪' },
+    { mile: 166, name: 'Fontana Dam', highlight: 'Gateway to the Smokies', emoji: '🏗️' },
+    { mile: 274, name: 'Hot Springs', highlight: 'First trail town, hot springs!', emoji: '♨️' },
+    { mile: 386, name: 'Damascus', highlight: 'Trail Days, friendliest town', emoji: '🎉' },
+    { mile: 702, name: 'Waynesboro', highlight: 'Gateway to Shenandoah', emoji: '🏘️' },
+    { mile: 1025, name: 'Harpers Ferry', highlight: 'ATC HQ, psychological halfway', emoji: '🏛️' },
+    { mile: 2090, name: 'Monson', highlight: 'Last stop before the wilderness', emoji: '🏕️' },
+  ];
+
+  // Numeric achievement milestones
   const milestones = [
-    { miles: 31, label: 'Neels Gap', note: 'First outfitter, first real test' },
-    { miles: 166, label: 'Fontana Dam', note: 'Gateway to the Smokies' },
-    { miles: 274, label: 'Hot Springs', note: 'First true trail town' },
-    { miles: 386, label: 'Damascus', note: 'Friendliest town on the AT' },
-    { miles: 550, label: 'Pearisburg', note: 'Quarter mark, Virginia begins' },
-    { miles: 702, label: 'Waynesboro', note: 'Shenandoah awaits' },
-    { miles: 1025, label: 'Harpers Ferry', note: 'ATC HQ, psychological halfway' },
-    { miles: 1099, label: 'Halfway Point', note: 'The trail breaks even' },
-    { miles: 1791, label: 'White Mountains', note: 'The hardest miles begin' },
-    { miles: 2090, label: 'Monson', note: 'Last stop, 100-mile wilderness' },
+    { miles: 100, label: 'First Century', note: 'Triple digits!' },
+    { miles: 500, label: '500 Club', note: 'Quarter done' },
+    { miles: 1000, label: '1000 Miles', note: 'A thousand stories' },
+    { miles: 1099, label: 'Halfway', note: 'The trail breaks even' },
+    { miles: 2000, label: '2000 Miles', note: 'Almost home' },
   ];
 
   const landmarks = [
@@ -166,6 +173,38 @@
     day: getCalendarDayForMile(m.miles),
   })));
 
+  // Calculate trail town arrival dates
+  let calculatedTrailTowns = $derived(trailTowns.map(town => {
+    const day = getCalendarDayForMile(town.mile);
+    const arrivalDate = addDays(startDate, day);
+    const season = getSeason(arrivalDate);
+    return {
+      ...town,
+      day,
+      arrivalDate,
+      season,
+      isTown: true,
+    };
+  }));
+
+  // Merge sections and trail towns into unified timeline, sorted by mile
+  let timelineItems = $derived(() => {
+    const sectionItems = calculatedSections.map(s => ({
+      ...s,
+      mile: s.startMile,
+      type: 'section',
+    }));
+    const townItems = calculatedTrailTowns.map(t => ({
+      ...t,
+      type: 'town',
+    }));
+    return [...sectionItems, ...townItems].sort((a, b) => {
+      const mileA = a.type === 'section' ? a.startMile : a.mile;
+      const mileB = b.type === 'section' ? b.startMile : b.mile;
+      return mileA - mileB;
+    });
+  });
+
   // Trail mode calculations
   let todayStr = $derived(getTodayStr());
   let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, todayStr)));
@@ -298,36 +337,61 @@ hoggcountry.com/tools`;
         SECTION BREAKDOWN
       </h3>
       <div class="timeline">
-        {#each calculatedSections as section, i}
-          <div class="timeline-item" style="animation-delay: {i * 40}ms">
-            <div class="item-date">
-              <span class="date-main">{formatDateShort(section.arrivalDate)}</span>
-              <span class="date-day">Day {section.daysToStart}</span>
-            </div>
-            <div class="item-marker">
-              <div class="marker-line" class:first={i===0}></div>
-              <div class="marker-dot" style="background: {section.season.color}">{i === 0 ? 'S' : section.index}</div>
-              <div class="marker-line" class:last={i===calculatedSections.length-1}></div>
-            </div>
-            <div class="item-content">
-              <div class="section-card">
-                <div class="card-top">
-                  <span class="card-emoji">{section.emoji}</span>
-                  <span class="card-name">{section.name}</span>
-                  <span class="card-miles">{section.sectionMiles.toFixed(0)} mi</span>
-                </div>
-                <div class="card-mile-range">
-                  <span class="mile-marker">Mile {section.startMile.toFixed(0)}</span>
-                  <span class="mile-arrow">→</span>
-                  <span class="mile-marker">Mile {section.endMile.toFixed(0)}</span>
-                </div>
-                <div class="card-bottom">
-                  <span class="card-highlight">{section.highlight}</span>
-                  <span class="card-season" style="color: {section.season.color}">{section.season.icon} {section.season.name}</span>
+        {#each timelineItems() as item, i}
+          {#if item.type === 'section'}
+            <!-- Section -->
+            <div class="timeline-item" style="animation-delay: {i * 30}ms">
+              <div class="item-date">
+                <span class="date-main">{formatDateShort(item.arrivalDate)}</span>
+                <span class="date-day">Day {item.daysToStart}</span>
+              </div>
+              <div class="item-marker">
+                <div class="marker-line" class:first={i===0}></div>
+                <div class="marker-dot" style="background: {item.season.color}">{item.index}</div>
+                <div class="marker-line"></div>
+              </div>
+              <div class="item-content">
+                <div class="section-card">
+                  <div class="card-top">
+                    <span class="card-emoji">{item.emoji}</span>
+                    <span class="card-name">{item.name}</span>
+                    <span class="card-miles">{item.sectionMiles.toFixed(0)} mi</span>
+                  </div>
+                  <div class="card-mile-range">
+                    <span class="mile-marker">Mile {item.startMile.toFixed(0)}</span>
+                    <span class="mile-arrow">→</span>
+                    <span class="mile-marker">Mile {item.endMile.toFixed(0)}</span>
+                  </div>
+                  <div class="card-bottom">
+                    <span class="card-highlight">{item.highlight}</span>
+                    <span class="card-season" style="color: {item.season.color}">{item.season.icon} {item.season.name}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          {:else}
+            <!-- Trail Town -->
+            <div class="timeline-item town" style="animation-delay: {i * 30}ms">
+              <div class="item-date">
+                <span class="date-main">{formatDateShort(item.arrivalDate)}</span>
+                <span class="date-day">Day {item.day}</span>
+              </div>
+              <div class="item-marker">
+                <div class="marker-line"></div>
+                <div class="marker-dot town">{item.emoji}</div>
+                <div class="marker-line"></div>
+              </div>
+              <div class="item-content">
+                <div class="town-card">
+                  <div class="town-header">
+                    <span class="town-name">{item.name}</span>
+                    <span class="town-mile">Mile {item.mile}</span>
+                  </div>
+                  <span class="town-highlight">{item.highlight}</span>
+                </div>
+              </div>
+            </div>
+          {/if}
         {/each}
 
         <!-- Summit -->
@@ -359,14 +423,10 @@ hoggcountry.com/tools`;
       <div class="milestones-grid">
         {#each calculatedMilestones as ms}
           <div class="milestone-card">
-            <div class="ms-miles">
-              <span class="ms-mile-num">{ms.miles}</span>
-              <span class="ms-mile-unit">mi</span>
-            </div>
+            <div class="ms-miles">{ms.miles}</div>
             <div class="ms-info">
               <span class="ms-label">{ms.label}</span>
-              <span class="ms-note">{ms.note}</span>
-              <span class="ms-date">{formatDateShort(ms.date)} · Day {ms.day}</span>
+              <span class="ms-date">{formatDateShort(ms.date)}</span>
             </div>
           </div>
         {/each}
@@ -895,6 +955,55 @@ hoggcountry.com/tools`;
     font-weight: 600;
   }
 
+  /* Trail Town Cards */
+  .timeline-item.town {
+    opacity: 0.95;
+  }
+
+  .marker-dot.town {
+    background: #f59e0b !important;
+    font-size: 0.8rem;
+    width: 28px;
+    height: 28px;
+  }
+
+  .town-card {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.04));
+    border: 2px solid rgba(245, 158, 11, 0.4);
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+  }
+
+  .town-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.2rem;
+  }
+
+  .town-name {
+    font-family: Oswald, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #b45309;
+  }
+
+  .town-mile {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #d97706;
+    background: rgba(245, 158, 11, 0.15);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .town-highlight {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
   .summit-card {
     background: linear-gradient(135deg, var(--pine), #1a2e1a);
     border-radius: 12px;
@@ -925,7 +1034,7 @@ hoggcountry.com/tools`;
 
   .milestones-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 0.75rem;
   }
 
@@ -933,67 +1042,34 @@ hoggcountry.com/tools`;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.875rem 1rem;
-    background: linear-gradient(135deg, rgba(240, 224, 0, 0.08), rgba(240, 224, 0, 0.02));
-    border: 2px solid rgba(240, 224, 0, 0.3);
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(240, 224, 0, 0.1), rgba(240, 224, 0, 0.02));
+    border: 2px solid rgba(240, 224, 0, 0.4);
     border-radius: 10px;
-    transition: all 0.2s ease;
-  }
-
-  .milestone-card:hover {
-    border-color: rgba(240, 224, 0, 0.6);
-    transform: translateY(-1px);
   }
 
   .ms-miles {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 55px;
-    padding-right: 0.75rem;
-    border-right: 2px solid var(--border);
-  }
-
-  .ms-mile-num {
     font-family: Oswald, sans-serif;
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--pine);
-    line-height: 1;
-  }
-
-  .ms-mile-unit {
-    font-size: 0.6rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    min-width: 50px;
   }
 
   .ms-info {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
   }
 
   .ms-label {
-    font-family: Oswald, sans-serif;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--ink);
   }
 
-  .ms-note {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-style: italic;
-  }
-
   .ms-date {
     font-size: 0.7rem;
-    color: var(--alpine);
-    font-weight: 500;
+    color: var(--muted);
   }
 
   /* Dashboard */
