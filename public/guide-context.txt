@@ -1,4 +1,51 @@
-# AT Field Guide
+# THE COMPLETE APPALACHIAN TRAIL NOBO FIELD GUIDE
+
+**Springer Mountain, Georgia to Mount Katahdin, Maine**  
+*2,197.9 Miles of Trail-Tested Knowledge*  
+*February Start Edition*
+
+---
+
+**Prepared by:** Theman  
+**A Comprehensive Planning & Field Reference**  
+*Based on 840+ Miles of Thru-Hiking Experience*
+
+---
+
+## TABLE OF CONTENTS
+
+**FOUNDATION & CONTEXT**
+- [PART I: HIKER PROFILE & EXPERIENCE](#part-i-hiker-profile--experience)
+- [PART II: TRAIL SECTIONS & MILESTONES](#part-ii-trail-sections--milestones)
+- [PART III: AT MOUNTAIN & WEATHER REFERENCE](#part-iii-at-mountain--weather-reference)
+
+**PRE-TRAIL PLANNING**
+- [PART IV: PERMITS & LOGISTICS](#part-iv-permits--logistics)
+- [PART V: FINANCIAL PLANNING](#part-v-financial-planning)
+
+**GEAR SYSTEMS**
+- [PART VI: GEAR SYSTEM](#part-vi-gear-system)
+- [PART VII: CLOTHING SYSTEM](#part-vii-clothing-system)
+- [PART VIII: SHELTER VS. TENT DECISION SYSTEM](#part-viii-shelter-vs-tent-decision-system)
+- [PART IX: WATER TREATMENT SYSTEM](#part-ix-water-treatment-system)
+- [PART X: POWER & ELECTRONICS](#part-x-power--electronics)
+- [PART XI: MEDICAL PLANNING](#part-xi-medical-planning)
+
+**STRATEGY & KNOWLEDGE**
+- [PART XII: WEATHER STRATEGY](#part-xii-weather-strategy)
+- [PART XIII: TRAIL RESOURCES & NAVIGATION](#part-xiii-trail-resources--navigation)
+
+**RESUPPLY SYSTEMS**
+- [PART XIV: FOOD & RESUPPLY](#part-xiv-food--resupply)
+- [PART XV: RESUPPLY LOGISTICS](#part-xv-resupply-logistics)
+- [PART XVI: TOWN STRATEGY](#part-xvi-town-strategy)
+
+**ON-TRAIL OPERATIONS**
+- [PART XVII: DAILY OPERATIONS & TRAIL LIFE](#part-xvii-daily-operations--trail-life)
+- [PART XVIII: SAFETY & EMERGENCY PROCEDURES](#part-xviii-safety--emergency-procedures)
+- [PART XIX: CONTENT CREATION](#part-xix-content-creation)
+
+---
 
 # The Philosophy Behind This Guide
 
@@ -22,7 +69,7 @@ This guide is organized by system rather than chronology. Each chapter addresses
 
 ---
 
-# Hiker Profile & Experience
+# PART I: HIKER PROFILE & EXPERIENCE
 
 
 ## Hiking Resume
@@ -117,9 +164,7 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 
 ---
 
----
-
-# Trail Sections & Milestones
+# PART II: TRAIL SECTIONS & MILESTONES
 
 
 ## Town Rhythm
@@ -263,9 +308,7 @@ By the time you reach the Whites, you've hiked 1,700+ miles. Fatigue is real.
 
 ---
 
----
-
-# At Mountain & Weather Reference
+# PART III: AT MOUNTAIN & WEATHER REFERENCE
 
 
 ## Major Sections (NOBO)
@@ -438,9 +481,7 @@ Roots, rocks, ladders. Katahdin is inevitable.
 
 ---
 
----
-
-# Permits & Logistics
+# PART IV: PERMITS & LOGISTICS
 
 
 ## Required Permits
@@ -517,9 +558,7 @@ Voluntary identifier, NOT a permit. NOT required to hike.
 
 ---
 
----
-
-# Financial Planning
+# PART V: FINANCIAL PLANNING
 
 
 ## Worst-Case Funding Plan
@@ -601,9 +640,7 @@ This cost model provides a **worst-case scenario** baseline for budgeting purpos
 
 ---
 
----
-
-# Gear System
+# PART VI: GEAR SYSTEM
 
 
 ## Chapter 1: Base Weight Philosophy
@@ -888,9 +925,7 @@ Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 
 ---
 
----
-
-# Clothing System
+# PART VII: CLOTHING SYSTEM
 
 
 ## Core Principles
@@ -1013,9 +1048,7 @@ Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 
 ---
 
----
-
-# Shelter Vs. Tent Decision System
+# PART VIII: SHELTER VS. TENT DECISION SYSTEM
 
 
 ## Core Philosophy
@@ -1184,9 +1217,7 @@ Once shelter is chosen, you switch modes.
 
 ---
 
----
-
-# Water Treatment System
+# PART IX: WATER TREATMENT SYSTEM
 
 
 ## Final System Decision
@@ -1610,9 +1641,7 @@ If forced:
 
 ---
 
----
-
-# Power & Electronics
+# PART X: POWER & ELECTRONICS
 
 
 ## Battery System
@@ -1681,9 +1710,7 @@ Charge Apple Watch Ultra to ~80-90%
 
 ---
 
----
-
-# Medical Planning
+# PART XI: MEDICAL PLANNING
 
 
 ## First Aid Kit Philosophy
@@ -1907,9 +1934,7 @@ Charge Apple Watch Ultra to ~80-90%
 
 ---
 
----
-
-# Weather Strategy
+# PART XII: WEATHER STRATEGY
 
 
 ## Temperature Planning
@@ -2220,9 +2245,7 @@ Trail elevation changes while hiking are meaningless for weather detection. Elev
 
 ---
 
----
-
-# Trail Resources & Navigation
+# PART XIII: TRAIL RESOURCES & NAVIGATION
 
 
 ## Primary Guidebook Reference
@@ -2330,9 +2353,7 @@ Exceptions only. Primarily the 100-Mile Wilderness in Maine.
 
 **⚠️ IMPORTANT: Kennebec River Ferry (Maine)** — The ferry across the Kennebec River will **NOT operate in 2026**. Plan for the road-walk alternative. Check current guidance before reaching this section.
 
----
-
-# Food & Resupply
+# PART XIV: FOOD & RESUPPLY
 
 
 ## Trail Food Staples
@@ -2484,9 +2505,7 @@ Bears follow scent plumes. Odor reduction reduces investigation time.
 
 ---
 
----
-
-# Resupply Logistics
+# PART XV: RESUPPLY LOGISTICS
 
 
 ## USPS Mail Drop System
@@ -2560,9 +2579,7 @@ ETA: MM/DD/YYYY
 
 ---
 
----
-
-# Town Strategy
+# PART XVI: TOWN STRATEGY
 
 
 ## Comprehensive AT Town & Services Guide (NOBO)
@@ -3141,9 +3158,7 @@ You do NOT carry extra clothes. Laundry is done while you are still dressed and 
 
 ---
 
----
-
-# Daily Operations & Trail Life
+# PART XVII: DAILY OPERATIONS & TRAIL LIFE
 
 
 ## Morning Routine & Breakdown
@@ -4354,9 +4369,7 @@ At the end of every day, ask yourself these questions:
 
 ---
 
----
-
-# Safety & Emergency Procedures
+# PART XVIII: SAFETY & EMERGENCY PROCEDURES
 
 
 ## Core Principle
@@ -4711,9 +4724,8 @@ Message a trusted person at home. They:
 
 ---
 
----
 
-# Content Creation
+# PART XIX: CONTENT CREATION
 
 
 ## Daily Video Structure
@@ -4818,256 +4830,3 @@ The preparation is complete. Focus now shifts to execution, pacing, and decision
 *Fact-checked and corrected for 2026 thru-hiking season*  
 *Includes: Emergency Exit Points, Medical Access by State, Enhanced Weather/Camp Strategy, Complete Water Source Mile Markers*  
 *Total corrections and additions applied: 35+*
-
----
-
-
-
-# Emergency Protocol
-
-## Call Priority
-
-1. **Call 911 FIRST** — Always primary for life, limb, or weather danger
-2. **NPS Dispatch:** 1-866-677-6677 — Non-emergency follow-up within NPS lands
-3. **No service:** 3 short whistle blasts, repeat
-
-*911 dispatchers coordinate with local SAR. NPS number is supplementary.*
-
----
-
-## Location Script
-
-Use this verbatim:
-
-> "I am on the Appalachian Trail."
->
-> "State: ___"
->
-> "Nearest named point: ___"
->
-> "I am hiking northbound."
->
-> "Approximate mile marker: ___"
->
-> "GPS coordinates: ___"
->
-> "Can I walk: Yes / No / Limited"
->
-> "Nature of problem: ___"
-
----
-
-## InReach Bail-Out
-
-Message your logistics contact:
-> "Bad weather. Need off-trail help. I'm near AT mile ___ (landmark)."
-
-They call hostels/shuttles and message back.
-
----
-
-## Press SOS When:
-
-- Injury prevents movement
-- Hypothermia risk is real
-- Flooding traps you
-- Lost and disoriented
-- Self-rescue is no longer possible
-
-
----
-
-
-
-# Layering Chart
-
-## While Moving
-
-| Temp | Layers |
-|------|--------|
-| **45-60°F** | Hiking shirt only, pants if windy |
-| **35-45°F** | Hiking hoodie, Alpha Freak, hiking pants, Buff optional |
-| **25-35°F** | All mid layers, Buff, shell for wind only |
-| **20-30°F** | Full layering including shell, Buff, gloves |
-
-## Static / Camp
-
-- **Down puffy ON immediately**
-- Shell over puffy if windy
-- Never rely on Alpha for static warmth
-
-## Sleep (Every Night)
-
-- Smartwool 250 sleep top and pants
-- Dry socks
-- Puffy inside quilt if temps drop
-
----
-
-## Core Rules
-
-- **Wet hiking clothes = acceptable**
-- **Wet + cold + static = dangerous**
-- **Sleep layers are sacred — never hike in them**
-- **Calories are heat**
-- **Down puffy: Never hike in it. Put it on IMMEDIATELY when stopped.**
-
-
----
-
-
-
-# Resupply Locations
-
-## Walkable Dollar General
-
-| Town | Mile | Distance |
-|------|------|----------|
-| Hot Springs, NC | ~274.5 | 0.3 mi |
-| Erwin, TN | ~343.8 | 0.6 mi |
-| Hampton, TN | ~421.9 | 0.8 mi |
-| Pearisburg, VA | ~635.7 | 0.9 mi |
-| Daleville, VA | ~727.3 | 0.7 mi |
-| Waynesboro, VA | ~861.7 | 1.1 mi |
-| Front Royal, VA | ~971.1 | 1.0 mi |
-| Palmerton, PA | ~1266.6 | 0.9 mi |
-| Great Barrington, MA | ~1518.8 | 1.4 mi |
-| Gorham, NH | ~1890.7 | 1.2 mi |
-
----
-
-## Recommended Mail Drops
-
-| Location | Mile | Notes |
-|----------|------|-------|
-| Hot Springs, NC | ~274.6 | Most reliable on AT |
-| Damascus, VA | ~470.7 | AT hub, generous hold |
-| Daleville, VA | ~685.3 | Easy access |
-| Harpers Ferry, WV | ~860.6 | Halfway, very reliable |
-| Duncannon, PA | ~1090.5 | Great PO + hostel |
-| Hanover, NH | ~1460.4 | Before the Whites |
-| Monson, ME | ~1893.1 | 100-Mile gateway (14-day max) |
-| Shaw's Hiker Hostel, ME | ~1893 | Full resupply + gear ship |
-
----
-
-## Box Format
-
-```
-THEMAN HOGG
-GENERAL DELIVERY
-CITY, STATE ZIP
-PLEASE HOLD FOR AT HIKER
-ETA: MM/DD/YYYY
-```
-
-
----
-
-
-
-# Shelter Triggers
-
-**Go to a shelter if ANY ONE is true:**
-
-## 1. Wind + Cold
-- Temps below ~25°F
-- Sustained wind 15+ mph or gusts 20+ mph
-- Exposed ridge or saddle
-- You feel cold before stopping
-
-## 2. Freezing Rain or Heavy Wet Snow
-**Automatic shelter night. No debate.**
-
-## 3. Ground Conditions
-- Solid ice
-- Snow too deep to anchor
-- No flat or drained tent sites
-
-## 4. Wet and Can't Dry Before Dark
-- Damp clothing + temps dropping
-- No sun left
-- Hands losing dexterity
-
-## 5. Mental/Physical Exhaustion
-- Foggy thinking
-- Irritation during setup
-- Skipping food or water steps
-
----
-
-## Winter Decision Scoring
-
-**Score 3+ → Shelter. Score 2 → Consider. Score 0-1 → Tent OK.**
-
-| Condition | Points |
-|-----------|--------|
-| Temp below 25°F | +1 |
-| Sustained wind 15+ mph | +1 |
-| Wet clothes at day's end | +1 |
-| Freezing rain / ice forecast | +2 |
-| Ground unfit for tent | +1 |
-| Mental / physical exhaustion | +1 |
-
----
-
-**NOT a shelter trigger:**
-- Cold but dry and calm
-- Tired but functional
-- Others are staying there
-- Convenience
-
-
----
-
-
-
-# Weather Warning Signs
-
-## Visual Warnings
-
-- Dark clouds moving quickly (especially low/rolling)
-- Clouds dropping into ridges or saddles
-- White haze on ridgelines
-- Sudden visibility loss
-- Fast temperature drop
-
-## Wind Warnings
-
-- Sudden direction change
-- Rapid speed increase
-- Funneling through gaps/saddles
-
-## Sound & Sensory
-
-- Any thunder (even distant)
-- Metallic or sharp smell
-- Tingling, buzzing, hair standing up
-
-**→ Lightning protocol immediately. Get off ridges and summits.**
-
----
-
-## 2-Out-of-5 Rule
-
-If **ANY TWO** occur, act conservatively:
-
-1. Pressure dropping (watch elevation drift)
-2. Wind increasing or shifting
-3. Clouds thickening or lowering
-4. Garmin forecast worsens
-5. Sudden temperature drop
-
----
-
-## Pressure Reading (Stationary Only)
-
-| Elevation Drift | Meaning |
-|-----------------|---------|
-| ±3-5 ft, settles | Stable |
-| Drops 10-20 ft over 3-6 hrs | Weather in 12-24 hrs |
-| Drops 20-30+ ft in 1-3 hrs | **Weather imminent** |
-
-
----
-
