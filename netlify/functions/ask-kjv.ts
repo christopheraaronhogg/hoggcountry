@@ -1,11 +1,11 @@
 import type { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 
-// Cache KJV context in memory (cold start loads it once)
-let cachedKJVContext: string | null = null;
+// Cache Proverbs context in memory (cold start loads it once)
+let cachedProverbsContext: string | null = null;
 
 // Simple rate limiter
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 20; // requests per window
+const RATE_LIMIT = 30; // requests per window
 const RATE_WINDOW = 60 * 1000; // 1 minute
 
 function checkRateLimit(ip: string): boolean {
@@ -28,14 +28,14 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-async function getKJVContext(): Promise<string> {
-  if (cachedKJVContext) return cachedKJVContext;
+async function getProverbsContext(): Promise<string> {
+  if (cachedProverbsContext) return cachedProverbsContext;
 
   const siteUrl = process.env.URL || 'https://hoggcountry.com';
-  const res = await fetch(`${siteUrl}/kjv-context.txt`);
+  const res = await fetch(`${siteUrl}/proverbs-context.txt`);
   if (res.ok) {
-    cachedKJVContext = await res.text();
-    return cachedKJVContext;
+    cachedProverbsContext = await res.text();
+    return cachedProverbsContext;
   }
   return '';
 }
@@ -45,7 +45,6 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  // Rate limiting by IP
   const ip = event.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
              event.headers['x-nf-client-connection-ip'] ||
              'unknown';
@@ -65,42 +64,43 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       return { statusCode: 400, body: JSON.stringify({ error: 'Question is required' }) };
     }
 
-    const apiKey = process.env.XAI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'xAI API key not configured' }) };
+      return { statusCode: 500, body: JSON.stringify({ error: 'OpenAI API key not configured' }) };
     }
 
-    // Load KJV context server-side (cached after first load)
-    const kjvContext = await getKJVContext();
+    // Load Proverbs context server-side (cached after first load)
+    const proverbsContext = await getProverbsContext();
 
-    const systemPrompt = `You are a Bible assistant that ONLY quotes scripture from the King James Version (KJV).
+    const systemPrompt = `You are a Proverbs assistant that ONLY quotes scripture from the King James Version (KJV) Book of Proverbs.
 
 STRICT RULES:
-1. ONLY use text that appears in the KJV Bible context below - never paraphrase or add your own words
-2. Always cite the exact reference: Book Chapter:Verse (e.g., John 3:16)
+1. ONLY use text that appears in the Proverbs context below - never paraphrase or add your own words
+2. Always cite the exact reference: Proverbs Chapter:Verse (e.g., Proverbs 3:5)
 3. When quoting, use the EXACT wording from the KJV - do not modernize or change it
-4. If asked about something not covered in scripture, say "That topic is not directly addressed in Scripture"
+4. If asked about something not covered in Proverbs, say "That topic is not directly addressed in Proverbs"
 5. Do NOT provide commentary, interpretation, or personal opinions - only quote the Word
 6. If multiple passages are relevant, quote them all with proper citations
-7. For topical questions, provide the most relevant verses with full text
+7. For topical questions (wisdom, money, speech, etc.), find the most relevant proverbs
 
 FORMATTING:
 - Quote scripture in a natural, readable way
 - Include the full verse text, not just references
 - Use line breaks between different passages
-- Bold the reference (e.g., **John 3:16**)
+- Bold the reference (e.g., **Proverbs 3:5**)
 
-KING JAMES VERSION BIBLE:
-${kjvContext || 'No scripture context found.'}`;
+BOOK OF PROVERBS (KJV):
+${proverbsContext || 'No scripture context found.'}`;
 
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast',
+        model: 'gpt-5-nano',
+        reasoning_effort: 'low',
         messages: [
           { role: 'system', content: systemPrompt },
           ...history.slice(-6).map((m: { role: string; content: string }) => ({
@@ -109,7 +109,6 @@ ${kjvContext || 'No scripture context found.'}`;
           })),
           { role: 'user', content: question },
         ],
-        temperature: 0.3,
       }),
     });
 
@@ -120,14 +119,14 @@ ${kjvContext || 'No scripture context found.'}`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           answer: data.choices?.[0]?.message?.content || 'No response',
-          model: 'grok-4-1-fast',
+          model: 'gpt-5-nano',
           tokens: data.usage,
         }),
       };
     }
 
     const errorText = await response.text();
-    console.error('Grok API error:', errorText);
+    console.error('OpenAI API error:', errorText);
     return { statusCode: 502, body: JSON.stringify({ error: 'AI error', details: errorText }) };
 
   } catch (error) {
