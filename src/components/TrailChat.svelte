@@ -15,7 +15,8 @@
   interface Conversation { id: string; createdAt: string; title: string; messages: Message[] }
 
   const STORAGE_KEY = 'at-trail-ai-conversations';
-  const MAX_CONVERSATIONS = 10;
+  // No limit - localStorage handles its own ~5-10MB limit per domain
+  // Each conversation is ~5-20KB, so users can store hundreds
 
   let question = $state('');
   let messages = $state<Message[]>([]);
@@ -57,7 +58,7 @@
       // Create new
       currentConvoId = crypto.randomUUID();
       const newConvo: Conversation = { id: currentConvoId, createdAt: new Date().toISOString(), title, messages: [...messages] };
-      savedConversations = [newConvo, ...savedConversations].slice(0, MAX_CONVERSATIONS);
+      savedConversations = [newConvo, ...savedConversations];
     }
     saveConversations();
   }
