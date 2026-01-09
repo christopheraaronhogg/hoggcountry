@@ -255,14 +255,14 @@
       <div class="input-group">
         <label>Actual Elevation</label>
         <div class="input-wrapper">
-          <input type="number" bind:value={actualElevation} placeholder="3450" />
+          <input type="number" bind:value={actualElevation} placeholder="3450" onkeydown={(e) => e.key === 'Enter' && recordReading()} />
           <span class="unit">ft</span>
         </div>
       </div>
       <div class="input-group">
         <label>Watch Shows</label>
         <div class="input-wrapper">
-          <input type="number" bind:value={watchElevation} placeholder="3475" />
+          <input type="number" bind:value={watchElevation} placeholder="3475" onkeydown={(e) => e.key === 'Enter' && recordReading()} />
           <span class="unit">ft</span>
         </div>
       </div>
