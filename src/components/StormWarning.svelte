@@ -4,223 +4,39 @@
   // Accept trailContext prop for consistency with other tools
   let { trailContext = {} } = $props();
 
-  // Types
   interface Reading {
+    id: string;
     timestamp: number;
-    actualElevation: number;
-    watchElevation: number;
-    drift: number;
+    elevation: number;
+    note: string;
   }
 
-  interface WarningConfig {
-    level: string;
+  interface DriftResult {
+    rate: number;
+    direction: 'rising' | 'falling' | 'stable';
+    timeSpanMinutes: number;
+  }
+
+  interface WarningLevel {
+    icon: string;
+    label: string;
+    action: string;
+    explanation: string;
+    threshold: string;
     color: string;
     bgColor: string;
-    icon: string;
-    message: string;
-    pulse?: boolean;
   }
 
-  // Warning level configurations
-  const WARNING_LEVELS: Record<string, WarningConfig> = {
-    clear: {
-      level: 'Clear',
-      color: '#22c55e',
-      bgColor: 'rgba(34, 197, 94, 0.1)',
-      icon: '☀️',
-      message: 'Conditions stable. Enjoy your hike!'
-    },
-    improving: {
-      level: 'Improving',
-      color: '#3b82f6',
-      bgColor: 'rgba(59, 130, 246, 0.1)',
-      icon: '📈',
-      message: 'Pressure rising. Weather should be improving.'
-    },
-    watch: {
-      level: 'Watch',
-      color: '#eab308',
-      bgColor: 'rgba(234, 179, 8, 0.1)',
-      icon: '👀',
-      message: 'Pressure dropping slowly. Keep an eye on the sky.'
-    },
-    warning: {
-      level: 'Warning',
-      color: '#f97316',
-      bgColor: 'rgba(249, 115, 22, 0.1)',
-      icon: '⚠️',
-      message: 'Weather likely changing in 6-12 hours. Know where your next shelter is.'
-    },
-    danger: {
-      level: 'Danger',
-      color: '#ef4444',
-      bgColor: 'rgba(239, 68, 68, 0.1)',
-      icon: '🏃',
-      message: 'Storm approaching. Get to shelter soon.'
-    },
-    imminent: {
-      level: 'Imminent',
-      color: '#ef4444',
-      bgColor: 'rgba(239, 68, 68, 0.15)',
-      icon: '⛈️',
-      message: 'Rapid pressure drop! Seek shelter NOW.',
-      pulse: true
-    }
-  };
-
   // State
-  let actualElevation = $state('');
-  let watchElevation = $state('');
   let readings = $state<Reading[]>([]);
+  let newElevation = $state<string>('');
+  let newNote = $state<string>('');
+  let showGraph = $state<boolean>(false);
+  let showFieldGuide = $state<boolean>(false);
   let mounted = $state(false);
-  let validationError = $state('');
-  let showStalePrompt = $state(false);
-  let showEducation = $state(false);
-
-  // Derived calculations
-  let session = $derived.by(() => {
-    if (readings.length < 1) {
-      return { totalDrift: 0, driftRate: 0, elapsedHours: 0, hasData: false };
-    }
-
-    const firstReading = readings[0];
-    const latestReading = readings[readings.length - 1];
-    const totalDrift = latestReading.drift - firstReading.drift;
-    const elapsedMs = latestReading.timestamp - firstReading.timestamp;
-    const elapsedHours = elapsedMs / (1000 * 60 * 60);
-    const driftRate = elapsedHours > 0.05 ? totalDrift / elapsedHours : 0;
-
-    return {
-      totalDrift,
-      driftRate,
-      elapsedHours,
-      hasData: true,
-      readingCount: readings.length
-    };
-  });
-
-  let warningLevel = $derived.by((): string => {
-    if (readings.length < 2) return 'clear';
-
-    const { totalDrift, driftRate, elapsedHours } = session;
-
-    // If significant drift but not enough time elapsed, still warn based on absolute drift
-    if (elapsedHours < 0.25) {
-      // Even with insufficient time, large absolute drift is concerning
-      if (totalDrift > 100) return 'danger';
-      if (totalDrift > 50) return 'warning';
-      if (totalDrift > 25) return 'watch';
-      return 'clear';
-    }
-
-    // Check for rapid drop (special case)
-    if (totalDrift > 100 && elapsedHours < 1) return 'imminent';
-
-    // Check for improving conditions (negative drift = rising pressure)
-    if (driftRate < -25) return 'improving';
-
-    // Standard thresholds (positive drift = falling pressure)
-    if (driftRate > 100) return 'danger';
-    if (driftRate > 50) return 'warning';
-    if (driftRate > 25) return 'watch';
-
-    return 'clear';
-  });
-
-  let warningDisplay = $derived(WARNING_LEVELS[warningLevel]);
-
-  let elapsedTimeDisplay = $derived.by(() => {
-    if (readings.length === 0) return '';
-    const ms = Date.now() - readings[0].timestamp;
-    const hours = Math.floor(ms / (1000 * 60 * 60));
-    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  });
-
-  let driftRateDisplay = $derived.by(() => {
-    if (!session.hasData || readings.length < 2) return null;
-
-    // If not enough time, show absolute drift instead of rate
-    if (session.elapsedHours < 0.25) {
-      const drift = Math.round(session.totalDrift);
-      if (drift > 0) {
-        return `+${drift} ft total (need 15+ min for rate)`;
-      } else if (drift < 0) {
-        return `${drift} ft total (need 15+ min for rate)`;
-      }
-      return 'No change yet';
-    }
-
-    const rate = Math.round(session.driftRate);
-    if (rate > 0) {
-      return `+${rate} ft/hr (pressure falling)`;
-    } else if (rate < 0) {
-      return `${rate} ft/hr (pressure rising)`;
-    }
-    return 'Stable';
-  });
-
-  // Timing guidance for next reading
-  let timingGuidance = $derived.by(() => {
-    if (readings.length === 0) return null;
-
-    const lastReading = readings[readings.length - 1];
-    const msSinceLast = Date.now() - lastReading.timestamp;
-    const minutesSinceLast = Math.floor(msSinceLast / (1000 * 60));
-    const hoursSinceLast = msSinceLast / (1000 * 60 * 60);
-
-    if (readings.length === 1) {
-      // First reading taken, waiting for second
-      if (hoursSinceLast < 1) {
-        const minutesRemaining = Math.max(0, 60 - minutesSinceLast);
-        return {
-          status: 'waiting',
-          message: `Keep hiking. Take next reading in ${minutesRemaining}+ min at any known elevation.`,
-          ready: false
-        };
-      } else if (hoursSinceLast < 3) {
-        return {
-          status: 'ready',
-          message: `Good time for reading #2. ${Math.floor(hoursSinceLast)}h elapsed — data will be meaningful.`,
-          ready: true
-        };
-      } else {
-        return {
-          status: 'ideal',
-          message: `Ideal timing for reading #2. ${Math.floor(hoursSinceLast)}h elapsed — excellent data quality.`,
-          ready: true
-        };
-      }
-    } else {
-      // Multiple readings exist
-      if (hoursSinceLast < 0.5) {
-        return {
-          status: 'recent',
-          message: 'Reading just recorded. Continue hiking to your next checkpoint.',
-          ready: false
-        };
-      } else if (hoursSinceLast < 2) {
-        return {
-          status: 'ready',
-          message: 'Ready for another reading at your next known elevation point.',
-          ready: true
-        };
-      } else {
-        return {
-          status: 'due',
-          message: `${Math.floor(hoursSinceLast)}h since last reading. Record at next known elevation.`,
-          ready: true
-        };
-      }
-    }
-  });
 
   // localStorage persistence
-  const STORAGE_KEY = 'storm-warning-session';
-  const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+  const STORAGE_KEY = 'storm-warning-journal';
 
   onMount(() => {
     try {
@@ -229,14 +45,6 @@
         const data = JSON.parse(saved);
         if (Array.isArray(data.readings)) {
           readings = data.readings;
-
-          // Check if session is stale
-          if (readings.length > 0) {
-            const lastReading = readings[readings.length - 1];
-            if (Date.now() - lastReading.timestamp > STALE_THRESHOLD) {
-              showStalePrompt = true;
-            }
-          }
         }
       }
     } catch (e) {
@@ -254,831 +62,1039 @@
     }
   });
 
-  // Input validation
-  function validateInputs(): boolean {
-    validationError = '';
-
-    const actual = parseFloat(actualElevation);
-    const watch = parseFloat(watchElevation);
-
-    if (isNaN(actual) || isNaN(watch)) {
-      validationError = 'Please enter valid numbers for both elevations.';
-      return false;
-    }
-
-    if (actual < -500 || actual > 20000) {
-      validationError = 'Actual elevation must be between -500 and 20,000 feet.';
-      return false;
-    }
-
-    if (watch < -500 || watch > 20000) {
-      validationError = 'Watch elevation must be between -500 and 20,000 feet.';
-      return false;
-    }
-
-    const drift = Math.abs(watch - actual);
-    if (drift > 2000) {
-      validationError = 'Watch reading differs by more than 2,000 feet from actual. Check for typos.';
-      return false;
-    }
-
-    return true;
-  }
-
-  function recordReading() {
-    if (!validateInputs()) return;
-
-    const actual = parseFloat(actualElevation);
-    const watch = parseFloat(watchElevation);
-    const drift = watch - actual;
-
-    readings = [...readings, {
-      timestamp: Date.now(),
-      actualElevation: actual,
-      watchElevation: watch,
-      drift
-    }];
-
-    // Clear inputs for next reading
-    actualElevation = '';
-    watchElevation = '';
-    showStalePrompt = false;
-  }
-
-  function resetSession() {
-    readings = [];
-    actualElevation = '';
-    watchElevation = '';
-    validationError = '';
-    showStalePrompt = false;
-  }
-
-  function dismissStalePrompt() {
-    showStalePrompt = false;
-  }
-
-  function formatTime(timestamp: number): string {
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-
-  // Chart calculations with intelligent scaling
-  const CHART_WIDTH = 300;
-  const CHART_HEIGHT = 140;
-  const CHART_PADDING = { top: 20, right: 15, bottom: 28, left: 45 };
-  const MIN_TICK_SPACING = 25; // Minimum pixels between Y-axis labels
-
-  // Get a "nice" step size for axis ticks
-  function niceStep(range: number, maxTicks: number): number {
-    const roughStep = range / maxTicks;
-    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
-    const residual = roughStep / magnitude;
-
-    let niceResidual: number;
-    if (residual <= 1.5) niceResidual = 1;
-    else if (residual <= 3) niceResidual = 2;
-    else if (residual <= 7) niceResidual = 5;
-    else niceResidual = 10;
-
-    return niceResidual * magnitude;
-  }
-
-  let chartData = $derived.by(() => {
+  // Calculate drift between two most recent readings
+  let drift = $derived.by<DriftResult | null>(() => {
     if (readings.length < 2) return null;
 
-    const firstReading = readings[0];
-    const points = readings.map(r => ({
-      time: r.timestamp,
-      drift: r.drift - firstReading.drift,
-      label: formatTime(r.timestamp)
-    }));
+    const latest = readings[0];
+    const previous = readings[1];
 
-    // Calculate data bounds
-    const drifts = points.map(p => p.drift);
-    const dataMin = Math.min(...drifts);
-    const dataMax = Math.max(...drifts);
+    const elevationChange = latest.elevation - previous.elevation;
+    const timeSpanMs = latest.timestamp - previous.timestamp;
+    const timeSpanMinutes = timeSpanMs / (1000 * 60);
+    const timeSpanHours = timeSpanMinutes / 60;
 
-    // Always include 0 in the range, add padding
-    const rangeMin = Math.min(dataMin, 0);
-    const rangeMax = Math.max(dataMax, 25); // At least show up to 25
-    const dataRange = rangeMax - rangeMin || 25;
+    if (timeSpanHours === 0) return null;
 
-    // Calculate nice axis bounds with padding
-    const innerH = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
-    const maxTicks = Math.floor(innerH / MIN_TICK_SPACING);
-    const step = niceStep(dataRange, Math.min(maxTicks, 5));
+    const rate = Math.abs(elevationChange / timeSpanHours);
+    const direction: 'rising' | 'falling' | 'stable' =
+      elevationChange > 5 ? 'rising' : elevationChange < -5 ? 'falling' : 'stable';
 
-    // Round axis bounds to step
-    const yMin = Math.floor(rangeMin / step) * step;
-    const yMax = Math.ceil(rangeMax / step) * step + step * 0.1; // Tiny padding at top
-    const yRange = yMax - yMin;
+    return { rate, direction, timeSpanMinutes };
+  });
 
-    const timeRange = points[points.length - 1].time - points[0].time || 1;
-    const innerW = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
-
-    const scaleX = (t: number) => CHART_PADDING.left + ((t - points[0].time) / timeRange) * innerW;
-    const scaleY = (d: number) => CHART_HEIGHT - CHART_PADDING.bottom - ((d - yMin) / yRange) * innerH;
-
-    // Generate path
-    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(p.time).toFixed(1)},${scaleY(p.drift).toFixed(1)}`).join(' ');
-
-    // Generate Y-axis ticks at nice intervals
-    const yTicks: { value: number; y: number }[] = [];
-    for (let v = yMin; v <= rangeMax + step * 0.5; v += step) {
-      const y = scaleY(v);
-      // Only include if within chart bounds with margin
-      if (y >= CHART_PADDING.top - 5 && y <= CHART_HEIGHT - CHART_PADDING.bottom + 5) {
-        yTicks.push({ value: Math.round(v), y });
-      }
+  // Determine warning level based on drift rate
+  let warningLevel = $derived.by<WarningLevel>(() => {
+    if (!drift) {
+      return {
+        icon: '☀️',
+        label: 'Clear',
+        action: 'Keep hiking - conditions look stable.',
+        explanation: 'Normal atmospheric fluctuation. No weather concerns.',
+        threshold: '< 25 ft/hr',
+        color: '#22c55e',
+        bgColor: 'rgba(34, 197, 94, 0.1)'
+      };
     }
 
-    const lastPoint = points[points.length - 1];
+    const rate = drift.rate;
+    const timeSpanMinutes = drift.timeSpanMinutes;
+
+    // Imminent: > 100 ft in < 1 hour
+    if (rate > 100 && timeSpanMinutes < 60) {
+      return {
+        icon: '⛈️',
+        label: 'Imminent',
+        action: 'Seek shelter immediately! Rapid pressure change detected.',
+        explanation: 'Extreme pressure shift indicates storm arriving within minutes.',
+        threshold: '> 100 ft in < 1 hr',
+        color: '#7c3aed',
+        bgColor: 'rgba(124, 58, 237, 0.15)'
+      };
+    }
+
+    // Danger: > 100 ft/hr
+    if (rate > 100) {
+      return {
+        icon: '🏃',
+        label: 'Danger',
+        action: 'Find shelter now. Storm approaching within 6-12 hours.',
+        explanation: 'Significant pressure drop. Plan for severe weather.',
+        threshold: '> 100 ft/hr',
+        color: '#ef4444',
+        bgColor: 'rgba(239, 68, 68, 0.1)'
+      };
+    }
+
+    // Warning: 50-100 ft/hr
+    if (rate > 50) {
+      return {
+        icon: '⚠️',
+        label: 'Warning',
+        action: 'Weather change likely in 6-12 hours. Consider shelter options.',
+        explanation: 'Notable pressure trend. Monitor conditions closely.',
+        threshold: '50-100 ft/hr',
+        color: '#f59e0b',
+        bgColor: 'rgba(245, 158, 11, 0.1)'
+      };
+    }
+
+    // Watch: 25-50 ft/hr
+    if (rate > 25) {
+      return {
+        icon: '👀',
+        label: 'Watch',
+        action: 'Minor change possible in 12-24 hours. Stay aware.',
+        explanation: 'Subtle pressure drift. Worth noting but not urgent.',
+        threshold: '25-50 ft/hr',
+        color: '#3b82f6',
+        bgColor: 'rgba(59, 130, 246, 0.1)'
+      };
+    }
+
+    // Clear: < 25 ft/hr
+    return {
+      icon: '☀️',
+      label: 'Clear',
+      action: 'Keep hiking - conditions look stable.',
+      explanation: 'Normal atmospheric fluctuation. No weather concerns.',
+      threshold: '< 25 ft/hr',
+      color: '#22c55e',
+      bgColor: 'rgba(34, 197, 94, 0.1)'
+    };
+  });
+
+  function formatTime(timestamp: number): string {
+    return new Date(timestamp).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
+  function formatDate(timestamp: number): string {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  function formatCurrentDate(): string {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  function addReading() {
+    const elevation = parseFloat(newElevation);
+    if (isNaN(elevation)) return;
+
+    const reading: Reading = {
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      elevation,
+      note: newNote.trim()
+    };
+
+    readings = [reading, ...readings];
+    newElevation = '';
+    newNote = '';
+  }
+
+  function deleteReading(id: string) {
+    readings = readings.filter(r => r.id !== id);
+  }
+
+  function clearAll() {
+    readings = [];
+  }
+
+  function getDriftBetween(current: Reading, previous: Reading): DriftResult | null {
+    const elevationChange = current.elevation - previous.elevation;
+    const timeSpanMs = current.timestamp - previous.timestamp;
+    const timeSpanMinutes = timeSpanMs / (1000 * 60);
+    const timeSpanHours = timeSpanMinutes / 60;
+
+    if (timeSpanHours === 0) return null;
+
+    const rate = Math.abs(elevationChange / timeSpanHours);
+    const direction: 'rising' | 'falling' | 'stable' =
+      elevationChange > 5 ? 'rising' : elevationChange < -5 ? 'falling' : 'stable';
+
+    return { rate, direction, timeSpanMinutes };
+  }
+
+  function formatDriftRate(d: DriftResult | null): string {
+    if (!d) return '--';
+    const sign = d.direction === 'rising' ? '+' : d.direction === 'falling' ? '-' : '';
+    return `${sign}${Math.round(d.rate)} ft/hr`;
+  }
+
+  // Graph calculations
+  let graphData = $derived.by(() => {
+    if (readings.length < 2) return null;
+
+    const sorted = [...readings].reverse();
+    const elevations = sorted.map(r => r.elevation);
+    const minElev = Math.min(...elevations);
+    const maxElev = Math.max(...elevations);
+    const range = maxElev - minElev || 100;
+    const padding = range * 0.1;
 
     return {
-      points: points.map(p => ({ x: scaleX(p.time), y: scaleY(p.drift), drift: p.drift })),
-      pathD,
-      yTicks,
-      zeroY: scaleY(0),
-      currentDrift: Math.round(lastPoint.drift),
-      startTime: points[0].label,
-      endTime: lastPoint.label
+      readings: sorted,
+      minElev: minElev - padding,
+      maxElev: maxElev + padding,
+      range: range + padding * 2
     };
   });
 </script>
 
-<div class="storm-warning">
-  <!-- Giant Warning Indicator -->
-  <div class="warning-display" style="--warning-color: {warningDisplay.color}; --warning-bg: {warningDisplay.bgColor}">
-    <div class="warning-circle" class:pulse={warningDisplay.pulse}>
-      <span class="warning-icon">{warningDisplay.icon}</span>
-    </div>
-    <p class="warning-message">{warningDisplay.message}</p>
-    {#if driftRateDisplay}
-      <p class="drift-rate">Phantom drift: {driftRateDisplay}</p>
-    {/if}
-  </div>
-
-  <!-- Stale Session Prompt -->
-  {#if showStalePrompt}
-    <div class="stale-prompt">
-      <p>Your last reading was over 24 hours ago.</p>
-      <div class="stale-actions">
-        <button class="btn btn-reset" onclick={resetSession}>Start Fresh</button>
-        <button class="btn btn-secondary" onclick={dismissStalePrompt}>Continue</button>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Drift Chart -->
-  {#if chartData}
-    <div class="chart-card">
-      <svg viewBox="0 0 {CHART_WIDTH} {CHART_HEIGHT}" class="drift-chart">
-        <!-- Grid lines -->
-        {#each chartData.yTicks as tick}
-          <line
-            x1={CHART_PADDING.left}
-            y1={tick.y}
-            x2={CHART_WIDTH - CHART_PADDING.right}
-            y2={tick.y}
-            stroke={tick.value === 0 ? '#94a3b8' : '#e5e7eb'}
-            stroke-width={tick.value === 0 ? 1.5 : 1}
-          />
-          <text x={CHART_PADDING.left - 6} y={tick.y + 4} class="y-label">{tick.value}</text>
-        {/each}
-
-        <!-- Data line -->
-        <path d={chartData.pathD} fill="none" stroke={warningDisplay.color} stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-
-        <!-- Data points -->
-        {#each chartData.points as point, i}
-          <circle cx={point.x} cy={point.y} r="5" fill={warningDisplay.color} stroke="#fff" stroke-width="2" />
-        {/each}
-
-        <!-- Current value label at last point -->
-        {#if chartData.points.length > 0}
-          {@const last = chartData.points[chartData.points.length - 1]}
-          <text x={last.x} y={last.y - 10} class="value-label" style="fill: {warningDisplay.color}">
-            {chartData.currentDrift > 0 ? '+' : ''}{chartData.currentDrift}
-          </text>
-        {/if}
-
-        <!-- Time axis -->
-        <text x={CHART_PADDING.left} y={CHART_HEIGHT - 6} class="time-label">{chartData.startTime}</text>
-        <text x={CHART_WIDTH - CHART_PADDING.right} y={CHART_HEIGHT - 6} class="time-label" text-anchor="end">{chartData.endTime}</text>
-      </svg>
-    </div>
-  {/if}
-
-  <!-- Input Section -->
-  <div class="input-section">
-    <div class="input-group">
-      <label for="actual-elevation">Actual Elevation</label>
-      <input
-        id="actual-elevation"
-        type="number"
-        bind:value={actualElevation}
-        placeholder="From FarOut or trail marker"
-        min="-500"
-        max="20000"
-      />
-      <span class="input-hint">feet</span>
-    </div>
-
-    <div class="input-group">
-      <label for="watch-elevation">Watch Shows</label>
-      <input
-        id="watch-elevation"
-        type="number"
-        bind:value={watchElevation}
-        placeholder="Your altimeter reading"
-        min="-500"
-        max="20000"
-      />
-      <span class="input-hint">feet</span>
-    </div>
-
-    {#if validationError}
-      <div class="validation-error">{validationError}</div>
-    {/if}
-
-    <button class="btn btn-record" onclick={recordReading}>
-      Record Reading
-    </button>
-
-    <!-- Timing Guidance -->
-    {#if timingGuidance}
-      <div class="timing-guidance" class:ready={timingGuidance.ready} class:waiting={!timingGuidance.ready}>
-        <span class="timing-icon">{timingGuidance.ready ? '✓' : '⏱️'}</span>
-        <span class="timing-message">{timingGuidance.message}</span>
-      </div>
-    {:else if readings.length === 0}
-      <div class="timing-guidance intro">
-        <span class="timing-icon">📍</span>
-        <span class="timing-message">Record reading #1 at any known elevation (FarOut, trail marker, summit).</span>
-      </div>
-    {/if}
-
-    {#if readings.length > 0}
-      <div class="session-info">
-        <span>Started {elapsedTimeDisplay} ago</span>
-        <span class="dot"></span>
-        <span>{readings.length} reading{readings.length !== 1 ? 's' : ''}</span>
-        <button class="reset-link" onclick={resetSession}>Reset</button>
-      </div>
-    {/if}
-  </div>
-
-  <!-- Educational Section -->
-  <div class="education-section">
-    <button
-      class="education-toggle"
-      onclick={() => showEducation = !showEducation}
-      aria-expanded={showEducation}
-    >
-      {showEducation ? '▼' : '▶'} Learn More
-    </button>
-
-    {#if showEducation}
-      <div class="education-content">
-        <h3>How This Works</h3>
-        <p>
-          Your altimeter measures air pressure and converts it to elevation. When atmospheric
-          pressure drops (storm approaching), your altimeter shows you've climbed higher than you actually have —
-          because lower pressure exists at higher elevations.
-        </p>
-        <p>
-          <strong>The key insight:</strong> Compare what your altimeter <em>should</em> show vs what it <em>actually</em> shows.
-          If your watch reads 50' higher than your true elevation, that's +50' of "phantom drift." Track this over time — if the drift is growing, pressure is falling and weather may be changing.
-        </p>
-        <p>
-          <strong>You don't need to stay in one place.</strong> Take Reading 1 at any known elevation, then keep hiking.
-          An hour+ later at your next known elevation point (summit, shelter, trail junction marked on FarOut), take Reading 2.
-          The tool compares drift-to-drift, so your actual hiking elevation change doesn't matter.
-        </p>
-
-        <h3>Understanding the Thresholds</h3>
-        <div class="threshold-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Level</th>
-                <th>Drift Rate</th>
-                <th>What It Means</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span class="level-badge clear">☀️ Clear</span></td>
-                <td>&lt; 25 ft/hr</td>
-                <td>Normal fluctuation</td>
-              </tr>
-              <tr>
-                <td><span class="level-badge watch">👀 Watch</span></td>
-                <td>25-50 ft/hr</td>
-                <td>Minor change possible in 12-24 hours</td>
-              </tr>
-              <tr>
-                <td><span class="level-badge warning">⚠️ Warning</span></td>
-                <td>50-100 ft/hr</td>
-                <td>Weather change likely in 6-12 hours</td>
-              </tr>
-              <tr>
-                <td><span class="level-badge danger">🏃 Danger</span></td>
-                <td>&gt; 100 ft/hr</td>
-                <td>Storm approaching within 6-12 hours</td>
-              </tr>
-              <tr>
-                <td><span class="level-badge imminent">⛈️ Imminent</span></td>
-                <td>&gt; 100 ft in &lt;1 hr</td>
-                <td>Seek shelter immediately</td>
-              </tr>
-            </tbody>
-          </table>
+<div class="storm-tracker">
+  <!-- Warning Ribbon -->
+  <div class="warning-ribbon" style="background: {warningLevel.bgColor}; border-color: {warningLevel.color};">
+    <div class="ribbon-main">
+      <span class="ribbon-icon">{warningLevel.icon}</span>
+      <div class="ribbon-content">
+        <div class="ribbon-header">
+          <span class="ribbon-label" style="color: {warningLevel.color};">{warningLevel.label}</span>
+          {#if drift}
+            <span class="ribbon-rate">
+              {formatDriftRate(drift)}
+              <span class="rate-direction">({drift.direction === 'falling' ? 'pressure falling' : drift.direction === 'rising' ? 'pressure rising' : 'stable'})</span>
+            </span>
+          {/if}
         </div>
+        <p class="ribbon-action">{warningLevel.action}</p>
+        <div class="ribbon-details">
+          <span class="threshold">Threshold: {warningLevel.threshold}</span>
+          <span class="separator">|</span>
+          <span class="explanation">{warningLevel.explanation}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        <h3>Tips for Accurate Readings</h3>
-        <ul>
-          <li><strong>Use known elevations</strong> — FarOut, trail markers, summits, and shelters all work. Don't guess.</li>
-          <li><strong>Wait 1+ hour between readings</strong> — Shorter intervals show noise, not meaningful trends.</li>
-          <li><strong>Stop briefly when recording</strong> — Hold your watch still for a consistent reading.</li>
-          <li><strong>Temperature affects readings</strong> — Cold air makes altimeters read high even without pressure change.</li>
-          <li><strong>More readings = better data</strong> — Take a reading at each known-elevation point throughout the day.</li>
-        </ul>
+  <!-- New Entry Section -->
+  <div class="entry-section">
+    <div class="entry-header">
+      <span class="hand entry-title">New Field Entry</span>
+      <span class="entry-date">{formatCurrentDate()}</span>
+    </div>
 
-        <h3>The Science</h3>
-        <p>
-          The fundamental conversion: <strong>27 feet per millibar (hPa)</strong> or about
-          <strong>1,000 feet per inch of mercury</strong>. These thresholds are based on
-          mountaineering training programs and the Suunto storm alarm standard (4 hPa / 3 hours).
-        </p>
-
-        {#if readings.length > 0}
-          <h3>Your Reading History</h3>
-          <div class="reading-history">
-            {#each readings as reading, i}
-              <div class="reading-row">
-                <span class="reading-time">{formatTime(reading.timestamp)}</span>
-                <span class="reading-values">
-                  Actual: {reading.actualElevation}' | Watch: {reading.watchElevation}'
-                </span>
-                <span class="reading-drift" class:positive={reading.drift > 0} class:negative={reading.drift < 0}>
-                  {reading.drift > 0 ? '+' : ''}{reading.drift}'
-                </span>
-              </div>
-            {/each}
+    <div class="entry-form">
+      <div class="form-row">
+        <label class="form-label">
+          <span class="label-text">Altimeter Reading</span>
+          <div class="input-wrapper">
+            <input
+              type="number"
+              bind:value={newElevation}
+              placeholder="3450"
+              class="elevation-input"
+            />
+            <span class="input-suffix">ft</span>
           </div>
+        </label>
+
+        <label class="form-label note-label">
+          <span class="label-text">Trail Notes (optional)</span>
+          <input
+            type="text"
+            bind:value={newNote}
+            placeholder="At McAfee Knob, clouds building..."
+            class="note-input"
+          />
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button onclick={addReading} class="add-button" disabled={!newElevation}>
+          <span class="hand">Log Entry</span>
+        </button>
+        {#if readings.length > 0}
+          <button onclick={clearAll} class="clear-button" title="Clear all entries">
+            Clear All
+          </button>
         {/if}
+      </div>
+    </div>
+  </div>
+
+  <!-- Journal Entries -->
+  <div class="journal-section">
+    <div class="journal-header">
+      <span class="hand section-title">Pressure Log</span>
+      <span class="entry-count">{readings.length} {readings.length === 1 ? 'entry' : 'entries'}</span>
+    </div>
+
+    {#if readings.length === 0}
+      <div class="empty-journal">
+        <div class="empty-icon">📓</div>
+        <p class="hand empty-text">Your trail journal awaits...</p>
+        <p class="empty-hint">Log your first altimeter reading above to start tracking pressure changes.</p>
+      </div>
+    {:else}
+      <div class="journal-entries">
+        {#each readings as reading, index}
+          {@const previousReading = readings[index + 1]}
+          {@const entryDrift = previousReading ? getDriftBetween(reading, previousReading) : null}
+
+          <div class="journal-entry">
+            <div class="entry-timestamp">
+              <span class="hand timestamp-time">{formatTime(reading.timestamp)}</span>
+              <span class="timestamp-date">{formatDate(reading.timestamp)}</span>
+            </div>
+
+            <div class="entry-body">
+              <div class="elevation-display">
+                <span class="elevation-value">{reading.elevation.toLocaleString()}</span>
+                <span class="elevation-unit">ft</span>
+              </div>
+
+              {#if entryDrift}
+                <div class="drift-badge" class:rising={entryDrift.direction === 'rising'} class:falling={entryDrift.direction === 'falling'}>
+                  <span class="drift-arrow">{entryDrift.direction === 'rising' ? '↑' : entryDrift.direction === 'falling' ? '↓' : '→'}</span>
+                  <span class="drift-value">{formatDriftRate(entryDrift)}</span>
+                </div>
+              {:else if index === readings.length - 1}
+                <div class="drift-badge first">
+                  <span class="drift-value">First entry</span>
+                </div>
+              {/if}
+
+              {#if reading.note}
+                <p class="entry-note hand">"{reading.note}"</p>
+              {/if}
+            </div>
+
+            <button class="delete-btn" onclick={() => deleteReading(reading.id)} title="Delete entry">
+              x
+            </button>
+          </div>
+        {/each}
       </div>
     {/if}
   </div>
+
+  <!-- Analytics Panel Toggle -->
+  {#if readings.length >= 2}
+    <button class="toggle-section" onclick={() => showGraph = !showGraph}>
+      <span>{showGraph ? '▼' : '▶'}</span>
+      <span class="hand">Trend Chart</span>
+    </button>
+
+    {#if showGraph && graphData}
+      <div class="graph-panel">
+        <div class="graph-container">
+          <svg viewBox="0 0 300 120" class="trend-graph">
+            <!-- Grid lines -->
+            {#each [0, 0.25, 0.5, 0.75, 1] as y}
+              <line
+                x1="40" y1={10 + y * 100}
+                x2="290" y2={10 + y * 100}
+                stroke="var(--border)"
+                stroke-width="1"
+                stroke-dasharray={y === 0.5 ? "none" : "2,2"}
+              />
+            {/each}
+
+            <!-- Y-axis labels -->
+            <text x="35" y="15" class="axis-label" text-anchor="end">
+              {Math.round(graphData.maxElev).toLocaleString()}
+            </text>
+            <text x="35" y="65" class="axis-label" text-anchor="end">
+              {Math.round((graphData.maxElev + graphData.minElev) / 2).toLocaleString()}
+            </text>
+            <text x="35" y="113" class="axis-label" text-anchor="end">
+              {Math.round(graphData.minElev).toLocaleString()}
+            </text>
+
+            <!-- Line path -->
+            <polyline
+              fill="none"
+              stroke="var(--pine)"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              points={graphData.readings.map((r, i) => {
+                const x = 50 + (i / Math.max(graphData.readings.length - 1, 1)) * 230;
+                const y = 10 + ((graphData.maxElev - r.elevation) / graphData.range) * 100;
+                return `${x},${y}`;
+              }).join(' ')}
+            />
+
+            <!-- Data points -->
+            {#each graphData.readings as reading, i}
+              {@const x = 50 + (i / Math.max(graphData.readings.length - 1, 1)) * 230}
+              {@const y = 10 + ((graphData.maxElev - reading.elevation) / graphData.range) * 100}
+              <circle
+                cx={x} cy={y} r="4"
+                fill="var(--card)"
+                stroke="var(--pine)"
+                stroke-width="2"
+              />
+            {/each}
+          </svg>
+        </div>
+        <p class="graph-caption">Elevation readings over time - falling indicates dropping pressure</p>
+      </div>
+    {/if}
+  {/if}
+
+  <!-- Field Guide Toggle -->
+  <button class="toggle-section" onclick={() => showFieldGuide = !showFieldGuide}>
+    <span>{showFieldGuide ? '▼' : '▶'}</span>
+    <span class="hand">Field Guide: Reading Pressure</span>
+  </button>
+
+  {#if showFieldGuide}
+    <div class="field-guide">
+      <div class="guide-intro">
+        <p>Your altimeter reads barometric pressure as elevation. When weather changes, pressure shifts - causing your altimeter to show a different elevation even when you have not moved.</p>
+      </div>
+
+      <div class="guide-section">
+        <h4 class="hand">How It Works</h4>
+        <p>While stationary, record your altimeter. Check again after 30-60 minutes. The "drift" reveals pressure changes:</p>
+        <ul class="guide-list">
+          <li><strong>Falling reading</strong> = Pressure dropping = Weather moving in</li>
+          <li><strong>Rising reading</strong> = Pressure rising = Clearing skies</li>
+          <li><strong>Stable reading</strong> = Pressure steady = Current conditions continue</li>
+        </ul>
+      </div>
+
+      <div class="guide-section">
+        <h4 class="hand">Warning Thresholds</h4>
+        <div class="threshold-grid">
+          <div class="threshold-item">
+            <span class="t-icon">☀️</span>
+            <span class="t-range">&lt; 25 ft/hr</span>
+            <span class="t-meaning">Normal</span>
+          </div>
+          <div class="threshold-item">
+            <span class="t-icon">👀</span>
+            <span class="t-range">25-50 ft/hr</span>
+            <span class="t-meaning">Watch</span>
+          </div>
+          <div class="threshold-item">
+            <span class="t-icon">⚠️</span>
+            <span class="t-range">50-100 ft/hr</span>
+            <span class="t-meaning">Warning</span>
+          </div>
+          <div class="threshold-item">
+            <span class="t-icon">🏃</span>
+            <span class="t-range">&gt; 100 ft/hr</span>
+            <span class="t-meaning">Danger</span>
+          </div>
+          <div class="threshold-item">
+            <span class="t-icon">⛈️</span>
+            <span class="t-range">&gt; 100 ft in &lt; 1hr</span>
+            <span class="t-meaning">Imminent</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <h4 class="hand">Best Practices</h4>
+        <ul class="guide-list">
+          <li>Take readings every 30-60 minutes when conditions look uncertain</li>
+          <li>Always calibrate at known elevations (trail markers, summits)</li>
+          <li>Combine with sky observation - clouds + pressure drop = action time</li>
+          <li>Rapid drops (&gt; 100 ft/hr) mean seek shelter within hours, not days</li>
+        </ul>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
-  .storm-warning {
-    font-family: system-ui, sans-serif;
+  .storm-tracker {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1rem;
   }
 
-  /* Warning Display */
-  .warning-display {
-    text-align: center;
-    padding: 2rem 1.5rem;
-    background: var(--warning-bg);
-    border-radius: 16px;
+  /* Warning Ribbon */
+  .warning-ribbon {
+    border: 2px solid;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
     margin-bottom: 1.5rem;
+    background: var(--card);
   }
 
-  .warning-circle {
-    width: 120px;
-    height: 120px;
-    margin: 0 auto 1rem;
-    border-radius: 50%;
-    background: var(--warning-color);
+  .ribbon-main {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    gap: 1rem;
+    align-items: flex-start;
   }
 
-  .warning-circle.pulse {
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
-  }
-
-  .warning-icon {
-    font-size: 3.5rem;
+  .ribbon-icon {
+    font-size: 2rem;
     line-height: 1;
-  }
-
-  .warning-message {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--ink, #1f2937);
-    margin: 0 0 0.5rem;
-  }
-
-  .drift-rate {
-    font-size: 1rem;
-    color: var(--muted, #6b7c6e);
-    margin: 0;
-  }
-
-  /* Chart */
-  .chart-card {
-    background: var(--card, #fff);
-    border: 1px solid var(--border, #e6e1d4);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .drift-chart {
-    width: 100%;
-    height: auto;
-    display: block;
-    overflow: visible;
-  }
-
-  .drift-chart .y-label {
-    font-size: 11px;
-    font-family: system-ui, -apple-system, sans-serif;
-    fill: #6b7280;
-    text-anchor: end;
-  }
-
-  .drift-chart .time-label {
-    font-size: 11px;
-    font-family: system-ui, -apple-system, sans-serif;
-    fill: #6b7280;
-  }
-
-  .drift-chart .value-label {
-    font-size: 13px;
-    font-weight: 700;
-    font-family: system-ui, -apple-system, sans-serif;
-    text-anchor: middle;
-  }
-
-  /* Stale Prompt */
-  .stale-prompt {
-    background: #fef3c7;
-    border: 1px solid #fcd34d;
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    text-align: center;
-  }
-
-  .stale-prompt p {
-    margin: 0 0 0.75rem;
-    color: #92400e;
-  }
-
-  .stale-actions {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-  }
-
-  /* Input Section */
-  .input-section {
-    background: var(--card, #fff);
-    border: 1px solid var(--border, #e6e1d4);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .input-group {
-    margin-bottom: 1rem;
-  }
-
-  .input-group label {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--pine, #4d594a);
-    margin-bottom: 0.375rem;
-  }
-
-  .input-group input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 2px solid var(--border, #e6e1d4);
-    border-radius: 8px;
-    font-size: 1.125rem;
-    box-sizing: border-box;
-    transition: border-color 0.15s ease;
-  }
-
-  .input-group input:focus {
-    outline: none;
-    border-color: var(--pine, #4d594a);
-  }
-
-  .input-hint {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--muted, #6b7c6e);
-    margin-top: 0.25rem;
-  }
-
-  .validation-error {
-    background: #fee2e2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-    padding: 0.75rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-  }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    border: none;
-  }
-
-  .btn-record {
-    width: 100%;
-    background: var(--pine, #4d594a);
-    color: white;
-  }
-
-  .btn-record:hover {
-    background: #3d473a;
-  }
-
-  .btn-reset {
-    background: #ef4444;
-    color: white;
-  }
-
-  .btn-reset:hover {
-    background: #dc2626;
-  }
-
-  .btn-secondary {
-    background: var(--card, #fff);
-    color: var(--pine, #4d594a);
-    border: 1px solid var(--border, #e6e1d4);
-  }
-
-  .btn-secondary:hover {
-    background: var(--bg, #f5f2e8);
-  }
-
-  .session-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    color: var(--muted, #6b7c6e);
-    flex-wrap: wrap;
-  }
-
-  .session-info .dot {
-    width: 4px;
-    height: 4px;
-    background: var(--muted, #6b7c6e);
-    border-radius: 50%;
-  }
-
-  .reset-link {
-    background: none;
-    border: none;
-    color: #dc2626;
-    cursor: pointer;
-    font-size: 0.9rem;
-    text-decoration: underline;
-    padding: 0;
-    margin-left: auto;
-  }
-
-  .reset-link:hover {
-    color: #b91c1c;
-  }
-
-  /* Timing Guidance */
-  .timing-guidance {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    margin-top: 1rem;
-    font-size: 0.9rem;
-  }
-
-  .timing-guidance.intro {
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    color: #1e40af;
-  }
-
-  .timing-guidance.ready {
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    color: #15803d;
-  }
-
-  .timing-guidance.waiting {
-    background: rgba(234, 179, 8, 0.1);
-    border: 1px solid rgba(234, 179, 8, 0.3);
-    color: #a16207;
-  }
-
-  .timing-icon {
-    font-size: 1.1rem;
     flex-shrink: 0;
   }
 
-  .timing-message {
+  .ribbon-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ribbon-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.25rem;
+  }
+
+  .ribbon-label {
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .ribbon-rate {
+    font-size: 0.9rem;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .rate-direction {
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .ribbon-action {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--ink);
     line-height: 1.4;
   }
 
-  /* Education Section */
-  .education-section {
-    margin-top: 1rem;
+  .ribbon-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
   }
 
-  .education-toggle {
-    background: none;
-    border: none;
-    color: var(--pine, #4d594a);
-    font-size: 1rem;
+  .separator {
+    color: var(--border);
+  }
+
+  .threshold {
     font-weight: 600;
-    cursor: pointer;
-    padding: 0.5rem 0;
+  }
+
+  /* Entry Section */
+  .entry-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    position: relative;
+  }
+
+  .entry-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--pine), var(--alpine));
+    border-radius: 12px 12px 0 0;
+  }
+
+  .entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .entry-title {
+    font-size: 1.5rem;
+    color: var(--pine);
+  }
+
+  .entry-date {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .entry-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 500px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .form-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .note-label {
+    min-width: 0;
+  }
+
+  .label-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .input-wrapper {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-  }
-
-  .education-toggle:hover {
-    color: var(--ink, #1f2937);
-  }
-
-  .education-content {
-    padding: 1.5rem;
-    background: var(--card, #fff);
-    border: 1px solid var(--border, #e6e1d4);
-    border-radius: 12px;
-    margin-top: 0.5rem;
-  }
-
-  .education-content h3 {
-    font-size: 1.1rem;
-    color: var(--pine, #4d594a);
-    margin: 1.5rem 0 0.75rem;
-  }
-
-  .education-content h3:first-child {
-    margin-top: 0;
-  }
-
-  .education-content p {
-    line-height: 1.7;
-    color: var(--fg, #333);
-    margin: 0.75rem 0;
-  }
-
-  .education-content ul {
-    margin: 0.75rem 0;
-    padding-left: 1.25rem;
-  }
-
-  .education-content li {
-    margin: 0.5rem 0;
-    line-height: 1.6;
-  }
-
-  /* Threshold Table */
-  .threshold-table {
-    overflow-x: auto;
-    margin: 1rem 0;
-  }
-
-  .threshold-table table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-  }
-
-  .threshold-table th {
-    text-align: left;
-    padding: 0.625rem 0.75rem;
-    background: var(--bg, #f5f2e8);
-    border-bottom: 2px solid var(--border, #e6e1d4);
-    font-weight: 600;
-    color: var(--pine, #4d594a);
-  }
-
-  .threshold-table td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border, #e6e1d4);
-    vertical-align: middle;
-  }
-
-  .level-badge {
-    display: inline-flex;
-    align-items: center;
     gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
+  }
+
+  .elevation-input {
+    width: 100px;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-family: inherit;
+    background: #fdfcf7;
+  }
+
+  .elevation-input:focus {
+    outline: none;
+    border-color: var(--pine);
+    box-shadow: 0 0 0 3px rgba(77, 89, 74, 0.1);
+  }
+
+  .input-suffix {
+    font-size: 0.9rem;
+    color: var(--muted);
     font-weight: 500;
   }
 
-  .level-badge.clear { background: rgba(34, 197, 94, 0.15); color: #15803d; }
-  .level-badge.watch { background: rgba(234, 179, 8, 0.15); color: #a16207; }
-  .level-badge.warning { background: rgba(249, 115, 22, 0.15); color: #c2410c; }
-  .level-badge.danger { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
-  .level-badge.imminent { background: rgba(239, 68, 68, 0.2); color: #dc2626; }
-
-  /* Reading History */
-  .reading-history {
-    background: var(--bg, #f5f2e8);
+  .note-input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 0.75rem;
-    margin-top: 0.5rem;
+    font-size: 1rem;
+    font-family: Caveat, cursive;
+    background: #fdfcf7;
   }
 
-  .reading-row {
+  .note-input:focus {
+    outline: none;
+    border-color: var(--pine);
+    box-shadow: 0 0 0 3px rgba(77, 89, 74, 0.1);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .add-button {
+    padding: 0.6rem 1.5rem;
+    background: var(--pine);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .add-button:hover:not(:disabled) {
+    background: #3d4a3a;
+    transform: translateY(-1px);
+  }
+
+  .add-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .clear-button {
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .clear-button:hover {
+    background: #fee2e2;
+  }
+
+  /* Journal Section */
+  .journal-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .journal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+    color: var(--pine);
+  }
+
+  .entry-count {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .empty-journal {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--card);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+
+  .empty-text {
+    font-size: 1.5rem;
+    color: var(--pine);
+    margin: 0 0 0.5rem;
+  }
+
+  .empty-hint {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* Journal Entries */
+  .journal-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .journal-entry {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: start;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    position: relative;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .journal-entry::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: var(--alpine);
+    border-radius: 0 3px 3px 0;
+  }
+
+  .journal-entry:hover {
+    border-color: #d6d1c4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .entry-timestamp {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 70px;
+  }
+
+  .timestamp-time {
+    font-size: 1.25rem;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .timestamp-date {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .entry-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .elevation-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+  }
+
+  .elevation-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .elevation-unit {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .drift-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #f0f0f0;
+    color: var(--muted);
+    width: fit-content;
+  }
+
+  .drift-badge.rising {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+  }
+
+  .drift-badge.falling {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+  }
+
+  .drift-badge.first {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+  }
+
+  .drift-arrow {
+    font-size: 0.9rem;
+  }
+
+  .entry-note {
+    font-size: 1.1rem;
+    color: var(--pine);
+    margin: 0;
+    font-style: italic;
+  }
+
+  .delete-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1.25rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    border-radius: 4px;
+  }
+
+  .journal-entry:hover .delete-btn {
+    opacity: 1;
+  }
+
+  .delete-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  /* Toggle Sections */
+  .toggle-section {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border, #e6e1d4);
-    font-size: 0.85rem;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--pine);
+    margin-bottom: 0.75rem;
+    transition: background 0.15s ease, border-color 0.15s ease;
   }
 
-  .reading-row:last-child {
-    border-bottom: none;
+  .toggle-section:hover {
+    background: rgba(77, 89, 74, 0.05);
+    border-color: var(--alpine);
   }
 
-  .reading-time {
+  .toggle-section span:first-child {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* Graph Panel */
+  .graph-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .graph-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .trend-graph {
+    width: 100%;
+    height: auto;
+    min-height: 120px;
+  }
+
+  .axis-label {
+    font-size: 8px;
+    fill: var(--muted);
+  }
+
+  .graph-caption {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0.75rem 0 0;
+  }
+
+  /* Field Guide */
+  .field-guide {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .guide-intro {
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--border);
+    margin-bottom: 1rem;
+  }
+
+  .guide-intro p {
+    margin: 0;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  .guide-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .guide-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .guide-section h4 {
+    font-size: 1.35rem;
+    color: var(--pine);
+    margin: 0 0 0.5rem;
+  }
+
+  .guide-section p {
+    margin: 0 0 0.75rem;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  .guide-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--ink);
+  }
+
+  .guide-list li {
+    margin-bottom: 0.35rem;
+    line-height: 1.5;
+  }
+
+  .threshold-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .threshold-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #fdfcf7;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .t-icon {
+    font-size: 1.25rem;
+  }
+
+  .t-range {
+    font-size: 0.8rem;
     font-weight: 600;
-    color: var(--pine, #4d594a);
-    min-width: 60px;
+    color: var(--ink);
   }
 
-  .reading-values {
-    flex: 1;
-    color: var(--muted, #6b7c6e);
+  .t-meaning {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-left: auto;
   }
 
-  .reading-drift {
-    font-weight: 600;
-    min-width: 50px;
-    text-align: right;
-  }
-
-  .reading-drift.positive { color: #dc2626; }
-  .reading-drift.negative { color: #15803d; }
-
-  /* Mobile */
-  @media (max-width: 480px) {
-    .storm-warning {
-      /* Mobile adjustments */
-    }
-
-    .warning-circle {
-      width: 100px;
-      height: 100px;
-    }
-
-    .warning-icon {
-      font-size: 2.5rem;
-    }
-
-    .warning-message {
-      font-size: 1.1rem;
-    }
-
-    .threshold-table {
-      font-size: 0.8rem;
-    }
-
-    .reading-row {
-      flex-wrap: wrap;
-    }
-
-    .reading-values {
-      width: 100%;
-      order: 3;
-      margin-top: 0.25rem;
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .journal-entry,
+    .add-button,
+    .toggle-section,
+    .delete-btn {
+      transition: none;
     }
   }
 </style>

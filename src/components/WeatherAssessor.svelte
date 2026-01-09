@@ -2,11 +2,17 @@
   import { onMount } from 'svelte';
   import { slide, fade } from 'svelte/transition';
   import StormWarning from './StormWarning.svelte';
+  import StormWarningFieldStation from './StormWarningFieldStation.svelte';
+  import StormWarningJournal from './StormWarningJournal.svelte';
+  import StormWarningGauge from './StormWarningGauge.svelte';
 
   let { trailContext = {} } = $props();
 
   // Active section
   let activeSection = $state('temp');
+
+  // Storm warning concept selector (for A/B testing)
+  let activeStormConcept = $state('field-station');
 
   // Temperature calculator inputs
   let townTemp = $state(35);
@@ -774,7 +780,45 @@
   <!-- Pressure Section - Storm Warning Tool -->
   {#if activeSection === 'pressure'}
     <section class="wx-section" transition:fade>
-      <StormWarning {trailContext} />
+      <!-- Concept picker for A/B testing -->
+      <div class="concept-picker">
+        <span class="picker-label">Pick a style:</span>
+        <div class="picker-tabs">
+          <button
+            class="picker-tab"
+            class:active={activeStormConcept === 'field-station'}
+            onclick={() => activeStormConcept = 'field-station'}
+          >
+            <span class="tab-num">1</span>
+            Field Station
+          </button>
+          <button
+            class="picker-tab"
+            class:active={activeStormConcept === 'journal'}
+            onclick={() => activeStormConcept = 'journal'}
+          >
+            <span class="tab-num">2</span>
+            Trail Journal
+          </button>
+          <button
+            class="picker-tab"
+            class:active={activeStormConcept === 'gauge'}
+            onclick={() => activeStormConcept = 'gauge'}
+          >
+            <span class="tab-num">3</span>
+            Weather Gauge
+          </button>
+        </div>
+      </div>
+
+      <!-- Render selected concept -->
+      {#if activeStormConcept === 'field-station'}
+        <StormWarningFieldStation {trailContext} />
+      {:else if activeStormConcept === 'journal'}
+        <StormWarningJournal {trailContext} />
+      {:else if activeStormConcept === 'gauge'}
+        <StormWarningGauge {trailContext} />
+      {/if}
     </section>
   {/if}
 
@@ -972,6 +1016,69 @@
 <style>
   .weather-assessor {
     font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  /* Concept Picker for A/B Testing */
+  .concept-picker {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed #d1d5db;
+  }
+
+  .picker-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #6b7c6e;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .picker-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .picker-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    background: #f5f2e8;
+    border: 2px solid #e6e1d4;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #4d594a;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .picker-tab:hover {
+    background: #e6e1d4;
+    border-color: #4d594a;
+  }
+
+  .picker-tab.active {
+    background: #4d594a;
+    border-color: #4d594a;
+    color: white;
+  }
+
+  .tab-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .picker-tab.active .tab-num {
+    background: rgba(255, 255, 255, 0.25);
   }
 
   /* Atmospheric Header */
