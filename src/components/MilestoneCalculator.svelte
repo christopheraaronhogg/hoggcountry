@@ -188,16 +188,76 @@
   }));
 
   // Merge sections and trail towns into unified timeline, sorted by mile
+  // In trail mode, use actual pace to project dates for future items
   let timelineItems = $derived(() => {
-    const sectionItems = calculatedSections.map(s => ({
-      ...s,
-      mile: s.startMile,
-      type: 'section',
-    }));
-    const townItems = calculatedTrailTowns.map(t => ({
-      ...t,
-      type: 'town',
-    }));
+    const effectivePace = mode === 'trail' && actualPaceOverall > 0 ? actualPaceOverall : pace;
+    const baseDate = mode === 'trail' ? todayStr : startDate;
+    const baseMile = mode === 'trail' ? currentMile : 0;
+
+    function getProjectedDate(mile) {
+      if (mode === 'trail') {
+        if (mile <= currentMile) {
+          // Past - calculate when they actually were there
+          const daysFromStart = Math.ceil(mile / actualPaceOverall);
+          return addDays(tripStartDate, daysFromStart);
+        } else {
+          // Future - project from current position
+          const milesAhead = mile - currentMile;
+          const daysAhead = Math.ceil(milesAhead / effectivePace);
+          return addDays(todayStr, daysAhead);
+        }
+      } else {
+        return addDays(startDate, getCalendarDayForMile(mile));
+      }
+    }
+
+    function getItemStatus(mile, endMile = null) {
+      if (mode !== 'trail') return 'upcoming';
+      if (endMile !== null) {
+        // Section
+        if (currentMile >= endMile) return 'completed';
+        if (currentMile >= mile) return 'current';
+        return 'upcoming';
+      } else {
+        // Town
+        if (currentMile >= mile) return 'completed';
+        return 'upcoming';
+      }
+    }
+
+    const sectionItems = calculatedSections.map(s => {
+      const status = getItemStatus(s.startMile, s.endMile);
+      const arrivalDate = getProjectedDate(s.startMile);
+      const day = mode === 'trail'
+        ? (status === 'completed' ? Math.ceil(s.startMile / actualPaceOverall) : Math.ceil((s.startMile - currentMile) / effectivePace) + daysOnTrail)
+        : s.daysToStart;
+      return {
+        ...s,
+        mile: s.startMile,
+        type: 'section',
+        status,
+        arrivalDate,
+        daysToStart: day,
+        season: getSeason(arrivalDate),
+      };
+    });
+
+    const townItems = calculatedTrailTowns.map(t => {
+      const status = getItemStatus(t.mile);
+      const arrivalDate = getProjectedDate(t.mile);
+      const day = mode === 'trail'
+        ? (status === 'completed' ? Math.ceil(t.mile / actualPaceOverall) : Math.ceil((t.mile - currentMile) / effectivePace) + daysOnTrail)
+        : t.day;
+      return {
+        ...t,
+        type: 'town',
+        status,
+        arrivalDate,
+        day,
+        season: getSeason(arrivalDate),
+      };
+    });
+
     return [...sectionItems, ...townItems].sort((a, b) => {
       const mileA = a.type === 'section' ? a.startMile : a.mile;
       const mileB = b.type === 'section' ? b.startMile : b.mile;
@@ -434,170 +494,162 @@ hoggcountry.com/tools`;
     </section>
 
   {:else}
-    <!-- TRAIL MODE -->
+    <!-- TRAIL MODE - Same timeline view with progress context -->
 
-    <!-- Progress Dashboard -->
-    <section class="dashboard-section">
-      <div class="dashboard-hero">
-        <div class="progress-ring-container">
-          <svg viewBox="0 0 120 120" class="progress-ring">
-            <defs>
-              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#22c55e"/>
-                <stop offset="100%" style="stop-color:#3b82f6"/>
-              </linearGradient>
-            </defs>
-            <circle cx="60" cy="60" r="52" class="ring-bg"/>
-            <circle cx="60" cy="60" r="52" class="ring-fill" style="stroke-dasharray: {326.7 * (percentComplete / 100)} 326.7"/>
-          </svg>
-          <div class="ring-center">
-            <span class="ring-percent">{percentComplete.toFixed(0)}%</span>
-            <span class="ring-label">complete</span>
-          </div>
+    <!-- Compact Progress Summary -->
+    <section class="progress-summary">
+      <div class="summary-stats">
+        <div class="summary-stat main">
+          <span class="ss-value">{currentMile.toFixed(0)}</span>
+          <span class="ss-label">miles hiked</span>
         </div>
-
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <span class="hs-value">{daysOnTrail}</span>
-            <span class="hs-label">Days on Trail</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hs-value">{hikingDaysActual}</span>
-            <span class="hs-label">Hiking Days</span>
-          </div>
-          <div class="hero-stat status" style="--status-color: {statusColor}">
-            <span class="hs-value">{daysAheadBehind >= 0 ? '+' : ''}{daysAheadBehind}</span>
-            <span class="hs-label">{statusLabel}</span>
-          </div>
+        <div class="summary-stat">
+          <span class="ss-value">{percentComplete.toFixed(0)}%</span>
+          <span class="ss-label">complete</span>
+        </div>
+        <div class="summary-stat">
+          <span class="ss-value">{daysOnTrail}</span>
+          <span class="ss-label">days on trail</span>
+        </div>
+        <div class="summary-stat status" style="--status-color: {statusColor}">
+          <span class="ss-value">{daysAheadBehind >= 0 ? '+' : ''}{daysAheadBehind}</span>
+          <span class="ss-label">{statusLabel}</span>
         </div>
       </div>
-
-      <!-- Pace Cards -->
-      <div class="pace-grid">
-        <div class="pace-card">
-          <span class="pace-value">{actualPaceHiking.toFixed(1)}</span>
-          <span class="pace-unit">mi/hiking day</span>
-          <span class="pace-note">True pace</span>
-        </div>
-        <div class="pace-card">
-          <span class="pace-value">{actualPaceOverall.toFixed(1)}</span>
-          <span class="pace-unit">mi/calendar day</span>
-          <span class="pace-note">+{zeroDaysTaken} zeros</span>
-        </div>
-        <div class="pace-card">
-          <span class="pace-value">{zeroDayFrequency.toFixed(1)}</span>
-          <span class="pace-unit">zeros/month</span>
-          <span class="pace-note">{zeroDayFrequency <= 4 ? 'Efficient' : zeroDayFrequency <= 6 ? 'Normal' : 'Relaxed'}</span>
-        </div>
-      </div>
-
-      <!-- Quick Stats -->
-      <div class="quick-grid">
-        <div class="quick-card">
-          <span class="qc-icon">📍</span>
-          <span class="qc-value">{currentMile.toFixed(0)}</span>
-          <span class="qc-label">miles hiked</span>
-        </div>
-        <div class="quick-card">
-          <span class="qc-icon">🎯</span>
-          <span class="qc-value">{milesRemaining.toFixed(0)}</span>
-          <span class="qc-label">miles to go</span>
-        </div>
-        <div class="quick-card">
-          <span class="qc-icon">📅</span>
-          <span class="qc-value">{daysRemaining}</span>
-          <span class="qc-label">days remaining</span>
-        </div>
+      <div class="summary-projection">
+        <span class="proj-label">Summit projection:</span>
+        <span class="proj-date">{formatDate(projectedFinish)}</span>
+        <span class="proj-pace">at {actualPaceOverall.toFixed(1)} mi/day</span>
       </div>
     </section>
 
-    <!-- Current Section -->
-    <section class="current-section">
-      <div class="current-card">
-        <div class="current-header">
-          <span class="current-emoji">{currentSection.emoji}</span>
-          <div class="current-info">
-            <span class="current-name">{currentSection.name}</span>
-            <span class="current-highlight">{currentSection.highlight}</span>
-          </div>
-        </div>
-        <div class="current-progress">
-          <div class="progress-track">
-            <div class="progress-fill" style="width: {((currentMile - currentSection.startMile) / (currentSection.endMile - currentSection.startMile)) * 100}%"></div>
-          </div>
-          <span class="progress-label">{milesToSectionEnd.toFixed(0)} mi to next section</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Next Milestone -->
-    {#if nextMilestone}
-      <section class="next-milestone">
-        <div class="nm-card">
-          <span class="nm-label">NEXT MILESTONE</span>
-          <div class="nm-content">
-            <div class="nm-info">
-              <span class="nm-name">{nextMilestone.label}</span>
-              <span class="nm-note">{nextMilestone.note}</span>
-            </div>
-            <div class="nm-distance">
-              <span class="nm-miles">{milesToNextMilestone.toFixed(0)}</span>
-              <span class="nm-unit">mi away</span>
-            </div>
-          </div>
-        </div>
-      </section>
-    {/if}
-
-    <!-- Projections -->
-    <section class="projections-section">
+    <!-- Unified Timeline -->
+    <section class="timeline-section">
       <h3 class="section-header">
         <span class="header-bar"></span>
-        PROJECTIONS
+        YOUR JOURNEY
       </h3>
-      <div class="proj-grid">
-        <div class="proj-card current">
-          <div class="proj-header">
-            <span class="proj-label">At Current Pace</span>
-            <span class="proj-pace">{actualPace.toFixed(1)} mi/day</span>
-          </div>
-          <div class="proj-date">{formatDate(projectedFinish)}</div>
-          <div class="proj-days">{daysRemaining} days remaining</div>
-        </div>
-        <div class="proj-card target">
-          <div class="proj-header">
-            <span class="proj-label">To Hit Target</span>
-            <span class="proj-target-date">{formatDateShort(originalFinish)}</span>
-          </div>
-          <div class="proj-pace-needed">
-            <span class="ppn-value">{paceToHitTarget}</span>
-            <span class="ppn-unit">mi/day needed</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Remaining Sections -->
-    <section class="remaining-section">
-      <h3 class="section-header">
-        <span class="header-bar"></span>
-        SECTIONS AHEAD
-      </h3>
-      <div class="remaining-list">
-        {#each remainingSections as section}
-          <div class="rem-item" class:current={section.isCurrent}>
-            <span class="rem-emoji">{section.emoji}</span>
-            <div class="rem-info">
-              <div class="rem-top">
-                <span class="rem-name">{section.name}</span>
-                {#if section.isCurrent}
-                  <span class="rem-badge">HERE</span>
+      <div class="timeline">
+        {#each timelineItems() as item, i}
+          {#if item.type === 'section'}
+            <!-- Section -->
+            <div class="timeline-item {item.status}" style="animation-delay: {i * 30}ms">
+              <div class="item-date">
+                {#if item.status === 'completed'}
+                  <span class="date-main completed">✓</span>
+                  <span class="date-day">Done</span>
+                {:else if item.status === 'current'}
+                  <span class="date-main current">NOW</span>
+                  <span class="date-day">Day {daysOnTrail}</span>
+                {:else}
+                  <span class="date-main">{formatDateShort(item.arrivalDate)}</span>
+                  <span class="date-day">~Day {item.daysToStart}</span>
                 {/if}
               </div>
-              <div class="rem-meta">
-                <span>{section.milesRemaining.toFixed(0)} mi</span>
-                <span>~{section.daysToComplete} days</span>
+              <div class="item-marker">
+                <div class="marker-line" class:first={i===0}></div>
+                <div class="marker-dot {item.status}" style="background: {item.status === 'completed' ? '#9ca3af' : item.status === 'current' ? '#22c55e' : item.season.color}">
+                  {#if item.status === 'completed'}✓{:else}{item.index}{/if}
+                </div>
+                <div class="marker-line"></div>
               </div>
+              <div class="item-content">
+                <div class="section-card {item.status}">
+                  <div class="card-top">
+                    <span class="card-emoji">{item.emoji}</span>
+                    <span class="card-name">{item.name}</span>
+                    <span class="card-miles">{item.sectionMiles.toFixed(0)} mi</span>
+                  </div>
+                  <div class="card-mile-range">
+                    <span class="mile-marker">Mile {item.startMile.toFixed(0)}</span>
+                    <span class="mile-arrow">→</span>
+                    <span class="mile-marker">Mile {item.endMile.toFixed(0)}</span>
+                  </div>
+                  {#if item.status === 'current'}
+                    <div class="current-progress-inline">
+                      <div class="progress-track-inline">
+                        <div class="progress-fill-inline" style="width: {((currentMile - item.startMile) / (item.endMile - item.startMile)) * 100}%"></div>
+                      </div>
+                      <span class="progress-label-inline">{(item.endMile - currentMile).toFixed(0)} mi to go</span>
+                    </div>
+                  {:else}
+                    <div class="card-bottom">
+                      <span class="card-highlight">{item.highlight}</span>
+                      {#if item.status !== 'completed'}
+                        <span class="card-season" style="color: {item.season.color}">{item.season.icon} {item.season.name}</span>
+                      {/if}
+                    </div>
+                  {/if}
+                </div>
+              </div>
+            </div>
+          {:else}
+            <!-- Trail Town -->
+            <div class="timeline-item town {item.status}" style="animation-delay: {i * 30}ms">
+              <div class="item-date">
+                {#if item.status === 'completed'}
+                  <span class="date-main completed">✓</span>
+                  <span class="date-day">Done</span>
+                {:else}
+                  <span class="date-main">{formatDateShort(item.arrivalDate)}</span>
+                  <span class="date-day">~Day {item.day}</span>
+                {/if}
+              </div>
+              <div class="item-marker">
+                <div class="marker-line"></div>
+                <div class="marker-dot town {item.status}">{item.emoji}</div>
+                <div class="marker-line"></div>
+              </div>
+              <div class="item-content">
+                <div class="town-card {item.status}">
+                  <div class="town-header">
+                    <span class="town-name">{item.name}</span>
+                    <span class="town-mile">Mile {item.mile}</span>
+                  </div>
+                  <span class="town-highlight">{item.highlight}</span>
+                </div>
+              </div>
+            </div>
+          {/if}
+        {/each}
+
+        <!-- Summit -->
+        <div class="timeline-item summit" style="animation-delay: {timelineItems().length * 30}ms">
+          <div class="item-date">
+            <span class="date-main">{formatDateShort(projectedFinish)}</span>
+            <span class="date-day">~Day {daysOnTrail + daysRemaining}</span>
+          </div>
+          <div class="item-marker">
+            <div class="marker-line top-only"></div>
+            <div class="marker-dot summit">★</div>
+          </div>
+          <div class="item-content">
+            <div class="summit-card">
+              <h4>KATAHDIN</h4>
+              <p>The Northern Terminus</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Milestones with progress -->
+    <section class="milestones-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        KEY MILESTONES
+      </h3>
+      <div class="milestones-grid">
+        {#each calculatedMilestones as ms}
+          <div class="milestone-card" class:achieved={currentMile >= ms.miles}>
+            <div class="ms-miles">{ms.miles}</div>
+            <div class="ms-info">
+              <span class="ms-label">{ms.label}</span>
+              {#if currentMile >= ms.miles}
+                <span class="ms-achieved">✓ Achieved</span>
+              {:else}
+                <span class="ms-date">{(ms.miles - currentMile).toFixed(0)} mi away</span>
+              {/if}
             </div>
           </div>
         {/each}
@@ -967,11 +1019,191 @@ hoggcountry.com/tools`;
     height: 28px;
   }
 
+  .marker-dot.town.completed {
+    background: #9ca3af !important;
+    opacity: 0.7;
+  }
+
   .town-card {
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.04));
     border: 2px solid rgba(245, 158, 11, 0.4);
     border-radius: 10px;
     padding: 0.65rem 0.9rem;
+  }
+
+  .town-card.completed {
+    background: var(--bg);
+    border-color: var(--border);
+    opacity: 0.6;
+  }
+
+  .town-card.completed .town-name,
+  .town-card.completed .town-mile {
+    color: var(--muted);
+  }
+
+  /* Section status styles */
+  .timeline-item.completed {
+    opacity: 0.6;
+  }
+
+  .section-card.completed {
+    background: var(--bg);
+    border-color: var(--border);
+  }
+
+  .section-card.completed .card-name,
+  .section-card.completed .card-miles {
+    color: var(--muted);
+  }
+
+  .section-card.current {
+    border-color: #22c55e;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
+  }
+
+  .marker-dot.completed {
+    background: #9ca3af !important;
+    color: #fff;
+  }
+
+  .marker-dot.current {
+    background: #22c55e !important;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  }
+
+  .date-main.completed {
+    color: #22c55e;
+    font-size: 1rem;
+  }
+
+  .date-main.current {
+    color: #22c55e;
+    font-weight: 700;
+  }
+
+  /* Inline progress for current section */
+  .current-progress-inline {
+    margin-top: 0.5rem;
+  }
+
+  .progress-track-inline {
+    height: 6px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill-inline {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label-inline {
+    display: block;
+    text-align: right;
+    font-size: 0.7rem;
+    color: #22c55e;
+    font-weight: 600;
+    margin-top: 0.25rem;
+  }
+
+  /* Progress Summary (trail mode header) */
+  .progress-summary {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
+    border-bottom: 2px solid var(--border);
+  }
+
+  .summary-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .summary-stat {
+    text-align: center;
+  }
+
+  .summary-stat.main {
+    flex: 1.5;
+  }
+
+  .ss-value {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .summary-stat.main .ss-value {
+    font-size: 2rem;
+    color: var(--pine);
+  }
+
+  .summary-stat.status .ss-value {
+    color: var(--status-color);
+  }
+
+  .ss-label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 0.15rem;
+  }
+
+  .summary-projection {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .summary-projection .proj-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .summary-projection .proj-date {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--pine);
+  }
+
+  .summary-projection .proj-pace {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* Achieved milestones */
+  .milestone-card.achieved {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.02));
+    border-color: #22c55e;
+  }
+
+  .milestone-card.achieved .ms-miles {
+    color: #22c55e;
+  }
+
+  .ms-achieved {
+    font-size: 0.7rem;
+    color: #22c55e;
+    font-weight: 600;
   }
 
   .town-header {
