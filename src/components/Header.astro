@@ -1,0 +1,195 @@
+---
+const pathname = Astro.url.pathname;
+const isGuide = pathname.startsWith('/guide');
+const isGenerate = pathname.startsWith('/generate');
+const isTools = pathname.startsWith('/tools');
+---
+
+<header class="header" id="site-header">
+  <nav class="container nav">
+    <a href="/" class="brand" aria-label="Hogg Country">
+      <img src="/logo.png" alt="Hogg Country" class="logo" />
+    </a>
+
+    <div class="nav-right">
+      <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
+      <!-- <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a> -->
+      <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
+      <span id="offline-status" class="offline-badge" title="Offline status" style="display: none;"></span>
+    </div>
+  </nav>
+</header>
+
+<style>
+  .header {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    background: var(--bg, #f5f2e8);
+    border-bottom: 1px solid var(--border, #e6e1d4);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Scroll-hide state (toggled via JS on guide page) */
+  .header.is-hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+  }
+
+  .logo {
+    height: 40px;
+    width: auto;
+  }
+
+  @media (max-width: 600px) {
+    .logo {
+      height: 32px;
+    }
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Navigation links */
+  .nav-link {
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    transition: color 0.12s ease, background-color 0.12s ease;
+  }
+
+  .nav-link:hover {
+    color: var(--pine);
+    background: rgba(77, 89, 74, 0.08);
+  }
+
+  .nav-link.is-active {
+    color: var(--pine);
+    font-weight: 600;
+    background: rgba(166, 181, 137, 0.2);
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .nav-right {
+      gap: 0.25rem;
+    }
+
+    .nav-link {
+      font-size: 0.8rem;
+      padding: 0.2rem 0.4rem;
+    }
+  }
+
+  /* Offline status badge */
+  .offline-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .offline-badge.caching {
+    background: rgba(240, 224, 0, 0.3);
+    color: #8a7800;
+  }
+
+  .offline-badge.ready {
+    background: rgba(166, 181, 137, 0.3);
+    color: var(--pine);
+  }
+
+  .offline-badge.offline {
+    background: rgba(217, 119, 6, 0.2);
+    color: #b45309;
+  }
+
+  /* Print: hide header */
+  @media print {
+    .header {
+      display: none !important;
+    }
+  }
+</style>
+
+<script is:inline>
+  // Offline status indicator
+  (function() {
+    const badge = document.getElementById('offline-status');
+    if (!badge || !('serviceWorker' in navigator)) return;
+
+    function showReady() {
+      badge.textContent = '✓ Saved';
+      badge.className = 'offline-badge ready';
+      badge.style.display = 'inline-block';
+      badge.title = 'Site saved for offline use';
+      // Hide after 5 seconds if online
+      setTimeout(() => {
+        if (navigator.onLine) badge.style.display = 'none';
+      }, 5000);
+    }
+
+    function showOffline() {
+      badge.textContent = '📴 Offline';
+      badge.className = 'offline-badge offline';
+      badge.style.display = 'inline-block';
+      badge.title = 'You are offline - cached content available';
+    }
+
+    function showCaching() {
+      badge.textContent = '↓ Saving...';
+      badge.className = 'offline-badge caching';
+      badge.style.display = 'inline-block';
+      badge.title = 'Saving site for offline use...';
+    }
+
+    function updateStatus() {
+      if (!navigator.onLine) {
+        showOffline();
+      } else if (navigator.serviceWorker.controller) {
+        showReady();
+      }
+    }
+
+    // Listen for SW messages
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'CACHE_COMPLETE') {
+        console.log('[Offline] Cache complete, site ready for offline use');
+        showReady();
+      }
+    });
+
+    // Check on load
+    if (navigator.serviceWorker.controller) {
+      updateStatus();
+    } else {
+      // Wait for SW to activate
+      navigator.serviceWorker.ready.then(() => {
+        showCaching();
+      });
+    }
+
+    // Listen for online/offline
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+  })();
+</script>

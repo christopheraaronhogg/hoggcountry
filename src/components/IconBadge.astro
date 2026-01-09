@@ -1,0 +1,25 @@
+---
+/**
+ * Compact icon badge that sits on the stitch line.
+ * variant: 'trip' | 'video' | 'post'
+ */
+interface Props {
+  variant?: 'trip' | 'video' | 'post';
+  title?: string;
+}
+const { variant = 'trip', title = '' } = Astro.props as Props;
+const color = variant === 'video' ? 'var(--marker)' : variant === 'post' ? 'var(--terra)' : 'var(--alpine)';
+---
+<div class="icon-badge" aria-label={title} title={title} style={`background:${color};`}>
+  {variant === 'video' ? (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="#1f2937" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+  ) : variant === 'post' ? (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="#1f2937" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41L18.37 3.3a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.84z"/></svg>
+  ) : (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="#1f2937" aria-hidden="true"><path d="M12 2l4 6h-3l3 5h-3l3 5h-8l3-5H8l3-5H8l4-6z"/></svg>
+  )}
+</div>
+
+<style>
+  .icon-badge { width: 28px; height: 28px; border-radius: 999px; display:grid; place-items:center; border: 2px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15); }
+</style>

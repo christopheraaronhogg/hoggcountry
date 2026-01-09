@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolsApp from '../../components/ToolsApp.svelte';
+
+const title = "Trail Tools — Hogg Country";
+const description = "Interactive tools for AT thru-hiking: milestone planner, gear calculator, daylight calculator, and more.";
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero">
+    <span class="chapter font-chapter">AT 2026</span>
+    <h1 class="font-display">Trail Tools</h1>
+    <p>Interactive planning tools for the Appalachian Trail</p>
+  </section>
+
+  <div class="container tools-container">
+    <ToolsApp client:load />
+  </div>
+</BaseLayout>
+
+<style>
+  .tools-container {
+    padding-bottom: 4rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+</style>

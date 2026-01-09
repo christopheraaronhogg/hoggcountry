@@ -1,0 +1,792 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import YouTubeEmbed from '../components/YouTubeEmbed.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { YT_FEED_URL } from '../lib/config';
+import { fetchYouTubeRSS } from '../lib/youtube';
+import { getCollection } from 'astro:content';
+
+const trips = (await getCollection('trips')).map(t => ({
+  kind: 'trip' as const,
+  id: t.id,
+  title: t.data.title,
+  date: new Date(t.data.date).toISOString(),
+  url: `/trips/${t.id}/`,
+  meta: {
+    state: t.data.state,
+    distance_miles: t.data.distance_miles,
+    elevation_gain_ft: t.data.elevation_gain_ft,
+    difficulty: t.data.difficulty,
+  },
+}));
+
+const vids = (await fetchYouTubeRSS(YT_FEED_URL)).map(v => ({
+  kind: 'video' as const,
+  id: v.id,
+  title: v.title,
+  date: v.published,
+  url: `https://www.youtube.com/watch?v=${v.id}`,
+}));
+
+const combined = [...trips, ...vids]
+  .filter(i => !!i.date)
+  .sort((a, b) => +new Date(b.date) - +new Date(a.date))
+  .slice(0, 12);
+
+const entries = combined.map((e, index) => {
+  const d = new Date(e.date);
+  const dateShort = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const dateFull = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const year = d.getFullYear();
+  return { ...e, dateShort, dateFull, year, index };
+});
+---
+<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+  <!-- Hero: Field Journal Cover -->
+  <section class="hero-journal">
+    <div class="hero-inner">
+      <!-- Decorative trail blazes -->
+      <div class="hero-blazes" aria-hidden="true">
+        <span class="blaze"></span>
+        <span class="blaze"></span>
+        <span class="blaze"></span>
+      </div>
+
+      <!-- Main content -->
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="badge-ring"></span>
+          <span class="badge-inner">
+            <span class="badge-icon">⛰</span>
+            <span class="badge-text">Triple O</span>
+            <span class="badge-subtitle">Crowner</span>
+          </span>
+        </div>
+
+        <h1 class="hero-title font-display">
+          <span class="title-main">Hogg Country</span>
+          <span class="title-sub hand">The Trailhead Logbook</span>
+        </h1>
+
+        <p class="hero-intro">
+          I'm <strong>Jimmy Hogg</strong>, an Arkansas hiker preparing for my <em class="hand">2026 AT NOBO thru-hike</em>. I've completed the <strong>Ouachita</strong>, <strong>Ozark Highlands</strong>, and <strong>Ozark Trail</strong> (the "Triple O"), plus the <strong>Buffalo River Trail</strong>, becoming the 6th recognized recipient of the <span class="highlight">Sassafras Hiking Award</span>.
+        </p>
+
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-value">840+</span>
+            <span class="stat-label">Miles Logged</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-value">120k+</span>
+            <span class="stat-label">Ft Elevation</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-value">3</span>
+            <span class="stat-label">Thru-Hikes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coordinates decoration -->
+      <div class="hero-coords hand" aria-hidden="true">
+        35.2010° N, 92.4422° W
+      </div>
+    </div>
+  </section>
+
+  <!-- Logbook Section -->
+  <section class="logbook-section" id="timeline">
+    <div class="container">
+      <!-- Section header with filter tabs -->
+      <header class="logbook-header">
+        <div class="logbook-title-row">
+          <h2 class="logbook-title font-display">
+            <span class="title-accent" aria-hidden="true">§</span>
+            Trail Logbook
+          </h2>
+          <span class="logbook-count hand">{entries.length} entries</span>
+        </div>
+
+        <!-- Filter tabs styled as journal tabs -->
+        <nav class="logbook-filters" id="filters" aria-label="Filter entries">
+          <button class="filter-tab is-active" data-filter="all" aria-pressed="true">
+            <span class="tab-icon">◆</span>
+            <span>All</span>
+          </button>
+          <button class="filter-tab" data-filter="trip" aria-pressed="false">
+            <span class="tab-icon">⛰</span>
+            <span>Trips</span>
+          </button>
+          <button class="filter-tab" data-filter="video" aria-pressed="false">
+            <span class="tab-icon">▶</span>
+            <span>Videos</span>
+          </button>
+        </nav>
+      </header>
+
+      <!-- Journal entries -->
+      <div class="journal-entries">
+        {entries.map((e) => (
+          <article class="journal-entry" data-kind={e.kind}>
+            <!-- Date sidebar -->
+            <div class="entry-date-col">
+              <div class="entry-date">
+                <span class="date-day">{new Date(e.date).getDate()}</span>
+                <span class="date-month">{new Date(e.date).toLocaleDateString(undefined, { month: 'short' })}</span>
+                <span class="date-year">{e.year}</span>
+              </div>
+              <div class="entry-type-badge" data-type={e.kind}>
+                {e.kind === 'trip' ? '⛰' : '▶'}
+              </div>
+            </div>
+
+            <!-- Entry content -->
+            <div class="entry-content">
+              {e.kind === 'trip' ? (
+                <a href={e.url} class="entry-link">
+                  <h3 class="entry-title">{e.title}</h3>
+                  <div class="entry-meta-row">
+                    {e.meta.state && <span class="meta-item"><span class="meta-icon">📍</span>{e.meta.state}</span>}
+                    {e.meta.distance_miles && <span class="meta-item"><span class="meta-icon">↔</span>{e.meta.distance_miles} mi</span>}
+                    {e.meta.elevation_gain_ft && <span class="meta-item"><span class="meta-icon">△</span>{e.meta.elevation_gain_ft} ft</span>}
+                  </div>
+                  <span class="entry-cta">Read trip report →</span>
+                </a>
+              ) : (
+                <div class="video-entry">
+                  <div class="video-thumb">
+                    <YouTubeEmbed id={e.id} title={e.title} />
+                  </div>
+                  <div class="video-info">
+                    <h3 class="entry-title">{e.title}</h3>
+                    <a href={e.url} target="_blank" rel="noopener" class="entry-cta">
+                      Watch on YouTube →
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <!-- Decorative stitch -->
+            <div class="entry-stitch" aria-hidden="true"></div>
+          </article>
+        ))}
+      </div>
+
+      <!-- View all link -->
+      <div class="logbook-footer">
+        <div class="footer-line" aria-hidden="true"></div>
+        <a href="/trips" class="view-all-link">
+          <span>View All Adventures</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    /* ===== Hero: Field Journal Cover ===== */
+    .hero-journal {
+      position: relative;
+      padding: 4rem 1.5rem 3rem;
+      overflow: hidden;
+    }
+
+    .hero-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Decorative blazes */
+    .hero-blazes {
+      position: absolute;
+      top: -1rem;
+      right: 0;
+      display: flex;
+      gap: 0.5rem;
+      opacity: 0.7;
+    }
+
+    .blaze {
+      width: 10px;
+      height: 18px;
+      background: var(--marker);
+      border-radius: 2px;
+      transform: rotate(-3deg);
+    }
+
+    .blaze:nth-child(2) {
+      transform: rotate(2deg);
+      opacity: 0.6;
+    }
+
+    .blaze:nth-child(3) {
+      transform: rotate(-1deg);
+      opacity: 0.4;
+    }
+
+    /* Badge */
+    .hero-badge {
+      width: 110px;
+      height: 110px;
+      margin: 0 auto 1.5rem;
+      position: relative;
+    }
+
+    .badge-ring {
+      position: absolute;
+      inset: 0;
+      border: 3px solid var(--pine);
+      border-radius: 50%;
+      opacity: 0.3;
+    }
+
+    .badge-ring::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 2px dashed var(--alpine);
+      border-radius: 50%;
+      opacity: 0.6;
+    }
+
+    .badge-inner {
+      position: absolute;
+      inset: 8px;
+      background: linear-gradient(145deg, #fff 0%, var(--bg) 100%);
+      border: 2px solid var(--alpine);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 4px 12px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .badge-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .badge-text {
+      font-family: Oswald, sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--pine);
+      margin-top: 0.15rem;
+    }
+
+    .badge-subtitle {
+      font-family: Caveat, cursive;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: -0.1rem;
+    }
+
+    /* Title */
+    .hero-title {
+      text-align: center;
+      margin: 0 0 1.25rem;
+    }
+
+    .title-main {
+      display: block;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      color: var(--ink);
+      line-height: 1;
+      letter-spacing: -0.01em;
+    }
+
+    .title-sub {
+      display: block;
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+      color: var(--pine);
+      margin-top: 0.25rem;
+    }
+
+    /* Intro */
+    .hero-intro {
+      text-align: center;
+      max-width: 580px;
+      margin: 0 auto 2rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .hero-intro strong {
+      color: var(--ink);
+    }
+
+    .hero-intro .hand {
+      font-family: Caveat, cursive;
+      font-size: 1.15em;
+    }
+
+    .highlight {
+      background: linear-gradient(to top, rgba(240, 224, 0, 0.3) 0%, rgba(240, 224, 0, 0.3) 40%, transparent 40%);
+      padding: 0 0.15rem;
+    }
+
+    /* Stats */
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.25rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 0 auto;
+      max-width: 400px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      display: block;
+      font-family: Oswald, sans-serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--pine);
+      line-height: 1.1;
+    }
+
+    .stat-label {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 40px;
+      background: var(--border);
+    }
+
+    /* Coordinates */
+    .hero-coords {
+      position: absolute;
+      bottom: -2rem;
+      left: 0;
+      font-size: 0.85rem;
+      color: var(--stone);
+      transform: rotate(-2deg);
+    }
+
+    /* ===== Logbook Section ===== */
+    .logbook-section {
+      padding: 4rem 0 5rem;
+    }
+
+    .logbook-header {
+      margin-bottom: 2.5rem;
+    }
+
+    .logbook-title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .logbook-title {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      margin: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .title-accent {
+      color: var(--alpine);
+      font-weight: 400;
+    }
+
+    .logbook-count {
+      font-size: 1rem;
+      color: var(--muted);
+    }
+
+    /* Filter tabs */
+    .logbook-filters {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+    }
+
+    .filter-tab {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1rem;
+      background: transparent;
+      border: none;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+
+    .filter-tab:hover {
+      color: var(--pine);
+    }
+
+    .filter-tab.is-active {
+      color: var(--pine);
+      font-weight: 600;
+      border-bottom-color: var(--pine);
+    }
+
+    .tab-icon {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .filter-tab.is-active .tab-icon {
+      opacity: 1;
+    }
+
+    /* ===== Journal Entries ===== */
+    .journal-entries {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .journal-entry {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 1rem;
+      padding: 1.25rem 0;
+      border-bottom: 1px dashed var(--border);
+      position: relative;
+      transition: background 0.15s ease;
+    }
+
+    .journal-entry:hover {
+      background: rgba(166, 181, 137, 0.04);
+    }
+
+    .journal-entry:last-child {
+      border-bottom: none;
+    }
+
+    /* Date column */
+    .entry-date-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding-top: 0.25rem;
+    }
+
+    .entry-date {
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .date-day {
+      display: block;
+      font-family: Oswald, sans-serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--pine);
+    }
+
+    .date-month {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .date-year {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--stone);
+      margin-top: 0.1rem;
+    }
+
+    .entry-type-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      border: 2px solid;
+    }
+
+    .entry-type-badge[data-type="trip"] {
+      background: rgba(166, 181, 137, 0.15);
+      border-color: var(--alpine);
+    }
+
+    .entry-type-badge[data-type="video"] {
+      background: rgba(240, 224, 0, 0.15);
+      border-color: var(--marker);
+    }
+
+    /* Entry content */
+    .entry-content {
+      min-width: 0;
+    }
+
+    .entry-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .entry-title {
+      font-family: Oswald, sans-serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0 0 0.4rem;
+      line-height: 1.3;
+      transition: color 0.15s ease;
+    }
+
+    .entry-link:hover .entry-title {
+      color: var(--pine);
+    }
+
+    .entry-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .meta-icon {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .entry-cta {
+      font-size: 0.85rem;
+      color: var(--pine);
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+
+    .entry-link:hover .entry-cta {
+      color: var(--terra);
+    }
+
+    /* Video entry */
+    .video-entry {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .video-thumb {
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .video-info {
+      padding-top: 0.25rem;
+    }
+
+    .video-info .entry-title {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .video-info .entry-cta {
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .video-info .entry-cta:hover {
+      color: var(--terra);
+      text-decoration: underline;
+    }
+
+    /* Stitch decoration */
+    .entry-stitch {
+      position: absolute;
+      left: 70px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background-image: linear-gradient(to bottom, var(--stone) 50%, transparent 50%);
+      background-size: 1px 8px;
+      opacity: 0.4;
+    }
+
+    /* ===== Logbook Footer ===== */
+    .logbook-footer {
+      margin-top: 2.5rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .footer-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    .view-all-link {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg);
+      color: var(--pine);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .view-all-link:hover {
+      border-color: var(--alpine);
+      background: #fff;
+      transform: translateY(-1px);
+    }
+
+    .view-all-link .arrow {
+      transition: transform 0.15s ease;
+    }
+
+    .view-all-link:hover .arrow {
+      transform: translateX(3px);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 700px) {
+      .hero-journal {
+        padding: 3rem 1rem 2rem;
+      }
+
+      .hero-badge {
+        width: 90px;
+        height: 90px;
+      }
+
+      .hero-stats {
+        gap: 1rem;
+        padding: 1rem 0;
+      }
+
+      .stat-value {
+        font-size: 1.4rem;
+      }
+
+      .hero-coords {
+        display: none;
+      }
+
+      .journal-entry {
+        grid-template-columns: 55px 1fr;
+        gap: 0.75rem;
+      }
+
+      .entry-stitch {
+        left: 55px;
+      }
+
+      .date-day {
+        font-size: 1.4rem;
+      }
+
+      .video-entry {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .video-thumb {
+        max-width: 280px;
+        width: 100%;
+      }
+
+      .filter-tab {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .logbook-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+
+      .video-thumb {
+        max-width: 220px;
+      }
+
+      .entry-type-badge {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+
+  <script>
+    const filters = document.getElementById('filters');
+    if (filters) {
+      filters.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('button.filter-tab');
+        if (!btn) return;
+        const value = btn.getAttribute('data-filter');
+        for (const b of filters.querySelectorAll('button.filter-tab')) {
+          b.classList.toggle('is-active', b === btn);
+          b.setAttribute('aria-pressed', String(b === btn));
+        }
+        const items = document.querySelectorAll('.journal-entry');
+        items.forEach((node) => {
+          const kind = node.getAttribute('data-kind');
+          const show = value === 'all' || value === kind;
+          (node as HTMLElement).style.display = show ? '' : 'none';
+        });
+      });
+    }
+  </script>
+</BaseLayout>

@@ -1,0 +1,79 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getEntry } from 'astro:content';
+import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
+import Gallery from '../../components/Gallery.svelte';
+import InfoPills from '../../components/InfoPills.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+export async function getStaticPaths() {
+  const { getCollection } = await import('astro:content');
+  const trips = await getCollection('trips');
+  return trips.map((trip) => ({ params: { slug: trip.id } }));
+}
+
+const { slug } = Astro.params;
+const entry = await getEntry('trips', slug!);
+const data = entry!.data as any;
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title={`${data.title} • Hogg Country`} description={data.description || ''} />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <section class="hero" style="padding-bottom: 1rem;">
+        <div class="container">
+          <h1 class="font-display">{data.title}</h1>
+          <div style="color:#9aa3b2; font-size:.95rem; margin-top:.25rem;">
+            <FormattedDate date={data.date} />
+          </div>
+          <div class="badges">
+            {data.state && <span class="badge"><strong>State</strong> {data.state}</span>}
+            {data.trail_name && <span class="badge"><strong>Trail</strong> {data.trail_name}</span>}
+            {data.distance_miles && <span class="badge"><strong>Distance</strong> {data.distance_miles} mi</span>}
+            {data.elevation_gain_ft && <span class="badge"><strong>Gain</strong> {data.elevation_gain_ft} ft</span>}
+            {data.difficulty && <span class="badge"><strong>Difficulty</strong> {data.difficulty}</span>}
+            {(data.tags || []).map((t: string) => <span class="badge">#{t}</span>)}
+          </div>
+          <InfoPills pills={data.pills} />
+        </div>
+      </section>
+
+      <section>
+        <div class="container" style="display:grid; gap: 1rem;">
+          <article class="card" style="padding: 1rem 1rem .5rem;">
+            <slot />
+          </article>
+
+          {data.gallery?.length ? (
+            <section class="card" style="padding: 1rem;">
+              <h2 class="section-title font-display">Gallery</h2>
+              <Gallery images={data.gallery.map((src: string) => ({ src }))} />
+            </section>
+          ) : null}
+
+          {data.youtube?.length ? (
+            <section>
+              <h2 class="section-title container font-display" style="margin-top: .5rem;">Clips</h2>
+              <div class="container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+                {data.youtube.map((u: string) => (
+                  <article class="card">
+                    <div class="video-frame">
+                      <YouTubeEmbed url={u} title={data.title} />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </section>
+    </main>
+    <Footer />
+  </body>
+</html>

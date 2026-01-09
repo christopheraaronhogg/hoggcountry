@@ -1,0 +1,483 @@
+{
+  "meta": {
+    "startDate": "2026-02-01",
+    "hiker": "HoggCountry",
+    "baseWeight": 24.76,
+    "totalCarried": 27.52,
+    "typicalTrailWeight": 36.7
+  },
+  "transitions": {
+    "hotSprings": {
+      "mile": 274.5,
+      "drops": ["microspikes", "chemicalTabs"],
+      "description": "Freeze-thaw risk ends. Filter freeze risk manageable."
+    },
+    "damascus": {
+      "mile": 470.7,
+      "swaps": [
+        { "from": "sleepTopHeavy", "to": "sleepTopLight" },
+        { "from": "sleepPantsHeavy", "to": "sleepPantsLight" },
+        { "from": "quiltWinter", "to": "quiltSummer" },
+        { "from": "padWinter", "to": "padSummer" }
+      ],
+      "description": "Nights rarely below freezing. Sleep warmth becomes comfort-based."
+    }
+  },
+  "items": [
+    {
+      "id": "pack",
+      "name": "Osprey Atmos AG LT 50",
+      "category": "pack",
+      "weight": 67.0,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "scrubba",
+      "name": "Scrubba Wash Bag",
+      "category": "pack",
+      "weight": 5.3,
+      "tier": 4,
+      "season": "all",
+      "worn": false,
+      "essential": false,
+      "note": "Luxury item for town laundry"
+    },
+    {
+      "id": "tent",
+      "name": "Durston 1+ Tent",
+      "category": "shelter",
+      "weight": 36.8,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Body + fly + poles"
+    },
+    {
+      "id": "stakes",
+      "name": "Tent Stakes (10)",
+      "category": "shelter",
+      "weight": 3.5,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "guylines",
+      "name": "Guylines",
+      "category": "shelter",
+      "weight": 2.5,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "quiltWinter",
+      "name": "Zenbivy 10° Down Quilt",
+      "category": "sleep",
+      "weight": 29.5,
+      "tier": 1,
+      "season": "winter",
+      "worn": false,
+      "essential": true,
+      "swapGroup": "quilt",
+      "note": "February start. Swapped at Damascus."
+    },
+    {
+      "id": "quiltSummer",
+      "name": "Vesper Quilt (lighter)",
+      "category": "sleep",
+      "weight": 20.0,
+      "tier": 1,
+      "season": "summer",
+      "worn": false,
+      "essential": true,
+      "swapGroup": "quilt",
+      "note": "Post-Damascus summer configuration"
+    },
+    {
+      "id": "quiltSheet",
+      "name": "Zenbivy Down Sheet",
+      "category": "sleep",
+      "weight": 19.0,
+      "tier": 3,
+      "season": "winter",
+      "worn": false,
+      "essential": false,
+      "note": "Added warmth for winter start"
+    },
+    {
+      "id": "padWinter",
+      "name": "Sleeping Pad (R ≈ 8)",
+      "category": "sleep",
+      "weight": 25.0,
+      "tier": 1,
+      "season": "winter",
+      "worn": false,
+      "essential": true,
+      "swapGroup": "pad",
+      "note": "High R-value for February cold"
+    },
+    {
+      "id": "padSummer",
+      "name": "Sleeping Pad (R ≈ 3-4)",
+      "category": "sleep",
+      "weight": 14.0,
+      "tier": 1,
+      "season": "summer",
+      "worn": false,
+      "essential": true,
+      "swapGroup": "pad",
+      "note": "Lighter pad post-Damascus"
+    },
+    {
+      "id": "pillow",
+      "name": "Pillow",
+      "category": "sleep",
+      "weight": 4.8,
+      "tier": 4,
+      "season": "all",
+      "worn": false,
+      "essential": false,
+      "note": "Sleep quality priority"
+    },
+    {
+      "id": "sleepTopHeavy",
+      "name": "Smartwool Merino 250 Sleep Top",
+      "category": "sleepClothing",
+      "weight": 8.5,
+      "tier": 2,
+      "season": "winter",
+      "worn": false,
+      "essential": true,
+      "swapGroup": "sleepTop",
+      "note": "Sacred sleep layer - never hike in"
+    },
+    {
+      "id": "sleepTopLight",
+      "name": "Lightweight Sleep Top",
+      "category": "sleepClothing",
+      "weight": 4.0,
+      "tier": 2,
+      "season": "summer",
+      "worn": false,
+      "essential": true,
+      "swapGroup": "sleepTop"
+    },
+    {
+      "id": "sleepPantsHeavy",
+      "name": "Smartwool Merino 250 Sleep Pants",
+      "category": "sleepClothing",
+      "weight": 8.7,
+      "tier": 2,
+      "season": "winter",
+      "worn": false,
+      "essential": true,
+      "swapGroup": "sleepPants",
+      "note": "Sacred sleep layer - never hike in"
+    },
+    {
+      "id": "sleepPantsLight",
+      "name": "Lightweight Sleep Pants",
+      "category": "sleepClothing",
+      "weight": 4.0,
+      "tier": 2,
+      "season": "summer",
+      "worn": false,
+      "essential": true,
+      "swapGroup": "sleepPants"
+    },
+    {
+      "id": "sleepSocks",
+      "name": "Sleep Socks",
+      "category": "sleepClothing",
+      "weight": 3.7,
+      "tier": 2,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "puffy",
+      "name": "Mountain Hardwear Down Puffy",
+      "category": "insulation",
+      "weight": 8.5,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Static warmth only. Never hike in."
+    },
+    {
+      "id": "rainJacket",
+      "name": "Outdoor Research Rain Jacket",
+      "category": "insulation",
+      "weight": 12.9,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Also serves as wind shell"
+    },
+    {
+      "id": "stove",
+      "name": "Stove",
+      "category": "kitchen",
+      "weight": 3.0,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "pot",
+      "name": "Cook Pot",
+      "category": "kitchen",
+      "weight": 4.5,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "cup",
+      "name": "TOAKS 450ml Titanium Cup",
+      "category": "kitchen",
+      "weight": 2.7,
+      "tier": 2,
+      "season": "all",
+      "worn": false,
+      "essential": false
+    },
+    {
+      "id": "cupLid",
+      "name": "Cup Lid",
+      "category": "kitchen",
+      "weight": 0.9,
+      "tier": 3,
+      "season": "all",
+      "worn": false,
+      "essential": false
+    },
+    {
+      "id": "spoon",
+      "name": "Spoon",
+      "category": "kitchen",
+      "weight": 1.6,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "fuel",
+      "name": "Fuel Canister (full)",
+      "category": "kitchen",
+      "weight": 7.0,
+      "tier": 2,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Weight varies with use"
+    },
+    {
+      "id": "lighter",
+      "name": "Lighter + Backup",
+      "category": "kitchen",
+      "weight": 0.8,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "phone",
+      "name": "iPhone",
+      "category": "electronics",
+      "weight": 7.9,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Navigation, communication, content creation"
+    },
+    {
+      "id": "battery",
+      "name": "Anker Prime 26,000 mAh Battery",
+      "category": "electronics",
+      "weight": 23.5,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Single energy reservoir for entire system"
+    },
+    {
+      "id": "charger",
+      "name": "Anker 140W Fast Charger",
+      "category": "electronics",
+      "weight": 8.8,
+      "tier": 2,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Town charging only"
+    },
+    {
+      "id": "inreach",
+      "name": "Garmin inReach Mini 2",
+      "category": "electronics",
+      "weight": 3.5,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Emergency communication, weather"
+    },
+    {
+      "id": "glasses",
+      "name": "Ray-Ban Meta Gen 2 Smart Glasses + Case",
+      "category": "electronics",
+      "weight": 6.4,
+      "tier": 4,
+      "season": "all",
+      "worn": false,
+      "essential": false,
+      "note": "Content creation"
+    },
+    {
+      "id": "headlamp",
+      "name": "Headlamp",
+      "category": "electronics",
+      "weight": 1.5,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "rainPants",
+      "name": "Rab Proflex Rain Pants",
+      "category": "worn",
+      "weight": 11.6,
+      "tier": 2,
+      "season": "all",
+      "worn": true,
+      "essential": true
+    },
+    {
+      "id": "alphaFreak",
+      "name": "Rab Alpha Freak (Polartec Alpha Direct)",
+      "category": "worn",
+      "weight": 12.7,
+      "tier": 2,
+      "season": "all",
+      "worn": true,
+      "essential": true,
+      "note": "Active insulation layer"
+    },
+    {
+      "id": "hikingSocks",
+      "name": "Smartwool Hiking Socks",
+      "category": "worn",
+      "weight": 3.7,
+      "tier": 1,
+      "season": "all",
+      "worn": true,
+      "essential": true
+    },
+    {
+      "id": "underwear",
+      "name": "Underwear",
+      "category": "worn",
+      "weight": 3.2,
+      "tier": 1,
+      "season": "all",
+      "worn": true,
+      "essential": true
+    },
+    {
+      "id": "buff",
+      "name": "Buff",
+      "category": "worn",
+      "weight": 2.3,
+      "tier": 2,
+      "season": "all",
+      "worn": true,
+      "essential": true,
+      "note": "Sun, cold, and wind protection"
+    },
+    {
+      "id": "kneeBrace",
+      "name": "Bauerfeind Hinged Knee Brace",
+      "category": "worn",
+      "weight": 10.6,
+      "tier": 2,
+      "season": "all",
+      "worn": true,
+      "essential": true,
+      "note": "Injury prevention"
+    },
+    {
+      "id": "microspikes",
+      "name": "Microspikes",
+      "category": "traction",
+      "weight": 11.0,
+      "tier": 2,
+      "season": "winter",
+      "worn": false,
+      "essential": true,
+      "note": "Dropped at Hot Springs, NC"
+    },
+    {
+      "id": "chemicalTabs",
+      "name": "Chlorine Dioxide Tablets",
+      "category": "water",
+      "weight": 2.0,
+      "tier": 2,
+      "season": "winter",
+      "worn": false,
+      "essential": true,
+      "note": "Backup water treatment. Dropped at Hot Springs."
+    },
+    {
+      "id": "filter",
+      "name": "Water Filter (BeFree/Platypus)",
+      "category": "water",
+      "weight": 2.0,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true
+    },
+    {
+      "id": "firstAid",
+      "name": "First Aid Kit",
+      "category": "safety",
+      "weight": 5.0,
+      "tier": 1,
+      "season": "all",
+      "worn": false,
+      "essential": true,
+      "note": "Target weight 3-6 oz"
+    }
+  ],
+  "categories": {
+    "pack": { "name": "Backpack & Carry", "color": "#6b705c", "icon": "🎒" },
+    "shelter": { "name": "Shelter System", "color": "#4d594a", "icon": "⛺" },
+    "sleep": { "name": "Sleep System", "color": "#7c8a6e", "icon": "🛏️" },
+    "sleepClothing": { "name": "Sleep Clothing", "color": "#8b9a7a", "icon": "👕" },
+    "insulation": { "name": "Insulation & Shells", "color": "#a6b589", "icon": "🧥" },
+    "kitchen": { "name": "Kitchen", "color": "#d97706", "icon": "🍳" },
+    "electronics": { "name": "Electronics", "color": "#0a4fa6", "icon": "📱" },
+    "worn": { "name": "Worn Weight", "color": "#9ca3af", "icon": "👟" },
+    "traction": { "name": "Traction", "color": "#64748b", "icon": "❄️" },
+    "water": { "name": "Water Treatment", "color": "#0891b2", "icon": "💧" },
+    "safety": { "name": "Safety", "color": "#dc2626", "icon": "🏥" }
+  }
+}

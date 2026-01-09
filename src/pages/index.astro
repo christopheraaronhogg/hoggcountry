@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProtoF from '../components/prototypes/ProtoF_Ranger.svelte';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { YT_FEED_URL } from '../lib/config';
+import { fetchYouTubeRSS } from '../lib/youtube';
+
+// Fetch videos at build time for ProtoF
+const videos = await fetchYouTubeRSS(YT_FEED_URL);
+---
+<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+  <ProtoF client:visible videos={videos} />
+</BaseLayout>

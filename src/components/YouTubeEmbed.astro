@@ -1,0 +1,117 @@
+---
+// Privacy-friendly, lazy YouTube embed supporting Shorts & full videos.
+// Props: id?: string; url?: string; title: string; start?: number; autoplay?: boolean; captions?: boolean; aspect?: '16-9' | '9-16';
+const { id, url, title, start = 0, autoplay = false, captions = false, aspect } = Astro.props as any;
+
+function parseId(u?: string, fallback?: string): { id?: string; isShorts: boolean } {
+  if (!u) return { id: fallback, isShorts: false };
+  try {
+    const url = new URL(u);
+    if (url.hostname.includes('youtube.com')) {
+      if (url.pathname.startsWith('/shorts/')) {
+        return { id: url.pathname.split('/')[2], isShorts: true };
+      }
+      if (url.searchParams.get('v')) {
+        return { id: url.searchParams.get('v')!, isShorts: false };
+      }
+    }
+    if (url.hostname === 'youtu.be') {
+      return { id: url.pathname.replace('/', ''), isShorts: false };
+    }
+  } catch {}
+  return { id: fallback, isShorts: false };
+}
+
+const parsed = parseId(url, id);
+const videoId = parsed.id;
+const isShorts = parsed.isShorts || aspect === '9-16';
+const ratio = isShorts ? '56.25%' : '56.25%'; // 16:9 default; we constrain width for shorts
+const base = 'https://www.youtube-nocookie.com/embed/' + videoId;
+const params = new URLSearchParams({
+  rel: '0',
+  modestbranding: '1',
+  playsinline: '1',
+  start: String(start || 0),
+  ...(autoplay ? { autoplay: '1', mute: '1' } : {}),
+});
+const src = `${base}?${params.toString()}`;
+const thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+---
+
+{videoId ? (
+  <div class={`yt-outer ${isShorts ? 'shorts' : ''}`}>
+    <button class="yt-thumb" aria-label={`Play video: ${title}`} data-video-id={videoId} data-title={title}>
+      <img src={thumb} alt={title} loading="lazy" />
+      <div class="yt-play" aria-hidden="true">▶</div>
+    </button>
+  </div>
+) : (
+  <div>Invalid YouTube ID/URL</div>
+)}
+
+<script>
+  // Single delegated listener - only register once
+  if (!(window as any).__ytEmbedInit) {
+    (window as any).__ytEmbedInit = true;
+    document.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.yt-thumb') as HTMLButtonElement | null;
+      if (!btn) return;
+
+      const videoId = btn.getAttribute('data-video-id');
+      const title = btn.getAttribute('data-title') || '';
+      const wrapper = btn.parentElement as HTMLElement;
+      if (!videoId || !wrapper) return;
+
+      const rect = wrapper.getBoundingClientRect();
+      const width = Math.floor(rect.width);
+      const height = Math.floor(rect.height);
+
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`;
+      iframe.width = width.toString();
+      iframe.height = height.toString();
+      iframe.title = title;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allowFullscreen = true;
+      iframe.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: ${width}px;
+        height: ${height}px;
+        border: none;
+        display: block;
+        z-index: 10;
+      `;
+
+      wrapper.replaceChild(iframe, btn);
+    });
+  }
+</script>
+
+<style>
+  /* Default: self-contained aspect; no external margins so parent controls centering */
+  .yt-outer { position: relative; width: 100%; max-width: 100%; margin: 0; }
+  .yt-outer::before { content: ''; display: block; padding-top: 56.25%; }
+  .yt-outer.shorts { max-width: 100%; }
+  .yt-outer > * { position: absolute; inset: 0; }
+
+  /* When parent provides aspect (e.g., .video-frame), fill it */
+  .video-frame .yt-outer { position: absolute; inset: 0; max-width: none; margin: 0; width: 100%; height: 100%; }
+  .video-frame .yt-outer::before { display: none; }
+  .video-frame .yt-outer > * { position: absolute; inset: 0; }
+  .video-frame iframe, .video-frame .yt-iframe { position: absolute; inset: 0; display: block; width: 100%; height: 100%; z-index: 1; }
+
+  .yt-thumb { border: 0; background: #000; cursor: pointer; padding: 0; }
+  .yt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .yt-play { position: absolute; inset: 0; display: grid; place-items: center; color: white; font-size: 3rem; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
+  .yt-thumb:focus-visible { outline: 2px solid #60a5fa; outline-offset: 4px; border-radius: 6px; }
+
+  .yt-player-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+  }
+</style>

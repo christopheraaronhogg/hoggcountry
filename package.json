@@ -1,0 +1,36 @@
+{
+  "name": "hogg-country",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "prebuild": "node scripts/parse-master-guide.js && node scripts/generate-search-index.js",
+    "build": "astro build",
+    "postbuild": "node scripts/generate-asset-manifest.js",
+    "build:pdf": "node scripts/generate-pdf.js",
+    "build:all": "astro build && node scripts/generate-pdf.js",
+    "update-guide": "node scripts/parse-master-guide.js",
+    "test": "node --test scripts/parse-master-guide.test.js",
+    "test:guide": "node --test scripts/parse-master-guide.test.js",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.6",
+    "@astrojs/mdx": "^4.3.3",
+    "@astrojs/rss": "^4.0.12",
+    "@astrojs/sitemap": "^3.4.2",
+    "@astrojs/svelte": "^7.1.0",
+    "@tailwindcss/vite": "^4.1.11",
+    "astro": "^5.12.8",
+    "fast-xml-parser": "^5.2.5",
+    "jsdom": "^26.1.0",
+    "sharp": "^0.34.2",
+    "svelte": "^5.37.3",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.34.0"
+  }
+}
