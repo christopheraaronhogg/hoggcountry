@@ -48,8 +48,6 @@ ${guideContext || 'No specific context found.'}`;
             })),
             { role: 'user', content: question },
           ],
-          stream: false,
-          temperature: 0.3,
         }),
       });
 
