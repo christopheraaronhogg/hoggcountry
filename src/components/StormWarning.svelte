@@ -321,10 +321,26 @@
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Chart calculations - clean simple design
-  const CHART_WIDTH = 280;
-  const CHART_HEIGHT = 120;
-  const CHART_PADDING = { top: 12, right: 12, bottom: 24, left: 40 };
+  // Chart calculations with intelligent scaling
+  const CHART_WIDTH = 300;
+  const CHART_HEIGHT = 140;
+  const CHART_PADDING = { top: 20, right: 15, bottom: 28, left: 45 };
+  const MIN_TICK_SPACING = 25; // Minimum pixels between Y-axis labels
+
+  // Get a "nice" step size for axis ticks
+  function niceStep(range: number, maxTicks: number): number {
+    const roughStep = range / maxTicks;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+    const residual = roughStep / magnitude;
+
+    let niceResidual: number;
+    if (residual <= 1.5) niceResidual = 1;
+    else if (residual <= 3) niceResidual = 2;
+    else if (residual <= 7) niceResidual = 5;
+    else niceResidual = 10;
+
+    return niceResidual * magnitude;
+  }
 
   let chartData = $derived.by(() => {
     if (readings.length < 2) return null;
@@ -336,46 +352,52 @@
       label: formatTime(r.timestamp)
     }));
 
+    // Calculate data bounds
     const drifts = points.map(p => p.drift);
-    const minDrift = Math.min(...drifts, 0);
-    const maxDrift = Math.max(...drifts, 25);
-    const range = Math.max(maxDrift - minDrift, 25);
-    const padding = range * 0.2;
+    const dataMin = Math.min(...drifts);
+    const dataMax = Math.max(...drifts);
 
-    const yMin = minDrift - padding;
-    const yMax = maxDrift + padding;
-    const timeRange = points[points.length - 1].time - points[0].time || 1;
+    // Always include 0 in the range, add padding
+    const rangeMin = Math.min(dataMin, 0);
+    const rangeMax = Math.max(dataMax, 25); // At least show up to 25
+    const dataRange = rangeMax - rangeMin || 25;
 
-    const innerW = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
+    // Calculate nice axis bounds with padding
     const innerH = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
+    const maxTicks = Math.floor(innerH / MIN_TICK_SPACING);
+    const step = niceStep(dataRange, Math.min(maxTicks, 5));
+
+    // Round axis bounds to step
+    const yMin = Math.floor(rangeMin / step) * step;
+    const yMax = Math.ceil(rangeMax / step) * step + step * 0.1; // Tiny padding at top
+    const yRange = yMax - yMin;
+
+    const timeRange = points[points.length - 1].time - points[0].time || 1;
+    const innerW = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
 
     const scaleX = (t: number) => CHART_PADDING.left + ((t - points[0].time) / timeRange) * innerW;
-    const scaleY = (d: number) => CHART_HEIGHT - CHART_PADDING.bottom - ((d - yMin) / (yMax - yMin)) * innerH;
+    const scaleY = (d: number) => CHART_HEIGHT - CHART_PADDING.bottom - ((d - yMin) / yRange) * innerH;
 
-    // Simple smooth path
+    // Generate path
     const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(p.time).toFixed(1)},${scaleY(p.drift).toFixed(1)}`).join(' ');
 
-    // Y-axis ticks - just a few clean values
-    const yTicks: number[] = [];
-    const step = range <= 50 ? 25 : range <= 150 ? 50 : 100;
-    for (let v = 0; v <= yMax; v += step) {
-      if (v >= yMin && v <= yMax) yTicks.push(v);
-    }
-    if (minDrift < 0) {
-      for (let v = -step; v >= yMin; v -= step) {
-        if (v >= yMin) yTicks.push(v);
+    // Generate Y-axis ticks at nice intervals
+    const yTicks: { value: number; y: number }[] = [];
+    for (let v = yMin; v <= rangeMax + step * 0.5; v += step) {
+      const y = scaleY(v);
+      // Only include if within chart bounds with margin
+      if (y >= CHART_PADDING.top - 5 && y <= CHART_HEIGHT - CHART_PADDING.bottom + 5) {
+        yTicks.push({ value: Math.round(v), y });
       }
     }
 
     const lastPoint = points[points.length - 1];
 
     return {
-      points: points.map(p => ({ x: scaleX(p.time), y: scaleY(p.drift), label: p.label, drift: p.drift })),
+      points: points.map(p => ({ x: scaleX(p.time), y: scaleY(p.drift), drift: p.drift })),
       pathD,
-      yTicks: yTicks.sort((a, b) => b - a).map(v => ({ value: v, y: scaleY(v) })),
+      yTicks,
       zeroY: scaleY(0),
-      innerW,
-      innerH,
       currentDrift: Math.round(lastPoint.drift),
       startTime: points[0].label,
       endTime: lastPoint.label
