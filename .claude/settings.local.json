@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Read(//**/codehogg/**)",
+      "Bash(npm run update-guide:*)",
+      "Bash(git pull:*)",
+      "Bash(npx codehogg:*)"
+    ]
+  },
+  "plugins": [
+    "./.claude/plugins/codehogg"
+  ],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && if git diff --name-only HEAD~1 2>/dev/null | grep -q 'trailhogg/' || git status --porcelain 2>/dev/null | grep -q 'trailhogg/'; then echo ''; echo '📋 Trail Legs work detected! Remember to update the roadmap in CLAUDE.md'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

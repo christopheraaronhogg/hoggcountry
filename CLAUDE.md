@@ -103,3 +103,57 @@ Before committing:
 - `architecture.md` — High-level architecture and routes
 - `design.md` — Visual design system, colors, typography
 - `content-model.md` — Content schema examples
+
+---
+
+## Trail Legs Game Roadmap
+
+An AT thru-hiking simulation game built with Phaser 3.70 + Colyseus. Located in `trailhogg/`.
+
+### Completed
+- [x] Project scaffold (client/server/shared monorepo)
+- [x] 32-color pixel art palette system
+- [x] 358 programmatic sprites across 43 categories
+- [x] Sprite catalog page at `/cat` (unlisted)
+- [x] Core sprite types: hiker, environment, blazes, structures, weather, UI
+- [x] Extended sprites: wildlife, trail features, items, signs, terrain, plants
+- [x] Character sprites: NPCs, expressions, clothing
+- [x] Location sprites: towns, shelters, summits, bridges, trailheads, campsites
+- [x] Famous landmarks: McAfee Knob, Dragon's Tooth, Katahdin sign
+- [x] AMC huts, lighting effects, celebrations, ruins, vistas
+
+### In Progress
+- [ ] Phaser client rendering pipeline (SpriteGenerator → Phaser textures)
+- [ ] Boot scene with asset loading
+
+### Next Up
+- [ ] Basic hiker movement and animation
+- [ ] Trail segment rendering with parallax backgrounds
+- [ ] Day/night cycle with lighting sprites
+- [ ] Weather system visualization
+- [ ] Blaze/trail marker interaction
+- [ ] Shelter arrival scenes
+- [ ] Town resupply UI
+- [ ] Colyseus server integration for multiplayer state
+- [ ] Save/load game state
+
+### Future
+- [ ] Full 2,190-mile trail data integration
+- [ ] NPC hiker encounters with dialogue
+- [ ] Gear/inventory management
+- [ ] Food/water/energy systems
+- [ ] Achievement badges
+- [ ] Trail magic events
+- [ ] Weather hazards and decision points
+
+### Dev Commands (Trail Legs)
+```bash
+cd trailhogg/trailhogg
+npm install              # Install all workspace deps
+npm run dev:client       # Start Phaser client (Vite)
+npm run dev:server       # Start Colyseus server
+npm run dev              # Start both
+npm run build            # Production build
+```
+
+**After completing Trail Legs work:** Update this roadmap by moving items between sections.
