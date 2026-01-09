@@ -340,25 +340,28 @@
     return '#059669';
   }
 
-  // Pressure tracking
-  let currentPressure = $state(30.00);
-  let previousPressure = $state(30.10);
+  // Pressure tracking via elevation drift
+  // When stopped: if watch reads HIGHER than actual elevation, pressure is DROPPING
+  let actualElevation = $state(3200);  // From map/GPS at known point
+  let watchElevation = $state(3200);   // What your watch/phone shows
+  let previousDrift = $state(0);       // Previous reading's drift (ft)
   let hoursElapsed = $state(3);
 
-  // Calculate pressure change rate and assessment
-  let pressureChange = $derived(currentPressure - previousPressure);
-  let pressureChangePerHour = $derived(hoursElapsed > 0 ? pressureChange / hoursElapsed : 0);
+  // Calculate elevation drift (phantom gain = pressure drop)
+  let elevationDrift = $derived(watchElevation - actualElevation);
+  let driftChange = $derived(elevationDrift - previousDrift);
+  let driftRatePerHour = $derived(hoursElapsed > 0 ? driftChange / hoursElapsed : 0);
 
   let pressureAssessment = $derived.by(() => {
-    const change = pressureChange;
-    const ratePerHour = Math.abs(pressureChangePerHour);
+    const drift = elevationDrift;
+    const ratePerHour = driftRatePerHour;
 
-    // Determine trend
+    // Determine trend based on drift change
     let trend, trendIcon;
-    if (change > 0.02) {
+    if (ratePerHour < -20) {
       trend = 'rising';
       trendIcon = '📈';
-    } else if (change < -0.02) {
+    } else if (ratePerHour > 20) {
       trend = 'falling';
       trendIcon = '📉';
     } else {
@@ -366,22 +369,23 @@
       trendIcon = '➡️';
     }
 
-    // Assess severity based on rate of fall
-    if (change >= 0) {
+    // Assess severity based on rate of phantom climb (positive = pressure dropping)
+    if (ratePerHour <= 0) {
       return {
         trend,
         trendIcon,
         level: 'good',
         color: '#22c55e',
         headline: trend === 'rising' ? 'Improving Weather' : 'Stable Conditions',
-        message: 'High or steady pressure indicates fair weather ahead.',
+        message: 'Pressure steady or rising. Fair weather ahead.',
         action: 'Continue as planned',
         urgency: 'none',
+        driftDesc: drift === 0 ? 'Calibrated' : drift < 0 ? `${Math.abs(drift)} ft low` : `${drift} ft high`,
       };
     }
 
-    // Falling pressure - assess rate
-    if (ratePerHour < 0.02) {
+    // Positive drift rate = pressure dropping = storm approaching
+    if (ratePerHour < 50) {
       return {
         trend,
         trendIcon,
@@ -391,10 +395,11 @@
         message: 'Weather may change in 12-24 hours.',
         action: 'Monitor conditions, have backup plan',
         urgency: 'low',
+        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
       };
     }
 
-    if (ratePerHour < 0.05) {
+    if (ratePerHour < 150) {
       return {
         trend,
         trendIcon,
@@ -404,10 +409,11 @@
         message: 'Weather change likely in 6-12 hours.',
         action: 'Plan for shelter, reduce exposed time',
         urgency: 'moderate',
+        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
       };
     }
 
-    if (ratePerHour < 0.10) {
+    if (ratePerHour < 300) {
       return {
         trend,
         trendIcon,
@@ -417,6 +423,7 @@
         message: 'Storm approaching in 2-6 hours.',
         action: 'Seek shelter soon, avoid exposed ridges',
         urgency: 'high',
+        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
       };
     }
 
@@ -429,6 +436,7 @@
       message: 'Severe weather imminent. Act now.',
       action: 'SHELTER IMMEDIATELY',
       urgency: 'critical',
+      driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
     };
   });
 
@@ -765,11 +773,28 @@
   <!-- Pressure Section -->
   {#if activeSection === 'pressure'}
     <section class="wx-section" transition:fade>
+      <!-- Concept Intro -->
+      <div class="pressure-concept">
+        <div class="concept-icon">⛰️</div>
+        <div class="concept-text">
+          <strong>Your altimeter is a barometer.</strong> When stopped at a known elevation,
+          if your watch shows you HIGHER than you actually are, pressure is dropping — a storm is coming.
+        </div>
+      </div>
+
       <!-- Assessment Hero -->
       <div class="pressure-hero" style="--pressure-color: {pressureAssessment.color}">
         <div class="pressure-trend">
           <span class="trend-icon">{pressureAssessment.trendIcon}</span>
-          <span class="trend-value" style="color: {pressureAssessment.color}">{pressureChange >= 0 ? '+' : ''}{pressureChange.toFixed(2)}"</span>
+          <span class="trend-value" style="color: {pressureAssessment.color}">
+            {#if elevationDrift === 0}
+              Calibrated
+            {:else if elevationDrift > 0}
+              +{elevationDrift} ft
+            {:else}
+              {elevationDrift} ft
+            {/if}
+          </span>
         </div>
         <div class="pressure-assessment">
           <div class="assessment-headline" style="color: {pressureAssessment.color}">{pressureAssessment.headline}</div>
@@ -796,23 +821,46 @@
         <div class="pressure-title">Your Readings</div>
         <div class="pressure-grid">
           <div class="pressure-input-group">
-            <label class="pressure-label">Current Pressure</label>
+            <label class="pressure-label">Actual Elevation (from map)</label>
             <div class="pressure-value-row">
-              <input type="number" bind:value={currentPressure} min="28.5" max="31.5" step="0.01" class="pressure-num" />
-              <span class="pressure-unit">inHg</span>
+              <input type="number" bind:value={actualElevation} min="0" max="7000" step="10" class="pressure-num" />
+              <span class="pressure-unit">ft</span>
             </div>
-            <input type="range" bind:value={currentPressure} min="28.5" max="31.5" step="0.01" class="pressure-slider" />
+            <input type="range" bind:value={actualElevation} min="0" max="7000" step="10" class="pressure-slider" />
           </div>
           <div class="pressure-input-group">
-            <label class="pressure-label">Previous Reading</label>
+            <label class="pressure-label">Watch/Phone Shows</label>
             <div class="pressure-value-row">
-              <input type="number" bind:value={previousPressure} min="28.5" max="31.5" step="0.01" class="pressure-num" />
-              <span class="pressure-unit">inHg</span>
+              <input type="number" bind:value={watchElevation} min="0" max="7000" step="10" class="pressure-num" />
+              <span class="pressure-unit">ft</span>
             </div>
-            <input type="range" bind:value={previousPressure} min="28.5" max="31.5" step="0.01" class="pressure-slider" />
+            <input type="range" bind:value={watchElevation} min="0" max="7000" step="10" class="pressure-slider" />
+          </div>
+        </div>
+
+        <div class="drift-compare">
+          <div class="drift-result" style="color: {pressureAssessment.color}">
+            {#if elevationDrift === 0}
+              ✓ Watch matches actual — calibrated
+            {:else if elevationDrift > 0}
+              ⬆️ Watch reads {elevationDrift} ft HIGH — pressure dropping
+            {:else}
+              ⬇️ Watch reads {Math.abs(elevationDrift)} ft LOW — pressure rising
+            {/if}
+          </div>
+        </div>
+
+        <div class="pressure-grid" style="margin-top: 1rem;">
+          <div class="pressure-input-group">
+            <label class="pressure-label">Previous Drift</label>
+            <div class="pressure-value-row">
+              <input type="number" bind:value={previousDrift} min="-500" max="500" step="10" class="pressure-num" />
+              <span class="pressure-unit">ft</span>
+            </div>
+            <p class="input-hint">What was the drift at your last check?</p>
           </div>
           <div class="pressure-input-group hours">
-            <label class="pressure-label">Hours Between Readings</label>
+            <label class="pressure-label">Hours Since Last Check</label>
             <div class="hours-options">
               {#each [1, 2, 3, 6, 12] as h}
                 <button class="hour-btn" class:active={hoursElapsed === h} onclick={() => hoursElapsed = h}>{h}h</button>
@@ -824,59 +872,42 @@
 
       <!-- Rate Display -->
       <div class="rate-display">
-        <div class="rate-label">Rate of Change</div>
+        <div class="rate-label">Drift Rate</div>
         <div class="rate-value" style="color: {pressureAssessment.color}">
-          {pressureChangePerHour >= 0 ? '+' : ''}{pressureChangePerHour.toFixed(3)}" per hour
+          {driftRatePerHour >= 0 ? '+' : ''}{Math.round(driftRatePerHour)} ft per hour
+        </div>
+        <div class="rate-explain">
+          {#if driftRatePerHour > 0}
+            Phantom elevation climbing — pressure falling
+          {:else if driftRatePerHour < 0}
+            Phantom elevation dropping — pressure rising
+          {:else}
+            Stable — no pressure change detected
+          {/if}
         </div>
       </div>
 
-      <!-- Reference Scale -->
-      <div class="pressure-reference">
-        <div class="ref-title">Pressure Guide</div>
-        <div class="ref-scale">
-          <div class="ref-zone low">
-            <span class="ref-range">&lt; 29.80"</span>
-            <span class="ref-name">Low</span>
-            <span class="ref-weather">Stormy</span>
-          </div>
-          <div class="ref-zone normal">
-            <span class="ref-range">29.80 - 30.20"</span>
-            <span class="ref-name">Normal</span>
-            <span class="ref-weather">Variable</span>
-          </div>
-          <div class="ref-zone high">
-            <span class="ref-range">&gt; 30.20"</span>
-            <span class="ref-name">High</span>
-            <span class="ref-weather">Fair</span>
-          </div>
-        </div>
-        <div class="ref-current" style="left: {Math.min(100, Math.max(0, (currentPressure - 28.5) / 3 * 100))}%">
-          <span class="ref-needle"></span>
-          <span class="ref-reading">{currentPressure.toFixed(2)}"</span>
-        </div>
-      </div>
-
-      <!-- Drop Rate Reference -->
+      <!-- Drift Rate Reference -->
       <div class="drop-rates">
-        <div class="drop-title">Drop Rate Thresholds</div>
+        <div class="drop-title">Elevation Drift Thresholds</div>
         <div class="drop-grid">
           <div class="drop-row">
-            <span class="drop-rate">&lt; 0.02"/hr</span>
+            <span class="drop-rate">&lt; 50 ft/hr</span>
             <span class="drop-timing">12-24 hours</span>
             <span class="drop-action good">Monitor</span>
           </div>
           <div class="drop-row">
-            <span class="drop-rate">0.02-0.05"/hr</span>
+            <span class="drop-rate">50-150 ft/hr</span>
             <span class="drop-timing">6-12 hours</span>
             <span class="drop-action caution">Prepare</span>
           </div>
           <div class="drop-row">
-            <span class="drop-rate">0.05-0.10"/hr</span>
+            <span class="drop-rate">150-300 ft/hr</span>
             <span class="drop-timing">2-6 hours</span>
             <span class="drop-action warning">Shelter Soon</span>
           </div>
           <div class="drop-row">
-            <span class="drop-rate">&gt; 0.10"/hr</span>
+            <span class="drop-rate">&gt; 300 ft/hr</span>
             <span class="drop-timing">Imminent</span>
             <span class="drop-action critical">SHELTER NOW</span>
           </div>
@@ -885,12 +916,13 @@
 
       <!-- How to Check -->
       <div class="pressure-tips">
-        <div class="tips-title">How to Check Pressure</div>
+        <div class="tips-title">How to Check</div>
         <ul class="tips-list">
-          <li><strong>Phone/Watch:</strong> Most show barometric pressure in weather apps</li>
-          <li><strong>Morning check:</strong> Note pressure when you wake up</li>
-          <li><strong>Evening check:</strong> Compare to morning reading</li>
-          <li><strong>Trend matters:</strong> Direction of change is more important than absolute value</li>
+          <li><strong>Stop moving:</strong> Only check while stationary — hiking affects readings</li>
+          <li><strong>Know your actual elevation:</strong> Use a shelter, trail marker, or GPS waypoint</li>
+          <li><strong>Note the difference:</strong> Watch reading minus actual = your drift</li>
+          <li><strong>Check again later:</strong> Compare drift over time to see the trend</li>
+          <li><strong>Calibrate when you can:</strong> Reset your altimeter at known elevations in good weather</li>
         </ul>
       </div>
     </section>
@@ -1986,6 +2018,55 @@
     letter-spacing: 0.03em;
   }
 
+  .pressure-concept {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(45, 90, 135, 0.08) 0%, rgba(45, 90, 135, 0.03) 100%);
+    border: 2px solid rgba(45, 90, 135, 0.2);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+
+  .concept-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .concept-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .drift-compare {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .drift-result {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .input-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
+    font-style: italic;
+  }
+
+  .rate-explain {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
   .pressure-grid {
     display: flex;
     flex-direction: column;
@@ -2034,7 +2115,7 @@
     width: 100%;
     height: 8px;
     -webkit-appearance: none;
-    background: linear-gradient(90deg, #ef4444 0%, #fbbf24 30%, #22c55e 50%, #22c55e 100%);
+    background: linear-gradient(90deg, var(--alpine) 0%, var(--pine) 100%);
     border-radius: 4px;
   }
 
@@ -2075,9 +2156,10 @@
 
   .rate-display {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    padding: 0.75rem 1rem;
+    text-align: center;
+    padding: 1rem;
     background: #fff;
     border: 2px solid var(--alpine);
     border-radius: 10px;
@@ -2085,13 +2167,16 @@
   }
 
   .rate-label {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
     color: var(--muted);
+    margin-bottom: 0.35rem;
   }
 
   .rate-value {
     font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
+    font-size: 1.5rem;
     font-weight: 700;
   }
 
