@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { slide, fade } from 'svelte/transition';
+  import StormWarning from './StormWarning.svelte';
 
   let { trailContext = {} } = $props();
 
@@ -770,161 +771,10 @@
     </section>
   {/if}
 
-  <!-- Pressure Section -->
+  <!-- Pressure Section - Storm Warning Tool -->
   {#if activeSection === 'pressure'}
     <section class="wx-section" transition:fade>
-      <!-- Concept Intro -->
-      <div class="pressure-concept">
-        <div class="concept-icon">⛰️</div>
-        <div class="concept-text">
-          <strong>Your altimeter is a barometer.</strong> When stopped at a known elevation,
-          if your watch shows you HIGHER than you actually are, pressure is dropping — a storm is coming.
-        </div>
-      </div>
-
-      <!-- Assessment Hero -->
-      <div class="pressure-hero" style="--pressure-color: {pressureAssessment.color}">
-        <div class="pressure-trend">
-          <span class="trend-icon">{pressureAssessment.trendIcon}</span>
-          <span class="trend-value" style="color: {pressureAssessment.color}">
-            {#if elevationDrift === 0}
-              Calibrated
-            {:else if elevationDrift > 0}
-              +{elevationDrift} ft
-            {:else}
-              {elevationDrift} ft
-            {/if}
-          </span>
-        </div>
-        <div class="pressure-assessment">
-          <div class="assessment-headline" style="color: {pressureAssessment.color}">{pressureAssessment.headline}</div>
-          <div class="assessment-message">{pressureAssessment.message}</div>
-        </div>
-      </div>
-
-      <!-- Action Card -->
-      {#if pressureAssessment.urgency !== 'none'}
-        <div class="pressure-action" class:warning={pressureAssessment.urgency === 'high'} class:critical={pressureAssessment.urgency === 'critical'}>
-          <span class="action-icon">
-            {#if pressureAssessment.urgency === 'critical'}🚨
-            {:else if pressureAssessment.urgency === 'high'}⚠️
-            {:else if pressureAssessment.urgency === 'moderate'}📋
-            {:else}👁️
-            {/if}
-          </span>
-          <span class="action-text">{pressureAssessment.action}</span>
-        </div>
-      {/if}
-
-      <!-- Input Panel -->
-      <div class="pressure-inputs">
-        <div class="pressure-title">Your Readings</div>
-        <div class="pressure-grid">
-          <div class="pressure-input-group">
-            <label class="pressure-label">Actual Elevation (from map)</label>
-            <div class="pressure-value-row">
-              <input type="number" bind:value={actualElevation} min="0" max="7000" step="10" class="pressure-num" />
-              <span class="pressure-unit">ft</span>
-            </div>
-            <input type="range" bind:value={actualElevation} min="0" max="7000" step="10" class="pressure-slider" />
-          </div>
-          <div class="pressure-input-group">
-            <label class="pressure-label">Watch/Phone Shows</label>
-            <div class="pressure-value-row">
-              <input type="number" bind:value={watchElevation} min="0" max="7000" step="10" class="pressure-num" />
-              <span class="pressure-unit">ft</span>
-            </div>
-            <input type="range" bind:value={watchElevation} min="0" max="7000" step="10" class="pressure-slider" />
-          </div>
-        </div>
-
-        <div class="drift-compare">
-          <div class="drift-result" style="color: {pressureAssessment.color}">
-            {#if elevationDrift === 0}
-              ✓ Watch matches actual — calibrated
-            {:else if elevationDrift > 0}
-              ⬆️ Watch reads {elevationDrift} ft HIGH — pressure dropping
-            {:else}
-              ⬇️ Watch reads {Math.abs(elevationDrift)} ft LOW — pressure rising
-            {/if}
-          </div>
-        </div>
-
-        <div class="pressure-grid" style="margin-top: 1rem;">
-          <div class="pressure-input-group">
-            <label class="pressure-label">Previous Drift</label>
-            <div class="pressure-value-row">
-              <input type="number" bind:value={previousDrift} min="-500" max="500" step="10" class="pressure-num" />
-              <span class="pressure-unit">ft</span>
-            </div>
-            <p class="input-hint">What was the drift at your last check?</p>
-          </div>
-          <div class="pressure-input-group hours">
-            <label class="pressure-label">Hours Since Last Check</label>
-            <div class="hours-options">
-              {#each [1, 2, 3, 6, 12] as h}
-                <button class="hour-btn" class:active={hoursElapsed === h} onclick={() => hoursElapsed = h}>{h}h</button>
-              {/each}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Rate Display -->
-      <div class="rate-display">
-        <div class="rate-label">Drift Rate</div>
-        <div class="rate-value" style="color: {pressureAssessment.color}">
-          {driftRatePerHour >= 0 ? '+' : ''}{Math.round(driftRatePerHour)} ft per hour
-        </div>
-        <div class="rate-explain">
-          {#if driftRatePerHour > 0}
-            Phantom elevation climbing — pressure falling
-          {:else if driftRatePerHour < 0}
-            Phantom elevation dropping — pressure rising
-          {:else}
-            Stable — no pressure change detected
-          {/if}
-        </div>
-      </div>
-
-      <!-- Drift Rate Reference -->
-      <div class="drop-rates">
-        <div class="drop-title">Elevation Drift Thresholds</div>
-        <div class="drop-grid">
-          <div class="drop-row">
-            <span class="drop-rate">&lt; 50 ft/hr</span>
-            <span class="drop-timing">12-24 hours</span>
-            <span class="drop-action good">Monitor</span>
-          </div>
-          <div class="drop-row">
-            <span class="drop-rate">50-150 ft/hr</span>
-            <span class="drop-timing">6-12 hours</span>
-            <span class="drop-action caution">Prepare</span>
-          </div>
-          <div class="drop-row">
-            <span class="drop-rate">150-300 ft/hr</span>
-            <span class="drop-timing">2-6 hours</span>
-            <span class="drop-action warning">Shelter Soon</span>
-          </div>
-          <div class="drop-row">
-            <span class="drop-rate">&gt; 300 ft/hr</span>
-            <span class="drop-timing">Imminent</span>
-            <span class="drop-action critical">SHELTER NOW</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- How to Check -->
-      <div class="pressure-tips">
-        <div class="tips-title">How to Check</div>
-        <ul class="tips-list">
-          <li><strong>Stop moving:</strong> Only check while stationary — hiking affects readings</li>
-          <li><strong>Know your actual elevation:</strong> Use a shelter, trail marker, or GPS waypoint</li>
-          <li><strong>Note the difference:</strong> Watch reading minus actual = your drift</li>
-          <li><strong>Check again later:</strong> Compare drift over time to see the trend</li>
-          <li><strong>Calibrate when you can:</strong> Reset your altimeter at known elevations in good weather</li>
-        </ul>
-      </div>
+      <StormWarning {trailContext} />
     </section>
   {/if}
 

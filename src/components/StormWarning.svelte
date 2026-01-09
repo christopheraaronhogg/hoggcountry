@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
+  // Accept trailContext prop for consistency with other tools
+  let { trailContext = {} } = $props();
+
   // Types
   interface Reading {
     timestamp: number;
@@ -417,9 +420,6 @@
 
 <style>
   .storm-warning {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 1.5rem;
     font-family: system-ui, sans-serif;
   }
 
@@ -763,7 +763,7 @@
   /* Mobile */
   @media (max-width: 480px) {
     .storm-warning {
-      padding: 1rem;
+      /* Mobile adjustments */
     }
 
     .warning-circle {
