@@ -104,8 +104,14 @@
 
     const { totalDrift, driftRate, elapsedHours } = session;
 
-    // Minimum 15 minutes of data required
-    if (elapsedHours < 0.25) return 'clear';
+    // If significant drift but not enough time elapsed, still warn based on absolute drift
+    if (elapsedHours < 0.25) {
+      // Even with insufficient time, large absolute drift is concerning
+      if (totalDrift > 100) return 'danger';
+      if (totalDrift > 50) return 'warning';
+      if (totalDrift > 25) return 'watch';
+      return 'clear';
+    }
 
     // Check for rapid drop (special case)
     if (totalDrift > 100 && elapsedHours < 1) return 'imminent';
@@ -136,11 +142,23 @@
 
   let driftRateDisplay = $derived.by(() => {
     if (!session.hasData || readings.length < 2) return null;
+
+    // If not enough time, show absolute drift instead of rate
+    if (session.elapsedHours < 0.25) {
+      const drift = Math.round(session.totalDrift);
+      if (drift > 0) {
+        return `+${drift} ft total (need 15+ min for rate)`;
+      } else if (drift < 0) {
+        return `${drift} ft total (need 15+ min for rate)`;
+      }
+      return 'No change yet';
+    }
+
     const rate = Math.round(session.driftRate);
     if (rate > 0) {
-      return `+${rate} ft/hr (climbing)`;
+      return `+${rate} ft/hr (pressure falling)`;
     } else if (rate < 0) {
-      return `${rate} ft/hr (descending)`;
+      return `${rate} ft/hr (pressure rising)`;
     }
     return 'Stable';
   });
@@ -304,9 +322,9 @@
   }
 
   // Chart calculations
-  const CHART_WIDTH = 300;
-  const CHART_HEIGHT = 150;
-  const CHART_PADDING = { top: 20, right: 20, bottom: 30, left: 45 };
+  const CHART_WIDTH = 320;
+  const CHART_HEIGHT = 180;
+  const CHART_PADDING = { top: 15, right: 15, bottom: 35, left: 50 };
 
   let chartData = $derived.by(() => {
     if (readings.length < 2) return null;
@@ -316,17 +334,19 @@
     const points = readings.map((r, i) => ({
       time: r.timestamp,
       drift: r.drift - firstReading.drift,
+      absoluteDrift: r.drift,
       label: formatTime(r.timestamp)
     }));
 
-    // Get bounds
+    // Get bounds - always include 0 and show reasonable range
     const drifts = points.map(p => p.drift);
-    const minDrift = Math.min(...drifts, -25); // Always show at least -25
-    const maxDrift = Math.max(...drifts, 100);  // Always show at least 100
-    const driftRange = maxDrift - minDrift || 100;
-    const driftPadding = driftRange * 0.1;
+    const minDrift = Math.min(...drifts, 0);
+    const maxDrift = Math.max(...drifts, 50);
+    const driftRange = maxDrift - minDrift || 50;
+    const driftPadding = Math.max(driftRange * 0.15, 10);
 
     const timeRange = points[points.length - 1].time - points[0].time;
+    const elapsedHours = timeRange / (1000 * 60 * 60);
 
     // Inner chart dimensions
     const innerWidth = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
@@ -334,33 +354,46 @@
 
     // Scale functions
     const scaleX = (time: number) => {
-      const ratio = (time - points[0].time) / timeRange;
+      const ratio = timeRange > 0 ? (time - points[0].time) / timeRange : 0.5;
       return CHART_PADDING.left + ratio * innerWidth;
     };
 
     const scaleY = (drift: number) => {
-      const ratio = (drift - (minDrift - driftPadding)) / (driftRange + 2 * driftPadding);
+      const yMin = minDrift - driftPadding;
+      const yMax = maxDrift + driftPadding;
+      const ratio = (drift - yMin) / (yMax - yMin);
       return CHART_HEIGHT - CHART_PADDING.bottom - ratio * innerHeight;
     };
 
-    // Generate path
-    const pathPoints = points.map((p, i) => {
+    // Generate line path
+    const linePath = points.map((p, i) => {
       const x = scaleX(p.time);
       const y = scaleY(p.drift);
       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
     }).join(' ');
 
-    // Threshold lines (relative to 0)
-    const thresholds = [
-      { value: 0, color: '#22c55e', label: '0' },
-      { value: 25, color: '#eab308', label: '25' },
-      { value: 50, color: '#f97316', label: '50' },
-      { value: 100, color: '#ef4444', label: '100' }
-    ].filter(t => t.value >= minDrift - driftPadding && t.value <= maxDrift + driftPadding)
-     .map(t => ({
-       ...t,
-       y: scaleY(t.value)
-     }));
+    // Generate area path (for fill under line)
+    const areaPath = linePath +
+      ` L ${scaleX(points[points.length - 1].time)} ${CHART_HEIGHT - CHART_PADDING.bottom}` +
+      ` L ${CHART_PADDING.left} ${CHART_HEIGHT - CHART_PADDING.bottom} Z`;
+
+    // Threshold lines - only show relevant ones
+    const allThresholds = [
+      { value: 0, color: '#94a3b8', label: 'baseline', dash: '2,2' },
+      { value: 25, color: '#eab308', label: 'watch', dash: '4,3' },
+      { value: 50, color: '#f97316', label: 'warning', dash: '4,3' },
+      { value: 100, color: '#ef4444', label: 'danger', dash: '4,3' }
+    ];
+
+    const yMin = minDrift - driftPadding;
+    const yMax = maxDrift + driftPadding;
+    const thresholds = allThresholds
+      .filter(t => t.value >= yMin && t.value <= yMax)
+      .map(t => ({ ...t, y: scaleY(t.value) }));
+
+    // Current value (last point)
+    const lastPoint = points[points.length - 1];
+    const currentDrift = Math.round(lastPoint.drift);
 
     return {
       points: points.map(p => ({
@@ -368,12 +401,14 @@
         x: scaleX(p.time),
         y: scaleY(p.drift)
       })),
-      path: pathPoints,
+      linePath,
+      areaPath,
       thresholds,
       innerWidth,
       innerHeight,
-      yAxisMin: Math.round(minDrift - driftPadding),
-      yAxisMax: Math.round(maxDrift + driftPadding)
+      elapsedHours: elapsedHours.toFixed(1),
+      currentDrift,
+      zeroY: scaleY(0)
     };
   });
 </script>
@@ -404,14 +439,37 @@
   <!-- Drift Chart -->
   {#if chartData}
     <div class="chart-container">
-      <h3 class="chart-title">Pressure Drift Over Time</h3>
+      <div class="chart-header">
+        <span class="chart-title">Drift Trend</span>
+        <span class="chart-stat" style="color: {warningDisplay.color}">
+          {chartData.currentDrift > 0 ? '+' : ''}{chartData.currentDrift} ft
+        </span>
+      </div>
+
       <svg
         viewBox="0 0 {CHART_WIDTH} {CHART_HEIGHT}"
         class="drift-chart"
         role="img"
         aria-label="Chart showing pressure drift readings over time"
       >
-        <!-- Threshold zones (background) -->
+        <defs>
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color={warningDisplay.color} stop-opacity="0.3" />
+            <stop offset="100%" stop-color={warningDisplay.color} stop-opacity="0.05" />
+          </linearGradient>
+        </defs>
+
+        <!-- Chart background -->
+        <rect
+          x={CHART_PADDING.left}
+          y={CHART_PADDING.top}
+          width={chartData.innerWidth}
+          height={chartData.innerHeight}
+          fill="var(--bg, #f8f7f4)"
+          rx="4"
+        />
+
+        <!-- Threshold lines -->
         {#each chartData.thresholds as threshold}
           <line
             x1={CHART_PADDING.left}
@@ -420,31 +478,32 @@
             y2={threshold.y}
             stroke={threshold.color}
             stroke-width="1"
-            stroke-dasharray="4,4"
-            opacity="0.5"
+            stroke-dasharray={threshold.dash}
+            opacity="0.6"
           />
           <text
-            x={CHART_PADDING.left - 5}
-            y={threshold.y + 4}
+            x={CHART_PADDING.left - 8}
+            y={threshold.y + 3}
             text-anchor="end"
-            class="chart-label"
+            class="chart-threshold-label"
             fill={threshold.color}
           >
-            {threshold.label}ft
+            {threshold.value}
           </text>
         {/each}
 
-        <!-- Zero line (if visible) -->
-        {#if chartData.thresholds.some(t => t.value === 0)}
-          <!-- Already drawn above -->
-        {/if}
+        <!-- Area fill under line -->
+        <path
+          d={chartData.areaPath}
+          fill="url(#areaGradient)"
+        />
 
         <!-- Data line -->
         <path
-          d={chartData.path}
+          d={chartData.linePath}
           fill="none"
           stroke={warningDisplay.color}
-          stroke-width="3"
+          stroke-width="2.5"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
@@ -454,44 +513,56 @@
           <circle
             cx={point.x}
             cy={point.y}
-            r="5"
+            r={i === chartData.points.length - 1 ? 6 : 4}
             fill={warningDisplay.color}
             stroke="#fff"
             stroke-width="2"
           />
-          <!-- Time label for first and last -->
-          {#if i === 0 || i === chartData.points.length - 1}
-            <text
-              x={point.x}
-              y={CHART_HEIGHT - 8}
-              text-anchor={i === 0 ? 'start' : 'end'}
-              class="chart-label"
-            >
-              {point.label}
-            </text>
-          {/if}
         {/each}
 
-        <!-- Y-axis label -->
+        <!-- Time labels -->
         <text
-          x="12"
-          y={CHART_HEIGHT / 2}
-          text-anchor="middle"
-          transform="rotate(-90, 12, {CHART_HEIGHT / 2})"
-          class="chart-axis-label"
+          x={CHART_PADDING.left}
+          y={CHART_HEIGHT - 10}
+          text-anchor="start"
+          class="chart-time-label"
         >
-          Drift (ft)
+          {chartData.points[0].label}
+        </text>
+        <text
+          x={CHART_WIDTH - CHART_PADDING.right}
+          y={CHART_HEIGHT - 10}
+          text-anchor="end"
+          class="chart-time-label"
+        >
+          {chartData.points[chartData.points.length - 1].label}
+        </text>
+
+        <!-- Elapsed time in center -->
+        <text
+          x={CHART_WIDTH / 2}
+          y={CHART_HEIGHT - 10}
+          text-anchor="middle"
+          class="chart-elapsed"
+        >
+          {chartData.elapsedHours}h span
         </text>
       </svg>
-      <p class="chart-caption">
-        {#if session.driftRate > 0}
-          Rising line = falling pressure = potential weather change
-        {:else if session.driftRate < 0}
-          Falling line = rising pressure = improving conditions
-        {:else}
-          Flat line = stable pressure = steady weather
-        {/if}
-      </p>
+
+      <div class="chart-legend">
+        <span class="legend-item">
+          <span class="legend-line" style="background: #eab308"></span>
+          Watch (25+)
+        </span>
+        <span class="legend-item">
+          <span class="legend-line" style="background: #f97316"></span>
+          Warning (50+)
+        </span>
+        <span class="legend-item">
+          <span class="legend-line" style="background: #ef4444"></span>
+          Danger (100+)
+        </span>
+      </div>
     </div>
   {/if}
 
@@ -717,16 +788,30 @@
     background: var(--card, #fff);
     border: 1px solid var(--border, #e6e1d4);
     border-radius: 12px;
-    padding: 1.25rem;
+    padding: 1rem 1rem 0.75rem;
     margin-bottom: 1.5rem;
   }
 
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0 0.25rem;
+  }
+
   .chart-title {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--pine, #4d594a);
-    margin: 0 0 1rem;
-    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .chart-stat {
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: 'SF Mono', Menlo, monospace;
   }
 
   .drift-chart {
@@ -735,24 +820,60 @@
     display: block;
   }
 
-  .chart-label {
-    font-size: 9px;
-    fill: var(--muted, #6b7c6e);
-    font-family: system-ui, sans-serif;
+  .chart-threshold-label {
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'SF Mono', Menlo, monospace;
   }
 
-  .chart-axis-label {
+  .chart-time-label {
     font-size: 10px;
     fill: var(--muted, #6b7c6e);
     font-family: system-ui, sans-serif;
   }
 
-  .chart-caption {
-    font-size: 0.8rem;
+  .chart-elapsed {
+    font-size: 9px;
+    fill: var(--muted, #6b7c6e);
+    font-family: system-ui, sans-serif;
+    opacity: 0.7;
+  }
+
+  .chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    padding-top: 0.625rem;
+    border-top: 1px solid var(--border, #e6e1d4);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
     color: var(--muted, #6b7c6e);
-    text-align: center;
-    margin: 0.75rem 0 0;
-    font-style: italic;
+  }
+
+  .legend-line {
+    width: 12px;
+    height: 2px;
+    border-radius: 1px;
+  }
+
+  @media (max-width: 400px) {
+    .chart-legend {
+      gap: 0.5rem;
+    }
+
+    .legend-item {
+      font-size: 0.65rem;
+    }
+
+    .legend-line {
+      width: 8px;
+    }
   }
 
   /* Stale Prompt */
