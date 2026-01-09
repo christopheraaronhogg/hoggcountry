@@ -188,23 +188,24 @@
     };
   }));
 
-  // Merge sections and trail towns into unified timeline, sorted by mile
-  // In trail mode, use actual pace to project dates for future items
-  let timelineItems = $derived(() => {
-    const effectivePace = mode === 'trail' && actualPaceOverall > 0 ? actualPaceOverall : pace;
-    const baseDate = mode === 'trail' ? todayStr : startDate;
-    const baseMile = mode === 'trail' ? currentMile : 0;
+  // Helper: get calendar days for a given number of miles using target pace + zero ratio
+  function getCalendarDaysForMiles(miles) {
+    const hikingDays = Math.ceil(miles / targetPace);
+    return Math.ceil(hikingDays / (1 - zeroDaysPerMonth / 30));
+  }
 
+  // Merge sections and trail towns into unified timeline, sorted by mile
+  // In trail mode, use TARGET pace to project future dates (not actual pace)
+  let timelineItems = $derived(() => {
     function getProjectedDate(mile) {
       if (mode === 'trail') {
         if (mile <= currentMile) {
-          // Past - calculate when they actually were there
-          const daysFromStart = Math.ceil(mile / actualPaceOverall);
-          return addDays(tripStartDate, daysFromStart);
+          // Past - already passed this point
+          return null; // We'll show "Done" instead of a date
         } else {
-          // Future - project from current position
+          // Future - project from current position using TARGET pace
           const milesAhead = mile - currentMile;
-          const daysAhead = Math.ceil(milesAhead / effectivePace);
+          const daysAhead = getCalendarDaysForMiles(milesAhead);
           return addDays(todayStr, daysAhead);
         }
       } else {
@@ -230,7 +231,7 @@
       const status = getItemStatus(s.startMile, s.endMile);
       const arrivalDate = getProjectedDate(s.startMile);
       const day = mode === 'trail'
-        ? (status === 'completed' ? Math.ceil(s.startMile / actualPaceOverall) : Math.ceil((s.startMile - currentMile) / effectivePace) + daysOnTrail)
+        ? (status === 'completed' ? null : getCalendarDaysForMiles(s.startMile - currentMile) + daysOnTrail)
         : s.daysToStart;
       return {
         ...s,
@@ -239,7 +240,7 @@
         status,
         arrivalDate,
         daysToStart: day,
-        season: getSeason(arrivalDate),
+        season: arrivalDate ? getSeason(arrivalDate) : s.season,
       };
     });
 
@@ -247,7 +248,7 @@
       const status = getItemStatus(t.mile);
       const arrivalDate = getProjectedDate(t.mile);
       const day = mode === 'trail'
-        ? (status === 'completed' ? Math.ceil(t.mile / actualPaceOverall) : Math.ceil((t.mile - currentMile) / effectivePace) + daysOnTrail)
+        ? (status === 'completed' ? null : getCalendarDaysForMiles(t.mile - currentMile) + daysOnTrail)
         : t.day;
       return {
         ...t,
@@ -255,7 +256,7 @@
         status,
         arrivalDate,
         day,
-        season: getSeason(arrivalDate),
+        season: arrivalDate ? getSeason(arrivalDate) : t.season,
       };
     });
 
@@ -266,13 +267,14 @@
     });
   });
 
-  // Trail mode calculations - uses derived calendar pace (inherently includes zeros)
+  // Trail mode calculations
   let todayStr = $derived(getTodayStr());
   let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, todayStr)));
-  let actualPaceOverall = $derived(currentMile / daysOnTrail); // Calendar pace includes zeros
+  let actualPaceOverall = $derived(daysOnTrail > 0 ? currentMile / daysOnTrail : 0); // For display only
   let milesRemaining = $derived(TOTAL_MILES - currentMile);
   let percentComplete = $derived((currentMile / TOTAL_MILES) * 100);
-  let daysRemaining = $derived(actualPaceOverall > 0 ? Math.ceil(milesRemaining / actualPaceOverall) : 999);
+  // Use TARGET pace for projections, not actual pace
+  let daysRemaining = $derived(getCalendarDaysForMiles(milesRemaining));
   let projectedFinish = $derived(addDays(todayStr, daysRemaining));
 
   // Compare to target pace (planning estimate)
@@ -308,7 +310,7 @@ hoggcountry.com/tools`;
 ✅ ${percentComplete.toFixed(1)}% complete
 ${daysAheadBehind >= 0 ? '🟢' : '🟠'} ${statusLabel}
 
-📊 Pace: ${actualPaceOverall.toFixed(1)} mi/day
+📊 Target: ${targetPace} mi/day
 🎯 Projected Summit: ${formatDate(projectedFinish)}
 
 hoggcountry.com/tools`;
@@ -494,7 +496,7 @@ hoggcountry.com/tools`;
       <div class="summary-projection">
         <span class="proj-label">Summit projection:</span>
         <span class="proj-date">{formatDate(projectedFinish)}</span>
-        <span class="proj-pace">at {actualPaceOverall.toFixed(1)} mi/day</span>
+        <span class="proj-pace">at {targetPace} mi/day target</span>
       </div>
     </section>
 

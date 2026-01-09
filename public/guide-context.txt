@@ -1,7 +1,5 @@
 # AT Field Guide
 
-
-
 # The Philosophy Behind This Guide
 
 This guide represents hundreds of hours of research, planning, and real-world trail experience distilled into a single comprehensive resource. It is not a theoretical exercise—it is a battle-tested system built on 840+ miles of completed thru-hikes across three major trail systems, earning the rare Sassafras Award from the Ozark Society.
@@ -23,8 +21,6 @@ This guide is organized by system rather than chronology. Each chapter addresses
 > *"The hikers who finish are not the strongest—they are the ones who listen, adapt, and stay patient."*
 
 ---
-
-
 
 # Hiker Profile & Experience
 
@@ -122,8 +118,6 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 ---
 
 ---
-
-
 
 # Trail Sections & Milestones
 
@@ -270,8 +264,6 @@ By the time you reach the Whites, you've hiked 1,700+ miles. Fatigue is real.
 ---
 
 ---
-
-
 
 # At Mountain & Weather Reference
 
@@ -448,8 +440,6 @@ Roots, rocks, ladders. Katahdin is inevitable.
 
 ---
 
-
-
 # Permits & Logistics
 
 
@@ -528,8 +518,6 @@ Voluntary identifier, NOT a permit. NOT required to hike.
 ---
 
 ---
-
-
 
 # Financial Planning
 
@@ -614,8 +602,6 @@ This cost model provides a **worst-case scenario** baseline for budgeting purpos
 ---
 
 ---
-
-
 
 # Gear System
 
@@ -904,8 +890,6 @@ Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 
 ---
 
-
-
 # Clothing System
 
 
@@ -1030,8 +1014,6 @@ Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 ---
 
 ---
-
-
 
 # Shelter Vs. Tent Decision System
 
@@ -1203,8 +1185,6 @@ Once shelter is chosen, you switch modes.
 ---
 
 ---
-
-
 
 # Water Treatment System
 
@@ -1632,8 +1612,6 @@ If forced:
 
 ---
 
-
-
 # Power & Electronics
 
 
@@ -1704,8 +1682,6 @@ Charge Apple Watch Ultra to ~80-90%
 ---
 
 ---
-
-
 
 # Medical Planning
 
@@ -1932,8 +1908,6 @@ Charge Apple Watch Ultra to ~80-90%
 ---
 
 ---
-
-
 
 # Weather Strategy
 
@@ -2248,8 +2222,6 @@ Trail elevation changes while hiking are meaningless for weather detection. Elev
 
 ---
 
-
-
 # Trail Resources & Navigation
 
 
@@ -2359,8 +2331,6 @@ Exceptions only. Primarily the 100-Mile Wilderness in Maine.
 **⚠️ IMPORTANT: Kennebec River Ferry (Maine)** — The ferry across the Kennebec River will **NOT operate in 2026**. Plan for the road-walk alternative. Check current guidance before reaching this section.
 
 ---
-
-
 
 # Food & Resupply
 
@@ -2516,8 +2486,6 @@ Bears follow scent plumes. Odor reduction reduces investigation time.
 
 ---
 
-
-
 # Resupply Logistics
 
 
@@ -2593,8 +2561,6 @@ ETA: MM/DD/YYYY
 ---
 
 ---
-
-
 
 # Town Strategy
 
@@ -3176,8 +3142,6 @@ You do NOT carry extra clothes. Laundry is done while you are still dressed and 
 ---
 
 ---
-
-
 
 # Daily Operations & Trail Life
 
@@ -4392,8 +4356,6 @@ At the end of every day, ask yourself these questions:
 
 ---
 
-
-
 # Safety & Emergency Procedures
 
 
@@ -4750,8 +4712,6 @@ Message a trusted person at home. They:
 ---
 
 ---
-
-
 
 # Content Creation
 
