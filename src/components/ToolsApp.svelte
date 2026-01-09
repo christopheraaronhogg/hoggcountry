@@ -99,10 +99,26 @@
   let showQuickLog = $state(false);
 
   onMount(async () => {
+    // IMPORTANT: Load saved context FIRST, before setting mounted = true
+    // Otherwise the $effect will save defaults over the user's actual data
+    const saved = localStorage.getItem('trailContext');
+    if (saved) {
+      try {
+        const ctx = JSON.parse(saved);
+        currentMile = ctx.currentMile ?? 0;
+        startDate = ctx.startDate || ctx.tripStartDate || startDate;
+        targetPace = ctx.targetPace || ctx.pace || targetPace;
+        zeroDaysPerMonth = ctx.zeroDaysPerMonth ?? 4;
+        contextExpanded = ctx.contextExpanded ?? true;
+      } catch (e) {}
+    }
+
+    // Now safe to set mounted - $effect will save current (loaded) values
     mounted = true;
+
+    // Handle URL hash for deep-linking to tools
     const hash = window.location.hash.slice(1);
     if (tools.some(t => t.id === hash && !t.disabled)) {
-      // Load the tool from hash if it's not the default
       if (hash !== 'milestone' && toolLoaders[hash]) {
         isToolLoading = true;
         try {
@@ -114,18 +130,6 @@
         isToolLoading = false;
       }
       activeTool = hash;
-    }
-    // Load saved context from localStorage
-    const saved = localStorage.getItem('trailContext');
-    if (saved) {
-      try {
-        const ctx = JSON.parse(saved);
-        currentMile = ctx.currentMile ?? 0;
-        startDate = ctx.startDate || ctx.tripStartDate || startDate;
-        targetPace = ctx.targetPace || ctx.pace || targetPace;
-        zeroDaysPerMonth = ctx.zeroDaysPerMonth ?? 4;
-        contextExpanded = ctx.contextExpanded ?? true;
-      } catch (e) {}
     }
   });
 
