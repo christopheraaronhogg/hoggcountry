@@ -216,9 +216,8 @@
 <div class="field-station">
   <!-- Station Header -->
   <div class="station-header">
-    <span class="station-badge">FIELD STATION</span>
     <span class="data-status" class:active={readings.length > 0}>
-      {readings.length > 0 ? '● TRACKING' : '○ STANDBY'}
+      {readings.length > 0 ? `● ${readings.length} reading${readings.length === 1 ? '' : 's'}` : '○ No readings yet'}
     </span>
   </div>
 
@@ -429,18 +428,6 @@
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
     border-bottom: 2px solid var(--border, #e6e1d4);
-  }
-
-  .station-badge {
-    font-family: Anton, Oswald, Impact, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    color: var(--pine, #4d594a);
-    background: var(--bg, #f5f2e8);
-    padding: 0.35rem 0.75rem;
-    border-radius: 999px;
-    border: 2px solid var(--pine, #4d594a);
   }
 
   .data-status {
