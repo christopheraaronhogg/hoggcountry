@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node scripts/parse-master-guide.js && node scripts/generate-search-index.js && node scripts/build-guide-context.js && node scripts/build-proverbs-context.js",
+    "prebuild": "node scripts/parse-master-guide.js && node scripts/generate-search-index.js && node scripts/build-guide-context.js && node scripts/build-proverbs-json.js",
     "build": "astro build",
     "postbuild": "node scripts/generate-asset-manifest.js",
     "build:pdf": "node scripts/generate-pdf.js",
