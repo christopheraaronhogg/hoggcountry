@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BibleChat from '../components/BibleChat.svelte';
+---
+<BaseLayout title="KJV Bible Search" description="Search the scriptures - King James Version">
+  <main class="container" style="padding: 2rem 1rem 4rem; min-height: 70vh;">
+    <BibleChat client:load />
+  </main>
+</BaseLayout>

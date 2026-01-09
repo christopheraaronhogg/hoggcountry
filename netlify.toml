@@ -9,6 +9,9 @@
 [functions."ask"]
   timeout = 60  # Extended timeout for AI responses
 
+[functions."ask-kjv"]
+  timeout = 60  # Extended timeout for Bible AI responses
+
 [build.environment]
   NODE_VERSION = "20"
 
