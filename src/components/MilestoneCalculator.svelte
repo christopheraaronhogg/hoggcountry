@@ -435,7 +435,10 @@ hoggcountry.com/tools`;
           </div>
           <div class="item-content">
             <div class="summit-card">
-              <h4>KATAHDIN</h4>
+              <div class="summit-header">
+                <h4>KATAHDIN</h4>
+                <span class="summit-mile">Mile 2,198</span>
+              </div>
               <p>The Northern Terminus</p>
             </div>
           </div>
@@ -599,7 +602,10 @@ hoggcountry.com/tools`;
           </div>
           <div class="item-content">
             <div class="summit-card">
-              <h4>KATAHDIN</h4>
+              <div class="summit-header">
+                <h4>KATAHDIN</h4>
+                <span class="summit-mile">Mile 2,198</span>
+              </div>
               <p>The Northern Terminus</p>
             </div>
           </div>
@@ -1225,11 +1231,28 @@ hoggcountry.com/tools`;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
 
+  .summit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
   .summit-card h4 {
     margin: 0;
     font-family: Oswald, sans-serif;
     font-size: 1.1rem;
     letter-spacing: 0.1em;
+  }
+
+  .summit-mile {
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--marker);
+    background: rgba(0,0,0,0.2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
   }
 
   .summit-card p {
