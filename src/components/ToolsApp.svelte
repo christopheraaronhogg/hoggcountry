@@ -550,19 +550,6 @@
     onSave={handleQuickLogSave}
   />
 
-  <!-- Quick Links -->
-  <div class="quick-links">
-    <a href="/guide" class="quick-link">
-      <div class="link-content">
-        <span class="link-icon">📖</span>
-        <div class="link-text">
-          <span class="link-title">Field Guide</span>
-          <span class="link-desc">Read the full breakdown</span>
-        </div>
-      </div>
-      <span class="link-arrow">→</span>
-    </a>
-  </div>
 </div>
 
 <style>
@@ -1179,74 +1166,6 @@
     letter-spacing: 0.05em;
   }
 
-  /* Quick Links */
-  .quick-links {
-    margin-top: 3rem;
-    display: flex;
-    justify-content: center;
-  }
-
-  .quick-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1rem 1.5rem;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    text-decoration: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: all 0.2s ease;
-    width: 100%;
-    max-width: 400px;
-  }
-
-  .quick-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    border-color: var(--alpine);
-  }
-
-  .link-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .link-icon {
-    font-size: 1.75rem;
-  }
-
-  .link-text {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .link-title {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .link-desc {
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-
-  .link-arrow {
-    font-size: 1.25rem;
-    color: var(--alpine);
-    transition: transform 0.2s ease;
-  }
-
-  .quick-link:hover .link-arrow {
-    transform: translateX(4px);
-  }
-
   /* ========== QUICK LOG FAB ========== */
   .quick-log-fab {
     position: fixed;
@@ -1453,14 +1372,6 @@
       min-height: 400px;
     }
 
-    .quick-links {
-      margin-top: 2rem;
-    }
-
-    .quick-link {
-      padding: 0.75rem 1rem;
-      gap: 1rem;
-    }
   }
 
   /* Extra small screens */
