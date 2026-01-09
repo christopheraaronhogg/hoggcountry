@@ -1,0 +1,159 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const title = "Storm Warning Concepts — Hogg Country";
+const description = "Compare 3 UX concepts for the pressure drift storm warning tool.";
+
+const concepts = [
+  {
+    name: "Field Station",
+    href: "/weather/field-station/",
+    description: "Scientific monitoring station aesthetic. Data-dense but organized. Compact history visible below input.",
+    metaphor: "Weather station control panel"
+  },
+  {
+    name: "Trail Journal",
+    href: "/weather/journal/",
+    description: "Handwritten field notes aesthetic. Each reading is a journal entry with optional notes. Story-driven.",
+    metaphor: "Trail journal / field notes"
+  },
+  {
+    name: "Weather Gauge",
+    href: "/weather/gauge/",
+    description: "Circular gauge with rotating needle. Timeline strip shows readings as numbered pins. Instrument aesthetic.",
+    metaphor: "Analog barometer"
+  }
+];
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero">
+    <span class="chapter font-chapter">UX CONCEPTS</span>
+    <h1 class="font-display">Storm Warning Tool</h1>
+    <p>Pick your favorite UX direction for the pressure drift tracker</p>
+  </section>
+
+  <div class="container concepts-grid">
+    {concepts.map((concept, i) => (
+      <a href={concept.href} class="concept-card">
+        <div class="concept-number">{i + 1}</div>
+        <h2 class="concept-name font-display">{concept.name}</h2>
+        <p class="concept-metaphor">{concept.metaphor}</p>
+        <p class="concept-description">{concept.description}</p>
+        <span class="concept-cta">Try it →</span>
+      </a>
+    ))}
+  </div>
+
+  <div class="container notes">
+    <h3>What are we testing?</h3>
+    <ul>
+      <li><strong>Field Station:</strong> History visible immediately below input (no toggle). Scientific look.</li>
+      <li><strong>Trail Journal:</strong> Each reading is a journal entry you can add notes to. Warm, personal feel.</li>
+      <li><strong>Weather Gauge:</strong> Circular dial with needle. Compact horizontal timeline. Instrument look.</li>
+    </ul>
+    <p>All 3 show the same threshold info in the warning display. Try each one and let me know which feels best!</p>
+  </div>
+</BaseLayout>
+
+<style>
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem 1rem;
+    max-width: 1000px;
+  }
+
+  .concept-card {
+    display: block;
+    background: var(--card, #fff);
+    border: 2px solid var(--border, #e6e1d4);
+    border-radius: 16px;
+    padding: 1.75rem;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .concept-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+    border-color: var(--pine, #4d594a);
+  }
+
+  .concept-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--pine, #4d594a);
+    color: white;
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+  }
+
+  .concept-name {
+    font-size: 1.5rem;
+    margin: 0 0 0.25rem;
+    color: var(--ink, #1f2937);
+  }
+
+  .concept-metaphor {
+    font-size: 0.85rem;
+    color: var(--muted, #6b7c6e);
+    font-style: italic;
+    margin: 0 0 0.75rem;
+  }
+
+  .concept-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--fg, #333);
+    margin: 0 0 1rem;
+  }
+
+  .concept-cta {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--bg, #f5f2e8);
+    border-radius: 8px;
+    font-weight: 600;
+    color: var(--pine, #4d594a);
+    font-size: 0.9rem;
+  }
+
+  .concept-card:hover .concept-cta {
+    background: var(--pine, #4d594a);
+    color: white;
+  }
+
+  .notes {
+    max-width: 700px;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .notes h3 {
+    font-size: 1.25rem;
+    color: var(--pine, #4d594a);
+    margin: 0 0 1rem;
+  }
+
+  .notes ul {
+    margin: 0 0 1.5rem;
+    padding-left: 1.25rem;
+  }
+
+  .notes li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  .notes p {
+    color: var(--muted, #6b7c6e);
+    font-style: italic;
+  }
+</style>

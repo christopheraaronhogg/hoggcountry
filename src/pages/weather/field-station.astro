@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import StormWarningFieldStation from '../../components/StormWarningFieldStation.svelte';
+
+const title = "Storm Warning: Field Station — Hogg Country";
+const description = "Direction 1: Scientific monitoring station aesthetic for pressure drift tracking.";
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero">
+    <span class="chapter font-chapter">CONCEPT TEST</span>
+    <h1 class="font-display">Field Station Dashboard</h1>
+    <p>Direction 1: Scientific monitoring station aesthetic. Data-dense but organized.</p>
+  </section>
+
+  <div class="container" style="padding-bottom: 4rem; max-width: 600px;">
+    <StormWarningFieldStation client:load />
+  </div>
+</BaseLayout>
