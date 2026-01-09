@@ -6,8 +6,8 @@
 
 ---
 
-**Prepared by:** Theman  
-**A Comprehensive Planning & Field Reference**  
+**Prepared by:** HoggCountry
+**A Comprehensive Planning & Field Reference**
 *Based on 840+ Miles of Thru-Hiking Experience*
 
 ---
@@ -2530,7 +2530,7 @@ Bears follow scent plumes. Odor reduction reduces investigation time.
 **Do not deviate from this format:**
 
 ```
-THEMAN HOGG
+HOGGCOUNTRY (Your Legal Name)
 GENERAL DELIVERY
 CITY, STATE ZIP
 PLEASE HOLD FOR AT HIKER
@@ -4822,7 +4822,7 @@ The preparation is complete. Focus now shifts to execution, pacing, and decision
 
 ---
 
-**See you on Katahdin, Theman.**
+**See you on Katahdin, HoggCountry.**
 
 ---
 

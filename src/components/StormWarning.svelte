@@ -145,6 +145,61 @@
     return 'Stable';
   });
 
+  // Timing guidance for next reading
+  let timingGuidance = $derived.by(() => {
+    if (readings.length === 0) return null;
+
+    const lastReading = readings[readings.length - 1];
+    const msSinceLast = Date.now() - lastReading.timestamp;
+    const minutesSinceLast = Math.floor(msSinceLast / (1000 * 60));
+    const hoursSinceLast = msSinceLast / (1000 * 60 * 60);
+
+    if (readings.length === 1) {
+      // First reading taken, waiting for second
+      if (hoursSinceLast < 1) {
+        const minutesRemaining = Math.max(0, 60 - minutesSinceLast);
+        return {
+          status: 'waiting',
+          message: `Keep hiking. Take next reading in ${minutesRemaining}+ min at any known elevation.`,
+          ready: false
+        };
+      } else if (hoursSinceLast < 3) {
+        return {
+          status: 'ready',
+          message: `Good time for reading #2. ${Math.floor(hoursSinceLast)}h elapsed — data will be meaningful.`,
+          ready: true
+        };
+      } else {
+        return {
+          status: 'ideal',
+          message: `Ideal timing for reading #2. ${Math.floor(hoursSinceLast)}h elapsed — excellent data quality.`,
+          ready: true
+        };
+      }
+    } else {
+      // Multiple readings exist
+      if (hoursSinceLast < 0.5) {
+        return {
+          status: 'recent',
+          message: 'Reading just recorded. Continue hiking to your next checkpoint.',
+          ready: false
+        };
+      } else if (hoursSinceLast < 2) {
+        return {
+          status: 'ready',
+          message: 'Ready for another reading at your next known elevation point.',
+          ready: true
+        };
+      } else {
+        return {
+          status: 'due',
+          message: `${Math.floor(hoursSinceLast)}h since last reading. Record at next known elevation.`,
+          ready: true
+        };
+      }
+    }
+  });
+
   // localStorage persistence
   const STORAGE_KEY = 'storm-warning-session';
   const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
@@ -308,6 +363,19 @@
       Record Reading
     </button>
 
+    <!-- Timing Guidance -->
+    {#if timingGuidance}
+      <div class="timing-guidance" class:ready={timingGuidance.ready} class:waiting={!timingGuidance.ready}>
+        <span class="timing-icon">{timingGuidance.ready ? '✓' : '⏱️'}</span>
+        <span class="timing-message">{timingGuidance.message}</span>
+      </div>
+    {:else if readings.length === 0}
+      <div class="timing-guidance intro">
+        <span class="timing-icon">📍</span>
+        <span class="timing-message">Record reading #1 at any known elevation (FarOut, trail marker, summit).</span>
+      </div>
+    {/if}
+
     {#if readings.length > 0}
       <div class="session-info">
         <span>Started {elapsedTimeDisplay} ago</span>
@@ -333,12 +401,17 @@
         <h3>How This Works</h3>
         <p>
           Your altimeter measures air pressure and converts it to elevation. When atmospheric
-          pressure drops (storm approaching), your altimeter thinks you've climbed higher —
+          pressure drops (storm approaching), your altimeter shows you've climbed higher than you actually have —
           because lower pressure exists at higher elevations.
         </p>
         <p>
-          <strong>The key insight:</strong> If you're standing still and your altimeter shows you've
-          "climbed," you haven't moved — the air pressure dropped. This is called <em>phantom drift</em>.
+          <strong>The key insight:</strong> Compare what your altimeter <em>should</em> show vs what it <em>actually</em> shows.
+          If your watch reads 50' higher than your true elevation, that's +50' of "phantom drift." Track this over time — if the drift is growing, pressure is falling and weather may be changing.
+        </p>
+        <p>
+          <strong>You don't need to stay in one place.</strong> Take Reading 1 at any known elevation, then keep hiking.
+          An hour+ later at your next known elevation point (summit, shelter, trail junction marked on FarOut), take Reading 2.
+          The tool compares drift-to-drift, so your actual hiking elevation change doesn't matter.
         </p>
 
         <h3>Understanding the Thresholds</h3>
@@ -383,11 +456,11 @@
 
         <h3>Tips for Accurate Readings</h3>
         <ul>
-          <li><strong>Stay still</strong> — Only record readings when you're stationary</li>
-          <li><strong>Temperature matters</strong> — Cold air makes altimeters read high even without pressure change</li>
-          <li><strong>Wind affects readings</strong> — Strong wind can cause temporary fluctuations</li>
-          <li><strong>Calibrate often</strong> — Set your watch at known elevations when weather is stable</li>
-          <li><strong>Wait 15+ minutes</strong> — Shorter intervals show noise, not trends</li>
+          <li><strong>Use known elevations</strong> — FarOut, trail markers, summits, and shelters all work. Don't guess.</li>
+          <li><strong>Wait 1+ hour between readings</strong> — Shorter intervals show noise, not meaningful trends.</li>
+          <li><strong>Stop briefly when recording</strong> — Hold your watch still for a consistent reading.</li>
+          <li><strong>Temperature affects readings</strong> — Cold air makes altimeters read high even without pressure change.</li>
+          <li><strong>More readings = better data</strong> — Take a reading at each known-elevation point throughout the day.</li>
         </ul>
 
         <h3>The Science</h3>
@@ -618,6 +691,44 @@
 
   .reset-link:hover {
     color: #b91c1c;
+  }
+
+  /* Timing Guidance */
+  .timing-guidance {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+
+  .timing-guidance.intro {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #1e40af;
+  }
+
+  .timing-guidance.ready {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #15803d;
+  }
+
+  .timing-guidance.waiting {
+    background: rgba(234, 179, 8, 0.1);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    color: #a16207;
+  }
+
+  .timing-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .timing-message {
+    line-height: 1.4;
   }
 
   /* Education Section */

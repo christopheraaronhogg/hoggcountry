@@ -321,7 +321,7 @@ function cleanIntroContent(content) {
 
 ---
 
-**Prepared by:** Theman
+**Prepared by:** HoggCountry
 *Based on 840+ Miles of Thru-Hiking Experience*
 
 ---
