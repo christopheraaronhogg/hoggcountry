@@ -459,12 +459,19 @@
     <span class="reset-text">Reset All</span>
   </button>
 
-  <!-- Guide Link -->
-  <a href="/guide/08-shelter-vs-tent-decision-system" class="guide-link">
-    <span class="link-icon">📖</span>
-    <span class="link-text">Full Shelter vs. Tent Guide</span>
-    <span class="link-arrow">→</span>
-  </a>
+  <!-- Guide Links -->
+  <div class="guide-links">
+    <a href="/guide/08-shelter-vs-tent-decision-system" class="guide-link chapter-link">
+      <span class="link-icon">📚</span>
+      <span class="link-text">Full Shelter vs. Tent Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="/guide#08-shelter-vs-tent-decision-system" class="guide-link field-guide-link">
+      <span class="link-icon">📖</span>
+      <span class="link-text">Field Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+  </div>
 </div>
 
 <style>
@@ -1309,7 +1316,13 @@
     color: var(--muted);
   }
 
-  /* Guide Link */
+  /* Guide Links */
+  .guide-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .guide-link {
     display: flex;
     align-items: center;
@@ -1320,12 +1333,19 @@
     border-radius: 14px;
     text-decoration: none;
     transition: all 0.2s ease;
+    flex: 1;
+    min-width: 200px;
   }
 
   .guide-link:hover {
     border-color: var(--alpine);
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     transform: translateY(-2px);
+  }
+
+  .field-guide-link {
+    flex: 0 0 auto;
+    min-width: 140px;
   }
 
   .link-icon { font-size: 1.25rem; }
