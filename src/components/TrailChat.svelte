@@ -1,15 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   let question = $state('');
   let messages = $state<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   let isLoading = $state(false);
   let error = $state('');
-  let guideContext = $state('');
-
-  onMount(async () => {
-    const res = await fetch('/guide-context.txt');
-    if (res.ok) guideContext = await res.text();
-  });
 
   async function askQuestion() {
     if (!question.trim() || isLoading) return;
@@ -23,7 +16,7 @@
       const res = await fetch('/.netlify/functions/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, context: guideContext, history: messages }),
+        body: JSON.stringify({ question: q, history: messages }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');

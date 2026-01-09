@@ -1,5 +1,21 @@
 import type { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 
+// Cache guide context in memory (cold start loads it once)
+let cachedGuideContext: string | null = null;
+
+async function getGuideContext(): Promise<string> {
+  if (cachedGuideContext) return cachedGuideContext;
+
+  // Fetch from our own site's public file
+  const siteUrl = process.env.URL || 'https://hoggcountry.com';
+  const res = await fetch(`${siteUrl}/guide-context.txt`);
+  if (res.ok) {
+    cachedGuideContext = await res.text();
+    return cachedGuideContext;
+  }
+  return '';
+}
+
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
@@ -7,7 +23,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { question, context: guideContext, history = [] } = body;
+    const { question, history = [] } = body;
 
     if (!question || typeof question !== 'string') {
       return { statusCode: 400, body: JSON.stringify({ error: 'Question is required' }) };
@@ -17,6 +33,9 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     if (!apiKey) {
       return { statusCode: 500, body: JSON.stringify({ error: 'OpenAI API key not configured' }) };
     }
+
+    // Load guide context server-side (cached after first load)
+    const guideContext = await getGuideContext();
 
     const systemPrompt = `You are the AT Trail AI, an expert assistant for Appalachian Trail thru-hikers.
 
