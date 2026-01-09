@@ -3,6 +3,35 @@ import type { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 // Cache guide context in memory (cold start loads it once)
 let cachedGuideContext: string | null = null;
 
+// Simple rate limiter (resets on cold start, but catches active abuse)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 30; // requests per window
+const RATE_WINDOW = 60 * 1000; // 1 minute
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  // Clean up old entries periodically
+  if (rateLimitMap.size > 1000) {
+    for (const [key, val] of rateLimitMap) {
+      if (val.resetTime < now) rateLimitMap.delete(key);
+    }
+  }
+
+  if (!record || record.resetTime < now) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+    return true;
+  }
+
+  if (record.count >= RATE_LIMIT) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
 async function getGuideContext(): Promise<string> {
   if (cachedGuideContext) return cachedGuideContext;
 
@@ -19,6 +48,18 @@ async function getGuideContext(): Promise<string> {
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
+  // Rate limiting by IP
+  const ip = event.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+             event.headers['x-nf-client-connection-ip'] ||
+             'unknown';
+
+  if (!checkRateLimit(ip)) {
+    return {
+      statusCode: 429,
+      body: JSON.stringify({ error: 'Too many requests. Please wait a minute and try again.' }),
+    };
   }
 
   try {
