@@ -100,7 +100,7 @@ ${kjvContext || 'No scripture context found.'}`;
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast-latest',
+        model: 'grok-4-1-fast',
         messages: [
           { role: 'system', content: systemPrompt },
           ...history.slice(-6).map((m: { role: string; content: string }) => ({
