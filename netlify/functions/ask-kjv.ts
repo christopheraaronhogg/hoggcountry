@@ -1,7 +1,8 @@
 import type { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 
-// Cache KJV parsed into books (cold start loads once)
-let cachedBooks: Map<string, string> | null = null;
+// Cache KJV parsed into verses database
+let cachedVerses: Map<string, string> | null = null;
+let cachedBooksList: string[] | null = null;
 
 // Simple rate limiter
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -28,108 +29,70 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-// Parse KJV into individual books
-async function getKJVBooks(): Promise<Map<string, string>> {
-  if (cachedBooks) return cachedBooks;
+// Parse KJV into verse database: "Book Chapter:Verse" -> "text"
+async function getKJVVerses(): Promise<{ verses: Map<string, string>; books: string[] }> {
+  if (cachedVerses && cachedBooksList) {
+    return { verses: cachedVerses, books: cachedBooksList };
+  }
 
   const siteUrl = process.env.URL || 'https://hoggcountry.com';
   const res = await fetch(`${siteUrl}/kjv-context.txt`);
   if (!res.ok) {
-    cachedBooks = new Map();
-    return cachedBooks;
+    cachedVerses = new Map();
+    cachedBooksList = [];
+    return { verses: cachedVerses, books: cachedBooksList };
   }
 
   const fullText = await res.text();
-  cachedBooks = new Map();
+  cachedVerses = new Map();
+  const booksSet = new Set<string>();
 
-  // Split by book headers (## BookName)
-  const bookRegex = /^## (.+)$/gm;
-  let lastBook = '';
-  let lastIndex = 0;
+  // Parse verses like "Genesis 1:1 In the beginning..."
+  // Match: BookName Chapter:Verse Text
+  const verseRegex = /^([1-3]?\s?[A-Za-z]+(?:\s+of\s+[A-Za-z]+)?)\s+(\d+):(\d+)\s+(.+)$/gm;
 
   let match;
-  while ((match = bookRegex.exec(fullText)) !== null) {
-    if (lastBook) {
-      const content = fullText.slice(lastIndex, match.index).trim();
-      if (content) {
-        cachedBooks.set(normalizeBookName(lastBook), content);
-      }
-    }
-    lastBook = match[1].trim();
-    lastIndex = match.index + match[0].length;
+  while ((match = verseRegex.exec(fullText)) !== null) {
+    const book = match[1].trim();
+    const chapter = match[2];
+    const verse = match[3];
+    const text = match[4].trim();
+
+    const key = `${book} ${chapter}:${verse}`;
+    cachedVerses.set(key.toLowerCase(), text);
+    booksSet.add(book);
   }
 
-  // Don't forget the last book
-  if (lastBook) {
-    const content = fullText.slice(lastIndex).trim();
-    if (content) {
-      cachedBooks.set(normalizeBookName(lastBook), content);
-    }
-  }
-
-  return cachedBooks;
+  cachedBooksList = Array.from(booksSet);
+  return { verses: cachedVerses, books: cachedBooksList };
 }
 
-// Normalize book names for matching
-function normalizeBookName(name: string): string {
-  return name.toLowerCase()
-    .replace(/^(1|2|3|i|ii|iii)\s*/i, (m) => {
-      if (m.match(/^i+\s*/i)) return m.replace(/i/gi, '1').replace(/ii/gi, '2').replace(/iii/gi, '3');
-      return m;
-    })
-    .replace(/\s+/g, ' ')
-    .trim();
+// Look up verse from database
+function getVerseText(verses: Map<string, string>, reference: string): string | null {
+  // Normalize the reference for lookup
+  const normalized = reference.toLowerCase().trim();
+  return verses.get(normalized) || null;
 }
 
-// Stage 1: Select relevant books using cheap fast model
-async function selectBooks(question: string, apiKey: string): Promise<string[]> {
-  const response = await fetch('https://api.x.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'grok-4-1-fast',
-      messages: [
-        {
-          role: 'system',
-          content: `Select exactly 4 Bible books to provide balanced scriptural guidance. Return ONLY a JSON array of book names.
+// Parse a reference like "Psalms 4:8" or "Philippians 4:6-7"
+interface ParsedRef {
+  book: string;
+  chapter: number;
+  startVerse: number;
+  endVerse: number;
+}
 
-BALANCE: Pick one from each section for diverse perspective:
-1. WISDOM: Job, Psalms, Proverbs, Ecclesiastes, Song of Solomon
-2. OLD TESTAMENT: Isaiah, Jeremiah, Daniel, or other prophets/history
-3. GOSPELS: Matthew, Mark, Luke, John
-4. EPISTLES: Romans, Philippians, Hebrews, James, 1 John, etc.
+function parseReference(ref: string): ParsedRef | null {
+  // Match "Book Chapter:Verse" or "Book Chapter:StartVerse-EndVerse"
+  const match = ref.match(/^([1-3]?\s?[A-Za-z]+(?:\s+of\s+[A-Za-z]+)?)\s+(\d+):(\d+)(?:-(\d+))?$/);
+  if (!match) return null;
 
-Return format: ["Psalms", "Isaiah", "Matthew", "Philippians"]`
-        },
-        { role: 'user', content: question }
-      ],
-      temperature: 0.1,
-    }),
-  });
-
-  if (!response.ok) {
-    return ['Psalms', 'Isaiah', 'Matthew', 'Philippians'];
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || '';
-
-  try {
-    const jsonMatch = content.match(/\[[\s\S]*?\]/);
-    if (jsonMatch) {
-      const books = JSON.parse(jsonMatch[0]);
-      if (Array.isArray(books) && books.length > 0) {
-        return books.slice(0, 5);
-      }
-    }
-  } catch {
-    // Parse failed
-  }
-
-  return ['Psalms', 'Isaiah', 'Matthew', 'Philippians'];
+  return {
+    book: match[1].trim(),
+    chapter: parseInt(match[2], 10),
+    startVerse: parseInt(match[3], 10),
+    endVerse: match[4] ? parseInt(match[4], 10) : parseInt(match[3], 10),
+  };
 }
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
@@ -161,58 +124,29 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       return { statusCode: 500, body: JSON.stringify({ error: 'xAI API key not configured' }) };
     }
 
-    // Stage 1: Select relevant books (fast, cheap)
-    const selectedBooks = await selectBooks(question, apiKey);
+    // Load verse database
+    const { verses, books } = await getKJVVerses();
 
-    // Stage 2: Get content for selected books
-    const allBooks = await getKJVBooks();
-    const relevantContent: string[] = [];
+    // Ask LLM to select verse REFERENCES only (not quote them)
+    const systemPrompt = `You are a Bible reference assistant. Given a question, select the most relevant KJV verse references.
 
-    for (const bookName of selectedBooks) {
-      const normalized = normalizeBookName(bookName);
-      let content = allBooks.get(normalized);
-      if (!content) {
-        for (const [key, val] of allBooks) {
-          if (key.includes(normalized) || normalized.includes(key)) {
-            content = val;
-            break;
-          }
-        }
-      }
-      if (content) {
-        relevantContent.push(`## ${bookName}\n${content}`);
-      }
-    }
+IMPORTANT: Return ONLY a JSON object. Do NOT quote scripture text - just return references.
 
-    const booksContext = relevantContent.join('\n\n');
+JSON FORMAT:
+{
+  "intro": "1-2 sentence warm acknowledgment of their situation",
+  "verses": ["Psalms 4:8", "Psalms 127:2", "Isaiah 26:3", "Matthew 11:28", "Philippians 4:6-7"],
+  "closing": "1 sentence of gentle encouragement"
+}
 
-    // Stage 3: Generate warm pastoral response
-    const systemPrompt = `You are a warm, pastoral Bible guide who helps people find comfort and wisdom in the King James Version scriptures.
+RULES:
+1. Select 4-8 most relevant verses from across the Bible
+2. Use exact reference format: "Book Chapter:Verse" or "Book Chapter:Start-End" for ranges
+3. Balance selections: include Psalms/Proverbs (wisdom), Old Testament prophets, Gospels, and Epistles
+4. The intro should be warm and pastoral, acknowledging their emotional state
+5. Return ONLY valid JSON, no other text
 
-YOUR ROLE:
-- You are like a kind pastor or trusted friend who knows the Bible deeply
-- Meet people where they are emotionally - acknowledge their struggles with warmth
-- Let Scripture do the heavy lifting, but frame it with gentle encouragement
-
-RESPONSE STRUCTURE:
-1. Brief warm acknowledgment (1-2 sentences)
-2. Primary scripture - the most relevant passage(s), quoted in full
-3. Supporting verses - 2-4 additional relevant scriptures
-4. Gentle closing (1 sentence)
-
-SCRIPTURE RULES:
-- ONLY quote exact KJV text from the context below - never paraphrase
-- Always cite: **Book Chapter:Verse** (bold the reference)
-- Include the FULL verse text, not just references
-- Provide 4-6 relevant verses from the books provided
-
-TONE:
-- Warm and personal, not robotic or academic
-- Hopeful - the scriptures are meant to encourage
-- Let Scripture be the star
-
-SCRIPTURE CONTEXT (from ${selectedBooks.join(', ')}):
-${booksContext || 'No scripture context found.'}`;
+AVAILABLE BOOKS: ${books.slice(0, 30).join(', ')}... and more`;
 
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -224,33 +158,86 @@ ${booksContext || 'No scripture context found.'}`;
         model: 'grok-4-1-fast',
         messages: [
           { role: 'system', content: systemPrompt },
-          ...history.slice(-6).map((m: { role: string; content: string }) => ({
+          ...history.slice(-4).map((m: { role: string; content: string }) => ({
             role: m.role === 'assistant' ? 'assistant' : 'user',
             content: m.content,
           })),
           { role: 'user', content: question },
         ],
-        temperature: 0.3,
+        temperature: 0.2,
       }),
     });
 
-    if (response.ok) {
-      const data = await response.json();
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Grok API error:', errorText);
+      return { statusCode: 502, body: JSON.stringify({ error: 'AI error', details: errorText }) };
+    }
+
+    const data = await response.json();
+    const rawContent = data.choices?.[0]?.message?.content || '{}';
+
+    // Parse JSON response
+    let llmResponse: { intro?: string; verses?: string[]; closing?: string };
+    try {
+      // Extract JSON from response (in case there's extra text)
+      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+      llmResponse = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+    } catch {
       return {
         statusCode: 200,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          answer: data.choices?.[0]?.message?.content || 'No response',
-          model: 'grok-4-1-fast',
-          books: selectedBooks,
-          tokens: data.usage,
+          intro: 'I had trouble finding relevant verses. Please try rephrasing your question.',
+          verses: [],
+          closing: null,
         }),
       };
     }
 
-    const errorText = await response.text();
-    console.error('Grok API error:', errorText);
-    return { statusCode: 502, body: JSON.stringify({ error: 'AI error', details: errorText }) };
+    // Look up actual verse text from database
+    const verifiedVerses: { reference: string; text: string }[] = [];
+
+    if (llmResponse.verses && Array.isArray(llmResponse.verses)) {
+      for (const ref of llmResponse.verses) {
+        const parsed = parseReference(ref);
+        if (!parsed) continue;
+
+        if (parsed.startVerse === parsed.endVerse) {
+          // Single verse
+          const text = getVerseText(verses, ref);
+          if (text) {
+            verifiedVerses.push({ reference: ref, text });
+          }
+        } else {
+          // Verse range - collect all verses
+          const texts: string[] = [];
+          for (let v = parsed.startVerse; v <= parsed.endVerse; v++) {
+            const singleRef = `${parsed.book} ${parsed.chapter}:${v}`;
+            const text = getVerseText(verses, singleRef);
+            if (text) texts.push(`[${v}] ${text}`);
+          }
+          if (texts.length > 0) {
+            verifiedVerses.push({
+              reference: `${parsed.book} ${parsed.chapter}:${parsed.startVerse}-${parsed.endVerse}`,
+              text: texts.join(' '),
+            });
+          }
+        }
+      }
+    }
+
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        intro: llmResponse.intro || null,
+        verses: verifiedVerses,
+        closing: llmResponse.closing || null,
+        model: 'grok-4-1-fast',
+        tokens: data.usage,
+      }),
+    };
 
   } catch (error) {
     console.error('Internal error:', error);

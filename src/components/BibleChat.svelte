@@ -1,24 +1,19 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
 
-  interface Message { role: 'user' | 'assistant'; content: string; books?: string[] }
+  interface Verse { reference: string; text: string }
+  interface AssistantContent { intro: string | null; verses: Verse[]; closing: string | null }
+  interface Message { role: 'user' | 'assistant'; content: string | AssistantContent }
+
+  // Handle legacy string content (old saved conversations)
+  function isStructuredContent(content: string | AssistantContent): content is AssistantContent {
+    return typeof content === 'object' && content !== null && 'verses' in content;
+  }
+
   interface Conversation { id: string; createdAt: string; title: string; messages: Message[] }
 
   const STORAGE_KEY = 'kjv-ai-conversations';
   const SHOW_RECENT_COUNT = 5;
-
-  // Convert markdown-style response to HTML
-  function formatResponse(text: string): string {
-    return text
-      // Bold references like **Psalm 4:8**
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      // Paragraph breaks
-      .replace(/\n\n/g, '</p><p>')
-      // Single line breaks
-      .replace(/\n/g, '<br>')
-      // Wrap in paragraph
-      .replace(/^(.*)$/, '<p>$1</p>');
-  }
 
   let question = $state('');
   let messages = $state<Message[]>([]);
@@ -56,7 +51,9 @@
 
   function saveCurrentConvo() {
     if (messages.length === 0) return;
-    const title = messages[0]?.content.slice(0, 60) + (messages[0]?.content.length > 60 ? '...' : '');
+    const firstMsg = messages[0];
+    const titleText = typeof firstMsg?.content === 'string' ? firstMsg.content : 'Scripture search';
+    const title = titleText.slice(0, 60) + (titleText.length > 60 ? '...' : '');
 
     if (currentConvoId) {
       const idx = savedConversations.findIndex(c => c.id === currentConvoId);
@@ -112,8 +109,13 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
 
-      // Store response with optional books info
-      messages = [...messages, { role: 'assistant', content: data.answer || 'No response', books: data.books }];
+      // Store structured response with verified verses
+      const assistantContent: AssistantContent = {
+        intro: data.intro || null,
+        verses: data.verses || [],
+        closing: data.closing || null,
+      };
+      messages = [...messages, { role: 'assistant', content: assistantContent }];
       saveCurrentConvo();
       scrollToBottom();
     } catch (e) {
@@ -144,7 +146,7 @@
       </button>
     {/if}
     <h1>Scripture Guide</h1>
-    <p>King James Version · Wisdom from across the Bible</p>
+    <p>King James Version · Verified from database</p>
   </header>
 
   {#if messages.length === 0}
@@ -196,16 +198,33 @@
         {#if m.role === 'user'}
           <div class="msg user">{m.content}</div>
         {:else}
+          {@const content = isStructuredContent(m.content) ? m.content : { intro: String(m.content), verses: [], closing: null }}
           <div class="msg assistant">
-            {#if m.books && m.books.length > 0}
-              <div class="books-used">
-                <span class="books-label">Drawing from:</span>
-                {#each m.books as book, i}
-                  <span class="book-tag">{book}</span>
-                {/each}
+            {#if content.intro}
+              <div class="ai-intro">
+                <p>{content.intro}</p>
               </div>
             {/if}
-            <div class="response-content">{@html formatResponse(m.content)}</div>
+            {#if content.verses && content.verses.length > 0}
+              <div class="verses">
+                {#each content.verses as verse}
+                  <blockquote class="scripture">
+                    <div class="scripture-header">
+                      <span class="verse-ref">{verse.reference}</span>
+                      <span class="verified-badge">✓ KJV</span>
+                    </div>
+                    <p class="verse-text">{verse.text}</p>
+                  </blockquote>
+                {/each}
+              </div>
+            {:else if !content.intro}
+              <p class="no-results">No relevant verses found for this topic.</p>
+            {/if}
+            {#if content.closing}
+              <div class="ai-closing">
+                <p>{content.closing}</p>
+              </div>
+            {/if}
           </div>
         {/if}
       {/each}
@@ -234,7 +253,7 @@
       aria-label="Your question"
     />
     <button type="submit" disabled={isLoading || !question.trim()}>
-      {isLoading ? '...' : 'Search'}
+      {isLoading ? '...' : 'Ask'}
     </button>
   </form>
 </div>
@@ -312,46 +331,79 @@
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
   .msg.user { background: #4a3728; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-  .msg.assistant { background: #faf8f5; border: 1px solid #e8e2d8; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.assistant { background: #faf8f5; border: 1px solid #e8e2d8; align-self: flex-start; border-bottom-left-radius: 4px; max-width: 100%; }
 
-  /* Books used indicator */
-  .books-used {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.75rem;
+  /* AI intro/closing styling */
+  .ai-intro {
+    margin-bottom: 1rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid #e8e2d8;
   }
-  .books-label {
-    font-size: 0.75rem;
-    color: #7a6a5a;
+  .ai-intro p {
+    margin: 0;
+    color: #5a4a3a;
+    font-size: 0.95rem;
+    line-height: 1.6;
   }
-  .book-tag {
-    font-size: 0.7rem;
-    background: #e8e2d8;
-    color: #4a3728;
-    padding: 0.2rem 0.5rem;
-    border-radius: 10px;
-    font-weight: 500;
+  .ai-closing {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e8e2d8;
+  }
+  .ai-closing p {
+    margin: 0;
+    color: #5a4a3a;
+    font-size: 0.9rem;
+    font-style: italic;
+    line-height: 1.5;
   }
 
-  /* Response content styling */
-  .response-content {
-    font-size: 0.95rem;
+  /* Verified scripture styling */
+  .verses {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .scripture {
+    margin: 0;
+    padding: 1rem;
+    background: linear-gradient(135deg, #fdfcfa 0%, #f9f6f1 100%);
+    border: 1px solid #e8e2d8;
+    border-left: 4px solid #8b7355;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 1px 3px rgba(74, 55, 40, 0.08);
+  }
+  .scripture-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .verse-ref {
+    font-weight: 700;
+    color: #4a3728;
+    font-size: 0.9rem;
+  }
+  .verified-badge {
+    font-size: 0.65rem;
+    color: #2d6a4f;
+    background: #d8f3dc;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .verse-text {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1rem;
     line-height: 1.7;
     color: #3a2a1a;
   }
-  .response-content p {
-    margin: 0 0 0.75rem;
-  }
-  .response-content p:last-child {
-    margin-bottom: 0;
-  }
-  .response-content strong {
-    color: #4a3728;
-    font-weight: 700;
+  .no-results {
+    margin: 0;
+    color: #7a6a5a;
+    font-style: italic;
   }
 
   .error {
