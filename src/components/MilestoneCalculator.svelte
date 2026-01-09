@@ -1,4 +1,6 @@
 <script>
+  import { fade } from 'svelte/transition';
+
   let { trailContext = {} } = $props();
 
   // Original 14 trail sections
