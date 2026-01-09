@@ -58,6 +58,10 @@ const totalSprites = categories.reduce((acc, cat) => acc + cat.count, 0);
     <meta name="robots" content="noindex, nofollow" />
     <title>{title}</title>
     <style is:global>
+      :root {
+        --sprite-scale: 3;
+      }
+
       *, *::before, *::after {
         box-sizing: border-box;
       }
@@ -260,6 +264,9 @@ const totalSprites = categories.reduce((acc, cat) => acc + cat.count, 0);
         border-radius: 4px;
         padding: 4px;
         image-rendering: pixelated;
+        /* GPU-accelerated scaling via CSS variable */
+        width: calc(var(--base-width) * var(--sprite-scale) * 1px);
+        will-change: width;
       }
 
       .pixel-row {
@@ -377,9 +384,7 @@ const totalSprites = categories.reduce((acc, cat) => acc + cat.count, 0);
               <div class="sprite-card" data-name={sprite.name.toLowerCase()}>
                 <div
                   class="sprite-preview"
-                  style={`grid-template-columns: repeat(${sprite.width}, 1fr); width: ${sprite.width * 3}px;`}
-                  data-width={sprite.width}
-                  data-height={sprite.height}
+                  style={`grid-template-columns: repeat(${sprite.width}, 1fr); --base-width: ${sprite.width};`}
                 >
                   {sprite.pixels.flat().map((colorIndex) => (
                     <div
@@ -426,19 +431,14 @@ const totalSprites = categories.reduce((acc, cat) => acc + cat.count, 0);
         });
       });
 
-      // Scale control
+      // Scale control - single CSS variable update instead of 358 DOM updates
       const scaleSlider = document.getElementById('scaleSlider') as HTMLInputElement;
       const scaleValue = document.getElementById('scaleValue');
-      const spritePreviews = document.querySelectorAll('.sprite-preview') as NodeListOf<HTMLElement>;
 
       scaleSlider?.addEventListener('input', () => {
         const scale = parseInt(scaleSlider.value);
         scaleValue!.textContent = `${scale}x`;
-
-        spritePreviews.forEach(preview => {
-          const width = parseInt(preview.getAttribute('data-width') || '16');
-          preview.style.width = `${width * scale}px`;
-        });
+        document.documentElement.style.setProperty('--sprite-scale', String(scale));
       });
 
       // Category toggle

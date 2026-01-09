@@ -97,6 +97,13 @@ Before committing:
 - Do not wait for permission.
 - We can always revert changes if needed.
 
+## Interrupt Handling
+
+When the user mentions a bug, feature request, or task mid-conversation:
+- **Default:** Add it to the relevant roadmap/task list and continue current work
+- **"Drop everything":** Stop current work immediately and focus on the new request
+- Don't context-switch unless explicitly told to prioritize the interruption
+
 ## Additional Documentation
 
 - `cursor.md` — Detailed AI assistant guidelines and common tasks
@@ -121,6 +128,7 @@ An AT thru-hiking simulation game built with Phaser 3.70 + Colyseus. Located in 
 - [x] Location sprites: towns, shelters, summits, bridges, trailheads, campsites
 - [x] Famous landmarks: McAfee Knob, Dragon's Tooth, Katahdin sign
 - [x] AMC huts, lighting effects, celebrations, ruins, vistas
+- [x] Optimized /cat catalog (CSS variable scaling, 1 update vs 358)
 
 ### In Progress
 - [ ] Phaser client rendering pipeline (SpriteGenerator → Phaser textures)
