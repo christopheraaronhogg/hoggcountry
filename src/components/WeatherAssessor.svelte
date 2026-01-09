@@ -21,6 +21,46 @@
     }
   });
 
+  // Extract journey context for heat projections
+  let startDate = $derived(trailContext?.startDate || '2026-03-01');
+  let targetPace = $derived(trailContext?.targetPace || 15);
+  let zeroDaysPerMonth = $derived(trailContext?.zeroDaysPerMonth || 4);
+  let effectiveDate = $derived(trailContext?.effectiveDate || startDate);
+
+  // Calculate adjusted pace accounting for zero days
+  let adjustedPace = $derived(targetPace * (30 - zeroDaysPerMonth) / 30);
+
+  // Project date at a given mile marker
+  function getDateAtMile(mile) {
+    const daysToReach = Math.ceil(mile / adjustedPace);
+    const date = new Date(effectiveDate);
+    date.setDate(date.getDate() + daysToReach);
+    return date;
+  }
+
+  function formatDateShort(date) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function formatDateRange(startMile, endMile) {
+    return `${formatDateShort(getDateAtMile(startMile))} – ${formatDateShort(getDateAtMile(endMile))}`;
+  }
+
+  function getStartMonth() {
+    const date = new Date(startDate);
+    return date.toLocaleDateString('en-US', { month: 'short' });
+  }
+
+  // Heat zone milestone projections based on user's pace
+  let heatMilestones = $derived({
+    onset: getDateAtMile(600),
+    building: getDateAtMile(700),
+    peakStart: getDateAtMile(900),
+    peakEnd: getDateAtMile(1450),
+    taperEnd: getDateAtMile(1750),
+    finish: getDateAtMile(2198),
+  });
+
   // Weather warning checkboxes (2-out-of-5 rule)
   let warnings = $state({
     pressureDropping: false,
@@ -47,7 +87,7 @@
 
   let feelsLike = $derived(windSpeed >= 5 ? windChill : summitTemp);
 
-  // Heat zone based on mile
+  // Heat zone based on mile - with projected dates from user's pace
   let heatZone = $derived.by(() => {
     if (currentMile < 600) {
       return {
@@ -56,6 +96,8 @@
         color: '#22c55e',
         desc: 'Cold/cool conditions. Focus on layering and staying warm.',
         tips: ['Layer management is key', 'Cold mornings common', 'Watch for ice/frost'],
+        mileRange: '0 – 600',
+        dates: formatDateRange(0, 600),
       };
     }
     if (currentMile < 700) {
@@ -65,7 +107,8 @@
         color: '#fbbf24',
         desc: 'Heat begins. Daytime highs in 70s-80s. Humidity increases.',
         tips: ['Start hydration discipline', 'Early morning hiking helps', 'Electrolytes become important'],
-        dates: 'April 20 - May 10',
+        mileRange: '600 – 700',
+        dates: formatDateRange(600, 700),
       };
     }
     if (currentMile < 900) {
@@ -75,6 +118,8 @@
         color: '#f97316',
         desc: 'Summer conditions establishing. Consistent heat and humidity.',
         tips: ['Mandatory water planning', 'Shade breaks help', 'Sweat management critical'],
+        mileRange: '700 – 900',
+        dates: formatDateRange(700, 900),
       };
     }
     if (currentMile < 1450) {
@@ -84,7 +129,8 @@
         color: '#ef4444',
         desc: 'Most demanding heat stretch. Green tunnel traps heat. Hot sticky nights.',
         tips: ['Early starts essential', 'Consistent hydration', 'Electrolytes mandatory', 'Controlled pacing', 'Shade management'],
-        dates: 'Late May - Early August',
+        mileRange: '900 – 1,450',
+        dates: formatDateRange(900, 1450),
         warning: true,
       };
     }
@@ -95,7 +141,8 @@
         color: '#fbbf24',
         desc: 'Heat easing. Cooler nights. Fewer oppressive days.',
         tips: ['Heat still present but manageable', 'Focus shifts to terrain', 'Whites approaching'],
-        dates: 'Mid - Late August',
+        mileRange: '1,450 – 1,750',
+        dates: formatDateRange(1450, 1750),
       };
     }
     return {
@@ -104,6 +151,8 @@
       color: '#22c55e',
       desc: 'Heat no longer primary challenge. Focus on cold weather prep for Maine.',
       tips: ['Watch for cold snaps', 'Prepare for Whites/Maine', 'Variable conditions'],
+      mileRange: '1,750 – 2,198',
+      dates: formatDateRange(1750, 2198),
     };
   });
 
@@ -293,10 +342,6 @@
       <span class="tab-icon">🔥</span>
       <span class="tab-label">Heat</span>
     </button>
-    <button class="nav-tab" class:active={activeSection === 'wind'} onclick={() => activeSection = 'wind'}>
-      <span class="tab-icon">💨</span>
-      <span class="tab-label">Wind</span>
-    </button>
     <button class="nav-tab" class:active={activeSection === 'warning'} class:alert={warningTriggered} onclick={() => activeSection = 'warning'}>
       <span class="tab-icon">{warningTriggered ? '🚨' : '📡'}</span>
       <span class="tab-label">Warn</span>
@@ -408,9 +453,35 @@
   <!-- Heat Zone Section -->
   {#if activeSection === 'heat'}
     <section class="wx-section" transition:fade>
+      <!-- Context Explanation -->
+      <div class="heat-context">
+        <div class="context-header">
+          <span class="context-icon">📊</span>
+          <span class="context-title">Your Heat Timeline</span>
+        </div>
+        <div class="context-details">
+          <div class="context-item">
+            <span class="context-label">Start</span>
+            <span class="context-value">{formatDateShort(new Date(startDate))}</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">Pace</span>
+            <span class="context-value">{targetPace} mi/day</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">Zeros</span>
+            <span class="context-value">{zeroDaysPerMonth}/mo</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">Eff. Pace</span>
+            <span class="context-value">{adjustedPace.toFixed(1)} mi/day</span>
+          </div>
+        </div>
+      </div>
+
       <div class="mile-control">
         <div class="mile-header">
-          <label class="field-label">Current Mile</label>
+          <label class="field-label">Explore Mile Position</label>
           <span class="mile-number">{currentMile}</span>
         </div>
         <input type="range" bind:value={currentMile} min="0" max="2198" class="mile-slider" />
@@ -432,9 +503,10 @@
           <span class="heat-name">{heatZone.name}</span>
         </div>
         <p class="heat-desc">{heatZone.desc}</p>
-        {#if heatZone.dates}
+        <div class="heat-meta">
+          <div class="heat-miles">📍 Mile {heatZone.mileRange}</div>
           <div class="heat-dates">📅 {heatZone.dates}</div>
-        {/if}
+        </div>
         <ul class="heat-tips">
           {#each heatZone.tips as tip}
             <li>{tip}</li>
@@ -443,7 +515,7 @@
       </div>
 
       <div class="heat-timeline">
-        <div class="timeline-title">Heat Timeline (Feb NOBO)</div>
+        <div class="timeline-title">Your Heat Timeline ({getStartMonth()} NOBO)</div>
         <div class="timeline-bar">
           <div class="tl-seg cold" style="width: {(600/2198)*100}%"><span>Cold</span></div>
           <div class="tl-seg onset" style="width: {((700-600)/2198)*100}%"></div>
@@ -453,132 +525,48 @@
           <div class="tl-seg post" style="width: {((2198-1750)/2198)*100}%"><span>Post</span></div>
           <div class="tl-needle" style="left: {(currentMile/2198)*100}%"></div>
         </div>
+        <div class="timeline-dates">
+          <span class="tl-date" style="left: 0%">{formatDateShort(new Date(startDate))}</span>
+          <span class="tl-date" style="left: {(600/2198)*100}%">{formatDateShort(heatMilestones.onset)}</span>
+          <span class="tl-date" style="left: {(900/2198)*100}%">{formatDateShort(heatMilestones.peakStart)}</span>
+          <span class="tl-date" style="left: {(1450/2198)*100}%">{formatDateShort(heatMilestones.peakEnd)}</span>
+          <span class="tl-date" style="left: 100%">{formatDateShort(heatMilestones.finish)}</span>
+        </div>
+      </div>
+
+      <!-- Key Milestones -->
+      <div class="heat-milestones">
+        <div class="milestone-row peak">
+          <span class="milestone-icon">🔥</span>
+          <div class="milestone-info">
+            <span class="milestone-label">Peak Heat Begins</span>
+            <span class="milestone-date">{formatDateShort(heatMilestones.peakStart)} @ Mile 900</span>
+          </div>
+        </div>
+        <div class="milestone-row peak">
+          <span class="milestone-icon">😮‍💨</span>
+          <div class="milestone-info">
+            <span class="milestone-label">Peak Heat Ends</span>
+            <span class="milestone-date">{formatDateShort(heatMilestones.peakEnd)} @ Mile 1,450</span>
+          </div>
+        </div>
+        <div class="milestone-row finish">
+          <span class="milestone-icon">🏔️</span>
+          <div class="milestone-info">
+            <span class="milestone-label">Katahdin Summit</span>
+            <span class="milestone-date">{formatDateShort(heatMilestones.finish)} @ Mile 2,198</span>
+          </div>
+        </div>
       </div>
 
       <div class="truth-box">
         <h4 class="truth-title">Strategic Truth</h4>
         <ul class="truth-list">
-          <li>A February NOBO cannot avoid summer heat</li>
+          <li>A {getStartMonth()} NOBO cannot avoid summer heat</li>
           <li>You hit heat with strong legs and lower injury risk</li>
           <li>The worst heat is predictable and finite</li>
           <li>You exit oppressive heat before September</li>
         </ul>
-      </div>
-    </section>
-  {/if}
-
-  <!-- Wind Section -->
-  {#if activeSection === 'wind'}
-    <section class="wx-section" transition:fade>
-      <div class="wind-hero">
-        <div class="wind-gauge">
-          <svg viewBox="0 0 200 120" class="gauge-svg">
-            <defs>
-              <linearGradient id="windGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#22c55e" />
-                <stop offset="40%" stop-color="#fbbf24" />
-                <stop offset="70%" stop-color="#f97316" />
-                <stop offset="100%" stop-color="#ef4444" />
-              </linearGradient>
-            </defs>
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="16" stroke-linecap="round" />
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#windGrad)" stroke-width="16" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="{251 - (windSpeed / 50) * 251}" />
-            <circle cx="{20 + (windSpeed / 50) * 160}" cy="{100 - Math.sin(Math.acos((windSpeed / 50) * 2 - 1)) * 80}" r="12" fill="#fff" stroke="{windAction.color}" stroke-width="4" />
-          </svg>
-          <div class="gauge-reading">
-            <span class="gauge-value" style="color: {windAction.color}">{windSpeed}</span>
-            <span class="gauge-unit">mph</span>
-          </div>
-        </div>
-        <input type="range" bind:value={windSpeed} min="0" max="50" step="5" class="wind-slider" />
-      </div>
-
-      <div class="wind-action" class:danger={windAction.warning} style="--action-color: {windAction.color}">
-        <div class="action-level">{windAction.level.toUpperCase()}</div>
-        <div class="action-text">{windAction.action}</div>
-        <ul class="action-tips">
-          {#each windAction.tips as tip}
-            <li>{tip}</li>
-          {/each}
-        </ul>
-      </div>
-
-      {#if windAction.trigger}
-        <div class="shelter-alert">
-          <div class="shelter-header">
-            <span class="shelter-icon">🏠</span>
-            <span class="shelter-title">SHELTER TRIGGER ACTIVE</span>
-          </div>
-          <div class="shelter-body">
-            <p><strong>Wind + Cold combination detected</strong></p>
-            <p>Summit temp {summitTemp.toFixed(0)}°F + {windSpeed} mph wind</p>
-            <p class="shelter-reason">Tent setup is dangerous when hands fail fast. Shelter reduces complexity.</p>
-          </div>
-        </div>
-      {/if}
-
-      <div class="wind-matrix">
-        <div class="matrix-title">Wind + Temperature Matrix</div>
-        <div class="matrix-grid">
-          <div class="matrix-row" class:active={windSpeed < 10}>
-            <span class="m-speed">0-10 mph</span>
-            <span class="m-cond">Any temp</span>
-            <span class="m-action" style="color: #22c55e">Either OK</span>
-          </div>
-          <div class="matrix-row" class:active={windSpeed >= 10 && windSpeed < 20 && summitTemp > 35}>
-            <span class="m-speed">10-20 mph</span>
-            <span class="m-cond">Warm</span>
-            <span class="m-action" style="color: #fbbf24">Tent OK</span>
-          </div>
-          <div class="matrix-row" class:active={windSpeed >= 10 && windSpeed < 20 && summitTemp <= 35}>
-            <span class="m-speed">10-20 mph</span>
-            <span class="m-cond">Cool</span>
-            <span class="m-action" style="color: #fbbf24">Watch temp</span>
-          </div>
-          <div class="matrix-row" class:active={windSpeed >= 20 && windSpeed < 30 && summitTemp > 35}>
-            <span class="m-speed">20-30 mph</span>
-            <span class="m-cond">Warm</span>
-            <span class="m-action" style="color: #f97316">Protected site</span>
-          </div>
-          <div class="matrix-row warning" class:active={windSpeed >= 20 && windSpeed < 30 && summitTemp <= 35}>
-            <span class="m-speed">20-30 mph</span>
-            <span class="m-cond">Cool</span>
-            <span class="m-action" style="color: #f97316">Lean SHELTER</span>
-          </div>
-          <div class="matrix-row trigger" class:active={windSpeed >= 15 && summitTemp <= 25}>
-            <span class="m-speed">15+ + ≤25°F</span>
-            <span class="m-cond">TRIGGER</span>
-            <span class="m-action" style="color: #ef4444">SHELTER</span>
-          </div>
-          <div class="matrix-row severe" class:active={windSpeed >= 30}>
-            <span class="m-speed">30+ mph</span>
-            <span class="m-cond">Any</span>
-            <span class="m-action" style="color: #dc2626">SEEK COVER</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="tent-tips">
-        <h4 class="tips-title">🎪 Tent Setup in Wind</h4>
-        <div class="tips-grid">
-          <div class="tip-card">
-            <span class="tip-icon">🧭</span>
-            <span class="tip-text">Narrow end INTO wind</span>
-          </div>
-          <div class="tip-card">
-            <span class="tip-icon">📐</span>
-            <span class="tip-text">Stakes 30-45° away</span>
-          </div>
-          <div class="tip-card">
-            <span class="tip-icon">🔧</span>
-            <span class="tip-text">Windward corners FIRST</span>
-          </div>
-          <div class="tip-card">
-            <span class="tip-icon">⬇️</span>
-            <span class="tip-text">High wind = LOW pitch</span>
-          </div>
-        </div>
-        <p class="wind-rule"><strong>Wind + Cold = SHELTER (setup danger)</strong></p>
       </div>
     </section>
   {/if}
@@ -1193,6 +1181,143 @@
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--ink);
+  }
+
+  /* Heat Context Card */
+  .heat-context {
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.15) 0%, rgba(166, 181, 137, 0.08) 100%);
+    border: 2px solid var(--alpine);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .context-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .context-icon { font-size: 1.1rem; }
+
+  .context-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--pine);
+    letter-spacing: 0.03em;
+  }
+
+  .context-details {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+
+  .context-item {
+    text-align: center;
+    padding: 0.5rem;
+    background: #fff;
+    border-radius: 8px;
+  }
+
+  .context-label {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .context-value {
+    font-family: Oswald, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  /* Heat Meta (mile range + dates) */
+  .heat-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .heat-miles, .heat-dates {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* Timeline Dates */
+  .timeline-dates {
+    position: relative;
+    height: 20px;
+    margin-top: 0.5rem;
+  }
+
+  .tl-date {
+    position: absolute;
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: var(--muted);
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .tl-date:first-child { transform: translateX(0); }
+  .tl-date:last-child { transform: translateX(-100%); }
+
+  /* Heat Milestones */
+  .heat-milestones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .milestone-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border-radius: 10px;
+    border-left: 4px solid var(--alpine);
+  }
+
+  .milestone-row.peak {
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .milestone-row.finish {
+    border-left-color: #22c55e;
+    background: rgba(34, 197, 94, 0.08);
+  }
+
+  .milestone-icon { font-size: 1.25rem; }
+
+  .milestone-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .milestone-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .milestone-date {
+    font-size: 0.85rem;
+    color: var(--muted);
   }
 
   /* Heat Section */
