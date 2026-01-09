@@ -3,15 +3,15 @@
   import { fade, slide } from 'svelte/transition';
 
   // Static import for default tool (ensures CSS is in SSR output)
-  import LayeringAdvisor from './LayeringAdvisor.svelte';
+  import MilestoneCalculator from './MilestoneCalculator.svelte';
   import QuickLog from './QuickLog.svelte';
 
   // Dynamic loaders for other tools (code-split with CSS)
   const toolLoaders = {
-    layers: null, // Static import above
+    milestone: null, // Static import above
+    layers: () => import('./LayeringAdvisor.svelte'),
     shelter: () => import('./ShelterDecision.svelte'),
     weather: () => import('./WeatherAssessor.svelte'),
-    milestone: () => import('./MilestoneCalculator.svelte'),
     pack: () => import('./PackBuilder.svelte'),
     resupply: () => import('./ResupplyCalculator.svelte'),
     water: () => import('./WaterTracker.svelte'),
@@ -25,7 +25,7 @@
   };
 
   // Cache for loaded components
-  let loadedTools = $state({ layers: LayeringAdvisor });
+  let loadedTools = $state({ milestone: MilestoneCalculator });
   let isToolLoading = $state(false);
 
   // Trail landmarks for mile context
@@ -51,12 +51,10 @@
     { mile: 2198, name: 'Katahdin' },
   ];
 
-  // Consolidated 14 high-leverage tools
+  // Consolidated 14 high-leverage tools - Milestone is foundational
   const tools = [
-    { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
-    { id: 'shelter', name: 'Shelter', icon: '🏠', desc: 'Tent vs shelter decision' },
+    { id: 'milestone', name: 'Journey', icon: '🗺️', desc: 'Plan your timeline & track progress' },
     { id: 'weather', name: 'Weather', icon: '🌤️', desc: 'Weather, heat zones & daylight' },
-    { id: 'milestone', name: 'Milestones', icon: '📍', desc: 'Plan your journey timeline' },
     { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
     { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Towns, food & mail drops' },
     { id: 'water', name: 'Water', icon: '💧', desc: 'Water sources & carry calc' },
@@ -66,26 +64,29 @@
     { id: 'food', name: 'Food', icon: '🍽️', desc: 'Calorie & weight calculator' },
     { id: 'geartrans', name: 'Swap', icon: '🔄', desc: 'Gear transition planner' },
     { id: 'training', name: 'Train', icon: '🏋️', desc: 'Pre-trail preparation' },
+    { id: 'shelter', name: 'Shelter', icon: '🏠', desc: 'Tent vs shelter decision' },
+    { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
     { id: 'emergency', name: 'Emergency', icon: '🆘', desc: 'Emergency info & bailouts' },
   ];
 
   // ========== GLOBAL TRAIL CONTEXT (Svelte 5 $state) ==========
-  let mode = $state('planning'); // 'planning' or 'trail'
   let contextExpanded = $state(true);
 
-  // Planning mode state
-  let startDate = $state('2026-02-01');
-  let pace = $state(15);
-  let zeroDaysPerMonth = $state(4);
-
-  // Trail mode state
-  let currentMile = $state(500);
-  let tripStartDate = $state('2026-02-01');
-  let zeroDaysTaken = $state(5);
+  // Unified state - mode is derived from data
+  let currentMile = $state(0);
+  let startDate = $state('2026-03-01');
   let targetPace = $state(15);
+  let zeroDaysPerMonth = $state(4);  // For planning projections
+
+  // Derived: are we on trail or planning?
+  function isPastDate(dateStr) {
+    return new Date(dateStr) <= new Date();
+  }
+  let isOnTrail = $derived(currentMile > 0 || isPastDate(startDate));
+  let mode = $derived(isOnTrail ? 'trail' : 'planning');
 
   // Tool navigation state
-  let activeTool = $state('layers');
+  let activeTool = $state('milestone');
   let isTransitioning = $state(false);
   let mounted = $state(false);
 
@@ -98,11 +99,27 @@
   let showQuickLog = $state(false);
 
   onMount(async () => {
+    // IMPORTANT: Load saved context FIRST, before setting mounted = true
+    // Otherwise the $effect will save defaults over the user's actual data
+    const saved = localStorage.getItem('trailContext');
+    if (saved) {
+      try {
+        const ctx = JSON.parse(saved);
+        currentMile = ctx.currentMile ?? 0;
+        startDate = ctx.startDate || ctx.tripStartDate || startDate;
+        targetPace = ctx.targetPace || ctx.pace || targetPace;
+        zeroDaysPerMonth = ctx.zeroDaysPerMonth ?? 4;
+        contextExpanded = ctx.contextExpanded ?? true;
+      } catch (e) {}
+    }
+
+    // Now safe to set mounted - $effect will save current (loaded) values
     mounted = true;
+
+    // Handle URL hash for deep-linking to tools
     const hash = window.location.hash.slice(1);
     if (tools.some(t => t.id === hash && !t.disabled)) {
-      // Load the tool from hash if it's not the default
-      if (hash !== 'layers' && toolLoaders[hash]) {
+      if (hash !== 'milestone' && toolLoaders[hash]) {
         isToolLoading = true;
         try {
           const module = await toolLoaders[hash]();
@@ -114,31 +131,14 @@
       }
       activeTool = hash;
     }
-    // Load saved context from localStorage
-    const saved = localStorage.getItem('trailContext');
-    if (saved) {
-      try {
-        const ctx = JSON.parse(saved);
-        mode = ctx.mode || 'planning';
-        startDate = ctx.startDate || startDate;
-        pace = ctx.pace || pace;
-        zeroDaysPerMonth = ctx.zeroDaysPerMonth || zeroDaysPerMonth;
-        currentMile = ctx.currentMile || currentMile;
-        tripStartDate = ctx.tripStartDate || tripStartDate;
-        zeroDaysTaken = ctx.zeroDaysTaken || zeroDaysTaken;
-        targetPace = ctx.targetPace || targetPace;
-        contextExpanded = ctx.contextExpanded ?? true;
-      } catch (e) {}
-    }
   });
 
   // Save context to localStorage when it changes
   $effect(() => {
     if (mounted) {
       localStorage.setItem('trailContext', JSON.stringify({
-        mode, startDate, pace, zeroDaysPerMonth,
-        currentMile, tripStartDate, zeroDaysTaken, targetPace,
-        contextExpanded
+        currentMile, startDate, targetPace,
+        zeroDaysPerMonth, contextExpanded
       }));
     }
   });
@@ -170,14 +170,35 @@
 
   // Derived values (Svelte 5 $derived)
   let nearestLandmark = $derived(getNearestLandmark(currentMile));
-  let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, getTodayStr())));
-  let hikingDays = $derived(Math.max(1, daysOnTrail - zeroDaysTaken));
-  let actualPace = $derived((currentMile / hikingDays).toFixed(1));
+  let daysOnTrail = $derived(isOnTrail ? Math.max(1, daysBetween(startDate, getTodayStr())) : 0);
+  let actualPace = $derived(isOnTrail && daysOnTrail > 0 ? (currentMile / daysOnTrail).toFixed(1) : targetPace); // Calendar pace includes zeros
   let percentComplete = $derived(((currentMile / 2198) * 100).toFixed(0));
 
-  // Planning mode calculations
-  let hikingDaysPlanned = $derived(Math.ceil(2198 / pace));
+  // Planning calculations (always available for projections)
+  let hikingDaysPlanned = $derived(Math.ceil(2198 / targetPace));
   let totalDaysPlanned = $derived(Math.ceil(hikingDaysPlanned / (1 - zeroDaysPerMonth / 30)));
+
+  // Effective date for projections: use today if start date has passed, otherwise use start date
+  let effectiveDate = $derived(isPastDate(startDate) ? getTodayStr() : startDate);
+
+  // Miles remaining (for on-trail projections)
+  let milesRemaining = $derived(2198 - currentMile);
+
+  // Days needed for remaining miles
+  function getCalendarDaysForMiles(miles) {
+    const hikingDays = Math.ceil(miles / targetPace);
+    return Math.ceil(hikingDays / (1 - zeroDaysPerMonth / 30));
+  }
+  let daysToFinish = $derived(isOnTrail ? getCalendarDaysForMiles(milesRemaining) : totalDaysPlanned);
+
+  // Projected finish date
+  function addDaysToDate(dateStr, days) {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + days);
+    return date;
+  }
+  // Use effective date + days to finish
+  let projectedFinish = $derived(addDaysToDate(effectiveDate, daysToFinish));
 
   async function switchTool(toolId) {
     if (toolId === activeTool || tools.find(t => t.id === toolId)?.disabled) return;
@@ -246,95 +267,132 @@
 
   let activeToolData = $derived(tools.find(t => t.id === activeTool));
 
+  // Arrow key navigation for tabs (WCAG 2.1.1)
+  function handleTabKeydown(e, currentIndex) {
+    const enabledTools = tools.filter(t => !t.disabled);
+    const currentEnabledIndex = enabledTools.findIndex(t => t.id === tools[currentIndex].id);
+    if (currentEnabledIndex === -1) return;
+
+    let nextIndex = -1;
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        nextIndex = currentEnabledIndex - 1;
+        if (nextIndex < 0) nextIndex = enabledTools.length - 1;
+        break;
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        nextIndex = currentEnabledIndex + 1;
+        if (nextIndex >= enabledTools.length) nextIndex = 0;
+        break;
+      case 'Home':
+        e.preventDefault();
+        nextIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        nextIndex = enabledTools.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    const nextTool = enabledTools[nextIndex];
+    switchTool(nextTool.id);
+    // Focus the new tab
+    requestAnimationFrame(() => {
+      const tabElement = document.getElementById(`tab-${nextTool.id}`);
+      if (tabElement) tabElement.focus();
+    });
+  }
+
   // Build context object for child components
   let trailContext = $derived({
     mode,
-    // Planning
-    startDate,
-    pace,
-    zeroDaysPerMonth,
-    // Trail
+    isOnTrail,
+    // Core inputs
     currentMile,
-    tripStartDate,
-    zeroDaysTaken,
+    startDate,
     targetPace,
+    zeroDaysPerMonth,
     // Computed
+    effectiveDate, // Today if past start date, otherwise start date
     daysOnTrail,
-    hikingDays,
-    actualPace: parseFloat(actualPace),
+    actualPace: parseFloat(actualPace), // Calendar pace (includes zeros implicitly)
     percentComplete: parseFloat(percentComplete),
     nearestLandmark,
+    projectedFinish,
+    hikingDaysPlanned,
+    totalDaysPlanned,
+    milesRemaining,
+    daysToFinish,
+    // Legacy aliases for compatibility
+    pace: targetPace,
+    tripStartDate: startDate,
   });
 </script>
 
 <div class="tools-app" class:mounted>
-  <!-- Trail Context Bar -->
+  <!-- Trail Context Bar - Simplified, mile-focused -->
   <div class="context-bar" class:expanded={contextExpanded}>
     <!-- Topographic texture overlay -->
     <div class="topo-texture"></div>
 
-    <!-- Mode Toggle -->
+    <!-- Header with mile + landmark -->
     <div class="context-header">
-      <div class="mode-switch">
-        <button
-          class="mode-btn"
-          class:active={mode === 'planning'}
-          onclick={() => mode = 'planning'}
-        >
-          <span class="mode-icon">📋</span>
-          <span class="mode-text">Planning</span>
-        </button>
-        <div class="mode-indicator" class:trail={mode === 'trail'}></div>
-        <button
-          class="mode-btn"
-          class:active={mode === 'trail'}
-          onclick={() => mode = 'trail'}
-        >
-          <span class="mode-icon">🥾</span>
-          <span class="mode-text">On Trail</span>
-        </button>
+      <div class="mile-quick">
+        <span class="mile-current">{currentMile}</span>
+        <span class="mile-label">mi</span>
+        <span class="mile-landmark-quick">
+          {#if currentMile === 0}
+            at Springer
+          {:else}
+            near {nearestLandmark.name}
+          {/if}
+        </span>
+        {#if isOnTrail}
+          <span class="mile-status on-trail">hiking</span>
+        {:else}
+          <span class="mile-status planning">planning</span>
+        {/if}
       </div>
 
-      <button class="expand-toggle" onclick={() => contextExpanded = !contextExpanded}>
-        <span class="toggle-chevron" class:flipped={contextExpanded}>▼</span>
-      </button>
+      <div class="header-right">
+        <div class="projected-finish">
+          <span class="finish-icon">🏔️</span>
+          <span class="finish-date">{projectedFinish.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+        </div>
+
+        <button class="expand-toggle" onclick={() => contextExpanded = !contextExpanded}>
+          <span class="toggle-chevron" class:flipped={contextExpanded}>▼</span>
+        </button>
+      </div>
     </div>
 
     <!-- Collapsed Summary -->
     {#if !contextExpanded}
       <div class="context-summary" transition:fade={{ duration: 150 }}>
-        {#if mode === 'planning'}
-          <span class="summary-item">
-            <span class="sum-icon">📅</span>
-            <span class="sum-val">{new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-          </span>
-          <span class="summary-divider">•</span>
-          <span class="summary-item">
-            <span class="sum-val">{pace}</span>
-            <span class="sum-unit">mi/day</span>
-          </span>
-          <span class="summary-divider">•</span>
-          <span class="summary-item">
-            <span class="sum-val">{totalDaysPlanned}</span>
-            <span class="sum-unit">days total</span>
-          </span>
-        {:else}
-          <span class="summary-item primary">
-            <span class="sum-val">{currentMile}</span>
-            <span class="sum-unit">mi</span>
-          </span>
-          <span class="summary-divider">•</span>
-          <span class="summary-item">
-            <span class="sum-val">{percentComplete}%</span>
-          </span>
-          <span class="summary-divider">•</span>
-          <span class="summary-item">
-            <span class="sum-val">Day {daysOnTrail}</span>
-          </span>
+        <span class="summary-item">
+          <span class="sum-val">{percentComplete}%</span>
+          <span class="sum-unit">complete</span>
+        </span>
+        <span class="summary-divider">•</span>
+        <span class="summary-item">
+          <span class="sum-val">{targetPace}</span>
+          <span class="sum-unit">mi/day</span>
+        </span>
+        <span class="summary-divider">•</span>
+        <span class="summary-item">
+          <span class="sum-val">{totalDaysPlanned}</span>
+          <span class="sum-unit">days</span>
+        </span>
+        {#if isOnTrail}
           <span class="summary-divider">•</span>
           <span class="summary-item">
             <span class="sum-val">{actualPace}</span>
-            <span class="sum-unit">mi/day</span>
+            <span class="sum-unit">actual</span>
           </span>
         {/if}
       </div>
@@ -343,32 +401,69 @@
     <!-- Expanded Settings Panel -->
     {#if contextExpanded}
       <div class="context-panel" transition:slide={{ duration: 200 }}>
-        {#if mode === 'planning'}
-          <!-- Planning Mode Controls -->
-          <div class="control-grid planning">
-            <div class="ctrl-item">
-              <label class="ctrl-label">Start Date</label>
-              <input type="date" bind:value={startDate} class="ctrl-date" />
+        <!-- Mile slider with progress ring -->
+        <div class="mile-slider-row">
+          <div class="mile-pct">
+            <svg viewBox="0 0 36 36" class="progress-ring-small">
+              <circle cx="18" cy="18" r="15.5" class="ring-bg-small" />
+              <circle cx="18" cy="18" r="15.5" class="ring-fill-small"
+                style="stroke-dasharray: {97.4 * (percentComplete / 100)} 97.4" />
+            </svg>
+            <span class="pct-text">{percentComplete}%</span>
+          </div>
+          <div class="mile-slider-wrap">
+            <div class="mile-slider-container">
+              <label for="current-mile" class="visually-hidden">Current mile marker</label>
+              <input type="range" id="current-mile" min="0" max="2198" step="1" bind:value={currentMile} class="mile-slider" aria-valuemin="0" aria-valuemax="2198" aria-valuenow={currentMile} aria-valuetext="Mile {currentMile} of 2198" />
+              <div class="mile-progress-bar" style="width: {(currentMile / 2198) * 100}%" aria-hidden="true"></div>
             </div>
-
-            <div class="ctrl-item">
-              <div class="ctrl-header">
-                <label class="ctrl-label">Target Pace</label>
-                <span class="ctrl-val">{pace} <small>mi/day</small></span>
-              </div>
-              <input type="range" min="8" max="25" step="0.5" bind:value={pace} class="ctrl-slider" />
-            </div>
-
-            <div class="ctrl-item">
-              <div class="ctrl-header">
-                <label class="ctrl-label">Zero Days</label>
-                <span class="ctrl-val">{zeroDaysPerMonth} <small>/month</small></span>
-              </div>
-              <input type="range" min="0" max="10" step="1" bind:value={zeroDaysPerMonth} class="ctrl-slider zero" />
+            <div class="mile-endpoints">
+              <span>Springer</span>
+              <span>Katahdin</span>
             </div>
           </div>
+        </div>
 
-          <div class="context-stat-row">
+        <!-- Unified controls -->
+        <div class="control-grid unified">
+          <div class="ctrl-item">
+            <label class="ctrl-label" for="start-date">{isOnTrail ? 'Started' : 'Start Date'}</label>
+            <input type="date" id="start-date" bind:value={startDate} class="ctrl-date" />
+          </div>
+
+          <div class="ctrl-item">
+            <div class="ctrl-header">
+              <label class="ctrl-label" for="target-pace">Target Pace</label>
+              <span class="ctrl-val" aria-hidden="true">{targetPace} <small>mi/day</small></span>
+            </div>
+            <input type="range" id="target-pace" min="8" max="25" step="0.5" bind:value={targetPace} class="ctrl-slider" aria-valuemin="8" aria-valuemax="25" aria-valuenow={targetPace} aria-valuetext="{targetPace} miles per day" />
+          </div>
+
+          <div class="ctrl-item">
+            <div class="ctrl-header">
+              <label class="ctrl-label" for="zeros-planned">Zero Days</label>
+              <span class="ctrl-val" aria-hidden="true">{zeroDaysPerMonth} <small>/month</small></span>
+            </div>
+            <input type="range" id="zeros-planned" min="0" max="10" step="1" bind:value={zeroDaysPerMonth} class="ctrl-slider zero" aria-valuemin="0" aria-valuemax="10" aria-valuenow={zeroDaysPerMonth} aria-valuetext="{zeroDaysPerMonth} zero days per month" />
+          </div>
+        </div>
+
+        <!-- Stats row adapts to mode -->
+        <div class="context-stat-row">
+          {#if isOnTrail}
+            <div class="ctx-stat">
+              <span class="ctx-stat-val">{daysOnTrail}</span>
+              <span class="ctx-stat-label">Days Out</span>
+            </div>
+            <div class="ctx-stat">
+              <span class="ctx-stat-val">{milesRemaining}</span>
+              <span class="ctx-stat-label">Miles Left</span>
+            </div>
+            <div class="ctx-stat highlight">
+              <span class="ctx-stat-val">{daysToFinish}</span>
+              <span class="ctx-stat-label">Days to Go</span>
+            </div>
+          {:else}
             <div class="ctx-stat">
               <span class="ctx-stat-val">{hikingDaysPlanned}</span>
               <span class="ctx-stat-label">Hiking Days</span>
@@ -381,97 +476,34 @@
               <span class="ctx-stat-val">{totalDaysPlanned - hikingDaysPlanned}</span>
               <span class="ctx-stat-label">Zero Days</span>
             </div>
-          </div>
-
-        {:else}
-          <!-- Trail Mode Controls -->
-          <div class="mile-display">
-            <div class="mile-main">
-              <span class="mile-num">{currentMile}</span>
-              <span class="mile-landmark">near {nearestLandmark.name}</span>
-            </div>
-            <div class="mile-pct">
-              <svg viewBox="0 0 36 36" class="progress-ring-small">
-                <circle cx="18" cy="18" r="15.5" class="ring-bg-small" />
-                <circle cx="18" cy="18" r="15.5" class="ring-fill-small"
-                  style="stroke-dasharray: {97.4 * (percentComplete / 100)} 97.4" />
-              </svg>
-              <span class="pct-text">{percentComplete}%</span>
-            </div>
-          </div>
-
-          <div class="mile-slider-container">
-            <input type="range" min="0" max="2198" step="1" bind:value={currentMile} class="mile-slider" />
-            <div class="mile-progress-bar" style="width: {(currentMile / 2198) * 100}%"></div>
-          </div>
-          <div class="mile-endpoints">
-            <span>Springer</span>
-            <span>Katahdin</span>
-          </div>
-
-          <div class="control-grid trail">
-            <div class="ctrl-item">
-              <label class="ctrl-label">Trip Start</label>
-              <input type="date" bind:value={tripStartDate} class="ctrl-date" />
-            </div>
-
-            <div class="ctrl-item">
-              <label class="ctrl-label">Zero Days Taken</label>
-              <div class="ctrl-num-wrap">
-                <input type="number" min="0" max="100" bind:value={zeroDaysTaken} class="ctrl-num" />
-                <span class="ctrl-num-unit">rest days</span>
-              </div>
-            </div>
-
-            <div class="ctrl-item">
-              <label class="ctrl-label">Target Pace</label>
-              <div class="ctrl-num-wrap">
-                <input type="number" min="8" max="30" step="0.5" bind:value={targetPace} class="ctrl-num" />
-                <span class="ctrl-num-unit">mi/day</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="context-stat-row">
-            <div class="ctx-stat">
-              <span class="ctx-stat-val">{daysOnTrail}</span>
-              <span class="ctx-stat-label">Days Out</span>
-            </div>
-            <div class="ctx-stat">
-              <span class="ctx-stat-val">{hikingDays}</span>
-              <span class="ctx-stat-label">Hiking Days</span>
-            </div>
-            <div class="ctx-stat highlight">
-              <span class="ctx-stat-val">{actualPace}</span>
-              <span class="ctx-stat-label">Actual Pace</span>
-            </div>
-            <div class="ctx-stat">
-              <span class="ctx-stat-val">{2198 - currentMile}</span>
-              <span class="ctx-stat-label">Miles Left</span>
-            </div>
-          </div>
-        {/if}
+          {/if}
+        </div>
       </div>
     {/if}
   </div>
 
   <!-- Tool Navigation -->
-  <nav class="tools-nav">
-    {#each tools as tool}
+  <nav class="tools-nav" role="tablist" aria-label="Trail tools">
+    {#each tools as tool, index}
       <button
         class="nav-tab"
         class:active={activeTool === tool.id}
         class:disabled={tool.disabled}
         onclick={() => switchTool(tool.id)}
+        onkeydown={(e) => handleTabKeydown(e, index)}
         disabled={tool.disabled}
-        aria-label={tool.name}
+        role="tab"
+        id="tab-{tool.id}"
+        aria-selected={activeTool === tool.id}
+        aria-controls="tabpanel-{tool.id}"
+        tabindex={activeTool === tool.id ? 0 : -1}
       >
         <span class="tab-content">
-          <span class="tab-icon">{tool.icon}</span>
+          <span class="tab-icon" aria-hidden="true">{tool.icon}</span>
           <span class="tab-name">{tool.name}</span>
         </span>
         {#if tool.disabled}
-          <span class="tab-badge">Soon</span>
+          <span class="tab-badge" aria-label="Coming soon">Soon</span>
         {/if}
         {#if activeTool === tool.id}
           <div class="active-indicator" transition:fade></div>
@@ -481,11 +513,17 @@
   </nav>
 
   <!-- Tool Content - Dynamic loading with code-split CSS -->
-  <div class="tool-viewport">
+  <div
+    class="tool-viewport"
+    role="tabpanel"
+    id="tabpanel-{activeTool}"
+    aria-labelledby="tab-{activeTool}"
+    tabindex="0"
+  >
     <div class="tool-container" class:transitioning={isTransitioning}>
       {#if isToolLoading}
-        <div class="tool-loading">
-          <div class="loading-spinner"></div>
+        <div class="tool-loading" aria-live="polite">
+          <div class="loading-spinner" aria-hidden="true"></div>
           <span class="loading-text">Loading tool...</span>
         </div>
       {:else if loadedTools[activeTool]}
@@ -512,19 +550,6 @@
     onSave={handleQuickLogSave}
   />
 
-  <!-- Quick Links -->
-  <div class="quick-links">
-    <a href="/guide" class="quick-link">
-      <div class="link-content">
-        <span class="link-icon">📖</span>
-        <div class="link-text">
-          <span class="link-title">Field Guide</span>
-          <span class="link-desc">Read the full breakdown</span>
-        </div>
-      </div>
-      <span class="link-arrow">→</span>
-    </a>
-  </div>
 </div>
 
 <style>
@@ -577,61 +602,84 @@
     z-index: 1;
   }
 
-  /* Mode Switch */
-  .mode-switch {
+  /* Mile Quick Display */
+  .mile-quick {
     display: flex;
-    align-items: center;
-    background: rgba(0,0,0,0.25);
-    border-radius: 10px;
-    padding: 0.25rem;
-    position: relative;
+    align-items: baseline;
+    gap: 0.35rem;
   }
 
-  .mode-indicator {
-    position: absolute;
-    top: 0.25rem;
-    left: 0.25rem;
-    width: calc(50% - 0.25rem);
-    height: calc(100% - 0.5rem);
-    background: var(--marker);
-    border-radius: 8px;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 2px 8px rgba(240, 224, 0, 0.3);
-  }
-
-  .mode-indicator.trail {
-    transform: translateX(100%);
-  }
-
-  .mode-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.25rem;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    position: relative;
-    z-index: 1;
-    transition: all 0.2s ease;
-  }
-
-  .mode-icon {
-    font-size: 1rem;
-  }
-
-  .mode-text {
+  .mile-current {
     font-family: Oswald, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .mile-label {
     font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+  }
+
+  .mile-status {
+    font-family: Oswald, sans-serif;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.6);
-    transition: color 0.2s ease;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
   }
 
-  .mode-btn.active .mode-text {
-    color: var(--ink);
+  .mile-status.planning {
+    background: rgba(240, 224, 0, 0.2);
+    color: var(--marker);
+  }
+
+  .mile-status.on-trail {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+
+  .mile-landmark-quick {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+    margin-left: 0.25rem;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .projected-finish {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+  }
+
+  .finish-icon {
+    font-size: 1rem;
+  }
+
+  .finish-date {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .control-grid.unified {
+    grid-template-columns: 1fr 1.5fr 1fr;
   }
 
   .expand-toggle {
@@ -826,32 +874,16 @@
     color: rgba(255,255,255,0.4);
   }
 
-  /* Mile Display (Trail Mode) */
-  .mile-display {
+  /* Mile Slider Row */
+  .mile-slider-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
   }
 
-  .mile-main {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-  }
-
-  .mile-num {
-    font-family: Oswald, sans-serif;
-    font-size: 3rem;
-    font-weight: 700;
-    color: #fff;
-    line-height: 1;
-  }
-
-  .mile-landmark {
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.5);
-    font-style: italic;
+  .mile-slider-wrap {
+    flex: 1;
   }
 
   .mile-pct {
@@ -1014,6 +1046,12 @@
     color: var(--pine);
   }
 
+  .nav-tab:focus-visible {
+    outline: 3px solid var(--alpine);
+    outline-offset: 2px;
+    z-index: 2;
+  }
+
   .nav-tab.active {
     color: var(--pine);
   }
@@ -1126,74 +1164,6 @@
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-  }
-
-  /* Quick Links */
-  .quick-links {
-    margin-top: 3rem;
-    display: flex;
-    justify-content: center;
-  }
-
-  .quick-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1rem 1.5rem;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    text-decoration: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: all 0.2s ease;
-    width: 100%;
-    max-width: 400px;
-  }
-
-  .quick-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    border-color: var(--alpine);
-  }
-
-  .link-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .link-icon {
-    font-size: 1.75rem;
-  }
-
-  .link-text {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .link-title {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .link-desc {
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-
-  .link-arrow {
-    font-size: 1.25rem;
-    color: var(--alpine);
-    transition: transform 0.2s ease;
-  }
-
-  .quick-link:hover .link-arrow {
-    transform: translateX(4px);
   }
 
   /* ========== QUICK LOG FAB ========== */
@@ -1402,14 +1372,6 @@
       min-height: 400px;
     }
 
-    .quick-links {
-      margin-top: 2rem;
-    }
-
-    .quick-link {
-      padding: 0.75rem 1rem;
-      gap: 1rem;
-    }
   }
 
   /* Extra small screens */

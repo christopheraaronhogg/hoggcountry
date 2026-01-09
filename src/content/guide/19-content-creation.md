@@ -103,7 +103,7 @@ The preparation is complete. Focus now shifts to execution, pacing, and decision
 
 ---
 
-**See you on Katahdin, Theman.**
+**See you on Katahdin, HoggCountry.**
 
 ---
 

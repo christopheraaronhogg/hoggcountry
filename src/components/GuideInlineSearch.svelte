@@ -202,10 +202,26 @@
     }
   }
 
+  // Escape HTML entities to prevent XSS
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Escape regex special characters
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   function highlightMatch(text, terms) {
-    if (!terms.length) return text;
-    const regex = new RegExp(`(${terms.join('|')})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
+    if (!terms.length) return escapeHtml(text);
+    // Escape the text first to prevent XSS, then apply highlighting
+    const escaped = escapeHtml(text);
+    // Escape regex special chars in terms to prevent injection
+    const safeTerms = terms.map(t => escapeRegex(t));
+    const regex = new RegExp(`(${safeTerms.join('|')})`, 'gi');
+    return escaped.replace(regex, '<mark>$1</mark>');
   }
 </script>
 

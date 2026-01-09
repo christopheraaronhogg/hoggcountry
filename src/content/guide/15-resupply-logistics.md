@@ -31,7 +31,7 @@ icon: "utensils"
 **Do not deviate from this format:**
 
 ```
-THEMAN HOGG
+HOGGCOUNTRY (Your Legal Name)
 GENERAL DELIVERY
 CITY, STATE ZIP
 PLEASE HOLD FOR AT HIKER

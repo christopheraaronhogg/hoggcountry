@@ -336,7 +336,8 @@
         <div class="weather-btns">
           {#each ['none', 'light_rain', 'heavy_rain', 'snow'] as p}
             <button class="wx-btn" class:active={precipitation === p} onclick={() => precipitation = p}>
-              {#if p === 'none'}☀️{:else if p === 'light_rain'}🌧️{:else if p === 'heavy_rain'}⛈️{:else}❄️{/if}
+              <span class="wx-icon">{#if p === 'none'}☀️{:else if p === 'light_rain'}🌧️{:else if p === 'heavy_rain'}⛈️{:else}❄️{/if}</span>
+              <span class="wx-label">{#if p === 'none'}Clear{:else if p === 'light_rain'}Light{:else if p === 'heavy_rain'}Heavy{:else}Snow{/if}</span>
             </button>
           {/each}
         </div>
@@ -346,7 +347,8 @@
         <div class="weather-btns">
           {#each ['none', 'light', 'moderate', 'strong'] as w}
             <button class="wx-btn" class:active={wind === w} onclick={() => wind = w}>
-              {#if w === 'none'}🍃{:else if w === 'light'}💨{:else if w === 'moderate'}🌬️{:else}🌪️{/if}
+              <span class="wx-icon">{#if w === 'none'}🍃{:else if w === 'light'}💨{:else if w === 'moderate'}🌬️{:else}🌪️{/if}</span>
+              <span class="wx-label">{#if w === 'none'}Calm{:else if w === 'light'}Light{:else if w === 'moderate'}Moderate{:else}Strong{/if}</span>
             </button>
           {/each}
         </div>
@@ -483,14 +485,19 @@
     </div>
   </div>
 
-  <!-- Guide Link -->
-  <a href="/guide/07-clothing-system" class="guide-link">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-    </svg>
-    Clothing System Guide
-  </a>
+  <!-- Guide Links -->
+  <div class="guide-links">
+    <a href="/guide/07-clothing-system" class="guide-link chapter-link">
+      <span class="link-icon">📚</span>
+      <span class="link-text">Full Clothing System Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="/guide#07-clothing-system" class="guide-link field-guide-link">
+      <span class="link-icon">📖</span>
+      <span class="link-text">Field Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+  </div>
 </div>
 
 <style>
@@ -882,13 +889,30 @@
 
   .wx-btn {
     flex: 1;
-    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.4rem 0.25rem;
     background: var(--bg);
     border: 2px solid var(--border);
     border-radius: 8px;
-    font-size: 1.1rem;
     cursor: pointer;
     transition: all 0.2s;
+  }
+
+  .wx-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .wx-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
   }
 
   .wx-btn:hover {
@@ -900,6 +924,10 @@
     background: var(--pine);
     border-color: var(--pine);
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .wx-btn.active .wx-label {
+    color: #fff;
   }
 
   /* Wet Section */
@@ -1254,26 +1282,57 @@
   }
 
   /* Guide Link */
+  /* Guide Links */
+  .guide-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .guide-link {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    background: var(--pine);
-    color: #fff;
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 14px;
     text-decoration: none;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 200px;
   }
 
   .guide-link:hover {
-    background: var(--alpine);
+    border-color: var(--alpine);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
   }
+
+  .field-guide-link {
+    flex: 0 0 auto;
+    min-width: 140px;
+  }
+
+  .link-icon { font-size: 1.25rem; }
+
+  .link-text {
+    flex: 1;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .link-arrow {
+    font-size: 1.25rem;
+    color: var(--alpine);
+    transition: transform 0.2s ease;
+  }
+
+  .guide-link:hover .link-arrow { transform: translateX(4px); }
 
   /* Responsive */
   @media (max-width: 640px) {

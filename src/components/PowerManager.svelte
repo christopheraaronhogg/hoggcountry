@@ -614,13 +614,20 @@
     </section>
   {/if}
 
-  <!-- Footer with Guide Link and Reset -->
+  <!-- Footer with Guide Links and Reset -->
   <div class="footer-row">
-    <a href="/guide/10-power-and-electronics" class="guide-link">
-      <span class="link-icon">📖</span>
-      <span class="link-text">Full Power & Electronics Guide</span>
-      <span class="link-arrow">→</span>
-    </a>
+    <div class="guide-links">
+      <a href="/guide/10-power-and-electronics" class="guide-link chapter-link">
+        <span class="link-icon">📚</span>
+        <span class="link-text">Full Power Guide</span>
+        <span class="link-arrow">→</span>
+      </a>
+      <a href="/guide#10-power-and-electronics" class="guide-link field-guide-link">
+        <span class="link-icon">📖</span>
+        <span class="link-text">Field Guide</span>
+        <span class="link-arrow">→</span>
+      </a>
+    </div>
     <button class="reset-btn" onclick={() => { if (confirm('Reset all power settings to defaults?')) resetToDefaults(); }}>
       Reset
     </button>
@@ -1894,18 +1901,26 @@
     margin-top: 1.5rem;
   }
 
-  /* Guide Link */
+  /* Guide Links */
+  .guide-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
   .guide-link {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     padding: 1rem 1.25rem;
-    flex: 1;
     background: #fff;
     border: 2px solid var(--border);
     border-radius: 14px;
     text-decoration: none;
     transition: all 0.2s ease;
+    flex: 1;
+    min-width: 140px;
   }
 
   .guide-link:hover {
@@ -1914,9 +1929,12 @@
     transform: translateY(-2px);
   }
 
-  .link-icon {
-    font-size: 1.25rem;
+  .field-guide-link {
+    flex: 0 0 auto;
+    min-width: 120px;
   }
+
+  .link-icon { font-size: 1.25rem; }
 
   .link-text {
     flex: 1;
@@ -1934,9 +1952,7 @@
     transition: transform 0.2s ease;
   }
 
-  .guide-link:hover .link-arrow {
-    transform: translateX(4px);
-  }
+  .guide-link:hover .link-arrow { transform: translateX(4px); }
 
   .reset-btn {
     padding: 1rem 1.25rem;

@@ -672,7 +672,7 @@
       </a>
 
       <!-- Panel 3: The Journey -->
-      <a href="/videos" class="panel panel-journey">
+      <a href="/trips" class="panel panel-journey">
         <div class="panel-frame">
           <div class="panel-number">III</div>
           <div class="panel-icon">
@@ -922,7 +922,7 @@
         <span class="footer-dot"></span>
         <a href="/tools">Trail Tools</a>
         <span class="footer-dot"></span>
-        <a href="/videos">Trip Reports</a>
+        <a href="/trips">Trip Reports</a>
         <span class="footer-dot"></span>
         <a href="/videos">Videos</a>
       </div>

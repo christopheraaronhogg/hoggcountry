@@ -17,7 +17,7 @@
       <nav class="th-nav">
         <a href="/guide">Field Guide</a>
         <a href="/tools">Tools</a>
-        <a href="/videos">Trips</a>
+        <a href="/trips">Trips</a>
         <a href="/videos">Videos</a>
       </nav>
     </div>
@@ -172,7 +172,7 @@
           <span class="stat-dot"></span>
           <span class="stat">Stories</span>
         </div>
-        <a href="/videos" class="card-link">View Timeline →</a>
+        <a href="/trips" class="card-link">View Timeline →</a>
       </article>
     </div>
   </section>
@@ -239,7 +239,7 @@
       <nav class="footer-nav">
         <a href="/guide">Field Guide</a>
         <a href="/tools">Tools</a>
-        <a href="/videos">Trips</a>
+        <a href="/trips">Trips</a>
         <a href="/videos">Videos</a>
         <a href="/about">About</a>
       </nav>

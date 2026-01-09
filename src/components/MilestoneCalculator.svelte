@@ -1,6 +1,9 @@
 <script>
+  import { fade } from 'svelte/transition';
+
   let { trailContext = {} } = $props();
 
+  // Original 14 trail sections
   const sections = [
     { name: 'Georgia', startMile: 0, endMile: 78.5, highlight: 'Sharp climbs, Blood Mountain', emoji: '🏔️' },
     { name: 'Southern NC', startMile: 78.5, endMile: 165.7, highlight: 'Long ridge walks', emoji: '🌲' },
@@ -18,6 +21,18 @@
     { name: 'Maine', startMile: 1912, endMile: 2198, highlight: 'Katahdin awaits!', emoji: '🎯' },
   ];
 
+  // Key trail towns that appear as markers in the timeline
+  const trailTowns = [
+    { mile: 31, name: 'Neels Gap', highlight: 'First outfitter, first test', emoji: '🏪' },
+    { mile: 166, name: 'Fontana Dam', highlight: 'Gateway to the Smokies', emoji: '🏗️' },
+    { mile: 274, name: 'Hot Springs', highlight: 'First trail town, hot springs!', emoji: '♨️' },
+    { mile: 386, name: 'Damascus', highlight: 'Trail Days, friendliest town', emoji: '🎉' },
+    { mile: 702, name: 'Waynesboro', highlight: 'Gateway to Shenandoah', emoji: '🏘️' },
+    { mile: 1025, name: 'Harpers Ferry', highlight: 'ATC HQ, psychological halfway', emoji: '🏛️' },
+    { mile: 2090, name: 'Monson', highlight: 'Last stop before the wilderness', emoji: '🏕️' },
+  ];
+
+  // Numeric achievement milestones
   const milestones = [
     { miles: 100, label: 'First Century', note: 'Triple digits!' },
     { miles: 500, label: '500 Club', note: 'Quarter done' },
@@ -57,10 +72,11 @@
   let startDate = $derived(trailContext.startDate || '2026-02-15');
   let pace = $derived(trailContext.pace || 15);
   let zeroDaysPerMonth = $derived(trailContext.zeroDaysPerMonth || 4);
-  let currentMile = $derived(trailContext.currentMile || 500);
+  let currentMile = $derived(trailContext.currentMile || 0);
   let tripStartDate = $derived(trailContext.tripStartDate || '2026-02-15');
   let targetPace = $derived(trailContext.targetPace || 15);
-  let zeroDaysTaken = $derived(trailContext.zeroDaysTaken || 5);
+  let daysOnTrail = $derived(trailContext.daysOnTrail || 0);
+  let effectiveDate = $derived(trailContext.effectiveDate || startDate);
 
   let mounted = $state(false);
 
@@ -160,61 +176,143 @@
     day: getCalendarDayForMile(m.miles),
   })));
 
-  // Trail mode calculations
-  let todayStr = $derived(getTodayStr());
-  let daysOnTrail = $derived(Math.max(1, daysBetween(tripStartDate, todayStr)));
-  let hikingDaysActual = $derived(Math.max(1, daysOnTrail - zeroDaysTaken));
-  let actualPaceOverall = $derived(currentMile / daysOnTrail);
-  let actualPaceHiking = $derived(currentMile / hikingDaysActual);
-  let actualPace = $derived(actualPaceOverall);
-  let milesRemaining = $derived(TOTAL_MILES - currentMile);
-  let percentComplete = $derived((currentMile / TOTAL_MILES) * 100);
-  let zeroDayFrequency = $derived(daysOnTrail > 0 ? (zeroDaysTaken / daysOnTrail) * 30 : 0);
-  let hikingDaysRemaining = $derived(actualPaceHiking > 0 ? Math.ceil(milesRemaining / actualPaceHiking) : 999);
-  let projectedZeroDaysRemaining = $derived(Math.round(hikingDaysRemaining * (zeroDaysTaken / hikingDaysActual)));
-  let daysRemaining = $derived(hikingDaysRemaining + projectedZeroDaysRemaining);
-  let projectedFinish = $derived(addDays(todayStr, daysRemaining));
-  let originalHikingDays = $derived(Math.ceil(TOTAL_MILES / targetPace));
-  let originalTotalDays = $derived(Math.ceil(originalHikingDays * 1.15));
-  let originalFinish = $derived(addDays(tripStartDate, originalTotalDays));
-  let originalDayForCurrentMile = $derived(Math.ceil(Math.ceil(currentMile / targetPace) * 1.15));
-  let daysAheadBehind = $derived(originalDayForCurrentMile - daysOnTrail);
-  let statusLabel = $derived(daysAheadBehind > 0 ? `${daysAheadBehind} day${daysAheadBehind !== 1 ? 's' : ''} ahead` : daysAheadBehind < 0 ? `${Math.abs(daysAheadBehind)} day${Math.abs(daysAheadBehind) !== 1 ? 's' : ''} behind` : 'On schedule');
-  let statusColor = $derived(daysAheadBehind > 0 ? '#22c55e' : daysAheadBehind < 0 ? '#ef4444' : '#3b82f6');
-  let daysUntilTarget = $derived(daysBetween(todayStr, originalFinish.toISOString().split('T')[0]));
-  let paceToHitTarget = $derived(daysUntilTarget > 0 ? (milesRemaining / daysUntilTarget).toFixed(1) : '—');
-  let currentSection = $derived(getCurrentSection(currentMile));
-  let milesToSectionEnd = $derived(currentSection.endMile - currentMile);
-  let nearestLandmark = $derived(getNearestLandmark(currentMile));
-  let nextMilestone = $derived(milestones.find(m => m.miles > currentMile) || null);
-  let milesToNextMilestone = $derived(nextMilestone ? nextMilestone.miles - currentMile : 0);
-
-  let remainingSections = $derived(sections.filter(s => s.endMile > currentMile).map((section, i) => {
-    const effectiveStart = Math.max(section.startMile, currentMile);
-    const milesInSection = section.endMile - effectiveStart;
-    const daysToComplete = Math.ceil(milesInSection / actualPace);
-    const arrivalDate = i === 0 ? new Date() : addDays(todayStr, Math.ceil((section.startMile - currentMile) / actualPace));
+  // Calculate trail town arrival dates
+  let calculatedTrailTowns = $derived(trailTowns.map(town => {
+    const day = getCalendarDayForMile(town.mile);
+    const arrivalDate = addDays(startDate, day);
     const season = getSeason(arrivalDate);
     return {
-      ...section,
-      milesRemaining: milesInSection,
-      daysToComplete,
+      ...town,
+      day,
       arrivalDate,
       season,
-      isCurrent: currentMile >= section.startMile && currentMile < section.endMile,
+      isTown: true,
     };
   }));
 
-  function generateShareText() {
-    if (mode === 'planning') {
-      const text = `🥾 My AT NOBO 2026 Plan\n\n📅 Start: ${formatDate(new Date(startDate))}\n🎯 Summit: ${formatDate(summitDate)}\n📊 Pace: ${pace} mi/day\n⏱️ Duration: ${totalDays} days\n\nGenerated at hoggcountry.com/tools`;
-      if (navigator.share) navigator.share({ title: 'My AT Plan', text });
-      else { navigator.clipboard.writeText(text); alert('Copied!'); }
-    } else {
-      const text = `🥾 AT Trail Update - Day ${daysOnTrail}\n\n📍 Mile ${currentMile.toFixed(0)}\n✅ ${percentComplete.toFixed(1)}% complete\n${daysAheadBehind >= 0 ? '🟢' : '🟠'} ${statusLabel}\n\n🎯 Projected: ${formatDate(projectedFinish)}\n\nGenerated at hoggcountry.com/tools`;
-      if (navigator.share) navigator.share({ title: 'AT Update', text });
-      else { navigator.clipboard.writeText(text); alert('Copied!'); }
+  // Helper: get calendar days for a given number of miles using target pace + zero ratio
+  function getCalendarDaysForMiles(miles) {
+    const hikingDays = Math.ceil(miles / targetPace);
+    return Math.ceil(hikingDays / (1 - zeroDaysPerMonth / 30));
+  }
+
+  // Merge sections and trail towns into unified timeline, sorted by mile
+  // In trail mode, use TARGET pace to project future dates (not actual pace)
+  let timelineItems = $derived(() => {
+    function getProjectedDate(mile) {
+      if (mode === 'trail') {
+        if (mile <= currentMile) {
+          // Past - already passed this point
+          return null; // We'll show "Done" instead of a date
+        } else {
+          // Future - project from effectiveDate using TARGET pace
+          // effectiveDate = today if start date passed, otherwise start date
+          const milesAhead = mile - currentMile;
+          const daysAhead = getCalendarDaysForMiles(milesAhead);
+          return addDays(effectiveDate, daysAhead);
+        }
+      } else {
+        return addDays(startDate, getCalendarDayForMile(mile));
+      }
     }
+
+    function getItemStatus(mile, endMile = null) {
+      if (mode !== 'trail') return 'upcoming';
+      if (endMile !== null) {
+        // Section
+        if (currentMile >= endMile) return 'completed';
+        if (currentMile >= mile) return 'current';
+        return 'upcoming';
+      } else {
+        // Town
+        if (currentMile >= mile) return 'completed';
+        return 'upcoming';
+      }
+    }
+
+    const sectionItems = calculatedSections.map(s => {
+      const status = getItemStatus(s.startMile, s.endMile);
+      const arrivalDate = getProjectedDate(s.startMile);
+      const day = mode === 'trail'
+        ? (status === 'completed' ? null : getCalendarDaysForMiles(s.startMile - currentMile) + daysOnTrail)
+        : s.daysToStart;
+      return {
+        ...s,
+        mile: s.startMile,
+        type: 'section',
+        status,
+        arrivalDate,
+        daysToStart: day,
+        season: arrivalDate ? getSeason(arrivalDate) : s.season,
+      };
+    });
+
+    const townItems = calculatedTrailTowns.map(t => {
+      const status = getItemStatus(t.mile);
+      const arrivalDate = getProjectedDate(t.mile);
+      const day = mode === 'trail'
+        ? (status === 'completed' ? null : getCalendarDaysForMiles(t.mile - currentMile) + daysOnTrail)
+        : t.day;
+      return {
+        ...t,
+        type: 'town',
+        status,
+        arrivalDate,
+        day,
+        season: arrivalDate ? getSeason(arrivalDate) : t.season,
+      };
+    });
+
+    return [...sectionItems, ...townItems].sort((a, b) => {
+      const mileA = a.type === 'section' ? a.startMile : a.mile;
+      const mileB = b.type === 'section' ? b.startMile : b.mile;
+      return mileA - mileB;
+    });
+  });
+
+  // Trail mode calculations
+  let todayStr = $derived(getTodayStr());
+  let milesRemaining = $derived(TOTAL_MILES - currentMile);
+  let percentComplete = $derived((currentMile / TOTAL_MILES) * 100);
+  // Summit projection: effectiveDate + (remaining miles at target pace with zeros)
+  // effectiveDate = today if start date has passed, otherwise start date
+  let daysRemaining = $derived(getCalendarDaysForMiles(milesRemaining));
+  let projectedFinish = $derived(addDays(effectiveDate, daysRemaining));
+  let currentSection = $derived(getCurrentSection(currentMile));
+  let nearestLandmark = $derived(getNearestLandmark(currentMile));
+
+  let copyNotification = $state('');
+
+  function copyToClipboard() {
+    let text;
+    if (mode === 'planning') {
+      text = `🥾 AT NOBO ${new Date(startDate).getFullYear()} Plan
+
+📅 Start: ${formatDate(new Date(startDate))}
+🏔️ Summit: ${formatDate(summitDate)}
+📊 Pace: ${pace} mi/day
+⏱️ Duration: ${totalDays} days (${hikingDaysOnly} hiking + ${totalZeroDays} zeros)
+
+Section Timeline:
+${calculatedSections.map(s => `• ${s.name} (Mi ${s.startMile.toFixed(0)}-${s.endMile.toFixed(0)}) - ${formatDateShort(s.arrivalDate)}`).join('\n')}
+
+hoggcountry.com/tools`;
+    } else {
+      text = `🥾 AT Trail Update
+
+📍 Mile ${currentMile.toFixed(0)} - near ${nearestLandmark.name}
+✅ ${percentComplete.toFixed(1)}% complete
+📊 ${milesRemaining.toFixed(0)} miles to go
+
+🎯 Summit: ${formatDate(projectedFinish)}
+   at ${targetPace} mi/day + ${zeroDaysPerMonth} zeros/mo
+
+hoggcountry.com/tools`;
+    }
+
+    navigator.clipboard.writeText(text);
+    copyNotification = 'Copied to clipboard!';
+    setTimeout(() => copyNotification = '', 2000);
   }
 </script>
 
@@ -270,31 +368,61 @@
         SECTION BREAKDOWN
       </h3>
       <div class="timeline">
-        {#each calculatedSections as section, i}
-          <div class="timeline-item" style="animation-delay: {i * 40}ms">
-            <div class="item-date">
-              <span class="date-main">{formatDateShort(section.arrivalDate)}</span>
-              <span class="date-day">Day {section.daysToStart}</span>
-            </div>
-            <div class="item-marker">
-              <div class="marker-line" class:first={i===0}></div>
-              <div class="marker-dot" style="background: {section.season.color}">{i === 0 ? 'S' : section.index}</div>
-              <div class="marker-line" class:last={i===calculatedSections.length-1}></div>
-            </div>
-            <div class="item-content">
-              <div class="section-card">
-                <div class="card-top">
-                  <span class="card-emoji">{section.emoji}</span>
-                  <span class="card-name">{section.name}</span>
-                  <span class="card-miles">{section.sectionMiles.toFixed(0)} mi</span>
-                </div>
-                <div class="card-bottom">
-                  <span class="card-highlight">{section.highlight}</span>
-                  <span class="card-season" style="color: {section.season.color}">{section.season.icon} {section.season.name}</span>
+        {#each timelineItems() as item, i}
+          {#if item.type === 'section'}
+            <!-- Section -->
+            <div class="timeline-item" style="animation-delay: {i * 30}ms">
+              <div class="item-date">
+                <span class="date-main">{formatDateShort(item.arrivalDate)}</span>
+                <span class="date-day">Day {item.daysToStart}</span>
+              </div>
+              <div class="item-marker">
+                <div class="marker-line" class:first={i===0}></div>
+                <div class="marker-dot" style="background: {item.season.color}">{item.index}</div>
+                <div class="marker-line"></div>
+              </div>
+              <div class="item-content">
+                <div class="section-card">
+                  <div class="card-header">
+                    <span class="card-emoji">{item.emoji}</span>
+                    <span class="card-name">{item.name}</span>
+                    <span class="card-mile-badge">Mile {item.startMile.toFixed(0)}</span>
+                  </div>
+                  <div class="card-details">
+                    <span class="card-length">{item.sectionMiles.toFixed(0)} mi</span>
+                    <span class="card-separator">•</span>
+                    <span class="card-highlight">{item.highlight}</span>
+                  </div>
+                  <div class="card-footer">
+                    <span class="card-end-mile">ends Mile {item.endMile.toFixed(0)}</span>
+                    <span class="card-season" style="color: {item.season.color}">{item.season.icon} {item.season.name}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          {:else}
+            <!-- Trail Town -->
+            <div class="timeline-item town" style="animation-delay: {i * 30}ms">
+              <div class="item-date">
+                <span class="date-main">{formatDateShort(item.arrivalDate)}</span>
+                <span class="date-day">Day {item.day}</span>
+              </div>
+              <div class="item-marker">
+                <div class="marker-line"></div>
+                <div class="marker-dot town">{item.emoji}</div>
+                <div class="marker-line"></div>
+              </div>
+              <div class="item-content">
+                <div class="town-card">
+                  <div class="town-header">
+                    <span class="town-name">{item.name}</span>
+                    <span class="town-mile">Mile {item.mile}</span>
+                  </div>
+                  <span class="town-highlight">{item.highlight}</span>
+                </div>
+              </div>
+            </div>
+          {/if}
         {/each}
 
         <!-- Summit -->
@@ -309,7 +437,10 @@
           </div>
           <div class="item-content">
             <div class="summit-card">
-              <h4>KATAHDIN</h4>
+              <div class="summit-header">
+                <h4>KATAHDIN</h4>
+                <span class="summit-mile">Mile 2,198</span>
+              </div>
               <p>The Northern Terminus</p>
             </div>
           </div>
@@ -337,170 +468,170 @@
     </section>
 
   {:else}
-    <!-- TRAIL MODE -->
+    <!-- TRAIL MODE - Same timeline view with progress context -->
 
-    <!-- Progress Dashboard -->
-    <section class="dashboard-section">
-      <div class="dashboard-hero">
-        <div class="progress-ring-container">
-          <svg viewBox="0 0 120 120" class="progress-ring">
-            <defs>
-              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#22c55e"/>
-                <stop offset="100%" style="stop-color:#3b82f6"/>
-              </linearGradient>
-            </defs>
-            <circle cx="60" cy="60" r="52" class="ring-bg"/>
-            <circle cx="60" cy="60" r="52" class="ring-fill" style="stroke-dasharray: {326.7 * (percentComplete / 100)} 326.7"/>
-          </svg>
-          <div class="ring-center">
-            <span class="ring-percent">{percentComplete.toFixed(0)}%</span>
-            <span class="ring-label">complete</span>
-          </div>
+    <!-- Compact Progress Summary -->
+    <section class="progress-summary">
+      <div class="summary-stats">
+        <div class="summary-stat main">
+          <span class="ss-value">{currentMile.toFixed(0)}</span>
+          <span class="ss-label">miles hiked</span>
         </div>
-
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <span class="hs-value">{daysOnTrail}</span>
-            <span class="hs-label">Days on Trail</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hs-value">{hikingDaysActual}</span>
-            <span class="hs-label">Hiking Days</span>
-          </div>
-          <div class="hero-stat status" style="--status-color: {statusColor}">
-            <span class="hs-value">{daysAheadBehind >= 0 ? '+' : ''}{daysAheadBehind}</span>
-            <span class="hs-label">{statusLabel}</span>
-          </div>
+        <div class="summary-stat">
+          <span class="ss-value">{percentComplete.toFixed(0)}%</span>
+          <span class="ss-label">complete</span>
+        </div>
+        <div class="summary-stat">
+          <span class="ss-value">{milesRemaining.toFixed(0)}</span>
+          <span class="ss-label">miles to go</span>
+        </div>
+        <div class="summary-stat">
+          <span class="ss-value">{daysRemaining}</span>
+          <span class="ss-label">days to go</span>
         </div>
       </div>
-
-      <!-- Pace Cards -->
-      <div class="pace-grid">
-        <div class="pace-card">
-          <span class="pace-value">{actualPaceHiking.toFixed(1)}</span>
-          <span class="pace-unit">mi/hiking day</span>
-          <span class="pace-note">True pace</span>
-        </div>
-        <div class="pace-card">
-          <span class="pace-value">{actualPaceOverall.toFixed(1)}</span>
-          <span class="pace-unit">mi/calendar day</span>
-          <span class="pace-note">+{zeroDaysTaken} zeros</span>
-        </div>
-        <div class="pace-card">
-          <span class="pace-value">{zeroDayFrequency.toFixed(1)}</span>
-          <span class="pace-unit">zeros/month</span>
-          <span class="pace-note">{zeroDayFrequency <= 4 ? 'Efficient' : zeroDayFrequency <= 6 ? 'Normal' : 'Relaxed'}</span>
-        </div>
-      </div>
-
-      <!-- Quick Stats -->
-      <div class="quick-grid">
-        <div class="quick-card">
-          <span class="qc-icon">📍</span>
-          <span class="qc-value">{currentMile.toFixed(0)}</span>
-          <span class="qc-label">miles hiked</span>
-        </div>
-        <div class="quick-card">
-          <span class="qc-icon">🎯</span>
-          <span class="qc-value">{milesRemaining.toFixed(0)}</span>
-          <span class="qc-label">miles to go</span>
-        </div>
-        <div class="quick-card">
-          <span class="qc-icon">📅</span>
-          <span class="qc-value">{daysRemaining}</span>
-          <span class="qc-label">days remaining</span>
-        </div>
+      <div class="summary-projection">
+        <span class="proj-label">Summit:</span>
+        <span class="proj-date">{formatDate(projectedFinish)}</span>
+        <span class="proj-pace">at {targetPace} mi/day + {zeroDaysPerMonth} zeros/mo</span>
       </div>
     </section>
 
-    <!-- Current Section -->
-    <section class="current-section">
-      <div class="current-card">
-        <div class="current-header">
-          <span class="current-emoji">{currentSection.emoji}</span>
-          <div class="current-info">
-            <span class="current-name">{currentSection.name}</span>
-            <span class="current-highlight">{currentSection.highlight}</span>
-          </div>
-        </div>
-        <div class="current-progress">
-          <div class="progress-track">
-            <div class="progress-fill" style="width: {((currentMile - currentSection.startMile) / (currentSection.endMile - currentSection.startMile)) * 100}%"></div>
-          </div>
-          <span class="progress-label">{milesToSectionEnd.toFixed(0)} mi to next section</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Next Milestone -->
-    {#if nextMilestone}
-      <section class="next-milestone">
-        <div class="nm-card">
-          <span class="nm-label">NEXT MILESTONE</span>
-          <div class="nm-content">
-            <div class="nm-info">
-              <span class="nm-name">{nextMilestone.label}</span>
-              <span class="nm-note">{nextMilestone.note}</span>
-            </div>
-            <div class="nm-distance">
-              <span class="nm-miles">{milesToNextMilestone.toFixed(0)}</span>
-              <span class="nm-unit">mi away</span>
-            </div>
-          </div>
-        </div>
-      </section>
-    {/if}
-
-    <!-- Projections -->
-    <section class="projections-section">
+    <!-- Unified Timeline -->
+    <section class="timeline-section">
       <h3 class="section-header">
         <span class="header-bar"></span>
-        PROJECTIONS
+        YOUR JOURNEY
       </h3>
-      <div class="proj-grid">
-        <div class="proj-card current">
-          <div class="proj-header">
-            <span class="proj-label">At Current Pace</span>
-            <span class="proj-pace">{actualPace.toFixed(1)} mi/day</span>
-          </div>
-          <div class="proj-date">{formatDate(projectedFinish)}</div>
-          <div class="proj-days">{daysRemaining} days remaining</div>
-        </div>
-        <div class="proj-card target">
-          <div class="proj-header">
-            <span class="proj-label">To Hit Target</span>
-            <span class="proj-target-date">{formatDateShort(originalFinish)}</span>
-          </div>
-          <div class="proj-pace-needed">
-            <span class="ppn-value">{paceToHitTarget}</span>
-            <span class="ppn-unit">mi/day needed</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Remaining Sections -->
-    <section class="remaining-section">
-      <h3 class="section-header">
-        <span class="header-bar"></span>
-        SECTIONS AHEAD
-      </h3>
-      <div class="remaining-list">
-        {#each remainingSections as section}
-          <div class="rem-item" class:current={section.isCurrent}>
-            <span class="rem-emoji">{section.emoji}</span>
-            <div class="rem-info">
-              <div class="rem-top">
-                <span class="rem-name">{section.name}</span>
-                {#if section.isCurrent}
-                  <span class="rem-badge">HERE</span>
+      <div class="timeline">
+        {#each timelineItems() as item, i}
+          {#if item.type === 'section'}
+            <!-- Section -->
+            <div class="timeline-item {item.status}" style="animation-delay: {i * 30}ms">
+              <div class="item-date">
+                {#if item.status === 'completed'}
+                  <span class="date-main completed">✓</span>
+                  <span class="date-day">Done</span>
+                {:else if item.status === 'current'}
+                  <span class="date-main current">NOW</span>
+                  <span class="date-day">Day {daysOnTrail}</span>
+                {:else}
+                  <span class="date-main">{formatDateShort(item.arrivalDate)}</span>
+                  <span class="date-day">~Day {item.daysToStart}</span>
                 {/if}
               </div>
-              <div class="rem-meta">
-                <span>{section.milesRemaining.toFixed(0)} mi</span>
-                <span>~{section.daysToComplete} days</span>
+              <div class="item-marker">
+                <div class="marker-line" class:first={i===0}></div>
+                <div class="marker-dot {item.status}" style="background: {item.status === 'completed' ? '#9ca3af' : item.status === 'current' ? '#22c55e' : item.season.color}">
+                  {#if item.status === 'completed'}✓{:else}{item.index}{/if}
+                </div>
+                <div class="marker-line"></div>
               </div>
+              <div class="item-content">
+                <div class="section-card {item.status}">
+                  <div class="card-header">
+                    <span class="card-emoji">{item.emoji}</span>
+                    <span class="card-name">{item.name}</span>
+                    <span class="card-mile-badge">Mile {item.startMile.toFixed(0)}</span>
+                  </div>
+                  {#if item.status === 'current'}
+                    <div class="card-details">
+                      <span class="card-length">{item.sectionMiles.toFixed(0)} mi section</span>
+                      <span class="card-separator">•</span>
+                      <span class="card-highlight">ends Mile {item.endMile.toFixed(0)}</span>
+                    </div>
+                    <div class="current-progress-inline">
+                      <div class="progress-track-inline">
+                        <div class="progress-fill-inline" style="width: {((currentMile - item.startMile) / (item.endMile - item.startMile)) * 100}%"></div>
+                      </div>
+                      <span class="progress-label-inline">{(item.endMile - currentMile).toFixed(0)} mi to go</span>
+                    </div>
+                  {:else}
+                    <div class="card-details">
+                      <span class="card-length">{item.sectionMiles.toFixed(0)} mi</span>
+                      <span class="card-separator">•</span>
+                      <span class="card-highlight">{item.highlight}</span>
+                    </div>
+                    {#if item.status !== 'completed'}
+                      <div class="card-footer">
+                        <span class="card-end-mile">ends Mile {item.endMile.toFixed(0)}</span>
+                        <span class="card-season" style="color: {item.season.color}">{item.season.icon} {item.season.name}</span>
+                      </div>
+                    {/if}
+                  {/if}
+                </div>
+              </div>
+            </div>
+          {:else}
+            <!-- Trail Town -->
+            <div class="timeline-item town {item.status}" style="animation-delay: {i * 30}ms">
+              <div class="item-date">
+                {#if item.status === 'completed'}
+                  <span class="date-main completed">✓</span>
+                  <span class="date-day">Done</span>
+                {:else}
+                  <span class="date-main">{formatDateShort(item.arrivalDate)}</span>
+                  <span class="date-day">~Day {item.day}</span>
+                {/if}
+              </div>
+              <div class="item-marker">
+                <div class="marker-line"></div>
+                <div class="marker-dot town {item.status}">{item.emoji}</div>
+                <div class="marker-line"></div>
+              </div>
+              <div class="item-content">
+                <div class="town-card {item.status}">
+                  <div class="town-header">
+                    <span class="town-name">{item.name}</span>
+                    <span class="town-mile">Mile {item.mile}</span>
+                  </div>
+                  <span class="town-highlight">{item.highlight}</span>
+                </div>
+              </div>
+            </div>
+          {/if}
+        {/each}
+
+        <!-- Summit -->
+        <div class="timeline-item summit" style="animation-delay: {timelineItems().length * 30}ms">
+          <div class="item-date">
+            <span class="date-main">{formatDateShort(projectedFinish)}</span>
+            <span class="date-day">~Day {daysOnTrail + daysRemaining}</span>
+          </div>
+          <div class="item-marker">
+            <div class="marker-line top-only"></div>
+            <div class="marker-dot summit">★</div>
+          </div>
+          <div class="item-content">
+            <div class="summit-card">
+              <div class="summit-header">
+                <h4>KATAHDIN</h4>
+                <span class="summit-mile">Mile 2,198</span>
+              </div>
+              <p>The Northern Terminus</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Milestones with progress -->
+    <section class="milestones-section">
+      <h3 class="section-header">
+        <span class="header-bar"></span>
+        KEY MILESTONES
+      </h3>
+      <div class="milestones-grid">
+        {#each calculatedMilestones as ms}
+          <div class="milestone-card" class:achieved={currentMile >= ms.miles}>
+            <div class="ms-miles">{ms.miles}</div>
+            <div class="ms-info">
+              <span class="ms-label">{ms.label}</span>
+              {#if currentMile >= ms.miles}
+                <span class="ms-achieved">✓ Achieved</span>
+              {:else}
+                <span class="ms-date">{(ms.miles - currentMile).toFixed(0)} mi away</span>
+              {/if}
             </div>
           </div>
         {/each}
@@ -510,21 +641,31 @@
 
   <!-- Footer -->
   <footer class="calc-footer">
-    <button class="share-btn" onclick={generateShareText}>
+    <button class="share-btn" onclick={copyToClipboard}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
       </svg>
-      {mode === 'planning' ? 'Share Plan' : 'Share Update'}
+      {mode === 'planning' ? 'Copy Plan' : 'Copy Update'}
     </button>
+    {#if copyNotification}
+      <span class="copy-toast" transition:fade={{ duration: 150 }}>{copyNotification}</span>
+    {/if}
   </footer>
 
-  <!-- Guide Link -->
-  <a href="/guide/02-trail-sections-and-milestones" class="guide-link">
-    <span>Read the Trail Section Guide</span>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M5 12h14M12 5l7 7-7 7"/>
-    </svg>
-  </a>
+  <!-- Guide Links -->
+  <div class="guide-links">
+    <a href="/guide/02-trail-sections-and-milestones" class="guide-link chapter-link">
+      <span class="link-icon">📚</span>
+      <span class="link-text">Full Trail Sections Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="/guide#02-trail-sections-and-milestones" class="guide-link field-guide-link">
+      <span class="link-icon">📖</span>
+      <span class="link-text">Field Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+  </div>
 </div>
 
 <style>
@@ -792,11 +933,11 @@
     padding: 0.75rem 1rem;
   }
 
-  .card-top {
+  .card-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
   }
 
   .card-emoji {
@@ -806,24 +947,38 @@
   .card-name {
     flex: 1;
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--ink);
   }
 
-  .card-miles {
+  .card-mile-badge {
+    font-family: Oswald, sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--muted);
-    background: var(--bg);
-    padding: 0.15rem 0.4rem;
+    color: var(--alpine);
+    background: rgba(30, 58, 95, 0.1);
+    padding: 0.2rem 0.5rem;
     border-radius: 4px;
+    border: 1px solid rgba(30, 58, 95, 0.2);
   }
 
-  .card-bottom {
+  .card-details {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
     font-size: 0.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .card-length {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    color: var(--pine);
+  }
+
+  .card-separator {
+    color: var(--muted);
   }
 
   .card-highlight {
@@ -831,8 +986,249 @@
     font-style: italic;
   }
 
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+  }
+
+  .card-end-mile {
+    color: var(--muted);
+    font-family: Oswald, sans-serif;
+  }
+
   .card-season {
     font-weight: 600;
+  }
+
+  /* Trail Town Cards */
+  .timeline-item.town {
+    opacity: 0.95;
+  }
+
+  .marker-dot.town {
+    background: #f59e0b !important;
+    font-size: 0.8rem;
+    width: 28px;
+    height: 28px;
+  }
+
+  .marker-dot.town.completed {
+    background: #9ca3af !important;
+    opacity: 0.7;
+  }
+
+  .town-card {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.04));
+    border: 2px solid rgba(245, 158, 11, 0.4);
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+  }
+
+  .town-card.completed {
+    background: var(--bg);
+    border-color: var(--border);
+    opacity: 0.6;
+  }
+
+  .town-card.completed .town-name,
+  .town-card.completed .town-mile {
+    color: var(--muted);
+  }
+
+  /* Section status styles */
+  .timeline-item.completed {
+    opacity: 0.6;
+  }
+
+  .section-card.completed {
+    background: var(--bg);
+    border-color: var(--border);
+  }
+
+  .section-card.completed .card-name,
+  .section-card.completed .card-miles {
+    color: var(--muted);
+  }
+
+  .section-card.current {
+    border-color: #22c55e;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
+  }
+
+  .marker-dot.completed {
+    background: #9ca3af !important;
+    color: #fff;
+  }
+
+  .marker-dot.current {
+    background: #22c55e !important;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  }
+
+  .date-main.completed {
+    color: #22c55e;
+    font-size: 1rem;
+  }
+
+  .date-main.current {
+    color: #22c55e;
+    font-weight: 700;
+  }
+
+  /* Inline progress for current section */
+  .current-progress-inline {
+    margin-top: 0.5rem;
+  }
+
+  .progress-track-inline {
+    height: 6px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill-inline {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label-inline {
+    display: block;
+    text-align: right;
+    font-size: 0.7rem;
+    color: #22c55e;
+    font-weight: 600;
+    margin-top: 0.25rem;
+  }
+
+  /* Progress Summary (trail mode header) */
+  .progress-summary {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
+    border-bottom: 2px solid var(--border);
+  }
+
+  .summary-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .summary-stat {
+    text-align: center;
+  }
+
+  .summary-stat.main {
+    flex: 1.5;
+  }
+
+  .ss-value {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .summary-stat.main .ss-value {
+    font-size: 2rem;
+    color: var(--pine);
+  }
+
+  .summary-stat.status .ss-value {
+    color: var(--status-color);
+  }
+
+  .ss-label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 0.15rem;
+  }
+
+  .summary-projection {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .summary-projection .proj-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .summary-projection .proj-date {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--pine);
+  }
+
+  .summary-projection .proj-pace {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* Achieved milestones */
+  .milestone-card.achieved {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.02));
+    border-color: #22c55e;
+  }
+
+  .milestone-card.achieved .ms-miles {
+    color: #22c55e;
+  }
+
+  .ms-achieved {
+    font-size: 0.7rem;
+    color: #22c55e;
+    font-weight: 600;
+  }
+
+  .town-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.2rem;
+  }
+
+  .town-name {
+    font-family: Oswald, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #b45309;
+  }
+
+  .town-mile {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #d97706;
+    background: rgba(245, 158, 11, 0.15);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .town-highlight {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
   }
 
   .summit-card {
@@ -843,11 +1239,28 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
 
+  .summit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
   .summit-card h4 {
     margin: 0;
     font-family: Oswald, sans-serif;
     font-size: 1.1rem;
     letter-spacing: 0.1em;
+  }
+
+  .summit-mile {
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--marker);
+    background: rgba(0,0,0,0.2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
   }
 
   .summit-card p {
@@ -1360,6 +1773,7 @@
     background: var(--bg);
     text-align: center;
     border-bottom: 2px solid var(--border);
+    position: relative;
   }
 
   .share-btn {
@@ -1388,31 +1802,69 @@
     border-color: var(--alpine);
   }
 
+  .copy-toast {
+    display: inline-block;
+    margin-left: 1rem;
+    padding: 0.5rem 1rem;
+    background: #22c55e;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 6px;
+  }
+
   /* Guide Link */
+  /* Guide Links */
+  .guide-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .guide-link {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    background: var(--pine);
-    color: #fff;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 14px;
     text-decoration: none;
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 200px;
   }
 
   .guide-link:hover {
-    background: var(--alpine);
+    border-color: var(--alpine);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
   }
 
-  .guide-link svg {
-    width: 18px;
-    height: 18px;
+  .field-guide-link {
+    flex: 0 0 auto;
+    min-width: 140px;
   }
+
+  .link-icon { font-size: 1.25rem; }
+
+  .link-text {
+    flex: 1;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .link-arrow {
+    font-size: 1.25rem;
+    color: var(--alpine);
+    transition: transform 0.2s ease;
+  }
+
+  .guide-link:hover .link-arrow { transform: translateX(4px); }
 
   /* Responsive */
   @media (max-width: 640px) {

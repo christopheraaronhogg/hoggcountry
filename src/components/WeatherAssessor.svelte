@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { slide, fade } from 'svelte/transition';
+  import StormWarningFieldStation from './StormWarningFieldStation.svelte';
 
   let { trailContext = {} } = $props();
 
@@ -19,6 +20,135 @@
     if (trailContext?.currentMile !== undefined) {
       currentMile = trailContext.currentMile;
     }
+  });
+
+  // Extract journey context for heat projections
+  let startDate = $derived(trailContext?.startDate || '2026-03-01');
+  let targetPace = $derived(trailContext?.targetPace || 15);
+  let zeroDaysPerMonth = $derived(trailContext?.zeroDaysPerMonth || 4);
+  let effectiveDate = $derived(trailContext?.effectiveDate || startDate);
+
+  // Calculate adjusted pace accounting for zero days
+  let adjustedPace = $derived(targetPace * (30 - zeroDaysPerMonth) / 30);
+
+  // Project date at a given mile marker
+  function getDateAtMile(mile) {
+    const daysToReach = Math.ceil(mile / adjustedPace);
+    const date = new Date(effectiveDate);
+    date.setDate(date.getDate() + daysToReach);
+    return date;
+  }
+
+  function formatDateShort(date) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function formatDateRange(startMile, endMile) {
+    return `${formatDateShort(getDateAtMile(startMile))} – ${formatDateShort(getDateAtMile(endMile))}`;
+  }
+
+  function getStartMonth() {
+    const date = new Date(startDate);
+    return date.toLocaleDateString('en-US', { month: 'short' });
+  }
+
+  // Heat zone milestone projections based on user's pace
+  let heatMilestones = $derived({
+    onset: getDateAtMile(600),
+    building: getDateAtMile(700),
+    peakStart: getDateAtMile(900),
+    peakEnd: getDateAtMile(1450),
+    taperEnd: getDateAtMile(1750),
+    finish: getDateAtMile(2198),
+  });
+
+  // Duration calculations
+  function daysBetweenDates(date1, date2) {
+    return Math.ceil((date2 - date1) / (1000 * 60 * 60 * 24));
+  }
+
+  function getDaysFromNow(targetDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return daysBetweenDates(today, targetDate);
+  }
+
+  // Heat phase durations in days
+  let heatDurations = $derived({
+    preHeat: daysBetweenDates(getDateAtMile(0), getDateAtMile(600)),
+    onset: daysBetweenDates(getDateAtMile(600), getDateAtMile(700)),
+    building: daysBetweenDates(getDateAtMile(700), getDateAtMile(900)),
+    peak: daysBetweenDates(getDateAtMile(900), getDateAtMile(1450)),
+    taper: daysBetweenDates(getDateAtMile(1450), getDateAtMile(1750)),
+    postHeat: daysBetweenDates(getDateAtMile(1750), getDateAtMile(2198)),
+  });
+
+  // Hero stat: What's the key insight right now?
+  let heatHeroStat = $derived.by(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const peakStart = heatMilestones.peakStart;
+    const peakEnd = heatMilestones.peakEnd;
+    const startD = new Date(startDate);
+
+    // Before start
+    if (today < startD) {
+      const daysUntilPeak = getDaysFromNow(peakStart);
+      return {
+        icon: '🔥',
+        headline: `Peak Heat in ${daysUntilPeak} days`,
+        subline: `${formatDateShort(peakStart)} – ${formatDateShort(peakEnd)} (${heatDurations.peak} days)`,
+        status: 'upcoming',
+      };
+    }
+
+    // Use currentMile to determine where they are on trail
+    if (currentMile < 600) {
+      const daysUntilPeak = getDaysFromNow(peakStart);
+      return {
+        icon: '❄️',
+        headline: daysUntilPeak > 0 ? `Peak Heat in ${daysUntilPeak} days` : 'Approaching Peak Heat',
+        subline: `Currently in pre-heat phase at mile ${currentMile}`,
+        status: 'pre-heat',
+      };
+    }
+
+    if (currentMile < 900) {
+      const daysUntilPeak = getDaysFromNow(peakStart);
+      return {
+        icon: '🌡️',
+        headline: daysUntilPeak > 0 ? `Peak Heat in ${daysUntilPeak} days` : 'Peak Heat imminent',
+        subline: `Heat building. Start hydration discipline now.`,
+        status: 'building',
+      };
+    }
+
+    if (currentMile < 1450) {
+      const daysRemaining = getDaysFromNow(peakEnd);
+      const milesRemaining = 1450 - currentMile;
+      return {
+        icon: '🔥',
+        headline: `${daysRemaining > 0 ? daysRemaining : Math.ceil(milesRemaining / adjustedPace)} days of Peak Heat left`,
+        subline: `${milesRemaining} miles until you exit at mile 1,450`,
+        status: 'peak',
+      };
+    }
+
+    if (currentMile < 1750) {
+      return {
+        icon: '😮‍💨',
+        headline: 'Past Peak Heat',
+        subline: `Heat tapering. Focus shifting to terrain.`,
+        status: 'taper',
+      };
+    }
+
+    return {
+      icon: '🏔️',
+      headline: 'Post Heat Zone',
+      subline: `Cold weather prep for Whites & Maine`,
+      status: 'post',
+    };
   });
 
   // Weather warning checkboxes (2-out-of-5 rule)
@@ -47,7 +177,7 @@
 
   let feelsLike = $derived(windSpeed >= 5 ? windChill : summitTemp);
 
-  // Heat zone based on mile
+  // Heat zone based on mile - with projected dates from user's pace
   let heatZone = $derived.by(() => {
     if (currentMile < 600) {
       return {
@@ -56,6 +186,8 @@
         color: '#22c55e',
         desc: 'Cold/cool conditions. Focus on layering and staying warm.',
         tips: ['Layer management is key', 'Cold mornings common', 'Watch for ice/frost'],
+        mileRange: '0 – 600',
+        dates: formatDateRange(0, 600),
       };
     }
     if (currentMile < 700) {
@@ -65,7 +197,8 @@
         color: '#fbbf24',
         desc: 'Heat begins. Daytime highs in 70s-80s. Humidity increases.',
         tips: ['Start hydration discipline', 'Early morning hiking helps', 'Electrolytes become important'],
-        dates: 'April 20 - May 10',
+        mileRange: '600 – 700',
+        dates: formatDateRange(600, 700),
       };
     }
     if (currentMile < 900) {
@@ -75,6 +208,8 @@
         color: '#f97316',
         desc: 'Summer conditions establishing. Consistent heat and humidity.',
         tips: ['Mandatory water planning', 'Shade breaks help', 'Sweat management critical'],
+        mileRange: '700 – 900',
+        dates: formatDateRange(700, 900),
       };
     }
     if (currentMile < 1450) {
@@ -84,7 +219,8 @@
         color: '#ef4444',
         desc: 'Most demanding heat stretch. Green tunnel traps heat. Hot sticky nights.',
         tips: ['Early starts essential', 'Consistent hydration', 'Electrolytes mandatory', 'Controlled pacing', 'Shade management'],
-        dates: 'Late May - Early August',
+        mileRange: '900 – 1,450',
+        dates: formatDateRange(900, 1450),
         warning: true,
       };
     }
@@ -95,7 +231,8 @@
         color: '#fbbf24',
         desc: 'Heat easing. Cooler nights. Fewer oppressive days.',
         tips: ['Heat still present but manageable', 'Focus shifts to terrain', 'Whites approaching'],
-        dates: 'Mid - Late August',
+        mileRange: '1,450 – 1,750',
+        dates: formatDateRange(1450, 1750),
       };
     }
     return {
@@ -104,6 +241,8 @@
       color: '#22c55e',
       desc: 'Heat no longer primary challenge. Focus on cold weather prep for Maine.',
       tips: ['Watch for cold snaps', 'Prepare for Whites/Maine', 'Variable conditions'],
+      mileRange: '1,750 – 2,198',
+      dates: formatDateRange(1750, 2198),
     };
   });
 
@@ -202,6 +341,106 @@
     return '#059669';
   }
 
+  // Pressure tracking via elevation drift
+  // When stopped: if watch reads HIGHER than actual elevation, pressure is DROPPING
+  let actualElevation = $state(3200);  // From map/GPS at known point
+  let watchElevation = $state(3200);   // What your watch/phone shows
+  let previousDrift = $state(0);       // Previous reading's drift (ft)
+  let hoursElapsed = $state(3);
+
+  // Calculate elevation drift (phantom gain = pressure drop)
+  let elevationDrift = $derived(watchElevation - actualElevation);
+  let driftChange = $derived(elevationDrift - previousDrift);
+  let driftRatePerHour = $derived(hoursElapsed > 0 ? driftChange / hoursElapsed : 0);
+
+  let pressureAssessment = $derived.by(() => {
+    const drift = elevationDrift;
+    const ratePerHour = driftRatePerHour;
+
+    // Determine trend based on drift change
+    let trend, trendIcon;
+    if (ratePerHour < -20) {
+      trend = 'rising';
+      trendIcon = '📈';
+    } else if (ratePerHour > 20) {
+      trend = 'falling';
+      trendIcon = '📉';
+    } else {
+      trend = 'steady';
+      trendIcon = '➡️';
+    }
+
+    // Assess severity based on rate of phantom climb (positive = pressure dropping)
+    if (ratePerHour <= 0) {
+      return {
+        trend,
+        trendIcon,
+        level: 'good',
+        color: '#22c55e',
+        headline: trend === 'rising' ? 'Improving Weather' : 'Stable Conditions',
+        message: 'Pressure steady or rising. Fair weather ahead.',
+        action: 'Continue as planned',
+        urgency: 'none',
+        driftDesc: drift === 0 ? 'Calibrated' : drift < 0 ? `${Math.abs(drift)} ft low` : `${drift} ft high`,
+      };
+    }
+
+    // Positive drift rate = pressure dropping = storm approaching
+    if (ratePerHour < 50) {
+      return {
+        trend,
+        trendIcon,
+        level: 'watch',
+        color: '#fbbf24',
+        headline: 'Slow Pressure Drop',
+        message: 'Weather may change in 12-24 hours.',
+        action: 'Monitor conditions, have backup plan',
+        urgency: 'low',
+        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
+      };
+    }
+
+    if (ratePerHour < 150) {
+      return {
+        trend,
+        trendIcon,
+        level: 'caution',
+        color: '#f97316',
+        headline: 'Moderate Pressure Drop',
+        message: 'Weather change likely in 6-12 hours.',
+        action: 'Plan for shelter, reduce exposed time',
+        urgency: 'moderate',
+        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
+      };
+    }
+
+    if (ratePerHour < 300) {
+      return {
+        trend,
+        trendIcon,
+        level: 'warning',
+        color: '#ef4444',
+        headline: 'Rapid Pressure Drop',
+        message: 'Storm approaching in 2-6 hours.',
+        action: 'Seek shelter soon, avoid exposed ridges',
+        urgency: 'high',
+        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
+      };
+    }
+
+    return {
+      trend,
+      trendIcon,
+      level: 'emergency',
+      color: '#dc2626',
+      headline: 'PRESSURE CRASH',
+      message: 'Severe weather imminent. Act now.',
+      action: 'SHELTER IMMEDIATELY',
+      urgency: 'critical',
+      driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
+    };
+  });
+
   // Daylight calculator
   let dlDate = $state(new Date().toISOString().split('T')[0]);
   let dlMile = $state(trailContext?.currentMile || 500);
@@ -293,9 +532,9 @@
       <span class="tab-icon">🔥</span>
       <span class="tab-label">Heat</span>
     </button>
-    <button class="nav-tab" class:active={activeSection === 'wind'} onclick={() => activeSection = 'wind'}>
-      <span class="tab-icon">💨</span>
-      <span class="tab-label">Wind</span>
+    <button class="nav-tab" class:active={activeSection === 'pressure'} class:alert={pressureAssessment.urgency === 'high' || pressureAssessment.urgency === 'critical'} onclick={() => activeSection = 'pressure'}>
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">Pressure</span>
     </button>
     <button class="nav-tab" class:active={activeSection === 'warning'} class:alert={warningTriggered} onclick={() => activeSection = 'warning'}>
       <span class="tab-icon">{warningTriggered ? '🚨' : '📡'}</span>
@@ -408,178 +647,134 @@
   <!-- Heat Zone Section -->
   {#if activeSection === 'heat'}
     <section class="wx-section" transition:fade>
-      <div class="mile-control">
-        <div class="mile-header">
-          <label class="field-label">Current Mile</label>
-          <span class="mile-number">{currentMile}</span>
+      <!-- Hero Stat -->
+      <div class="heat-hero" class:peak={heatHeroStat.status === 'peak'} class:upcoming={heatHeroStat.status === 'upcoming'}>
+        <span class="hero-icon">{heatHeroStat.icon}</span>
+        <div class="hero-text">
+          <div class="hero-headline">{heatHeroStat.headline}</div>
+          <div class="hero-subline">{heatHeroStat.subline}</div>
         </div>
-        <input type="range" bind:value={currentMile} min="0" max="2198" class="mile-slider" />
-        <div class="mile-track">
-          <div class="track-progress" style="width: {(currentMile / 2198) * 100}%"></div>
-          <div class="track-marker" style="left: {(currentMile / 2198) * 100}%"></div>
+      </div>
+
+      <!-- Compact Timeline -->
+      <div class="heat-timeline-compact">
+        <div class="timeline-bar">
+          <div class="tl-seg cold" style="width: {(600/2198)*100}%"></div>
+          <div class="tl-seg onset" style="width: {((700-600)/2198)*100}%"></div>
+          <div class="tl-seg build" style="width: {((900-700)/2198)*100}%"></div>
+          <div class="tl-seg peak" style="width: {((1450-900)/2198)*100}%"></div>
+          <div class="tl-seg taper" style="width: {((1750-1450)/2198)*100}%"></div>
+          <div class="tl-seg post" style="width: {((2198-1750)/2198)*100}%"></div>
+          <div class="tl-needle" style="left: {(currentMile/2198)*100}%"></div>
         </div>
-        <div class="mile-labels">
+        <div class="timeline-legend">
           <span>GA</span>
-          <span style="left: {(600/2198)*100}%">600</span>
-          <span style="left: {(1450/2198)*100}%">1450</span>
+          <span class="tl-peak-marker">PEAK HEAT (mi 900-1450)</span>
           <span>ME</span>
         </div>
       </div>
 
-      <div class="heat-card" class:danger={heatZone.warning} style="--zone-color: {heatZone.color}">
-        <div class="heat-header">
-          <span class="heat-badge" style="background: {heatZone.color}">{heatZone.phase}</span>
-          <span class="heat-name">{heatZone.name}</span>
+      <!-- Phase Breakdown -->
+      <div class="phase-breakdown">
+        <div class="phase-title">Your Heat Phases</div>
+        <div class="phase-grid">
+          <div class="phase-row" class:active={currentMile < 600}>
+            <div class="phase-color cold"></div>
+            <div class="phase-info">
+              <span class="phase-name">Pre-Heat</span>
+              <span class="phase-range">Mile 0–600</span>
+            </div>
+            <div class="phase-dates">
+              <span class="phase-when">{formatDateShort(new Date(startDate))} – {formatDateShort(heatMilestones.onset)}</span>
+              <span class="phase-duration">{heatDurations.preHeat} days</span>
+            </div>
+          </div>
+          <div class="phase-row" class:active={currentMile >= 600 && currentMile < 900}>
+            <div class="phase-color building"></div>
+            <div class="phase-info">
+              <span class="phase-name">Heat Building</span>
+              <span class="phase-range">Mile 600–900</span>
+            </div>
+            <div class="phase-dates">
+              <span class="phase-when">{formatDateShort(heatMilestones.onset)} – {formatDateShort(heatMilestones.peakStart)}</span>
+              <span class="phase-duration">{heatDurations.onset + heatDurations.building} days</span>
+            </div>
+          </div>
+          <div class="phase-row peak" class:active={currentMile >= 900 && currentMile < 1450}>
+            <div class="phase-color peak"></div>
+            <div class="phase-info">
+              <span class="phase-name">PEAK HEAT</span>
+              <span class="phase-range">Mile 900–1,450</span>
+            </div>
+            <div class="phase-dates">
+              <span class="phase-when">{formatDateShort(heatMilestones.peakStart)} – {formatDateShort(heatMilestones.peakEnd)}</span>
+              <span class="phase-duration">{heatDurations.peak} days</span>
+            </div>
+          </div>
+          <div class="phase-row" class:active={currentMile >= 1450}>
+            <div class="phase-color post"></div>
+            <div class="phase-info">
+              <span class="phase-name">Post Heat</span>
+              <span class="phase-range">Mile 1,450+</span>
+            </div>
+            <div class="phase-dates">
+              <span class="phase-when">{formatDateShort(heatMilestones.peakEnd)} – {formatDateShort(heatMilestones.finish)}</span>
+              <span class="phase-duration">{heatDurations.taper + heatDurations.postHeat} days</span>
+            </div>
+          </div>
         </div>
-        <p class="heat-desc">{heatZone.desc}</p>
-        {#if heatZone.dates}
-          <div class="heat-dates">📅 {heatZone.dates}</div>
-        {/if}
-        <ul class="heat-tips">
-          {#each heatZone.tips as tip}
-            <li>{tip}</li>
-          {/each}
+      </div>
+
+      <!-- Action Tips based on current phase -->
+      <div class="heat-actions">
+        <div class="actions-title">
+          {#if currentMile < 600}
+            Pre-Heat Preparation
+          {:else if currentMile < 900}
+            Heat Building Strategy
+          {:else if currentMile < 1450}
+            Peak Heat Survival
+          {:else}
+            Post-Heat Focus
+          {/if}
+        </div>
+        <ul class="actions-list">
+          {#if currentMile < 600}
+            <li>Dial in hydration habits before you need them</li>
+            <li>Practice early starts (5-6am hiking)</li>
+            <li>Prepare electrolyte system</li>
+          {:else if currentMile < 900}
+            <li>Hydration discipline now mandatory</li>
+            <li>Start hiking at first light</li>
+            <li>Electrolytes with every water fill</li>
+          {:else if currentMile < 1450}
+            <li>Start hiking by 5:30am</li>
+            <li>Siesta during 11am-3pm if possible</li>
+            <li>2L minimum water carry</li>
+            <li>Wet bandana on neck</li>
+          {:else}
+            <li>Heat no longer primary challenge</li>
+            <li>Focus on Whites/Maine terrain</li>
+            <li>Watch for cold snaps</li>
+          {/if}
         </ul>
       </div>
 
-      <div class="heat-timeline">
-        <div class="timeline-title">Heat Timeline (Feb NOBO)</div>
-        <div class="timeline-bar">
-          <div class="tl-seg cold" style="width: {(600/2198)*100}%"><span>Cold</span></div>
-          <div class="tl-seg onset" style="width: {((700-600)/2198)*100}%"></div>
-          <div class="tl-seg build" style="width: {((900-700)/2198)*100}%"></div>
-          <div class="tl-seg peak" style="width: {((1450-900)/2198)*100}%"><span>PEAK</span></div>
-          <div class="tl-seg taper" style="width: {((1750-1450)/2198)*100}%"></div>
-          <div class="tl-seg post" style="width: {((2198-1750)/2198)*100}%"><span>Post</span></div>
-          <div class="tl-needle" style="left: {(currentMile/2198)*100}%"></div>
-        </div>
-      </div>
-
-      <div class="truth-box">
-        <h4 class="truth-title">Strategic Truth</h4>
-        <ul class="truth-list">
-          <li>A February NOBO cannot avoid summer heat</li>
-          <li>You hit heat with strong legs and lower injury risk</li>
-          <li>The worst heat is predictable and finite</li>
-          <li>You exit oppressive heat before September</li>
-        </ul>
+      <!-- Strategic insight -->
+      <div class="heat-insight">
+        <span class="insight-icon">💡</span>
+        <p class="insight-text">
+          A {getStartMonth()} NOBO hits peak heat with strong trail legs (lower injury risk) and exits before September.
+          The heat is finite: <strong>{heatDurations.peak} days</strong> of peak conditions.
+        </p>
       </div>
     </section>
   {/if}
 
-  <!-- Wind Section -->
-  {#if activeSection === 'wind'}
+  <!-- Pressure Section - Storm Warning Tool -->
+  {#if activeSection === 'pressure'}
     <section class="wx-section" transition:fade>
-      <div class="wind-hero">
-        <div class="wind-gauge">
-          <svg viewBox="0 0 200 120" class="gauge-svg">
-            <defs>
-              <linearGradient id="windGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#22c55e" />
-                <stop offset="40%" stop-color="#fbbf24" />
-                <stop offset="70%" stop-color="#f97316" />
-                <stop offset="100%" stop-color="#ef4444" />
-              </linearGradient>
-            </defs>
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="16" stroke-linecap="round" />
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#windGrad)" stroke-width="16" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="{251 - (windSpeed / 50) * 251}" />
-            <circle cx="{20 + (windSpeed / 50) * 160}" cy="{100 - Math.sin(Math.acos((windSpeed / 50) * 2 - 1)) * 80}" r="12" fill="#fff" stroke="{windAction.color}" stroke-width="4" />
-          </svg>
-          <div class="gauge-reading">
-            <span class="gauge-value" style="color: {windAction.color}">{windSpeed}</span>
-            <span class="gauge-unit">mph</span>
-          </div>
-        </div>
-        <input type="range" bind:value={windSpeed} min="0" max="50" step="5" class="wind-slider" />
-      </div>
-
-      <div class="wind-action" class:danger={windAction.warning} style="--action-color: {windAction.color}">
-        <div class="action-level">{windAction.level.toUpperCase()}</div>
-        <div class="action-text">{windAction.action}</div>
-        <ul class="action-tips">
-          {#each windAction.tips as tip}
-            <li>{tip}</li>
-          {/each}
-        </ul>
-      </div>
-
-      {#if windAction.trigger}
-        <div class="shelter-alert">
-          <div class="shelter-header">
-            <span class="shelter-icon">🏠</span>
-            <span class="shelter-title">SHELTER TRIGGER ACTIVE</span>
-          </div>
-          <div class="shelter-body">
-            <p><strong>Wind + Cold combination detected</strong></p>
-            <p>Summit temp {summitTemp.toFixed(0)}°F + {windSpeed} mph wind</p>
-            <p class="shelter-reason">Tent setup is dangerous when hands fail fast. Shelter reduces complexity.</p>
-          </div>
-        </div>
-      {/if}
-
-      <div class="wind-matrix">
-        <div class="matrix-title">Wind + Temperature Matrix</div>
-        <div class="matrix-grid">
-          <div class="matrix-row" class:active={windSpeed < 10}>
-            <span class="m-speed">0-10 mph</span>
-            <span class="m-cond">Any temp</span>
-            <span class="m-action" style="color: #22c55e">Either OK</span>
-          </div>
-          <div class="matrix-row" class:active={windSpeed >= 10 && windSpeed < 20 && summitTemp > 35}>
-            <span class="m-speed">10-20 mph</span>
-            <span class="m-cond">Warm</span>
-            <span class="m-action" style="color: #fbbf24">Tent OK</span>
-          </div>
-          <div class="matrix-row" class:active={windSpeed >= 10 && windSpeed < 20 && summitTemp <= 35}>
-            <span class="m-speed">10-20 mph</span>
-            <span class="m-cond">Cool</span>
-            <span class="m-action" style="color: #fbbf24">Watch temp</span>
-          </div>
-          <div class="matrix-row" class:active={windSpeed >= 20 && windSpeed < 30 && summitTemp > 35}>
-            <span class="m-speed">20-30 mph</span>
-            <span class="m-cond">Warm</span>
-            <span class="m-action" style="color: #f97316">Protected site</span>
-          </div>
-          <div class="matrix-row warning" class:active={windSpeed >= 20 && windSpeed < 30 && summitTemp <= 35}>
-            <span class="m-speed">20-30 mph</span>
-            <span class="m-cond">Cool</span>
-            <span class="m-action" style="color: #f97316">Lean SHELTER</span>
-          </div>
-          <div class="matrix-row trigger" class:active={windSpeed >= 15 && summitTemp <= 25}>
-            <span class="m-speed">15+ + ≤25°F</span>
-            <span class="m-cond">TRIGGER</span>
-            <span class="m-action" style="color: #ef4444">SHELTER</span>
-          </div>
-          <div class="matrix-row severe" class:active={windSpeed >= 30}>
-            <span class="m-speed">30+ mph</span>
-            <span class="m-cond">Any</span>
-            <span class="m-action" style="color: #dc2626">SEEK COVER</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="tent-tips">
-        <h4 class="tips-title">🎪 Tent Setup in Wind</h4>
-        <div class="tips-grid">
-          <div class="tip-card">
-            <span class="tip-icon">🧭</span>
-            <span class="tip-text">Narrow end INTO wind</span>
-          </div>
-          <div class="tip-card">
-            <span class="tip-icon">📐</span>
-            <span class="tip-text">Stakes 30-45° away</span>
-          </div>
-          <div class="tip-card">
-            <span class="tip-icon">🔧</span>
-            <span class="tip-text">Windward corners FIRST</span>
-          </div>
-          <div class="tip-card">
-            <span class="tip-icon">⬇️</span>
-            <span class="tip-text">High wind = LOW pitch</span>
-          </div>
-        </div>
-        <p class="wind-rule"><strong>Wind + Cold = SHELTER (setup danger)</strong></p>
-      </div>
+      <StormWarningFieldStation {trailContext} />
     </section>
   {/if}
 
@@ -759,12 +954,19 @@
     </section>
   {/if}
 
-  <!-- Guide Link -->
-  <a href="/guide/12-weather-strategy" class="guide-link">
-    <span class="link-icon">📖</span>
-    <span class="link-text">Full Weather Strategy Guide</span>
-    <span class="link-arrow">→</span>
-  </a>
+  <!-- Guide Links -->
+  <div class="guide-links">
+    <a href="/guide/12-weather-strategy" class="guide-link chapter-link">
+      <span class="link-icon">📚</span>
+      <span class="link-text">Full Weather Strategy Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="/guide#12-weather-strategy" class="guide-link field-guide-link">
+      <span class="link-icon">📖</span>
+      <span class="link-text">Field Guide</span>
+      <span class="link-arrow">→</span>
+    </a>
+  </div>
 </div>
 
 <style>
@@ -1195,7 +1397,811 @@
     color: var(--ink);
   }
 
-  /* Heat Section */
+  /* Heat Context Card */
+  .heat-context {
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.15) 0%, rgba(166, 181, 137, 0.08) 100%);
+    border: 2px solid var(--alpine);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .context-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .context-icon { font-size: 1.1rem; }
+
+  .context-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--pine);
+    letter-spacing: 0.03em;
+  }
+
+  .context-details {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+
+  .context-item {
+    text-align: center;
+    padding: 0.5rem;
+    background: #fff;
+    border-radius: 8px;
+  }
+
+  .context-label {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .context-value {
+    font-family: Oswald, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  /* Heat Meta (mile range + dates) */
+  .heat-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .heat-miles, .heat-dates {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* Timeline Dates */
+  .timeline-dates {
+    position: relative;
+    height: 20px;
+    margin-top: 0.5rem;
+  }
+
+  .tl-date {
+    position: absolute;
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: var(--muted);
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .tl-date:first-child { transform: translateX(0); }
+  .tl-date:last-child { transform: translateX(-100%); }
+
+  /* Heat Milestones */
+  .heat-milestones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .milestone-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border-radius: 10px;
+    border-left: 4px solid var(--alpine);
+  }
+
+  .milestone-row.peak {
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .milestone-row.finish {
+    border-left-color: #22c55e;
+    background: rgba(34, 197, 94, 0.08);
+  }
+
+  .milestone-icon { font-size: 1.25rem; }
+
+  .milestone-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .milestone-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .milestone-date {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* Heat Hero */
+  .heat-hero {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.15) 0%, rgba(166, 181, 137, 0.05) 100%);
+    border: 2px solid var(--alpine);
+    border-radius: 16px;
+    margin-bottom: 1.25rem;
+  }
+
+  .heat-hero.peak {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.05) 100%);
+    border-color: #ef4444;
+  }
+
+  .heat-hero.upcoming {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.05) 100%);
+    border-color: #fbbf24;
+  }
+
+  .hero-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+
+  .hero-text { flex: 1; }
+
+  .hero-headline {
+    font-family: Oswald, sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+  }
+
+  .hero-subline {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  /* Compact Timeline */
+  .heat-timeline-compact {
+    margin-bottom: 1.25rem;
+  }
+
+  .heat-timeline-compact .timeline-bar {
+    position: relative;
+    height: 12px;
+    display: flex;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .timeline-legend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .tl-peak-marker {
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Phase Breakdown */
+  .phase-breakdown {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .phase-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .phase-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .phase-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: #fff;
+    border-radius: 10px;
+    opacity: 0.6;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .phase-row.active {
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: scale(1.01);
+  }
+
+  .phase-row.peak {
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .phase-row.peak.active {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+  }
+
+  .phase-color {
+    width: 8px;
+    height: 32px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .phase-color.cold { background: #22c55e; }
+  .phase-color.building { background: #f97316; }
+  .phase-color.peak { background: #ef4444; }
+  .phase-color.post { background: #22c55e; }
+
+  .phase-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .phase-name {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .phase-range {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .phase-dates {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .phase-when {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--ink);
+  }
+
+  .phase-duration {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  /* Heat Actions */
+  .heat-actions {
+    background: #fff;
+    border: 2px solid var(--alpine);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .actions-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--pine);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .actions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .actions-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+
+  .actions-list li::before {
+    content: '→';
+    color: var(--alpine);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Heat Insight */
+  .heat-insight {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(166, 181, 137, 0.1);
+    border-radius: 12px;
+  }
+
+  .insight-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .insight-text {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .insight-text strong {
+    color: var(--ink);
+  }
+
+  /* Pressure Section */
+  .pressure-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.12) 0%, rgba(166, 181, 137, 0.05) 100%);
+    border: 2px solid var(--pressure-color, var(--alpine));
+    border-radius: 16px;
+    margin-bottom: 1rem;
+  }
+
+  .pressure-trend {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .trend-icon { font-size: 2rem; }
+
+  .trend-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .pressure-assessment { flex: 1; }
+
+  .assessment-headline {
+    font-family: Oswald, sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .assessment-message {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .pressure-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(251, 191, 36, 0.1);
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+  }
+
+  .pressure-action.warning {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+  }
+
+  .pressure-action.critical {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: #dc2626;
+    animation: pulse-border 1s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: #dc2626; }
+    50% { border-color: #ef4444; }
+  }
+
+  .action-icon { font-size: 1.5rem; }
+
+  .action-text {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .pressure-inputs {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .pressure-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .pressure-concept {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(45, 90, 135, 0.08) 0%, rgba(45, 90, 135, 0.03) 100%);
+    border: 2px solid rgba(45, 90, 135, 0.2);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+
+  .concept-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .concept-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .drift-compare {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .drift-result {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .input-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
+    font-style: italic;
+  }
+
+  .rate-explain {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
+  .pressure-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .pressure-input-group {
+    background: #fff;
+    padding: 0.75rem;
+    border-radius: 10px;
+  }
+
+  .pressure-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .pressure-value-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .pressure-num {
+    width: 80px;
+    padding: 0.4rem 0.5rem;
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: center;
+    border: 2px solid var(--alpine);
+    border-radius: 8px;
+    color: var(--ink);
+  }
+
+  .pressure-unit {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .pressure-slider {
+    width: 100%;
+    height: 8px;
+    -webkit-appearance: none;
+    background: linear-gradient(90deg, var(--alpine) 0%, var(--pine) 100%);
+    border-radius: 4px;
+  }
+
+  .pressure-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border: 3px solid var(--pine);
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .hours-options {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .hour-btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .hour-btn.active {
+    background: var(--pine);
+    border-color: var(--pine);
+    color: #fff;
+  }
+
+  .rate-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+    background: #fff;
+    border: 2px solid var(--alpine);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .rate-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .rate-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .pressure-reference {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+  }
+
+  .ref-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .ref-scale {
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .ref-zone {
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .ref-zone.low { background: rgba(239, 68, 68, 0.15); }
+  .ref-zone.normal { background: rgba(251, 191, 36, 0.15); }
+  .ref-zone.high { background: rgba(34, 197, 94, 0.15); }
+
+  .ref-range {
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .ref-name {
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .ref-weather {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .ref-current {
+    position: absolute;
+    bottom: 1rem;
+    transform: translateX(-50%);
+  }
+
+  .ref-needle {
+    display: block;
+    width: 2px;
+    height: 12px;
+    background: var(--pine);
+    margin: 0 auto 0.25rem;
+  }
+
+  .ref-reading {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .drop-rates {
+    background: #fff;
+    border: 2px solid var(--alpine);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .drop-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--pine);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .drop-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .drop-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg);
+    border-radius: 8px;
+  }
+
+  .drop-rate {
+    font-family: monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink);
+    min-width: 90px;
+  }
+
+  .drop-timing {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .drop-action {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .drop-action.good { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+  .drop-action.caution { background: rgba(251, 191, 36, 0.15); color: #d97706; }
+  .drop-action.warning { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+  .drop-action.critical { background: #dc2626; color: #fff; }
+
+  .pressure-tips {
+    background: rgba(166, 181, 137, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+
+  .tips-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--pine);
+    margin-bottom: 0.75rem;
+  }
+
+  .tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tips-list li {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .tips-list li strong {
+    color: var(--ink);
+  }
+
+  /* Heat Section (legacy - keep for now) */
   .mile-control {
     margin-bottom: 1.5rem;
   }
@@ -2132,7 +3138,13 @@
 
   .terrain-icon { font-size: 1.25rem; }
 
-  /* Guide Link */
+  /* Guide Links */
+  .guide-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .guide-link {
     display: flex;
     align-items: center;
@@ -2143,12 +3155,19 @@
     border-radius: 14px;
     text-decoration: none;
     transition: all 0.2s ease;
+    flex: 1;
+    min-width: 200px;
   }
 
   .guide-link:hover {
     border-color: var(--alpine);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
+  }
+
+  .field-guide-link {
+    flex: 0 0 auto;
+    min-width: 140px;
   }
 
   .link-icon { font-size: 1.25rem; }

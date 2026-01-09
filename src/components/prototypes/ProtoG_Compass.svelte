@@ -89,7 +89,7 @@
           <span class="coord-dir">E</span>
           <span class="coord-label">Tools</span>
         </a>
-        <a href="/videos" class="nav-coord">
+        <a href="/trips" class="nav-coord">
           <span class="coord-dir">S</span>
           <span class="coord-label">Trips</span>
         </a>
@@ -126,7 +126,7 @@
           </div>
           <div class="cardinal south">
             <span class="cardinal-letter">S</span>
-            <a href="/videos" class="cardinal-link">Trip Reports</a>
+            <a href="/trips" class="cardinal-link">Trip Reports</a>
           </div>
           <div class="cardinal west">
             <span class="cardinal-letter">W</span>
@@ -337,7 +337,7 @@
         </a>
 
         <!-- SOUTH: Trips -->
-        <a href="/videos" class="direction-card south-card">
+        <a href="/trips" class="direction-card south-card">
           <div class="dir-compass">
             <span class="dir-letter">S</span>
             <div class="dir-needle south"></div>

@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v3';
+const CACHE_NAME = 'hogg-country-v4';
 
 // Core pages to precache on install
 const CORE_PAGES = [
@@ -17,26 +17,28 @@ const CORE_PAGES = [
 ];
 
 // Guide chapters (high priority - the main offline use case)
+// These paths match the actual content collection slugs
 const GUIDE_CHAPTERS = [
   '/guide/00-introduction/',
-  '/guide/01-hiker-profile/',
-  '/guide/02-gear-system/',
-  '/guide/03-clothing-system/',
-  '/guide/04-water-treatment/',
-  '/guide/05-shelter-decisions/',
-  '/guide/06-weather-strategy/',
-  '/guide/07-food-resupply/',
-  '/guide/08-town-strategy/',
-  '/guide/09-permits-logistics/',
-  '/guide/09-trail-resources/',
-  '/guide/10-mail-drops/',
-  '/guide/11-power-electronics/',
-  '/guide/12-medical-planning/',
-  '/guide/13-safety-emergency/',
-  '/guide/14-trail-sections/',
-  '/guide/15-content-creation/',
-  '/guide/16-financial-planning/',
-  '/guide/17-final-truths/',
+  '/guide/01-hiker-profile-and-experience/',
+  '/guide/02-trail-sections-and-milestones/',
+  '/guide/03-at-mountain-and-weather-reference/',
+  '/guide/04-permits-and-logistics/',
+  '/guide/05-financial-planning/',
+  '/guide/06-gear-system/',
+  '/guide/07-clothing-system/',
+  '/guide/08-shelter-vs-tent-decision-system/',
+  '/guide/09-water-treatment-system/',
+  '/guide/10-power-and-electronics/',
+  '/guide/11-medical-planning/',
+  '/guide/12-weather-strategy/',
+  '/guide/13-trail-resources-and-navigation/',
+  '/guide/14-food-and-resupply/',
+  '/guide/15-resupply-logistics/',
+  '/guide/16-town-strategy/',
+  '/guide/17-daily-operations-and-trail-life/',
+  '/guide/18-safety-and-emergency-procedures/',
+  '/guide/19-content-creation/',
   '/guide/quick/shelter-triggers/',
   '/guide/quick/layering/',
   '/guide/quick/emergency/',
