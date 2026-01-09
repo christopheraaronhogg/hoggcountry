@@ -264,8 +264,8 @@ const totalSprites = categories.reduce((acc, cat) => acc + cat.count, 0);
         border-radius: 4px;
         padding: 4px;
         image-rendering: pixelated;
-        /* GPU-accelerated scaling via CSS variable */
-        width: calc(var(--base-width) * var(--sprite-scale) * 1px);
+        /* GPU-accelerated scaling via CSS variable - unit must come first */
+        width: calc(1px * var(--base-width) * var(--sprite-scale));
         will-change: width;
       }
 
