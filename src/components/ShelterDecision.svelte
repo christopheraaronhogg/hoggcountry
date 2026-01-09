@@ -30,7 +30,7 @@
     warmAt3am: true,
   });
 
-  let activeSection = $state('triggers');
+  let activeSection = $state('quick');
 
   let hasTrigger = $derived(Object.values(triggers).some(t => t));
   let totalScore = $derived(Object.values(scores).reduce((a, b) => a + b, 0));
@@ -183,6 +183,14 @@
 
   <!-- Navigation -->
   <nav class="decision-nav">
+    <button class="nav-btn" class:active={activeSection === 'quick'} onclick={() => activeSection = 'quick'}>
+      <span class="nav-icon">⚡</span>
+      <span class="nav-label">Quick</span>
+    </button>
+    <button class="nav-btn" class:active={activeSection === 'protocol'} onclick={() => activeSection = 'protocol'}>
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Protocol</span>
+    </button>
     <button class="nav-btn" class:active={activeSection === 'triggers'} class:warning={hasTrigger} onclick={() => activeSection = 'triggers'}>
       <span class="nav-icon">{hasTrigger ? '⚠️' : '🎯'}</span>
       <span class="nav-label">Triggers</span>
@@ -191,14 +199,6 @@
     <button class="nav-btn" class:active={activeSection === 'scoring'} onclick={() => activeSection = 'scoring'}>
       <span class="nav-icon">📊</span>
       <span class="nav-label">Score</span>
-    </button>
-    <button class="nav-btn" class:active={activeSection === 'quick'} onclick={() => activeSection = 'quick'}>
-      <span class="nav-icon">⚡</span>
-      <span class="nav-label">Quick</span>
-    </button>
-    <button class="nav-btn" class:active={activeSection === 'protocol'} onclick={() => activeSection = 'protocol'}>
-      <span class="nav-icon">📋</span>
-      <span class="nav-label">Protocol</span>
     </button>
   </nav>
 
