@@ -1,0 +1,770 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Ranger Radio Dispatch | Live Trail Tracking" description="Live tracking dispatches from the Appalachian Trail. Follow the hiker's position in real-time via ranger station radio transmissions.">
+  <div class="dispatch-page">
+    <!-- Hero Section -->
+    <section class="dispatch-hero">
+      <div class="morse-decoration" aria-hidden="true">
+        <span class="morse">·· ·-· -·-· --- -- ·· -· --·</span>
+      </div>
+      <h1 class="dispatch-title">
+        <span class="signal-icon" aria-hidden="true">◢◤</span>
+        INCOMING TRANSMISSION
+        <span class="signal-icon" aria-hidden="true">◥◣</span>
+      </h1>
+      <p class="dispatch-subtitle">APPALACHIAN TRAIL RANGER STATION • EST. 1937</p>
+      <div class="morse-decoration" aria-hidden="true">
+        <span class="morse">- ·-· ·- ·· ·-··</span>
+      </div>
+    </section>
+
+    <!-- Status Panel -->
+    <section class="status-panel">
+      <div class="panel-header">
+        <div class="rivet" aria-hidden="true"></div>
+        <span class="panel-label">SIGNAL STATUS</span>
+        <div class="rivet" aria-hidden="true"></div>
+      </div>
+      <div class="signal-strength">
+        <div class="signal-label">SIGNAL STRENGTH</div>
+        <div class="signal-bars" aria-label="Signal strength: strong">
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+        </div>
+        <div class="signal-status">RECEIVING</div>
+      </div>
+    </section>
+
+    <!-- Main Equipment Panel (Map) -->
+    <section class="equipment-panel">
+      <div class="panel-frame">
+        <!-- Top decorative bar -->
+        <div class="frame-top">
+          <div class="rivet" aria-hidden="true"></div>
+          <div class="nameplate">GARMIN TRACKING RECEIVER — MODEL GT-2024</div>
+          <div class="rivet" aria-hidden="true"></div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-container">
+          <div class="screen-bezel">
+            <iframe
+              src="https://share.garmin.com/theman1"
+              title="Live Garmin tracking map showing current hiker position on the Appalachian Trail"
+              class="tracking-screen"
+              loading="lazy"
+              allowfullscreen
+            ></iframe>
+            <div class="screen-glare" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+          <div class="control-group">
+            <div class="indicator-light active" aria-hidden="true"></div>
+            <span class="control-label">POWER</span>
+          </div>
+          <div class="control-group">
+            <div class="indicator-light active pulse" aria-hidden="true"></div>
+            <span class="control-label">RECEIVING</span>
+          </div>
+          <div class="control-group">
+            <div class="dial" aria-hidden="true">
+              <div class="dial-marker"></div>
+            </div>
+            <span class="control-label">TUNE</span>
+          </div>
+          <div class="control-group">
+            <div class="dial" aria-hidden="true">
+              <div class="dial-marker" style="transform: rotate(45deg);"></div>
+            </div>
+            <span class="control-label">VOLUME</span>
+          </div>
+        </div>
+
+        <!-- Bottom decorative bar -->
+        <div class="frame-bottom">
+          <div class="rivet" aria-hidden="true"></div>
+          <div class="serial-number">S/N: AT-2197-NOBO</div>
+          <div class="rivet" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dispatch Messages -->
+    <section class="dispatch-feed">
+      <div class="feed-header">
+        <div class="rivet" aria-hidden="true"></div>
+        <span class="feed-title">RECENT DISPATCHES</span>
+        <div class="rivet" aria-hidden="true"></div>
+      </div>
+
+      <div class="ticker-tape" role="log" aria-label="Recent dispatch messages">
+        <div class="dispatch-message">
+          <span class="dispatch-number">DISPATCH #001</span>
+          <span class="dispatch-text typewriter">Signal acquired. Tracking beacon active on Appalachian Trail corridor.</span>
+          <span class="dispatch-time">STANDBY FOR UPDATES</span>
+        </div>
+        <div class="dispatch-message">
+          <span class="dispatch-number">DISPATCH #002</span>
+          <span class="dispatch-text">All stations: Hiker transmitting via Garmin satellite uplink. Position verified.</span>
+          <span class="dispatch-time">SIGNAL CLEAR</span>
+        </div>
+        <div class="dispatch-message featured">
+          <span class="dispatch-number">DISPATCH #003</span>
+          <span class="dispatch-text">LIVE FEED ACTIVE — Real-time position updates incoming on main receiver.</span>
+          <span class="dispatch-time">NOW TRACKING</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gauges Section -->
+    <section class="gauges-panel">
+      <div class="gauge-row">
+        <div class="vintage-gauge">
+          <div class="gauge-label">TRAIL PROGRESS</div>
+          <div class="gauge-face">
+            <div class="gauge-marks" aria-hidden="true">
+              <span>0</span>
+              <span>500</span>
+              <span>1000</span>
+              <span>1500</span>
+              <span>2000</span>
+            </div>
+            <div class="gauge-needle" style="transform: rotate(-60deg);" aria-hidden="true"></div>
+            <div class="gauge-center" aria-hidden="true"></div>
+          </div>
+          <div class="gauge-reading">MILES HIKED</div>
+        </div>
+
+        <div class="vintage-gauge">
+          <div class="gauge-label">ELEVATION</div>
+          <div class="gauge-face elevation">
+            <div class="gauge-marks" aria-hidden="true">
+              <span>0</span>
+              <span>2K</span>
+              <span>4K</span>
+              <span>6K</span>
+              <span>8K</span>
+            </div>
+            <div class="gauge-needle" style="transform: rotate(-30deg);" aria-hidden="true"></div>
+            <div class="gauge-center" aria-hidden="true"></div>
+          </div>
+          <div class="gauge-reading">FEET ASL</div>
+        </div>
+
+        <div class="vintage-gauge">
+          <div class="gauge-label">DAYS ON TRAIL</div>
+          <div class="gauge-face days">
+            <div class="gauge-marks" aria-hidden="true">
+              <span>0</span>
+              <span>50</span>
+              <span>100</span>
+              <span>150</span>
+              <span>200</span>
+            </div>
+            <div class="gauge-needle" style="transform: rotate(-80deg);" aria-hidden="true"></div>
+            <div class="gauge-center" aria-hidden="true"></div>
+          </div>
+          <div class="gauge-reading">ELAPSED</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer Note -->
+    <section class="dispatch-footer">
+      <p class="station-id">
+        <span class="callsign">STATION WHISKEY-HOTEL-INDIA-TANGO-ECHO</span>
+        <br>
+        <span class="frequency">FREQUENCY: 156.800 MHz • CHANNEL 16</span>
+      </p>
+      <p class="disclaimer">
+        Live tracking provided by Garmin inReach satellite messenger.
+        Position updates occur when device is active and has satellite visibility.
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  /* ========== PAGE FOUNDATION ========== */
+  .dispatch-page {
+    min-height: 100vh;
+    background:
+      /* Wood grain overlay */
+      repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(139, 90, 43, 0.03) 2px,
+        rgba(139, 90, 43, 0.03) 4px
+      ),
+      /* Vignette */
+      radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.15) 100%),
+      /* Base color - aged paper/wood */
+      linear-gradient(180deg, #e8dcc8 0%, #d4c4a8 50%, #c8b898 100%);
+    padding: 2rem 1rem 4rem;
+  }
+
+  /* ========== MORSE & HERO ========== */
+  .dispatch-hero {
+    text-align: center;
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .morse-decoration {
+    margin: 0.5rem 0;
+  }
+
+  .morse {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    color: var(--pine);
+    opacity: 0.5;
+  }
+
+  .dispatch-title {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--pine);
+    text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.5);
+    margin: 1rem 0 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .signal-icon {
+    font-size: 0.6em;
+    animation: pulse-signal 2s ease-in-out infinite;
+    color: #b45309;
+  }
+
+  @keyframes pulse-signal {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .dispatch-subtitle {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  /* ========== STATUS PANEL ========== */
+  .status-panel {
+    max-width: 400px;
+    margin: 0 auto 2rem;
+    background: linear-gradient(145deg, #3d3d3d, #2a2a2a);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow:
+      inset 0 2px 4px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .panel-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: #a0a0a0;
+    text-transform: uppercase;
+  }
+
+  .rivet {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #c0a060, #8b6914);
+    box-shadow:
+      inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+      0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .signal-strength {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .signal-label {
+    font-family: 'Courier New', monospace;
+    font-size: 0.65rem;
+    color: #888;
+    letter-spacing: 0.1em;
+  }
+
+  .signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 20px;
+  }
+
+  .signal-bars .bar {
+    width: 6px;
+    background: #444;
+    border-radius: 2px;
+    transition: background 0.3s ease;
+  }
+
+  .signal-bars .bar:nth-child(1) { height: 4px; }
+  .signal-bars .bar:nth-child(2) { height: 8px; }
+  .signal-bars .bar:nth-child(3) { height: 12px; }
+  .signal-bars .bar:nth-child(4) { height: 16px; }
+  .signal-bars .bar:nth-child(5) { height: 20px; }
+
+  .signal-bars .bar.active {
+    background: #4ade80;
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+  }
+
+  .signal-status {
+    font-family: 'Courier New', monospace;
+    font-size: 0.65rem;
+    color: #4ade80;
+    letter-spacing: 0.1em;
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ========== EQUIPMENT PANEL (MAP) ========== */
+  .equipment-panel {
+    max-width: 900px;
+    margin: 0 auto 2rem;
+  }
+
+  .panel-frame {
+    background:
+      /* Wood grain texture */
+      repeating-linear-gradient(
+        85deg,
+        transparent 0px,
+        transparent 1px,
+        rgba(101, 67, 33, 0.08) 1px,
+        rgba(101, 67, 33, 0.08) 2px
+      ),
+      linear-gradient(180deg, #8b6914 0%, #654321 10%, #5a3d1a 90%, #4a2c0a 100%);
+    border-radius: 12px;
+    padding: 0.5rem;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .frame-top,
+  .frame-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(180deg, #4a3520, #3d2815);
+    border-radius: 6px;
+  }
+
+  .frame-top {
+    margin-bottom: 0.5rem;
+  }
+
+  .frame-bottom {
+    margin-top: 0.5rem;
+  }
+
+  .nameplate {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: #c0a060;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .serial-number {
+    font-family: 'Courier New', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: #8b7355;
+  }
+
+  .map-container {
+    padding: 0.5rem;
+  }
+
+  .screen-bezel {
+    position: relative;
+    background: #1a1a1a;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow:
+      inset 0 4px 12px rgba(0, 0, 0, 0.8),
+      inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+  }
+
+  .tracking-screen {
+    width: 100%;
+    height: 500px;
+    border: none;
+    border-radius: 2px;
+    background: #222;
+  }
+
+  @media (max-width: 600px) {
+    .tracking-screen {
+      height: 350px;
+    }
+  }
+
+  .screen-glare {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 50%;
+    bottom: 70%;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 60%
+    );
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  /* Control Panel */
+  .control-panel {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 1rem;
+    background: linear-gradient(180deg, #3d3d3d, #2a2a2a);
+    border-radius: 6px;
+    margin: 0.5rem;
+  }
+
+  @media (max-width: 500px) {
+    .control-panel {
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .control-label {
+    font-family: 'Courier New', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    color: #888;
+    text-transform: uppercase;
+  }
+
+  .indicator-light {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #333;
+    box-shadow:
+      inset 0 2px 4px rgba(0, 0, 0, 0.5),
+      0 1px 2px rgba(255, 255, 255, 0.1);
+  }
+
+  .indicator-light.active {
+    background: radial-gradient(circle at 30% 30%, #4ade80, #22c55e);
+    box-shadow:
+      0 0 8px rgba(74, 222, 128, 0.6),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .indicator-light.pulse {
+    animation: light-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes light-pulse {
+    0%, 100% {
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.6), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 16px rgba(74, 222, 128, 0.9), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .dial {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 30%, #555, #333);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.4),
+      inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    position: relative;
+  }
+
+  .dial-marker {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    width: 2px;
+    height: 10px;
+    background: #c0a060;
+    transform-origin: bottom center;
+    margin-left: -1px;
+    border-radius: 1px;
+  }
+
+  /* ========== DISPATCH FEED ========== */
+  .dispatch-feed {
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    background: #fdfbf5;
+    border: 2px solid #8b6914;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow:
+      inset 0 0 20px rgba(139, 105, 20, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed #c0a060;
+    margin-bottom: 1rem;
+  }
+
+  .feed-title {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    color: var(--pine);
+  }
+
+  .ticker-tape {
+    font-family: 'Courier New', monospace;
+  }
+
+  .dispatch-message {
+    padding: 0.75rem;
+    border-bottom: 1px dotted #d4c4a8;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .dispatch-message:last-child {
+    border-bottom: none;
+  }
+
+  .dispatch-message.featured {
+    background: rgba(166, 181, 137, 0.15);
+    border-radius: 4px;
+    border: 1px solid var(--alpine);
+  }
+
+  .dispatch-number {
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #b45309;
+    letter-spacing: 0.1em;
+  }
+
+  .dispatch-text {
+    font-size: 0.85rem;
+    color: var(--fg);
+    line-height: 1.5;
+  }
+
+  .dispatch-text.typewriter {
+    overflow: hidden;
+    border-right: 2px solid var(--pine);
+    animation:
+      typing 3.5s steps(60, end) forwards,
+      blink-caret 0.75s step-end infinite;
+  }
+
+  @keyframes typing {
+    from { max-width: 0; }
+    to { max-width: 100%; }
+  }
+
+  @keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: var(--pine); }
+  }
+
+  .dispatch-time {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-align: right;
+  }
+
+  /* ========== GAUGES ========== */
+  .gauges-panel {
+    max-width: 700px;
+    margin: 0 auto 2rem;
+  }
+
+  .gauge-row {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .vintage-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .gauge-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--pine);
+  }
+
+  .gauge-face {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 50%, #f5f2e8, #e8dcc8);
+    border: 4px solid #654321;
+    box-shadow:
+      inset 0 0 15px rgba(0, 0, 0, 0.2),
+      0 4px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gauge-marks {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    font-family: 'Courier New', monospace;
+    font-size: 0.5rem;
+    color: #654321;
+    padding: 0 5px;
+  }
+
+  .gauge-needle {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    width: 3px;
+    height: 35px;
+    background: linear-gradient(to top, #b91c1c, #dc2626);
+    transform-origin: bottom center;
+    margin-left: -1.5px;
+    border-radius: 2px 2px 0 0;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .gauge-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #c0a060, #8b6914);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .gauge-reading {
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  /* ========== FOOTER ========== */
+  .dispatch-footer {
+    text-align: center;
+    max-width: 600px;
+    margin: 2rem auto 0;
+    padding-top: 2rem;
+    border-top: 2px dashed var(--stone);
+  }
+
+  .station-id {
+    font-family: 'Courier New', monospace;
+    margin-bottom: 1rem;
+  }
+
+  .callsign {
+    font-size: 0.9rem;
+    font-weight: bold;
+    letter-spacing: 0.15em;
+    color: var(--pine);
+  }
+
+  .frequency {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .disclaimer {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  /* ========== REDUCED MOTION ========== */
+  @media (prefers-reduced-motion: reduce) {
+    .signal-icon,
+    .signal-status,
+    .indicator-light.pulse,
+    .dispatch-text.typewriter {
+      animation: none;
+    }
+
+    .dispatch-text.typewriter {
+      border-right: none;
+      max-width: 100%;
+    }
+  }
+</style>

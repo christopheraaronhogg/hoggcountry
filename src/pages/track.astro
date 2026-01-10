@@ -1,0 +1,668 @@
+---
+import '../styles/global.css';
+import BaseHead from '../components/BaseHead.astro';
+
+const title = "Live Tracking | Hogg Country";
+const description = "Mission Control - Live GPS tracking for the Appalachian Trail thru-hike";
+
+// Trail stats (can be updated as the hike progresses)
+const TRAIL_TOTAL_MILES = 2197.9;
+const START_DATE = new Date('2025-03-01'); // Update with actual start date
+const today = new Date();
+const daysOnTrail = Math.floor((today.getTime() - START_DATE.getTime()) / (1000 * 60 * 60 * 24));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={title} description={description} />
+    <style>
+      /* Mission Control Dark Theme Override */
+      :root {
+        --mc-bg: #0a0f0a;
+        --mc-bg-panel: #0f1610;
+        --mc-border: #1a2f1a;
+        --mc-glow: #00ff41;
+        --mc-glow-dim: rgba(0, 255, 65, 0.3);
+        --mc-glow-subtle: rgba(0, 255, 65, 0.1);
+        --mc-text: #c8d6c8;
+        --mc-text-dim: #5a6b5a;
+        --mc-accent: #00cc33;
+        --mc-warning: #ffcc00;
+        --mc-pine: #4d594a;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        background: var(--mc-bg);
+        font-family: 'Courier New', 'Monaco', 'Consolas', monospace;
+        color: var(--mc-text);
+      }
+
+      body {
+        background:
+          radial-gradient(ellipse at 50% 0%, rgba(0, 255, 65, 0.03) 0%, transparent 60%),
+          radial-gradient(ellipse at 0% 50%, rgba(0, 255, 65, 0.02) 0%, transparent 40%),
+          radial-gradient(ellipse at 100% 50%, rgba(0, 255, 65, 0.02) 0%, transparent 40%),
+          var(--mc-bg);
+        background-attachment: fixed;
+      }
+
+      /* Scanline overlay */
+      .scanlines {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 1000;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.1) 2px,
+          rgba(0, 0, 0, 0.1) 4px
+        );
+        opacity: 0.3;
+      }
+
+      .mission-control {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Header Bar */
+      .mc-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border: 1px solid var(--mc-border);
+        background: var(--mc-bg-panel);
+        margin-bottom: 1rem;
+        position: relative;
+      }
+
+      .mc-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--mc-glow), transparent);
+      }
+
+      .mc-logo {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .mc-logo a {
+        color: var(--mc-text);
+        text-decoration: none;
+        font-size: 0.9rem;
+        opacity: 0.7;
+        transition: opacity 0.2s, color 0.2s;
+      }
+
+      .mc-logo a:hover {
+        opacity: 1;
+        color: var(--mc-glow);
+      }
+
+      .mc-title {
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        color: var(--mc-glow);
+        text-shadow: 0 0 20px var(--mc-glow-dim);
+        text-transform: uppercase;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .status-light {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--mc-glow);
+        box-shadow: 0 0 10px var(--mc-glow), 0 0 20px var(--mc-glow-dim);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--mc-glow), 0 0 20px var(--mc-glow-dim); }
+        50% { opacity: 0.6; box-shadow: 0 0 5px var(--mc-glow), 0 0 10px var(--mc-glow-dim); }
+      }
+
+      .status-text {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--mc-glow);
+      }
+
+      /* Main Grid Layout */
+      .mc-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 1rem;
+      }
+
+      @media (max-width: 1024px) {
+        .mc-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Map Panel */
+      .map-panel {
+        border: 1px solid var(--mc-border);
+        background: var(--mc-bg-panel);
+        padding: 1rem;
+        position: relative;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--mc-border);
+      }
+
+      .panel-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--mc-text-dim);
+      }
+
+      .panel-status {
+        font-size: 0.75rem;
+        color: var(--mc-accent);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .blink {
+        animation: blink 1s steps(1) infinite;
+      }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+
+      .map-container {
+        aspect-ratio: 16 / 10;
+        width: 100%;
+        background: #000;
+        border: 1px solid var(--mc-border);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .map-container iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      .map-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        border: 1px solid var(--mc-glow-subtle);
+        box-shadow: inset 0 0 60px rgba(0, 255, 65, 0.05);
+      }
+
+      /* Corner brackets */
+      .corner {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-color: var(--mc-glow);
+        border-style: solid;
+        border-width: 0;
+      }
+
+      .corner.tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
+      .corner.tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
+      .corner.bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
+      .corner.br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
+
+      /* Telemetry Panel */
+      .telemetry-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .data-block {
+        border: 1px solid var(--mc-border);
+        background: var(--mc-bg-panel);
+        padding: 1rem;
+        position: relative;
+      }
+
+      .data-block::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+        background: var(--mc-glow-subtle);
+      }
+
+      .data-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--mc-text-dim);
+        margin-bottom: 0.5rem;
+      }
+
+      .data-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: var(--mc-glow);
+        text-shadow: 0 0 15px var(--mc-glow-dim);
+        font-family: 'Courier New', monospace;
+      }
+
+      .data-unit {
+        font-size: 0.9rem;
+        color: var(--mc-text-dim);
+        margin-left: 0.25rem;
+      }
+
+      .data-sub {
+        font-size: 0.75rem;
+        color: var(--mc-text-dim);
+        margin-top: 0.25rem;
+      }
+
+      /* Progress Bar */
+      .progress-block {
+        border: 1px solid var(--mc-border);
+        background: var(--mc-bg-panel);
+        padding: 1rem;
+      }
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 0.75rem;
+      }
+
+      .progress-bar-container {
+        height: 24px;
+        background: rgba(0, 255, 65, 0.1);
+        border: 1px solid var(--mc-border);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--mc-accent), var(--mc-glow));
+        box-shadow: 0 0 20px var(--mc-glow-dim);
+        transition: width 0.5s ease;
+        position: relative;
+      }
+
+      .progress-bar-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 2px;
+        height: 100%;
+        background: #fff;
+        box-shadow: 0 0 10px #fff;
+        animation: progressPulse 1s ease-in-out infinite;
+      }
+
+      @keyframes progressPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      .progress-markers {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        font-size: 0.65rem;
+        color: var(--mc-text-dim);
+      }
+
+      /* Waypoints */
+      .waypoint-block {
+        border: 1px solid var(--mc-border);
+        background: var(--mc-bg-panel);
+        padding: 1rem;
+      }
+
+      .waypoint-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--mc-border);
+      }
+
+      .waypoint-item:last-child {
+        border-bottom: none;
+      }
+
+      .waypoint-marker {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--mc-glow);
+        box-shadow: 0 0 8px var(--mc-glow);
+      }
+
+      .waypoint-marker.pending {
+        background: var(--mc-text-dim);
+        box-shadow: none;
+      }
+
+      .waypoint-marker.current {
+        background: var(--mc-warning);
+        box-shadow: 0 0 8px var(--mc-warning);
+        animation: pulse 1s ease-in-out infinite;
+      }
+
+      .waypoint-name {
+        flex: 1;
+        font-size: 0.85rem;
+      }
+
+      .waypoint-mile {
+        font-size: 0.75rem;
+        color: var(--mc-text-dim);
+      }
+
+      /* System Info */
+      .system-info {
+        border: 1px solid var(--mc-border);
+        background: var(--mc-bg-panel);
+        padding: 1rem;
+        font-size: 0.75rem;
+        color: var(--mc-text-dim);
+      }
+
+      .system-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+        border-bottom: 1px dotted var(--mc-border);
+      }
+
+      .system-row:last-child {
+        border-bottom: none;
+      }
+
+      .system-value {
+        color: var(--mc-accent);
+      }
+
+      /* Footer */
+      .mc-footer {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--mc-border);
+        background: var(--mc-bg-panel);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        color: var(--mc-text-dim);
+      }
+
+      .mc-footer a {
+        color: var(--mc-accent);
+        text-decoration: none;
+      }
+
+      .mc-footer a:hover {
+        color: var(--mc-glow);
+        text-decoration: underline;
+      }
+
+      /* Mobile adjustments */
+      @media (max-width: 768px) {
+        .mc-header {
+          flex-direction: column;
+          gap: 1rem;
+          text-align: center;
+        }
+
+        .mc-logo {
+          flex-direction: column;
+        }
+
+        .data-value {
+          font-size: 1.5rem;
+        }
+
+        .map-container {
+          aspect-ratio: 4 / 3;
+        }
+      }
+
+      /* Loading state */
+      .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--mc-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+
+      .loading-text {
+        color: var(--mc-glow);
+        font-size: 0.9rem;
+        letter-spacing: 0.1em;
+        animation: blink 1s steps(1) infinite;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scanlines"></div>
+
+    <div class="mission-control">
+      <!-- Header -->
+      <header class="mc-header">
+        <div class="mc-logo">
+          <a href="/">&larr; HOGG COUNTRY</a>
+          <span class="mc-title">Mission Control</span>
+        </div>
+        <div class="status-indicator">
+          <div class="status-light"></div>
+          <span class="status-text">Signal Active</span>
+        </div>
+      </header>
+
+      <!-- Main Grid -->
+      <div class="mc-grid">
+        <!-- Map Panel -->
+        <div class="map-panel">
+          <div class="panel-header">
+            <span class="panel-title">GPS Tracking Feed</span>
+            <span class="panel-status">
+              <span class="blink">&#9679;</span> LIVE
+            </span>
+          </div>
+          <div class="map-container">
+            <div class="loading-overlay" id="mapLoading">
+              <span class="loading-text">ACQUIRING SIGNAL...</span>
+            </div>
+            <iframe
+              src="https://share.garmin.com/theman1"
+              title="Live GPS Tracking Map"
+              loading="lazy"
+              onload="document.getElementById('mapLoading').classList.add('hidden')"
+            ></iframe>
+            <div class="map-overlay">
+              <div class="corner tl"></div>
+              <div class="corner tr"></div>
+              <div class="corner bl"></div>
+              <div class="corner br"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry Panel -->
+        <div class="telemetry-panel">
+          <div class="data-block">
+            <div class="data-label">Days on Trail</div>
+            <div class="data-value" id="daysOnTrail">{daysOnTrail > 0 ? daysOnTrail : '--'}</div>
+            <div class="data-sub">Started: {START_DATE.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+          </div>
+
+          <div class="data-block">
+            <div class="data-label">Last Signal</div>
+            <div class="data-value" id="lastUpdate" style="font-size: 1.2rem;">--:--</div>
+            <div class="data-sub">Garmin InReach Mini 2</div>
+          </div>
+
+          <div class="data-block">
+            <div class="data-label">Current Elevation</div>
+            <div class="data-value">--<span class="data-unit">ft</span></div>
+            <div class="data-sub">Data from Garmin feed</div>
+          </div>
+
+          <!-- Progress Block -->
+          <div class="progress-block">
+            <div class="progress-header">
+              <span class="data-label">Trail Progress</span>
+              <span class="data-value" style="font-size: 1rem;" id="progressPercent">--%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="progress-markers">
+              <span>GA</span>
+              <span>NC</span>
+              <span>TN</span>
+              <span>VA</span>
+              <span>WV</span>
+              <span>MD</span>
+              <span>PA</span>
+              <span>NJ</span>
+              <span>NY</span>
+              <span>CT</span>
+              <span>MA</span>
+              <span>VT</span>
+              <span>NH</span>
+              <span>ME</span>
+            </div>
+          </div>
+
+          <!-- Waypoints -->
+          <div class="waypoint-block">
+            <div class="data-label" style="margin-bottom: 0.75rem;">Key Waypoints</div>
+            <div class="waypoint-item">
+              <div class="waypoint-marker"></div>
+              <span class="waypoint-name">Springer Mountain</span>
+              <span class="waypoint-mile">mi 0.0</span>
+            </div>
+            <div class="waypoint-item">
+              <div class="waypoint-marker current"></div>
+              <span class="waypoint-name">Current Position</span>
+              <span class="waypoint-mile">mi --</span>
+            </div>
+            <div class="waypoint-item">
+              <div class="waypoint-marker pending"></div>
+              <span class="waypoint-name">Mt. Katahdin</span>
+              <span class="waypoint-mile">mi 2197.9</span>
+            </div>
+          </div>
+
+          <!-- System Info -->
+          <div class="system-info">
+            <div class="system-row">
+              <span>TRACKING ID</span>
+              <span class="system-value">THEMAN1</span>
+            </div>
+            <div class="system-row">
+              <span>TOTAL DISTANCE</span>
+              <span class="system-value">2,197.9 MI</span>
+            </div>
+            <div class="system-row">
+              <span>SYSTEM STATUS</span>
+              <span class="system-value">NOMINAL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="mc-footer">
+        <span>&copy; {today.getFullYear()} Hogg Country Mission Control</span>
+        <span>
+          Powered by <a href="https://www.garmin.com/en-US/p/765374" target="_blank" rel="noopener">Garmin InReach</a>
+        </span>
+      </footer>
+    </div>
+
+    <script is:inline>
+      // Update timestamp
+      function updateTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+        const el = document.getElementById('lastUpdate');
+        if (el) el.textContent = timeStr;
+      }
+
+      updateTime();
+      setInterval(updateTime, 1000);
+
+      // Simulated progress (replace with real data when available)
+      // For now, show a placeholder
+      const progressBar = document.getElementById('progressBar');
+      const progressPercent = document.getElementById('progressPercent');
+
+      // Placeholder: Set to 0% until real tracking data is integrated
+      if (progressBar) progressBar.style.width = '0%';
+      if (progressPercent) progressPercent.textContent = '0%';
+    </script>
+  </body>
+</html>
