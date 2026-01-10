@@ -41,6 +41,20 @@ export class GameScene extends Phaser.Scene {
   private skyOverlay!: Phaser.GameObjects.Rectangle;
   private sunMoon!: Phaser.GameObjects.Sprite;
 
+  // Other hikers
+  private otherHikers: Phaser.GameObjects.Container[] = [];
+  private nextHikerSpawn: number = 0;
+
+  // Viewpoints
+  private viewpoints: Phaser.GameObjects.Container[] = [];
+
+  // Trail plants
+  private plants: Phaser.GameObjects.Sprite[] = [];
+
+  // Random events
+  private nextEventCheck: number = 0;
+  private activeEvents: Set<string> = new Set();
+
   // Camera follow offset
   private cameraTarget: number = 0;
 
@@ -114,6 +128,9 @@ export class GameScene extends Phaser.Scene {
 
     // Spawn initial wildlife
     this.generateWildlife();
+
+    // Generate trail plants for visual variety
+    this.generatePlants();
 
     // Set up camera
     this.cameras.main.setBackgroundColor(0x355E3B);
@@ -452,6 +469,233 @@ export class GameScene extends Phaser.Scene {
       this.sunMoon.x = 60 + progress * (width - 120);
       this.sunMoon.y = 40;
     }
+  }
+
+  generatePlants() {
+    const { width, height } = this.cameras.main;
+
+    // Plant types available from sprites
+    const plantTypes = [
+      'fern', 'small_bush', 'tall_grass', 'mountain_laurel',
+      'rhododendron', 'bluebells', 'trillium'
+    ];
+
+    // Scatter plants along the trail edges
+    for (let i = 0; i < 20; i++) {
+      const type = plantTypes[Math.floor(Math.random() * plantTypes.length)];
+      const side = Math.random() < 0.5 ? 'left' : 'right';
+      const x = side === 'left'
+        ? Phaser.Math.Between(width * 0.22, width * 0.32)
+        : Phaser.Math.Between(width * 0.68, width * 0.78);
+      const y = Phaser.Math.Between(0, height);
+
+      const plant = this.add.sprite(x, y, type);
+      plant.setScale(Phaser.Math.FloatBetween(0.5, 0.8));
+      plant.setDepth(3);
+      plant.setAlpha(0.9);
+      this.plants.push(plant);
+    }
+  }
+
+  spawnOtherHiker() {
+    const { width } = this.cameras.main;
+
+    // Hiker names and trail names
+    const trailNames = [
+      'Trailblazer', 'Wanderer', 'Happy Feet', 'Mountain Goat',
+      'Barefoot', 'Nemo', 'Turtle', 'Roadrunner', 'Sherpa',
+      'Patches', 'Compass', 'Maverick', 'Steady', 'Blaze'
+    ];
+
+    const greetings = [
+      'Hey there! Beautiful day, huh?',
+      'How many miles you doing today?',
+      'There\'s water about a mile ahead!',
+      'Watch out for the rocks up ahead.',
+      'I just saw a deer back there!',
+      'Happy trails!',
+      'Stay hydrated out there!',
+      'The shelter up ahead has a great view!',
+      'You got this! Keep going!',
+      'Trail magic at the next road crossing!'
+    ];
+
+    const name = trailNames[Math.floor(Math.random() * trailNames.length)];
+    const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+
+    // Create hiker container
+    const container = this.add.container(width / 2, -80);
+
+    // Hiker sprite (use same hiker sprite but tinted)
+    const hikerSprite = this.add.sprite(0, 0, 'hiker');
+    hikerSprite.setScale(1.5);
+    hikerSprite.setTint(Phaser.Math.Between(0x888888, 0xffffff));
+    container.add(hikerSprite);
+
+    // Trail name above
+    const nameTag = this.add.text(0, -30, `"${name}"`, {
+      font: 'bold 10px Courier',
+      color: '#ffffff',
+      backgroundColor: '#2e5339',
+      padding: { x: 4, y: 2 }
+    }).setOrigin(0.5);
+    container.add(nameTag);
+
+    container.setDepth(9);
+    container.setData('name', name);
+    container.setData('greeting', greeting);
+    container.setData('greeted', false);
+    container.setData('direction', Math.random() < 0.7 ? 'nobo' : 'sobo'); // 70% northbound
+
+    this.otherHikers.push(container);
+  }
+
+  spawnViewpoint() {
+    const { width } = this.cameras.main;
+
+    const viewNames = [
+      'Springer Mountain View',
+      'Blood Mountain Vista',
+      'Sunrise Overlook',
+      'Blue Ridge Panorama',
+      'Valley View',
+      'Mountain Majesty Point'
+    ];
+
+    const name = viewNames[Math.floor(Math.random() * viewNames.length)];
+
+    // Create viewpoint container
+    const container = this.add.container(width / 2, -60);
+
+    // Background (scenic view represented)
+    const bg = this.add.rectangle(0, 0, 220, 70, 0x355E3B, 0.9);
+    bg.setStrokeStyle(3, 0x87CEEB);
+    container.add(bg);
+
+    // View emoji
+    const emoji = this.add.text(-80, 0, '🏔️', {
+      font: '24px Arial'
+    }).setOrigin(0.5);
+    container.add(emoji);
+
+    // Text
+    const viewLabel = this.add.text(10, -15, '📍 VIEWPOINT', {
+      font: 'bold 11px Courier',
+      color: '#87CEEB'
+    }).setOrigin(0.5);
+    container.add(viewLabel);
+
+    const nameText = this.add.text(10, 5, name, {
+      font: '10px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+    container.add(nameText);
+
+    const bonusText = this.add.text(10, 20, '+Morale', {
+      font: '9px Courier',
+      color: '#aaffaa'
+    }).setOrigin(0.5);
+    container.add(bonusText);
+
+    container.setDepth(50);
+    container.setData('name', name);
+    container.setData('visited', false);
+
+    this.viewpoints.push(container);
+  }
+
+  checkRandomEvents() {
+    if (!this.hikerData?.isHiking) return;
+
+    // Random trail events that can occur
+    const events = [
+      {
+        id: 'blister',
+        chance: 0.02,
+        condition: () => this.hikerData.currentDayMiles > 10,
+        trigger: () => {
+          if (!this.activeEvents.has('blister')) {
+            this.activeEvents.add('blister');
+            this.hikerData.energy = Math.max(0, this.hikerData.energy - 10);
+            this.hikerData.moodles.fatigue = Math.min(3, this.hikerData.moodles.fatigue + 1);
+            this.events.emit('game-event', {
+              type: 'warning',
+              message: '🦶 Developed a blister! Pace yourself...'
+            });
+          }
+        }
+      },
+      {
+        id: 'second_wind',
+        chance: 0.01,
+        condition: () => this.hikerData.energy < 40,
+        trigger: () => {
+          this.hikerData.energy = Math.min(100, this.hikerData.energy + 20);
+          this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 10);
+          this.events.emit('game-event', {
+            type: 'success',
+            message: '💪 Second wind! Feeling energized!'
+          });
+        }
+      },
+      {
+        id: 'scenic_moment',
+        chance: 0.03,
+        condition: () => true,
+        trigger: () => {
+          this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 5);
+          const sights = [
+            '🦌 Spotted a doe with her fawn!',
+            '🌈 Beautiful rainbow in the distance!',
+            '🦅 Eagle soaring overhead!',
+            '🌸 Wildflowers blooming trailside!',
+            '🍄 Interesting mushrooms on a log!',
+            '🦋 Butterflies dancing around!'
+          ];
+          this.events.emit('game-event', {
+            type: 'info',
+            message: sights[Math.floor(Math.random() * sights.length)]
+          });
+        }
+      },
+      {
+        id: 'stumble',
+        chance: 0.02,
+        condition: () => this.hikerData.pace === 'rush' || this.hikerData.pace === 'fast',
+        trigger: () => {
+          this.hikerData.energy = Math.max(0, this.hikerData.energy - 3);
+          this.events.emit('game-event', {
+            type: 'warning',
+            message: '😰 Nearly twisted an ankle! Slow down?'
+          });
+        }
+      },
+      {
+        id: 'good_vibes',
+        chance: 0.02,
+        condition: () => this.hikerData.moodles.morale > 60,
+        trigger: () => {
+          this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 10);
+          const vibes = [
+            '🎵 Humming a trail song!',
+            '😊 Feeling grateful to be out here!',
+            '✨ In the zone! Great hiking today!',
+            '🌲 Loving the forest vibes!'
+          ];
+          this.events.emit('game-event', {
+            type: 'success',
+            message: vibes[Math.floor(Math.random() * vibes.length)]
+          });
+        }
+      }
+    ];
+
+    // Check each event
+    events.forEach(event => {
+      if (Math.random() < event.chance && event.condition()) {
+        event.trigger();
+      }
+    });
   }
 
   async connectToServer() {
@@ -1554,6 +1798,117 @@ export class GameScene extends Phaser.Scene {
         }
         // Check again in 30-60 seconds
         this.nextTrailMagicSpawn = Phaser.Math.Between(30000, 60000);
+      }
+
+      // Move plants down (slower parallax)
+      this.plants.forEach(plant => {
+        plant.y += scrollSpeed * 0.7;
+        if (plant.y > height + 30) {
+          plant.y = -30;
+          // Randomize position
+          const side = Math.random() < 0.5 ? 'left' : 'right';
+          plant.x = side === 'left'
+            ? Phaser.Math.Between(width * 0.22, width * 0.32)
+            : Phaser.Math.Between(width * 0.68, width * 0.78);
+        }
+      });
+
+      // Move other hikers and handle greetings
+      this.otherHikers.forEach((hiker, index) => {
+        const direction = hiker.getData('direction');
+        // NOBO hikers move down slower (same direction as us)
+        // SOBO hikers move down faster (coming toward us)
+        const hikerSpeed = direction === 'nobo' ? scrollSpeed * 0.3 : scrollSpeed * 1.5;
+        hiker.y += hikerSpeed;
+
+        // Check for greeting when close
+        if (!hiker.getData('greeted')) {
+          const dist = Phaser.Math.Distance.Between(
+            this.hiker.x, this.hiker.y,
+            hiker.x, hiker.y
+          );
+          if (dist < 80) {
+            hiker.setData('greeted', true);
+            const name = hiker.getData('name');
+            const greeting = hiker.getData('greeting');
+
+            // Show greeting
+            this.events.emit('game-event', {
+              type: 'info',
+              message: `"${name}": "${greeting}"`
+            });
+
+            // Small morale boost from social interaction
+            if (this.hikerData?.moodles) {
+              this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 3);
+            }
+          }
+        }
+
+        // Remove when off screen
+        if (hiker.y > height + 100 || hiker.y < -200) {
+          hiker.destroy();
+          this.otherHikers.splice(index, 1);
+        }
+      });
+
+      // Spawn other hikers periodically
+      this.nextHikerSpawn -= delta;
+      if (this.nextHikerSpawn <= 0) {
+        this.spawnOtherHiker();
+        // Other hikers every 20-40 seconds
+        this.nextHikerSpawn = Phaser.Math.Between(20000, 40000);
+      }
+
+      // Move viewpoints and check visits
+      this.viewpoints.forEach((viewpoint, index) => {
+        viewpoint.y += scrollSpeed;
+
+        // Check if hiker visits viewpoint
+        if (!viewpoint.getData('visited')) {
+          const dist = Phaser.Math.Distance.Between(
+            this.hiker.x, this.hiker.y,
+            viewpoint.x, viewpoint.y
+          );
+          if (dist < 60) {
+            viewpoint.setData('visited', true);
+            const name = viewpoint.getData('name');
+
+            // Morale boost!
+            if (this.hikerData?.moodles) {
+              this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 15);
+            }
+
+            this.events.emit('game-event', {
+              type: 'success',
+              message: `🏔️ ${name} - What a view! (+15 morale)`
+            });
+          }
+        }
+
+        // Remove when off screen
+        if (viewpoint.y > height + 100) {
+          viewpoint.destroy();
+          this.viewpoints.splice(index, 1);
+        }
+      });
+
+      // Spawn viewpoints at certain miles (every ~5 miles)
+      if (this.hikerData) {
+        const mile = this.hikerData.mile;
+        const viewpointMiles = [2.5, 7, 12, 17, 22, 27];
+        viewpointMiles.forEach(vm => {
+          if (Math.abs(mile - vm) < 0.1 && this.viewpoints.length === 0) {
+            this.spawnViewpoint();
+          }
+        });
+      }
+
+      // Check random events periodically
+      this.nextEventCheck -= delta;
+      if (this.nextEventCheck <= 0) {
+        this.checkRandomEvents();
+        this.nextEventCheck = 5000; // Check every 5 seconds
       }
 
       // Hiker walking animation
