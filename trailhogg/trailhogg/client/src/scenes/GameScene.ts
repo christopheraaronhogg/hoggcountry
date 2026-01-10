@@ -67,6 +67,34 @@ export class GameScene extends Phaser.Scene {
   private elevationData: { mile: number; elevation: number }[] = [];
   private elevationText!: Phaser.GameObjects.Text;
 
+  // Town system
+  private townData = [
+    {
+      name: 'Neels Gap',
+      mile: 30.7,
+      hasStore: true,
+      hasHostel: true,
+      hasRestaurant: false,
+      hasOutfitter: true,
+      hostelPrice: 45,
+      description: 'Mountain Crossings - the AT goes through the building!',
+      storeInventory: [
+        { id: 'ramen', name: 'Ramen Noodles', price: 1, type: 'food', calories: 400, weight: 0.1, servings: 1 },
+        { id: 'oatmeal', name: 'Instant Oatmeal (3pk)', price: 4, type: 'food', calories: 300, weight: 0.3, servings: 3 },
+        { id: 'trailMix', name: 'Trail Mix', price: 6, type: 'food', calories: 600, weight: 0.3, servings: 2 },
+        { id: 'snickers', name: 'Snickers Bar', price: 2, type: 'food', calories: 250, weight: 0.1, servings: 1 },
+        { id: 'tuna', name: 'Tuna Packet', price: 3, type: 'food', calories: 200, weight: 0.15, servings: 1 },
+        { id: 'peanutButter', name: 'Peanut Butter', price: 5, type: 'food', calories: 800, weight: 0.4, servings: 4 },
+        { id: 'tortillas', name: 'Tortillas (6pk)', price: 4, type: 'food', calories: 150, weight: 0.3, servings: 6 },
+        { id: 'pepperoni', name: 'Pepperoni', price: 5, type: 'food', calories: 500, weight: 0.2, servings: 3 },
+        { id: 'gatorade', name: 'Gatorade Powder', price: 4, type: 'food', calories: 100, weight: 0.2, servings: 4 },
+        { id: 'cliff', name: 'Clif Bar', price: 3, type: 'food', calories: 250, weight: 0.1, servings: 1 },
+      ]
+    }
+  ];
+  private visitedTowns: Set<string> = new Set();
+  private townPromptShown: boolean = false;
+
   // Camera follow offset
   private cameraTarget: number = 0;
 
@@ -180,6 +208,19 @@ export class GameScene extends Phaser.Scene {
     if (this.isMobile) {
       this.setupMobileControls();
     }
+
+    // Listen for town exit events
+    this.events.on('town-exit', (data: { hiker: any }) => {
+      // Update hiker data from town
+      this.hikerData = data.hiker;
+      this.townPromptShown = false;
+
+      // Resume the game
+      this.events.emit('state-update', {
+        hiker: this.hikerData,
+        game: this.gameState
+      });
+    });
 
     // Emit event that game scene is ready
     this.events.emit('scene-ready');
@@ -859,6 +900,131 @@ export class GameScene extends Phaser.Scene {
       // Better morale at shelters
       this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 0.05);
     }
+  }
+
+  checkTownProximity() {
+    if (!this.hikerData) return;
+
+    const currentMile = this.hikerData.mile;
+
+    // Check if near any town
+    this.townData.forEach(town => {
+      const distance = Math.abs(currentMile - town.mile);
+
+      // If within 0.2 miles of town and haven't shown prompt yet
+      if (distance < 0.2 && !this.visitedTowns.has(town.name) && !this.townPromptShown) {
+        this.townPromptShown = true;
+        this.showTownPrompt(town);
+      }
+    });
+  }
+
+  showTownPrompt(town: any) {
+    const { width, height } = this.cameras.main;
+
+    // Stop hiking
+    if (this.hikerData) {
+      this.hikerData.isHiking = false;
+    }
+
+    // Create prompt overlay
+    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
+    overlay.setDepth(500);
+
+    const promptBg = this.add.rectangle(width / 2, height / 2, 350, 200, 0x2e5339);
+    promptBg.setStrokeStyle(3, 0x4a7d5a);
+    promptBg.setDepth(501);
+
+    const title = this.add.text(width / 2, height / 2 - 60, `🏘️ ${town.name}`, {
+      font: 'bold 20px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5).setDepth(502);
+
+    const desc = this.add.text(width / 2, height / 2 - 25, town.description, {
+      font: '11px Courier',
+      color: '#aaaaaa',
+      wordWrap: { width: 300 },
+      align: 'center'
+    }).setOrigin(0.5).setDepth(502);
+
+    // Enter town button
+    const enterBtn = this.add.rectangle(width / 2 - 80, height / 2 + 40, 130, 40, 0x4a7d5a);
+    enterBtn.setStrokeStyle(2, 0x6a9d7a);
+    enterBtn.setDepth(502);
+    enterBtn.setInteractive();
+
+    const enterText = this.add.text(width / 2 - 80, height / 2 + 40, 'Enter Town', {
+      font: '14px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5).setDepth(503);
+
+    // Skip button
+    const skipBtn = this.add.rectangle(width / 2 + 80, height / 2 + 40, 130, 40, 0x555555);
+    skipBtn.setStrokeStyle(2, 0x777777);
+    skipBtn.setDepth(502);
+    skipBtn.setInteractive();
+
+    const skipText = this.add.text(width / 2 + 80, height / 2 + 40, 'Keep Hiking', {
+      font: '14px Courier',
+      color: '#cccccc'
+    }).setOrigin(0.5).setDepth(503);
+
+    // Button interactions
+    enterBtn.on('pointerover', () => enterBtn.setFillStyle(0x5a9d6a));
+    enterBtn.on('pointerout', () => enterBtn.setFillStyle(0x4a7d5a));
+    enterBtn.on('pointerdown', () => {
+      // Clean up prompt
+      overlay.destroy();
+      promptBg.destroy();
+      title.destroy();
+      desc.destroy();
+      enterBtn.destroy();
+      enterText.destroy();
+      skipBtn.destroy();
+      skipText.destroy();
+
+      // Enter town
+      this.enterTown(town);
+    });
+
+    skipBtn.on('pointerover', () => skipBtn.setFillStyle(0x666666));
+    skipBtn.on('pointerout', () => skipBtn.setFillStyle(0x555555));
+    skipBtn.on('pointerdown', () => {
+      // Clean up prompt
+      overlay.destroy();
+      promptBg.destroy();
+      title.destroy();
+      desc.destroy();
+      enterBtn.destroy();
+      enterText.destroy();
+      skipBtn.destroy();
+      skipText.destroy();
+
+      // Mark as visited (skipped)
+      this.visitedTowns.add(town.name);
+      this.townPromptShown = false;
+
+      this.events.emit('game-event', {
+        type: 'info',
+        message: `Passed through ${town.name}`
+      });
+    });
+  }
+
+  enterTown(town: any) {
+    // Mark as visiting
+    this.visitedTowns.add(town.name);
+
+    // Launch TownScene as overlay
+    this.scene.launch('TownScene', {
+      town: town,
+      hiker: this.hikerData
+    });
+
+    this.events.emit('game-event', {
+      type: 'success',
+      message: `Welcome to ${town.name}!`
+    });
   }
 
   async connectToServer() {
@@ -2106,6 +2272,9 @@ export class GameScene extends Phaser.Scene {
 
     // Check shelter proximity for bonus rest
     this.checkShelterProximity();
+
+    // Check for town entry
+    this.checkTownProximity();
 
     // Fog movement
     this.fogSprites.forEach(fog => {
