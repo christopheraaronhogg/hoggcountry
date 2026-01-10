@@ -49,7 +49,7 @@ export class UIScene extends Phaser.Scene {
     gameScene.events.on('game-event', this.onGameEvent, this);
     
     // Create lost indicator (hidden by default)
-    this.lostIndicator = this.add.text(width / 2, 60, '⚠ LOST - Press S to search, B to backtrack', {
+    this.lostIndicator = this.add.text(width / 2, 60, '⚠ LOST - Press F to search, B to backtrack', {
       font: '16px Courier',
       color: '#ff6b6b',
       backgroundColor: '#000000',

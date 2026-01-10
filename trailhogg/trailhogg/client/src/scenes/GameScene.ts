@@ -24,8 +24,8 @@ export class GameScene extends Phaser.Scene {
   private cameraTarget: number = 0;
 
   // Mobile controls
-  private joystickBase!: Phaser.GameObjects.Circle;
-  private joystickThumb!: Phaser.GameObjects.Circle;
+  private joystickBase!: Phaser.GameObjects.Arc;
+  private joystickThumb!: Phaser.GameObjects.Arc;
   private joystickActive: boolean = false;
   private joystickVector: { x: number; y: number } = { x: 0, y: 0 };
   private isMobile: boolean = false;
