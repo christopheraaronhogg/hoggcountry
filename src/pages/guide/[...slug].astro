@@ -158,30 +158,104 @@ const description = entry.data.description || `AT Field Guide: ${entry.data.titl
     color: var(--ink);
   }
 
+  /* Table wrapper for horizontal scroll on mobile */
   .prose :global(table) {
+    position: relative;
+    display: block;
     width: 100%;
     margin: 1.5rem 0;
-    border-collapse: collapse;
-    font-size: 0.95rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .prose :global(table thead),
+  .prose :global(table tbody),
+  .prose :global(table tr) {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  .prose :global(table thead) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   .prose :global(th) {
     text-align: left;
-    padding: 0.625rem 0.75rem;
-    background: var(--bg);
-    border-bottom: 2px solid var(--border);
+    padding: 0.75rem 1rem;
+    background: linear-gradient(to bottom, var(--pine), #3d4a3a);
+    color: #f5f2e8;
+    font-family: Oswald, Impact, sans-serif;
     font-weight: 600;
-    color: var(--pine);
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .prose :global(th:first-child) {
+    border-radius: 9px 0 0 0;
+  }
+
+  .prose :global(th:last-child) {
+    border-radius: 0 9px 0 0;
+  }
+
+  .prose :global(th:only-child) {
+    border-radius: 9px 9px 0 0;
   }
 
   .prose :global(td) {
-    padding: 0.5rem 0.75rem;
+    padding: 0.625rem 1rem;
     border-bottom: 1px solid var(--border);
     vertical-align: top;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  /* Zebra striping */
+  .prose :global(tbody tr:nth-child(even)) {
+    background: rgba(166, 181, 137, 0.06);
+  }
+
+  /* Hover state */
+  .prose :global(tbody tr:hover) {
+    background: rgba(166, 181, 137, 0.12);
   }
 
   .prose :global(tr:last-child td) {
     border-bottom: none;
+  }
+
+  .prose :global(tr:last-child td:first-child) {
+    border-radius: 0 0 0 9px;
+  }
+
+  .prose :global(tr:last-child td:last-child) {
+    border-radius: 0 0 9px 0;
+  }
+
+  /* Bold text in cells (usually totals or categories) */
+  .prose :global(td strong) {
+    color: var(--pine);
+    font-weight: 700;
+  }
+
+  /* Right-align numeric columns when they have units */
+  .prose :global(td:last-child:not(:first-child)) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Keep first column left-aligned */
+  .prose :global(td:first-child) {
+    text-align: left;
   }
 
   .prose :global(code) {
@@ -269,11 +343,30 @@ const description = entry.data.description || `AT Field Guide: ${entry.data.titl
     }
 
     .prose :global(table) {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
+      margin: 1rem 0;
     }
 
-    .prose :global(th), .prose :global(td) {
-      padding: 0.4rem 0.5rem;
+    .prose :global(th) {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    .prose :global(td) {
+      padding: 0.5rem 0.75rem;
+    }
+
+    /* Show scroll hint on mobile */
+    .prose :global(table)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 20px;
+      background: linear-gradient(to right, transparent, rgba(0,0,0,0.05));
+      pointer-events: none;
+      border-radius: 0 10px 10px 0;
     }
 
     .chapter-nav {
