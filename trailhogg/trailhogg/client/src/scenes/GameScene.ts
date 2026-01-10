@@ -19,9 +19,16 @@ export class GameScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.TileSprite;
   private rainEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private fogSprites: Phaser.GameObjects.Sprite[] = [];
-  
+
   // Camera follow offset
   private cameraTarget: number = 0;
+
+  // Mobile controls
+  private joystickBase!: Phaser.GameObjects.Circle;
+  private joystickThumb!: Phaser.GameObjects.Circle;
+  private joystickActive: boolean = false;
+  private joystickVector: { x: number; y: number } = { x: 0, y: 0 };
+  private isMobile: boolean = false;
 
   // Game state
   private isConnected: boolean = false;
@@ -72,7 +79,16 @@ export class GameScene extends Phaser.Scene {
     
     // Input handlers
     this.setupInputHandlers();
-    
+
+    // Detect mobile and setup touch controls
+    this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS ||
+                    this.sys.game.device.os.iPad || this.sys.game.device.os.iPhone ||
+                    ('ontouchstart' in window);
+
+    if (this.isMobile) {
+      this.setupMobileControls();
+    }
+
     // Emit event that game scene is ready
     this.events.emit('scene-ready');
   }
@@ -555,34 +571,167 @@ export class GameScene extends Phaser.Scene {
   setupInputHandlers() {
     // Keyboard controls
     const cursors = this.input.keyboard?.createCursorKeys();
-    
+
+    // WASD keys for movement
+    const keyW = this.input.keyboard?.addKey('W');
+    const keyA = this.input.keyboard?.addKey('A');
+    const keyS = this.input.keyboard?.addKey('S');
+    const keyD = this.input.keyboard?.addKey('D');
+
     // Space to toggle hiking
     this.input.keyboard?.on('keydown-SPACE', () => {
       this.toggleHiking();
     });
-    
+
     // Number keys for pace
     this.input.keyboard?.on('keydown-ONE', () => this.setPace('slow'));
     this.input.keyboard?.on('keydown-TWO', () => this.setPace('normal'));
     this.input.keyboard?.on('keydown-THREE', () => this.setPace('fast'));
     this.input.keyboard?.on('keydown-FOUR', () => this.setPace('rush'));
-    
+
     // E to eat
     this.input.keyboard?.on('keydown-E', () => this.eat());
-    
-    // D to drink
-    this.input.keyboard?.on('keydown-D', () => this.drink());
-    
-    // R to rest/camp
+
+    // R to rest/camp (changed from D which conflicts with movement)
     this.input.keyboard?.on('keydown-R', () => this.toggleCamp());
-    
-    // S to search for blaze (when lost)
-    this.input.keyboard?.on('keydown-S', () => this.searchBlaze());
-    
+
+    // Q to drink (changed from D which is now movement)
+    this.input.keyboard?.on('keydown-Q', () => this.drink());
+
+    // F to search for blaze (changed from S which is now movement)
+    this.input.keyboard?.on('keydown-F', () => this.searchBlaze());
+
     // B to backtrack (when lost)
     this.input.keyboard?.on('keydown-B', () => this.backtrack());
   }
-  
+
+  setupMobileControls() {
+    const { width, height } = this.cameras.main;
+
+    // Create virtual joystick on left side
+    const joystickSize = 80;
+    const joystickX = joystickSize + 20;
+    const joystickY = height - joystickSize - 20;
+
+    // Joystick base (outer circle)
+    this.joystickBase = this.add.circle(joystickX, joystickY, joystickSize / 2, 0x333333, 0.4);
+    this.joystickBase.setDepth(1000);
+    this.joystickBase.setScrollFactor(0);
+    this.joystickBase.setStrokeStyle(2, 0x666666, 0.6);
+
+    // Joystick thumb (inner circle)
+    this.joystickThumb = this.add.circle(joystickX, joystickY, joystickSize / 4, 0x4a7d5a, 0.7);
+    this.joystickThumb.setDepth(1001);
+    this.joystickThumb.setScrollFactor(0);
+
+    // Touch controls for joystick
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      const distance = Phaser.Math.Distance.Between(
+        pointer.x, pointer.y, this.joystickBase.x, this.joystickBase.y
+      );
+
+      // Check if touch is on joystick
+      if (distance < joystickSize) {
+        this.joystickActive = true;
+      }
+    });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (this.joystickActive) {
+        const distance = Phaser.Math.Distance.Between(
+          pointer.x, pointer.y, this.joystickBase.x, this.joystickBase.y
+        );
+
+        const angle = Phaser.Math.Angle.Between(
+          this.joystickBase.x, this.joystickBase.y, pointer.x, pointer.y
+        );
+
+        // Limit thumb movement to base radius
+        const maxDistance = joystickSize / 2;
+        const clampedDistance = Math.min(distance, maxDistance);
+
+        // Update thumb position
+        this.joystickThumb.x = this.joystickBase.x + Math.cos(angle) * clampedDistance;
+        this.joystickThumb.y = this.joystickBase.y + Math.sin(angle) * clampedDistance;
+
+        // Calculate normalized vector for movement
+        this.joystickVector.x = (this.joystickThumb.x - this.joystickBase.x) / maxDistance;
+        this.joystickVector.y = (this.joystickThumb.y - this.joystickBase.y) / maxDistance;
+      }
+    });
+
+    this.input.on('pointerup', () => {
+      if (this.joystickActive) {
+        this.joystickActive = false;
+
+        // Reset thumb to center
+        this.joystickThumb.x = this.joystickBase.x;
+        this.joystickThumb.y = this.joystickBase.y;
+        this.joystickVector.x = 0;
+        this.joystickVector.y = 0;
+      }
+    });
+
+    // Mobile action buttons (right side)
+    const buttonSize = 50;
+    const buttonX = width - 70;
+    const buttonSpacing = 60;
+
+    // Hike button (SPACE equivalent)
+    const hikeButton = this.add.circle(buttonX, height - buttonSpacing * 3, buttonSize / 2, 0x2e5339, 0.7);
+    hikeButton.setDepth(1000);
+    hikeButton.setScrollFactor(0);
+    hikeButton.setInteractive();
+    const hikeText = this.add.text(buttonX, height - buttonSpacing * 3, '▶', {
+      font: '24px Arial',
+      color: '#ffffff'
+    }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
+
+    hikeButton.on('pointerdown', () => {
+      this.toggleHiking();
+      hikeButton.setFillStyle(0x4a7d5a, 0.9);
+    });
+    hikeButton.on('pointerup', () => {
+      hikeButton.setFillStyle(0x2e5339, 0.7);
+    });
+
+    // Eat button (E equivalent)
+    const eatButton = this.add.circle(buttonX, height - buttonSpacing * 2, buttonSize / 2, 0x4a7d5a, 0.7);
+    eatButton.setDepth(1000);
+    eatButton.setScrollFactor(0);
+    eatButton.setInteractive();
+    const eatText = this.add.text(buttonX, height - buttonSpacing * 2, '🍽', {
+      font: '20px Arial',
+      color: '#ffffff'
+    }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
+
+    eatButton.on('pointerdown', () => {
+      this.eat();
+      eatButton.setFillStyle(0x5a9d6a, 0.9);
+    });
+    eatButton.on('pointerup', () => {
+      eatButton.setFillStyle(0x4a7d5a, 0.7);
+    });
+
+    // Drink button (Q equivalent)
+    const drinkButton = this.add.circle(buttonX, height - buttonSpacing, buttonSize / 2, 0x4a7d5a, 0.7);
+    drinkButton.setDepth(1000);
+    drinkButton.setScrollFactor(0);
+    drinkButton.setInteractive();
+    const drinkText = this.add.text(buttonX, height - buttonSpacing, '💧', {
+      font: '20px Arial',
+      color: '#ffffff'
+    }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
+
+    drinkButton.on('pointerdown', () => {
+      this.drink();
+      drinkButton.setFillStyle(0x5a9d6a, 0.9);
+    });
+    drinkButton.on('pointerup', () => {
+      drinkButton.setFillStyle(0x4a7d5a, 0.7);
+    });
+  }
+
   toggleHiking() {
     if (this.isConnected && this.room) {
       const isHiking = this.hikerData?.isHiking;
@@ -728,23 +877,77 @@ export class GameScene extends Phaser.Scene {
   }
   
   update(time: number, delta: number) {
+    const { width, height } = this.cameras.main;
+
+    // Handle movement (keyboard or joystick)
+    const moveSpeed = 200 * (delta / 1000); // pixels per second
+    let moveX = 0;
+    let moveY = 0;
+
+    // Keyboard movement
+    const keys = this.input.keyboard;
+    if (keys) {
+      const keyW = keys.addKey('W');
+      const keyA = keys.addKey('A');
+      const keyS = keys.addKey('S');
+      const keyD = keys.addKey('D');
+      const cursors = keys.createCursorKeys();
+
+      // Horizontal movement (A/D or Left/Right)
+      if (keyA?.isDown || cursors.left?.isDown) {
+        moveX = -1;
+      } else if (keyD?.isDown || cursors.right?.isDown) {
+        moveX = 1;
+      }
+
+      // Vertical movement (W/S or Up/Down)
+      if (keyW?.isDown || cursors.up?.isDown) {
+        moveY = -1;
+      } else if (keyS?.isDown || cursors.down?.isDown) {
+        moveY = 1;
+      }
+    }
+
+    // Joystick movement (mobile)
+    if (this.isMobile && this.joystickActive) {
+      moveX = this.joystickVector.x;
+      moveY = this.joystickVector.y;
+    }
+
+    // Apply movement with bounds checking
+    if (moveX !== 0) {
+      this.hiker.x = Phaser.Math.Clamp(
+        this.hiker.x + moveX * moveSpeed,
+        width * 0.32,
+        width * 0.68
+      );
+    }
+
+    if (moveY !== 0) {
+      this.hiker.y = Phaser.Math.Clamp(
+        this.hiker.y + moveY * moveSpeed,
+        height * 0.3,
+        height * 0.8
+      );
+    }
+
     // Scroll the trail to simulate forward movement
     if (this.hikerData?.isHiking) {
       const scrollSpeed = 0.5 * delta / 16; // Adjust for frame rate
       this.ground.tilePositionY -= scrollSpeed;
       this.trail.tilePositionY -= scrollSpeed;
-      
+
       // Move trees up (parallax)
       this.trees.forEach(tree => {
         tree.y -= scrollSpeed * 0.8;
         if (tree.y < -50) {
           tree.y = this.cameras.main.height + 50;
-          tree.x = tree.x < this.cameras.main.width / 2 
+          tree.x = tree.x < this.cameras.main.width / 2
             ? Phaser.Math.Between(20, this.cameras.main.width * 0.25)
             : Phaser.Math.Between(this.cameras.main.width * 0.75, this.cameras.main.width - 20);
         }
       });
-      
+
       // Move blazes
       this.blazes.forEach(blaze => {
         blaze.y -= scrollSpeed;
@@ -752,11 +955,12 @@ export class GameScene extends Phaser.Scene {
           blaze.y = this.cameras.main.height + 20;
         }
       });
-      
-      // Hiker bob animation
-      this.hiker.y = this.cameras.main.height * 0.6 + Math.sin(time / 100) * 2;
+
+      // Hiker bob animation when hiking
+      const baseY = this.hiker.y;
+      this.hiker.y = baseY + Math.sin(time / 100) * 2;
     }
-    
+
     // Fog movement
     this.fogSprites.forEach(fog => {
       fog.x += Math.sin(time / 1000 + fog.y) * 0.2;

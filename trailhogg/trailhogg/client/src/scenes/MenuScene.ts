@@ -26,6 +26,7 @@ export class MenuScene extends Phaser.Scene {
   private nameText!: Phaser.GameObjects.Text;
   private hasSave: boolean = false;
   private saveInfo: { hikerName?: string; mile?: number; daysOnTrail?: number } = {};
+  private isMobile: boolean = false;
 
   constructor() {
     super({ key: 'MenuScene' });
@@ -34,6 +35,11 @@ export class MenuScene extends Phaser.Scene {
   async create() {
     const { width, height } = this.cameras.main;
 
+    // Detect mobile
+    this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS ||
+                    this.sys.game.device.os.iPad || this.sys.game.device.os.iPhone ||
+                    ('ontouchstart' in window) || width < 768;
+
     // Check for existing save
     const saveData = await gameStorage.getSaveInfo('autosave');
     this.hasSave = saveData.exists;
@@ -41,31 +47,40 @@ export class MenuScene extends Phaser.Scene {
       this.saveInfo = saveData;
     }
 
+    // Responsive sizing
+    const titleSize = this.isMobile ? '32px' : '48px';
+    const subtitleSize = this.isMobile ? '12px' : '16px';
+    const titleY = this.isMobile ? 30 : 50;
+    const subtitleY = this.isMobile ? 60 : 90;
+
     // Title
-    this.add.text(width / 2, 50, 'TRAILHOGG', {
-      font: '48px Courier',
+    this.add.text(width / 2, titleY, 'TRAILHOGG', {
+      font: `${titleSize} Courier`,
       color: '#2e5339'
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 90, 'An Appalachian Trail Simulation', {
-      font: '16px Courier',
+    this.add.text(width / 2, subtitleY, 'An Appalachian Trail Simulation', {
+      font: `${subtitleSize} Courier`,
       color: '#666666',
       fontStyle: 'italic'
     }).setOrigin(0.5);
 
     // Continue button (if save exists)
-    if (this.hasSave) {
-      const continueY = 130;
+    const buttonHeight = this.isMobile ? 40 : 50;
+    const buttonWidth = this.isMobile ? Math.min(250, width - 40) : 300;
 
-      const continueButton = this.add.rectangle(width / 2, continueY, 300, 50, 0x4a7d5a);
+    if (this.hasSave) {
+      const continueY = this.isMobile ? 90 : 130;
+
+      const continueButton = this.add.rectangle(width / 2, continueY, buttonWidth, buttonHeight, 0x4a7d5a);
       const continueText = this.add.text(width / 2, continueY - 5, 'CONTINUE', {
-        font: '20px Courier',
+        font: this.isMobile ? '16px Courier' : '20px Courier',
         color: '#ffffff'
       }).setOrigin(0.5);
 
       const saveInfoText = this.add.text(width / 2, continueY + 15,
         `${this.saveInfo.hikerName} - Mile ${this.saveInfo.mile?.toFixed(1)} - Day ${this.saveInfo.daysOnTrail}`, {
-        font: '12px Courier',
+        font: this.isMobile ? '10px Courier' : '12px Courier',
         color: '#cccccc'
       }).setOrigin(0.5);
 
@@ -76,18 +91,20 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // Adjust Y positions based on whether continue button exists
-    const offsetY = this.hasSave ? 60 : 0;
+    const offsetY = this.hasSave ? (this.isMobile ? 50 : 60) : 0;
 
     // Name input area
-    this.add.text(width / 2, 140 + offsetY, 'Your Name:', {
-      font: '18px Courier',
+    const nameY = this.isMobile ? 120 + offsetY : 140 + offsetY;
+    this.add.text(width / 2, nameY, 'Your Name:', {
+      font: this.isMobile ? '14px Courier' : '18px Courier',
       color: '#4a7d5a'
     }).setOrigin(0.5);
 
     // Name display (simulated input)
-    const nameBox = this.add.rectangle(width / 2, 170 + offsetY, 200, 30, 0x333333);
-    this.nameText = this.add.text(width / 2, 170 + offsetY, this.hikerName, {
-      font: '18px Courier',
+    const nameBoxY = nameY + 30;
+    const nameBox = this.add.rectangle(width / 2, nameBoxY, Math.min(200, width - 40), 30, 0x333333);
+    this.nameText = this.add.text(width / 2, nameBoxY, this.hikerName, {
+      font: this.isMobile ? '14px Courier' : '18px Courier',
       color: '#ffffff'
     }).setOrigin(0.5);
 
@@ -102,19 +119,20 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // Build selection
-    this.add.text(width / 2, 220 + offsetY, 'Choose Your Background:', {
-      font: '18px Courier',
+    const buildTitleY = nameBoxY + 50;
+    this.add.text(width / 2, buildTitleY, 'Choose Your Background:', {
+      font: this.isMobile ? '14px Courier' : '18px Courier',
       color: '#4a7d5a'
     }).setOrigin(0.5);
 
     // Build options
-    const startY = 260 + offsetY;
-    const spacing = 35;
+    const startY = buildTitleY + 40;
+    const spacing = this.isMobile ? 28 : 35;
 
     BUILDS.forEach((build, index) => {
       const y = startY + index * spacing;
       const text = this.add.text(width / 2, y, build.name, {
-        font: '16px Courier',
+        font: this.isMobile ? '13px Courier' : '16px Courier',
         color: index === this.selectedBuild ? '#ffffff' : '#888888'
       }).setOrigin(0.5);
 
@@ -135,25 +153,30 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // Description box
-    this.add.rectangle(width / 2, 500 + offsetY, 600, 80, 0x222222, 0.8);
+    const descY = startY + BUILDS.length * spacing + 30;
+    const descBoxWidth = this.isMobile ? width - 40 : 600;
+    const descBoxHeight = this.isMobile ? 100 : 80;
 
-    this.descriptionText = this.add.text(width / 2, 480 + offsetY, BUILDS[0].description, {
-      font: '14px Courier',
+    this.add.rectangle(width / 2, descY + 10, descBoxWidth, descBoxHeight, 0x222222, 0.8);
+
+    this.descriptionText = this.add.text(width / 2, descY - 10, BUILDS[0].description, {
+      font: this.isMobile ? '11px Courier' : '14px Courier',
       color: '#cccccc',
-      wordWrap: { width: 580 },
+      wordWrap: { width: descBoxWidth - 20 },
       align: 'center'
     }).setOrigin(0.5);
 
-    this.statsText = this.add.text(width / 2, 510 + offsetY, BUILDS[0].stats, {
-      font: '14px Courier',
+    this.statsText = this.add.text(width / 2, descY + 20, BUILDS[0].stats, {
+      font: this.isMobile ? '11px Courier' : '14px Courier',
       color: '#4a7d5a',
       align: 'center'
     }).setOrigin(0.5);
 
     // Start button (new game)
-    const startButton = this.add.rectangle(width / 2, 560 + offsetY, 200, 40, 0x2e5339);
-    const startText = this.add.text(width / 2, 560 + offsetY, this.hasSave ? 'NEW GAME' : 'HIT THE TRAIL', {
-      font: '18px Courier',
+    const startButtonY = descY + descBoxHeight;
+    const startButton = this.add.rectangle(width / 2, startButtonY, buttonWidth, buttonHeight, 0x2e5339);
+    const startText = this.add.text(width / 2, startButtonY, this.hasSave ? 'NEW GAME' : 'HIT THE TRAIL', {
+      font: this.isMobile ? '14px Courier' : '18px Courier',
       color: '#ffffff'
     }).setOrigin(0.5);
 
@@ -176,10 +199,12 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // Instructions
-    this.add.text(width / 2, height - 20, 'Click a build to select, then HIT THE TRAIL', {
-      font: '12px Courier',
-      color: '#666666'
-    }).setOrigin(0.5);
+    if (!this.isMobile) {
+      this.add.text(width / 2, height - 20, 'Click a build to select, then HIT THE TRAIL', {
+        font: '12px Courier',
+        color: '#666666'
+      }).setOrigin(0.5);
+    }
 
     // Keyboard controls
     this.input.keyboard?.on('keydown-UP', () => {
