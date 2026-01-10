@@ -1,6 +1,11 @@
 import Phaser from 'phaser';
 import * as Colyseus from 'colyseus.js';
 import { gameStorage, type HikerSaveData, type GameSaveData } from '../storage/GameStorage';
+import {
+  SHELTERS, TOWNS, TERRAIN_ZONES, STATE_BOUNDARIES, PEAKS,
+  getTerrainZone, getCurrentState, getNextShelter, getNextTown, getElevationAtMile,
+  type Shelter, type Town, type TerrainZone
+} from '../data/TrailData';
 
 interface GameData {
   hikerName: string;
@@ -68,30 +73,29 @@ export class GameScene extends Phaser.Scene {
   private elevationText!: Phaser.GameObjects.Text;
 
   // Town system
-  private townData = [
-    {
-      name: 'Neels Gap',
-      mile: 30.7,
-      hasStore: true,
-      hasHostel: true,
-      hasRestaurant: false,
-      hasOutfitter: true,
-      hostelPrice: 45,
-      description: 'Mountain Crossings - the AT goes through the building!',
-      storeInventory: [
-        { id: 'ramen', name: 'Ramen Noodles', price: 1, type: 'food', calories: 400, weight: 0.1, servings: 1 },
-        { id: 'oatmeal', name: 'Instant Oatmeal (3pk)', price: 4, type: 'food', calories: 300, weight: 0.3, servings: 3 },
-        { id: 'trailMix', name: 'Trail Mix', price: 6, type: 'food', calories: 600, weight: 0.3, servings: 2 },
-        { id: 'snickers', name: 'Snickers Bar', price: 2, type: 'food', calories: 250, weight: 0.1, servings: 1 },
-        { id: 'tuna', name: 'Tuna Packet', price: 3, type: 'food', calories: 200, weight: 0.15, servings: 1 },
-        { id: 'peanutButter', name: 'Peanut Butter', price: 5, type: 'food', calories: 800, weight: 0.4, servings: 4 },
-        { id: 'tortillas', name: 'Tortillas (6pk)', price: 4, type: 'food', calories: 150, weight: 0.3, servings: 6 },
-        { id: 'pepperoni', name: 'Pepperoni', price: 5, type: 'food', calories: 500, weight: 0.2, servings: 3 },
-        { id: 'gatorade', name: 'Gatorade Powder', price: 4, type: 'food', calories: 100, weight: 0.2, servings: 4 },
-        { id: 'cliff', name: 'Clif Bar', price: 3, type: 'food', calories: 250, weight: 0.1, servings: 1 },
-      ]
-    }
+  // Standard store inventory for towns with stores
+  private storeInventory = [
+    { id: 'ramen', name: 'Ramen Noodles', price: 1, type: 'food', calories: 400, weight: 0.1, servings: 1 },
+    { id: 'oatmeal', name: 'Instant Oatmeal (3pk)', price: 4, type: 'food', calories: 300, weight: 0.3, servings: 3 },
+    { id: 'trailMix', name: 'Trail Mix', price: 6, type: 'food', calories: 600, weight: 0.3, servings: 2 },
+    { id: 'snickers', name: 'Snickers Bar', price: 2, type: 'food', calories: 250, weight: 0.1, servings: 1 },
+    { id: 'tuna', name: 'Tuna Packet', price: 3, type: 'food', calories: 200, weight: 0.15, servings: 1 },
+    { id: 'peanutButter', name: 'Peanut Butter', price: 5, type: 'food', calories: 800, weight: 0.4, servings: 4 },
+    { id: 'tortillas', name: 'Tortillas (6pk)', price: 4, type: 'food', calories: 150, weight: 0.3, servings: 6 },
+    { id: 'pepperoni', name: 'Pepperoni', price: 5, type: 'food', calories: 500, weight: 0.2, servings: 3 },
+    { id: 'gatorade', name: 'Gatorade Powder', price: 4, type: 'food', calories: 100, weight: 0.2, servings: 4 },
+    { id: 'cliff', name: 'Clif Bar', price: 3, type: 'food', calories: 250, weight: 0.1, servings: 1 },
   ];
+
+  // Helper to get store inventory for any town with a store
+  getTownStoreInventory(_town: Town) {
+    return this.storeInventory;
+  }
+
+  // Helper to get hostel price (standard rate)
+  getTownHostelPrice(_town: Town): number {
+    return 45; // Standard hostel rate
+  }
   private visitedTowns: Set<string> = new Set();
   private townPromptShown: boolean = false;
 
@@ -809,27 +813,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   initElevationData() {
-    // Real-ish elevation profile for the first 30 miles of the AT (Springer to Neels Gap)
-    // Values in feet
-    this.elevationData = [
-      { mile: 0, elevation: 3782 },    // Springer Mountain summit
-      { mile: 0.8, elevation: 3400 },  // Down from Springer
-      { mile: 2.2, elevation: 3100 },  // Stover Creek
-      { mile: 3.7, elevation: 2500 },  // Three Forks
-      { mile: 5.5, elevation: 3200 },  // Hawk Mountain
-      { mile: 7.6, elevation: 2800 },  // Justus Creek
-      { mile: 8.1, elevation: 3450 },  // Sassafras Mountain
-      { mile: 10.4, elevation: 2850 }, // Woods Hole Shelter
-      { mile: 12.2, elevation: 3050 }, // Ramrock Mountain
-      { mile: 15.3, elevation: 2950 }, // Gooch Mountain
-      { mile: 17.8, elevation: 2280 }, // Cooper Gap
-      { mile: 20.0, elevation: 3150 }, // Woody Gap
-      { mile: 22.1, elevation: 2500 }, // Jarrard Gap
-      { mile: 24.0, elevation: 3200 }, // Slaughter Creek
-      { mile: 27.1, elevation: 4458 }, // Blood Mountain (highest)
-      { mile: 28.6, elevation: 3500 }, // Flatrock Gap
-      { mile: 30.7, elevation: 3125 }, // Neels Gap
-    ];
+    // Build elevation data from real shelter elevations for accurate interpolation
+    this.elevationData = SHELTERS.map(s => ({
+      mile: s.mile,
+      elevation: s.elevation
+    }));
   }
 
   getCurrentElevation(): number {
@@ -837,22 +825,102 @@ export class GameScene extends Phaser.Scene {
 
     const mile = this.hikerData.mile;
 
-    // Find the two elevation points we're between
-    let prev = this.elevationData[0];
-    let next = this.elevationData[0];
+    // Use real trail data for elevation
+    return getElevationAtMile(mile);
+  }
 
-    for (let i = 0; i < this.elevationData.length - 1; i++) {
-      if (mile >= this.elevationData[i].mile && mile <= this.elevationData[i + 1].mile) {
-        prev = this.elevationData[i];
-        next = this.elevationData[i + 1];
-        break;
-      }
-    }
+  // Get current terrain zone for visual/gameplay changes
+  getCurrentTerrainZone(): TerrainZone | undefined {
+    if (!this.hikerData) return undefined;
+    return getTerrainZone(this.hikerData.mile);
+  }
 
-    // Linear interpolation between points
-    if (next.mile === prev.mile) return prev.elevation;
-    const progress = (mile - prev.mile) / (next.mile - prev.mile);
-    return Math.round(prev.elevation + progress * (next.elevation - prev.elevation));
+  // Get current state
+  getCurrentTrailState(): string {
+    if (!this.hikerData) return 'GA';
+    return getCurrentState(this.hikerData.mile);
+  }
+
+  // Terrain zone color palettes for visual variety across 2,197 miles
+  private lastZoneType: string = '';
+
+  getTerrainColors(zoneType: string): { tree: number; ground: number; sky: number } {
+    const palettes: Record<string, { tree: number; ground: number; sky: number }> = {
+      // Georgia
+      'ga_forest': { tree: 0x2e5339, ground: 0x4a3728, sky: 0x87CEEB },
+      'ga_highlands': { tree: 0x355E3B, ground: 0x3d2817, sky: 0x7EC8E3 },
+
+      // North Carolina
+      'nc_nantahala': { tree: 0x2d4a35, ground: 0x453020, sky: 0x87CEEB },
+      'nc_approach': { tree: 0x3a5540, ground: 0x4a3525, sky: 0x82C4E3 },
+
+      // Great Smokies - misty, spruce-fir
+      'smokies': { tree: 0x1a3d2a, ground: 0x2d1f14, sky: 0x708090 },
+
+      // NC/TN Highlands
+      'nc_tn_highlands': { tree: 0x3d5c45, ground: 0x4d3d2d, sky: 0x87CEEB },
+      'roan_highlands': { tree: 0x4a6b52, ground: 0x6b7d5a, sky: 0x99D9EA },
+      'tn_damascus': { tree: 0x355E3B, ground: 0x4a3728, sky: 0x87CEEB },
+
+      // Virginia
+      'va_grayson': { tree: 0x4d6b54, ground: 0x6b7d5a, sky: 0xA3E4F8 },
+      'va_central': { tree: 0x3a5d42, ground: 0x5a4a3a, sky: 0x87CEEB },
+      'va_blue_ridge': { tree: 0x3d5a45, ground: 0x554535, sky: 0x7BC8EB },
+      'va_priest': { tree: 0x2d4a35, ground: 0x4a3a2a, sky: 0x87CEEB },
+      'shenandoah': { tree: 0x4a6b52, ground: 0x5d4d3d, sky: 0x89D0EF },
+      'va_roller': { tree: 0x3d5a45, ground: 0x5a4a3a, sky: 0x87CEEB },
+
+      // Mid-Atlantic
+      'harpers_md': { tree: 0x4a6352, ground: 0x6a5a4a, sky: 0x87CEEB },
+      'pa_south': { tree: 0x3a5540, ground: 0x6a5a4a, sky: 0x7EC8E3 },
+      'pa_rocks': { tree: 0x4a5a4a, ground: 0x7a6a5a, sky: 0x87CEEB },
+
+      // NJ/NY
+      'nj_ridges': { tree: 0x3d5c45, ground: 0x4a4a3a, sky: 0x87CEEB },
+      'ny_highlands': { tree: 0x3a5540, ground: 0x5a4a3a, sky: 0x7BC8EB },
+
+      // New England
+      'ct_ridges': { tree: 0x4a6b52, ground: 0x6a5a4a, sky: 0x89D0EF },
+      'ma_berkshires': { tree: 0x3d5c45, ground: 0x5a5a4a, sky: 0x7BC8EB },
+      'vt_green': { tree: 0x2d5a35, ground: 0x4a3a2a, sky: 0x87CEEB },
+
+      // White Mountains - granite, alpine
+      'nh_approach': { tree: 0x3d5c45, ground: 0x6a6a5a, sky: 0x7BC8EB },
+      'whites': { tree: 0x3a4a3a, ground: 0x8a8a7a, sky: 0x99D9EA },
+
+      // Maine
+      'me_mahoosuc': { tree: 0x2a4a32, ground: 0x5a4a3a, sky: 0x7EC8E3 },
+      'me_lakes': { tree: 0x1a4a28, ground: 0x4a3a28, sky: 0x89D0EF },
+      'me_100mile': { tree: 0x1a3d25, ground: 0x3a2a1a, sky: 0x87CEEB },
+      'katahdin': { tree: 0x3a4a3a, ground: 0x7a7a6a, sky: 0xA3E4F8 },
+    };
+
+    return palettes[zoneType] || { tree: 0x355E3B, ground: 0x4a3728, sky: 0x87CEEB };
+  }
+
+  updateTerrainVisuals() {
+    const zone = this.getCurrentTerrainZone();
+    if (!zone || zone.type === this.lastZoneType) return;
+
+    this.lastZoneType = zone.type;
+    const colors = this.getTerrainColors(zone.type);
+
+    // Update tree tints based on zone
+    this.trees.forEach(tree => {
+      tree.setTint(colors.tree);
+    });
+
+    // Update ground tint
+    this.ground?.setTint(colors.ground);
+
+    // Update sky overlay
+    this.skyOverlay?.setFillStyle(colors.sky, 0.3);
+
+    // Emit zone change event
+    this.events.emit('game-event', {
+      type: 'zone',
+      message: `📍 ${zone.name} - ${zone.description}`
+    });
   }
 
   updateNightVisibility() {
@@ -945,8 +1013,8 @@ export class GameScene extends Phaser.Scene {
 
     const currentMile = this.hikerData.mile;
 
-    // Check if near any town
-    this.townData.forEach(town => {
+    // Check if near any town from real TOWNS data
+    TOWNS.forEach(town => {
       const distance = Math.abs(currentMile - town.mile);
 
       // If within 0.2 miles of town and haven't shown prompt yet
@@ -957,7 +1025,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  showTownPrompt(town: any) {
+  showTownPrompt(town: Town) {
     const { width, height } = this.cameras.main;
 
     // Stop hiking
@@ -978,7 +1046,8 @@ export class GameScene extends Phaser.Scene {
       color: '#ffffff'
     }).setOrigin(0.5).setDepth(502);
 
-    const desc = this.add.text(width / 2, height / 2 - 25, town.description, {
+    const townDesc = town.notes || `${town.distance} - Services: ${town.services.join(', ')}`;
+    const desc = this.add.text(width / 2, height / 2 - 25, townDesc, {
       font: '11px Courier',
       color: '#aaaaaa',
       wordWrap: { width: 300 },
@@ -2090,30 +2159,53 @@ export class GameScene extends Phaser.Scene {
         if (currentMile > this.lastMileLandmark && currentMile > 0) {
           this.lastMileLandmark = currentMile;
 
-          // Spawn a landmark every mile
-          const landmarks = [
-            { mile: 1, name: 'Stover Creek Shelter', hasWater: true },
-            { mile: 2, name: 'Three Forks', hasWater: true },
-            { mile: 3, name: 'Long Creek Falls', hasWater: true },
-            { mile: 5, name: 'Hawk Mountain Shelter', hasWater: true },
-            { mile: 8, name: 'Springer Mountain', hasWater: false },
-            { mile: 10, name: 'Black Gap Shelter', hasWater: true },
-            { mile: 15, name: 'Gooch Mountain Shelter', hasWater: true },
-            { mile: 20, name: 'Woody Gap', hasWater: false },
-            { mile: 25, name: 'Blood Mountain', hasWater: false },
-            { mile: 30, name: 'Neels Gap', hasWater: true },
-          ];
-
-          const landmark = landmarks.find(l => l.mile === currentMile);
-          if (landmark) {
-            this.spawnLandmark(currentMile, landmark.name, landmark.hasWater);
+          // Check for real shelters near this mile
+          const shelter = SHELTERS.find(s => Math.floor(s.mile) === currentMile);
+          if (shelter) {
+            this.spawnLandmark(currentMile, shelter.name, shelter.hasWater);
+            const waterIcon = shelter.hasWater ? '💧' : '';
+            const privyIcon = shelter.hasPrivy ? '🚻' : '';
             this.events.emit('game-event', {
-              type: 'milestone',
-              message: `Approaching ${landmark.name}!`
+              type: 'shelter',
+              message: `🏕️ ${shelter.name} ${waterIcon}${privyIcon} (${shelter.elevation.toLocaleString()} ft)`
             });
           } else {
-            // Generic mile marker
-            this.spawnLandmark(currentMile, `Mile ${currentMile}`, false);
+            // Check for town near this mile
+            const town = TOWNS.find(t => Math.floor(t.mile) === currentMile);
+            if (town) {
+              this.spawnLandmark(currentMile, town.name, true);
+              const services = [];
+              if (town.hasStore) services.push('🏪');
+              if (town.hasRestaurant) services.push('🍔');
+              if (town.hasHostel) services.push('🛏️');
+              if (town.hasOutfitter) services.push('🎒');
+              this.events.emit('game-event', {
+                type: 'town',
+                message: `🏘️ ${town.name} ${services.join('')} - ${town.distance}`
+              });
+            } else {
+              // Check for peak near this mile
+              const peak = PEAKS.find(p => Math.floor(p.mile) === currentMile);
+              if (peak) {
+                this.spawnLandmark(currentMile, peak.name, false);
+                this.events.emit('game-event', {
+                  type: 'peak',
+                  message: `⛰️ ${peak.name} (${peak.elevation.toLocaleString()} ft)${peak.notes ? ' - ' + peak.notes : ''}`
+                });
+              } else if (currentMile % 5 === 0) {
+                // Mile markers every 5 miles if no major landmark
+                this.spawnLandmark(currentMile, `Mile ${currentMile}`, false);
+              }
+            }
+          }
+
+          // Check for state boundary crossings
+          const stateBoundary = STATE_BOUNDARIES.find(b => Math.floor(b.mile) === currentMile);
+          if (stateBoundary && stateBoundary.prevState) {
+            this.events.emit('game-event', {
+              type: 'milestone',
+              message: `🎉 ${stateBoundary.name}! Welcome to ${stateBoundary.state}!`
+            });
           }
         }
       }
@@ -2381,6 +2473,9 @@ export class GameScene extends Phaser.Scene {
     if (this.hikerData) {
       this.hikerData.elevation = elevation;
     }
+
+    // Update terrain visuals based on current zone
+    this.updateTerrainVisuals();
 
     // Check shelter proximity for bonus rest
     this.checkShelterProximity();

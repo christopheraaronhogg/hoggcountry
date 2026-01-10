@@ -1,16 +1,5 @@
 import Phaser from 'phaser';
-
-interface TownData {
-  name: string;
-  mile: number;
-  hasStore: boolean;
-  hasHostel: boolean;
-  hasRestaurant: boolean;
-  hasOutfitter: boolean;
-  storeInventory: StoreItem[];
-  hostelPrice: number;
-  description: string;
-}
+import { type Town } from '../data/TrailData';
 
 interface StoreItem {
   id: string;
@@ -22,34 +11,25 @@ interface StoreItem {
   servings?: number;
 }
 
-// Town data for the first 30 miles
-const TOWNS: TownData[] = [
-  {
-    name: 'Neels Gap',
-    mile: 30.7,
-    hasStore: true,
-    hasHostel: true,
-    hasRestaurant: false,
-    hasOutfitter: true,
-    hostelPrice: 45,
-    description: 'Mountain Crossings - the AT goes through the building!',
-    storeInventory: [
-      { id: 'ramen', name: 'Ramen Noodles', price: 1, type: 'food', calories: 400, weight: 0.1, servings: 1 },
-      { id: 'oatmeal', name: 'Instant Oatmeal (3pk)', price: 4, type: 'food', calories: 300, weight: 0.3, servings: 3 },
-      { id: 'trailMix', name: 'Trail Mix', price: 6, type: 'food', calories: 600, weight: 0.3, servings: 2 },
-      { id: 'snickers', name: 'Snickers Bar', price: 2, type: 'food', calories: 250, weight: 0.1, servings: 1 },
-      { id: 'tuna', name: 'Tuna Packet', price: 3, type: 'food', calories: 200, weight: 0.15, servings: 1 },
-      { id: 'peanutButter', name: 'Peanut Butter', price: 5, type: 'food', calories: 800, weight: 0.4, servings: 4 },
-      { id: 'tortillas', name: 'Tortillas (6pk)', price: 4, type: 'food', calories: 150, weight: 0.3, servings: 6 },
-      { id: 'pepperoni', name: 'Pepperoni', price: 5, type: 'food', calories: 500, weight: 0.2, servings: 3 },
-      { id: 'gatorade', name: 'Gatorade Powder', price: 4, type: 'food', calories: 100, weight: 0.2, servings: 4 },
-      { id: 'cliff', name: 'Clif Bar', price: 3, type: 'food', calories: 250, weight: 0.1, servings: 1 },
-    ]
-  }
+// Standard store inventory available at towns with stores
+const STORE_INVENTORY: StoreItem[] = [
+  { id: 'ramen', name: 'Ramen Noodles', price: 1, type: 'food', calories: 400, weight: 0.1, servings: 1 },
+  { id: 'oatmeal', name: 'Instant Oatmeal (3pk)', price: 4, type: 'food', calories: 300, weight: 0.3, servings: 3 },
+  { id: 'trailMix', name: 'Trail Mix', price: 6, type: 'food', calories: 600, weight: 0.3, servings: 2 },
+  { id: 'snickers', name: 'Snickers Bar', price: 2, type: 'food', calories: 250, weight: 0.1, servings: 1 },
+  { id: 'tuna', name: 'Tuna Packet', price: 3, type: 'food', calories: 200, weight: 0.15, servings: 1 },
+  { id: 'peanutButter', name: 'Peanut Butter', price: 5, type: 'food', calories: 800, weight: 0.4, servings: 4 },
+  { id: 'tortillas', name: 'Tortillas (6pk)', price: 4, type: 'food', calories: 150, weight: 0.3, servings: 6 },
+  { id: 'pepperoni', name: 'Pepperoni', price: 5, type: 'food', calories: 500, weight: 0.2, servings: 3 },
+  { id: 'gatorade', name: 'Gatorade Powder', price: 4, type: 'food', calories: 100, weight: 0.2, servings: 4 },
+  { id: 'cliff', name: 'Clif Bar', price: 3, type: 'food', calories: 250, weight: 0.1, servings: 1 },
 ];
 
+// Standard hostel price
+const HOSTEL_PRICE = 45;
+
 export class TownScene extends Phaser.Scene {
-  private townData!: TownData;
+  private townData!: Town;
   private hikerData: any;
   private selectedCategory: string = 'main';
   private menuItems: Phaser.GameObjects.Container[] = [];
@@ -61,7 +41,7 @@ export class TownScene extends Phaser.Scene {
     super({ key: 'TownScene' });
   }
 
-  init(data: { town: TownData; hiker: any }) {
+  init(data: { town: Town; hiker: any }) {
     this.townData = data.town;
     this.hikerData = data.hiker;
     this.cartItems = [];
@@ -83,7 +63,9 @@ export class TownScene extends Phaser.Scene {
       color: '#ffffff'
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 55, this.townData.description, {
+    // Town description from notes or services
+    const description = this.townData.notes || `${this.townData.distance} - ${this.townData.services.join(', ')}`;
+    this.add.text(width / 2, 55, description, {
       font: 'italic 12px Courier',
       color: '#aaaaaa'
     }).setOrigin(0.5);
@@ -108,7 +90,7 @@ export class TownScene extends Phaser.Scene {
 
     const options = [
       { id: 'store', label: '🏪 General Store', available: this.townData.hasStore },
-      { id: 'hostel', label: '🛏️ Hostel', available: this.townData.hasHostel, price: this.townData.hostelPrice },
+      { id: 'hostel', label: '🛏️ Hostel', available: this.townData.hasHostel, price: HOSTEL_PRICE },
       { id: 'restaurant', label: '🍔 Restaurant', available: this.townData.hasRestaurant },
       { id: 'outfitter', label: '🎒 Outfitter', available: this.townData.hasOutfitter },
       { id: 'leave', label: '🥾 Hit the Trail', available: true },
@@ -217,9 +199,9 @@ export class TownScene extends Phaser.Scene {
     // Scrollable item list
     const startY = 140;
     const itemHeight = 45;
-    const visibleItems = Math.min(8, this.townData.storeInventory.length);
+    const visibleItems = Math.min(8, STORE_INVENTORY.length);
 
-    this.townData.storeInventory.forEach((item, index) => {
+    STORE_INVENTORY.forEach((item, index) => {
       if (index >= visibleItems) return; // Simplified - no scroll for now
 
       const y = startY + index * itemHeight;
@@ -316,7 +298,7 @@ export class TownScene extends Phaser.Scene {
     if (!this.hikerData?.inventory) return;
 
     const money = this.hikerData.inventory.money || 0;
-    const price = this.townData.hostelPrice;
+    const price = HOSTEL_PRICE;
 
     if (money < price) {
       this.showMessage(`Need $${price} for a bunk!`, 'error');

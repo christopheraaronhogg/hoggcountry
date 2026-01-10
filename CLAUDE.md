@@ -117,7 +117,10 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 An AT thru-hiking simulation game. **Live at [hoggcountry.com/game](https://hoggcountry.com/game)**
 
-**Stack:** Phaser 3.90 + Vite 7 + Colyseus 0.15 + TypeScript. Located in `trailhogg/`.
+**Stack:** Phaser 3.90 + Vite 7 + TypeScript. Located in `trailhogg/`.
+
+### Vision
+A gritty, immersive AT simulation with Project Zomboid pacing. Slow and deliberate by default (0.5x speed), with player-adjustable speeds (0.25x to 8x). The entire 2,197.9 miles mapped with real shelters, towns, terrain zones, and landmarks.
 
 ### Completed
 - [x] Project scaffold (client/server/shared monorepo)
@@ -131,39 +134,89 @@ An AT thru-hiking simulation game. **Live at [hoggcountry.com/game](https://hogg
 - [x] Famous landmarks: McAfee Knob, Dragon's Tooth, Katahdin sign
 - [x] AMC huts, lighting effects, celebrations, ruins, vistas
 - [x] Optimized /cat catalog (CSS variable scaling, 1 update vs 358)
-- [x] Phase 0: Rename to TrailHogg, upgrade deps (Phaser 3.90, Vite 7, Colyseus 0.15.57)
+- [x] Phase 0: Rename to TrailHogg, upgrade deps (Phaser 3.90, Vite 7)
 - [x] Phase 0: Add Vitest test infrastructure (10 tests passing)
 - [x] Phase 0: Deploy to /game path on Netlify (offline single-player mode)
+- [x] Vertical scroller gameplay with SPACE to hike
+- [x] Mobile joystick controls
+- [x] Project Zomboid-style game speed system (0.25x-8x, default 0.5x)
+- [x] IndexedDB save/load persistence
+- [x] Day/night cycle with headlamp
+- [x] Weather system (rain, fog)
+- [x] Shelter and town scenes with stores/hostels
+- [x] Inventory management and food system
+- [x] Moodles system (fatigue, hunger, morale, anxiety)
+- [x] Wildlife encounters (deer, bear, snake, turkey, squirrel)
+- [x] Trail magic random events
+- [x] In-game Field Guide (G key)
+- [x] **FULL TRAIL DATA**: 2,197.9 miles with:
+  - 260+ real shelters (mile, elevation, water, privy, capacity)
+  - 24+ terrain zones with unique visuals (PA rocks, Whites, Smokies, etc.)
+  - 25+ real towns with services (hostels, stores, restaurants, outfitters)
+  - 20+ major peaks and landmarks
+  - 14 state boundaries with celebration messages
+- [x] **Terrain-adaptive visuals**: Tree/ground/sky colors change by zone
 
 ### In Progress
-- [ ] Phase 1: Extract shared simulation (offline/online parity)
-- [ ] Phase 1: IndexedDB storage layer for persistence
+- [ ] P2P multiplayer (see architecture below)
 
-### Next Up (Phase 1-2)
-- [ ] Unified input manager (keyboard + touch)
-- [ ] Game controller for state management
-- [ ] Online/offline adapters
-- [ ] Mobile responsive UI
-- [ ] Capacitor integration for native builds
-
-### Future (Phase 3-4)
+### Next Up
 - [ ] Real pixel art assets (replace procedural)
 - [ ] Audio system (ambient + SFX)
-- [ ] Full 2,190-mile trail data
 - [ ] NPC hiker encounters with dialogue
-- [ ] Inventory/shelter/town scenes
 - [ ] PWA + app store deployment
 
+### P2P Multiplayer Architecture (Project Zomboid Style)
+
+**Goal:** Drop-in co-op where friends can join your hike. No central servers, no monthly costs.
+
+**Stack Options:**
+
+1. **WebRTC + PeerJS** (Recommended for v1)
+   - Pure P2P, works in browsers
+   - Host runs simulation, guests sync state
+   - Free signaling via PeerJS public server (or self-host)
+   - Pros: Zero server cost, works offline after connection
+   - Cons: NAT traversal can be tricky, one player must host
+
+2. **libp2p / Hyperswarm** (For advanced P2P)
+   - DHT-based peer discovery
+   - Works without any central server at all
+   - Better for truly decentralized games
+   - Cons: More complex, less browser support
+
+3. **Steam Relay / Epic Online Services** (For desktop)
+   - Handles NAT traversal automatically
+   - Free for games on their platforms
+   - Cons: Requires platform integration
+
+**Implementation Plan:**
+```
+1. Host starts game → generates room code (PeerJS ID)
+2. Guests enter code → WebRTC connection established
+3. Host runs authoritative simulation, sends state updates
+4. Guests send inputs (hike, rest, eat), host validates
+5. All players see each other on trail in real-time
+```
+
+**Data Sync:**
+- Host broadcasts: position, energy, weather, time of day
+- Guests send: input intentions (not direct state changes)
+- Conflict resolution: Host wins (authoritative)
+
+**Offline Fallback:**
+- Game works 100% offline (current state)
+- P2P is optional enhancement for co-op
+- Save data stays local (IndexedDB)
+
 ### Research Backlog
-- [ ] **SpacetimeDB evaluation** — All-in-one DB+server with SQL subscriptions, 60 FPS transaction rate, time-travel debugging. Pros: Perfect for real-time multiplayer, cheap ($5/hr for thousands of players), simpler than Colyseus+Postgres. Cons: Rust/C# only (no TypeScript SDK yet), would require server rewrite. Revisit when TS support lands or for v2 rewrite.
+- [ ] **SpacetimeDB evaluation** — All-in-one DB+server with SQL subscriptions, 60 FPS transaction rate, time-travel debugging. Pros: Perfect for real-time multiplayer, cheap ($5/hr for thousands of players), simpler than traditional servers. Cons: Rust/C# only (no TypeScript SDK yet), would require server rewrite. Revisit when TS support lands.
 
 ### Dev Commands
 ```bash
 cd trailhogg/trailhogg
 npm install              # Install all workspace deps
 npm run dev:client       # Start Phaser client at localhost:3000
-npm run dev:server       # Start Colyseus server
-npm run dev              # Start both
 npm run build            # Production build
 npm test                 # Run Vitest tests
 ```
