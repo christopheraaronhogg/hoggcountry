@@ -20,6 +20,15 @@ export class GameScene extends Phaser.Scene {
   private rainEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private fogSprites: Phaser.GameObjects.Sprite[] = [];
 
+  // Trail features
+  private obstacles: Phaser.GameObjects.Sprite[] = [];
+  private landmarks: Phaser.GameObjects.Container[] = [];
+  private waterSources: Phaser.GameObjects.Sprite[] = [];
+  private offTrailWarning!: Phaser.GameObjects.Text;
+  private lastMileLandmark: number = 0;
+  private nextObstacleSpawn: number = 0;
+  private nextWaterSpawn: number = 0;
+
   // Camera follow offset
   private cameraTarget: number = 0;
 
@@ -70,7 +79,18 @@ export class GameScene extends Phaser.Scene {
     this.hiker = this.add.sprite(width / 2, height * 0.6, 'hiker');
     this.hiker.setScale(2);
     this.hiker.setDepth(10);
-    
+
+    // Create off-trail warning (hidden by default)
+    this.offTrailWarning = this.add.text(width / 2, height * 0.4, '⚠ OFF TRAIL - Move back to center!', {
+      font: '14px Courier',
+      color: '#ff6b6b',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    }).setOrigin(0.5).setAlpha(0).setDepth(100);
+
+    // Generate initial obstacles
+    this.generateObstacles();
+
     // Set up camera
     this.cameras.main.setBackgroundColor(0x355E3B);
     
@@ -137,7 +157,105 @@ export class GameScene extends Phaser.Scene {
       this.blazes.push(blaze);
     }
   }
-  
+
+  generateObstacles() {
+    const { width, height } = this.cameras.main;
+
+    // Create initial obstacles scattered on the trail
+    // Use actual sprite names from AssetGenerator
+    const obstacleTypes = ['rock', 'roots', 'mud_puddle', 'boulder', 'fallen_log'];
+
+    for (let i = 0; i < 5; i++) {
+      const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+      const x = width * 0.35 + Math.random() * (width * 0.3); // On trail area
+      const y = Phaser.Math.Between(-height, height);
+
+      const obstacle = this.add.sprite(x, y, type);
+      obstacle.setDepth(5);
+      obstacle.setScale(0.8); // Slightly smaller for trail
+      obstacle.setData('type', type);
+      obstacle.setData('hit', false);
+      this.obstacles.push(obstacle);
+    }
+  }
+
+  spawnObstacle() {
+    const { width } = this.cameras.main;
+    const obstacleTypes = ['rock', 'roots', 'mud_puddle', 'boulder', 'fallen_log'];
+    const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+
+    // Spawn at top of screen, random position on trail
+    const x = width * 0.35 + Math.random() * (width * 0.3);
+    const y = -30;
+
+    const obstacle = this.add.sprite(x, y, type);
+    obstacle.setDepth(5);
+    obstacle.setScale(0.8);
+    obstacle.setData('type', type);
+    obstacle.setData('hit', false);
+    this.obstacles.push(obstacle);
+  }
+
+  spawnLandmark(mile: number, name: string, hasWater: boolean = false) {
+    const { width } = this.cameras.main;
+
+    // Create a container for the landmark
+    const container = this.add.container(width / 2, -60);
+
+    // Shelter/sign background
+    const bg = this.add.rectangle(0, 0, 200, 50, 0x2e5339, 0.9);
+    bg.setStrokeStyle(2, 0x4a7d5a);
+    container.add(bg);
+
+    // Landmark text
+    const text = this.add.text(0, -8, name, {
+      font: '12px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+    container.add(text);
+
+    // Mile marker
+    const mileText = this.add.text(0, 10, `Mile ${mile.toFixed(1)}`, {
+      font: '10px Courier',
+      color: '#aaffaa'
+    }).setOrigin(0.5);
+    container.add(mileText);
+
+    // Water indicator if available
+    if (hasWater) {
+      const waterIcon = this.add.text(80, 0, '💧', {
+        font: '16px Arial'
+      }).setOrigin(0.5);
+      container.add(waterIcon);
+    }
+
+    container.setDepth(50);
+    container.setData('mile', mile);
+    container.setData('hasWater', hasWater);
+    this.landmarks.push(container);
+  }
+
+  spawnWaterSource() {
+    const { width } = this.cameras.main;
+
+    // Stream crosses the trail - use stream_crossing sprite
+    const x = width / 2;
+    const y = -40;
+
+    const water = this.add.sprite(x, y, 'stream_crossing');
+    water.setDepth(4);
+    water.setData('used', false);
+    water.setScale(1.5, 1);
+
+    // Add a water indicator icon above it
+    const indicator = this.add.text(x, y - 25, '💧', {
+      font: '16px Arial'
+    }).setOrigin(0.5).setDepth(50);
+    water.setData('indicator', indicator);
+
+    this.waterSources.push(water);
+  }
+
   async connectToServer() {
     try {
       // Connect to Colyseus server
@@ -911,6 +1029,24 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
+    // Check if hiker is off-trail (outside the main trail path)
+    const trailLeft = width * 0.35;
+    const trailRight = width * 0.65;
+    const isOffTrail = this.hiker.x < trailLeft || this.hiker.x > trailRight;
+
+    // Show/hide off-trail warning and apply penalty
+    if (isOffTrail && this.hikerData?.isHiking) {
+      this.offTrailWarning.setAlpha(1);
+      // Energy penalty for being off-trail
+      this.hikerData.energy = Math.max(0, this.hikerData.energy - 0.05);
+      // Extra fatigue
+      if (this.hikerData.moodles) {
+        this.hikerData.moodles.fatigue = Math.min(3, this.hikerData.moodles.fatigue + 0.01);
+      }
+    } else {
+      this.offTrailWarning.setAlpha(0);
+    }
+
     // Calculate scroll speed based on pace
     const paceScrollSpeed: Record<string, number> = {
       slow: 60, normal: 100, fast: 150, rush: 200
@@ -950,6 +1086,154 @@ export class GameScene extends Phaser.Scene {
             : width * 0.7 + Phaser.Math.Between(-10, 20);
         }
       });
+
+      // Move obstacles down and check collisions
+      this.obstacles.forEach((obstacle, index) => {
+        obstacle.y += scrollSpeed;
+
+        // Check collision with hiker
+        if (!obstacle.getData('hit')) {
+          const dist = Phaser.Math.Distance.Between(
+            this.hiker.x, this.hiker.y,
+            obstacle.x, obstacle.y
+          );
+          if (dist < 25) {
+            // Hit obstacle!
+            obstacle.setData('hit', true);
+            obstacle.setTint(0xff6666);
+
+            // Apply penalty based on obstacle type
+            const type = obstacle.getData('type');
+            let penalty = 2;
+            let message = 'Tripped on a rock!';
+
+            if (type === 'roots') {
+              penalty = 3;
+              message = 'Caught foot on roots!';
+            } else if (type === 'mud_puddle') {
+              penalty = 1;
+              message = 'Stepped in mud!';
+            } else if (type === 'boulder') {
+              penalty = 4;
+              message = 'Stumbled over boulder!';
+            } else if (type === 'fallen_log') {
+              penalty = 2;
+              message = 'Tripped on fallen log!';
+            }
+
+            if (this.hikerData) {
+              this.hikerData.energy = Math.max(0, this.hikerData.energy - penalty);
+            }
+            this.events.emit('game-event', {
+              type: 'warning',
+              message
+            });
+          }
+        }
+
+        // Remove when off screen
+        if (obstacle.y > height + 50) {
+          obstacle.destroy();
+          this.obstacles.splice(index, 1);
+        }
+      });
+
+      // Spawn new obstacles periodically
+      this.nextObstacleSpawn -= delta;
+      if (this.nextObstacleSpawn <= 0) {
+        this.spawnObstacle();
+        // Random interval between 2-5 seconds
+        this.nextObstacleSpawn = Phaser.Math.Between(2000, 5000);
+      }
+
+      // Move water sources down and check for interaction
+      this.waterSources.forEach((water, index) => {
+        water.y += scrollSpeed;
+        const indicator = water.getData('indicator') as Phaser.GameObjects.Text;
+        if (indicator) {
+          indicator.y = water.y - 25;
+        }
+
+        // Check if hiker walks over water source
+        if (!water.getData('used')) {
+          const dist = Phaser.Math.Distance.Between(
+            this.hiker.x, this.hiker.y,
+            water.x, water.y
+          );
+          if (dist < 40) {
+            // Auto-fill water
+            water.setData('used', true);
+            if (this.hikerData?.inventory) {
+              const oldWater = this.hikerData.inventory.water;
+              this.hikerData.inventory.water = this.hikerData.inventory.waterCapacity;
+              this.events.emit('game-event', {
+                type: 'success',
+                message: `Filled up at stream! (+${(this.hikerData.inventory.water - oldWater).toFixed(1)}L)`
+              });
+            }
+          }
+        }
+
+        // Remove when off screen
+        if (water.y > height + 50) {
+          if (indicator) indicator.destroy();
+          water.destroy();
+          this.waterSources.splice(index, 1);
+        }
+      });
+
+      // Spawn water sources periodically
+      this.nextWaterSpawn -= delta;
+      if (this.nextWaterSpawn <= 0) {
+        this.spawnWaterSource();
+        // Water sources every 15-30 seconds
+        this.nextWaterSpawn = Phaser.Math.Between(15000, 30000);
+      }
+
+      // Move landmarks down
+      this.landmarks.forEach((landmark, index) => {
+        landmark.y += scrollSpeed;
+
+        // Remove when off screen
+        if (landmark.y > height + 100) {
+          landmark.destroy();
+          this.landmarks.splice(index, 1);
+        }
+      });
+
+      // Check for landmark spawning at mile intervals
+      if (this.hikerData) {
+        const currentMile = Math.floor(this.hikerData.mile);
+        if (currentMile > this.lastMileLandmark && currentMile > 0) {
+          this.lastMileLandmark = currentMile;
+
+          // Spawn a landmark every mile
+          const landmarks = [
+            { mile: 1, name: 'Stover Creek Shelter', hasWater: true },
+            { mile: 2, name: 'Three Forks', hasWater: true },
+            { mile: 3, name: 'Long Creek Falls', hasWater: true },
+            { mile: 5, name: 'Hawk Mountain Shelter', hasWater: true },
+            { mile: 8, name: 'Springer Mountain', hasWater: false },
+            { mile: 10, name: 'Black Gap Shelter', hasWater: true },
+            { mile: 15, name: 'Gooch Mountain Shelter', hasWater: true },
+            { mile: 20, name: 'Woody Gap', hasWater: false },
+            { mile: 25, name: 'Blood Mountain', hasWater: false },
+            { mile: 30, name: 'Neels Gap', hasWater: true },
+          ];
+
+          const landmark = landmarks.find(l => l.mile === currentMile);
+          if (landmark) {
+            this.spawnLandmark(currentMile, landmark.name, landmark.hasWater);
+            this.events.emit('game-event', {
+              type: 'milestone',
+              message: `Approaching ${landmark.name}!`
+            });
+          } else {
+            // Generic mile marker
+            this.spawnLandmark(currentMile, `Mile ${currentMile}`, false);
+          }
+        }
+      }
 
       // Hiker bob animation while hiking
       this.hiker.y = height * 0.65 + Math.sin(time / 80) * 3;
