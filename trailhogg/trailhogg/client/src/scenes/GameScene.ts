@@ -188,6 +188,26 @@ export class GameScene extends Phaser.Scene {
       padding: { x: 4, y: 2 }
     }).setScrollFactor(0).setDepth(200);
 
+    // Start hiking hint (shown until player starts hiking)
+    const startHint = this.add.text(width / 2, height * 0.25, 'Press SPACE to start hiking\n\nA/D or ←/→ to stay on trail\nG to open Field Guide', {
+      font: '16px Courier',
+      color: '#4a7d5a',
+      backgroundColor: '#000000cc',
+      padding: { x: 16, y: 12 },
+      align: 'center'
+    }).setOrigin(0.5).setDepth(200);
+
+    // Hide hint once hiking starts
+    this.time.addEvent({
+      delay: 100,
+      loop: true,
+      callback: () => {
+        if (this.hikerData?.isHiking) {
+          startHint.destroy();
+        }
+      }
+    });
+
     // Initialize elevation data for the first 30 miles
     this.initElevationData();
 
