@@ -3,11 +3,13 @@ export const YT_CHANNEL_ID = 'UCtlUsN3UpR-Vmb-XbgAuNHg';
 // ============================================
 // LIVE TRACKING CONFIG
 // ============================================
-// Set to true when dad starts the AT thru-hike
-// This shows a floating "Track Live" button site-wide
-export const LIVE_TRACKING_ENABLED = true; // TESTING - set to false until hike starts
-export const LIVE_TRACKING_URL = 'https://share.garmin.com/theman1';
-export const LIVE_TRACKING_LABEL = 'Track Dad Live';
+// Shows "Track Me" link in header nav when:
+// 1. LIVE_TRACKING_ENABLED is true, AND
+// 2. Current date is >= LIVE_TRACKING_START_DATE
+// Note: Date check happens at build time - redeploy after start date to activate
+export const LIVE_TRACKING_ENABLED = true;
+export const LIVE_TRACKING_START_DATE = '2026-02-02'; // Feb 2, 2026
+export const LIVE_TRACKING_URL = 'https://share.garmin.com/hoggcountry';
 
 // Optional: Set a playlist ID to filter videos to a specific playlist
 // Leave empty to show all channel videos

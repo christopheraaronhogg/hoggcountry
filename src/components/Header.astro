@@ -1,10 +1,15 @@
 ---
-import { LIVE_TRACKING_ENABLED, LIVE_TRACKING_URL, LIVE_TRACKING_LABEL } from '../lib/config';
+import { LIVE_TRACKING_ENABLED, LIVE_TRACKING_URL, LIVE_TRACKING_START_DATE } from '../lib/config';
 
 const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
 const isGenerate = pathname.startsWith('/generate');
 const isTools = pathname.startsWith('/tools');
+
+// Show tracking link only if enabled AND we're past the start date
+const now = new Date();
+const startDate = new Date(LIVE_TRACKING_START_DATE);
+const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 ---
 
 <header class="header" id="site-header">
@@ -17,7 +22,7 @@ const isTools = pathname.startsWith('/tools');
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
       <!-- <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a> -->
       <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
-      {LIVE_TRACKING_ENABLED && (
+      {showTracking && (
         <a
           href={LIVE_TRACKING_URL}
           target="_blank"
