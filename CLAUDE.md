@@ -113,9 +113,11 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 ---
 
-## Trail Legs Game Roadmap
+## TrailHogg Game Roadmap
 
-An AT thru-hiking simulation game built with Phaser 3.70 + Colyseus. Located in `trailhogg/`.
+An AT thru-hiking simulation game. **Live at [hoggcountry.com/game](https://hoggcountry.com/game)**
+
+**Stack:** Phaser 3.90 + Vite 7 + Colyseus 0.15 + TypeScript. Located in `trailhogg/`.
 
 ### Completed
 - [x] Project scaffold (client/server/shared monorepo)
@@ -129,39 +131,41 @@ An AT thru-hiking simulation game built with Phaser 3.70 + Colyseus. Located in 
 - [x] Famous landmarks: McAfee Knob, Dragon's Tooth, Katahdin sign
 - [x] AMC huts, lighting effects, celebrations, ruins, vistas
 - [x] Optimized /cat catalog (CSS variable scaling, 1 update vs 358)
+- [x] Phase 0: Rename to TrailHogg, upgrade deps (Phaser 3.90, Vite 7, Colyseus 0.15.57)
+- [x] Phase 0: Add Vitest test infrastructure (10 tests passing)
+- [x] Phase 0: Deploy to /game path on Netlify (offline single-player mode)
 
 ### In Progress
-- [ ] Phaser client rendering pipeline (SpriteGenerator → Phaser textures)
-- [ ] Boot scene with asset loading
+- [ ] Phase 1: Extract shared simulation (offline/online parity)
+- [ ] Phase 1: IndexedDB storage layer for persistence
 
-### Next Up
-- [ ] Basic hiker movement and animation
-- [ ] Trail segment rendering with parallax backgrounds
-- [ ] Day/night cycle with lighting sprites
-- [ ] Weather system visualization
-- [ ] Blaze/trail marker interaction
-- [ ] Shelter arrival scenes
-- [ ] Town resupply UI
-- [ ] Colyseus server integration for multiplayer state
-- [ ] Save/load game state
+### Next Up (Phase 1-2)
+- [ ] Unified input manager (keyboard + touch)
+- [ ] Game controller for state management
+- [ ] Online/offline adapters
+- [ ] Mobile responsive UI
+- [ ] Capacitor integration for native builds
 
-### Future
-- [ ] Full 2,190-mile trail data integration
+### Future (Phase 3-4)
+- [ ] Real pixel art assets (replace procedural)
+- [ ] Audio system (ambient + SFX)
+- [ ] Full 2,190-mile trail data
 - [ ] NPC hiker encounters with dialogue
-- [ ] Gear/inventory management
-- [ ] Food/water/energy systems
-- [ ] Achievement badges
-- [ ] Trail magic events
-- [ ] Weather hazards and decision points
+- [ ] Inventory/shelter/town scenes
+- [ ] PWA + app store deployment
 
-### Dev Commands (Trail Legs)
+### Research Backlog
+- [ ] **SpacetimeDB evaluation** — All-in-one DB+server with SQL subscriptions, 60 FPS transaction rate, time-travel debugging. Pros: Perfect for real-time multiplayer, cheap ($5/hr for thousands of players), simpler than Colyseus+Postgres. Cons: Rust/C# only (no TypeScript SDK yet), would require server rewrite. Revisit when TS support lands or for v2 rewrite.
+
+### Dev Commands
 ```bash
 cd trailhogg/trailhogg
 npm install              # Install all workspace deps
-npm run dev:client       # Start Phaser client (Vite)
+npm run dev:client       # Start Phaser client at localhost:3000
 npm run dev:server       # Start Colyseus server
 npm run dev              # Start both
 npm run build            # Production build
+npm test                 # Run Vitest tests
 ```
 
-**After completing Trail Legs work:** Update this roadmap by moving items between sections.
+**After completing TrailHogg work:** Update this roadmap by moving items between sections.
