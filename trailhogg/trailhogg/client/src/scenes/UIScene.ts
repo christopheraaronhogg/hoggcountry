@@ -19,7 +19,8 @@ export class UIScene extends Phaser.Scene {
   private weatherText!: Phaser.GameObjects.Text;
   private eventTexts: Phaser.GameObjects.Text[] = [];
   private lostIndicator!: Phaser.GameObjects.Text;
-  
+  private saveIndicator!: Phaser.GameObjects.Text;
+
   // State
   private currentState: any = null;
   
@@ -48,6 +49,29 @@ export class UIScene extends Phaser.Scene {
       backgroundColor: '#000000',
       padding: { x: 10, y: 5 }
     }).setOrigin(0.5).setVisible(false).setDepth(100);
+
+    // Create save indicator (hidden by default)
+    this.saveIndicator = this.add.text(width - 10, 10, 'Saved', {
+      font: '12px Courier',
+      color: '#4a7d5a',
+      backgroundColor: '#000000',
+      padding: { x: 6, y: 3 }
+    }).setOrigin(1, 0).setAlpha(0).setDepth(100);
+
+    // Listen for save events
+    gameScene.events.on('game-saved', this.onGameSaved, this);
+  }
+
+  onGameSaved() {
+    // Show save indicator with fade out
+    this.saveIndicator.setAlpha(1);
+    this.tweens.add({
+      targets: this.saveIndicator,
+      alpha: 0,
+      duration: 1500,
+      delay: 500,
+      ease: 'Power2'
+    });
   }
   
   createStatsPanel() {
