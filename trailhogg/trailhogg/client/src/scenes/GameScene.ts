@@ -29,6 +29,18 @@ export class GameScene extends Phaser.Scene {
   private nextObstacleSpawn: number = 0;
   private nextWaterSpawn: number = 0;
 
+  // Wildlife
+  private wildlife: Phaser.GameObjects.Sprite[] = [];
+  private nextWildlifeSpawn: number = 0;
+
+  // Trail magic
+  private trailMagicItems: Phaser.GameObjects.Container[] = [];
+  private nextTrailMagicSpawn: number = 0;
+
+  // Sky/atmosphere
+  private skyOverlay!: Phaser.GameObjects.Rectangle;
+  private sunMoon!: Phaser.GameObjects.Sprite;
+
   // Camera follow offset
   private cameraTarget: number = 0;
 
@@ -60,22 +72,31 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
-    
+
+    // Create sky overlay for day/night cycle (behind everything)
+    this.skyOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x87CEEB, 0.3);
+    this.skyOverlay.setDepth(-10);
+
+    // Create sun/moon indicator
+    this.sunMoon = this.add.sprite(width - 40, 40, 'sun');
+    this.sunMoon.setDepth(200);
+    this.sunMoon.setScale(0.8);
+
     // Create ground layer
     this.ground = this.add.tileSprite(0, 0, width * 3, height, 'ground');
     this.ground.setOrigin(0, 0);
-    
+
     // Create trail
     this.trail = this.add.tileSprite(width * 0.3, 0, width * 0.4, height, 'trail');
     this.trail.setOrigin(0, 0);
-    
+
     // Generate trees on both sides
     this.generateTrees();
-    
+
     // Generate initial blazes
     this.generateBlazes();
-    
-    // Create hiker sprite
+
+    // Create hiker sprite with animation
     this.hiker = this.add.sprite(width / 2, height * 0.6, 'hiker');
     this.hiker.setScale(2);
     this.hiker.setDepth(10);
@@ -90,6 +111,9 @@ export class GameScene extends Phaser.Scene {
 
     // Generate initial obstacles
     this.generateObstacles();
+
+    // Spawn initial wildlife
+    this.generateWildlife();
 
     // Set up camera
     this.cameras.main.setBackgroundColor(0x355E3B);
@@ -254,6 +278,180 @@ export class GameScene extends Phaser.Scene {
     water.setData('indicator', indicator);
 
     this.waterSources.push(water);
+  }
+
+  generateWildlife() {
+    const { width, height } = this.cameras.main;
+
+    // Spawn a few initial wildlife in the woods
+    for (let i = 0; i < 3; i++) {
+      this.spawnWildlife(Phaser.Math.Between(0, height));
+    }
+  }
+
+  spawnWildlife(startY: number = -50) {
+    const { width } = this.cameras.main;
+
+    // Wildlife types with their behaviors
+    const wildlifeTypes = [
+      { sprite: 'deer', scale: 0.8, speed: 0.3, side: 'either', rare: false },
+      { sprite: 'chipmunk', scale: 0.5, speed: 0.8, side: 'either', rare: false },
+      { sprite: 'cardinal', scale: 0.4, speed: 1.2, side: 'either', rare: false },
+      { sprite: 'blue_jay', scale: 0.4, speed: 1.0, side: 'either', rare: false },
+      { sprite: 'turkey', scale: 0.7, speed: 0.4, side: 'either', rare: false },
+      { sprite: 'bear', scale: 1.0, speed: 0.2, side: 'either', rare: true },
+      { sprite: 'snake', scale: 0.5, speed: 0.1, side: 'trail', rare: true },
+    ];
+
+    // Pick a wildlife type (rare ones less likely)
+    let type;
+    if (Math.random() < 0.1) {
+      // 10% chance for rare wildlife
+      type = wildlifeTypes.filter(w => w.rare)[Math.floor(Math.random() * 2)];
+    } else {
+      type = wildlifeTypes.filter(w => !w.rare)[Math.floor(Math.random() * 5)];
+    }
+
+    // Determine position
+    let x: number;
+    if (type.side === 'trail') {
+      // On or near the trail (for snakes)
+      x = width * 0.35 + Math.random() * (width * 0.3);
+    } else {
+      // In the woods on either side
+      x = Math.random() < 0.5
+        ? Phaser.Math.Between(20, width * 0.28)
+        : Phaser.Math.Between(width * 0.72, width - 20);
+    }
+
+    const animal = this.add.sprite(x, startY, type.sprite);
+    animal.setScale(type.scale);
+    animal.setDepth(7);
+    animal.setData('type', type.sprite);
+    animal.setData('speed', type.speed);
+    animal.setData('movementTimer', 0);
+    animal.setData('targetX', x);
+
+    // Flip sprite based on which side it's on
+    if (x > width / 2) {
+      animal.setFlipX(true);
+    }
+
+    this.wildlife.push(animal);
+
+    // Bear encounter warning
+    if (type.sprite === 'bear') {
+      this.events.emit('game-event', {
+        type: 'warning',
+        message: '🐻 Bear spotted nearby! Stay calm...'
+      });
+    }
+  }
+
+  spawnTrailMagic() {
+    const { width } = this.cameras.main;
+
+    // Trail magic items
+    const magicTypes = [
+      { name: 'Cooler of Sodas', emoji: '🥤', calories: 150, water: 0.5 },
+      { name: 'Box of Snacks', emoji: '🍪', calories: 400, water: 0 },
+      { name: 'Fresh Fruit', emoji: '🍎', calories: 200, water: 0.2 },
+      { name: 'Cold Beer', emoji: '🍺', calories: 150, water: 0.3 },
+      { name: 'Homemade Cookies', emoji: '🍪', calories: 300, water: 0 },
+      { name: 'Hot Dogs!', emoji: '🌭', calories: 500, water: 0 },
+    ];
+
+    const magic = magicTypes[Math.floor(Math.random() * magicTypes.length)];
+
+    // Create container for trail magic
+    const container = this.add.container(width / 2, -60);
+
+    // Background
+    const bg = this.add.rectangle(0, 0, 180, 60, 0x4a7d5a, 0.9);
+    bg.setStrokeStyle(2, 0xffd700);
+    container.add(bg);
+
+    // Emoji
+    const emoji = this.add.text(-60, 0, magic.emoji, {
+      font: '28px Arial'
+    }).setOrigin(0.5);
+    container.add(emoji);
+
+    // Text
+    const text = this.add.text(10, -10, 'TRAIL MAGIC!', {
+      font: 'bold 12px Courier',
+      color: '#ffd700'
+    }).setOrigin(0.5);
+    container.add(text);
+
+    const nameText = this.add.text(10, 8, magic.name, {
+      font: '10px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+    container.add(nameText);
+
+    container.setDepth(50);
+    container.setData('magic', magic);
+    container.setData('collected', false);
+
+    this.trailMagicItems.push(container);
+  }
+
+  updateDayNightCycle() {
+    if (!this.gameState) return;
+
+    const hour = this.gameState.time.hour;
+    const { width } = this.cameras.main;
+
+    // Determine time of day colors
+    let skyColor: number;
+    let skyAlpha: number;
+    let useSun = true;
+
+    if (hour >= 6 && hour < 8) {
+      // Sunrise
+      skyColor = 0xFFB347; // Orange
+      skyAlpha = 0.3;
+      useSun = true;
+    } else if (hour >= 8 && hour < 17) {
+      // Daytime
+      skyColor = 0x87CEEB; // Light blue
+      skyAlpha = 0.2;
+      useSun = true;
+    } else if (hour >= 17 && hour < 19) {
+      // Sunset
+      skyColor = 0xFF6B6B; // Pink/red
+      skyAlpha = 0.35;
+      useSun = true;
+    } else if (hour >= 19 && hour < 21) {
+      // Dusk
+      skyColor = 0x4B0082; // Indigo
+      skyAlpha = 0.4;
+      useSun = false;
+    } else {
+      // Night
+      skyColor = 0x191970; // Midnight blue
+      skyAlpha = 0.5;
+      useSun = false;
+    }
+
+    // Update sky overlay
+    this.skyOverlay.setFillStyle(skyColor, skyAlpha);
+
+    // Update sun/moon
+    if (useSun) {
+      this.sunMoon.setTexture('sun');
+      // Sun position based on hour (arc across top)
+      const progress = (hour - 6) / 12; // 0 at 6am, 1 at 6pm
+      this.sunMoon.x = 60 + progress * (width - 120);
+      this.sunMoon.y = 40 + Math.sin(progress * Math.PI) * -20;
+    } else {
+      this.sunMoon.setTexture('moon');
+      // Moon position
+      const progress = (hour >= 21 ? hour - 21 : hour + 3) / 9;
+      this.sunMoon.x = 60 + progress * (width - 120);
+      this.sunMoon.y = 40;
+    }
   }
 
   async connectToServer() {
@@ -1235,12 +1433,148 @@ export class GameScene extends Phaser.Scene {
         }
       }
 
+      // Move wildlife down and animate
+      this.wildlife.forEach((animal, index) => {
+        animal.y += scrollSpeed * 0.9;
+
+        // Random movement for wildlife
+        const movementTimer = animal.getData('movementTimer') - delta;
+        animal.setData('movementTimer', movementTimer);
+
+        if (movementTimer <= 0) {
+          // Random horizontal movement
+          const type = animal.getData('type');
+          const speed = animal.getData('speed');
+
+          if (Math.random() < 0.3) {
+            const moveAmount = (Math.random() - 0.5) * 30 * speed;
+            animal.x = Phaser.Math.Clamp(animal.x + moveAmount, 20, width - 20);
+
+            // Flip based on movement direction
+            if (moveAmount > 0) {
+              animal.setFlipX(true);
+            } else if (moveAmount < 0) {
+              animal.setFlipX(false);
+            }
+          }
+
+          animal.setData('movementTimer', Phaser.Math.Between(500, 2000));
+        }
+
+        // Check for snake collision
+        if (animal.getData('type') === 'snake') {
+          const dist = Phaser.Math.Distance.Between(
+            this.hiker.x, this.hiker.y,
+            animal.x, animal.y
+          );
+          if (dist < 30 && !animal.getData('encountered')) {
+            animal.setData('encountered', true);
+            if (this.hikerData) {
+              this.hikerData.energy = Math.max(0, this.hikerData.energy - 5);
+              this.hikerData.moodles.anxiety = Math.min(3, this.hikerData.moodles.anxiety + 1);
+            }
+            this.events.emit('game-event', {
+              type: 'warning',
+              message: '🐍 Snake on the trail! Startled you!'
+            });
+          }
+        }
+
+        // Remove when off screen
+        if (animal.y > height + 50) {
+          animal.destroy();
+          this.wildlife.splice(index, 1);
+        }
+      });
+
+      // Spawn new wildlife periodically
+      this.nextWildlifeSpawn -= delta;
+      if (this.nextWildlifeSpawn <= 0) {
+        this.spawnWildlife();
+        // Wildlife every 5-15 seconds
+        this.nextWildlifeSpawn = Phaser.Math.Between(5000, 15000);
+      }
+
+      // Move trail magic items and check collection
+      this.trailMagicItems.forEach((magic, index) => {
+        magic.y += scrollSpeed;
+
+        // Check if hiker collects trail magic
+        if (!magic.getData('collected')) {
+          const dist = Phaser.Math.Distance.Between(
+            this.hiker.x, this.hiker.y,
+            magic.x, magic.y
+          );
+          if (dist < 50) {
+            magic.setData('collected', true);
+            const magicData = magic.getData('magic');
+
+            if (this.hikerData) {
+              // Apply trail magic benefits
+              this.hikerData.calories = Math.min(3000, this.hikerData.calories + magicData.calories);
+              if (this.hikerData.inventory && magicData.water > 0) {
+                this.hikerData.inventory.water = Math.min(
+                  this.hikerData.inventory.waterCapacity,
+                  this.hikerData.inventory.water + magicData.water
+                );
+              }
+              // Boost morale!
+              this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 20);
+            }
+
+            this.events.emit('game-event', {
+              type: 'success',
+              message: `✨ Trail Magic! ${magicData.name} (+${magicData.calories} cal)`
+            });
+
+            // Visual feedback
+            this.tweens.add({
+              targets: magic,
+              alpha: 0,
+              scale: 1.5,
+              duration: 500,
+              onComplete: () => magic.destroy()
+            });
+          }
+        }
+
+        // Remove when off screen
+        if (magic.y > height + 100) {
+          magic.destroy();
+          this.trailMagicItems.splice(index, 1);
+        }
+      });
+
+      // Spawn trail magic rarely
+      this.nextTrailMagicSpawn -= delta;
+      if (this.nextTrailMagicSpawn <= 0) {
+        // Only 30% chance when timer hits
+        if (Math.random() < 0.3) {
+          this.spawnTrailMagic();
+        }
+        // Check again in 30-60 seconds
+        this.nextTrailMagicSpawn = Phaser.Math.Between(30000, 60000);
+      }
+
+      // Hiker walking animation
+      if (this.anims.exists('hiker_walk')) {
+        this.hiker.play('hiker_walk', true);
+      }
+
       // Hiker bob animation while hiking
       this.hiker.y = height * 0.65 + Math.sin(time / 80) * 3;
     } else {
+      // Stop walking animation when not hiking
+      if (this.hiker.anims.isPlaying) {
+        this.hiker.stop();
+        this.hiker.setTexture('hiker');
+      }
       // Keep hiker centered when not hiking
       this.hiker.y = height * 0.65;
     }
+
+    // Update day/night cycle visuals
+    this.updateDayNightCycle();
 
     // Fog movement
     this.fogSprites.forEach(fog => {
