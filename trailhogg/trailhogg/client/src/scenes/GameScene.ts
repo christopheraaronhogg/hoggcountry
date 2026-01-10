@@ -55,6 +55,18 @@ export class GameScene extends Phaser.Scene {
   private nextEventCheck: number = 0;
   private activeEvents: Set<string> = new Set();
 
+  // Shelter system
+  private nearShelter: boolean = false;
+  private currentShelterName: string = '';
+
+  // Night visibility
+  private nightOverlay!: Phaser.GameObjects.Rectangle;
+  private headlampLight!: Phaser.GameObjects.Graphics;
+
+  // Elevation
+  private elevationData: { mile: number; elevation: number }[] = [];
+  private elevationText!: Phaser.GameObjects.Text;
+
   // Camera follow offset
   private cameraTarget: number = 0;
 
@@ -131,6 +143,25 @@ export class GameScene extends Phaser.Scene {
 
     // Generate trail plants for visual variety
     this.generatePlants();
+
+    // Night overlay (for darkness effect)
+    this.nightOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000033, 0);
+    this.nightOverlay.setDepth(150);
+
+    // Headlamp light (visible at night)
+    this.headlampLight = this.add.graphics();
+    this.headlampLight.setDepth(149);
+
+    // Elevation text (bottom left)
+    this.elevationText = this.add.text(10, height - 30, '⛰️ 3,782 ft', {
+      font: '12px Courier',
+      color: '#aaaaaa',
+      backgroundColor: '#000000aa',
+      padding: { x: 4, y: 2 }
+    }).setScrollFactor(0).setDepth(200);
+
+    // Initialize elevation data for the first 30 miles
+    this.initElevationData();
 
     // Set up camera
     this.cameras.main.setBackgroundColor(0x355E3B);
@@ -696,6 +727,138 @@ export class GameScene extends Phaser.Scene {
         event.trigger();
       }
     });
+  }
+
+  initElevationData() {
+    // Real-ish elevation profile for the first 30 miles of the AT (Springer to Neels Gap)
+    // Values in feet
+    this.elevationData = [
+      { mile: 0, elevation: 3782 },    // Springer Mountain summit
+      { mile: 0.8, elevation: 3400 },  // Down from Springer
+      { mile: 2.2, elevation: 3100 },  // Stover Creek
+      { mile: 3.7, elevation: 2500 },  // Three Forks
+      { mile: 5.5, elevation: 3200 },  // Hawk Mountain
+      { mile: 7.6, elevation: 2800 },  // Justus Creek
+      { mile: 8.1, elevation: 3450 },  // Sassafras Mountain
+      { mile: 10.4, elevation: 2850 }, // Woods Hole Shelter
+      { mile: 12.2, elevation: 3050 }, // Ramrock Mountain
+      { mile: 15.3, elevation: 2950 }, // Gooch Mountain
+      { mile: 17.8, elevation: 2280 }, // Cooper Gap
+      { mile: 20.0, elevation: 3150 }, // Woody Gap
+      { mile: 22.1, elevation: 2500 }, // Jarrard Gap
+      { mile: 24.0, elevation: 3200 }, // Slaughter Creek
+      { mile: 27.1, elevation: 4458 }, // Blood Mountain (highest)
+      { mile: 28.6, elevation: 3500 }, // Flatrock Gap
+      { mile: 30.7, elevation: 3125 }, // Neels Gap
+    ];
+  }
+
+  getCurrentElevation(): number {
+    if (!this.hikerData) return 3782;
+
+    const mile = this.hikerData.mile;
+
+    // Find the two elevation points we're between
+    let prev = this.elevationData[0];
+    let next = this.elevationData[0];
+
+    for (let i = 0; i < this.elevationData.length - 1; i++) {
+      if (mile >= this.elevationData[i].mile && mile <= this.elevationData[i + 1].mile) {
+        prev = this.elevationData[i];
+        next = this.elevationData[i + 1];
+        break;
+      }
+    }
+
+    // Linear interpolation between points
+    if (next.mile === prev.mile) return prev.elevation;
+    const progress = (mile - prev.mile) / (next.mile - prev.mile);
+    return Math.round(prev.elevation + progress * (next.elevation - prev.elevation));
+  }
+
+  updateNightVisibility() {
+    if (!this.gameState) return;
+
+    const hour = this.gameState.time.hour;
+    const { width, height } = this.cameras.main;
+
+    // Determine darkness level
+    let darkness = 0;
+
+    if (hour >= 21 || hour < 5) {
+      // Full night
+      darkness = 0.7;
+    } else if (hour >= 19 && hour < 21) {
+      // Dusk
+      darkness = (hour - 19) / 2 * 0.7;
+    } else if (hour >= 5 && hour < 7) {
+      // Dawn
+      darkness = (7 - hour) / 2 * 0.7;
+    }
+
+    // Update night overlay
+    this.nightOverlay.setAlpha(darkness);
+
+    // Update headlamp effect
+    this.headlampLight.clear();
+
+    if (darkness > 0.3 && this.hikerData?.isHiking) {
+      // Draw headlamp cone
+      this.headlampLight.fillStyle(0xffffcc, 0.3);
+      this.headlampLight.beginPath();
+
+      // Cone shape pointing up from hiker
+      const hikerX = this.hiker.x;
+      const hikerY = this.hiker.y;
+
+      this.headlampLight.moveTo(hikerX, hikerY - 20);
+      this.headlampLight.lineTo(hikerX - 80, hikerY - 200);
+      this.headlampLight.lineTo(hikerX + 80, hikerY - 200);
+      this.headlampLight.closePath();
+      this.headlampLight.fillPath();
+
+      // Add some glow around the cone
+      this.headlampLight.fillStyle(0xffffcc, 0.1);
+      this.headlampLight.fillCircle(hikerX, hikerY - 100, 100);
+    }
+
+    // Night hiking is harder!
+    if (darkness > 0.5 && this.hikerData?.isHiking) {
+      // Slower progress at night
+      // (handled in offlineTick by checking time)
+      // More likely to trip on obstacles
+    }
+  }
+
+  checkShelterProximity() {
+    // Check if near a shelter landmark
+    this.nearShelter = false;
+    this.currentShelterName = '';
+
+    this.landmarks.forEach(landmark => {
+      const dist = Math.abs(landmark.y - this.hiker.y);
+      const name = landmark.getData('mile') ? `Mile ${landmark.getData('mile')}` : '';
+
+      // Check if this is a shelter (has water = likely a shelter)
+      if (dist < 100 && landmark.getData('hasWater') !== undefined) {
+        this.nearShelter = true;
+        // Try to get the name from the landmark
+        const children = landmark.getAll();
+        children.forEach((child: any) => {
+          if (child.text && !child.text.includes('Mile') && !child.text.includes('💧')) {
+            this.currentShelterName = child.text;
+          }
+        });
+      }
+    });
+
+    // Bonus recovery when resting near shelter
+    if (this.nearShelter && this.hikerData?.isResting) {
+      // Double energy recovery at shelters
+      this.hikerData.energy = Math.min(100, this.hikerData.energy + 0.2);
+      // Better morale at shelters
+      this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 0.05);
+    }
   }
 
   async connectToServer() {
@@ -1930,6 +2093,19 @@ export class GameScene extends Phaser.Scene {
 
     // Update day/night cycle visuals
     this.updateDayNightCycle();
+
+    // Update night visibility and headlamp
+    this.updateNightVisibility();
+
+    // Update elevation display
+    const elevation = this.getCurrentElevation();
+    this.elevationText.setText(`⛰️ ${elevation.toLocaleString()} ft`);
+    if (this.hikerData) {
+      this.hikerData.elevation = elevation;
+    }
+
+    // Check shelter proximity for bonus rest
+    this.checkShelterProximity();
 
     // Fog movement
     this.fogSprites.forEach(fog => {
