@@ -60,6 +60,30 @@ export class UIScene extends Phaser.Scene {
 
     // Listen for save events
     gameScene.events.on('game-saved', this.onGameSaved, this);
+
+    // Inventory button
+    const invBtn = this.add.rectangle(width - 50, height - 160, 80, 30, 0x4a7d5a);
+    invBtn.setInteractive();
+    const invText = this.add.text(width - 50, height - 160, 'PACK', {
+      font: '14px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    invBtn.on('pointerover', () => invBtn.setFillStyle(0x5a9d6a));
+    invBtn.on('pointerout', () => invBtn.setFillStyle(0x4a7d5a));
+    invBtn.on('pointerdown', () => this.openInventory());
+
+    // Keyboard handler for inventory
+    this.input.keyboard?.on('keydown-I', () => this.openInventory());
+  }
+
+  openInventory() {
+    const gameScene = this.scene.get('GameScene') as any;
+    if (gameScene.hikerData?.inventory) {
+      this.scene.pause('GameScene');
+      this.scene.pause('UIScene');
+      this.scene.launch('InventoryScene', { inventory: gameScene.hikerData.inventory });
+    }
   }
 
   onGameSaved() {
@@ -154,8 +178,8 @@ export class UIScene extends Phaser.Scene {
       '[1-4] Set Pace',
       '[E] Eat  [D] Drink',
       '[R] Rest/Camp',
-      '[S] Search (if lost)',
-      '[B] Backtrack (if lost)'
+      '[I] Inventory',
+      '[S] Search (if lost)'
     ];
     
     const controlTexts = controls.map((text, i) => {

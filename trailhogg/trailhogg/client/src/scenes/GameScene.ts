@@ -12,7 +12,7 @@ export class GameScene extends Phaser.Scene {
   private client!: Colyseus.Client;
   private room!: Colyseus.Room;
   private hiker!: Phaser.GameObjects.Sprite;
-  private hikerData: any = null;
+  public hikerData: any = null;  // Public so UIScene can access inventory
   private trees: Phaser.GameObjects.Sprite[] = [];
   private blazes: Phaser.GameObjects.Sprite[] = [];
   private trail!: Phaser.GameObjects.TileSprite;
@@ -243,7 +243,23 @@ export class GameScene extends Phaser.Scene {
         hunger: 0, thirst: 0, fatigue: 0, morale: 50, anxiety: 0
       },
       inventory: {
-        water: 2.0, waterCapacity: 3.0, money: 500
+        water: 2.0,
+        waterCapacity: 3.0,
+        money: 500,
+        gear: [
+          { id: 'backpack', name: 'Backpack', weight: 2.5, condition: 95, category: 'misc' },
+          { id: 'tent', name: '2-Person Tent', weight: 3.2, condition: 90, category: 'shelter' },
+          { id: 'sleepingBag', name: 'Sleeping Bag', weight: 2.0, condition: 88, category: 'sleep' },
+          { id: 'sleepingPad', name: 'Sleeping Pad', weight: 1.0, condition: 92, category: 'sleep' },
+          { id: 'stove', name: 'Camp Stove', weight: 0.5, condition: 100, category: 'cook' },
+          { id: 'headlamp', name: 'Headlamp', weight: 0.2, condition: 100, category: 'misc' }
+        ],
+        food: [
+          { id: 'oatmeal', name: 'Instant Oatmeal', calories: 300, weight: 0.2, servings: 4 },
+          { id: 'ramen', name: 'Ramen Noodles', calories: 400, weight: 0.1, servings: 3 },
+          { id: 'trailMix', name: 'Trail Mix', calories: 600, weight: 0.3, servings: 2 },
+          { id: 'snickers', name: 'Snickers Bar', calories: 250, weight: 0.1, servings: 3 }
+        ]
       }
     };
 

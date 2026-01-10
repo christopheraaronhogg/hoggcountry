@@ -52,7 +52,20 @@ export interface HikerSaveData {
     water: number;
     waterCapacity: number;
     money: number;
-    [key: string]: number;
+    gear: Array<{
+      id: string;
+      name: string;
+      weight: number;
+      condition: number;
+      category: string;
+    }>;
+    food: Array<{
+      id: string;
+      name: string;
+      calories: number;
+      weight: number;
+      servings: number;
+    }>;
   };
 }
 
