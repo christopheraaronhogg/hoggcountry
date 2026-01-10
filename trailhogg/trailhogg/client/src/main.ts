@@ -5,6 +5,7 @@ import { GameScene } from './scenes/GameScene';
 import { UIScene } from './scenes/UIScene';
 import { InventoryScene } from './scenes/InventoryScene';
 import { TownScene } from './scenes/TownScene';
+import { GuideScene } from './scenes/GuideScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -25,7 +26,7 @@ const config: Phaser.Types.Core.GameConfig = {
       height: 1200
     }
   },
-  scene: [BootScene, MenuScene, GameScene, UIScene, InventoryScene, TownScene],
+  scene: [BootScene, MenuScene, GameScene, UIScene, InventoryScene, TownScene, GuideScene],
   physics: {
     default: 'arcade',
     arcade: {

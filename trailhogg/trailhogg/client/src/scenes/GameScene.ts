@@ -1492,6 +1492,9 @@ export class GameScene extends Phaser.Scene {
 
     // B to backtrack (when lost)
     this.input.keyboard?.on('keydown-B', () => this.backtrack());
+
+    // G to open field guide
+    this.input.keyboard?.on('keydown-G', () => this.openGuide());
   }
 
   setupMobileControls() {
@@ -1618,6 +1621,24 @@ export class GameScene extends Phaser.Scene {
     });
     drinkButton.on('pointerup', () => {
       drinkButton.setFillStyle(0x4a7d5a, 0.7);
+    });
+
+    // Guide button (G equivalent) - top left corner
+    const guideButton = this.add.circle(50, 50, buttonSize / 2, 0x557799, 0.8);
+    guideButton.setDepth(1000);
+    guideButton.setScrollFactor(0);
+    guideButton.setInteractive();
+    const guideText = this.add.text(50, 50, '📖', {
+      font: '22px Arial',
+      color: '#ffffff'
+    }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
+
+    guideButton.on('pointerdown', () => {
+      this.openGuide();
+      guideButton.setFillStyle(0x6688aa, 0.9);
+    });
+    guideButton.on('pointerup', () => {
+      guideButton.setFillStyle(0x557799, 0.8);
     });
   }
 
@@ -1764,7 +1785,15 @@ export class GameScene extends Phaser.Scene {
       });
     }
   }
-  
+
+  openGuide() {
+    // Pause the game scene and launch the guide
+    this.scene.pause('GameScene');
+    this.scene.launch('GuideScene', {
+      currentMile: this.hikerData?.mile || 0
+    });
+  }
+
   update(time: number, delta: number) {
     const { width, height } = this.cameras.main;
 
