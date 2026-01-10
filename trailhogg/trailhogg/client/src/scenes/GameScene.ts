@@ -879,86 +879,83 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number) {
     const { width, height } = this.cameras.main;
 
-    // Handle movement (keyboard or joystick)
-    const moveSpeed = 200 * (delta / 1000); // pixels per second
+    // Handle horizontal movement (keyboard or joystick)
+    const moveSpeed = 250 * (delta / 1000); // pixels per second
     let moveX = 0;
-    let moveY = 0;
 
-    // Keyboard movement
+    // Keyboard movement - left/right only for trail navigation
     const keys = this.input.keyboard;
     if (keys) {
-      const keyW = keys.addKey('W');
       const keyA = keys.addKey('A');
-      const keyS = keys.addKey('S');
       const keyD = keys.addKey('D');
       const cursors = keys.createCursorKeys();
 
-      // Horizontal movement (A/D or Left/Right)
       if (keyA?.isDown || cursors.left?.isDown) {
         moveX = -1;
       } else if (keyD?.isDown || cursors.right?.isDown) {
         moveX = 1;
       }
-
-      // Vertical movement (W/S or Up/Down)
-      if (keyW?.isDown || cursors.up?.isDown) {
-        moveY = -1;
-      } else if (keyS?.isDown || cursors.down?.isDown) {
-        moveY = 1;
-      }
     }
 
-    // Joystick movement (mobile)
+    // Joystick movement (mobile) - horizontal component
     if (this.isMobile && this.joystickActive) {
       moveX = this.joystickVector.x;
-      moveY = this.joystickVector.y;
     }
 
-    // Apply movement with bounds checking
+    // Apply horizontal movement - stay on the trail
     if (moveX !== 0) {
       this.hiker.x = Phaser.Math.Clamp(
         this.hiker.x + moveX * moveSpeed,
-        width * 0.32,
-        width * 0.68
+        width * 0.25,  // Can go a bit off trail left
+        width * 0.75   // Can go a bit off trail right
       );
     }
 
-    if (moveY !== 0) {
-      this.hiker.y = Phaser.Math.Clamp(
-        this.hiker.y + moveY * moveSpeed,
-        height * 0.3,
-        height * 0.8
-      );
-    }
+    // Calculate scroll speed based on pace
+    const paceScrollSpeed: Record<string, number> = {
+      slow: 60, normal: 100, fast: 150, rush: 200
+    };
+    const baseScrollSpeed = paceScrollSpeed[this.hikerData?.pace || 'normal'] || 100;
 
-    // Scroll the trail to simulate forward movement
+    // Continuous vertical scrolling when hiking (the main game mechanic)
     if (this.hikerData?.isHiking) {
-      const scrollSpeed = 0.5 * delta / 16; // Adjust for frame rate
+      const scrollSpeed = baseScrollSpeed * (delta / 1000);
+
+      // Scroll ground and trail textures
       this.ground.tilePositionY -= scrollSpeed;
       this.trail.tilePositionY -= scrollSpeed;
 
-      // Move trees up (parallax)
+      // Move trees down (they scroll toward player, parallax effect)
       this.trees.forEach(tree => {
-        tree.y -= scrollSpeed * 0.8;
-        if (tree.y < -50) {
-          tree.y = this.cameras.main.height + 50;
-          tree.x = tree.x < this.cameras.main.width / 2
-            ? Phaser.Math.Between(20, this.cameras.main.width * 0.25)
-            : Phaser.Math.Between(this.cameras.main.width * 0.75, this.cameras.main.width - 20);
+        tree.y += scrollSpeed * 0.8;
+        // Respawn at top when they go off screen
+        if (tree.y > height + 50) {
+          tree.y = -50;
+          // Randomize X position on left or right side
+          tree.x = tree.x < width / 2
+            ? Phaser.Math.Between(20, width * 0.28)
+            : Phaser.Math.Between(width * 0.72, width - 20);
+          tree.setScale(Phaser.Math.FloatBetween(0.8, 1.5));
         }
       });
 
-      // Move blazes
+      // Move blazes down
       this.blazes.forEach(blaze => {
-        blaze.y -= scrollSpeed;
-        if (blaze.y < -20) {
-          blaze.y = this.cameras.main.height + 20;
+        blaze.y += scrollSpeed;
+        if (blaze.y > height + 20) {
+          blaze.y = -20;
+          // Randomize which side of trail
+          blaze.x = Math.random() > 0.5
+            ? width * 0.3 + Phaser.Math.Between(-20, 10)
+            : width * 0.7 + Phaser.Math.Between(-10, 20);
         }
       });
 
-      // Hiker bob animation when hiking
-      const baseY = this.hiker.y;
-      this.hiker.y = baseY + Math.sin(time / 100) * 2;
+      // Hiker bob animation while hiking
+      this.hiker.y = height * 0.65 + Math.sin(time / 80) * 3;
+    } else {
+      // Keep hiker centered when not hiking
+      this.hiker.y = height * 0.65;
     }
 
     // Fog movement
