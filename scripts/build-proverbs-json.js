@@ -3,11 +3,22 @@
  * Structure allows exact verse retrieval by chapter:verse.
  */
 
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, access } from 'fs/promises';
+import { constants } from 'fs';
 
 const KJV_URL = 'https://raw.githubusercontent.com/thiagobodruk/bible/master/json/en_kjv.json';
+const OUTPUT_PATH = 'public/proverbs.json';
 
 async function build() {
+  // Skip if file already exists
+  try {
+    await access(OUTPUT_PATH, constants.F_OK);
+    console.log('proverbs.json already exists, skipping fetch');
+    return;
+  } catch {
+    // File doesn't exist, continue with fetch
+  }
+
   console.log('Fetching KJV Bible from GitHub...');
 
   const res = await fetch(KJV_URL);
@@ -43,7 +54,7 @@ async function build() {
   }
 
   await mkdir('public', { recursive: true });
-  await writeFile('public/proverbs.json', JSON.stringify(verses, null, 0));
+  await writeFile(OUTPUT_PATH, JSON.stringify(verses, null, 0));
 
   const sizeKB = (Buffer.byteLength(JSON.stringify(verses), 'utf8') / 1024).toFixed(1);
   console.log(`Built proverbs.json: ${sizeKB} KB, ${totalVerses} verses`);
