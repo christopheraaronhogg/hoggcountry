@@ -334,23 +334,43 @@ export class GameScene extends Phaser.Scene {
     else if (hour >= 8 && hour < 18) this.gameState.phase = 'hiking';
     else if (hour >= 18 && hour < 21) this.gameState.phase = 'evening';
     else this.gameState.phase = 'night';
+
+    // Random weather changes (check every ~30 minutes of game time)
+    if (this.gameState.time.minute === 0 || this.gameState.time.minute === 30) {
+      this.maybeChangeWeather();
+    }
     
     // Process hiking
     if (this.hikerData.isHiking) {
       const paceSpeed: Record<string, number> = {
         slow: 1.5, normal: 2.0, fast: 2.5, rush: 3.0
       };
-      const speed = paceSpeed[this.hikerData.pace] || 2.0;
+      let speed = paceSpeed[this.hikerData.pace] || 2.0;
+
+      // Weather affects hiking speed and resource consumption
+      const weatherSpeedMod: Record<string, number> = {
+        'clear': 1.0, 'cloudy': 1.0, 'rain_light': 0.85,
+        'rain_heavy': 0.7, 'fog': 0.75, 'storm': 0.5
+      };
+      const weatherEnergyMod: Record<string, number> = {
+        'clear': 1.0, 'cloudy': 1.0, 'rain_light': 1.3,
+        'rain_heavy': 1.5, 'fog': 1.1, 'storm': 2.0
+      };
+
+      const speedMod = weatherSpeedMod[this.gameState.weather] || 1.0;
+      const energyMod = weatherEnergyMod[this.gameState.weather] || 1.0;
+
+      speed *= speedMod;
       const distance = speed / 60; // miles per minute
-      
+
       this.hikerData.mile = Math.min(30.7, this.hikerData.mile + distance);
       this.hikerData.currentDayMiles += distance;
       this.hikerData.totalMilesHiked += distance;
-      
-      // Consume resources
-      this.hikerData.calories -= 3;
+
+      // Consume resources (modified by weather)
+      this.hikerData.calories -= 3 * energyMod;
       this.hikerData.hydration -= 0.5;
-      this.hikerData.energy -= 0.1;
+      this.hikerData.energy -= 0.1 * energyMod;
       
       // Clamp values
       this.hikerData.calories = Math.max(0, this.hikerData.calories);
@@ -409,8 +429,53 @@ export class GameScene extends Phaser.Scene {
       hiker: this.hikerData,
       game: this.gameState
     });
+
+    // Update visual weather effects
+    this.updateWeatherEffects(this.gameState.weather);
   }
-  
+
+  maybeChangeWeather() {
+    // 20% chance to change weather each check
+    if (Math.random() > 0.2) return;
+
+    const weatherTypes = ['clear', 'cloudy', 'rain_light', 'rain_heavy', 'fog', 'storm'];
+    const currentIndex = weatherTypes.indexOf(this.gameState.weather);
+
+    // Weather tends to transition gradually
+    const transitions: Record<string, string[]> = {
+      'clear': ['clear', 'clear', 'cloudy'],
+      'cloudy': ['clear', 'cloudy', 'rain_light', 'fog'],
+      'rain_light': ['cloudy', 'rain_light', 'rain_heavy'],
+      'rain_heavy': ['rain_light', 'rain_heavy', 'storm'],
+      'storm': ['rain_heavy', 'storm', 'rain_light'],
+      'fog': ['fog', 'cloudy', 'clear']
+    };
+
+    const possibilities = transitions[this.gameState.weather] || ['clear'];
+    const newWeather = possibilities[Math.floor(Math.random() * possibilities.length)];
+
+    if (newWeather !== this.gameState.weather) {
+      this.gameState.weather = newWeather;
+
+      // Update temperature based on weather
+      const tempMods: Record<string, number> = {
+        'clear': 0, 'cloudy': -5, 'rain_light': -10,
+        'rain_heavy': -15, 'fog': -8, 'storm': -20
+      };
+      this.gameState.temperature = 55 + (tempMods[newWeather] || 0);
+
+      // Emit weather change event
+      const weatherNames: Record<string, string> = {
+        'clear': 'sunny', 'cloudy': 'overcast', 'rain_light': 'drizzling',
+        'rain_heavy': 'raining hard', 'fog': 'foggy', 'storm': 'stormy'
+      };
+      this.events.emit('game-event', {
+        type: newWeather === 'clear' ? 'success' : 'warning',
+        message: `Weather turning ${weatherNames[newWeather] || newWeather}...`
+      });
+    }
+  }
+
   updateFromState(state: any) {
     // Find our hiker in the state
     const sessionId = this.room?.sessionId;
