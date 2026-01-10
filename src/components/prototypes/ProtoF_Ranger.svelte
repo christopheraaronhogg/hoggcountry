@@ -14,6 +14,31 @@
     const date = new Date(isoDate);
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   }
+
+  // Get reliable thumbnail URL - YouTube has multiple CDN hosts
+  function getThumbnail(video) {
+    if (!video?.id) return '';
+    // Use maxresdefault with fallback chain: maxres -> hq -> mq -> default
+    return `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+  }
+
+  // Handle image load errors - try alternative URL
+  function handleImageError(event, videoId) {
+    const img = event.target;
+    const currentSrc = img.src;
+
+    // Try different quality levels
+    if (currentSrc.includes('maxresdefault')) {
+      img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    } else if (currentSrc.includes('hqdefault')) {
+      img.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+    } else if (currentSrc.includes('mqdefault')) {
+      img.src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+    } else {
+      // Final fallback - hide the broken image
+      img.style.display = 'none';
+    }
+  }
 </script>
 
 <div class="ranger-station">
@@ -517,7 +542,13 @@
           <!-- Featured (first) video -->
           <a href={displayVideos[0].link} target="_blank" rel="noopener" class="dispatch-card dispatch-featured">
             <div class="dispatch-media">
-              <img src={displayVideos[0].thumbnail} alt={displayVideos[0].title} class="dispatch-thumb" />
+              <img
+                src={getThumbnail(displayVideos[0])}
+                alt={displayVideos[0].title}
+                class="dispatch-thumb"
+                onerror={(e) => handleImageError(e, displayVideos[0].id)}
+                loading="lazy"
+              />
               <span class="dispatch-badge">LATEST</span>
               <div class="dispatch-play">
                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -536,7 +567,13 @@
           {#each displayVideos.slice(1) as video}
             <a href={video.link} target="_blank" rel="noopener" class="dispatch-card">
               <div class="dispatch-media small">
-                <img src={video.thumbnail} alt={video.title} class="dispatch-thumb" />
+                <img
+                  src={getThumbnail(video)}
+                  alt={video.title}
+                  class="dispatch-thumb"
+                  onerror={(e) => handleImageError(e, video.id)}
+                  loading="lazy"
+                />
                 <div class="dispatch-play small">
                   <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z"/>
