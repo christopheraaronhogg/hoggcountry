@@ -524,25 +524,61 @@ export class GameScene extends Phaser.Scene {
     if (this.isConnected && this.room) {
       // Eat first available food
       this.room.send('eat', { foodId: 'oatmeal_1' });
-    } else if (this.hikerData) {
-      this.hikerData.calories = Math.min(3000, this.hikerData.calories + 300);
-      this.events.emit('game-event', {
-        type: 'info',
-        message: 'Ate some food (+300 calories)'
-      });
+    } else if (this.hikerData?.inventory?.food) {
+      // Find food item with servings remaining
+      const food = this.hikerData.inventory.food.find((f: any) => f.servings > 0);
+      if (food) {
+        food.servings--;
+        const caloriesGained = food.calories;
+        this.hikerData.calories = Math.min(3000, this.hikerData.calories + caloriesGained);
+
+        // Remove item if no servings left
+        if (food.servings <= 0) {
+          const idx = this.hikerData.inventory.food.indexOf(food);
+          this.hikerData.inventory.food.splice(idx, 1);
+        }
+
+        // Update hunger moodle
+        if (this.hikerData.moodles.hunger > 0) {
+          this.hikerData.moodles.hunger = Math.max(0, this.hikerData.moodles.hunger - 1);
+        }
+
+        this.events.emit('game-event', {
+          type: 'success',
+          message: `Ate ${food.name} (+${caloriesGained} cal)`
+        });
+      } else {
+        this.events.emit('game-event', {
+          type: 'warning',
+          message: 'No food left!'
+        });
+      }
     }
   }
-  
+
   drink() {
     if (this.isConnected && this.room) {
       this.room.send('drink', { amount: 0.5 });
-    } else if (this.hikerData && this.hikerData.inventory.water >= 0.5) {
-      this.hikerData.inventory.water -= 0.5;
-      this.hikerData.hydration = Math.min(100, this.hikerData.hydration + 15);
-      this.events.emit('game-event', {
-        type: 'info',
-        message: 'Drank water (+15 hydration)'
-      });
+    } else if (this.hikerData?.inventory) {
+      if (this.hikerData.inventory.water >= 0.25) {
+        this.hikerData.inventory.water -= 0.25;
+        this.hikerData.hydration = Math.min(100, this.hikerData.hydration + 10);
+
+        // Update thirst moodle
+        if (this.hikerData.moodles.thirst > 0) {
+          this.hikerData.moodles.thirst = Math.max(0, this.hikerData.moodles.thirst - 1);
+        }
+
+        this.events.emit('game-event', {
+          type: 'success',
+          message: `Drank water (${this.hikerData.inventory.water.toFixed(1)}L left)`
+        });
+      } else {
+        this.events.emit('game-event', {
+          type: 'warning',
+          message: 'Need more water!'
+        });
+      }
     }
   }
   
