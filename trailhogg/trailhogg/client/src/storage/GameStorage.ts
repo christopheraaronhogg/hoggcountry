@@ -29,6 +29,7 @@ export interface HikerSaveData {
   pace: string;
   lostState: string;
   isHiking: boolean;
+  isResting: boolean;
   currentDayMiles: number;
   totalMilesHiked: number;
   daysOnTrail: number;

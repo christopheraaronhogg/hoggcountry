@@ -232,6 +232,7 @@ export class GameScene extends Phaser.Scene {
       pace: 'normal',
       lostState: 'on_trail',
       isHiking: false,
+      isResting: false,
       currentDayMiles: 0,
       totalMilesHiked: 0,
       daysOnTrail: 1,
@@ -380,7 +381,29 @@ export class GameScene extends Phaser.Scene {
         });
       }
     }
-    
+
+    // Process resting
+    if (this.hikerData.isResting) {
+      // Recover energy faster while resting
+      this.hikerData.energy = Math.min(100, this.hikerData.energy + 0.3);
+
+      // Still consume calories/hydration but slowly
+      this.hikerData.calories -= 0.5;
+      this.hikerData.hydration -= 0.1;
+
+      // Clamp values
+      this.hikerData.calories = Math.max(0, this.hikerData.calories);
+      this.hikerData.hydration = Math.max(0, this.hikerData.hydration);
+
+      // Update fatigue moodle
+      this.hikerData.moodles.fatigue = this.hikerData.energy < 40 ?
+        (this.hikerData.energy < 20 ? 3 : 2) :
+        (this.hikerData.energy < 60 ? 1 : 0);
+
+      // Recover morale slowly
+      this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 0.1);
+    }
+
     // Emit update
     this.events.emit('state-update', {
       hiker: this.hikerData,
@@ -587,10 +610,22 @@ export class GameScene extends Phaser.Scene {
       const isResting = this.hikerData?.isResting;
       this.room.send(isResting ? 'break_camp' : 'make_camp');
     } else if (this.hikerData) {
-      this.events.emit('game-event', {
-        type: 'info',
-        message: 'Resting...'
-      });
+      // Toggle resting state
+      this.hikerData.isResting = !this.hikerData.isResting;
+
+      // Can't hike and rest at the same time
+      if (this.hikerData.isResting) {
+        this.hikerData.isHiking = false;
+        this.events.emit('game-event', {
+          type: 'info',
+          message: 'Taking a break to rest and recover...'
+        });
+      } else {
+        this.events.emit('game-event', {
+          type: 'info',
+          message: 'Packed up and ready to hike!'
+        });
+      }
     }
   }
   
