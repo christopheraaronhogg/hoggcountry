@@ -114,6 +114,11 @@ export class GameScene extends Phaser.Scene {
   private lastSaveTime: number = 0;
   private loadFromSave: boolean = false;
 
+  // Game speed (Project Zomboid style - slower default for immersion)
+  private gameSpeed: number = 0.5;
+  private gameSpeedText!: Phaser.GameObjects.Text;
+  private readonly SPEED_OPTIONS = [0.25, 0.5, 1, 2, 4, 8];
+
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -188,9 +193,22 @@ export class GameScene extends Phaser.Scene {
       padding: { x: 4, y: 2 }
     }).setScrollFactor(0).setDepth(200);
 
+    // Game speed indicator (top right, below sun/moon)
+    this.gameSpeedText = this.add.text(width - 10, 70, '▷ 0.5x', {
+      font: '14px Courier',
+      color: '#88aacc',
+      backgroundColor: '#000000aa',
+      padding: { x: 6, y: 3 }
+    }).setOrigin(1, 0).setScrollFactor(0).setDepth(200);
+
     // Start hiking hint (shown until player starts hiking)
-    const startHint = this.add.text(width / 2, height * 0.25, 'Press SPACE to start hiking\n\nA/D or ←/→ to stay on trail\nG to open Field Guide', {
-      font: '16px Courier',
+    const startHint = this.add.text(width / 2, height * 0.25,
+      'Press SPACE to start hiking\n\n' +
+      'A/D or ←/→ to stay on trail\n' +
+      '1-4 to set hiking pace\n' +
+      '[ ] or +/- to change game speed\n' +
+      'G to open Field Guide', {
+      font: '14px Courier',
       color: '#4a7d5a',
       backgroundColor: '#000000cc',
       padding: { x: 16, y: 12 },
@@ -1239,9 +1257,9 @@ export class GameScene extends Phaser.Scene {
   
   offlineTick() {
     if (!this.hikerData) return;
-    
-    // Advance time
-    this.gameState.time.minute += 1;
+
+    // Advance time (scaled by game speed)
+    this.gameState.time.minute += this.gameSpeed;
     if (this.gameState.time.minute >= 60) {
       this.gameState.time.minute = 0;
       this.gameState.time.hour++;
@@ -1515,6 +1533,41 @@ export class GameScene extends Phaser.Scene {
 
     // G to open field guide
     this.input.keyboard?.on('keydown-G', () => this.openGuide());
+
+    // Game speed controls (Project Zomboid style)
+    this.input.keyboard?.on('keydown-PLUS', () => this.changeGameSpeed(1));
+    this.input.keyboard?.on('keydown-MINUS', () => this.changeGameSpeed(-1));
+    this.input.keyboard?.on('keydown-EQUAL', () => this.changeGameSpeed(1)); // = key (shift for +)
+    this.input.keyboard?.on('keydown-OPEN_BRACKET', () => this.changeGameSpeed(-1));
+    this.input.keyboard?.on('keydown-CLOSED_BRACKET', () => this.changeGameSpeed(1));
+  }
+
+  changeGameSpeed(direction: number) {
+    const currentIndex = this.SPEED_OPTIONS.indexOf(this.gameSpeed);
+    const newIndex = Phaser.Math.Clamp(currentIndex + direction, 0, this.SPEED_OPTIONS.length - 1);
+    this.gameSpeed = this.SPEED_OPTIONS[newIndex];
+
+    // Update display
+    const speedSymbol = this.gameSpeed >= 1 ? '▶'.repeat(Math.min(this.gameSpeed, 4)) : '▷';
+    this.gameSpeedText.setText(`${speedSymbol} ${this.gameSpeed}x`);
+
+    // Color based on speed (more deliberate = cooler colors)
+    if (this.gameSpeed <= 0.25) {
+      this.gameSpeedText.setColor('#6699bb'); // Very slow - deep blue
+    } else if (this.gameSpeed <= 0.5) {
+      this.gameSpeedText.setColor('#88aacc'); // Slow - blue (default PZ feel)
+    } else if (this.gameSpeed <= 1) {
+      this.gameSpeedText.setColor('#aaaaaa'); // Normal - gray
+    } else if (this.gameSpeed <= 2) {
+      this.gameSpeedText.setColor('#cccc88'); // Fast - yellow
+    } else {
+      this.gameSpeedText.setColor('#cc8866'); // Very fast - orange
+    }
+
+    this.events.emit('game-event', {
+      type: 'info',
+      message: `Game speed: ${this.gameSpeed}x`
+    });
   }
 
   setupMobileControls() {
@@ -1867,7 +1920,7 @@ export class GameScene extends Phaser.Scene {
       this.offTrailWarning.setAlpha(0);
     }
 
-    // Calculate scroll speed based on pace
+    // Calculate scroll speed based on pace and game speed multiplier
     const paceScrollSpeed: Record<string, number> = {
       slow: 60, normal: 100, fast: 150, rush: 200
     };
@@ -1875,7 +1928,8 @@ export class GameScene extends Phaser.Scene {
 
     // Continuous vertical scrolling when hiking (the main game mechanic)
     if (this.hikerData?.isHiking) {
-      const scrollSpeed = baseScrollSpeed * (delta / 1000);
+      // Apply game speed multiplier (Project Zomboid style)
+      const scrollSpeed = baseScrollSpeed * (delta / 1000) * this.gameSpeed;
 
       // Scroll ground and trail textures
       this.ground.tilePositionY -= scrollSpeed;
@@ -1983,12 +2037,21 @@ export class GameScene extends Phaser.Scene {
           if (dist < 40) {
             // Auto-fill water
             water.setData('used', true);
+            water.setTint(0x666666); // Visual feedback - used stream
             if (this.hikerData?.inventory) {
               const oldWater = this.hikerData.inventory.water;
               this.hikerData.inventory.water = this.hikerData.inventory.waterCapacity;
+              const gained = this.hikerData.inventory.water - oldWater;
+
               this.events.emit('game-event', {
                 type: 'success',
-                message: `Filled up at stream! (+${(this.hikerData.inventory.water - oldWater).toFixed(1)}L)`
+                message: `Filled up at stream! (+${gained.toFixed(1)}L)`
+              });
+
+              // Update UI with new state
+              this.events.emit('state-update', {
+                hiker: this.hikerData,
+                game: this.gameState
               });
             }
           }
