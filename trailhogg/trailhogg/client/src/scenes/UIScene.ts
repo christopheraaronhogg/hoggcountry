@@ -23,13 +23,19 @@ export class UIScene extends Phaser.Scene {
 
   // State
   private currentState: any = null;
-  
+  private isMobile: boolean = false;
+
   constructor() {
     super({ key: 'UIScene' });
   }
 
   create() {
     const { width, height } = this.cameras.main;
+
+    // Detect mobile
+    this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS ||
+                    this.sys.game.device.os.iPad || this.sys.game.device.os.iPhone ||
+                    ('ontouchstart' in window) || width < 768;
     
     // Create UI panels
     this.createStatsPanel();
@@ -61,17 +67,19 @@ export class UIScene extends Phaser.Scene {
     // Listen for save events
     gameScene.events.on('game-saved', this.onGameSaved, this);
 
-    // Inventory button
-    const invBtn = this.add.rectangle(width - 50, height - 160, 80, 30, 0x4a7d5a);
-    invBtn.setInteractive();
-    const invText = this.add.text(width - 50, height - 160, 'PACK', {
-      font: '14px Courier',
-      color: '#ffffff'
-    }).setOrigin(0.5);
+    // Inventory button (hide on mobile, we have limited screen space)
+    if (!this.isMobile) {
+      const invBtn = this.add.rectangle(width - 50, height - 160, 80, 30, 0x4a7d5a);
+      invBtn.setInteractive();
+      const invText = this.add.text(width - 50, height - 160, 'PACK', {
+        font: '14px Courier',
+        color: '#ffffff'
+      }).setOrigin(0.5);
 
-    invBtn.on('pointerover', () => invBtn.setFillStyle(0x5a9d6a));
-    invBtn.on('pointerout', () => invBtn.setFillStyle(0x4a7d5a));
-    invBtn.on('pointerdown', () => this.openInventory());
+      invBtn.on('pointerover', () => invBtn.setFillStyle(0x5a9d6a));
+      invBtn.on('pointerout', () => invBtn.setFillStyle(0x4a7d5a));
+      invBtn.on('pointerdown', () => this.openInventory());
+    }
 
     // Keyboard handler for inventory
     this.input.keyboard?.on('keydown-I', () => this.openInventory());
@@ -100,119 +108,160 @@ export class UIScene extends Phaser.Scene {
   
   createStatsPanel() {
     const { width } = this.cameras.main;
-    
+
+    // Responsive sizing
+    const panelWidth = this.isMobile ? Math.min(180, width - 10) : 200;
+    const panelHeight = this.isMobile ? 150 : 180;
+    const fontSize = this.isMobile ? '10px' : '12px';
+    const titleSize = this.isMobile ? '12px' : '14px';
+    const padding = this.isMobile ? 5 : 10;
+    const barWidth = this.isMobile ? 110 : 150;
+
     // Background
-    const bg = this.add.rectangle(0, 0, 200, 180, 0x000000, 0.7);
+    const bg = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x000000, 0.6);
     bg.setOrigin(0, 0);
-    
+
     // Time display
-    this.timeText = this.add.text(10, 10, 'Day 1, 6:00 AM', {
-      font: '14px Courier',
+    this.timeText = this.add.text(padding, padding, 'Day 1, 6:00 AM', {
+      font: `${titleSize} Courier`,
       color: '#4a7d5a'
     });
-    
+
     // Weather
-    this.weatherText = this.add.text(10, 28, '☀ Clear 55°F', {
-      font: '12px Courier',
+    this.weatherText = this.add.text(padding, padding + 18, '☀ Clear 55°F', {
+      font: `${fontSize} Courier`,
       color: '#888888'
     });
-    
+
     // Mile marker
-    this.mileText = this.add.text(10, 48, 'Mile: 0.0 / 30.7', {
-      font: '14px Courier',
+    this.mileText = this.add.text(padding, padding + 36, 'Mile: 0.0 / 30.7', {
+      font: `${titleSize} Courier`,
       color: '#ffffff'
     });
-    
+
     // Elevation
-    this.elevationText = this.add.text(10, 66, 'Elev: 3,782 ft', {
-      font: '12px Courier',
+    this.elevationText = this.add.text(padding, padding + 54, 'Elev: 3,782 ft', {
+      font: `${fontSize} Courier`,
       color: '#aaaaaa'
     });
-    
+
     // Status bars labels
-    this.add.text(10, 90, 'Cal', { font: '10px Courier', color: '#ff9999' });
-    this.add.text(10, 106, 'H2O', { font: '10px Courier', color: '#99ccff' });
-    this.add.text(10, 122, 'Nrg', { font: '10px Courier', color: '#99ff99' });
-    
+    const barY1 = padding + 76;
+    const barY2 = barY1 + 14;
+    const barY3 = barY2 + 14;
+
+    this.add.text(padding, barY1, 'Cal', { font: `${fontSize} Courier`, color: '#ff9999' });
+    this.add.text(padding, barY2, 'H2O', { font: `${fontSize} Courier`, color: '#99ccff' });
+    this.add.text(padding, barY3, 'Nrg', { font: `${fontSize} Courier`, color: '#99ff99' });
+
     // Status bars (graphics for fill)
     this.caloriesBar = this.add.graphics();
     this.hydrationBar = this.add.graphics();
     this.energyBar = this.add.graphics();
-    
-    this.drawStatusBar(this.caloriesBar, 40, 90, 150, 12, 1.0, 0xff6666);
-    this.drawStatusBar(this.hydrationBar, 40, 106, 150, 12, 1.0, 0x6699ff);
-    this.drawStatusBar(this.energyBar, 40, 122, 150, 12, 1.0, 0x66ff66);
-    
-    // Pace display
-    this.paceText = this.add.text(10, 142, 'Pace: Normal (2.0 mph)', {
-      font: '12px Courier',
-      color: '#cccccc'
-    });
-    
-    // Current status
-    this.statusText = this.add.text(10, 160, 'Status: Ready', {
-      font: '12px Courier',
-      color: '#4a7d5a'
-    });
-    
-    this.statsPanel = this.add.container(0, 0, [
-      bg, this.timeText, this.weatherText, this.mileText, this.elevationText,
-      this.caloriesBar, this.hydrationBar, this.energyBar,
-      this.paceText, this.statusText
-    ]);
+
+    const barX = this.isMobile ? 35 : 40;
+    this.drawStatusBar(this.caloriesBar, barX, barY1, barWidth, 10, 1.0, 0xff6666);
+    this.drawStatusBar(this.hydrationBar, barX, barY2, barWidth, 10, 1.0, 0x6699ff);
+    this.drawStatusBar(this.energyBar, barX, barY3, barWidth, 10, 1.0, 0x66ff66);
+
+    // Pace display (hide on mobile to save space)
+    if (!this.isMobile) {
+      this.paceText = this.add.text(padding, 142, 'Pace: Normal (2.0 mph)', {
+        font: `${fontSize} Courier`,
+        color: '#cccccc'
+      });
+
+      // Current status
+      this.statusText = this.add.text(padding, 160, 'Status: Ready', {
+        font: `${fontSize} Courier`,
+        color: '#4a7d5a'
+      });
+
+      this.statsPanel = this.add.container(0, 0, [
+        bg, this.timeText, this.weatherText, this.mileText, this.elevationText,
+        this.caloriesBar, this.hydrationBar, this.energyBar,
+        this.paceText, this.statusText
+      ]);
+    } else {
+      // Mobile: status only, no pace
+      this.statusText = this.add.text(padding, barY3 + 18, 'Ready', {
+        font: `${fontSize} Courier`,
+        color: '#4a7d5a'
+      });
+
+      this.paceText = this.add.text(0, 0, '', { font: `${fontSize} Courier` }); // Placeholder
+
+      this.statsPanel = this.add.container(0, 0, [
+        bg, this.timeText, this.weatherText, this.mileText, this.elevationText,
+        this.caloriesBar, this.hydrationBar, this.energyBar,
+        this.statusText
+      ]);
+    }
   }
   
   createControlsPanel() {
     const { width, height } = this.cameras.main;
-    
+
+    // Hide controls panel on mobile (we have touch controls)
+    if (this.isMobile) {
+      this.controlsPanel = this.add.container(0, 0, []);
+      return;
+    }
+
     const bg = this.add.rectangle(0, 0, 200, 140, 0x000000, 0.7);
     bg.setOrigin(0, 0);
-    
+
     const title = this.add.text(10, 5, 'CONTROLS', {
       font: '12px Courier',
       color: '#4a7d5a'
     });
-    
+
     const controls = [
+      '[WASD/Arrows] Move',
       '[SPACE] Start/Stop Hiking',
       '[1-4] Set Pace',
-      '[E] Eat  [D] Drink',
-      '[R] Rest/Camp',
-      '[I] Inventory',
-      '[S] Search (if lost)'
+      '[E] Eat  [Q] Drink',
+      '[R] Rest/Camp  [I] Pack',
+      '[F] Search (lost)'
     ];
-    
+
     const controlTexts = controls.map((text, i) => {
       return this.add.text(10, 22 + i * 18, text, {
         font: '11px Courier',
         color: '#888888'
       });
     });
-    
+
     this.controlsPanel = this.add.container(width - 200, height - 140, [bg, title, ...controlTexts]);
   }
   
   createEventLog() {
     const { width, height } = this.cameras.main;
-    
-    const bg = this.add.rectangle(0, 0, width, 80, 0x000000, 0.6);
+
+    // Responsive sizing
+    const logHeight = this.isMobile ? 60 : 80;
+    const fontSize = this.isMobile ? '9px' : '11px';
+    const lineHeight = this.isMobile ? 12 : 14;
+    const numLines = this.isMobile ? 3 : 4;
+
+    const bg = this.add.rectangle(0, 0, width, logHeight, 0x000000, 0.6);
     bg.setOrigin(0, 0);
-    
-    const title = this.add.text(10, 5, 'EVENT LOG', {
-      font: '10px Courier',
+
+    const title = this.add.text(10, 3, 'EVENT LOG', {
+      font: this.isMobile ? '9px Courier' : '10px Courier',
       color: '#4a7d5a'
     });
-    
-    // Create 4 lines for events
-    for (let i = 0; i < 4; i++) {
-      const text = this.add.text(10, 20 + i * 14, '', {
-        font: '11px Courier',
+
+    // Create lines for events
+    for (let i = 0; i < numLines; i++) {
+      const text = this.add.text(10, 16 + i * lineHeight, '', {
+        font: `${fontSize} Courier`,
         color: '#aaaaaa'
       });
       this.eventTexts.push(text);
     }
-    
-    this.eventLog = this.add.container(0, height - 80, [bg, title, ...this.eventTexts]);
+
+    this.eventLog = this.add.container(0, height - logHeight, [bg, title, ...this.eventTexts]);
   }
   
   createMoodleIcons() {
@@ -273,10 +322,17 @@ export class UIScene extends Phaser.Scene {
     // Update elevation
     this.elevationText.setText(`Elev: ${hiker.elevation?.toLocaleString() || 3782} ft`);
     
-    // Update status bars
-    this.drawStatusBar(this.caloriesBar, 40, 90, 150, 12, hiker.calories / 3000, 0xff6666);
-    this.drawStatusBar(this.hydrationBar, 40, 106, 150, 12, hiker.hydration / 100, 0x6699ff);
-    this.drawStatusBar(this.energyBar, 40, 122, 150, 12, hiker.energy / 100, 0x66ff66);
+    // Update status bars (use responsive sizing)
+    const barX = this.isMobile ? 35 : 40;
+    const barWidth = this.isMobile ? 110 : 150;
+    const padding = this.isMobile ? 5 : 10;
+    const barY1 = padding + 76;
+    const barY2 = barY1 + 14;
+    const barY3 = barY2 + 14;
+
+    this.drawStatusBar(this.caloriesBar, barX, barY1, barWidth, 10, hiker.calories / 3000, 0xff6666);
+    this.drawStatusBar(this.hydrationBar, barX, barY2, barWidth, 10, hiker.hydration / 100, 0x6699ff);
+    this.drawStatusBar(this.energyBar, barX, barY3, barWidth, 10, hiker.energy / 100, 0x66ff66);
     
     // Update pace
     const paceSpeed: Record<string, number> = {
