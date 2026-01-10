@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import * as Colyseus from 'colyseus.js';
+import { gameStorage, type HikerSaveData, type GameSaveData } from '../storage/GameStorage';
 
 interface GameData {
   hikerName: string;
   build: string;
+  loadSave?: boolean;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -20,11 +22,16 @@ export class GameScene extends Phaser.Scene {
   
   // Camera follow offset
   private cameraTarget: number = 0;
-  
+
   // Game state
   private isConnected: boolean = false;
   private gameState: any = null;
-  
+
+  // Save system
+  private autoSaveTimer: Phaser.Time.TimerEvent | null = null;
+  private lastSaveTime: number = 0;
+  private loadFromSave: boolean = false;
+
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -32,6 +39,7 @@ export class GameScene extends Phaser.Scene {
   init(data: GameData) {
     this.registry.set('hikerName', data.hikerName);
     this.registry.set('build', data.build);
+    this.loadFromSave = data.loadSave || false;
   }
 
   create() {
@@ -162,12 +170,59 @@ export class GameScene extends Phaser.Scene {
     }
   }
   
-  runOfflineMode() {
+  async runOfflineMode() {
     console.log('Running in offline mode');
-    
-    // Create simulated state
+
+    // Check if we should load from save
+    if (this.loadFromSave) {
+      const saveData = await gameStorage.load('autosave');
+      if (saveData) {
+        console.log('Loading saved game...');
+        this.hikerData = saveData.hiker;
+        this.gameState = saveData.game;
+        this.events.emit('game-event', {
+          type: 'success',
+          message: `Welcome back, ${saveData.hikerName}!`
+        });
+      } else {
+        // No save found, create new game
+        this.createNewGame();
+      }
+    } else {
+      // Create new game
+      this.createNewGame();
+    }
+
+    // Start offline simulation loop
+    this.time.addEvent({
+      delay: 100,
+      callback: this.offlineTick,
+      callbackScope: this,
+      loop: true
+    });
+
+    // Set up auto-save every 30 seconds
+    this.autoSaveTimer = this.time.addEvent({
+      delay: 30000,
+      callback: this.autoSave,
+      callbackScope: this,
+      loop: true
+    });
+
+    // Save on page unload
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
+
+    // Emit initial state to UI
+    this.events.emit('state-update', {
+      hiker: this.hikerData,
+      game: this.gameState
+    });
+  }
+
+  private createNewGame() {
     this.hikerData = {
       name: this.registry.get('hikerName'),
+      build: this.registry.get('build'),
       mile: 0,
       elevation: 3782,
       calories: 2000,
@@ -191,7 +246,7 @@ export class GameScene extends Phaser.Scene {
         water: 2.0, waterCapacity: 3.0, money: 500
       }
     };
-    
+
     this.gameState = {
       time: { day: 1, hour: 6, minute: 0 },
       phase: 'morning',
@@ -199,20 +254,45 @@ export class GameScene extends Phaser.Scene {
       temperature: 55,
       events: []
     };
-    
-    // Start offline simulation loop
-    this.time.addEvent({
-      delay: 100,
-      callback: this.offlineTick,
-      callbackScope: this,
-      loop: true
+  }
+
+  private handleBeforeUnload = () => {
+    // Synchronous save attempt on page close
+    this.saveGame();
+  };
+
+  async saveGame(): Promise<void> {
+    if (!this.hikerData || !this.gameState) return;
+
+    try {
+      await gameStorage.save(
+        this.hikerData as HikerSaveData,
+        this.gameState as GameSaveData,
+        'autosave'
+      );
+      this.lastSaveTime = Date.now();
+      this.events.emit('game-saved');
+    } catch (error) {
+      console.error('Failed to save game:', error);
+    }
+  }
+
+  private async autoSave() {
+    await this.saveGame();
+    this.events.emit('game-event', {
+      type: 'info',
+      message: 'Game saved'
     });
-    
-    // Emit initial state to UI
-    this.events.emit('state-update', {
-      hiker: this.hikerData,
-      game: this.gameState
-    });
+  }
+
+  // Clean up on scene shutdown
+  shutdown() {
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    if (this.autoSaveTimer) {
+      this.autoSaveTimer.destroy();
+    }
+    // Final save
+    this.saveGame();
   }
   
   offlineTick() {
