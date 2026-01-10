@@ -1,4 +1,6 @@
 ---
+import { LIVE_TRACKING_ENABLED, LIVE_TRACKING_URL, LIVE_TRACKING_LABEL } from '../lib/config';
+
 const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
 const isGenerate = pathname.startsWith('/generate');
@@ -15,6 +17,18 @@ const isTools = pathname.startsWith('/tools');
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
       <!-- <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a> -->
       <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
+      {LIVE_TRACKING_ENABLED && (
+        <a
+          href={LIVE_TRACKING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="live-link"
+          title="Track live on Garmin MapShare"
+        >
+          <span class="live-dot"></span>
+          <span class="live-text">Live</span>
+        </a>
+      )}
       <span id="offline-status" class="offline-badge" title="Offline status" style="display: none;"></span>
     </div>
   </nav>
@@ -87,6 +101,45 @@ const isTools = pathname.startsWith('/tools');
     background: rgba(166, 181, 137, 0.2);
   }
 
+  /* Live tracking link */
+  .live-link {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--pine);
+    text-decoration: none;
+    padding: 0.25rem 0.6rem 0.25rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    transition: all 0.15s ease;
+  }
+
+  .live-link:hover {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: rgba(220, 38, 38, 0.35);
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: #dc2626;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(220, 38, 38, 0.5);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  .live-text {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
   /* Mobile */
   @media (max-width: 600px) {
     .nav-right {
@@ -96,6 +149,24 @@ const isTools = pathname.startsWith('/tools');
     .nav-link {
       font-size: 0.8rem;
       padding: 0.2rem 0.4rem;
+    }
+
+    .live-link {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.45rem 0.2rem 0.35rem;
+      gap: 0.25rem;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .live-dot {
+      animation: none;
     }
   }
 

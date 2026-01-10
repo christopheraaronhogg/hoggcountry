@@ -37,12 +37,13 @@ const { title, description = SITE_DESCRIPTION } = Astro.props;
     </main>
     <Footer />
     <BackgroundWidget client:only='svelte' />
-    <LiveTrackingButton
+    <!-- Live tracking now in header nav - floating button disabled -->
+    <!-- <LiveTrackingButton
       client:load
       enabled={LIVE_TRACKING_ENABLED}
       url={LIVE_TRACKING_URL}
       label={LIVE_TRACKING_LABEL}
-    />
+    /> -->
 
     <!-- Global Service Worker Registration -->
     <script is:inline>
