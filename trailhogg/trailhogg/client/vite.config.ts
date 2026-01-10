@@ -2,9 +2,10 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
+  base: '/game/',
   resolve: {
     alias: {
-      '@trail-legs/shared': path.resolve(__dirname, '../shared/src'),
+      '@trailhogg/shared': path.resolve(__dirname, '../shared/src'),
     },
   },
   server: {
@@ -17,7 +18,8 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: 'dist',
-    sourcemap: true
+    outDir: '../../../public/game',
+    emptyOutDir: true,
+    sourcemap: false
   }
 });

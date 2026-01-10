@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Trail Legs - Appalachian Trail Simulation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background-color: #1a1a1a;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+    }
+    
+    #game-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #4a7d5a;
+      font-size: 24px;
+      text-align: center;
+    }
+    
+    #loading .trail-name {
+      font-size: 48px;
+      font-weight: bold;
+      color: #2e5339;
+      margin-bottom: 20px;
+    }
+    
+    #loading .tagline {
+      font-size: 16px;
+      color: #888;
+      font-style: italic;
+    }
+  </style>
+  <script type="module" crossorigin src="/game/assets/index-KFMcPxyE.js"></script>
+</head>
+<body>
+  <div id="game-container">
+    <div id="loading">
+      <div class="trail-name">TRAIL LEGS</div>
+      <div>Loading...</div>
+      <div class="tagline">Every mile is earned.</div>
+    </div>
+  </div>
+</body>
+</html>

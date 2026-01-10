@@ -57,10 +57,10 @@ import {
   CAMP_GEAR_SPRITES,
   WEATHER_EXTENDED_SPRITES,
   BACKGROUND_SPRITES,
-} from '@trail-legs/shared/sprites';
+} from '@trailhogg/shared/sprites';
 
 // Import UI icons separately due to naming collision
-import { UI_SPRITES as UI_ICON_SPRITES } from '@trail-legs/shared/sprites/ui-icons';
+import { UI_SPRITES as UI_ICON_SPRITES } from '@trailhogg/shared/sprites/ui-icons';
 
 /**
  * Generates all game assets from sprite definitions

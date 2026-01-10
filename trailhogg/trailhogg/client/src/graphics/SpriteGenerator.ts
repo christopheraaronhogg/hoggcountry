@@ -11,8 +11,8 @@ import {
   ButtonSprite,
   TileSprite,
   PixelGrid,
-} from '@trail-legs/shared/sprites';
-import { TRAIL_LEGS_PALETTE } from '@trail-legs/shared/sprites';
+} from '@trailhogg/shared/sprites';
+import { TRAIL_LEGS_PALETTE } from '@trailhogg/shared/sprites';
 
 /**
  * Converts a hex color string to a number for Phaser
