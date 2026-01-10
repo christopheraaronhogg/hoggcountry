@@ -1,5 +1,14 @@
 export const YT_CHANNEL_ID = 'UCtlUsN3UpR-Vmb-XbgAuNHg';
 
+// ============================================
+// LIVE TRACKING CONFIG
+// ============================================
+// Set to true when dad starts the AT thru-hike
+// This shows a floating "Track Live" button site-wide
+export const LIVE_TRACKING_ENABLED = true; // TESTING - set to false until hike starts
+export const LIVE_TRACKING_URL = 'https://share.garmin.com/theman1';
+export const LIVE_TRACKING_LABEL = 'Track Dad Live';
+
 // Optional: Set a playlist ID to filter videos to a specific playlist
 // Leave empty to show all channel videos
 export const YT_PLAYLIST_ID = 'PLfcu9P1xhBSV-4a9YRUkLDUEIvthF-lct';
