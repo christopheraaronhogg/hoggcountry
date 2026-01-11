@@ -667,37 +667,103 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
         font-style: italic;
       }
 
-      /* Tables */
+      /* Tables - Card style with enhanced formatting */
       .chapter-prose :global(table) {
+        position: relative;
+        display: block;
         width: 100%;
         margin: 2rem 0;
-        border-collapse: collapse;
-        font-size: 0.9rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       }
 
-      .chapter-prose :global(thead) {
-        background: var(--pine);
-        color: #fff;
+      .chapter-prose :global(table thead),
+      .chapter-prose :global(table tbody),
+      .chapter-prose :global(table tr) {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+      }
+
+      .chapter-prose :global(table thead) {
+        position: sticky;
+        top: 0;
+        z-index: 1;
       }
 
       .chapter-prose :global(th) {
-        padding: 0.75rem 1rem;
         text-align: left;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(to bottom, var(--pine), #3d4a3a);
+        color: #f5f2e8;
         font-family: Oswald, sans-serif;
         font-weight: 600;
         font-size: 0.8rem;
+        letter-spacing: 0.03em;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        white-space: nowrap;
+      }
+
+      .chapter-prose :global(th:first-child) {
+        border-radius: 9px 0 0 0;
+      }
+
+      .chapter-prose :global(th:last-child) {
+        border-radius: 0 9px 0 0;
+      }
+
+      .chapter-prose :global(th:only-child) {
+        border-radius: 9px 9px 0 0;
       }
 
       .chapter-prose :global(td) {
-        padding: 0.75rem 1rem;
+        padding: 0.625rem 1rem;
         border-bottom: 1px solid var(--border);
         vertical-align: top;
+        font-size: 0.9rem;
+        line-height: 1.5;
       }
 
-      .chapter-prose :global(tr:nth-child(even)) {
-        background: rgba(166, 181, 137, 0.05);
+      /* Zebra striping */
+      .chapter-prose :global(tbody tr:nth-child(even)) {
+        background: rgba(166, 181, 137, 0.06);
+      }
+
+      /* Hover state */
+      .chapter-prose :global(tbody tr:hover) {
+        background: rgba(166, 181, 137, 0.12);
+      }
+
+      .chapter-prose :global(tr:last-child td) {
+        border-bottom: none;
+      }
+
+      .chapter-prose :global(tr:last-child td:first-child) {
+        border-radius: 0 0 0 9px;
+      }
+
+      .chapter-prose :global(tr:last-child td:last-child) {
+        border-radius: 0 0 9px 0;
+      }
+
+      /* Bold text in cells (totals/categories) */
+      .chapter-prose :global(td strong) {
+        color: var(--pine);
+        font-weight: 700;
+      }
+
+      /* Right-align numeric columns */
+      .chapter-prose :global(td:last-child:not(:first-child)) {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .chapter-prose :global(td:first-child) {
+        text-align: left;
       }
 
       /* Code */
@@ -1050,11 +1116,16 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
 
         .chapter-prose :global(table) {
           font-size: 0.8rem;
+          margin: 1.5rem 0;
         }
 
-        .chapter-prose :global(th),
+        .chapter-prose :global(th) {
+          padding: 0.6rem 0.75rem;
+          font-size: 0.7rem;
+        }
+
         .chapter-prose :global(td) {
-          padding: 0.5rem 0.6rem;
+          padding: 0.5rem 0.75rem;
         }
       }
     </style>
