@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "colyseus.js": "^0.15.28",
+    "peerjs": "^1.5.5",
     "phaser": "^3.90.0"
   },
   "devDependencies": {

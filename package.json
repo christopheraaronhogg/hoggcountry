@@ -24,6 +24,7 @@
     "@astrojs/svelte": "^7.1.0",
     "@tailwindcss/vite": "^4.1.11",
     "astro": "^5.12.8",
+    "codehogg": "^2.4.0",
     "fast-xml-parser": "^5.2.5",
     "jsdom": "^26.1.0",
     "marked": "^17.0.1",

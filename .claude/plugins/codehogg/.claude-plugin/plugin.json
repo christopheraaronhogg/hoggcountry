@@ -1,0 +1,20 @@
+{
+  "name": "codehogg",
+  "description": "18 expert consultant subagents for comprehensive codebase audits, feature planning, and implementation guidance. Run /codehogg:audit-full for complete analysis.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Christopher Hogg"
+  },
+  "repository": "https://github.com/christopheraaronhogg/codehogg",
+  "license": "MIT",
+  "keywords": [
+    "audit",
+    "architecture",
+    "security",
+    "performance",
+    "code-quality",
+    "consultants",
+    "planning",
+    "ultrathink"
+  ]
+}

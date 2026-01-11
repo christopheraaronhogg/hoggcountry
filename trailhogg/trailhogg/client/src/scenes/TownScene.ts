@@ -416,37 +416,83 @@ export class TownScene extends Phaser.Scene {
       color: '#ffffff'
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 140, 'Gear shakedown and replacements', {
+    this.add.text(width / 2, 140, 'Gear, safety equipment, and services', {
       font: 'italic 12px Courier',
       color: '#aaaaaa'
     }).setOrigin(0.5);
 
-    // Gear options (simplified for now)
-    const gearOptions = [
+    // Check what the hiker already has
+    const hasPLB = this.hikerData?.inventory?.gear?.some((g: any) => g.id === 'plb');
+    const hasInsurance = this.hikerData?.inventory?.rescueInsurance || false;
+
+    // Gear options - dynamic based on what player has
+    const gearOptions: { name: string; price: number; effect: string; description?: string; owned?: boolean }[] = [
       { name: 'Replace Worn Shoes', price: 120, effect: 'shoes' },
       { name: 'New Water Filter', price: 40, effect: 'filter' },
       { name: 'Repair Tent', price: 25, effect: 'tent' },
       { name: 'Upgrade Sleeping Bag', price: 200, effect: 'sleepingBag' },
     ];
 
+    // Add PLB option if player doesn't have one
+    if (!hasPLB) {
+      gearOptions.unshift({
+        name: '📡 Garmin InReach Mini',
+        price: 350,
+        effect: 'plb',
+        description: 'Satellite SOS beacon - call for rescue anywhere!'
+      });
+    }
+
+    // Add rescue insurance option
+    if (!hasInsurance) {
+      gearOptions.unshift({
+        name: '🏥 Rescue Insurance',
+        price: 50,
+        effect: 'insurance',
+        description: 'Covers SAR costs - only $100 copay for rescues'
+      });
+    } else {
+      gearOptions.unshift({
+        name: '✅ Rescue Insurance',
+        price: 0,
+        effect: 'insurance',
+        description: 'ACTIVE - You\'re covered!',
+        owned: true
+      });
+    }
+
     gearOptions.forEach((gear, index) => {
-      const y = 180 + index * 50;
-      const canAfford = (this.hikerData?.inventory?.money || 0) >= gear.price;
+      const y = 175 + index * (gear.description ? 55 : 45);
+      const canAfford = (this.hikerData?.inventory?.money || 0) >= gear.price || gear.owned;
 
       const container = this.add.container(width / 2, y);
 
-      const bg = this.add.rectangle(0, 0, width - 60, 40, canAfford ? 0x2e5339 : 0x333333);
-      bg.setStrokeStyle(1, 0x4a7d5a);
+      // Taller box for items with descriptions
+      const boxHeight = gear.description ? 48 : 40;
+      const bgColor = gear.owned ? 0x225522 : (canAfford ? 0x2e5339 : 0x333333);
+      const bg = this.add.rectangle(0, 0, width - 60, boxHeight, bgColor);
+      bg.setStrokeStyle(1, gear.owned ? 0x44aa44 : 0x4a7d5a);
       container.add(bg);
 
-      const text = this.add.text(-100, 0, `${gear.name} - $${gear.price}`, {
-        font: '14px Courier',
-        color: canAfford ? '#ffffff' : '#666666'
+      // Item name and price
+      const priceText = gear.owned ? '(OWNED)' : `$${gear.price}`;
+      const text = this.add.text(-width / 2 + 50, gear.description ? -10 : 0, `${gear.name} - ${priceText}`, {
+        font: '13px Courier',
+        color: gear.owned ? '#44ff44' : (canAfford ? '#ffffff' : '#666666')
       }).setOrigin(0, 0.5);
       container.add(text);
 
-      if (canAfford) {
-        container.setInteractive(new Phaser.Geom.Rectangle(-150, -20, 300, 40), Phaser.Geom.Rectangle.Contains);
+      // Description if present
+      if (gear.description) {
+        const desc = this.add.text(-width / 2 + 50, 10, gear.description, {
+          font: '10px Courier',
+          color: '#888888'
+        }).setOrigin(0, 0.5);
+        container.add(desc);
+      }
+
+      if (canAfford && !gear.owned) {
+        container.setInteractive(new Phaser.Geom.Rectangle(-width / 2 + 30, -boxHeight / 2, width - 60, boxHeight), Phaser.Geom.Rectangle.Contains);
         container.on('pointerdown', () => this.buyGear(gear));
         container.on('pointerover', () => bg.setFillStyle(0x4a7d5a));
         container.on('pointerout', () => bg.setFillStyle(0x2e5339));
@@ -458,10 +504,40 @@ export class TownScene extends Phaser.Scene {
     this.showStats();
   }
 
-  buyGear(gear: { name: string; price: number; effect: string }) {
+  buyGear(gear: { name: string; price: number; effect: string; owned?: boolean }) {
     if (!this.hikerData?.inventory) return;
 
+    // Already owned - do nothing
+    if (gear.owned) {
+      this.showMessage('You already have this!', 'info');
+      return;
+    }
+
     this.hikerData.inventory.money -= gear.price;
+
+    // Handle special purchases
+    if (gear.effect === 'insurance') {
+      // Activate rescue insurance
+      this.hikerData.inventory.rescueInsurance = true;
+      this.showMessage('🏥 Rescue Insurance activated! SAR rescues now only $100 copay.', 'success');
+      this.showOutfitter();
+      return;
+    }
+
+    if (gear.effect === 'plb') {
+      // Add Garmin InReach to gear
+      this.hikerData.inventory.gear.push({
+        id: 'plb',
+        name: 'Garmin InReach Mini',
+        weight: 0.1,
+        condition: 100,
+        category: 'safety',
+        description: 'Satellite communicator with SOS button. Press H in emergencies.'
+      });
+      this.showMessage('📡 Garmin InReach Mini acquired! Press H for emergency SOS.', 'success');
+      this.showOutfitter();
+      return;
+    }
 
     // Apply gear effect (restore condition or add new item)
     const existingGear = this.hikerData.inventory.gear.find((g: any) =>

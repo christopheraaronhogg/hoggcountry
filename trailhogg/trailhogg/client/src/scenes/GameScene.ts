@@ -1,21 +1,28 @@
 import Phaser from 'phaser';
-import * as Colyseus from 'colyseus.js';
 import { gameStorage, type HikerSaveData, type GameSaveData } from '../storage/GameStorage';
 import {
   SHELTERS, TOWNS, TERRAIN_ZONES, STATE_BOUNDARIES, PEAKS,
   getTerrainZone, getCurrentState, getNextShelter, getNextTown, getElevationAtMile,
+  getZoneIdForMile,
   type Shelter, type Town, type TerrainZone
 } from '../data/TrailData';
+import { networkManager, MessageType, type PlayerState } from '../network/NetworkManager';
+import { gpsService, type RealHikerGhost } from '../network/GPSService';
+import { zoneManager } from '../network/ZoneManager';
+import { getGlobalTime, globalTime, getSkyColor, getAmbientLight, formatGameTime, type GameTime } from '../systems/GlobalTime';
+import { getWeatherForZone, formatWeather, getWeatherAlert, type Weather } from '../systems/DeterministicWeather';
 
 interface GameData {
   hikerName: string;
+  trailName?: string;
   build: string;
   loadSave?: boolean;
+  multiplayer?: boolean;
+  isHost?: boolean;
+  mmoMode?: boolean;  // True = join global trail (UTC time, no speed controls)
 }
 
 export class GameScene extends Phaser.Scene {
-  private client!: Colyseus.Client;
-  private room!: Colyseus.Room;
   private hiker!: Phaser.GameObjects.Sprite;
   public hikerData: any = null;  // Public so UIScene can access inventory
   private trees: Phaser.GameObjects.Sprite[] = [];
@@ -112,6 +119,8 @@ export class GameScene extends Phaser.Scene {
   // Game state
   private isConnected: boolean = false;
   private gameState: any = null;
+  private isIncapacitated: boolean = false;
+  private deathOverlay: Phaser.GameObjects.Container | null = null;
 
   // Save system
   private autoSaveTimer: Phaser.Time.TimerEvent | null = null;
@@ -123,6 +132,24 @@ export class GameScene extends Phaser.Scene {
   private gameSpeedText!: Phaser.GameObjects.Text;
   private readonly SPEED_OPTIONS = [0.25, 0.5, 1, 2, 4, 8];
 
+  // Multiplayer
+  private isMultiplayer: boolean = false;
+  private isHost: boolean = false;
+  private isMMOMode: boolean = false;  // True = global time, no speed controls
+  private otherPlayerSprites: Map<string, Phaser.GameObjects.Container> = new Map();
+  private trailName: string = '';
+
+  // Global time (MMO mode)
+  private globalGameTime: GameTime | null = null;
+  private globalWeather: Weather | null = null;
+  private lastWeatherCheck: number = 0;
+  private weatherText!: Phaser.GameObjects.Text;
+
+  // Real hiker ghosts (GPS data)
+  private ghostSprites: Map<string, Phaser.GameObjects.Container> = new Map();
+  private lastGhostUpdate: number = 0;
+  private readonly GHOST_UPDATE_INTERVAL = 5000; // Update ghosts every 5 seconds
+
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -131,6 +158,10 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('hikerName', data.hikerName);
     this.registry.set('build', data.build);
     this.loadFromSave = data.loadSave || false;
+    this.isMultiplayer = data.multiplayer || false;
+    this.isHost = data.isHost || false;
+    this.isMMOMode = data.mmoMode || false;
+    this.trailName = data.trailName || '';
   }
 
   create() {
@@ -198,12 +229,48 @@ export class GameScene extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(200);
 
     // Game speed indicator (top right, below sun/moon)
-    this.gameSpeedText = this.add.text(width - 10, 70, '▷ 0.5x', {
-      font: '14px Courier',
-      color: '#88aacc',
-      backgroundColor: '#000000aa',
-      padding: { x: 6, y: 3 }
-    }).setOrigin(1, 0).setScrollFactor(0).setDepth(200);
+    // In MMO mode, show global time instead of speed controls
+    if (this.isMMOMode) {
+      const time = getGlobalTime();
+      this.gameSpeedText = this.add.text(width - 10, 70, `🌐 ${formatGameTime(time)}`, {
+        font: '14px Courier',
+        color: '#44aaff',
+        backgroundColor: '#000000aa',
+        padding: { x: 6, y: 3 }
+      }).setOrigin(1, 0).setScrollFactor(0).setDepth(200);
+
+      // Subscribe to global time updates
+      globalTime.start();
+      globalTime.onTimeChange((gameTime) => {
+        this.globalGameTime = gameTime;
+        this.gameSpeedText.setText(`🌐 ${formatGameTime(gameTime)}`);
+
+        // Sync gameState.time from global time
+        if (this.gameState) {
+          this.gameState.time.hour = gameTime.hour;
+          this.gameState.time.minute = gameTime.minute;
+          this.gameState.time.day = gameTime.day;
+          this.gameState.phase = gameTime.phase;
+        }
+      });
+    } else {
+      this.gameSpeedText = this.add.text(width - 10, 70, '▷ 0.5x', {
+        font: '14px Courier',
+        color: '#88aacc',
+        backgroundColor: '#000000aa',
+        padding: { x: 6, y: 3 }
+      }).setOrigin(1, 0).setScrollFactor(0).setDepth(200);
+    }
+
+    // Weather display (MMO mode shows zone-specific weather)
+    if (this.isMMOMode) {
+      this.weatherText = this.add.text(width - 10, 95, '☀️ Clear 65°F', {
+        font: '12px Courier',
+        color: '#aaddff',
+        backgroundColor: '#000000aa',
+        padding: { x: 4, y: 2 }
+      }).setOrigin(1, 0).setScrollFactor(0).setDepth(200);
+    }
 
     // Start hiking hint (shown until player starts hiking)
     const startHint = this.add.text(width / 2, height * 0.25,
@@ -531,39 +598,52 @@ export class GameScene extends Phaser.Scene {
   updateDayNightCycle() {
     if (!this.gameState) return;
 
-    const hour = this.gameState.time.hour;
     const { width } = this.cameras.main;
-
-    // Determine time of day colors
+    let hour: number;
     let skyColor: number;
     let skyAlpha: number;
     let useSun = true;
 
-    if (hour >= 6 && hour < 8) {
-      // Sunrise
-      skyColor = 0xFFB347; // Orange
-      skyAlpha = 0.3;
-      useSun = true;
-    } else if (hour >= 8 && hour < 17) {
-      // Daytime
-      skyColor = 0x87CEEB; // Light blue
-      skyAlpha = 0.2;
-      useSun = true;
-    } else if (hour >= 17 && hour < 19) {
-      // Sunset
-      skyColor = 0xFF6B6B; // Pink/red
-      skyAlpha = 0.35;
-      useSun = true;
-    } else if (hour >= 19 && hour < 21) {
-      // Dusk
-      skyColor = 0x4B0082; // Indigo
-      skyAlpha = 0.4;
-      useSun = false;
+    // In MMO mode, use GlobalTime for accurate sky colors
+    if (this.isMMOMode && this.globalGameTime) {
+      hour = this.globalGameTime.hour;
+      skyColor = getSkyColor(this.globalGameTime);
+
+      // Ambient light determines alpha (brighter = more transparent overlay)
+      const ambient = getAmbientLight(this.globalGameTime);
+      skyAlpha = 0.1 + (1 - ambient) * 0.4; // 0.1 at day, 0.5 at night
+
+      useSun = !this.globalGameTime.isNight;
     } else {
-      // Night
-      skyColor = 0x191970; // Midnight blue
-      skyAlpha = 0.5;
-      useSun = false;
+      hour = this.gameState.time.hour;
+
+      // Determine time of day colors (legacy mode)
+      if (hour >= 6 && hour < 8) {
+        // Sunrise
+        skyColor = 0xFFB347; // Orange
+        skyAlpha = 0.3;
+        useSun = true;
+      } else if (hour >= 8 && hour < 17) {
+        // Daytime
+        skyColor = 0x87CEEB; // Light blue
+        skyAlpha = 0.2;
+        useSun = true;
+      } else if (hour >= 17 && hour < 19) {
+        // Sunset
+        skyColor = 0xFF6B6B; // Pink/red
+        skyAlpha = 0.35;
+        useSun = true;
+      } else if (hour >= 19 && hour < 21) {
+        // Dusk
+        skyColor = 0x4B0082; // Indigo
+        skyAlpha = 0.4;
+        useSun = false;
+      } else {
+        // Night
+        skyColor = 0x191970; // Midnight blue
+        skyAlpha = 0.5;
+        useSun = false;
+      }
     }
 
     // Update sky overlay
@@ -1135,53 +1215,228 @@ export class GameScene extends Phaser.Scene {
   }
 
   async connectToServer() {
-    try {
-      // Connect to Colyseus server
-      const serverUrl = window.location.hostname === 'localhost' 
-        ? 'ws://localhost:2567' 
-        : `wss://${window.location.hostname}`;
-      
-      this.client = new Colyseus.Client(serverUrl);
-      
-      // Join or create a room
-      this.room = await this.client.joinOrCreate('trail', {});
-      
-      console.log('Connected to room:', this.room.id);
-      this.isConnected = true;
-      
-      // Create our hiker
-      this.room.send('create_hiker', {
-        name: this.registry.get('hikerName'),
-        build: this.registry.get('build')
+    // For P2P multiplayer, we connect via NetworkManager (already done in MenuScene)
+    // For solo play, we just run in offline mode
+    if (this.isMultiplayer) {
+      this.setupMultiplayer();
+    }
+
+    // Always run offline mode for local simulation
+    // (In multiplayer, host runs authoritative sim, guests just render)
+    this.runOfflineMode();
+  }
+
+  /**
+   * Setup multiplayer networking
+   */
+  setupMultiplayer() {
+    console.log(`[GameScene] Setting up multiplayer (isHost: ${this.isHost})`);
+
+    // Register for state sync updates (guest only)
+    if (!this.isHost) {
+      networkManager.on(MessageType.STATE_SYNC, (message) => {
+        const players = message.payload.players as PlayerState[];
+        // Update local player states from host
+        players.forEach(playerState => {
+          if (playerState.peerId !== networkManager.localPlayerId) {
+            // Store for rendering
+            this.updateOtherPlayerSprite(playerState);
+          }
+        });
       });
-      
-      // Listen for state changes
-      this.room.onStateChange((state) => {
-        this.gameState = state;
-        this.updateFromState(state);
+
+      // Receive game speed changes from host
+      networkManager.on(MessageType.TIME_UPDATE, (message) => {
+        if (message.payload.gameSpeed !== undefined) {
+          this.setGameSpeed(message.payload.gameSpeed);
+        }
       });
-      
-      // Listen for events
-      this.room.onMessage('hiker_created', (data) => {
-        console.log('Hiker created:', data);
+    }
+
+    // Handle new player joining
+    networkManager.on(MessageType.PLAYER_JOIN, (message) => {
+      const player = message.payload as PlayerState;
+      console.log(`[GameScene] Player joined: ${player.name}`);
+      this.events.emit('game-event', {
+        type: 'success',
+        message: `🎒 ${player.name} "${player.trailName}" joined the trail!`
       });
-      
-      this.room.onError((code, message) => {
-        console.error('Room error:', code, message);
-      });
-      
-      this.room.onLeave((code) => {
-        console.log('Left room:', code);
-        this.isConnected = false;
-      });
-      
-    } catch (error) {
-      console.error('Connection failed:', error);
-      // Run in offline mode with simulated state
-      this.runOfflineMode();
+    });
+
+    // Handle player leaving
+    networkManager.on(MessageType.PLAYER_LEAVE, (message) => {
+      const peerId = message.payload.peerId;
+      console.log(`[GameScene] Player left: ${peerId}`);
+
+      // Remove their sprite
+      const sprite = this.otherPlayerSprites.get(peerId);
+      if (sprite) {
+        sprite.destroy();
+        this.otherPlayerSprites.delete(peerId);
+      }
+
+      // If host left and we're a guest, show disconnect message
+      if (message.payload.isHost && !this.isHost) {
+        this.events.emit('game-event', {
+          type: 'warning',
+          message: '⚠️ Host disconnected - returning to menu'
+        });
+        this.time.delayedCall(2000, () => {
+          networkManager.disconnect();
+          this.scene.stop('UIScene');
+          this.scene.start('MenuScene');
+        });
+      }
+    });
+  }
+
+  /**
+   * Create or update sprite for another player
+   */
+  updateOtherPlayerSprite(playerState: PlayerState) {
+    const { width, height } = this.cameras.main;
+
+    let container = this.otherPlayerSprites.get(playerState.peerId);
+
+    if (!container) {
+      // Create new player container
+      container = this.add.container(playerState.x, height * 0.65);
+      container.setDepth(9); // Just below local player
+
+      // Player sprite
+      const sprite = this.add.sprite(0, 0, 'hiker');
+      sprite.setScale(1.8);
+      sprite.setTint(0x88aaff); // Blue tint for other players
+      container.add(sprite);
+
+      // Name label
+      const nameLabel = this.add.text(0, -40, `${playerState.trailName}`, {
+        font: '10px Courier',
+        color: '#88aaff',
+        backgroundColor: '#000000aa',
+        padding: { x: 4, y: 2 }
+      }).setOrigin(0.5);
+      container.add(nameLabel);
+
+      container.setData('sprite', sprite);
+      container.setData('nameLabel', nameLabel);
+      this.otherPlayerSprites.set(playerState.peerId, container);
+    }
+
+    // Update position based on mile difference from local player
+    const localMile = this.hikerData?.mile || 0;
+    const mileDiff = playerState.mile - localMile;
+
+    // Convert mile difference to Y position (negative = ahead, positive = behind)
+    // Each mile is roughly 5000 feet, so scale appropriately
+    const yOffset = -mileDiff * 200; // pixels per mile difference
+    container.y = (height * 0.65) + yOffset;
+    container.x = playerState.x;
+
+    // Only show if within reasonable distance
+    const visible = Math.abs(mileDiff) < 0.5; // Within half a mile
+    container.setVisible(visible);
+
+    // Animate if hiking
+    const sprite = container.getData('sprite') as Phaser.GameObjects.Sprite;
+    if (sprite && playerState.isHiking && this.anims.exists('hiker_walk')) {
+      sprite.play('hiker_walk', true);
+    } else if (sprite) {
+      sprite.stop();
+      sprite.setTexture('hiker');
     }
   }
-  
+
+  /**
+   * Create or update sprite for a real hiker ghost (GPS data)
+   * Green tint, semi-transparent - they're hiking IRL!
+   */
+  updateGhostSprite(ghost: RealHikerGhost) {
+    const { width, height } = this.cameras.main;
+
+    let container = this.ghostSprites.get(ghost.id);
+
+    if (!container) {
+      // Create new ghost container
+      container = this.add.container(width / 2, height * 0.65);
+      container.setDepth(8); // Below players but above NPCs
+
+      // Ghost sprite (green tint, semi-transparent)
+      const sprite = this.add.sprite(0, 0, 'hiker');
+      sprite.setScale(1.6);
+      sprite.setTint(0x44ff44); // Green = real hiker!
+      sprite.setAlpha(0.6); // Semi-transparent (they're a ghost)
+      container.add(sprite);
+
+      // Name label with trail name or "Real Hiker"
+      const displayName = ghost.trailName || 'Real Hiker';
+      const nameLabel = this.add.text(0, -35, displayName, {
+        font: '9px Courier',
+        color: '#44ff44',
+        backgroundColor: '#000000aa',
+        padding: { x: 3, y: 1 }
+      }).setOrigin(0.5);
+      container.add(nameLabel);
+
+      // Direction badge (NOBO/SOBO)
+      const dirBadge = this.add.text(0, -22, ghost.direction, {
+        font: '7px Courier',
+        color: '#88ff88'
+      }).setOrigin(0.5);
+      container.add(dirBadge);
+
+      container.setData('sprite', sprite);
+      container.setData('nameLabel', nameLabel);
+      this.ghostSprites.set(ghost.id, container);
+    }
+
+    // Update position based on mile difference from local player
+    const localMile = this.hikerData?.mile || 0;
+    const mileDiff = ghost.mile - localMile;
+
+    // Convert mile difference to Y position
+    const yOffset = -mileDiff * 200; // pixels per mile difference
+    container.y = (height * 0.65) + yOffset;
+    container.x = width / 2 + (Math.sin(ghost.mile * 10) * 50); // Slight zigzag
+
+    // Only show if within 2 miles (expanded range for ghosts)
+    const visible = Math.abs(mileDiff) < 2;
+    container.setVisible(visible);
+
+    // Ghosts are always "hiking" since they're real hikers on trail
+    const sprite = container.getData('sprite') as Phaser.GameObjects.Sprite;
+    if (sprite && this.anims.exists('hiker_walk')) {
+      sprite.play('hiker_walk', true);
+    }
+  }
+
+  /**
+   * Update all ghost sprites from GPS service
+   */
+  updateGhosts() {
+    if (!this.hikerData) return;
+
+    const localMile = this.hikerData.mile;
+    const nearbyGhosts = gpsService.getHikersInRange(localMile, 5);
+
+    // Track which ghosts we've seen this update
+    const seenGhosts = new Set<string>();
+
+    // Update or create ghost sprites
+    nearbyGhosts.forEach(ghost => {
+      this.updateGhostSprite(ghost);
+      seenGhosts.add(ghost.id);
+    });
+
+    // Remove ghosts that are no longer nearby
+    this.ghostSprites.forEach((container, id) => {
+      if (!seenGhosts.has(id)) {
+        container.destroy();
+        this.ghostSprites.delete(id);
+      }
+    });
+  }
+
   async runOfflineMode() {
     console.log('Running in offline mode');
 
@@ -1224,6 +1479,12 @@ export class GameScene extends Phaser.Scene {
     // Save on page unload
     window.addEventListener('beforeunload', this.handleBeforeUnload);
 
+    // Start GPS service to fetch real hiker data
+    gpsService.startPolling();
+
+    // Initialize zone manager with starting mile
+    zoneManager.initializeZone(this.hikerData?.mile || 0, networkManager.localPlayerId);
+
     // Emit initial state to UI
     this.events.emit('state-update', {
       hiker: this.hikerData,
@@ -1265,8 +1526,11 @@ export class GameScene extends Phaser.Scene {
           { id: 'sleepingBag', name: 'Sleeping Bag', weight: 2.0, condition: 88, category: 'sleep' },
           { id: 'sleepingPad', name: 'Sleeping Pad', weight: 1.0, condition: 92, category: 'sleep' },
           { id: 'stove', name: 'Camp Stove', weight: 0.5, condition: 100, category: 'cook' },
-          { id: 'headlamp', name: 'Headlamp', weight: 0.2, condition: 100, category: 'misc' }
+          { id: 'headlamp', name: 'Headlamp', weight: 0.2, condition: 100, category: 'misc' },
+          { id: 'plb', name: 'Garmin InReach Mini', weight: 0.1, condition: 100, category: 'safety',
+            description: 'Satellite communicator with SOS button. Press H in emergencies.' }
         ],
+        rescueInsurance: false,  // Can buy in towns for cheaper rescues
         food: [
           { id: 'oatmeal', name: 'Instant Oatmeal', calories: 300, weight: 0.2, servings: 4 },
           { id: 'ramen', name: 'Ramen Noodles', calories: 400, weight: 0.1, servings: 3 },
@@ -1317,6 +1581,10 @@ export class GameScene extends Phaser.Scene {
   // Clean up on scene shutdown
   shutdown() {
     window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    // Stop global time manager if in MMO mode
+    if (this.isMMOMode) {
+      globalTime.stop();
+    }
     if (this.autoSaveTimer) {
       this.autoSaveTimer.destroy();
     }
@@ -1327,31 +1595,61 @@ export class GameScene extends Phaser.Scene {
   offlineTick() {
     if (!this.hikerData) return;
 
-    // Advance time (scaled by game speed)
-    this.gameState.time.minute += this.gameSpeed;
-    if (this.gameState.time.minute >= 60) {
-      this.gameState.time.minute = 0;
-      this.gameState.time.hour++;
-      if (this.gameState.time.hour >= 24) {
-        this.gameState.time.hour = 0;
-        this.gameState.time.day++;
-        this.hikerData.daysOnTrail++;
-        this.hikerData.currentDayMiles = 0;
+    // In MMO mode, time is handled by GlobalTime - skip local time advancement
+    if (!this.isMMOMode) {
+      // Advance time (scaled by game speed)
+      this.gameState.time.minute += this.gameSpeed;
+      if (this.gameState.time.minute >= 60) {
+        this.gameState.time.minute = 0;
+        this.gameState.time.hour++;
+        if (this.gameState.time.hour >= 24) {
+          this.gameState.time.hour = 0;
+          this.gameState.time.day++;
+          this.hikerData.daysOnTrail++;
+          this.hikerData.currentDayMiles = 0;
+        }
+      }
+
+      // Update phase
+      const hour = this.gameState.time.hour;
+      if (hour >= 5 && hour < 8) this.gameState.phase = 'morning';
+      else if (hour >= 8 && hour < 18) this.gameState.phase = 'hiking';
+      else if (hour >= 18 && hour < 21) this.gameState.phase = 'evening';
+      else this.gameState.phase = 'night';
+
+      // Random weather changes (check every ~30 minutes of game time)
+      if (this.gameState.time.minute === 0 || this.gameState.time.minute === 30) {
+        this.maybeChangeWeather();
+      }
+    } else {
+      // MMO mode: Update deterministic weather based on zone
+      const now = Date.now();
+      if (now - this.lastWeatherCheck > 30000) { // Check every 30 real seconds
+        this.lastWeatherCheck = now;
+        const zoneId = getZoneIdForMile(this.hikerData.mile);
+        if (zoneId) {
+          const weather = getWeatherForZone(zoneId);
+          this.globalWeather = weather;
+          this.gameState.weather = weather.type;
+          this.gameState.temperature = weather.temperature;
+
+          // Update weather display
+          if (this.weatherText) {
+            this.weatherText.setText(`${weather.icon} ${weather.description} ${weather.temperature}°F`);
+          }
+
+          // Update visual effects
+          this.updateWeatherEffects(weather.type);
+
+          // Check for weather alerts
+          const alert = getWeatherAlert(weather);
+          if (alert) {
+            this.events.emit('game-event', { type: 'warning', message: alert });
+          }
+        }
       }
     }
-    
-    // Update phase
-    const hour = this.gameState.time.hour;
-    if (hour >= 5 && hour < 8) this.gameState.phase = 'morning';
-    else if (hour >= 8 && hour < 18) this.gameState.phase = 'hiking';
-    else if (hour >= 18 && hour < 21) this.gameState.phase = 'evening';
-    else this.gameState.phase = 'night';
 
-    // Random weather changes (check every ~30 minutes of game time)
-    if (this.gameState.time.minute === 0 || this.gameState.time.minute === 30) {
-      this.maybeChangeWeather();
-    }
-    
     // Process hiking
     if (this.hikerData.isHiking) {
       const paceSpeed: Record<string, number> = {
@@ -1359,18 +1657,27 @@ export class GameScene extends Phaser.Scene {
       };
       let speed = paceSpeed[this.hikerData.pace] || 2.0;
 
-      // Weather affects hiking speed and resource consumption
-      const weatherSpeedMod: Record<string, number> = {
-        'clear': 1.0, 'cloudy': 1.0, 'rain_light': 0.85,
-        'rain_heavy': 0.7, 'fog': 0.75, 'storm': 0.5
-      };
-      const weatherEnergyMod: Record<string, number> = {
-        'clear': 1.0, 'cloudy': 1.0, 'rain_light': 1.3,
-        'rain_heavy': 1.5, 'fog': 1.1, 'storm': 2.0
-      };
+      // Get speed/energy modifiers from weather
+      let speedMod = 1.0;
+      let energyMod = 1.0;
 
-      const speedMod = weatherSpeedMod[this.gameState.weather] || 1.0;
-      const energyMod = weatherEnergyMod[this.gameState.weather] || 1.0;
+      if (this.isMMOMode && this.globalWeather) {
+        // Use deterministic weather modifiers
+        speedMod = this.globalWeather.hikingSpeedMod;
+        energyMod = this.globalWeather.energyDrainMod;
+      } else {
+        // Use local weather modifiers
+        const weatherSpeedMod: Record<string, number> = {
+          'clear': 1.0, 'cloudy': 1.0, 'rain_light': 0.85,
+          'rain_heavy': 0.7, 'fog': 0.75, 'storm': 0.5
+        };
+        const weatherEnergyMod: Record<string, number> = {
+          'clear': 1.0, 'cloudy': 1.0, 'rain_light': 1.3,
+          'rain_heavy': 1.5, 'fog': 1.1, 'storm': 2.0
+        };
+        speedMod = weatherSpeedMod[this.gameState.weather] || 1.0;
+        energyMod = weatherEnergyMod[this.gameState.weather] || 1.0;
+      }
 
       speed *= speedMod;
       const distance = speed / 60; // miles per minute
@@ -1436,11 +1743,54 @@ export class GameScene extends Phaser.Scene {
       this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 0.1);
     }
 
+    // Check for incapacitation (death) - player has no resources and no way to recover
+    if (!this.isIncapacitated) {
+      const hasNoEnergy = this.hikerData.energy <= 0;
+      const hasNoCalories = this.hikerData.calories <= 0;
+      const hasNoHydration = this.hikerData.hydration <= 0;
+      const hasNoFood = !this.hikerData.inventory?.food?.some((f: any) => f.servings > 0);
+      const hasNoWater = (this.hikerData.inventory?.water || 0) < 0.25;
+
+      // Incapacitated if: no energy AND (no food OR no calories) AND (no water OR no hydration)
+      if (hasNoEnergy && hasNoCalories && hasNoHydration && hasNoFood && hasNoWater) {
+        this.triggerIncapacitation();
+      }
+    }
+
     // Emit update
     this.events.emit('state-update', {
       hiker: this.hikerData,
       game: this.gameState
     });
+
+    // Multiplayer: sync state to network
+    if (this.isMultiplayer) {
+      networkManager.updateLocalPlayer({
+        mile: this.hikerData.mile,
+        x: this.hiker?.x || 400,
+        isHiking: this.hikerData.isHiking,
+        energy: this.hikerData.energy,
+        health: this.hikerData.health,
+        elevation: this.hikerData.elevation || 3782,
+      });
+
+      // Host also sends weather/time state
+      if (this.isHost) {
+        networkManager.updateGameState(
+          {
+            isRaining: this.gameState.weather === 'rain_light' ||
+                       this.gameState.weather === 'rain_heavy' ||
+                       this.gameState.weather === 'storm',
+            isFoggy: this.gameState.weather === 'fog'
+          },
+          {
+            hour: this.gameState.time.hour,
+            minute: this.gameState.time.minute,
+            day: this.gameState.time.day
+          }
+        );
+      }
+    }
 
     // Update visual weather effects
     this.updateWeatherEffects(this.gameState.weather);
@@ -1489,15 +1839,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateFromState(state: any) {
-    // Find our hiker in the state
-    const sessionId = this.room?.sessionId;
-    if (sessionId && state.hikers) {
-      const hiker = state.hikers.get(sessionId);
-      if (hiker) {
-        this.hikerData = hiker;
-      }
+    // This method was used for Colyseus server sync - now handled locally
+    // In P2P multiplayer, guests receive state via NetworkManager
+    if (state.hikers) {
+      this.hikerData = state.hiker;
     }
-    
+
     // Emit to UI
     this.events.emit('state-update', {
       hiker: this.hikerData,
@@ -1509,7 +1856,7 @@ export class GameScene extends Phaser.Scene {
         events: state.events
       }
     });
-    
+
     // Update weather effects
     this.updateWeatherEffects(state.weather);
   }
@@ -1603,6 +1950,9 @@ export class GameScene extends Phaser.Scene {
     // G to open field guide
     this.input.keyboard?.on('keydown-G', () => this.openGuide());
 
+    // H for emergency help/rescue (when in critical condition)
+    this.input.keyboard?.on('keydown-H', () => this.requestEmergencyRescue());
+
     // Game speed controls (Project Zomboid style)
     this.input.keyboard?.on('keydown-PLUS', () => this.changeGameSpeed(1));
     this.input.keyboard?.on('keydown-MINUS', () => this.changeGameSpeed(-1));
@@ -1612,13 +1962,49 @@ export class GameScene extends Phaser.Scene {
   }
 
   changeGameSpeed(direction: number) {
+    // In MMO mode, speed controls are disabled - everyone uses global time
+    if (this.isMMOMode) {
+      this.events.emit('game-event', {
+        type: 'info',
+        message: 'Global Trail uses real-time sync - speed controls disabled'
+      });
+      return;
+    }
+
+    // In multiplayer co-op, only host can change speed
+    if (this.isMultiplayer && !this.isHost) {
+      this.events.emit('game-event', {
+        type: 'warning',
+        message: 'Only the host can change game speed'
+      });
+      return;
+    }
+
     const currentIndex = this.SPEED_OPTIONS.indexOf(this.gameSpeed);
     const newIndex = Phaser.Math.Clamp(currentIndex + direction, 0, this.SPEED_OPTIONS.length - 1);
-    this.gameSpeed = this.SPEED_OPTIONS[newIndex];
+    this.setGameSpeed(this.SPEED_OPTIONS[newIndex]);
+
+    // Broadcast to guests if we're host
+    if (this.isMultiplayer && this.isHost) {
+      networkManager.broadcast({
+        type: MessageType.TIME_UPDATE,
+        payload: { gameSpeed: this.gameSpeed },
+        senderId: networkManager.localPlayerId,
+        timestamp: Date.now()
+      });
+    }
+  }
+
+  /**
+   * Set game speed (used by host and when receiving from host)
+   */
+  setGameSpeed(speed: number) {
+    this.gameSpeed = speed;
 
     // Update display
     const speedSymbol = this.gameSpeed >= 1 ? '▶'.repeat(Math.min(this.gameSpeed, 4)) : '▷';
-    this.gameSpeedText.setText(`${speedSymbol} ${this.gameSpeed}x`);
+    const hostLabel = this.isMultiplayer && !this.isHost ? ' (host)' : '';
+    this.gameSpeedText.setText(`${speedSymbol} ${this.gameSpeed}x${hostLabel}`);
 
     // Color based on speed (more deliberate = cooler colors)
     if (this.gameSpeed <= 0.25) {
@@ -1785,22 +2171,32 @@ export class GameScene extends Phaser.Scene {
   }
 
   toggleHiking() {
-    if (this.isConnected && this.room) {
-      const isHiking = this.hikerData?.isHiking;
-      this.room.send(isHiking ? 'stop_hiking' : 'start_hiking');
-    } else if (this.hikerData) {
+    if (this.isIncapacitated) {
+      this.events.emit('game-event', {
+        type: 'warning',
+        message: 'You are incapacitated! Press H for emergency rescue.'
+      });
+      return;
+    }
+
+    if (this.hikerData) {
       this.hikerData.isHiking = !this.hikerData.isHiking;
       this.events.emit('game-event', {
         type: 'info',
         message: this.hikerData.isHiking ? 'Started hiking' : 'Stopped hiking'
       });
+
+      // In multiplayer, send input to host
+      if (this.isMultiplayer && !this.isHost) {
+        networkManager.sendInput({
+          action: this.hikerData.isHiking ? 'start_hike' : 'stop_hike'
+        });
+      }
     }
   }
-  
+
   setPace(pace: string) {
-    if (this.isConnected && this.room) {
-      this.room.send('set_pace', { pace });
-    } else if (this.hikerData) {
+    if (this.hikerData) {
       this.hikerData.pace = pace;
       this.events.emit('game-event', {
         type: 'info',
@@ -1808,12 +2204,9 @@ export class GameScene extends Phaser.Scene {
       });
     }
   }
-  
+
   eat() {
-    if (this.isConnected && this.room) {
-      // Eat first available food
-      this.room.send('eat', { foodId: 'oatmeal_1' });
-    } else if (this.hikerData?.inventory?.food) {
+    if (this.hikerData?.inventory?.food) {
       // Find food item with servings remaining
       const food = this.hikerData.inventory.food.find((f: any) => f.servings > 0);
       if (food) {
@@ -1846,9 +2239,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   drink() {
-    if (this.isConnected && this.room) {
-      this.room.send('drink', { amount: 0.5 });
-    } else if (this.hikerData?.inventory) {
+    if (this.hikerData?.inventory) {
       if (this.hikerData.inventory.water >= 0.25) {
         this.hikerData.inventory.water -= 0.25;
         this.hikerData.hydration = Math.min(100, this.hikerData.hydration + 10);
@@ -1862,6 +2253,11 @@ export class GameScene extends Phaser.Scene {
           type: 'success',
           message: `Drank water (${this.hikerData.inventory.water.toFixed(1)}L left)`
         });
+
+        // Notify host in multiplayer
+        if (this.isMultiplayer && !this.isHost) {
+          networkManager.sendInput({ action: 'drink' });
+        }
       } else {
         this.events.emit('game-event', {
           type: 'warning',
@@ -1870,12 +2266,9 @@ export class GameScene extends Phaser.Scene {
       }
     }
   }
-  
+
   toggleCamp() {
-    if (this.isConnected && this.room) {
-      const isResting = this.hikerData?.isResting;
-      this.room.send(isResting ? 'break_camp' : 'make_camp');
-    } else if (this.hikerData) {
+    if (this.hikerData) {
       // Toggle resting state
       this.hikerData.isResting = !this.hikerData.isResting;
 
@@ -1886,6 +2279,11 @@ export class GameScene extends Phaser.Scene {
           type: 'info',
           message: 'Taking a break to rest and recover...'
         });
+
+        // Notify host in multiplayer
+        if (this.isMultiplayer && !this.isHost) {
+          networkManager.sendInput({ action: 'rest' });
+        }
       } else {
         this.events.emit('game-event', {
           type: 'info',
@@ -1894,12 +2292,10 @@ export class GameScene extends Phaser.Scene {
       }
     }
   }
-  
+
   searchBlaze() {
-    if (this.isConnected && this.room) {
-      this.room.send('search_blaze');
-    } else if (this.hikerData && this.hikerData.lostState !== 'on_trail') {
-      // Offline blaze search
+    if (this.hikerData && this.hikerData.lostState !== 'on_trail') {
+      // Blaze search
       if (Math.random() < 0.3) {
         this.hikerData.lostState = 'on_trail';
         this.events.emit('game-event', {
@@ -1914,11 +2310,9 @@ export class GameScene extends Phaser.Scene {
       }
     }
   }
-  
+
   backtrack() {
-    if (this.isConnected && this.room) {
-      this.room.send('backtrack');
-    } else if (this.hikerData && this.hikerData.lostState !== 'on_trail') {
+    if (this.hikerData && this.hikerData.lostState !== 'on_trail') {
       this.hikerData.mile = Math.max(0, this.hikerData.mile - 0.1);
       this.hikerData.energy -= 5;
       this.events.emit('game-event', {
@@ -2487,5 +2881,465 @@ export class GameScene extends Phaser.Scene {
     this.fogSprites.forEach(fog => {
       fog.x += Math.sin(time / 1000 + fog.y) * 0.2;
     });
+
+    // Multiplayer: render other players (host renders from local state)
+    if (this.isMultiplayer && this.isHost) {
+      const otherPlayers = networkManager.getOtherPlayers();
+      otherPlayers.forEach(playerState => {
+        this.updateOtherPlayerSprite(playerState);
+      });
+    }
+
+    // Update real hiker ghosts (GPS data) - periodically, not every frame
+    if (time - this.lastGhostUpdate > this.GHOST_UPDATE_INTERVAL) {
+      this.updateGhosts();
+      this.lastGhostUpdate = time;
+
+      // Also update zone if mile changed significantly
+      if (this.hikerData) {
+        zoneManager.updatePlayerPosition(this.hikerData.mile, networkManager.localPlayerId);
+      }
+    }
+  }
+
+  /**
+   * Trigger incapacitation (death) when resources are fully depleted
+   * Shows overlay with restart options
+   */
+  triggerIncapacitation() {
+    this.isIncapacitated = true;
+    this.hikerData.isHiking = false;
+    this.hikerData.isResting = false;
+
+    // Emit death event
+    this.events.emit('game-event', {
+      type: 'warning',
+      message: 'You have collapsed from exhaustion...'
+    });
+
+    // Show death overlay
+    this.showDeathOverlay();
+  }
+
+  /**
+   * Show the death/game-over overlay with restart options
+   */
+  showDeathOverlay() {
+    if (this.deathOverlay) return;
+
+    const { width, height } = this.cameras.main;
+
+    // Check if player has PLB and calculate rescue cost
+    const hasPLB = this.hikerData?.inventory?.gear?.some((g: any) => g.id === 'plb');
+    const hasInsurance = this.hikerData?.inventory?.rescueInsurance || false;
+
+    // Real rescue costs: $5,000-$50,000 without insurance
+    // With insurance: $0-500 copay
+    // With PLB but no insurance: Search is free but medical transport still costs
+    const rescueCost = hasInsurance ? 100 : (hasPLB ? 2500 : 10000);
+
+    this.deathOverlay = this.add.container(0, 0);
+    this.deathOverlay.setDepth(2000);
+    this.deathOverlay.setScrollFactor(0);
+
+    // Dark background
+    const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.85);
+    this.deathOverlay.add(bg);
+
+    // Death message
+    const deathTitle = this.add.text(width / 2, height * 0.18, '💀 INCAPACITATED', {
+      font: 'bold 36px Courier',
+      color: '#ff4444'
+    }).setOrigin(0.5);
+    this.deathOverlay.add(deathTitle);
+
+    const deathMessage = this.add.text(width / 2, height * 0.28,
+      'Your body has given out.\nNo food, no water, no energy.\nThe trail has claimed another.', {
+      font: '14px Courier',
+      color: '#cccccc',
+      align: 'center'
+    }).setOrigin(0.5);
+    this.deathOverlay.add(deathMessage);
+
+    // Stats
+    const statsText = this.add.text(width / 2, height * 0.40,
+      `Mile ${this.hikerData?.mile?.toFixed(1) || 0} | Day ${this.hikerData?.daysOnTrail || 0} | ${this.hikerData?.totalMilesHiked?.toFixed(1) || 0} miles total`, {
+      font: '12px Courier',
+      color: '#888888',
+      align: 'center'
+    }).setOrigin(0.5);
+    this.deathOverlay.add(statsText);
+
+    const buttonWidth = 300;
+    const buttonHeight = 55;
+
+    // PLB / SOS Button - the main rescue option
+    const rescueY = height * 0.52;
+    const rescueButton = this.add.rectangle(width / 2, rescueY, buttonWidth, buttonHeight, 0xcc3333);
+
+    // SOS button styling (like real PLB)
+    const sosLabel = hasPLB ? '📡 ACTIVATE SOS BEACON' : '📞 CALL 911';
+    const rescueText = this.add.text(width / 2, rescueY - 5, sosLabel, {
+      font: 'bold 16px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    const costLabel = hasInsurance
+      ? `Rescue Insurance Active - $${rescueCost} copay`
+      : hasPLB
+        ? `InReach SOS → Helicopter Rescue - $${rescueCost.toLocaleString()}`
+        : `No PLB - Full rescue cost $${rescueCost.toLocaleString()}`;
+
+    const rescueCostText = this.add.text(width / 2, rescueY + 15, costLabel, {
+      font: '10px Courier',
+      color: '#ffaaaa'
+    }).setOrigin(0.5);
+
+    rescueButton.setInteractive();
+    rescueButton.on('pointerover', () => rescueButton.setFillStyle(0xee4444));
+    rescueButton.on('pointerout', () => rescueButton.setFillStyle(0xcc3333));
+    rescueButton.on('pointerdown', () => this.activateSOSBeacon(rescueCost));
+
+    this.deathOverlay.add([rescueButton, rescueText, rescueCostText]);
+
+    // What happens text
+    const processText = this.add.text(width / 2, rescueY + 40,
+      hasPLB ? 'Signal sent → SAR dispatched → Helicopter inbound' : 'Waiting for a passing hiker to find you...',
+      {
+        font: '9px Courier',
+        color: '#666666',
+        fontStyle: 'italic'
+      }).setOrigin(0.5);
+    this.deathOverlay.add(processText);
+
+    // Restart from Springer button
+    const restartY = height * 0.72;
+    const restartButton = this.add.rectangle(width / 2, restartY, buttonWidth, buttonHeight - 10, 0x442222);
+    const restartText = this.add.text(width / 2, restartY, '🏔️ RESTART FROM SPRINGER', {
+      font: 'bold 14px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    restartButton.setInteractive();
+    restartButton.on('pointerover', () => restartButton.setFillStyle(0x663333));
+    restartButton.on('pointerout', () => restartButton.setFillStyle(0x442222));
+    restartButton.on('pointerdown', () => this.restartFromSpringer());
+
+    this.deathOverlay.add([restartButton, restartText]);
+
+    const restartDesc = this.add.text(width / 2, restartY + 30,
+      'Your thru-hike ends here. Start over from mile 0.', {
+      font: '10px Courier',
+      color: '#666666'
+    }).setOrigin(0.5);
+    this.deathOverlay.add(restartDesc);
+
+    // Quit to Menu button
+    const quitY = height * 0.88;
+    const quitButton = this.add.rectangle(width / 2, quitY, 150, 35, 0x333333);
+    const quitText = this.add.text(width / 2, quitY, 'QUIT TO MENU', {
+      font: '12px Courier',
+      color: '#aaaaaa'
+    }).setOrigin(0.5);
+
+    quitButton.setInteractive();
+    quitButton.on('pointerover', () => quitButton.setFillStyle(0x444444));
+    quitButton.on('pointerout', () => quitButton.setFillStyle(0x333333));
+    quitButton.on('pointerdown', () => this.quitToMenu());
+
+    this.deathOverlay.add([quitButton, quitText]);
+  }
+
+  /**
+   * Activate SOS beacon - shows helicopter rescue animation
+   */
+  activateSOSBeacon(rescueCost: number) {
+    if (!this.hikerData) return;
+
+    const { width, height } = this.cameras.main;
+
+    // Check if player has enough money
+    const playerMoney = this.hikerData.inventory?.money || 0;
+    if (playerMoney < rescueCost) {
+      // Can't afford rescue - go into debt or alternative
+      const goIntoDebt = confirm(
+        `You don't have $${rescueCost.toLocaleString()} for the rescue.\n\n` +
+        `Current funds: $${playerMoney}\n\n` +
+        `Take on medical debt? You'll owe $${(rescueCost - playerMoney).toLocaleString()} when you reach town.`
+      );
+      if (!goIntoDebt) return;
+    }
+
+    // Clear the death overlay for rescue animation
+    if (this.deathOverlay) {
+      this.deathOverlay.destroy();
+      this.deathOverlay = null;
+    }
+
+    // Create rescue animation container
+    const rescueContainer = this.add.container(0, 0);
+    rescueContainer.setDepth(2000);
+    rescueContainer.setScrollFactor(0);
+
+    // Dark background
+    const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.9);
+    rescueContainer.add(bg);
+
+    // SOS activation sequence
+    const sosText = this.add.text(width / 2, height * 0.3, '📡 SOS BEACON ACTIVATED', {
+      font: 'bold 28px Courier',
+      color: '#ff6666'
+    }).setOrigin(0.5);
+    rescueContainer.add(sosText);
+
+    // Blink the SOS text
+    this.tweens.add({
+      targets: sosText,
+      alpha: 0.3,
+      duration: 500,
+      yoyo: true,
+      repeat: 3
+    });
+
+    // Status messages that appear sequentially
+    const statusMessages = [
+      { delay: 500, text: '📶 Signal transmitted to satellite...', color: '#aaaaaa' },
+      { delay: 1500, text: '🛰️ GEOS receiving coordinates...', color: '#aaaaaa' },
+      { delay: 2500, text: '📞 Notifying Search & Rescue...', color: '#aaaaaa' },
+      { delay: 3500, text: '🚁 HELICOPTER DISPATCHED', color: '#44ff44' }
+    ];
+
+    statusMessages.forEach((msg, i) => {
+      this.time.delayedCall(msg.delay, () => {
+        const statusText = this.add.text(width / 2, height * 0.45 + i * 25, msg.text, {
+          font: '14px Courier',
+          color: msg.color
+        }).setOrigin(0.5).setAlpha(0);
+        rescueContainer.add(statusText);
+
+        this.tweens.add({
+          targets: statusText,
+          alpha: 1,
+          duration: 300
+        });
+      });
+    });
+
+    // Helicopter animation after status messages
+    this.time.delayedCall(4500, () => {
+      // Create helicopter (simple text-based for now)
+      const helicopter = this.add.text(-100, height * 0.6, '🚁', {
+        font: '64px Arial'
+      }).setOrigin(0.5);
+      rescueContainer.add(helicopter);
+
+      // Helicopter flies across screen
+      this.tweens.add({
+        targets: helicopter,
+        x: width / 2,
+        duration: 2000,
+        ease: 'Quad.easeOut',
+        onComplete: () => {
+          // Hover and lower rope
+          const ropeText = this.add.text(width / 2, height * 0.75, '🪢', {
+            font: '32px Arial'
+          }).setOrigin(0.5).setAlpha(0);
+          rescueContainer.add(ropeText);
+
+          this.tweens.add({
+            targets: ropeText,
+            alpha: 1,
+            y: height * 0.85,
+            duration: 1000,
+            onComplete: () => {
+              // Rescue complete message
+              this.time.delayedCall(800, () => {
+                const rescueComplete = this.add.text(width / 2, height * 0.35,
+                  '✅ RESCUE SUCCESSFUL', {
+                  font: 'bold 24px Courier',
+                  color: '#44ff44'
+                }).setOrigin(0.5).setAlpha(0);
+                rescueContainer.add(rescueComplete);
+
+                this.tweens.add({
+                  targets: rescueComplete,
+                  alpha: 1,
+                  duration: 500
+                });
+
+                // Complete the rescue after animation
+                this.time.delayedCall(1500, () => {
+                  rescueContainer.destroy();
+                  this.completeRescue(rescueCost);
+                });
+              });
+            }
+          });
+        }
+      });
+    });
+  }
+
+  /**
+   * Complete the rescue - teleport to nearest town with resources restored
+   * Called after the helicopter animation completes
+   */
+  completeRescue(rescueCost: number) {
+    if (!this.hikerData) return;
+
+    // Find nearest town
+    const currentMile = this.hikerData.mile;
+    let nearestTown = TOWNS[0];
+    let minDistance = Math.abs(currentMile - TOWNS[0].mile);
+
+    TOWNS.forEach(town => {
+      const dist = Math.abs(currentMile - town.mile);
+      if (dist < minDistance) {
+        minDistance = dist;
+        nearestTown = town;
+      }
+    });
+
+    // Apply rescue - deduct money (can go negative = debt), restore resources, move to town
+    const currentMoney = this.hikerData.inventory?.money || 0;
+    this.hikerData.inventory.money = currentMoney - rescueCost;
+
+    // Move to nearest town
+    this.hikerData.mile = nearestTown.mile;
+
+    // Restore resources (hospital patched you up)
+    this.hikerData.calories = 2000;
+    this.hikerData.hydration = 100;
+    this.hikerData.energy = 80;
+    this.hikerData.health = 100;
+    this.hikerData.inventory.water = 2.0;
+
+    // Give some basic food if they have none
+    if (!this.hikerData.inventory.food || this.hikerData.inventory.food.length === 0) {
+      this.hikerData.inventory.food = [
+        { id: 'ramen', name: 'Ramen Noodles', calories: 400, weight: 0.1, servings: 3 },
+        { id: 'snickers', name: 'Snickers Bar', calories: 250, weight: 0.1, servings: 2 }
+      ];
+    }
+
+    // Reset moodles
+    this.hikerData.moodles.hunger = 0;
+    this.hikerData.moodles.thirst = 0;
+    this.hikerData.moodles.fatigue = 1;
+    this.hikerData.moodles.anxiety = 2; // Traumatic experience
+
+    // Clear incapacitated state
+    this.isIncapacitated = false;
+
+    // Remove overlay if it exists
+    if (this.deathOverlay) {
+      this.deathOverlay.destroy();
+      this.deathOverlay = null;
+    }
+
+    // Notify player with details
+    const debtMessage = this.hikerData.inventory.money < 0
+      ? ` (Debt: $${Math.abs(this.hikerData.inventory.money).toLocaleString()})`
+      : '';
+
+    this.events.emit('game-event', {
+      type: 'success',
+      message: `🏥 Rescued and treated at ${nearestTown.name}!${debtMessage}`
+    });
+
+    // Add a follow-up message about the experience
+    this.time.delayedCall(2000, () => {
+      this.events.emit('game-event', {
+        type: 'info',
+        message: 'The SAR team says: "Take it easy out there. Eat, drink, rest."'
+      });
+    });
+
+    // Save the game
+    this.saveGame();
+  }
+
+  /**
+   * Restart the game from Springer Mountain (mile 0)
+   */
+  restartFromSpringer() {
+    // Clear save data
+    gameStorage.deleteSave('autosave');
+
+    // Return to menu - they'll start fresh
+    this.scene.stop('UIScene');
+    this.scene.start('MenuScene');
+  }
+
+  /**
+   * Quit to main menu
+   */
+  quitToMenu() {
+    // Save current state (even incapacitated) so they can retry
+    if (this.hikerData && !this.isIncapacitated) {
+      this.saveGame();
+    }
+
+    this.scene.stop('UIScene');
+    this.scene.start('MenuScene');
+  }
+
+  /**
+   * Request emergency rescue - can be called anytime with H key
+   * Useful when stuck but not yet incapacitated
+   */
+  requestEmergencyRescue() {
+    if (!this.hikerData) return;
+
+    // If already incapacitated and overlay is showing, just let them use the overlay
+    if (this.isIncapacitated && this.deathOverlay) {
+      return;
+    }
+
+    // If incapacitated but overlay not showing, show it
+    if (this.isIncapacitated) {
+      this.showDeathOverlay();
+      return;
+    }
+
+    // Check if player is in critical condition (low resources)
+    const isCritical =
+      this.hikerData.energy < 20 ||
+      this.hikerData.calories < 300 ||
+      this.hikerData.hydration < 15;
+
+    const hasNoResources =
+      (!this.hikerData.inventory?.food?.some((f: any) => f.servings > 0)) &&
+      (this.hikerData.inventory?.water || 0) < 0.25;
+
+    // Check if player has PLB
+    const hasPLB = this.hikerData.inventory?.gear?.some((g: any) => g.id === 'plb');
+
+    if (isCritical || hasNoResources) {
+      // Show SOS confirmation
+      const msg = hasPLB
+        ? '📡 ACTIVATE SOS BEACON?\n\nYour Garmin InReach will send an emergency signal.\nSearch & Rescue will be dispatched.\n\nThis should only be used in true emergencies.'
+        : '📞 CALL FOR HELP?\n\nYou will need to wait for another hiker to find you,\nor attempt to self-rescue.';
+
+      if (confirm(msg)) {
+        // Trigger incapacitation to show the full rescue overlay with options
+        this.isIncapacitated = true;
+        this.hikerData.isHiking = false;
+        this.showDeathOverlay();
+      }
+    } else {
+      // Not in critical condition - show PLB reminder
+      if (hasPLB) {
+        this.events.emit('game-event', {
+          type: 'info',
+          message: '📡 InReach ready. SOS available in emergencies (H key when critical)'
+        });
+      } else {
+        this.events.emit('game-event', {
+          type: 'warning',
+          message: 'No PLB/InReach! Consider buying one in town for emergencies.'
+        });
+      }
+    }
   }
 }

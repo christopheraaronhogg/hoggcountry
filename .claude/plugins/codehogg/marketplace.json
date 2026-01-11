@@ -1,0 +1,19 @@
+{
+  "name": "codehogg",
+  "description": "Official CodeHogg Plugin Marketplace - 18 expert consultant subagents for comprehensive codebase audits, feature planning, and implementation guidance",
+  "version": "1.0.0",
+  "author": {
+    "name": "Christopher Hogg",
+    "url": "https://github.com/christopheraaronhogg"
+  },
+  "plugins": [
+    {
+      "name": "codehogg",
+      "description": "18 expert consultant subagents for comprehensive codebase audits, feature planning, and implementation guidance",
+      "source": {
+        "source": "local",
+        "path": "."
+      }
+    }
+  ]
+}
