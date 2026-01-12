@@ -183,7 +183,7 @@ Report format: BROKEN | Product Name | Correct URL
 
 ## 🔦 Electronics
 
-- [ ] **Petzl Tikkina** - $20
+- [x] **Petzl Tikkina** - $35 ✅ PRICE UPDATED
   Link: https://www.petzl.com/US/en/Sport/COMPACT-Series-headlamps/TIKKINA
 
 - [ ] **Nitecore NU25 (UL Version)** - $40
