@@ -299,6 +299,15 @@
     </div>
   </header>
 
+  <!-- Beta Disclaimer -->
+  <div class="beta-banner">
+    <span class="beta-icon">🚧</span>
+    <div class="beta-content">
+      <strong>Work in Progress</strong>
+      <p>We're actively verifying product links and prices. Some links may be outdated. Always confirm pricing before purchase.</p>
+    </div>
+  </div>
+
   <!-- Budget Input -->
   <section class="input-section">
     <div class="budget-control">
@@ -722,6 +731,41 @@
     color: rgba(255,255,255,0.6);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  /* Beta Banner */
+  .beta-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .beta-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .beta-content {
+    flex: 1;
+  }
+
+  .beta-content strong {
+    display: block;
+    font-size: 0.85rem;
+    color: #92400e;
+    margin-bottom: 0.2rem;
+  }
+
+  .beta-content p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #a16207;
+    line-height: 1.4;
   }
 
   /* Input Section */
