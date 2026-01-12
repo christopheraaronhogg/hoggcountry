@@ -22,6 +22,7 @@
     geartrans: () => import('./GearTransitionTracker.svelte'),
     training: () => import('./TrainingPlanner.svelte'),
     emergency: () => import('./EmergencyCard.svelte'),
+    gearbudget: () => import('./BudgetGearBuilder.svelte'),
   };
 
   // Cache for loaded components
@@ -67,6 +68,7 @@
     { id: 'shelter', name: 'Shelter', icon: '🏠', desc: 'Tent vs shelter decision' },
     { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
     { id: 'emergency', name: 'Emergency', icon: '🆘', desc: 'Emergency info & bailouts' },
+    { id: 'gearbudget', name: 'Gear', icon: '🛠️', desc: 'Build your kit by budget' },
   ];
 
   // ========== GLOBAL TRAIL CONTEXT (Svelte 5 $state) ==========
@@ -1016,7 +1018,7 @@
   /* ========== NAVIGATION ========== */
   .tools-nav {
     display: grid;
-    grid-template-columns: repeat(14, 1fr);
+    grid-template-columns: repeat(15, 1fr);
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;

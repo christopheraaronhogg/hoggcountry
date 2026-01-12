@@ -1,0 +1,1209 @@
+<script>
+  import { onMount } from 'svelte';
+  import { slide } from 'svelte/transition';
+  import gearData from '../data/gearRecommendations.json';
+
+  let { trailContext = {} } = $props();
+
+  // Core state
+  let mounted = $state(false);
+  let budget = $state(1500);
+  let mode = $state('value'); // 'value' | 'weight' | 'durability'
+  let season = $state('3-season');
+  let shelterPref = $state('tent');
+
+  // UI state
+  let expandedCategory = $state(null);
+  let showMethodology = $state(false);
+  let activeTab = $state('loadout');
+
+  // Load saved preferences
+  onMount(() => {
+    mounted = true;
+    const saved = localStorage.getItem('at-gear-budget');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.budget) budget = data.budget;
+        if (data.mode) mode = data.mode;
+        if (data.season) season = data.season;
+        if (data.shelterPref) shelterPref = data.shelterPref;
+      } catch (e) {}
+    }
+  });
+
+  // Save preferences
+  $effect(() => {
+    if (mounted) {
+      localStorage.setItem('at-gear-budget', JSON.stringify({
+        budget, mode, season, shelterPref
+      }));
+    }
+  });
+
+  // Get budget tier
+  function getBudgetTier(budget) {
+    if (budget < 800) return 'budget';
+    if (budget < 1500) return 'mid';
+    if (budget < 2500) return 'premium';
+    return 'luxury';
+  }
+
+  // Category budget allocation
+  const CATEGORY_BUDGETS = {
+    backpack: 0.15,
+    shelter: 0.25,
+    sleepSystem: 0.20,
+    clothing: 0.15,
+    kitchen: 0.08,
+    water: 0.05,
+    electronics: 0.07,
+    safety: 0.05
+  };
+
+  // Score item based on mode
+  function scoreItem(item, mode, targetTier) {
+    const weights = {
+      value: { value: 0.5, weight: 0.25, durability: 0.25 },
+      weight: { value: 0.2, weight: 0.6, durability: 0.2 },
+      durability: { value: 0.2, weight: 0.2, durability: 0.6 }
+    }[mode];
+
+    const baseScore = (
+      item.valueScore * weights.value +
+      (11 - item.weight / gearData.categories[item.category]?.avgWeight * 5) * weights.weight +
+      item.durabilityScore * weights.durability
+    );
+
+    // Tier affinity bonus
+    const tiers = ['budget', 'mid', 'premium', 'luxury'];
+    const itemTierIdx = tiers.indexOf(item.tier);
+    const targetTierIdx = tiers.indexOf(targetTier);
+    const tierDistance = Math.abs(itemTierIdx - targetTierIdx);
+    const tierBonus = tierDistance === 0 ? 1.0 : tierDistance === 1 ? 0.85 : 0.6;
+
+    return baseScore * tierBonus;
+  }
+
+  // Build recommendation
+  function buildRecommendation(budget, mode, season, shelterPref) {
+    const tier = getBudgetTier(budget);
+    const items = gearData.items;
+    const selected = [];
+
+    // For each category, find best item within budget allocation
+    Object.keys(CATEGORY_BUDGETS).forEach(category => {
+      const categoryBudget = budget * CATEGORY_BUDGETS[category] * 1.3; // 30% flexibility
+
+      // Filter candidates
+      let candidates = items.filter(item => {
+        if (item.category !== category) return false;
+        if (item.price > categoryBudget) return false;
+
+        // Season filter
+        if (item.season && item.season !== 'both' && item.season !== season) return false;
+
+        // Shelter type filter
+        if (category === 'shelter' && item.shelterType && item.shelterType !== shelterPref) return false;
+
+        return true;
+      });
+
+      // Score and sort
+      candidates = candidates.map(item => ({
+        ...item,
+        score: scoreItem(item, mode, tier)
+      })).sort((a, b) => b.score - a.score);
+
+      // Select best, or best available if none in budget
+      if (candidates.length > 0) {
+        selected.push(candidates[0]);
+      } else {
+        // Fall back to cheapest in category
+        const fallback = items
+          .filter(i => i.category === category)
+          .sort((a, b) => a.price - b.price)[0];
+        if (fallback) selected.push({ ...fallback, score: 0 });
+      }
+    });
+
+    return selected;
+  }
+
+  // Derived values
+  let budgetTier = $derived(getBudgetTier(budget));
+  let recommendation = $derived(buildRecommendation(budget, mode, season, shelterPref));
+  let totalCost = $derived(recommendation.reduce((sum, item) => sum + item.price, 0));
+  let totalWeightOz = $derived(recommendation.reduce((sum, item) => sum + item.weight, 0));
+  let totalWeightLbs = $derived(totalWeightOz / 16);
+  let remainingBudget = $derived(budget - totalCost);
+  let budgetUsedPercent = $derived(Math.min(100, (totalCost / budget) * 100));
+
+  let weightClass = $derived.by(() => {
+    if (totalWeightLbs < 10) return { label: 'Ultralight', color: '#22c55e', icon: '🪶', desc: 'Sub-10lb base weight. Elite level.' };
+    if (totalWeightLbs < 15) return { label: 'Lightweight', color: '#84cc16', icon: '✓', desc: 'Great weight. Sustainable miles.' };
+    if (totalWeightLbs < 20) return { label: 'Traditional', color: '#eab308', icon: '⚖️', desc: 'Average pack weight.' };
+    return { label: 'Heavy', color: '#ef4444', icon: '⚠️', desc: 'Consider lighter options.' };
+  });
+
+  // Group items by category for display
+  let itemsByCategory = $derived(
+    recommendation.reduce((acc, item) => {
+      if (!acc[item.category]) acc[item.category] = [];
+      acc[item.category].push(item);
+      return acc;
+    }, {})
+  );
+
+  // Format price
+  function formatPrice(price) {
+    return '$' + price.toLocaleString();
+  }
+
+  // Format weight
+  function formatWeight(oz) {
+    if (oz < 16) return oz.toFixed(1) + ' oz';
+    return (oz / 16).toFixed(1) + ' lbs';
+  }
+
+  // Toggle category expansion
+  function toggleCategory(category) {
+    expandedCategory = expandedCategory === category ? null : category;
+  }
+
+  // Mode labels
+  const MODE_LABELS = {
+    value: { label: 'Best Value', icon: '💰', desc: 'Maximize quality per dollar' },
+    weight: { label: 'Lightest', icon: '🪶', desc: 'Minimize pack weight' },
+    durability: { label: 'Most Durable', icon: '🛡️', desc: 'Built to last' }
+  };
+
+  // Tier info
+  let tierInfo = $derived(gearData.tiers[budgetTier]);
+</script>
+
+<div class="gear-builder">
+  <!-- Header -->
+  <header class="builder-header">
+    <div class="header-icon-box">
+      <span class="header-icon">🎒</span>
+    </div>
+    <div class="header-content">
+      <h2>GEAR BUILDER</h2>
+      <p>Build your AT kit by budget</p>
+    </div>
+    <div class="header-stat">
+      <span class="stat-value">{recommendation.length}</span>
+      <span class="stat-label">items</span>
+    </div>
+  </header>
+
+  <!-- Budget Input -->
+  <section class="input-section">
+    <div class="budget-control">
+      <div class="budget-header">
+        <label class="section-label">Total Budget</label>
+        <span class="budget-display">{formatPrice(budget)}</span>
+      </div>
+      <input
+        type="range"
+        min="300"
+        max="5000"
+        step="50"
+        bind:value={budget}
+        class="budget-slider"
+      />
+      <div class="budget-ticks">
+        <span>$300</span>
+        <span>$1,000</span>
+        <span>$2,000</span>
+        <span>$3,500</span>
+        <span>$5,000</span>
+      </div>
+      <div class="tier-badge" style="--tier-color: {budgetTier === 'luxury' ? '#8b5cf6' : budgetTier === 'premium' ? '#22c55e' : budgetTier === 'mid' ? '#3b82f6' : '#f59e0b'}">
+        {tierInfo?.label || 'Budget'} Tier: {tierInfo?.range || '$300-800'}
+      </div>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="mode-control">
+      <label class="section-label">Optimization Mode</label>
+      <div class="mode-buttons">
+        {#each Object.entries(MODE_LABELS) as [key, info]}
+          <button
+            class="mode-btn"
+            class:active={mode === key}
+            onclick={() => mode = key}
+          >
+            <span class="mode-icon">{info.icon}</span>
+            <span class="mode-label">{info.label}</span>
+          </button>
+        {/each}
+      </div>
+      <p class="mode-desc">{MODE_LABELS[mode].desc}</p>
+    </div>
+
+    <!-- Options Row -->
+    <div class="options-row">
+      <div class="option">
+        <label>Season</label>
+        <select bind:value={season}>
+          <option value="3-season">3-Season</option>
+          <option value="4-season">4-Season</option>
+          <option value="both">Year-Round</option>
+        </select>
+      </div>
+      <div class="option">
+        <label>Shelter Type</label>
+        <select bind:value={shelterPref}>
+          <option value="tent">Tent</option>
+          <option value="tarp">Tarp</option>
+          <option value="hammock">Hammock</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results Hero -->
+  <section class="results-hero">
+    <div class="hero-ring">
+      <svg viewBox="0 0 100 100" class="ring-svg">
+        <circle
+          cx="50" cy="50" r="45"
+          fill="none"
+          stroke="var(--border)"
+          stroke-width="8"
+        />
+        <circle
+          cx="50" cy="50" r="45"
+          fill="none"
+          stroke="var(--alpine)"
+          stroke-width="8"
+          stroke-dasharray="{budgetUsedPercent * 2.83} 283"
+          stroke-linecap="round"
+          transform="rotate(-90 50 50)"
+          class="ring-progress"
+        />
+      </svg>
+      <div class="ring-content">
+        <span class="ring-value">{formatPrice(totalCost)}</span>
+        <span class="ring-label">of {formatPrice(budget)}</span>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="stat-icon" style="color: {weightClass.color}">{weightClass.icon}</span>
+        <div class="stat-info">
+          <span class="stat-value">{totalWeightLbs.toFixed(1)} lbs</span>
+          <span class="stat-label">Base Weight</span>
+        </div>
+      </div>
+      <div class="hero-stat">
+        <span class="stat-icon" style="color: {remainingBudget >= 0 ? '#22c55e' : '#ef4444'}">
+          {remainingBudget >= 0 ? '✓' : '⚠️'}
+        </span>
+        <div class="stat-info">
+          <span class="stat-value">{formatPrice(Math.abs(remainingBudget))}</span>
+          <span class="stat-label">{remainingBudget >= 0 ? 'Remaining' : 'Over Budget'}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="weight-class-badge" style="background: {weightClass.color}20; border-color: {weightClass.color}">
+      <span style="color: {weightClass.color}">{weightClass.label}</span>
+      <span class="weight-desc">{weightClass.desc}</span>
+    </div>
+  </section>
+
+  <!-- Category Cards -->
+  <section class="categories-section">
+    <h3 class="section-header">
+      <span class="header-bar"></span>
+      <span>Recommended Loadout</span>
+    </h3>
+
+    {#each Object.entries(gearData.categories) as [catId, catInfo]}
+      {@const items = itemsByCategory[catId] || []}
+      {@const item = items[0]}
+      {#if item}
+        <div class="category-card" class:expanded={expandedCategory === catId}>
+          <button class="card-header" onclick={() => toggleCategory(catId)}>
+            <div class="card-icon">{catInfo.icon === 'backpack' ? '🎒' : catInfo.icon === 'tent' ? '⛺' : catInfo.icon === 'bed' ? '🛏️' : catInfo.icon === 'shirt' ? '👕' : catInfo.icon === 'pot' ? '🍳' : catInfo.icon === 'droplet' ? '💧' : catInfo.icon === 'flashlight' ? '🔦' : '🩹'}</div>
+            <div class="card-main">
+              <span class="card-category">{catInfo.name}</span>
+              <span class="card-item">{item.brand} {item.name}</span>
+            </div>
+            <div class="card-stats">
+              <span class="card-price">{formatPrice(item.price)}</span>
+              <span class="card-weight">{formatWeight(item.weight)}</span>
+            </div>
+            <span class="card-expand">{expandedCategory === catId ? '−' : '+'}</span>
+          </button>
+
+          {#if expandedCategory === catId}
+            <div class="card-details" transition:slide={{ duration: 200 }}>
+              <p class="item-why">{item.why}</p>
+
+              <div class="item-scores">
+                <div class="score-bar">
+                  <span class="score-label">Value</span>
+                  <div class="score-track">
+                    <div class="score-fill" style="width: {item.valueScore * 10}%"></div>
+                  </div>
+                  <span class="score-value">{item.valueScore}/10</span>
+                </div>
+                <div class="score-bar">
+                  <span class="score-label">Weight</span>
+                  <div class="score-track">
+                    <div class="score-fill" style="width: {item.weightScore * 10}%"></div>
+                  </div>
+                  <span class="score-value">{item.weightScore}/10</span>
+                </div>
+                <div class="score-bar">
+                  <span class="score-label">Durability</span>
+                  <div class="score-track">
+                    <div class="score-fill" style="width: {item.durabilityScore * 10}%"></div>
+                  </div>
+                  <span class="score-value">{item.durabilityScore}/10</span>
+                </div>
+              </div>
+
+              <div class="pros-cons">
+                <div class="pros">
+                  <span class="list-label">Pros</span>
+                  <ul>
+                    {#each item.pros as pro}
+                      <li>✓ {pro}</li>
+                    {/each}
+                  </ul>
+                </div>
+                <div class="cons">
+                  <span class="list-label">Cons</span>
+                  <ul>
+                    {#each item.cons as con}
+                      <li>✗ {con}</li>
+                    {/each}
+                  </ul>
+                </div>
+              </div>
+
+              {#if item.link}
+                <a href={item.link} target="_blank" rel="noopener noreferrer" class="product-link">
+                  View Product →
+                </a>
+              {/if}
+            </div>
+          {/if}
+        </div>
+      {/if}
+    {/each}
+  </section>
+
+  <!-- Totals Summary -->
+  <section class="totals-section">
+    <div class="totals-row">
+      <span class="totals-label">Total Gear Cost</span>
+      <span class="totals-value">{formatPrice(totalCost)}</span>
+    </div>
+    <div class="totals-row">
+      <span class="totals-label">Base Weight (Gear Only)</span>
+      <span class="totals-value">{totalWeightLbs.toFixed(1)} lbs ({totalWeightOz.toFixed(0)} oz)</span>
+    </div>
+    <div class="totals-row highlight">
+      <span class="totals-label">Budget Remaining</span>
+      <span class="totals-value" style="color: {remainingBudget >= 0 ? '#22c55e' : '#ef4444'}">
+        {remainingBudget >= 0 ? '+' : ''}{formatPrice(remainingBudget)}
+      </span>
+    </div>
+  </section>
+
+  <!-- Methodology Disclosure -->
+  <section class="methodology-section">
+    <button class="methodology-toggle" onclick={() => showMethodology = !showMethodology}>
+      <span>📊 How Recommendations Work</span>
+      <span class="toggle-icon">{showMethodology ? '−' : '+'}</span>
+    </button>
+
+    {#if showMethodology}
+      <div class="methodology-content" transition:slide={{ duration: 200 }}>
+        <h4>Scoring Methodology</h4>
+        <p>Each item is scored based on three factors:</p>
+        <ul>
+          <li><strong>Value Score:</strong> Price-to-performance ratio. How much quality you get per dollar.</li>
+          <li><strong>Weight Score:</strong> Inverse of weight relative to category average. Lighter = higher score.</li>
+          <li><strong>Durability Score:</strong> Expected lifespan and build quality based on materials and user reports.</li>
+        </ul>
+
+        <h4>Mode Weighting</h4>
+        <ul>
+          <li><strong>Best Value:</strong> 50% value, 25% weight, 25% durability</li>
+          <li><strong>Lightest:</strong> 20% value, 60% weight, 20% durability</li>
+          <li><strong>Most Durable:</strong> 20% value, 20% weight, 60% durability</li>
+        </ul>
+
+        <h4>Budget Tier Affinity</h4>
+        <p>Items matching your budget tier get priority. This prevents recommending luxury gear when you have a budget build, and vice versa.</p>
+
+        <p class="methodology-disclaimer">
+          <strong>Disclaimer:</strong> Prices verified as of {gearData.meta.lastUpdated}. Actual prices may vary. Always verify current pricing before purchase.
+        </p>
+      </div>
+    {/if}
+  </section>
+
+  <!-- Guide Links -->
+  <div class="guide-links">
+    <a href="/guide/06-gear-system" class="guide-link">
+      <span>📚</span>
+      <span>Full Gear Guide</span>
+    </a>
+    <a href="/guide" class="guide-link">
+      <span>📖</span>
+      <span>Field Guide</span>
+    </a>
+  </div>
+</div>
+
+<style>
+  .gear-builder {
+    font-family: inherit;
+  }
+
+  /* Header */
+  .builder-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #4a5568, #2d3748);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .header-icon-box {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-icon {
+    font-size: 1.5rem;
+  }
+
+  .header-content {
+    flex: 1;
+  }
+
+  .header-content h2 {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+  }
+
+  .header-content p {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .header-stat {
+    text-align: center;
+    padding: 0.5rem 1rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+  }
+
+  .header-stat .stat-value {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .header-stat .stat-label {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Input Section */
+  .input-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-label {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .budget-control {
+    margin-bottom: 1.5rem;
+  }
+
+  .budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .budget-display {
+    font-family: Oswald, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .budget-slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--border);
+    appearance: none;
+    cursor: pointer;
+    margin: 0.75rem 0 0.5rem;
+  }
+
+  .budget-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--pine);
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+
+  .budget-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .tier-badge {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    background: color-mix(in srgb, var(--tier-color) 15%, transparent);
+    border: 1px solid var(--tier-color);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--tier-color);
+  }
+
+  /* Mode Control */
+  .mode-control {
+    margin-bottom: 1.25rem;
+  }
+
+  .mode-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .mode-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem 0.5rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .mode-btn:hover {
+    border-color: var(--alpine);
+  }
+
+  .mode-btn.active {
+    background: var(--pine);
+    border-color: var(--pine);
+    color: #fff;
+  }
+
+  .mode-icon {
+    font-size: 1.25rem;
+  }
+
+  .mode-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .mode-desc {
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* Options Row */
+  .options-row {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .option {
+    flex: 1;
+  }
+
+  .option label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .option select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  /* Results Hero */
+  .results-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+
+  .ring-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .ring-progress {
+    transition: stroke-dasharray 0.5s ease;
+  }
+
+  .ring-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .ring-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .hero-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .hero-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .stat-icon {
+    font-size: 1.5rem;
+  }
+
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-info .stat-value {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .stat-info .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .weight-class-badge {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.75rem 1rem;
+    border: 2px solid;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .weight-class-badge span:first-child {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .weight-desc {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted) !important;
+    margin-top: 0.15rem;
+  }
+
+  /* Categories Section */
+  .categories-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 1rem;
+  }
+
+  .header-bar {
+    width: 24px;
+    height: 3px;
+    background: var(--alpine);
+    border-radius: 2px;
+  }
+
+  /* Category Card */
+  .category-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: border-color 0.15s ease;
+  }
+
+  .category-card:hover {
+    border-color: var(--alpine);
+  }
+
+  .category-card.expanded {
+    border-color: var(--pine);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+  }
+
+  .card-icon {
+    font-size: 1.25rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border-radius: 8px;
+  }
+
+  .card-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .card-category {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+
+  .card-item {
+    display: block;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-stats {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .card-price {
+    display: block;
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    color: var(--pine);
+  }
+
+  .card-weight {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .card-expand {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border-radius: 6px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  /* Card Details */
+  .card-details {
+    padding: 0 1rem 1rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0;
+  }
+
+  .item-why {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: rgba(166, 181, 137, 0.1);
+    border-left: 3px solid var(--alpine);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    color: var(--pine);
+    font-style: italic;
+  }
+
+  .item-scores {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .score-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .score-label {
+    width: 70px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .score-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    background: var(--alpine);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+
+  .score-value {
+    width: 35px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--pine);
+    text-align: right;
+  }
+
+  .pros-cons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .pros, .cons {
+    flex: 1;
+  }
+
+  .list-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .pros-cons ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pros-cons li {
+    font-size: 0.8rem;
+    margin: 0.25rem 0;
+    color: var(--fg);
+  }
+
+  .pros li {
+    color: #16a34a;
+  }
+
+  .cons li {
+    color: #dc2626;
+  }
+
+  .product-link {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--pine);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background 0.15s ease;
+  }
+
+  .product-link:hover {
+    background: var(--ink);
+  }
+
+  /* Totals Section */
+  .totals-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .totals-row:last-child {
+    border-bottom: none;
+  }
+
+  .totals-row.highlight {
+    padding-top: 0.75rem;
+    margin-top: 0.25rem;
+    border-top: 2px solid var(--border);
+    border-bottom: none;
+  }
+
+  .totals-label {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .totals-value {
+    font-family: Oswald, sans-serif;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* Methodology Section */
+  .methodology-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .methodology-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--pine);
+  }
+
+  .toggle-icon {
+    font-size: 1.25rem;
+    color: var(--muted);
+  }
+
+  .methodology-content {
+    padding: 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    margin-top: -10px;
+    padding-top: 1.5rem;
+  }
+
+  .methodology-content h4 {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    color: var(--pine);
+    margin: 1rem 0 0.5rem;
+  }
+
+  .methodology-content h4:first-child {
+    margin-top: 0;
+  }
+
+  .methodology-content p {
+    font-size: 0.85rem;
+    color: var(--fg);
+    margin: 0.5rem 0;
+    line-height: 1.6;
+  }
+
+  .methodology-content ul {
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+  }
+
+  .methodology-content li {
+    font-size: 0.85rem;
+    margin: 0.35rem 0;
+    line-height: 1.5;
+  }
+
+  .methodology-disclaimer {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(234, 179, 8, 0.1);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* Guide Links */
+  .guide-links {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .guide-link {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--pine);
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+  }
+
+  .guide-link:hover {
+    border-color: var(--alpine);
+    transform: translateY(-1px);
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .results-hero {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .hero-ring {
+      margin: 0 auto;
+    }
+
+    .hero-stats {
+      flex-direction: row;
+      justify-content: space-around;
+    }
+
+    .weight-class-badge {
+      min-width: auto;
+    }
+
+    .pros-cons {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .mode-buttons {
+      flex-wrap: wrap;
+    }
+
+    .mode-btn {
+      min-width: calc(50% - 0.25rem);
+    }
+  }
+</style>
