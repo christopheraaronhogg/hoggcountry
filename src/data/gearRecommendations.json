@@ -709,17 +709,17 @@
       "name": "Ultra-Lite2 Jacket",
       "brand": "Frogg Toggs",
       "category": "rainGear",
-      "price": 20,
+      "price": 24,
       "weight": 5.5,
       "tier": "budget",
       "season": "both",
       "valueScore": 10,
       "weightScore": 9,
       "durabilityScore": 4,
-      "why": "Disposable rain gear philosophy. $20 means you can trash it guilt-free. 5.5oz for jacket only.",
-      "pros": ["$20 is nothing", "5.5oz jacket", "Breathable material"],
+      "why": "Disposable rain gear philosophy. $24 means you can trash it guilt-free. 5.5oz for jacket only.",
+      "pros": ["$24 is nothing", "5.5oz jacket", "Breathable material"],
       "cons": ["Will tear eventually", "Looks like trash bag", "No pit zips"],
-      "link": "https://www.froggtoggs.com/ultra-lite2-rain-jacket"
+      "link": "https://www.amazon.com/FROGG-TOGGS-Ultra-lite2-Waterproof-Breathable/dp/B00CKCZOZC"
     },
     {
       "id": "rain-or-helium",

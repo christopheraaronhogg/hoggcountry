@@ -124,8 +124,8 @@ Report format: BROKEN | Product Name | Correct URL
 
 ## 🌧️ Rain Jacket
 
-- [ ] **Frogg Toggs Ultra-Lite2 Jacket** - $20
-  Link: https://www.froggtoggs.com/ultra-lite2-rain-jacket
+- [x] **Frogg Toggs Ultra-Lite2 Jacket** - $24 ✅ PRICE & LINK FIXED
+  Link: https://www.amazon.com/FROGG-TOGGS-Ultra-lite2-Waterproof-Breathable/dp/B00CKCZOZC
 
 - [ ] **Outdoor Research Helium Rain Jacket** - $160
   Link: https://www.outdoorresearch.com/us/mens-helium-rain-jacket-300892
