@@ -155,7 +155,7 @@ Report format: BROKEN | Product Name | Correct URL
 
 ## 🍳 Kitchen
 
-- [ ] **BRS BRS-3000T** - $18
+- [x] **BRS BRS-3000T** - $17 ✅ PRICE VERIFIED
   Link: https://www.amazon.com/BRS-Outdoor-Camping-Portable-Ultralight/dp/B00NNMF70U
 
 - [ ] **Soto WindMaster** - $75
