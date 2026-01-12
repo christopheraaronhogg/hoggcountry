@@ -107,8 +107,8 @@ Report format: BROKEN | Product Name | Correct URL
 
 ## 🧥 Insulation Layer
 
-- [ ] **Forclaz (Decathlon) MT100 Down Jacket** - $100
-  Link: https://www.decathlon.com/products/mens-trekking-down-jacket-mt100
+- [x] **Simond (Decathlon) MT100 Hooded Down Puffer** - $119 ✅ FIXED (men's version)
+  Link: https://www.decathlon.com/products/simond-mt100-hooded-down-puffer-jacket-167571
 
 - [ ] **REI Co-op 650 Down Jacket 2.0** - $130
   Link: https://www.rei.com/product/175428/rei-co-op-650-down-jacket-20-mens

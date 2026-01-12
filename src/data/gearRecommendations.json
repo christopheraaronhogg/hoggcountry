@@ -620,20 +620,20 @@
 
     {
       "id": "insulation-decathlon-down",
-      "name": "MT100 Down Jacket",
-      "brand": "Forclaz (Decathlon)",
+      "name": "MT100 Hooded Down Puffer",
+      "brand": "Simond (Decathlon)",
       "category": "insulation",
-      "price": 100,
+      "price": 119,
       "weight": 10,
       "tier": "budget",
       "season": "3-season",
       "valueScore": 10,
       "weightScore": 7,
       "durabilityScore": 7,
-      "why": "Best budget down jacket. Real down at unbelievable price. Perfect for hikers testing ultralight approach.",
-      "pros": ["$100 for down", "10oz is reasonable", "Packs small"],
-      "cons": ["Not as warm as premium", "Durability questions", "Limited sizes"],
-      "link": "https://www.decathlon.com/products/mens-trekking-down-jacket-mt100"
+      "why": "Best budget down jacket. 800-fill down at remarkable price. Forclaz rebranded to Simond but same quality.",
+      "pros": ["$119 for 800-fill down", "10oz is reasonable", "Packs small"],
+      "cons": ["Runs small - size up", "Basic features", "Limited colors"],
+      "link": "https://www.decathlon.com/products/simond-mt100-hooded-down-puffer-jacket-167571"
     },
     {
       "id": "insulation-rei-650down",
