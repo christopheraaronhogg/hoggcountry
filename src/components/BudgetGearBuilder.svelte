@@ -49,16 +49,19 @@
     return 'luxury';
   }
 
-  // Category budget allocation
+  // Category budget allocation (11 categories = 100%)
   const CATEGORY_BUDGETS = {
-    backpack: 0.15,
-    shelter: 0.25,
-    sleepSystem: 0.20,
-    clothing: 0.15,
-    kitchen: 0.08,
-    water: 0.05,
+    backpack: 0.14,
+    shelter: 0.22,
+    sleepBag: 0.17,
+    sleepPad: 0.06,
+    insulation: 0.08,
+    rainGear: 0.05,
+    footwear: 0.08,
+    kitchen: 0.06,
+    water: 0.04,
     electronics: 0.07,
-    safety: 0.05
+    safety: 0.03
   };
 
   // Score item based on mode
@@ -329,7 +332,7 @@
       {#if item}
         <div class="category-card" class:expanded={expandedCategory === catId}>
           <button class="card-header" onclick={() => toggleCategory(catId)}>
-            <div class="card-icon">{catInfo.icon === 'backpack' ? '🎒' : catInfo.icon === 'tent' ? '⛺' : catInfo.icon === 'bed' ? '🛏️' : catInfo.icon === 'shirt' ? '👕' : catInfo.icon === 'pot' ? '🍳' : catInfo.icon === 'droplet' ? '💧' : catInfo.icon === 'flashlight' ? '🔦' : '🩹'}</div>
+            <div class="card-icon">{catInfo.icon}</div>
             <div class="card-main">
               <span class="card-category">{catInfo.name}</span>
               <span class="card-item">{item.brand} {item.name}</span>

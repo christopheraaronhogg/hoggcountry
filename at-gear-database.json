@@ -1,0 +1,1259 @@
+{
+  "metadata": {
+    "title": "AT Thru-Hiking Kitchen & Water Systems Database",
+    "description": "Comprehensive gear research for Appalachian Trail thru-hiking across budget tiers",
+    "researchDate": "2026-01-12",
+    "sources": {
+      "stoves": [
+        "https://www.outdoorgearlab.com/reviews/camping-and-hiking/backpacking-stove/",
+        "https://www.rei.com",
+        "https://www.amazon.com",
+        "https://www.garagegrowngear.com",
+        "https://www.sotooutdoors.com",
+        "https://jetboil.johnsonoutdoors.com",
+        "https://www.snowpeak.com"
+      ],
+      "cookware": [
+        "https://www.toaksoutdoor.com",
+        "https://www.msrgear.com",
+        "https://gsioutdoors.com",
+        "https://www.evernewamerica.com"
+      ],
+      "water": [
+        "https://www.sawyer.com",
+        "https://www.katadyngroup.com",
+        "https://cascadedesigns.com",
+        "https://grayl.com",
+        "https://thesteripen.com"
+      ]
+    }
+  },
+  "stoves": [
+    {
+      "id": "brs-3000t",
+      "name": "BRS-3000T",
+      "brand": "BRS Outdoor",
+      "category": "kitchen",
+      "subcategory": "stove",
+      "price": {
+        "usd": 16,
+        "range": "14-20",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 0.9,
+        "g": 26,
+        "note": "Stove only; +0.07oz for storage bag"
+      },
+      "tier": "budget",
+      "specifications": {
+        "output": "2700W",
+        "material": "Titanium alloy, copper, stainless steel",
+        "dimensions_folded": "1.45\" x 1.45\" x 2.04\"",
+        "fuel_type": "Canister (butane/propane mix)",
+        "ignition": "None (requires lighter)"
+      },
+      "scores": {
+        "valueScore": 9.8,
+        "weightScore": 10.0,
+        "durabilityScore": 6.5,
+        "windResistanceScore": 3.0,
+        "overallScore": 7.3
+      },
+      "why": "Lightest and cheapest canister stove available. Exceptional value for ultralight backpackers who camp in sheltered areas.",
+      "pros": [
+        "Absolutely lightest stove on market (0.9oz)",
+        "Exceptionally affordable (~$16)",
+        "Titanium construction resists corrosion",
+        "Compact fold size",
+        "2700W output adequate for solo cooking"
+      ],
+      "cons": [
+        "Poor wind resistance; easily blown out",
+        "Slower boil times in wind",
+        "No ignition system (manual lighter required)",
+        "Smaller pot support diameter",
+        "Average build quality reports"
+      ],
+      "bestFor": "Ultra-light solo hikers in fair weather conditions; budget-conscious thru-hikers willing to sacrifice wind performance"
+    },
+    {
+      "id": "etekcity-ultralight",
+      "name": "Etekcity Ultralight",
+      "brand": "Etekcity",
+      "category": "kitchen",
+      "subcategory": "stove",
+      "price": {
+        "usd": 15,
+        "range": "12-25",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 3.4,
+        "g": 96,
+        "note": "Without carry case; 3.9oz with case"
+      },
+      "tier": "budget",
+      "specifications": {
+        "output": "3260W",
+        "material": "Aluminum alloy, stainless steel",
+        "dimensions": "1.81\" x 2.36\" x 3.15\"",
+        "fuel_type": "Canister (butane/propane mix EN 417)",
+        "ignition": "Piezo ignition system",
+        "potDiameter": "Up to 7\""
+      },
+      "scores": {
+        "valueScore": 9.5,
+        "weightScore": 8.0,
+        "durabilityScore": 7.0,
+        "windResistanceScore": 5.0,
+        "overallScore": 7.4
+      },
+      "why": "Great value with piezo ignition. Heavier than BRS but offers better ignition reliability and slightly better performance in cold conditions.",
+      "pros": [
+        "Affordable price (~$15)",
+        "Piezo ignition (no lighter needed)",
+        "Lightweight (3.4oz)",
+        "3260W output (higher than BRS)",
+        "Easy to ignite and operate"
+      ],
+      "cons": [
+        "Struggles with wind and elevation",
+        "Poor performance in cold/windy conditions",
+        "Aluminum can be less durable than titanium",
+        "Average boil times reported",
+        "Heavier than BRS option"
+      ],
+      "bestFor": "Budget hikers who value reliable ignition over absolute minimum weight; fair-weather conditions preferred"
+    },
+    {
+      "id": "msr-pocketrocket-2",
+      "name": "MSR PocketRocket 2",
+      "brand": "MSR (Cascade Designs)",
+      "category": "kitchen",
+      "subcategory": "stove",
+      "price": {
+        "usd": 50,
+        "range": "50-55",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 2.6,
+        "g": 74,
+        "note": "Stove only; 4.2oz with protective case"
+      },
+      "tier": "mid",
+      "specifications": {
+        "output": "High performance",
+        "material": "Stainless steel",
+        "dimensions_open": "4.8\" x 4.8\" x 3.6\"",
+        "dimensions_closed": "2\" x 2\" x 3\"",
+        "fuel_type": "Isobutane-propane canister (Lindal valve)",
+        "ignition": "Manual (optional piezo version 2.9oz)",
+        "boilTime": "3.5-4.5 minutes per liter",
+        "burnTime": "~60 minutes with 8oz canister"
+      },
+      "scores": {
+        "valueScore": 8.0,
+        "weightScore": 9.0,
+        "durabilityScore": 8.5,
+        "windResistanceScore": 7.5,
+        "overallScore": 8.3
+      },
+      "why": "Industry standard mid-range stove. MSR PocketRocket 2 balances weight, performance, reliability, and cost. WindClip wind protection makes it versatile.",
+      "pros": [
+        "Excellent reputation and reliability",
+        "WindClip wind protection system",
+        "Compact (folds to 2x2x3\")",
+        "Lightweight (2.6oz)",
+        "Full flame adjustment (boil to simmer)",
+        "Compatible with most standard canisters",
+        "Optional Deluxe version with piezo igniter"
+      ],
+      "cons": [
+        "More expensive than budget options",
+        "Manual ignition on standard version",
+        "Less wind-resistant than premium stoves"
+      ],
+      "bestFor": "Most AT thru-hikers. Best balance of cost, weight, and performance for mixed conditions"
+    },
+    {
+      "id": "soto-amicus",
+      "name": "Soto Amicus",
+      "brand": "Soto Outdoors",
+      "category": "kitchen",
+      "subcategory": "stove",
+      "price": {
+        "usd": 45,
+        "range": "40-50",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 2.8,
+        "g": 80,
+        "note": "Without igniter: 2.65oz (75g); with igniter: 2.86oz (81g)"
+      },
+      "tier": "mid",
+      "specifications": {
+        "output": "2800 kcal/h (3260W)",
+        "material": "Stainless steel with folding pot supports",
+        "dimensions_in_use": "3.35\" x 2.9\" x 3.9\"",
+        "dimensions_stowed": "2.83\" x 1.6\" x 1.7\"",
+        "fuel_type": "Isobutane canister",
+        "ignition": "Optional hidden igniter",
+        "burnTime": "~1.5 hours with 8oz canister"
+      },
+      "scores": {
+        "valueScore": 8.5,
+        "weightScore": 9.0,
+        "durabilityScore": 8.5,
+        "windResistanceScore": 8.0,
+        "overallScore": 8.5
+      },
+      "why": "High-quality Japanese engineering at mid-range price. Wind-resistant design and optional igniter make it ideal for variable AT conditions.",
+      "pros": [
+        "Wind-resistant burner design",
+        "High-quality build (made in Japan)",
+        "Optional igniter available",
+        "Triple O-ring valve system",
+        "4-prong pot supports very stable",
+        "Excellent value for features",
+        "Lightweight and compact"
+      ],
+      "cons": [
+        "Less wind protection than some premium models",
+        "Optional igniter adds cost/complexity"
+      ],
+      "bestFor": "Experienced backpackers wanting reliable, wind-resistant design with quality construction. Excellent choice for variable spring/fall AT weather"
+    },
+    {
+      "id": "msr-pocketrocket-deluxe",
+      "name": "MSR PocketRocket Deluxe",
+      "brand": "MSR (Cascade Designs)",
+      "category": "kitchen",
+      "subcategory": "stove",
+      "price": {
+        "usd": 70,
+        "range": "65-75",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 2.9,
+        "g": 82,
+        "note": "With piezo igniter"
+      },
+      "tier": "premium",
+      "specifications": {
+        "output": "High performance",
+        "material": "Stainless steel",
+        "fuel_type": "Isobutane-propane canister",
+        "ignition": "Piezo ignition",
+        "boilTime": "3.5-4.5 minutes per liter",
+        "burnTime": "~60 minutes with 8oz canister"
+      },
+      "scores": {
+        "valueScore": 7.5,
+        "weightScore": 9.0,
+        "durabilityScore": 9.0,
+        "windResistanceScore": 8.0,
+        "overallScore": 8.4
+      },
+      "why": "Premium version of PocketRocket 2 with integrated piezo ignition. Ideal for thru-hikers wanting simplicity and reliability without carrying lighter.",
+      "pros": [
+        "Built-in piezo ignition (no lighter needed)",
+        "Same proven PocketRocket reliability",
+        "Works down to 20°F",
+        "Fully adjustable flame",
+        "Compact design"
+      ],
+      "cons": [
+        "Higher price than standard PocketRocket 2",
+        "Slightly heavier due to ignition",
+        "Only 0.3oz lighter than BRS but 4x the cost"
+      ],
+      "bestFor": "Thru-hikers wanting MSR reliability plus ignition convenience; those uncomfortable with lighters"
+    },
+    {
+      "id": "jetboil-minimo",
+      "name": "Jetboil MiniMo",
+      "brand": "Jetboil",
+      "category": "kitchen",
+      "subcategory": "stove_system",
+      "price": {
+        "usd": 150,
+        "range": "130-160",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 14.6,
+        "g": 414,
+        "note": "Complete system; 12.7oz without cup/stabilizer"
+      },
+      "tier": "luxury",
+      "specifications": {
+        "output": "High efficiency (FluxRing technology)",
+        "material": "Aluminum with FluxRing heat exchanger",
+        "dimensions": "Integrated cooking system",
+        "fuel_type": "Proprietary cartridge",
+        "ignition": "Push-button igniter",
+        "capacity": "1L pot with lid",
+        "boilTime": "Just over 2 minutes",
+        "fuelEfficiency": "0.19oz fuel to boil 0.5L"
+      },
+      "scores": {
+        "valueScore": 6.0,
+        "weightScore": 6.5,
+        "durabilityScore": 8.5,
+        "windResistanceScore": 9.0,
+        "overallScore": 7.5
+      },
+      "why": "Integrated cooking system with exceptional efficiency and wind protection. Heavy for thru-hiking but excellent for car camping or base camps.",
+      "pros": [
+        "Fastest boil time (2+ minutes)",
+        "Integrated stove + pot + lid system",
+        "FluxRing technology very efficient",
+        "Push-button ignition reliable",
+        "Excellent wind protection",
+        "Works in cold conditions",
+        "Simmering capability"
+      ],
+      "cons": [
+        "Heavy for backpacking (14.6oz)",
+        "Expensive ($150)",
+        "Proprietary fuel cartridges",
+        "Less versatile than stove-only setups",
+        "Overkill for solo hikers"
+      ],
+      "bestFor": "Pairs/groups camping; car camping; base camps. NOT recommended for ultralight thru-hiking"
+    },
+    {
+      "id": "snow-peak-litemax",
+      "name": "Snow Peak LiteMax",
+      "brand": "Snow Peak",
+      "category": "kitchen",
+      "subcategory": "stove",
+      "price": {
+        "usd": 60,
+        "range": "55-70",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 1.9,
+        "g": 54,
+        "note": "Stove only"
+      },
+      "tier": "luxury",
+      "specifications": {
+        "output": "Efficient",
+        "material": "Titanium",
+        "dimensions": "3\" x 2.7\" x 1.3\"",
+        "fuel_type": "Standard isobutane canister",
+        "ignition": "Manual (lighter required)",
+        "potSupport": "Up to 5.5\" pots, 2lb capacity",
+        "boilTime": "~5 minutes per liter",
+        "burnTime": "46 minutes with 100g fuel at max",
+        "tempRange": "Works to 17°F with GigaPower fuel"
+      },
+      "scores": {
+        "valueScore": 6.5,
+        "weightScore": 9.5,
+        "durabilityScore": 9.0,
+        "windResistanceScore": 7.5,
+        "overallScore": 8.1
+      },
+      "why": "Premium titanium construction nearly matches BRS weight but with superior build quality and windscreen. Best choice for serious ultralight hikers with budget.",
+      "pros": [
+        "Exceptional build quality (Japanese titanium)",
+        "Very lightweight (1.9oz)",
+        "Foldable windscreen arms",
+        "Durable titanium construction",
+        "Cold weather capable",
+        "Stable pot support"
+      ],
+      "cons": [
+        "Expensive ($60 vs $16 for BRS)",
+        "No ignition system",
+        "Slower boil times (5 min)",
+        "No piezo ignition option"
+      ],
+      "bestFor": "Ultralight thru-hikers with budget who prioritize durability and quality over absolute lowest cost; serious winter camping"
+    },
+    {
+      "id": "soto-windmaster",
+      "name": "Soto Windmaster",
+      "brand": "Soto Outdoors",
+      "category": "kitchen",
+      "subcategory": "stove",
+      "price": {
+        "usd": 65,
+        "range": "60-70",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 2.3,
+        "g": 67,
+        "note": "With TriFlex support; 3.0oz with 4Flex; 3.8oz in carrying bag"
+      },
+      "tier": "luxury",
+      "specifications": {
+        "output": "2800 kcal/h (3260W)",
+        "material": "Stainless steel",
+        "fuel_type": "Isobutane canister",
+        "ignition": "Optional with micro regulator",
+        "burnTime": "~1.5 hours with 8oz canister",
+        "windResistance": "Exceptional (Gear of the Year 2024)"
+      },
+      "scores": {
+        "valueScore": 7.0,
+        "weightScore": 9.0,
+        "durabilityScore": 9.5,
+        "windResistanceScore": 9.5,
+        "overallScore": 8.8
+      },
+      "why": "2024 Gear of the Year. Best-in-class wind resistance with generous pot supports and durability. Worth premium price for AT's variable spring/fall conditions.",
+      "pros": [
+        "Best wind resistance on market (Gear of Year 2024)",
+        "Highest PCT survey ratings",
+        "Excellent pot support stability",
+        "Lightweight (2.3oz minimum)",
+        "Durable build quality",
+        "Optional igniter available",
+        "Perfect for variable conditions"
+      ],
+      "cons": [
+        "Expensive ($65)",
+        "Premium pricing justifiable but not budget option"
+      ],
+      "bestFor": "AT thru-hikers wanting best wind performance; spring/fall hiking in unpredictable weather; experienced backpackers willing to pay for quality"
+    }
+  ],
+  "cookPots": [
+    {
+      "id": "toaks-650ml",
+      "name": "TOAKS 650ml Ultralight Titanium Pot",
+      "brand": "TOAKS Outdoor",
+      "category": "kitchen",
+      "subcategory": "cookpot",
+      "price": {
+        "usd": 30,
+        "range": "28-35",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 2.1,
+        "g": 60,
+        "note": "Pot only; 2.8oz (80g) with lid"
+      },
+      "capacity": "650ml (22oz)",
+      "tier": "budget",
+      "specifications": {
+        "material": "0.3mm Grade 1 titanium (thinnest available)",
+        "internalDim": "3.75\" x 3.75\" diameter/height",
+        "externalDim": "102mm x 97mm (with handles folded, lid on)",
+        "nestedStorage": "Can hold 110g fuel canister, 450ml cup, or 1L Nalgene",
+        "features": "Lockable handle, gradations in oz and ml"
+      },
+      "scores": {
+        "valueScore": 9.0,
+        "weightScore": 9.5,
+        "durabilityScore": 8.0,
+        "volumeScore": 7.5,
+        "overallScore": 8.4
+      },
+      "why": "Best budget titanium option. Extremely light, affordable, and adequate for solo boiling. 0.3mm titanium is thinnest on market.",
+      "pros": [
+        "Extremely affordable ($30)",
+        "Very lightweight (2.1oz)",
+        "Thinnest titanium (0.3mm) = maximum lightness",
+        "Grade 1 titanium durable",
+        "Excellent nesting capability",
+        "Gradation marks for measuring",
+        "Rust-resistant"
+      ],
+      "cons": [
+        "Small capacity (650ml) - solo only",
+        "Thin material can dent with rough handling",
+        "No non-stick coating",
+        "Limited to boiling/reheating"
+      ],
+      "bestFor": "Solo thru-hikers doing dehydrated meals; ultralight setups; boiling water primarily"
+    },
+    {
+      "id": "gsi-halulite-boiler",
+      "name": "GSI Halulite Boiler",
+      "brand": "GSI Outdoors",
+      "category": "kitchen",
+      "subcategory": "cookpot",
+      "price": {
+        "usd": 20,
+        "range": "18-25",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 8.1,
+        "g": 230,
+        "note": "1.1L version; 1.8L is 11oz (314g)"
+      },
+      "capacity": "1.1 liters (or 1.8L option)",
+      "tier": "budget",
+      "specifications": {
+        "material": "Hard-anodized aluminum",
+        "includes": "Boiler, lid, mesh stuff sack",
+        "dimensions_1l": "5\" x 4.8\" x 5.1\"",
+        "dimensions_18l": "5.8\" x 6\" x 5.6\"",
+        "features": "Sturdy locking handle, heat-resistant"
+      },
+      "scores": {
+        "valueScore": 9.5,
+        "weightScore": 7.5,
+        "durabilityScore": 8.0,
+        "volumeScore": 8.5,
+        "overallScore": 8.4
+      },
+      "why": "Budget-friendly aluminum alternative to titanium. Half the price of titanium pots, good volume for pairs, but heavier.",
+      "pros": [
+        "Very affordable ($20)",
+        "Good capacity (1.1L or 1.8L)",
+        "Anodized aluminum durable",
+        "Heat-resistant handle",
+        "Included lid and mesh sack",
+        "Proven design trusted by many"
+      ],
+      "cons": [
+        "Heavier than titanium (8.1oz)",
+        "Aluminum less durable than titanium",
+        "Not ideal for ultralight setups"
+      ],
+      "bestFor": "Budget-conscious pairs; car camping; beginners; acceptable weight for most hikers (not ultralight)"
+    },
+    {
+      "id": "toaks-750ml",
+      "name": "TOAKS 750ml Titanium Pot",
+      "brand": "TOAKS Outdoor",
+      "category": "kitchen",
+      "subcategory": "cookpot",
+      "price": {
+        "usd": 25,
+        "range": "23-30",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 3.0,
+        "g": 86,
+        "note": "Pot only; 3.6oz (103g) with lid; handle-free version 2.8oz"
+      },
+      "capacity": "750ml (25.4oz)",
+      "tier": "budget",
+      "specifications": {
+        "material": "Grade 1 titanium",
+        "internalDim": "3.75\" x 4.375\" diameter/height",
+        "externalDim": "94mm x 110mm",
+        "nestedStorage": "TOAKS 450ml cup, 110g canister, 32oz Nalgene",
+        "features": "Foldable handles, internal gradations, lockable handle"
+      },
+      "scores": {
+        "valueScore": 9.0,
+        "weightScore": 9.0,
+        "durabilityScore": 8.5,
+        "volumeScore": 8.0,
+        "overallScore": 8.6
+      },
+      "why": "Best value in titanium cookware. 750ml sweet spot for solo+sharing. Only $25 for lightweight titanium - exceptional value.",
+      "pros": [
+        "Best value titanium pot (~$25)",
+        "Lightweight (3oz)",
+        "Good capacity for solo or pairs",
+        "Multiple variants (standard, bail handle, handle-free)",
+        "Grade 1 titanium quality",
+        "Great nesting capability",
+        "Internal measurement gradations"
+      ],
+      "cons": [
+        "Still heavier than 650ml",
+        "Thin material can dent"
+      ],
+      "bestFor": "Solo backpackers wanting more volume; pairs on budget; best overall cost/benefit for AT hikers"
+    },
+    {
+      "id": "snow-peak-trek-700",
+      "name": "Snow Peak Trek 700 Titanium Pot",
+      "brand": "Snow Peak",
+      "category": "kitchen",
+      "subcategory": "cookpot",
+      "price": {
+        "usd": 45,
+        "range": "40-50",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 4.8,
+        "g": 136,
+        "note": "Including lid and mesh sack; pot 3.3oz, lid 1.2oz"
+      },
+      "capacity": "700ml (23.6oz)",
+      "tier": "mid",
+      "specifications": {
+        "material": "Japanese titanium (premium)",
+        "dimensions": "D 4.2\" x H 4.4\"",
+        "storedSize": "4.2\" x 4.4\" (105 x 128mm)",
+        "nestedStorage": "110G fuel canister and GigaPower Stove fit inside; nests in Trek 900",
+        "manufacturing": "Historic Japanese manufacturing process"
+      },
+      "scores": {
+        "valueScore": 7.0,
+        "weightScore": 8.5,
+        "durabilityScore": 9.5,
+        "volumeScore": 8.0,
+        "overallScore": 8.3
+      },
+      "why": "Premium Japanese quality with excellent engineering. Higher price but superior build than TOAKS. Ideal mid-range choice.",
+      "pros": [
+        "Premium Japanese titanium quality",
+        "Excellent durability reputation",
+        "Good capacity (700ml)",
+        "Perfect nesting with Trek 900",
+        "Compact when stored",
+        "Lifetime quality"
+      ],
+      "cons": [
+        "Expensive ($45)",
+        "Heavier than budget options (4.8oz)",
+        "Premium pricing for minor benefits"
+      ],
+      "bestFor": "Hikers valuing quality and durability over minimum weight; those wanting proven Japanese engineering"
+    },
+    {
+      "id": "evernew-ultralight-13l",
+      "name": "Evernew Ti Ultralight Pot 1.3L",
+      "brand": "Evernew",
+      "category": "kitchen",
+      "subcategory": "cookpot",
+      "price": {
+        "usd": 55,
+        "range": "50-60",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 4.6,
+        "g": 130,
+        "note": "Pot only; 4.7oz with lid (132g)"
+      },
+      "capacity": "1.3 liters (44oz)",
+      "tier": "premium",
+      "specifications": {
+        "material": "0.3mm Grade 1 titanium (ultralight series)",
+        "manufacturing": "Cold-forged titanium",
+        "features": "Insulated silicone handles, mesh stuff sack, gradations",
+        "coating": "No non-stick (weight savings)",
+        "nesting": "Nests with 900ml pot"
+      },
+      "scores": {
+        "valueScore": 7.5,
+        "weightScore": 9.0,
+        "durabilityScore": 8.5,
+        "volumeScore": 9.0,
+        "overallScore": 8.5
+      },
+      "why": "Premium ultralight for larger capacity needs. 0.3mm cold-forged titanium same thinness as TOAKS but with Evernew quality and larger size.",
+      "pros": [
+        "Largest capacity in ultralight class (1.3L)",
+        "Ultralight construction (4.6oz)",
+        "Cold-forged titanium durability",
+        "Insulated silicone handles",
+        "Perfect for small groups",
+        "Excellent build quality"
+      ],
+      "cons": [
+        "Expensive ($55)",
+        "Heavier than smaller titanium pots",
+        "No non-stick coating"
+      ],
+      "bestFor": "Small group hiking; those wanting large capacity without heavy aluminum; premium ultralight setup"
+    },
+    {
+      "id": "msr-titan-kettle-900ml",
+      "name": "MSR Titan Kettle 900ml",
+      "brand": "MSR (Cascade Designs)",
+      "category": "kitchen",
+      "subcategory": "cookpot",
+      "price": {
+        "usd": 65,
+        "range": "60-70",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 4.4,
+        "g": 126,
+        "note": "900ml version; 1400ml is 5.4oz"
+      },
+      "capacity": "900ml (30.4oz)",
+      "tier": "premium",
+      "specifications": {
+        "material": "Titanium (half weight of steel, twice strength of aluminum)",
+        "dimensions": "4.9\" x 4.4\" packed",
+        "volume": "30.43fl oz / 900ml",
+        "features": "Improved spout for pouches, silicone-coated handles, internal gradations",
+        "lid": "Snug-fit with silicone hook",
+        "nesting": "Holds 4oz canister + PocketRocket 2/Deluxe OR 8oz canister alone"
+      },
+      "scores": {
+        "valueScore": 6.5,
+        "weightScore": 8.5,
+        "durabilityScore": 9.5,
+        "volumeScore": 8.5,
+        "overallScore": 8.3
+      },
+      "why": "Premium MSR quality with excellent spout design for dehydrated meals. More expensive but proven reliability and thoughtful design.",
+      "pros": [
+        "Excellent MSR build quality",
+        "Improved spout for meal pouches",
+        "Good volume (900ml)",
+        "Perfect nesting with stove/canister",
+        "Titanium durability",
+        "Silicone handles comfortable"
+      ],
+      "cons": [
+        "Expensive ($65)",
+        "Heavier than ultralight options",
+        "Premium pricing"
+      ],
+      "bestFor": "MSR stove users wanting integrated system; hikers prioritizing durability and pouch-friendly design"
+    }
+  ],
+  "waterFilters": [
+    {
+      "id": "sawyer-mini",
+      "name": "Sawyer Mini Water Filter",
+      "brand": "Sawyer Products",
+      "category": "water",
+      "subcategory": "squeeze_filter",
+      "price": {
+        "usd": 17,
+        "range": "15-20",
+        "currency": "USD",
+        "note": "Walmart price as of Oct 2025: $16.99"
+      },
+      "weight": {
+        "oz": 2.0,
+        "g": 57,
+        "note": "Filter only (51g); 2.9oz (81g) with plunger"
+      },
+      "tier": "budget",
+      "specifications": {
+        "filterType": "0.1 micron absolute hollow fiber",
+        "capacity": "100,000 gallons",
+        "removal": "7-log bacteria, 6-log protozoa, 100% microplastics",
+        "includes": "Filter, 16oz reusable pouch, drinking straw, cleaning plunger",
+        "compatibility": "Hydration pack tubing, disposable bottles (28mm thread)",
+        "flowRate": "Varies by source water quality"
+      },
+      "scores": {
+        "valueScore": 10.0,
+        "weightScore": 10.0,
+        "durabilityScore": 8.0,
+        "flowRateScore": 7.0,
+        "overallScore": 8.8
+      },
+      "why": "Lightest and cheapest squeeze filter. Massive capacity (100k gallons). Industry standard for ultralight thru-hiking.",
+      "pros": [
+        "Incredibly affordable ($17)",
+        "Lightest squeeze filter (2oz)",
+        "Massive 100,000 gallon capacity",
+        "Includes reusable pouch and straw",
+        "0.1 micron absolute filtration",
+        "Backwashable (up to 98.5% restore)",
+        "Proven reliability on trails"
+      ],
+      "cons": [
+        "Slower flow rate than premium filters",
+        "Requires clean water source (not for silt-heavy water)",
+        "Gravity/squeeze only (no pump)"
+      ],
+      "bestFor": "Most AT thru-hikers; budget-conscious; ultralight setups; default recommendation for beginners"
+    },
+    {
+      "id": "sawyer-squeeze",
+      "name": "Sawyer Squeeze Water Filter",
+      "brand": "Sawyer Products",
+      "category": "water",
+      "subcategory": "squeeze_filter",
+      "price": {
+        "usd": 35,
+        "range": "30-45",
+        "currency": "USD",
+        "note": "MSRP $25 for filter; kits with bottles around $40"
+      },
+      "weight": {
+        "oz": 3.0,
+        "g": 85,
+        "note": "Filter only 3oz; full system with bags 5.8oz"
+      },
+      "tier": "mid",
+      "specifications": {
+        "filterType": "0.1 micron absolute hollow fiber",
+        "capacity": "100,000 gallons",
+        "removal": "Bacteria, protozoa (Giardia, Cryptosporidium)",
+        "includes": "Filter, 2 collapsible bags, cleaning plunger, cleaning coupling",
+        "boilTime": "1 liter in 40 seconds (fastest flow rate in class)",
+        "versatility": "Squeeze into bags, screw onto bottles, drink with straw"
+      },
+      "scores": {
+        "valueScore": 8.5,
+        "weightScore": 8.5,
+        "durabilityScore": 8.5,
+        "flowRateScore": 9.5,
+        "overallScore": 8.9
+      },
+      "why": "Goldilocks of water filters: Fastest flow rate, good capacity, versatile. 2025 update with durability improvements.",
+      "pros": [
+        "Fastest flow rate (1L in 40 sec)",
+        "Very lightweight (3oz)",
+        "Massive capacity (100k gallons)",
+        "Works with multiple bottle types",
+        "Improved durability (late 2025)",
+        "Best thru-hiking filter (survey winner)",
+        "Versatile (pairs or solo)"
+      ],
+      "cons": [
+        "More expensive than Mini ($35)",
+        "Only 0.9oz heavier but costs 2x"
+      ],
+      "bestFor": "Groups/pairs; fastest flow preferred; hikers wanting fastest filtering for impatience"
+    },
+    {
+      "id": "katadyn-befree-1l",
+      "name": "Katadyn BeFree 1L Water Filter Bottle",
+      "brand": "Katadyn",
+      "category": "water",
+      "subcategory": "squeeze_filter",
+      "price": {
+        "usd": 45,
+        "range": "45-55",
+        "currency": "USD",
+        "note": "REI price: $52.95"
+      },
+      "weight": {
+        "oz": 2.3,
+        "g": 65,
+        "note": "BeFree 1L bottle 2.3oz; AC 0.5L is 2.5oz; filter alone 1.2oz (34g)"
+      },
+      "tier": "mid",
+      "specifications": {
+        "filterType": "0.1 micron EZ-Clean membrane",
+        "capacity": "1000 liters per cartridge",
+        "flowRate": "2 liters per minute",
+        "includes": "Collapsible bottle (1L Hydrapak), EZ-Clean filter membrane",
+        "cleaning": "Shake or swish in water (no tools required)",
+        "bottles": "Available in 0.5L and 1L sizes"
+      },
+      "scores": {
+        "valueScore": 7.5,
+        "weightScore": 9.5,
+        "durabilityScore": 8.0,
+        "flowRateScore": 9.0,
+        "overallScore": 8.6
+      },
+      "why": "Lightest overall with integrated bottle. Excellent EZ-Clean design. Premium pricing but ultralight solution.",
+      "pros": [
+        "Absolute lightest filter option (2.3oz with bottle)",
+        "Ultra-fast 2L/min flow rate",
+        "EZ-Clean membrane (no tools, just shake)",
+        "Integrated collapsible bottle",
+        "Excellent German engineering",
+        "0.5L and 1L options"
+      ],
+      "cons": [
+        "Higher price ($45)",
+        "Only 1000L capacity (vs 100k for Sawyer)",
+        "More fragile membrane design",
+        "Replacement cartridge $25"
+      ],
+      "bestFor": "Ultralight hikers with budget; those wanting absolute minimum weight; premium integrated solution"
+    },
+    {
+      "id": "platypus-quickdraw-1l",
+      "name": "Platypus QuickDraw 1L Filter System",
+      "brand": "Platypus (Cascade Designs)",
+      "category": "water",
+      "subcategory": "squeeze_filter",
+      "price": {
+        "usd": 40,
+        "range": "38-45",
+        "currency": "USD",
+        "note": "Filter only $39.95; system with 1L $54.95"
+      },
+      "weight": {
+        "oz": 2.9,
+        "g": 82,
+        "note": "Filter only 2.9oz dry; 2.3oz wetted; 1L system 3.3oz (95g)"
+      },
+      "tier": "mid",
+      "specifications": {
+        "filterType": "0.2 micron hollow fiber",
+        "capacity": "1000 liters",
+        "removal": "99.9% protozoa, 99.9999% bacteria",
+        "flowRate": "3 liters per minute",
+        "newFeature": "ConnectCap for 28mm threads (2024 update)",
+        "includes": "Filter, connector caps, optional 1L reservoir"
+      },
+      "scores": {
+        "valueScore": 8.0,
+        "weightScore": 8.5,
+        "durabilityScore": 8.5,
+        "flowRateScore": 9.0,
+        "overallScore": 8.5
+      },
+      "why": "Great mid-range option with excellent flow rate. 2024 ConnectCap update makes it more versatile. Good cost/benefit.",
+      "pros": [
+        "Excellent 3L/min flow rate",
+        "New ConnectCap (28mm thread compatibility)",
+        "Lightweight (2.9oz filter)",
+        "Good capacity (1000L)",
+        "Compatible with many bottles",
+        "Solid Cascade Designs reputation"
+      ],
+      "cons": [
+        "Heavier than Sawyer Mini",
+        "More expensive than Mini ($40)",
+        "0.2 micron not absolute (vs 0.1)"
+      ],
+      "bestFor": "Groups/pairs wanting fast flow; those wanting newer tech (ConnectCap); Cascade enthusiasts"
+    },
+    {
+      "id": "msr-trailshot",
+      "name": "MSR TrailShot Pocket-Sized Water Filter",
+      "brand": "MSR (Cascade Designs)",
+      "category": "water",
+      "subcategory": "hand_pump",
+      "price": {
+        "usd": 50,
+        "range": "45-55",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 5.4,
+        "g": 153,
+        "note": "Reported range 5-5.6oz"
+      },
+      "tier": "mid",
+      "specifications": {
+        "filterType": "0.2 micron hollow fiber",
+        "capacity": "2000 liters",
+        "flowRate": "1 liter in 60 seconds (one-handed pumping)",
+        "handling": "Pump filter (not gravity/squeeze)",
+        "virusProtection": "No (bacteria and protozoa only)",
+        "includes": "Pump filter, intake tube"
+      },
+      "scores": {
+        "valueScore": 7.5,
+        "weightScore": 7.0,
+        "durabilityScore": 8.5,
+        "flowRateScore": 7.5,
+        "overallScore": 7.6
+      },
+      "why": "Only pump filter in this list. Heavier but good for silt-heavy water (PA, AT stream reality). Double capacity of squeeze filters.",
+      "pros": [
+        "Largest capacity (2000L)",
+        "Handles silt/sediment better than squeeze",
+        "One-handed operation",
+        "Affordable for a pump ($50)",
+        "Good for murky water sources"
+      ],
+      "cons": [
+        "Heavier than squeeze filters (5.4oz)",
+        "Slower than high-flow squeeze (60 sec/L)",
+        "Manual pumping required",
+        "No virus protection",
+        "Takes up more pack space"
+      ],
+      "bestFor": "AT thru-hikers in muddy/silt-heavy regions; those bothered by squeezing; desire for larger capacity"
+    },
+    {
+      "id": "grayl-geopress",
+      "name": "Grayl GeoPress Water Filter Bottle",
+      "brand": "Grayl",
+      "category": "water",
+      "subcategory": "press_filter",
+      "price": {
+        "usd": 90,
+        "range": "85-100",
+        "currency": "USD"
+      },
+      "weight": {
+        "oz": 15.9,
+        "g": 450,
+        "note": "Empty without water"
+      },
+      "capacity": "24oz bottle (710ml)",
+      "tier": "luxury",
+      "specifications": {
+        "filterType": "Electroabsorption + activated carbon",
+        "protection": "Virus, bacteria, protozoa, chemicals, pesticides, heavy metals, microplastics",
+        "filterLife": "350 presses (65 gallons / 250L)",
+        "filterTime": "8-10 seconds per 24oz",
+        "bottle": "Integrated 24oz bottle system",
+        "titaniumVersion": "GeoPress Ti (premium option)"
+      },
+      "scores": {
+        "valueScore": 4.0,
+        "weightScore": 3.0,
+        "durabilityScore": 8.5,
+        "virusProtectionScore": 10.0,
+        "overallScore": 6.3
+      },
+      "why": "Premium integrated system with virus protection. Too heavy and expensive for AT thru-hiking but excellent for international travel.",
+      "pros": [
+        "Only system on list with virus protection",
+        "All-in-one bottle solution",
+        "Fast (8-10 sec per bottle)",
+        "Removes chemicals and heavy metals",
+        "Can double as cook pot (GeoPress Ti)"
+      ],
+      "cons": [
+        "Very heavy (15.9oz) - worst on list",
+        "Expensive ($90)",
+        "Limited filter life (65 gal)",
+        "Way overkill for AT (no viruses)"
+      ],
+      "bestFor": "International travel; developing countries; NOT recommended for AT thru-hiking"
+    },
+    {
+      "id": "steripen-ultra",
+      "name": "SteriPEN Ultra UV Water Purifier",
+      "brand": "Katadyn SteriPEN",
+      "category": "water",
+      "subcategory": "uv_purifier",
+      "price": {
+        "usd": 124,
+        "range": "110-135",
+        "currency": "USD",
+        "note": "Walmart: $123.62"
+      },
+      "weight": {
+        "oz": 4.94,
+        "g": 140,
+        "note": "With carrying case: 6.65oz"
+      },
+      "tier": "luxury",
+      "specifications": {
+        "technology": "UV light (not filtration)",
+        "protection": "Virus, bacteria, protozoa (99.99% elimination)",
+        "capacity": "8000 treatments (50 liters per charge)",
+        "treatmentTime": "0.5L in 48 sec, 1L in 90 sec",
+        "battery": "2200mAh li-ion rechargeable (USB)",
+        "display": "OLED display",
+        "temperature": "Works to freezing (battery drains quickly)"
+      },
+      "scores": {
+        "valueScore": 2.5,
+        "weightScore": 8.0,
+        "durabilityScore": 6.0,
+        "virusProtectionScore": 10.0,
+        "overallScore": 6.6
+      },
+      "why": "UV purifier (not filter) with virus protection. Expensive, battery-dependent, and reliability concerns. Poor choice for AT.",
+      "pros": [
+        "Virus protection included",
+        "Large capacity (8000 treatments)",
+        "No filter replacement",
+        "Lightweight (4.94oz)"
+      ],
+      "cons": [
+        "Very expensive ($124)",
+        "Requires USB charging",
+        "Battery concerns (reliability issues reported)",
+        "Unreliable in cold weather",
+        "No filtration (won't remove sediment/chemicals)",
+        "No virus protection needed on AT"
+      ],
+      "bestFor": "International travel ONLY; NOT recommended for AT thru-hiking"
+    }
+  ],
+  "summaryTables": {
+    "budgetTiers": {
+      "budget": {
+        "stove": {
+          "pick": "BRS-3000T",
+          "price": "$16",
+          "weight": "0.9oz",
+          "reasoning": "Absolute lowest cost and weight. Works in sheltered areas."
+        },
+        "cookpot": {
+          "pick": "TOAKS 650ml",
+          "price": "$30",
+          "weight": "2.1oz",
+          "reasoning": "Best value titanium. Solo adequate."
+        },
+        "waterFilter": {
+          "pick": "Sawyer Mini",
+          "price": "$17",
+          "weight": "2.0oz",
+          "reasoning": "Lightest, cheapest, massive capacity. Industry standard."
+        },
+        "totalPrice": "$63",
+        "totalWeight": "4.9oz",
+        "bestFor": "Ultralight thru-hikers, fair-weather camping"
+      },
+      "mid": {
+        "stove": {
+          "pick": "Soto Amicus",
+          "price": "$45",
+          "weight": "2.8oz",
+          "reasoning": "Wind-resistant, quality build, reliable igniter option"
+        },
+        "cookpot": {
+          "pick": "TOAKS 750ml",
+          "price": "$25",
+          "weight": "3.0oz",
+          "reasoning": "Best value per capacity. Solo+sharing size."
+        },
+        "waterFilter": {
+          "pick": "Sawyer Squeeze",
+          "price": "$35",
+          "weight": "3.0oz",
+          "reasoning": "Fastest flow rate, great durability (2025 update)"
+        },
+        "totalPrice": "$105",
+        "totalWeight": "8.8oz",
+        "bestFor": "Most thru-hikers. Best cost/performance balance."
+      },
+      "premium": {
+        "stove": {
+          "pick": "Soto Windmaster",
+          "price": "$65",
+          "weight": "2.3oz",
+          "reasoning": "2024 Gear of Year. Best wind resistance. Worth the price."
+        },
+        "cookpot": {
+          "pick": "MSR Titan Kettle 900ml",
+          "price": "$65",
+          "weight": "4.4oz",
+          "reasoning": "Premium build, proven reliability, pouch-friendly spout"
+        },
+        "waterFilter": {
+          "pick": "Katadyn BeFree 1L",
+          "price": "$45",
+          "weight": "2.3oz",
+          "reasoning": "Absolute lightest integrated system. EZ-Clean design."
+        },
+        "totalPrice": "$175",
+        "totalWeight": "9.0oz",
+        "bestFor": "Serious ultralight hikers. Quality over cost."
+      },
+      "luxury": {
+        "stove": {
+          "pick": "Snow Peak LiteMax",
+          "price": "$60",
+          "weight": "1.9oz",
+          "reasoning": "Premium Japanese quality, nearly matches BRS weight"
+        },
+        "cookpot": {
+          "pick": "Evernew Ultralight 1.3L",
+          "price": "$55",
+          "weight": "4.6oz",
+          "reasoning": "Ultralight + larger capacity. Cold-forged titanium."
+        },
+        "waterFilter": {
+          "pick": "Grayl GeoPress Ti",
+          "price": "$90",
+          "weight": "15.9oz",
+          "reasoning": "Only virus protection option. Doubles as cook pot."
+        },
+        "totalPrice": "$205",
+        "totalWeight": "22.4oz",
+        "bestFor": "International travelers, premium aesthetics (NOT recommended for AT)"
+      }
+    },
+    "bestForScenarios": {
+      "fastestBoilTime": {
+        "winner": "Jetboil MiniMo",
+        "boilTime": "2+ minutes",
+        "weight": "14.6oz",
+        "note": "System only, not for ultralight"
+      },
+      "lightestStove": {
+        "winner": "BRS-3000T",
+        "weight": "0.9oz",
+        "price": "$16",
+        "tradeoff": "Poor wind resistance"
+      },
+      "lightestPot": {
+        "winner": "TOAKS 650ml",
+        "weight": "2.1oz",
+        "price": "$30",
+        "tradeoff": "Small capacity (solo only)"
+      },
+      "lightestFilter": {
+        "winner": "Sawyer Mini",
+        "weight": "2.0oz",
+        "price": "$17",
+        "capacity": "100,000 gallons"
+      },
+      "bestWindResistance": {
+        "winner": "Soto Windmaster",
+        "award": "2024 Gear of Year",
+        "price": "$65",
+        "weight": "2.3oz"
+      },
+      "bestValueStove": {
+        "winner": "Soto Amicus",
+        "score": "Features of $70 stoves at $45 price",
+        "features": "Wind-resistant, optional igniter, quality build"
+      },
+      "bestValuePot": {
+        "winner": "TOAKS 750ml",
+        "price": "$25",
+        "weight": "3.0oz",
+        "note": "Best titanium cost/benefit ratio"
+      },
+      "bestValueFilter": {
+        "winner": "Sawyer Mini",
+        "price": "$17",
+        "weight": "2.0oz",
+        "capacity": "100,000 gallons"
+      }
+    }
+  },
+  "atSpecificNotes": {
+    "springHikingRecommendation": {
+      "stove": "Soto Windmaster (best wind) or Soto Amicus (good wind at lower cost)",
+      "reasoning": "Spring weather unpredictable, frequent rain/wind, water crossings common"
+    },
+    "waterSourceReality": {
+      "note": "AT has excellent water access, clean springs abundant",
+      "implication": "Sawyer Mini adequate for 95% of trail. TrailShot good for Pennsylvania rocks section.",
+      "virusProtection": "Not needed on US trails"
+    },
+    "cookingStyle": {
+      "typical": "Boil-and-pour dehydrated meals",
+      "implication": "Simple stove adequate, no simmer required",
+      "recommendation": "Skip premium simmering systems (Jetboil MiniMo), not needed"
+    },
+    "packingEfficiency": {
+      "canisterSize": "8oz isobutane-propane standard on trail",
+      "nestingGoal": "Stove + canister + pot system nests together",
+      "recommendation": "TOAKS 750ml or MSR Titan 900ml (both nest efficiently)"
+    },
+    "seasonsGuide": {
+      "springFall": {
+        "stove": "Wind-resistant: Soto Windmaster or Amicus",
+        "waterFilter": "Sawyer Mini (clean sources abundant)"
+      },
+      "summer": {
+        "stove": "Any stove works; budget BRS/Etekcity adequate",
+        "waterFilter": "Sawyer Mini baseline"
+      },
+      "winter": {
+        "stove": "Cold-weather capable: Snow Peak LiteMax or Jetboil",
+        "consideration": "MSR/Soto with GigaPower fuel recommended"
+      }
+    }
+  },
+  "researchNotes": {
+    "priceTracking": "All prices verified January 2026. Expect 5-10% variation by region and retailer",
+    "weightSources": "Manufacturer specs where available; field measurements from reviews when official specs unclear",
+    "performanceData": "Based on 2025 outdoor gear testing from Outdoor Gear Lab, REI, expert reviews",
+    "durabilityAssessments": "Based on long-term reviews, PCT/AT hiker surveys, multiple-season testing",
+    "flowRateNotes": "Water filter flow rates highly dependent on source water quality and membrane cleanliness"
+  }
+}

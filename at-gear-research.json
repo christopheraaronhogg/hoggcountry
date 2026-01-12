@@ -1,0 +1,805 @@
+{
+  "metadata": {
+    "category": "AT Thru-Hiking Gear Research",
+    "researchDate": "2026-01-12",
+    "scope": "Electronics, Safety, and Toiletries across Budget Tiers",
+    "note": "Prices and weights current as of January 2026. All weights in ounces, prices in USD."
+  },
+  "headlamps": [
+    {
+      "id": "headlamp-001",
+      "name": "Petzl Tikkina",
+      "brand": "Petzl",
+      "category": "electronics",
+      "tier": "budget",
+      "price": 25,
+      "weight": 3.2,
+      "lumens": 300,
+      "features": "3 AAA batteries or rechargeable CORE battery compatible, IPX4 weather-resistant",
+      "valueScore": 9,
+      "weightScore": 6,
+      "durabilityScore": 8,
+      "why": "Best budget headlamp. Solid 300 lumens, hybrid battery system, easy one-button operation, proven reliability for basic trail use.",
+      "pros": [
+        "Exceptional value at $25",
+        "Hybrid power system (AAA or rechargeable battery compatible)",
+        "Simple one-button interface works with gloves",
+        "Compact design fits in pocket",
+        "IPX4 waterproof rating"
+      ],
+      "cons": [
+        "Heavier than other budget options (3.2oz)",
+        "Not rechargeable only (requires AAA batteries if no CORE battery)"
+      ]
+    },
+    {
+      "id": "headlamp-002",
+      "name": "Black Diamond Spot 400",
+      "brand": "Black Diamond",
+      "category": "electronics",
+      "tier": "budget",
+      "price": 55,
+      "weight": 2.7,
+      "lumens": 400,
+      "features": "Rechargeable or AAA compatible, IPX8 waterproof, PowerTap brightness memory",
+      "valueScore": 9,
+      "weightScore": 8,
+      "durabilityScore": 9,
+      "why": "Best lightweight budget option. 400 lumens at only 2.7oz. Excellent reliability and versatility with dual power options.",
+      "pros": [
+        "Lightweight at 2.7oz",
+        "Good brightness at 400 lumens",
+        "Dual fuel compatible (rechargeable or AAA)",
+        "IPX8 waterproof (better than Tikkina)",
+        "PowerTap technology for instant dimming"
+      ],
+      "cons": [
+        "More expensive than Tikkina ($55 vs $25)",
+        "Requires separate purchase of BD1500 battery for rechargeable mode"
+      ]
+    },
+    {
+      "id": "headlamp-003",
+      "name": "Black Diamond Sprint 225",
+      "brand": "Black Diamond",
+      "category": "electronics",
+      "tier": "mid",
+      "price": 45,
+      "weight": 1.9,
+      "lumens": 225,
+      "features": "Ultra-lightweight rechargeable, USB rechargeable, IPX4 waterproof, 2.5hr runtime on high",
+      "valueScore": 8,
+      "weightScore": 9,
+      "durabilityScore": 8,
+      "why": "Best ultralight headlamp for weight-conscious hikers. Only 1.9oz with solid 225 lumens for trail use.",
+      "pros": [
+        "Extremely lightweight at 1.9oz",
+        "USB rechargeable",
+        "Good price-to-weight ratio",
+        "Perfect for long-distance hiking where ounces matter",
+        "IPX4 waterproof rating"
+      ],
+      "cons": [
+        "Lower lumen output (225 vs 400 in Spot 400)",
+        "2.5hr runtime on high is relatively short",
+        "Not dual-fuel (rechargeable only)"
+      ]
+    },
+    {
+      "id": "headlamp-004",
+      "name": "Nitecore NU25 MCT UL",
+      "brand": "Nitecore",
+      "category": "electronics",
+      "tier": "mid",
+      "price": 40,
+      "weight": 1.65,
+      "lumens": 400,
+      "features": "Multi-color temp (3000K/4000K/6500K), USB-C rechargeable, IP66 waterproof, 45hr runtime on low",
+      "valueScore": 10,
+      "weightScore": 10,
+      "durabilityScore": 8,
+      "why": "BEST VALUE. Only 1.65oz with 400 lumens, multi-color temps, and exceptional 45hr runtime. Exceptional for weight-conscious hikers.",
+      "pros": [
+        "Ultralight at 1.65oz (under 2oz with shock cord)",
+        "400 lumens despite minimal weight",
+        "Multi-temperature color options for reading maps",
+        "45hr runtime on lowest setting",
+        "USB-C rechargeable",
+        "IP66 waterproof",
+        "650mAh built-in battery"
+      ],
+      "cons": [
+        "Smallest beam (may not project as far as larger models)",
+        "Charging speed not specified",
+        "Price not consistently listed across retailers ($40-50)"
+      ]
+    },
+    {
+      "id": "headlamp-005",
+      "name": "Petzl Actik Core",
+      "brand": "Petzl",
+      "category": "electronics",
+      "tier": "mid",
+      "price": 88,
+      "weight": 3.1,
+      "lumens": 625,
+      "features": "Rechargeable CORE battery, 3 white levels + red light, IPX4 waterproof, 3hr charge time",
+      "valueScore": 7,
+      "weightScore": 6,
+      "durabilityScore": 9,
+      "why": "Premium mid-tier. Most powerful 625 lumens, excellent reliability, but heavier than competitors.",
+      "pros": [
+        "Highest lumen output in mid-tier at 625 lumens",
+        "Hybrid power (rechargeable or 3 AAA batteries)",
+        "Red light for night vision preservation",
+        "LOCK function prevents accidental activation",
+        "Reflective headband material",
+        "Very durable Petzl brand"
+      ],
+      "cons": [
+        "Heaviest mid-tier option at 3.1oz",
+        "More expensive at $88",
+        "Overkill lumens for AT (625 vs 225-400)"
+      ]
+    },
+    {
+      "id": "headlamp-006",
+      "name": "Black Diamond Sprint 225 Rechargeable",
+      "brand": "Black Diamond",
+      "category": "electronics",
+      "tier": "premium",
+      "price": 65,
+      "weight": 1.9,
+      "lumens": 225,
+      "features": "Premium rechargeable, IPX4 waterproof, PowerTap technology, Brightness Memory",
+      "valueScore": 8,
+      "weightScore": 9,
+      "durabilityScore": 9,
+      "why": "Premium lightweight option. Same weight as standard Sprint 225 but better features. Best for serious ultralight enthusiasts.",
+      "pros": [
+        "Same ultralight weight as budget version (1.9oz)",
+        "Premium build quality",
+        "PowerTap instant adjustment technology",
+        "Brightness Memory feature",
+        "6 lumen low mode for 20hrs runtime"
+      ],
+      "cons": [
+        "Same 225 lumen output (lower than alternatives)",
+        "Price premium over budget models"
+      ]
+    },
+    {
+      "id": "headlamp-007",
+      "name": "Petzl Swift RL",
+      "brand": "Petzl",
+      "category": "electronics",
+      "tier": "premium",
+      "price": 145,
+      "weight": 3.5,
+      "lumens": 1100,
+      "features": "Reactive Lighting sensor, USB-C rechargeable, IPX4 waterproof, 2350mAh battery, auto-brightness",
+      "valueScore": 6,
+      "weightScore": 6,
+      "durabilityScore": 10,
+      "why": "Premium feature set with Reactive Lighting. Overkill for AT hiking but best-in-class features.",
+      "pros": [
+        "Reactive Lighting auto-adjusts to ambient light",
+        "Highest brightness at 1100 lumens",
+        "USB-C rechargeable with battery indicator",
+        "Excellent build quality and durability",
+        "Up to 150m beam distance",
+        "Red light mode available"
+      ],
+      "cons": [
+        "Very heavy at 3.5oz for ultralight hiking",
+        "1100 lumens far exceeds AT trail needs",
+        "High price at $145",
+        "Overkill features for solo hiking"
+      ]
+    },
+    {
+      "id": "headlamp-008",
+      "name": "Ledlenser NEO5R",
+      "brand": "Ledlenser",
+      "category": "electronics",
+      "tier": "premium",
+      "price": 70,
+      "weight": 3.7,
+      "lumens": 600,
+      "features": "600 lumens boost, rear red LED, IP54 dust/water resistant, magnetic USB-C charging, 2yr warranty",
+      "valueScore": 7,
+      "weightScore": 6,
+      "durabilityScore": 8,
+      "why": "Good all-rounder. Decent brightness with rear light, but heavy for AT hiking.",
+      "pros": [
+        "Bright at 600 lumens (boost mode 10sec)",
+        "Rear red LED for visibility",
+        "Magnetic USB-C charging",
+        "100m beam range",
+        "2-year warranty",
+        "Tilting lamp head adjustable"
+      ],
+      "cons": [
+        "Heavy at 3.7oz",
+        "Expensive at $70",
+        "Boost mode only 10 seconds",
+        "IP54 is lower waterproof rating than competitors"
+      ]
+    }
+  ],
+  "powerBanks": [
+    {
+      "id": "powerbank-001",
+      "name": "Goal Zero Flip 24",
+      "brand": "Goal Zero",
+      "category": "electronics",
+      "tier": "budget",
+      "price": 30,
+      "weight": 4.6,
+      "capacity": "6700mAh / 24Wh",
+      "features": "Dual USB ports, passthrough charging, no buttons, compact",
+      "valueScore": 9,
+      "weightScore": 7,
+      "durabilityScore": 8,
+      "why": "Best budget power bank. Lightweight, cheap, reliable, and ~2 phone charges.",
+      "pros": [
+        "Exceptional value at $30",
+        "Lightweight at 4.6oz",
+        "No buttons to fail (simple plug and charge design)",
+        "Dual USB ports",
+        "Pass-through charging capability",
+        "Compact, fits in pocket",
+        "12-month warranty"
+      ],
+      "cons": [
+        "Lower capacity means fewer charges (2-3 phones max)",
+        "Slower charging speeds than newer models",
+        "No USB-C port"
+      ]
+    },
+    {
+      "id": "powerbank-002",
+      "name": "Anker PowerCore 10000",
+      "brand": "Anker",
+      "category": "electronics",
+      "tier": "budget",
+      "price": 25,
+      "weight": 6.48,
+      "capacity": "10000mAh",
+      "features": "PowerIQ tech, LED indicators, USB-A only, 6-7hr recharge",
+      "valueScore": 8,
+      "weightScore": 6,
+      "durabilityScore": 8,
+      "why": "Budget 10000mAh option. Same capacity as mid-tier but at budget price.",
+      "pros": [
+        "Very cheap at $25",
+        "10000mAh double Goal Zero capacity",
+        "PowerIQ technology for device-specific charging",
+        "LED indicators show battery level",
+        "Widely available"
+      ],
+      "cons": [
+        "Heaviest budget option at 6.48oz",
+        "USB-A only (outdated)",
+        "Slower 6-7hr recharge time",
+        "Lower quality build than Nitecore"
+      ]
+    },
+    {
+      "id": "powerbank-003",
+      "name": "Anker Nano 10000",
+      "brand": "Anker",
+      "category": "electronics",
+      "tier": "mid",
+      "price": 43,
+      "weight": 7.58,
+      "capacity": "10000mAh",
+      "features": "Built-in USB-C cable, 30W output, dual ports, color display, 45min to 50%",
+      "valueScore": 8,
+      "weightScore": 5,
+      "durabilityScore": 8,
+      "why": "Mid-tier with convenience of built-in cable. Great for USB-C devices but heaviest option.",
+      "pros": [
+        "Built-in USB-C cable (always have charging cable)",
+        "30W bi-directional fast charging",
+        "Color display shows charging status",
+        "50% in 45 minutes",
+        "80% recycled plastic casing",
+        "Reasonable price at $43"
+      ],
+      "cons": [
+        "Heaviest option at 7.58oz",
+        "Built-in cable may fail over time",
+        "30W may not be enough for laptops"
+      ]
+    },
+    {
+      "id": "powerbank-004",
+      "name": "Nitecore NB10000 Gen 3",
+      "brand": "Nitecore",
+      "category": "electronics",
+      "tier": "mid",
+      "price": 55,
+      "weight": 5.29,
+      "capacity": "10000mAh / 38.5Wh",
+      "features": "Carbon fiber construction, dual USB-C, 22.5W fast charging, IPX5 rated, ultra-slim",
+      "valueScore": 9,
+      "weightScore": 8,
+      "durabilityScore": 9,
+      "why": "BEST VALUE mid-tier. Carbon fiber construction, excellent weight, dual USB-C, 22.5W charging.",
+      "pros": [
+        "Carbon fiber lightweight at 5.29oz",
+        "Dual USB-C ports",
+        "22.5W fast charging",
+        "Ultra-slim design (0.42in thick)",
+        "IPX5 water resistant",
+        "PD3.0 quick-charge support",
+        "Excellent build quality"
+      ],
+      "cons": [
+        "Price premium at $55",
+        "Lower output than Anker Nano (22.5W vs 30W)",
+        "Not ideal for laptop charging"
+      ]
+    },
+    {
+      "id": "powerbank-005",
+      "name": "Hyperjuice 245W USB-C",
+      "brand": "Hyperjuice",
+      "category": "electronics",
+      "tier": "premium",
+      "price": 150,
+      "weight": 16,
+      "capacity": "27000mAh / 100Wh",
+      "features": "100W PD passthrough, dual 100W + dual 65W USB-C ports, OLED screen, charge 4 devices",
+      "valueScore": 5,
+      "weightScore": 2,
+      "durabilityScore": 10,
+      "why": "Laptop-class power bank. Way too heavy for AT hiking but incredible for multidevice charging.",
+      "pros": [
+        "Highest capacity at 27000mAh",
+        "Four USB-C ports for simultaneous charging",
+        "100W passthrough charging",
+        "OLED screen shows real-time power usage per port",
+        "Charge MacBook 1.3x or iPhone 4.5x",
+        "TSA compliant (under 100Wh)"
+      ],
+      "cons": [
+        "WAY too heavy at 16oz for AT hiking",
+        "Extremely expensive at $150",
+        "Overkill for single-hiker needs",
+        "Larger than most hiking packs"
+      ]
+    },
+    {
+      "id": "powerbank-006",
+      "name": "Anker 737 Power Bank (Discontinued)",
+      "brand": "Anker",
+      "category": "electronics",
+      "tier": "premium",
+      "price": 100,
+      "weight": 22,
+      "capacity": "24000mAh",
+      "features": "140W output, dual USB-C + USB-A, smart display, TSA compliant",
+      "valueScore": 4,
+      "weightScore": 2,
+      "durabilityScore": 8,
+      "why": "DISCONTINUED as of July 2025. Too heavy for hiking anyway. Not recommended for AT trips.",
+      "pros": [
+        "Highest charging power at 140W",
+        "Large 24000mAh capacity",
+        "Three ports for multiple devices",
+        "Smart display shows usage",
+        "TSA compliant"
+      ],
+      "cons": [
+        "DISCONTINUED - no longer available",
+        "Extremely heavy at 22oz for AT hiking",
+        "Expensive at $100",
+        "Replaced by Anker A1695 (check that instead)"
+      ]
+    }
+  ],
+  "safety": [
+    {
+      "id": "safety-001",
+      "name": "Adventure Medical Kits Ultralight/Watertight .5",
+      "brand": "Adventure Medical Kits",
+      "category": "safety",
+      "tier": "budget",
+      "price": 18,
+      "weight": 3.6,
+      "people": "2",
+      "days": "1-2",
+      "features": "100% waterproof DryFlex inner bag, bandages, blister treatment, tape",
+      "valueScore": 9,
+      "weightScore": 9,
+      "durabilityScore": 8,
+      "why": "Perfect for solo hikers or 2-person day trips. Ultralight, waterproof, essential items only.",
+      "pros": [
+        "Extremely lightweight at 3.6oz",
+        "Waterproof inner and outer protection",
+        "Compact pocket-sized",
+        "Affordable at ~$18",
+        "Includes blister treatment (common AT issue)"
+      ],
+      "cons": [
+        "Minimal supplies for extended trips",
+        "Only covers 1-2 days",
+        "Limited for multi-person groups"
+      ]
+    },
+    {
+      "id": "safety-002",
+      "name": "Adventure Medical Kits Ultralight/Watertight .7",
+      "brand": "Adventure Medical Kits",
+      "category": "safety",
+      "tier": "budget",
+      "price": 25,
+      "weight": 5.8,
+      "people": "2",
+      "days": "1-4",
+      "features": "Waterproof, blister kit, medications, bandages, tape, gauze",
+      "valueScore": 9,
+      "weightScore": 8,
+      "durabilityScore": 8,
+      "why": "Best budget kit for multi-day trips. Covers common trail injuries and blister management.",
+      "pros": [
+        "Lightweight at 5.8oz",
+        "Covers 1-4 days",
+        "Comprehensive blister kit",
+        "Good price at ~$25",
+        "Waterproof protection"
+      ],
+      "cons": [
+        "Still minimal for longer trips",
+        "May need supplementation for extended hikes"
+      ]
+    },
+    {
+      "id": "safety-003",
+      "name": "Deuce #2 Ultralight Trowel",
+      "brand": "The Tentlab (TheTentlab)",
+      "category": "safety",
+      "tier": "budget",
+      "price": 21,
+      "weight": 0.6,
+      "material": "Aerospace-grade 7075-T6 aluminum",
+      "features": "4 teeth for cutting roots, lifetime warranty, handle-up or down design",
+      "valueScore": 10,
+      "weightScore": 10,
+      "durabilityScore": 10,
+      "why": "BEST ultralight trowel. Barely 0.6oz, aerospace aluminum, lifetime warranty. Essential for Leave No Trace.",
+      "pros": [
+        "Unbelievably light at only 0.6oz",
+        "Aerospace-grade 7075-T6 aluminum (satellite-quality)",
+        "4 teeth cut through roots up to 0.5in thick",
+        "Quad force design for hard ground",
+        "Lifetime guarantee",
+        "US-produced (MIL spec AMS4045)",
+        "Reasonable price at $21"
+      ],
+      "cons": [
+        "Very small blade (works for digging but minimal)",
+        "Handle may feel cramped for larger hands"
+      ]
+    },
+    {
+      "id": "safety-004",
+      "name": "SOL Emergency Bivvy",
+      "brand": "SOL (Survive Outdoors Longer)",
+      "category": "safety",
+      "tier": "budget",
+      "price": 20,
+      "weight": 3.8,
+      "size": "84in x 36in",
+      "features": "Reflects 90% body heat, high-visibility orange, rescue whistle + tinder cord included",
+      "valueScore": 10,
+      "weightScore": 9,
+      "durabilityScore": 7,
+      "why": "Emergency backup insurance. Minimal weight, reflects heat, includes whistle. Every hiker should carry one.",
+      "pros": [
+        "Extremely lightweight at 3.8oz",
+        "Reflects 90% body heat",
+        "Non-crinkly material (quieter than Mylar)",
+        "High-visibility orange for rescue",
+        "Includes rescue whistle + tinder cord",
+        "Packs smaller than 12oz soda can",
+        "Cheap at $20"
+      ],
+      "cons": [
+        "Non-breathable (condensation may form)",
+        "Single-use (hard to repack after deployment)",
+        "Smaller size (36in wide) may feel cramped"
+      ]
+    },
+    {
+      "id": "safety-005",
+      "name": "SOL Emergency Bivvy XL",
+      "brand": "SOL (Survive Outdoors Longer)",
+      "category": "safety",
+      "tier": "mid",
+      "price": 25,
+      "weight": 5.8,
+      "size": "84in x 60in",
+      "features": "Larger version with same reflective tech, wider body coverage",
+      "valueScore": 9,
+      "weightScore": 8,
+      "durabilityScore": 7,
+      "why": "Better comfort if weight allows. 50% heavier but much more spacious for two people or comfort.",
+      "pros": [
+        "More spacious at 60in width",
+        "Better for two-person use",
+        "Still relatively lightweight at 5.8oz",
+        "Same heat reflection as standard",
+        "Better for claustrophobic hikers"
+      ],
+      "cons": [
+        "Heavier at 5.8oz vs 3.8oz for standard",
+        "Extra weight may not justify marginal benefit"
+      ]
+    }
+  ],
+  "toiletries": [
+    {
+      "id": "toiletry-001",
+      "name": "Dr. Bronner's Soap",
+      "brand": "Dr. Bronner's",
+      "category": "safety",
+      "tier": "budget",
+      "price": 3,
+      "weight": 0.2,
+      "volume": "2oz decanted",
+      "features": "Concentrated, multipurpose (body/hair/dishes), biodegradable",
+      "valueScore": 10,
+      "weightScore": 10,
+      "durabilityScore": 9,
+      "why": "Essential multipurpose toiletry. One 2oz bottle handles body, hair, and dishes. Super concentrated.",
+      "pros": [
+        "Extremely lightweight at 0.2oz for 2oz bottle",
+        "Multipurpose (body wash, shampoo, dishwashing)",
+        "Concentrated (lasts for many washes)",
+        "100% biodegradable",
+        "Leave-No-Trace friendly"
+      ],
+      "cons": [
+        "Requires water for lathering",
+        "Strong smell (not everyone likes it)"
+      ]
+    },
+    {
+      "id": "toiletry-002",
+      "name": "Hand Sanitizer",
+      "brand": "Various",
+      "category": "safety",
+      "tier": "budget",
+      "price": 2,
+      "weight": 0.15,
+      "volume": "2oz decanted",
+      "features": "Alcohol-based, no-water wash, prevents illness",
+      "valueScore": 9,
+      "weightScore": 10,
+      "durabilityScore": 9,
+      "why": "Critical for backcountry hygiene. Lightweight, prevents waterborne illness and infection.",
+      "pros": [
+        "Minimal weight at 0.15oz for 2oz",
+        "No water required",
+        "Prevents illness from camp food prep",
+        "Cheap to decant",
+        "Reduces infection risk on trail"
+      ],
+      "cons": [
+        "Less effective than hand washing with soap",
+        "Alcohol drying on skin",
+        "Flammable (store carefully)"
+      ]
+    },
+    {
+      "id": "toiletry-003",
+      "name": "Toothbrush (cut handle)",
+      "brand": "Any standard",
+      "category": "safety",
+      "tier": "budget",
+      "price": 3,
+      "weight": 0.3,
+      "features": "Handle cut in half, reduces weight by 50%",
+      "valueScore": 10,
+      "weightScore": 10,
+      "durabilityScore": 8,
+      "why": "Standard ultralight hack. Cut handle in half, saves 0.3oz, functions identically.",
+      "pros": [
+        "Extremely lightweight at 0.3oz",
+        "Virtually free (cut any toothbrush)",
+        "Functions identically to full brush",
+        "Easy to replace on trail"
+      ],
+      "cons": [
+        "Handle may feel cramped",
+        "Cosmetically less appealing",
+        "Shorter handle may be awkward"
+      ]
+    },
+    {
+      "id": "toiletry-004",
+      "name": "Toothpaste (travel size)",
+      "brand": "Any travel",
+      "category": "safety",
+      "tier": "budget",
+      "price": 2,
+      "weight": 0.4,
+      "volume": "0.3-0.5oz",
+      "features": "Small 0.3-0.5oz travel tubes, biodegradable brushing",
+      "valueScore": 9,
+      "weightScore": 9,
+      "durabilityScore": 8,
+      "why": "Lightweight dental care. Small travel tube lasts entire thru-hike. Biodegradable.",
+      "pros": [
+        "Travel size at only 0.4oz",
+        "Lasts entire thru-hike",
+        "Biodegradable for Leave-No-Trace",
+        "Cheap at $2",
+        "Small enough for tiny pack space"
+      ],
+      "cons": [
+        "Harder to find in small villages",
+        "Some travel pastes less effective"
+      ]
+    }
+  ],
+  "budgetTiers": {
+    "budget": {
+      "description": "Essential gear for AT thru-hiking. Functional, proven, minimal cost.",
+      "headlamp": "Petzl Tikkina ($25) or Black Diamond Spot 400 ($55)",
+      "powerBank": "Goal Zero Flip 24 ($30)",
+      "firstAid": "Adventure Medical Kits .5 or .7 ($18-25)",
+      "safety": "Deuce #2 Trowel ($21) + SOL Emergency Bivvy ($20)",
+      "toiletries": "Essential basics ~$10 total",
+      "totalEstimate": "$130-160",
+      "bestFor": "Budget-conscious hikers, day-hikers, shorter AT sections"
+    },
+    "mid": {
+      "description": "Optimized balance of weight, features, and durability. Best value for most thru-hikers.",
+      "headlamp": "Nitecore NU25 MCT UL ($40) or Black Diamond Sprint 225 ($45)",
+      "powerBank": "Nitecore NB10000 Gen 3 ($55)",
+      "firstAid": "Adventure Medical Kits .7 ($25)",
+      "safety": "Deuce #2 Trowel ($21) + SOL Emergency Bivvy XL ($25)",
+      "toiletries": "Essential basics ~$10 total",
+      "totalEstimate": "$165-180",
+      "bestFor": "Most AT thru-hikers, ultralight enthusiasts, weight-conscious long-distance hikers"
+    },
+    "premium": {
+      "description": "Best-in-class features, highest durability, advanced technology.",
+      "headlamp": "Petzl Swift RL ($145) or Ledlenser NEO5R ($70)",
+      "powerBank": "Hyperjuice 245W ($150 - NOT recommended for AT)",
+      "firstAid": "Adventure Medical Kits .9 ($40-50)",
+      "safety": "Same Deuce #2 ($21) + expanded emergency kit",
+      "toiletries": "Premium/backup options ~$20 total",
+      "totalEstimate": "$350+ (or $270 without Hyperjuice)",
+      "bestFor": "Multiweek expeditions, night hiking, luxury/comfort-focused, tech enthusiasts"
+    }
+  },
+  "recommendations": {
+    "bestOverallBudget": {
+      "headlamp": "Black Diamond Spot 400 ($55, 2.7oz) - Best lightweight budget option with 400 lumens",
+      "powerBank": "Goal Zero Flip 24 ($30, 4.6oz) - Cheap, lightweight, reliable",
+      "firstAid": "Adventure Medical Kits .7 ($25, 5.8oz) - Covers 1-4 days",
+      "safety": "Deuce #2 ($21, 0.6oz) + SOL Emergency Bivvy ($20, 3.8oz)",
+      "totalEstimate": "$171",
+      "totalWeight": "17.5oz",
+      "why": "Proven gear with excellent value. Skip the Tikkina heavier option and go Spot 400 for better weight."
+    },
+    "bestValueMid": {
+      "headlamp": "Nitecore NU25 MCT UL ($40, 1.65oz) - BEST VALUE headlamp. Ultralight with multi-color temps",
+      "powerBank": "Nitecore NB10000 Gen 3 ($55, 5.29oz) - Carbon fiber, dual USB-C, excellent quality",
+      "firstAid": "Adventure Medical Kits .7 ($25, 5.8oz)",
+      "safety": "Deuce #2 ($21, 0.6oz) + SOL Emergency Bivvy XL ($25, 5.8oz) - More comfortable emergency option",
+      "totalEstimate": "$166",
+      "totalWeight": "19.22oz",
+      "why": "RECOMMENDED FOR MOST HIKERS. Best balance of weight, features, price, and durability. Nitecore NU25 MCT UL is exceptional value."
+    },
+    "bestUltralight": {
+      "headlamp": "Nitecore NU25 MCT UL ($40, 1.65oz) - Best ultralight headlamp",
+      "powerBank": "Goal Zero Flip 24 ($30, 4.6oz) - Lightest power bank option",
+      "firstAid": "Adventure Medical Kits .5 ($18, 3.6oz) - Minimal but covers essentials",
+      "safety": "Deuce #2 ($21, 0.6oz) + SOL Emergency Bivvy ($20, 3.8oz)",
+      "totalEstimate": "$129",
+      "totalWeight": "14.15oz",
+      "why": "Maximum weight reduction. Sacrifices some comfort for minimal electronics weight."
+    },
+    "bestPremium": {
+      "headlamp": "Petzl Swift RL ($145, 3.5oz) - Reactive Lighting auto-brightness, 1100 lumens",
+      "powerBank": "Nitecore NB10000 Gen 3 ($55, 5.29oz) - Best overall power bank for hiking",
+      "firstAid": "Adventure Medical Kits .9 ($40, 8oz+) - Comprehensive coverage",
+      "safety": "Deuce #2 ($21, 0.6oz) + SOL Emergency Bivvy XL ($25, 5.8oz) + backup thermal layer",
+      "totalEstimate": "$286",
+      "totalWeight": "22.19oz+",
+      "why": "Best-in-class. Overkill for AT but excellent for winter/night hiking or luxury expeditions."
+    }
+  },
+  "atThruHikeSpecificAdvice": {
+    "headlampConsiderations": [
+      "225-400 lumens is sufficient for AT trail walking",
+      "Weight matters more than brightness for thru-hiking",
+      "Multi-color temps help with map reading without ruining night vision",
+      "Consider weather exposure in exposed areas (Whites, Smokies, Baxter)",
+      "Nitecore NU25 MCT UL is the standout choice for AT thru-hikers"
+    ],
+    "powerBankConsiderations": [
+      "10000mAh capacity = 1-2 full smartphone charges",
+      "Most shelters have power outlets (use them!)",
+      "Power banks matter more for communication and GPS",
+      "Weight is critical - prioritize light options",
+      "Goal Zero Flip 24 vs Nitecore NB10000 Gen 3: flip 24 if ultralight, nitecore if USB-C devices"
+    ],
+    "firstAidConsiderations": [
+      "Blisters are #1 trail injury on AT - prioritize blister treatment",
+      "Most shelters have water for wound cleaning",
+      "Minimal pharmaceuticals - most section hikers can resupply",
+      "Adventure Medical Kits already optimized for AT use",
+      "Consider decanting larger kits to reduce weight"
+    ],
+    "safetyConsiderations": [
+      "Deuce #2 trowel is LNT essential - no exceptions",
+      "Emergency Bivvy is cheap insurance ($20) against hypothermia",
+      "Weather exposure in exposed ridges (Whites, Smokies) makes emergency gear critical",
+      "Many AT deaths are from exposure - respect the emergency bivvy weight",
+      "Standard Emergency Bivvy (3.8oz) often sufficient; XL rarely needed for solo hiker"
+    ],
+    "toiletryConsiderations": [
+      "2oz Dr. Bronner's lasts entire thru-hike when concentrated",
+      "Hand sanitizer critical for food prep hygiene",
+      "Toothpaste: one travel tube covers full hike",
+      "Biodegradable products essential for LNT on crowded AT",
+      "Decant larger sizes into small containers"
+    ]
+  },
+  "weightComparison": {
+    "heavier": {
+      "headlamp": "Ledlenser NEO5R (3.7oz) vs Nitecore NU25 MCT UL (1.65oz) = +2.05oz penalty",
+      "powerBank": "Anker Nano 10000 (7.58oz) vs Goal Zero Flip 24 (4.6oz) = +2.98oz penalty",
+      "combined": "+5.03oz = 142g more per day for 2,190 miles = very significant"
+    },
+    "savings": "Switching budget gear to mid-tier optimal gear saves 0-2oz while improving durability and features"
+  },
+  "sources": [
+    "https://www.petzl.com/US/en/Sport/Headlamps/TIKKINA",
+    "https://www.rei.com/product/203909/petzl-tikkina-headlamp",
+    "https://www.outdoorgearlab.com/reviews/camping-and-hiking/headlamp/petzl-tikkina",
+    "https://blackdiamondequipment.com/products/spot-400-headlamp",
+    "https://www.rei.com/product/117627/black-diamond-spot-headlamp",
+    "https://andrewskurka.com/black-diamond-spot-headlamp-review/",
+    "https://flashlight.nitecore.com/product/nu25ul",
+    "https://www.amazon.com/Nitecore-NU25-MCT-Rechargeble-Temperatures/dp/B0DY2SW4CH",
+    "https://dutchwaregear.com/product/nitecore-nu25/",
+    "https://www.petzl.com/US/en/Sport/Headlamps/ACTIK-CORE",
+    "https://www.rei.com/product/163701/petzl-actik-core-headlamp",
+    "https://blackdiamondequipment.com/products/sprint-225-headlamp",
+    "https://www.rei.com/product/162945/black-diamond-sprint-225-headlamp",
+    "https://andrewskurka.com/review-black-diamond-sprint-225-headlamp/",
+    "https://www.petzl.com/US/en/Sport/Headlamps/SWIFT-RL",
+    "https://www.rei.com/product/232321/petzl-swift-rl-headlamp",
+    "https://ledlenser.com/en/product/headlamp-neo5r-502757/",
+    "https://www.ledlenserusa.com/products/neo5r",
+    "https://www.rei.com/product/214783/ledlenser-neo5r-running-headlamp",
+    "https://www.anker.com/products/a1229",
+    "https://www.amazon.com/Anker-Travel-Ready-Technology-High-Speed-Output/dp/B0D5CLSMFB",
+    "https://goalzero.com/products/flip-24-power-bank",
+    "https://www.rei.com/product/155545/goal-zero-flip-24-power-bank",
+    "https://www.cleverhiker.com/backpacking/goal-zero-flip-24-review/",
+    "https://charger.nitecore.com/product/nb10000gen3",
+    "https://nitecorestore.com/products/nitecore-nb10000-gen-3-ultra-slim-usb-c-power-bank",
+    "https://www.litesmith.com/nitecore-nb10000-gen3-ultralight-power-bank/",
+    "https://www.hypershop.com/products/hyperjuice-245w-usb-c-battery-pack",
+    "https://www.amazon.com/HyperJuice-Battery-MacBook-Charger-Portable/dp/B0BBSFJKV6",
+    "https://www.anker.com/products/a1289",
+    "https://www.amazon.com/Anker-PowerCore-Portable-Charger-Compatible/dp/B09VPHVT2Z",
+    "https://adventuremedicalkits.com/products/ultralight-watertight-medical-kit-5",
+    "https://adventuremedicalkits.com/collections/ultralight-watertight-series-medical-kits",
+    "https://www.rei.com/product/247862/adventure-medical-kits-ultralightwatertight-5-medical-kit",
+    "https://thetentlab.com/Deuce/DeuceofSpadespage.html",
+    "https://www.rei.com/product/131611/thetentlab-the-deuce-2-ul-backcountry-trowel",
+    "https://www.surviveoutdoorslonger.com/collections/emergency-survival-bivvies",
+    "https://www.rei.com/product/199053/sol-emergency-bivvy-with-rescue-whistle-and-tinder-cord",
+    "https://www.amazon.com/Survive-Outdoors-Longer-Emergency-Whistle/dp/B09ZGWZXRP"
+  ]
+}

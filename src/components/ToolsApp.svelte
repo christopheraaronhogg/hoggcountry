@@ -536,13 +536,13 @@
     </div>
   </div>
 
-  <!-- Quick Log FAB (Trail Mode Only) -->
-  {#if mode === 'trail'}
+  <!-- Quick Log FAB (Trail Mode Only) - Hidden for now, revisit later -->
+  <!-- {#if mode === 'trail'}
     <button class="quick-log-fab" onclick={() => showQuickLog = true} transition:fade>
       <span class="fab-icon">📝</span>
       <span class="fab-label">Log Day</span>
     </button>
-  {/if}
+  {/if} -->
 
   <!-- Quick Log Modal -->
   <QuickLog
