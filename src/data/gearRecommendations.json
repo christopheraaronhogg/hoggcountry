@@ -537,7 +537,7 @@
       "name": "Z Lite Sol",
       "brand": "Therm-a-Rest",
       "category": "sleepPad",
-      "price": 50,
+      "price": 58,
       "weight": 14,
       "tier": "budget",
       "season": "3-season",
@@ -547,7 +547,7 @@
       "why": "Indestructible foam pad. Can't pop, always works. R-value 2.0 good for summer AT hiking.",
       "pros": ["Cannot puncture", "Always ready to use", "Doubles as sit pad"],
       "cons": ["Bulky (can't compress)", "R-value 2.0 only", "Thin comfort"],
-      "link": "https://www.thermarest.com/sleeping-pads/trek-and-travel/z-lite-sol-sleeping-pad"
+      "link": "https://www.amazon.com/Therm-Rest-Ultralight-Backpacking-Mattress/dp/B005I6R0WC"
     },
     {
       "id": "pad-klymit-static-v",

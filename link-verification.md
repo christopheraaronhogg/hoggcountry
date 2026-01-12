@@ -90,8 +90,8 @@ Report format: BROKEN | Product Name | Correct URL
 
 ## 🟦 Sleeping Pad
 
-- [ ] **Therm-a-Rest Z Lite Sol** - $50
-  Link: https://www.thermarest.com/sleeping-pads/trek-and-travel/z-lite-sol-sleeping-pad
+- [x] **Therm-a-Rest Z Lite Sol** - $58 ✅ PRICE & LINK FIXED
+  Link: https://www.amazon.com/Therm-Rest-Ultralight-Backpacking-Mattress/dp/B005I6R0WC
 
 - [ ] **Klymit Static V** - $60
   Link: https://klymit.com/products/static-v-sleeping-pad
