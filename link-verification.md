@@ -138,8 +138,8 @@ Report format: BROKEN | Product Name | Correct URL
 
 ## 👟 Footwear
 
-- [ ] **Ozark Trail Lightweight Hiking Shoe** - $35
-  Link: https://www.walmart.com/ip/Ozark-Trail-Men-s-Lightweight-Hiking-Shoes/3547829326
+- [x] **Ozark Trail Lightweight Hiking Shoe** - $40 ✅ PRICE & LINK FIXED
+  Link: https://www.walmart.com/ip/Ozark-Trail-Men-s-Lightweight-Hiking-Shoes/1276636208
 
 - [ ] **Altra Lone Peak 8** - $140
   Link: https://www.altrarunning.com/shop/mens-shoes-trail/mens-lone-peak-8-al0a85nb

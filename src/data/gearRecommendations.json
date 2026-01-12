@@ -778,17 +778,17 @@
       "name": "Lightweight Hiking Shoe",
       "brand": "Ozark Trail",
       "category": "footwear",
-      "price": 35,
+      "price": 40,
       "weight": 24,
       "tier": "budget",
       "season": "both",
       "valueScore": 8,
       "weightScore": 5,
       "durabilityScore": 5,
-      "why": "Budget trail shoe option. $35 at any Walmart nationwide. Waterproof, EVA midsole. Won't last 500 miles but perfect for section hikes or emergency replacement.",
-      "pros": ["Under $40 anywhere", "Waterproof", "Decent cushioning"],
+      "why": "Budget trail shoe option. $40 at any Walmart nationwide. Waterproof, EVA midsole. Won't last 500 miles but perfect for section hikes or emergency replacement.",
+      "pros": ["$40 at any Walmart", "Waterproof", "Decent cushioning"],
       "cons": ["300-mile lifespan", "Limited support", "Heavy at 24oz"],
-      "link": "https://www.walmart.com/ip/Ozark-Trail-Men-s-Lightweight-Hiking-Shoes/3547829326"
+      "link": "https://www.walmart.com/ip/Ozark-Trail-Men-s-Lightweight-Hiking-Shoes/1276636208"
     },
     {
       "id": "shoe-altra-lonepeak",
