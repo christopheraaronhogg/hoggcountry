@@ -971,7 +971,7 @@
       "name": "Aquamira Drops",
       "brand": "Aquamira",
       "category": "water",
-      "price": 15,
+      "price": 25,
       "weight": 2,
       "tier": "budget",
       "season": "both",
@@ -981,7 +981,7 @@
       "why": "BACKUP treatment only - not recommended as sole system. 30-minute wait means carrying more water and planning ahead. Essential backup when your filter breaks or freezes.",
       "pros": ["Can't break or clog", "Kills viruses (filters don't)", "Perfect backup at 2oz"],
       "cons": ["30-min wait = impractical as primary", "Chemical taste", "Must carry untreated water while waiting"],
-      "link": "https://www.aquamira.com/product/aquamira-water-treatment-drops",
+      "link": "https://aquamira.com/products/aquamira-water-treatment-2-oz-glass-bottles",
       "isPrimary": false,
       "treatmentType": "chemical"
     },

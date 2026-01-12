@@ -175,8 +175,8 @@ Report format: BROKEN | Product Name | Correct URL
 - [ ] **Katadyn BeFree 1L** - $45
   Link: https://www.katadyn.com/us/us/13860-8019639-katadyn-befree-1L_usa
 
-- [ ] **Aquamira Aquamira Drops** - $15
-  Link: https://www.aquamira.com/product/aquamira-water-treatment-drops
+- [x] **Aquamira Aquamira Drops** - $25 ✅ PRICE & LINK FIXED
+  Link: https://aquamira.com/products/aquamira-water-treatment-2-oz-glass-bottles
 
 - [ ] **Platypus QuickDraw Microfilter** - $40
   Link: https://www.platy.com/quickdraw-microfilter-system/11462.html
