@@ -10,20 +10,22 @@ import { GuideScene } from './scenes/GuideScene';
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game-container',
-  width: 800,
-  height: 600,
+  width: window.innerWidth,
+  height: window.innerHeight,
   pixelArt: true,
   backgroundColor: '#1a1a1a',
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: '100%',
+    height: '100%',
     min: {
-      width: 400,
-      height: 300
+      width: 320,
+      height: 480
     },
     max: {
-      width: 1600,
-      height: 1200
+      width: 2560,
+      height: 1440
     }
   },
   scene: [BootScene, MenuScene, GameScene, UIScene, InventoryScene, TownScene, GuideScene],

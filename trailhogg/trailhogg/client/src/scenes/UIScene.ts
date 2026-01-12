@@ -36,12 +36,15 @@ export class UIScene extends Phaser.Scene {
     this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS ||
                     this.sys.game.device.os.iPad || this.sys.game.device.os.iPhone ||
                     ('ontouchstart' in window) || width < 768;
-    
+
     // Create UI panels
     this.createStatsPanel();
     this.createControlsPanel();
     this.createEventLog();
     this.createMoodleIcons();
+
+    // Handle resize events
+    this.scale.on('resize', this.onResize, this);
     
     // Listen for state updates from GameScene
     const gameScene = this.scene.get('GameScene');
@@ -411,15 +414,66 @@ export class UIScene extends Phaser.Scene {
       this.eventTexts[i].setText(this.eventTexts[i - 1].text);
       this.eventTexts[i].setColor(this.eventTexts[i - 1].style.color as string);
     }
-    
+
     // Add new event at top
     let color = '#aaaaaa';
     if (event.type === 'success') color = '#66ff66';
     else if (event.type === 'warning') color = '#ffaa66';
     else if (event.type === 'danger' || event.type === 'lost') color = '#ff6666';
     else if (event.type === 'milestone') color = '#66ffff';
-    
+
     this.eventTexts[0].setText(`> ${event.message}`);
     this.eventTexts[0].setColor(color);
+  }
+
+  onResize(gameSize: Phaser.Structs.Size) {
+    const width = gameSize.width;
+    const height = gameSize.height;
+
+    // Update mobile detection on resize
+    const wasMobile = this.isMobile;
+    this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS ||
+                    this.sys.game.device.os.iPad || this.sys.game.device.os.iPhone ||
+                    ('ontouchstart' in window) || width < 768;
+
+    // If mobile state changed, recreate panels
+    if (wasMobile !== this.isMobile) {
+      this.statsPanel.destroy();
+      this.controlsPanel.destroy();
+      this.eventLog.destroy();
+      this.moodleIcons.destroy();
+      this.eventTexts = [];
+
+      this.createStatsPanel();
+      this.createControlsPanel();
+      this.createEventLog();
+      this.createMoodleIcons();
+      return;
+    }
+
+    // Reposition existing panels
+    // Stats panel stays at 0,0
+
+    // Controls panel (bottom-right on desktop, hidden on mobile)
+    if (!this.isMobile) {
+      this.controlsPanel.setPosition(width - 200, height - 140);
+    }
+
+    // Event log (bottom, full width)
+    const logHeight = this.isMobile ? 60 : 80;
+    this.eventLog.setPosition(0, height - logHeight);
+
+    // Moodle icons (top-right)
+    this.moodleIcons.setPosition(width - 105, 5);
+
+    // Lost indicator
+    if (this.lostIndicator) {
+      this.lostIndicator.setPosition(width / 2, 60);
+    }
+
+    // Save indicator
+    if (this.saveIndicator) {
+      this.saveIndicator.setPosition(width - 10, 10);
+    }
   }
 }

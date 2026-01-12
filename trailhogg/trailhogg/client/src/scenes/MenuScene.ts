@@ -47,6 +47,15 @@ export class MenuScene extends Phaser.Scene {
   async create() {
     const { width, height } = this.cameras.main;
 
+    // Check for reset parameter in URL (?reset=true)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('reset') === 'true') {
+      await gameStorage.deleteSave('autosave');
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+      console.log('Save data reset via URL parameter');
+    }
+
     // Detect mobile
     this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS ||
                     this.sys.game.device.os.iPad || this.sys.game.device.os.iPhone ||
@@ -68,7 +77,35 @@ export class MenuScene extends Phaser.Scene {
     // Container for all menu elements (makes view switching easy)
     this.menuContainer = this.add.container(0, 0);
 
+    // Handle resize events
+    this.scale.on('resize', this.onResize, this);
+
     this.showMainMenu();
+  }
+
+  private onResize(gameSize: Phaser.Structs.Size) {
+    const width = gameSize.width;
+
+    // Update mobile detection
+    this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS ||
+                    this.sys.game.device.os.iPad || this.sys.game.device.os.iPhone ||
+                    ('ontouchstart' in window) || width < 768;
+
+    // Recreate current view with new dimensions
+    switch (this.currentView) {
+      case 'main':
+        this.showMainMenu();
+        break;
+      case 'multiplayer':
+        this.showMultiplayerMenu();
+        break;
+      case 'host':
+        // Don't recreate host menu to avoid losing room code state
+        break;
+      case 'join':
+        // Don't recreate join menu to avoid losing room code input
+        break;
+    }
   }
 
   private clearMenu() {
@@ -108,7 +145,7 @@ export class MenuScene extends Phaser.Scene {
 
     if (this.hasSave) {
       const continueY = this.isMobile ? 90 : 130;
-      offsetY = this.isMobile ? 50 : 60;
+      offsetY = this.isMobile ? 70 : 80;
 
       const continueButton = this.add.rectangle(width / 2, continueY, buttonWidth, buttonHeight, 0x4a7d5a);
       const continueText = this.add.text(width / 2, continueY - 5, 'CONTINUE', {
@@ -128,6 +165,27 @@ export class MenuScene extends Phaser.Scene {
       continueButton.on('pointerdown', () => this.continueGame());
 
       this.menuContainer.add([continueButton, continueText, saveInfoText]);
+
+      // Delete Save button (small, below continue)
+      const deleteY = continueY + 45;
+      const deleteButton = this.add.rectangle(width / 2, deleteY, 120, 25, 0x442222);
+      const deleteText = this.add.text(width / 2, deleteY, '🗑️ Delete Save', {
+        font: '11px Courier',
+        color: '#aa6666'
+      }).setOrigin(0.5);
+
+      deleteButton.setInteractive();
+      deleteButton.on('pointerover', () => {
+        deleteButton.setFillStyle(0x663333);
+        deleteText.setColor('#ff8888');
+      });
+      deleteButton.on('pointerout', () => {
+        deleteButton.setFillStyle(0x442222);
+        deleteText.setColor('#aa6666');
+      });
+      deleteButton.on('pointerdown', () => this.deleteSave());
+
+      this.menuContainer.add([deleteButton, deleteText]);
     }
 
     // Name input area
@@ -640,6 +698,16 @@ export class MenuScene extends Phaser.Scene {
       multiplayer: false
     });
     this.scene.start('UIScene');
+  }
+
+  async deleteSave() {
+    if (confirm('Delete your save? This cannot be undone!\n\nYour hiker will be gone forever.')) {
+      await gameStorage.deleteSave('autosave');
+      this.hasSave = false;
+      this.saveInfo = {};
+      // Refresh the menu
+      this.showMainMenu();
+    }
   }
 
   startGame(multiplayer: boolean) {

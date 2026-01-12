@@ -319,6 +319,14 @@ export class GuideScene extends Phaser.Scene {
     // Keyboard controls
     this.input.keyboard?.on('keydown-ESC', () => this.closeGuide());
     this.input.keyboard?.on('keydown-G', () => this.closeGuide());
+
+    // Handle resize events
+    this.scale.on('resize', this.onResize, this);
+  }
+
+  onResize() {
+    // Restart scene with current state to rebuild layout
+    this.scene.restart({ currentMile: this.currentMile });
   }
 
   switchTab(tab: string) {

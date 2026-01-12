@@ -76,8 +76,20 @@ export class TownScene extends Phaser.Scene {
       color: '#4aff4a'
     }).setOrigin(1, 0.5);
 
+    // Handle resize events
+    this.scale.on('resize', this.onResize, this);
+
     // Show main menu
     this.showMainMenu();
+  }
+
+  onResize(gameSize: Phaser.Structs.Size) {
+    // Update mobile detection
+    this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS ||
+                    ('ontouchstart' in window) || gameSize.width < 768;
+
+    // Recreate the scene - simplest approach for modal scene
+    this.scene.restart({ town: this.townData, hiker: this.hikerData });
   }
 
   showMainMenu() {

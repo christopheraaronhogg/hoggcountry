@@ -116,6 +116,14 @@ export class GameScene extends Phaser.Scene {
   private joystickVector: { x: number; y: number } = { x: 0, y: 0 };
   private isMobile: boolean = false;
 
+  // Mobile buttons (stored for resize handling)
+  private mobileButtons: {
+    hike?: { button: Phaser.GameObjects.Arc; text: Phaser.GameObjects.Text };
+    eat?: { button: Phaser.GameObjects.Arc; text: Phaser.GameObjects.Text };
+    drink?: { button: Phaser.GameObjects.Arc; text: Phaser.GameObjects.Text };
+    guide?: { button: Phaser.GameObjects.Arc; text: Phaser.GameObjects.Text };
+  } = {};
+
   // Game state
   private isConnected: boolean = false;
   private gameState: any = null;
@@ -317,6 +325,9 @@ export class GameScene extends Phaser.Scene {
     if (this.isMobile) {
       this.setupMobileControls();
     }
+
+    // Handle resize events for responsive layout
+    this.scale.on('resize', this.onResize, this);
 
     // Listen for town exit events
     this.events.on('town-exit', (data: { hiker: any }) => {
@@ -1682,7 +1693,7 @@ export class GameScene extends Phaser.Scene {
       speed *= speedMod;
       const distance = speed / 60; // miles per minute
 
-      this.hikerData.mile = Math.min(30.7, this.hikerData.mile + distance);
+      this.hikerData.mile = Math.min(2197.9, this.hikerData.mile + distance);
       this.hikerData.currentDayMiles += distance;
       this.hikerData.totalMilesHiked += distance;
 
@@ -1711,12 +1722,12 @@ export class GameScene extends Phaser.Scene {
       this.hikerData.skills.trailLegs = Math.min(100, 
         this.hikerData.skills.trailLegs + 0.01);
       
-      // Check for end
-      if (this.hikerData.mile >= 30.7) {
+      // Check for end - Katahdin summit!
+      if (this.hikerData.mile >= 2197.9) {
         this.hikerData.isHiking = false;
         this.events.emit('game-event', {
           type: 'milestone',
-          message: 'You reached Neels Gap! MVP Complete!'
+          message: 'YOU SUMMITED KATAHDIN! Thru-hike complete!'
         });
       }
     }
@@ -2093,9 +2104,14 @@ export class GameScene extends Phaser.Scene {
     });
 
     // Mobile action buttons (right side)
-    const buttonSize = 50;
-    const buttonX = width - 70;
-    const buttonSpacing = 60;
+    this.createMobileActionButtons();
+  }
+
+  createMobileActionButtons() {
+    const { width, height } = this.cameras.main;
+    const buttonSize = Math.min(50, width * 0.1);
+    const buttonX = width - Math.max(70, width * 0.1);
+    const buttonSpacing = Math.min(60, height * 0.12);
 
     // Hike button (SPACE equivalent)
     const hikeButton = this.add.circle(buttonX, height - buttonSpacing * 3, buttonSize / 2, 0x2e5339, 0.7);
@@ -2103,7 +2119,7 @@ export class GameScene extends Phaser.Scene {
     hikeButton.setScrollFactor(0);
     hikeButton.setInteractive();
     const hikeText = this.add.text(buttonX, height - buttonSpacing * 3, '▶', {
-      font: '24px Arial',
+      font: `${Math.max(18, buttonSize * 0.48)}px Arial`,
       color: '#ffffff'
     }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
 
@@ -2115,13 +2131,15 @@ export class GameScene extends Phaser.Scene {
       hikeButton.setFillStyle(0x2e5339, 0.7);
     });
 
+    this.mobileButtons.hike = { button: hikeButton, text: hikeText };
+
     // Eat button (E equivalent)
     const eatButton = this.add.circle(buttonX, height - buttonSpacing * 2, buttonSize / 2, 0x4a7d5a, 0.7);
     eatButton.setDepth(1000);
     eatButton.setScrollFactor(0);
     eatButton.setInteractive();
     const eatText = this.add.text(buttonX, height - buttonSpacing * 2, '🍽', {
-      font: '20px Arial',
+      font: `${Math.max(16, buttonSize * 0.4)}px Arial`,
       color: '#ffffff'
     }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
 
@@ -2133,13 +2151,15 @@ export class GameScene extends Phaser.Scene {
       eatButton.setFillStyle(0x4a7d5a, 0.7);
     });
 
+    this.mobileButtons.eat = { button: eatButton, text: eatText };
+
     // Drink button (Q equivalent)
     const drinkButton = this.add.circle(buttonX, height - buttonSpacing, buttonSize / 2, 0x4a7d5a, 0.7);
     drinkButton.setDepth(1000);
     drinkButton.setScrollFactor(0);
     drinkButton.setInteractive();
     const drinkText = this.add.text(buttonX, height - buttonSpacing, '💧', {
-      font: '20px Arial',
+      font: `${Math.max(16, buttonSize * 0.4)}px Arial`,
       color: '#ffffff'
     }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
 
@@ -2151,13 +2171,16 @@ export class GameScene extends Phaser.Scene {
       drinkButton.setFillStyle(0x4a7d5a, 0.7);
     });
 
-    // Guide button (G equivalent) - top left corner
-    const guideButton = this.add.circle(50, 50, buttonSize / 2, 0x557799, 0.8);
+    this.mobileButtons.drink = { button: drinkButton, text: drinkText };
+
+    // Guide button (G equivalent) - top left corner, offset for stats panel on desktop
+    const guideX = this.isMobile ? 50 : 220;
+    const guideButton = this.add.circle(guideX, 50, buttonSize / 2, 0x557799, 0.8);
     guideButton.setDepth(1000);
     guideButton.setScrollFactor(0);
     guideButton.setInteractive();
-    const guideText = this.add.text(50, 50, '📖', {
-      font: '22px Arial',
+    const guideText = this.add.text(guideX, 50, '📖', {
+      font: `${Math.max(18, buttonSize * 0.44)}px Arial`,
       color: '#ffffff'
     }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
 
@@ -2168,6 +2191,65 @@ export class GameScene extends Phaser.Scene {
     guideButton.on('pointerup', () => {
       guideButton.setFillStyle(0x557799, 0.8);
     });
+
+    this.mobileButtons.guide = { button: guideButton, text: guideText };
+  }
+
+  onResize(gameSize: Phaser.Structs.Size) {
+    const width = gameSize.width;
+    const height = gameSize.height;
+
+    // Update joystick position if mobile
+    if (this.isMobile && this.joystickBase) {
+      const joystickSize = Math.min(80, width * 0.15);
+      const joystickX = joystickSize + 20;
+      const joystickY = height - joystickSize - 20;
+
+      this.joystickBase.setPosition(joystickX, joystickY);
+      this.joystickBase.setRadius(joystickSize / 2);
+      this.joystickThumb.setPosition(joystickX, joystickY);
+      this.joystickThumb.setRadius(joystickSize / 4);
+    }
+
+    // Update mobile action buttons position
+    if (this.isMobile) {
+      const buttonSize = Math.min(50, width * 0.1);
+      const buttonX = width - Math.max(70, width * 0.1);
+      const buttonSpacing = Math.min(60, height * 0.12);
+
+      if (this.mobileButtons.hike) {
+        this.mobileButtons.hike.button.setPosition(buttonX, height - buttonSpacing * 3);
+        this.mobileButtons.hike.button.setRadius(buttonSize / 2);
+        this.mobileButtons.hike.text.setPosition(buttonX, height - buttonSpacing * 3);
+      }
+
+      if (this.mobileButtons.eat) {
+        this.mobileButtons.eat.button.setPosition(buttonX, height - buttonSpacing * 2);
+        this.mobileButtons.eat.button.setRadius(buttonSize / 2);
+        this.mobileButtons.eat.text.setPosition(buttonX, height - buttonSpacing * 2);
+      }
+
+      if (this.mobileButtons.drink) {
+        this.mobileButtons.drink.button.setPosition(buttonX, height - buttonSpacing);
+        this.mobileButtons.drink.button.setRadius(buttonSize / 2);
+        this.mobileButtons.drink.text.setPosition(buttonX, height - buttonSpacing);
+      }
+
+      if (this.mobileButtons.guide) {
+        const guideX = this.isMobile ? 50 : 220;
+        this.mobileButtons.guide.button.setPosition(guideX, 50);
+        this.mobileButtons.guide.button.setRadius(buttonSize / 2);
+        this.mobileButtons.guide.text.setPosition(guideX, 50);
+      }
+    }
+
+    // Update game speed text position
+    if (this.gameSpeedText) {
+      this.gameSpeedText.setPosition(width / 2, 30);
+    }
+
+    // Emit resize event for UIScene
+    this.events.emit('game-resize', { width, height });
   }
 
   toggleHiking() {

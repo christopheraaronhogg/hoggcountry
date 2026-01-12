@@ -117,6 +117,14 @@ export class InventoryScene extends Phaser.Scene {
     // Keyboard close
     this.input.keyboard?.on('keydown-I', () => this.closeInventory());
     this.input.keyboard?.on('keydown-ESC', () => this.closeInventory());
+
+    // Handle resize events
+    this.scale.on('resize', this.onResize, this);
+  }
+
+  onResize() {
+    // Restart scene with current inventory to rebuild layout
+    this.scene.restart({ inventory: this.inventoryData });
   }
 
   buildContent(contentWidth: number) {
