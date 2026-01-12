@@ -92,7 +92,10 @@
     const tierDistance = Math.abs(itemTierIdx - targetTierIdx);
     const tierBonus = tierDistance === 0 ? 1.0 : tierDistance === 1 ? 0.85 : 0.6;
 
-    return baseScore * tierBonus;
+    // Thru-hike viability penalty - items marked as not viable get heavily penalized
+    const viabilityPenalty = item.thruHikeViable === false ? 0.3 : 1.0;
+
+    return baseScore * tierBonus * viabilityPenalty;
   }
 
   // Get all items for a category (for browsing alternatives)
@@ -448,6 +451,12 @@
 
           {#if expandedCategory === catId}
             <div class="card-details" transition:slide={{ duration: 200 }}>
+              {#if item.thruHikeViable === false}
+                <div class="viability-warning">
+                  <span class="warning-icon">⚠️</span>
+                  <span>Not recommended for full thru-hikes. See alternatives.</span>
+                </div>
+              {/if}
               <p class="item-why">{item.why}</p>
 
               <div class="item-scores">
@@ -1101,6 +1110,24 @@
     padding: 0 1rem 1rem;
     border-top: 1px solid var(--border);
     margin-top: 0;
+  }
+
+  .viability-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+    padding: 0.6rem 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #92400e;
+  }
+
+  .warning-icon {
+    font-size: 1.1rem;
   }
 
   .item-why {
