@@ -16,6 +16,10 @@
   let expandedCategory = $state(null);
   let showMethodology = $state(false);
   let activeTab = $state('loadout');
+  let selectingCategory = $state(null); // Category being browsed for alternatives
+
+  // User overrides - manually selected items by category
+  let userOverrides = $state({});
 
   // Load saved preferences
   onMount(() => {
@@ -28,6 +32,7 @@
         if (data.mode) mode = data.mode;
         if (data.season) season = data.season;
         if (data.shelterPref) shelterPref = data.shelterPref;
+        if (data.userOverrides) userOverrides = data.userOverrides;
       } catch (e) {}
     }
   });
@@ -36,7 +41,7 @@
   $effect(() => {
     if (mounted) {
       localStorage.setItem('at-gear-budget', JSON.stringify({
-        budget, mode, season, shelterPref
+        budget, mode, season, shelterPref, userOverrides
       }));
     }
   });
@@ -49,19 +54,21 @@
     return 'luxury';
   }
 
-  // Category budget allocation (11 categories = 100%)
+  // Category budget allocation (13 categories = 100%)
   const CATEGORY_BUDGETS = {
     backpack: 0.14,
-    shelter: 0.22,
-    sleepBag: 0.17,
+    shelter: 0.20,
+    sleepBag: 0.15,
     sleepPad: 0.06,
-    insulation: 0.08,
+    insulation: 0.07,
     rainGear: 0.05,
     footwear: 0.08,
     kitchen: 0.06,
     water: 0.04,
-    electronics: 0.07,
-    safety: 0.03
+    electronics: 0.06,
+    safety: 0.03,
+    trekkingPoles: 0.04,
+    socks: 0.02
   };
 
   // Score item based on mode
@@ -88,6 +95,76 @@
     return baseScore * tierBonus;
   }
 
+  // Get all items for a category (for browsing alternatives)
+  function getCategoryItems(category) {
+    return gearData.items
+      .filter(item => item.category === category)
+      .sort((a, b) => a.price - b.price);
+  }
+
+  // Select an item manually (override recommendation)
+  function selectItem(category, itemId) {
+    userOverrides = { ...userOverrides, [category]: itemId };
+    selectingCategory = null;
+  }
+
+  // Clear manual override for category
+  function clearOverride(category) {
+    const newOverrides = { ...userOverrides };
+    delete newOverrides[category];
+    userOverrides = newOverrides;
+  }
+
+  // Get retailer from URL for buy buttons
+  function getRetailer(url) {
+    if (!url) return { name: 'View Product', icon: '🔗' };
+    if (url.includes('amazon.com')) return { name: 'Amazon', icon: '📦' };
+    if (url.includes('walmart.com')) return { name: 'Walmart', icon: '🏪' };
+    if (url.includes('rei.com')) return { name: 'REI', icon: '⛰️' };
+    if (url.includes('backcountry.com')) return { name: 'Backcountry', icon: '🏔️' };
+    if (url.includes('zpacks.com')) return { name: 'Zpacks', icon: '🎒' };
+    if (url.includes('gossamergear.com')) return { name: 'Gossamer', icon: '🪶' };
+    if (url.includes('hyperlitemountaingear.com')) return { name: 'HMG', icon: '💎' };
+    if (url.includes('enlightenedequipment.com')) return { name: 'EE', icon: '🛏️' };
+    if (url.includes('katabaticgear.com')) return { name: 'Katabatic', icon: '🌙' };
+    if (url.includes('hammockgear.com')) return { name: 'HG', icon: '🌲' };
+    if (url.includes('ugqoutdoor.com')) return { name: 'UGQ', icon: '🏕️' };
+    if (url.includes('durstongear.com')) return { name: 'Durston', icon: '⛺' };
+    if (url.includes('osprey.com')) return { name: 'Osprey', icon: '🦅' };
+    if (url.includes('bigagnes.com')) return { name: 'Big Agnes', icon: '🏔️' };
+    if (url.includes('granitegear.com')) return { name: 'Granite Gear', icon: '🪨' };
+    if (url.includes('thermarest.com')) return { name: 'Therm-a-Rest', icon: '🔥' };
+    if (url.includes('nemoequipment.com')) return { name: 'Nemo', icon: '🐟' };
+    if (url.includes('kelty.com')) return { name: 'Kelty', icon: '🏕️' };
+    if (url.includes('patagonia.com')) return { name: 'Patagonia', icon: '🧥' };
+    if (url.includes('arcteryx.com')) return { name: "Arc'teryx", icon: '🏔️' };
+    if (url.includes('montbell.')) return { name: 'Montbell', icon: '🗾' };
+    if (url.includes('outdoorresearch.com')) return { name: 'OR', icon: '🔬' };
+    if (url.includes('mountainhardwear.com')) return { name: 'MHW', icon: '⛰️' };
+    if (url.includes('westernmountaineering.com')) return { name: 'WM', icon: '🏔️' };
+    if (url.includes('decathlon.com')) return { name: 'Decathlon', icon: '🏃' };
+    if (url.includes('altrarunning.com')) return { name: 'Altra', icon: '👟' };
+    if (url.includes('brooksrunning.com')) return { name: 'Brooks', icon: '🏃' };
+    if (url.includes('hoka.com')) return { name: 'HOKA', icon: '👟' };
+    if (url.includes('sawyer.com')) return { name: 'Sawyer', icon: '💧' };
+    if (url.includes('katadyn.com')) return { name: 'Katadyn', icon: '💧' };
+    if (url.includes('msrgear.com')) return { name: 'MSR', icon: '⛺' };
+    if (url.includes('sotooutdoors.com')) return { name: 'Soto', icon: '🔥' };
+    if (url.includes('nitecorestore.com')) return { name: 'Nitecore', icon: '🔦' };
+    if (url.includes('petzl.com')) return { name: 'Petzl', icon: '🔦' };
+    if (url.includes('anker.com')) return { name: 'Anker', icon: '🔋' };
+    if (url.includes('froggtoggs.com')) return { name: 'Frogg Toggs', icon: '🐸' };
+    if (url.includes('ula-equipment.com')) return { name: 'ULA', icon: '🎒' };
+    if (url.includes('cumulus.equipment')) return { name: 'Cumulus', icon: '☁️' };
+    if (url.includes('klymit.com')) return { name: 'Klymit', icon: '🛏️' };
+    if (url.includes('toaksoutdoor.com')) return { name: 'TOAKS', icon: '🍳' };
+    if (url.includes('adventuremedicalkits.com')) return { name: 'AMK', icon: '🩹' };
+    if (url.includes('thetentlab.com')) return { name: 'TentLab', icon: '🏕️' };
+    if (url.includes('surviveoutdoorslonger.com')) return { name: 'SOL', icon: '🆘' };
+    if (url.includes('aquamira.com')) return { name: 'Aquamira', icon: '💧' };
+    return { name: 'Buy Direct', icon: '🛒' };
+  }
+
   // Build recommendation
   function buildRecommendation(budget, mode, season, shelterPref) {
     const tier = getBudgetTier(budget);
@@ -96,6 +173,15 @@
 
     // For each category, find best item within budget allocation
     Object.keys(CATEGORY_BUDGETS).forEach(category => {
+      // Check if user has manually selected an item for this category
+      if (userOverrides[category]) {
+        const overrideItem = items.find(i => i.id === userOverrides[category]);
+        if (overrideItem) {
+          selected.push({ ...overrideItem, isOverride: true });
+          return;
+        }
+      }
+
       const categoryBudget = budget * CATEGORY_BUDGETS[category] * 1.3; // 30% flexibility
 
       // Filter candidates
@@ -183,6 +269,15 @@
 
   // Tier info
   let tierInfo = $derived(gearData.tiers[budgetTier]);
+
+  // Alternatives for currently selecting category
+  let categoryAlternatives = $derived.by(() => {
+    if (!selectingCategory) return [];
+    return getCategoryItems(selectingCategory);
+  });
+
+  // Count user overrides
+  let overrideCount = $derived(Object.keys(userOverrides).length);
 </script>
 
 <div class="gear-builder">
@@ -329,12 +424,19 @@
     {#each Object.entries(gearData.categories) as [catId, catInfo]}
       {@const items = itemsByCategory[catId] || []}
       {@const item = items[0]}
+      {@const retailer = item ? getRetailer(item.link) : null}
+      {@const isOverride = item?.isOverride}
       {#if item}
-        <div class="category-card" class:expanded={expandedCategory === catId}>
+        <div class="category-card" class:expanded={expandedCategory === catId} class:override={isOverride}>
           <button class="card-header" onclick={() => toggleCategory(catId)}>
             <div class="card-icon">{catInfo.icon}</div>
             <div class="card-main">
-              <span class="card-category">{catInfo.name}</span>
+              <span class="card-category">
+                {catInfo.name}
+                {#if isOverride}
+                  <span class="override-badge">Custom</span>
+                {/if}
+              </span>
               <span class="card-item">{item.brand} {item.name}</span>
             </div>
             <div class="card-stats">
@@ -391,11 +493,26 @@
                 </div>
               </div>
 
-              {#if item.link}
-                <a href={item.link} target="_blank" rel="noopener noreferrer" class="product-link">
-                  View Product →
-                </a>
-              {/if}
+              <!-- Action buttons -->
+              <div class="card-actions">
+                {#if item.link}
+                  <a href={item.link} target="_blank" rel="noopener noreferrer" class="buy-button">
+                    <span class="buy-icon">{retailer.icon}</span>
+                    <span>Buy at {retailer.name}</span>
+                    <span class="buy-arrow">→</span>
+                  </a>
+                {/if}
+                <button class="change-button" onclick={() => selectingCategory = catId}>
+                  <span>🔄</span>
+                  <span>Change Item</span>
+                </button>
+                {#if isOverride}
+                  <button class="reset-button" onclick={() => clearOverride(catId)}>
+                    <span>↩️</span>
+                    <span>Reset to Recommended</span>
+                  </button>
+                {/if}
+              </div>
             </div>
           {/if}
         </div>
@@ -466,6 +583,65 @@
       <span>Field Guide</span>
     </a>
   </div>
+
+  <!-- Item Selection Modal -->
+  {#if selectingCategory}
+    {@const catInfo = gearData.categories[selectingCategory]}
+    <div class="modal-backdrop" onclick={() => selectingCategory = null}>
+      <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+        <header class="modal-header">
+          <div class="modal-title">
+            <span class="modal-icon">{catInfo.icon}</span>
+            <div>
+              <h3>Choose {catInfo.name}</h3>
+              <p>Select from {categoryAlternatives.length} options</p>
+            </div>
+          </div>
+          <button class="modal-close" onclick={() => selectingCategory = null}>✕</button>
+        </header>
+
+        <div class="modal-items">
+          {#each categoryAlternatives as alt}
+            {@const altRetailer = getRetailer(alt.link)}
+            {@const isSelected = userOverrides[selectingCategory] === alt.id}
+            {@const isRecommended = recommendation.find(r => r.category === selectingCategory && !r.isOverride)?.id === alt.id}
+            <div
+              class="alt-item"
+              class:selected={isSelected}
+              class:recommended={isRecommended && !isSelected}
+            >
+              <div class="alt-main" onclick={() => selectItem(selectingCategory, alt.id)}>
+                <div class="alt-header">
+                  <span class="alt-brand">{alt.brand}</span>
+                  <span class="alt-name">{alt.name}</span>
+                  {#if isRecommended}
+                    <span class="rec-badge">Recommended</span>
+                  {/if}
+                </div>
+                <div class="alt-stats">
+                  <span class="alt-price">{formatPrice(alt.price)}</span>
+                  <span class="alt-weight">{formatWeight(alt.weight)}</span>
+                  <span class="alt-tier tier-{alt.tier}">{alt.tier}</span>
+                </div>
+                <p class="alt-why">{alt.why}</p>
+                <div class="alt-scores">
+                  <span title="Value Score">💰 {alt.valueScore}</span>
+                  <span title="Weight Score">⚖️ {alt.weightScore}</span>
+                  <span title="Durability Score">🛡️ {alt.durabilityScore}</span>
+                </div>
+              </div>
+              {#if alt.link}
+                <a href={alt.link} target="_blank" rel="noopener noreferrer" class="alt-buy" onclick={(e) => e.stopPropagation()}>
+                  <span>{altRetailer.icon}</span>
+                  <span>{altRetailer.name}</span>
+                </a>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -1020,20 +1196,97 @@
     color: #dc2626;
   }
 
-  .product-link {
+  /* Override badge */
+  .override-badge {
     display: inline-block;
-    padding: 0.5rem 1rem;
-    background: var(--pine);
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    background: #8b5cf6;
     color: #fff;
-    text-decoration: none;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: background 0.15s ease;
+    font-size: 0.6rem;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
-  .product-link:hover {
-    background: var(--ink);
+  .category-card.override {
+    border-color: #8b5cf6;
+    border-width: 2px;
+  }
+
+  /* Card Actions */
+  .card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .buy-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+  }
+
+  .buy-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(22, 163, 74, 0.4);
+  }
+
+  .buy-icon {
+    font-size: 1.1rem;
+  }
+
+  .buy-arrow {
+    margin-left: 0.25rem;
+    transition: transform 0.15s ease;
+  }
+
+  .buy-button:hover .buy-arrow {
+    transform: translateX(3px);
+  }
+
+  .change-button, .reset-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--pine);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .change-button:hover {
+    background: var(--alpine);
+    color: #fff;
+    border-color: var(--alpine);
+  }
+
+  .reset-button {
+    color: #8b5cf6;
+    border-color: #8b5cf640;
+  }
+
+  .reset-button:hover {
+    background: #8b5cf6;
+    color: #fff;
+    border-color: #8b5cf6;
   }
 
   /* Totals Section */
@@ -1207,6 +1460,275 @@
 
     .mode-btn {
       min-width: calc(50% - 0.25rem);
+    }
+  }
+
+  /* Modal Styles */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 1000;
+    animation: fadeIn 0.15s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.2s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--pine) 0%, #3d5a3d 100%);
+  }
+
+  .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #fff;
+  }
+
+  .modal-icon {
+    font-size: 1.75rem;
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-title h3 {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .modal-title p {
+    margin: 0.1rem 0 0;
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+
+  .modal-close {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.25rem;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .modal-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .modal-items {
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .alt-item {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.15s ease;
+  }
+
+  .alt-item:hover {
+    border-color: var(--alpine);
+  }
+
+  .alt-item.selected {
+    border-color: var(--pine);
+    background: rgba(77, 107, 83, 0.1);
+  }
+
+  .alt-item.recommended {
+    border-color: #22c55e;
+  }
+
+  .alt-main {
+    padding: 0.875rem 1rem;
+    cursor: pointer;
+  }
+
+  .alt-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .alt-brand {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .alt-name {
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .rec-badge {
+    margin-left: auto;
+    padding: 0.15rem 0.4rem;
+    background: #22c55e;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .alt-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .alt-price {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pine);
+  }
+
+  .alt-weight {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .alt-tier {
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .alt-tier.tier-budget {
+    background: #f59e0b20;
+    color: #b45309;
+  }
+
+  .alt-tier.tier-mid {
+    background: #3b82f620;
+    color: #1d4ed8;
+  }
+
+  .alt-tier.tier-premium {
+    background: #22c55e20;
+    color: #15803d;
+  }
+
+  .alt-tier.tier-luxury {
+    background: #8b5cf620;
+    color: #6d28d9;
+  }
+
+  .alt-why {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--fg);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .alt-scores {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .alt-buy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background 0.15s ease;
+  }
+
+  .alt-buy:hover {
+    background: linear-gradient(135deg, #15803d, #166534);
+  }
+
+  @media (max-width: 600px) {
+    .modal-content {
+      max-height: 90vh;
+      border-radius: 12px 12px 0 0;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 100%;
+    }
+
+    .modal-backdrop {
+      align-items: flex-end;
+      padding: 0;
+    }
+
+    .card-actions {
+      flex-direction: column;
+    }
+
+    .buy-button, .change-button, .reset-button {
+      justify-content: center;
     }
   }
 </style>
