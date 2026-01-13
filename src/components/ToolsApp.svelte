@@ -1327,39 +1327,17 @@
     }
 
     .tools-nav {
-      display: flex;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      gap: 0.2rem;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.25rem;
       padding: 0.25rem;
       border-radius: 10px;
       margin-bottom: 1.5rem;
       max-width: 100%;
-      position: relative;
-    }
-
-    .tools-nav::-webkit-scrollbar {
-      display: none;
-    }
-
-    /* Visual indicator for scrollable content */
-    .tools-nav::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 60px;
-      background: linear-gradient(to left, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.7) 40%, transparent 100%);
-      pointer-events: none;
-      border-radius: 0 10px 10px 0;
-      z-index: 10;
     }
 
     .nav-tab {
-      flex: 0 0 auto;
-      min-width: 56px;
+      min-width: 0;
       padding: 0.5rem 0.25rem;
     }
 
@@ -1405,8 +1383,8 @@
       font-size: 1.1rem;
     }
 
-    .nav-tab {
-      min-width: 50px;
+    .tools-nav {
+      grid-template-columns: repeat(4, 1fr);
     }
 
     .tab-name {

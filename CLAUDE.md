@@ -111,6 +111,10 @@ When the user mentions a bug, feature request, or task mid-conversation:
 - `design.md` — Visual design system, colors, typography
 - `content-model.md` — Content schema examples
 
+
+## Current Session Tasks
+- [x] Go with the former solution *(02:00)*
+
 ---
 
 ## TrailHogg Game Roadmap
