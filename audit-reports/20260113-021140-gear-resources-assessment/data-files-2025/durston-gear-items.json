@@ -1,0 +1,165 @@
+{
+  "note": "Add these items to src/data/gearRecommendations.json",
+  "items": [
+    {
+      "id": "durston-xmid-1-gen3",
+      "category": "shelter",
+      "brand": "Durston",
+      "name": "X-Mid 1 Gen 3",
+      "price": 250,
+      "weight": 25,
+      "tier": "mid",
+      "valueScore": 10,
+      "weightScore": 9,
+      "durabilityScore": 9,
+      "why": "The #1 tent on the 2025 AT. Completely redesigned Gen 3 is lighter, more spacious, and more user-friendly than previous generations. Durston Gear became the most popular shelter brand, dethroning Zpacks. Best value-to-performance in the mid-range tier.",
+      "pros": [
+        "#1 most popular tent on 2025 AT (The Trek Survey)",
+        "Excellent ventilation with dual doors and vestibules",
+        "Spacious interior for 1-person use with gear storage",
+        "Well-documented setup with extensive YouTube tutorials",
+        "Strong resale value due to high demand",
+        "Trekking pole setup = no extra poles to carry"
+      ],
+      "cons": [
+        "Requires trekking poles (no freestanding option)",
+        "Setup learning curve for first-time trekking pole tent users",
+        "High demand can lead to stock issues",
+        "Not ideal for above-treeline exposed sites"
+      ],
+      "link": "https://durstongear.com/products/x-mid-1",
+      "season": "3-season",
+      "thruHikeViable": true,
+      "shelterType": "tent",
+      "trekSurveyUsage": 25,
+      "trekSurveyRank": 1,
+      "trekSurveyYear": 2025,
+      "consensusBestValue": false,
+      "communityEndorsement": "#1 tent on the 2025 AT. Durston Gear became the most popular shelter brand, overtaking Zpacks.",
+      "valueRationale": "At $250, delivers performance comparable to $500-700 tents. Gen 3 redesign addressed all previous complaints while reducing weight.",
+      "verifiedLoadouts": [
+        "Recommended in Budget-tier research 2025/2026 mid-range build"
+      ],
+      "sources": [
+        "The Trek 2025 AT Thru-Hiker Survey (279 respondents)",
+        "Budget-tier research 2025/2026",
+        "Adventure Alan Best Cheap Backpacking Gear 2026"
+      ]
+    },
+    {
+      "id": "durston-kakwa-55",
+      "category": "backpack",
+      "brand": "Durston",
+      "name": "Kakwa 55 UltraGrid",
+      "price": 280,
+      "weight": 31,
+      "tier": "mid",
+      "valueScore": 10,
+      "weightScore": 8,
+      "durabilityScore": 9,
+      "why": "Nothing beats its value-to-performance ratio for an ultralight thru-hiking pack. Same best-in-class frame, comfort, and pocket design as the premium Durston Ultra 200X at a significantly lower price point. UltraGrid fabric has proven durable on thousands of trail miles.",
+      "pros": [
+        "Exceptional value at $280 for ultralight frame pack",
+        "Comfortable load distribution up to 35 lbs",
+        "Thoughtful pocket placement and organization",
+        "UltraGrid fabric (200D) proven durable in the field",
+        "Load lifters and padded hip belt included",
+        "Side water bottle pockets accessible while wearing",
+        "Removable frame stays for weight customization"
+      ],
+      "cons": [
+        "Slightly heavier than premium cottage packs (31 oz)",
+        "Limited color options compared to competitors",
+        "Relatively new to market (less long-term data than established brands)",
+        "No external frame option for heavier loads"
+      ],
+      "link": "https://durstongear.com/products/kakwa-55",
+      "season": "both",
+      "thruHikeViable": true,
+      "consensusBestValue": true,
+      "communityEndorsement": "Best value-to-performance ratio in mid-range tier. Competes with $400+ packs at $280 price point.",
+      "valueRationale": "Offers 90% of the performance of $400+ premium packs (HMG Southwest, Zpacks Arc Haul) at 30% lower cost. Only 2oz heavier than HMG Southwest.",
+      "comparisonData": {
+        "premiumItem": "Hyperlite Mountain Gear Southwest 55",
+        "premiumPrice": 419,
+        "premiumWeight": 29,
+        "priceDelta": 139,
+        "weightDelta": 2,
+        "analysis": "Save $139 for only 2oz weight penalty. Same carrying capacity, similar comfort. Best mid-range value according to Adventure Alan 2026."
+      },
+      "verifiedLoadouts": [
+        "Recommended in Budget-tier research 2025/2026 mid-range build"
+      ],
+      "sources": [
+        "Adventure Alan Best Cheap Backpacking Gear 2026",
+        "Durston Gear",
+        "Budget-tier research 2025/2026"
+      ]
+    },
+    {
+      "id": "durston-xmid-pro-1",
+      "category": "shelter",
+      "brand": "Durston",
+      "name": "X-Mid Pro 1 DCF",
+      "price": 499,
+      "weight": 13.5,
+      "tier": "premium",
+      "valueScore": 8,
+      "weightScore": 10,
+      "durabilityScore": 8,
+      "why": "Top-rated premium shelter. DCF (Dyneema) version of the #1 AT tent saves 11.5oz over Gen 3 model. For experienced hikers who want the X-Mid design at ultralight weight.",
+      "pros": [
+        "Ultralight at 13.5oz (11.5oz lighter than Gen 3)",
+        "DCF material = superior strength-to-weight",
+        "Same proven X-Mid geometry as #1 tent",
+        "Excellent ventilation and weather protection",
+        "Dual doors and vestibules",
+        "Premium materials and construction"
+      ],
+      "cons": [
+        "Premium price at $499",
+        "DCF less durable than silnylon/silpoly (careful handling required)",
+        "DCF can be noisy in wind",
+        "Requires trekking poles",
+        "High demand = long wait times when ordering"
+      ],
+      "link": "https://durstongear.com/products/x-mid-pro-1",
+      "season": "3-season",
+      "thruHikeViable": true,
+      "shelterType": "tent",
+      "trekSurveyUsage": 8,
+      "trekSurveyYear": 2025,
+      "consensusBestValue": false,
+      "communityEndorsement": "Top-rated premium shelter. DCF version of the #1 AT tent.",
+      "comparisonData": {
+        "premiumItem": "Zpacks Duplex Classic",
+        "premiumPrice": 649,
+        "premiumWeight": 18.5,
+        "priceDelta": 150,
+        "weightDelta": -5,
+        "analysis": "Save $150 vs Zpacks Duplex AND save 5oz. X-Mid Pro offers better value in premium DCF tent category."
+      },
+      "sources": [
+        "Durston Gear",
+        "Budget-tier research 2025/2026"
+      ]
+    }
+  ],
+
+  "updateInstructions": {
+    "file": "src/data/gearRecommendations.json",
+    "steps": [
+      "1. Add these 3 items to the 'items' array",
+      "2. Update Zpacks Duplex trekSurveyRank to 2 (overtaken by X-Mid)",
+      "3. Update Altra Lone Peak trekSurveyRank to 1, trekSurveyYear to 2025",
+      "4. Update Topo Athletic trekSurveyRank to 2, trekSurveyYear to 2025",
+      "5. Ensure scoring algorithm gives bonus to trekSurveyRank: 1 items"
+    ]
+  },
+
+  "scoringAlgorithmUpdate": {
+    "location": "BudgetGearBuilder.svelte line 75-98",
+    "addTo": "scoreItem() function",
+    "code": "// Trek survey rank bonus (2025 data)\nconst surveyRankBonus = item.trekSurveyRank === 1 && item.trekSurveyYear === 2025 ? 1.15 : 1.0;\n\nreturn baseScore * tierBonus * viabilityPenalty * surveyRankBonus;"
+  }
+}

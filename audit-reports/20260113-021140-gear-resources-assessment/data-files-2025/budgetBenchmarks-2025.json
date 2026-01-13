@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "version": "2025-2026",
+    "lastUpdated": "2026-01-13",
+    "sources": [
+      "The Trek 2025 AT Thru-Hiker Survey (279 respondents)",
+      "Budget-tier research 2025/2026",
+      "Adventure Alan Best Cheap Backpacking Gear 2026"
+    ]
+  },
+
+  "spending": {
+    "estimatedRange": {
+      "min": 1000,
+      "max": 2500,
+      "typical": "$1,000-$2,500",
+      "note": "Most successful thru-hikers spend within this range"
+    },
+    "historicalAverage": {
+      "amount": 2212,
+      "year": 2024,
+      "sampleSize": 389,
+      "source": "The Trek 2024 Survey",
+      "note": "2025 survey did not report average spending"
+    },
+    "budgetFloor": {
+      "minimum": 400,
+      "note": "Functional AT thru-hike achievable from $400-700",
+      "previousMinimum": 383,
+      "change": "Raised due to inflation (2025/2026)"
+    },
+    "distribution": {
+      "budget": {
+        "range": "$400-700",
+        "percentage": 15,
+        "note": "Ultra-budget tier, requires compromises"
+      },
+      "midRange": {
+        "range": "$1,000-$1,800",
+        "percentage": 45,
+        "note": "Sweet spot — best value-to-performance"
+      },
+      "premium": {
+        "range": "$2,500-$3,500",
+        "percentage": 30,
+        "note": "Cottage gear, marginal weight savings"
+      },
+      "luxury": {
+        "range": "$3,500+",
+        "percentage": 10,
+        "note": "Premium cottage gear, sub-8lb builds"
+      }
+    }
+  },
+
+  "budgetTiers": [
+    {
+      "tier": "budget",
+      "range": "$400-700",
+      "baseWeight": "~9.5 lbs",
+      "exampleBuild": {
+        "cost": 605,
+        "weight": 9.5,
+        "description": "Complete functional build"
+      },
+      "tradeoffs": [
+        "Duck down vs goose (heavier per warmth)",
+        "Thinner tent fabrics requiring seam-sealing",
+        "Foam pads over inflatables",
+        "Frogg Toggs may need mid-hike replacement",
+        "3F UL China shipping (2-3 weeks)"
+      ],
+      "viability": "Functional — thousands of successful thru-hikes",
+      "keyProducts": [
+        "3F UL Lanshan 1 Pro ($120, 26oz)",
+        "Hammock Gear Econ Burrow ($160)",
+        "Nemo Switchback CCF pad ($50)"
+      ]
+    },
+    {
+      "tier": "mid",
+      "range": "$1,000-$1,800",
+      "baseWeight": "~10 lbs",
+      "exampleBuild": {
+        "cost": 1325,
+        "weight": 10,
+        "description": "Best value build — Durston-focused"
+      },
+      "tradeoffs": [
+        "Minimal — this is the sweet spot tier",
+        "~90% of premium performance at ~40% cost"
+      ],
+      "viability": "Recommended for most first-time thru-hikers",
+      "keyProducts": [
+        "Durston X-Mid 1 Gen 3 ($250, 25oz) — #1 AT tent 2025",
+        "Durston Kakwa 55 ($280, 31oz) — best value pack",
+        "UGQ Bandit 20°F ($270) or EE Revelation ($290-340)"
+      ],
+      "marketNote": "2025 market centered on Durston products for mid-range"
+    },
+    {
+      "tier": "premium",
+      "range": "$2,500-$3,500+",
+      "baseWeight": "~8 lbs",
+      "exampleBuild": {
+        "cost": 3000,
+        "weight": 8,
+        "description": "Cottage gear build"
+      },
+      "tradeoffs": [
+        "Marginal weight savings (2-4 lbs) at high cost",
+        "DCF/Dyneema materials = premium prices",
+        "Returns diminish vs mid-range"
+      ],
+      "viability": "For experienced hikers optimizing systems",
+      "keyProducts": [
+        "Zpacks Duplex ($649, 18.5oz)",
+        "Hyperlite Mountain Gear Southwest ($419, 29oz)",
+        "Enlightened Equipment Enigma 950fp ($420, 19oz)"
+      ]
+    }
+  ],
+
+  "categorySpending": {
+    "bigThree": {
+      "percentage": "60-70%",
+      "categories": ["pack", "shelter", "sleepBag"],
+      "note": "Pack, shelter, sleep system consume majority of budget",
+      "recommendation": "Prioritize these three categories first"
+    },
+    "shelter": {
+      "range": "$100-650",
+      "sweetSpot": "$200-400",
+      "budget": "$120 (3F UL Lanshan 1 Pro)",
+      "mid": "$250 (Durston X-Mid 1)",
+      "premium": "$500-650 (Zpacks, Durston Pro)"
+    },
+    "pack": {
+      "range": "$90-420",
+      "sweetSpot": "$200-300",
+      "budget": "$90 (3F UL QiDian)",
+      "mid": "$280 (Durston Kakwa 55)",
+      "premium": "$400-420 (HMG, Zpacks)"
+    },
+    "sleepBag": {
+      "range": "$160-450",
+      "sweetSpot": "$250-350",
+      "budget": "$160 (Hammock Gear Econ Burrow)",
+      "mid": "$270-340 (UGQ Bandit, EE Revelation)",
+      "premium": "$400-450 (EE Enigma 950fp, Katabatic)"
+    },
+    "sleepPad": {
+      "range": "$50-220",
+      "sweetSpot": "$180-220",
+      "budget": "$50 (Nemo Switchback CCF)",
+      "mid": "$200 (Nemo Tensor Insulated)",
+      "premium": "$220 (Nemo Tensor UL)"
+    },
+    "rainGear": {
+      "range": "$25-500",
+      "sweetSpot": "$25",
+      "consensus": "Frogg Toggs ($25) — best value at any budget",
+      "premium": "$300-500 (Arc'teryx, Zpacks)"
+    },
+    "insulation": {
+      "range": "$80-400",
+      "sweetSpot": "$80-150",
+      "budget": "$80 (Decathlon Trek 100)",
+      "mid": "$120-180 (various)",
+      "premium": "$350-400 (Zpacks, Feathered Friends)"
+    },
+    "footwear": {
+      "range": "$130-180",
+      "sweetSpot": "$140-160",
+      "note": "Do NOT cheap out on footwear — blisters end hikes",
+      "top": "Altra Lone Peak ($140) — #1 on 2025 AT"
+    },
+    "kitchen": {
+      "range": "$35-120",
+      "sweetSpot": "$40-80",
+      "budget": "$35 (BRS-3000T + Toaks Ti)",
+      "consensus": "BRS-3000T ($17) functionally identical to $60 stoves"
+    },
+    "water": {
+      "range": "$40-90",
+      "sweetSpot": "$50-70",
+      "consensus": "Sawyer Squeeze ($40) — proven standard"
+    },
+    "electronics": {
+      "range": "$80-300",
+      "sweetSpot": "$100-200",
+      "basics": "Nitecore NU25 headlamp ($40) + Anker 10k battery ($40)"
+    }
+  },
+
+  "verifiedBuilds": [
+    {
+      "name": "Ultra-Budget Build",
+      "budget": 605,
+      "baseWeight": 9.5,
+      "tier": "budget",
+      "year": 2025,
+      "viability": "Functional, requires compromises",
+      "keyProducts": [
+        "3F UL Lanshan 1 Pro",
+        "Hammock Gear Econ Burrow",
+        "Nemo Switchback CCF"
+      ]
+    },
+    {
+      "name": "Shoestring Guide",
+      "budget": 590,
+      "baseWeight": 8.9,
+      "tier": "budget",
+      "year": 2023,
+      "viability": "Proven ultralight on a budget",
+      "source": "lighterpack.com/r/776crf"
+    },
+    {
+      "name": "Durston Mid-Range Build",
+      "budget": 1325,
+      "baseWeight": 10,
+      "tier": "mid",
+      "year": 2025,
+      "viability": "Best value — recommended for most",
+      "keyProducts": [
+        "Durston X-Mid 1 Gen 3 (#1 AT tent 2025)",
+        "Durston Kakwa 55 (best value pack)",
+        "UGQ Bandit 20°F"
+      ],
+      "note": "Reflects 2025 market shift to Durston dominance"
+    },
+    {
+      "name": "Premium Cottage Build",
+      "budget": 3000,
+      "baseWeight": 8,
+      "tier": "premium",
+      "year": 2025,
+      "viability": "Marginal weight savings over mid-tier",
+      "keyProducts": [
+        "Zpacks Duplex",
+        "HMG Southwest",
+        "EE Enigma 950fp"
+      ]
+    }
+  ],
+
+  "pricingComparisons": [
+    {
+      "category": "shelter",
+      "budget": {
+        "item": "3F UL Lanshan 1 Pro",
+        "price": 120,
+        "weight": 26
+      },
+      "mid": {
+        "item": "Durston X-Mid 1 Gen 3",
+        "price": 250,
+        "weight": 25
+      },
+      "premium": {
+        "item": "Zpacks Duplex",
+        "price": 649,
+        "weight": 18.5
+      },
+      "analysis": "Mid-range offers 90% of premium performance at 40% cost"
+    },
+    {
+      "category": "pack",
+      "budget": {
+        "item": "3F UL QiDian Pro",
+        "price": 90,
+        "weight": 18
+      },
+      "mid": {
+        "item": "Durston Kakwa 55",
+        "price": 280,
+        "weight": 31
+      },
+      "premium": {
+        "item": "HMG Southwest 55",
+        "price": 419,
+        "weight": 29
+      },
+      "analysis": "Kakwa 55 best value-to-performance ratio"
+    },
+    {
+      "category": "rainGear",
+      "budget": {
+        "item": "Frogg Toggs Ultra-Lite",
+        "price": 25,
+        "weight": 5
+      },
+      "premium": {
+        "item": "Arc'teryx Beta",
+        "price": 500,
+        "weight": 8
+      },
+      "analysis": "Most lopsided value equation — Frogg Toggs actually lighter and can replace 20x"
+    }
+  ],
+
+  "recommendations": {
+    "firstTimeThruHikers": {
+      "tier": "mid",
+      "budget": "$1,200-1,500",
+      "rationale": "Best value, forgiving, well-documented, upgradeable",
+      "avoid": "Ultra-budget shelter fabrics requiring careful handling"
+    },
+    "experiencedHikers": {
+      "tier": "premium",
+      "budget": "$2,500-3,500",
+      "rationale": "Weight savings compound over 2,000+ miles if systems dialed"
+    },
+    "budgetConstrained": {
+      "tier": "budget",
+      "budget": "$600-700",
+      "rationale": "Genuinely works — thousands of successful thru-hikes",
+      "prioritize": ["Sleep system", "Footwear"],
+      "note": "Blisters and poor sleep end more hikes than gear failures"
+    },
+    "universal": {
+      "rule": "Buy your pack last",
+      "rationale": "Ensure proper sizing for your actual load after assembling gear"
+    }
+  }
+}
