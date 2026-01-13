@@ -1662,6 +1662,7 @@
   }
 
   .alt-header {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -1794,12 +1795,151 @@
       padding: 0;
     }
 
+    .modal-header {
+      padding: 0.875rem 1rem;
+    }
+
+    .modal-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.5rem;
+    }
+
+    .modal-title h3 {
+      font-size: 1rem;
+    }
+
+    .modal-title p {
+      font-size: 0.75rem;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      font-size: 1.1rem;
+    }
+
+    .modal-items {
+      padding: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .alt-item {
+      border-width: 1.5px;
+    }
+
+    .alt-main {
+      padding: 0.75rem;
+    }
+
+    .alt-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.15rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .alt-brand {
+      font-size: 0.7rem;
+    }
+
+    .alt-name {
+      font-size: 0.9rem;
+    }
+
+    .rec-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      margin-left: 0;
+    }
+
+    .alt-stats {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .alt-price {
+      font-size: 1rem;
+    }
+
+    .alt-weight {
+      font-size: 0.8rem;
+    }
+
+    .alt-tier {
+      margin-left: auto;
+    }
+
+    .alt-why {
+      font-size: 0.75rem;
+      -webkit-line-clamp: 3;
+    }
+
+    .alt-scores {
+      gap: 0.5rem;
+      font-size: 0.7rem;
+    }
+
+    .alt-buy {
+      padding: 0.5rem 0.875rem;
+      font-size: 0.75rem;
+    }
+
     .card-actions {
       flex-direction: column;
     }
 
     .buy-button, .change-button, .reset-button {
       justify-content: center;
+    }
+  }
+
+  /* Extra small screens (< 400px) */
+  @media (max-width: 400px) {
+    .modal-header {
+      padding: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .modal-title {
+      flex: 1;
+      min-width: calc(100% - 40px);
+      gap: 0.5rem;
+    }
+
+    .modal-icon {
+      width: 36px;
+      height: 36px;
+      font-size: 1.25rem;
+    }
+
+    .modal-title h3 {
+      font-size: 0.95rem;
+    }
+
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      font-size: 1rem;
+    }
+
+    .modal-items {
+      padding: 0.5rem;
+    }
+
+    .alt-main {
+      padding: 0.625rem;
+    }
+
+    .alt-stats {
+      gap: 0.4rem;
+    }
+
+    .alt-price {
+      font-size: 0.95rem;
     }
   }
 </style>
