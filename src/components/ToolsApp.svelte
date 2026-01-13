@@ -57,6 +57,7 @@
     { id: 'milestone', name: 'Journey', icon: '🗺️', desc: 'Plan your timeline & track progress' },
     { id: 'weather', name: 'Weather', icon: '🌤️', desc: 'Weather, heat zones & daylight' },
     { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
+    { id: 'gearbudget', name: 'Gear', icon: '🛠️', desc: 'Build your kit by budget' },
     { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Towns, food & mail drops' },
     { id: 'water', name: 'Water', icon: '💧', desc: 'Water sources & carry calc' },
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
@@ -68,7 +69,6 @@
     { id: 'shelter', name: 'Shelter', icon: '🏠', desc: 'Tent vs shelter decision' },
     { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
     { id: 'emergency', name: 'Emergency', icon: '🆘', desc: 'Emergency info & bailouts' },
-    { id: 'gearbudget', name: 'Gear', icon: '🛠️', desc: 'Build your kit by budget' },
   ];
 
   // ========== GLOBAL TRAIL CONTEXT (Svelte 5 $state) ==========
@@ -1336,10 +1336,25 @@
       border-radius: 10px;
       margin-bottom: 1.5rem;
       max-width: 100%;
+      position: relative;
     }
 
     .tools-nav::-webkit-scrollbar {
       display: none;
+    }
+
+    /* Visual indicator for scrollable content */
+    .tools-nav::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 60px;
+      background: linear-gradient(to left, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.7) 40%, transparent 100%);
+      pointer-events: none;
+      border-radius: 0 10px 10px 0;
+      z-index: 10;
     }
 
     .nav-tab {
