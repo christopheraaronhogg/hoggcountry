@@ -1,0 +1,215 @@
+{
+  "meta": {
+    "version": "2025",
+    "lastUpdated": "2026-01-13",
+    "source": "The Trek 2025 AT Thru-Hiker Survey",
+    "sourceUrl": "https://thetrek.co/appalachian-trail-thru-hiker-survey",
+    "note": "Class of 2025 completers, 279 respondents"
+  },
+
+  "surveyYear": 2025,
+  "responses": 279,
+  "previousYear": {
+    "surveyYear": 2024,
+    "responses": 389
+  },
+
+  "baseWeightStats": {
+    "note": "2025 survey did not report base weight statistics",
+    "previousYearData": {
+      "avgStart": 20.4,
+      "avgEnd": 17.2,
+      "avgReduction": 3.2,
+      "percentWhoReduce": 68,
+      "source": "Trek 2024 Survey"
+    },
+    "useForComparison": "previousYearData"
+  },
+
+  "shelterTrends": {
+    "topBrand": {
+      "name": "Durston Gear",
+      "rank": 1,
+      "note": "Dethroned Zpacks as most popular shelter brand",
+      "yearEstablished": 2025
+    },
+    "topModel": {
+      "name": "Durston X-Mid 1",
+      "brand": "Durston Gear",
+      "rank": 1,
+      "estimatedUsage": 25,
+      "note": "#1 tent on the 2025 AT"
+    },
+    "secondModel": {
+      "name": "Zpacks Duplex",
+      "brand": "Zpacks",
+      "rank": 2,
+      "note": "Still popular but overtaken by X-Mid"
+    },
+    "shelterTypes": {
+      "tent": {
+        "percentage": 88,
+        "trend": "stable"
+      },
+      "hammock": {
+        "percentage": 9,
+        "trend": "up",
+        "growth": "Doubled year-over-year"
+      },
+      "tarp": {
+        "percentage": 3,
+        "trend": "stable"
+      }
+    }
+  },
+
+  "footwearTrends": {
+    "topBrand": {
+      "name": "Altra",
+      "rank": 1,
+      "estimatedUsage": 35,
+      "note": "Regained #1 spot from Topo Athletic"
+    },
+    "secondBrand": {
+      "name": "Topo Athletic",
+      "rank": 2,
+      "estimatedUsage": 18,
+      "note": "Strong #2 showing, was #1 in 2024"
+    },
+    "trailRunnerUsage": 86,
+    "bootsUsage": 14,
+    "note": "Trail runners continue to dominate AT footwear"
+  },
+
+  "socksTrends": {
+    "topBrand": {
+      "name": "Darn Tough",
+      "dominance": "Overwhelming majority",
+      "note": "Lifetime warranty and trail exchanges make them AT standard"
+    },
+    "linerUsage": {
+      "percentage": 37,
+      "note": "37% of hikers use sock liners"
+    }
+  },
+
+  "packTrends": {
+    "note": "2025 survey did not break down specific pack models",
+    "popularBrands": ["Osprey", "Gossamer Gear", "Hyperlite Mountain Gear", "Durston Gear"],
+    "previousYearTop": {
+      "brand": "Osprey",
+      "model": "Exos/Eja series",
+      "estimatedUsage": 28,
+      "year": 2024
+    }
+  },
+
+  "quiltTrends": {
+    "quiltsVsBags": {
+      "quilts": 53,
+      "sleepingBags": 47,
+      "trend": "Quilts gaining 6% year-over-year",
+      "year": 2024
+    },
+    "topQuiltBrand": {
+      "name": "Enlightened Equipment",
+      "model": "Revelation",
+      "estimatedUsage": 22
+    }
+  },
+
+  "waterTreatment": {
+    "sawyerSqueeze": {
+      "estimatedUsage": 65,
+      "note": "Preferred over Sawyer Mini for flow rate"
+    },
+    "sawyerMini": {
+      "estimatedUsage": 12,
+      "note": "Less popular due to slower flow"
+    }
+  },
+
+  "marketShifts2025": [
+    {
+      "shift": "Durston Gear became most popular shelter brand",
+      "significance": "Major — overtook industry leader Zpacks",
+      "driverProducts": ["X-Mid 1 Gen 3", "X-Mid Pro 1"]
+    },
+    {
+      "shift": "Hammock usage doubled year-over-year",
+      "significance": "Moderate — now 9% of hikers",
+      "note": "Still minority but growing acceptance"
+    },
+    {
+      "shift": "Altra regained #1 footwear spot from Topo",
+      "significance": "Minor — both brands strong",
+      "note": "Altra Lone Peak remains most popular trail runner"
+    },
+    {
+      "shift": "Darn Tough socks remain dominant",
+      "significance": "Stable — lifetime warranty drives loyalty",
+      "note": "No competition close to overtaking"
+    }
+  ],
+
+  "consensusItems": [
+    {
+      "item": "Frogg Toggs Ultra-Lite rain suit",
+      "price": 25,
+      "category": "rainGear",
+      "consensus": "Best value item across all tiers",
+      "usage": "70%+ of budget builds"
+    },
+    {
+      "item": "BRS-3000T stove",
+      "price": 17,
+      "category": "kitchen",
+      "consensus": "Functionally identical to $60 alternatives"
+    },
+    {
+      "item": "Sawyer Squeeze filter",
+      "price": 35,
+      "category": "water",
+      "consensus": "Proven on thousands of thru-hikes"
+    },
+    {
+      "item": "Nitecore NU25 headlamp",
+      "price": 40,
+      "category": "electronics",
+      "consensus": "USB-C rechargeable, 400 lumens"
+    },
+    {
+      "item": "Cascade Mountain Tech carbon poles",
+      "price": 45,
+      "category": "trekkingPoles",
+      "consensus": "Aluminum locking mechanism, proven durability"
+    },
+    {
+      "item": "Darn Tough socks",
+      "price": 25,
+      "category": "socks",
+      "consensus": "Lifetime warranty, dominant brand"
+    },
+    {
+      "item": "Decathlon Trek 100 down jacket",
+      "price": 80,
+      "category": "insulation",
+      "consensus": "80% of Ghost Whisperer warmth at 25% price"
+    }
+  ],
+
+  "spendingEstimates": {
+    "note": "2025 survey did not report average spending",
+    "previousYear": {
+      "average": 2212,
+      "year": 2024,
+      "sampleSize": 389
+    },
+    "estimatedRange": {
+      "min": 1000,
+      "max": 2500,
+      "note": "Most successful thru-hikers spend $1,000-$2,500 on gear",
+      "source": "2025/2026 budget-tier research"
+    }
+  }
+}
