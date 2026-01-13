@@ -37,6 +37,18 @@
     }
   });
 
+  // Lock body scroll when modal is open
+  $effect(() => {
+    if (selectingCategory) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+  });
+
   // Save preferences
   $effect(() => {
     if (mounted) {
@@ -1545,6 +1557,7 @@
     padding: 1rem;
     z-index: 1000;
     animation: fadeIn 0.15s ease;
+    overflow: hidden;
   }
 
   @keyframes fadeIn {
@@ -1558,7 +1571,7 @@
     border-radius: 16px;
     width: 100%;
     max-width: 600px;
-    max-height: 85vh;
+    max-height: calc(100vh - 2rem);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -1781,18 +1794,20 @@
 
   @media (max-width: 600px) {
     .modal-content {
-      max-height: 90vh;
+      max-height: calc(100dvh - 1rem);
       border-radius: 12px 12px 0 0;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      position: relative;
+      bottom: auto;
+      left: auto;
+      right: auto;
       max-width: 100%;
+      margin-bottom: 0;
     }
 
     .modal-backdrop {
       align-items: flex-end;
       padding: 0;
+      padding-top: 1rem;
     }
 
     .modal-header {
