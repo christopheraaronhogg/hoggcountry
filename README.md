@@ -353,15 +353,16 @@ Currently deployed to Netlify. On push to `main`:
 ## Roadmap & Task List
 
 ### Completed
-- [x] **Trail Data System** - Created `src/data/trailData.ts` as single source of truth for all AT facts with citations (2026-01-14)
-- [x] **Multi-Agent Fact Checker** - Built `/audit-trail-facts` skill with 5 cross-checking agents to prevent hallucination (2026-01-14)
+- [x] **YAML Trail Facts System** - `src/data/trail-facts.yaml` as single source of truth with template injection (2026-01-14)
+- [x] **Parser Fact Injection** - `parse-master-guide.js` now injects facts from YAML into prose at build time (2026-01-14)
+- [x] **#1 Distance Consistency** - All guide chapters now use 2,197.4 miles (AWOL 2026) via template system (2026-01-14)
+- [x] **Multi-Agent Fact Checker** - `/audit-trail-facts` skill validates YAML against official sources (2026-01-14)
 - [x] **Full Trail Data in Game** - 2,197.4 miles mapped with 260+ shelters, 25+ towns, 20+ peaks (2025)
 - [x] **Field Guide Parser** - Auto-generates chapters from master document (2025)
 - [x] **Offline PWA Support** - Full offline capability via service worker (2025)
 - [x] **Code-Split Tools** - 14 tools lazy-loaded for performance (2025)
 
 ### In Progress
-- [ ] **#1 Distance Consistency** - Sync all AT mileage references across site (some show 2,197.9, should be 2,197.4 per AWOL 2026)
 - [ ] **#9 AWOL 2026 Deep Dive** - Full audit comparing our guide to official AWOL 2026 data
 
 ### Backlog (Prioritized)
@@ -380,20 +381,32 @@ Currently deployed to Netlify. On push to `main`:
 | 13 | Snowbird/Blood Mountain bottom line fix | Content | Pending |
 | 14 | Winter tent site checklist | New Content | Pending |
 
-### Data Integrity System
+### Trail Data Architecture
 
-All AT facts now flow from a single source:
+All AT facts flow from a single YAML source with automatic injection:
 
 ```
-src/data/trailData.ts          ← CANONICAL SOURCE (with citations)
-    ↓
-├── MASTER_NOBO_FIELD_GUIDE.md ← Guide prose uses these values
-├── src/pages/*.astro          ← Website pages import from here
-├── trailhogg/**/trailData.ts  ← Game syncs from here
-└── Planning tools             ← Resupply, milestones, etc.
+src/data/trail-facts.yaml       ← SINGLE SOURCE OF TRUTH (YAML, cited)
+    │
+    ├──→ parse-master-guide.js  ← Injects {{...}} templates at build
+    │         │
+    │         └──→ src/content/guide/*.md (generated with real values)
+    │
+    ├──→ src/data/trailFacts.ts ← TypeScript wrapper for code
+    │
+    └──→ /audit-trail-facts     ← Multi-agent validation
 ```
 
-Run `/audit-trail-facts` to validate consistency across all files.
+**Template syntax in master guide:**
+```markdown
+The trail is {{trail.total_miles|commas}} miles long.
+→ The trail is 2,197.4 miles long.
+
+{{factbox:landmarks.blood_mountain}}
+→ Generates cited fact card with mile, elevation, source
+```
+
+Run `npm run update-guide` to regenerate chapters from YAML.
 
 ---
 
