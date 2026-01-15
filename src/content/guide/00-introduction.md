@@ -6,6 +6,7 @@ description: "This guide represents hundreds of hours of research, planning, and
 icon: "compass"
 ---
 
+*2,197.4 Miles of Trail-Tested Knowledge*
 # The Philosophy Behind This Guide
 
 This guide represents hundreds of hours of research, planning, and real-world trail experience distilled into a single comprehensive resource. It is not a theoretical exercise—it is a battle-tested system built on 840+ miles of completed thru-hikes across three major trail systems, earning the rare Sassafras Award from the Ozark Society.
