@@ -49,8 +49,12 @@ async function build() {
         const verseNum = verseIdx + 1;
         let verseText = chapter[verseIdx];
 
-        // Clean up any annotation markers like {Heb. ...}
-        verseText = verseText.replace(/\{[^}]+\}/g, '').trim();
+        // Remove scholarly annotations like {Heb. ...} but KEEP italicized words
+        // KJV uses {} for words added by translators - we want to keep those
+        // Only remove if it looks like an annotation (contains a period or colon)
+        verseText = verseText.replace(/\{[^}]*[.:][^}]*\}/g, ''); // Remove {Heb. word} style
+        verseText = verseText.replace(/\{([^}]+)\}/g, '$1'); // Keep content, remove braces
+        verseText = verseText.trim();
 
         output += `${bookName} ${chapterNum}:${verseNum} ${verseText}\n`;
         totalVerses++;
