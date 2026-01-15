@@ -348,7 +348,7 @@ Message a trusted person at home. They:
 | ~1,888.1 | Pinkham Notch (NH-16) |
 | ~1,904.8 | Gorham (US-2) |
 
-### MAINE (Mile ~1,905 – 2,197.9)
+### MAINE (Mile ~1,905 – 2,197.4)
 
 | Mile | Exit Point |
 |------|------------|

@@ -1,0 +1,881 @@
+# ============================================================================
+# APPALACHIAN TRAIL FACTS DATABASE
+# ============================================================================
+#
+# This YAML file is the SINGLE SOURCE OF TRUTH for all AT facts.
+#
+# CITATION POLICY:
+# Every fact MUST have a citation. We track:
+# - source: ATC | AWOL | NPS | USFS | ALDHA | MEASURED
+# - year: The year the source was published/verified
+# - page: (optional) Page number in printed guide
+# - url: (optional) URL for online sources
+#
+# TEMPLATE SYNTAX (in master guide):
+# - {{trail.total_miles}}              → 2197.4
+# - {{trail.total_miles|commas}}       → 2,197.4
+# - {{trail.total_miles|round}}        → 2197
+# - {{landmarks.springer.elevation}}   → 3782
+# - {{factbox:landmarks.blood_mountain}} → generates full fact card
+# - {{table:towns.georgia}}            → generates markdown table
+#
+# MAINTENANCE:
+# - Update annually when new AWOL guide releases
+# - Run /audit-trail-facts to validate consistency
+# - All changes should be committed with citation source
+#
+# ============================================================================
+
+_meta:
+  version: "2026.1.0"
+  awol_edition: 2026
+  last_verified: "2026-01-14"
+  next_audit: "2027-01-15"
+  maintainer: "hoggcountry"
+
+# ============================================================================
+# CORE TRAIL FACTS
+# ============================================================================
+
+trail:
+  total_miles:
+    value: 2197.4
+    display: "2,197.4"
+    marketing: "2,190+"
+    citation:
+      source: AWOL
+      year: 2026
+      page: 1
+      note: "Official NOBO distance, Springer to Katahdin"
+
+  approach_trail_miles:
+    value: 8.8
+    citation:
+      source: AWOL
+      year: 2026
+      page: 12
+      note: "Amicalola Falls to Springer Mountain summit - NOT included in AT total"
+
+  total_elevation_gain:
+    value: 464500
+    unit: feet
+    display: "464,500"
+    citation:
+      source: ATC
+      year: 2026
+      note: "Cumulative elevation gain NOBO"
+
+  state_count:
+    value: 14
+    citation:
+      source: ATC
+      year: 2026
+
+  shelter_count:
+    value: 260
+    approximate: true
+    citation:
+      source: ATC
+      year: 2026
+      note: "Approximately 260 shelters, count changes yearly"
+
+  completion_rate:
+    value: 0.25
+    display: "25%"
+    citation:
+      source: ATC
+      year: 2025
+      note: "Only ~25% of thru-hike attempts succeed"
+
+  average_completion_days:
+    value: 165
+    range: "5-7 months"
+    citation:
+      source: ATC
+      year: 2025
+
+# ============================================================================
+# STATES (NOBO Order)
+# ============================================================================
+
+states:
+  - id: GA
+    name: Georgia
+    entry_mile: 0.0
+    exit_mile: 75.5
+    miles: 75.5
+    citation: { source: AWOL, year: 2026 }
+
+  - id: NC
+    name: North Carolina
+    entry_mile: 75.5
+    exit_mile: 240.8
+    miles: 165.3
+    note: "NC/TN border section is complex - trail weaves between states"
+    citation: { source: AWOL, year: 2026 }
+
+  - id: TN
+    name: Tennessee
+    entry_mile: 240.8
+    exit_mile: 392.5
+    miles: 151.7
+    note: "Shared with NC border section"
+    citation: { source: AWOL, year: 2026 }
+
+  - id: VA
+    name: Virginia
+    entry_mile: 464.4
+    exit_mile: 1009.0
+    miles: 544.6
+    note: "Longest state on the AT"
+    citation: { source: AWOL, year: 2026 }
+
+  - id: WV
+    name: West Virginia
+    entry_mile: 1009.0
+    exit_mile: 1012.1
+    miles: 3.1
+    note: "Brief section through Harpers Ferry"
+    citation: { source: AWOL, year: 2026 }
+
+  - id: MD
+    name: Maryland
+    entry_mile: 1012.1
+    exit_mile: 1052.4
+    miles: 40.3
+    citation: { source: AWOL, year: 2026 }
+
+  - id: PA
+    name: Pennsylvania
+    entry_mile: 1052.4
+    exit_mile: 1282.5
+    miles: 230.1
+    note: "Rocksylvania - famous for rocky terrain"
+    citation: { source: AWOL, year: 2026 }
+
+  - id: NJ
+    name: New Jersey
+    entry_mile: 1282.5
+    exit_mile: 1355.0
+    miles: 72.5
+    citation: { source: AWOL, year: 2026 }
+
+  - id: NY
+    name: New York
+    entry_mile: 1355.0
+    exit_mile: 1443.8
+    miles: 88.8
+    citation: { source: AWOL, year: 2026 }
+
+  - id: CT
+    name: Connecticut
+    entry_mile: 1443.8
+    exit_mile: 1495.5
+    miles: 51.7
+    citation: { source: AWOL, year: 2026 }
+
+  - id: MA
+    name: Massachusetts
+    entry_mile: 1495.5
+    exit_mile: 1585.9
+    miles: 90.4
+    citation: { source: AWOL, year: 2026 }
+
+  - id: VT
+    name: Vermont
+    entry_mile: 1585.9
+    exit_mile: 1736.7
+    miles: 150.8
+    citation: { source: AWOL, year: 2026 }
+
+  - id: NH
+    name: New Hampshire
+    entry_mile: 1736.7
+    exit_mile: 1898.5
+    miles: 161.8
+    note: "The White Mountains - most challenging terrain"
+    citation: { source: AWOL, year: 2026 }
+
+  - id: ME
+    name: Maine
+    entry_mile: 1898.5
+    exit_mile: 2197.4
+    miles: 298.9
+    note: "Includes the 100-Mile Wilderness"
+    citation: { source: AWOL, year: 2026 }
+
+# ============================================================================
+# LANDMARKS
+# ============================================================================
+
+landmarks:
+  # === GEORGIA ===
+  springer_mountain:
+    name: Springer Mountain
+    mile: 0.0
+    elevation: 3782
+    state: GA
+    type: summit
+    significance: Southern terminus of the AT
+    citation: { source: AWOL, year: 2026, page: 12 }
+
+  blood_mountain:
+    name: Blood Mountain
+    mile: 30.7
+    elevation: 4458
+    state: GA
+    type: summit
+    significance: Highest point in Georgia on AT
+    citation: { source: AWOL, year: 2026, page: 14 }
+
+  neels_gap:
+    name: Neels Gap (Mountain Crossings)
+    mile: 31.7
+    elevation: 3125
+    state: GA
+    type: landmark
+    significance: First resupply point, famous outfitter
+    citation: { source: AWOL, year: 2026, page: 14 }
+
+  # === NORTH CAROLINA ===
+  standing_indian:
+    name: Standing Indian Mountain
+    mile: 86.5
+    elevation: 5499
+    state: NC
+    type: summit
+    citation: { source: AWOL, year: 2026 }
+
+  albert_mountain:
+    name: Albert Mountain
+    mile: 103.0
+    elevation: 5250
+    state: NC
+    type: summit
+    significance: Fire tower with panoramic views
+    citation: { source: AWOL, year: 2026 }
+
+  fontana_dam:
+    name: Fontana Dam
+    mile: 163.8
+    elevation: 1800
+    state: NC
+    type: landmark
+    significance: "Fontana Hilton shelter, last resupply before Smokies"
+    citation: { source: AWOL, year: 2026 }
+
+  # === GREAT SMOKY MOUNTAINS ===
+  clingmans_dome:
+    name: Clingmans Dome (Kuwohi)
+    mile: 199.5
+    elevation: 6643
+    state: NC/TN
+    type: summit
+    significance: Highest point on the entire AT
+    renamed: "Officially renamed to Kuwohi in 2024"
+    citation: { source: AWOL, year: 2026 }
+
+  newfound_gap:
+    name: Newfound Gap
+    mile: 206.4
+    elevation: 5046
+    state: NC/TN
+    type: gap
+    significance: Road access to Gatlinburg
+    citation: { source: AWOL, year: 2026 }
+
+  charlies_bunion:
+    name: Charlies Bunion
+    mile: 212.0
+    elevation: 5565
+    state: NC/TN
+    type: landmark
+    citation: { source: AWOL, year: 2026 }
+
+  # === NC/TN BORDER ===
+  max_patch:
+    name: Max Patch
+    mile: 252.3
+    elevation: 4629
+    state: NC
+    type: summit
+    significance: Famous bald with 360-degree views
+    citation: { source: AWOL, year: 2026 }
+
+  hot_springs:
+    name: Hot Springs
+    mile: 273.4
+    elevation: 1326
+    state: NC
+    type: town
+    significance: Trail goes through town, hot springs spa
+    citation: { source: AWOL, year: 2026 }
+
+  roan_high_knob:
+    name: Roan High Knob
+    mile: 355.0
+    elevation: 6285
+    state: NC/TN
+    type: summit
+    citation: { source: AWOL, year: 2026 }
+
+  # === VIRGINIA ===
+  damascus:
+    name: Damascus
+    mile: 464.4
+    elevation: 1928
+    state: VA
+    type: town
+    significance: Trail Days festival, major resupply
+    citation: { source: AWOL, year: 2026 }
+
+  mount_rogers:
+    name: Mount Rogers
+    mile: 496.5
+    elevation: 5729
+    state: VA
+    type: summit
+    significance: Highest point in Virginia (side trail)
+    citation: { source: AWOL, year: 2026 }
+
+  grayson_highlands:
+    name: Grayson Highlands
+    mile: 498.0
+    elevation: 5000
+    state: VA
+    type: landmark
+    significance: Wild ponies
+    citation: { source: AWOL, year: 2026 }
+
+  mcafee_knob:
+    name: McAfee Knob
+    mile: 708.6
+    elevation: 3197
+    state: VA
+    type: landmark
+    significance: Most photographed spot on the AT
+    citation: { source: AWOL, year: 2026 }
+
+  dragons_tooth:
+    name: Dragons Tooth
+    mile: 699.2
+    elevation: 3020
+    state: VA
+    type: landmark
+    citation: { source: AWOL, year: 2026 }
+
+  # === WEST VIRGINIA ===
+  harpers_ferry:
+    name: Harpers Ferry
+    mile: 1009.0
+    elevation: 265
+    state: WV
+    type: town
+    significance: ATC Headquarters, psychological halfway point
+    citation: { source: AWOL, year: 2026 }
+
+  # === PENNSYLVANIA ===
+  pine_grove_furnace:
+    name: Pine Grove Furnace State Park
+    mile: 1092.0
+    elevation: 920
+    state: PA
+    type: landmark
+    significance: Half-gallon ice cream challenge
+    citation: { source: AWOL, year: 2026 }
+
+  true_halfway:
+    name: True Halfway Point
+    mile: 1098.7
+    elevation: 1200
+    state: PA
+    type: landmark
+    note: "Actual midpoint varies slightly by year"
+    citation: { source: AWOL, year: 2026 }
+
+  # === NEW YORK ===
+  bear_mountain:
+    name: Bear Mountain
+    mile: 1394.0
+    elevation: 1305
+    state: NY
+    type: summit
+    citation: { source: AWOL, year: 2026 }
+
+  bear_mountain_bridge:
+    name: Bear Mountain Bridge
+    mile: 1394.5
+    elevation: 124
+    state: NY
+    type: landmark
+    significance: Lowest point on the entire AT
+    citation: { source: AWOL, year: 2026 }
+
+  # === MASSACHUSETTS ===
+  mount_greylock:
+    name: Mount Greylock
+    mile: 1574.8
+    elevation: 3491
+    state: MA
+    type: summit
+    significance: Highest point in Massachusetts
+    citation: { source: AWOL, year: 2026 }
+
+  # === VERMONT ===
+  stratton_mountain:
+    name: Stratton Mountain
+    mile: 1626.2
+    elevation: 3936
+    state: VT
+    type: summit
+    significance: Where the AT was conceived (Benton MacKaye)
+    citation: { source: AWOL, year: 2026 }
+
+  killington:
+    name: Killington Peak
+    mile: 1722.0
+    elevation: 4235
+    state: VT
+    type: summit
+    citation: { source: AWOL, year: 2026 }
+
+  # === NEW HAMPSHIRE (White Mountains) ===
+  mount_moosilauke:
+    name: Mount Moosilauke
+    mile: 1769.8
+    elevation: 4802
+    state: NH
+    type: summit
+    significance: Southern gateway to the Whites
+    citation: { source: AWOL, year: 2026 }
+
+  franconia_ridge:
+    name: Franconia Ridge
+    mile: 1808.0
+    elevation: 5089
+    state: NH
+    type: landmark
+    significance: Iconic above-treeline traverse
+    citation: { source: AWOL, year: 2026 }
+
+  mount_lafayette:
+    name: Mount Lafayette
+    mile: 1808.5
+    elevation: 5260
+    state: NH
+    type: summit
+    citation: { source: AWOL, year: 2026 }
+
+  mount_washington:
+    name: Mount Washington
+    mile: 1841.0
+    elevation: 6288
+    state: NH
+    type: summit
+    significance: Highest in Northeast, worst weather in world
+    citation: { source: AWOL, year: 2026 }
+
+  # === MAINE ===
+  mahoosuc_notch:
+    name: Mahoosuc Notch
+    mile: 1895.0
+    elevation: 2150
+    state: ME
+    type: landmark
+    significance: "Hardest mile on the AT"
+    citation: { source: AWOL, year: 2026 }
+
+  hundred_mile_wilderness_start:
+    name: 100-Mile Wilderness (Start)
+    mile: 2080.5
+    elevation: 1100
+    state: ME
+    type: boundary
+    significance: No resupply for approximately 100 miles
+    citation: { source: AWOL, year: 2026 }
+
+  abol_bridge:
+    name: Abol Bridge
+    mile: 2170.5
+    elevation: 590
+    state: ME
+    type: landmark
+    significance: End of 100-Mile Wilderness, last store
+    citation: { source: AWOL, year: 2026 }
+
+  katahdin:
+    name: Mount Katahdin (Baxter Peak)
+    mile: 2197.4
+    elevation: 5269
+    state: ME
+    type: summit
+    significance: Northern terminus - THE END
+    citation: { source: AWOL, year: 2026 }
+
+# ============================================================================
+# RESUPPLY TOWNS
+# ============================================================================
+
+towns:
+  # Georgia
+  mountain_crossings:
+    name: Mountain Crossings (Neels Gap)
+    mile: 31.7
+    state: GA
+    distance_from_trail: 0
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: false
+      laundry: false
+      restaurant: false
+    note: "On-trail outfitter, famous shakedown spot"
+    citation: { source: AWOL, year: 2026 }
+
+  hiawassee:
+    name: Hiawassee
+    mile: 69.2
+    state: GA
+    distance_from_trail: 11
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    citation: { source: AWOL, year: 2026 }
+
+  franklin:
+    name: Franklin
+    mile: 108.3
+    state: NC
+    distance_from_trail: 10
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "Major resupply before Smokies"
+    citation: { source: AWOL, year: 2026 }
+
+  fontana:
+    name: Fontana Dam
+    mile: 163.8
+    state: NC
+    distance_from_trail: 0.3
+    services:
+      grocery: true
+      outfitter: false
+      hostel: false
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "LAST resupply before Smokies, Fontana Hilton shelter"
+    citation: { source: AWOL, year: 2026 }
+
+  gatlinburg:
+    name: Gatlinburg
+    mile: 206.4
+    state: TN
+    distance_from_trail: 18
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "Access via Newfound Gap, tourist town"
+    citation: { source: AWOL, year: 2026 }
+
+  hot_springs_town:
+    name: Hot Springs
+    mile: 273.4
+    state: NC
+    distance_from_trail: 0
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "Trail goes through town, hot springs spa"
+    citation: { source: AWOL, year: 2026 }
+
+  erwin:
+    name: Erwin
+    mile: 340.5
+    state: TN
+    distance_from_trail: 3
+    services:
+      grocery: true
+      outfitter: false
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    citation: { source: AWOL, year: 2026 }
+
+  damascus_town:
+    name: Damascus
+    mile: 464.4
+    state: VA
+    distance_from_trail: 0
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "Trail goes through town, Trail Days festival"
+    citation: { source: AWOL, year: 2026 }
+
+  pearisburg:
+    name: Pearisburg
+    mile: 633.5
+    state: VA
+    distance_from_trail: 0.5
+    services:
+      grocery: true
+      outfitter: false
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    citation: { source: AWOL, year: 2026 }
+
+  daleville:
+    name: Daleville
+    mile: 714.5
+    state: VA
+    distance_from_trail: 0.3
+    services:
+      grocery: true
+      outfitter: true
+      hostel: false
+      post_office: true
+      laundry: true
+      restaurant: true
+    citation: { source: AWOL, year: 2026 }
+
+  waynesboro:
+    name: Waynesboro
+    mile: 858.8
+    state: VA
+    distance_from_trail: 2
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "Full services, good zero town"
+    citation: { source: AWOL, year: 2026 }
+
+  harpers_ferry_town:
+    name: Harpers Ferry
+    mile: 1009.0
+    state: WV
+    distance_from_trail: 0
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "ATC Headquarters, psychological halfway"
+    citation: { source: AWOL, year: 2026 }
+
+  duncannon:
+    name: Duncannon
+    mile: 1145.9
+    state: PA
+    distance_from_trail: 0
+    services:
+      grocery: true
+      outfitter: false
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "Doyle Hotel - historic hiker hotel"
+    citation: { source: AWOL, year: 2026 }
+
+  delaware_water_gap:
+    name: Delaware Water Gap
+    mile: 1282.5
+    state: PA
+    distance_from_trail: 0
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    citation: { source: AWOL, year: 2026 }
+
+  hanover:
+    name: Hanover
+    mile: 1750.2
+    state: NH
+    distance_from_trail: 0
+    services:
+      grocery: true
+      outfitter: true
+      hostel: false
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "Dartmouth College town"
+    citation: { source: AWOL, year: 2026 }
+
+  gorham:
+    name: Gorham
+    mile: 1880.5
+    state: NH
+    distance_from_trail: 3.5
+    services:
+      grocery: true
+      outfitter: true
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "Major White Mountains town"
+    citation: { source: AWOL, year: 2026 }
+
+  monson:
+    name: Monson
+    mile: 2074.5
+    state: ME
+    distance_from_trail: 0.5
+    services:
+      grocery: true
+      outfitter: false
+      hostel: true
+      post_office: true
+      laundry: true
+      restaurant: true
+    note: "LAST RESUPPLY before 100-Mile Wilderness"
+    citation: { source: AWOL, year: 2026 }
+
+# ============================================================================
+# HIKER PROFILE DATA (Chris-specific)
+# ============================================================================
+
+hiker:
+  completed_miles:
+    ouachita: 223
+    ozark_highlands: 270
+    ozark_trail: 230
+    total: 723
+    citation: { source: MEASURED, year: 2025 }
+
+  at_miles_hiked:
+    standing_bear_to_hot_springs: 33
+    newfound_gap_kuwohi: 15.6
+    total: 48.6
+    note: "Hard miles - winter, full pack conditions"
+    citation: { source: MEASURED, year: 2025 }
+
+  elevation_gain_total:
+    value: 120000
+    unit: feet
+    approximate: true
+    citation: { source: MEASURED, year: 2025 }
+
+  awards:
+    - name: Sassafras Award
+      organization: Ozark Society
+      note: "6th person in history to receive this award"
+      citation: { source: MEASURED, year: 2025 }
+
+# ============================================================================
+# AMC HUTS (White Mountains)
+# ============================================================================
+
+amc_huts:
+  - name: Lonesome Lake Hut
+    mile: 1795.5
+    elevation: 2760
+    citation: { source: AWOL, year: 2026 }
+
+  - name: Greenleaf Hut
+    mile: 1805.0
+    elevation: 4200
+    citation: { source: AWOL, year: 2026 }
+
+  - name: Galehead Hut
+    mile: 1816.5
+    elevation: 3800
+    citation: { source: AWOL, year: 2026 }
+
+  - name: Zealand Falls Hut
+    mile: 1822.0
+    elevation: 2630
+    citation: { source: AWOL, year: 2026 }
+
+  - name: Mizpah Spring Hut
+    mile: 1835.5
+    elevation: 3800
+    citation: { source: AWOL, year: 2026 }
+
+  - name: Lakes of the Clouds Hut
+    mile: 1840.0
+    elevation: 5012
+    note: "Highest AMC hut"
+    citation: { source: AWOL, year: 2026 }
+
+  - name: Madison Spring Hut
+    mile: 1849.5
+    elevation: 4800
+    citation: { source: AWOL, year: 2026 }
+
+  - name: Carter Notch Hut
+    mile: 1864.5
+    elevation: 3288
+    citation: { source: AWOL, year: 2026 }
+
+# ============================================================================
+# EXTREMES & RECORDS
+# ============================================================================
+
+extremes:
+  highest_point:
+    name: Clingmans Dome (Kuwohi)
+    mile: 199.5
+    elevation: 6643
+    state: NC/TN
+    citation: { source: ATC, year: 2026 }
+
+  lowest_point:
+    name: Bear Mountain Bridge
+    mile: 1394.5
+    elevation: 124
+    state: NY
+    citation: { source: ATC, year: 2026 }
+
+  longest_state:
+    name: Virginia
+    miles: 544.6
+    citation: { source: AWOL, year: 2026 }
+
+  shortest_state:
+    name: West Virginia
+    miles: 3.1
+    citation: { source: AWOL, year: 2026 }
+
+  hardest_mile:
+    name: Mahoosuc Notch
+    mile: 1895.0
+    state: ME
+    citation: { source: ATC, year: 2026 }

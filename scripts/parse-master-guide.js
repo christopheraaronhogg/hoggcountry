@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 /**
- * Parse Master Guide Script (Dynamic Version)
+ * Parse Master Guide Script (Dynamic Version with Fact Injection)
  *
  * Reads MASTER_NOBO_FIELD_GUIDE.md and splits it into individual chapter files
- * for the Astro content collection.
+ * for the Astro content collection. Also injects facts from trail-facts.yaml.
  *
- * This parser is FULLY DYNAMIC:
- * - Auto-detects all PART sections from the document
- * - Extracts titles directly from headings
- * - Generates filenames from titles (slugified)
- * - Handles any number of parts without code changes
+ * TEMPLATE SYNTAX (in master guide):
+ * - {{trail.total_miles}}           → raw value (2197.4)
+ * - {{trail.total_miles|commas}}    → with commas (2,197.4)
+ * - {{trail.total_miles|round}}     → rounded (2197)
+ * - {{trail.total_miles|display}}   → uses .display if available
+ * - {{trail.total_miles|marketing}} → uses .marketing if available
+ * - {{landmarks.blood_mountain.elevation}} → nested access (4458)
+ * - {{factbox:landmarks.blood_mountain}}   → generates fact card
+ * - {{table:towns.GA}}                     → generates town table
  *
  * Usage: node scripts/parse-master-guide.js
  *        npm run update-guide
@@ -20,6 +24,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import yaml from 'js-yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +32,7 @@ const ROOT = path.resolve(__dirname, '..');
 
 const MASTER_FILE = path.join(ROOT, 'MASTER_NOBO_FIELD_GUIDE.md');
 const GUIDE_DIR = path.join(ROOT, 'src/content/guide');
+const FACTS_FILE = path.join(ROOT, 'src/data/trail-facts.yaml');
 
 // Icon mapping based on common keywords in titles
 const ICON_MAP = {
@@ -67,6 +73,222 @@ const ICON_MAP = {
   'final': 'mountain',
   'truth': 'mountain',
 };
+
+// =============================================================================
+// FACT INJECTION SYSTEM
+// =============================================================================
+
+let _facts = null;
+
+/**
+ * Load facts from YAML file
+ */
+function loadFacts() {
+  if (_facts) return _facts;
+
+  if (!fs.existsSync(FACTS_FILE)) {
+    console.warn(`⚠️  Facts file not found: ${FACTS_FILE}`);
+    console.warn('   Template variables will not be replaced.');
+    return null;
+  }
+
+  const yamlContent = fs.readFileSync(FACTS_FILE, 'utf-8');
+  _facts = yaml.load(yamlContent);
+  return _facts;
+}
+
+/**
+ * Get a value from facts by dot-notation path
+ */
+function getFactByPath(path) {
+  const facts = loadFacts();
+  if (!facts) return undefined;
+
+  const parts = path.split('.');
+  let current = facts;
+
+  for (const part of parts) {
+    if (current === null || current === undefined) return undefined;
+    if (typeof current !== 'object') return undefined;
+    current = current[part];
+  }
+
+  // Auto-extract .value from FactValue objects
+  if (current && typeof current === 'object' && 'value' in current) {
+    return current;
+  }
+
+  return current;
+}
+
+/**
+ * Format a number with the specified format
+ */
+function formatNumber(value, format) {
+  if (typeof value !== 'number') return String(value);
+
+  switch (format) {
+    case 'commas':
+      return value.toLocaleString('en-US', { maximumFractionDigits: 1 });
+    case 'round':
+      return Math.round(value).toString();
+    case 'raw':
+    default:
+      return value.toString();
+  }
+}
+
+/**
+ * Format a fact value
+ */
+function formatFact(factOrValue, format = 'raw') {
+  // Handle FactValue objects
+  if (factOrValue && typeof factOrValue === 'object' && 'value' in factOrValue) {
+    const factValue = factOrValue;
+
+    switch (format) {
+      case 'display':
+        return factValue.display ?? formatNumber(factValue.value, 'commas');
+      case 'marketing':
+        return factValue.marketing ?? formatNumber(factValue.value, 'commas');
+      case 'commas':
+        return formatNumber(factValue.value, 'commas');
+      case 'round':
+        return formatNumber(factValue.value, 'round');
+      case 'raw':
+      default:
+        return String(factValue.value);
+    }
+  }
+
+  // Handle raw values
+  if (typeof factOrValue === 'number') {
+    return formatNumber(factOrValue, format === 'raw' ? 'raw' : format);
+  }
+
+  return String(factOrValue ?? '');
+}
+
+/**
+ * Generate a fact box for a landmark
+ */
+function generateFactBox(landmarkId) {
+  const facts = loadFacts();
+  if (!facts) return `<!-- Facts not loaded -->`;
+
+  const landmark = facts.landmarks?.[landmarkId];
+  if (!landmark) return `<!-- Landmark not found: ${landmarkId} -->`;
+
+  const lines = [
+    '',
+    `> **📍 ${landmark.name}**`,
+    `> Mile ${landmark.mile.toLocaleString('en-US', { maximumFractionDigits: 1 })} | Elevation ${landmark.elevation.toLocaleString('en-US')} ft | ${landmark.state}`,
+  ];
+
+  if (landmark.significance) {
+    lines.push(`> *${landmark.significance}*`);
+  }
+
+  if (landmark.note) {
+    lines.push(`> ${landmark.note}`);
+  }
+
+  lines.push(`> <small>Source: ${landmark.citation.source} ${landmark.citation.year}</small>`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+/**
+ * Generate a town table for a state
+ */
+function generateTownTable(stateId) {
+  const facts = loadFacts();
+  if (!facts) return `<!-- Facts not loaded -->`;
+
+  const upper = stateId.toUpperCase();
+  const towns = Object.values(facts.towns || {}).filter(t =>
+    t.state.toUpperCase() === upper
+  );
+
+  if (towns.length === 0) return `<!-- No towns found for state: ${stateId} -->`;
+
+  // Sort by mile
+  towns.sort((a, b) => a.mile - b.mile);
+
+  const headers = ['Town', 'Mile', 'From Trail', 'Grocery', 'Outfitter', 'Hostel', 'PO'];
+  const rows = towns.map(t => [
+    t.name,
+    t.mile.toString(),
+    t.distance_from_trail === 0 ? 'On trail' : `${t.distance_from_trail} mi`,
+    t.services.grocery ? '✓' : '—',
+    t.services.outfitter ? '✓' : '—',
+    t.services.hostel ? '✓' : '—',
+    t.services.post_office ? '✓' : '—',
+  ]);
+
+  const headerRow = `| ${headers.join(' | ')} |`;
+  const separatorRow = `| ${headers.map(() => '---').join(' | ')} |`;
+  const dataRows = rows.map(r => `| ${r.join(' | ')} |`).join('\n');
+
+  return `\n${headerRow}\n${separatorRow}\n${dataRows}\n`;
+}
+
+/**
+ * Process all template syntax in content
+ */
+function processTemplates(content) {
+  const facts = loadFacts();
+  if (!facts) return content;
+
+  let processed = content;
+  let replacementCount = 0;
+
+  // Process fact boxes: {{factbox:landmarks.blood_mountain}}
+  processed = processed.replace(/\{\{factbox:([^}]+)\}\}/g, (match, expr) => {
+    const [type, id] = expr.trim().split('.');
+    if (type === 'landmarks') {
+      replacementCount++;
+      return generateFactBox(id);
+    }
+    return match;
+  });
+
+  // Process tables: {{table:towns.GA}}
+  processed = processed.replace(/\{\{table:towns\.([^}]+)\}\}/g, (match, stateId) => {
+    replacementCount++;
+    return generateTownTable(stateId.trim());
+  });
+
+  // Process simple values: {{path.to.fact}} or {{path.to.fact|format}}
+  processed = processed.replace(/\{\{([^}]+)\}\}/g, (match, expr) => {
+    // Skip if already processed (factbox/table)
+    if (expr.startsWith('factbox:') || expr.startsWith('table:')) {
+      return match;
+    }
+
+    const [path, format] = expr.trim().split('|');
+    const fact = getFactByPath(path.trim());
+
+    if (fact === undefined) {
+      console.warn(`⚠️  Template variable not found: ${path.trim()}`);
+      return match; // Keep original if not found
+    }
+
+    replacementCount++;
+    return formatFact(fact, format?.trim() || 'raw');
+  });
+
+  if (replacementCount > 0) {
+    console.log(`   📝 Replaced ${replacementCount} template variables`);
+  }
+
+  return processed;
+}
+
+// =============================================================================
+// ROMAN NUMERALS & UTILITIES
+// =============================================================================
 
 /**
  * Convert Roman numerals to Arabic numbers
@@ -290,11 +512,16 @@ export function parseMasterDocument(content) {
  * Clean introduction content
  */
 function cleanIntroContent(content) {
+  // Load facts for template replacement in intro
+  const facts = loadFacts();
+  const totalMiles = facts?.trail?.total_miles?.display || '2,197.4';
+  const totalMilesRaw = facts?.trail?.total_miles?.value || 2197.4;
+
   // Remove the document header block
   let cleaned = content
     .replace(/^# THE COMPLETE APPALACHIAN TRAIL NOBO FIELD GUIDE\s*/mi, '')
     .replace(/^\*\*Springer Mountain.*?\*\*\s*/m, '')
-    .replace(/^\*2,197\.9 Miles.*?\*\s*/m, '')
+    .replace(/^\*2,197\.\d+ Miles.*?\*\s*/m, '')
     .replace(/^\*February Start Edition\*\s*/m, '')
     .replace(/^---\s*/gm, '')
     .replace(/^\*\*Prepared by:\*\*.*\s*/m, '')
@@ -316,7 +543,7 @@ function cleanIntroContent(content) {
       return `# The Complete Appalachian Trail NOBO Field Guide
 
 **Springer Mountain, Georgia to Mount Katahdin, Maine**
-*2,197.9 Miles of Trail-Tested Knowledge*
+*${totalMiles} Miles of Trail-Tested Knowledge*
 *February Start Edition*
 
 ---
@@ -330,6 +557,10 @@ function cleanIntroContent(content) {
     }
   );
 
+  // Replace hardcoded trail length with dynamic value
+  cleaned = cleaned.replace(/2,?197\.9/g, totalMiles);
+  cleaned = cleaned.replace(/2197\.9/g, String(totalMilesRaw));
+
   return cleaned;
 }
 
@@ -338,10 +569,21 @@ function cleanIntroContent(content) {
  */
 function cleanPartContent(content, title) {
   // Replace the PART X: TITLE or CONCLUSION: TITLE header with just # Title
-  const cleaned = content.replace(
+  let cleaned = content.replace(
     /^# (PART\s+[IVXLCDM]+|CONCLUSION):\s*.*$/mi,
     `# ${title}`
   );
+
+  // Load facts for template replacement
+  const facts = loadFacts();
+  if (facts) {
+    const totalMiles = facts.trail?.total_miles?.display || '2,197.4';
+    const totalMilesRaw = facts.trail?.total_miles?.value || 2197.4;
+
+    // Replace hardcoded trail length with dynamic value
+    cleaned = cleaned.replace(/2,?197\.9/g, totalMiles);
+    cleaned = cleaned.replace(/2197\.9/g, String(totalMilesRaw));
+  }
 
   return cleaned.trim();
 }
@@ -380,7 +622,10 @@ function generateFilename(section) {
 function writeChapter(section, dryRun = false) {
   const filename = generateFilename(section);
   const frontmatter = generateFrontmatter(section);
-  const fullContent = frontmatter + section.content;
+
+  // Process templates in content
+  const processedContent = processTemplates(section.content);
+  const fullContent = frontmatter + processedContent;
 
   const filePath = path.join(GUIDE_DIR, filename);
 
@@ -431,8 +676,18 @@ export function main(options = {}) {
     return { success: false, error };
   }
 
+  // Load facts
+  log('Loading trail facts from YAML...');
+  const facts = loadFacts();
+  if (facts) {
+    log(`   ✓ Loaded facts (AWOL ${facts._meta?.awol_edition || 'unknown'} edition)`);
+    log(`   ✓ Trail length: ${facts.trail?.total_miles?.value} miles`);
+    log(`   ✓ ${Object.keys(facts.landmarks || {}).length} landmarks defined`);
+    log(`   ✓ ${Object.keys(facts.towns || {}).length} towns defined`);
+  }
+
   // Read master document
-  log('Reading MASTER_NOBO_FIELD_GUIDE.md...');
+  log('\nReading MASTER_NOBO_FIELD_GUIDE.md...');
   const masterContent = fs.readFileSync(MASTER_FILE, 'utf-8');
 
   // Parse into sections
@@ -490,6 +745,7 @@ export function main(options = {}) {
     sections,
     written,
     quickFiles,
+    factsLoaded: !!facts,
   };
 }
 

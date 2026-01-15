@@ -10,7 +10,7 @@ icon: "compass"
 
 This guide represents hundreds of hours of research, planning, and real-world trail experience distilled into a single comprehensive resource. It is not a theoretical exercise—it is a battle-tested system built on 840+ miles of completed thru-hikes across three major trail systems, earning the rare Sassafras Award from the Ozark Society.
 
-The Appalachian Trail demands respect. It is 2,197.9 miles of variable terrain, unpredictable weather, and constant decision-making. Success requires more than fitness—it requires systems, knowledge, and the discipline to apply both consistently.
+The Appalachian Trail demands respect. It is 2,197.4 miles of variable terrain, unpredictable weather, and constant decision-making. Success requires more than fitness—it requires systems, knowledge, and the discipline to apply both consistently.
 
 ## Core Principles
 
