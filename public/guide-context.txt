@@ -1,7 +1,7 @@
 # THE COMPLETE APPALACHIAN TRAIL NOBO FIELD GUIDE
 
-**Springer Mountain, Georgia to Mount Katahdin, Maine**  
-*2,197.9 Miles of Trail-Tested Knowledge*  
+**Springer Mountain, Georgia to Mount Katahdin, Maine**
+*{{trail.total_miles|commas}} Miles of Trail-Tested Knowledge*
 *February Start Edition*
 
 ---
@@ -51,7 +51,7 @@
 
 This guide represents hundreds of hours of research, planning, and real-world trail experience distilled into a single comprehensive resource. It is not a theoretical exercise—it is a battle-tested system built on 840+ miles of completed thru-hikes across three major trail systems, earning the rare Sassafras Award from the Ozark Society.
 
-The Appalachian Trail demands respect. It is 2,197.9 miles of variable terrain, unpredictable weather, and constant decision-making. Success requires more than fitness—it requires systems, knowledge, and the discipline to apply both consistently.
+The Appalachian Trail demands respect. It is {{trail.total_miles|commas}} miles of variable terrain, unpredictable weather, and constant decision-making. Success requires more than fitness—it requires systems, knowledge, and the discipline to apply both consistently.
 
 ## Core Principles
 
@@ -95,7 +95,7 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 ### Prior Appalachian Trail Experience
 
 - **Standing Bear Farm to Hot Springs, NC** — ~35 miles | ~9,000 ft elevation gain | Full pack, winter conditions
-- **Newfound Gap to Kuwohi (Overnight)** — ~16 miles round trip | ~3,300 ft elevation gain | Shelter stay in ~17°F conditions | Summit: 6,643 ft (highest point on the AT)
+- **Newfound Gap to Kuwohi (Overnight)** — ~16 miles round trip | ~3,300 ft elevation gain | Shelter stay in ~17°F conditions | Summit: {{extremes.highest_point.elevation|commas}} ft (highest point on the AT)
 
 *Note: Clingmans Dome was officially renamed to "Kuwohi" in 2024, restoring its Cherokee name meaning "mulberry place."*
 
@@ -320,7 +320,7 @@ Sharp climbs early, Blood Mountain. First state down.
 Long ridge walks. You're officially a real AT hiker.
 
 ### 3. Great Smoky Mountains — Mile ~165.7 to ~241
-Highest sustained elevations. Kuwohi (Clingmans Dome) 6,643 ft.
+Highest sustained elevations. Kuwohi (Clingmans Dome) {{landmarks.clingmans_dome.elevation|commas}} ft.
 
 ### 4. Northern NC & Tennessee — Mile ~241 to ~386
 Big balds, Roan Highlands. Damascus = Trail Town USA.
@@ -355,7 +355,7 @@ Hardest terrain on AT. Alpine travel. **If you finish this, you WILL finish.**
 ### 14. Maine — Mile ~1,912 to ~2,198
 Roots, rocks, ladders. Katahdin is inevitable.
 
-> *"I'm not hiking 2,197.9 miles—I'm hiking 14 victories."*
+> *"I'm not hiking {{trail.total_miles|commas}} miles—I'm hiking 14 victories."*
 
 ---
 
@@ -377,8 +377,8 @@ Roots, rocks, ladders. Katahdin is inevitable.
 
 | Peak | Start Elevation | Summit | Net Gain |
 |------|-----------------|--------|----------|
-| Springer Mountain | ~3,200 ft | 3,782 ft | ~580 ft |
-| Blood Mountain | ~3,100 ft (Neels Gap) | 4,458 ft | ~1,350 ft |
+| Springer Mountain | ~3,200 ft | {{landmarks.springer_mountain.elevation|commas}} ft | ~580 ft |
+| Blood Mountain | ~3,100 ft (Neels Gap) | {{landmarks.blood_mountain.elevation|commas}} ft | ~1,350 ft |
 
 #### NORTH CAROLINA / TENNESSEE
 
@@ -387,7 +387,7 @@ Roots, rocks, ladders. Katahdin is inevitable.
 | Standing Indian Mountain | ~3,500 ft | 5,499 ft | ~2,000 ft |
 | Wayah Bald | ~3,800 ft | 5,342 ft | ~1,540 ft |
 | Cheoah Bald | ~1,700 ft | 5,062 ft | ~3,300 ft |
-| Kuwohi (Clingmans Dome) | ~5,000 ft | 6,643 ft | ~1,640 ft |
+| Kuwohi (Clingmans Dome) | ~5,000 ft | {{landmarks.clingmans_dome.elevation|commas}} ft | ~1,640 ft |
 | Snowbird Mountain ✓ | ~2,200 ft | ~4,260 ft | ~2,060 ft |
 
 #### VIRGINIA
@@ -2922,7 +2922,7 @@ ETA: MM/DD/YYYY
 
 ---
 
-### MAINE (Mile 1,905-2,197.9)
+### MAINE (Mile 1,905-{{trail.total_miles|round}})
 
 **Andover, ME (Mile ~1,975 via ME-5)**
 - **Distance from Trail:** ~0.8 miles
@@ -4711,14 +4711,14 @@ Message a trusted person at home. They:
 | ~1,888.1 | Pinkham Notch (NH-16) |
 | ~1,904.8 | Gorham (US-2) |
 
-### MAINE (Mile ~1,905 – 2,197.9)
+### MAINE (Mile ~1,905 – {{trail.total_miles|round}})
 
 | Mile | Exit Point |
 |------|------------|
 | ~1,964.5 | ME-27 (Stratton) |
 | ~2,012.3 | Kennebec River (ME-201) |
 | ~2,089.6 | Jo-Mary Road |
-| ~2,197.4 | Katahdin Stream Campground Road |
+| ~{{trail.total_miles}} | Katahdin Stream Campground Road |
 
 *Note: Some forest roads may be seasonally gated—verify with FarOut when conditions matter.*
 

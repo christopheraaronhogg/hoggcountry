@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { TRAIL_TOTAL_MILES, KATAHDIN } from '../data/TrailData';
 
 interface TrailLocation {
   mile: number;
@@ -83,7 +84,7 @@ const TRAIL_DATA: TrailLocation[] = [
   { mile: 2093, name: '100-Mile Wilderness Begins', type: 'landmark', description: 'No resupply for 100 miles. Carry 8-10 days food.' },
   { mile: 2145, name: 'Bigelow Range', type: 'peak', description: 'Challenging Maine peaks.', elevation: 4145 },
   { mile: 2193, name: '100-Mile Wilderness Ends', type: 'landmark', description: 'You made it through! Katahdin awaits.' },
-  { mile: 2197.9, name: 'Mt. Katahdin', type: 'peak', description: 'THE END! Northern terminus. You did it!', elevation: 5269 }
+  { mile: TRAIL_TOTAL_MILES, name: KATAHDIN.name, type: 'peak', description: 'THE END! Northern terminus. You did it!', elevation: KATAHDIN.elevation }
 ];
 
 // Trail tips based on current section
@@ -180,7 +181,7 @@ const TRAIL_TIPS: { minMile: number; maxMile: number; tips: string[] }[] = [
     ]
   },
   {
-    minMile: 1912, maxMile: 2197.9,
+    minMile: 1912, maxMile: TRAIL_TOTAL_MILES,
     tips: [
       'Maine is slow - adjust expectations.',
       'Monson: last resupply before 100-Mile.',
@@ -229,7 +230,7 @@ export class GuideScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Current position indicator
-    this.add.text(width / 2, headerHeight / 2 + 22, `Mile ${this.currentMile.toFixed(1)} of 2,197.9`, {
+    this.add.text(width / 2, headerHeight / 2 + 22, `Mile ${this.currentMile.toFixed(1)} of ${TRAIL_TOTAL_MILES.toLocaleString()}`, {
       font: this.isMobile ? '11px Courier' : '13px Courier',
       color: '#aaccaa'
     }).setOrigin(0.5);

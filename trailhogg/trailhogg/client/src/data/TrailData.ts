@@ -1,13 +1,18 @@
 /**
  * Complete Appalachian Trail Data
- * 2,197.9 miles from Springer Mountain, GA to Mt. Katahdin, ME
+ * From Springer Mountain, GA to Mt. Katahdin, ME
  *
  * Data sources:
  * - WhiteBlaze AT Shelter Database
  * - MASTER_NOBO_FIELD_GUIDE.md
  * - TNlandforms.us AT data
- * - ATC official mileages (2025)
+ * - AWOL's AT Guide (2025)
  */
+
+import { TRAIL_TOTAL_MILES, TRAIL_TOTAL_STATES, KATAHDIN, KUWOHI, BEAR_MOUNTAIN_BRIDGE } from '@trailhogg/shared';
+
+// Re-export trail constants for easy imports
+export { TRAIL_TOTAL_MILES, TRAIL_TOTAL_STATES, KATAHDIN };
 
 // ============================================================================
 // SHELTER DATA - All 260+ AT Shelters
@@ -342,7 +347,7 @@ export interface StateBoundary {
 }
 
 export const STATE_BOUNDARIES: StateBoundary[] = [
-  { mile: 0, state: 'GA', prevState: '', name: 'Springer Mountain - Southern Terminus', celebration: "Your journey begins! Touch the bronze plaque and take a deep breath. 2,197.9 miles to Katahdin.", statesCompleted: 0, percentComplete: 0, funFact: "Springer Mountain was designated the southern terminus in 1958." },
+  { mile: 0, state: 'GA', prevState: '', name: 'Springer Mountain - Southern Terminus', celebration: `Your journey begins! Touch the bronze plaque and take a deep breath. ${TRAIL_TOTAL_MILES.toLocaleString()} miles to Katahdin.`, statesCompleted: 0, percentComplete: 0, funFact: "Springer Mountain was designated the southern terminus in 1958." },
   { mile: 78.5, state: 'NC', prevState: 'GA', name: 'Georgia/North Carolina Border', celebration: "Goodbye Georgia! Hello North Carolina! You've completed your first state - only 13 more to go!", statesCompleted: 1, percentComplete: 3.6, funFact: "NC has 95.5 miles of AT but you'll cross through it multiple times with TN." },
   { mile: 166, state: 'GSMNP', prevState: 'NC', name: 'Great Smoky Mountains National Park', celebration: "Welcome to the Smokies! The most visited national park on the AT. Shelter camping required.", statesCompleted: 1, percentComplete: 7.5, funFact: "GSMNP has the highest sustained elevation on the entire AT." },
   { mile: 241, state: 'NC', prevState: 'GSMNP', name: 'Exit Smokies into NC', celebration: "You made it through the Smokies! That's a major accomplishment. The balds await!", statesCompleted: 1, percentComplete: 11.0, funFact: "The AT weaves between NC and TN multiple times through the highlands." },
@@ -358,7 +363,7 @@ export const STATE_BOUNDARIES: StateBoundary[] = [
   { mile: 1600, state: 'VT', prevState: 'MA', name: 'Massachusetts/Vermont Border', celebration: "GREEN MOUNTAIN STATE! Welcome to Vermont - and the MUD! The Long Trail overlap begins.", statesCompleted: 11, percentComplete: 72.8, funFact: "Vermont means 'green mountain' in French." },
   { mile: 1754, state: 'NH', prevState: 'VT', name: 'Vermont/New Hampshire Border - Hanover!', celebration: "NEW HAMPSHIRE! The White Mountains await. This is where it gets REAL. Prepare for the hardest terrain on the AT!", statesCompleted: 12, percentComplete: 79.8, funFact: "The Presidential Range has some of the worst weather on Earth." },
   { mile: 1912, state: 'ME', prevState: 'NH', name: 'New Hampshire/Maine Border', celebration: "THE FINAL STATE! Welcome to Maine! Only 286 miles to Katahdin. You're going to finish this!", statesCompleted: 13, percentComplete: 87.0, funFact: "Maine has more remote wilderness than any other state on the AT." },
-  { mile: 2197.9, state: 'END', prevState: 'ME', name: 'Baxter Peak - Katahdin - THE END!', celebration: "YOU DID IT!!! 2,197.9 MILES! Touch the famous sign at Baxter Peak! You are now an AT thru-hiker! Cry. Take photos. You earned every single step.", statesCompleted: 14, percentComplete: 100, funFact: "Only about 25% of people who start a thru-hike actually finish." },
+  { mile: TRAIL_TOTAL_MILES, state: 'END', prevState: 'ME', name: 'Baxter Peak - Katahdin - THE END!', celebration: `YOU DID IT!!! ${TRAIL_TOTAL_MILES.toLocaleString()} MILES! Touch the famous sign at Baxter Peak! You are now an AT thru-hiker! Cry. Take photos. You earned every single step.`, statesCompleted: 14, percentComplete: 100, funFact: "Only about 25% of people who start a thru-hike actually finish." },
 ];
 
 // ============================================================================
@@ -614,7 +619,7 @@ export const PEAKS: Peak[] = [
   { mile: 1863, name: 'Mt. Washington', elevation: 6288, state: 'NH', netGain: 3900, difficulty: 5, notes: 'Worst weather in the world!' },
   { mile: 1925, name: 'Mahoosuc Notch', elevation: 2500, state: 'ME', netGain: 0, difficulty: 5, notes: 'Hardest mile on AT - boulder cave' },
   { mile: 2014, name: 'Bigelow Range', elevation: 4145, state: 'ME', netGain: 2800, difficulty: 4 },
-  { mile: 2197.9, name: 'Mt. Katahdin', elevation: 5269, state: 'ME', netGain: 4000, difficulty: 5, notes: 'Northern Terminus! You did it!' },
+  { mile: TRAIL_TOTAL_MILES, name: KATAHDIN.name, elevation: KATAHDIN.elevation, state: 'ME', netGain: 4000, difficulty: 5, notes: 'Northern Terminus! You did it!' },
 ];
 
 // ============================================================================
@@ -867,7 +872,7 @@ export const LANDMARKS: Landmark[] = [
   { mile: 2188.2, name: 'Katahdin Stream Falls', type: 'waterfall', state: 'ME', description: 'Falls near final campground' },
   { mile: 2190.4, name: 'The Hunt Trail', type: 'trail_feature', state: 'ME', description: 'Final climb begins - 5 miles, 4,000ft', notes: 'Iron rungs, exposed scrambles ahead' },
   { mile: 2194.5, name: 'The Tableland', type: 'trail_feature', state: 'ME', description: 'Above treeline plateau on Katahdin', photoWorthy: true },
-  { mile: 2197.9, name: 'Baxter Peak - Katahdin', type: 'historic', state: 'ME', description: 'THE END. The Northern Terminus. You made it!', photoWorthy: true, notes: 'Touch the sign. Cry. Take photos. You did it!' },
+  { mile: TRAIL_TOTAL_MILES, name: 'Baxter Peak - Katahdin', type: 'historic', state: 'ME', description: 'THE END. The Northern Terminus. You made it!', photoWorthy: true, notes: 'Touch the sign. Cry. Take photos. You did it!' },
 ];
 
 // ============================================================================
@@ -959,13 +964,13 @@ export function getElevationAtMile(mile: number): number {
 // ============================================================================
 
 export const TRAIL_STATS = {
-  totalMiles: 2197.9,
-  totalStates: 14,
+  totalMiles: TRAIL_TOTAL_MILES,
+  totalStates: TRAIL_TOTAL_STATES,
   totalShelters: SHELTERS.length,
   totalTowns: TOWNS.length,
   totalPeaks: PEAKS.length,
-  highestPoint: { name: 'Kuwohi (Clingmans Dome)', elevation: 6643, mile: 209 },
-  lowestPoint: { name: 'Bear Mountain Bridge', elevation: 124, mile: 1408 },
+  highestPoint: { name: KUWOHI.name, elevation: KUWOHI.elevation, mile: KUWOHI.mile },
+  lowestPoint: { name: BEAR_MOUNTAIN_BRIDGE.name, elevation: BEAR_MOUNTAIN_BRIDGE.elevation, mile: BEAR_MOUNTAIN_BRIDGE.mile },
   highestShelter: { name: 'Roan High Knob Shelter', elevation: 6275, mile: 379.3 },
   lowestShelter: { name: 'Ten Mile River Lean-to', elevation: 290, mile: 1464.1 },
 };
@@ -1825,7 +1830,7 @@ export const VIEW_SPOTS: ViewSpot[] = [
   { mile: 2058.8, name: 'Bigelow Range', state: 'ME', bestFor: 'sunset', direction: 'west', description: 'Views over Flagstaff Lake', campNearby: true, notes: 'Beautiful sunset over lake' },
   { mile: 2111.8, name: 'White Cap Mountain', state: 'ME', bestFor: 'sunrise', direction: 'east', description: 'First views of Katahdin!', campNearby: true, notes: 'Seeing Katahdin at sunrise is emotional' },
   { mile: 2143.6, name: 'Rainbow Ledges', state: 'ME', bestFor: 'both', direction: 'panoramic', description: 'Views of Rainbow Lake and Katahdin', campNearby: true },
-  { mile: 2197.9, name: 'Baxter Peak - Katahdin', state: 'ME', bestFor: 'sunrise', direction: 'east', description: 'THE END - First light hits Maine first', campNearby: false, notes: 'Camp at Katahdin Stream, start at 5am for sunrise summit. The ultimate.' },
+  { mile: TRAIL_TOTAL_MILES, name: 'Baxter Peak - Katahdin', state: 'ME', bestFor: 'sunrise', direction: 'east', description: 'THE END - First light hits Maine first', campNearby: false, notes: 'Camp at Katahdin Stream, start at 5am for sunrise summit. The ultimate.' },
 ];
 
 // ============================================================================
@@ -1900,7 +1905,7 @@ export const HIKER_TRADITIONS: HikerTradition[] = [
   { mile: 2093.0, name: 'Last Town Zero', tradition: 'Full rest day in Monson before 100-mile', description: 'Prepare mind and body for final push', optional: false, notes: 'Shaws hostel legendary. Eat everything. Resupply carefully.' },
   { mile: 2093.0, name: '100-Mile Sign Photo', tradition: 'Photo at the 100-mile wilderness sign', description: 'Mark the beginning of the end', optional: false, notes: 'No resupply, no easy bailout for 100 miles. You ready?' },
   { mile: 2160.4, name: 'Abol Bridge View', tradition: 'First full view of Katahdin from Abol', description: 'See your destination. Its real. Its there.', optional: false, notes: 'Most hikers cry. Last store. Last easy night.' },
-  { mile: 2197.9, name: 'Katahdin Summit Sign', tradition: 'Touch the sign. Take the photo. Cry.', description: 'THE moment. Touch the famous brown sign.', optional: false, notes: 'You did it. All 2,197.9 miles. Take it in. Then figure out how to get down.' },
+  { mile: TRAIL_TOTAL_MILES, name: 'Katahdin Summit Sign', tradition: 'Touch the sign. Take the photo. Cry.', description: 'THE moment. Touch the famous brown sign.', optional: false, notes: `You did it. All ${TRAIL_TOTAL_MILES.toLocaleString()} miles. Take it in. Then figure out how to get down.` },
 ];
 
 // ============================================================================
@@ -1966,10 +1971,10 @@ export const TRAIL_HISTORY: TrailHistory[] = [
   { mile: 888.2, name: 'ATC Founded', year: 1925, type: 'founding', description: 'Appalachian Trail Conservancy established in Washington DC', impact: 'Organization to manage and maintain the trail', notes: 'Moved to Harpers Ferry in 1972 - now the psychological halfway point' },
 
   // FIRST THRU-HIKERS
-  { mile: 2197.9, name: 'First Thru-Hike', year: 1948, type: 'achievement', description: 'Earl Shaffer becomes first person to thru-hike the AT', impact: 'Proved it was possible, inspired generations', notes: '"Crazy One" completed it in 124 days carrying WWII army gear' },
-  { mile: 2197.9, name: 'First Woman Thru-Hiker', year: 1955, type: 'achievement', description: 'Emma "Grandma" Gatewood thru-hikes at age 67', impact: 'Proved age/gender no barrier, inspired lightweight hiking', notes: 'Wore Keds sneakers, carried a shower curtain as shelter' },
-  { mile: 2197.9, name: 'FKT First Set', year: 1973, type: 'achievement', description: 'Warren Doyle sets first recognized FKT: 66 days', impact: 'Birth of competitive thru-hiking', notes: 'Doyle went on to complete 18+ thru-hikes' },
-  { mile: 2197.9, name: 'Speed Record Broken', year: 2015, type: 'achievement', description: 'Scott Jurek sets FKT at 46 days, 8 hours', impact: 'Pushed limits of human endurance on trail', notes: 'Ultra-running legend. Record has since been broken multiple times.' },
+  { mile: TRAIL_TOTAL_MILES, name: 'First Thru-Hike', year: 1948, type: 'achievement', description: 'Earl Shaffer becomes first person to thru-hike the AT', impact: 'Proved it was possible, inspired generations', notes: '"Crazy One" completed it in 124 days carrying WWII army gear' },
+  { mile: TRAIL_TOTAL_MILES, name: 'First Woman Thru-Hiker', year: 1955, type: 'achievement', description: 'Emma "Grandma" Gatewood thru-hikes at age 67', impact: 'Proved age/gender no barrier, inspired lightweight hiking', notes: 'Wore Keds sneakers, carried a shower curtain as shelter' },
+  { mile: TRAIL_TOTAL_MILES, name: 'FKT First Set', year: 1973, type: 'achievement', description: 'Warren Doyle sets first recognized FKT: 66 days', impact: 'Birth of competitive thru-hiking', notes: 'Doyle went on to complete 18+ thru-hikes' },
+  { mile: TRAIL_TOTAL_MILES, name: 'Speed Record Broken', year: 2015, type: 'achievement', description: 'Scott Jurek sets FKT at 46 days, 8 hours', impact: 'Pushed limits of human endurance on trail', notes: 'Ultra-running legend. Record has since been broken multiple times.' },
 
   // TRAGEDIES AND RESCUES
   { mile: 1863.0, name: 'Washington Death Zone', year: 1900, type: 'tragedy', description: 'First recorded fatality on Mt. Washington - 150+ deaths since', impact: 'Established need for weather awareness', notes: 'More deaths than any other AT peak. Weather kills.' },

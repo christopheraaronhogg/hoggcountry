@@ -17,6 +17,7 @@
     "experimentalDecorators": true,
     "baseUrl": ".",
     "paths": {
+      "@trailhogg/shared": ["../shared/src/index"],
       "@trailhogg/shared/*": ["../shared/src/*"]
     }
   },

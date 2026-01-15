@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { gameStorage, type HikerSaveData, type GameSaveData } from '../storage/GameStorage';
 import {
-  SHELTERS, TOWNS, TERRAIN_ZONES, STATE_BOUNDARIES, PEAKS,
+  SHELTERS, TOWNS, TERRAIN_ZONES, STATE_BOUNDARIES, PEAKS, TRAIL_TOTAL_MILES,
   getTerrainZone, getCurrentState, getNextShelter, getNextTown, getElevationAtMile,
   getZoneIdForMile,
   type Shelter, type Town, type TerrainZone
@@ -1693,7 +1693,7 @@ export class GameScene extends Phaser.Scene {
       speed *= speedMod;
       const distance = speed / 60; // miles per minute
 
-      this.hikerData.mile = Math.min(2197.9, this.hikerData.mile + distance);
+      this.hikerData.mile = Math.min(TRAIL_TOTAL_MILES, this.hikerData.mile + distance);
       this.hikerData.currentDayMiles += distance;
       this.hikerData.totalMilesHiked += distance;
 
@@ -1723,7 +1723,7 @@ export class GameScene extends Phaser.Scene {
         this.hikerData.skills.trailLegs + 0.01);
       
       // Check for end - Katahdin summit!
-      if (this.hikerData.mile >= 2197.9) {
+      if (this.hikerData.mile >= TRAIL_TOTAL_MILES) {
         this.hikerData.isHiking = false;
         this.events.emit('game-event', {
           type: 'milestone',

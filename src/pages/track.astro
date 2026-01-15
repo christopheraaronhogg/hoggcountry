@@ -1,12 +1,12 @@
 ---
 import '../styles/global.css';
 import BaseHead from '../components/BaseHead.astro';
+import { TRAIL_TOTAL_MILES } from '../data/trailFacts';
 
 const title = "Live Tracking | Hogg Country";
 const description = "Mission Control - Live GPS tracking for the Appalachian Trail thru-hike";
 
-// Trail stats (can be updated as the hike progresses)
-const TRAIL_TOTAL_MILES = 2197.9;
+// Trail stats (imported from centralized trail-facts.yaml)
 const START_DATE = new Date('2025-03-01'); // Update with actual start date
 const today = new Date();
 const daysOnTrail = Math.floor((today.getTime() - START_DATE.getTime()) / (1000 * 60 * 60 * 24));
@@ -607,7 +607,7 @@ const daysOnTrail = Math.floor((today.getTime() - START_DATE.getTime()) / (1000 
             <div class="waypoint-item">
               <div class="waypoint-marker pending"></div>
               <span class="waypoint-name">Mt. Katahdin</span>
-              <span class="waypoint-mile">mi 2197.9</span>
+              <span class="waypoint-mile">mi {TRAIL_TOTAL_MILES}</span>
             </div>
           </div>
 
@@ -619,7 +619,7 @@ const daysOnTrail = Math.floor((today.getTime() - START_DATE.getTime()) / (1000 
             </div>
             <div class="system-row">
               <span>TOTAL DISTANCE</span>
-              <span class="system-value">2,197.9 MI</span>
+              <span class="system-value">{TRAIL_TOTAL_MILES.toLocaleString()} MI</span>
             </div>
             <div class="system-row">
               <span>SYSTEM STATUS</span>
