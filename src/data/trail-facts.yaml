@@ -5,11 +5,27 @@
 # This YAML file is the SINGLE SOURCE OF TRUTH for all AT facts.
 #
 # CITATION POLICY:
-# Every fact MUST have a citation. We track:
-# - source: ATC | AWOL | NPS | USFS | ALDHA | MEASURED
-# - year: The year the source was published/verified
-# - page: (optional) Page number in printed guide
-# - url: (optional) URL for online sources
+# Every fact MUST have at least one citation. Prefer multiple sources.
+# Use either singular 'citation:' or plural 'citations:' (array)
+#
+# Single citation:
+#   citation:
+#     source: AWOL
+#     year: 2026
+#     page: 14
+#
+# Multi-source citation (preferred for key facts):
+#   citations:
+#     - source: AWOL
+#       year: 2026
+#       page: 14
+#     - source: ATC
+#       year: 2026
+#       url: https://appalachiantrail.org/...
+#     - source: USGS
+#       note: "Elevation verified via National Map"
+#
+# Valid sources: ATC | AWOL | NPS | USFS | ALDHA | USGS | MEASURED
 #
 # TEMPLATE SYNTAX (in master guide):
 # - {{trail.total_miles}}              → 2197.4
@@ -19,10 +35,10 @@
 # - {{factbox:landmarks.blood_mountain}} → generates full fact card
 # - {{table:towns.georgia}}            → generates markdown table
 #
-# MAINTENANCE:
-# - Update annually when new AWOL guide releases
-# - Run /audit-trail-facts to validate consistency
-# - All changes should be committed with citation source
+# VERIFICATION:
+# - See .claude/skills/audit-trail-facts/references/SOURCES.md
+# - Run /audit-trail-facts to validate
+# - Update annually when new AWOL releases (January)
 #
 # ============================================================================
 
@@ -42,11 +58,15 @@ trail:
     value: 2197.4
     display: "2,197.4"
     marketing: "2,190+"
-    citation:
-      source: AWOL
-      year: 2026
-      page: 1
-      note: "Official NOBO distance, Springer to Katahdin"
+    citations:
+      - source: AWOL
+        year: 2026
+        page: 1
+        note: "NOBO distance, Springer to Katahdin"
+      - source: ATC
+        year: 2026
+        url: https://appalachiantrail.org/explore/hike-the-a-t/thru-hiking/
+        note: "Official ATC figure (may round differently)"
 
   approach_trail_miles:
     value: 8.8
@@ -855,24 +875,45 @@ extremes:
     mile: 199.5
     elevation: 6643
     state: NC/TN
-    citation: { source: ATC, year: 2026 }
+    renamed: "Officially renamed to Kuwohi in 2024 (Cherokee: mulberry place)"
+    citations:
+      - source: ATC
+        year: 2026
+        note: "Confirmed highest point on AT"
+      - source: USGS
+        note: "Elevation from National Elevation Dataset"
+      - source: NPS
+        year: 2024
+        note: "Name change to Kuwohi"
 
   lowest_point:
     name: Bear Mountain Bridge
     mile: 1394.5
     elevation: 124
     state: NY
-    citation: { source: ATC, year: 2026 }
+    citations:
+      - source: ATC
+        year: 2026
+      - source: USGS
+        note: "Elevation verified"
 
   longest_state:
     name: Virginia
     miles: 544.6
-    citation: { source: AWOL, year: 2026 }
+    citations:
+      - source: AWOL
+        year: 2026
+      - source: ATC
+        year: 2026
 
   shortest_state:
     name: West Virginia
     miles: 3.1
-    citation: { source: AWOL, year: 2026 }
+    citations:
+      - source: AWOL
+        year: 2026
+      - source: ATC
+        year: 2026
 
   hardest_mile:
     name: Mahoosuc Notch
