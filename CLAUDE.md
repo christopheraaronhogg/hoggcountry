@@ -117,6 +117,34 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 ---
 
+## Trail Data Integrity System
+
+**CRITICAL:** All AT facts must be sourced from `src/data/trailData.ts` — the canonical source of truth.
+
+**Key facts (AWOL 2026):**
+- Total trail length: **2,197.4 miles** (not 2,197.9)
+- Approach trail: **8.8 miles** (Amicalola to Springer, NOT included in AT total)
+- States: **14**
+- Shelters: **~260**
+
+**To validate data consistency:** Run `/audit-trail-facts`
+
+This skill uses 5 independent agents that cross-check each other:
+1. **Extractor** - Scans codebase for all AT claims
+2. **Citation** - Fetches official sources (ATC, AWOL, NPS)
+3. **Internal Validator** - Compares our files against each other
+4. **Reconciler** - Requires 2/3 agent agreement
+5. **Reporter** - Generates actionable fix list
+
+See `.claude/skills/audit-trail-facts.md` for full documentation.
+
+**When adding AT facts:**
+1. Add to `src/data/trailData.ts` with citation
+2. Import and use the value (never hardcode)
+3. Run `/audit-trail-facts` to verify consistency
+
+---
+
 ## TrailHogg Game Roadmap
 
 An AT thru-hiking simulation game. **Live at [hoggcountry.com/game](https://hoggcountry.com/game)**
@@ -124,7 +152,7 @@ An AT thru-hiking simulation game. **Live at [hoggcountry.com/game](https://hogg
 **Stack:** Phaser 3.90 + Vite 7 + TypeScript. Located in `trailhogg/`.
 
 ### Vision
-A gritty, immersive AT simulation with Project Zomboid pacing. Slow and deliberate by default (0.5x speed), with player-adjustable speeds (0.25x to 8x). The entire 2,197.9 miles mapped with real shelters, towns, terrain zones, and landmarks.
+A gritty, immersive AT simulation with Project Zomboid pacing. Slow and deliberate by default (0.5x speed), with player-adjustable speeds (0.25x to 8x). The entire 2,197.4 miles mapped with real shelters, towns, terrain zones, and landmarks.
 
 ### Completed
 - [x] Project scaffold (client/server/shared monorepo)
@@ -153,7 +181,7 @@ A gritty, immersive AT simulation with Project Zomboid pacing. Slow and delibera
 - [x] Wildlife encounters (deer, bear, snake, turkey, squirrel)
 - [x] Trail magic random events
 - [x] In-game Field Guide (G key)
-- [x] **FULL TRAIL DATA**: 2,197.9 miles with:
+- [x] **FULL TRAIL DATA**: 2,197.4 miles with:
   - 260+ real shelters (mile, elevation, water, privy, capacity)
   - 24+ terrain zones with unique visuals (PA rocks, Whites, Smokies, etc.)
   - 25+ real towns with services (hostels, stores, restaurants, outfitters)

@@ -350,6 +350,53 @@ Currently deployed to Netlify. On push to `main`:
 | `cursor.md` | Cursor AI guidelines |
 | `TOOL_EVALUATION.md` | Tool consolidation analysis |
 
+## Roadmap & Task List
+
+### Completed
+- [x] **Trail Data System** - Created `src/data/trailData.ts` as single source of truth for all AT facts with citations (2026-01-14)
+- [x] **Multi-Agent Fact Checker** - Built `/audit-trail-facts` skill with 5 cross-checking agents to prevent hallucination (2026-01-14)
+- [x] **Full Trail Data in Game** - 2,197.4 miles mapped with 260+ shelters, 25+ towns, 20+ peaks (2025)
+- [x] **Field Guide Parser** - Auto-generates chapters from master document (2025)
+- [x] **Offline PWA Support** - Full offline capability via service worker (2025)
+- [x] **Code-Split Tools** - 14 tools lazy-loaded for performance (2025)
+
+### In Progress
+- [ ] **#1 Distance Consistency** - Sync all AT mileage references across site (some show 2,197.9, should be 2,197.4 per AWOL 2026)
+- [ ] **#9 AWOL 2026 Deep Dive** - Full audit comparing our guide to official AWOL 2026 data
+
+### Backlog (Prioritized)
+| # | Issue | Category | Status |
+|---|-------|----------|--------|
+| 2 | Broken links on videos main page | Bug | Pending |
+| 3 | Clarify if miles include approach trail | Content | Pending |
+| 4 | Resupply planner different on phone vs laptop | Responsive | Pending |
+| 5 | Fontana comes before Smokies (ordering) | Content | Pending |
+| 6 | Add Franklin to stops before Smokies | Content | Pending |
+| 7 | Update hero image on website | Asset | Pending |
+| 8 | Slider sensitivity too high | UX | Pending |
+| 10 | Guide formatting off on mobile | Responsive | Pending |
+| 11 | Personal finance missing gear replacements | Feature | Pending |
+| 12 | Review Damascus drop list | Content | Pending |
+| 13 | Snowbird/Blood Mountain bottom line fix | Content | Pending |
+| 14 | Winter tent site checklist | New Content | Pending |
+
+### Data Integrity System
+
+All AT facts now flow from a single source:
+
+```
+src/data/trailData.ts          ← CANONICAL SOURCE (with citations)
+    ↓
+├── MASTER_NOBO_FIELD_GUIDE.md ← Guide prose uses these values
+├── src/pages/*.astro          ← Website pages import from here
+├── trailhogg/**/trailData.ts  ← Game syncs from here
+└── Planning tools             ← Resupply, milestones, etc.
+```
+
+Run `/audit-trail-facts` to validate consistency across all files.
+
+---
+
 ## License
 
 Personal project. All rights reserved.
