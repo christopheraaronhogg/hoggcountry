@@ -11,7 +11,13 @@ import svelte from '@astrojs/svelte';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://hoggcountry.com',
-  integrations: [mdx(), sitemap(), svelte()],
+  integrations: [
+    mdx(),
+    sitemap({
+      filter: (page) => !page.includes('/guide/personalize'),
+    }),
+    svelte(),
+  ],
 
   vite: {
     plugins: [tailwindcss()],
