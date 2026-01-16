@@ -1198,7 +1198,8 @@
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     padding: 0.75rem;
-    width: 240px;
+    width: max-content;
+    max-width: 280px;
     border: 1px solid #eee;
   }
   .emoji-popover::after {
@@ -1212,8 +1213,8 @@
 
   .emoji-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 0.4rem;
+    grid-template-columns: repeat(6, 40px);
+    gap: 0.25rem;
   }
   .emoji-grid button {
     background: none;
