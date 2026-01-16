@@ -5,7 +5,7 @@
   let { trailContext = {} } = $props();
 
   const DEFAULT_CATEGORIES = [
-    { id: "food", name: "Food & Resupply", icon: "🛒", color: "#22c55e" },
+    { id: "food", name: "Resupply (Trail Food)", icon: "🛒", color: "#22c55e" },
     { id: "lodging", name: "Hotels & Hostels", icon: "🏨", color: "#3b82f6" },
     { id: "gear", name: "Gear & Repairs", icon: "🎒", color: "#f59e0b" },
     { id: "services", name: "Town Services", icon: "🧺", color: "#a855f7" },
@@ -65,13 +65,14 @@
         expenses = data.expenses || [];
         if (data.uCategories) {
           uCategories = data.uCategories.map((c) => {
-            if (c.icon === "🍺")
-              return {
-                ...c,
-                icon: "🎉",
-                name: c.name === "Town Fun" ? "Misc / Fun" : c.name,
-              };
-            return c;
+            let nc = { ...c };
+            if (nc.icon === "🍺") {
+              nc.icon = "🎉";
+              if (nc.name === "Town Fun") nc.name = "Misc / Fun";
+            }
+            if (nc.name === "Food & Resupply")
+              nc.name = "Resupply (Trail Food)";
+            return nc;
           });
         }
       } catch (e) {
