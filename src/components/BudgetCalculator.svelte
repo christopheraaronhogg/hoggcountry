@@ -702,19 +702,21 @@
     --marker-gold: #d4a373;
     --cream: #fefae0;
     --muted-green: #a3b18a;
-    --alert-red: #8b0000;
+    --alert-red: #bb2124;
+    --card-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(0, 0, 0, 0.05);
 
     font-family: "Inter", system-ui, sans-serif;
     color: var(--ink);
     background: #fdfdf5;
-    border-radius: 16px;
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
     opacity: 0;
     transition: opacity 0.8s;
-    border: 1px solid #e0e0d0;
+    border: 1px solid var(--glass-border);
     width: 100%;
-    max-width: 100%;
+    max-width: 1000px;
     margin: 0 auto;
     box-sizing: border-box;
   }
@@ -739,13 +741,12 @@
   .budget-header {
     background: var(--pine-green);
     color: white;
-    padding: 1.25rem 2rem;
+    padding: 1.5rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 4px solid var(--marker-gold);
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 1.5rem;
   }
 
   .header-main {
@@ -798,19 +799,20 @@
 
   /* New Stats Dashboard */
   .stats-bar {
-    background: white;
-    padding: 1.5rem 2rem;
+    background: var(--pine-green);
+    color: white;
+    padding: 0 2rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid #f0f0e0;
+    border-bottom: 4px solid var(--marker-gold);
     flex-wrap: wrap;
     gap: 1.5rem;
   }
   .stat-group {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.4rem;
   }
   .stat-group.right {
     flex-direction: row;
@@ -823,19 +825,20 @@
     gap: 0.1rem;
   }
   .stat-value {
-    font-size: 2.2rem;
+    font-size: 2.4rem;
     line-height: 1;
-    color: var(--pine-green);
+    color: white;
     font-family: "Oswald", sans-serif;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
   .stat-value.over {
     color: var(--alert-red);
   }
   .pace-context {
     font-size: 0.8rem;
-    color: #555;
+    color: rgba(255, 255, 255, 0.7);
     margin-top: 5px;
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .sub-item {
@@ -845,23 +848,23 @@
   }
   .sub-label {
     font-size: 0.65rem;
-    color: #555;
+    color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     font-weight: 800;
     margin-bottom: 3px;
   }
   .sub-value {
     font-family: "Oswald", sans-serif;
-    font-size: 1.25rem;
-    color: #444;
+    font-size: 1.4rem;
+    color: white;
     line-height: 1;
   }
   .sub-value .unit {
-    font-size: 0.75rem;
-    opacity: 0.7;
+    font-size: 0.85rem;
+    opacity: 0.6;
     font-weight: 500;
-    margin-left: 2px;
+    margin-left: 4px;
   }
 
   /* Journal Ledger */
@@ -880,9 +883,14 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding-bottom: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(253, 253, 245, 0.95);
+    backdrop-filter: blur(8px);
     border-bottom: 2px solid #f0f0e0;
-    margin-top: 0.5rem;
+    margin: 0 -1.5rem 0.5rem;
+    position: sticky;
+    top: -1.51rem;
+    z-index: 10;
   }
   .day-label {
     font-family: "Oswald", sans-serif;
@@ -907,34 +915,48 @@
   @media (max-width: 900px) {
     .layout-grid {
       grid-template-columns: 1fr;
+      padding: 1rem;
+      gap: 1.5rem;
     }
     .stats-bar {
-      padding: 1.5rem;
+      padding: 0 1.5rem 1.5rem;
     }
     .stat-group.right {
       width: 100%;
-      justify-content: space-between;
-      border-top: 1px solid #eee;
-      padding-top: 1rem;
+      justify-content: flex-start;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 1.5rem;
+      gap: 1.5rem;
     }
     .sub-item {
       text-align: left;
     }
-    .sub-item:last-child {
-      text-align: right;
+  }
+
+  @media (min-width: 901px) {
+    .actions-panel {
+      position: sticky;
+      top: 2rem;
+      height: fit-content;
     }
   }
 
   /* Cards */
   .card {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    border-radius: 16px;
+    box-shadow:
+      0 2px 15px rgba(0, 0, 0, 0.04),
+      0 1px 2px rgba(0, 0, 0, 0.02);
     margin-bottom: 2rem;
     padding: 1.5rem;
     border: 1px solid #f0f0e0;
     box-sizing: border-box;
     width: 100%;
+    transition: transform 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   }
   h3 {
     margin: 0 0 1.5rem;
@@ -996,21 +1018,31 @@
     background: var(--pine-green);
     color: white;
     border: none;
-    padding: 1rem;
-    border-radius: 8px;
-    font-size: 0.95rem;
+    padding: 1.1rem;
+    border-radius: 12px;
+    font-size: 1rem;
     font-weight: 800;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     margin-top: 0.5rem;
-    box-shadow: 0 4px 0 #1a2318;
+    box-shadow: 0 4px 12px rgba(45, 58, 40, 0.25);
     width: 100%;
     box-sizing: border-box;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
   }
-  .btn-primary:active {
-    transform: translateY(2px);
+  .btn-primary:hover:not(:disabled) {
+    background: var(--alpine-green);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(45, 58, 40, 0.3);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(45, 58, 40, 0.2);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
     box-shadow: none;
   }
 
@@ -1085,18 +1117,22 @@
   }
   .btn-refine {
     background: #f0f0e0;
-    border: none;
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.65rem;
+    border: 1px solid #e0e0d0;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
     font-weight: 800;
     text-transform: uppercase;
-    color: #666;
+    color: #444;
     cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
   }
   .btn-refine:hover {
-    background: var(--muted-green);
+    background: var(--marker-gold);
+    border-color: var(--marker-gold);
     color: white;
+    transform: translateY(-1px);
   }
 
   .envelopes-stack {
@@ -1106,10 +1142,16 @@
   }
   .envelope-row {
     padding: 1.25rem;
-    border-radius: 12px;
+    border-radius: 16px;
     background: #fafaf5;
+    border: 1px solid #f0f0e0;
     border-left: 6px solid var(--muted-green);
-    transition: transform 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .envelope-row:hover {
+    transform: translateX(4px);
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   }
   .envelope-row.is-over {
     border-left-color: var(--alert-red);
@@ -1285,18 +1327,20 @@
 
   .btn-add-cat {
     background: white;
-    border: 2px dashed #ddd;
-    border-radius: 10px;
-    padding: 1rem;
+    border: 2px dashed #e0e0d0;
+    border-radius: 16px;
+    padding: 1.25rem;
     color: #888;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
   }
   .btn-add-cat:hover {
-    border-color: var(--muted-green);
-    color: var(--muted-green);
-    background: #fafaf5;
+    border-color: var(--marker-gold);
+    color: var(--marker-gold);
+    background: #fdfdf5;
   }
 
   input,
@@ -1334,7 +1378,7 @@
   /* Ticker (History) */
   .ledger-container {
     width: 100%;
-    overflow-x: hidden;
+    margin-top: -1rem;
   }
   .ticker {
     display: flex;
@@ -1348,12 +1392,18 @@
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    padding: 0.8rem;
+    padding: 0.8rem 1rem;
     background: white;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid #f0f0e0;
     width: 100%;
     box-sizing: border-box;
+    transition: all 0.2s ease;
+  }
+  .ticker-item:hover {
+    border-color: var(--marker-gold);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    transform: scale(1.01);
   }
   @media (max-width: 500px) {
     .ticker-item {
