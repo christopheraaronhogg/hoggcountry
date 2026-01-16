@@ -635,7 +635,16 @@
                     </div>
                     <input
                       type="text"
-                      bind:value={cat.name}
+                      value={cat.name}
+                      oninput={(e) => {
+                        const sourceCat = uCategories.find(
+                          (c) => c.id === cat.id,
+                        );
+                        if (sourceCat) {
+                          sourceCat.name = e.target.value;
+                          saveData();
+                        }
+                      }}
                       class="name-edit"
                       placeholder="Name"
                     />
