@@ -391,37 +391,32 @@
 
   <div class="stats-bar">
     <div class="stat-group">
-      <span class="stat-label"
-        >Spent in {currentMonthKey
-          ? getMonthDisplayName(currentMonthKey).split(" ")[0]
-          : ""}</span
-      >
+      <span class="stat-label">Remaining</span>
       <div class="burn-rate-display">
-        <span class="stat-value">
-          {formatMoney(totalSpentInMonth)}
+        <span
+          class="stat-value"
+          class:over={totalMonthlyBudget - totalSpentInMonth < 0}
+        >
+          {formatMoney(totalMonthlyBudget - totalSpentInMonth)}
         </span>
         <span class="pace-context">
-          Budget for {getMonthDisplayName(currentMonthKey).split(" ")[0]}: {formatMoney(
-            totalMonthlyBudget,
-          )}
+          Actual Burn: {formatMoney(burnMetrics().dailyBurn)} / day
         </span>
       </div>
     </div>
     <div class="stat-group right">
       <div class="sub-item">
-        <span class="sub-label">Daily Average</span>
-        <span class="sub-value"
-          >{formatMoney(burnMetrics().dailyBurn)}<span class="unit">/avg</span
-          ></span
+        <span class="sub-label"
+          >Spending in {getMonthDisplayName(currentMonthKey).split(
+            " ",
+          )[0]}</span
         >
-      </div>
-      <div class="sub-item">
-        <span class="sub-label">Remaining</span>
-        <span
-          class="sub-value"
-          class:warn={totalMonthlyBudget - totalSpentInMonth < 0}
-        >
-          {formatMoney(Math.max(0, totalMonthlyBudget - totalSpentInMonth))}
+        <span class="sub-value">
+          {formatMoney(totalSpentInMonth)}
+          <span class="unit">/ {formatMoney(totalMonthlyBudget)}</span>
+        </span>
+        <span class="pace-context" style="text-align: right">
+          Budgeted Burn: {formatMoney(burnMetrics().safePace)} / day
         </span>
       </div>
     </div>
@@ -825,7 +820,16 @@
   .burn-rate-display {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.1rem;
+  }
+  .stat-value {
+    font-size: 2.2rem;
+    line-height: 1;
+    color: var(--pine-green);
+    font-family: "Oswald", sans-serif;
+  }
+  .stat-value.over {
+    color: var(--alert-red);
   }
   .pace-context {
     font-size: 0.8rem;
@@ -852,9 +856,6 @@
     font-size: 1.25rem;
     color: #444;
     line-height: 1;
-  }
-  .sub-value.warn {
-    color: var(--alert-red);
   }
   .sub-value .unit {
     font-size: 0.75rem;
