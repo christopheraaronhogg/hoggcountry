@@ -473,6 +473,24 @@
     </div>
   </div>
 
+  {#if expenses.length === 0}
+    <div class="onboarding-banner" transition:fade>
+      <div class="banner-content">
+        <span class="banner-icon">🚀</span>
+        <div class="banner-text">
+          <h3>Welcome to Trail Categories!</h3>
+          <p>
+            Start by adjusting your monthly budget, then post your first
+            transaction to the journal.
+          </p>
+        </div>
+        <button class="btn-primary mini" onclick={toggleCategorySettings}>
+          {showCategorySettings ? "Close Setup" : "Adjust Budget"}
+        </button>
+      </div>
+    </div>
+  {/if}
+
   <div class="layout-grid">
     <!-- LEFT COLUMN: Input & Chart -->
     <div class="actions-panel">
@@ -579,7 +597,7 @@
         <div class="section-header">
           <h3>Active Categories</h3>
           <button class="btn-refine" onclick={toggleCategorySettings}>
-            {showCategorySettings ? "Lock Budget" : "Adjust Categories"}
+            {showCategorySettings ? "Lock Budget" : "Adjust Budget"}
           </button>
         </div>
 
@@ -1411,6 +1429,58 @@
     background-size: 1rem;
     padding-right: 2.5rem;
     cursor: pointer;
+  }
+
+  /* Onboarding Banner */
+  .onboarding-banner {
+    background: linear-gradient(135deg, var(--pine-green) 0%, #2d3a28 100%);
+    margin: 1.5rem 2rem 0;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .banner-icon {
+    font-size: 2.5rem;
+  }
+  .banner-text h3 {
+    margin: 0 0 0.25rem;
+    color: white;
+    font-size: 1.1rem;
+  }
+  .banner-text p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  .btn-primary.mini {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.8rem;
+    width: auto;
+    margin-top: 0;
+    white-space: nowrap;
+    background: var(--marker-gold);
+    color: white;
+    box-shadow: 0 4px 10px rgba(212, 163, 115, 0.3);
+  }
+  .btn-primary.mini:hover {
+    background: #c99363;
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 768px) {
+    .banner-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
   }
 
   /* Ticker (History) */
