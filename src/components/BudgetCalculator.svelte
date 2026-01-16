@@ -394,29 +394,41 @@
       <span class="stat-label">Remaining</span>
       <div class="burn-rate-display">
         <span
-          class="stat-value"
+          class="stat-value highlight-gold"
           class:over={totalMonthlyBudget - totalSpentInMonth < 0}
         >
           {formatMoney(totalMonthlyBudget - totalSpentInMonth)}
         </span>
         <span class="pace-context">
-          Actual Burn: {formatMoney(burnMetrics().dailyBurn)} / day
+          Actual: {formatMoney(burnMetrics().dailyBurn)} / day
         </span>
       </div>
     </div>
-    <div class="stat-group right">
-      <div class="sub-item">
-        <span class="sub-label"
-          >Spending in {getMonthDisplayName(currentMonthKey).split(
-            " ",
-          )[0]}</span
-        >
-        <span class="sub-value">
+
+    <div class="stat-divider"></div>
+
+    <div class="stat-group">
+      <span class="stat-label">Total Spent</span>
+      <div class="burn-rate-display">
+        <span class="stat-value highlight-white">
           {formatMoney(totalSpentInMonth)}
-          <span class="unit">/ {formatMoney(totalMonthlyBudget)}</span>
         </span>
-        <span class="pace-context" style="text-align: right">
-          Budgeted Burn: {formatMoney(burnMetrics().safePace)} / day
+        <span class="pace-context">
+          {getMonthDisplayName(currentMonthKey).split(" ")[0]} Tally
+        </span>
+      </div>
+    </div>
+
+    <div class="stat-divider"></div>
+
+    <div class="stat-group">
+      <span class="stat-label">Budgeted</span>
+      <div class="burn-rate-display">
+        <span class="stat-value highlight-muted">
+          {formatMoney(totalMonthlyBudget)}
+        </span>
+        <span class="pace-context">
+          Safe Pace: {formatMoney(burnMetrics().safePace)} / day
         </span>
       </div>
     </div>
@@ -813,10 +825,14 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+    flex: 1;
+    min-width: 140px;
   }
-  .stat-group.right {
-    flex-direction: row;
-    gap: 2rem;
+  .stat-divider {
+    width: 1px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    align-self: flex-end;
   }
 
   .burn-rate-display {
@@ -825,46 +841,30 @@
     gap: 0.1rem;
   }
   .stat-value {
-    font-size: 2.4rem;
+    font-size: 2.2rem;
     line-height: 1;
     color: white;
     font-family: "Oswald", sans-serif;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
+  .stat-value.highlight-gold {
+    color: var(--marker-gold);
+  }
+  .stat-value.highlight-white {
+    color: white;
+  }
+  .stat-value.highlight-muted {
+    color: var(--muted-green);
+  }
+
   .stat-value.over {
-    color: var(--alert-red);
+    color: var(--alert-red) !important;
   }
   .pace-context {
     font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.7);
     margin-top: 5px;
     font-weight: 500;
-  }
-
-  .sub-item {
-    display: flex;
-    flex-direction: column;
-    text-align: right;
-  }
-  .sub-label {
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 800;
-    margin-bottom: 3px;
-  }
-  .sub-value {
-    font-family: "Oswald", sans-serif;
-    font-size: 1.4rem;
-    color: white;
-    line-height: 1;
-  }
-  .sub-value .unit {
-    font-size: 0.85rem;
-    opacity: 0.6;
-    font-weight: 500;
-    margin-left: 4px;
   }
 
   /* Journal Ledger */
@@ -920,16 +920,18 @@
     }
     .stats-bar {
       padding: 0 1.5rem 1.5rem;
+      gap: 1.5rem 1rem;
     }
-    .stat-group.right {
-      width: 100%;
-      justify-content: flex-start;
+    .stat-divider {
+      display: none;
+    }
+    .stat-group {
+      min-width: calc(50% - 1rem);
+    }
+    .stat-group:last-child {
+      min-width: 100%;
       border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding-top: 1.5rem;
-      gap: 1.5rem;
-    }
-    .sub-item {
-      text-align: left;
+      padding-top: 1rem;
     }
   }
 
