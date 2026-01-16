@@ -16,7 +16,6 @@
       color: "#ef4444",
     },
     { id: "entertainment", name: "Misc / Fun", icon: "🎉", color: "#ec4899" },
-    { id: "charity", name: "Charitable Giving", icon: "🤝", color: "#14b8a6" },
     { id: "other", name: "Other / Bills", icon: "📦", color: "#6b7280" },
   ];
 
@@ -118,19 +117,6 @@
               nc.name = "Resupply (Trail Food)";
             return nc;
           });
-
-          // Ensure Charitable Giving exists for existing users
-          if (!uCategories.some((c) => c.id === "charity")) {
-            uCategories = [
-              ...uCategories,
-              {
-                id: "charity",
-                name: "Charitable Giving",
-                icon: "🤝",
-                color: "#14b8a6",
-              },
-            ];
-          }
         }
       } catch (e) {
         console.error("Failed to load budget data:", e);
