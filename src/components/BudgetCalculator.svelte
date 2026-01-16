@@ -15,7 +15,7 @@
       icon: "🚗",
       color: "#ef4444",
     },
-    { id: "entertainment", name: "Town Fun", icon: "🍺", color: "#ec4899" },
+    { id: "entertainment", name: "Misc / Fun", icon: "🎉", color: "#ec4899" },
     { id: "other", name: "Other / Bills", icon: "📦", color: "#6b7280" },
   ];
 
@@ -273,9 +273,7 @@
     <div class="stat-main">
       <span class="stat-label"
         >Spent in {currentMonthKey
-          ? new Date(currentMonthKey + "-01").toLocaleDateString("en-US", {
-              month: "short",
-            })
+          ? getMonthDisplayName(currentMonthKey).split(" ")[0]
           : ""}</span
       >
       <span class="stat-value">{formatMoney(totalSpentInMonth)}</span>
@@ -505,13 +503,16 @@
             <div class="ticker">
               {#each displayedTransactions as exp (exp.id)}
                 {@const cat = uCategories.find((c) => c.id === exp.category)}
+                <!-- Parse date ensuring we treat it as local for display if provided as YYYY-MM-DD -->
+                {@const dateObj = new Date(
+                  exp.date.includes("T") ? exp.date : exp.date + "T12:00:00",
+                )}
                 <div class="ticker-item" transition:slide>
                   <div class="t-date">
-                    <span class="d-day">{new Date(exp.date).getUTCDate()}</span>
+                    <span class="d-day">{dateObj.getDate()}</span>
                     <span class="d-mon"
-                      >{new Date(exp.date).toLocaleDateString("en-US", {
+                      >{dateObj.toLocaleDateString("en-US", {
                         month: "short",
-                        timeZone: "UTC",
                       })}</span
                     >
                   </div>
