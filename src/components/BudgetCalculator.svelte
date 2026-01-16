@@ -1,68 +1,95 @@
 <script>
   import { onMount } from 'svelte';
+  import { fade, slide, scale } from 'svelte/transition';
 
   let { trailContext = {} } = $props();
 
   const categories = [
     { id: 'food', name: 'Food & Resupply', icon: '🛒', color: '#22c55e' },
-    { id: 'lodging', name: 'Lodging', icon: '🏨', color: '#3b82f6' },
+    { id: 'lodging', name: 'Hotels & Hostels', icon: '🏨', color: '#3b82f6' },
     { id: 'gear', name: 'Gear & Repairs', icon: '🎒', color: '#f59e0b' },
     { id: 'services', name: 'Town Services', icon: '🧺', color: '#a855f7' },
-    { id: 'transport', name: 'Transportation', icon: '🚗', color: '#ef4444' },
-    { id: 'entertainment', name: 'Entertainment', icon: '🍺', color: '#ec4899' },
-    { id: 'other', name: 'Other', icon: '📦', color: '#6b7280' },
+    { id: 'transport', name: 'Shuttles & Hitching', icon: '🚗', color: '#ef4444' },
+    { id: 'entertainment', name: 'Town Fun', icon: '🍺', color: '#ec4899' },
+    { id: 'other', name: 'Other / Bills', icon: '📦', color: '#6b7280' },
   ];
 
   let mounted = $state(false);
-  let totalBudget = $state(5000);
-  let startDate = $state('2026-02-15');
-  let expenses = $state([]);
+  let envelopes = $state({
+    food: 1200,
+    lodging: 800,
+    gear: 200,
+    services: 200,
+    transport: 150,
+    entertainment: 300,
+    other: 150
+  });
 
+  let startDate = $state('2026-03-01');
+  let expenses = $state([]);
+  let showEnvelopeSettings = $state(false);
+
+  // Form State
   let newAmount = $state('');
   let newCategory = $state('food');
   let newNote = $state('');
+  let newDate = $state(new Date().toISOString().split('T')[0]);
 
   onMount(() => {
     mounted = true;
-    const saved = localStorage.getItem('at-budget-data');
+    const saved = localStorage.getItem('at-budget-v2');
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        totalBudget = data.totalBudget || 5000;
-        startDate = data.startDate || trailContext.tripStartDate || trailContext.startDate || '2026-02-15';
+        envelopes = data.envelopes || envelopes;
+        startDate = data.startDate || trailContext.startDate || '2026-03-01';
         expenses = data.expenses || [];
       } catch (e) {
         console.error('Failed to load budget data:', e);
       }
-    } else if (trailContext.tripStartDate || trailContext.startDate) {
-      startDate = trailContext.tripStartDate || trailContext.startDate;
+    } else {
+      // Look for migration from v1
+      const legacy = localStorage.getItem('at-budget-data');
+      if (legacy) {
+         try {
+           const data = JSON.parse(legacy);
+           expenses = data.expenses || [];
+           startDate = data.startDate || startDate;
+         } catch(e) {}
+      }
     }
   });
 
   function saveData() {
-    const data = { totalBudget, startDate, expenses };
-    localStorage.setItem('at-budget-data', JSON.stringify(data));
+    if (!mounted) return;
+    const data = { envelopes, startDate, expenses };
+    localStorage.setItem('at-budget-v2', JSON.stringify(data));
   }
 
-  function getDaysOnTrail() {
-    const start = new Date(startDate);
-    const today = new Date();
-    const diff = today - start;
-    return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
-  }
+  // Reactive calculations
+  let totalMonthlyBudget = $derived(Object.values(envelopes).reduce((a, b) => a + b, 0));
+  let totalSpent = $derived(expenses.reduce((sum, e) => sum + e.amount, 0));
+  
+  let categoryStats = $derived(categories.map(cat => {
+    const spent = expenses.filter(e => e.category === cat.id).reduce((sum, e) => sum + (e.amount || 0), 0);
+    const budget = envelopes[cat.id] || 0;
+    const remaining = budget - spent;
+    const percent = budget > 0 ? (spent / budget) * 100 : 0;
+    return { ...cat, spent, budget, remaining, percent };
+  }));
 
-  let trailStarted = $derived(new Date(startDate) <= new Date());
+  let topExpenses = $derived([...expenses].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 10));
 
   function addExpense() {
     const amount = parseFloat(newAmount);
     if (isNaN(amount) || amount <= 0) return;
 
     const expense = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       amount,
       category: newCategory,
       note: newNote.trim(),
-      date: new Date().toISOString(),
+      date: newDate,
     };
 
     expenses = [expense, ...expenses];
@@ -81,1247 +108,379 @@
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
     }).format(amount);
   }
 
-  function formatDateShort(dateStr) {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
-
-  let daysOnTrail = $derived(getDaysOnTrail());
-  let totalSpent = $derived(expenses.reduce((sum, e) => sum + e.amount, 0));
-  let remaining = $derived(totalBudget - totalSpent);
-  let percentSpent = $derived(totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0);
-
-  let dailyAverage = $derived.by(() => {
-    if (trailStarted && daysOnTrail > 0) {
-      return totalSpent / daysOnTrail;
-    } else if (expenses.length > 0) {
-      const avgPerExpense = totalSpent / expenses.length;
-      return avgPerExpense / 6;
-    } else {
-      return totalBudget / 150;
-    }
+  // Pie Chart Calculations
+  let pieData = $derived(() => {
+    const data = categoryStats.filter(c => c.spent > 0);
+    if (data.length === 0) return [];
+    
+    let cumulativePercent = 0;
+    return data.map(cat => {
+      const p = (cat.spent / totalSpent);
+      const startX = Math.cos(2 * Math.PI * cumulativePercent);
+      const startY = Math.sin(2 * Math.PI * cumulativePercent);
+      cumulativePercent += p;
+      const endX = Math.cos(2 * Math.PI * cumulativePercent);
+      const endY = Math.sin(2 * Math.PI * cumulativePercent);
+      
+      const largeArcFlag = p > 0.5 ? 1 : 0;
+      const pathData = [
+        `M ${startX} ${startY}`,
+        `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+        `L 0 0`
+      ].join(' ');
+      
+      return { ...cat, pathData };
+    });
   });
-
-  let monthlyRate = $derived(dailyAverage * 30);
-
-  let projectedTotal = $derived.by(() => {
-    if (trailStarted && daysOnTrail > 0) {
-      return dailyAverage * 150;
-    } else if (expenses.length > 0) {
-      return dailyAverage * 150;
-    } else {
-      return totalBudget;
-    }
-  });
-
-  let daysRemaining = $derived(dailyAverage > 0 ? Math.floor(remaining / dailyAverage) : 999);
-
-  let budgetStatus = $derived.by(() => {
-    if (!trailStarted && expenses.length === 0) return 'good';
-    const ratio = projectedTotal / totalBudget;
-    if (ratio <= 1) return 'good';
-    if (ratio <= 1.15) return 'caution';
-    return 'over';
-  });
-
-  let statusConfig = $derived.by(() => {
-    if (budgetStatus === 'good') return { label: 'ON TRACK', color: '#22c55e', icon: '✓' };
-    if (budgetStatus === 'caution') return { label: 'WATCH IT', color: '#f59e0b', icon: '!' };
-    return { label: 'OVER BUDGET', color: '#ef4444', icon: '✗' };
-  });
-
-  let categoryTotals = $derived(categories.map(cat => {
-    const total = expenses.filter(e => e.category === cat.id).reduce((sum, e) => sum + e.amount, 0);
-    const percent = totalSpent > 0 ? (total / totalSpent) * 100 : 0;
-    return { ...cat, total, percent };
-  }).filter(c => c.total > 0).sort((a, b) => b.total - a.total));
-
-  let recentExpenses = $derived(expenses.slice(0, 8));
-
-  let trailRangePercent = $derived(Math.min(100, Math.max(0, ((projectedTotal - 4000) / 3000) * 100)));
 
   $effect(() => {
-    if (mounted && (totalBudget || startDate)) {
-      saveData();
-    }
+    if (mounted) saveData();
   });
-
-  function getCategoryById(id) {
-    return categories.find(c => c.id === id) || categories[categories.length - 1];
-  }
-
-  // Donut chart calculations
-  let donutRadius = 70;
-  let donutStroke = 20;
-  let donutCircumference = $derived(2 * Math.PI * donutRadius);
-  let spentOffset = $derived(donutCircumference - (percentSpent / 100) * donutCircumference);
 </script>
 
-<div class="budget-calc" class:mounted>
-  <!-- Header -->
-  <header class="calc-header">
-    <div class="header-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
-      </svg>
+<div class="trail-budget" class:mounted>
+  <header class="budget-header">
+    <div class="header-main">
+      <span class="icon">💸</span>
+      <div>
+        <h2>Trail Envelopes</h2>
+        <p>Ramsey-style monthly budgeting for the trail</p>
+      </div>
     </div>
-    <div class="header-content">
-      <h2>TRAIL LEDGER</h2>
-      <p>Track every dollar on the AT</p>
-    </div>
-    <div class="header-status" style="--status-color: {statusConfig.color}">
-      <span class="status-icon">{statusConfig.icon}</span>
-      <span class="status-text">{statusConfig.label}</span>
+    <div class="header-summary">
+      <div class="summary-item">
+        <span class="label">Total Spent</span>
+        <span class="value">{formatMoney(totalSpent)}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Monthly Budget</span>
+        <span class="value">{formatMoney(totalMonthlyBudget)}</span>
+      </div>
     </div>
   </header>
 
-  <!-- Budget Setup -->
-  <section class="setup-section">
-    <div class="setup-grid">
-      <div class="setup-field">
-        <label>TOTAL BUDGET</label>
-        <div class="money-input">
-          <span class="currency">$</span>
-          <input
-            type="number"
-            bind:value={totalBudget}
-            min="1000"
-            max="20000"
-            step="100"
-          />
+  <div class="layout-grid">
+    <!-- LEFT COLUMN: Input & Chart -->
+    <div class="actions-panel">
+      <!-- Add Expense Form -->
+      <section class="card add-expense">
+        <h3>Add Expense</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="amount">Amount</label>
+            <div class="currency-input">
+              <span>$</span>
+              <input type="number" id="amount" bind:value={newAmount} placeholder="0.00" step="0.01" />
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="category">Envelope</label>
+            <select id="category" bind:value={newCategory}>
+              {#each categories as cat}
+                <option value={cat.id}>{cat.icon} {cat.name}</option>
+              {/each}
+            </select>
+          </div>
+          <div class="input-group full">
+            <label for="note">Note</label>
+            <input type="text" id="note" bind:value={newNote} placeholder="Walmart, Gear repair, etc." />
+          </div>
+          <div class="input-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" bind:value={newDate} />
+          </div>
+          <button class="btn-primary" onclick={addExpense} disabled={!newAmount}>
+            Add to Envelope
+          </button>
         </div>
-      </div>
-      <div class="setup-field">
-        <label>START DATE</label>
-        <input
-          type="date"
-          bind:value={startDate}
-          class="date-input"
-        />
-      </div>
-    </div>
-  </section>
+      </section>
 
-  <!-- Main Dashboard -->
-  <section class="dashboard-section">
-    <div class="dashboard-grid">
-      <!-- Donut Chart -->
-      <div class="donut-container">
-        <svg viewBox="0 0 180 180" class="donut-chart">
-          <!-- Background circle -->
-          <circle
-            cx="90"
-            cy="90"
-            r={donutRadius}
-            fill="none"
-            stroke="var(--border)"
-            stroke-width={donutStroke}
-          />
-          <!-- Spent arc -->
-          <circle
-            cx="90"
-            cy="90"
-            r={donutRadius}
-            fill="none"
-            stroke={statusConfig.color}
-            stroke-width={donutStroke}
-            stroke-dasharray={donutCircumference}
-            stroke-dashoffset={spentOffset}
-            stroke-linecap="round"
-            transform="rotate(-90 90 90)"
-            class="spent-arc"
-          />
-        </svg>
-        <div class="donut-center">
-          <span class="donut-spent">{formatMoney(totalSpent)}</span>
-          <span class="donut-label">of {formatMoney(totalBudget)}</span>
-          <span class="donut-percent">{percentSpent.toFixed(0)}%</span>
-        </div>
-      </div>
-
-      <!-- Stats Grid -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">📅</div>
-          <div class="stat-data">
-            <span class="stat-value">{trailStarted ? daysOnTrail : expenses.length}</span>
-            <span class="stat-label">{trailStarted ? 'Days On Trail' : 'Planned Items'}</span>
+      <!-- Pie Chart Section -->
+      <section class="card spending-viz">
+        <h3>Where's it going?</h3>
+        {#if totalSpent > 0}
+          <div class="chart-container">
+            <svg viewBox="-1.1 -1.1 2.2 2.2" class="pie-chart">
+              {#each pieData() as slice}
+                <path d={slice.pathData} fill={slice.color}>
+                  <title>{slice.name}: {formatMoney(slice.spent)}</title>
+                </path>
+              {/each}
+              <circle r="0.6" fill="white" /> <!-- Donut hole -->
+            </svg>
+            <div class="chart-labels">
+              {#each categoryStats.filter(c => c.spent > 0).sort((a,b) => b.spent - a.spent) as cat}
+                <div class="chart-label-item">
+                  <span class="dot" style="background: {cat.color}"></span>
+                  <span class="name">{cat.name}</span>
+                  <span class="val">{((cat.spent / totalSpent) * 100).toFixed(0)}%</span>
+                </div>
+              {/each}
+            </div>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">📊</div>
-          <div class="stat-data">
-            <span class="stat-value">{formatMoney(dailyAverage)}</span>
-            <span class="stat-label">{trailStarted ? 'Daily Avg' : 'Est. Daily'}</span>
+        {:else}
+          <div class="empty-state">
+            <p>No expenses recorded yet. Start logging to see your distribution!</p>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">📈</div>
-          <div class="stat-data">
-            <span class="stat-value">{formatMoney(monthlyRate)}</span>
-            <span class="stat-label">{trailStarted ? 'Monthly Rate' : 'Est. Monthly'}</span>
-          </div>
-        </div>
-        <div class="stat-card accent" style="--accent: {statusConfig.color}">
-          <div class="stat-icon">⏱️</div>
-          <div class="stat-data">
-            <span class="stat-value">{daysRemaining < 999 ? daysRemaining : '—'}</span>
-            <span class="stat-label">Budget Days Left</span>
-          </div>
-        </div>
-      </div>
+        {/if}
+      </section>
     </div>
 
-    <!-- Remaining Bar -->
-    <div class="remaining-bar">
-      <div class="bar-track">
-        <div class="bar-fill" style="width: {Math.min(100, percentSpent)}%; background: {statusConfig.color}"></div>
-      </div>
-      <div class="bar-labels">
-        <span class="spent-label">{formatMoney(totalSpent)} spent</span>
-        <span class="remain-label">{formatMoney(remaining)} remaining</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- Add Expense -->
-  <section class="add-section">
-    <h3 class="section-header">
-      <span class="header-bar"></span>
-      ADD EXPENSE
-    </h3>
-    <div class="add-form">
-      <div class="form-row">
-        <div class="form-field amount">
-          <label>Amount</label>
-          <div class="money-input small">
-            <span class="currency">$</span>
-            <input
-              type="number"
-              bind:value={newAmount}
-              min="0"
-              step="0.01"
-              placeholder="0"
-              onkeydown={(e) => e.key === 'Enter' && addExpense()}
-            />
-          </div>
+    <!-- RIGHT COLUMN: Envelopes & History -->
+    <div class="data-panel">
+      <!-- Envelope Management -->
+      <section class="card envelope-list">
+        <div class="section-header">
+          <h3>Your Envelopes</h3>
+          <button class="btn-text" onclick={() => showEnvelopeSettings = !showEnvelopeSettings}>
+            {showEnvelopeSettings ? 'Done' : 'Adjust Budgets'}
+          </button>
         </div>
-        <div class="form-field category">
-          <label>Category</label>
-          <select bind:value={newCategory}>
-            {#each categories as cat}
-              <option value={cat.id}>{cat.icon} {cat.name}</option>
+
+        <div class="envelopes-grid">
+          {#each categoryStats as cat}
+            <div class="envelope-item" class:over={cat.remaining < 0}>
+              <div class="envelope-info">
+                <span class="icon">{cat.icon}</span>
+                <span class="name">{cat.name}</span>
+                {#if showEnvelopeSettings}
+                  <div class="budget-input">
+                    <span>$</span>
+                    <input type="number" bind:value={envelopes[cat.id]} step="50" onchange={saveData} />
+                  </div>
+                {:else}
+                  <span class="amount-detail">
+                    {formatMoney(cat.spent)} / <span class="max">{formatMoney(cat.budget)}</span>
+                  </span>
+                {/if}
+              </div>
+              
+              <div class="progress-bar">
+                <div class="fill" style="width: {Math.min(100, cat.percent)}%; background: {cat.color}"></div>
+              </div>
+              
+              <div class="envelope-footer">
+                {#if cat.remaining < 0}
+                  <span class="status over">Over by {formatMoney(Math.abs(cat.remaining))}! ⚠️</span>
+                {:else}
+                  <span class="status">{formatMoney(cat.remaining)} remaining</span>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      </section>
+
+      <!-- History -->
+      <section class="card history">
+        <h3>Recent Transactions</h3>
+        {#if topExpenses.length > 0}
+          <div class="transaction-list">
+            {#each topExpenses as exp (exp.id)}
+              {@const cat = categories.find(c => c.id === exp.category)}
+              <div class="transaction-item" transition:slide>
+                <div class="cat-icon" style="background: {cat?.color || '#eee'}">
+                  {cat?.icon || '💰'}
+                </div>
+                <div class="details">
+                  <span class="note">{exp.note || cat?.name}</span>
+                  <span class="date">{exp.date}</span>
+                </div>
+                <div class="amount">{formatMoney(exp.amount)}</div>
+                <button class="btn-del" onclick={() => deleteExpense(exp.id)} title="Delete">×</button>
+              </div>
             {/each}
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field note">
-          <label>Note</label>
-          <input
-            type="text"
-            bind:value={newNote}
-            placeholder="e.g., Resupply at Walmart"
-            onkeydown={(e) => e.key === 'Enter' && addExpense()}
-          />
-        </div>
-        <button class="add-btn" onclick={addExpense} disabled={!newAmount}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          Add
-        </button>
-      </div>
+          </div>
+        {:else}
+          <div class="empty-state">
+            <p>Your ledger is empty.</p>
+          </div>
+        {/if}
+      </section>
     </div>
-  </section>
-
-  <!-- Recent Expenses -->
-  {#if recentExpenses.length > 0}
-    <section class="expenses-section">
-      <h3 class="section-header">
-        <span class="header-bar"></span>
-        RECENT EXPENSES
-        <span class="count-badge">{expenses.length}</span>
-      </h3>
-      <div class="expense-list">
-        {#each recentExpenses as expense (expense.id)}
-          {@const cat = getCategoryById(expense.category)}
-          <div class="expense-item">
-            <div class="expense-cat" style="--cat-color: {cat.color}">
-              {cat.icon}
-            </div>
-            <div class="expense-info">
-              <span class="expense-name">{cat.name}</span>
-              {#if expense.note}
-                <span class="expense-note">{expense.note}</span>
-              {/if}
-            </div>
-            <div class="expense-amount">{formatMoney(expense.amount)}</div>
-            <div class="expense-date">{formatDateShort(expense.date)}</div>
-            <button class="delete-btn" onclick={() => deleteExpense(expense.id)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6L6 18M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-        {/each}
-      </div>
-    </section>
-  {/if}
-
-  <!-- Category Breakdown -->
-  {#if categoryTotals.length > 0}
-    <section class="breakdown-section">
-      <h3 class="section-header">
-        <span class="header-bar"></span>
-        SPENDING BY CATEGORY
-      </h3>
-      <div class="category-list">
-        {#each categoryTotals as cat}
-          <div class="category-item">
-            <div class="cat-header">
-              <span class="cat-icon" style="background: {cat.color}">{cat.icon}</span>
-              <span class="cat-name">{cat.name}</span>
-              <span class="cat-amount">{formatMoney(cat.total)}</span>
-            </div>
-            <div class="cat-bar">
-              <div class="cat-fill" style="width: {cat.percent}%; background: {cat.color}"></div>
-            </div>
-            <span class="cat-percent">{cat.percent.toFixed(0)}%</span>
-          </div>
-        {/each}
-      </div>
-    </section>
-  {/if}
-
-  <!-- Trail Context -->
-  <section class="context-section">
-    <h3 class="section-header">
-      <span class="header-bar"></span>
-      TRAIL SPENDING CONTEXT
-    </h3>
-    <div class="context-card">
-      <div class="context-top">
-        <div class="projected-label">Projected Total</div>
-        <div class="projected-value">{formatMoney(projectedTotal)}</div>
-      </div>
-
-      {#if trailStarted || expenses.length > 0}
-        <div class="range-section">
-          <div class="range-track">
-            <div class="range-gradient"></div>
-            <div class="range-marker" style="left: {trailRangePercent}%">
-              <span class="marker-dot"></span>
-              <span class="marker-label">You</span>
-            </div>
-          </div>
-          <div class="range-labels">
-            <div class="range-point">
-              <span class="pt-value">$4K</span>
-              <span class="pt-label">Budget</span>
-            </div>
-            <div class="range-point">
-              <span class="pt-value">$5.5K</span>
-              <span class="pt-label">Average</span>
-            </div>
-            <div class="range-point">
-              <span class="pt-value">$7K</span>
-              <span class="pt-label">Comfortable</span>
-            </div>
-          </div>
-        </div>
-      {:else}
-        <div class="planning-note">
-          <span class="note-icon">💡</span>
-          <p>Add expected expenses to see how your plans compare to your budget.</p>
-        </div>
-      {/if}
-
-      <div class="context-tips">
-        <div class="tip">
-          <span>💰</span>
-          <span>Typical AT thru-hike: $1,000–$1,500/month</span>
-        </div>
-        <div class="tip">
-          <span>🏨</span>
-          <span>Lodging is usually the biggest variable</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Data Management -->
-  <div class="data-section">
-    <button class="clear-btn" onclick={() => { if(confirm('Clear all expense data?')) { expenses = []; saveData(); }}}>
-      Clear All Data
-    </button>
-  </div>
-
-  <!-- Guide Links -->
-  <div class="guide-links">
-    <a href="/guide/05-financial-planning" class="guide-link chapter-link">
-      <span class="link-icon">📚</span>
-      <span class="link-text">Full Financial Planning Guide</span>
-      <span class="link-arrow">→</span>
-    </a>
-    <a href="/guide#05-financial-planning" class="guide-link field-guide-link">
-      <span class="link-icon">📖</span>
-      <span class="link-text">Field Guide</span>
-      <span class="link-arrow">→</span>
-    </a>
   </div>
 </div>
 
 <style>
-  .budget-calc {
-    background: var(--bg);
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
+  .trail-budget {
+    --primary: #3d4a38;
+    --accent: #d4a373;
+    --bg-card: #fefae0;
+    --text: #283618;
+    --border: #bc6c25;
+    
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text);
     opacity: 0;
-    transform: translateY(12px);
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.5s;
   }
+  .trail-budget.mounted { opacity: 1; }
 
-  .budget-calc.mounted {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* Header */
-  .calc-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    background: linear-gradient(135deg, #166534 0%, #15803d 100%);
-    border-bottom: 2px solid #14532d;
-  }
-
-  .header-icon {
-    width: 48px;
-    height: 48px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #bbf7d0;
-  }
-
-  .header-icon svg {
-    width: 28px;
-    height: 28px;
-  }
-
-  .header-content {
-    flex: 1;
-  }
-
-  .header-content h2 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.05em;
-  }
-
-  .header-content p {
-    margin: 0.15rem 0 0;
-    font-size: 0.85rem;
-    color: #bbf7d0;
-  }
-
-  .header-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-    border: 2px solid var(--status-color);
-  }
-
-  .status-icon {
-    width: 20px;
-    height: 20px;
-    background: var(--status-color);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #fff;
-  }
-
-  .status-text {
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--status-color);
-    letter-spacing: 0.05em;
-  }
-
-  /* Setup Section */
-  .setup-section {
-    padding: 1.5rem;
-    background: #fff;
-    border-bottom: 2px solid var(--border);
-  }
-
-  .setup-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  .setup-field label {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    margin-bottom: 0.5rem;
-  }
-
-  .money-input {
-    display: flex;
-    align-items: center;
-    background: var(--bg);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .money-input .currency {
-    padding: 0.75rem;
-    background: var(--border);
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .money-input input {
-    flex: 1;
-    padding: 0.75rem;
-    border: none;
-    background: transparent;
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--ink);
-    min-width: 0;
-  }
-
-  .money-input input:focus {
-    outline: none;
-  }
-
-  .money-input.small {
-    max-width: 140px;
-  }
-
-  .date-input {
-    width: 100%;
-    padding: 0.75rem;
-    background: var(--bg);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 1rem;
-    color: var(--ink);
-    box-sizing: border-box;
-  }
-
-  /* Dashboard Section */
-  .dashboard-section {
-    padding: 1.5rem;
-    background: #fff;
-    border-bottom: 2px solid var(--border);
-  }
-
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  /* Donut Chart */
-  .donut-container {
-    position: relative;
-    width: 180px;
-    height: 180px;
-  }
-
-  .donut-chart {
-    width: 100%;
-    height: 100%;
-  }
-
-  .spent-arc {
-    transition: stroke-dashoffset 0.6s ease;
-  }
-
-  .donut-center {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .donut-spent {
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--ink);
-  }
-
-  .donut-label {
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-
-  .donut-percent {
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--alpine);
-    margin-top: 0.25rem;
-  }
-
-  /* Stats Grid */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-
-  .stat-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: var(--bg);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-  }
-
-  .stat-card.accent {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 5%, white);
-  }
-
-  .stat-icon {
-    font-size: 1.25rem;
-  }
-
-  .stat-data {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .stat-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1.1;
-  }
-
-  .stat-label {
-    font-size: 0.65rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  /* Remaining Bar */
-  .remaining-bar {
-    margin-top: 0.5rem;
-  }
-
-  .bar-track {
-    height: 12px;
-    background: var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .bar-fill {
-    height: 100%;
-    border-radius: 6px;
-    transition: width 0.5s ease;
-  }
-
-  .bar-labels {
+  .budget-header {
+    background: var(--primary);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 12px 12px 0 0;
     display: flex;
     justify-content: space-between;
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
-
-  /* Section Headers */
-  .section-header {
-    display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin: 0 0 1.25rem;
-    font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--pine);
-    letter-spacing: 0.08em;
-  }
-
-  .header-bar {
-    width: 4px;
-    height: 16px;
-    background: var(--marker);
-    border-radius: 2px;
-  }
-
-  .count-badge {
-    margin-left: auto;
-    padding: 0.15rem 0.5rem;
-    background: var(--border);
-    border-radius: 10px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--muted);
-  }
-
-  /* Add Section */
-  .add-section {
-    padding: 1.5rem;
-    background: var(--bg);
-    border-bottom: 2px solid var(--border);
-  }
-
-  .add-form {
-    background: #fff;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 1.25rem;
-  }
-
-  .form-row {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .form-row:last-child {
-    margin-bottom: 0;
-  }
-
-  .form-field {
-    flex: 1;
-  }
-
-  .form-field.amount {
-    flex: 0 0 140px;
-  }
-
-  .form-field label {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-    margin-bottom: 0.4rem;
-  }
-
-  .form-field select,
-  .form-field.note input {
-    width: 100%;
-    padding: 0.7rem;
-    background: var(--bg);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.9rem;
-    color: var(--ink);
-    box-sizing: border-box;
-  }
-
-  .add-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.7rem 1.25rem;
-    background: var(--pine);
-    border: 2px solid var(--pine);
-    border-radius: 8px;
-    color: #fff;
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    align-self: flex-end;
-    white-space: nowrap;
-  }
-
-  .add-btn svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .add-btn:hover:not(:disabled) {
-    background: var(--alpine);
-    border-color: var(--alpine);
-  }
-
-  .add-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Expenses Section */
-  .expenses-section {
-    padding: 1.5rem;
-    background: #fff;
-    border-bottom: 2px solid var(--border);
-  }
-
-  .expense-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .expense-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: var(--bg);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-  }
-
-  .expense-cat {
-    width: 36px;
-    height: 36px;
-    background: color-mix(in srgb, var(--cat-color) 15%, white);
-    border: 2px solid var(--cat-color);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-
-  .expense-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .expense-name {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .expense-note {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .expense-amount {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--ink);
-    flex-shrink: 0;
-  }
-
-  .expense-date {
-    font-size: 0.7rem;
-    color: var(--muted);
-    flex-shrink: 0;
-  }
-
-  .delete-btn {
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-
-  .delete-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .delete-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-  }
-
-  /* Breakdown Section */
-  .breakdown-section {
-    padding: 1.5rem;
-    background: var(--bg);
-    border-bottom: 2px solid var(--border);
-  }
-
-  .category-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .category-item {
-    display: grid;
-    grid-template-columns: 1fr 100px 45px;
-    gap: 1rem;
-    align-items: center;
-  }
-
-  .cat-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .cat-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-  }
-
-  .cat-name {
-    flex: 1;
-    font-size: 0.85rem;
-    color: var(--ink);
-  }
-
-  .cat-amount {
-    font-family: Oswald, sans-serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--ink);
-  }
-
-  .cat-bar {
-    height: 8px;
-    background: var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .cat-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.5s ease;
-  }
-
-  .cat-percent {
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    color: var(--muted);
-    text-align: right;
-  }
-
-  /* Context Section */
-  .context-section {
-    padding: 1.5rem;
-    background: #fff;
-    border-bottom: 2px solid var(--border);
-  }
-
-  .context-card {
-    background: linear-gradient(135deg, rgba(22, 101, 52, 0.08) 0%, rgba(22, 101, 52, 0.02) 100%);
-    border: 2px solid var(--alpine);
-    border-radius: 12px;
-    padding: 1.25rem;
-  }
-
-  .context-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 1.25rem;
-  }
-
-  .projected-label {
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .projected-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--pine);
-  }
-
-  .range-section {
-    margin-bottom: 1.25rem;
-  }
-
-  .range-track {
-    height: 12px;
-    background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
-    border-radius: 6px;
-    position: relative;
-    margin-bottom: 0.75rem;
-  }
-
-  .range-gradient {
-    position: absolute;
-    inset: 0;
-    border-radius: 6px;
-  }
-
-  .range-marker {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .marker-dot {
-    width: 16px;
-    height: 16px;
-    background: #fff;
-    border: 3px solid var(--ink);
-    border-radius: 50%;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  }
-
-  .marker-label {
-    margin-top: 0.35rem;
-    font-family: Oswald, sans-serif;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--ink);
-    background: #fff;
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-
-  .range-labels {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .range-point {
-    text-align: left;
-  }
-
-  .range-point:nth-child(2) {
-    text-align: center;
-  }
-
-  .range-point:last-child {
-    text-align: right;
-  }
-
-  .pt-value {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--ink);
-  }
-
-  .pt-label {
-    font-size: 0.65rem;
-    color: var(--muted);
-  }
-
-  .planning-note {
-    display: flex;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: rgba(250, 204, 21, 0.1);
-    border-radius: 8px;
-    margin-bottom: 1rem;
-  }
-
-  .note-icon {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
-
-  .planning-note p {
-    margin: 0;
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-
-  .context-tips {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .tip {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  /* Data Section */
-  .data-section {
-    padding: 1rem 1.5rem;
-    text-align: center;
-    background: var(--bg);
-    border-bottom: 2px solid var(--border);
-  }
-
-  .clear-btn {
-    padding: 0.5rem 1rem;
-    background: transparent;
-    border: 2px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.8rem;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .clear-btn:hover {
-    border-color: #ef4444;
-    color: #ef4444;
-  }
-
-  /* Guide Links */
-  .guide-links {
-    display: flex;
-    gap: 0.75rem;
     flex-wrap: wrap;
+    gap: 1.5rem;
   }
 
-  .guide-link {
+  .header-main { display: flex; gap: 1rem; align-items: center; }
+  .header-main .icon { font-size: 2.5rem; }
+  .header-main h2 { margin: 0; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
+  .header-main p { margin: 0; opacity: 0.8; font-size: 0.9rem; }
+
+  .header-summary { display: flex; gap: 2rem; }
+  .summary-item { display: flex; flex-direction: column; text-align: right; }
+  .summary-item .label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; }
+  .summary-item .value { font-family: 'Oswald', sans-serif; font-size: 1.5rem; }
+
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: #f1f1e6;
+    border-radius: 0 0 12px 12px;
+  }
+
+  @media (max-width: 900px) {
+    .layout-grid { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+
+  h3 {
+    margin: 0 0 1.25rem;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    font-size: 1.1rem;
+    color: var(--primary);
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+    padding-bottom: 2px;
+  }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .input-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .full { grid-column: span 2; }
+  label { font-size: 0.75rem; font-weight: 600; color: #666; text-transform: uppercase; }
+  input, select {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #fafafa;
+  }
+  .currency-input { position: relative; display: flex; align-items: center; }
+  .currency-input span { position: absolute; left: 0.75rem; color: #666; font-weight: bold; }
+  .currency-input input { padding-left: 1.75rem; width: 100%; }
+
+  .btn-primary {
+    grid-column: span 2;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.5; }
+
+  /* Pie Chart */
+  .chart-container {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.25rem;
-    background: #fff;
-    border: 2px solid var(--border);
-    border-radius: 14px;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    flex: 1;
-    min-width: 200px;
+    gap: 2rem;
   }
+  .pie-chart { width: 150px; height: 150px; transform: rotate(-90deg); }
+  .chart-labels { flex: 1; display: grid; gap: 0.5rem; }
+  .chart-label-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .val { margin-left: auto; font-weight: bold; }
 
-  .guide-link:hover {
-    border-color: var(--alpine);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
+  /* Envelopes */
+  .section-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .btn-text { background: none; border: none; color: var(--border); font-weight: 600; cursor: pointer; }
+  
+  .envelopes-grid { display: flex; flex-direction: column; gap: 1rem; }
+  .envelope-item { background: #fafafa; padding: 1rem; border-radius: 8px; border: 1px solid #eee; }
+  .envelope-item.over { border-color: #ef4444; background: #fff5f5; }
+
+  .envelope-info { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .envelope-info .name { font-weight: 600; flex: 1; }
+  .amount-detail { font-size: 0.85rem; font-weight: 600; }
+  .amount-detail .max { color: #999; }
+
+  .budget-input { display: flex; align-items: center; gap: 0.25rem; }
+  .budget-input input { padding: 0.25rem 0.5rem; width: 80px; font-size: 0.85rem; }
+
+  .progress-bar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; }
+  .progress-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  .envelope-footer { font-size: 0.75rem; text-align: right; color: #666; }
+  .status.over { color: #ef4444; font-weight: bold; }
+
+  /* History */
+  .transaction-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .transaction-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: #fafafa;
+    border: 1px solid #eee;
   }
-
-  .field-guide-link {
-    flex: 0 0 auto;
-    min-width: 140px;
-  }
-
-  .link-icon { font-size: 1.25rem; }
-
-  .link-text {
-    flex: 1;
-    font-family: Oswald, sans-serif;
+  .transaction-item .cat-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
     font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
   }
-
-  .link-arrow {
+  .details { flex: 1; display: flex; flex-direction: column; }
+  .details .note { font-weight: 500; font-size: 0.9rem; }
+  .details .date { font-size: 0.7rem; color: #999; }
+  .transaction-item .amount { font-family: 'Oswald', sans-serif; font-weight: bold; }
+  
+  .btn-del {
+    background: none;
+    border: none;
+    color: #ccc;
     font-size: 1.25rem;
-    color: var(--alpine);
-    transition: transform 0.2s ease;
+    cursor: pointer;
+    line-height: 1;
   }
+  .btn-del:hover { color: #ef4444; }
 
-  .guide-link:hover .link-arrow { transform: translateX(4px); }
-
-  /* Responsive */
-  @media (max-width: 640px) {
-    .setup-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-
-    .dashboard-grid {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-
-    .donut-container {
-      margin: 0 auto;
-    }
-
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .form-row {
-      flex-direction: column;
-    }
-
-    .form-field.amount {
-      flex: 1;
-    }
-
-    .money-input.small {
-      max-width: none;
-    }
-
-    .add-btn {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .category-item {
-      grid-template-columns: 1fr 80px 40px;
-      gap: 0.75rem;
-    }
-
-    .header-status {
-      display: none;
-    }
+  .empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    background: #fafafa;
+    border: 2px dashed #eee;
+    border-radius: 8px;
   }
 </style>
