@@ -456,9 +456,9 @@
                   class="speed-dial-item"
                   class:active={newCategory === cat.id}
                   onclick={() => (newCategory = cat.id)}
-                  title={cat.name}
                 >
-                  {cat.icon}
+                  <span class="sd-icon">{cat.icon}</span>
+                  <span class="sd-name">{cat.name}</span>
                 </button>
               {/each}
             </div>
@@ -729,6 +729,7 @@
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
+    box-sizing: border-box;
   }
   .trail-budget.mounted {
     opacity: 1;
@@ -771,10 +772,12 @@
   .header-main h2 {
     margin: 0;
     font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--marker-gold);
   }
   .header-main p {
     margin: 0;
-    opacity: 0.7;
+    opacity: 0.9;
     font-size: 0.8rem;
     font-style: italic;
   }
@@ -831,11 +834,6 @@
     display: flex;
     flex-direction: column;
   }
-  .burn-rate-display .start-value {
-    display: flex;
-    align-items: baseline;
-    gap: 5px;
-  }
   .burn-rate-display .stat-value {
     font-size: 2.5rem;
     line-height: 1;
@@ -846,16 +844,16 @@
   }
   .burn-rate-display .unit {
     font-size: 1rem;
-    color: #888;
+    color: #666;
     font-family: "Inter", sans-serif;
-    font-weight: 500;
+    font-weight: 600;
     margin-left: 5px;
   }
   .pace-context {
     font-size: 0.8rem;
-    color: #888;
+    color: #555;
     margin-top: 5px;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .sub-item {
@@ -865,10 +863,10 @@
   }
   .sub-label {
     font-size: 0.65rem;
-    color: #999;
+    color: #555;
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-weight: 700;
+    font-weight: 800;
     margin-bottom: 3px;
   }
   .sub-value {
@@ -889,6 +887,8 @@
     padding-bottom: 0.5rem;
     scrollbar-width: thin;
     scrollbar-color: #ddd transparent;
+    width: 100%;
+    min-width: 0;
   }
   .speed-dial::-webkit-scrollbar {
     height: 4px;
@@ -899,17 +899,30 @@
   }
 
   .speed-dial-item {
-    flex: 0 0 45px;
-    height: 45px;
-    border-radius: 12px;
+    flex: 0 0 auto;
+    height: 40px;
+    padding: 0 0.8rem;
+    border-radius: 20px;
     border: 2px solid #f0f0e0;
     background: #fafaf5;
-    font-size: 1.4rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.5rem;
     transition: all 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .sd-icon {
+    font-size: 1.1rem;
+  }
+  .sd-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #666;
+  }
+  .speed-dial-item.active .sd-name {
+    color: white;
   }
   .speed-dial-item:hover {
     transform: translateY(-2px);
@@ -952,7 +965,7 @@
   .day-total {
     font-size: 0.8rem;
     font-weight: 700;
-    color: #888;
+    color: #555;
   }
 
   /* Layout */
@@ -991,6 +1004,8 @@
     margin-bottom: 2rem;
     padding: 1.5rem;
     border: 1px solid #f0f0e0;
+    box-sizing: border-box;
+    width: 100%;
   }
   h3 {
     margin: 0 0 1.5rem;
@@ -1009,17 +1024,20 @@
 
   /* Forms */
   .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
   }
   .input-group {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+    min-width: 0;
+    width: 100%;
   }
   .full {
-    grid-column: span 2;
+    width: 100%;
   }
   label {
     font-size: 0.65rem;
@@ -1027,28 +1045,13 @@
     color: #888;
     text-transform: uppercase;
   }
-  input,
-  select {
-    padding: 0.7rem;
-    border: 2px solid #f0f0e0;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    transition: border-color 0.2s;
-    background: #fafaf5;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  input:focus,
-  select:focus {
-    border-color: var(--muted-green);
-    outline: none;
-  }
 
   .currency-input {
     position: relative;
     display: flex;
     align-items: center;
     width: 100%;
+    min-width: 0;
   }
   .currency-input span {
     position: absolute;
@@ -1061,17 +1064,21 @@
   }
 
   .btn-primary {
-    grid-column: span 2;
     background: var(--pine-green);
     color: white;
     border: none;
     padding: 1rem;
     border-radius: 8px;
     font-size: 0.95rem;
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.2s;
     margin-top: 0.5rem;
     box-shadow: 0 4px 0 #1a2318;
+    width: 100%;
+    box-sizing: border-box;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
   .btn-primary:active {
     transform: translateY(2px);
@@ -1193,11 +1200,6 @@
     align-items: center;
     gap: 0.5rem;
     width: 100%;
-  }
-  .icon-edit {
-    width: 45px;
-    text-align: center;
-    padding: 0.4rem;
   }
   .name-edit {
     flex: 1;
@@ -1367,6 +1369,22 @@
     background: #fafaf5;
   }
 
+  input {
+    padding: 0.7rem;
+    border: 2px solid #f0f0e0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+    background: #fafaf5;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+  input:focus {
+    border-color: var(--muted-green);
+    outline: none;
+  }
+
   /* Ticker (History) */
   .ledger-container {
     width: 100%;
@@ -1427,7 +1445,7 @@
   }
   .t-cat {
     font-size: 0.65rem;
-    color: #999;
+    color: #666;
     text-transform: uppercase;
     font-weight: 800;
   }
