@@ -39,6 +39,39 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   };
 
+  const EMOJI_LIST = [
+    "🛒",
+    "🏨",
+    "🎒",
+    "🧺",
+    "🚗",
+    "🎉",
+    "📦",
+    "🥾",
+    "🚿",
+    "📱",
+    "🔋",
+    "🆘",
+    "🛠️",
+    "🏕️",
+    "🍳",
+    "💊",
+    "🗺️",
+    "💵",
+    "💳",
+    "🥤",
+    "🍔",
+    "🍦",
+    "🚌",
+    "✈️",
+    "🛌",
+    "🧖",
+    "🧼",
+    "👕",
+    "✂️",
+    "👟",
+  ];
+
   let mounted = $state(false);
   let currentMonthKey = $state(getMonthKey());
 
@@ -48,6 +81,7 @@
   let uCategories = $state([...DEFAULT_CATEGORIES]); // Dynamic categories
 
   let showEnvelopeSettings = $state(false);
+  let activeEmojiPicker = $state(null); // ID of category being edited
 
   // Form State
   let newAmount = $state("");
@@ -57,6 +91,15 @@
 
   onMount(() => {
     mounted = true;
+
+    // Handle clicks outside picker to close it
+    const handleClick = (e) => {
+      if (activeEmojiPicker && !e.target.closest(".emoji-picker-container")) {
+        activeEmojiPicker = null;
+      }
+    };
+    window.addEventListener("click", handleClick);
+
     const saved = localStorage.getItem("at-budget-v3");
     if (saved) {
       try {
@@ -94,6 +137,8 @@
 
     ensureBudgetTemplate(currentMonthKey);
     if (uCategories.length > 0) newCategory = uCategories[0].id;
+
+    return () => window.removeEventListener("click", handleClick);
   });
 
   function ensureBudgetTemplate(key) {
@@ -116,6 +161,15 @@
     if (!mounted) return;
     const data = { monthlyBudgets, expenses, uCategories };
     localStorage.setItem("at-budget-v3", JSON.stringify(data));
+  }
+
+  function selectEmoji(catId, emoji) {
+    const cat = uCategories.find((c) => c.id === catId);
+    if (cat) {
+      cat.icon = emoji;
+      activeEmojiPicker = null;
+      saveData();
+    }
   }
 
   function changeMonth(delta) {
@@ -425,12 +479,32 @@
               <div class="row-top">
                 {#if showEnvelopeSettings}
                   <div class="env-edit-mode">
-                    <input
-                      type="text"
-                      bind:value={cat.icon}
-                      class="icon-edit"
-                      placeholder="Icon"
-                    />
+                    <div class="emoji-picker-container">
+                      <button
+                        class="icon-btn"
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          activeEmojiPicker = cat.id;
+                        }}
+                        title="Change Icon"
+                      >
+                        {cat.icon}
+                      </button>
+                      {#if activeEmojiPicker === cat.id}
+                        <div
+                          class="emoji-popover"
+                          transition:scale={{ duration: 150, start: 0.9 }}
+                        >
+                          <div class="emoji-grid">
+                            {#each EMOJI_LIST as emoji}
+                              <button onclick={() => selectEmoji(cat.id, emoji)}
+                                >{emoji}</button
+                              >
+                            {/each}
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
                     <input
                       type="text"
                       bind:value={cat.name}
@@ -980,6 +1054,78 @@
     gap: 0.6rem;
     overflow: hidden;
   }
+  /* Emoji Picker Styles */
+  .emoji-picker-container {
+    position: relative;
+  }
+  .icon-btn {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      transform 0.2s,
+      border-color 0.2s;
+  }
+  .icon-btn:hover {
+    border-color: var(--muted-green);
+    transform: translateY(-1px);
+  }
+
+  .emoji-popover {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 100;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    padding: 0.75rem;
+    width: 240px;
+    border: 1px solid #eee;
+  }
+  .emoji-popover::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 15px;
+    border: 8px solid transparent;
+    border-bottom-color: white;
+  }
+
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.4rem;
+  }
+  .emoji-grid button {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    padding: 0.4rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition:
+      background 0.2s,
+      transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .emoji-grid button:hover {
+    background: #f0f0e0;
+    transform: scale(1.1);
+  }
+  .emoji-grid button:active {
+    transform: scale(0.9);
+  }
+
   .env-title .name {
     font-size: 0.85rem;
     font-weight: 600;
