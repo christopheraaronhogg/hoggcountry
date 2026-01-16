@@ -135,7 +135,10 @@
       }
     }
 
-    ensureBudgetTemplate(currentMonthKey);
+    // Only ensure a template exists for the initial view if everything is empty
+    if (Object.keys(monthlyBudgets).length === 0) {
+      ensureBudgetTemplate(currentMonthKey);
+    }
     if (uCategories.length > 0) newCategory = uCategories[0].id;
 
     return () => window.removeEventListener("click", handleClick);
@@ -143,7 +146,9 @@
 
   function ensureBudgetTemplate(key) {
     if (!monthlyBudgets[key]) {
-      const keys = Object.keys(monthlyBudgets).sort();
+      const keys = Object.keys(monthlyBudgets)
+        .filter((k) => k < key)
+        .sort();
       const lastKey = keys[keys.length - 1];
 
       if (lastKey) {
@@ -154,6 +159,7 @@
         uCategories.forEach((c) => (initial[c.id] = 100));
         monthlyBudgets[key] = initial;
       }
+      saveData();
     }
   }
 
@@ -177,7 +183,6 @@
     const date = new Date(year, month - 1 + delta, 1);
     const newKey = getMonthKey(date);
     currentMonthKey = newKey;
-    ensureBudgetTemplate(newKey);
     saveData();
   }
 
@@ -215,11 +220,31 @@
     saveData();
   }
 
+  function toggleEnvelopeSettings() {
+    showEnvelopeSettings = !showEnvelopeSettings;
+    if (showEnvelopeSettings) {
+      ensureBudgetTemplate(currentMonthKey);
+    }
+  }
+
   // Date Helpers
   const getDaysInMonth = (y, m) => new Date(y, m, 0).getDate();
 
   // Reactive calculations
-  let currentEnvelopes = $derived(monthlyBudgets[currentMonthKey] || {});
+  let currentEnvelopes = $derived.by(() => {
+    if (monthlyBudgets[currentMonthKey]) return monthlyBudgets[currentMonthKey];
+    // Find most recent past budget
+    const keys = Object.keys(monthlyBudgets)
+      .filter((k) => k < currentMonthKey)
+      .sort();
+    if (keys.length > 0) return monthlyBudgets[keys[keys.length - 1]];
+
+    // Default template if nothing found
+    const def = {};
+    uCategories.forEach((c) => (def[c.id] = 100));
+    return def;
+  });
+
   let totalMonthlyBudget = $derived(
     Object.values(currentEnvelopes).reduce((a, b) => a + b, 0),
   );
@@ -539,10 +564,7 @@
       <section class="card envelope-list">
         <div class="section-header">
           <h3>Active Envelopes</h3>
-          <button
-            class="btn-refine"
-            onclick={() => (showEnvelopeSettings = !showEnvelopeSettings)}
-          >
+          <button class="btn-refine" onclick={toggleEnvelopeSettings}>
             {showEnvelopeSettings ? "Lock Budget" : "Adjust Envelopes"}
           </button>
         </div>
