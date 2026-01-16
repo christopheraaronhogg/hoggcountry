@@ -237,21 +237,17 @@
   // Hiker's Pulse Metrics
   let burnMetrics = $derived(() => {
     if (!currentMonthKey)
-      return { dailyBurn: 0, safePace: 0, daysPassed: 0, projected: 0 };
+      return { dailyBurn: 0, safePace: 0, projected: 0, totalDays: 0 };
 
     const [y, m] = currentMonthKey.split("-").map(Number);
     const totalDays = getDaysInMonth(y, m);
 
-    // Calculate days passed (clamped to today if current month, else total days)
-    const now = new Date();
-    const isCurrentMonth = now.getFullYear() === y && now.getMonth() + 1 === m;
-    const daysPassed = isCurrentMonth ? now.getDate() : totalDays;
-
-    const dailyBurn = daysPassed > 0 ? totalSpentInMonth / daysPassed : 0;
+    // Simple Monthly Pace: Total Spent / Month Length
+    // This provides a stable average vs a fluctuating live rate
+    const dailyBurn = totalDays > 0 ? totalSpentInMonth / totalDays : 0;
     const safePace = totalDays > 0 ? totalMonthlyBudget / totalDays : 0;
-    const projected = dailyBurn * totalDays;
 
-    return { dailyBurn, safePace, daysPassed, projected, totalDays };
+    return { dailyBurn, safePace, totalDays };
   });
 
   let categoryStats = $derived(
@@ -380,8 +376,10 @@
     <div class="header-main">
       <span class="icon">💰</span>
       <div>
-        <h2>Trail Envelopes</h2>
-        <p>Every dollar has a name, every mile.</p>
+        <h2 style="color: white">Trail Envelopes</h2>
+        <p style="color: rgba(255,255,255,0.9)">
+          Every dollar has a name, every mile.
+        </p>
       </div>
     </div>
     <div class="month-selector">
@@ -393,28 +391,29 @@
 
   <div class="stats-bar">
     <div class="stat-group">
-      <span class="stat-label">Daily Burn Rate</span>
+      <span class="stat-label"
+        >Spent in {currentMonthKey
+          ? getMonthDisplayName(currentMonthKey).split(" ")[0]
+          : ""}</span
+      >
       <div class="burn-rate-display">
-        <span
-          class="stat-value"
-          class:over={burnMetrics().dailyBurn > burnMetrics().safePace}
-        >
-          {formatMoney(burnMetrics().dailyBurn)}
-          <span class="unit">/ day</span>
+        <span class="stat-value">
+          {formatMoney(totalSpentInMonth)}
         </span>
         <span class="pace-context">
-          vs. {formatMoney(burnMetrics().safePace)} safe pace
+          Budget for {getMonthDisplayName(currentMonthKey).split(" ")[0]}: {formatMoney(
+            totalMonthlyBudget,
+          )}
         </span>
       </div>
     </div>
     <div class="stat-group right">
       <div class="sub-item">
-        <span class="sub-label"
-          >Spent in {currentMonthKey
-            ? getMonthDisplayName(currentMonthKey).split(" ")[0]
-            : ""}</span
+        <span class="sub-label">Daily Average</span>
+        <span class="sub-value"
+          >{formatMoney(burnMetrics().dailyBurn)}<span class="unit">/avg</span
+          ></span
         >
-        <span class="sub-value">{formatMoney(totalSpentInMonth)}</span>
       </div>
       <div class="sub-item">
         <span class="sub-label">Remaining</span>
@@ -450,18 +449,11 @@
           </div>
           <div class="input-group">
             <label for="category">Envelope</label>
-            <div class="speed-dial">
+            <select id="category" bind:value={newCategory}>
               {#each uCategories as cat}
-                <button
-                  class="speed-dial-item"
-                  class:active={newCategory === cat.id}
-                  onclick={() => (newCategory = cat.id)}
-                >
-                  <span class="sd-icon">{cat.icon}</span>
-                  <span class="sd-name">{cat.name}</span>
-                </button>
+                <option value={cat.id}>{cat.icon} {cat.name}</option>
               {/each}
-            </div>
+            </select>
           </div>
           <div class="input-group full">
             <label for="note">Note</label>
@@ -833,21 +825,7 @@
   .burn-rate-display {
     display: flex;
     flex-direction: column;
-  }
-  .burn-rate-display .stat-value {
-    font-size: 2.5rem;
-    line-height: 1;
-    color: var(--pine-green);
-  }
-  .burn-rate-display .stat-value.over {
-    color: var(--alert-red);
-  }
-  .burn-rate-display .unit {
-    font-size: 1rem;
-    color: #666;
-    font-family: "Inter", sans-serif;
-    font-weight: 600;
-    margin-left: 5px;
+    gap: 0.25rem;
   }
   .pace-context {
     font-size: 0.8rem;
@@ -878,61 +856,11 @@
   .sub-value.warn {
     color: var(--alert-red);
   }
-
-  /* Speed Dial */
-  .speed-dial {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-    scrollbar-width: thin;
-    scrollbar-color: #ddd transparent;
-    width: 100%;
-    min-width: 0;
-  }
-  .speed-dial::-webkit-scrollbar {
-    height: 4px;
-  }
-  .speed-dial::-webkit-scrollbar-thumb {
-    background: #ddd;
-    border-radius: 4px;
-  }
-
-  .speed-dial-item {
-    flex: 0 0 auto;
-    height: 40px;
-    padding: 0 0.8rem;
-    border-radius: 20px;
-    border: 2px solid #f0f0e0;
-    background: #fafaf5;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-    font-family: inherit;
-    white-space: nowrap;
-  }
-  .sd-icon {
-    font-size: 1.1rem;
-  }
-  .sd-name {
+  .sub-value .unit {
     font-size: 0.75rem;
-    font-weight: 700;
-    color: #666;
-  }
-  .speed-dial-item.active .sd-name {
-    color: white;
-  }
-  .speed-dial-item:hover {
-    transform: translateY(-2px);
-    border-color: var(--muted-green);
-  }
-  .speed-dial-item.active {
-    background: var(--pine-green);
-    border-color: var(--pine-green);
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(45, 58, 40, 0.2);
+    opacity: 0.7;
+    font-weight: 500;
+    margin-left: 2px;
   }
 
   /* Journal Ledger */
