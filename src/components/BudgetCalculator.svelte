@@ -63,7 +63,17 @@
         const data = JSON.parse(saved);
         monthlyBudgets = data.monthlyBudgets || {};
         expenses = data.expenses || [];
-        if (data.uCategories) uCategories = data.uCategories;
+        if (data.uCategories) {
+          uCategories = data.uCategories.map((c) => {
+            if (c.icon === "🍺")
+              return {
+                ...c,
+                icon: "🎉",
+                name: c.name === "Town Fun" ? "Misc / Fun" : c.name,
+              };
+            return c;
+          });
+        }
       } catch (e) {
         console.error("Failed to load budget data:", e);
       }
