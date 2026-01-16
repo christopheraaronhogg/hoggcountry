@@ -215,6 +215,9 @@
     saveData();
   }
 
+  // Date Helpers
+  const getDaysInMonth = (y, m) => new Date(y, m, 0).getDate();
+
   // Reactive calculations
   let currentEnvelopes = $derived(monthlyBudgets[currentMonthKey] || {});
   let totalMonthlyBudget = $derived(
@@ -227,10 +230,29 @@
   let totalSpentInMonth = $derived(
     monthlyExpenses.reduce((sum, e) => sum + e.amount, 0),
   );
-
   let totalAllTimeSpent = $derived(
     expenses.reduce((sum, e) => sum + e.amount, 0),
   );
+
+  // Hiker's Pulse Metrics
+  let burnMetrics = $derived(() => {
+    if (!currentMonthKey)
+      return { dailyBurn: 0, safePace: 0, daysPassed: 0, projected: 0 };
+
+    const [y, m] = currentMonthKey.split("-").map(Number);
+    const totalDays = getDaysInMonth(y, m);
+
+    // Calculate days passed (clamped to today if current month, else total days)
+    const now = new Date();
+    const isCurrentMonth = now.getFullYear() === y && now.getMonth() + 1 === m;
+    const daysPassed = isCurrentMonth ? now.getDate() : totalDays;
+
+    const dailyBurn = daysPassed > 0 ? totalSpentInMonth / daysPassed : 0;
+    const safePace = totalDays > 0 ? totalMonthlyBudget / totalDays : 0;
+    const projected = dailyBurn * totalDays;
+
+    return { dailyBurn, safePace, daysPassed, projected, totalDays };
+  });
 
   let categoryStats = $derived(
     uCategories.map((cat) => {
@@ -240,13 +262,48 @@
       const budget = currentEnvelopes[cat.id] || 0;
       const remaining = budget - spent;
       const percent = budget > 0 ? (spent / budget) * 100 : 0;
-      return { ...cat, spent, budget, remaining, percent };
+
+      // Traffic Light Health
+      let statusColor = "var(--pine-green)";
+      if (percent > 95) statusColor = "var(--alert-red)";
+      else if (percent > 75) statusColor = "var(--marker-gold)";
+
+      return { ...cat, spent, budget, remaining, percent, statusColor };
     }),
   );
 
   let displayedTransactions = $derived(
     [...monthlyExpenses].sort((a, b) => new Date(b.date) - new Date(a.date)),
   );
+
+  // Journal Grouping
+  let groupedTransactions = $derived(() => {
+    const groups = {};
+    displayedTransactions.forEach((t) => {
+      // Parse safely using local time assumption for display consistency
+      const d = new Date(t.date.includes("T") ? t.date : t.date + "T12:00:00");
+      const key = d.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      });
+
+      // Check for Today/Yesterday
+      const now = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(now.getDate() - 1);
+
+      let label = key;
+      if (d.toDateString() === now.toDateString()) label = "Today";
+      else if (d.toDateString() === yesterday.toDateString())
+        label = "Yesterday";
+
+      if (!groups[label]) groups[label] = { date: d, items: [], total: 0 };
+      groups[label].items.push(t);
+      groups[label].total += t.amount;
+    });
+    return Object.entries(groups).sort((a, b) => b[1].date - a[1].date);
+  });
 
   function addExpense() {
     const amount = parseFloat(newAmount);
@@ -335,18 +392,29 @@
   </header>
 
   <div class="stats-bar">
-    <div class="stat-main">
-      <span class="stat-label"
-        >Spent in {currentMonthKey
-          ? getMonthDisplayName(currentMonthKey).split(" ")[0]
-          : ""}</span
-      >
-      <span class="stat-value">{formatMoney(totalSpentInMonth)}</span>
+    <div class="stat-group">
+      <span class="stat-label">Daily Burn Rate</span>
+      <div class="burn-rate-display">
+        <span
+          class="stat-value"
+          class:over={burnMetrics().dailyBurn > burnMetrics().safePace}
+        >
+          {formatMoney(burnMetrics().dailyBurn)}
+          <span class="unit">/ day</span>
+        </span>
+        <span class="pace-context">
+          vs. {formatMoney(burnMetrics().safePace)} safe pace
+        </span>
+      </div>
     </div>
-    <div class="stat-sub">
+    <div class="stat-group right">
       <div class="sub-item">
-        <span class="sub-label">Plan</span>
-        <span class="sub-value">{formatMoney(totalMonthlyBudget)}</span>
+        <span class="sub-label"
+          >Spent in {currentMonthKey
+            ? getMonthDisplayName(currentMonthKey).split(" ")[0]
+            : ""}</span
+        >
+        <span class="sub-value">{formatMoney(totalSpentInMonth)}</span>
       </div>
       <div class="sub-item">
         <span class="sub-label">Remaining</span>
@@ -382,11 +450,18 @@
           </div>
           <div class="input-group">
             <label for="category">Envelope</label>
-            <select id="category" bind:value={newCategory}>
+            <div class="speed-dial">
               {#each uCategories as cat}
-                <option value={cat.id}>{cat.icon} {cat.name}</option>
+                <button
+                  class="speed-dial-item"
+                  class:active={newCategory === cat.id}
+                  onclick={() => (newCategory = cat.id)}
+                  title={cat.name}
+                >
+                  {cat.icon}
+                </button>
               {/each}
-            </select>
+            </div>
           </div>
           <div class="input-group full">
             <label for="note">Note</label>
@@ -546,7 +621,7 @@
                     style="width: {Math.min(
                       100,
                       cat.percent,
-                    )}%; background: {cat.color}"
+                    )}%; background: {cat.statusColor}"
                   ></div>
                 </div>
               </div>
@@ -581,45 +656,45 @@
             ? new Date(currentMonthKey + "-01").toLocaleDateString("en-US", {
                 month: "long",
               })
-            : ""} Activity
+            : ""} Journal
         </h3>
-        {#if displayedTransactions.length > 0}
+        {#if groupedTransactions().length > 0}
           <div class="ledger-container">
-            <div class="ticker">
-              {#each displayedTransactions as exp (exp.id)}
-                {@const cat = uCategories.find((c) => c.id === exp.category)}
-                <!-- Parse date ensuring we treat it as local for display if provided as YYYY-MM-DD -->
-                {@const dateObj = new Date(
-                  exp.date.includes("T") ? exp.date : exp.date + "T12:00:00",
-                )}
-                <div class="ticker-item" transition:slide>
-                  <div class="t-date">
-                    <span class="d-day">{dateObj.getDate()}</span>
-                    <span class="d-mon"
-                      >{dateObj.toLocaleDateString("en-US", {
-                        month: "short",
-                      })}</span
-                    >
-                  </div>
-                  <div
-                    class="t-icon"
-                    style="background: {cat?.color || '#eee'}"
-                  >
-                    {cat?.icon || "💰"}
-                  </div>
-                  <div class="t-details">
-                    <span class="t-note" title={exp.note || cat?.name}
-                      >{exp.note || cat?.name}</span
-                    >
-                    <span class="t-cat">{cat?.name || "Uncategorized"}</span>
-                  </div>
-                  <div class="t-amount">{formatMoney(exp.amount)}</div>
-                  <button class="t-del" onclick={() => deleteExpense(exp.id)}
-                    >×</button
-                  >
+            {#each groupedTransactions() as group}
+              <div class="ledger-day">
+                <div class="day-header">
+                  <span class="day-label">{group[0]}</span>
+                  <span class="day-total">{formatMoney(group[1].total)}</span>
                 </div>
-              {/each}
-            </div>
+                <div class="ticker">
+                  {#each group[1].items as exp (exp.id)}
+                    {@const cat = uCategories.find(
+                      (c) => c.id === exp.category,
+                    )}
+                    <div class="ticker-item" transition:slide>
+                      <div
+                        class="t-icon"
+                        style="background: {cat?.color || '#eee'}"
+                      >
+                        {cat?.icon || "💰"}
+                      </div>
+                      <div class="t-details">
+                        <span class="t-note" title={exp.note || cat?.name}
+                          >{exp.note || cat?.name}</span
+                        >
+                        <span class="t-cat">{cat?.name || "Uncategorized"}</span
+                        >
+                      </div>
+                      <div class="t-amount">{formatMoney(exp.amount)}</div>
+                      <button
+                        class="t-del"
+                        onclick={() => deleteExpense(exp.id)}>×</button
+                      >
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/each}
           </div>
         {:else}
           <div class="empty-state">
@@ -731,7 +806,7 @@
     transform: scale(1.2);
   }
 
-  /* Stats Bar */
+  /* New Stats Dashboard */
   .stats-bar {
     background: white;
     padding: 1.5rem 2rem;
@@ -742,26 +817,47 @@
     flex-wrap: wrap;
     gap: 1.5rem;
   }
-  .stat-main {
+  .stat-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .stat-group.right {
+    flex-direction: row;
+    gap: 2rem;
+  }
+
+  .burn-rate-display {
     display: flex;
     flex-direction: column;
   }
-  .stat-label {
-    font-size: 0.75rem;
-    color: #666;
-    text-transform: uppercase;
-    font-weight: 700;
+  .burn-rate-display .start-value {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
   }
-  .stat-value {
+  .burn-rate-display .stat-value {
     font-size: 2.5rem;
-    color: var(--pine-green);
     line-height: 1;
+    color: var(--pine-green);
+  }
+  .burn-rate-display .stat-value.over {
+    color: var(--alert-red);
+  }
+  .burn-rate-display .unit {
+    font-size: 1rem;
+    color: #888;
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+    margin-left: 5px;
+  }
+  .pace-context {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 5px;
+    font-weight: 500;
   }
 
-  .stat-sub {
-    display: flex;
-    gap: 3rem;
-  }
   .sub-item {
     display: flex;
     flex-direction: column;
@@ -769,17 +865,94 @@
   }
   .sub-label {
     font-size: 0.65rem;
-    color: #888;
+    color: #999;
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 3px;
   }
   .sub-value {
     font-family: "Oswald", sans-serif;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     color: #444;
+    line-height: 1;
   }
   .sub-value.warn {
     color: var(--alert-red);
+  }
+
+  /* Speed Dial */
+  .speed-dial {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: #ddd transparent;
+  }
+  .speed-dial::-webkit-scrollbar {
+    height: 4px;
+  }
+  .speed-dial::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 4px;
+  }
+
+  .speed-dial-item {
+    flex: 0 0 45px;
+    height: 45px;
+    border-radius: 12px;
+    border: 2px solid #f0f0e0;
+    background: #fafaf5;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .speed-dial-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--muted-green);
+  }
+  .speed-dial-item.active {
+    background: var(--pine-green);
+    border-color: var(--pine-green);
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(45, 58, 40, 0.2);
+  }
+
+  /* Journal Ledger */
+  .ledger-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .ledger-day {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f0f0e0;
+    margin-top: 0.5rem;
+  }
+  .day-label {
+    font-family: "Oswald", sans-serif;
+    font-size: 0.95rem;
+    color: var(--pine-green);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .day-total {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #888;
   }
 
   /* Layout */
@@ -794,12 +967,19 @@
       grid-template-columns: 1fr;
     }
     .stats-bar {
-      justify-content: center;
-      text-align: center;
+      padding: 1.5rem;
     }
-    .stat-sub {
+    .stat-group.right {
       width: 100%;
-      justify-content: space-around;
+      justify-content: space-between;
+      border-top: 1px solid #eee;
+      padding-top: 1rem;
+    }
+    .sub-item {
+      text-align: left;
+    }
+    .sub-item:last-child {
+      text-align: right;
     }
   }
 
@@ -1198,9 +1378,10 @@
     gap: 0.75rem;
     width: 100%;
   }
+
   .ticker-item {
-    display: grid;
-    grid-template-columns: 50px 40px 1fr auto 30px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
     gap: 1rem;
     padding: 0.8rem;
@@ -1216,32 +1397,9 @@
       gap: 0.5rem;
       padding: 0.5rem;
     }
-    .t-date {
-      padding-right: 0.5rem;
-    }
     .t-details .t-note {
       font-size: 0.8rem;
     }
-  }
-
-  .t-date {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #888;
-    border-right: 1px solid #eee;
-    padding-right: 0.8rem;
-  }
-  .d-day {
-    font-family: "Oswald", sans-serif;
-    font-size: 1.1rem;
-    line-height: 1;
-    color: var(--pine-green);
-  }
-  .d-mon {
-    font-size: 0.55rem;
-    text-transform: uppercase;
-    font-weight: 800;
   }
 
   .t-icon {
@@ -1252,12 +1410,14 @@
     justify-content: center;
     border-radius: 50%;
     font-size: 0.9rem;
+    flex-shrink: 0;
   }
   .t-details {
     display: flex;
     flex-direction: column;
     min-width: 0;
-  } /* min-width: 0 is CRITICAL for truncation */
+    flex: 1;
+  }
   .t-note {
     font-weight: 700;
     font-size: 0.9rem;
@@ -1285,6 +1445,7 @@
     color: #eee;
     font-size: 1.2rem;
     cursor: pointer;
+    padding: 0 5px;
   }
   .t-del:hover {
     color: var(--alert-red);
