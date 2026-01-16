@@ -80,7 +80,7 @@
   let expenses = $state([]);
   let uCategories = $state([...DEFAULT_CATEGORIES]); // Dynamic categories
 
-  let showEnvelopeSettings = $state(false);
+  let showCategorySettings = $state(false);
   let activeEmojiPicker = $state(null); // ID of category being edited
 
   // Form State
@@ -128,8 +128,8 @@
         try {
           const data = JSON.parse(legacy);
           expenses = data.expenses || [];
-          if (data.envelopes) {
-            monthlyBudgets[currentMonthKey] = data.envelopes;
+          if (data.envelopes || data.categories) {
+            monthlyBudgets[currentMonthKey] = data.envelopes || data.categories;
           }
         } catch (e) {}
       }
@@ -220,9 +220,9 @@
     saveData();
   }
 
-  function toggleEnvelopeSettings() {
-    showEnvelopeSettings = !showEnvelopeSettings;
-    if (showEnvelopeSettings) {
+  function toggleCategorySettings() {
+    showCategorySettings = !showCategorySettings;
+    if (showCategorySettings) {
       ensureBudgetTemplate(currentMonthKey);
     }
   }
@@ -231,7 +231,7 @@
   const getDaysInMonth = (y, m) => new Date(y, m, 0).getDate();
 
   // Reactive calculations
-  let currentEnvelopes = $derived.by(() => {
+  let currentCategoryBudgets = $derived.by(() => {
     if (monthlyBudgets[currentMonthKey]) return monthlyBudgets[currentMonthKey];
     // Find most recent past budget
     const keys = Object.keys(monthlyBudgets)
@@ -246,7 +246,7 @@
   });
 
   let totalMonthlyBudget = $derived(
-    Object.values(currentEnvelopes).reduce((a, b) => a + b, 0),
+    Object.values(currentCategoryBudgets).reduce((a, b) => a + b, 0),
   );
 
   let monthlyExpenses = $derived(
@@ -280,7 +280,7 @@
       const spent = monthlyExpenses
         .filter((e) => e.category === cat.id)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
-      const budget = currentEnvelopes[cat.id] || 0;
+      const budget = currentCategoryBudgets[cat.id] || 0;
       const remaining = budget - spent;
       const percent = budget > 0 ? (spent / budget) * 100 : 0;
 
@@ -401,7 +401,7 @@
     <div class="header-main">
       <span class="icon">💰</span>
       <div>
-        <h2 style="color: white">Trail Envelopes</h2>
+        <h2 style="color: white">Trail Categories</h2>
         <p style="color: rgba(255,255,255,0.9)">
           Every dollar has a name, every mile.
         </p>
@@ -480,7 +480,7 @@
             </div>
           </div>
           <div class="input-group">
-            <label for="category">Envelope</label>
+            <label for="category">Category</label>
             <select id="category" bind:value={newCategory}>
               {#each uCategories as cat}
                 <option value={cat.id}>{cat.icon} {cat.name}</option>
@@ -505,7 +505,7 @@
             onclick={addExpense}
             disabled={!newAmount}
           >
-            Post to Envelope
+            Post Transaction
           </button>
         </div>
       </section>
@@ -558,23 +558,23 @@
       </section>
     </div>
 
-    <!-- RIGHT COLUMN: Envelopes & History -->
+    <!-- RIGHT COLUMN: Categories & History -->
     <div class="data-panel">
-      <!-- Envelope Management -->
-      <section class="card envelope-list">
+      <!-- Category Management -->
+      <section class="card category-list">
         <div class="section-header">
-          <h3>Active Envelopes</h3>
-          <button class="btn-refine" onclick={toggleEnvelopeSettings}>
-            {showEnvelopeSettings ? "Lock Budget" : "Adjust Envelopes"}
+          <h3>Active Categories</h3>
+          <button class="btn-refine" onclick={toggleCategorySettings}>
+            {showCategorySettings ? "Lock Budget" : "Adjust Categories"}
           </button>
         </div>
 
-        <div class="envelopes-stack">
+        <div class="categories-stack">
           {#each categoryStats as cat}
-            <div class="envelope-row" class:is-over={cat.remaining < 0}>
+            <div class="category-row" class:is-over={cat.remaining < 0}>
               <div class="row-top">
-                {#if showEnvelopeSettings}
-                  <div class="env-edit-mode">
+                {#if showCategorySettings}
+                  <div class="cat-edit-mode">
                     <div class="emoji-picker-container">
                       <button
                         class="icon-btn"
@@ -623,11 +623,11 @@
                     >
                   </div>
                 {:else}
-                  <div class="env-title">
+                  <div class="cat-title">
                     <span class="icon">{cat.icon}</span>
                     <span class="name">{cat.name}</span>
                   </div>
-                  <div class="env-values">
+                  <div class="cat-values">
                     <span class="spent">{formatMoney(cat.spent)}</span>
                     <span class="slash">/</span>
                     <span class="budget">{formatMoney(cat.budget)}</span>
@@ -662,9 +662,9 @@
             </div>
           {/each}
 
-          {#if showEnvelopeSettings}
+          {#if showCategorySettings}
             <button class="btn-add-cat" onclick={addCategory} transition:fade>
-              + Add Monthly Envelope
+              + Add Monthly Category
             </button>
           {/if}
         </div>
@@ -764,7 +764,7 @@
   .current-month,
   .stat-value,
   .btn-primary,
-  .env-title .name,
+  .cat-title .name,
   .btn-add-cat {
     font-family: "Oswald", sans-serif;
     text-transform: uppercase;
@@ -1132,7 +1132,7 @@
     text-align: center;
   }
 
-  /* Envelopes Stack */
+  /* Categories Stack */
   .section-header {
     display: flex;
     justify-content: space-between;
@@ -1159,12 +1159,12 @@
     transform: translateY(-1px);
   }
 
-  .envelopes-stack {
+  .categories-stack {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
-  .envelope-row {
+  .category-row {
     padding: 1.25rem;
     border-radius: 16px;
     background: #fafaf5;
@@ -1172,12 +1172,12 @@
     border-left: 6px solid var(--muted-green);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .envelope-row:hover {
+  .category-row:hover {
     transform: translateX(4px);
     background: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   }
-  .envelope-row.is-over {
+  .category-row.is-over {
     border-left-color: var(--alert-red);
     background: #fff5f5;
   }
@@ -1190,7 +1190,7 @@
   }
 
   /* Edit Mode Row */
-  .env-edit-mode {
+  .cat-edit-mode {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1225,7 +1225,7 @@
     padding: 0 5px;
   }
 
-  .env-title {
+  .cat-title {
     display: flex;
     align-items: center;
     gap: 0.6rem;
@@ -1304,7 +1304,7 @@
     transform: scale(0.9);
   }
 
-  .env-title .name {
+  .cat-title .name {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--pine-green);
@@ -1313,12 +1313,12 @@
     text-overflow: ellipsis;
   }
 
-  .env-values {
+  .cat-values {
     font-size: 0.85rem;
     font-weight: 700;
     white-space: nowrap;
   }
-  .env-values .budget {
+  .cat-values .budget {
     color: #888;
     font-family: "Inter", sans-serif;
     font-weight: 400;
