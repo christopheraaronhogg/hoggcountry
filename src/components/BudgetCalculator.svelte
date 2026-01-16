@@ -1298,20 +1298,36 @@
     background: #fafaf5;
   }
 
-  input {
-    padding: 0.7rem;
+  input,
+  select {
+    padding: 0.8rem;
     border: 2px solid #f0f0e0;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    transition: border-color 0.2s;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
     background: #fafaf5;
     width: 100%;
     box-sizing: border-box;
     min-width: 0;
+    color: var(--ink);
+    font-family: inherit;
+    font-weight: 500;
   }
-  input:focus {
-    border-color: var(--muted-green);
+  input:focus,
+  select:focus {
+    border-color: var(--marker-gold);
+    background: white;
     outline: none;
+    box-shadow: 0 0 0 4px rgba(212, 163, 115, 0.1);
+  }
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    cursor: pointer;
   }
 
   /* Ticker (History) */
