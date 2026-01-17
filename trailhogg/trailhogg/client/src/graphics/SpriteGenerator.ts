@@ -14,29 +14,17 @@ import {
 } from '@trailhogg/shared/sprites';
 import { TRAIL_LEGS_PALETTE } from '@trailhogg/shared/sprites';
 
-/**
- * Converts a hex color string to a number for Phaser
- * @param hex - Color string like '#4A7D5A' or 'transparent'
- * @returns Number like 0x4A7D5A, or -1 for transparent
- */
-function hexToNumber(hex: string): number {
-  if (hex === 'transparent' || hex === '') {
-    return -1;
-  }
-  return parseInt(hex.replace('#', ''), 16);
-}
 
 /**
- * Gets the hex color number for a palette index
+ * Gets the string color for a palette index
  * @param index - Palette color index (0 = transparent)
- * @returns Phaser-compatible color number, or -1 for transparent
+ * @returns CSS color string or 'transparent'
  */
-function getPaletteColor(index: number): number {
+function getPaletteColorString(index: number): string {
   if (index === 0) {
-    return -1; // Transparent
+    return 'transparent';
   }
-  const color = TRAIL_LEGS_PALETTE.colors[index];
-  return hexToNumber(color);
+  return TRAIL_LEGS_PALETTE.colors[index] || 'transparent';
 }
 
 /**
@@ -70,13 +58,27 @@ export class SpriteGenerator {
    */
   generateSprite(sprite: PixelSprite, textureKey?: string): void {
     const key = textureKey || sprite.name;
+
+    // Check if texture already exists
+    if (this.scene.textures.exists(key)) {
+      return;
+    }
+
     const width = sprite.width * this.scale;
     const height = sprite.height * this.scale;
 
-    const graphics = this.scene.make.graphics({ x: 0, y: 0 });
-    this.drawPixels(graphics, sprite.pixels);
-    graphics.generateTexture(key, width, height);
-    graphics.destroy();
+    // OPTIMIZATION: Use Canvas API instead of Phaser Graphics
+    // This is significantly faster for generating static textures
+    // because it avoids WebGL/Canvas command buffering and replay
+    const texture = this.scene.textures.createCanvas(key, width, height);
+    if (!texture) {
+      console.error(`Failed to create texture: ${key}`);
+      return;
+    }
+
+    const context = texture.getContext();
+    this.drawPixels(context, sprite.pixels);
+    texture.refresh();
   }
 
   /**
@@ -87,42 +89,46 @@ export class SpriteGenerator {
    */
   generateAnimatedSprite(sprite: AnimatedSprite, textureKey?: string): void {
     const key = textureKey || sprite.name;
+
+    // Animation creation handles 'exists' check internally
+    // But we should check if texture exists to skip generation
+    if (this.scene.textures.exists(key)) {
+      this.createAnimation(key, sprite);
+      return;
+    }
+
     const frameWidth = sprite.width * this.scale;
     const frameHeight = sprite.height * this.scale;
     const totalWidth = frameWidth * sprite.frames.length;
 
-    // Create a temporary render texture to draw the spritesheet
-    const renderTexture = this.scene.make.renderTexture({
-      width: totalWidth,
-      height: frameHeight,
-    }, false);
+    // OPTIMIZATION: Use Canvas API for spritesheet generation
+    const texture = this.scene.textures.createCanvas(key, totalWidth, frameHeight);
+    if (!texture) {
+      console.error(`Failed to create texture: ${key}`);
+      return;
+    }
 
-    // Draw each frame side by side using graphics
-    const graphics = this.scene.make.graphics({ x: 0, y: 0 });
+    const context = texture.getContext();
 
     for (let i = 0; i < sprite.frames.length; i++) {
       const offsetX = i * frameWidth;
-      this.drawPixels(graphics, sprite.frames[i], offsetX);
+      this.drawPixels(context, sprite.frames[i], offsetX);
     }
 
-    // Draw graphics to render texture
-    renderTexture.draw(graphics, 0, 0);
-    graphics.destroy();
+    texture.refresh();
 
-    // Save as a spritesheet with frame data
-    renderTexture.saveTexture(key);
-    renderTexture.destroy();
-
-    // Add spritesheet frame data to the texture
-    const texture = this.scene.textures.get(key);
-    if (texture) {
-      // Manually add frames to the texture
-      for (let i = 0; i < sprite.frames.length; i++) {
-        texture.add(i, 0, i * frameWidth, 0, frameWidth, frameHeight);
-      }
+    // Manually add frames to the texture
+    for (let i = 0; i < sprite.frames.length; i++) {
+      texture.add(i, 0, i * frameWidth, 0, frameWidth, frameHeight);
     }
 
-    // Create the animation config in Phaser
+    this.createAnimation(key, sprite);
+  }
+
+  /**
+   * Helper to create animation config
+   */
+  private createAnimation(key: string, sprite: AnimatedSprite): void {
     if (!this.scene.anims.exists(key)) {
       this.scene.anims.create({
         key: key,
@@ -191,24 +197,33 @@ export class SpriteGenerator {
     height: number,
     key: string
   ): void {
+    if (this.scene.textures.exists(key)) {
+      return;
+    }
+
     const scaledWidth = width * this.scale;
     const scaledHeight = height * this.scale;
 
-    const graphics = this.scene.make.graphics({ x: 0, y: 0 });
-    this.drawPixels(graphics, pixels);
-    graphics.generateTexture(key, scaledWidth, scaledHeight);
-    graphics.destroy();
+    const texture = this.scene.textures.createCanvas(key, scaledWidth, scaledHeight);
+    if (!texture) {
+      console.error(`Failed to create texture: ${key}`);
+      return;
+    }
+
+    const context = texture.getContext();
+    this.drawPixels(context, pixels);
+    texture.refresh();
   }
 
   /**
-   * Internal helper to draw pixels onto a graphics object
-   * @param graphics - Phaser graphics object
+   * Internal helper to draw pixels onto a canvas context
+   * @param context - Canvas 2D context
    * @param pixels - 2D array of palette indices
    * @param offsetX - X offset for drawing (used in spritesheets)
    * @param offsetY - Y offset for drawing
    */
   private drawPixels(
-    graphics: Phaser.GameObjects.Graphics,
+    context: CanvasRenderingContext2D,
     pixels: PixelGrid,
     offsetX: number = 0,
     offsetY: number = 0
@@ -217,15 +232,15 @@ export class SpriteGenerator {
       const row = pixels[y];
       for (let x = 0; x < row.length; x++) {
         const colorIndex = row[x];
-        const color = getPaletteColor(colorIndex);
+        const color = getPaletteColorString(colorIndex);
 
         // Skip transparent pixels
-        if (color === -1) {
+        if (color === 'transparent') {
           continue;
         }
 
-        graphics.fillStyle(color, 1);
-        graphics.fillRect(
+        context.fillStyle = color;
+        context.fillRect(
           offsetX + x * this.scale,
           offsetY + y * this.scale,
           this.scale,
