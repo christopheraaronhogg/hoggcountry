@@ -31,6 +31,7 @@ export class GameScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.TileSprite;
   private rainEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private fogSprites: Phaser.GameObjects.Sprite[] = [];
+  private lastWeatherEffect: string = ''; // Optimization: track last applied weather
 
   // Trail features
   private obstacles: Phaser.GameObjects.Sprite[] = [];
@@ -1873,6 +1874,10 @@ export class GameScene extends Phaser.Scene {
   }
   
   updateWeatherEffects(weather: string) {
+    // Optimization: prevent unnecessary destruction/creation of effects
+    if (this.lastWeatherEffect === weather) return;
+    this.lastWeatherEffect = weather;
+
     // Clear existing effects
     if (this.rainEmitter) {
       this.rainEmitter.stop();
@@ -2198,6 +2203,9 @@ export class GameScene extends Phaser.Scene {
   onResize(gameSize: Phaser.Structs.Size) {
     const width = gameSize.width;
     const height = gameSize.height;
+
+    // Force weather update on resize
+    this.lastWeatherEffect = '';
 
     // Update joystick position if mobile
     if (this.isMobile && this.joystickBase) {
