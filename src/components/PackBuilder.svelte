@@ -5,62 +5,123 @@
 
   let { trailContext = {} } = $props();
 
-  let season = $state('winter');
   let mounted = $state(false);
   let expandedCategory = $state(null);
   let activeTab = $state('builder');
   let foodDays = $state(4);
   let waterLiters = $state(2);
   let foodWeightPerDay = $state(1.75);
+  let editableItems = $state([]);
+
+  const categories = gearData.categories;
+  const WATER_WEIGHT_PER_LITER = 2.2;
+  const STORAGE_KEY = 'at-pack-builder-custom';
+  const templateItems = gearData.items.filter(item => item.season !== 'summer');
+  const templateLookup = new Map(templateItems.map(item => [item.id, item]));
+
+  function createItem({
+    id,
+    category,
+    name = '',
+    weight = '',
+    worn = false,
+    tier = 3,
+    templateName = '',
+    templateWeight = ''
+  }) {
+    return {
+      id,
+      category,
+      name,
+      weight,
+      worn,
+      tier,
+      templateName,
+      templateWeight
+    };
+  }
+
+  function buildTemplateItems() {
+    return templateItems.map(item => createItem({
+      id: item.id,
+      category: item.category,
+      worn: item.worn ?? false,
+      tier: item.tier ?? 3,
+      templateName: item.name,
+      templateWeight: item.weight,
+      defaultWeight: item.weight
+    }));
+  }
 
   onMount(() => {
     mounted = true;
-    const saved = localStorage.getItem('at-pack-builder');
+    const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        if (data.season) season = data.season;
-        if (data.foodDays) foodDays = data.foodDays;
-        if (data.waterLiters) waterLiters = data.waterLiters;
-        if (data.foodWeightPerDay) foodWeightPerDay = data.foodWeightPerDay;
+        if (data.foodDays !== undefined) foodDays = data.foodDays;
+        if (data.waterLiters !== undefined) waterLiters = data.waterLiters;
+        if (data.foodWeightPerDay !== undefined) foodWeightPerDay = data.foodWeightPerDay;
+        if (Array.isArray(data.items)) {
+          editableItems = data.items.map(item => {
+            const template = templateLookup.get(item.id);
+            return createItem({
+              id: item.id || `custom_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+              category: item.category || template?.category || 'pack',
+              name: item.name ?? '',
+              weight: item.weight ?? '',
+              worn: item.worn ?? false,
+              tier: item.tier ?? template?.tier ?? 3,
+              templateName: item.templateName ?? template?.name ?? '',
+              templateWeight: item.templateWeight ?? template?.weight ?? '',
+              defaultWeight: item.defaultWeight ?? template?.weight ?? ''
+            });
+          });
+          return;
+        }
       } catch (e) {}
     }
+
+    editableItems = buildTemplateItems();
   });
 
   $effect(() => {
     if (mounted) {
-      localStorage.setItem('at-pack-builder', JSON.stringify({
-        season, foodDays, waterLiters, foodWeightPerDay
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        items: editableItems,
+        foodDays,
+        waterLiters,
+        foodWeightPerDay
       }));
     }
   });
 
-  const categories = gearData.categories;
-  const WATER_WEIGHT_PER_LITER = 2.2;
-
-  function getSeasonItems(items, currentSeason) {
-    const swapGroups = {};
-    const result = [];
-    items.forEach(item => {
-      if (item.swapGroup) {
-        if (!swapGroups[item.swapGroup]) swapGroups[item.swapGroup] = [];
-        swapGroups[item.swapGroup].push(item);
-      } else {
-        if (item.season === 'all' || item.season === currentSeason) result.push(item);
-      }
-    });
-    Object.values(swapGroups).forEach(group => {
-      const match = group.find(i => i.season === currentSeason) || group.find(i => i.season === 'all');
-      if (match) result.push(match);
-    });
-    return result;
+  function updateItem(id, key, value) {
+    editableItems = editableItems.map(item =>
+      item.id === id ? { ...item, [key]: value } : item
+    );
   }
 
-  let seasonItems = $derived(getSeasonItems(gearData.items, season));
-  let baseWeightOz = $derived(seasonItems.filter(item => !item.worn).reduce((sum, item) => sum + item.weight, 0));
-  let wornWeightOz = $derived(seasonItems.filter(item => item.worn).reduce((sum, item) => sum + item.weight, 0));
+  function addItem(categoryId) {
+    const id = `custom_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    editableItems = [...editableItems, createItem({ id, category: categoryId })];
+    expandedCategory = categoryId;
+  }
+
+  function removeItem(id) {
+    editableItems = editableItems.filter(item => item.id !== id);
+  }
+
+  function getItemWeight(item) {
+    const weight = Number(item.weight);
+    return Number.isFinite(weight) ? weight : 0;
+  }
+
+  let filledItemsCount = $derived(editableItems.length);
+  let baseWeightOz = $derived(
+    editableItems.filter(item => !item.worn).reduce((sum, item) => sum + getItemWeight(item), 0)
+  );
   let baseWeightLbs = $derived(baseWeightOz / 16);
-  let wornWeightLbs = $derived(wornWeightOz / 16);
   let foodWeight = $derived(foodDays * foodWeightPerDay);
   let waterWeight = $derived(waterLiters * WATER_WEIGHT_PER_LITER);
   let totalPackWeight = $derived(baseWeightLbs + foodWeight + waterWeight);
@@ -89,32 +150,28 @@
     };
   });
 
-  let weightPercents = $derived({
-    base: (baseWeightLbs / totalPackWeight) * 100,
-    food: (foodWeight / totalPackWeight) * 100,
-    water: (waterWeight / totalPackWeight) * 100,
+  let weightPercents = $derived.by(() => {
+    if (totalPackWeight <= 0) return { base: 0, food: 0, water: 0 };
+    return {
+      base: (baseWeightLbs / totalPackWeight) * 100,
+      food: (foodWeight / totalPackWeight) * 100,
+      water: (waterWeight / totalPackWeight) * 100,
+    };
   });
 
-  let itemsByCategory = $derived(
-    seasonItems.reduce((acc, item) => {
-      if (!acc[item.category]) acc[item.category] = [];
-      acc[item.category].push(item);
-      return acc;
-    }, {})
-  );
-
   let categoryWeights = $derived(
-    Object.entries(itemsByCategory).map(([catId, items]) => {
-      const weight = items.filter(i => !i.worn).reduce((sum, i) => sum + i.weight, 0);
+    Object.entries(categories).map(([catId, catData]) => {
+      const items = editableItems.filter(item => item.category === catId);
+      const weight = items.filter(i => !i.worn).reduce((sum, i) => sum + getItemWeight(i), 0);
       return {
         id: catId,
-        ...categories[catId],
+        ...catData,
         weight,
         weightLbs: weight / 16,
-        items: items.filter(i => !i.worn),
+        items,
         wornItems: items.filter(i => i.worn)
       };
-    }).filter(c => c.weight > 0 || c.wornItems.length > 0).sort((a, b) => b.weight - a.weight)
+    })
   );
 
   let maxCategoryWeight = $derived(Math.max(...categoryWeights.map(c => c.weight), 1));
@@ -154,6 +211,7 @@
   }
 </script>
 
+
 <div class="pack-builder" class:mounted>
   <!-- Header -->
   <header class="calc-header">
@@ -167,9 +225,10 @@
       <p>Build your kit, know your weight</p>
     </div>
     <div class="header-stat">
-      <span class="stat-val">{seasonItems.length}</span>
+      <span class="stat-val">{filledItemsCount}</span>
       <span class="stat-lbl">items</span>
     </div>
+
   </header>
 
   <!-- Tab Navigation -->
@@ -222,20 +281,16 @@
   </section>
 
   {#if activeTab === 'builder'}
-    <!-- Season Toggle -->
     <section class="controls-section">
-      <div class="season-toggle">
-        <button class="toggle-btn" class:active={season === 'winter'} onclick={() => season = 'winter'}>
-          <span>❄️</span> Winter Start
-        </button>
-        <button class="toggle-btn" class:active={season === 'summer'} onclick={() => season = 'summer'}>
-          <span>☀️</span> Summer
-        </button>
+      <div class="builder-intro">
+        <h3>Your loadout</h3>
+        <p>Winter kit template. Replace with your own gear and weights.</p>
       </div>
       <div class="base-pill" style="--pill-color: {baseWeightClass.color}">
         Base: {baseWeightLbs.toFixed(1)} lb ({baseWeightClass.label})
       </div>
     </section>
+
 
     <!-- Big 3 Section -->
     <section class="big3-section">
@@ -297,18 +352,52 @@
               <div class="cat-items" transition:slide>
                 {#each cat.items as item}
                   <div class="gear-item">
-                    <span class="item-name">{item.name}</span>
-                    {#if item.tier === 1}<span class="item-tag essential">Essential</span>{/if}
-                    <span class="item-weight">{formatWeight(item.weight)}</span>
+                    <div class="item-main">
+                      <input
+                        class="item-input"
+                        type="text"
+                        placeholder={item.templateName || 'Add gear item'}
+                        value={item.name}
+                        oninput={(event) => updateItem(item.id, 'name', event.currentTarget.value)}
+                      />
+                      {#if item.tier === 1}<span class="item-tag essential">Essential</span>{/if}
+                    </div>
+                    <div class="item-meta">
+                      <input
+                        class="item-weight-input"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        inputmode="decimal"
+                        placeholder={item.templateWeight ? item.templateWeight.toString() : 'oz'}
+                        value={item.weight}
+                        oninput={(event) => updateItem(item.id, 'weight', event.currentTarget.value)}
+                      />
+                    </div>
+                    <div class="item-actions">
+                      <label class="item-toggle">
+                        <input
+                          type="checkbox"
+                          checked={item.worn}
+                          onchange={(event) => updateItem(item.id, 'worn', event.currentTarget.checked)}
+                        />
+                        Worn
+                      </label>
+                      <button class="item-remove" onclick={() => removeItem(item.id)} aria-label="Remove item">
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 {/each}
-                {#each cat.wornItems as item}
-                  <div class="gear-item worn">
-                    <span class="item-name">{item.name}</span>
-                    <span class="item-tag worn">Worn</span>
-                    <span class="item-weight">{formatWeight(item.weight)}</span>
-                  </div>
-                {/each}
+                {#if cat.items.length === 0}
+                  <button class="item-add" onclick={() => addItem(cat.id)}>
+                    + Add item
+                  </button>
+                {:else}
+                  <button class="item-add" onclick={() => addItem(cat.id)}>
+                    + Add another item
+                  </button>
+                {/if}
               </div>
             {/if}
           </div>
@@ -689,37 +778,22 @@
     flex-wrap: wrap;
   }
 
-  .season-toggle {
-    display: flex;
-    background: #fff;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-
-  .toggle-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1rem;
-    border: none;
-    background: transparent;
+  .builder-intro h3 {
+    margin: 0 0 0.25rem;
     font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--pine);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .builder-intro p {
+    margin: 0;
     font-size: 0.8rem;
-    font-weight: 600;
     color: var(--muted);
-    cursor: pointer;
-    transition: all 0.2s;
   }
 
-  .toggle-btn:first-child {
-    border-right: 2px solid var(--border);
-  }
-
-  .toggle-btn.active {
-    background: var(--pine);
-    color: #fff;
-  }
 
   .base-pill {
     padding: 0.4rem 0.75rem;
@@ -917,28 +991,133 @@
   }
 
   .gear-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.6rem 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.8rem;
+  }
+
+  .item-main {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed var(--border);
+  }
+
+  .item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+
+  .item-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .item-input,
+  .item-weight-input {
+    width: 100%;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
     font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+    color: var(--ink);
+  }
+
+  .item-input:focus,
+  .item-weight-input:focus {
+    outline: none;
+    border-color: var(--alpine);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--alpine) 25%, transparent);
+  }
+
+  .item-weight-input {
+    max-width: 90px;
+    text-align: right;
+  }
+
+  .item-input::placeholder,
+  .item-weight-input::placeholder {
+    color: color-mix(in srgb, var(--muted) 70%, transparent);
+  }
+
+  .item-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+
+  .item-toggle input {
+    accent-color: var(--pine);
+  }
+
+  .item-remove,
+  .item-restore {
+    border: none;
+    background: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+  }
+
+  .item-remove {
+    color: #b91c1c;
+  }
+
+  .item-remove:hover {
+    color: #7f1d1d;
+  }
+
+  .item-restore {
+    color: var(--pine);
+  }
+
+  .item-restore:hover {
+    color: var(--alpine);
+  }
+
+  .item-add {
+    margin-top: 0.5rem;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    border: 2px dashed var(--border);
+    background: transparent;
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pine);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .item-add:hover {
+    border-color: var(--alpine);
+    color: var(--alpine);
+    background: color-mix(in srgb, var(--alpine) 8%, transparent);
   }
 
   .gear-item:last-child {
     border-bottom: none;
   }
 
-  .item-name {
-    flex: 1;
-    color: var(--ink);
-  }
-
-  .item-weight {
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
 
   .item-tag {
     font-size: 0.55rem;
