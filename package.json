@@ -13,6 +13,7 @@
     "update-guide": "node scripts/parse-master-guide.js",
     "test": "node --test scripts/parse-master-guide.test.js",
     "test:guide": "node --test scripts/parse-master-guide.test.js",
+    "check:mileage": "node scripts/check-mileage-consistency.js",
     "preview": "astro preview",
     "astro": "astro"
   },

@@ -7,8 +7,8 @@
 
   let mounted = $state(false);
   let expandedCategory = $state(null);
-  let activeTab = $state('builder');
   let foodDays = $state(4);
+
   let waterLiters = $state(2);
   let foodWeightPerDay = $state(1.75);
   let editableItems = $state([]);
@@ -48,10 +48,10 @@
       worn: item.worn ?? false,
       tier: item.tier ?? 3,
       templateName: item.name,
-      templateWeight: item.weight,
-      defaultWeight: item.weight
+      templateWeight: item.weight
     }));
   }
+
 
   onMount(() => {
     mounted = true;
@@ -73,8 +73,8 @@
               worn: item.worn ?? false,
               tier: item.tier ?? template?.tier ?? 3,
               templateName: item.templateName ?? template?.name ?? '',
-              templateWeight: item.templateWeight ?? template?.weight ?? '',
-              defaultWeight: item.defaultWeight ?? template?.weight ?? ''
+              templateWeight: item.templateWeight ?? template?.weight ?? ''
+
             });
           });
           return;
@@ -121,6 +121,7 @@
   let baseWeightOz = $derived(
     editableItems.filter(item => !item.worn).reduce((sum, item) => sum + getItemWeight(item), 0)
   );
+
   let baseWeightLbs = $derived(baseWeightOz / 16);
   let foodWeight = $derived(foodDays * foodWeightPerDay);
   let waterWeight = $derived(waterLiters * WATER_WEIGHT_PER_LITER);
@@ -231,17 +232,6 @@
 
   </header>
 
-  <!-- Tab Navigation -->
-  <div class="tab-nav">
-    <button class="tab-btn" class:active={activeTab === 'builder'} onclick={() => activeTab = 'builder'}>
-      <span class="tab-icon">🎒</span>
-      Loadout
-    </button>
-    <button class="tab-btn" class:active={activeTab === 'loadout'} onclick={() => activeTab = 'loadout'}>
-      <span class="tab-icon">⚖️</span>
-      Weight
-    </button>
-  </div>
 
   <!-- Weight Hero -->
   <section class="weight-hero">
@@ -278,9 +268,31 @@
         <span class="legend-item"><span class="dot water"></span>Water {waterWeight.toFixed(1)} lb</span>
       </div>
     </div>
+
+    <!-- Consumables Inline -->
+    <div class="consumables-inline">
+      <div class="consumable-mini">
+        <span class="consumable-icon">🍽️</span>
+        <div class="mini-stepper">
+          <button onclick={() => foodDays = Math.max(0, foodDays - 1)}>−</button>
+          <span class="mini-val">{foodDays}</span>
+          <button onclick={() => foodDays = Math.min(10, foodDays + 1)}>+</button>
+        </div>
+        <span class="consumable-label">days food</span>
+      </div>
+      <div class="consumable-mini">
+        <span class="consumable-icon">💧</span>
+        <div class="mini-stepper">
+          <button onclick={() => waterLiters = Math.max(0, waterLiters - 0.5)}>−</button>
+          <span class="mini-val">{waterLiters}</span>
+          <button onclick={() => waterLiters = Math.min(6, waterLiters + 0.5)}>+</button>
+        </div>
+        <span class="consumable-label">liters</span>
+      </div>
+    </div>
   </section>
 
-  {#if activeTab === 'builder'}
+
     <section class="controls-section">
       <div class="builder-intro">
         <h3>Your loadout</h3>
@@ -290,6 +302,7 @@
         Base: {baseWeightLbs.toFixed(1)} lb ({baseWeightClass.label})
       </div>
     </section>
+
 
 
     <!-- Big 3 Section -->
@@ -405,72 +418,9 @@
       </div>
     </section>
 
-  {:else}
-    <!-- Consumables Controls -->
-    <section class="consumables-section">
-      <h3 class="section-header">
-        <span class="header-bar"></span>
-        CONSUMABLES
-      </h3>
-      <div class="consumables-grid">
-        <div class="consumable-card">
-          <label>FOOD (days)</label>
-          <div class="stepper">
-            <button onclick={() => foodDays = Math.max(0, foodDays - 1)}>−</button>
-            <span class="stepper-val">{foodDays}</span>
-            <button onclick={() => foodDays = Math.min(10, foodDays + 1)}>+</button>
-          </div>
-          <span class="consumable-hint">{foodWeight.toFixed(1)} lbs @ {foodWeightPerDay} lb/day</span>
-        </div>
-        <div class="consumable-card">
-          <label>WATER (liters)</label>
-          <div class="stepper">
-            <button onclick={() => waterLiters = Math.max(0, waterLiters - 0.5)}>−</button>
-            <span class="stepper-val">{waterLiters}</span>
-            <button onclick={() => waterLiters = Math.min(6, waterLiters + 0.5)}>+</button>
-          </div>
-          <span class="consumable-hint">{waterWeight.toFixed(1)} lbs</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Joint Stress -->
-    <section class="stress-section">
-      <div class="stress-header">
-        <h4>JOINT STRESS</h4>
-        <span class="stress-badge {jointStress.risk}">{jointStress.risk}</span>
-      </div>
-      <div class="stress-gauge">
-        <div class="gauge-track">
-          <div class="gauge-fill" style="width: {jointStress.level}%"></div>
-        </div>
-        <div class="gauge-labels">
-          <span>Low</span>
-          <span>Moderate</span>
-          <span>High</span>
-        </div>
-      </div>
-      <p class="stress-note">
-        {#if jointStress.risk === 'low'}Good weight for sustained miles
-        {:else if jointStress.risk === 'moderate'}Take care on descents, especially rocky terrain
-        {:else}Consider reducing weight to prevent long-term injury{/if}
-      </p>
-    </section>
-
-    <!-- Tips -->
-    <section class="tips-section">
-      <h4>WEIGHT REDUCTION TIPS</h4>
-      <ul class="tips-list">
-        <li><strong>Consumables first</strong> — Carry 3-4 days food, not 5-6</li>
-        <li><strong>Camel up</strong> — Drink at sources, carry less water</li>
-        <li><strong>Worn weight</strong> — Heavy items on body, not in pack</li>
-        <li><strong>Multi-use items</strong> — Puffy is pillow, bandana is towel</li>
-      </ul>
-    </section>
-  {/if}
-
   <!-- Guide Links -->
   <div class="guide-links">
+
     <a href="/guide/06-gear-system" class="guide-link chapter-link">
       <span class="link-icon">📚</span>
       <span class="link-text">Full Gear System Guide</span>
@@ -566,45 +516,7 @@
     text-transform: uppercase;
   }
 
-  /* Tab Nav */
-  .tab-nav {
-    display: flex;
-    border-bottom: 2px solid var(--border);
-    background: #fff;
-  }
 
-  .tab-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--muted);
-    border-bottom: 3px solid transparent;
-    margin-bottom: -2px;
-    transition: all 0.2s;
-  }
-
-  .tab-btn:hover {
-    color: var(--ink);
-  }
-
-  .tab-btn.active {
-    color: var(--pine);
-    border-bottom-color: var(--pine);
-    background: rgba(77, 89, 74, 0.05);
-  }
-
-  .tab-icon {
-    font-size: 1rem;
-  }
 
   /* Weight Hero */
   .weight-hero {
@@ -745,6 +657,65 @@
   .dot.base { background: var(--pine); }
   .dot.food { background: var(--terra); }
   .dot.water { background: #3b82f6; }
+
+  /* Consumables Inline */
+  .consumables-inline {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .consumable-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .consumable-icon {
+    font-size: 1rem;
+  }
+
+  .mini-stepper {
+    display: flex;
+    align-items: center;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .mini-stepper button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    color: var(--pine);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .mini-stepper button:hover {
+    background: var(--alpine);
+    color: #fff;
+  }
+
+  .mini-val {
+    min-width: 32px;
+    text-align: center;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .consumable-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
 
   /* Section Headers */
   .section-header {
@@ -1064,8 +1035,7 @@
     accent-color: var(--pine);
   }
 
-  .item-remove,
-  .item-restore {
+  .item-remove {
     border: none;
     background: none;
     font-size: 0.7rem;
@@ -1073,9 +1043,6 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     cursor: pointer;
-  }
-
-  .item-remove {
     color: #b91c1c;
   }
 
@@ -1083,13 +1050,6 @@
     color: #7f1d1d;
   }
 
-  .item-restore {
-    color: var(--pine);
-  }
-
-  .item-restore:hover {
-    color: var(--alpine);
-  }
 
   .item-add {
     margin-top: 0.5rem;
@@ -1137,6 +1097,8 @@
     background: var(--muted);
     color: #fff;
   }
+
+
 
   /* Consumables Section */
   .consumables-section {
