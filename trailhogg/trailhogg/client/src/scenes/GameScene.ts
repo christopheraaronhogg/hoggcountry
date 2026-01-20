@@ -153,6 +153,9 @@ export class GameScene extends Phaser.Scene {
   private lastWeatherCheck: number = 0;
   private weatherText!: Phaser.GameObjects.Text;
 
+  // Weather optimization
+  private lastWeather: string = '';
+
   // Real hiker ghosts (GPS data)
   private ghostSprites: Map<string, Phaser.GameObjects.Container> = new Map();
   private lastGhostUpdate: number = 0;
@@ -1873,9 +1876,13 @@ export class GameScene extends Phaser.Scene {
   }
   
   updateWeatherEffects(weather: string) {
+    // Optimization: prevent redundant recreation of effects
+    if (this.lastWeather === weather) return;
+    this.lastWeather = weather;
+
     // Clear existing effects
     if (this.rainEmitter) {
-      this.rainEmitter.stop();
+      this.rainEmitter.destroy();
       this.rainEmitter = null;
     }
     this.fogSprites.forEach(f => f.destroy());
@@ -2247,6 +2254,9 @@ export class GameScene extends Phaser.Scene {
     if (this.gameSpeedText) {
       this.gameSpeedText.setPosition(width / 2, 30);
     }
+
+    // Force weather effect update on next tick
+    this.lastWeather = '';
 
     // Emit resize event for UIScene
     this.events.emit('game-resize', { width, height });
