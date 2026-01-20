@@ -8,7 +8,7 @@
   let season = $state('winter');
   let mounted = $state(false);
   let expandedCategory = $state(null);
-  let activeTab = $state('builder');
+  let expandedWorn = $state(false);
   let foodDays = $state(4);
   let waterLiters = $state(2);
   let foodWeightPerDay = $state(1.75);
@@ -57,6 +57,7 @@
   }
 
   let seasonItems = $derived(getSeasonItems(gearData.items, season));
+  let wornItems = $derived(seasonItems.filter(item => item.worn));
   let baseWeightOz = $derived(seasonItems.filter(item => !item.worn).reduce((sum, item) => sum + item.weight, 0));
   let wornWeightOz = $derived(seasonItems.filter(item => item.worn).reduce((sum, item) => sum + item.weight, 0));
   let baseWeightLbs = $derived(baseWeightOz / 16);
@@ -172,17 +173,6 @@
     </div>
   </header>
 
-  <!-- Tab Navigation -->
-  <div class="tab-nav">
-    <button class="tab-btn" class:active={activeTab === 'builder'} onclick={() => activeTab = 'builder'}>
-      <span class="tab-icon">🎒</span>
-      Loadout
-    </button>
-    <button class="tab-btn" class:active={activeTab === 'loadout'} onclick={() => activeTab = 'loadout'}>
-      <span class="tab-icon">⚖️</span>
-      Weight
-    </button>
-  </div>
 
   <!-- Weight Hero -->
   <section class="weight-hero">
@@ -219,11 +209,32 @@
         <span class="legend-item"><span class="dot water"></span>Water {waterWeight.toFixed(1)} lb</span>
       </div>
     </div>
+
+    <!-- Consumables Inline -->
+    <div class="consumables-inline">
+      <div class="consumable-mini">
+        <span class="consumable-icon">🍽️</span>
+        <div class="mini-stepper">
+          <button onclick={() => foodDays = Math.max(0, foodDays - 1)}>−</button>
+          <span class="mini-val">{foodDays}</span>
+          <button onclick={() => foodDays = Math.min(10, foodDays + 1)}>+</button>
+        </div>
+        <span class="consumable-label">days food</span>
+      </div>
+      <div class="consumable-mini">
+        <span class="consumable-icon">💧</span>
+        <div class="mini-stepper">
+          <button onclick={() => waterLiters = Math.max(0, waterLiters - 0.5)}>−</button>
+          <span class="mini-val">{waterLiters}</span>
+          <button onclick={() => waterLiters = Math.min(6, waterLiters + 0.5)}>+</button>
+        </div>
+        <span class="consumable-label">liters</span>
+      </div>
+    </div>
   </section>
 
-  {#if activeTab === 'builder'}
-    <!-- Season Toggle -->
-    <section class="controls-section">
+  <!-- Season Toggle -->
+  <section class="controls-section">
       <div class="season-toggle">
         <button class="toggle-btn" class:active={season === 'winter'} onclick={() => season = 'winter'}>
           <span>❄️</span> Winter Start
@@ -316,69 +327,30 @@
       </div>
     </section>
 
-  {:else}
-    <!-- Consumables Controls -->
-    <section class="consumables-section">
-      <h3 class="section-header">
-        <span class="header-bar"></span>
-        CONSUMABLES
-      </h3>
-      <div class="consumables-grid">
-        <div class="consumable-card">
-          <label>FOOD (days)</label>
-          <div class="stepper">
-            <button onclick={() => foodDays = Math.max(0, foodDays - 1)}>−</button>
-            <span class="stepper-val">{foodDays}</span>
-            <button onclick={() => foodDays = Math.min(10, foodDays + 1)}>+</button>
+    <!-- Worn Weight Section -->
+    {#if wornItems.length > 0}
+      <section class="worn-section">
+        <button class="worn-header" onclick={() => expandedWorn = !expandedWorn}>
+          <div class="worn-icon">👟</div>
+          <div class="worn-info">
+            <h3 class="worn-title">WORN WEIGHT</h3>
+            <p class="worn-subtitle">Not counted in base weight — on your body, not in your pack</p>
           </div>
-          <span class="consumable-hint">{foodWeight.toFixed(1)} lbs @ {foodWeightPerDay} lb/day</span>
-        </div>
-        <div class="consumable-card">
-          <label>WATER (liters)</label>
-          <div class="stepper">
-            <button onclick={() => waterLiters = Math.max(0, waterLiters - 0.5)}>−</button>
-            <span class="stepper-val">{waterLiters}</span>
-            <button onclick={() => waterLiters = Math.min(6, waterLiters + 0.5)}>+</button>
+          <div class="worn-weight">{wornWeightLbs.toFixed(1)} lb</div>
+          <span class="worn-chevron" class:expanded={expandedWorn}>▼</span>
+        </button>
+        {#if expandedWorn}
+          <div class="worn-items" transition:slide>
+            {#each wornItems as item}
+              <div class="worn-item">
+                <span class="worn-item-name">{item.name}</span>
+                <span class="worn-item-weight">{formatWeight(item.weight)}</span>
+              </div>
+            {/each}
           </div>
-          <span class="consumable-hint">{waterWeight.toFixed(1)} lbs</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Joint Stress -->
-    <section class="stress-section">
-      <div class="stress-header">
-        <h4>JOINT STRESS</h4>
-        <span class="stress-badge {jointStress.risk}">{jointStress.risk}</span>
-      </div>
-      <div class="stress-gauge">
-        <div class="gauge-track">
-          <div class="gauge-fill" style="width: {jointStress.level}%"></div>
-        </div>
-        <div class="gauge-labels">
-          <span>Low</span>
-          <span>Moderate</span>
-          <span>High</span>
-        </div>
-      </div>
-      <p class="stress-note">
-        {#if jointStress.risk === 'low'}Good weight for sustained miles
-        {:else if jointStress.risk === 'moderate'}Take care on descents, especially rocky terrain
-        {:else}Consider reducing weight to prevent long-term injury{/if}
-      </p>
-    </section>
-
-    <!-- Tips -->
-    <section class="tips-section">
-      <h4>WEIGHT REDUCTION TIPS</h4>
-      <ul class="tips-list">
-        <li><strong>Consumables first</strong> — Carry 3-4 days food, not 5-6</li>
-        <li><strong>Camel up</strong> — Drink at sources, carry less water</li>
-        <li><strong>Worn weight</strong> — Heavy items on body, not in pack</li>
-        <li><strong>Multi-use items</strong> — Puffy is pillow, bandana is towel</li>
-      </ul>
-    </section>
-  {/if}
+        {/if}
+      </section>
+    {/if}
 
   <!-- Guide Links -->
   <div class="guide-links">
@@ -656,6 +628,65 @@
   .dot.base { background: var(--pine); }
   .dot.food { background: var(--terra); }
   .dot.water { background: #3b82f6; }
+
+  /* Consumables Inline */
+  .consumables-inline {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .consumable-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .consumable-icon {
+    font-size: 1rem;
+  }
+
+  .mini-stepper {
+    display: flex;
+    align-items: center;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .mini-stepper button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    color: var(--pine);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .mini-stepper button:hover {
+    background: var(--alpine);
+    color: #fff;
+  }
+
+  .mini-val {
+    min-width: 32px;
+    text-align: center;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .consumable-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
 
   /* Section Headers */
   .section-header {
@@ -957,6 +988,109 @@
   .item-tag.worn {
     background: var(--muted);
     color: #fff;
+  }
+
+  /* Worn Weight Section */
+  .worn-section {
+    margin: 1.5rem;
+    background: linear-gradient(135deg, #f8f7f4 0%, #f0ede6 100%);
+    border: 2px dashed var(--muted);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .worn-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .worn-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1.25rem;
+  }
+
+  .worn-info {
+    flex: 1;
+  }
+
+  .worn-title {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .worn-subtitle {
+    margin: 0.2rem 0 0;
+    font-size: 0.7rem;
+    color: var(--muted);
+    opacity: 0.8;
+  }
+
+  .worn-weight {
+    font-family: Oswald, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--muted);
+    background: #fff;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+  }
+
+  .worn-chevron {
+    font-size: 0.6rem;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+
+  .worn-chevron.expanded {
+    transform: rotate(180deg);
+  }
+
+  .worn-items {
+    padding: 0 1.25rem 1rem;
+    border-top: 1px dashed var(--muted);
+  }
+
+  .worn-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed rgba(0,0,0,0.1);
+    font-size: 0.8rem;
+  }
+
+  .worn-item:last-child {
+    border-bottom: none;
+  }
+
+  .worn-item-name {
+    color: var(--muted);
+  }
+
+  .worn-item-weight {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    color: var(--muted);
+    opacity: 0.8;
   }
 
   /* Consumables Section */
