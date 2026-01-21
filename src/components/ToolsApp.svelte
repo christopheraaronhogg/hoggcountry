@@ -57,7 +57,7 @@
     { id: 'weather', name: 'Weather', icon: '🌤️', desc: 'Weather, heat zones & daylight' },
     { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
     { id: 'gearbudget', name: 'Gear', icon: '🛠️', desc: 'Build your kit by budget' },
-    { id: 'water', name: 'Water', icon: '💧', desc: 'Water sources & carry calc' },
+    { id: 'water', name: 'Water', icon: '💧', desc: 'AWOL water sources' },
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
     { id: 'mail', name: 'Mail', icon: '📬', desc: 'Plan resupply mail drops' },
     { id: 'power', name: 'Power', icon: '🔋', desc: 'Manage battery & devices' },
