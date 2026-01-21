@@ -13,7 +13,6 @@
     shelter: () => import('./ShelterDecision.svelte'),
     weather: () => import('./WeatherAssessor.svelte'),
     pack: () => import('./PackBuilder.svelte'),
-    resupply: () => import('./ResupplyCalculator.svelte'),
     water: () => import('./WaterTracker.svelte'),
     budget: () => import('./BudgetCalculator.svelte'),
     mail: () => import('./MailDropPlanner.svelte'),
@@ -52,13 +51,12 @@
     { mile: 2198, name: 'Katahdin' },
   ];
 
-  // Consolidated 14 high-leverage tools - Milestone is foundational
+  // Consolidated 14 high-leverage tools - Journey is foundational
   const tools = [
     { id: 'milestone', name: 'Journey', icon: '🗺️', desc: 'Plan your timeline & track progress' },
     { id: 'weather', name: 'Weather', icon: '🌤️', desc: 'Weather, heat zones & daylight' },
     { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
     { id: 'gearbudget', name: 'Gear', icon: '🛠️', desc: 'Build your kit by budget' },
-    { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Towns, food & mail drops' },
     { id: 'water', name: 'Water', icon: '💧', desc: 'Water sources & carry calc' },
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
     { id: 'mail', name: 'Mail', icon: '📬', desc: 'Plan resupply mail drops' },
@@ -1018,7 +1016,7 @@
   /* ========== NAVIGATION ========== */
   .tools-nav {
     display: grid;
-    grid-template-columns: repeat(15, 1fr);
+    grid-template-columns: repeat(14, 1fr);
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;

@@ -429,18 +429,18 @@
               <span class="big-number">{stats.resupplyStops}</span>
               <span class="big-label">Town Stops</span>
             </div>
-            <div class="stat-row">
-              <span class="stat-label">Days Between Resupply</span>
-              <span class="stat-value">~{stats.avgDaysBetweenResupply} days</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Avg Food Carry</span>
-              <span class="stat-value">{stats.avgFoodWeight} lbs</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Avg Town Cost</span>
-              <span class="stat-value">{formatMoney(stats.avgTownCost)}</span>
-            </div>
+	            <div class="stat-row">
+	              <span class="stat-label">Days Between Resupply</span>
+	              <span class="stat-value">~{stats.avgDaysBetweenResupply} days</span>
+	            </div>
+	            <div class="stat-row">
+	              <span class="stat-label">Max Carry Window</span>
+	              <span class="stat-value">~{stats.maxCarryDays} days</span>
+	            </div>
+	            <div class="stat-row">
+	              <span class="stat-label">Avg Town Cost</span>
+	              <span class="stat-value">{formatMoney(stats.avgTownCost)}</span>
+	            </div>
           </div>
 
           <!-- Milestones Card -->

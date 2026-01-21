@@ -1,5 +1,6 @@
 <script>
   import { fade } from 'svelte/transition';
+  import { RESUPPLY_SERVICE_META, resupplyServicesByTownName } from '../lib/resupplyTowns';
 
   let { trailContext = {} } = $props();
 
@@ -23,14 +24,27 @@
 
   // Key trail towns that appear as markers in the timeline
   const trailTowns = [
-    { mile: 31, name: 'Neels Gap', highlight: 'First outfitter, first test', emoji: '🏪' },
-    { mile: 166, name: 'Fontana Dam', highlight: 'Gateway to the Smokies', emoji: '🏗️' },
-    { mile: 274, name: 'Hot Springs', highlight: 'First trail town, hot springs!', emoji: '♨️' },
-    { mile: 386, name: 'Damascus', highlight: 'Trail Days, friendliest town', emoji: '🎉' },
-    { mile: 702, name: 'Waynesboro', highlight: 'Gateway to Shenandoah', emoji: '🏘️' },
-    { mile: 1025, name: 'Harpers Ferry', highlight: 'ATC HQ, psychological halfway', emoji: '🏛️' },
-    { mile: 2090, name: 'Monson', highlight: 'Last stop before the wilderness', emoji: '🏕️' },
+    { mile: 31, name: 'Neels Gap', highlight: 'First outfitter, first test', emoji: '🏪', services: resupplyServicesByTownName['Neels Gap'] || [] },
+    { mile: 166, name: 'Fontana Dam', highlight: 'Gateway to the Smokies', emoji: '🏗️', services: resupplyServicesByTownName['Fontana Dam'] || [] },
+    { mile: 274, name: 'Hot Springs', highlight: 'First trail town, hot springs!', emoji: '♨️', services: resupplyServicesByTownName['Hot Springs'] || [] },
+    { mile: 386, name: 'Damascus', highlight: 'Trail Days, friendliest town', emoji: '🎉', services: resupplyServicesByTownName['Damascus'] || [] },
+    { mile: 702, name: 'Waynesboro', highlight: 'Gateway to Shenandoah', emoji: '🏘️', services: resupplyServicesByTownName['Waynesboro'] || [] },
+    { mile: 1025, name: 'Harpers Ferry', highlight: 'ATC HQ, psychological halfway', emoji: '🏛️', services: resupplyServicesByTownName['Harpers Ferry'] || [] },
+    { mile: 2090, name: 'Monson', highlight: 'Last stop before the wilderness', emoji: '🏕️', services: resupplyServicesByTownName['Monson'] || [] },
   ];
+
+  const serviceOrder = ['grocery', 'outfitter', 'convenience', 'restaurant', 'snacks'];
+
+  function getServiceChips(services = []) {
+    const filtered = services.filter(s => s && s !== 'start');
+    const sorted = filtered.sort((a, b) => {
+      const ia = serviceOrder.indexOf(a);
+      const ib = serviceOrder.indexOf(b);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    });
+    return sorted
+      .map(s => ({ key: s, ...(RESUPPLY_SERVICE_META[s] || { label: s, icon: '🏷️' }) }));
+  }
 
   // Numeric achievement milestones
   const milestones = [
@@ -419,6 +433,16 @@ hoggcountry.com/tools`;
                     <span class="town-mile">Mile {item.mile}</span>
                   </div>
                   <span class="town-highlight">{item.highlight}</span>
+                  {#if item.services?.length}
+                    <div class="town-services" aria-label="Town services">
+                      {#each getServiceChips(item.services) as svc (svc.key)}
+                        <span class="badge town-service">
+                          <span class="town-service-icon" aria-hidden="true">{svc.icon}</span>
+                          <span class="town-service-label">{svc.label}</span>
+                        </span>
+                      {/each}
+                    </div>
+                  {/if}
                 </div>
               </div>
             </div>
@@ -1229,6 +1253,30 @@ hoggcountry.com/tools`;
     font-size: 0.75rem;
     color: var(--muted);
     font-style: italic;
+  }
+
+  .town-services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+  }
+
+  .badge.town-service {
+    font-size: 0.7rem;
+    padding: 0.12rem 0.45rem;
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(255, 255, 255, 0.7);
+    color: #92400e;
+  }
+
+  .town-card.completed .badge.town-service {
+    opacity: 0.65;
+  }
+
+  .town-service-icon {
+    font-size: 0.8rem;
+    line-height: 1;
   }
 
   .summit-card {
