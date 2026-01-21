@@ -47,6 +47,24 @@
       .map(s => ({ key: s, ...(RESUPPLY_SERVICE_META[s] || { label: s, icon: '🏷️' }) }));
   }
 
+  function getServicesForTownName(name) {
+    if (!name) return [];
+    if (resupplyServicesByTownName[name]) return resupplyServicesByTownName[name];
+
+    const slashParts = String(name).split('/').map(s => s.trim()).filter(Boolean);
+    for (const part of slashParts) {
+      if (resupplyServicesByTownName[part]) return resupplyServicesByTownName[part];
+    }
+
+    const normalized = String(name)
+      .replace(/\s+Center$/i, '')
+      .replace(/\s+Notch$/i, '')
+      .trim();
+    if (resupplyServicesByTownName[normalized]) return resupplyServicesByTownName[normalized];
+
+    return [];
+  }
+
   // Numeric achievement milestones
   const milestones = [
     { miles: 100, label: 'First Century', note: 'Triple digits!' },
@@ -303,10 +321,8 @@
   });
 
   let keyMilestonesFilters = $state({
-    sections: true,
-    achievements: true,
-    walkableTowns: true,
-    shuttleTowns: true,
+    walkableTowns: false,
+    shuttleTowns: false,
   });
 
   function toggleKeyMilestonesFilter(key) {
@@ -318,6 +334,7 @@
       const category = getTownCategory(town.distance);
       const status = getItemStatus(town.mile);
       const arrivalDate = getProjectedDate(town.mile);
+      const services = getServicesForTownName(town.name);
       return {
         kind: 'town',
         mile: town.mile,
@@ -328,6 +345,7 @@
         status,
         arrivalDate,
         notes: town.notes,
+        services,
       };
     }).sort((a, b) => a.mile - b.mile);
   });
@@ -383,17 +401,14 @@
   }
 
   let keyMilestonesItems = $derived(() => {
-    const sectionItems = keyMilestonesFilters.sections ? sectionMilestoneItems : [];
-    const achievementItems = keyMilestonesFilters.achievements ? achievementMilestoneItems : [];
-
     const townsFiltered = townMilestoneItems.filter(town => {
       if (town.category === '1.1') return keyMilestonesFilters.walkableTowns;
       return keyMilestonesFilters.shuttleTowns;
     });
 
     const items = [
-      ...sectionItems,
-      ...achievementItems,
+      ...sectionMilestoneItems,
+      ...achievementMilestoneItems,
       ...townsFiltered,
     ];
 
@@ -408,8 +423,6 @@
     const walkableCount = townMilestoneItems.filter(t => t.category === '1.1').length;
     const shuttleCount = townMilestoneItems.filter(t => t.category === '1.2').length;
     return {
-      sections: sectionMilestoneItems.length,
-      achievements: achievementMilestoneItems.length,
       walkableTowns: walkableCount,
       shuttleTowns: shuttleCount,
     };
@@ -610,22 +623,7 @@ hoggcountry.com/tools`;
         KEY MILESTONES
       </h3>
       <div class="milestones-filters">
-        <button
-          type="button"
-          class="filter-pill"
-          class:active={keyMilestonesFilters.sections}
-          onclick={() => toggleKeyMilestonesFilter('sections')}
-        >
-          Sections <span class="pill-count">{keyMilestonesCounts.sections}</span>
-        </button>
-        <button
-          type="button"
-          class="filter-pill"
-          class:active={keyMilestonesFilters.achievements}
-          onclick={() => toggleKeyMilestonesFilter('achievements')}
-        >
-          Achievements <span class="pill-count">{keyMilestonesCounts.achievements}</span>
-        </button>
+        <span class="filters-label">Add layers:</span>
         <button
           type="button"
           class="filter-pill walkable"
@@ -640,7 +638,7 @@ hoggcountry.com/tools`;
           class:active={keyMilestonesFilters.shuttleTowns}
           onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
         >
-          1.2 Shuttle <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
+          1.2 Shuttle/Hitch <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
         </button>
       </div>
       <div class="milestones-grid">
@@ -670,6 +668,13 @@ hoggcountry.com/tools`;
                   <span class="ms-tag {item.category === '1.1' ? 'walkable' : 'shuttle'}">{getTownTagLabel(item.category)}</span>
                   <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
                 </div>
+                {#if item.services?.length}
+                  <div class="ms-service-icons" aria-label="Town services">
+                    {#each getServiceChips(item.services) as svc (svc.key)}
+                      <span class="ms-service-icon" title={svc.label} aria-label={svc.label}>{svc.icon}</span>
+                    {/each}
+                  </div>
+                {/if}
               </div>
             {:else}
               <div class="ms-miles">{item.miles}</div>
@@ -838,22 +843,7 @@ hoggcountry.com/tools`;
         KEY MILESTONES
       </h3>
       <div class="milestones-filters">
-        <button
-          type="button"
-          class="filter-pill"
-          class:active={keyMilestonesFilters.sections}
-          onclick={() => toggleKeyMilestonesFilter('sections')}
-        >
-          Sections <span class="pill-count">{keyMilestonesCounts.sections}</span>
-        </button>
-        <button
-          type="button"
-          class="filter-pill"
-          class:active={keyMilestonesFilters.achievements}
-          onclick={() => toggleKeyMilestonesFilter('achievements')}
-        >
-          Achievements <span class="pill-count">{keyMilestonesCounts.achievements}</span>
-        </button>
+        <span class="filters-label">Add layers:</span>
         <button
           type="button"
           class="filter-pill walkable"
@@ -868,7 +858,7 @@ hoggcountry.com/tools`;
           class:active={keyMilestonesFilters.shuttleTowns}
           onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
         >
-          1.2 Shuttle <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
+          1.2 Shuttle/Hitch <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
         </button>
       </div>
       <div class="milestones-grid">
@@ -898,6 +888,13 @@ hoggcountry.com/tools`;
                   <span class="ms-tag {item.category === '1.1' ? 'walkable' : 'shuttle'}">{getTownTagLabel(item.category)}</span>
                   <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
                 </div>
+                {#if item.services?.length}
+                  <div class="ms-service-icons" aria-label="Town services">
+                    {#each getServiceChips(item.services) as svc (svc.key)}
+                      <span class="ms-service-icon" title={svc.label} aria-label={svc.label}>{svc.icon}</span>
+                    {/each}
+                  </div>
+                {/if}
               </div>
             {:else}
               <div class="ms-miles">{item.miles}</div>
@@ -1576,8 +1573,16 @@ hoggcountry.com/tools`;
   .milestones-filters {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.9rem;
+  }
+
+  .filters-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 600;
+    margin-right: 0.1rem;
   }
 
   .filter-pill {
@@ -1733,6 +1738,26 @@ hoggcountry.com/tools`;
     color: #2563eb;
     border-color: rgba(59, 130, 246, 0.35);
     background: rgba(59, 130, 246, 0.10);
+  }
+
+  .ms-service-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+  }
+
+  .ms-service-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    font-size: 0.9rem;
+    line-height: 1;
   }
 
   /* Dashboard */
