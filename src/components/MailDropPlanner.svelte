@@ -1,4 +1,6 @@
 <script>
+  import { RESUPPLY_STOPS } from '../data/resupplyStops';
+
   /** @type {{ trailContext: any }} */
   let { trailContext } = $props();
 
@@ -15,102 +17,345 @@
 
   // Current trail position (from context or manual)
   let currentMile = $derived(trailContext?.currentMile || 0);
+  let pace = $derived(trailContext?.targetPace || trailContext?.pace || 15);
 
-  // Recommended mail drop locations with trigger miles
-  const mailDrops = [
+  // Global defaults
+  let triggerLeadMiles = $state(125); // ship ~125 miles before pickup
+  let defaultHoldTimeDays = $state(30);
+
+  /**
+   * @typedef {'post-office' | 'hostel'} MailLocationKind
+   * @typedef {{
+   *   id: string;
+   *   kind: MailLocationKind;
+   *   town: string;
+   *   state?: string;
+   *   mile: number;
+   *   recommended?: boolean;
+   *   holdTime?: number;
+   *   zip?: string;
+   *   address?: string;
+   *   hours?: string;
+   *   phone?: string;
+   *   notes?: string;
+   *   warning?: boolean;
+   *   estimatedHostelNight?: number;
+   * }} MailLocation
+   */
+
+  function slugify(input) {
+    return String(input || '')
+      .toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  function toNumber(input, fallback = 0) {
+    const n = typeof input === 'number' ? input : Number(String(input || '').trim());
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function formatMoney(n) {
+    const v = toNumber(n, NaN);
+    if (!Number.isFinite(v)) return '—';
+    return `$${v.toFixed(0)}`;
+  }
+
+  function getUspsFinderUrl(town, state) {
+    const q = [town, state].filter(Boolean).join(', ');
+    return `https://tools.usps.com/locations/home.htm?location=${encodeURIComponent(q)}`;
+  }
+
+  function getStopCostHints(town) {
+    const hit = RESUPPLY_STOPS.find(s => s.name.toLowerCase() === String(town).toLowerCase());
+    const hostel = hit?.costs?.hostel;
+    return {
+      estimatedHostelNight: typeof hostel === 'number' ? hostel : undefined,
+    };
+  }
+
+  // Manual overrides for the most-used General Delivery POs (kept tight + verified)
+  const RECOMMENDED_PO_OVERRIDES = [
     {
-      id: 'hotsprings',
-      town: 'Hot Springs',
-      state: 'NC',
+      key: 'hot-springs-nc',
       zip: '28743',
-      mile: 274,
-      triggerMile: 150, // When to notify support
       holdTime: 30,
-      poAddress: '170 Bridge St, Hot Springs, NC 28743',
-      poHours: 'M-F 8:30-12, 12:30-4; Sat 9-11',
-      poPhone: '(828) 622-3242',
-      notes: 'Excellent hiker-friendly PO. Town has good resupply.'
+      address: '170 Bridge St, Hot Springs, NC 28743',
+      hours: 'M-F 8:30-12, 12:30-4; Sat 9-11',
+      phone: '(828) 622-3242',
+      notes: 'Excellent hiker-friendly PO. Town has good resupply.',
     },
     {
-      id: 'damascus',
-      town: 'Damascus',
-      state: 'VA',
+      key: 'damascus-va',
       zip: '24236',
-      mile: 469,
-      triggerMile: 350,
       holdTime: 30,
-      poAddress: '206 W Laurel Ave, Damascus, VA 24236',
-      poHours: 'M-F 8-12, 1-4; Sat 9-11',
-      poPhone: '(276) 475-3411',
-      notes: 'Trail Days in May. Very hiker-friendly town.'
+      address: '206 W Laurel Ave, Damascus, VA 24236',
+      hours: 'M-F 8-12, 1-4; Sat 9-11',
+      phone: '(276) 475-3411',
+      notes: 'Trail Days in May. Very hiker-friendly town.',
     },
     {
-      id: 'daleville',
-      town: 'Daleville',
-      state: 'VA',
+      key: 'daleville-va',
       zip: '24083',
-      mile: 728,
-      triggerMile: 600,
       holdTime: 30,
-      poAddress: '138 Roanoke Rd, Daleville, VA 24083',
-      poHours: 'M-F 8:30-12, 1-4:30; Sat 9-11',
-      poPhone: '(540) 992-4422',
-      notes: 'Easy trail access. Kroger nearby.'
+      address: '138 Roanoke Rd, Daleville, VA 24083',
+      hours: 'M-F 8:30-12, 1-4:30; Sat 9-11',
+      phone: '(540) 992-4422',
+      notes: 'Easy trail access. Kroger nearby.',
     },
     {
-      id: 'harpersferry',
-      town: 'Harpers Ferry',
-      state: 'WV',
+      key: 'harpers-ferry-wv',
       zip: '25425',
-      mile: 1025,
-      triggerMile: 900,
       holdTime: 30,
-      poAddress: '1000 Washington St, Harpers Ferry, WV 25425',
-      poHours: 'M-F 8-4; Sat 9-12',
-      poPhone: '(304) 535-2479',
-      notes: 'Psychological halfway! ATC HQ here.'
+      address: '1000 Washington St, Harpers Ferry, WV 25425',
+      hours: 'M-F 8-4; Sat 9-12',
+      phone: '(304) 535-2479',
+      notes: 'Psychological halfway! ATC HQ here.',
     },
     {
-      id: 'duncannon',
-      town: 'Duncannon',
-      state: 'PA',
+      key: 'duncannon-pa',
       zip: '17020',
-      mile: 1145,
-      triggerMile: 1020,
       holdTime: 30,
-      poAddress: '2 N High St, Duncannon, PA 17020',
-      poHours: 'M-F 8-12, 1-4:30; Sat 8-11',
-      poPhone: '(717) 834-3332',
-      notes: 'Doyle Hotel is legendary.'
+      address: '2 N High St, Duncannon, PA 17020',
+      hours: 'M-F 8-12, 1-4:30; Sat 8-11',
+      phone: '(717) 834-3332',
+      notes: 'Doyle Hotel is legendary.',
     },
     {
-      id: 'hanover',
-      town: 'Hanover',
-      state: 'NH',
+      key: 'hanover-nh',
       zip: '03755',
-      mile: 1747,
-      triggerMile: 1620,
       holdTime: 30,
-      poAddress: '52 S Main St, Hanover, NH 03755',
-      poHours: 'M-F 8:30-5; Sat 8:30-12',
-      poPhone: '(603) 643-4544',
-      notes: 'Last major resupply before the Whites.'
+      address: '52 S Main St, Hanover, NH 03755',
+      hours: 'M-F 8:30-5; Sat 8:30-12',
+      phone: '(603) 643-4544',
+      notes: 'Last major resupply before the Whites.',
     },
     {
-      id: 'monson',
-      town: 'Monson',
-      state: 'ME',
+      key: 'monson-me',
       zip: '04464',
-      mile: 2077,
-      triggerMile: 1950,
       holdTime: 14,
-      poAddress: '5 Greenville Rd, Monson, ME 04464',
-      poHours: 'M-F 7:30-11:30, 12:30-4; Sat 8-11',
-      poPhone: '(207) 997-3975',
+      address: '5 Greenville Rd, Monson, ME 04464',
+      hours: 'M-F 7:30-11:30, 12:30-4; Sat 8-11',
+      phone: '(207) 997-3975',
       notes: 'Gateway to 100-Mile Wilderness. SHORTER HOLD TIME!',
-      warning: true
-    }
+      warning: true,
+    },
   ];
+
+  function applyRecommendedOverrides(location) {
+    if (location.kind !== 'post-office') return location;
+    const key = slugify(`${location.town}-${location.state || ''}`);
+    const ov = RECOMMENDED_PO_OVERRIDES.find(o => o.key === key);
+    if (!ov) return location;
+    return {
+      ...location,
+      recommended: true,
+      zip: ov.zip,
+      holdTime: ov.holdTime,
+      address: ov.address,
+      hours: ov.hours,
+      phone: ov.phone,
+      notes: ov.notes,
+      warning: ov.warning,
+    };
+  }
+
+  function buildFallbackDirectoryFromStops() {
+    /** @type {MailLocation[]} */
+    const out = [];
+    for (const stop of RESUPPLY_STOPS) {
+      const base = {
+        town: stop.name,
+        state: stop.state,
+        mile: stop.mile,
+      };
+
+      if (stop.mailDrop) {
+        out.push(applyRecommendedOverrides({
+          id: `${slugify(`${stop.name}-${stop.state || ''}`)}-po`,
+          kind: 'post-office',
+          ...base,
+          holdTime: stop.name === 'Monson' ? 14 : undefined,
+          notes: stop.name === 'Monson' ? 'Often shorter hold times. Call ahead.' : undefined,
+          warning: stop.name === 'Monson',
+        }));
+      }
+
+      if (typeof stop.costs?.hostel === 'number') {
+        const hints = getStopCostHints(stop.name);
+        out.push({
+          id: `${slugify(`${stop.name}-${stop.state || ''}`)}-hostel`,
+          kind: 'hostel',
+          ...base,
+          notes: 'Call ahead to confirm package hold policies and any fees.',
+          estimatedHostelNight: hints.estimatedHostelNight,
+        });
+      }
+    }
+    return out.sort((a, b) => a.mile - b.mile);
+  }
+
+  function parseGuideDirectory(text) {
+    // Best-effort extraction from MASTER_NOBO_FIELD_GUIDE.md (served as /guide-context.txt).
+    // Extracts entries like: **Hot Springs, NC (Mile ~274)**
+    const lines = String(text || '').split(/\r?\n/);
+
+    const stateNameToAbbr = {
+      GEORGIA: 'GA',
+      'NORTH CAROLINA': 'NC',
+      TENNESSEE: 'TN',
+      VIRGINIA: 'VA',
+      'WEST VIRGINIA': 'WV',
+      MARYLAND: 'MD',
+      PENNSYLVANIA: 'PA',
+      'NEW JERSEY': 'NJ',
+      NEW_YORK: 'NY',
+      'NEW YORK': 'NY',
+      CONNECTICUT: 'CT',
+      MASSACHUSETTS: 'MA',
+      VERMONT: 'VT',
+      'NEW HAMPSHIRE': 'NH',
+      MAINE: 'ME',
+    };
+
+    function sectionToStateAbbr(sectionTitle) {
+      const raw = String(sectionTitle || '').toUpperCase();
+      const primary = raw.split('/')[0]?.trim();
+      return stateNameToAbbr[primary] || null;
+    }
+
+    /** @type {MailLocation[]} */
+    const out = [];
+    let fallbackState = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Track coarse state section for entries missing ", XX"
+      const sectionMatch = line.match(/^###\s+([A-Z][A-Z\s/]+?)\s*(?:\(|$)/);
+      if (sectionMatch) {
+        fallbackState = sectionToStateAbbr(sectionMatch[1]);
+        continue;
+      }
+
+      const headingMatch = line.match(/^\*\*(.+?)\s*\(Mile\s*~?\s*([0-9]{1,4}(?:\.[0-9]+)?)/i);
+      if (!headingMatch) continue;
+
+      const rawTitle = headingMatch[1].trim();
+      const mile = toNumber(headingMatch[2], NaN);
+      if (!Number.isFinite(mile)) continue;
+
+      const lookahead = lines.slice(i, i + 14).join(' ');
+      const hasPO = lookahead.includes('✉️') || /post office/i.test(lookahead);
+      const hasHostel = lookahead.includes('🏨') || /hostel/i.test(lookahead);
+
+      if (!hasPO && !hasHostel) continue;
+
+      let town = rawTitle;
+      let state = fallbackState || undefined;
+      const m2 = rawTitle.match(/^(.*?),\s*([A-Z]{2})$/);
+      if (m2) {
+        town = m2[1].trim();
+        state = m2[2];
+      }
+
+      const hints = getStopCostHints(town);
+
+      if (hasPO) {
+        out.push(applyRecommendedOverrides({
+          id: `${slugify(`${town}-${state || ''}`)}-po`,
+          kind: 'post-office',
+          town,
+          state: state || undefined,
+          mile,
+          holdTime: town === 'Monson' ? 14 : undefined,
+          notes: town === 'Monson' ? 'Often shorter hold times. Call ahead.' : undefined,
+          warning: town === 'Monson',
+        }));
+      }
+
+      if (hasHostel) {
+        out.push({
+          id: `${slugify(`${town}-${state || ''}`)}-hostel`,
+          kind: 'hostel',
+          town,
+          state: state || undefined,
+          mile,
+          notes: 'Call ahead to confirm package hold policies and any fees.',
+          estimatedHostelNight: hints.estimatedHostelNight,
+        });
+      }
+    }
+
+    // Deduplicate by id (prefer entries with more detail)
+    /** @type {Map<string, MailLocation>} */
+    const byId = new Map();
+    for (const item of out) {
+      const prev = byId.get(item.id);
+      if (!prev) {
+        byId.set(item.id, item);
+        continue;
+      }
+      const prevScore =
+        (prev.zip ? 1 : 0) + (prev.address ? 1 : 0) + (prev.hours ? 1 : 0) + (prev.phone ? 1 : 0);
+      const nextScore =
+        (item.zip ? 1 : 0) + (item.address ? 1 : 0) + (item.hours ? 1 : 0) + (item.phone ? 1 : 0);
+      byId.set(item.id, nextScore >= prevScore ? item : prev);
+    }
+
+    return Array.from(byId.values()).sort((a, b) => a.mile - b.mile);
+  }
+
+  function mergeDirectories(primary, secondary) {
+    /** @type {Map<string, MailLocation>} */
+    const byId = new Map();
+    const all = [...primary, ...secondary];
+
+    function score(item) {
+      return (
+        (item.recommended ? 2 : 0) +
+        (item.zip ? 1 : 0) +
+        (item.address ? 1 : 0) +
+        (item.hours ? 1 : 0) +
+        (item.phone ? 1 : 0)
+      );
+    }
+
+    for (const item of all) {
+      const prev = byId.get(item.id);
+      if (!prev) {
+        byId.set(item.id, item);
+        continue;
+      }
+      byId.set(item.id, score(item) >= score(prev) ? item : prev);
+    }
+
+    return Array.from(byId.values()).sort((a, b) => a.mile - b.mile);
+  }
+
+  let directoryLoaded = $state(false);
+  let directoryError = $state('');
+  /** @type {MailLocation[]} */
+  let mailDrops = $state(buildFallbackDirectoryFromStops());
+
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    if (directoryLoaded) return;
+    directoryLoaded = true;
+
+    (async () => {
+      try {
+        const res = await fetch('/guide-context.txt', { cache: 'force-cache' });
+        if (!res.ok) return;
+        const txt = await res.text();
+        const parsed = parseGuideDirectory(txt);
+        if (parsed.length) mailDrops = mergeDirectories(buildFallbackDirectoryFromStops(), parsed);
+      } catch (e) {
+        directoryError = 'Could not load the directory. Using fallback list.';
+      }
+    })();
+  });
 
   // User's planned drops with contents
   let plannedDrops = $state({});
@@ -118,7 +363,7 @@
   // Load from localStorage
   $effect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('mailDropPlannerV2');
+      const saved = localStorage.getItem('mailDropPlannerV3');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -127,6 +372,8 @@
           supportName = parsed.supportName || '';
           supportPhone = parsed.supportPhone || '';
           returnAddress = parsed.returnAddress || '';
+          triggerLeadMiles = parsed.triggerLeadMiles ?? triggerLeadMiles;
+          defaultHoldTimeDays = parsed.defaultHoldTimeDays ?? defaultHoldTimeDays;
         } catch (e) {}
       }
     }
@@ -135,12 +382,14 @@
   // Save to localStorage
   $effect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('mailDropPlannerV2', JSON.stringify({
+      localStorage.setItem('mailDropPlannerV3', JSON.stringify({
         drops: plannedDrops,
         hikerName,
         supportName,
         supportPhone,
-        returnAddress
+        returnAddress,
+        triggerLeadMiles,
+        defaultHoldTimeDays,
       }));
     }
   });
@@ -154,7 +403,15 @@
       notified: false,
       shipped: false,
       trackingNumber: '',
-      received: false
+      received: false,
+      shippingCost: '',
+      pickupFee: '',
+      holdTimeOverride: '',
+      leadMilesOverride: '',
+      addressOverride: '',
+      zipOverride: '',
+      hoursOverride: '',
+      phoneOverride: '',
     };
   }
 
@@ -176,41 +433,119 @@
     };
   }
 
+  function getTriggerMile(drop) {
+    const data = getDropData(drop.id);
+    const override = toNumber(data.leadMilesOverride, NaN);
+    const lead = Number.isFinite(override) && override > 0 ? override : triggerLeadMiles;
+    return Math.max(0, Math.round(drop.mile - lead));
+  }
+
+  function getHoldTimeDays(drop) {
+    const data = getDropData(drop.id);
+    const override = toNumber(data.holdTimeOverride, NaN);
+    if (Number.isFinite(override) && override > 0) return override;
+    return toNumber(drop.holdTime, defaultHoldTimeDays);
+  }
+
+  function getAddressLine(drop) {
+    const data = getDropData(drop.id);
+    return (data.addressOverride || drop.address || '').trim();
+  }
+
+  function getZip(drop) {
+    const data = getDropData(drop.id);
+    return (data.zipOverride || drop.zip || '').trim();
+  }
+
+  function getHours(drop) {
+    const data = getDropData(drop.id);
+    return (data.hoursOverride || drop.hours || '').trim();
+  }
+
+  function getPhone(drop) {
+    const data = getDropData(drop.id);
+    return (data.phoneOverride || drop.phone || '').trim();
+  }
+
   // Get status for a drop based on current mile
   function getDropStatus(drop) {
     const data = getDropData(drop.id);
     if (!data.enabled) return 'disabled';
     if (data.received) return 'received';
     if (data.shipped) return 'shipped';
-    if (currentMile >= drop.triggerMile && !data.notified) return 'notify-now';
+    if (currentMile >= getTriggerMile(drop) && !data.notified) return 'notify-now';
     if (data.notified) return 'notified';
     if (data.packed) return 'packed';
     return 'planning';
+  }
+
+  function estimateEtaDate(drop) {
+    if (!currentMile || currentMile <= 0) return null;
+    const milesToGo = Math.max(0, drop.mile - currentMile);
+    const days = pace > 0 ? Math.ceil(milesToGo / pace) : null;
+    if (!days || !Number.isFinite(days)) return null;
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+
+  function formatEta(d) {
+    if (!d) return '';
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
   }
 
   // Generate notification message for support person
   function generateNotifyMessage(drop) {
     const name = hikerName.trim() || '[HIKER NAME]';
     const ret = returnAddress.trim() || '[YOUR ADDRESS]';
+    const state = drop.state || '[STATE]';
+    const zip = getZip(drop) || '[ZIP]';
+    const eta = formatEta(estimateEtaDate(drop)) || 'MM/DD/YYYY';
+    const hold = getHoldTimeDays(drop);
+    const phone = getPhone(drop);
+    const hours = getHours(drop);
+    const address = getAddressLine(drop);
+    const uspsHelp = drop.kind === 'post-office'
+      ? `USPS locator: ${getUspsFinderUrl(drop.town, drop.state)}`
+      : '';
+
+    let shipToBlock = '';
+
+    if (drop.kind === 'post-office') {
+      shipToBlock = `${name.toUpperCase()}
+GENERAL DELIVERY
+${drop.town.toUpperCase()}, ${state} ${zip}
+PLEASE HOLD FOR AT HIKER
+ETA: ${eta}`;
+    } else {
+      shipToBlock = `${name.toUpperCase()}
+C/O [HOSTEL / BUSINESS NAME]
+${address || '[STREET ADDRESS]'}
+${drop.town.toUpperCase()}, ${state} ${zip}
+HOLD FOR AT HIKER - PACKAGE
+ETA: ${eta}`;
+    }
+
     return `📦 MAIL DROP REQUEST
 
 Hi${supportName ? ' ' + supportName : ''}! Please ship my ${drop.town} box.
 
 SHIP TO:
-${name.toUpperCase()}
-GENERAL DELIVERY
-${drop.town.toUpperCase()}, ${drop.state} ${drop.zip}
-PLEASE HOLD FOR AT HIKER
+${shipToBlock}
 
 RETURN ADDRESS:
 ${ret}
 
-📍 PO Info:
-${drop.poAddress}
-${drop.poHours}
-📞 ${drop.poPhone}
+📍 Pickup Info:
+${address ? address : drop.kind === 'post-office' ? 'Use General Delivery (confirm exact PO + ZIP).' : 'Confirm exact pickup location + address.'}
+${hours ? `Hours: ${hours}` : ''}
+${phone ? `Phone: ${phone}` : ''}
+${uspsHelp ? uspsHelp : ''}
 
-⏱️ Hold time: ${drop.holdTime} days
+⏱️ Hold time: ${hold} days
 📬 Use Priority Mail (2-3 days)
 
 Thanks! 🥾`;
@@ -242,6 +577,17 @@ Thanks! 🥾`;
   let shippedCount = $derived(Object.values(plannedDrops).filter(d => d.shipped).length);
   let receivedCount = $derived(Object.values(plannedDrops).filter(d => d.received).length);
 
+  let estimatedTotalCost = $derived(() => {
+    let total = 0;
+    for (const drop of mailDrops) {
+      const data = getDropData(drop.id);
+      if (!data.enabled) continue;
+      total += toNumber(data.shippingCost, 0);
+      total += toNumber(data.pickupFee, 0);
+    }
+    return total;
+  });
+
   // Get next action needed
   let nextAction = $derived(() => {
     for (const drop of mailDrops) {
@@ -257,6 +603,36 @@ Thanks! 🥾`;
       }
     }
     return null;
+  });
+
+  // Directory browsing
+  let showDirectory = $state(false);
+  let search = $state('');
+  let filterPO = $state(true);
+  let filterHostel = $state(true);
+
+  let visibleDrops = $derived(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = mailDrops.filter(d => {
+      if (!filterPO && d.kind === 'post-office') return false;
+      if (!filterHostel && d.kind === 'hostel') return false;
+      if (!showDirectory && !getDropData(d.id).enabled) return false;
+      if (!q) return true;
+      const hay = `${d.town} ${d.state || ''} ${d.kind}`.toLowerCase();
+      return hay.includes(q) || String(d.mile).includes(q);
+    });
+    return filtered.sort((a, b) => a.mile - b.mile);
+  });
+
+  let plannedList = $derived(() =>
+    mailDrops
+      .filter(d => getDropData(d.id).enabled)
+      .sort((a, b) => a.mile - b.mile)
+  );
+
+  let timelineDrops = $derived(() => {
+    if (plannedList.length) return plannedList;
+    return mailDrops.filter(d => d.recommended).sort((a, b) => a.mile - b.mile);
   });
 </script>
 
@@ -346,7 +722,7 @@ Thanks! 🥾`;
 
       <!-- Timeline View -->
       <div class="timeline-overview">
-        {#each mailDrops as drop}
+        {#each timelineDrops as drop}
           {@const data = getDropData(drop.id)}
           {@const status = getDropStatus(drop)}
           <div class="timeline-item status-{status}" class:enabled={data.enabled}>
@@ -358,11 +734,13 @@ Thanks! 🥾`;
               {:else}–{/if}
             </div>
             <div class="timeline-info">
-              <div class="timeline-town">{drop.town}, {drop.state}</div>
+              <div class="timeline-town">
+                {drop.town}{drop.state ? `, ${drop.state}` : ''} {drop.kind === 'post-office' ? '✉️' : '🏨'}
+              </div>
               <div class="timeline-meta">
                 <span class="meta-mile">Mile {drop.mile}</span>
                 {#if data.enabled}
-                  <span class="meta-trigger">Trigger: {drop.triggerMile}</span>
+                  <span class="meta-trigger">Trigger: {getTriggerMile(drop)}</span>
                 {/if}
               </div>
             </div>
@@ -430,6 +808,24 @@ Thanks! 🥾`;
         </div>
       </div>
 
+      <div class="setup-card">
+        <h3 class="card-title">
+          <span class="card-icon">🎛️</span>
+          Defaults
+        </h3>
+        <p class="card-desc">These apply to all locations unless you override them per drop.</p>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Ship lead (miles)</label>
+            <input type="number" class="field-input" bind:value={triggerLeadMiles} min="25" max="250" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Default hold time (days)</label>
+            <input type="number" class="field-input" bind:value={defaultHoldTimeDays} min="7" max="60" />
+          </div>
+        </div>
+      </div>
+
       {#if !hikerName || !returnAddress}
         <div class="setup-warning">
           <span class="warn-icon">⚠️</span>
@@ -442,9 +838,56 @@ Thanks! 🥾`;
   <!-- DROPS SECTION -->
   {#if activeSection === 'drops'}
     <div class="drops-section">
-      {#each mailDrops as drop}
+      <div class="drops-controls">
+        <div class="controls-left">
+          <button class="dir-btn" onclick={() => showDirectory = !showDirectory}>
+            {showDirectory ? '✓ My Plan' : 'Browse Directory'}
+          </button>
+          <input
+            type="search"
+            class="dir-search"
+            bind:value={search}
+            placeholder="Search town, mile, PO/hostel…"
+          />
+        </div>
+        <div class="controls-right">
+          <label class="filter-pill">
+            <input type="checkbox" bind:checked={filterPO} />
+            <span>Post Offices</span>
+          </label>
+          <label class="filter-pill">
+            <input type="checkbox" bind:checked={filterHostel} />
+            <span>Hostels</span>
+          </label>
+          <div class="cost-pill" title="Sum of shipping + pickup fees you entered">
+            Est. Total: {formatMoney(estimatedTotalCost)}
+          </div>
+        </div>
+      </div>
+
+      {#if directoryError}
+        <div class="setup-warning">
+          <span class="warn-icon">⚠️</span>
+          <span class="warn-text">{directoryError}</span>
+        </div>
+      {/if}
+
+      {#if showDirectory}
+        <div class="dir-hint">
+          Toggle any location to add it to your plan. For Post Offices, confirm ZIP + hours before shipping.
+        </div>
+      {/if}
+
+      {#if !showDirectory && !plannedList.length}
+        <div class="dir-empty">
+          <strong>No drops selected yet.</strong> Click <em>Browse Directory</em> and toggle the ones you want.
+        </div>
+      {/if}
+
+      {#each visibleDrops as drop}
         {@const data = getDropData(drop.id)}
         {@const status = getDropStatus(drop)}
+        {@const triggerMile = getTriggerMile(drop)}
 
         <div class="drop-card status-{status}">
           <!-- Header Row -->
@@ -455,7 +898,8 @@ Thanks! 🥾`;
             </label>
             <div class="drop-location">
               <h4 class="drop-town">{drop.town}</h4>
-              <span class="drop-state">{drop.state}</span>
+              <span class="drop-state">{drop.state || ''}</span>
+              <span class="drop-kind">{drop.kind === 'post-office' ? 'Post Office' : 'Hostel'}</span>
             </div>
             <div class="drop-miles">
               <div class="mile-badge">
@@ -470,9 +914,9 @@ Thanks! 🥾`;
             <div class="trigger-row">
               <span class="trigger-icon">🔔</span>
               <span class="trigger-text">
-                Notify support at <strong>mile {drop.triggerMile}</strong>
+                Notify support at <strong>mile {triggerMile}</strong>
                 {#if currentMile > 0}
-                  ({drop.triggerMile - currentMile > 0 ? `${drop.triggerMile - currentMile} mi away` : 'NOW!'})
+                  ({triggerMile - currentMile > 0 ? `${triggerMile - currentMile} mi away` : 'NOW!'})
                 {/if}
               </span>
             </div>
@@ -487,6 +931,40 @@ Thanks! 🥾`;
                 oninput={(e) => updateDrop(drop.id, 'contents', e.target.value)}
                 rows="2"
               ></textarea>
+            </div>
+
+            <!-- Costs -->
+            <div class="costs-row">
+              <div class="cost-field">
+                <label class="cost-label">Shipping ($)</label>
+                <input
+                  type="number"
+                  class="cost-input"
+                  placeholder="0"
+                  value={data.shippingCost || ''}
+                  oninput={(e) => updateDrop(drop.id, 'shippingCost', e.target.value)}
+                  min="0"
+                  step="1"
+                />
+              </div>
+              <div class="cost-field">
+                <label class="cost-label">Pickup fee ($)</label>
+                <input
+                  type="number"
+                  class="cost-input"
+                  placeholder="0"
+                  value={data.pickupFee || ''}
+                  oninput={(e) => updateDrop(drop.id, 'pickupFee', e.target.value)}
+                  min="0"
+                  step="1"
+                />
+              </div>
+              <div class="cost-total">
+                Total: {formatMoney(toNumber(data.shippingCost, 0) + toNumber(data.pickupFee, 0))}
+                {#if drop.kind === 'hostel' && drop.estimatedHostelNight}
+                  <span class="cost-hint">Est hostel/night: {formatMoney(drop.estimatedHostelNight)}</span>
+                {/if}
+              </div>
             </div>
 
             <!-- Status Checkboxes -->
@@ -546,17 +1024,100 @@ Thanks! 🥾`;
               </button>
             {/if}
 
-            <!-- PO Info (collapsible) -->
-            <details class="po-details">
-              <summary class="po-summary">📍 Post Office Info</summary>
-              <div class="po-info">
-                <div class="po-line"><strong>Address:</strong> {drop.poAddress}</div>
-                <div class="po-line"><strong>Hours:</strong> {drop.poHours}</div>
-                <div class="po-line">
-                  <strong>Phone:</strong>
-                  <a href="tel:{drop.poPhone.replace(/\D/g, '')}" class="po-phone">{drop.poPhone}</a>
+            <!-- Pickup Info + Overrides (collapsible) -->
+	            <details class="po-details">
+	              <summary class="po-summary">
+	                📍 {drop.kind === 'post-office' ? 'Post Office' : 'Hostel / Business'} info + overrides
+	              </summary>
+	              <div class="po-info">
+	                {#if drop.kind === 'post-office'}
+	                  <div class="po-line">
+	                    <strong>USPS Locator:</strong>
+	                    <a class="po-link" href={getUspsFinderUrl(drop.town, drop.state)} target="_blank" rel="noreferrer">
+	                      Find the correct Post Office / ZIP →
+                    </a>
+	                  </div>
+	                {/if}
+	
+	                <div class="po-line"><strong>Address:</strong> {getAddressLine(drop) || '—'}</div>
+	                <div class="po-line"><strong>Hours:</strong> {getHours(drop) || '—'}</div>
+	                <div class="po-line">
+	                  <strong>Phone:</strong>
+	                  {#if getPhone(drop)}
+	                    {@const phone = getPhone(drop)}
+	                    <a href="tel:{phone.replace(/\D/g, '')}" class="po-phone">{phone}</a>
+	                  {:else}
+	                    —
+	                  {/if}
+	                </div>
+	                <div class="po-line"><strong>Hold Time:</strong> {getHoldTimeDays(drop)} days {drop.warning ? '⚠️' : ''}</div>
+
+                <div class="override-grid">
+                  <div class="override-field">
+                    <label class="override-label">Lead miles override</label>
+                    <input
+                      type="number"
+                      class="override-input"
+                      placeholder={String(triggerLeadMiles)}
+                      value={data.leadMilesOverride || ''}
+                      oninput={(e) => updateDrop(drop.id, 'leadMilesOverride', e.target.value)}
+                      min="1"
+                      step="1"
+                    />
+                  </div>
+                  <div class="override-field">
+                    <label class="override-label">Hold time override (days)</label>
+                    <input
+                      type="number"
+                      class="override-input"
+                      placeholder={String(getHoldTimeDays(drop))}
+                      value={data.holdTimeOverride || ''}
+                      oninput={(e) => updateDrop(drop.id, 'holdTimeOverride', e.target.value)}
+                      min="1"
+                      step="1"
+                    />
+                  </div>
+                  <div class="override-field">
+                    <label class="override-label">ZIP (for General Delivery)</label>
+                    <input
+                      type="text"
+                      class="override-input"
+                      placeholder={drop.zip || ''}
+                      value={data.zipOverride || ''}
+                      oninput={(e) => updateDrop(drop.id, 'zipOverride', e.target.value)}
+                    />
+                  </div>
+                  <div class="override-field">
+                    <label class="override-label">Address</label>
+                    <input
+                      type="text"
+                      class="override-input"
+                      placeholder={drop.address || ''}
+                      value={data.addressOverride || ''}
+                      oninput={(e) => updateDrop(drop.id, 'addressOverride', e.target.value)}
+                    />
+                  </div>
+                  <div class="override-field">
+                    <label class="override-label">Hours</label>
+                    <input
+                      type="text"
+                      class="override-input"
+                      placeholder={drop.hours || ''}
+                      value={data.hoursOverride || ''}
+                      oninput={(e) => updateDrop(drop.id, 'hoursOverride', e.target.value)}
+                    />
+                  </div>
+                  <div class="override-field">
+                    <label class="override-label">Phone</label>
+                    <input
+                      type="text"
+                      class="override-input"
+                      placeholder={drop.phone || ''}
+                      value={data.phoneOverride || ''}
+                      oninput={(e) => updateDrop(drop.id, 'phoneOverride', e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div class="po-line"><strong>Hold Time:</strong> {drop.holdTime} days {drop.warning ? '⚠️' : ''}</div>
               </div>
             </details>
           {/if}
@@ -961,6 +1522,16 @@ Thanks! 🥾`;
 
   .field-textarea { resize: vertical; font-family: inherit; }
 
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 520px) {
+    .field-row { grid-template-columns: 1fr; }
+  }
+
   .setup-warning {
     display: flex;
     align-items: center;
@@ -979,6 +1550,97 @@ Thanks! 🥾`;
     flex-direction: column;
     gap: 1rem;
   }
+
+  .drops-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .controls-left {
+    display: flex;
+    flex: 1;
+    min-width: 240px;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .controls-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .dir-btn {
+    padding: 0.55rem 0.85rem;
+    background: var(--pine);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .dir-btn:hover { background: #3a4538; }
+
+  .dir-search {
+    flex: 1;
+    min-width: 160px;
+    padding: 0.55rem 0.85rem;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    font-size: 0.9rem;
+  }
+
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.65rem;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .filter-pill input { accent-color: var(--pine); }
+
+  .cost-pill {
+    padding: 0.45rem 0.65rem;
+    border: 2px solid rgba(77,89,74,0.25);
+    border-radius: 999px;
+    background: rgba(77,89,74,0.06);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--pine);
+    white-space: nowrap;
+  }
+
+  .dir-hint,
+  .dir-empty {
+    padding: 0.875rem 1rem;
+    background: rgba(77,89,74,0.06);
+    border: 2px dashed rgba(77,89,74,0.25);
+    border-radius: 14px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .dir-empty strong { color: var(--ink); }
 
   .drop-card {
     background: #fff;
@@ -1048,6 +1710,19 @@ Thanks! 🥾`;
     margin-left: 0.35rem;
   }
 
+  .drop-kind {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(77,89,74,0.08);
+    color: var(--pine);
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
   .mile-badge {
     text-align: center;
     padding: 0.35rem 0.6rem;
@@ -1103,6 +1778,56 @@ Thanks! 🥾`;
     resize: vertical;
     font-family: inherit;
     box-sizing: border-box;
+  }
+
+  .costs-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr;
+    gap: 0.65rem;
+    margin-top: 0.875rem;
+    padding: 0.75rem;
+    background: rgba(77,89,74,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  @media (max-width: 620px) {
+    .costs-row { grid-template-columns: 1fr 1fr; }
+    .cost-total { grid-column: 1 / -1; }
+  }
+
+  .cost-field { display: flex; flex-direction: column; gap: 0.25rem; }
+
+  .cost-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  .cost-input {
+    padding: 0.6rem 0.75rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.9rem;
+  }
+
+  .cost-total {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-weight: 800;
+    color: var(--ink);
+    font-size: 0.95rem;
+  }
+
+  .cost-hint {
+    margin-top: 0.25rem;
+    font-weight: 700;
+    color: var(--muted);
+    font-size: 0.75rem;
   }
 
   .status-row {
@@ -1212,6 +1937,41 @@ Thanks! 🥾`;
   .po-phone {
     color: var(--pine);
     text-decoration: none;
+  }
+
+  .po-link {
+    color: var(--pine);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .override-grid {
+    margin-top: 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  @media (max-width: 520px) {
+    .override-grid { grid-template-columns: 1fr; }
+  }
+
+  .override-field { display: flex; flex-direction: column; gap: 0.3rem; }
+
+  .override-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .override-input {
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 0.85rem;
   }
 
   /* ========== HOW IT WORKS ========== */
