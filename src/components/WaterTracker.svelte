@@ -342,6 +342,22 @@
       {/if}
     </section>
   </div>
+
+  <!-- Guide Links -->
+  <div class="water-footer">
+    <div class="guide-links">
+      <a href="/guide/09-water-treatment-system" class="guide-link chapter-link">
+        <span class="link-icon">📚</span>
+        <span class="link-text">Full Water Treatment Guide</span>
+        <span class="link-arrow">→</span>
+      </a>
+      <a href="/guide#09-water-treatment-system" class="guide-link field-guide-link">
+        <span class="link-icon">📖</span>
+        <span class="link-text">Field Guide</span>
+        <span class="link-arrow">→</span>
+      </a>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -411,6 +427,62 @@
     padding: 1.25rem;
     background: var(--bg);
   }
+
+  .water-footer {
+    padding: 0 1.25rem 1.25rem;
+    background: var(--bg);
+  }
+
+  .guide-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .guide-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .guide-link:hover {
+    border-color: var(--alpine);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .field-guide-link {
+    flex: 0 0 auto;
+    min-width: 140px;
+  }
+
+  .link-icon { font-size: 1.25rem; }
+
+  .link-text {
+    flex: 1;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .link-arrow {
+    font-size: 1.25rem;
+    color: var(--alpine);
+    transition: transform 0.2s ease;
+  }
+
+  .guide-link:hover .link-arrow { transform: translateX(4px); }
 
   .water-section h3 {
     margin: 0 0 0.75rem;
