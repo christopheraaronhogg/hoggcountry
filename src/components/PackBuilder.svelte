@@ -42,14 +42,25 @@
   }
 
   function buildTemplateItems() {
-    return templateItems.map(item => createItem({
-      id: item.id,
-      category: item.category,
-      worn: item.worn ?? false,
-      tier: item.tier ?? 3,
-      templateName: item.name,
-      templateWeight: item.weight
-    }));
+    const perCategoryCount = new Map();
+    const limited = [];
+    for (const item of templateItems) {
+      const count = perCategoryCount.get(item.category) ?? 0;
+      if (count >= 3) continue;
+      perCategoryCount.set(item.category, count + 1);
+      limited.push(item);
+    }
+
+    return limited.map(item =>
+      createItem({
+        id: item.id,
+        category: item.category,
+        worn: item.worn ?? false,
+        tier: item.tier ?? 3,
+        templateName: item.name,
+        templateWeight: item.weight,
+      })
+    );
   }
 
 
@@ -395,8 +406,6 @@
                         value={item.name}
                         oninput={(event) => updateItem(item.id, 'name', event.currentTarget.value)}
                       />
-                      {#if item.tier === 1}<span class="item-tag essential">Essential</span>{/if}
-                      {#if item.worn}<span class="item-tag worn">Worn</span>{/if}
                     </div>
                     <div class="item-meta">
                       <input
@@ -411,13 +420,14 @@
                       />
                       <button
                         type="button"
-                        class="item-icon-btn worn"
+                        class="item-pill-btn worn"
                         class:isOn={item.worn}
+                        title="Counts as worn weight (not in base weight)"
                         aria-label="Toggle worn weight"
                         aria-pressed={item.worn}
                         onclick={() => updateItem(item.id, 'worn', !item.worn)}
                       >
-                        👟
+                        Worn
                       </button>
                       <button
                         type="button"
@@ -1056,6 +1066,44 @@
     color: color-mix(in srgb, var(--muted) 70%, transparent);
   }
 
+  .item-pill-btn {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.6rem;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: Oswald, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .item-pill-btn:hover {
+    border-color: var(--alpine);
+    background: color-mix(in srgb, var(--alpine) 8%, #fff);
+    color: var(--pine);
+  }
+
+  .item-pill-btn:focus {
+    outline: none;
+    border-color: var(--alpine);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--alpine) 25%, transparent);
+  }
+
+  .item-pill-btn.worn.isOn {
+    background: var(--pine);
+    border-color: var(--pine);
+    color: #fff;
+  }
+
   .item-icon-btn {
     width: 34px;
     height: 34px;
@@ -1081,12 +1129,6 @@
     outline: none;
     border-color: var(--alpine);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--alpine) 25%, transparent);
-  }
-
-  .item-icon-btn.worn.isOn {
-    background: var(--pine);
-    border-color: var(--pine);
-    color: #fff;
   }
 
   .item-icon-btn.remove {
@@ -1125,29 +1167,6 @@
   .gear-item:last-child {
     border-bottom: none;
   }
-
-
-  .item-tag {
-    font-size: 0.55rem;
-    padding: 0.15rem 0.35rem;
-    border-radius: 4px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .item-tag.essential {
-    background: var(--pine);
-    color: #fff;
-  }
-
-  .item-tag.worn {
-    background: color-mix(in srgb, var(--muted) 12%, #fff);
-    border: 1px solid color-mix(in srgb, var(--muted) 28%, #fff);
-    color: var(--muted);
-  }
-
-
 
   /* Consumables Section */
   .consumables-section {
