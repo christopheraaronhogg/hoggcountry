@@ -313,7 +313,48 @@
       };
     });
 
-    return [...sectionItems, ...townItems].sort((a, b) => {
+    const hasAnyTownLayers = keyMilestonesFilters.walkableTowns || keyMilestonesFilters.shuttleTowns;
+    const normalizeTownKey = (name) => String(name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '');
+    const baseTownNameKey = new Set(townItems.map(t => normalizeTownKey(t.name)));
+    const baseTownRoundedMileKey = new Set(townItems.map(t => String(Math.round(Number(t.mile)))));
+
+    const layeredTownItems = hasAnyTownLayers
+      ? townMilestoneItems
+          .filter(town => {
+            if (town.category === '1.1') return keyMilestonesFilters.walkableTowns;
+            return keyMilestonesFilters.shuttleTowns;
+          })
+          .filter(town => {
+            if (baseTownNameKey.has(normalizeTownKey(town.name))) return false;
+            if (baseTownRoundedMileKey.has(String(Math.round(Number(town.mile))))) return false;
+            return true;
+          })
+          .map(town => {
+            const status = getItemStatus(town.mile);
+            const arrivalDate = getProjectedDate(town.mile);
+            const day = mode === 'trail'
+              ? (status === 'completed' ? null : getCalendarDaysForMiles(town.mile - currentMile) + daysOnTrail)
+              : getCalendarDayForMile(town.mile);
+
+            const emoji = town.category === '1.1' ? '🚶' : '🚌';
+            const highlight = town.notes || `${town.distance} from trail`;
+
+            return {
+              ...town,
+              type: 'town',
+              status,
+              arrivalDate,
+              day,
+              emoji,
+              highlight,
+              season: arrivalDate ? getSeason(arrivalDate) : null,
+            };
+          })
+      : [];
+
+    return [...sectionItems, ...townItems, ...layeredTownItems].sort((a, b) => {
       const mileA = a.type === 'section' ? a.startMile : a.mile;
       const mileB = b.type === 'section' ? b.startMile : b.mile;
       return mileA - mileB;
@@ -525,6 +566,25 @@ hoggcountry.com/tools`;
         <span class="header-bar"></span>
         SECTION BREAKDOWN
       </h3>
+      <div class="milestones-filters timeline-filters">
+        <span class="filters-label">Show towns:</span>
+        <button
+          type="button"
+          class="filter-pill walkable"
+          class:active={keyMilestonesFilters.walkableTowns}
+          onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
+        >
+          1.1 Walkable <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill shuttle"
+          class:active={keyMilestonesFilters.shuttleTowns}
+          onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
+        >
+          1.2 Shuttle/Hitch <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
+        </button>
+      </div>
       <div class="timeline">
         {#each timelineItems() as item, i}
           {#if item.type === 'section'}
@@ -574,9 +634,17 @@ hoggcountry.com/tools`;
                 <div class="town-card">
                   <div class="town-header">
                     <span class="town-name">{item.name}</span>
-                    <span class="town-mile">Mile {item.mile}</span>
+                    <div class="town-badges">
+                      <span class="town-mile">Mile {item.mile}</span>
+                      {#if item.category}
+                        <span class="town-layer {item.category === '1.1' ? 'walkable' : 'shuttle'}">{getTownTagLabel(item.category)}</span>
+                      {/if}
+                    </div>
                   </div>
                   <span class="town-highlight">{item.highlight}</span>
+                  {#if item.distance}
+                    <span class="town-distance">{item.distance}</span>
+                  {/if}
                   {#if item.services?.length}
                     <div class="town-services" aria-label="Town services">
                       {#each getServiceChips(item.services) as svc (svc.key)}
@@ -724,6 +792,25 @@ hoggcountry.com/tools`;
         <span class="header-bar"></span>
         YOUR JOURNEY
       </h3>
+      <div class="milestones-filters timeline-filters">
+        <span class="filters-label">Show towns:</span>
+        <button
+          type="button"
+          class="filter-pill walkable"
+          class:active={keyMilestonesFilters.walkableTowns}
+          onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
+        >
+          1.1 Walkable <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill shuttle"
+          class:active={keyMilestonesFilters.shuttleTowns}
+          onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
+        >
+          1.2 Shuttle/Hitch <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
+        </button>
+      </div>
       <div class="timeline">
         {#each timelineItems() as item, i}
           {#if item.type === 'section'}
@@ -804,9 +891,27 @@ hoggcountry.com/tools`;
                 <div class="town-card {item.status}">
                   <div class="town-header">
                     <span class="town-name">{item.name}</span>
-                    <span class="town-mile">Mile {item.mile}</span>
+                    <div class="town-badges">
+                      <span class="town-mile">Mile {item.mile}</span>
+                      {#if item.category}
+                        <span class="town-layer {item.category === '1.1' ? 'walkable' : 'shuttle'}">{getTownTagLabel(item.category)}</span>
+                      {/if}
+                    </div>
                   </div>
                   <span class="town-highlight">{item.highlight}</span>
+                  {#if item.distance}
+                    <span class="town-distance">{item.distance}</span>
+                  {/if}
+                  {#if item.services?.length}
+                    <div class="town-services" aria-label="Town services">
+                      {#each getServiceChips(item.services) as svc (svc.key)}
+                        <span class="badge town-service">
+                          <span class="town-service-icon" aria-hidden="true">{svc.icon}</span>
+                          <span class="town-service-label">{svc.label}</span>
+                        </span>
+                      {/each}
+                    </div>
+                  {/if}
                 </div>
               </div>
             </div>
@@ -1478,6 +1583,14 @@ hoggcountry.com/tools`;
     margin-bottom: 0.2rem;
   }
 
+  .town-badges {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
   .town-name {
     font-family: Oswald, sans-serif;
     font-size: 0.95rem;
@@ -1499,6 +1612,38 @@ hoggcountry.com/tools`;
     font-size: 0.75rem;
     color: var(--muted);
     font-style: italic;
+  }
+
+  .town-distance {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .town-layer {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--pine);
+    line-height: 1.1;
+  }
+
+  .town-layer.walkable {
+    color: #16a34a;
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.10);
+  }
+
+  .town-layer.shuttle {
+    color: #2563eb;
+    border-color: rgba(59, 130, 246, 0.35);
+    background: rgba(59, 130, 246, 0.10);
   }
 
   .town-services {
@@ -1576,6 +1721,11 @@ hoggcountry.com/tools`;
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.9rem;
+  }
+
+  .timeline-filters {
+    margin-top: 0.5rem;
+    margin-bottom: 1.1rem;
   }
 
   .filters-label {
