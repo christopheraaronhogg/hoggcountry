@@ -42,16 +42,30 @@
   }
 
   function buildTemplateItems() {
-    const perCategoryCount = new Map();
-    const limited = [];
-    for (const item of templateItems) {
-      const count = perCategoryCount.get(item.category) ?? 0;
-      if (count >= 3) continue;
-      perCategoryCount.set(item.category, count + 1);
-      limited.push(item);
+    const itemsByCategory = new Map();
+    templateItems.forEach((item, idx) => {
+      if (!itemsByCategory.has(item.category)) itemsByCategory.set(item.category, []);
+      itemsByCategory.get(item.category).push({ item, idx });
+    });
+
+    const orderedCategoryIds = Object.keys(categories);
+    const flattened = [];
+
+    for (const categoryId of orderedCategoryIds) {
+      const list = itemsByCategory.get(categoryId) || [];
+      list
+        .slice()
+        .sort((a, b) => {
+          const tierA = a.item.tier ?? 3;
+          const tierB = b.item.tier ?? 3;
+          if (tierA !== tierB) return tierA - tierB;
+          return a.idx - b.idx;
+        })
+        .slice(0, 3)
+        .forEach(({ item }) => flattened.push(item));
     }
 
-    return limited.map(item =>
+    return flattened.map(item =>
       createItem({
         id: item.id,
         category: item.category,
@@ -408,16 +422,19 @@
                       />
                     </div>
                     <div class="item-meta">
-                      <input
-                        class="item-weight-input"
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        inputmode="decimal"
-                        placeholder={item.templateWeight ? item.templateWeight.toString() : 'oz'}
-                        value={item.weight}
-                        oninput={(event) => updateItem(item.id, 'weight', event.currentTarget.value)}
-                      />
+                      <div class="item-weight-wrap">
+                        <input
+                          class="item-weight-input"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          inputmode="decimal"
+                          placeholder={item.templateWeight ? item.templateWeight.toString() : '0'}
+                          value={item.weight}
+                          oninput={(event) => updateItem(item.id, 'weight', event.currentTarget.value)}
+                        />
+                        <span class="item-weight-unit">oz</span>
+                      </div>
                       <button
                         type="button"
                         class="item-pill-btn worn"
@@ -1003,9 +1020,20 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.75rem;
-    padding: 0.65rem 0;
+    padding: 0.55rem 0.35rem;
+    margin: 0 -0.35rem;
     border-bottom: 1px dashed var(--border);
     font-size: 0.8rem;
+    border-radius: 10px;
+    transition: background 0.15s ease;
+  }
+
+  .gear-item:hover {
+    background: color-mix(in srgb, var(--alpine) 6%, transparent);
+  }
+
+  .gear-item:focus-within {
+    background: color-mix(in srgb, var(--alpine) 10%, transparent);
   }
 
   .item-main {
@@ -1046,8 +1074,27 @@
   }
 
   .item-weight-input {
-    max-width: 88px;
+    max-width: 82px;
     text-align: right;
+    padding-right: 2.1rem;
+  }
+
+  .item-weight-wrap {
+    position: relative;
+  }
+
+  .item-weight-unit {
+    position: absolute;
+    right: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: Oswald, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--muted) 75%, transparent);
+    pointer-events: none;
   }
 
   .item-weight-input::-webkit-outer-spin-button,
@@ -1133,6 +1180,16 @@
 
   .item-icon-btn.remove {
     color: #b91c1c;
+    opacity: 0;
+    transform: scale(0.98);
+    pointer-events: none;
+  }
+
+  .gear-item:hover .item-icon-btn.remove,
+  .gear-item:focus-within .item-icon-btn.remove {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
   }
 
   .item-icon-btn.remove:hover {
