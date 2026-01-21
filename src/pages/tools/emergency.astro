@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolPage from '../../components/tools/ToolPage.svelte';
+
+const title = "Emergency Card — Trail Tools — Hogg Country";
+const description = "Emergency planning and bailout info for the Appalachian Trail.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="container tools-container">
+    <ToolPage client:load toolId="emergency" title="Emergency Card" />
+  </div>
+</BaseLayout>
+
+<style>
+  .tools-container {
+    padding: 1rem 0 4rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+</style>
+

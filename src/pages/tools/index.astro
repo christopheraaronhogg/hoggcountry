@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ToolsApp from '../../components/ToolsApp.svelte';
+import ToolsDashboard from '../../components/tools/ToolsDashboard.svelte';
 
 const title = "Trail Tools — Hogg Country";
 const description = "Interactive tools for AT thru-hiking: milestone planner, weather, budgeting, and more.";
@@ -14,7 +14,31 @@ const description = "Interactive tools for AT thru-hiking: milestone planner, we
   </section>
 
   <div class="container tools-container">
-    <ToolsApp client:load />
+    <script is:inline>
+      // Back-compat: redirect old hash navigation (/tools#water) to routed pages (/tools/water/)
+      const hash = window.location.hash?.slice(1);
+      const hashMap = {
+        milestone: 'milestone',
+        weather: 'weather',
+        pack: 'pack',
+        resupply: 'resupply',
+        water: 'water',
+        budget: 'budget',
+        mail: 'mail',
+        power: 'power',
+        food: 'food',
+        geartrans: 'geartrans',
+        training: 'training',
+        shelter: 'shelter',
+        layers: 'layers',
+        emergency: 'emergency',
+        // Old id → new route
+        gearbudget: 'gear',
+      };
+      if (hash && hashMap[hash]) window.location.replace(`/tools/${hashMap[hash]}/`);
+    </script>
+
+    <ToolsDashboard client:load />
   </div>
 </BaseLayout>
 

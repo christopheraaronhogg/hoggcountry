@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v4';
+const CACHE_NAME = 'hogg-country-v5';
 
 // Core pages to precache on install
 const CORE_PAGES = [
@@ -14,6 +14,25 @@ const CORE_PAGES = [
   '/trips/',
   '/videos/',
   '/tags/',
+];
+
+// Tool sub-pages (new /tools/ routed layout)
+const TOOL_PAGES = [
+  '/tools/milestone/',
+  '/tools/weather/',
+  '/tools/pack/',
+  '/tools/gear/',
+  '/tools/resupply/',
+  '/tools/water/',
+  '/tools/budget/',
+  '/tools/mail/',
+  '/tools/power/',
+  '/tools/food/',
+  '/tools/geartrans/',
+  '/tools/training/',
+  '/tools/shelter/',
+  '/tools/layers/',
+  '/tools/emergency/',
 ];
 
 // Guide chapters (high priority - the main offline use case)
@@ -59,7 +78,7 @@ const STATIC_ASSETS = [
 
 // Install event - precache core resources + JS/CSS chunks
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing v3...');
+  console.log('[SW] Installing v5...');
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] Precaching core pages and assets');
@@ -88,8 +107,8 @@ self.addEventListener('install', (event) => {
         console.warn('[SW] Could not load asset manifest:', err.message);
       }
 
-      // Cache core pages
-      const pagePromises = [...CORE_PAGES, ...GUIDE_CHAPTERS].map(async (url) => {
+      // Cache core pages (+ tools) + guide chapters
+      const pagePromises = [...CORE_PAGES, ...TOOL_PAGES, ...GUIDE_CHAPTERS].map(async (url) => {
         try {
           await cache.add(url);
         } catch (err) {
