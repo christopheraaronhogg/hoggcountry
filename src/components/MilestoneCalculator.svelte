@@ -370,7 +370,7 @@
     keyMilestonesFilters[key] = !keyMilestonesFilters[key];
   }
 
-  let townMilestoneItems = $derived(() => {
+  function buildTownMilestoneItems() {
     return AT_TOWNS.map(town => {
       const category = getTownCategory(town.distance);
       const status = getItemStatus(town.mile);
@@ -389,9 +389,11 @@
         services,
       };
     }).sort((a, b) => a.mile - b.mile);
-  });
+  }
 
-  let sectionMilestoneItems = $derived(() => {
+  let townMilestoneItems = $derived(buildTownMilestoneItems());
+
+  function buildSectionMilestoneItems() {
     return calculatedSections.map(section => {
       const status = getItemStatus(section.startMile, section.endMile);
       const arrivalDate = getProjectedDate(section.startMile);
@@ -405,9 +407,11 @@
         arrivalDate,
       };
     });
-  });
+  }
 
-  let achievementMilestoneItems = $derived(() => {
+  let sectionMilestoneItems = $derived(buildSectionMilestoneItems());
+
+  function buildAchievementMilestoneItems() {
     return calculatedMilestones.map(ms => ({
       kind: 'achievement',
       miles: ms.miles,
@@ -415,7 +419,9 @@
       date: ms.date,
       achieved: currentMile >= ms.miles,
     }));
-  });
+  }
+
+  let achievementMilestoneItems = $derived(buildAchievementMilestoneItems());
 
   function getKeyMilestoneSubtitle(item) {
     if (mode === 'planning') {
@@ -441,7 +447,7 @@
     return '';
   }
 
-  let keyMilestonesItems = $derived(() => {
+  function buildKeyMilestonesItems() {
     const townsFiltered = townMilestoneItems.filter(town => {
       if (town.category === '1.1') return keyMilestonesFilters.walkableTowns;
       return keyMilestonesFilters.shuttleTowns;
@@ -458,16 +464,20 @@
       const mileB = b.kind === 'achievement' ? b.miles : b.kind === 'section' ? b.startMile : b.mile;
       return mileA - mileB;
     });
-  });
+  }
 
-  let keyMilestonesCounts = $derived(() => {
+  let keyMilestonesItems = $derived(buildKeyMilestonesItems());
+
+  function buildKeyMilestonesCounts() {
     const walkableCount = townMilestoneItems.filter(t => t.category === '1.1').length;
     const shuttleCount = townMilestoneItems.filter(t => t.category === '1.2').length;
     return {
       walkableTowns: walkableCount,
       shuttleTowns: shuttleCount,
     };
-  });
+  }
+
+  let keyMilestonesCounts = $derived(buildKeyMilestonesCounts());
 
   // Trail mode calculations
   let todayStr = $derived(getTodayStr());
