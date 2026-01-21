@@ -1,6 +1,7 @@
 <script>
   import { fade } from 'svelte/transition';
   import { RESUPPLY_SERVICE_META, resupplyServicesByTownName } from '../lib/resupplyTowns';
+  import { AT_TOWNS } from '../lib/atTowns';
 
   let { trailContext = {} } = $props();
 
@@ -210,40 +211,57 @@
     return Math.ceil(hikingDays / (1 - zeroDaysPerMonth / 30));
   }
 
+  function getProjectedDate(mile) {
+    if (mode === 'trail') {
+      if (mile <= currentMile) {
+        // Past - already passed this point
+        return null; // We'll show "Done" instead of a date
+      }
+      // Future - project from effectiveDate using TARGET pace
+      // effectiveDate = today if start date passed, otherwise start date
+      const milesAhead = mile - currentMile;
+      const daysAhead = getCalendarDaysForMiles(milesAhead);
+      return addDays(effectiveDate, daysAhead);
+    }
+    return addDays(startDate, getCalendarDayForMile(mile));
+  }
+
+  function getItemStatus(mile, endMile = null) {
+    if (mode !== 'trail') return 'upcoming';
+    if (endMile !== null) {
+      // Section
+      if (currentMile >= endMile) return 'completed';
+      if (currentMile >= mile) return 'current';
+      return 'upcoming';
+    }
+    // Point milestone (town, mile marker)
+    if (currentMile >= mile) return 'completed';
+    return 'upcoming';
+  }
+
+  function parseDistanceRange(distance) {
+    const normalized = String(distance || '').trim().toLowerCase();
+    if (normalized.includes('on trail')) return { minMiles: 0, maxMiles: 0 };
+    const numbers = normalized.match(/\d+(\.\d+)?/g)?.map(Number) || [];
+    if (numbers.length === 0) return null;
+    const minMiles = Math.min(...numbers);
+    const maxMiles = Math.max(...numbers);
+    return { minMiles, maxMiles };
+  }
+
+  function getTownCategory(distance) {
+    const parsed = parseDistanceRange(distance);
+    if (!parsed) return '1.2';
+    return parsed.maxMiles <= 1 ? '1.1' : '1.2';
+  }
+
+  function getTownTagLabel(category) {
+    return category === '1.1' ? '1.1 Walkable' : '1.2 Shuttle';
+  }
+
   // Merge sections and trail towns into unified timeline, sorted by mile
   // In trail mode, use TARGET pace to project future dates (not actual pace)
   let timelineItems = $derived(() => {
-    function getProjectedDate(mile) {
-      if (mode === 'trail') {
-        if (mile <= currentMile) {
-          // Past - already passed this point
-          return null; // We'll show "Done" instead of a date
-        } else {
-          // Future - project from effectiveDate using TARGET pace
-          // effectiveDate = today if start date passed, otherwise start date
-          const milesAhead = mile - currentMile;
-          const daysAhead = getCalendarDaysForMiles(milesAhead);
-          return addDays(effectiveDate, daysAhead);
-        }
-      } else {
-        return addDays(startDate, getCalendarDayForMile(mile));
-      }
-    }
-
-    function getItemStatus(mile, endMile = null) {
-      if (mode !== 'trail') return 'upcoming';
-      if (endMile !== null) {
-        // Section
-        if (currentMile >= endMile) return 'completed';
-        if (currentMile >= mile) return 'current';
-        return 'upcoming';
-      } else {
-        // Town
-        if (currentMile >= mile) return 'completed';
-        return 'upcoming';
-      }
-    }
-
     const sectionItems = calculatedSections.map(s => {
       const status = getItemStatus(s.startMile, s.endMile);
       const arrivalDate = getProjectedDate(s.startMile);
@@ -282,6 +300,119 @@
       const mileB = b.type === 'section' ? b.startMile : b.mile;
       return mileA - mileB;
     });
+  });
+
+  let keyMilestonesFilters = $state({
+    sections: true,
+    achievements: true,
+    walkableTowns: true,
+    shuttleTowns: true,
+  });
+
+  function toggleKeyMilestonesFilter(key) {
+    keyMilestonesFilters[key] = !keyMilestonesFilters[key];
+  }
+
+  let townMilestoneItems = $derived(() => {
+    return AT_TOWNS.map(town => {
+      const category = getTownCategory(town.distance);
+      const status = getItemStatus(town.mile);
+      const arrivalDate = getProjectedDate(town.mile);
+      return {
+        kind: 'town',
+        mile: town.mile,
+        name: town.name,
+        state: town.state,
+        distance: town.distance,
+        category,
+        status,
+        arrivalDate,
+        notes: town.notes,
+      };
+    }).sort((a, b) => a.mile - b.mile);
+  });
+
+  let sectionMilestoneItems = $derived(() => {
+    return calculatedSections.map(section => {
+      const status = getItemStatus(section.startMile, section.endMile);
+      const arrivalDate = getProjectedDate(section.startMile);
+      return {
+        kind: 'section',
+        name: section.name,
+        emoji: section.emoji,
+        startMile: section.startMile,
+        endMile: section.endMile,
+        status,
+        arrivalDate,
+      };
+    });
+  });
+
+  let achievementMilestoneItems = $derived(() => {
+    return calculatedMilestones.map(ms => ({
+      kind: 'achievement',
+      miles: ms.miles,
+      label: ms.label,
+      date: ms.date,
+      achieved: currentMile >= ms.miles,
+    }));
+  });
+
+  function getKeyMilestoneSubtitle(item) {
+    if (mode === 'planning') {
+      if (item.kind === 'achievement') return formatDateShort(item.date);
+      if (item.kind === 'section') return formatDateShort(item.arrivalDate);
+      if (item.kind === 'town') return formatDateShort(item.arrivalDate);
+      return '';
+    }
+
+    // trail mode
+    if (item.kind === 'achievement') {
+      return item.achieved ? '✓ Achieved' : `${(item.miles - currentMile).toFixed(0)} mi away`;
+    }
+    if (item.kind === 'section') {
+      if (item.status === 'completed') return '✓ Done';
+      if (item.status === 'current') return `${(item.endMile - currentMile).toFixed(0)} mi to section end`;
+      return `${(item.startMile - currentMile).toFixed(0)} mi to section start`;
+    }
+    if (item.kind === 'town') {
+      if (item.status === 'completed') return '✓ Visited';
+      return `${(item.mile - currentMile).toFixed(0)} mi away`;
+    }
+    return '';
+  }
+
+  let keyMilestonesItems = $derived(() => {
+    const sectionItems = keyMilestonesFilters.sections ? sectionMilestoneItems : [];
+    const achievementItems = keyMilestonesFilters.achievements ? achievementMilestoneItems : [];
+
+    const townsFiltered = townMilestoneItems.filter(town => {
+      if (town.category === '1.1') return keyMilestonesFilters.walkableTowns;
+      return keyMilestonesFilters.shuttleTowns;
+    });
+
+    const items = [
+      ...sectionItems,
+      ...achievementItems,
+      ...townsFiltered,
+    ];
+
+    return items.sort((a, b) => {
+      const mileA = a.kind === 'achievement' ? a.miles : a.kind === 'section' ? a.startMile : a.mile;
+      const mileB = b.kind === 'achievement' ? b.miles : b.kind === 'section' ? b.startMile : b.mile;
+      return mileA - mileB;
+    });
+  });
+
+  let keyMilestonesCounts = $derived(() => {
+    const walkableCount = townMilestoneItems.filter(t => t.category === '1.1').length;
+    const shuttleCount = townMilestoneItems.filter(t => t.category === '1.2').length;
+    return {
+      sections: sectionMilestoneItems.length,
+      achievements: achievementMilestoneItems.length,
+      walkableTowns: walkableCount,
+      shuttleTowns: shuttleCount,
+    };
   });
 
   // Trail mode calculations
@@ -478,14 +609,75 @@ hoggcountry.com/tools`;
         <span class="header-bar"></span>
         KEY MILESTONES
       </h3>
+      <div class="milestones-filters">
+        <button
+          type="button"
+          class="filter-pill"
+          class:active={keyMilestonesFilters.sections}
+          onclick={() => toggleKeyMilestonesFilter('sections')}
+        >
+          Sections <span class="pill-count">{keyMilestonesCounts.sections}</span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          class:active={keyMilestonesFilters.achievements}
+          onclick={() => toggleKeyMilestonesFilter('achievements')}
+        >
+          Achievements <span class="pill-count">{keyMilestonesCounts.achievements}</span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill walkable"
+          class:active={keyMilestonesFilters.walkableTowns}
+          onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
+        >
+          1.1 Walkable <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill shuttle"
+          class:active={keyMilestonesFilters.shuttleTowns}
+          onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
+        >
+          1.2 Shuttle <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
+        </button>
+      </div>
       <div class="milestones-grid">
-        {#each calculatedMilestones as ms}
-          <div class="milestone-card">
-            <div class="ms-miles">{ms.miles}</div>
-            <div class="ms-info">
-              <span class="ms-label">{ms.label}</span>
-              <span class="ms-date">{formatDateShort(ms.date)}</span>
-            </div>
+        {#each keyMilestonesItems as item}
+          <div
+            class="milestone-card"
+            class:achieved={mode === 'trail' && item.kind === 'achievement' && item.achieved}
+            class:town={item.kind === 'town'}
+            class:section={item.kind === 'section'}
+            class:walkable={item.kind === 'town' && item.category === '1.1'}
+            class:shuttle={item.kind === 'town' && item.category === '1.2'}
+          >
+            {#if item.kind === 'section'}
+              <div class="ms-miles range">{item.startMile.toFixed(0)}–{item.endMile.toFixed(0)}</div>
+              <div class="ms-info">
+                <span class="ms-label">
+                  <span class="ms-emoji">{item.emoji}</span>
+                  {item.name}
+                </span>
+                <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
+              </div>
+            {:else if item.kind === 'town'}
+              <div class="ms-miles">{item.mile.toFixed(0)}</div>
+              <div class="ms-info">
+                <span class="ms-label">{item.name}</span>
+                <div class="ms-meta">
+                  <span class="ms-tag {item.category === '1.1' ? 'walkable' : 'shuttle'}">{getTownTagLabel(item.category)}</span>
+                  <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
+                </div>
+              </div>
+            {:else}
+              <div class="ms-miles">{item.miles}</div>
+              <div class="ms-info">
+                <span class="ms-label">{item.label}</span>
+                <span class={mode === 'trail' && item.achieved ? 'ms-achieved' : 'ms-date'}>{getKeyMilestoneSubtitle(item)}</span>
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
@@ -645,18 +837,75 @@ hoggcountry.com/tools`;
         <span class="header-bar"></span>
         KEY MILESTONES
       </h3>
+      <div class="milestones-filters">
+        <button
+          type="button"
+          class="filter-pill"
+          class:active={keyMilestonesFilters.sections}
+          onclick={() => toggleKeyMilestonesFilter('sections')}
+        >
+          Sections <span class="pill-count">{keyMilestonesCounts.sections}</span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          class:active={keyMilestonesFilters.achievements}
+          onclick={() => toggleKeyMilestonesFilter('achievements')}
+        >
+          Achievements <span class="pill-count">{keyMilestonesCounts.achievements}</span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill walkable"
+          class:active={keyMilestonesFilters.walkableTowns}
+          onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
+        >
+          1.1 Walkable <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill shuttle"
+          class:active={keyMilestonesFilters.shuttleTowns}
+          onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
+        >
+          1.2 Shuttle <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
+        </button>
+      </div>
       <div class="milestones-grid">
-        {#each calculatedMilestones as ms}
-          <div class="milestone-card" class:achieved={currentMile >= ms.miles}>
-            <div class="ms-miles">{ms.miles}</div>
-            <div class="ms-info">
-              <span class="ms-label">{ms.label}</span>
-              {#if currentMile >= ms.miles}
-                <span class="ms-achieved">✓ Achieved</span>
-              {:else}
-                <span class="ms-date">{(ms.miles - currentMile).toFixed(0)} mi away</span>
-              {/if}
-            </div>
+        {#each keyMilestonesItems as item}
+          <div
+            class="milestone-card"
+            class:achieved={item.kind === 'achievement' && item.achieved}
+            class:town={item.kind === 'town'}
+            class:section={item.kind === 'section'}
+            class:walkable={item.kind === 'town' && item.category === '1.1'}
+            class:shuttle={item.kind === 'town' && item.category === '1.2'}
+          >
+            {#if item.kind === 'section'}
+              <div class="ms-miles range">{item.startMile.toFixed(0)}–{item.endMile.toFixed(0)}</div>
+              <div class="ms-info">
+                <span class="ms-label">
+                  <span class="ms-emoji">{item.emoji}</span>
+                  {item.name}
+                </span>
+                <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
+              </div>
+            {:else if item.kind === 'town'}
+              <div class="ms-miles">{item.mile.toFixed(0)}</div>
+              <div class="ms-info">
+                <span class="ms-label">{item.name}</span>
+                <div class="ms-meta">
+                  <span class="ms-tag {item.category === '1.1' ? 'walkable' : 'shuttle'}">{getTownTagLabel(item.category)}</span>
+                  <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
+                </div>
+              </div>
+            {:else}
+              <div class="ms-miles">{item.miles}</div>
+              <div class="ms-info">
+                <span class="ms-label">{item.label}</span>
+                <span class={item.achieved ? 'ms-achieved' : 'ms-date'}>{getKeyMilestoneSubtitle(item)}</span>
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
@@ -1324,6 +1573,63 @@ hoggcountry.com/tools`;
     border-bottom: 2px solid var(--border);
   }
 
+  .milestones-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.6rem;
+    background: rgba(15, 23, 42, 0.03);
+    border: 2px solid rgba(15, 23, 42, 0.12);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--pine);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .filter-pill:hover {
+    border-color: rgba(15, 23, 42, 0.22);
+    background: rgba(15, 23, 42, 0.05);
+  }
+
+  .filter-pill.active {
+    background: rgba(240, 224, 0, 0.14);
+    border-color: rgba(240, 224, 0, 0.55);
+  }
+
+  .filter-pill.walkable.active {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.45);
+  }
+
+  .filter-pill.shuttle.active {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.45);
+  }
+
+  .pill-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
   .milestones-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -1340,6 +1646,26 @@ hoggcountry.com/tools`;
     border-radius: 10px;
   }
 
+  .milestone-card.section {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.10), rgba(34, 197, 94, 0.02));
+    border-color: rgba(34, 197, 94, 0.35);
+  }
+
+  .milestone-card.town {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.10), rgba(59, 130, 246, 0.02));
+    border-color: rgba(59, 130, 246, 0.35);
+  }
+
+  .milestone-card.town.walkable {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.10), rgba(34, 197, 94, 0.02));
+    border-color: rgba(34, 197, 94, 0.35);
+  }
+
+  .milestone-card.town.shuttle {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.10), rgba(59, 130, 246, 0.02));
+    border-color: rgba(59, 130, 246, 0.35);
+  }
+
   .ms-miles {
     font-family: Oswald, sans-serif;
     font-size: 1.25rem;
@@ -1348,20 +1674,65 @@ hoggcountry.com/tools`;
     min-width: 50px;
   }
 
+  .ms-miles.range {
+    font-size: 0.95rem;
+    min-width: 72px;
+    letter-spacing: 0.02em;
+  }
+
   .ms-info {
     display: flex;
     flex-direction: column;
+    gap: 0.15rem;
   }
 
   .ms-label {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .ms-emoji {
+    font-size: 0.9rem;
+    line-height: 1;
   }
 
   .ms-date {
     font-size: 0.7rem;
     color: var(--muted);
+  }
+
+  .ms-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .ms-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.12rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    color: var(--pine);
+    background: rgba(15, 23, 42, 0.04);
+    line-height: 1.25;
+  }
+
+  .ms-tag.walkable {
+    color: #16a34a;
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.10);
+  }
+
+  .ms-tag.shuttle {
+    color: #2563eb;
+    border-color: rgba(59, 130, 246, 0.35);
+    background: rgba(59, 130, 246, 0.10);
   }
 
   /* Dashboard */

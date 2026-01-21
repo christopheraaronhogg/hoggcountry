@@ -36,6 +36,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@netlify/functions": "^5.1.2",
     "@types/js-yaml": "^4.0.9",
     "puppeteer": "^24.34.0"
   }
