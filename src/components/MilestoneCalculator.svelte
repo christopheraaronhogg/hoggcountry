@@ -534,6 +534,29 @@ hoggcountry.com/tools`;
     </div>
   </header>
 
+  <!-- Layer Filters (apply to timeline + milestone grid) -->
+  <section class="layers-section">
+    <div class="milestones-filters layers-filters">
+      <span class="filters-label">Layers:</span>
+      <button
+        type="button"
+        class="filter-pill walkable"
+        class:active={keyMilestonesFilters.walkableTowns}
+        onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
+      >
+        1.1 Walkable towns <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
+      </button>
+      <button
+        type="button"
+        class="filter-pill shuttle"
+        class:active={keyMilestonesFilters.shuttleTowns}
+        onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
+      >
+        1.2 Shuttle/Hitch towns <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
+      </button>
+    </div>
+  </section>
+
   {#if mode === 'planning'}
     <!-- PLANNING MODE -->
 
@@ -566,25 +589,6 @@ hoggcountry.com/tools`;
         <span class="header-bar"></span>
         SECTION BREAKDOWN
       </h3>
-      <div class="milestones-filters timeline-filters">
-        <span class="filters-label">Show towns:</span>
-        <button
-          type="button"
-          class="filter-pill walkable"
-          class:active={keyMilestonesFilters.walkableTowns}
-          onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
-        >
-          1.1 Walkable <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
-        </button>
-        <button
-          type="button"
-          class="filter-pill shuttle"
-          class:active={keyMilestonesFilters.shuttleTowns}
-          onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
-        >
-          1.2 Shuttle/Hitch <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
-        </button>
-      </div>
       <div class="timeline">
         {#each timelineItems() as item, i}
           {#if item.type === 'section'}
@@ -690,25 +694,6 @@ hoggcountry.com/tools`;
         <span class="header-bar"></span>
         KEY MILESTONES
       </h3>
-      <div class="milestones-filters">
-        <span class="filters-label">Add layers:</span>
-        <button
-          type="button"
-          class="filter-pill walkable"
-          class:active={keyMilestonesFilters.walkableTowns}
-          onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
-        >
-          1.1 Walkable <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
-        </button>
-        <button
-          type="button"
-          class="filter-pill shuttle"
-          class:active={keyMilestonesFilters.shuttleTowns}
-          onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
-        >
-          1.2 Shuttle/Hitch <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
-        </button>
-      </div>
       <div class="milestones-grid">
         {#each keyMilestonesItems as item}
           <div
@@ -792,25 +777,6 @@ hoggcountry.com/tools`;
         <span class="header-bar"></span>
         YOUR JOURNEY
       </h3>
-      <div class="milestones-filters timeline-filters">
-        <span class="filters-label">Show towns:</span>
-        <button
-          type="button"
-          class="filter-pill walkable"
-          class:active={keyMilestonesFilters.walkableTowns}
-          onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
-        >
-          1.1 Walkable <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
-        </button>
-        <button
-          type="button"
-          class="filter-pill shuttle"
-          class:active={keyMilestonesFilters.shuttleTowns}
-          onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
-        >
-          1.2 Shuttle/Hitch <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
-        </button>
-      </div>
       <div class="timeline">
         {#each timelineItems() as item, i}
           {#if item.type === 'section'}
@@ -947,25 +913,6 @@ hoggcountry.com/tools`;
         <span class="header-bar"></span>
         KEY MILESTONES
       </h3>
-      <div class="milestones-filters">
-        <span class="filters-label">Add layers:</span>
-        <button
-          type="button"
-          class="filter-pill walkable"
-          class:active={keyMilestonesFilters.walkableTowns}
-          onclick={() => toggleKeyMilestonesFilter('walkableTowns')}
-        >
-          1.1 Walkable <span class="pill-count">{keyMilestonesCounts.walkableTowns}</span>
-        </button>
-        <button
-          type="button"
-          class="filter-pill shuttle"
-          class:active={keyMilestonesFilters.shuttleTowns}
-          onclick={() => toggleKeyMilestonesFilter('shuttleTowns')}
-        >
-          1.2 Shuttle/Hitch <span class="pill-count">{keyMilestonesCounts.shuttleTowns}</span>
-        </button>
-      </div>
       <div class="milestones-grid">
         {#each keyMilestonesItems as item}
           <div
@@ -1715,6 +1662,12 @@ hoggcountry.com/tools`;
     border-bottom: 2px solid var(--border);
   }
 
+  .layers-section {
+    padding: 0.85rem 1.5rem;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+  }
+
   .milestones-filters {
     display: flex;
     flex-wrap: wrap;
@@ -1723,9 +1676,8 @@ hoggcountry.com/tools`;
     margin-bottom: 0.9rem;
   }
 
-  .timeline-filters {
-    margin-top: 0.5rem;
-    margin-bottom: 1.1rem;
+  .layers-filters {
+    margin-bottom: 0;
   }
 
   .filters-label {
