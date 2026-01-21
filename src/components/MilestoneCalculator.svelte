@@ -393,24 +393,6 @@
 
   let townMilestoneItems = $derived(buildTownMilestoneItems());
 
-  function buildSectionMilestoneItems() {
-    return calculatedSections.map(section => {
-      const status = getItemStatus(section.startMile, section.endMile);
-      const arrivalDate = getProjectedDate(section.startMile);
-      return {
-        kind: 'section',
-        name: section.name,
-        emoji: section.emoji,
-        startMile: section.startMile,
-        endMile: section.endMile,
-        status,
-        arrivalDate,
-      };
-    });
-  }
-
-  let sectionMilestoneItems = $derived(buildSectionMilestoneItems());
-
   function buildAchievementMilestoneItems() {
     return calculatedMilestones.map(ms => ({
       kind: 'achievement',
@@ -423,50 +405,10 @@
 
   let achievementMilestoneItems = $derived(buildAchievementMilestoneItems());
 
-  function getKeyMilestoneSubtitle(item) {
-    if (mode === 'planning') {
-      if (item.kind === 'achievement') return formatDateShort(item.date);
-      if (item.kind === 'section') return formatDateShort(item.arrivalDate);
-      if (item.kind === 'town') return formatDateShort(item.arrivalDate);
-      return '';
-    }
-
-    // trail mode
-    if (item.kind === 'achievement') {
-      return item.achieved ? '✓ Achieved' : `${(item.miles - currentMile).toFixed(0)} mi away`;
-    }
-    if (item.kind === 'section') {
-      if (item.status === 'completed') return '✓ Done';
-      if (item.status === 'current') return `${(item.endMile - currentMile).toFixed(0)} mi to section end`;
-      return `${(item.startMile - currentMile).toFixed(0)} mi to section start`;
-    }
-    if (item.kind === 'town') {
-      if (item.status === 'completed') return '✓ Visited';
-      return `${(item.mile - currentMile).toFixed(0)} mi away`;
-    }
-    return '';
+  function getAchievementSubtitle(ms) {
+    if (mode === 'planning') return formatDateShort(ms.date);
+    return ms.achieved ? '✓ Achieved' : `${(ms.miles - currentMile).toFixed(0)} mi away`;
   }
-
-  function buildKeyMilestonesItems() {
-    const townsFiltered = townMilestoneItems.filter(town => {
-      if (town.category === '1.1') return keyMilestonesFilters.walkableTowns;
-      return keyMilestonesFilters.shuttleTowns;
-    });
-
-    const items = [
-      ...sectionMilestoneItems,
-      ...achievementMilestoneItems,
-      ...townsFiltered,
-    ];
-
-    return items.sort((a, b) => {
-      const mileA = a.kind === 'achievement' ? a.miles : a.kind === 'section' ? a.startMile : a.mile;
-      const mileB = b.kind === 'achievement' ? b.miles : b.kind === 'section' ? b.startMile : b.mile;
-      return mileA - mileB;
-    });
-  }
-
-  let keyMilestonesItems = $derived(buildKeyMilestonesItems());
 
   function buildKeyMilestonesCounts() {
     const walkableCount = townMilestoneItems.filter(t => t.category === '1.1').length;
@@ -705,47 +647,13 @@ hoggcountry.com/tools`;
         KEY MILESTONES
       </h3>
       <div class="milestones-grid">
-        {#each keyMilestonesItems as item}
-          <div
-            class="milestone-card"
-            class:achieved={mode === 'trail' && item.kind === 'achievement' && item.achieved}
-            class:town={item.kind === 'town'}
-            class:section={item.kind === 'section'}
-            class:walkable={item.kind === 'town' && item.category === '1.1'}
-            class:shuttle={item.kind === 'town' && item.category === '1.2'}
-          >
-            {#if item.kind === 'section'}
-              <div class="ms-miles range">{item.startMile.toFixed(0)}–{item.endMile.toFixed(0)}</div>
-              <div class="ms-info">
-                <span class="ms-label">
-                  <span class="ms-emoji">{item.emoji}</span>
-                  {item.name}
-                </span>
-                <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
-              </div>
-            {:else if item.kind === 'town'}
-              <div class="ms-miles">{item.mile.toFixed(0)}</div>
-              <div class="ms-info">
-                <span class="ms-label">{item.name}</span>
-                <div class="ms-meta">
-                  <span class="ms-tag {item.category === '1.1' ? 'walkable' : 'shuttle'}">{getTownTagLabel(item.category)}</span>
-                  <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
-                </div>
-                {#if item.services?.length}
-                  <div class="ms-service-icons" aria-label="Town services">
-                    {#each getServiceChips(item.services) as svc (svc.key)}
-                      <span class="ms-service-icon" title={svc.label} aria-label={svc.label}>{svc.icon}</span>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {:else}
-              <div class="ms-miles">{item.miles}</div>
-              <div class="ms-info">
-                <span class="ms-label">{item.label}</span>
-                <span class={mode === 'trail' && item.achieved ? 'ms-achieved' : 'ms-date'}>{getKeyMilestoneSubtitle(item)}</span>
-              </div>
-            {/if}
+        {#each achievementMilestoneItems as ms}
+          <div class="milestone-card" class:achieved={mode === 'trail' && ms.achieved}>
+            <div class="ms-miles">{ms.miles}</div>
+            <div class="ms-info">
+              <span class="ms-label">{ms.label}</span>
+              <span class={mode === 'trail' && ms.achieved ? 'ms-achieved' : 'ms-date'}>{getAchievementSubtitle(ms)}</span>
+            </div>
           </div>
         {/each}
       </div>
@@ -924,47 +832,13 @@ hoggcountry.com/tools`;
         KEY MILESTONES
       </h3>
       <div class="milestones-grid">
-        {#each keyMilestonesItems as item}
-          <div
-            class="milestone-card"
-            class:achieved={item.kind === 'achievement' && item.achieved}
-            class:town={item.kind === 'town'}
-            class:section={item.kind === 'section'}
-            class:walkable={item.kind === 'town' && item.category === '1.1'}
-            class:shuttle={item.kind === 'town' && item.category === '1.2'}
-          >
-            {#if item.kind === 'section'}
-              <div class="ms-miles range">{item.startMile.toFixed(0)}–{item.endMile.toFixed(0)}</div>
-              <div class="ms-info">
-                <span class="ms-label">
-                  <span class="ms-emoji">{item.emoji}</span>
-                  {item.name}
-                </span>
-                <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
-              </div>
-            {:else if item.kind === 'town'}
-              <div class="ms-miles">{item.mile.toFixed(0)}</div>
-              <div class="ms-info">
-                <span class="ms-label">{item.name}</span>
-                <div class="ms-meta">
-                  <span class="ms-tag {item.category === '1.1' ? 'walkable' : 'shuttle'}">{getTownTagLabel(item.category)}</span>
-                  <span class="ms-date">{getKeyMilestoneSubtitle(item)}</span>
-                </div>
-                {#if item.services?.length}
-                  <div class="ms-service-icons" aria-label="Town services">
-                    {#each getServiceChips(item.services) as svc (svc.key)}
-                      <span class="ms-service-icon" title={svc.label} aria-label={svc.label}>{svc.icon}</span>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {:else}
-              <div class="ms-miles">{item.miles}</div>
-              <div class="ms-info">
-                <span class="ms-label">{item.label}</span>
-                <span class={item.achieved ? 'ms-achieved' : 'ms-date'}>{getKeyMilestoneSubtitle(item)}</span>
-              </div>
-            {/if}
+        {#each achievementMilestoneItems as ms}
+          <div class="milestone-card" class:achieved={ms.achieved}>
+            <div class="ms-miles">{ms.miles}</div>
+            <div class="ms-info">
+              <span class="ms-label">{ms.label}</span>
+              <span class={ms.achieved ? 'ms-achieved' : 'ms-date'}>{getAchievementSubtitle(ms)}</span>
+            </div>
           </div>
         {/each}
       </div>
