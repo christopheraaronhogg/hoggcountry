@@ -178,10 +178,33 @@
   let maxCategoryWeight = $derived(Math.max(...categoryWeights.map(c => c.weight), 1));
 
   const big3Categories = ['shelter', 'sleep', 'pack'];
-  let big3Weight = $derived(categoryWeights.filter(c => big3Categories.includes(c.id)).reduce((sum, c) => sum + c.weight, 0));
+  let backpackOnlyWeightOz = $derived.by(() => {
+    const explicitBackpack = editableItems.find(item => item.id === 'pack' && item.category === 'pack' && !item.worn);
+    if (explicitBackpack) return getItemWeight(explicitBackpack);
+
+    const packItems = editableItems.filter(item => item.category === 'pack' && !item.worn);
+    if (packItems.length === 0) return 0;
+    return Math.max(...packItems.map(getItemWeight));
+  });
+
+  let big3Weight = $derived.by(() => {
+    const shelterWeight = categoryWeights.find(c => c.id === 'shelter')?.weight ?? 0;
+    const sleepWeight = categoryWeights.find(c => c.id === 'sleep')?.weight ?? 0;
+    return shelterWeight + sleepWeight + backpackOnlyWeightOz;
+  });
   let big3WeightLbs = $derived(big3Weight / 16);
-  let big3Breakdown = $derived(
+  let big3Breakdown = $derived.by(() =>
     big3Categories.map(catId => {
+      if (catId === 'pack') {
+        const packMeta = categories[catId];
+        return {
+          id: catId,
+          name: packMeta?.name || catId,
+          icon: packMeta?.icon || '?',
+          weight: backpackOnlyWeightOz
+        };
+      }
+
       const cat = categoryWeights.find(c => c.id === catId);
       return cat || { id: catId, name: categories[catId]?.name || catId, weight: 0, icon: categories[catId]?.icon || '?' };
     })
@@ -192,10 +215,9 @@
     const tips = [];
     const shelterCat = categoryWeights.find(c => c.id === 'shelter');
     const sleepCat = categoryWeights.find(c => c.id === 'sleep');
-    const packCat = categoryWeights.find(c => c.id === 'pack');
     if (shelterCat && shelterCat.weight > 48) tips.push({ icon: '🏕️', text: 'Shelter over 3 lbs—consider a tarp/hammock or DCF tent' });
     if (sleepCat && sleepCat.weight > 56) tips.push({ icon: '😴', text: 'Sleep system over 3.5 lbs—quilt + inflatable pad saves weight' });
-    if (packCat && packCat.weight > 48) tips.push({ icon: '🎒', text: 'Pack over 3 lbs—frameless packs work under 15 lb base' });
+    if (backpackOnlyWeightOz > 48) tips.push({ icon: '🎒', text: 'Pack over 3 lbs—frameless packs work under 15 lb base' });
     if (big3WeightLbs > 12) tips.push({ icon: '⚖️', text: 'Big 3 over 12 lbs—focus here for biggest savings' });
     if (baseWeightLbs < 10 && tips.length === 0) tips.push({ icon: '🏆', text: 'Ultralight achieved! Focus on durability now' });
     if (tips.length === 0 && baseWeightLbs < 15) tips.push({ icon: '✅', text: 'Solid lightweight setup—enjoy the miles!' });
