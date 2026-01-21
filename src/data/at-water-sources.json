@@ -1,0 +1,1232 @@
+[
+  {
+    "mile": 0.6,
+    "name": "Springer Mountain Spring",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 2.8,
+    "name": "Stover Creek",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 7.5,
+    "name": "Hawk Mountain Shelter Spring",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 8,
+    "name": "Hightower Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 10.8,
+    "name": "Cooper Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 15.8,
+    "name": "Gooch Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 19.3,
+    "name": "Woody Gap - USFS",
+    "type": "piped",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 21.7,
+    "name": "Big Cedar Mountain Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 24.1,
+    "name": "Woods Hole Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 27.8,
+    "name": "Blood Mountain Spring",
+    "type": "spring",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 30.7,
+    "name": "Neels Gap - Mountain Crossings",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 34.3,
+    "name": "Whitley Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 38.6,
+    "name": "Low Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 42.5,
+    "name": "Chattahoochee Spring",
+    "type": "spring",
+    "offTrail": 0
+  },
+  {
+    "mile": 47.2,
+    "name": "Blue Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 52.8,
+    "name": "Unicoi Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 56.4,
+    "name": "Tray Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 59.5,
+    "name": "Indian Grave Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 62.3,
+    "name": "Addis Gap Spring",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 69.4,
+    "name": "Dicks Creek Gap",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 73.8,
+    "name": "Plumorchard Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 83.1,
+    "name": "Muskrat Creek Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 88.7,
+    "name": "Standing Indian Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 91.8,
+    "name": "Beech Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 95.7,
+    "name": "Winding Stair Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 99.7,
+    "name": "Siler Bald Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 106.2,
+    "name": "Cold Spring Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 110.3,
+    "name": "Rock Gap - Franklin access",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 118,
+    "name": "Wayah Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 125.2,
+    "name": "Nantahala River",
+    "type": "river",
+    "offTrail": 0
+  },
+  {
+    "mile": 131,
+    "name": "Sassafras Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 137.1,
+    "name": "Wesser - NOC",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 143.4,
+    "name": "Rufus Morgan Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 152.3,
+    "name": "Cable Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 157.4,
+    "name": "Yellow Creek Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 164.2,
+    "name": "Fontana Dam Shelter",
+    "type": "piped",
+    "offTrail": 0
+  },
+  {
+    "mile": 165.7,
+    "name": "Fontana Dam Visitor Center",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 170.5,
+    "name": "Birch Spring Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 176,
+    "name": "Mollies Ridge Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 181.6,
+    "name": "Russell Field Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 186.9,
+    "name": "Spence Field Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 191.9,
+    "name": "Derrick Knob Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 196.6,
+    "name": "Silers Bald Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 200.4,
+    "name": "Double Spring Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 206.2,
+    "name": "Newfound Gap - Restrooms",
+    "type": "piped",
+    "offTrail": 0
+  },
+  {
+    "mile": 210.7,
+    "name": "Icewater Spring Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 217,
+    "name": "Pecks Corner Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 222.9,
+    "name": "Tri-Corner Knob Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 228.1,
+    "name": "Cosby Knob Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 234.3,
+    "name": "Davenport Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 241,
+    "name": "Davenport Gap - Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 245.8,
+    "name": "Groundhog Creek Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 255.5,
+    "name": "Max Patch Stream",
+    "type": "stream",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 260.1,
+    "name": "Roaring Fork Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 266,
+    "name": "Walnut Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 273.7,
+    "name": "Hot Springs - Town",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 280,
+    "name": "Spring Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 288.6,
+    "name": "Little Laurel Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 295,
+    "name": "Allen Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 302.4,
+    "name": "Flint Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 313.9,
+    "name": "Devils Fork Gap Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 320.7,
+    "name": "Hogback Ridge Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 328.3,
+    "name": "Nolichucky River",
+    "type": "river",
+    "offTrail": 0
+  },
+  {
+    "mile": 342.3,
+    "name": "Erwin - Town",
+    "type": "town",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 350.3,
+    "name": "Curley Maple Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 357.5,
+    "name": "Cherry Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 363.7,
+    "name": "Roan High Knob Shelter",
+    "type": "spring",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 374,
+    "name": "Overmountain Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 381.9,
+    "name": "Laurel Fork Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 386.1,
+    "name": "Damascus - Town",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 395.6,
+    "name": "Saunders Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 406.2,
+    "name": "Lost Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 421.7,
+    "name": "Raccoon Branch Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 439.4,
+    "name": "Old Orchard Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 454.2,
+    "name": "Chatfield Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 466,
+    "name": "VA 16 - Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 477.8,
+    "name": "Settlers Museum Spring",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 491,
+    "name": "Jenkins Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 508.7,
+    "name": "Atkins - Town",
+    "type": "town",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 520.8,
+    "name": "Davis Path Shelter",
+    "type": "spring",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 533.7,
+    "name": "Chestnut Knob Shelter",
+    "type": "spring",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 550.6,
+    "name": "Pearisburg - Town",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 563.5,
+    "name": "War Spur Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 580.5,
+    "name": "Laurel Creek Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 594.2,
+    "name": "Niday Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 606.8,
+    "name": "Dragons Tooth Parking",
+    "type": "stream",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 625.8,
+    "name": "Daleville - Town",
+    "type": "town",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 644.1,
+    "name": "Wilson Creek Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 660,
+    "name": "Bobblets Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 675.5,
+    "name": "Cove Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 687.3,
+    "name": "Seeley-Woodworth Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 702.3,
+    "name": "Waynesboro - Town",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 710.5,
+    "name": "Calf Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 725.4,
+    "name": "Blackrock Hut",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 741.2,
+    "name": "Loft Mountain Wayside",
+    "type": "town",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 757.3,
+    "name": "Hightop Hut",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 769,
+    "name": "Lewis Mountain Campstore",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 785.5,
+    "name": "Big Meadows",
+    "type": "town",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 796,
+    "name": "Rock Spring Hut",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 808,
+    "name": "Skyland Resort",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 826,
+    "name": "Pass Mountain Hut",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 838.5,
+    "name": "Elkwallow Wayside",
+    "type": "town",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 858.8,
+    "name": "Tom Floyd Wayside",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 876.8,
+    "name": "Manassas Gap - Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 891.3,
+    "name": "Rod Hollow Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 910.2,
+    "name": "Sam Moore Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 925,
+    "name": "Blackburn Trail Center",
+    "type": "piped",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 945.5,
+    "name": "David Lesser Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 969.6,
+    "name": "Bears Den Hostel",
+    "type": "town",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 988,
+    "name": "Blackburn Center",
+    "type": "piped",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 999.1,
+    "name": "Ed Garvey Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1007.2,
+    "name": "Crampton Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1025,
+    "name": "Harpers Ferry - Town",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1035.5,
+    "name": "Pine Knob Shelter",
+    "type": "spring",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 1048.9,
+    "name": "Tumbling Run Shelters",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1066.1,
+    "name": "Rocky Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 1078.5,
+    "name": "Antietam Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1094.4,
+    "name": "Pen Mar County Park",
+    "type": "piped",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1108.5,
+    "name": "Quarry Gap Shelters",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1123,
+    "name": "Birch Run Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1141,
+    "name": "Duncannon - Town",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1160.5,
+    "name": "Peters Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 1178,
+    "name": "Rausch Gap Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1194,
+    "name": "501 Shelter",
+    "type": "piped",
+    "offTrail": 0
+  },
+  {
+    "mile": 1207.3,
+    "name": "Port Clinton - Town",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1220,
+    "name": "Windsor Furnace Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 1238,
+    "name": "Lehigh Gap - Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 1253.4,
+    "name": "Leroy Smith Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1265.6,
+    "name": "Wind Gap - Town",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 1276.8,
+    "name": "Kirkridge Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1290,
+    "name": "Delaware Water Gap - Town",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1305,
+    "name": "Mohican Outdoor Center",
+    "type": "town",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 1318.2,
+    "name": "Brink Road Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1339.5,
+    "name": "High Point Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 1353.8,
+    "name": "Unionville - Town",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 1370,
+    "name": "Pochuck Creek Boardwalk",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 1385,
+    "name": "Wildcat Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1395.2,
+    "name": "Wawayanda Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1409.6,
+    "name": "Bear Mountain - Facilities",
+    "type": "piped",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1433.5,
+    "name": "Arden Valley Road - Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 1446,
+    "name": "William Brien Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1460.5,
+    "name": "RPH Shelter",
+    "type": "piped",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1479.5,
+    "name": "Kent - Town",
+    "type": "town",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 1494.7,
+    "name": "Silver Hill Campsite",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1508,
+    "name": "Pine Swamp Brook Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1521.1,
+    "name": "Salisbury - Town",
+    "type": "town",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 1534.4,
+    "name": "Riga Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1549.5,
+    "name": "Sage Ravine Campsite",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 1566.4,
+    "name": "Great Barrington - Access",
+    "type": "town",
+    "offTrail": 2
+  },
+  {
+    "mile": 1579.7,
+    "name": "Upper Goose Pond Cabin",
+    "type": "stream",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 1595.3,
+    "name": "Dalton - Town",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1610.2,
+    "name": "Cheshire - Town",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 1621.5,
+    "name": "Wilbur Clearing Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1630.5,
+    "name": "North Adams - Access",
+    "type": "town",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 1643,
+    "name": "Seth Warner Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1650.3,
+    "name": "Bennington - Access",
+    "type": "town",
+    "offTrail": 2
+  },
+  {
+    "mile": 1667.5,
+    "name": "Story Spring Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1684,
+    "name": "Stratton Pond Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1699.3,
+    "name": "Manchester - Access",
+    "type": "town",
+    "offTrail": 3
+  },
+  {
+    "mile": 1710.5,
+    "name": "Griffith Lake Tenting",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1724.5,
+    "name": "Little Rock Pond Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1741.8,
+    "name": "Killington - Access",
+    "type": "town",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 1755,
+    "name": "Stony Brook Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1773.3,
+    "name": "Hanover - Town",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1784,
+    "name": "Moose Mountain Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 1797.5,
+    "name": "Hexacuba Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1806.5,
+    "name": "Ore Hill Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1822.8,
+    "name": "Lincoln - Access",
+    "type": "town",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 1830,
+    "name": "Eliza Brook Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1843.4,
+    "name": "Franconia Notch - Lafayette",
+    "type": "piped",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 1850.2,
+    "name": "Garfield Ridge Shelter",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1856,
+    "name": "Galehead Hut",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1862.1,
+    "name": "Zealand Falls Hut",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1868,
+    "name": "Ethan Pond Campsite",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1875,
+    "name": "Crawford Notch - Highland Ctr",
+    "type": "town",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 1879.5,
+    "name": "Lakes of the Clouds Hut",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1884,
+    "name": "Madison Spring Hut",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1890,
+    "name": "Pinkham Notch - AMC",
+    "type": "town",
+    "offTrail": 0
+  },
+  {
+    "mile": 1897,
+    "name": "Gorham - Access",
+    "type": "town",
+    "offTrail": 0.5
+  },
+  {
+    "mile": 1905,
+    "name": "Gentian Pond Campsite",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1920.4,
+    "name": "Carlo Col Shelter",
+    "type": "spring",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 1932.7,
+    "name": "Full Goose Shelter",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1940.1,
+    "name": "Andover - Access",
+    "type": "town",
+    "offTrail": 2
+  },
+  {
+    "mile": 1954,
+    "name": "Surplus Pond",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1963.5,
+    "name": "Bemis Mountain Lean-to",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 1976,
+    "name": "Stratton - Access",
+    "type": "town",
+    "offTrail": 1
+  },
+  {
+    "mile": 1991.5,
+    "name": "Horns Pond Lean-tos",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2010.3,
+    "name": "Caratunk - Access",
+    "type": "town",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 2020,
+    "name": "Pleasant Pond Lean-to",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2032.5,
+    "name": "Bald Mountain Stream",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 2049.5,
+    "name": "Moxie Bald Lean-to",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2063,
+    "name": "Horseshoe Canyon Lean-to",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2075,
+    "name": "Leeman Brook Lean-to",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2090,
+    "name": "Monson - LAST RESUPPLY",
+    "type": "town",
+    "offTrail": 0.3
+  },
+  {
+    "mile": 2095,
+    "name": "Spectacle Pond",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2105,
+    "name": "Little Wilson Falls",
+    "type": "stream",
+    "offTrail": 0
+  },
+  {
+    "mile": 2115.5,
+    "name": "Long Pond Stream Lean-to",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2127,
+    "name": "Cloud Pond Lean-to",
+    "type": "stream",
+    "offTrail": 0.2
+  },
+  {
+    "mile": 2137,
+    "name": "Chairback Gap Lean-to",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2148,
+    "name": "Sidney Tappan Campsite",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2158.5,
+    "name": "White House Landing",
+    "type": "town",
+    "offTrail": 1
+  },
+  {
+    "mile": 2168,
+    "name": "Nahmakanta Stream Campsite",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2178.5,
+    "name": "Rainbow Spring Campsite",
+    "type": "spring",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2186,
+    "name": "Hurd Brook Lean-to",
+    "type": "stream",
+    "offTrail": 0.1
+  },
+  {
+    "mile": 2192.5,
+    "name": "Katahdin Stream Campground",
+    "type": "piped",
+    "offTrail": 0
+  }
+]
