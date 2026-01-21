@@ -11,17 +11,17 @@
   // Common trail devices with typical power consumption
   const defaultDevices = [
     { id: 'phone', name: 'Smartphone', icon: '📱', dailyDraw: 3500, capacity: 4500, priority: 1, essential: true, chargeFreq: 'nightly' },
-    { id: 'garmin', name: 'Garmin inReach', icon: '📡', dailyDraw: 70, capacity: 350, priority: 2, essential: true, chargeFreq: '5-7 days' },
+    { id: 'gps', name: 'GPS / Sat Messenger', icon: '📡', dailyDraw: 70, capacity: 350, priority: 2, essential: true, chargeFreq: '5-7 days' },
     { id: 'watch', name: 'Smartwatch', icon: '⌚', dailyDraw: 200, capacity: 400, priority: 3, essential: false, chargeFreq: '2 days' },
     { id: 'headlamp', name: 'Headlamp', icon: '🔦', dailyDraw: 100, capacity: 500, priority: 4, essential: false, chargeFreq: '4-5 days' },
-    { id: 'camera', name: 'Camera/GoPro', icon: '📷', dailyDraw: 500, capacity: 1500, priority: 5, essential: false, chargeFreq: '2-3 days' },
+    { id: 'camera', name: 'Camera / Action Cam', icon: '📷', dailyDraw: 500, capacity: 1500, priority: 5, essential: false, chargeFreq: '2-3 days' },
     { id: 'earbuds', name: 'Earbuds', icon: '🎧', dailyDraw: 50, capacity: 250, priority: 6, essential: false, chargeFreq: '4-5 days' },
   ];
 
   // Default device levels
   const defaultDeviceLevels = {
     phone: 85,
-    garmin: 70,
+    gps: 70,
     watch: 60,
     headlamp: 80,
     camera: 100,
@@ -29,9 +29,13 @@
   };
 
   // User's device setup (localStorage)
-  let devices = $state([...defaultDevices.slice(0, 4)]); // Start with phone, garmin, watch, headlamp
-  let powerBankCapacity = $state(30000); // mAh (Anker Nano 20K + Nitecore 10K)
+  let devices = $state([...defaultDevices.slice(0, 4)]); // Start with phone, GPS/sat messenger, watch, headlamp
+  let powerBankCapacity = $state(30000); // mAh (rated)
   let powerBankCurrent = $state(100); // percentage
+
+  // USB output usable capacity estimate (accounts for voltage step-up + conversion losses)
+  const USABLE_MAH_PER_10000_RATED = 6300;
+  const USABLE_MAH_FACTOR = USABLE_MAH_PER_10000_RATED / 10000;
 
   // Device battery levels
   let deviceLevels = $state({ ...defaultDeviceLevels });
@@ -59,9 +63,14 @@
       const saved = localStorage.getItem('powerManager');
       if (saved) {
         const parsed = JSON.parse(saved);
+        const legacyIdMap = { garmin: 'gps' };
+
         // Validate devices array
         if (Array.isArray(parsed.devices) && parsed.devices.length > 0 && parsed.devices.every(d => d && d.id && typeof d.dailyDraw === 'number')) {
-          devices = parsed.devices;
+          const normalizedDevices = parsed.devices
+            .map((d) => getDevice(legacyIdMap[d.id] || d.id))
+            .filter(Boolean);
+          if (normalizedDevices.length > 0) devices = normalizedDevices;
         }
         if (typeof parsed.powerBankCapacity === 'number' && parsed.powerBankCapacity > 0) {
           powerBankCapacity = parsed.powerBankCapacity;
@@ -70,7 +79,12 @@
           powerBankCurrent = parsed.powerBankCurrent;
         }
         if (parsed.deviceLevels && typeof parsed.deviceLevels === 'object') {
-          deviceLevels = { ...defaultDeviceLevels, ...parsed.deviceLevels };
+          const migratedLevels = { ...parsed.deviceLevels };
+          if (typeof migratedLevels.garmin === 'number' && typeof migratedLevels.gps !== 'number') {
+            migratedLevels.gps = migratedLevels.garmin;
+          }
+          delete migratedLevels.garmin;
+          deviceLevels = { ...defaultDeviceLevels, ...migratedLevels };
         }
         if (typeof parsed.daysSinceTown === 'number') {
           daysSinceTown = parsed.daysSinceTown;
@@ -107,8 +121,11 @@
   // Calculate daily draw with power save mode (30% reduction)
   let dailyDrawSave = $derived(Math.round(dailyDraw * 0.7));
 
+  // Usable power in bank (mAh @ USB output estimate)
+  let usableBankCapacity = $derived(Math.round(powerBankCapacity * USABLE_MAH_FACTOR));
+
   // Available power in bank
-  let availablePower = $derived(Math.round(powerBankCapacity * (powerBankCurrent / 100)));
+  let availablePower = $derived(Math.round(usableBankCapacity * (powerBankCurrent / 100)));
 
   // Days of power remaining
   let daysRemaining = $derived(Math.floor(availablePower / dailyDraw));
@@ -182,7 +199,7 @@
   const powerSaveActions = [
     { device: 'Phone', actions: ['Low Power Mode ON', 'Brightness <40%', 'Delay uploads', 'Close background apps'] },
     { device: 'Smartwatch', actions: ['Disable activity tracking', 'Reduce notifications', 'Theater mode'] },
-    { device: 'Garmin', actions: ['Tracking interval → 30 min', 'Disable weather updates'] },
+    { device: 'GPS / Sat Messenger', actions: ['Tracking interval → 30 min', 'Disable weather updates'] },
     { device: 'Camera', actions: ['No video unless exceptional', 'Reduce photo frequency'] }
   ];
 
@@ -242,7 +259,7 @@
         <div class="stat-block">
           <div class="stat-number">{availablePower.toLocaleString()}</div>
           <div class="stat-unit">mAh</div>
-          <div class="stat-desc">Available</div>
+          <div class="stat-desc">Usable</div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-block highlight">
@@ -359,7 +376,7 @@
 
         <div class="budget-grid">
           <div class="budget-item">
-            <span class="budget-label">Bank Capacity</span>
+            <span class="budget-label">Bank Capacity (rated)</span>
             <div class="budget-input-group">
               <input
                 type="number"
@@ -376,6 +393,11 @@
           <div class="budget-item">
             <span class="budget-label">Daily Draw</span>
             <span class="budget-value">{dailyDraw.toLocaleString()} mAh</span>
+          </div>
+
+          <div class="budget-item">
+            <span class="budget-label">Usable Capacity</span>
+            <span class="budget-value">{usableBankCapacity.toLocaleString()} mAh</span>
           </div>
 
           <div class="budget-item highlight">
@@ -421,8 +443,8 @@
       <div class="info-card">
         <span class="info-icon">💡</span>
         <p class="info-text">
-          At your current draw, a full {powerBankCapacity.toLocaleString()} mAh bank lasts ~{Math.floor(powerBankCapacity / dailyDraw)} days.
-          With power save mode, that extends to ~{Math.floor(powerBankCapacity / dailyDrawSave)} days.
+          A {powerBankCapacity.toLocaleString()} mAh rated bank typically delivers ~{usableBankCapacity.toLocaleString()} mAh usable (≈{USABLE_MAH_PER_10000_RATED.toLocaleString()} per 10,000 mAh).
+          At your current draw, that lasts ~{Math.floor(usableBankCapacity / dailyDraw)} days, or ~{Math.floor(usableBankCapacity / dailyDrawSave)} with power save.
         </p>
       </div>
     </section>
@@ -537,7 +559,7 @@
         <h4 class="rules-title">Charging Priority Rules</h4>
         <div class="rule-row critical">
           <span class="rule-badge">NEVER SACRIFICE</span>
-          <span class="rule-devices">Phone, Garmin inReach</span>
+          <span class="rule-devices">Phone, GPS / Sat Messenger</span>
         </div>
         <div class="rule-row warning">
           <span class="rule-badge">LIMIT IF NEEDED</span>
