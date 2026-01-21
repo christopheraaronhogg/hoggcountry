@@ -396,6 +396,7 @@
                         oninput={(event) => updateItem(item.id, 'name', event.currentTarget.value)}
                       />
                       {#if item.tier === 1}<span class="item-tag essential">Essential</span>{/if}
+                      {#if item.worn}<span class="item-tag worn">Worn</span>{/if}
                     </div>
                     <div class="item-meta">
                       <input
@@ -408,18 +409,23 @@
                         value={item.weight}
                         oninput={(event) => updateItem(item.id, 'weight', event.currentTarget.value)}
                       />
-                    </div>
-                    <div class="item-actions">
-                      <label class="item-toggle">
-                        <input
-                          type="checkbox"
-                          checked={item.worn}
-                          onchange={(event) => updateItem(item.id, 'worn', event.currentTarget.checked)}
-                        />
-                        Worn
-                      </label>
-                      <button class="item-remove" onclick={() => removeItem(item.id)} aria-label="Remove item">
-                        Remove
+                      <button
+                        type="button"
+                        class="item-icon-btn worn"
+                        class:isOn={item.worn}
+                        aria-label="Toggle worn weight"
+                        aria-pressed={item.worn}
+                        onclick={() => updateItem(item.id, 'worn', !item.worn)}
+                      >
+                        👟
+                      </button>
+                      <button
+                        type="button"
+                        class="item-icon-btn remove"
+                        aria-label="Remove item"
+                        onclick={() => removeItem(item.id)}
+                      >
+                        ✕
                       </button>
                     </div>
                   </div>
@@ -986,8 +992,8 @@
   .gear-item {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.6rem 1rem;
-    padding: 0.75rem 0;
+    gap: 0.75rem;
+    padding: 0.65rem 0;
     border-bottom: 1px dashed var(--border);
     font-size: 0.8rem;
   }
@@ -996,22 +1002,14 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
   }
 
   .item-meta {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.75rem;
-  }
-
-
-  .item-actions {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.45rem;
   }
 
   .item-input,
@@ -1025,6 +1023,11 @@
     color: var(--ink);
   }
 
+  .item-input {
+    flex: 1;
+    min-width: 0;
+  }
+
   .item-input:focus,
   .item-weight-input:focus {
     outline: none;
@@ -1033,8 +1036,19 @@
   }
 
   .item-weight-input {
-    max-width: 90px;
+    max-width: 88px;
     text-align: right;
+  }
+
+  .item-weight-input::-webkit-outer-spin-button,
+  .item-weight-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .item-weight-input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
   }
 
   .item-input::placeholder,
@@ -1042,36 +1056,48 @@
     color: color-mix(in srgb, var(--muted) 70%, transparent);
   }
 
-  .item-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .item-icon-btn {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
     color: var(--muted);
-  }
-
-  .item-toggle input {
-    accent-color: var(--pine);
-  }
-
-  .item-remove {
-    border: none;
-    background: none;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+    font-size: 0.95rem;
+  }
+
+  .item-icon-btn:hover {
+    border-color: var(--alpine);
+    background: color-mix(in srgb, var(--alpine) 8%, #fff);
+    color: var(--pine);
+  }
+
+  .item-icon-btn:focus {
+    outline: none;
+    border-color: var(--alpine);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--alpine) 25%, transparent);
+  }
+
+  .item-icon-btn.worn.isOn {
+    background: var(--pine);
+    border-color: var(--pine);
+    color: #fff;
+  }
+
+  .item-icon-btn.remove {
     color: #b91c1c;
   }
 
-  .item-remove:hover {
+  .item-icon-btn.remove:hover {
+    border-color: #b91c1c;
+    background: color-mix(in srgb, #b91c1c 8%, #fff);
     color: #7f1d1d;
   }
-
 
   .item-add {
     margin-top: 0.5rem;
@@ -1116,8 +1142,9 @@
   }
 
   .item-tag.worn {
-    background: var(--muted);
-    color: #fff;
+    background: color-mix(in srgb, var(--muted) 12%, #fff);
+    border: 1px solid color-mix(in srgb, var(--muted) 28%, #fff);
+    color: var(--muted);
   }
 
 
