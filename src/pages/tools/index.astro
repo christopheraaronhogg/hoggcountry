@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ToolsApp from '../../components/ToolsApp.svelte';
+import ToolsDashboard from '../../components/tools/ToolsDashboard.svelte';
 
 const title = "Trail Tools — Hogg Country";
 const description = "Interactive tools for AT thru-hiking: milestone planner, gear calculator, daylight calculator, and more.";
@@ -14,7 +14,7 @@ const description = "Interactive tools for AT thru-hiking: milestone planner, ge
   </section>
 
   <div class="container tools-container">
-    <ToolsApp client:load />
+    <ToolsDashboard client:load />
   </div>
 </BaseLayout>
 

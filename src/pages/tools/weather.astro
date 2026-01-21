@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolPage from '../../components/tools/ToolPage.svelte';
+
+const title = "Weather Assessor — Trail Tools";
+const description = "Check weather conditions, heat zones, and daylight hours for your current trail position.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="container tool-container">
+    <ToolPage client:load toolId="weather" toolName="Weather Assessor" />
+  </div>
+</BaseLayout>
+
+<style>
+  .tool-container {
+    padding: 2rem 0 4rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+</style>

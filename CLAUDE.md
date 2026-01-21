@@ -113,6 +113,7 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 
 ## Current Session Tasks
+- [ ] Implement *(16:34)*
 - [x] Maybe dashboard + separate routes is good *(16:03)*
 - [x] Go with the former solution *(02:00)*
 
