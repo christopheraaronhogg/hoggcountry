@@ -468,19 +468,6 @@
           <span class="tool-desc">Build fitness</span>
         </a>
 
-        <a href="/tools#geartrans" class="tool-card">
-          <div class="tool-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 1l4 4-4 4"/>
-              <path d="M3 11V9a4 4 0 014-4h14"/>
-              <path d="M7 23l-4-4 4-4"/>
-              <path d="M21 13v2a4 4 0 01-4 4H3"/>
-            </svg>
-          </div>
-          <span class="tool-name">Gear Swap</span>
-          <span class="tool-desc">Transition planner</span>
-        </a>
-
         <a href="/tools#emergency" class="tool-card">
           <div class="tool-icon emergency">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

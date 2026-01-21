@@ -86,8 +86,7 @@
     { name: 'Water', icon: '💧', href: '/tools#water' },
     { name: 'Budget', icon: '💰', href: '/tools#budget' },
     { name: 'Mail Drops', icon: '📬', href: '/tools#mail' },
-    { name: 'Power', icon: '🔋', href: '/tools#power' },
-    { name: 'Gear Swap', icon: '🔄', href: '/tools#geartrans' }
+    { name: 'Power', icon: '🔋', href: '/tools#power' }
   ];
 
   // Activity feed

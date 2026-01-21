@@ -39,13 +39,13 @@ A complete 21-chapter thru-hiking manual covering gear, clothing, water, shelter
 | **Weather** | Weather assessment, heat zones, and daylight calculator |
 | **Milestones** | Journey timeline and pace planning |
 | **Pack** | Gear list builder with weight tracking |
+| **Gear** | Build your kit by budget |
 | **Resupply** | Town distances, services, and resupply planning |
 | **Water** | Water sources and carry calculations |
 | **Budget** | Trail spending tracker |
 | **Mail** | Mail drop planning and scheduling |
 | **Power** | Device battery and charging management |
 | **Food** | Calorie and food weight calculator |
-| **Swap** | Gear transition planning (seasonal swaps) |
 | **Train** | Pre-trail training schedule |
 | **Emergency** | Emergency contacts, bailout points, protocols |
 
