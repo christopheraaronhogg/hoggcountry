@@ -1,11 +1,13 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
-const fileUrl = new URL('../src/data/at-water-sources.json', import.meta.url);
-const raw = fs.readFileSync(fileUrl, 'utf8');
+const defaultPath = new URL('../src/data/at-water-sources.json', import.meta.url);
+const inputPath = process.argv[2] || path.resolve(defaultPath.pathname);
+const raw = fs.readFileSync(inputPath, 'utf8');
 const data = JSON.parse(raw);
 
 const errors = [];
-const allowedTypes = new Set(['spring', 'stream', 'river', 'piped', 'town']);
+const allowedTypes = new Set(['spring', 'stream', 'river', 'piped', 'town', 'unknown']);
 
 if (!Array.isArray(data)) {
   errors.push('Expected JSON array.');
@@ -54,7 +56,7 @@ for (let i = 0; i < (Array.isArray(data) ? data.length : 0); i++) {
 }
 
 if (errors.length) {
-  console.error(`❌ Water sources validation failed for ${fileUrl.pathname}`); // eslint-disable-line no-console
+  console.error(`❌ Water sources validation failed for ${inputPath}`); // eslint-disable-line no-console
   for (const e of errors.slice(0, 50)) console.error(`- ${e}`); // eslint-disable-line no-console
   if (errors.length > 50) console.error(`- ...and ${errors.length - 50} more`); // eslint-disable-line no-console
   process.exit(1);
