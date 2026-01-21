@@ -1,14 +1,26 @@
 <script>
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount } from 'svelte';
 
-    let isOpen = $state(false);
-    let seed = $state('hogg-country');
-    let noiseScale = $state(98);
-    let gridSize = $state(184);
-    let contourLevels = $state(28);
-    let falloff = $state(3.8);
-    let colorScheme = $state('hogg-country');
-    let currentSvgContent = $state('');
+    // Background generator runs with fixed defaults (no UI).
+    const seed = 'hogg-country';
+    const noiseScale = 98;
+    const gridSize = 184;
+    const contourLevels = 28;
+    const falloff = 3.8;
+    const colorScheme = 'hogg-country';
+
+    // Versioned cache key so old "customized" backgrounds won't override defaults.
+    const SVG_CACHE_KEY = 'hc-bg-svg-default-v1';
+
+    let currentSvgContent = '';
+
+    function applyBackgroundSvg(svgText) {
+        const encoded = btoa(svgText);
+        const dataUri = `url('data:image/svg+xml;base64,${encoded}')`;
+        document.body.style.backgroundImage = dataUri;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center center';
+    }
 
     // --- PERLIN NOISE GENERATOR ---
     const PerlinNoise = new function() {
@@ -100,7 +112,7 @@
             }
             contourData.push({ level, lines });
         }
-        
+
         // 3. Render as SVG and set as background
         renderSVG(contourData, width, height, colorScheme);
     }
@@ -119,7 +131,7 @@
         const numColors = selectedColors.length;
 
         let svgContent = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="background-color: ${colorScheme === 'mono' ? '#111827' : selectedColors[0]};">`;
-        
+
         contourData.forEach((contour, index) => {
             // For hogg-country theme, use very subtle lines like the existing site
             if (colorScheme === 'hogg-country') {
@@ -143,369 +155,45 @@
                 svgContent += `<path d="${pathData}" stroke="${color}" stroke-width="1.5" fill="none" />`;
             }
         });
-        
+
         svgContent += '</svg>';
-        
-        // Store raw SVG and set as background
+
         currentSvgContent = svgContent;
         try {
-            localStorage.setItem('hc-bg-svg', currentSvgContent);
+            localStorage.setItem(SVG_CACHE_KEY, currentSvgContent);
         } catch (_) { /* ignore quota errors */ }
-        const encodedSvg = btoa(svgContent);
-        const dataUri = `url('data:image/svg+xml;base64,${encodedSvg}')`;
-        
-        document.body.style.backgroundImage = dataUri;
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center center';
+
+        applyBackgroundSvg(svgContent);
     }
 
-    function downloadSVG() {
-        if (!currentSvgContent) {
-            alert('Please generate a map first!');
-            return;
-        }
-        const blob = new Blob([currentSvgContent], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `hogg-country-background-${seed}.svg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
-
-    function toggleWidget() {
-        isOpen = !isOpen;
-    }
-
-    // Close on Escape for accessibility
-    function handleKeydown(e) {
-        if (e.key === 'Escape' && isOpen) {
-            isOpen = false;
-        }
-    }
-
-    // Debounced localStorage write to avoid UI stutter on slider drag
-    let saveTimeout = null;
-
-    // Persist settings whenever they change (debounced)
-    $effect(() => {
-        // Access all reactive vars to track them
-        const settings = { seed, noiseScale, gridSize, contourLevels, falloff, colorScheme };
-
-        // Debounce the write
-        if (saveTimeout) clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-            try {
-                localStorage.setItem('hc-bg-settings', JSON.stringify(settings));
-            } catch (_) { /* ignore */ }
-        }, 300);
-    });
-
-    // Generate on mount, loading saved settings and applying saved SVG if available
+    // Generate on mount, using a cached default SVG when available.
     onMount(() => {
-        // keyboard listener for Escape
-        window.addEventListener('keydown', handleKeydown);
         try {
-            const saved = localStorage.getItem('hc-bg-settings');
-            if (saved) {
-                const s = JSON.parse(saved);
-                if (typeof s.seed === 'string') seed = s.seed;
-                if (typeof s.noiseScale === 'number') noiseScale = s.noiseScale;
-                if (typeof s.gridSize === 'number') gridSize = s.gridSize;
-                if (typeof s.contourLevels === 'number') contourLevels = s.contourLevels;
-                if (typeof s.falloff === 'number') falloff = s.falloff;
-                if (typeof s.colorScheme === 'string') colorScheme = s.colorScheme;
-            }
-            const savedSvg = localStorage.getItem('hc-bg-svg');
+            const savedSvg = localStorage.getItem(SVG_CACHE_KEY);
             if (savedSvg) {
-                const encoded = btoa(savedSvg);
-                const dataUri = `url('data:image/svg+xml;base64,${encoded}')`;
-                document.body.style.backgroundImage = dataUri;
-                document.body.style.backgroundSize = 'cover';
-                document.body.style.backgroundPosition = 'center center';
-                return; // skip regeneration for performance
-            } else {
-                // First visit - fetch default SVG from server
-                fetch('/default-background.svg')
-                    .then(response => response.text())
-                    .then(defaultSvg => {
-                        // Save the default SVG to localStorage for future visits
-                        try {
-                            localStorage.setItem('hc-bg-svg', defaultSvg);
-                        } catch (_) { /* ignore quota errors */ }
-                        
-                        // Apply the default SVG as background
-                        const encoded = btoa(defaultSvg);
-                        const dataUri = `url('data:image/svg+xml;base64,${encoded}')`;
-                        document.body.style.backgroundImage = dataUri;
-                        document.body.style.backgroundSize = 'cover';
-                        document.body.style.backgroundPosition = 'center center';
-                    })
-                    .catch(() => {
-                        // Fallback: generate on client if server default fails
-                        generateMap();
-                    });
+                currentSvgContent = savedSvg;
+                applyBackgroundSvg(savedSvg);
                 return;
             }
         } catch (_) { /* ignore */ }
-        generateMap();
-    });
 
-    onDestroy(() => {
-        window.removeEventListener('keydown', handleKeydown);
+        fetch('/default-background.svg')
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch default background SVG');
+                return response.text();
+            })
+            .then(defaultSvg => {
+                currentSvgContent = defaultSvg;
+                try {
+                    localStorage.setItem(SVG_CACHE_KEY, defaultSvg);
+                } catch (_) { /* ignore quota errors */ }
+                applyBackgroundSvg(defaultSvg);
+            })
+            .catch(() => {
+                // Fallback: generate on client if server default fails
+                try {
+                    generateMap();
+                } catch (_) { /* ignore */ }
+            });
     });
 </script>
-
-<!-- Controls Toggle Button -->
-<button
-    onclick={toggleWidget}
-    class="toggle-btn"
-    title="Background Generator"
->
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996 .608 2.296 .07 2.572-1.065z" />
-        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-</button>
-
-{#if isOpen}
-  <!-- Click-outside backdrop to close panel -->
-  <div class="controls-backdrop" onclick={toggleWidget} aria-hidden="true"></div>
-{/if}
-
-<!-- Controls Panel -->
-<div class="controls-panel" class:open={isOpen}>
-    <div class="panel-header">
-        <h3>Background Generator</h3>
-        <button onclick={toggleWidget} class="close-btn">×</button>
-    </div>
-
-    <div class="panel-content">
-        <!-- Controls -->
-        <div class="control-group">
-            <label for="seed">Seed</label>
-            <input type="text" id="seed" bind:value={seed}>
-        </div>
-        
-        <div class="control-group">
-            <label for="noiseScale">Noise Scale: {noiseScale}</label>
-            <input type="range" id="noiseScale" min="5" max="200" bind:value={noiseScale}>
-        </div>
-        
-        <div class="control-group">
-            <label for="gridSize">Grid Detail: {gridSize}</label>
-            <input type="range" id="gridSize" min="20" max="250" bind:value={gridSize}>
-        </div>
-        
-        <div class="control-group">
-            <label for="contourLevels">Contour Levels: {contourLevels}</label>
-            <input type="range" id="contourLevels" min="2" max="50" bind:value={contourLevels}>
-        </div>
-        
-        <div class="control-group">
-            <label for="falloff">Island Effect: {falloff}</label>
-            <input type="range" id="falloff" min="0" max="5" step="0.1" bind:value={falloff}>
-        </div>
-        
-        <div class="control-group">
-            <label for="colorScheme">Color Scheme</label>
-            <select id="colorScheme" bind:value={colorScheme}>
-                <option value="hogg-country">Hogg Country</option>
-                <option value="terrain">Terrain</option>
-                <option value="ocean">Ocean</option>
-                <option value="mono">Monochrome</option>
-                <option value="magma">Magma</option>
-                <option value="viridis">Viridis</option>
-            </select>
-        </div>
-
-        <!-- Buttons -->
-        <div class="actions">
-            <button onclick={generateMap} class="btn btn-primary">Generate</button>
-            <button onclick={downloadSVG} class="btn">Download SVG</button>
-        </div>
-    </div>
-</div>
-
-<style>
-    .toggle-btn {
-        position: fixed;
-        bottom: 1rem;
-        right: 1rem;
-        z-index: 1000;
-        width: 50px;
-        height: 50px;
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(8px);
-        border: 1px solid var(--stone);
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--pine);
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .toggle-btn:hover {
-        transform: scale(1.1);
-        background: rgba(255, 255, 255, 1);
-    }
-
-    .controls-panel {
-        position: fixed;
-        top: 0;
-        right: 0;
-        height: 100vh;
-        width: 320px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(12px);
-        border-left: 1px solid var(--border);
-        z-index: 999;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        overflow-y: auto;
-        box-shadow: -4px 0 20px rgba(0,0,0,0.1);
-    }
-    
-.controls-panel.open {
-        transform: translateX(0);
-    }
-
-    .controls-backdrop {
-        position: fixed;
-        inset: 0;
-        background: transparent; /* or rgba(0,0,0,0.02) if you want a hint */
-        z-index: 998;
-    }
-    
-    .panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem;
-        border-bottom: 1px solid var(--border);
-        background: rgba(245, 242, 232, 0.8);
-    }
-    
-    .panel-header h3 {
-        margin: 0;
-        font-family: 'Oswald', sans-serif;
-        color: var(--ink);
-        font-size: 1.25rem;
-    }
-    
-    .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: var(--muted);
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-    }
-    
-    .close-btn:hover {
-        background: var(--stone);
-    }
-    
-    .panel-content {
-        padding: 1rem;
-    }
-    
-    .control-group {
-        margin-bottom: 1rem;
-    }
-    
-    .control-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-        color: var(--pine);
-        font-size: 0.875rem;
-    }
-    
-    .control-group input,
-    .control-group select {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid var(--stone);
-        border-radius: 4px;
-        background: white;
-        color: var(--pine);
-        font-size: 0.875rem;
-    }
-    
-    .control-group input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-        height: 4px;
-        background: var(--stone);
-        border-radius: 2px;
-        outline: none;
-        cursor: pointer;
-        padding: 0;
-    }
-    
-    .control-group input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 16px;
-        height: 16px;
-        background: var(--alpine);
-        border-radius: 50%;
-        cursor: pointer;
-    }
-    
-    .control-group input[type="range"]::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        background: var(--alpine);
-        border-radius: 50%;
-        cursor: pointer;
-        border: none;
-    }
-    
-    .actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border);
-    }
-    
-    .btn {
-        flex: 1;
-        padding: 0.75rem;
-        border: 1px solid var(--stone);
-        background: white;
-        color: var(--pine);
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
-    
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    .btn-primary {
-        background: var(--alpine);
-        color: white;
-        border-color: var(--alpine);
-    }
-    
-    .btn-primary:hover {
-        background: #98a87c;
-    }
-</style>
