@@ -78,15 +78,17 @@
       if (!best || dist < best.dist) best = { mile: p.mile, dist };
     }
 
+    const maxSnapMiles = 50;
+
     if (!best) {
       gpsState = 'error';
       gpsMessage = 'Couldn’t match your location to the trail.';
       return;
     }
 
-    if (best.dist > 5) {
+    if (best.dist > maxSnapMiles) {
       gpsState = 'error';
-      gpsMessage = `Not within 5 miles of the trail (closest mile: ${best.mile}, ~${best.dist.toFixed(1)} mi).`;
+      gpsMessage = `Not within ${maxSnapMiles} miles of the trail (closest mile: ${best.mile}, ~${best.dist.toFixed(1)} mi).`;
       return;
     }
 
