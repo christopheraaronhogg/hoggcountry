@@ -359,6 +359,7 @@
 
   // User's planned drops with contents
   let plannedDrops = $state({});
+  let viewInitialized = $state(false);
 
   // Load from localStorage
   $effect(() => {
@@ -375,6 +376,13 @@
           triggerLeadMiles = parsed.triggerLeadMiles ?? triggerLeadMiles;
           defaultHoldTimeDays = parsed.defaultHoldTimeDays ?? defaultHoldTimeDays;
         } catch (e) {}
+      }
+
+      // Default UX: if you haven't picked any drops yet, start in "Browse Directory"
+      if (!viewInitialized) {
+        const hasPlanned = Object.values(plannedDrops).some((d) => d?.enabled);
+        showDirectory = !hasPlanned;
+        viewInitialized = true;
       }
     }
   });
