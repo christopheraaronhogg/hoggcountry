@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { trailContext, TRAIL_TOTAL_MILES } from '../../stores/trailContext.svelte';
+  import { trailContext } from '../../stores/trailContext.svelte';
   import QuickMileControl from './QuickMileControl.svelte';
 
   interface Props {
@@ -16,39 +16,50 @@
 
 <div class="context-hero">
   <div class="hero-content">
-    <!-- Mile Display -->
-    <div class="mile-section">
-      <div class="mile-left">
+    <!-- Header -->
+    <div class="hero-header">
+      <div class="hero-primary">
+        <div class="eyebrow">Mile marker</div>
         <QuickMileControl />
-        <div class="mile-hint">
-          Mile marker updates are instant. Use Settings for pace/date/zeros.
+        <div class="primary-meta" aria-label="Current trail context">
+          <span class="landmark">
+            {#if trailContext.currentMile === 0}
+              At Springer Mountain
+            {:else}
+              Near {trailContext.nearestLandmark.name}
+            {/if}
+          </span>
+          <span class="dot">•</span>
+          <span class="date">{formatDate(new Date(trailContext.effectiveDate))}</span>
         </div>
       </div>
 
-      <button class="edit-btn" onclick={onEditClick} aria-label="Open settings (pace, date, zeros)">
-        Settings
-      </button>
+      <div class="hero-actions">
+        <div class="mode-badge" class:on-trail={trailContext.isOnTrail}>
+          {#if trailContext.isOnTrail}
+            <span class="badge-dot"></span>
+            On Trail
+          {:else}
+            Planning
+          {/if}
+        </div>
+
+        <button class="edit-btn" onclick={onEditClick} aria-label="Open settings (pace, date, zeros)">
+          Settings
+        </button>
+      </div>
     </div>
 
-    <!-- Progress Bar -->
+    <!-- Progress -->
     <div class="progress-section">
-      <div class="progress-bar">
+      <div class="progress-bar" aria-label="Progress bar">
         <div class="progress-fill" style="width: {trailContext.percentComplete}%"></div>
       </div>
-      <span class="progress-pct">{trailContext.percentComplete.toFixed(0)}%</span>
-    </div>
 
-    <!-- Context Info -->
-    <div class="context-info">
-      <span class="landmark">
-        {#if trailContext.currentMile === 0}
-          At Springer Mountain
-        {:else}
-          Near {trailContext.nearestLandmark.name}
-        {/if}
-      </span>
-      <span class="divider">*</span>
-      <span class="date">{formatDate(new Date(trailContext.effectiveDate))}</span>
+      <div class="progress-metrics" aria-label="Progress metrics">
+        <span class="progress-pct">{trailContext.percentComplete.toFixed(0)}%</span>
+        <span class="progress-left">{trailContext.milesRemaining} mi left</span>
+      </div>
     </div>
 
     <!-- Stats Row -->
@@ -65,16 +76,6 @@
         <span class="stat-label">Days Left</span>
         <span class="stat-value">{trailContext.daysToFinish}</span>
       </div>
-    </div>
-
-    <!-- Mode Badge -->
-    <div class="mode-badge" class:on-trail={trailContext.isOnTrail}>
-      {#if trailContext.isOnTrail}
-        <span class="badge-dot"></span>
-        On Trail
-      {:else}
-        Planning
-      {/if}
     </div>
   </div>
 </div>
@@ -104,23 +105,50 @@
     z-index: 1;
   }
 
-  /* Mile Section */
-  .mile-section {
+  /* Header */
+  .hero-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: start;
+    margin-bottom: 1.1rem;
+  }
+
+  .hero-primary {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .eyebrow {
+    font-family: Oswald, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .primary-meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-    gap: 0.75rem;
+    gap: 0.45rem;
+    flex-wrap: wrap;
   }
 
-  .mile-left {
-    display: grid;
-    gap: 0.35rem;
+  .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
   }
 
-  .mile-hint {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.55);
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-top: 0.15rem;
   }
 
   .edit-btn {
@@ -147,23 +175,13 @@
     color: #fff;
   }
 
-  @media (max-width: 560px) {
-    .mile-section {
-      flex-wrap: wrap;
-      align-items: start;
-    }
-    .edit-btn {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-
   /* Progress Section */
   .progress-section {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.1rem;
   }
 
   .progress-bar {
@@ -181,31 +199,28 @@
     transition: width 0.3s ease;
   }
 
+  .progress-metrics {
+    display: grid;
+    justify-items: end;
+    gap: 0.1rem;
+    min-width: 4.25rem;
+  }
+
   .progress-pct {
     font-family: Oswald, sans-serif;
     font-size: 0.875rem;
     font-weight: 600;
-    min-width: 3rem;
     text-align: right;
   }
 
-  /* Context Info */
-  .context-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
+  .progress-left {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.55);
   }
 
   .landmark {
     font-size: 0.9rem;
     color: rgba(255,255,255,0.8);
-  }
-
-  .divider {
-    color: rgba(255,255,255,0.3);
-    font-size: 0.75rem;
   }
 
   .date {
@@ -250,9 +265,6 @@
 
   /* Mode Badge */
   .mode-badge {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -303,10 +315,19 @@
       font-size: 1rem;
     }
 
-    .mode-badge {
-      position: static;
-      margin-top: 1rem;
-      justify-content: center;
+    .hero-header {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .hero-actions {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .edit-btn {
+      width: 100%;
     }
   }
 </style>
