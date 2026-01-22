@@ -591,7 +591,7 @@ Thanks! 🥾`;
   let shippedCount = $derived(Object.values(plannedDrops).filter(d => d.shipped).length);
   let receivedCount = $derived(Object.values(plannedDrops).filter(d => d.received).length);
 
-  let estimatedTotalCost = $derived(() => {
+  let estimatedTotalCost = $derived.by(() => {
     let total = 0;
     for (const drop of mailDrops) {
       const data = getDropData(drop.id);
@@ -603,7 +603,7 @@ Thanks! 🥾`;
   });
 
   // Get next action needed
-  let nextAction = $derived(() => {
+  let nextAction = $derived.by(() => {
     for (const drop of mailDrops) {
       const status = getDropStatus(drop);
       if (status === 'notify-now') {
@@ -620,7 +620,7 @@ Thanks! 🥾`;
   });
 
   // Directory browsing
-  let visibleDrops = $derived(() => {
+  let visibleDrops = $derived.by(() => {
     const q = search.trim().toLowerCase();
     const filtered = mailDrops.filter(d => {
       if (!filterPO && d.kind === 'post-office') return false;
@@ -633,13 +633,13 @@ Thanks! 🥾`;
     return filtered.sort((a, b) => a.mile - b.mile);
   });
 
-  let plannedList = $derived(() =>
+  let plannedList = $derived.by(() =>
     mailDrops
       .filter(d => getDropData(d.id).enabled)
       .sort((a, b) => a.mile - b.mile)
   );
 
-  let timelineDrops = $derived(() => {
+  let timelineDrops = $derived.by(() => {
     if (plannedList.length) return plannedList;
     return mailDrops.filter(d => d.recommended).sort((a, b) => a.mile - b.mile);
   });
@@ -670,8 +670,8 @@ Thanks! 🥾`;
   </header>
 
   <!-- Alert Banner if action needed -->
-  {#if nextAction()}
-    {@const action = nextAction()}
+  {#if nextAction}
+    {@const action = nextAction}
     <div class="action-banner" class:urgent={action.type === 'notify'}>
       {#if action.type === 'notify'}
         <span class="banner-icon">🚨</span>
