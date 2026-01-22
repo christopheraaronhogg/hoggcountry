@@ -2,12 +2,9 @@
   import { trailContext } from '../../stores/trailContext.svelte';
   import QuickMileControl from './QuickMileControl.svelte';
   import MileScrubber from './MileScrubber.svelte';
+  import ContextSettingsPanel from './ContextSettingsPanel.svelte';
 
-  interface Props {
-    onEditClick?: () => void;
-  }
-
-  let { onEditClick }: Props = $props();
+  let settingsOpen = $state(false);
 
   // Format date for display
   function formatDate(date: Date): string {
@@ -45,10 +42,20 @@
           {/if}
         </div>
 
-        <button class="edit-btn" onclick={onEditClick} aria-label="Open settings (pace, date, zeros)">
+        <button
+          class="edit-btn"
+          type="button"
+          aria-expanded={settingsOpen}
+          aria-controls="trail-settings-panel"
+          onclick={() => (settingsOpen = !settingsOpen)}
+        >
           Settings
         </button>
       </div>
+    </div>
+
+    <div id="trail-settings-panel">
+      <ContextSettingsPanel isOpen={settingsOpen} onClose={() => (settingsOpen = false)} />
     </div>
 
     <!-- Progress -->

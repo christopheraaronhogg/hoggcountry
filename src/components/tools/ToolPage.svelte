@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { loadContext, getContextSnapshot } from '../../stores/trailContext.svelte';
   import ContextBanner from './ContextBanner.svelte';
-  import ContextEditor from './ContextEditor.svelte';
 
   interface Props {
     toolId: string;
@@ -13,7 +12,6 @@
   let { toolId, toolName, children }: Props = $props();
 
   let mounted = $state(false);
-  let showEditor = $state(false);
   let ToolComponent = $state<typeof import('svelte').SvelteComponent | null>(null);
 
   // Tool component loaders
@@ -57,7 +55,7 @@
 
 <div class="tool-page" class:mounted>
   <!-- Context Banner with Edit Button -->
-  <ContextBanner onEditClick={() => showEditor = true} />
+  <ContextBanner />
 
   <!-- Tool Content -->
   <div class="tool-content">
@@ -71,8 +69,6 @@
     {/if}
   </div>
 
-  <!-- Context Editor Modal -->
-  <ContextEditor isOpen={showEditor} onClose={() => showEditor = false} />
 </div>
 
 <style>

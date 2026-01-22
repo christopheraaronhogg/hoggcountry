@@ -1,43 +1,56 @@
 <script lang="ts">
   import { trailContext } from '../../stores/trailContext.svelte';
   import QuickMileControl from './QuickMileControl.svelte';
+  import ContextSettingsPanel from './ContextSettingsPanel.svelte';
 
-  interface Props {
-    onEditClick?: () => void;
-  }
-
-  let { onEditClick }: Props = $props();
+  let settingsOpen = $state(false);
 
   function formatDate(date: Date): string {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 </script>
 
-<div class="context-banner">
-  <a href="/tools/" class="back-link">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M19 12H5M12 19l-7-7 7-7" />
-    </svg>
-    Dashboard
-  </a>
+<div class="banner-wrap">
+  <div class="context-banner">
+    <a href="/tools/" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+      </svg>
+      Dashboard
+    </a>
 
-  <div class="context-info">
-    <div class="mile-inline">
-      <span class="mile-label">Mile</span>
-      <QuickMileControl compact={true} showTotal={false} showGps={false} />
+    <div class="context-info">
+      <div class="mile-inline">
+        <span class="mile-label">Mile</span>
+        <QuickMileControl compact={true} showTotal={false} showGps={false} />
+      </div>
+      <span class="divider">•</span>
+      <span class="landmark">{trailContext.nearestLandmark.name}</span>
+      <span class="divider">•</span>
+      <span class="date">{formatDate(new Date(trailContext.effectiveDate))}</span>
     </div>
-    <span class="divider">•</span>
-    <span class="landmark">{trailContext.nearestLandmark.name}</span>
-    <span class="divider">•</span>
-    <span class="date">{formatDate(new Date(trailContext.effectiveDate))}</span>
+
+    <button
+      class="edit-btn"
+      type="button"
+      aria-expanded={settingsOpen}
+      aria-controls="trail-settings-panel-banner"
+      onclick={() => (settingsOpen = !settingsOpen)}
+    >
+      Settings
+    </button>
   </div>
 
-  <button class="edit-btn" onclick={onEditClick} aria-label="Open settings (pace, date, zeros)">
-    Settings
-  </button>
+  <div id="trail-settings-panel-banner" class="settings-slot">
+    <ContextSettingsPanel isOpen={settingsOpen} onClose={() => (settingsOpen = false)} />
+  </div>
 </div>
 
 <style>
+  .banner-wrap {
+    margin-bottom: 1.5rem;
+  }
+
   .context-banner {
     display: flex;
     align-items: center;
@@ -45,7 +58,6 @@
     padding: 0.75rem 1rem;
     background: linear-gradient(135deg, #3d4a38 0%, #2c362a 100%);
     border-radius: 10px;
-    margin-bottom: 1.5rem;
   }
 
   .back-link {
@@ -123,6 +135,10 @@
   .edit-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     color: #fff;
+  }
+
+  .settings-slot {
+    margin-top: 0.65rem;
   }
 
   /* Responsive */

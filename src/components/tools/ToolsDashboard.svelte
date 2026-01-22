@@ -3,7 +3,6 @@
   import { trailContext, loadContext } from '../../stores/trailContext.svelte';
   import { getAlerts, getNextTown } from '../../lib/trailRecommendations';
   import ContextHero from './ContextHero.svelte';
-  import ContextEditor from './ContextEditor.svelte';
   import ToolCard from './ToolCard.svelte';
   import AlertBanner from './widgets/AlertBanner.svelte';
   import TownWidget from './widgets/TownWidget.svelte';
@@ -50,7 +49,6 @@
 
   // State
   let mounted = $state(false);
-  let showEditor = $state(false);
 
   // Derived from context
   // NOTE: use $derived.by for function-based derivations so updates track correctly
@@ -79,7 +77,7 @@
 
 <div class="dashboard" class:mounted>
   <!-- Context Hero -->
-  <ContextHero onEditClick={() => showEditor = true} />
+  <ContextHero />
 
   <!-- What Matters Now Section -->
   <section class="matters-section">
@@ -132,9 +130,6 @@
       />
     </div>
   </section>
-
-  <!-- Context Editor Modal -->
-  <ContextEditor isOpen={showEditor} onClose={() => showEditor = false} />
 </div>
 
 <style>

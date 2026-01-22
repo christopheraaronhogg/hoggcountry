@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v6';
+const CACHE_NAME = 'hogg-country-v7';
 
 // Core pages to precache on install
 const CORE_PAGES = [
@@ -95,7 +95,7 @@ const STATIC_ASSETS = [
 
 // Install event - precache core resources + JS/CSS chunks
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing v6...');
+  console.log('[SW] Installing v7...');
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] Precaching core pages and assets');
