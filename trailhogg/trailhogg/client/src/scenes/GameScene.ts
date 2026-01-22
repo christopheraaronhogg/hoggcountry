@@ -33,7 +33,7 @@ export class GameScene extends Phaser.Scene {
   private fogSprites: Phaser.GameObjects.Sprite[] = [];
 
   // Trail features
-  private obstacles: Phaser.GameObjects.Sprite[] = [];
+  private obstacles!: Phaser.GameObjects.Group;
   private landmarks: Phaser.GameObjects.Container[] = [];
   private waterSources: Phaser.GameObjects.Sprite[] = [];
   private offTrailWarning!: Phaser.GameObjects.Text;
@@ -191,6 +191,13 @@ export class GameScene extends Phaser.Scene {
     // Create trail
     this.trail = this.add.tileSprite(width * 0.3, 0, width * 0.4, height, 'trail');
     this.trail.setOrigin(0, 0);
+
+    // Initialize obstacle group for pooling
+    this.obstacles = this.add.group({
+      classType: Phaser.GameObjects.Sprite,
+      maxSize: 50,
+      runChildUpdate: false
+    });
 
     // Generate trees on both sides
     this.generateTrees();
@@ -403,12 +410,16 @@ export class GameScene extends Phaser.Scene {
       const x = width * 0.35 + Math.random() * (width * 0.3); // On trail area
       const y = Phaser.Math.Between(-height, height);
 
-      const obstacle = this.add.sprite(x, y, type);
-      obstacle.setDepth(5);
-      obstacle.setScale(0.8); // Slightly smaller for trail
-      obstacle.setData('type', type);
-      obstacle.setData('hit', false);
-      this.obstacles.push(obstacle);
+      const obstacle = this.obstacles.get(x, y, type);
+      if (obstacle) {
+        obstacle.setActive(true).setVisible(true);
+        obstacle.setTexture(type);
+        obstacle.setDepth(5);
+        obstacle.setScale(0.8); // Slightly smaller for trail
+        obstacle.setData('type', type);
+        obstacle.setData('hit', false);
+        obstacle.clearTint();
+      }
     }
   }
 
@@ -421,12 +432,16 @@ export class GameScene extends Phaser.Scene {
     const x = width * 0.35 + Math.random() * (width * 0.3);
     const y = -30;
 
-    const obstacle = this.add.sprite(x, y, type);
-    obstacle.setDepth(5);
-    obstacle.setScale(0.8);
-    obstacle.setData('type', type);
-    obstacle.setData('hit', false);
-    this.obstacles.push(obstacle);
+    const obstacle = this.obstacles.get(x, y, type);
+    if (obstacle) {
+      obstacle.setActive(true).setVisible(true);
+      obstacle.setTexture(type);
+      obstacle.setDepth(5);
+      obstacle.setScale(0.8);
+      obstacle.setData('type', type);
+      obstacle.setData('hit', false);
+      obstacle.clearTint();
+    }
   }
 
   spawnLandmark(mile: number, name: string, hasWater: boolean = false) {
@@ -2507,7 +2522,9 @@ export class GameScene extends Phaser.Scene {
       });
 
       // Move obstacles down and check collisions
-      this.obstacles.forEach((obstacle, index) => {
+      this.obstacles.children.each((obstacle: any) => {
+        if (!obstacle.active) return true;
+
         obstacle.y += scrollSpeed;
 
         // Check collision with hiker
@@ -2550,11 +2567,11 @@ export class GameScene extends Phaser.Scene {
           }
         }
 
-        // Remove when off screen
+        // Remove when off screen (recycle)
         if (obstacle.y > height + 50) {
-          obstacle.destroy();
-          this.obstacles.splice(index, 1);
+          obstacle.setActive(false).setVisible(false);
         }
+        return true;
       });
 
       // Spawn new obstacles periodically
