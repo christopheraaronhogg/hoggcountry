@@ -8,6 +8,9 @@
  * - Next town/resupply info
  */
 
+import { AT_TOWNS } from './atTowns';
+import { resupplyServicesByTownName } from './resupplyTowns';
+
 // State boundaries (NOBO order) - from trail-facts.yaml
 export const stateBoundaries = [
   { mile: 0, state: 'GA', name: 'Georgia', message: 'Starting at Springer Mountain!' },
@@ -112,8 +115,16 @@ export interface TownInfo {
   mile: number;
   name: string;
   distance: number;
-  services: string[];
+  services?: string[];
   note?: string;
+}
+
+const townsSorted = [...AT_TOWNS].sort((a, b) => a.mile - b.mile);
+
+function normalizeTownName(name: string): string {
+  // Strip ", ST" and other trailing qualifiers for best-effort service mapping.
+  const head = name.split(',')[0] ?? name;
+  return head.trim();
 }
 
 /**
@@ -190,14 +201,23 @@ export function getAlerts(currentMile: number, lookAheadMiles: number = 20): Ale
  * Get next resupply town from current position
  */
 export function getNextTown(currentMile: number): TownInfo | null {
-  for (const town of resupplyTowns) {
-    if (town.mile > currentMile) {
+  const mile = Number(currentMile);
+  const current = Number.isFinite(mile) ? mile : 0;
+
+  for (const town of townsSorted) {
+    if (town.mile > current) {
+      const normalized = normalizeTownName(town.name);
+      const services = resupplyServicesByTownName[normalized];
       return {
-        ...town,
-        distance: Math.round(town.mile - currentMile),
+        mile: town.mile,
+        name: town.name,
+        distance: Math.round(town.mile - current),
+        services,
+        note: town.notes,
       };
     }
   }
+
   return null;
 }
 

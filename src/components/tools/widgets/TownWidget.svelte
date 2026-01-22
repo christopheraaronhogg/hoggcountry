@@ -12,9 +12,12 @@
     grocery: '🛒',
     hostel: '🛏️',
     outfitter: '🎒',
+    convenience: '🏪',
     restaurant: '🍽️',
+    snacks: '🍫',
     laundry: '👕',
     post_office: '📬',
+    start: '🏔️',
   };
 </script>
 
@@ -27,16 +30,18 @@
   {#if town}
     <div class="widget-body">
       <span class="town-name">{town.name}</span>
-      <span class="town-distance">{town.distance} mi</span>
+      <span class="town-distance">in {town.distance} mi</span>
     </div>
 
-    <div class="services">
-      {#each town.services as service}
-        <span class="service-badge" title={service}>
-          {serviceIcons[service] || '•'}
-        </span>
-      {/each}
-    </div>
+    {#if Array.isArray(town.services) && town.services.length > 0}
+      <div class="services">
+        {#each town.services as service}
+          <span class="service-badge" title={service}>
+            {serviceIcons[service] || '•'}
+          </span>
+        {/each}
+      </div>
+    {/if}
 
     {#if town.note}
       <p class="town-note">{town.note}</p>

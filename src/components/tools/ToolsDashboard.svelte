@@ -7,6 +7,8 @@
   import ToolCard from './ToolCard.svelte';
   import AlertBanner from './widgets/AlertBanner.svelte';
   import TownWidget from './widgets/TownWidget.svelte';
+  import WaterWidget from './widgets/WaterWidget.svelte';
+  import atWaterSources from '../../data/at-water-sources.json';
 
   // Tool definitions grouped by category
   const toolGroups = [
@@ -55,6 +57,20 @@
   let alerts = $derived.by(() => getAlerts(Number(trailContext.currentMile) || 0, 25));
   let nextTown = $derived.by(() => getNextTown(Number(trailContext.currentMile) || 0));
 
+  type WaterSource = { mile: number; name: string; type: string; offTrail?: number };
+  const waterSourcesSorted: WaterSource[] = (Array.isArray(atWaterSources) ? atWaterSources : [])
+    .filter((s) => typeof s?.mile === 'number' && typeof s?.name === 'string' && typeof s?.type === 'string')
+    .map((s) => ({ mile: s.mile, name: s.name, type: s.type, offTrail: typeof s.offTrail === 'number' ? s.offTrail : 0 }))
+    .sort((a, b) => a.mile - b.mile);
+
+  let nextWater = $derived.by(() => {
+    const mile = Number(trailContext.currentMile) || 0;
+    const next = waterSourcesSorted.find((s) => s.mile > mile);
+    if (!next) return null;
+    const distance = Number((next.mile - mile).toFixed(1));
+    return { ...next, distance };
+  });
+
   onMount(() => {
     loadContext();
     mounted = true;
@@ -72,6 +88,9 @@
     <div class="matters-grid">
       <!-- Town Widget -->
       <TownWidget town={nextTown} />
+
+      <!-- Next water (always) -->
+      <WaterWidget source={nextWater} />
 
       <!-- Alerts (state line, bear, terrain) -->
       {#each alerts.slice(0, 2) as alert}
