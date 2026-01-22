@@ -1,6 +1,7 @@
 <script lang="ts">
   import { trailContext } from '../../stores/trailContext.svelte';
   import QuickMileControl from './QuickMileControl.svelte';
+  import MileScrubber from './MileScrubber.svelte';
 
   interface Props {
     onEditClick?: () => void;
@@ -52,9 +53,7 @@
 
     <!-- Progress -->
     <div class="progress-section">
-      <div class="progress-bar" aria-label="Progress bar">
-        <div class="progress-fill" style="width: {trailContext.percentComplete}%"></div>
-      </div>
+      <MileScrubber />
 
       <div class="progress-metrics" aria-label="Progress metrics">
         <span class="progress-pct">{trailContext.percentComplete.toFixed(0)}%</span>
@@ -184,21 +183,6 @@
     margin-bottom: 1.1rem;
   }
 
-  .progress-bar {
-    flex: 1;
-    height: 8px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--alpine, #7b9e6b), var(--marker, #f0e000));
-    border-radius: 4px;
-    transition: width 0.3s ease;
-  }
-
   .progress-metrics {
     display: grid;
     justify-items: end;
@@ -301,10 +285,6 @@
   @media (max-width: 480px) {
     .context-hero {
       padding: 1.25rem;
-    }
-
-    .mile-current {
-      font-size: 2.5rem;
     }
 
     .stats-row {

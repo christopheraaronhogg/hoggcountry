@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { trailContext, updateContext, landmarks, TRAIL_TOTAL_MILES } from '../../stores/trailContext.svelte';
+  import { trailContext, updateContext } from '../../stores/trailContext.svelte';
   import { fade, fly } from 'svelte/transition';
 
   interface Props {
@@ -10,7 +10,6 @@
   let { isOpen, onClose }: Props = $props();
 
   // Local state for editing (so we can cancel without saving)
-  let editMile = $state(trailContext.currentMile);
   let editStartDate = $state(trailContext.startDate);
   let editPace = $state(trailContext.targetPace);
   let editZeros = $state(trailContext.zeroDaysPerMonth);
@@ -18,30 +17,14 @@
   // Sync local state when modal opens
   $effect(() => {
     if (isOpen) {
-      editMile = trailContext.currentMile;
       editStartDate = trailContext.startDate;
       editPace = trailContext.targetPace;
       editZeros = trailContext.zeroDaysPerMonth;
     }
   });
 
-  // Get nearest landmark for display
-  function getNearestLandmark(mile: number): string {
-    let closest = landmarks[0];
-    let minDist = Math.abs(mile - landmarks[0].mile);
-    for (const lm of landmarks) {
-      const dist = Math.abs(mile - lm.mile);
-      if (dist < minDist) {
-        minDist = dist;
-        closest = lm;
-      }
-    }
-    return closest.name;
-  }
-
   function handleSave() {
     updateContext({
-      currentMile: editMile,
       startDate: editStartDate,
       targetPace: editPace,
       zeroDaysPerMonth: editZeros,
@@ -84,31 +67,6 @@
       </div>
 
       <div class="modal-body">
-        <!-- Mile Slider -->
-        <div class="field">
-          <label class="field-label" for="edit-mile">
-            Current Mile
-            <span class="field-value">{editMile} mi</span>
-          </label>
-          <div class="mile-slider-wrap">
-            <input
-              type="range"
-              id="edit-mile"
-              min="0"
-              max={TRAIL_TOTAL_MILES}
-              step="1"
-              bind:value={editMile}
-              class="slider mile"
-            />
-            <div class="mile-fill" style="width: {(editMile / TRAIL_TOTAL_MILES) * 100}%"></div>
-          </div>
-          <div class="slider-labels">
-            <span>Springer</span>
-            <span class="landmark-name">{getNearestLandmark(editMile)}</span>
-            <span>Katahdin</span>
-          </div>
-        </div>
-
         <!-- Start Date -->
         <div class="field">
           <label class="field-label" for="edit-date">
@@ -265,25 +223,6 @@
     letter-spacing: 0;
   }
 
-  /* Mile Slider */
-  .mile-slider-wrap {
-    position: relative;
-    height: 40px;
-    background: var(--bg, #f0f0f0);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .mile-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: linear-gradient(90deg, var(--alpine, #7b9e6b), var(--pine, #4a5a44));
-    pointer-events: none;
-    transition: width 0.1s ease;
-  }
-
   .slider {
     position: relative;
     width: 100%;
@@ -292,11 +231,6 @@
     background: transparent;
     cursor: pointer;
     z-index: 2;
-  }
-
-  .slider.mile {
-    position: absolute;
-    inset: 0;
   }
 
   .slider::-webkit-slider-runnable-track {
@@ -343,11 +277,6 @@
     justify-content: space-between;
     font-size: 0.7rem;
     color: var(--muted, #888);
-  }
-
-  .landmark-name {
-    font-style: italic;
-    color: var(--alpine, #7b9e6b);
   }
 
   /* Date Input */

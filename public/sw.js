@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v5';
+const CACHE_NAME = 'hogg-country-v6';
 
 // Core pages to precache on install
 const CORE_PAGES = [
@@ -84,6 +84,7 @@ const GUIDE_CHAPTERS = [
 // Static assets to cache
 const STATIC_ASSETS = [
   '/guide-search-index.json',
+  '/at-mileposts.json',
   '/AT-Field-Guide-2026.pdf',
   '/manifest.json',
   '/favicon.svg',
@@ -94,7 +95,7 @@ const STATIC_ASSETS = [
 
 // Install event - precache core resources + JS/CSS chunks
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing v5...');
+  console.log('[SW] Installing v6...');
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] Precaching core pages and assets');

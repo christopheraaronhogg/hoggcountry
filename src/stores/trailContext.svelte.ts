@@ -226,13 +226,14 @@ export function updateContext(updates: {
   targetPace?: number;
   zeroDaysPerMonth?: number;
   contextExpanded?: boolean;
-}): void {
+}, options?: { persist?: boolean }): void {
   if (updates.currentMile !== undefined) _currentMile = updates.currentMile;
   if (updates.startDate !== undefined) _startDate = updates.startDate;
   if (updates.targetPace !== undefined) _targetPace = updates.targetPace;
   if (updates.zeroDaysPerMonth !== undefined) _zeroDaysPerMonth = updates.zeroDaysPerMonth;
   if (updates.contextExpanded !== undefined) _contextExpanded = updates.contextExpanded;
 
+  if (options?.persist === false) return;
   saveContext();
 }
 
