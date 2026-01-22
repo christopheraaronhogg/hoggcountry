@@ -468,7 +468,7 @@
     }
   ],
   "categories": {
-    "pack": { "name": "Backpack & Carry", "color": "#6b705c", "icon": "🎒" },
+    "pack": { "name": "Backpack", "color": "#6b705c", "icon": "🎒" },
     "shelter": { "name": "Shelter System", "color": "#4d594a", "icon": "⛺" },
     "sleep": { "name": "Sleep System", "color": "#7c8a6e", "icon": "🛏️" },
     "sleepClothing": { "name": "Sleep Clothing", "color": "#8b9a7a", "icon": "👕" },

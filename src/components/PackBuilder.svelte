@@ -42,14 +42,39 @@
   }
 
   function buildTemplateItems() {
-    return templateItems.map(item => createItem({
-      id: item.id,
-      category: item.category,
-      worn: item.worn ?? false,
-      tier: item.tier ?? 3,
-      templateName: item.name,
-      templateWeight: item.weight
-    }));
+    const itemsByCategory = new Map();
+    templateItems.forEach((item, idx) => {
+      if (!itemsByCategory.has(item.category)) itemsByCategory.set(item.category, []);
+      itemsByCategory.get(item.category).push({ item, idx });
+    });
+
+    const orderedCategoryIds = Object.keys(categories);
+    const flattened = [];
+
+    for (const categoryId of orderedCategoryIds) {
+      const list = itemsByCategory.get(categoryId) || [];
+      list
+        .slice()
+        .sort((a, b) => {
+          const tierA = a.item.tier ?? 3;
+          const tierB = b.item.tier ?? 3;
+          if (tierA !== tierB) return tierA - tierB;
+          return a.idx - b.idx;
+        })
+        .slice(0, 3)
+        .forEach(({ item }) => flattened.push(item));
+    }
+
+    return flattened.map(item =>
+      createItem({
+        id: item.id,
+        category: item.category,
+        worn: item.worn ?? false,
+        tier: item.tier ?? 3,
+        templateName: item.name,
+        templateWeight: item.weight,
+      })
+    );
   }
 
 
@@ -178,10 +203,33 @@
   let maxCategoryWeight = $derived(Math.max(...categoryWeights.map(c => c.weight), 1));
 
   const big3Categories = ['shelter', 'sleep', 'pack'];
-  let big3Weight = $derived(categoryWeights.filter(c => big3Categories.includes(c.id)).reduce((sum, c) => sum + c.weight, 0));
+  let backpackOnlyWeightOz = $derived.by(() => {
+    const explicitBackpack = editableItems.find(item => item.id === 'pack' && item.category === 'pack' && !item.worn);
+    if (explicitBackpack) return getItemWeight(explicitBackpack);
+
+    const packItems = editableItems.filter(item => item.category === 'pack' && !item.worn);
+    if (packItems.length === 0) return 0;
+    return Math.max(...packItems.map(getItemWeight));
+  });
+
+  let big3Weight = $derived.by(() => {
+    const shelterWeight = categoryWeights.find(c => c.id === 'shelter')?.weight ?? 0;
+    const sleepWeight = categoryWeights.find(c => c.id === 'sleep')?.weight ?? 0;
+    return shelterWeight + sleepWeight + backpackOnlyWeightOz;
+  });
   let big3WeightLbs = $derived(big3Weight / 16);
-  let big3Breakdown = $derived(
+  let big3Breakdown = $derived.by(() =>
     big3Categories.map(catId => {
+      if (catId === 'pack') {
+        const packMeta = categories[catId];
+        return {
+          id: catId,
+          name: packMeta?.name || catId,
+          icon: packMeta?.icon || '?',
+          weight: backpackOnlyWeightOz
+        };
+      }
+
       const cat = categoryWeights.find(c => c.id === catId);
       return cat || { id: catId, name: categories[catId]?.name || catId, weight: 0, icon: categories[catId]?.icon || '?' };
     })
@@ -192,10 +240,9 @@
     const tips = [];
     const shelterCat = categoryWeights.find(c => c.id === 'shelter');
     const sleepCat = categoryWeights.find(c => c.id === 'sleep');
-    const packCat = categoryWeights.find(c => c.id === 'pack');
     if (shelterCat && shelterCat.weight > 48) tips.push({ icon: '🏕️', text: 'Shelter over 3 lbs—consider a tarp/hammock or DCF tent' });
     if (sleepCat && sleepCat.weight > 56) tips.push({ icon: '😴', text: 'Sleep system over 3.5 lbs—quilt + inflatable pad saves weight' });
-    if (packCat && packCat.weight > 48) tips.push({ icon: '🎒', text: 'Pack over 3 lbs—frameless packs work under 15 lb base' });
+    if (backpackOnlyWeightOz > 48) tips.push({ icon: '🎒', text: 'Pack over 3 lbs—frameless packs work under 15 lb base' });
     if (big3WeightLbs > 12) tips.push({ icon: '⚖️', text: 'Big 3 over 12 lbs—focus here for biggest savings' });
     if (baseWeightLbs < 10 && tips.length === 0) tips.push({ icon: '🏆', text: 'Ultralight achieved! Focus on durability now' });
     if (tips.length === 0 && baseWeightLbs < 15) tips.push({ icon: '✅', text: 'Solid lightweight setup—enjoy the miles!' });
@@ -373,31 +420,39 @@
                         value={item.name}
                         oninput={(event) => updateItem(item.id, 'name', event.currentTarget.value)}
                       />
-                      {#if item.tier === 1}<span class="item-tag essential">Essential</span>{/if}
                     </div>
                     <div class="item-meta">
-                      <input
-                        class="item-weight-input"
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        inputmode="decimal"
-                        placeholder={item.templateWeight ? item.templateWeight.toString() : 'oz'}
-                        value={item.weight}
-                        oninput={(event) => updateItem(item.id, 'weight', event.currentTarget.value)}
-                      />
-                    </div>
-                    <div class="item-actions">
-                      <label class="item-toggle">
+                      <div class="item-weight-wrap">
                         <input
-                          type="checkbox"
-                          checked={item.worn}
-                          onchange={(event) => updateItem(item.id, 'worn', event.currentTarget.checked)}
+                          class="item-weight-input"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          inputmode="decimal"
+                          placeholder={item.templateWeight ? item.templateWeight.toString() : '0'}
+                          value={item.weight}
+                          oninput={(event) => updateItem(item.id, 'weight', event.currentTarget.value)}
                         />
+                        <span class="item-weight-unit">oz</span>
+                      </div>
+                      <button
+                        type="button"
+                        class="item-pill-btn worn"
+                        class:isOn={item.worn}
+                        title="Counts as worn weight (not in base weight)"
+                        aria-label="Toggle worn weight"
+                        aria-pressed={item.worn}
+                        onclick={() => updateItem(item.id, 'worn', !item.worn)}
+                      >
                         Worn
-                      </label>
-                      <button class="item-remove" onclick={() => removeItem(item.id)} aria-label="Remove item">
-                        Remove
+                      </button>
+                      <button
+                        type="button"
+                        class="item-icon-btn remove"
+                        aria-label="Remove item"
+                        onclick={() => removeItem(item.id)}
+                      >
+                        ✕
                       </button>
                     </div>
                   </div>
@@ -964,32 +1019,35 @@
   .gear-item {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.6rem 1rem;
-    padding: 0.75rem 0;
+    gap: 0.75rem;
+    padding: 0.55rem 0.35rem;
+    margin: 0 -0.35rem;
     border-bottom: 1px dashed var(--border);
     font-size: 0.8rem;
+    border-radius: 10px;
+    transition: background 0.15s ease;
+  }
+
+  .gear-item:hover {
+    background: color-mix(in srgb, var(--alpine) 6%, transparent);
+  }
+
+  .gear-item:focus-within {
+    background: color-mix(in srgb, var(--alpine) 10%, transparent);
   }
 
   .item-main {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
   }
 
   .item-meta {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.75rem;
-  }
-
-
-  .item-actions {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.45rem;
   }
 
   .item-input,
@@ -1003,6 +1061,11 @@
     color: var(--ink);
   }
 
+  .item-input {
+    flex: 1;
+    min-width: 0;
+  }
+
   .item-input:focus,
   .item-weight-input:focus {
     outline: none;
@@ -1011,8 +1074,38 @@
   }
 
   .item-weight-input {
-    max-width: 90px;
+    max-width: 82px;
     text-align: right;
+    padding-right: 2.1rem;
+  }
+
+  .item-weight-wrap {
+    position: relative;
+  }
+
+  .item-weight-unit {
+    position: absolute;
+    right: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: Oswald, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--muted) 75%, transparent);
+    pointer-events: none;
+  }
+
+  .item-weight-input::-webkit-outer-spin-button,
+  .item-weight-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .item-weight-input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
   }
 
   .item-input::placeholder,
@@ -1020,36 +1113,90 @@
     color: color-mix(in srgb, var(--muted) 70%, transparent);
   }
 
-  .item-toggle {
+  .item-pill-btn {
+    height: 34px;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    justify-content: center;
+    padding: 0 0.6rem;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    background: #fff;
     color: var(--muted);
-  }
-
-  .item-toggle input {
-    accent-color: var(--pine);
-  }
-
-  .item-remove {
-    border: none;
-    background: none;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     cursor: pointer;
-    color: #b91c1c;
+    transition: all 0.15s ease;
+    font-family: Oswald, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1;
   }
 
-  .item-remove:hover {
+  .item-pill-btn:hover {
+    border-color: var(--alpine);
+    background: color-mix(in srgb, var(--alpine) 8%, #fff);
+    color: var(--pine);
+  }
+
+  .item-pill-btn:focus {
+    outline: none;
+    border-color: var(--alpine);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--alpine) 25%, transparent);
+  }
+
+  .item-pill-btn.worn.isOn {
+    background: var(--pine);
+    border-color: var(--pine);
+    color: #fff;
+  }
+
+  .item-icon-btn {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+    font-size: 0.95rem;
+  }
+
+  .item-icon-btn:hover {
+    border-color: var(--alpine);
+    background: color-mix(in srgb, var(--alpine) 8%, #fff);
+    color: var(--pine);
+  }
+
+  .item-icon-btn:focus {
+    outline: none;
+    border-color: var(--alpine);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--alpine) 25%, transparent);
+  }
+
+  .item-icon-btn.remove {
+    color: #b91c1c;
+    opacity: 0;
+    transform: scale(0.98);
+    pointer-events: none;
+  }
+
+  .gear-item:hover .item-icon-btn.remove,
+  .gear-item:focus-within .item-icon-btn.remove {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .item-icon-btn.remove:hover {
+    border-color: #b91c1c;
+    background: color-mix(in srgb, #b91c1c 8%, #fff);
     color: #7f1d1d;
   }
-
 
   .item-add {
     margin-top: 0.5rem;
@@ -1077,28 +1224,6 @@
   .gear-item:last-child {
     border-bottom: none;
   }
-
-
-  .item-tag {
-    font-size: 0.55rem;
-    padding: 0.15rem 0.35rem;
-    border-radius: 4px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .item-tag.essential {
-    background: var(--pine);
-    color: #fff;
-  }
-
-  .item-tag.worn {
-    background: var(--muted);
-    color: #fff;
-  }
-
-
 
   /* Consumables Section */
   .consumables-section {

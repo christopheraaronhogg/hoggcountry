@@ -402,16 +402,17 @@
           <span class="tool-desc">Track daily progress</span>
         </a>
 
-        <a href="/tools#resupply" class="tool-card">
-          <div class="tool-icon resupply">
+        <a href="/tools#gearbudget" class="tool-card">
+          <div class="tool-icon pack">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 01-8 0"/>
+              <path d="M9 18h6"/>
+              <path d="M10 21h4"/>
+              <path d="M9 2h6l2 5H7l2-5z"/>
+              <path d="M7 7h10l-1 14H8L7 7z"/>
             </svg>
           </div>
-          <span class="tool-name">Resupply Planner</span>
-          <span class="tool-desc">Plan town stops</span>
+          <span class="tool-name">Gear Builder</span>
+          <span class="tool-desc">Build by budget</span>
         </a>
 
         <a href="/tools#weather" class="tool-card">
@@ -446,20 +447,6 @@
           </div>
           <span class="tool-name">Pack Builder</span>
           <span class="tool-desc">Optimize base weight</span>
-        </a>
-
-        <a href="/tools#food" class="tool-card">
-          <div class="tool-icon food">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8h1a4 4 0 010 8h-1"/>
-              <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
-              <line x1="6" y1="1" x2="6" y2="4"/>
-              <line x1="10" y1="1" x2="10" y2="4"/>
-              <line x1="14" y1="1" x2="14" y2="4"/>
-            </svg>
-          </div>
-          <span class="tool-name">Food Calculator</span>
-          <span class="tool-desc">Plan daily calories</span>
         </a>
 
         <a href="/tools#water" class="tool-card">
@@ -505,7 +492,7 @@
           <span class="tool-desc">Electronics strategy</span>
         </a>
 
-        <a href="/tools#maildrop" class="tool-card">
+        <a href="/tools#mail" class="tool-card">
           <div class="tool-icon maildrop">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 12h-6l-2 3h-4l-2-3H2"/>

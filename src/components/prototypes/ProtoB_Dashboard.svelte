@@ -82,13 +82,11 @@
     { name: 'Weather', icon: '🌤️', href: '/tools#weather' },
     { name: 'Milestones', icon: '📍', href: '/tools#milestone' },
     { name: 'Pack', icon: '🎒', href: '/tools#pack' },
-    { name: 'Resupply', icon: '🍽️', href: '/tools#resupply' },
+    { name: 'Gear', icon: '🛠️', href: '/tools#gearbudget' },
     { name: 'Water', icon: '💧', href: '/tools#water' },
     { name: 'Budget', icon: '💰', href: '/tools#budget' },
     { name: 'Mail Drops', icon: '📬', href: '/tools#mail' },
-    { name: 'Power', icon: '🔋', href: '/tools#power' },
-    { name: 'Food Calc', icon: '🥜', href: '/tools#food' },
-    { name: 'Gear Swap', icon: '🔄', href: '/tools#geartrans' }
+    { name: 'Power', icon: '🔋', href: '/tools#power' }
   ];
 
   // Activity feed

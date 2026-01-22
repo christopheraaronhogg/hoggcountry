@@ -13,16 +13,12 @@
     shelter: () => import('./ShelterDecision.svelte'),
     weather: () => import('./WeatherAssessor.svelte'),
     pack: () => import('./PackBuilder.svelte'),
-    resupply: () => import('./ResupplyCalculator.svelte'),
     water: () => import('./WaterTracker.svelte'),
     budget: () => import('./BudgetCalculator.svelte'),
     mail: () => import('./MailDropPlanner.svelte'),
     power: () => import('./PowerManager.svelte'),
-    food: () => import('./FoodCalculator.svelte'),
-    geartrans: () => import('./GearTransitionTracker.svelte'),
     training: () => import('./TrainingPlanner.svelte'),
     emergency: () => import('./EmergencyCard.svelte'),
-    gearbudget: () => import('./BudgetGearBuilder.svelte'),
   };
 
   // Cache for loaded components
@@ -52,19 +48,15 @@
     { mile: 2198, name: 'Katahdin' },
   ];
 
-  // Consolidated 14 high-leverage tools - Milestone is foundational
+  // Consolidated 14 high-leverage tools - Journey is foundational
   const tools = [
     { id: 'milestone', name: 'Journey', icon: '🗺️', desc: 'Plan your timeline & track progress' },
     { id: 'weather', name: 'Weather', icon: '🌤️', desc: 'Weather, heat zones & daylight' },
     { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
-    { id: 'gearbudget', name: 'Gear', icon: '🛠️', desc: 'Build your kit by budget' },
-    { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Towns, food & mail drops' },
-    { id: 'water', name: 'Water', icon: '💧', desc: 'Water sources & carry calc' },
+    { id: 'water', name: 'Water', icon: '💧', desc: 'AWOL water sources' },
     { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
     { id: 'mail', name: 'Mail', icon: '📬', desc: 'Plan resupply mail drops' },
     { id: 'power', name: 'Power', icon: '🔋', desc: 'Manage battery & devices' },
-    { id: 'food', name: 'Food', icon: '🍽️', desc: 'Calorie & weight calculator' },
-    { id: 'geartrans', name: 'Swap', icon: '🔄', desc: 'Gear transition planner' },
     { id: 'training', name: 'Train', icon: '🏋️', desc: 'Pre-trail preparation' },
     { id: 'shelter', name: 'Shelter', icon: '🏠', desc: 'Tent vs shelter decision' },
     { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
@@ -120,6 +112,11 @@
 
     // Handle URL hash for deep-linking to tools
     const hash = window.location.hash.slice(1);
+    // Hide unfinished tools that may still be linked/bookmarked
+    if (hash === 'gearbudget') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      return;
+    }
     if (tools.some(t => t.id === hash && !t.disabled)) {
       if (hash !== 'milestone' && toolLoaders[hash]) {
         isToolLoading = true;
@@ -1018,7 +1015,7 @@
   /* ========== NAVIGATION ========== */
   .tools-nav {
     display: grid;
-    grid-template-columns: repeat(15, 1fr);
+    grid-template-columns: repeat(14, 1fr);
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;

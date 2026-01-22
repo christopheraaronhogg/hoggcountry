@@ -2,7 +2,7 @@
  * Hiker Statistics Calculator
  *
  * Takes quiz/form inputs and calculates real trail statistics
- * using data from trail-facts.yaml and ResupplyCalculator towns
+ * using data from trail-facts.yaml
  */
 
 // AT total miles (AWOL 2024 mileage)
@@ -61,7 +61,6 @@ export interface CalculatedStats {
   resupplyStops: number;
   avgDaysBetweenResupply: number;
   maxCarryDays: number;
-  avgFoodWeight: number;     // lbs
 
   // Milestones
   quarterMileDate: Date;
@@ -198,10 +197,6 @@ export function calculateHikerStats(inputs: HikerInputs): CalculatedStats {
   const totalNeeded = townBudget + foodBudget + gearBudget;
   const emergencyBuffer = inputs.totalBudget - totalNeeded;
 
-  // Food carry weight (avg 1.5 lbs/day for 4000 cal)
-  const avgCarryDays = Math.ceil((cruisingPace * 4) / cruisingPace);
-  const avgFoodWeight = avgCarryDays * 1.5;
-
   // State breakdown
   const stateStats = calculateStateStats(startDate, cruisingPace, zeroDays, totalDays);
 
@@ -254,7 +249,6 @@ export function calculateHikerStats(inputs: HikerInputs): CalculatedStats {
     resupplyStops,
     avgDaysBetweenResupply: 4,
     maxCarryDays: 6,
-    avgFoodWeight: Math.round(avgFoodWeight * 10) / 10,
 
     quarterMileDate: quarterDate,
     halfwayDate: halfwayDate,
