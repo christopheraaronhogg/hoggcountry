@@ -5,6 +5,7 @@ import Header from '../../components/Header.astro';
 import FullGuideNav from '../../components/FullGuideNav.svelte';
 import GuideInlineSearch from '../../components/GuideInlineSearch.svelte';
 import DownloadGuideButton from '../../components/DownloadGuideButton.svelte';
+import HighlightsProvider from '../../components/HighlightsProvider.svelte';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -915,6 +916,46 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
         border-bottom-color: var(--alpine);
       }
 
+      /* ===== Highlight Styles ===== */
+      .guide-highlight {
+        cursor: pointer;
+        border-radius: 2px;
+        padding: 1px 0;
+        transition: all 0.15s ease;
+      }
+
+      .guide-highlight:hover {
+        filter: brightness(0.95);
+      }
+
+      .guide-highlight--yellow {
+        background: rgba(254, 240, 138, 0.8);
+        box-shadow: 0 0 0 2px rgba(254, 240, 138, 0.3);
+      }
+
+      .guide-highlight--blue {
+        background: rgba(191, 219, 254, 0.8);
+        box-shadow: 0 0 0 2px rgba(191, 219, 254, 0.3);
+      }
+
+      .guide-highlight--green {
+        background: rgba(187, 247, 208, 0.8);
+        box-shadow: 0 0 0 2px rgba(187, 247, 208, 0.3);
+      }
+
+      .guide-highlight--pink {
+        background: rgba(251, 207, 232, 0.8);
+        box-shadow: 0 0 0 2px rgba(251, 207, 232, 0.3);
+      }
+
+      /* Hide highlights in print */
+      @media print {
+        .guide-highlight {
+          background: none !important;
+          box-shadow: none !important;
+        }
+      }
+
       /* ===== Print Styles ===== */
       @media print {
         body.guide-page {
@@ -1266,6 +1307,9 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
 
     <!-- Hidden download button for header trigger -->
     <DownloadGuideButton client:load variant="header" markdownContent={markdownContent} />
+
+    <!-- Highlights & Notes System -->
+    <HighlightsProvider client:load />
 
     <script>
       // Header download button triggers modal via custom event
