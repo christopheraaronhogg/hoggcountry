@@ -52,7 +52,7 @@
   });
 
   // Get snapshot for passing to child tool (reactive)
-  let trailContext = $derived(getContextSnapshot());
+  let trailContext = $derived.by(() => getContextSnapshot());
 </script>
 
 <div class="tool-page" class:mounted>

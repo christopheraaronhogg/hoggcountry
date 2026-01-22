@@ -51,8 +51,9 @@
   let showEditor = $state(false);
 
   // Derived from context
-  let alerts = $derived(getAlerts(trailContext.currentMile, 25));
-  let nextTown = $derived(getNextTown(trailContext.currentMile));
+  // NOTE: use $derived.by for function-based derivations so updates track correctly
+  let alerts = $derived.by(() => getAlerts(Number(trailContext.currentMile) || 0, 25));
+  let nextTown = $derived.by(() => getNextTown(Number(trailContext.currentMile) || 0));
 
   onMount(() => {
     loadContext();
