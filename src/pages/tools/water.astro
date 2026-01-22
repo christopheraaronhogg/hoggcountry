@@ -2,22 +2,21 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ToolPage from '../../components/tools/ToolPage.svelte';
 
-const title = "Water Tracker — Trail Tools — Hogg Country";
-const description = "Water carry planning and source tracking for the Appalachian Trail.";
+const title = "Water Tracker — Trail Tools";
+const description = "Find water sources and calculate how much to carry between refills.";
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class="container tools-container">
-    <ToolPage client:load toolId="water" title="Water Tracker" />
+  <div class="container tool-container">
+    <ToolPage client:load toolId="water" toolName="Water Tracker" />
   </div>
 </BaseLayout>
 
 <style>
-  .tools-container {
-    padding: 1rem 0 4rem;
+  .tool-container {
+    padding: 2rem 0 4rem;
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: clip;
   }
 </style>
-

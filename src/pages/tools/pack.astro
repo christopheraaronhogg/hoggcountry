@@ -2,22 +2,21 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ToolPage from '../../components/tools/ToolPage.svelte';
 
-const title = "Pack Builder — Trail Tools — Hogg Country";
-const description = "Build, weigh, and refine your gear list for an AT thru-hike.";
+const title = "Pack Builder — Trail Tools";
+const description = "Build and weigh your thru-hiking kit. Track base weight and total pack weight.";
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class="container tools-container">
-    <ToolPage client:load toolId="pack" title="Pack Builder" />
+  <div class="container tool-container">
+    <ToolPage client:load toolId="pack" toolName="Pack Builder" />
   </div>
 </BaseLayout>
 
 <style>
-  .tools-container {
-    padding: 1rem 0 4rem;
+  .tool-container {
+    padding: 2rem 0 4rem;
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: clip;
   }
 </style>
-

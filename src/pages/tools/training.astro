@@ -2,22 +2,21 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ToolPage from '../../components/tools/ToolPage.svelte';
 
-const title = "Training Planner — Trail Tools — Hogg Country";
-const description = "Build a training plan leading up to an AT thru-hike.";
+const title = "Training Planner — Trail Tools";
+const description = "Build your pre-trail training program for thru-hiking fitness.";
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class="container tools-container">
-    <ToolPage client:load toolId="training" title="Training Planner" />
+  <div class="container tool-container">
+    <ToolPage client:load toolId="training" toolName="Training Planner" />
   </div>
 </BaseLayout>
 
 <style>
-  .tools-container {
-    padding: 1rem 0 4rem;
+  .tool-container {
+    padding: 2rem 0 4rem;
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: clip;
   }
 </style>
-

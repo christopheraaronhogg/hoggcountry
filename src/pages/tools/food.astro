@@ -2,22 +2,21 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ToolPage from '../../components/tools/ToolPage.svelte';
 
-const title = "Food Calculator — Trail Tools — Hogg Country";
-const description = "Calories, food weight, and resupply math for an AT thru-hike.";
+const title = "Food Calculator — Trail Tools";
+const description = "Calculate daily calories and food weight for your thru-hike.";
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class="container tools-container">
-    <ToolPage client:load toolId="food" title="Food Calculator" />
+  <div class="container tool-container">
+    <ToolPage client:load toolId="food" toolName="Food Calculator" />
   </div>
 </BaseLayout>
 
 <style>
-  .tools-container {
-    padding: 1rem 0 4rem;
+  .tool-container {
+    padding: 2rem 0 4rem;
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: clip;
   }
 </style>
-

@@ -2,22 +2,21 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ToolPage from '../../components/tools/ToolPage.svelte';
 
-const title = "Journey Planner — Trail Tools — Hogg Country";
-const description = "Milestone and finish-date planning for an Appalachian Trail thru-hike.";
+const title = "Journey Planner — Trail Tools";
+const description = "Plan your AT thru-hike timeline and track your progress from Springer to Katahdin.";
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class="container tools-container">
-    <ToolPage client:load toolId="milestone" title="Journey Planner" />
+  <div class="container tool-container">
+    <ToolPage client:load toolId="milestone" toolName="Journey Planner" />
   </div>
 </BaseLayout>
 
 <style>
-  .tools-container {
-    padding: 1rem 0 4rem;
+  .tool-container {
+    padding: 2rem 0 4rem;
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: clip;
   }
 </style>
-

@@ -1,113 +1,218 @@
-export interface TrailAlert {
-  kind: 'info' | 'warning';
+/**
+ * Trail Recommendations - Contextual alerts and suggestions based on mile position
+ *
+ * Provides "What Matters Now" data for the dashboard:
+ * - State line alerts (celebrations!)
+ * - Bear canister required zones
+ * - Terrain warnings (Whites, PA rocks, etc.)
+ * - Next town/resupply info
+ */
+
+// State boundaries (NOBO order) - from trail-facts.yaml
+export const stateBoundaries = [
+  { mile: 0, state: 'GA', name: 'Georgia', message: 'Starting at Springer Mountain!' },
+  { mile: 75.5, state: 'NC', name: 'North Carolina', message: 'Welcome to North Carolina!' },
+  { mile: 240.8, state: 'TN', name: 'Tennessee', message: 'Entering Tennessee!' },
+  { mile: 392.5, state: 'VA', name: 'Virginia', message: 'The Long Green Tunnel begins!' },
+  { mile: 464.4, state: 'VA', name: 'Virginia (cont.)', message: 'Virginia continues...' },
+  { mile: 1009.0, state: 'WV', name: 'West Virginia', message: 'Harpers Ferry - The Psychological Halfway!' },
+  { mile: 1012.1, state: 'MD', name: 'Maryland', message: 'Maryland - Quick but scenic!' },
+  { mile: 1052.4, state: 'PA', name: 'Pennsylvania', message: 'Rocksylvania begins...' },
+  { mile: 1282.5, state: 'NJ', name: 'New Jersey', message: 'The Garden State!' },
+  { mile: 1355.0, state: 'NY', name: 'New York', message: 'Empire State trail!' },
+  { mile: 1443.8, state: 'CT', name: 'Connecticut', message: 'Connecticut nutmeg country!' },
+  { mile: 1495.5, state: 'MA', name: 'Massachusetts', message: 'Bay State adventures!' },
+  { mile: 1585.9, state: 'VT', name: 'Vermont', message: 'Green Mountain State!' },
+  { mile: 1741.8, state: 'NH', name: 'New Hampshire', message: 'The Whites await!' },
+  { mile: 1902.4, state: 'ME', name: 'Maine', message: 'The final state! Katahdin calls!' },
+];
+
+// Bear canister required zones
+export const bearZones = [
+  {
+    startMile: 166,
+    endMile: 266,
+    name: 'Great Smoky Mountains',
+    requirement: 'Bear cables at shelters, food storage required',
+  },
+  {
+    startMile: 1791,
+    endMile: 1902,
+    name: 'White Mountains',
+    requirement: 'Bear boxes at campsites, proper food storage required',
+  },
+  {
+    startMile: 1902,
+    endMile: 2100,
+    name: 'Maine (100-Mile Wilderness approach)',
+    requirement: 'Bear canister strongly recommended',
+  },
+];
+
+// Terrain warning zones
+export const terrainZones = [
+  {
+    startMile: 1052,
+    endMile: 1282,
+    name: 'Rocksylvania',
+    icon: '🪨',
+    warning: 'Rocky terrain ahead - watch your ankles!',
+  },
+  {
+    startMile: 1741,
+    endMile: 1902,
+    name: 'White Mountains',
+    icon: '⛰️',
+    warning: 'Above treeline exposure - check weather!',
+  },
+  {
+    startMile: 2020,
+    endMile: 2100,
+    name: '100-Mile Wilderness',
+    icon: '🌲',
+    warning: 'No resupply for 100 miles - plan food carefully!',
+  },
+  {
+    startMile: 2180,
+    endMile: 2198,
+    name: 'Katahdin',
+    icon: '🏔️',
+    warning: 'Final climb! Check Baxter State Park conditions.',
+  },
+];
+
+// Major resupply towns
+export const resupplyTowns = [
+  { mile: 31, name: 'Neels Gap', services: ['outfitter', 'hostel'], note: 'First resupply!' },
+  { mile: 110, name: 'Franklin, NC', services: ['grocery', 'hostel', 'outfitter', 'restaurant'] },
+  { mile: 166, name: 'Fontana Dam', services: ['grocery', 'hostel'], note: 'Last stop before Smokies' },
+  { mile: 241, name: 'Gatlinburg, TN', services: ['grocery', 'hostel', 'outfitter', 'restaurant'] },
+  { mile: 274, name: 'Hot Springs, NC', services: ['grocery', 'hostel', 'restaurant'] },
+  { mile: 386, name: 'Damascus, VA', services: ['grocery', 'hostel', 'outfitter', 'restaurant'], note: 'Trail Days!' },
+  { mile: 550, name: 'Pearisburg, VA', services: ['grocery', 'hostel', 'restaurant'] },
+  { mile: 702, name: 'Waynesboro, VA', services: ['grocery', 'hostel', 'outfitter', 'restaurant'] },
+  { mile: 1025, name: 'Harpers Ferry, WV', services: ['grocery', 'hostel', 'restaurant'], note: 'ATC HQ!' },
+  { mile: 1290, name: 'Delaware Water Gap', services: ['grocery', 'hostel', 'restaurant'] },
+  { mile: 1392, name: 'Greenwood Lake, NY', services: ['grocery', 'restaurant'] },
+  { mile: 1585, name: 'Dalton, MA', services: ['grocery', 'hostel'] },
+  { mile: 1741, name: 'Gorham, NH', services: ['grocery', 'hostel', 'outfitter', 'restaurant'] },
+  { mile: 1912, name: 'Monson, ME', services: ['grocery', 'hostel'], note: 'Last major stop before Katahdin!' },
+];
+
+export interface Alert {
+  type: 'state-line' | 'bear' | 'terrain' | 'milestone';
+  icon: string;
   title: string;
   message: string;
+  distance?: number;
+  priority: number; // Lower = higher priority
 }
 
-export interface TrailTown {
-  name: string;
+export interface TownInfo {
   mile: number;
-  services?: string[];
-}
-
-export interface TrailState {
-  id: string;
   name: string;
-  entryMile: number;
-  exitMile: number;
+  distance: number;
+  services: string[];
+  note?: string;
 }
 
-// Mile markers are sourced from the project's 2026 trail facts database (rounded where appropriate).
-const states: TrailState[] = [
-  { id: 'GA', name: 'Georgia', entryMile: 0.0, exitMile: 75.5 },
-  { id: 'NC', name: 'North Carolina', entryMile: 75.5, exitMile: 240.8 },
-  { id: 'TN', name: 'Tennessee', entryMile: 240.8, exitMile: 392.5 },
-  { id: 'VA', name: 'Virginia', entryMile: 392.5, exitMile: 1009.0 },
-  { id: 'WV', name: 'West Virginia', entryMile: 1009.0, exitMile: 1012.1 },
-  { id: 'MD', name: 'Maryland', entryMile: 1012.1, exitMile: 1052.4 },
-  { id: 'PA', name: 'Pennsylvania', entryMile: 1052.4, exitMile: 1282.5 },
-  { id: 'NJ', name: 'New Jersey', entryMile: 1282.5, exitMile: 1355.0 },
-  { id: 'NY', name: 'New York', entryMile: 1355.0, exitMile: 1443.8 },
-  { id: 'CT', name: 'Connecticut', entryMile: 1443.8, exitMile: 1495.5 },
-  { id: 'MA', name: 'Massachusetts', entryMile: 1495.5, exitMile: 1585.9 },
-  { id: 'VT', name: 'Vermont', entryMile: 1585.9, exitMile: 1736.7 },
-  { id: 'NH', name: 'New Hampshire', entryMile: 1736.7, exitMile: 1898.5 },
-  { id: 'ME', name: 'Maine', entryMile: 1898.5, exitMile: 2197.4 },
-];
+/**
+ * Get contextual alerts based on current mile position
+ */
+export function getAlerts(currentMile: number, lookAheadMiles: number = 20): Alert[] {
+  const alerts: Alert[] = [];
 
-const keyTowns: TrailTown[] = [
-  { name: 'Mountain Crossings (Neels Gap)', mile: 31.7, services: ['outfitter', 'resupply'] },
-  { name: 'Hiawassee, GA', mile: 69.2, services: ['town resupply'] },
-  { name: 'Franklin, NC', mile: 108.3, services: ['outfitter', 'town resupply'] },
-  { name: 'Fontana Dam, NC', mile: 163.8, services: ['last stop before Smokies'] },
-  { name: 'Gatlinburg, TN', mile: 206.4, services: ['full services'] },
-  { name: 'Hot Springs, NC', mile: 273.4, services: ['on-trail town'] },
-  { name: 'Erwin, TN', mile: 340.5, services: ['town resupply'] },
-  { name: 'Damascus, VA', mile: 464.4, services: ['Trail Days', 'full services'] },
-  { name: 'Pearisburg, VA', mile: 635.3, services: ['town resupply'] },
-  { name: 'Waynesboro, VA', mile: 861.7, services: ['Shenandoah gateway'] },
-  { name: 'Harpers Ferry, WV', mile: 1012.0, services: ['ATC HQ'] },
-  { name: 'Delaware Water Gap, PA', mile: 1290.0, services: ['town resupply'] },
-  { name: 'Hanover, NH', mile: 1747.2, services: ['Whites approach'] },
-  { name: 'Monson, ME', mile: 2077.0, services: ['100-Mile Wilderness gateway'] },
-];
+  // Check for upcoming state line
+  for (const boundary of stateBoundaries) {
+    const distance = boundary.mile - currentMile;
+    if (distance > 0 && distance <= lookAheadMiles) {
+      alerts.push({
+        type: 'state-line',
+        icon: '🎉',
+        title: `Entering ${boundary.name}`,
+        message: boundary.message,
+        distance: Math.round(distance),
+        priority: 1,
+      });
+      break; // Only show next state line
+    }
+  }
 
-const ZONES = {
-  smokies: { start: 165.0, end: 241.0, title: 'Smokies zone' },
-  whites: { start: 1736.7, end: 1898.5, title: 'White Mountains zone' },
-  maine: { start: 2077.0, end: 2197.4, title: 'Maine backcountry zone' },
-};
+  // Check if in or approaching bear zone
+  for (const zone of bearZones) {
+    if (currentMile >= zone.startMile && currentMile <= zone.endMile) {
+      alerts.push({
+        type: 'bear',
+        icon: '🐻',
+        title: `${zone.name} Bear Zone`,
+        message: zone.requirement,
+        priority: 2,
+      });
+    } else if (zone.startMile - currentMile > 0 && zone.startMile - currentMile <= lookAheadMiles) {
+      alerts.push({
+        type: 'bear',
+        icon: '🐻',
+        title: `Bear Country Ahead`,
+        message: `${zone.name} in ${Math.round(zone.startMile - currentMile)} miles - ${zone.requirement}`,
+        distance: Math.round(zone.startMile - currentMile),
+        priority: 3,
+      });
+    }
+  }
 
-export function getCurrentState(mile: number): TrailState | null {
-  const found = states.find((s) => mile >= s.entryMile && mile < s.exitMile);
-  return found ?? null;
+  // Check for terrain warnings
+  for (const zone of terrainZones) {
+    if (currentMile >= zone.startMile && currentMile <= zone.endMile) {
+      alerts.push({
+        type: 'terrain',
+        icon: zone.icon,
+        title: zone.name,
+        message: zone.warning,
+        priority: 4,
+      });
+    } else if (zone.startMile - currentMile > 0 && zone.startMile - currentMile <= lookAheadMiles) {
+      alerts.push({
+        type: 'terrain',
+        icon: zone.icon,
+        title: `${zone.name} Ahead`,
+        message: `${zone.warning} (${Math.round(zone.startMile - currentMile)} miles)`,
+        distance: Math.round(zone.startMile - currentMile),
+        priority: 5,
+      });
+    }
+  }
+
+  // Sort by priority
+  return alerts.sort((a, b) => a.priority - b.priority);
 }
 
-export function getNextTown(mile: number): (TrailTown & { milesAway: number }) | null {
-  const next = keyTowns
-    .slice()
-    .sort((a, b) => a.mile - b.mile)
-    .find((t) => t.mile >= mile);
-  if (!next) return null;
-  return { ...next, milesAway: Math.max(0, Math.round((next.mile - mile) * 10) / 10) };
+/**
+ * Get next resupply town from current position
+ */
+export function getNextTown(currentMile: number): TownInfo | null {
+  for (const town of resupplyTowns) {
+    if (town.mile > currentMile) {
+      return {
+        ...town,
+        distance: Math.round(town.mile - currentMile),
+      };
+    }
+  }
+  return null;
 }
 
-export function getAlerts(mile: number): TrailAlert[] {
-  const alerts: TrailAlert[] = [];
-
-  if (mile >= ZONES.smokies.start && mile <= ZONES.smokies.end) {
-    alerts.push({
-      kind: 'warning',
-      title: 'Smokies',
-      message: 'Permit rules apply; check bear activity and current closures.',
-    });
+/**
+ * Get current state based on mile
+ */
+export function getCurrentState(currentMile: number): { state: string; name: string } | null {
+  // Find the state we're currently in
+  for (let i = stateBoundaries.length - 1; i >= 0; i--) {
+    if (currentMile >= stateBoundaries[i].mile) {
+      return {
+        state: stateBoundaries[i].state,
+        name: stateBoundaries[i].name,
+      };
+    }
   }
-
-  if (mile >= ZONES.whites.start && mile <= ZONES.whites.end) {
-    alerts.push({
-      kind: 'warning',
-      title: 'Whites',
-      message: 'Hard terrain and fast-changing weather; plan conservative mileage.',
-    });
-  }
-
-  if (mile >= ZONES.maine.start && mile <= ZONES.maine.end) {
-    alerts.push({
-      kind: 'warning',
-      title: 'Maine',
-      message: 'Remote stretches ahead (including the 100‑Mile Wilderness); carry extra food and a buffer day.',
-    });
-  }
-
-  // Terrain callouts (simple, mile-based)
-  if (mile >= 1052.4 && mile <= 1282.5) {
-    alerts.push({
-      kind: 'info',
-      title: 'Rocksylvania',
-      message: 'Rocky tread and sore feet are common; consider fresh shoes and a lighter pack.',
-    });
-  }
-
-  return alerts;
+  return { state: 'GA', name: 'Georgia' };
 }
-

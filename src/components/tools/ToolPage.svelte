@@ -1,11 +1,23 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { loadContext, trailContext } from '../../stores/trailContext.svelte';
+  import { loadContext, getContextSnapshot } from '../../stores/trailContext.svelte';
   import ContextBanner from './ContextBanner.svelte';
+  import ContextEditor from './ContextEditor.svelte';
 
-  let { toolId, title } = $props<{ toolId: string; title: string }>();
+  interface Props {
+    toolId: string;
+    toolName: string;
+    children?: import('svelte').Snippet;
+  }
 
-  const toolLoaders: Record<string, () => Promise<{ default: unknown }>> = {
+  let { toolId, toolName, children }: Props = $props();
+
+  let mounted = $state(false);
+  let showEditor = $state(false);
+  let ToolComponent = $state<typeof import('svelte').SvelteComponent | null>(null);
+
+  // Tool component loaders
+  const toolLoaders: Record<string, () => Promise<{ default: typeof import('svelte').SvelteComponent }>> = {
     milestone: () => import('../MilestoneCalculator.svelte'),
     weather: () => import('../WeatherAssessor.svelte'),
     pack: () => import('../PackBuilder.svelte'),
@@ -23,73 +35,92 @@
     emergency: () => import('../EmergencyCard.svelte'),
   };
 
-  let ToolComponent = $state<unknown>(null);
-  let loading = $state(true);
-  let loadError = $state<string | null>(null);
-
-  async function loadTool(id: string) {
-    loading = true;
-    loadError = null;
-
-    const loader = toolLoaders[id];
-    if (!loader) {
-      ToolComponent = null;
-      loading = false;
-      loadError = `Unknown tool: ${id}`;
-      return;
-    }
-
-    try {
-      const mod = await loader();
-      ToolComponent = mod.default;
-    } catch (err) {
-      ToolComponent = null;
-      loadError = err instanceof Error ? err.message : 'Failed to load tool.';
-    } finally {
-      loading = false;
-    }
-  }
-
-  onMount(() => {
+  onMount(async () => {
     loadContext();
-    loadTool(toolId);
+
+    // Load the tool component
+    if (toolLoaders[toolId]) {
+      try {
+        const module = await toolLoaders[toolId]();
+        ToolComponent = module.default;
+      } catch (e) {
+        console.error(`Failed to load tool: ${toolId}`, e);
+      }
+    }
+
+    mounted = true;
   });
+
+  // Get snapshot for passing to child tool (reactive)
+  let trailContext = $derived(getContextSnapshot());
 </script>
 
-<div class="tool-page">
-  <ContextBanner {title} />
+<div class="tool-page" class:mounted>
+  <!-- Context Banner with Edit Button -->
+  <ContextBanner onEditClick={() => showEditor = true} />
 
-  {#if loading}
-    <div class="card loading" aria-busy="true">Loading…</div>
-  {:else if loadError}
-    <div class="card loading">
-      <p><strong>Couldn’t load this tool.</strong></p>
-      <p class="muted">{loadError}</p>
-      <p><a href="/tools/">Back to tools</a></p>
-    </div>
-  {:else if ToolComponent}
-    <div class="tool-shell">
-      <svelte:component this={ToolComponent} trailContext={trailContext} />
-    </div>
-  {/if}
+  <!-- Tool Content -->
+  <div class="tool-content">
+    {#if ToolComponent}
+      <svelte:component this={ToolComponent} {trailContext} />
+    {:else}
+      <div class="loading">
+        <div class="spinner"></div>
+        <span>Loading {toolName}...</span>
+      </div>
+    {/if}
+  </div>
+
+  <!-- Context Editor Modal -->
+  <ContextEditor isOpen={showEditor} onClose={() => showEditor = false} />
 </div>
 
 <style>
   .tool-page {
-    padding-bottom: 4rem;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
   }
 
-  .tool-shell {
-    max-width: 100%;
-    overflow-x: clip;
+  .tool-page.mounted {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .tool-content {
+    min-height: 400px;
   }
 
   .loading {
-    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 300px;
+    color: var(--muted, #888);
   }
 
-  .muted {
-    color: var(--muted);
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border, #e5e5e5);
+    border-top-color: var(--alpine, #7b9e6b);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading span {
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 </style>
-

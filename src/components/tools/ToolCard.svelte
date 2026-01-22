@@ -1,51 +1,103 @@
 <script lang="ts">
-  let { href, icon, name, desc } = $props<{
-    href: string;
-    icon: string;
+  interface Props {
+    id: string;
     name: string;
-    desc: string;
-  }>();
+    icon: string;
+    description: string;
+    href: string;
+    isEmergency?: boolean;
+  }
+
+  let { id, name, icon, description, href, isEmergency = false }: Props = $props();
 </script>
 
-<a class="card tool-card" href={href}>
-  <div class="icon" aria-hidden="true">{icon}</div>
-  <div class="body">
-    <div class="name">{name}</div>
-    <div class="desc">{desc}</div>
-  </div>
+<a
+  class="tool-card"
+  class:emergency={isEmergency}
+  {href}
+  data-tool-id={id}
+>
+  <span class="card-icon" aria-hidden="true">{icon}</span>
+  <span class="card-name">{name}</span>
+  <span class="card-desc">{description}</span>
 </a>
 
 <style>
   .tool-card {
     display: flex;
-    gap: 0.9rem;
-    padding: 1rem;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem 0.75rem;
+    background: #fff;
+    border: 1px solid var(--border, #e5e5e5);
+    border-radius: 12px;
     text-decoration: none;
     color: inherit;
+    transition: all 0.2s ease;
   }
 
-  .icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-    background: rgba(166, 181, 137, 0.2);
-    border: 1px solid var(--border);
-    font-size: 1.4rem;
-    flex: 0 0 auto;
+  .tool-card:hover {
+    border-color: var(--alpine, #7b9e6b);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
   }
 
-  .name {
-    font-weight: 800;
-    color: var(--ink);
-    margin-bottom: 0.15rem;
+  .tool-card:focus-visible {
+    outline: 3px solid var(--alpine, #7b9e6b);
+    outline-offset: 2px;
   }
 
-  .desc {
-    color: var(--muted);
+  .tool-card.emergency {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.05), rgba(220, 38, 38, 0.02));
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  .tool-card.emergency:hover {
+    border-color: rgba(220, 38, 38, 0.6);
+  }
+
+  .card-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-name {
+    font-family: Oswald, sans-serif;
     font-size: 0.9rem;
-    line-height: 1.4;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--pine, #4a5a44);
+    margin-bottom: 0.25rem;
+  }
+
+  .tool-card.emergency .card-name {
+    color: #dc2626;
+  }
+
+  .card-desc {
+    font-size: 0.7rem;
+    color: var(--muted, #888);
+    line-height: 1.3;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .tool-card {
+      padding: 0.75rem 0.5rem;
+    }
+
+    .card-icon {
+      font-size: 1.25rem;
+    }
+
+    .card-name {
+      font-size: 0.8rem;
+    }
+
+    .card-desc {
+      font-size: 0.65rem;
+    }
   }
 </style>
-
