@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { RESUPPLY_STOPS, type ResupplyStop } from '../../data/resupplyStops';
   import { trailContext, updateContext, TRAIL_TOTAL_MILES } from '../../stores/trailContext.svelte';
 
   interface Props {
@@ -43,7 +42,7 @@
   }
 
   // =============================================================================
-  // GPS "snap" (best-effort): uses nearest cached resupply stop location
+  // GPS "snap": uses locally-hosted milepost coordinates (generated from the ANST centerline)
   // =============================================================================
 
   function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -57,82 +56,43 @@
     return 2 * R * Math.asin(Math.sqrt(a));
   }
 
-  type GeoCacheEntry = { lat: number; lon: number };
-  const GEO_CACHE_KEY = 'at-geo-cache-v1';
+  type Milepost = { mile: number; lat: number; lon: number };
+  let mileposts: Milepost[] | null = null;
 
-  function readGeoCache(): Record<string, GeoCacheEntry> {
-    if (typeof localStorage === 'undefined') return {};
-    try {
-      const raw = localStorage.getItem(GEO_CACHE_KEY);
-      if (!raw) return {};
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') return parsed as Record<string, GeoCacheEntry>;
-    } catch {}
-    return {};
+  async function loadMileposts(): Promise<Milepost[]> {
+    if (mileposts) return mileposts;
+    const resp = await fetch('/at-mileposts.json', { method: 'GET' });
+    if (!resp.ok) throw new Error('Could not load milepost data.');
+    const data = (await resp.json()) as { mileposts?: Milepost[] };
+    if (!data?.mileposts || !Array.isArray(data.mileposts)) throw new Error('Invalid milepost data.');
+    mileposts = data.mileposts;
+    return mileposts;
   }
 
-  function writeGeoCache(cache: Record<string, GeoCacheEntry>) {
-    if (typeof localStorage === 'undefined') return;
-    try {
-      localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(cache));
-    } catch {}
-  }
+  async function snapToNearestMile(lat: number, lon: number) {
+    const posts = await loadMileposts();
 
-  async function geocodeStop(stop: ResupplyStop): Promise<GeoCacheEntry | null> {
-    const cache = readGeoCache();
-    if (cache[stop.name]) return cache[stop.name]!;
-
-    // Nominatim is a best-effort free geocoder. Keep queries minimal and cache results.
-    const query = `${stop.name}${stop.state ? `, ${stop.state}` : ''}, United States`;
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
-
-    const resp = await fetch(url, { method: 'GET' });
-    if (!resp.ok) return null;
-    const data = (await resp.json()) as Array<{ lat: string; lon: string }>;
-    if (!Array.isArray(data) || !data[0]?.lat || !data[0]?.lon) return null;
-
-    const lat = Number(data[0].lat);
-    const lon = Number(data[0].lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-
-    const entry = { lat, lon };
-    cache[stop.name] = entry;
-    writeGeoCache(cache);
-    return entry;
-  }
-
-  async function snapToNearestStop(lat: number, lon: number) {
-    const current = trailContext.currentMile;
-    const candidates = RESUPPLY_STOPS
-      .slice()
-      .sort((a, b) => Math.abs(a.mile - current) - Math.abs(b.mile - current))
-      .slice(0, 14);
-
-    let best: { stop: ResupplyStop; dist: number } | null = null;
-
-    for (const stop of candidates) {
-      const coord = await geocodeStop(stop);
-      if (!coord) continue;
-      const dist = haversineMiles(lat, lon, coord.lat, coord.lon);
-      if (!best || dist < best.dist) best = { stop, dist };
-      if (best.dist <= 0.5) break; // close enough; stop early
+    let best: { mile: number; dist: number } | null = null;
+    for (const p of posts) {
+      const dist = haversineMiles(lat, lon, p.lat, p.lon);
+      if (!best || dist < best.dist) best = { mile: p.mile, dist };
     }
 
     if (!best) {
       gpsState = 'error';
-      gpsMessage = 'Couldn’t match your location to a nearby stop.';
+      gpsMessage = 'Couldn’t match your location to the trail.';
       return;
     }
 
     if (best.dist > 5) {
       gpsState = 'error';
-      gpsMessage = `Not within 5 miles of a known stop (closest: ${best.stop.name}, ~${best.dist.toFixed(1)} mi).`;
+      gpsMessage = `Not within 5 miles of the trail (closest mile: ${best.mile}, ~${best.dist.toFixed(1)} mi).`;
       return;
     }
 
-    commit(best.stop.mile);
+    commit(best.mile);
     gpsState = 'done';
-    gpsMessage = `Snapped to ${best.stop.name} (mile ${best.stop.mile}).`;
+    gpsMessage = `Snapped to mile ${best.mile} (~${best.dist.toFixed(1)} mi away).`;
   }
 
   async function useGps() {
@@ -148,7 +108,7 @@
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          await snapToNearestStop(pos.coords.latitude, pos.coords.longitude);
+          await snapToNearestMile(pos.coords.latitude, pos.coords.longitude);
         } catch (e) {
           gpsState = 'error';
           gpsMessage = e instanceof Error ? e.message : 'Couldn’t use your location.';
@@ -328,4 +288,3 @@
     color: rgba(255, 255, 255, 0.85);
   }
 </style>
-
