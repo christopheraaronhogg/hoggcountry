@@ -361,6 +361,12 @@
   let plannedDrops = $state({});
   let viewInitialized = $state(false);
 
+  // Directory browsing (declared early so effects can safely reference it)
+  let showDirectory = $state(false);
+  let search = $state('');
+  let filterPO = $state(true);
+  let filterHostel = $state(true);
+
   // Load from localStorage
   $effect(() => {
     if (typeof window !== 'undefined') {
@@ -614,11 +620,6 @@ Thanks! 🥾`;
   });
 
   // Directory browsing
-  let showDirectory = $state(false);
-  let search = $state('');
-  let filterPO = $state(true);
-  let filterHostel = $state(true);
-
   let visibleDrops = $derived(() => {
     const q = search.trim().toLowerCase();
     const filtered = mailDrops.filter(d => {
