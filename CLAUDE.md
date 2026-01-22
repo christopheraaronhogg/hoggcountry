@@ -113,6 +113,7 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 
 ## Current Session Tasks
+- [x] Merge it to main i wanna see it live, which netlify will deploy if you geth the change added to main *(23:00)*
 - [x] Sounds good *(22:49)*
 - [x] Highlight/take notes *(21:57)*
 - [x] Go with the former solution *(02:00)*
