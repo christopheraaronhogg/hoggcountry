@@ -113,6 +113,7 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 
 ## Current Session Tasks
+- [x] Sounds good *(22:49)*
 - [x] Highlight/take notes *(21:57)*
 - [ ] ```javascript *(21:59)*
 - [x] Okay okay this is looking great *(16:44)*
