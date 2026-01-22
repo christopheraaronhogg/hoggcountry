@@ -93,7 +93,7 @@
               name={tool.name}
               icon={tool.icon}
               description={tool.desc}
-              href="/tools/{tool.id}/"
+              href={`/tools/${tool.id}/`}
             />
           {/each}
         </div>

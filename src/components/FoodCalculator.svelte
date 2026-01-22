@@ -1,0 +1,160 @@
+<script lang="ts">
+  let { trailContext = {} as any } = $props<{ trailContext?: any }>();
+
+  const STORAGE_KEY = 'at-food-v1';
+
+  let caloriesPerDay = $state(4200);
+  let caloriesPerOz = $state(120); // typical high-cal trail food: 110–140 cal/oz
+  let daysBetweenResupply = $state(4);
+
+  function applyContextDefaults() {
+    const pace = Number(trailContext?.pace ?? trailContext?.targetPace ?? 0);
+    if (Number.isFinite(pace) && pace > 0) {
+      // Very rough heuristic: base 3200 + 70 cal per planned mile
+      caloriesPerDay = Math.round(3200 + pace * 70);
+    }
+  }
+
+  function load(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    try {
+      const saved = JSON.parse(raw);
+      if (typeof saved.caloriesPerDay === 'number') caloriesPerDay = saved.caloriesPerDay;
+      if (typeof saved.caloriesPerOz === 'number') caloriesPerOz = saved.caloriesPerOz;
+      if (typeof saved.daysBetweenResupply === 'number') daysBetweenResupply = saved.daysBetweenResupply;
+      return true;
+    } catch {}
+    return false;
+  }
+
+  function save() {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ caloriesPerDay, caloriesPerOz, daysBetweenResupply }),
+    );
+  }
+
+  // Persist on change
+  $effect(() => {
+    save();
+  });
+
+  const loaded = load();
+  if (!loaded) applyContextDefaults();
+
+  let ouncesPerDay = $derived(caloriesPerOz > 0 ? caloriesPerDay / caloriesPerOz : 0);
+  let poundsPerDay = $derived(ouncesPerDay / 16);
+  let poundsForCarry = $derived(poundsPerDay * daysBetweenResupply);
+</script>
+
+<section class="card" style="padding: 1rem;">
+  <h2 class="font-display" style="margin: 0 0 0.35rem;">Food Calculator</h2>
+  <p style="margin: 0; color: var(--muted);">
+    Quick planning math: calories → ounces → carry weight.
+  </p>
+</section>
+
+<section class="card" style="padding: 1rem; margin-top: 1rem;">
+  <div class="controls">
+    <label class="ctrl">
+      <span class="label">Calories per day</span>
+      <input type="number" min="2000" max="8000" step="50" bind:value={caloriesPerDay} />
+    </label>
+
+    <label class="ctrl">
+      <span class="label">Calories per ounce</span>
+      <input type="number" min="60" max="180" step="1" bind:value={caloriesPerOz} />
+    </label>
+
+    <label class="ctrl">
+      <span class="label">Days between resupply</span>
+      <input type="number" min="1" max="10" step="1" bind:value={daysBetweenResupply} />
+    </label>
+  </div>
+
+  <div class="results">
+    <div class="card result">
+      <div class="k">Per day</div>
+      <div class="v">{ouncesPerDay.toFixed(1)} oz</div>
+      <div class="s">{poundsPerDay.toFixed(2)} lb</div>
+    </div>
+
+    <div class="card result">
+      <div class="k">Carry</div>
+      <div class="v">{poundsForCarry.toFixed(2)} lb</div>
+      <div class="s">{daysBetweenResupply} days</div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 820px) {
+    .controls {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ctrl {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .label {
+    font-weight: 800;
+    color: var(--pine);
+  }
+
+  input[type="number"] {
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    font-family: inherit;
+  }
+
+  .results {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 560px) {
+    .results {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .result {
+    padding: 0.85rem;
+    box-shadow: none;
+  }
+
+  .k {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .v {
+    font-family: Oswald, sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+
+  .s {
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+</style>
