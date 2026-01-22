@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { trailContext, updateContext, TRAIL_TOTAL_MILES } from '../../stores/trailContext.svelte';
+  import { trailContext, TRAIL_TOTAL_MILES } from '../../stores/trailContext.svelte';
+  import QuickMileControl from './QuickMileControl.svelte';
 
   interface Props {
     onEditClick?: () => void;
@@ -17,17 +18,15 @@
   <div class="hero-content">
     <!-- Mile Display -->
     <div class="mile-section">
-      <div class="mile-display">
-        <span class="mile-current">{trailContext.currentMile}</span>
-        <span class="mile-divider">/</span>
-        <span class="mile-total">{Math.round(TRAIL_TOTAL_MILES)}</span>
+      <div class="mile-left">
+        <QuickMileControl />
+        <div class="mile-hint">
+          Mile marker updates are instant. Use Settings for pace/date/zeros.
+        </div>
       </div>
 
-      <button class="edit-btn" onclick={onEditClick} aria-label="Edit trail settings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
+      <button class="edit-btn" onclick={onEditClick} aria-label="Open settings (pace, date, zeros)">
+        Settings
       </button>
     </div>
 
@@ -111,50 +110,52 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1rem;
+    gap: 0.75rem;
   }
 
-  .mile-display {
-    display: flex;
-    align-items: baseline;
-    gap: 0.25rem;
+  .mile-left {
+    display: grid;
+    gap: 0.35rem;
   }
 
-  .mile-current {
-    font-family: Oswald, sans-serif;
-    font-size: 3rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .mile-divider {
-    font-size: 1.5rem;
-    color: rgba(255,255,255,0.4);
-    margin: 0 0.25rem;
-  }
-
-  .mile-total {
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    color: rgba(255,255,255,0.5);
+  .mile-hint {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.55);
   }
 
   .edit-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
     height: 36px;
+    padding: 0 0.75rem;
     background: rgba(255,255,255,0.1);
     border: none;
     border-radius: 8px;
     color: rgba(255,255,255,0.7);
     cursor: pointer;
     transition: all 0.2s ease;
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
   }
 
   .edit-btn:hover {
     background: rgba(255,255,255,0.2);
     color: #fff;
+  }
+
+  @media (max-width: 560px) {
+    .mile-section {
+      flex-wrap: wrap;
+      align-items: start;
+    }
+    .edit-btn {
+      width: 100%;
+      justify-content: center;
+    }
   }
 
   /* Progress Section */

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { trailContext } from '../../stores/trailContext.svelte';
+  import QuickMileControl from './QuickMileControl.svelte';
 
   interface Props {
     onEditClick?: () => void;
@@ -21,18 +22,18 @@
   </a>
 
   <div class="context-info">
-    <span class="mile">Mile {trailContext.currentMile}</span>
+    <div class="mile-inline">
+      <span class="mile-label">Mile</span>
+      <QuickMileControl compact={true} showTotal={false} showGps={false} />
+    </div>
     <span class="divider">•</span>
     <span class="landmark">{trailContext.nearestLandmark.name}</span>
     <span class="divider">•</span>
     <span class="date">{formatDate(new Date(trailContext.effectiveDate))}</span>
   </div>
 
-  <button class="edit-btn" onclick={onEditClick} aria-label="Edit trail settings">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
+  <button class="edit-btn" onclick={onEditClick} aria-label="Open settings (pace, date, zeros)">
+    Settings
   </button>
 </div>
 
@@ -74,11 +75,19 @@
     flex-wrap: wrap;
   }
 
-  .mile {
+  .mile-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .mile-label {
     font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .divider {
@@ -96,14 +105,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
     height: 32px;
+    padding: 0 0.65rem;
     background: rgba(255, 255, 255, 0.1);
     border: none;
     border-radius: 6px;
     color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
     transition: all 0.2s ease;
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
   }
 
   .edit-btn:hover {
