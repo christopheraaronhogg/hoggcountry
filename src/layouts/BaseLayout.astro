@@ -59,8 +59,8 @@ const { title, description = SITE_DESCRIPTION } = Astro.props;
                 const newWorker = registration.installing;
                 newWorker.addEventListener('statechange', () => {
                   if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // Show subtle update notification
                     console.log('[SW] New version available - refresh to update');
+                    // Optional: Show toast or auto-reload
                   }
                 });
               });
@@ -69,5 +69,9 @@ const { title, description = SITE_DESCRIPTION } = Astro.props;
         });
       }
     </script>
+    <!-- Version Indicator (Temporary for verification) -->
+    <div style="position: fixed; bottom: 4px; right: 4px; background: var(--pine, #4d594a); color: white; padding: 2px 6px; font-size: 10px; z-index: 9999; border-radius: 4px; pointer-events: none; opacity: 0.8; font-family: monospace;">
+      v8
+    </div>
   </body>
 </html>
