@@ -30,11 +30,13 @@
       console.error('Failed to load highlights:', err);
     }
 
-    // Set up chapter element references
+    // Set up chapter element references (reassign Map for Svelte 5 reactivity)
     const chapters = document.querySelectorAll('.chapter-section');
+    const newMap = new Map();
     chapters.forEach((el) => {
-      chapterElements.set(el.id, el);
+      newMap.set(el.id, el);
     });
+    chapterElements = newMap;
   });
 
   // Handle creating a new highlight
