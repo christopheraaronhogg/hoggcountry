@@ -113,13 +113,10 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 
 ## Current Session Tasks
+- [ ] Well, the feature is there now like apparently i can highlight/add notes but they dont show anywhere *(12:40)*
 - [x] Merge it to main i wanna see it live, which netlify will deploy if you geth the change added to main *(23:00)*
 - [x] Sounds good *(22:49)*
 - [x] Highlight/take notes *(21:57)*
-- [ ] ```javascript *(21:59)*
-- [x] Okay okay this is looking great *(16:44)*
-- [x] Implement *(16:34)*
-- [x] Maybe dashboard + separate routes is good *(16:03)*
 - [x] Go with the former solution *(02:00)*
 
 ---
