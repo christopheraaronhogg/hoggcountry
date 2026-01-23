@@ -10,7 +10,7 @@
   let {
     highlights = [],
     chapterEl = null,
-    onHighlightClick = (highlight) => {},
+    onHighlightClick = (highlightId) => {},
     onFallbackNotes = (notes) => {},
     onOrphans = (orphans) => {},
   } = $props();
@@ -39,7 +39,18 @@
 
     for (const highlight of highlights) {
       // Skip if already applied
-      if (appliedHighlightIds.has(highlight.id)) continue;
+      if (appliedHighlightIds.has(highlight.id)) {
+        const mark = chapterEl.querySelector(
+          `mark[data-highlight-id="${highlight.id}"]`
+        );
+        if (mark) {
+          const expectedClass = `guide-highlight guide-highlight--${highlight.color}`;
+          if (mark.className !== expectedClass) {
+            mark.className = expectedClass;
+          }
+        }
+        continue;
+      }
 
       const result = matchHighlight(highlight, chapterEl);
 
@@ -55,7 +66,7 @@
         // Add click handler
         mark.addEventListener('click', (e) => {
           e.stopPropagation();
-          onHighlightClick(highlight);
+          onHighlightClick(highlight.id);
         });
 
         appliedHighlightIds.add(highlight.id);

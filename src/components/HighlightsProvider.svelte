@@ -76,20 +76,26 @@
   }
 
   // Handle clicking an existing highlight
-  function handleHighlightClick(highlight) {
-    activeHighlight = highlight;
+  function handleHighlightClick(highlightId) {
+    const latest = highlights.find((h) => h.id === highlightId);
+    if (latest) {
+      activeHighlight = latest;
+    }
   }
 
   // Handle color change
   async function handleUpdateColor(color) {
     if (!activeHighlight) return;
 
+    const highlightId = activeHighlight.id;
     try {
-      await updateHighlight(activeHighlight.id, { color });
+      await updateHighlight(highlightId, { color });
       highlights = highlights.map((h) =>
-        h.id === activeHighlight.id ? { ...h, color } : h
+        h.id === highlightId ? { ...h, color } : h
       );
-      activeHighlight = { ...activeHighlight, color };
+      if (activeHighlight?.id === highlightId) {
+        activeHighlight = { ...activeHighlight, color };
+      }
     } catch (err) {
       console.error('Failed to update highlight color:', err);
     }
@@ -99,12 +105,15 @@
   async function handleUpdateNote(noteText) {
     if (!activeHighlight) return;
 
+    const highlightId = activeHighlight.id;
     try {
-      await updateHighlight(activeHighlight.id, { noteText });
+      await updateHighlight(highlightId, { noteText });
       highlights = highlights.map((h) =>
-        h.id === activeHighlight.id ? { ...h, noteText } : h
+        h.id === highlightId ? { ...h, noteText } : h
       );
-      activeHighlight = { ...activeHighlight, noteText };
+      if (activeHighlight?.id === highlightId) {
+        activeHighlight = { ...activeHighlight, noteText };
+      }
     } catch (err) {
       console.error('Failed to update note:', err);
     }
@@ -114,10 +123,13 @@
   async function handleDelete() {
     if (!activeHighlight) return;
 
+    const highlightId = activeHighlight.id;
     try {
-      await deleteHighlight(activeHighlight.id);
-      highlights = highlights.filter((h) => h.id !== activeHighlight.id);
-      activeHighlight = null;
+      await deleteHighlight(highlightId);
+      highlights = highlights.filter((h) => h.id !== highlightId);
+      if (activeHighlight?.id === highlightId) {
+        activeHighlight = null;
+      }
     } catch (err) {
       console.error('Failed to delete highlight:', err);
     }
