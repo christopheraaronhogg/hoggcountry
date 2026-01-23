@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TRAIL_TOTAL_MILES, KATAHDIN } from '../data/TrailData';
+import { binarySearchStartIndex } from '../utils/searchUtils';
 
 interface TrailLocation {
   mile: number;
@@ -201,6 +202,7 @@ export class GuideScene extends Phaser.Scene {
   private scrollY: number = 0;
   private maxScrollY: number = 0;
   private isMobile: boolean = false;
+  private peaksList: TrailLocation[] | null = null;
 
   constructor() {
     super({ key: 'GuideScene' });
@@ -361,16 +363,26 @@ export class GuideScene extends Phaser.Scene {
     switch (this.activeTab) {
       case 'upcoming':
         // Show next 10 locations from current mile
-        items = TRAIL_DATA.filter(loc => loc.mile >= this.currentMile).slice(0, 10);
+        // Optimization: Use binary search to find start index instead of filtering whole array
+        const startIndex = binarySearchStartIndex(TRAIL_DATA, loc => loc.mile, this.currentMile);
+        items = TRAIL_DATA.slice(startIndex, startIndex + 10);
         break;
       case 'towns':
-        items = TRAIL_DATA.filter(loc => loc.type === 'town' && loc.mile >= this.currentMile - 50);
+        // Optimization: Slice array from relevant mile before filtering
+        const townStartIndex = binarySearchStartIndex(TRAIL_DATA, loc => loc.mile, this.currentMile - 50);
+        items = TRAIL_DATA.slice(townStartIndex).filter(loc => loc.type === 'town');
         break;
       case 'shelters':
-        items = TRAIL_DATA.filter(loc => loc.type === 'shelter' && loc.mile >= this.currentMile - 20);
+        // Optimization: Slice array from relevant mile before filtering
+        const shelterStartIndex = binarySearchStartIndex(TRAIL_DATA, loc => loc.mile, this.currentMile - 20);
+        items = TRAIL_DATA.slice(shelterStartIndex).filter(loc => loc.type === 'shelter');
         break;
       case 'peaks':
-        items = TRAIL_DATA.filter(loc => loc.type === 'peak');
+        // Optimization: Memoize the peaks list since it's static
+        if (!this.peaksList) {
+          this.peaksList = TRAIL_DATA.filter(loc => loc.type === 'peak');
+        }
+        items = this.peaksList;
         break;
       case 'tips':
         this.renderTips();
