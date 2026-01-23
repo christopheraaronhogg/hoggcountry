@@ -38,7 +38,7 @@
     const orphans = [];
 
     for (const highlight of highlights) {
-      // Skip if already applied
+      // If already applied, check for updates (e.g. color change)
       if (appliedHighlightIds.has(highlight.id)) {
         const mark = chapterEl.querySelector(
           `mark[data-highlight-id="${highlight.id}"]`
@@ -66,6 +66,7 @@
         // Add click handler
         mark.addEventListener('click', (e) => {
           e.stopPropagation();
+          // Pass ID so parent can look up latest state (avoids stale closures)
           onHighlightClick(highlight.id);
         });
 

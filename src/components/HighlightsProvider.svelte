@@ -76,10 +76,17 @@
   }
 
   // Handle clicking an existing highlight
-  function handleHighlightClick(highlightId) {
-    const latest = highlights.find((h) => h.id === highlightId);
-    if (latest) {
-      activeHighlight = latest;
+  function handleHighlightClick(idOrObj) {
+    // Expect ID, but handle object for backward compatibility/safety
+    const id = typeof idOrObj === 'string' ? idOrObj : idOrObj?.id;
+    if (!id) return;
+
+    const found = highlights.find((h) => h.id === id);
+    if (found) {
+      console.log('[HighlightsProvider] Activating highlight:', found);
+      activeHighlight = found;
+    } else {
+      console.warn('[HighlightsProvider] Highlight not found for ID:', id);
     }
   }
 
@@ -93,6 +100,7 @@
       highlights = highlights.map((h) =>
         h.id === highlightId ? { ...h, color } : h
       );
+      // Only update activeHighlight if it's still open
       if (activeHighlight?.id === highlightId) {
         activeHighlight = { ...activeHighlight, color };
       }
@@ -106,13 +114,18 @@
     if (!activeHighlight) return;
 
     const highlightId = activeHighlight.id;
+    console.log('[HighlightsProvider] Saving note for', highlightId, ':', noteText);
+
     try {
       await updateHighlight(highlightId, { noteText });
       highlights = highlights.map((h) =>
         h.id === highlightId ? { ...h, noteText } : h
       );
+      
+      // Only update activeHighlight if it's still open
       if (activeHighlight?.id === highlightId) {
         activeHighlight = { ...activeHighlight, noteText };
+        console.log('[HighlightsProvider] Active highlight updated');
       }
     } catch (err) {
       console.error('Failed to update note:', err);
