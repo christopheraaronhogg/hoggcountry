@@ -53,8 +53,16 @@
 
     // Position popover above the selection
     const rect = range.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const popoverWidth = 200; // approximate width
+    const padding = 16;
+
+    let x = rect.left + rect.width / 2;
+    // Clamp position to keep popover in viewport
+    x = Math.max(popoverWidth / 2 + padding, Math.min(x, viewportWidth - popoverWidth / 2 - padding));
+
     position = {
-      x: rect.left + rect.width / 2,
+      x,
       y: rect.top - 10,
     };
     selectedText = text;
@@ -173,7 +181,8 @@
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
     padding: 0.5rem;
-    min-width: 180px;
+    min-width: min(180px, calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
   }
 
   .popover-arrow {
@@ -249,6 +258,7 @@
 
   .note-input {
     width: 100%;
+    box-sizing: border-box;
     padding: 0.5rem;
     border: 1px solid var(--border, #e6e1d4);
     border-radius: 6px;
@@ -268,5 +278,28 @@
     color: var(--muted, #5c665a);
     margin-top: 0.25rem;
     text-align: right;
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    .selection-popover {
+      left: 1rem !important;
+      right: 1rem;
+      transform: translateY(-100%);
+      width: auto;
+    }
+
+    .popover-content {
+      min-width: unset;
+      width: 100%;
+    }
+
+    .popover-arrow {
+      left: 50%;
+    }
+
+    .note-hint {
+      display: none;
+    }
   }
 </style>

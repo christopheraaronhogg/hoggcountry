@@ -32,8 +32,16 @@
     if (!mark) return;
 
     const rect = mark.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const popoverWidth = 300; // approximate width
+    const padding = 16;
+
+    let x = rect.left + rect.width / 2;
+    // Clamp position to keep popover in viewport
+    x = Math.max(popoverWidth / 2 + padding, Math.min(x, viewportWidth - popoverWidth / 2 - padding));
+
     position = {
-      x: rect.left + rect.width / 2,
+      x,
       y: rect.bottom + 10,
     };
   }
@@ -173,8 +181,8 @@
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
     padding: 0.75rem;
-    min-width: 280px;
-    max-width: 350px;
+    min-width: min(280px, calc(100vw - 2rem));
+    max-width: min(350px, calc(100vw - 2rem));
   }
 
   .color-row {
@@ -244,6 +252,7 @@
 
   .note-input {
     width: 100%;
+    box-sizing: border-box;
     padding: 0.5rem;
     border: 1px solid var(--border, #e6e1d4);
     border-radius: 6px;
@@ -301,5 +310,29 @@
   .snippet-text {
     font-style: italic;
     word-break: break-word;
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    .highlight-popover {
+      left: 1rem !important;
+      right: 1rem;
+      transform: none;
+      width: auto;
+    }
+
+    .popover-content {
+      min-width: unset;
+      max-width: unset;
+      width: 100%;
+    }
+
+    .popover-arrow-up {
+      left: 50%;
+    }
+
+    .note-hint {
+      display: none;
+    }
   }
 </style>
