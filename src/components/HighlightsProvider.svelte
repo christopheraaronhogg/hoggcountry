@@ -95,40 +95,75 @@
     if (!activeHighlight) return;
 
     const highlightId = activeHighlight.id;
+    
+    // Optimistic update
+    const now = Date.now();
+    let updatedHighlight = null;
+
+    highlights = highlights.map((h) => {
+      if (h.id === highlightId) {
+        updatedHighlight = { ...h, color, updatedAt: now };
+        return updatedHighlight;
+      }
+      return h;
+    });
+
+    if (activeHighlight?.id === highlightId && updatedHighlight) {
+      activeHighlight = updatedHighlight;
+    }
+
     try {
       await updateHighlight(highlightId, { color });
-      highlights = highlights.map((h) =>
-        h.id === highlightId ? { ...h, color } : h
-      );
-      // Only update activeHighlight if it's still open
-      if (activeHighlight?.id === highlightId) {
-        activeHighlight = { ...activeHighlight, color };
-      }
     } catch (err) {
       console.error('Failed to update highlight color:', err);
     }
   }
 
   // Handle note update
-  async function handleUpdateNote(noteText) {
-    if (!activeHighlight) return;
+  async function handleUpdateNote(idOrText, maybeText) {
+    let highlightId;
+    let noteText;
 
-    const highlightId = activeHighlight.id;
+    if (typeof idOrText === 'string' && maybeText === undefined) {
+      // Called as handleUpdateNote(noteText) - using active highlight
+      if (!activeHighlight) return;
+      highlightId = activeHighlight.id;
+      noteText = idOrText;
+    } else {
+      // Called as handleUpdateNote(id, noteText)
+      highlightId = idOrText;
+      noteText = maybeText;
+    }
+
+    if (!highlightId) return;
+
     console.log('[HighlightsProvider] Saving note for', highlightId, ':', noteText);
+
+    // Optimistic update
+    const now = Date.now();
+    let updatedHighlight = null;
+
+    highlights = highlights.map((h) => {
+      if (h.id === highlightId) {
+        updatedHighlight = { ...h, noteText, updatedAt: now };
+        return updatedHighlight;
+      }
+      return h;
+    });
+
+    // Update activeHighlight immediately if it matches
+    if (activeHighlight?.id === highlightId && updatedHighlight) {
+      activeHighlight = updatedHighlight;
+      console.log('[HighlightsProvider] Active highlight updated optimistically');
+    }
 
     try {
       await updateHighlight(highlightId, { noteText });
-      highlights = highlights.map((h) =>
-        h.id === highlightId ? { ...h, noteText } : h
-      );
-      
-      // Only update activeHighlight if it's still open
-      if (activeHighlight?.id === highlightId) {
-        activeHighlight = { ...activeHighlight, noteText };
-        console.log('[HighlightsProvider] Active highlight updated');
-      }
+      console.log('[HighlightsProvider] Saved note to DB');
     } catch (err) {
       console.error('Failed to update note:', err);
+      // Revert could go here, but for now we rely on simple error logging
+      // To revert properly, we'd need to keep the old state or re-fetch
     }
   }
 

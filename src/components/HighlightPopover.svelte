@@ -13,13 +13,36 @@
   let noteText = $state('');
   let position = $state({ x: 0, y: 0 });
   let noteInputRef = $state(null);
+  
+  // Track the ID we are currently editing to detect switches
+  let activeId = $state(null);
+  let savedNoteText = $state('');
 
-  // Initialize note text when highlight changes
+  // Handle highlight changes (switch, open, close)
   $effect(() => {
-    if (highlight) {
-      noteText = highlight.noteText || '';
-      positionPopover();
+    const newId = highlight?.id;
+
+    // If we were editing a highlight and the ID changed (or closed), save if dirty
+    if (activeId && activeId !== newId) {
+      if (noteText !== savedNoteText) {
+        // Call with (id, text) signature
+        onUpdateNote(activeId, noteText.trim() || undefined);
+      }
     }
+
+    // If opening a new highlight (or switching)
+    if (newId && newId !== activeId) {
+      activeId = newId;
+      noteText = highlight.noteText || '';
+      savedNoteText = noteText;
+      positionPopover();
+    } 
+    // If closing
+    else if (!newId) {
+      activeId = null;
+    }
+    // If ID is same (e.g. clicking same mark), do NOT reset noteText
+    // This preserves unsaved edits if the user clicks the mark again
   });
 
   function positionPopover() {
@@ -51,7 +74,11 @@
   }
 
   function handleSaveNote() {
-    onUpdateNote(noteText.trim() || undefined);
+    if (highlight) {
+      onUpdateNote(highlight.id, noteText.trim() || undefined);
+      // Update saved reference so we don't double-save on close
+      savedNoteText = noteText;
+    }
   }
 
   function handleKeydown(e) {
