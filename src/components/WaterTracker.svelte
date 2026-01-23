@@ -1,12 +1,24 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import atWaterSources from '../data/at-water-sources.json';
 
-  let { trailContext = {} } = $props();
+  type WaterSource = { mile: number; name: string; type: string; offTrail: number };
+
+  interface Props {
+    trailContext?: { currentMile?: number };
+  }
+
+  let { trailContext = {} }: Props = $props();
 
   let mounted = $state(false);
+  const CARRY_KEY = 'at-water-carry-v1';
 
-  const typeMeta = {
+  // Carry calculator (persisted)
+  let waterCapacityL = $state(3); // typical capacity: 2–4L
+  let litersPer10Mi = $state(1.2);
+  let bufferPct = $state(20);
+
+  const typeMeta: Record<string, { label: string; icon: string }> = {
     spring: { label: 'Spring', icon: '💧' },
     stream: { label: 'Stream', icon: '🏞️' },
     river: { label: 'River', icon: '🌊' },
@@ -14,18 +26,18 @@
     town: { label: 'Town', icon: '🏪' },
   };
 
-  function asNumber(value, fallback = 0) {
+  function asNumber(value: unknown, fallback: number = 0): number {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
   }
 
-  function formatMiles(value) {
+  function formatMiles(value: unknown): string {
     const n = asNumber(value, 0);
     const fixed = n.toFixed(1);
     return fixed.endsWith('.0') ? fixed.slice(0, -2) : fixed;
   }
 
-  const sourcesSorted = (Array.isArray(atWaterSources) ? atWaterSources : [])
+  const sourcesSorted: WaterSource[] = (Array.isArray(atWaterSources) ? atWaterSources : [])
     .filter((s) => typeof s?.mile === 'number' && typeof s?.name === 'string' && typeof s?.type === 'string')
     .map((s) => ({
       mile: s.mile,
@@ -35,14 +47,94 @@
     }))
     .sort((a, b) => a.mile - b.mile);
 
+  function loadCarryPrefs() {
+    if (typeof localStorage === 'undefined') return;
+    const raw = localStorage.getItem(CARRY_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.waterCapacityL === 'number') waterCapacityL = parsed.waterCapacityL;
+      if (typeof parsed.litersPer10Mi === 'number') litersPer10Mi = parsed.litersPer10Mi;
+      if (typeof parsed.bufferPct === 'number') bufferPct = parsed.bufferPct;
+    } catch {}
+  }
+
+  function saveCarryPrefs() {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(
+      CARRY_KEY,
+      JSON.stringify({ waterCapacityL, litersPer10Mi, bufferPct }),
+    );
+  }
+
   onMount(() => {
+    loadCarryPrefs();
     mounted = true;
+  });
+
+  $effect(() => {
+    if (mounted) saveCarryPrefs();
   });
 
   let currentMile = $derived(asNumber(trailContext.currentMile, 0));
 
   let upcomingSources = $derived.by(() => sourcesSorted.filter((s) => s.mile > currentMile).slice(0, 12));
   let recentSources = $derived.by(() => sourcesSorted.filter((s) => s.mile <= currentMile).slice(-6).reverse());
+
+  function clampNumber(value: number, min: number, max: number): number {
+    if (!Number.isFinite(value)) return min;
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function calcLiters(distanceMiles: number): number {
+    const dist = clampNumber(distanceMiles, 0, 999);
+    const rate = clampNumber(litersPer10Mi, 0.1, 5);
+    const buffer = clampNumber(bufferPct, 0, 100) / 100;
+    const raw = (dist / 10) * rate;
+    return raw * (1 + buffer);
+  }
+
+  function round1(value: number): number {
+    return Math.round(value * 10) / 10;
+  }
+
+  let carryPlan = $derived.by(() => {
+    const next = upcomingSources[0];
+    if (!next) return null;
+
+    const distToNext = next.mile - currentMile;
+    const distToSecond = upcomingSources[1]?.mile ? upcomingSources[1].mile - currentMile : null;
+
+    const litersToNext = calcLiters(distToNext);
+    const litersToSecond = distToSecond !== null ? calcLiters(distToSecond) : null;
+
+    const safeMilesAtCapacity = waterCapacityL > 0 ? (waterCapacityL / (litersPer10Mi / 10)) / (1 + bufferPct / 100) : 0;
+
+    // Largest gap among the visible upcoming sources (quick heuristic)
+    let maxGap = 0;
+    let maxGapFrom: typeof next | null = null;
+    let maxGapTo: typeof next | null = null;
+    for (let i = 0; i < upcomingSources.length - 1; i++) {
+      const a = upcomingSources[i];
+      const b = upcomingSources[i + 1];
+      const gap = b.mile - a.mile;
+      if (gap > maxGap) {
+        maxGap = gap;
+        maxGapFrom = a;
+        maxGapTo = b;
+      }
+    }
+
+    return {
+      next,
+      distToNext,
+      litersToNext,
+      distToSecond,
+      litersToSecond,
+      safeMilesAtCapacity,
+      maxGap: maxGapFrom && maxGapTo ? { miles: maxGap, from: maxGapFrom, to: maxGapTo } : null,
+    };
+  });
 </script>
 
 <div class="water-tool" class:mounted>
@@ -62,6 +154,71 @@
       </div>
     </div>
   </header>
+
+  <section class="carry-card">
+    <div class="carry-head">
+      <h3>Carry Plan</h3>
+      <p>Quick math for “how much water should I leave with?”</p>
+    </div>
+
+    <div class="carry-controls">
+      <label class="carry-field">
+        <span class="carry-label">Capacity</span>
+        <div class="carry-input">
+          <input type="range" min="0.5" max="6" step="0.1" bind:value={waterCapacityL} />
+          <span class="carry-val">{round1(waterCapacityL)} L</span>
+        </div>
+      </label>
+
+      <label class="carry-field">
+        <span class="carry-label">Use rate</span>
+        <div class="carry-input">
+          <input type="range" min="0.5" max="3" step="0.1" bind:value={litersPer10Mi} />
+          <span class="carry-val">{round1(litersPer10Mi)} L / 10 mi</span>
+        </div>
+      </label>
+
+      <label class="carry-field">
+        <span class="carry-label">Buffer</span>
+        <div class="carry-input">
+          <input type="range" min="0" max="50" step="5" bind:value={bufferPct} />
+          <span class="carry-val">{bufferPct}%</span>
+        </div>
+      </label>
+    </div>
+
+    {#if carryPlan}
+      <div class="carry-results">
+        <div class="carry-result">
+          <div class="carry-k">To next source</div>
+          <div class="carry-v">{round1(carryPlan.litersToNext)} L</div>
+          <div class="carry-s">+{formatMiles(carryPlan.distToNext)} mi</div>
+        </div>
+
+        <div class="carry-result">
+          <div class="carry-k">Capacity covers</div>
+          <div class="carry-v">{formatMiles(carryPlan.safeMilesAtCapacity)} mi</div>
+          <div class="carry-s">at current rate</div>
+        </div>
+
+        {#if carryPlan.maxGap}
+          <div class="carry-gap">
+            Largest gap ahead: <strong>{formatMiles(carryPlan.maxGap.miles)} mi</strong>
+            <span class="gap-note">({carryPlan.maxGap.from.name} → {carryPlan.maxGap.to.name})</span>
+          </div>
+        {/if}
+
+        {#if carryPlan.distToSecond !== null && carryPlan.litersToSecond !== null}
+          <div class="carry-skip">
+            If you skip the next source: <strong>{round1(carryPlan.litersToSecond)} L</strong>
+            <span class="gap-note">(+{formatMiles(carryPlan.distToSecond)} mi)</span>
+          </div>
+        {/if}
+      </div>
+    {:else}
+      <p class="carry-empty">No upcoming sources in the list.</p>
+    {/if}
+  </section>
 
   <div class="water-columns">
     <section class="water-section">
@@ -198,6 +355,133 @@
   .water-chips :global(.badge) {
     background: rgba(255,255,255,0.92);
     border-color: rgba(255,255,255,0.65);
+  }
+
+  /* Carry plan */
+  .carry-card {
+    padding: 1rem 1.25rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(2,132,199,0.06) 0%, rgba(255,255,255,0) 100%);
+  }
+
+  .carry-head h3 {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--pine, #4a5a44);
+  }
+
+  .carry-head p {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted, #6b7280);
+  }
+
+  .carry-controls {
+    margin-top: 0.85rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .carry-field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .carry-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted, #6b7280);
+  }
+
+  .carry-input {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .carry-input input[type="range"] {
+    flex: 1;
+    accent-color: #0284c7;
+  }
+
+  .carry-val {
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    color: var(--ink, #111);
+    white-space: nowrap;
+    font-size: 0.9rem;
+  }
+
+  .carry-results {
+    margin-top: 0.9rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  .carry-result {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    background: rgba(255,255,255,0.9);
+  }
+
+  .carry-k {
+    color: var(--muted, #6b7280);
+    font-size: 0.78rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .carry-v {
+    font-family: Oswald, sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #075985;
+    line-height: 1.05;
+  }
+
+  .carry-s {
+    margin-top: 0.15rem;
+    color: var(--muted, #6b7280);
+    font-size: 0.8rem;
+  }
+
+  .carry-gap,
+  .carry-skip {
+    grid-column: 1 / -1;
+    border: 1px dashed rgba(2,132,199,0.35);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    background: rgba(2,132,199,0.06);
+    color: #075985;
+    font-size: 0.9rem;
+  }
+
+  .gap-note {
+    color: rgba(7,89,133,0.75);
+    margin-left: 0.35rem;
+  }
+
+  .carry-empty {
+    margin: 0.85rem 0 0;
+    color: var(--muted, #6b7280);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 820px) {
+    .carry-controls {
+      grid-template-columns: 1fr;
+    }
+    .carry-results {
+      grid-template-columns: 1fr;
+    }
   }
 
   .water-columns {

@@ -1,68 +1,47 @@
 <script lang="ts">
-  import type { TownInfo } from '../../../lib/trailRecommendations';
+  import type { RoadCrossingInfo } from '../../../lib/trailRecommendations';
 
   interface Props {
-    town: TownInfo | null;
+    crossing: RoadCrossingInfo | null;
   }
 
-  let { town }: Props = $props();
+  let { crossing }: Props = $props();
 
   function formatMiles(value: number): string {
     const fixed = value.toFixed(1);
     return fixed.endsWith('.0') ? fixed.slice(0, -2) : fixed;
   }
-
-  // Service icons
-  const serviceIcons: Record<string, string> = {
-    grocery: '🛒',
-    hostel: '🛏️',
-    outfitter: '🎒',
-    convenience: '🏪',
-    restaurant: '🍽️',
-    snacks: '🍫',
-    laundry: '👕',
-    post_office: '📬',
-    start: '🏔️',
-  };
 </script>
 
-<a href="/tools/resupply/" class="widget town-widget">
+<a href="/tools/emergency/" class="widget bailout-widget">
   <div class="widget-header">
-    <span class="widget-icon">🏘️</span>
-    <span class="widget-title">Next Town</span>
+    <span class="widget-icon">🚗</span>
+    <span class="widget-title">Next Exit</span>
   </div>
 
-  {#if town}
+  {#if crossing}
     <div class="widget-body">
-      <span class="town-name">{town.name}</span>
-      <span class="town-distance">in {town.distance} mi</span>
+      <span class="exit-name">{crossing.name}</span>
+      <span class="exit-distance">in {formatMiles(crossing.distance)} mi</span>
     </div>
 
-    <div class="town-meta">
-      <span>Mile {formatMiles(town.mile)}</span>
+    <div class="exit-meta">
+      <span class="exit-road">{crossing.road}</span>
+      <span class="exit-dot">•</span>
+      <span class="exit-town">{crossing.nearestTown}</span>
     </div>
 
-    {#if Array.isArray(town.services) && town.services.length > 0}
-      <div class="services">
-        {#each town.services as service}
-          <span class="service-badge" title={service}>
-            {serviceIcons[service] || '•'}
-          </span>
-        {/each}
-      </div>
-    {/if}
-
-    {#if town.note}
-      <p class="town-note">{town.note}</p>
+    {#if crossing.hospital}
+      <p class="exit-note">Hospital: {crossing.hospital}</p>
     {/if}
   {:else}
     <div class="widget-body">
-      <span class="town-name">Katahdin!</span>
-      <span class="town-distance">You made it!</span>
+      <span class="exit-name">No exits ahead</span>
+      <span class="exit-distance">—</span>
     </div>
   {/if}
 
-  <span class="widget-link">See all towns →</span>
+  <span class="widget-link">Emergency card →</span>
 </a>
 
 <style>
@@ -106,49 +85,44 @@
   .widget-body {
     display: flex;
     align-items: baseline;
-    gap: 0.5rem;
+    justify-content: space-between;
+    gap: 0.75rem;
     flex-wrap: wrap;
     margin-bottom: 0.5rem;
   }
 
-  .town-name {
+  .exit-name {
     font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--pine, #4a5a44);
+    line-height: 1.2;
   }
 
-  .town-distance {
+  .exit-distance {
     font-size: 0.8rem;
     color: var(--muted, #888);
     background: var(--bg, #f5f5f5);
-    padding: 0.15rem 0.4rem;
+    padding: 0.15rem 0.45rem;
     border-radius: 4px;
+    white-space: nowrap;
   }
 
-  .town-meta {
+  .exit-meta {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
     font-size: 0.75rem;
     color: var(--muted, #888);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
   }
 
-  .services {
-    display: flex;
-    gap: 0.35rem;
-    margin-bottom: 0.5rem;
+  .exit-dot {
+    color: rgba(0, 0, 0, 0.25);
   }
 
-  .service-badge {
-    font-size: 0.9rem;
-    padding: 0.2rem 0.4rem;
-    background: var(--bg, #f5f5f5);
-    border-radius: 4px;
-  }
-
-  .town-note {
+  .exit-note {
     font-size: 0.75rem;
     font-style: italic;
     color: var(--alpine, #7b9e6b);
@@ -162,3 +136,4 @@
     font-weight: 500;
   }
 </style>
+

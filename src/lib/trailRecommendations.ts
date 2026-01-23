@@ -10,6 +10,7 @@
 
 import { AT_TOWNS } from './atTowns';
 import { resupplyServicesByTownName } from './resupplyTowns';
+import { AT_ROAD_CROSSINGS } from '../data/at-road-crossings';
 
 // State boundaries (NOBO order) - from trail-facts.yaml
 export const stateBoundaries = [
@@ -119,7 +120,20 @@ export interface TownInfo {
   note?: string;
 }
 
+export interface RoadCrossingInfo {
+  mile: number;
+  name: string;
+  road: string;
+  nearestTown: string;
+  townDist: number;
+  hospital: string;
+  hospitalDist: number;
+  notes?: string;
+  distance: number;
+}
+
 const townsSorted = [...AT_TOWNS].sort((a, b) => a.mile - b.mile);
+const roadCrossingsSorted = [...AT_ROAD_CROSSINGS].sort((a, b) => a.mile - b.mile);
 
 function normalizeTownName(name: string): string {
   // Strip ", ST" and other trailing qualifiers for best-effort service mapping.
@@ -214,6 +228,25 @@ export function getNextTown(currentMile: number): TownInfo | null {
         distance: Math.round(town.mile - current),
         services,
         note: town.notes,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get the next major road crossing (bailout) ahead of you.
+ */
+export function getNextRoadCrossing(currentMile: number): RoadCrossingInfo | null {
+  const mile = Number(currentMile);
+  const current = Number.isFinite(mile) ? mile : 0;
+
+  for (const crossing of roadCrossingsSorted) {
+    if (crossing.mile > current) {
+      return {
+        ...crossing,
+        distance: Math.round((crossing.mile - current) * 10) / 10,
       };
     }
   }

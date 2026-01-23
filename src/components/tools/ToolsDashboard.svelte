@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { trailContext, loadContext } from '../../stores/trailContext.svelte';
-  import { getAlerts, getNextTown } from '../../lib/trailRecommendations';
+  import { getAlerts, getNextTown, getNextRoadCrossing } from '../../lib/trailRecommendations';
   import ContextHero from './ContextHero.svelte';
   import ToolCard from './ToolCard.svelte';
   import AlertBanner from './widgets/AlertBanner.svelte';
   import TownWidget from './widgets/TownWidget.svelte';
   import WaterWidget from './widgets/WaterWidget.svelte';
+  import BailoutWidget from './widgets/BailoutWidget.svelte';
   import atWaterSources from '../../data/at-water-sources.json';
 
   // Tool definitions grouped by category
@@ -54,6 +55,7 @@
   // NOTE: use $derived.by for function-based derivations so updates track correctly
   let alerts = $derived.by(() => getAlerts(Number(trailContext.currentMile) || 0, 25));
   let nextTown = $derived.by(() => getNextTown(Number(trailContext.currentMile) || 0));
+  let nextBailout = $derived.by(() => getNextRoadCrossing(Number(trailContext.currentMile) || 0));
 
   type WaterSource = { mile: number; name: string; type: string; offTrail?: number };
   const waterSourcesSorted: WaterSource[] = (Array.isArray(atWaterSources) ? atWaterSources : [])
@@ -89,6 +91,9 @@
 
       <!-- Next water (always) -->
       <WaterWidget source={nextWater} />
+
+      <!-- Next bailout / road crossing -->
+      <BailoutWidget crossing={nextBailout} />
 
       <!-- Alerts (state line, bear, terrain) -->
       {#each alerts.slice(0, 2) as alert}
