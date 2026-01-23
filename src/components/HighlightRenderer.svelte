@@ -19,9 +19,9 @@
 
   // Re-render highlights when the list changes or chapter changes
   $effect(() => {
-    if (!chapterEl || !highlights.length) return;
+    if (!chapterEl) return;
 
-    // Clear existing highlights that are no longer in the list
+    // Cleanup FIRST - must run even when highlights array is empty (e.g., after deleting last highlight)
     const currentIds = new Set(highlights.map((h) => h.id));
     for (const id of appliedHighlightIds) {
       if (!currentIds.has(id)) {
@@ -29,6 +29,9 @@
         appliedHighlightIds.delete(id);
       }
     }
+
+    // Exit early if no highlights to apply
+    if (!highlights.length) return;
 
     // Apply new highlights
     const fallbackNotes = [];
