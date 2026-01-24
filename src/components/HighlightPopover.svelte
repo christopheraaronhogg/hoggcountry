@@ -141,11 +141,8 @@
           class="note-input"
           placeholder="Add a note..."
           rows="3"
+          onblur={handleSaveNote}
         ></textarea>
-        <div class="note-actions">
-          <span class="note-hint">Ctrl+Enter to save</span>
-          <button class="save-btn" onclick={handleSaveNote}>Save</button>
-        </div>
       </div>
 
       <!-- Snippet preview -->
