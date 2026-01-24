@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TRAIL_TOTAL_MILES, KATAHDIN } from '../data/TrailData';
+import { binarySearchStartIndex } from '../utils/searchUtils';
 
 interface TrailLocation {
   mile: number;
@@ -359,16 +360,24 @@ export class GuideScene extends Phaser.Scene {
     const contentWidth = width - 40;
 
     switch (this.activeTab) {
-      case 'upcoming':
+      case 'upcoming': {
         // Show next 10 locations from current mile
-        items = TRAIL_DATA.filter(loc => loc.mile >= this.currentMile).slice(0, 10);
+        const startIndex = binarySearchStartIndex(TRAIL_DATA, this.currentMile, (item) => item.mile);
+        items = TRAIL_DATA.slice(startIndex, startIndex + 10);
         break;
-      case 'towns':
-        items = TRAIL_DATA.filter(loc => loc.type === 'town' && loc.mile >= this.currentMile - 50);
+      }
+      case 'towns': {
+        const startMile = Math.max(0, this.currentMile - 50);
+        const startIndex = binarySearchStartIndex(TRAIL_DATA, startMile, (item) => item.mile);
+        items = TRAIL_DATA.slice(startIndex).filter(loc => loc.type === 'town');
         break;
-      case 'shelters':
-        items = TRAIL_DATA.filter(loc => loc.type === 'shelter' && loc.mile >= this.currentMile - 20);
+      }
+      case 'shelters': {
+        const startMile = Math.max(0, this.currentMile - 20);
+        const startIndex = binarySearchStartIndex(TRAIL_DATA, startMile, (item) => item.mile);
+        items = TRAIL_DATA.slice(startIndex).filter(loc => loc.type === 'shelter');
         break;
+      }
       case 'peaks':
         items = TRAIL_DATA.filter(loc => loc.type === 'peak');
         break;
