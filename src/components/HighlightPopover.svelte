@@ -51,7 +51,8 @@
 
   function handleSaveNote() {
     const text = noteText.trim() || undefined;
-    console.log('[HighlightPopover] Saving note:', { highlightId: highlight?.id, noteText: text });
+    console.log('[HighlightPopover] handleSaveNote CALLED:', { highlightId: highlight?.id, noteText: text });
+    alert('Save triggered! Note: ' + (text || '(empty)'));
     onUpdateNote(text);
   }
 

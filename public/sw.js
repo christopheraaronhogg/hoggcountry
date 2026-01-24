@@ -95,7 +95,7 @@ const STATIC_ASSETS = [
 
 // Install event - precache core resources + JS/CSS chunks
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing v7...');
+  console.log(`[SW] Installing ${CACHE_NAME}...`);
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] Precaching core pages and assets');
