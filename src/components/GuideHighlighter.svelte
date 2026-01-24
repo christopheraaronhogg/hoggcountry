@@ -64,6 +64,7 @@
     // Store selection for later, show selection popover
     const rect = range.getBoundingClientRect();
     pendingSelection = { text, range: range.cloneRange() };
+    selectionTimestamp = Date.now();
     selectionPopoverPos = {
       x: Math.min(rect.left + rect.width / 2, window.innerWidth - 100),
       y: rect.bottom + 8
@@ -193,12 +194,17 @@
     activeId = null;
   }
 
+  let selectionTimestamp = 0;
+  
   function handleClickOutside(e) {
     if (activeId && !e.target.closest('.highlight-popover') && !e.target.closest('mark')) {
       closePopover();
     }
-    if (pendingSelection && !e.target.closest('.selection-popover')) {
-      pendingSelection = null;
+    // Only clear pendingSelection if it wasn't just set (avoid mouseup->click race)
+    if (pendingSelection && Date.now() - selectionTimestamp > 100) {
+      if (!e.target.closest('.selection-popover')) {
+        pendingSelection = null;
+      }
     }
   }
 </script>
