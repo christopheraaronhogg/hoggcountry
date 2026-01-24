@@ -5,7 +5,7 @@ import Header from '../../components/Header.astro';
 import FullGuideNav from '../../components/FullGuideNav.svelte';
 import GuideInlineSearch from '../../components/GuideInlineSearch.svelte';
 import DownloadGuideButton from '../../components/DownloadGuideButton.svelte';
-import HighlightsProvider from '../../components/HighlightsProvider.svelte';
+import GuideHighlighter from '../../components/GuideHighlighter.svelte';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -1309,7 +1309,7 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
     <DownloadGuideButton client:load variant="header" markdownContent={markdownContent} />
 
     <!-- Highlights & Notes System -->
-    <HighlightsProvider client:load />
+    <GuideHighlighter client:load />
 
     <script>
       // Header download button triggers modal via custom event
