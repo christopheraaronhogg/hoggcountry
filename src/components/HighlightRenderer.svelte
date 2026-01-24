@@ -5,6 +5,7 @@
     wrapRangeInMark,
     createRangeForMatch,
     unwrapHighlight,
+    HIGHLIGHT_COLORS,
   } from '../lib/annotations';
 
   let {
@@ -16,6 +17,13 @@
   } = $props();
 
   let appliedHighlightIds = $state(new Set());
+
+  function applyMarkColor(mark, color) {
+    for (const c of HIGHLIGHT_COLORS) {
+      mark.classList.remove(`guide-highlight--${c}`);
+    }
+    mark.classList.add(`guide-highlight--${color}`);
+  }
 
   // Re-render highlights when the list changes or chapter changes
   $effect(() => {
@@ -38,17 +46,12 @@
     const orphans = [];
 
     for (const highlight of highlights) {
-      // If already applied, check for updates (e.g. color change)
+      // If already applied, update its color in-place (note edits don't need DOM changes)
       if (appliedHighlightIds.has(highlight.id)) {
-        const mark = chapterEl.querySelector(
+        const existingMark = chapterEl.querySelector(
           `mark[data-highlight-id="${highlight.id}"]`
         );
-        if (mark) {
-          const expectedClass = `guide-highlight guide-highlight--${highlight.color}`;
-          if (mark.className !== expectedClass) {
-            mark.className = expectedClass;
-          }
-        }
+        if (existingMark) applyMarkColor(existingMark, highlight.color);
         continue;
       }
 
@@ -66,7 +69,6 @@
         // Add click handler
         mark.addEventListener('click', (e) => {
           e.stopPropagation();
-          // Pass ID so parent can look up latest state (avoids stale closures)
           onHighlightClick(highlight.id);
         });
 

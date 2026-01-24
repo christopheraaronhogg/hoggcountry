@@ -76,94 +76,40 @@
   }
 
   // Handle clicking an existing highlight
-  function handleHighlightClick(idOrObj) {
-    // Expect ID, but handle object for backward compatibility/safety
-    const id = typeof idOrObj === 'string' ? idOrObj : idOrObj?.id;
-    if (!id) return;
-
-    const found = highlights.find((h) => h.id === id);
-    if (found) {
-      console.log('[HighlightsProvider] Activating highlight:', found);
-      activeHighlight = found;
-    } else {
-      console.warn('[HighlightsProvider] Highlight not found for ID:', id);
-    }
+  function handleHighlightClick(highlightId) {
+    const match = highlights.find((h) => h.id === highlightId);
+    if (match) activeHighlight = match;
   }
 
   // Handle color change
   async function handleUpdateColor(color) {
-    if (!activeHighlight) return;
-
-    const highlightId = activeHighlight.id;
-    
-    // Optimistic update
-    const now = Date.now();
-    let updatedHighlight = null;
-
-    highlights = highlights.map((h) => {
-      if (h.id === highlightId) {
-        updatedHighlight = { ...h, color, updatedAt: now };
-        return updatedHighlight;
-      }
-      return h;
-    });
-
-    if (activeHighlight?.id === highlightId && updatedHighlight) {
-      activeHighlight = updatedHighlight;
-    }
+    const id = activeHighlight?.id;
+    if (!id) return;
 
     try {
-      await updateHighlight(highlightId, { color });
+      await updateHighlight(id, { color });
+      highlights = highlights.map((h) => (h.id === id ? { ...h, color } : h));
+      if (activeHighlight?.id === id) {
+        activeHighlight = { ...activeHighlight, color };
+      }
     } catch (err) {
       console.error('Failed to update highlight color:', err);
     }
   }
 
   // Handle note update
-  async function handleUpdateNote(idOrText, maybeText) {
-    let highlightId;
-    let noteText;
-
-    if (typeof idOrText === 'string' && maybeText === undefined) {
-      // Called as handleUpdateNote(noteText) - using active highlight
-      if (!activeHighlight) return;
-      highlightId = activeHighlight.id;
-      noteText = idOrText;
-    } else {
-      // Called as handleUpdateNote(id, noteText)
-      highlightId = idOrText;
-      noteText = maybeText;
-    }
-
-    if (!highlightId) return;
-
-    console.log('[HighlightsProvider] Saving note for', highlightId, ':', noteText);
-
-    // Optimistic update
-    const now = Date.now();
-    let updatedHighlight = null;
-
-    highlights = highlights.map((h) => {
-      if (h.id === highlightId) {
-        updatedHighlight = { ...h, noteText, updatedAt: now };
-        return updatedHighlight;
-      }
-      return h;
-    });
-
-    // Update activeHighlight immediately if it matches
-    if (activeHighlight?.id === highlightId && updatedHighlight) {
-      activeHighlight = updatedHighlight;
-      console.log('[HighlightsProvider] Active highlight updated optimistically');
-    }
+  async function handleUpdateNote(noteText) {
+    const id = activeHighlight?.id;
+    if (!id) return;
 
     try {
-      await updateHighlight(highlightId, { noteText });
-      console.log('[HighlightsProvider] Saved note to DB');
+      await updateHighlight(id, { noteText });
+      highlights = highlights.map((h) => (h.id === id ? { ...h, noteText } : h));
+      if (activeHighlight?.id === id) {
+        activeHighlight = { ...activeHighlight, noteText };
+      }
     } catch (err) {
       console.error('Failed to update note:', err);
-      // Revert could go here, but for now we rely on simple error logging
-      // To revert properly, we'd need to keep the old state or re-fetch
     }
   }
 
@@ -171,13 +117,10 @@
   async function handleDelete() {
     if (!activeHighlight) return;
 
-    const highlightId = activeHighlight.id;
     try {
-      await deleteHighlight(highlightId);
-      highlights = highlights.filter((h) => h.id !== highlightId);
-      if (activeHighlight?.id === highlightId) {
-        activeHighlight = null;
-      }
+      await deleteHighlight(activeHighlight.id);
+      highlights = highlights.filter((h) => h.id !== activeHighlight.id);
+      activeHighlight = null;
     } catch (err) {
       console.error('Failed to delete highlight:', err);
     }

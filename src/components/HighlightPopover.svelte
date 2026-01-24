@@ -13,36 +13,13 @@
   let noteText = $state('');
   let position = $state({ x: 0, y: 0 });
   let noteInputRef = $state(null);
-  
-  // Track the ID we are currently editing to detect switches
-  let activeId = $state(null);
-  let savedNoteText = $state('');
 
-  // Handle highlight changes (switch, open, close)
+  // Initialize note text when highlight changes
   $effect(() => {
-    const newId = highlight?.id;
-
-    // If we were editing a highlight and the ID changed (or closed), save if dirty
-    if (activeId && activeId !== newId) {
-      if (noteText !== savedNoteText) {
-        // Call with (id, text) signature
-        onUpdateNote(activeId, noteText.trim() || undefined);
-      }
-    }
-
-    // If opening a new highlight (or switching)
-    if (newId && newId !== activeId) {
-      activeId = newId;
+    if (highlight) {
       noteText = highlight.noteText || '';
-      savedNoteText = noteText;
       positionPopover();
-    } 
-    // If closing
-    else if (!newId) {
-      activeId = null;
     }
-    // If ID is same (e.g. clicking same mark), do NOT reset noteText
-    // This preserves unsaved edits if the user clicks the mark again
   });
 
   function positionPopover() {
@@ -56,7 +33,7 @@
 
     const rect = mark.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
-    const popoverWidth = 320; // slightly wider
+    const popoverWidth = 300; // approximate width
     const padding = 16;
 
     let x = rect.left + rect.width / 2;
@@ -65,7 +42,7 @@
 
     position = {
       x,
-      y: rect.bottom + 12, // slightly more offset
+      y: rect.bottom + 10,
     };
   }
 
@@ -73,43 +50,42 @@
     onUpdateColor(color);
   }
 
-  function handleSaveNote() {
-    if (highlight) {
-      onUpdateNote(highlight.id, noteText.trim() || undefined);
-      // Update saved reference so we don't double-save on close
-      savedNoteText = noteText;
-    }
-  }
+   function handleSaveNote() {
+     onUpdateNote(noteText.trim() || undefined);
+   }
+ 
+   function handleKeydown(e) {
+     if (e.key === 'Escape') {
+       onClose();
+     }
+     if (e.key === 'Enter' && e.ctrlKey) {
+       handleSaveNote();
+     }
+   }
+ 
+   function handleClickOutside(e) {
+     // If you click the highlighted text itself, treat that as "open the popover",
+     // not "save + close".
+     if (e.target.closest(`mark[data-highlight-id="${highlight?.id}"]`)) return;
 
-  function handleKeydown(e) {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-    if (e.key === 'Enter' && e.ctrlKey) {
-      handleSaveNote();
-      onClose(); // Optional: close on save? Maybe just save.
-    }
-  }
-
-  function handleClickOutside(e) {
-    if (!e.target.closest('.highlight-popover')) {
-      handleSaveNote();
-      onClose();
-    }
-  }
-
-  onMount(() => {
-    document.addEventListener('keydown', handleKeydown);
-    document.addEventListener('click', handleClickOutside);
-    // Focus the note input if there's already a note
-    if (highlight?.noteText) {
-      setTimeout(() => noteInputRef?.focus(), 10);
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeydown);
-      document.removeEventListener('click', handleClickOutside);
-    };
-  });
+     if (!e.target.closest('.highlight-popover')) {
+       handleSaveNote();
+       onClose();
+     }
+   }
+ 
+   onMount(() => {
+     document.addEventListener('keydown', handleKeydown);
+     document.addEventListener('click', handleClickOutside);
+     // Focus the note input if there's already a note
+     if (highlight?.noteText) {
+       setTimeout(() => noteInputRef?.focus(), 10);
+     }
+     return () => {
+       document.removeEventListener('keydown', handleKeydown);
+       document.removeEventListener('click', handleClickOutside);
+     };
+   });
 </script>
 
 {#if highlight}
@@ -120,49 +96,33 @@
   >
     <div class="popover-arrow-up"></div>
     <div class="popover-content">
-      <!-- Header row with colors and actions -->
-      <div class="header-row">
-        <div class="color-picker">
-          {#each HIGHLIGHT_COLORS as color}
-            <button
-              class="color-btn color-btn--{color}"
-              class:active={highlight.color === color}
-              onclick={() => handleColorChange(color)}
-              aria-label="Change to {color}"
-            >
-              {#if highlight.color === color}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              {/if}
-            </button>
-          {/each}
-        </div>
-        
-        <div class="header-actions">
+      <!-- Color picker row -->
+      <div class="color-row">
+        {#each HIGHLIGHT_COLORS as color}
           <button
-            class="action-btn delete-btn"
-            onclick={onDelete}
-            aria-label="Delete highlight"
-            title="Delete highlight"
+            class="color-btn color-btn--{color}"
+            class:active={highlight.color === color}
+            onclick={() => handleColorChange(color)}
+            aria-label="Change to {color}"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
+            {#if highlight.color === color}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            {/if}
           </button>
-          <button
-            class="action-btn close-btn"
-            onclick={() => { handleSaveNote(); onClose(); }}
-            aria-label="Close"
-            title="Close"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
+        {/each}
+        <button
+          class="delete-btn"
+          onclick={onDelete}
+          aria-label="Delete highlight"
+          title="Delete highlight"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </button>
       </div>
 
       <!-- Note section -->
@@ -174,28 +134,16 @@
           placeholder="Add a note..."
           rows="3"
         ></textarea>
-        <div class="note-footer">
-          <span class="note-hint">
-            {#if savedNoteText === noteText && noteText.length > 0}
-              <span class="saved-indicator">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Saved
-              </span>
-            {:else}
-              Ctrl+Enter to save
-            {/if}
-          </span>
-          <!-- "Done" allows explicit close/save interaction especially for mobile -->
-          <button class="save-btn" onclick={() => { handleSaveNote(); onClose(); }}>Done</button>
+        <div class="note-actions">
+          <span class="note-hint">Ctrl+Enter to save</span>
+          <button class="save-btn" onclick={handleSaveNote}>Save</button>
         </div>
       </div>
 
-      <!-- Snippet preview (context) -->
+      <!-- Snippet preview -->
       <div class="snippet-preview">
         <span class="snippet-label">Highlighted:</span>
-        <span class="snippet-text">"{highlight.textSnippet.slice(0, 60)}{highlight.textSnippet.length > 60 ? '...' : ''}"</span>
+        <span class="snippet-text">"{highlight.textSnippet.slice(0, 50)}{highlight.textSnippet.length > 50 ? '...' : ''}"</span>
       </div>
     </div>
   </div>
@@ -206,18 +154,17 @@
     position: fixed;
     transform: translateX(-50%);
     z-index: 1001;
-    animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-    font-family: Lato, system-ui, sans-serif;
+    animation: popIn 0.15s ease;
   }
 
   @keyframes popIn {
     from {
       opacity: 0;
-      transform: translateX(-50%) scale(0.95) translateY(5px);
+      transform: translateX(-50%) scale(0.9);
     }
     to {
       opacity: 1;
-      transform: translateX(-50%) scale(1) translateY(0);
+      transform: translateX(-50%) scale(1);
     }
   }
 
@@ -228,233 +175,168 @@
     transform: translateX(-50%) rotate(45deg);
     width: 12px;
     height: 12px;
-    background: var(--card, #ffffff);
+    background: #fff;
     border-radius: 2px;
     box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.05);
   }
 
   .popover-content {
-    background: var(--card, #ffffff);
-    border: 1px solid var(--border, #e6e1d4);
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.05);
-    padding: 1rem;
-    width: 320px;
-    max-width: calc(100vw - 2rem);
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    padding: 0.75rem;
+    min-width: min(280px, calc(100vw - 2rem));
+    max-width: min(350px, calc(100vw - 2rem));
   }
 
-  /* Header Row */
-  .header-row {
+  .color-row {
     display: flex;
-    justify-content: space-between;
+    gap: 0.35rem;
     align-items: center;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--border, #e6e1d4);
   }
 
-  .color-picker {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .header-actions {
-    display: flex;
-    gap: 0.25rem;
-  }
-
-  /* Color Buttons */
   .color-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
     border: 2px solid transparent;
     cursor: pointer;
-    transition: transform 0.15s ease;
+    transition: all 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    position: relative;
   }
 
-  .color-btn:hover { transform: scale(1.1); }
-  .color-btn:focus-visible { outline: 2px solid var(--pine, #4d594a); outline-offset: 2px; }
-  
-  .color-btn::after {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border-radius: 50%;
-    border: 1px solid transparent;
-    transition: border-color 0.15s ease;
+  .color-btn:hover {
+    transform: scale(1.1);
   }
-  .color-btn.active::after { border-color: var(--stone, #ccc); }
+
+  .color-btn.active {
+    border-width: 3px;
+  }
 
   .color-btn--yellow { background: #fef08a; }
-  .color-btn--blue { background: #bfdbfe; }
-  .color-btn--green { background: #bbf7d0; }
-  .color-btn--pink { background: #fbcfe8; }
+  .color-btn--yellow:hover, .color-btn--yellow.active { border-color: #ca8a04; }
 
-  /* Action Buttons */
-  .action-btn {
-    width: 32px;
-    height: 32px;
+  .color-btn--blue { background: #bfdbfe; }
+  .color-btn--blue:hover, .color-btn--blue.active { border-color: #2563eb; }
+
+  .color-btn--green { background: #bbf7d0; }
+  .color-btn--green:hover, .color-btn--green.active { border-color: #16a34a; }
+
+  .color-btn--pink { background: #fbcfe8; }
+  .color-btn--pink:hover, .color-btn--pink.active { border-color: #db2777; }
+
+  .delete-btn {
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: transparent;
-    border: none;
+    border: 2px solid var(--border, #e6e1d4);
     border-radius: 6px;
     cursor: pointer;
     color: var(--muted, #5c665a);
     transition: all 0.15s ease;
+    margin-left: auto;
   }
 
-  .action-btn:hover { background: rgba(0,0,0,0.05); color: var(--fg, #333); }
-  .delete-btn:hover { background: #fee2e2; color: #ef4444; }
+  .delete-btn:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #ef4444;
+  }
 
-  /* Note Section */
   .note-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    padding: 0.75rem 0;
   }
 
   .note-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 0.75rem;
+    padding: 0.5rem;
     border: 1px solid var(--border, #e6e1d4);
-    border-radius: 8px;
-    font-size: 0.95rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
     font-family: inherit;
     resize: none;
     background: var(--bg, #f5f2e8);
-    color: var(--fg, #333);
-    line-height: 1.5;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    line-height: 1.4;
   }
 
   .note-input:focus {
     outline: none;
     border-color: var(--alpine, #a6b589);
-    box-shadow: 0 0 0 2px rgba(166, 181, 137, 0.2);
-    background: #fff;
   }
 
-  .note-footer {
+  .note-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 0.5rem;
   }
 
   .note-hint {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--muted, #5c665a);
-    display: flex;
-    align-items: center;
-  }
-  
-  .saved-indicator {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--alpine, #a6b589);
-    font-weight: 600;
   }
 
   .save-btn {
-    padding: 0.4rem 1rem;
+    padding: 0.35rem 0.75rem;
     background: var(--pine, #4d594a);
     color: #fff;
     border: none;
-    border-radius: 6px;
-    font-size: 0.85rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background 0.15s ease;
   }
 
   .save-btn:hover {
     background: var(--ink, #2b2f26);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
 
-  /* Snippet Preview */
   .snippet-preview {
-    padding-top: 0.75rem;
+    padding-top: 0.5rem;
     border-top: 1px solid var(--border, #e6e1d4);
     font-size: 0.75rem;
     color: var(--muted, #5c665a);
-    line-height: 1.4;
   }
 
   .snippet-label {
-    font-weight: 700;
-    margin-right: 0.25rem;
-    color: var(--pine, #4d594a);
+    font-weight: 600;
   }
 
   .snippet-text {
     font-style: italic;
+    word-break: break-word;
   }
 
-  /* Mobile Bottom Sheet Styles */
+  /* Mobile responsiveness */
   @media (max-width: 480px) {
     .highlight-popover {
-      position: fixed;
-      top: auto !important; /* Override inline style */
-      bottom: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      width: 100% !important;
-      transform: none !important;
-      z-index: 2000; /* Higher z-index */
-      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    
-    @keyframes slideUp {
-      from { transform: translateY(100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .popover-arrow-up {
-      display: none;
+      left: 1rem !important;
+      right: 1rem;
+      transform: none;
+      width: auto;
     }
 
     .popover-content {
+      min-width: unset;
+      max-width: unset;
       width: 100%;
-      max-width: 100%;
-      border-radius: 16px 16px 0 0;
-      border: none;
-      border-top: 1px solid var(--border, #e6e1d4);
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-      padding: 1.25rem 1rem 2rem 1rem; /* Extra bottom padding for safe area */
     }
 
-    /* Add a drag handle visual */
-    .popover-content::before {
-      content: '';
-      position: absolute;
-      top: 0.5rem;
+    .popover-arrow-up {
       left: 50%;
-      transform: translateX(-50%);
-      width: 40px;
-      height: 4px;
-      background: var(--border, #e6e1d4);
-      border-radius: 99px;
-    }
-    
-    .note-input {
-      font-size: 16px; /* Prevent iOS zoom */
     }
 
-    .header-row {
-      margin-top: 0.5rem;
+    .note-hint {
+      display: none;
     }
   }
 </style>
