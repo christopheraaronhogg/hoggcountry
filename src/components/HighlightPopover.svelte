@@ -50,45 +50,49 @@
   }
 
   function handleSaveNote() {
-    onUpdateNote(noteText.trim() || undefined);
+    const text = noteText.trim() || undefined;
+    console.log('[HighlightPopover] Saving note:', { highlightId: highlight?.id, noteText: text });
+    onUpdateNote(text);
   }
 
-  // Use $effect for event listeners so they update when highlight changes
-  $effect(() => {
+  function handleKeydown(e) {
     if (!highlight) return;
-
-    function handleKeydown(e) {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-      if (e.key === 'Enter' && e.ctrlKey) {
-        handleSaveNote();
-      }
+    if (e.key === 'Escape') {
+      onClose();
     }
-
-    function handleClickOutside(e) {
-      // If you click the highlighted text itself, treat that as "open the popover",
-      // not "save + close".
-      if (e.target.closest(`mark[data-highlight-id="${highlight?.id}"]`)) return;
-
-      if (!e.target.closest('.highlight-popover')) {
-        handleSaveNote();
-        onClose();
-      }
+    if (e.key === 'Enter' && e.ctrlKey) {
+      handleSaveNote();
     }
+  }
 
+  function handleClickOutside(e) {
+    if (!highlight) return;
+    // If you click the highlighted text itself, treat that as "open the popover",
+    // not "save + close".
+    if (e.target.closest(`mark[data-highlight-id="${highlight?.id}"]`)) return;
+
+    if (!e.target.closest('.highlight-popover')) {
+      handleSaveNote();
+      onClose();
+    }
+  }
+
+  // Set up event listeners
+  $effect(() => {
     document.addEventListener('keydown', handleKeydown);
     document.addEventListener('click', handleClickOutside);
-
-    // Focus the note input if there's already a note
-    if (highlight?.noteText) {
-      setTimeout(() => noteInputRef?.focus(), 10);
-    }
 
     return () => {
       document.removeEventListener('keydown', handleKeydown);
       document.removeEventListener('click', handleClickOutside);
     };
+  });
+
+  // Focus the note input when highlight changes
+  $effect(() => {
+    if (highlight?.noteText) {
+      setTimeout(() => noteInputRef?.focus(), 10);
+    }
   });
 </script>
 

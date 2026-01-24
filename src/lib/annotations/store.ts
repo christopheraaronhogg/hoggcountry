@@ -89,6 +89,7 @@ export async function updateHighlight(
   id: string,
   updates: Partial<Omit<Highlight, 'id'>>
 ): Promise<void> {
+  console.log('[store] updateHighlight called:', { id, updates });
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -97,6 +98,7 @@ export async function updateHighlight(
 
     getRequest.onsuccess = () => {
       const existing = getRequest.result;
+      console.log('[store] Found existing highlight:', existing);
       if (!existing) {
         reject(new Error(`Highlight ${id} not found`));
         return;
@@ -107,13 +109,23 @@ export async function updateHighlight(
         ...updates,
         updatedAt: Date.now(),
       };
+      console.log('[store] Saving updated highlight:', updated);
 
       const putRequest = store.put(updated);
-      putRequest.onsuccess = () => resolve();
-      putRequest.onerror = () => reject(putRequest.error);
+      putRequest.onsuccess = () => {
+        console.log('[store] Highlight saved successfully');
+        resolve();
+      };
+      putRequest.onerror = () => {
+        console.error('[store] Failed to save highlight:', putRequest.error);
+        reject(putRequest.error);
+      };
     };
 
-    getRequest.onerror = () => reject(getRequest.error);
+    getRequest.onerror = () => {
+      console.error('[store] Failed to get highlight:', getRequest.error);
+      reject(getRequest.error);
+    };
   });
 }
 

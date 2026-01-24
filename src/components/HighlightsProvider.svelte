@@ -100,10 +100,16 @@
   // Handle note update
   async function handleUpdateNote(noteText) {
     const id = activeHighlight?.id;
-    if (!id) return;
+    console.log('[HighlightsProvider] handleUpdateNote called:', { id, noteText, activeHighlight });
+    if (!id) {
+      console.warn('[HighlightsProvider] No activeHighlight.id, aborting save');
+      return;
+    }
 
     try {
+      console.log('[HighlightsProvider] Calling updateHighlight...');
       await updateHighlight(id, { noteText });
+      console.log('[HighlightsProvider] updateHighlight succeeded');
       highlights = highlights.map((h) => (h.id === id ? { ...h, noteText } : h));
       if (activeHighlight?.id === id) {
         activeHighlight = { ...activeHighlight, noteText };
