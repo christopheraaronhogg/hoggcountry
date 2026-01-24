@@ -71,17 +71,51 @@
     };
   }
 
+  function getContext(range) {
+    // Get surrounding text for better matching
+    const node = range.startContainer;
+    const fullText = node.textContent || '';
+    const start = Math.max(0, range.startOffset - 30);
+    const end = Math.min(fullText.length, range.endOffset + 30);
+    const before = fullText.slice(start, range.startOffset);
+    const after = fullText.slice(range.endOffset, end);
+    
+    // Also get the nearest heading
+    let heading = '';
+    let el = range.startContainer.parentElement;
+    while (el) {
+      const prev = el.previousElementSibling;
+      if (prev?.tagName?.match(/^H[1-6]$/)) {
+        heading = prev.id || prev.textContent?.slice(0, 50) || '';
+        break;
+      }
+      // Check if we're inside or after a heading
+      const h = el.closest('.chapter-section')?.querySelector('h2, h3');
+      if (h) {
+        heading = h.id || h.textContent?.slice(0, 50) || '';
+        break;
+      }
+      el = el.parentElement;
+    }
+    
+    return { before, after, heading };
+  }
+
   function createHighlight(color = 'yellow') {
     if (!pendingSelection) return;
     
     const { text, range } = pendingSelection;
     const id = Date.now().toString();
+    const ctx = getContext(range);
     const highlight = {
       id,
       text,
       note: '',
       color,
-      startText: text.slice(0, 50),
+      // Store context for better re-matching
+      before: ctx.before,
+      after: ctx.after,
+      heading: ctx.heading,
     };
 
     try {
@@ -109,35 +143,80 @@
   }
 
   function applyHighlights() {
-    // Re-apply highlights on page load by finding text
+    // Re-apply highlights on page load by finding text with context matching
     const guideContent = document.querySelector('.guide-content-area');
     if (!guideContent) return;
 
     for (const h of highlights) {
-      // Simple text search - find first occurrence
+      let bestMatch = null;
+      let bestScore = -1;
+      
       const walker = document.createTreeWalker(guideContent, NodeFilter.SHOW_TEXT);
       let node;
       while ((node = walker.nextNode())) {
-        const idx = node.textContent.indexOf(h.startText);
-        if (idx !== -1) {
-          try {
-            const range = document.createRange();
-            range.setStart(node, idx);
-            range.setEnd(node, idx + h.text.length);
-            
-            const mark = document.createElement('mark');
-            mark.className = `guide-highlight guide-highlight--${h.color}`;
-            mark.dataset.highlightId = h.id;
-            range.surroundContents(mark);
-            
-            mark.addEventListener('click', (e) => {
-              e.stopPropagation();
-              openPopover(h.id, mark);
-            });
-            break;
-          } catch (e) {
-            // Could not wrap, skip
+        const fullText = node.textContent || '';
+        let idx = 0;
+        
+        // Find all occurrences in this node
+        while ((idx = fullText.indexOf(h.text, idx)) !== -1) {
+          // Score this match based on context
+          let score = 0;
+          
+          // Check before context
+          if (h.before) {
+            const actualBefore = fullText.slice(Math.max(0, idx - h.before.length), idx);
+            if (actualBefore.includes(h.before.slice(-15))) score += 10;
           }
+          
+          // Check after context
+          if (h.after) {
+            const actualAfter = fullText.slice(idx + h.text.length, idx + h.text.length + h.after.length);
+            if (actualAfter.includes(h.after.slice(0, 15))) score += 10;
+          }
+          
+          // Check heading context
+          if (h.heading) {
+            let el = node.parentElement;
+            while (el && el !== guideContent) {
+              const section = el.closest('.chapter-section');
+              if (section) {
+                const sectionHeading = section.querySelector('h2, h3');
+                if (sectionHeading && (sectionHeading.id === h.heading || sectionHeading.textContent?.includes(h.heading.slice(0, 20)))) {
+                  score += 20;
+                }
+                break;
+              }
+              el = el.parentElement;
+            }
+          }
+          
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = { node, idx };
+          }
+          
+          idx += 1;
+        }
+      }
+      
+      // Apply the best match
+      if (bestMatch) {
+        try {
+          const range = document.createRange();
+          range.setStart(bestMatch.node, bestMatch.idx);
+          range.setEnd(bestMatch.node, bestMatch.idx + h.text.length);
+          
+          const mark = document.createElement('mark');
+          mark.className = `guide-highlight guide-highlight--${h.color}`;
+          mark.dataset.highlightId = h.id;
+          range.surroundContents(mark);
+          
+          mark.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openPopover(h.id, mark);
+          });
+        } catch (e) {
+          // Could not wrap, skip
         }
       }
     }
