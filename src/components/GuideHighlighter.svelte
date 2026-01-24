@@ -74,6 +74,9 @@
       highlights = [...highlights, highlight];
       save();
       sel.removeAllRanges();
+      
+      // Open popover immediately so user can add a note
+      openPopover(id, mark);
     } catch (e) {
       console.error('Could not highlight:', e);
     }
