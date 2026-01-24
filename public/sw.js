@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v10';
+const CACHE_NAME = 'hogg-country-v11';
 
 // Core pages to precache on install
 const CORE_PAGES = [
@@ -222,10 +222,11 @@ async function cacheFirst(request) {
   }
 }
 
-// Network-first strategy (HTML pages)
+// Network-first strategy (HTML pages) - ALWAYS try network first
 async function networkFirst(request) {
   try {
-    const response = await fetch(request);
+    // Force bypass cache on fetch
+    const response = await fetch(request, { cache: 'no-store' });
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
