@@ -22,6 +22,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
       <!-- <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a> -->
       <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
+      <a href="/test" class="nav-link" style="color: red; font-weight: bold;">TEST</a>
       {showTracking && (
         <a
           href={LIVE_TRACKING_URL}
