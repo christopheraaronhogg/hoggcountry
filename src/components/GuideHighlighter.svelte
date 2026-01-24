@@ -8,6 +8,10 @@
   let activeId = $state(null);
   let noteText = $state('');
   let popoverPos = $state({ x: 0, y: 0 });
+  
+  // Selection state (before highlighting)
+  let pendingSelection = $state(null);
+  let selectionPopoverPos = $state({ x: 0, y: 0 });
 
   // Load highlights from localStorage
   onMount(() => {
@@ -37,32 +41,51 @@
 
   function handleSelection() {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) return;
+    if (!sel || sel.isCollapsed) {
+      pendingSelection = null;
+      return;
+    }
     
     const text = sel.toString().trim();
-    if (text.length < 3) return;
+    if (text.length < 3) {
+      pendingSelection = null;
+      return;
+    }
 
     // Only allow selections within .guide-content
     const range = sel.getRangeAt(0);
     const container = range.commonAncestorContainer;
     const guideContent = document.querySelector('.guide-content-area');
-    if (!guideContent?.contains(container)) return;
+    if (!guideContent?.contains(container)) {
+      pendingSelection = null;
+      return;
+    }
 
-    // Create highlight
+    // Store selection for later, show selection popover
+    const rect = range.getBoundingClientRect();
+    pendingSelection = { text, range: range.cloneRange() };
+    selectionPopoverPos = {
+      x: Math.min(rect.left + rect.width / 2, window.innerWidth - 100),
+      y: rect.bottom + 8
+    };
+  }
+
+  function createHighlight(color = 'yellow') {
+    if (!pendingSelection) return;
+    
+    const { text, range } = pendingSelection;
     const id = Date.now().toString();
     const highlight = {
       id,
       text,
       note: '',
-      color: 'yellow',
-      // Store position info for re-finding
+      color,
       startText: text.slice(0, 50),
     };
 
-    // Wrap selection in mark
     try {
       const mark = document.createElement('mark');
-      mark.className = 'guide-highlight guide-highlight--yellow';
+      mark.className = `guide-highlight guide-highlight--${color}`;
       mark.dataset.highlightId = id;
       range.surroundContents(mark);
       
@@ -73,12 +96,14 @@
 
       highlights = [...highlights, highlight];
       save();
-      sel.removeAllRanges();
+      window.getSelection()?.removeAllRanges();
+      pendingSelection = null;
       
       // Open popover immediately so user can add a note
       openPopover(id, mark);
     } catch (e) {
       console.error('Could not highlight:', e);
+      pendingSelection = null;
     }
   }
 
@@ -172,10 +197,27 @@
     if (activeId && !e.target.closest('.highlight-popover') && !e.target.closest('mark')) {
       closePopover();
     }
+    if (pendingSelection && !e.target.closest('.selection-popover')) {
+      pendingSelection = null;
+    }
   }
 </script>
 
 <svelte:document onclick={handleClickOutside} />
+
+{#if pendingSelection}
+  <div class="selection-popover" style="left: {selectionPopoverPos.x}px; top: {selectionPopoverPos.y}px;">
+    <div class="selection-colors">
+      {#each ['yellow', 'blue', 'green', 'pink'] as color}
+        <button 
+          class="color-btn color-btn--{color}"
+          onclick={() => createHighlight(color)}
+          title="Highlight {color}"
+        ></button>
+      {/each}
+    </div>
+  </div>
+{/if}
 
 {#if activeId}
   <div class="highlight-popover" style="left: {popoverPos.x}px; top: {popoverPos.y}px;">
@@ -199,6 +241,21 @@
 {/if}
 
 <style>
+  .selection-popover {
+    position: fixed;
+    transform: translateX(-50%);
+    z-index: 1001;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 0.4rem;
+  }
+
+  .selection-colors {
+    display: flex;
+    gap: 0.25rem;
+  }
+
   .highlight-popover {
     position: fixed;
     transform: translateX(-50%);
