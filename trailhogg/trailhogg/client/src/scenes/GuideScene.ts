@@ -1,91 +1,7 @@
 import Phaser from 'phaser';
-import { TRAIL_TOTAL_MILES, KATAHDIN } from '../data/TrailData';
-
-interface TrailLocation {
-  mile: number;
-  name: string;
-  type: 'town' | 'shelter' | 'water' | 'peak' | 'landmark';
-  description: string;
-  services?: string[];
-  elevation?: number;
-  distance?: string; // Distance from trail
-}
-
-// Comprehensive AT trail data from MASTER_NOBO_FIELD_GUIDE
-const TRAIL_DATA: TrailLocation[] = [
-  // Georgia
-  { mile: 0, name: 'Springer Mountain', type: 'landmark', description: 'Southern terminus of the AT. You begin here.', elevation: 3782 },
-  { mile: 2.8, name: 'Stover Creek Shelter', type: 'shelter', description: 'First shelter northbound. Water nearby.' },
-  { mile: 7.6, name: 'Hawk Mountain Shelter', type: 'shelter', description: 'Good water source. First night for many.' },
-  { mile: 10.5, name: 'Gooch Mountain Shelter', type: 'shelter', description: 'Popular first night shelter. Privy available.' },
-  { mile: 15.6, name: 'Woody Gap (GA-60)', type: 'landmark', description: 'Road crossing. First easy bail point if needed.' },
-  { mile: 15.8, name: 'Woods Hole Shelter', type: 'shelter', description: 'Water from stream. Good campsite nearby.' },
-  { mile: 20.9, name: 'Blood Mountain Shelter', type: 'shelter', description: 'Oldest shelter on AT. No water at shelter.', elevation: 4458 },
-  { mile: 21.1, name: 'Blood Mountain', type: 'peak', description: 'Highest peak in Georgia on the AT. 360° views.', elevation: 4458 },
-  { mile: 30.7, name: 'Neels Gap / Mountain Crossings', type: 'town', description: 'The AT goes THROUGH the building! First resupply.', services: ['hostel', 'outfitter', 'shower', 'laundry'], distance: 'On Trail' },
-  { mile: 41.1, name: 'Low Gap Shelter', type: 'shelter', description: 'Water from spring. Reliable source.' },
-  { mile: 52.2, name: 'Plumorchard Gap Shelter', type: 'shelter', description: 'Good water. Near NC border.' },
-  { mile: 69, name: 'Hiawassee, GA', type: 'town', description: 'Major resupply town. Full services but requires hitch.', services: ['grocery', 'restaurants', 'motels'], distance: '~11 mi (hitch)' },
-  { mile: 78.5, name: 'NC/GA Border', type: 'landmark', description: 'You made it out of Georgia! First state complete.' },
-
-  // North Carolina / Tennessee
-  { mile: 89.6, name: 'Standing Indian Shelter', type: 'shelter', description: 'Near Standing Indian Mountain. Good water.' },
-  { mile: 91.8, name: 'Standing Indian Mountain', type: 'peak', description: 'Highest point on the southern AT at this mile.', elevation: 5499 },
-  { mile: 110, name: 'Franklin, NC', type: 'town', description: 'Major resupply via Winding Stair Gap. Medical services.', services: ['grocery', 'outfitter', 'restaurants'], distance: '~10 mi' },
-  { mile: 137, name: 'Nantahala Outdoor Center (NOC)', type: 'town', description: 'Rafting company with hostel and store. Popular stop.', services: ['hostel', 'outfitter', 'restaurant'], distance: 'On Trail' },
-  { mile: 165, name: 'Fontana Dam', type: 'town', description: '"Fontana Hilton" shelter at dam. Village nearby.', services: ['hostel', 'store', 'shower'], distance: '~1.5 mi' },
-  { mile: 165.7, name: 'Fontana Shelter', type: 'shelter', description: 'Famous "Hilton" shelter. Showers nearby!' },
-
-  // Smokies
-  { mile: 199.8, name: 'Newfound Gap', type: 'landmark', description: 'Road crossing (US-441). Gatlinburg access. Smokies midpoint.' },
-  { mile: 209, name: 'Kuwohi (Clingmans Dome)', type: 'peak', description: 'Highest point on the AT! Observation tower.', elevation: 6643 },
-  { mile: 241, name: 'Standing Bear Farm', type: 'town', description: 'Classic hiker hostel. "Museum" of trail history.', services: ['hostel', 'store', 'shower'], distance: '~0.2 mi' },
-
-  // NC/TN continued
-  { mile: 274, name: 'Hot Springs, NC', type: 'town', description: 'Trail goes through downtown! Major zero-day stop.', services: ['hostels', 'grocery', 'restaurants', 'laundry', 'PO'], distance: 'On Trail' },
-  { mile: 342, name: 'Erwin, TN', type: 'town', description: 'Uncle Johnny\'s hostel. Good resupply.', services: ['hostel', 'grocery', 'restaurants'], distance: '~0.5 mi' },
-  { mile: 395, name: 'Roan High Knob Shelter', type: 'shelter', description: 'Highest shelter on the AT! Enclosed cabin style.', elevation: 6285 },
-
-  // Virginia - Trail Town USA
-  { mile: 469, name: 'Damascus, VA', type: 'town', description: '"Trail Town USA" - Major hiker hub. Trail Days festival.', services: ['hostels', 'outfitter', 'grocery', 'restaurants', 'laundry', 'PO'], distance: 'On Trail' },
-  { mile: 530, name: 'Grayson Highlands', type: 'landmark', description: 'Wild ponies! Alpine meadows. Stunning views.' },
-  { mile: 635, name: 'Pearisburg, VA', type: 'town', description: 'Walkable with decent resupply.', services: ['hostel', 'grocery', 'restaurants'], distance: '~0.8 mi' },
-  { mile: 729, name: 'Daleville, VA', type: 'town', description: 'Good resupply right off I-81.', services: ['hotels', 'grocery', 'restaurants'], distance: '~0.5 mi' },
-  { mile: 854, name: 'The Priest', type: 'peak', description: 'One of the hardest climbs on the AT. 3,400 ft gain.', elevation: 4063 },
-  { mile: 880, name: 'Waynesboro, VA', type: 'town', description: 'Major town before Shenandoah. Popular zero stop.', services: ['motels', 'grocery', 'restaurants', 'laundry', 'PO'], distance: '~1-2 mi' },
-
-  // Shenandoah
-  { mile: 880, name: 'Shenandoah NP South', type: 'landmark', description: 'Entering Shenandoah National Park! Fast miles ahead.' },
-  { mile: 927, name: 'Big Meadows', type: 'landmark', description: 'Wayside with food, store, and showers.' },
-  { mile: 999, name: 'Front Royal, VA', type: 'town', description: 'Shenandoah north exit. Popular stop.', services: ['hostels', 'grocery', 'restaurants'], distance: '~1-3 mi' },
-
-  // Mid-Atlantic
-  { mile: 1024, name: 'Harpers Ferry, WV', type: 'town', description: '"Psychological halfway point." ATC HQ. Historic town.', services: ['hostel', 'store', 'restaurants'], distance: 'On Trail' },
-  { mile: 1103, name: 'Pine Grove Furnace SP', type: 'landmark', description: 'Half Gallon Challenge! Official AT midpoint.' },
-  { mile: 1149, name: 'Duncannon, PA', type: 'town', description: 'Classic trail town. Infamous Doyle Hotel.', services: ['hotel', 'grocery', 'restaurants'], distance: '~0.5 mi' },
-  { mile: 1298, name: 'Delaware Water Gap, PA', type: 'town', description: 'Beautiful town at river. Good resupply.', services: ['hostels', 'grocery', 'restaurants', 'PO'], distance: 'On Trail' },
-
-  // New England
-  { mile: 1433, name: 'Bear Mountain, NY', type: 'peak', description: 'Lowest elevation on the AT! Zoo nearby.', elevation: 1305 },
-  { mile: 1570, name: 'Dalton, MA', type: 'town', description: 'Trail goes through town. Tom Levardi\'s legendary.', services: ['hostel', 'grocery', 'restaurants'], distance: 'On Trail' },
-  { mile: 1590, name: 'Mt. Greylock', type: 'peak', description: 'Highest point in Massachusetts.', elevation: 3491 },
-  { mile: 1747, name: 'Hanover, NH', type: 'town', description: 'Dartmouth College town. Excellent services.', services: ['hostels', 'grocery', 'restaurants', 'laundry', 'PO'], distance: 'On Trail' },
-
-  // White Mountains
-  { mile: 1791, name: 'White Mountains Begin', type: 'landmark', description: 'The hardest terrain on the AT begins. Be ready.' },
-  { mile: 1823, name: 'Mt. Moosilauke', type: 'peak', description: 'First real White Mountain peak. Above treeline.', elevation: 4802 },
-  { mile: 1845, name: 'Franconia Ridge', type: 'peak', description: 'Exposed ridge walk. Incredible views. Weather danger.', elevation: 5249 },
-  { mile: 1875, name: 'Mt. Washington', type: 'peak', description: 'Highest peak in Northeast. Worst weather in world.', elevation: 6288 },
-  { mile: 1898, name: 'Gorham, NH', type: 'town', description: 'Major resupply after Whites. Popular zero stop.', services: ['hostels', 'grocery', 'restaurants', 'laundry', 'PO'], distance: '~1.5 mi' },
-
-  // Maine
-  { mile: 1912, name: 'Maine Border', type: 'landmark', description: 'The final state! Maine is slow but beautiful.' },
-  { mile: 2078, name: 'Monson, ME', type: 'town', description: 'Gateway to 100-Mile Wilderness. Last resupply!', services: ['hostels', 'grocery', 'restaurants', 'PO'], distance: '~0.5 mi' },
-  { mile: 2093, name: '100-Mile Wilderness Begins', type: 'landmark', description: 'No resupply for 100 miles. Carry 8-10 days food.' },
-  { mile: 2145, name: 'Bigelow Range', type: 'peak', description: 'Challenging Maine peaks.', elevation: 4145 },
-  { mile: 2193, name: '100-Mile Wilderness Ends', type: 'landmark', description: 'You made it through! Katahdin awaits.' },
-  { mile: TRAIL_TOTAL_MILES, name: KATAHDIN.name, type: 'peak', description: 'THE END! Northern terminus. You did it!', elevation: KATAHDIN.elevation }
-];
+import { TRAIL_TOTAL_MILES } from '../data/TrailData';
+import { TRAIL_DATA, TrailLocation } from '../data/UnifiedTrailData';
+import { binarySearchStartIndex } from '../utils/searchUtils';
 
 // Trail tips based on current section
 const TRAIL_TIPS: { minMile: number; maxMile: number; tips: string[] }[] = [
@@ -361,15 +277,19 @@ export class GuideScene extends Phaser.Scene {
     switch (this.activeTab) {
       case 'upcoming':
         // Show next 10 locations from current mile
-        items = TRAIL_DATA.filter(loc => loc.mile >= this.currentMile).slice(0, 10);
+        const upcomingIndex = binarySearchStartIndex(TRAIL_DATA, this.currentMile, item => item.mile);
+        items = TRAIL_DATA.slice(upcomingIndex, upcomingIndex + 10);
         break;
       case 'towns':
-        items = TRAIL_DATA.filter(loc => loc.type === 'town' && loc.mile >= this.currentMile - 50);
+        const townIndex = binarySearchStartIndex(TRAIL_DATA, this.currentMile - 50, item => item.mile);
+        items = TRAIL_DATA.slice(townIndex).filter(loc => loc.type === 'town');
         break;
       case 'shelters':
-        items = TRAIL_DATA.filter(loc => loc.type === 'shelter' && loc.mile >= this.currentMile - 20);
+        const shelterIndex = binarySearchStartIndex(TRAIL_DATA, this.currentMile - 20, item => item.mile);
+        items = TRAIL_DATA.slice(shelterIndex).filter(loc => loc.type === 'shelter');
         break;
       case 'peaks':
+        // Peaks are sparse, filtering all is acceptable
         items = TRAIL_DATA.filter(loc => loc.type === 'peak');
         break;
       case 'tips':
