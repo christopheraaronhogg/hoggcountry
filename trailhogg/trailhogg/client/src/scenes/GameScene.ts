@@ -151,6 +151,7 @@ export class GameScene extends Phaser.Scene {
   private globalGameTime: GameTime | null = null;
   private globalWeather: Weather | null = null;
   private lastWeatherCheck: number = 0;
+  private lastWeather: string = '';
   private weatherText!: Phaser.GameObjects.Text;
 
   // Real hiker ghosts (GPS data)
@@ -1873,6 +1874,11 @@ export class GameScene extends Phaser.Scene {
   }
   
   updateWeatherEffects(weather: string) {
+    // Optimization: Only update effects if weather actually changed
+    // This prevents destroying and recreating emitters/sprites every frame
+    if (weather === this.lastWeather) return;
+    this.lastWeather = weather;
+
     // Clear existing effects
     if (this.rainEmitter) {
       this.rainEmitter.stop();
