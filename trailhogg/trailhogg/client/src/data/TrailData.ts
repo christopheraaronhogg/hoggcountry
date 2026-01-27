@@ -666,10 +666,7 @@ export const AMC_HUTS: AMCHut[] = [
 
 // Helper function for AMC huts
 export function getNearestAMCHut(mile: number): AMCHut | undefined {
-  return AMC_HUTS.reduce((nearest, h) => {
-    if (!nearest) return h;
-    return Math.abs(h.mile - mile) < Math.abs(nearest.mile - mile) ? h : nearest;
-  }, undefined as AMCHut | undefined);
+  return binarySearchNearest(AMC_HUTS, mile, 'mile');
 }
 
 export function getAMCHutsInRange(startMile: number, endMile: number): AMCHut[] {
@@ -879,8 +876,51 @@ export const LANDMARKS: Landmark[] = [
 // HELPER FUNCTIONS
 // ============================================================================
 
+/**
+ * Binary search to find the item in a sorted array closest to the target value.
+ * Assumes the array is sorted by the given key in ascending order.
+ * O(log N) complexity.
+ */
+function binarySearchNearest<T>(array: T[], target: number, key: keyof T): T | undefined {
+  if (array.length === 0) return undefined;
+  if (array.length === 1) return array[0];
+
+  let low = 0;
+  let high = array.length - 1;
+
+  // Binary search to find the insertion point or exact match
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const midVal = array[mid][key] as unknown as number;
+
+    if (midVal === target) {
+      return array[mid];
+    } else if (midVal < target) {
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  // low is the insertion point. Check neighbors (high and low)
+  // high might be -1, low might be array.length
+
+  const idx1 = Math.max(0, high); // element before target (or 0)
+  const idx2 = Math.min(array.length - 1, low); // element after target (or last)
+
+  const val1 = array[idx1][key] as unknown as number;
+  const val2 = array[idx2][key] as unknown as number;
+
+  if (Math.abs(target - val1) <= Math.abs(target - val2)) {
+    return array[idx1];
+  } else {
+    return array[idx2];
+  }
+}
+
 export function getShelterByMile(mile: number): Shelter | undefined {
-  return SHELTERS.find(s => Math.abs(s.mile - mile) < 0.5);
+  const shelter = binarySearchNearest(SHELTERS, mile, 'mile');
+  return shelter && Math.abs(shelter.mile - mile) < 0.5 ? shelter : undefined;
 }
 
 export function getLandmarksInRange(startMile: number, endMile: number): Landmark[] {
@@ -888,10 +928,7 @@ export function getLandmarksInRange(startMile: number, endMile: number): Landmar
 }
 
 export function getNearestLandmark(mile: number): Landmark | undefined {
-  return LANDMARKS.reduce((nearest, l) => {
-    if (!nearest) return l;
-    return Math.abs(l.mile - mile) < Math.abs(nearest.mile - mile) ? l : nearest;
-  }, undefined as Landmark | undefined);
+  return binarySearchNearest(LANDMARKS, mile, 'mile');
 }
 
 export function getNextShelter(mile: number): Shelter | undefined {
@@ -948,11 +985,9 @@ export function getElevationAtMile(mile: number): number {
   if (!zone) return 3500;
 
   // Find nearby shelters for more accurate elevation
-  const nearestShelter = SHELTERS.reduce((prev, curr) => {
-    return Math.abs(curr.mile - mile) < Math.abs(prev.mile - mile) ? curr : prev;
-  });
+  const nearestShelter = binarySearchNearest(SHELTERS, mile, 'mile');
 
-  if (Math.abs(nearestShelter.mile - mile) < 2) {
+  if (nearestShelter && Math.abs(nearestShelter.mile - mile) < 2) {
     return nearestShelter.elevation;
   }
 
@@ -1578,10 +1613,7 @@ export function getWaterSourcesInRange(startMile: number, endMile: number): Wate
 }
 
 export function getNearestWaterSource(mile: number): WaterSource | undefined {
-  return FAMOUS_WATER_SOURCES.reduce((nearest, w) => {
-    if (!nearest) return w;
-    return Math.abs(w.mile - mile) < Math.abs(nearest.mile - mile) ? w : nearest;
-  }, undefined as WaterSource | undefined);
+  return binarySearchNearest(FAMOUS_WATER_SOURCES, mile, 'mile');
 }
 
 export function getDangerousCrossingsInRange(startMile: number, endMile: number): DangerousCrossing[] {
