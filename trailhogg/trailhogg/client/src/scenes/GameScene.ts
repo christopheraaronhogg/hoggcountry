@@ -2512,11 +2512,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check collision with hiker
         if (!obstacle.getData('hit')) {
-          const dist = Phaser.Math.Distance.Between(
+          // Use squared distance for performance
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             obstacle.x, obstacle.y
           );
-          if (dist < 25) {
+          if (distSq < 625) { // 25 * 25
             // Hit obstacle!
             obstacle.setData('hit', true);
             obstacle.setTint(0xff6666);
@@ -2575,11 +2576,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check if hiker walks over water source
         if (!water.getData('used')) {
-          const dist = Phaser.Math.Distance.Between(
+          // Use squared distance for performance
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             water.x, water.y
           );
-          if (dist < 40) {
+          if (distSq < 1600) { // 40 * 40
             // Auto-fill water
             water.setData('used', true);
             water.setTint(0x666666); // Visual feedback - used stream
@@ -2716,11 +2718,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check for snake collision
         if (animal.getData('type') === 'snake') {
-          const dist = Phaser.Math.Distance.Between(
+          // Use squared distance for performance
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             animal.x, animal.y
           );
-          if (dist < 30 && !animal.getData('encountered')) {
+          if (distSq < 900 && !animal.getData('encountered')) { // 30 * 30
             animal.setData('encountered', true);
             if (this.hikerData) {
               this.hikerData.energy = Math.max(0, this.hikerData.energy - 5);
@@ -2754,11 +2757,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check if hiker collects trail magic
         if (!magic.getData('collected')) {
-          const dist = Phaser.Math.Distance.Between(
+          // Use squared distance for performance
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             magic.x, magic.y
           );
-          if (dist < 50) {
+          if (distSq < 2500) { // 50 * 50
             magic.setData('collected', true);
             const magicData = magic.getData('magic');
 
@@ -2832,11 +2836,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check for greeting when close
         if (!hiker.getData('greeted')) {
-          const dist = Phaser.Math.Distance.Between(
+          // Use squared distance for performance
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             hiker.x, hiker.y
           );
-          if (dist < 80) {
+          if (distSq < 6400) { // 80 * 80
             hiker.setData('greeted', true);
             const name = hiker.getData('name');
             const greeting = hiker.getData('greeting');
@@ -2875,11 +2880,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check if hiker visits viewpoint
         if (!viewpoint.getData('visited')) {
-          const dist = Phaser.Math.Distance.Between(
+          // Use squared distance for performance
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             viewpoint.x, viewpoint.y
           );
-          if (dist < 60) {
+          if (distSq < 3600) { // 60 * 60
             viewpoint.setData('visited', true);
             const name = viewpoint.getData('name');
 
