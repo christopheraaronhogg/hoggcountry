@@ -13,6 +13,7 @@
   let showWaterSources = false;
   let showResupplyStops = true;
   let showRoadCrossings = false;
+  let showShelters = true;
 
   // Keep map init client-only.
   onMount(async () => {
@@ -65,6 +66,7 @@
     const waterLayer = L.layerGroup();
     const resupplyLayer = L.layerGroup();
     const crossingLayer = L.layerGroup();
+    const shelterLayer = L.layerGroup();
 
     // Mile coordinate lookup (used to "place" things that only have a mile number)
     const mileCoord = new Map<number, { lat: number; lon: number }>();
@@ -195,8 +197,48 @@
       }
     }
 
+    async function loadShelters() {
+      try {
+        const res = await fetch("/data/at-shelters.geojson", {
+          headers: { Accept: "application/geo+json, application/json" },
+        });
+        if (!res.ok) throw new Error(`shelters fetch failed: ${res.status}`);
+        const data = await res.json();
+
+        const features = data?.features || [];
+        for (const ft of features) {
+          const coords = ft?.geometry?.coordinates;
+          if (!Array.isArray(coords) || coords.length < 2) continue;
+          const lon = coords[0];
+          const lat = coords[1];
+          if (typeof lat !== "number" || typeof lon !== "number") continue;
+
+          const props = ft?.properties || {};
+          const name = props?.name || props?.tags?.name || "Shelter";
+          const shelterType = props?.shelter_type ? String(props.shelter_type) : "";
+
+          L.circleMarker([lat, lon], {
+            radius: 5,
+            color: "#92400e", // amber-800
+            weight: 2,
+            opacity: 0.95,
+            fillColor: "#f59e0b", // amber-500
+            fillOpacity: 0.75,
+            renderer: canvasRenderer,
+          })
+            .bindPopup(
+              `<b>${name}</b>${shelterType ? `<br/><small>${shelterType}</small>` : ""}`
+            )
+            .addTo(shelterLayer);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     try {
       await loadMilepostsAndBuildLayers();
+      await loadShelters();
     } catch (err) {
       console.error(err);
     }
@@ -223,13 +265,22 @@
         if (map.hasLayer(crossingLayer)) map.removeLayer(crossingLayer);
       }
 
-      // Water sources (only show when zoomed in enough)
       const zoom = map.getZoom();
+
+      // Water sources (only show when zoomed in enough)
       const waterAllowed = zoom >= 11;
       if (showWaterSources && waterAllowed) {
         if (!map.hasLayer(waterLayer)) waterLayer.addTo(map);
       } else {
         if (map.hasLayer(waterLayer)) map.removeLayer(waterLayer);
+      }
+
+      // Shelters (OSM-derived)
+      const shelterAllowed = zoom >= 10;
+      if (showShelters && shelterAllowed) {
+        if (!map.hasLayer(shelterLayer)) shelterLayer.addTo(map);
+      } else {
+        if (map.hasLayer(shelterLayer)) map.removeLayer(shelterLayer);
       }
     }
 
@@ -300,6 +351,11 @@
             </label>
 
             <label class="hc-toggle">
+              <input id="hc-shelter-toggle" type="checkbox" ${showShelters ? "checked" : ""} />
+              <span>Shelters (zoom 10+)</span>
+            </label>
+
+            <label class="hc-toggle">
               <input id="hc-cross-toggle" type="checkbox" ${showRoadCrossings ? "checked" : ""} />
               <span>Road crossings</span>
             </label>
@@ -314,6 +370,7 @@
         const mileToggle = div.querySelector("#hc-mile-toggle") as HTMLInputElement;
         const resupplyToggle = div.querySelector("#hc-resupply-toggle") as HTMLInputElement;
         const waterToggle = div.querySelector("#hc-water-toggle") as HTMLInputElement;
+        const shelterToggle = div.querySelector("#hc-shelter-toggle") as HTMLInputElement;
         const crossToggle = div.querySelector("#hc-cross-toggle") as HTMLInputElement;
         const locate = div.querySelector("#hc-locate") as HTMLButtonElement;
 
@@ -329,6 +386,11 @@
 
         waterToggle.addEventListener("change", () => {
           showWaterSources = waterToggle.checked;
+          syncOverlays();
+        });
+
+        shelterToggle.addEventListener("change", () => {
+          showShelters = shelterToggle.checked;
           syncOverlays();
         });
 
