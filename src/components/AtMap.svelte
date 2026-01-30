@@ -2,10 +2,17 @@
   import { onMount } from "svelte";
   import "leaflet/dist/leaflet.css";
 
+  import atWaterSources from "../data/at-water-sources.json";
+  import { RESUPPLY_STOPS } from "../data/resupplyStops";
+  import { AT_ROAD_CROSSINGS } from "../data/at-road-crossings";
+
   let container: HTMLDivElement;
 
   // UI state
   let showMileMarkers = true;
+  let showWaterSources = false;
+  let showResupplyStops = true;
+  let showRoadCrossings = false;
 
   // Keep map init client-only.
   onMount(async () => {
@@ -52,60 +59,183 @@
       console.error(err);
     }
 
-    // Mile markers (from existing site data)
-    const mileLayer = L.layerGroup();
+    // Layers
     const canvasRenderer = L.canvas({ padding: 0.5 });
+    const mileLayer = L.layerGroup();
+    const waterLayer = L.layerGroup();
+    const resupplyLayer = L.layerGroup();
+    const crossingLayer = L.layerGroup();
 
-    async function loadMileMarkers() {
-      try {
-        const res = await fetch("/at-mileposts.json", {
-          headers: { Accept: "application/json" },
-        });
-        if (!res.ok) throw new Error(`mileposts fetch failed: ${res.status}`);
-        const data = await res.json();
+    // Mile coordinate lookup (used to "place" things that only have a mile number)
+    const mileCoord = new Map<number, { lat: number; lon: number }>();
 
-        const mileposts = data?.mileposts || [];
-        // Keep it simple + readable: render every 10 miles.
-        const step = 10;
+    function coordForMile(mile: number): [number, number] | null {
+      if (!Number.isFinite(mile)) return null;
 
-        for (const mp of mileposts) {
-          const mile = mp.mile;
-          if (typeof mile !== "number") continue;
-          if (mile % step !== 0) continue;
+      const lo = Math.floor(mile);
+      const hi = Math.ceil(mile);
+      const a = mileCoord.get(lo);
+      const b = mileCoord.get(hi);
 
-          const lat = mp.lat;
-          const lon = mp.lon;
-          if (typeof lat !== "number" || typeof lon !== "number") continue;
+      if (!a && !b) return null;
+      if (a && !b) return [a.lat, a.lon];
+      if (!a && b) return [b.lat, b.lon];
+      if (lo === hi) return [a!.lat, a!.lon];
 
-          const marker = L.circleMarker([lat, lon], {
-            radius: 4,
-            color: "#0f172a", // slate-900
-            weight: 1,
-            opacity: 0.9,
-            fillColor: "#22c55e", // green-500
-            fillOpacity: 0.85,
-            renderer: canvasRenderer,
-          }).bindPopup(`<b>Mile ${mile}</b>`);
+      const t = (mile - lo) / (hi - lo);
+      return [a!.lat + (b!.lat - a!.lat) * t, a!.lon + (b!.lon - a!.lon) * t];
+    }
 
-          marker.addTo(mileLayer);
-        }
-      } catch (err) {
-        console.error(err);
+    async function loadMilepostsAndBuildLayers() {
+      const res = await fetch("/at-mileposts.json", {
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) throw new Error(`mileposts fetch failed: ${res.status}`);
+      const data = await res.json();
+
+      const mileposts = data?.mileposts || [];
+
+      for (const mp of mileposts) {
+        if (typeof mp?.mile !== "number") continue;
+        if (typeof mp?.lat !== "number" || typeof mp?.lon !== "number") continue;
+        mileCoord.set(mp.mile, { lat: mp.lat, lon: mp.lon });
+      }
+
+      // Mile markers (every 10)
+      const step = 10;
+      for (const mp of mileposts) {
+        const mile = mp.mile;
+        if (typeof mile !== "number") continue;
+        if (mile % step !== 0) continue;
+
+        const lat = mp.lat;
+        const lon = mp.lon;
+        if (typeof lat !== "number" || typeof lon !== "number") continue;
+
+        L.circleMarker([lat, lon], {
+          radius: 4,
+          color: "#0f172a", // slate-900
+          weight: 1,
+          opacity: 0.9,
+          fillColor: "#22c55e", // green-500
+          fillOpacity: 0.85,
+          renderer: canvasRenderer,
+        })
+          .bindPopup(`<b>Mile ${mile}</b>`)
+          .addTo(mileLayer);
+      }
+
+      // Resupply stops
+      for (const stop of RESUPPLY_STOPS) {
+        const ll = coordForMile(stop.mile);
+        if (!ll) continue;
+
+        const title = `${stop.name}${stop.state ? ", " + stop.state : ""}`;
+        const services = stop.services?.length ? stop.services.join(", ") : "";
+
+        L.circleMarker(ll, {
+          radius: 6,
+          color: "#7f1d1d", // red-900
+          weight: 2,
+          opacity: 0.95,
+          fillColor: "#ef4444", // red-500
+          fillOpacity: 0.75,
+          renderer: canvasRenderer,
+        })
+          .bindPopup(
+            `<b>${title}</b><br/>Mile ${stop.mile}<br/><small>${stop.type}${services ? " • " + services : ""}</small>`
+          )
+          .addTo(resupplyLayer);
+      }
+
+      // Water sources (approx placed by mile; shown at higher zoom)
+      for (const src of atWaterSources as any[]) {
+        const mile = src?.mile;
+        if (typeof mile !== "number") continue;
+        const ll = coordForMile(mile);
+        if (!ll) continue;
+
+        const name = src?.name || "Water";
+        const type = src?.type || "";
+        const offTrail = src?.offTrail ? " (off-trail)" : "";
+
+        L.circleMarker(ll, {
+          radius: 4,
+          color: "#0c4a6e", // sky-900
+          weight: 1,
+          opacity: 0.9,
+          fillColor: "#38bdf8", // sky-400
+          fillOpacity: 0.75,
+          renderer: canvasRenderer,
+        })
+          .bindPopup(`<b>${name}</b><br/>Mile ${mile}<br/><small>${type}${offTrail}</small>`)
+          .addTo(waterLayer);
+      }
+
+      // Road crossings / bailouts
+      for (const x of AT_ROAD_CROSSINGS) {
+        const ll = coordForMile(x.mile);
+        if (!ll) continue;
+
+        const subtitle = `${x.road} • ${x.nearestTown} (${x.townDist}mi)`;
+
+        L.circleMarker(ll, {
+          radius: 5,
+          color: "#312e81", // indigo-900
+          weight: 2,
+          opacity: 0.95,
+          fillColor: "#a78bfa", // violet-400
+          fillOpacity: 0.7,
+          renderer: canvasRenderer,
+        })
+          .bindPopup(
+            `<b>${x.name}</b><br/>Mile ${x.mile}<br/><small>${subtitle}</small>${x.notes ? `<br/><small>${x.notes}</small>` : ""}`
+          )
+          .addTo(crossingLayer);
       }
     }
 
-    await loadMileMarkers();
+    try {
+      await loadMilepostsAndBuildLayers();
+    } catch (err) {
+      console.error(err);
+    }
 
-    function syncMileLayer() {
+    function syncOverlays() {
+      // Mile markers
       if (showMileMarkers) {
         if (!map.hasLayer(mileLayer)) mileLayer.addTo(map);
       } else {
         if (map.hasLayer(mileLayer)) map.removeLayer(mileLayer);
       }
+
+      // Resupply stops
+      if (showResupplyStops) {
+        if (!map.hasLayer(resupplyLayer)) resupplyLayer.addTo(map);
+      } else {
+        if (map.hasLayer(resupplyLayer)) map.removeLayer(resupplyLayer);
+      }
+
+      // Road crossings
+      if (showRoadCrossings) {
+        if (!map.hasLayer(crossingLayer)) crossingLayer.addTo(map);
+      } else {
+        if (map.hasLayer(crossingLayer)) map.removeLayer(crossingLayer);
+      }
+
+      // Water sources (only show when zoomed in enough)
+      const zoom = map.getZoom();
+      const waterAllowed = zoom >= 11;
+      if (showWaterSources && waterAllowed) {
+        if (!map.hasLayer(waterLayer)) waterLayer.addTo(map);
+      } else {
+        if (map.hasLayer(waterLayer)) map.removeLayer(waterLayer);
+      }
     }
 
-    // Start with markers on.
-    syncMileLayer();
+    // Initial overlay sync
+    syncOverlays();
+    map.on("zoomend", syncOverlays);
 
     // Location (no API key): show a marker + center on it.
     let myLocationMarker: any = null;
@@ -158,6 +288,22 @@
               <input id="hc-mile-toggle" type="checkbox" ${showMileMarkers ? "checked" : ""} />
               <span>Mile markers</span>
             </label>
+
+            <label class="hc-toggle">
+              <input id="hc-resupply-toggle" type="checkbox" ${showResupplyStops ? "checked" : ""} />
+              <span>Resupply</span>
+            </label>
+
+            <label class="hc-toggle">
+              <input id="hc-water-toggle" type="checkbox" ${showWaterSources ? "checked" : ""} />
+              <span>Water (zoom 11+)</span>
+            </label>
+
+            <label class="hc-toggle">
+              <input id="hc-cross-toggle" type="checkbox" ${showRoadCrossings ? "checked" : ""} />
+              <span>Road crossings</span>
+            </label>
+
             <button id="hc-locate" type="button">Locate me</button>
           </div>
         `;
@@ -165,12 +311,30 @@
         // Prevent clicks from dragging the map.
         L.DomEvent.disableClickPropagation(div);
 
-        const toggle = div.querySelector("#hc-mile-toggle") as HTMLInputElement;
+        const mileToggle = div.querySelector("#hc-mile-toggle") as HTMLInputElement;
+        const resupplyToggle = div.querySelector("#hc-resupply-toggle") as HTMLInputElement;
+        const waterToggle = div.querySelector("#hc-water-toggle") as HTMLInputElement;
+        const crossToggle = div.querySelector("#hc-cross-toggle") as HTMLInputElement;
         const locate = div.querySelector("#hc-locate") as HTMLButtonElement;
 
-        toggle.addEventListener("change", () => {
-          showMileMarkers = toggle.checked;
-          syncMileLayer();
+        mileToggle.addEventListener("change", () => {
+          showMileMarkers = mileToggle.checked;
+          syncOverlays();
+        });
+
+        resupplyToggle.addEventListener("change", () => {
+          showResupplyStops = resupplyToggle.checked;
+          syncOverlays();
+        });
+
+        waterToggle.addEventListener("change", () => {
+          showWaterSources = waterToggle.checked;
+          syncOverlays();
+        });
+
+        crossToggle.addEventListener("change", () => {
+          showRoadCrossings = crossToggle.checked;
+          syncOverlays();
         });
 
         locate.addEventListener("click", () => locateMe());
