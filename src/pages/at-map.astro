@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import AtMap from "../components/AtMap.svelte";
+---
+
+<BaseLayout
+  title="Appalachian Trail Map"
+  description="Interactive map of the Appalachian Trail (OSM-derived)."
+>
+  <section class="content">
+    <h1>Appalachian Trail Map</h1>
+    <p>
+      Interactive overview of the Appalachian Trail route. Data is derived from
+      OpenStreetMap and is available under the ODbL.
+    </p>
+
+    <AtMap client:only="svelte" />
+
+    <p class="fineprint">
+      Data source:
+      <a href="https://www.openstreetmap.org/relation/156553" target="_blank" rel="noreferrer">OSM relation 156553</a>
+      •
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">&copy; OpenStreetMap contributors</a>
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .content {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+  }
+
+  .fineprint {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+</style>
