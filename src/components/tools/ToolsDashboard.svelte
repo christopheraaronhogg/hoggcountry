@@ -15,7 +15,6 @@
     {
       name: 'Planning',
       tools: [
-        { id: 'gear', name: 'Gear', icon: '🛠️', desc: 'Build your kit by budget' },
         { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
         { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Towns, food & mail drops' },
         { id: 'food', name: 'Food', icon: '🍽️', desc: 'Calorie & weight calculator' },

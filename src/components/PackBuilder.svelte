@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
   import gearData from '../data/gear.json';
+  import gearRecommendations from '../data/gearRecommendations.json';
 
   let { trailContext = {} } = $props();
 
@@ -19,11 +20,38 @@
   const templateItems = gearData.items.filter(item => item.season !== 'summer');
   const templateLookup = new Map(templateItems.map(item => [item.id, item]));
 
+  // Recommendations (optional)
+  let showRecommendations = $state(false);
+  let recBudget = $state(1500);
+  let recMode = $state('value'); // value | weight | durability
+  let recSeason = $state('3-season');
+  let recShelterPref = $state('tent');
+
+  const REC_TO_PACK_CAT = {
+    backpack: 'pack',
+    shelter: 'shelter',
+    sleepBag: 'sleep',
+    sleepPad: 'sleep',
+    insulation: 'insulation',
+    rainGear: 'insulation',
+    footwear: 'worn',
+    trekkingPoles: 'worn',
+    socks: 'worn',
+    kitchen: 'kitchen',
+    water: 'water',
+    electronics: 'electronics',
+    safety: 'safety'
+  };
+
+  const ESSENTIAL_PACK_CATS = new Set(['pack', 'shelter', 'sleep', 'insulation', 'kitchen', 'water', 'electronics', 'safety']);
+
   function createItem({
     id,
     category,
     name = '',
     weight = '',
+    cost = '',
+    url = '',
     worn = false,
     tier = 3,
     templateName = '',
@@ -34,6 +62,8 @@
       category,
       name,
       weight,
+      cost,
+      url,
       worn,
       tier,
       templateName,
@@ -77,6 +107,153 @@
     );
   }
 
+  // --- Recommendation engine (adapted from prior Gear Builder) ---
+
+  function getBudgetTier(budget) {
+    if (budget < 800) return 'budget';
+    if (budget < 1500) return 'mid';
+    if (budget < 2500) return 'premium';
+    return 'luxury';
+  }
+
+  const CATEGORY_BUDGETS = {
+    backpack: 0.14,
+    shelter: 0.20,
+    sleepBag: 0.15,
+    sleepPad: 0.06,
+    insulation: 0.07,
+    rainGear: 0.05,
+    footwear: 0.08,
+    kitchen: 0.06,
+    water: 0.04,
+    electronics: 0.06,
+    safety: 0.03,
+    trekkingPoles: 0.04,
+    socks: 0.02
+  };
+
+  function scoreItem(item, mode, targetTier) {
+    const weights = {
+      value: { value: 0.5, weight: 0.25, durability: 0.25 },
+      weight: { value: 0.2, weight: 0.6, durability: 0.2 },
+      durability: { value: 0.2, weight: 0.2, durability: 0.6 }
+    }[mode] || { value: 0.5, weight: 0.25, durability: 0.25 };
+
+    const avg = gearRecommendations.categories?.[item.category]?.avgWeight || 1;
+
+    const baseScore = (
+      (item.valueScore || 0) * weights.value +
+      (11 - (item.weight || 0) / avg * 5) * weights.weight +
+      (item.durabilityScore || 0) * weights.durability
+    );
+
+    const tiers = ['budget', 'mid', 'premium', 'luxury'];
+    const itemTierIdx = tiers.indexOf(item.tier);
+    const targetTierIdx = tiers.indexOf(targetTier);
+    const tierDistance = Math.abs(itemTierIdx - targetTierIdx);
+    const tierBonus = tierDistance === 0 ? 1.0 : tierDistance === 1 ? 0.85 : 0.6;
+
+    const viabilityPenalty = item.thruHikeViable === false ? 0.3 : 1.0;
+
+    return baseScore * tierBonus * viabilityPenalty;
+  }
+
+  function buildRecommendation(budget, mode, season, shelterPref) {
+    const tier = getBudgetTier(budget);
+    const items = gearRecommendations.items || [];
+    const selected = [];
+
+    Object.keys(CATEGORY_BUDGETS).forEach(category => {
+      const categoryBudget = budget * CATEGORY_BUDGETS[category] * 1.3; // flexibility
+
+      let candidates = items.filter(item => {
+        if (item.category !== category) return false;
+        if (item.price && item.price > categoryBudget) return false;
+
+        // Season filter
+        if (item.season && item.season !== 'both' && item.season !== season) return false;
+
+        // Shelter type filter
+        if (category === 'shelter' && item.shelterType && item.shelterType !== shelterPref) return false;
+
+        return true;
+      });
+
+      candidates = candidates
+        .map(item => ({ ...item, score: scoreItem(item, mode, tier) }))
+        .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+      if (candidates.length > 0) {
+        selected.push(candidates[0]);
+      } else {
+        const fallback = items.filter(i => i.category === category).sort((a, b) => (a.price || 0) - (b.price || 0))[0];
+        if (fallback) selected.push({ ...fallback, score: 0 });
+      }
+    });
+
+    return selected;
+  }
+
+  let recommendedItems = $derived(buildRecommendation(recBudget, recMode, recSeason, recShelterPref));
+
+  function mappedPackCategory(recCategory) {
+    return REC_TO_PACK_CAT[recCategory] || null;
+  }
+
+  let recommendedByPackCategory = $derived.by(() => {
+    const out = {};
+    for (const item of recommendedItems) {
+      const catId = mappedPackCategory(item.category);
+      if (!catId) continue;
+      if (!out[catId]) out[catId] = [];
+      out[catId].push(item);
+    }
+    return out;
+  });
+
+  function isCategoryFilled(catId) {
+    return editableItems.some(i => (i.category === catId) && String(i.name || '').trim().length > 0);
+  }
+
+  function addRecItem(recItem) {
+    const catId = mappedPackCategory(recItem.category);
+    if (!catId) return;
+
+    const id = `rec_${recItem.id || recItem.category}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    editableItems = [
+      ...editableItems,
+      createItem({
+        id,
+        category: catId,
+        name: recItem.name || '',
+        weight: Number.isFinite(recItem.weight) ? String(recItem.weight) : '',
+        cost: Number.isFinite(recItem.price) ? String(recItem.price) : '',
+        url: recItem.url || '',
+        worn: catId === 'worn'
+      })
+    ];
+
+    expandedCategory = catId;
+  }
+
+  function fillMissingEssentials() {
+    const toAdd = [];
+
+    for (const recItem of recommendedItems) {
+      const catId = mappedPackCategory(recItem.category);
+      if (!catId) continue;
+      if (!ESSENTIAL_PACK_CATS.has(catId)) continue;
+      if (isCategoryFilled(catId)) continue;
+
+      toAdd.push(recItem);
+    }
+
+    if (toAdd.length === 0) return;
+
+    // Add all selected recs
+    for (const recItem of toAdd) addRecItem(recItem);
+  }
+
 
   onMount(() => {
     mounted = true;
@@ -87,6 +264,13 @@
         if (data.foodDays !== undefined) foodDays = data.foodDays;
         if (data.waterLiters !== undefined) waterLiters = data.waterLiters;
         if (data.foodWeightPerDay !== undefined) foodWeightPerDay = data.foodWeightPerDay;
+        if (data.showRecommendations !== undefined) showRecommendations = !!data.showRecommendations;
+        if (data.recs) {
+          if (data.recs.budget !== undefined) recBudget = data.recs.budget;
+          if (data.recs.mode !== undefined) recMode = data.recs.mode;
+          if (data.recs.season !== undefined) recSeason = data.recs.season;
+          if (data.recs.shelterPref !== undefined) recShelterPref = data.recs.shelterPref;
+        }
         if (Array.isArray(data.items)) {
           editableItems = data.items.map(item => {
             const template = templateLookup.get(item.id);
@@ -95,6 +279,8 @@
               category: item.category || template?.category || 'pack',
               name: item.name ?? '',
               weight: item.weight ?? '',
+              cost: item.cost ?? '',
+              url: item.url ?? '',
               worn: item.worn ?? false,
               tier: item.tier ?? template?.tier ?? 3,
               templateName: item.templateName ?? template?.name ?? '',
@@ -116,7 +302,14 @@
         items: editableItems,
         foodDays,
         waterLiters,
-        foodWeightPerDay
+        foodWeightPerDay,
+        showRecommendations,
+        recs: {
+          budget: recBudget,
+          mode: recMode,
+          season: recSeason,
+          shelterPref: recShelterPref
+        }
       }));
     }
   });
@@ -341,13 +534,109 @@
 
 
     <section class="controls-section">
+      <div class="controls-top">
       <div class="builder-intro">
         <h3>Your loadout</h3>
-        <p>Winter kit template. Replace with your own gear and weights.</p>
+        <p>Start from scratch or use a starter template. Add your own items, cost, links, and weights.</p>
       </div>
+
+      <div class="controls-actions">
+        <button class="btn secondary" type="button" onclick={() => { editableItems = []; expandedCategory = null; }}>
+          Start blank
+        </button>
+        <button class="btn secondary" type="button" onclick={() => { editableItems = buildTemplateItems(); expandedCategory = null; }}>
+          Restore template
+        </button>
+        <button class="btn primary" type="button" onclick={() => showRecommendations = !showRecommendations}>
+          {showRecommendations ? 'Hide' : 'Show'} recommendations
+        </button>
+      </div>
+
       <div class="base-pill" style="--pill-color: {baseWeightClass.color}">
         Base: {baseWeightLbs.toFixed(1)} lb ({baseWeightClass.label})
       </div>
+      </div>
+
+      {#if showRecommendations}
+        <div class="recs" id="recommendations">
+          <div class="recs-head">
+            <div>
+              <h4>Recommendations (optional)</h4>
+              <p>Fill missing essentials automatically, or add individual items one-by-one.</p>
+            </div>
+            <button class="btn primary" type="button" onclick={fillMissingEssentials}>
+              Fill missing essentials
+            </button>
+          </div>
+
+          <div class="recs-controls">
+            <label class="field">
+              <span>Budget</span>
+              <input type="number" min="0" step="50" value={recBudget} oninput={(e) => recBudget = Number(e.currentTarget.value)} />
+            </label>
+            <label class="field">
+              <span>Mode</span>
+              <select value={recMode} onchange={(e) => recMode = e.currentTarget.value}>
+                <option value="value">Value</option>
+                <option value="weight">Weight</option>
+                <option value="durability">Durability</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Season</span>
+              <select value={recSeason} onchange={(e) => recSeason = e.currentTarget.value}>
+                <option value="3-season">3-season</option>
+                <option value="winter">Winter</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Shelter</span>
+              <select value={recShelterPref} onchange={(e) => recShelterPref = e.currentTarget.value}>
+                <option value="tent">Tent</option>
+                <option value="tarp">Tarp</option>
+                <option value="hammock">Hammock</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="recs-groups">
+            {#each Object.entries(recommendedByPackCategory) as [packCatId, items]}
+              {@const catMeta = categories?.[packCatId]}
+              <div class="recs-group">
+                <div class="recs-group-title">
+                  <span class="recs-group-icon">{catMeta?.icon || '✨'}</span>
+                  <span class="recs-group-name">{catMeta?.name || packCatId}</span>
+                  {#if isCategoryFilled(packCatId)}
+                    <span class="recs-group-tag">Already filled</span>
+                  {/if}
+                </div>
+
+                <div class="recs-list">
+                  {#each items as rec}
+                    <div class="rec-item">
+                      <div class="rec-main">
+                        <div class="rec-name">{rec.name}</div>
+                        <div class="rec-meta">
+                          {#if rec.weight}{rec.weight} oz{/if}
+                          {#if rec.price} • ${rec.price}{/if}
+                        </div>
+                      </div>
+                      <div class="rec-actions">
+                        {#if rec.url}
+                          <a class="btn link" href={rec.url} target="_blank" rel="noreferrer">Link</a>
+                        {/if}
+                        <button class="btn secondary" type="button" onclick={() => addRecItem(rec)}>
+                          Add this item
+                        </button>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </section>
 
 
@@ -413,14 +702,62 @@
                 {#each cat.items as item}
                   <div class="gear-item">
                     <div class="item-main">
-                      <input
-                        class="item-input"
-                        type="text"
-                        placeholder={item.templateName || 'Add gear item'}
-                        value={item.name}
-                        oninput={(event) => updateItem(item.id, 'name', event.currentTarget.value)}
-                      />
+                      <div class="item-top">
+                        <select
+                          class="item-cat"
+                          value={item.category}
+                          onchange={(event) => {
+                            const next = event.currentTarget.value;
+                            updateItem(item.id, 'category', next);
+                            expandedCategory = next;
+                          }}
+                          aria-label="Gear category"
+                        >
+                          {#each Object.entries(categories) as [cid, info]}
+                            <option value={cid}>{info.icon} {info.name}</option>
+                          {/each}
+                        </select>
+
+                        <input
+                          class="item-input"
+                          type="text"
+                          placeholder={item.templateName || 'Add gear item'}
+                          value={item.name}
+                          oninput={(event) => updateItem(item.id, 'name', event.currentTarget.value)}
+                        />
+                      </div>
+
+                      <div class="item-sub">
+                        <div class="item-cost-wrap">
+                          <span class="item-cost-dollar">$</span>
+                          <input
+                            class="item-cost-input"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputmode="decimal"
+                            placeholder="0"
+                            value={item.cost}
+                            oninput={(event) => updateItem(item.id, 'cost', event.currentTarget.value)}
+                            aria-label="Item cost"
+                          />
+                        </div>
+
+                        <input
+                          class="item-url-input"
+                          type="url"
+                          placeholder="Link (optional)"
+                          value={item.url}
+                          oninput={(event) => updateItem(item.id, 'url', event.currentTarget.value)}
+                          aria-label="Item link"
+                        />
+
+                        {#if item.url}
+                          <a class="item-open" href={item.url} target="_blank" rel="noreferrer">Open</a>
+                        {/if}
+                      </div>
                     </div>
+
                     <div class="item-meta">
                       <div class="item-weight-wrap">
                         <input
@@ -794,13 +1131,16 @@
 
   /* Controls Section */
   .controls-section {
+    padding: 1.25rem 1.5rem;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .controls-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    background: var(--bg);
-    border-bottom: 2px solid var(--border);
     flex-wrap: wrap;
   }
 
@@ -830,6 +1170,165 @@
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--pill-color);
+  }
+
+  .controls-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .btn {
+    height: 34px;
+    padding: 0 0.75rem;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: #fff;
+    color: var(--ink);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease;
+  }
+
+  .btn:hover {
+    background: color-mix(in srgb, var(--alpine) 6%, #fff);
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn.primary {
+    border-color: color-mix(in srgb, var(--alpine) 65%, var(--border));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--alpine) 28%, #fff), #fff);
+  }
+
+  .btn.secondary {
+    background: #fff;
+  }
+
+  a.btn.link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+
+  .recs {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+  }
+
+  .recs-head {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .recs-head h4 {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .recs-head p {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .recs-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .field input,
+  .field select {
+    height: 34px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 0 0.6rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+    background: #fff;
+  }
+
+  .recs-group {
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .recs-group:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .recs-group-title {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-weight: 800;
+    color: var(--pine);
+    margin-bottom: 0.5rem;
+  }
+
+  .recs-group-tag {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+  }
+
+  .rec-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  }
+
+  .rec-item:last-child {
+    border-bottom: none;
+  }
+
+  .rec-name {
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .rec-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .rec-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   /* Big 3 Section */
@@ -1038,6 +1537,20 @@
 
   .item-main {
     display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .item-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .item-sub {
+    display: flex;
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
@@ -1050,8 +1563,11 @@
     gap: 0.45rem;
   }
 
+  .item-cat,
   .item-input,
-  .item-weight-input {
+  .item-weight-input,
+  .item-cost-input,
+  .item-url-input {
     width: 100%;
     border: 2px solid var(--border);
     border-radius: 8px;
@@ -1066,8 +1582,11 @@
     min-width: 0;
   }
 
+  .item-cat:focus,
   .item-input:focus,
-  .item-weight-input:focus {
+  .item-weight-input:focus,
+  .item-cost-input:focus,
+  .item-url-input:focus {
     outline: none;
     border-color: var(--alpine);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--alpine) 25%, transparent);
@@ -1109,8 +1628,60 @@
   }
 
   .item-input::placeholder,
-  .item-weight-input::placeholder {
+  .item-weight-input::placeholder,
+  .item-cost-input::placeholder,
+  .item-url-input::placeholder {
     color: color-mix(in srgb, var(--muted) 70%, transparent);
+  }
+
+  .item-cat {
+    flex: 0 0 auto;
+    max-width: 150px;
+    cursor: pointer;
+  }
+
+  .item-cost-wrap {
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .item-cost-dollar {
+    position: absolute;
+    left: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: color-mix(in srgb, var(--muted) 80%, transparent);
+    pointer-events: none;
+  }
+
+  .item-cost-input {
+    width: 92px;
+    padding-left: 1.3rem;
+    text-align: right;
+  }
+
+  .item-url-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-open {
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--pine, #4a5a44);
+    text-decoration: none;
+    padding: 0.25rem 0.4rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg) 75%, transparent);
+  }
+
+  .item-open:hover {
+    text-decoration: underline;
   }
 
   .item-pill-btn {

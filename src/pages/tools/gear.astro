@@ -1,14 +1,26 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ToolPage from '../../components/tools/ToolPage.svelte';
 
-const title = "Gear Builder — Trail Tools";
-const description = "Build your thru-hiking gear kit by budget. Get recommendations for every price point.";
+const title = "Gear Builder moved → Pack Builder — Trail Tools";
+const description = "Gear Builder has moved into Pack Builder. Redirecting…";
+
+const to = "/tools/pack/#recommendations";
 ---
 
 <BaseLayout title={title} description={description}>
+  <meta http-equiv="refresh" content={`0; url=${to}`} />
+
   <div class="container tool-container">
-    <ToolPage client:load toolId="gear" toolName="Gear Builder" />
+    <div class="moved">
+      <h1>Gear Builder moved</h1>
+      <p>
+        We merged Gear Builder into Pack Builder so you can build <strong>your</strong> kit (custom items)
+        and optionally pull recommendations when you want them.
+      </p>
+      <p>
+        <a href={to}>Go to Pack Builder →</a>
+      </p>
+    </div>
   </div>
 </BaseLayout>
 
@@ -18,5 +30,25 @@ const description = "Build your thru-hiking gear kit by budget. Get recommendati
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: clip;
+  }
+
+  .moved {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 2rem;
+    border: 2px solid var(--border, #e5e5e5);
+    border-radius: 16px;
+    background: var(--bg, #fff);
+  }
+
+  .moved h1 {
+    font-family: Oswald, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 0.75rem;
+  }
+
+  .moved a {
+    font-weight: 700;
   }
 </style>
