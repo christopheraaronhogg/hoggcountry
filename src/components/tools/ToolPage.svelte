@@ -16,6 +16,7 @@
 
   // Tool component loaders
   const toolLoaders: Record<string, () => Promise<{ default: typeof import('svelte').SvelteComponent }>> = {
+    character: () => import('../CharacterSheet.svelte'),
     milestone: () => import('../MilestoneCalculator.svelte'),
     weather: () => import('../WeatherAssessor.svelte'),
     pack: () => import('../PackBuilder.svelte'),

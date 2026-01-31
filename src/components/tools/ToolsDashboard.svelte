@@ -15,6 +15,7 @@
     {
       name: 'Planning',
       tools: [
+        { id: 'character', name: 'Character', icon: '🧙', desc: 'Build your hiker (drives every tool)' },
         { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
         { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Towns, food & mail drops' },
         { id: 'food', name: 'Food', icon: '🍽️', desc: 'Calorie & weight calculator' },
