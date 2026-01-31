@@ -78,7 +78,8 @@
     height: 10px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 999px;
-    overflow: hidden;
+    /* Allow the thumb to overhang the bar (reads as a draggable handle). */
+    overflow: visible;
   }
 
   .fill {
