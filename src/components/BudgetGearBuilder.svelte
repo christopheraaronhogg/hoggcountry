@@ -9,7 +9,8 @@
 
   // Core state (Character-driven)
   let mounted = $state(false);
-  let budget = $state(character.equipment.recommendations.gearBudget.budget ?? 1500);
+  const _legacyBudget = character.equipment.recommendations.gearBudget.budget; // backward-compat for early v1
+  let budget = $state(character.equipment.recommendations.gearBudget.totalBudget ?? _legacyBudget ?? 1500);
   let mode = $state(character.equipment.recommendations.gearBudget.mode ?? 'value'); // 'value' | 'weight' | 'durability'
   let season = $state(character.equipment.recommendations.gearBudget.season ?? '3-season');
   let shelterPref = $state(character.equipment.recommendations.gearBudget.shelterPref ?? 'tent');
@@ -44,7 +45,7 @@
     updateCharacter({
       equipment: {
         recommendations: {
-          gearBudget: { budget, mode, season, shelterPref },
+          gearBudget: { totalBudget: budget, mode, season, shelterPref },
         },
         slots: {
           overridesByCategory: userOverrides,
