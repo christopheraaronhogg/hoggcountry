@@ -1,49 +1,37 @@
 <script lang="ts">
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
+
   let { trailContext = {} as any } = $props<{ trailContext?: any }>();
 
-  const STORAGE_KEY = 'at-food-v1';
+  loadCharacter();
 
-  let caloriesPerDay = $state(4200);
-  let caloriesPerOz = $state(120); // typical high-cal trail food: 110–140 cal/oz
-  let daysBetweenResupply = $state(4);
+  let caloriesPerDay = $state(character.consumables.food.caloriesPerDay ?? 4200);
+  let caloriesPerOz = $state(character.consumables.food.caloriesPerOz ?? 120); // typical: 110–140 cal/oz
+  let daysBetweenResupply = $state(character.consumables.food.daysBetweenResupply ?? 4);
 
-  function applyContextDefaults() {
+  // Optional one-time heuristic if the character is still on defaults.
+  function applyContextDefaultsIfStillDefault() {
+    if (caloriesPerDay !== 4200) return;
     const pace = Number(trailContext?.pace ?? trailContext?.targetPace ?? 0);
     if (Number.isFinite(pace) && pace > 0) {
-      // Very rough heuristic: base 3200 + 70 cal per planned mile
       caloriesPerDay = Math.round(3200 + pace * 70);
     }
   }
 
-  function load(): boolean {
-    if (typeof localStorage === 'undefined') return false;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
-    try {
-      const saved = JSON.parse(raw);
-      if (typeof saved.caloriesPerDay === 'number') caloriesPerDay = saved.caloriesPerDay;
-      if (typeof saved.caloriesPerOz === 'number') caloriesPerOz = saved.caloriesPerOz;
-      if (typeof saved.daysBetweenResupply === 'number') daysBetweenResupply = saved.daysBetweenResupply;
-      return true;
-    } catch {}
-    return false;
-  }
+  applyContextDefaultsIfStillDefault();
 
-  function save() {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ caloriesPerDay, caloriesPerOz, daysBetweenResupply }),
-    );
-  }
-
-  // Persist on change
+  // Persist into the unified Character model
   $effect(() => {
-    save();
+    updateCharacter({
+      consumables: {
+        food: {
+          caloriesPerDay,
+          caloriesPerOz,
+          daysBetweenResupply,
+        },
+      },
+    });
   });
-
-  const loaded = load();
-  if (!loaded) applyContextDefaults();
 
   let ouncesPerDay = $derived(caloriesPerOz > 0 ? caloriesPerDay / caloriesPerOz : 0);
   let poundsPerDay = $derived(ouncesPerDay / 16);

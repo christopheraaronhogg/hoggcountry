@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import atWaterSources from '../data/at-water-sources.json';
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   type WaterSource = { mile: number; name: string; type: string; offTrail: number };
 
@@ -10,13 +10,14 @@
 
   let { trailContext = {} }: Props = $props();
 
-  let mounted = $state(false);
-  const CARRY_KEY = 'at-water-carry-v1';
+  loadCharacter();
 
-  // Carry calculator (persisted)
-  let waterCapacityL = $state(3); // typical capacity: 2–4L
-  let litersPer10Mi = $state(1.2);
-  let bufferPct = $state(20);
+  let mounted = $state(true);
+
+  // Carry calculator (persisted on Character)
+  let waterCapacityL = $state(character.consumables.water.waterCapacityL ?? 3); // typical capacity: 2–4L
+  let litersPer10Mi = $state(character.consumables.water.litersPer10Mi ?? 1.2);
+  let bufferPct = $state(character.consumables.water.bufferPct ?? 20);
 
   const typeMeta: Record<string, { label: string; icon: string }> = {
     spring: { label: 'Spring', icon: '💧' },
@@ -47,33 +48,17 @@
     }))
     .sort((a, b) => a.mile - b.mile);
 
-  function loadCarryPrefs() {
-    if (typeof localStorage === 'undefined') return;
-    const raw = localStorage.getItem(CARRY_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      if (typeof parsed.waterCapacityL === 'number') waterCapacityL = parsed.waterCapacityL;
-      if (typeof parsed.litersPer10Mi === 'number') litersPer10Mi = parsed.litersPer10Mi;
-      if (typeof parsed.bufferPct === 'number') bufferPct = parsed.bufferPct;
-    } catch {}
-  }
-
-  function saveCarryPrefs() {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(
-      CARRY_KEY,
-      JSON.stringify({ waterCapacityL, litersPer10Mi, bufferPct }),
-    );
-  }
-
-  onMount(() => {
-    loadCarryPrefs();
-    mounted = true;
-  });
-
+  // Persist into the unified Character model
   $effect(() => {
-    if (mounted) saveCarryPrefs();
+    updateCharacter({
+      consumables: {
+        water: {
+          waterCapacityL,
+          litersPer10Mi,
+          bufferPct,
+        },
+      },
+    });
   });
 
   let currentMile = $derived(asNumber(trailContext.currentMile, 0));

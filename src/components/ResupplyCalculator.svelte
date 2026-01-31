@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { RESUPPLY_STOPS, type ResupplyStop } from '../data/resupplyStops';
   import { RESUPPLY_SERVICE_META } from '../lib/resupplyTowns';
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   interface Props {
     trailContext?: { currentMile?: number; targetPace?: number; pace?: number };
@@ -12,16 +12,23 @@
   type ResupplyServiceKey = keyof typeof RESUPPLY_SERVICE_META;
   type StopWithDistance = ResupplyStop & { milesAway: number };
 
-  const STORAGE_KEY = 'at-resupply-v1';
+  loadCharacter();
 
-  let mounted = $state(false);
-
-  // Controls
-  let carryDays = $state(4);
-  let mailDropOnly = $state(false);
-  let requireGrocery = $state(false);
-  let requireOutfitter = $state(false);
+  // Controls (persisted on Character)
+  let carryDays = $state(character.logistics.resupply.carryDays ?? 4);
+  let mailDropOnly = $state(!!character.logistics.resupply.mailDropOnly);
+  let requireGrocery = $state(!!character.logistics.resupply.requireGrocery);
+  let requireOutfitter = $state(!!character.logistics.resupply.requireOutfitter);
   let search = $state('');
+
+  // Persist into unified Character model
+  $effect(() => {
+    updateCharacter({
+      logistics: {
+        resupply: { carryDays, mailDropOnly, requireGrocery, requireOutfitter },
+      },
+    });
+  });
 
   function asNumber(value: unknown, fallback: number): number {
     const n = Number(value);
@@ -39,40 +46,6 @@
     return `$${n.toFixed(0)}`;
   }
 
-  function loadPrefs() {
-    if (typeof localStorage === 'undefined') return;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as Partial<{
-        carryDays: number;
-        mailDropOnly: boolean;
-        requireGrocery: boolean;
-        requireOutfitter: boolean;
-      }>;
-      if (typeof parsed.carryDays === 'number') carryDays = parsed.carryDays;
-      if (typeof parsed.mailDropOnly === 'boolean') mailDropOnly = parsed.mailDropOnly;
-      if (typeof parsed.requireGrocery === 'boolean') requireGrocery = parsed.requireGrocery;
-      if (typeof parsed.requireOutfitter === 'boolean') requireOutfitter = parsed.requireOutfitter;
-    } catch {}
-  }
-
-  function savePrefs() {
-    if (typeof localStorage === 'undefined' || !mounted) return;
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ carryDays, mailDropOnly, requireGrocery, requireOutfitter }),
-    );
-  }
-
-  onMount(() => {
-    loadPrefs();
-    mounted = true;
-  });
-
-  $effect(() => {
-    savePrefs();
-  });
 
   const stopsSorted = [...RESUPPLY_STOPS].sort((a, b) => a.mile - b.mile);
 

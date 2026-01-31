@@ -18,6 +18,8 @@
  *   updateContext({ currentMile: 500 });
  */
 
+import { loadCharacter, character, updateCharacter } from './character.svelte';
+
 // Trail landmarks for mile context (used across multiple tools)
 export const landmarks = [
   { mile: 0, name: 'Springer Mountain' },
@@ -180,21 +182,19 @@ export const trailContext = {
 export function loadContext(): void {
   if (typeof window === 'undefined') return;
 
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      const ctx = JSON.parse(saved);
-      _currentMile = ctx.currentMile ?? 0;
-      _startDate = ctx.startDate || ctx.tripStartDate || _startDate;
-      _targetPace = ctx.targetPace || ctx.pace || _targetPace;
-      _zeroDaysPerMonth = ctx.zeroDaysPerMonth ?? 4;
-      _contextExpanded = ctx.contextExpanded ?? true;
-    } catch (e) {
-      console.warn('Failed to parse trailContext from localStorage:', e);
-    }
-  }
+  // Canonical source of truth is now the unified Character store.
+  loadCharacter();
+
+  _currentMile = character.trail.currentMile ?? 0;
+  _startDate = character.trail.startDate || _startDate;
+  _targetPace = character.trail.targetPace || _targetPace;
+  _zeroDaysPerMonth = character.trail.zeroDaysPerMonth ?? 4;
+  _contextExpanded = typeof character.trail.contextExpanded === 'boolean' ? character.trail.contextExpanded : _contextExpanded;
 
   _mounted = true;
+
+  // Keep writing legacy `trailContext` for backward compatibility (tools/components still read it).
+  try { saveContext(); } catch {}
 }
 
 /**
@@ -227,6 +227,8 @@ export function updateContext(updates: {
   zeroDaysPerMonth?: number;
   contextExpanded?: boolean;
 }, options?: { persist?: boolean }): void {
+  if (!_mounted) loadContext();
+
   if (updates.currentMile !== undefined) _currentMile = updates.currentMile;
   if (updates.startDate !== undefined) _startDate = updates.startDate;
   if (updates.targetPace !== undefined) _targetPace = updates.targetPace;
@@ -234,6 +236,19 @@ export function updateContext(updates: {
   if (updates.contextExpanded !== undefined) _contextExpanded = updates.contextExpanded;
 
   if (options?.persist === false) return;
+
+  const trailPatch: any = {};
+  if (updates.currentMile !== undefined) trailPatch.currentMile = updates.currentMile;
+  if (updates.startDate !== undefined) trailPatch.startDate = updates.startDate;
+  if (updates.targetPace !== undefined) trailPatch.targetPace = updates.targetPace;
+  if (updates.zeroDaysPerMonth !== undefined) trailPatch.zeroDaysPerMonth = updates.zeroDaysPerMonth;
+  if (updates.contextExpanded !== undefined) trailPatch.contextExpanded = updates.contextExpanded;
+
+  if (Object.keys(trailPatch).length) {
+    updateCharacter({ trail: trailPatch } as any);
+  }
+
+  // Also persist legacy key for any remaining consumers.
   saveContext();
 }
 
@@ -241,11 +256,24 @@ export function updateContext(updates: {
  * Reset context to defaults (used for testing or user reset).
  */
 export function resetContext(): void {
+  if (!_mounted) loadContext();
+
   _currentMile = 0;
   _startDate = '2026-03-01';
   _targetPace = 15;
   _zeroDaysPerMonth = 4;
   _contextExpanded = true;
+
+  updateCharacter({
+    trail: {
+      currentMile: _currentMile,
+      startDate: _startDate,
+      targetPace: _targetPace,
+      zeroDaysPerMonth: _zeroDaysPerMonth,
+      contextExpanded: _contextExpanded,
+    },
+  } as any);
+
   saveContext();
 }
 
