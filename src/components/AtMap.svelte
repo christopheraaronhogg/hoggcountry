@@ -14,6 +14,7 @@
   let showResupplyStops = true;
   let showRoadCrossings = false;
   let showShelters = true;
+  let showHoggTracker = false;
 
   function haversineMeters(a: [number, number], b: [number, number]) {
     const R = 6371000;
@@ -80,6 +81,7 @@
     const resupplyLayer = L.layerGroup();
     const crossingLayer = L.layerGroup();
     const shelterLayer = L.layerGroup();
+    const hoggLayer = L.layerGroup();
 
     // Mile coordinate lookup (used to "place" things that only have a mile number)
     const mileCoord = new Map<number, { lat: number; lon: number }>();
@@ -263,6 +265,116 @@
       console.error(err);
     }
 
+    // HoggCountry Tracker (Garmin inReach MapShare → Netlify Function → GeoJSON)
+    let hoggLastFetchedAt = 0;
+    let hoggLastUpdatedWhen: string | null = null;
+    let hoggRefreshTimer: any = null;
+
+    function clearHoggLayer() {
+      hoggLayer.clearLayers();
+    }
+
+    async function refreshHoggTracker() {
+      // Avoid hammering on rapid toggles.
+      const now = Date.now();
+      if (now - hoggLastFetchedAt < 15_000) return;
+      hoggLastFetchedAt = now;
+
+      try {
+        const res = await fetch("/.netlify/functions/garmin-track?id=hoggcountry", {
+          headers: { Accept: "application/geo+json, application/json" },
+        });
+        if (!res.ok) throw new Error(`garmin-track fetch failed: ${res.status}`);
+
+        const data = await res.json();
+        const feats = data?.features || [];
+
+        // Extract best track + last point.
+        let lineCoords: [number, number][] | null = null;
+        let pointCoord: [number, number] | null = null;
+        let pointWhen: string | null = null;
+
+        for (const ft of feats) {
+          const g = ft?.geometry;
+          const p = ft?.properties || {};
+
+          if (g?.type === "LineString" && Array.isArray(g.coordinates)) {
+            const coords = g.coordinates
+              .map((c: any) => (Array.isArray(c) && c.length >= 2 ? [c[1], c[0]] : null))
+              .filter(Boolean);
+            if (coords.length >= 2) lineCoords = coords as any;
+          }
+
+          if (g?.type === "Point" && Array.isArray(g.coordinates) && g.coordinates.length >= 2) {
+            pointCoord = [g.coordinates[1], g.coordinates[0]];
+            if (typeof p.when === "string") pointWhen = p.when;
+          }
+        }
+
+        // If we have a line but no point, use the last line point as the marker.
+        if (!pointCoord && lineCoords && lineCoords.length) {
+          pointCoord = lineCoords[lineCoords.length - 1];
+        }
+
+        // Prefer the function's latestPoint.when if available.
+        const latestWhen =
+          typeof data?.properties?.latestPoint?.when === "string"
+            ? data.properties.latestPoint.when
+            : pointWhen;
+        hoggLastUpdatedWhen = latestWhen || null;
+
+        clearHoggLayer();
+
+        if (lineCoords && lineCoords.length >= 2) {
+          const poly = L.polyline(lineCoords, {
+            color: "#06b6d4", // cyan-500
+            weight: 4,
+            opacity: 0.9,
+          });
+          poly.addTo(hoggLayer);
+        }
+
+        if (pointCoord) {
+          const label = `HoggCountry${hoggLastUpdatedWhen ? `\n${hoggLastUpdatedWhen}` : ""}`;
+
+          const marker = L.circleMarker(pointCoord, {
+            radius: 7,
+            color: "#0e7490", // cyan-700
+            weight: 2,
+            opacity: 0.95,
+            fillColor: "#22d3ee", // cyan-400
+            fillOpacity: 0.85,
+          })
+            .bindPopup(
+              `<b>HoggCountry Tracker</b><br/>${hoggLastUpdatedWhen ? `<small>Updated: ${hoggLastUpdatedWhen}</small>` : "<small>(No timestamp)</small>"}`
+            )
+            .bindTooltip(label, { direction: "top", opacity: 0.85 });
+
+          marker.addTo(hoggLayer);
+        }
+
+        // If toggled on, ensure it is visible after refresh.
+        if (showHoggTracker && !map.hasLayer(hoggLayer)) hoggLayer.addTo(map);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function startHoggTrackerPolling() {
+      if (hoggRefreshTimer) return;
+      // Client polls; server function caches ~5 min at edge.
+      hoggRefreshTimer = setInterval(() => {
+        if (!showHoggTracker) return;
+        refreshHoggTracker();
+      }, 120_000);
+    }
+
+    function stopHoggTrackerPolling() {
+      if (!hoggRefreshTimer) return;
+      clearInterval(hoggRefreshTimer);
+      hoggRefreshTimer = null;
+    }
+
     function syncOverlays() {
       // Mile markers
       if (showMileMarkers) {
@@ -301,6 +413,13 @@
         if (!map.hasLayer(shelterLayer)) shelterLayer.addTo(map);
       } else {
         if (map.hasLayer(shelterLayer)) map.removeLayer(shelterLayer);
+      }
+
+      // HoggCountry Tracker (live-ish)
+      if (showHoggTracker) {
+        if (!map.hasLayer(hoggLayer)) hoggLayer.addTo(map);
+      } else {
+        if (map.hasLayer(hoggLayer)) map.removeLayer(hoggLayer);
       }
     }
 
@@ -465,6 +584,11 @@
             </label>
 
             <label class="hc-toggle">
+              <input id="hc-hogg-toggle" type="checkbox" ${showHoggTracker ? "checked" : ""} />
+              <span>Hogg tracker (live)</span>
+            </label>
+
+            <label class="hc-toggle">
               <input id="hc-cross-toggle" type="checkbox" ${showRoadCrossings ? "checked" : ""} />
               <span>Road crossings</span>
             </label>
@@ -480,6 +604,7 @@
         const resupplyToggle = div.querySelector("#hc-resupply-toggle") as HTMLInputElement;
         const waterToggle = div.querySelector("#hc-water-toggle") as HTMLInputElement;
         const shelterToggle = div.querySelector("#hc-shelter-toggle") as HTMLInputElement;
+        const hoggToggle = div.querySelector("#hc-hogg-toggle") as HTMLInputElement;
         const crossToggle = div.querySelector("#hc-cross-toggle") as HTMLInputElement;
         const locate = div.querySelector("#hc-locate") as HTMLButtonElement;
 
@@ -501,6 +626,19 @@
         shelterToggle.addEventListener("change", () => {
           showShelters = shelterToggle.checked;
           syncOverlays();
+        });
+
+        hoggToggle.addEventListener("change", () => {
+          showHoggTracker = hoggToggle.checked;
+          syncOverlays();
+
+          if (showHoggTracker) {
+            startHoggTrackerPolling();
+            refreshHoggTracker();
+          } else {
+            stopHoggTrackerPolling();
+            clearHoggLayer();
+          }
         });
 
         crossToggle.addEventListener("change", () => {
