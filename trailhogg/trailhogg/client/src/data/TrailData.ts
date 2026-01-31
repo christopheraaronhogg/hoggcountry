@@ -666,10 +666,7 @@ export const AMC_HUTS: AMCHut[] = [
 
 // Helper function for AMC huts
 export function getNearestAMCHut(mile: number): AMCHut | undefined {
-  return AMC_HUTS.reduce((nearest, h) => {
-    if (!nearest) return h;
-    return Math.abs(h.mile - mile) < Math.abs(nearest.mile - mile) ? h : nearest;
-  }, undefined as AMCHut | undefined);
+  return binarySearchNearest(AMC_HUTS, mile, h => h.mile);
 }
 
 export function getAMCHutsInRange(startMile: number, endMile: number): AMCHut[] {
@@ -879,8 +876,76 @@ export const LANDMARKS: Landmark[] = [
 // HELPER FUNCTIONS
 // ============================================================================
 
+/**
+ * Binary search to find the nearest item in a sorted array.
+ * @param array Sorted array of items
+ * @param target Target value
+ * @param getValue Function to extract the comparison value (e.g. item => item.mile)
+ */
+export function binarySearchNearest<T>(array: T[], target: number, getValue: (item: T) => number): T | undefined {
+  if (array.length === 0) return undefined;
+  if (array.length === 1) return array[0];
+
+  let left = 0;
+  let right = array.length - 1;
+
+  // Exact match or finding insertion point
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const val = getValue(array[mid]);
+
+    if (val === target) return array[mid];
+    if (val < target) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+
+  // Left is the insertion point.
+  // We need to compare array[left] (if valid) and array[left-1] (if valid)
+  // right is left - 1.
+
+  const idx1 = right;
+  const idx2 = left;
+
+  if (idx1 < 0) return array[idx2];
+  if (idx2 >= array.length) return array[idx1];
+
+  const val1 = getValue(array[idx1]);
+  const val2 = getValue(array[idx2]);
+
+  return Math.abs(target - val1) <= Math.abs(target - val2) ? array[idx1] : array[idx2];
+}
+
+/**
+ * Binary search to find the first item strictly greater than target.
+ * @param array Sorted array of items
+ * @param target Target value
+ * @param getValue Function to extract value
+ */
+export function binarySearchNext<T>(array: T[], target: number, getValue: (item: T) => number): T | undefined {
+  let left = 0;
+  let right = array.length - 1;
+  let result: T | undefined = undefined;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const val = getValue(array[mid]);
+
+    if (val > target) {
+      result = array[mid];
+      right = mid - 1; // Try to find a smaller one that is still > target
+    } else {
+      left = mid + 1;
+    }
+  }
+  return result;
+}
+
 export function getShelterByMile(mile: number): Shelter | undefined {
-  return SHELTERS.find(s => Math.abs(s.mile - mile) < 0.5);
+  const shelter = binarySearchNearest(SHELTERS, mile, s => s.mile);
+  return shelter && Math.abs(shelter.mile - mile) < 0.5 ? shelter : undefined;
 }
 
 export function getLandmarksInRange(startMile: number, endMile: number): Landmark[] {
@@ -888,14 +953,11 @@ export function getLandmarksInRange(startMile: number, endMile: number): Landmar
 }
 
 export function getNearestLandmark(mile: number): Landmark | undefined {
-  return LANDMARKS.reduce((nearest, l) => {
-    if (!nearest) return l;
-    return Math.abs(l.mile - mile) < Math.abs(nearest.mile - mile) ? l : nearest;
-  }, undefined as Landmark | undefined);
+  return binarySearchNearest(LANDMARKS, mile, l => l.mile);
 }
 
 export function getNextShelter(mile: number): Shelter | undefined {
-  return SHELTERS.find(s => s.mile > mile);
+  return binarySearchNext(SHELTERS, mile, s => s.mile);
 }
 
 export function getSheltersInRange(startMile: number, endMile: number): Shelter[] {
@@ -931,7 +993,7 @@ export function getCurrentState(mile: number): string {
 }
 
 export function getNextTown(mile: number): Town | undefined {
-  return TOWNS.find(t => t.mile > mile);
+  return binarySearchNext(TOWNS, mile, t => t.mile);
 }
 
 export function getTownsInRange(startMile: number, endMile: number): Town[] {
@@ -939,7 +1001,7 @@ export function getTownsInRange(startMile: number, endMile: number): Town[] {
 }
 
 export function getNextPeak(mile: number): Peak | undefined {
-  return PEAKS.find(p => p.mile > mile);
+  return binarySearchNext(PEAKS, mile, p => p.mile);
 }
 
 export function getElevationAtMile(mile: number): number {
@@ -948,11 +1010,9 @@ export function getElevationAtMile(mile: number): number {
   if (!zone) return 3500;
 
   // Find nearby shelters for more accurate elevation
-  const nearestShelter = SHELTERS.reduce((prev, curr) => {
-    return Math.abs(curr.mile - mile) < Math.abs(prev.mile - mile) ? curr : prev;
-  });
+  const nearestShelter = binarySearchNearest(SHELTERS, mile, s => s.mile);
 
-  if (Math.abs(nearestShelter.mile - mile) < 2) {
+  if (nearestShelter && Math.abs(nearestShelter.mile - mile) < 2) {
     return nearestShelter.elevation;
   }
 
@@ -1570,7 +1630,7 @@ export function getRoadCrossingsInRange(startMile: number, endMile: number): Roa
 }
 
 export function getNextRoadCrossing(mile: number): RoadCrossing | undefined {
-  return ROAD_CROSSINGS.find(r => r.mile > mile);
+  return binarySearchNext(ROAD_CROSSINGS, mile, r => r.mile);
 }
 
 export function getWaterSourcesInRange(startMile: number, endMile: number): WaterSource[] {
@@ -1578,10 +1638,7 @@ export function getWaterSourcesInRange(startMile: number, endMile: number): Wate
 }
 
 export function getNearestWaterSource(mile: number): WaterSource | undefined {
-  return FAMOUS_WATER_SOURCES.reduce((nearest, w) => {
-    if (!nearest) return w;
-    return Math.abs(w.mile - mile) < Math.abs(nearest.mile - mile) ? w : nearest;
-  }, undefined as WaterSource | undefined);
+  return binarySearchNearest(FAMOUS_WATER_SOURCES, mile, w => w.mile);
 }
 
 export function getDangerousCrossingsInRange(startMile: number, endMile: number): DangerousCrossing[] {
@@ -1589,7 +1646,7 @@ export function getDangerousCrossingsInRange(startMile: number, endMile: number)
 }
 
 export function getNextDangerousCrossing(mile: number): DangerousCrossing | undefined {
-  return DANGEROUS_CROSSINGS.find(d => d.mile > mile);
+  return binarySearchNext(DANGEROUS_CROSSINGS, mile, d => d.mile);
 }
 
 export function getTrailMagicSpots(mile: number, range: number = 50): RoadCrossing[] {
