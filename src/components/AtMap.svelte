@@ -15,6 +15,19 @@
   let showRoadCrossings = false;
   let showShelters = true;
 
+  function haversineMeters(a: [number, number], b: [number, number]) {
+    const R = 6371000;
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const [lat1, lon1] = a;
+    const [lat2, lon2] = b;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const x =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+
   // Keep map init client-only.
   onMount(async () => {
     const L = await import("leaflet");
@@ -88,6 +101,8 @@
       return [a!.lat + (b!.lat - a!.lat) * t, a!.lon + (b!.lon - a!.lon) * t];
     }
 
+    const milepostsRaw: { mile: number; lat: number; lon: number }[] = [];
+
     async function loadMilepostsAndBuildLayers() {
       const res = await fetch("/at-mileposts.json", {
         headers: { Accept: "application/json" },
@@ -101,6 +116,7 @@
         if (typeof mp?.mile !== "number") continue;
         if (typeof mp?.lat !== "number" || typeof mp?.lon !== "number") continue;
         mileCoord.set(mp.mile, { lat: mp.lat, lon: mp.lon });
+        milepostsRaw.push({ mile: mp.mile, lat: mp.lat, lon: mp.lon });
       }
 
       // Mile markers (every 10)
@@ -197,6 +213,8 @@
       }
     }
 
+    const sheltersRaw: { name: string; type?: string; lat: number; lon: number }[] = [];
+
     async function loadShelters() {
       try {
         const res = await fetch("/data/at-shelters.geojson", {
@@ -216,6 +234,8 @@
           const props = ft?.properties || {};
           const name = props?.name || props?.tags?.name || "Shelter";
           const shelterType = props?.shelter_type ? String(props.shelter_type) : "";
+
+          sheltersRaw.push({ name, type: shelterType || undefined, lat, lon });
 
           L.circleMarker([lat, lon], {
             radius: 5,
@@ -287,6 +307,95 @@
     // Initial overlay sync
     syncOverlays();
     map.on("zoomend", syncOverlays);
+
+    // Click-to-mile + nearest info
+    let infoPopup: any = null;
+
+    function nearestMileForLatLng(lat: number, lon: number): number | null {
+      if (!milepostsRaw.length) return null;
+
+      // Small N (2198) so O(n) scan is fine.
+      let bestMile = milepostsRaw[0].mile;
+      let bestD = Infinity;
+
+      for (const mp of milepostsRaw) {
+        const d = haversineMeters([lat, lon], [mp.lat, mp.lon]);
+        if (d < bestD) {
+          bestD = d;
+          bestMile = mp.mile;
+        }
+      }
+
+      return bestMile;
+    }
+
+    function nearestByMile<T extends { mile: number }>(
+      list: T[],
+      mile: number
+    ): { prev: T | null; next: T | null } {
+      let prev: T | null = null;
+      let next: T | null = null;
+
+      for (const item of list) {
+        if (item.mile <= mile) {
+          if (!prev || item.mile > prev.mile) prev = item;
+        } else {
+          if (!next || item.mile < next.mile) next = item;
+        }
+      }
+
+      return { prev, next };
+    }
+
+    function nearestShelter(lat: number, lon: number) {
+      if (!sheltersRaw.length) return null;
+
+      let best = sheltersRaw[0];
+      let bestD = Infinity;
+
+      for (const s of sheltersRaw) {
+        const d = haversineMeters([lat, lon], [s.lat, s.lon]);
+        if (d < bestD) {
+          bestD = d;
+          best = s;
+        }
+      }
+
+      return { shelter: best, distMeters: bestD };
+    }
+
+    map.on("click", (ev: any) => {
+      const lat = ev?.latlng?.lat;
+      const lon = ev?.latlng?.lng;
+      if (typeof lat !== "number" || typeof lon !== "number") return;
+
+      const mile = nearestMileForLatLng(lat, lon);
+
+      const water = mile == null ? { prev: null, next: null } : nearestByMile(atWaterSources as any[], mile);
+      const resupply = mile == null ? { prev: null, next: null } : nearestByMile(RESUPPLY_STOPS, mile);
+      const crossings = mile == null ? { prev: null, next: null } : nearestByMile(AT_ROAD_CROSSINGS, mile);
+      const shelter = nearestShelter(lat, lon);
+
+      const fmtMiles = (m: number) => (Math.round(m * 10) / 10).toFixed(1);
+      const fmtMi = (meters: number) => (meters / 1609.344).toFixed(1);
+
+      const html = `
+        <div style="min-width: 220px">
+          <div style="font-weight: 800; margin-bottom: 6px;">${mile == null ? "Map point" : `Mile ${fmtMiles(mile)}`}</div>
+          <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Lat ${lat.toFixed(4)}, Lon ${lon.toFixed(4)}</div>
+
+          <div style="font-size: 12px; margin-bottom: 6px;"><b>Resupply</b>: ${resupply.next ? `${resupply.next.name} (${fmtMiles(resupply.next.mile)})` : "—"}</div>
+          <div style="font-size: 12px; margin-bottom: 6px;"><b>Water</b>: ${water.next ? `${water.next.name} (${fmtMiles(water.next.mile)})` : "—"}</div>
+          <div style="font-size: 12px; margin-bottom: 6px;"><b>Road</b>: ${crossings.next ? `${crossings.next.name} (${fmtMiles(crossings.next.mile)})` : "—"}</div>
+          <div style="font-size: 12px; margin-bottom: 6px;"><b>Nearest shelter</b>: ${shelter ? `${shelter.shelter.name} (~${fmtMi(shelter.distMeters)} mi)` : "—"}</div>
+
+          <div style="font-size: 11px; opacity: 0.75; margin-top: 8px;">Tip: zoom in for more layers.</div>
+        </div>
+      `;
+
+      if (infoPopup) map.closePopup(infoPopup);
+      infoPopup = L.popup({ maxWidth: 340 }).setLatLng([lat, lon]).setContent(html).openOn(map);
+    });
 
     // Location (no API key): show a marker + center on it.
     let myLocationMarker: any = null;
