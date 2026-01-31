@@ -1,31 +1,36 @@
 <script>
-  import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
   import gearData from '../data/gear.json';
   import gearRecommendations from '../data/gearRecommendations.json';
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   let { trailContext = {} } = $props();
 
+  loadCharacter();
+
   let mounted = $state(false);
   let expandedCategory = $state(null);
-  let foodDays = $state(4);
 
-  let waterLiters = $state(2);
-  let foodWeightPerDay = $state(1.75);
+  // Character-driven state
+  let foodDays = $state(character.logistics.resupply.carryDays ?? 4);
+
+  let waterLiters = $state(character.equipment.packPrefs.typicalWaterCarryLiters ?? 2);
+  let foodWeightPerDay = $state(character.equipment.packPrefs.foodWeightPerDayLb ?? 1.75);
+
+  // Pack inventory items (editable)
   let editableItems = $state([]);
 
   const categories = gearData.categories;
   const WATER_WEIGHT_PER_LITER = 2.2;
-  const STORAGE_KEY = 'at-pack-builder-custom';
   const templateItems = gearData.items.filter(item => item.season !== 'summer');
   const templateLookup = new Map(templateItems.map(item => [item.id, item]));
 
   // Recommendations (optional)
-  let showRecommendations = $state(false);
-  let recBudget = $state(1500);
-  let recMode = $state('value'); // value | weight | durability
-  let recSeason = $state('3-season');
-  let recShelterPref = $state('tent');
+  let showRecommendations = $state(!!character.equipment.recommendations.pack.enabled);
+  let recBudget = $state(character.equipment.recommendations.pack.budget ?? 1500);
+  let recMode = $state(character.equipment.recommendations.pack.mode ?? 'value'); // value | weight | durability
+  let recSeason = $state(character.equipment.recommendations.pack.season ?? '3-season');
+  let recShelterPref = $state(character.equipment.recommendations.pack.shelterPref ?? 'tent');
 
   const REC_TO_PACK_CAT = {
     backpack: 'pack',
@@ -255,63 +260,84 @@
   }
 
 
-  onMount(() => {
+  // Initialize editableItems from Character
+  {
+    const stored = (character.equipment.inventory.items || []);
+    if (stored.length > 0) {
+      editableItems = stored.map((it) => {
+        const template = templateLookup.get(it.id);
+        const weightRaw = (it.weightRaw ?? (typeof it.weightOz === 'number' ? String(it.weightOz) : ''));
+        const costRaw = (it.costRaw ?? (typeof it.costUsd === 'number' ? String(it.costUsd) : ''));
+        return createItem({
+          id: it.id || `custom_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+          category: it.category || template?.category || 'pack',
+          name: it.name ?? '',
+          weight: weightRaw ?? '',
+          cost: costRaw ?? '',
+          url: it.url ?? '',
+          worn: it.worn ?? false,
+          tier: it.tier ?? template?.tier ?? 3,
+          templateName: it.templateName ?? template?.name ?? '',
+          templateWeight: it.templateWeightRaw ?? template?.weight ?? '',
+        });
+      });
+    } else {
+      editableItems = buildTemplateItems();
+    }
     mounted = true;
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        if (data.foodDays !== undefined) foodDays = data.foodDays;
-        if (data.waterLiters !== undefined) waterLiters = data.waterLiters;
-        if (data.foodWeightPerDay !== undefined) foodWeightPerDay = data.foodWeightPerDay;
-        if (data.showRecommendations !== undefined) showRecommendations = !!data.showRecommendations;
-        if (data.recs) {
-          if (data.recs.budget !== undefined) recBudget = data.recs.budget;
-          if (data.recs.mode !== undefined) recMode = data.recs.mode;
-          if (data.recs.season !== undefined) recSeason = data.recs.season;
-          if (data.recs.shelterPref !== undefined) recShelterPref = data.recs.shelterPref;
-        }
-        if (Array.isArray(data.items)) {
-          editableItems = data.items.map(item => {
-            const template = templateLookup.get(item.id);
-            return createItem({
-              id: item.id || `custom_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-              category: item.category || template?.category || 'pack',
-              name: item.name ?? '',
-              weight: item.weight ?? '',
-              cost: item.cost ?? '',
-              url: item.url ?? '',
-              worn: item.worn ?? false,
-              tier: item.tier ?? template?.tier ?? 3,
-              templateName: item.templateName ?? template?.name ?? '',
-              templateWeight: item.templateWeight ?? template?.weight ?? ''
+  }
 
-            });
-          });
-          return;
-        }
-      } catch (e) {}
-    }
+  function asNumber(input, fallback = 0) {
+    const n = Number(String(input ?? '').replace(/[^0-9.\-]/g, ''));
+    return Number.isFinite(n) ? n : fallback;
+  }
 
-    editableItems = buildTemplateItems();
-  });
-
+  // Persist to unified Character model
   $effect(() => {
-    if (mounted) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        items: editableItems,
-        foodDays,
-        waterLiters,
-        foodWeightPerDay,
-        showRecommendations,
-        recs: {
-          budget: recBudget,
-          mode: recMode,
-          season: recSeason,
-          shelterPref: recShelterPref
-        }
-      }));
-    }
+    if (!mounted) return;
+
+    updateCharacter({
+      equipment: {
+        inventory: {
+          items: editableItems.map((item) => {
+            const w = asNumber(item.weight, NaN);
+            const c = asNumber(item.cost, NaN);
+            return {
+              id: String(item.id),
+              category: String(item.category || 'pack'),
+              name: String(item.name || ''),
+              weightOz: Number.isFinite(w) ? w : undefined,
+              weightRaw: typeof item.weight === 'string' ? item.weight : undefined,
+              costUsd: Number.isFinite(c) ? c : undefined,
+              costRaw: typeof item.cost === 'string' ? item.cost : undefined,
+              url: item.url ? String(item.url) : undefined,
+              worn: !!item.worn,
+              tier: Number.isFinite(Number(item.tier)) ? Number(item.tier) : undefined,
+              templateName: item.templateName ? String(item.templateName) : undefined,
+              templateWeightRaw: item.templateWeight ? String(item.templateWeight) : undefined,
+            };
+          }),
+        },
+        packPrefs: {
+          typicalWaterCarryLiters: waterLiters,
+          foodWeightPerDayLb: foodWeightPerDay,
+        },
+        recommendations: {
+          pack: {
+            enabled: !!showRecommendations,
+            budget: recBudget,
+            mode: recMode,
+            season: recSeason,
+            shelterPref: recShelterPref,
+          },
+        },
+      },
+      logistics: {
+        resupply: {
+          carryDays: foodDays,
+        },
+      },
+    });
   });
 
   function updateItem(id, key, value) {
