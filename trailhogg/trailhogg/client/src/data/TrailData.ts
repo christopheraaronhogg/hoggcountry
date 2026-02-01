@@ -906,7 +906,7 @@ export function getNearestLandmark(mile: number): Landmark | undefined {
 }
 
 export function getNextShelter(mile: number): Shelter | undefined {
-  return SHELTERS.find(s => s.mile > mile);
+  return binarySearchNext(SHELTERS, mile, s => s.mile);
 }
 
 export function getSheltersInRange(startMile: number, endMile: number): Shelter[] {
@@ -942,7 +942,7 @@ export function getCurrentState(mile: number): string {
 }
 
 export function getNextTown(mile: number): Town | undefined {
-  return TOWNS.find(t => t.mile > mile);
+  return binarySearchNext(TOWNS, mile, t => t.mile);
 }
 
 export function getTownsInRange(startMile: number, endMile: number): Town[] {
@@ -950,7 +950,7 @@ export function getTownsInRange(startMile: number, endMile: number): Town[] {
 }
 
 export function getNextPeak(mile: number): Peak | undefined {
-  return PEAKS.find(p => p.mile > mile);
+  return binarySearchNext(PEAKS, mile, p => p.mile);
 }
 
 export function getElevationAtMile(mile: number): number {
@@ -959,11 +959,9 @@ export function getElevationAtMile(mile: number): number {
   if (!zone) return 3500;
 
   // Find nearby shelters for more accurate elevation
-  const nearestShelter = SHELTERS.reduce((prev, curr) => {
-    return Math.abs(curr.mile - mile) < Math.abs(prev.mile - mile) ? curr : prev;
-  });
+  const nearestShelter = binarySearchNearest(SHELTERS, mile, s => s.mile);
 
-  if (Math.abs(nearestShelter.mile - mile) < 2) {
+  if (nearestShelter && Math.abs(nearestShelter.mile - mile) < 2) {
     return nearestShelter.elevation;
   }
 
@@ -2230,4 +2228,86 @@ export function generateTrailName(): string {
 
 export function getTrailNameOrigin(): string {
   return TRAIL_NAME_ORIGINS[Math.floor(Math.random() * TRAIL_NAME_ORIGINS.length)];
+}
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION HELPERS
+// ============================================================================
+
+/**
+ * Generic binary search to find the nearest element in a sorted array
+ * @param arr Sorted array
+ * @param target Target value
+ * @param getValue Function to extract numeric value for comparison
+ */
+export function binarySearchNearest<T>(
+  arr: T[],
+  target: number,
+  getValue: (item: T) => number
+): T | undefined {
+  if (arr.length === 0) return undefined;
+  if (arr.length === 1) return arr[0];
+
+  // Handle out of bounds
+  if (target <= getValue(arr[0])) return arr[0];
+  if (target >= getValue(arr[arr.length - 1])) return arr[arr.length - 1];
+
+  let left = 0;
+  let right = arr.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const midVal = getValue(arr[mid]);
+
+    if (midVal === target) return arr[mid];
+
+    if (midVal < target) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+
+  // Check neighbors
+  // After loop, right < left. Target is between arr[right] and arr[left].
+  const itemRight = arr[right];
+  const itemLeft = arr[left];
+
+  if (Math.abs(target - getValue(itemRight)) <= Math.abs(target - getValue(itemLeft))) {
+    return itemRight;
+  } else {
+    return itemLeft;
+  }
+}
+
+/**
+ * Generic binary search to find the next element (smallest > target)
+ * @param arr Sorted array
+ * @param target Target value
+ * @param getValue Function to extract numeric value for comparison
+ */
+export function binarySearchNext<T>(
+  arr: T[],
+  target: number,
+  getValue: (item: T) => number
+): T | undefined {
+  if (arr.length === 0) return undefined;
+
+  let left = 0;
+  let right = arr.length - 1;
+  let result: T | undefined = undefined;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const midVal = getValue(arr[mid]);
+
+    if (midVal > target) {
+      result = arr[mid];
+      right = mid - 1;
+    } else {
+      left = mid + 1;
+    }
+  }
+
+  return result;
 }
