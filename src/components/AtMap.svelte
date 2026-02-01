@@ -18,9 +18,7 @@
   // Per request: tracker on by default.
   let showHoggTracker = $state(true);
 
-  // Mobile panel
-  let panelOpen = $state(false);
-  let panelTab = $state<"layers" | "nearby">("layers");
+  // (Deprecated) bottom-sheet UI removed in favor of always-visible Explorer panel.
 
   // Mile selection (like AT Weather)
   const PREVIEW_KEY = "hcAtMap.previewMile";
@@ -62,8 +60,11 @@
   let selectedMile = $state<number>(0); // preview mile
   let savedMile = $derived.by(() => Number(trailContext.currentMile) || 0);
 
-  let timeOffsetHours = $state<number>(0); // 0..24 step 3
-  let showPoiTempsOnMap = $state<boolean>(false);
+  // Shelter dataset indexed to nearest mile (used for Nearby panel)
+  let sheltersWithMile = $state<Array<{ name: string; mile: number; lat: number; lon: number }>>([]);
+
+  // Reserved for future “time horizon” exploration, but AT Map stays POI-first (no temps on-map).
+  let timeOffsetHours = $state<number>(0); // 0..24 step 3 (unused for now)
 
   // Map hooks (wired after Leaflet init)
   let mapReady = $state(false);
@@ -95,6 +96,34 @@
 
     return 0;
   }
+
+  function nextAfter<T extends { mile: number }>(list: T[], mile: number): T | null {
+    let best: T | null = null;
+    for (const item of list) {
+      if (typeof item?.mile !== "number") continue;
+      if (item.mile < mile) continue;
+      if (!best || item.mile < best.mile) best = item;
+    }
+    return best;
+  }
+
+  function withinAhead<T extends { mile: number }>(list: T[], mile: number, milesAhead: number, limit: number): T[] {
+    return list
+      .filter((x) => typeof x?.mile === "number" && x.mile >= mile && x.mile <= mile + milesAhead)
+      .slice()
+      .sort((a, b) => a.mile - b.mile)
+      .slice(0, limit);
+  }
+
+  const nextResupply = $derived.by(() => nextAfter(RESUPPLY_STOPS as any[], selectedMile));
+  const nextWater = $derived.by(() => nextAfter(atWaterSources as any[], selectedMile));
+  const nextCrossing = $derived.by(() => nextAfter(AT_ROAD_CROSSINGS as any[], selectedMile));
+  const nextShelter = $derived.by(() => nextAfter(sheltersWithMile as any[], selectedMile));
+
+  const upcomingResupply = $derived.by(() => withinAhead(RESUPPLY_STOPS as any[], selectedMile, 40, 4));
+  const upcomingWater = $derived.by(() => withinAhead(atWaterSources as any[], selectedMile, 12, 6));
+  const upcomingCrossings = $derived.by(() => withinAhead(AT_ROAD_CROSSINGS as any[], selectedMile, 25, 5));
+  const upcomingShelters = $derived.by(() => withinAhead(sheltersWithMile as any[], selectedMile, 25, 5));
 
   // Keep URL + local "last mile" in sync as user explores.
   $effect(() => {
@@ -397,6 +426,21 @@
       await loadShelters();
     } catch (err) {
       console.error(err);
+    }
+
+    // Precompute shelter→mile (used by the Explorer panel)
+    try {
+      const indexed = sheltersRaw
+        .map((s) => {
+          const m = nearestMileForLatLng(s.lat, s.lon);
+          return m == null ? null : { name: s.name, mile: m, lat: s.lat, lon: s.lon };
+        })
+        .filter(Boolean) as any[];
+
+      indexed.sort((a, b) => a.mile - b.mile);
+      sheltersWithMile = indexed as any;
+    } catch (err) {
+      console.warn(err);
     }
 
     // Selected mile marker (draggable)
@@ -759,89 +803,326 @@
   });
 </script>
 
-<div class="wrap">
-  <div class="mapWrap">
-    <div class="at-map" bind:this={container} aria-label="Appalachian Trail map" />
+<div class="explorer">
+  <aside class="panel" aria-label="AT map explorer">
+    <div class="panelTop">
+      <div>
+        <div class="k">Mile</div>
+        <div class="mile">{selectedMile}</div>
+        <div class="sub">Saved current: <b>{savedMile}</b></div>
+      </div>
 
-    <button
-      class="fab"
-      type="button"
-      aria-label="Open map controls"
-      title="Layers & nearby"
-      on:click={() => (panelOpen = true)}
-    >
-      <svg class="fabIco" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path
-          fill="currentColor"
-          d="M12 2 1 7l11 5 9-4.09V17h2V7L12 2Zm0 12L1 9v2l11 5 11-5V9l-11 5Zm0 6L1 15v2l11 5 11-5v-2l-11 5Z"
-        />
-      </svg>
-    </button>
-  </div>
+      <div class="panelActions">
+        <button class="btn" type="button" on:click={() => locatePreviewFn?.()}>Use my location</button>
+        <button class="btn" type="button" disabled={selectedMile === savedMile} on:click={() => updateContext({ currentMile: selectedMile })}>
+          Set as current
+        </button>
+        <a class="btn ghost" href={`/at-weather?mile=${selectedMile}`}>Weather →</a>
+      </div>
+    </div>
 
-  {#if panelOpen}
-    <div class="backdrop" on:click={() => (panelOpen = false)} aria-hidden="true"></div>
-  {/if}
+    <input class="mileSlider" type="range" min="0" max="2197" step="1" bind:value={selectedMile} aria-label="Mile slider" />
 
-  <aside class="sheet" class:open={panelOpen} aria-label="Map controls">
-    <div class="sheetTop" on:click|stopPropagation>
-      <div class="handle" aria-hidden="true"></div>
+    <div class="hint">Drag the slider or drag the dot on the map to explore what’s ahead.</div>
 
-      <div class="sheetHeader">
-        <div class="title">AT Map</div>
-        <div class="sub">
-          Mile <b>{selectedMile}</b> • Saved <b>{savedMile}</b>
+    <details class="layers">
+      <summary>Layers</summary>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" bind:checked={showHoggTracker} /> <span>Hogg tracker</span></label>
+        <label class="toggle"><input type="checkbox" bind:checked={showResupplyStops} /> <span>Resupply</span></label>
+        <label class="toggle"><input type="checkbox" bind:checked={showShelters} /> <span>Shelters</span></label>
+        <label class="toggle"><input type="checkbox" bind:checked={showWaterSources} /> <span>Water (zoom 11+)</span></label>
+        <label class="toggle"><input type="checkbox" bind:checked={showRoadCrossings} /> <span>Road crossings</span></label>
+        <label class="toggle"><input type="checkbox" bind:checked={showMileMarkers} /> <span>Mile markers</span></label>
+      </div>
+    </details>
+
+    <div class="nearby" aria-label="Nearby points of interest">
+      <div class="k">Nearby</div>
+
+      <div class="nextUp">
+        <div class="row2">
+          <div class="nk">Next resupply</div>
+          <div class="nv">{nextResupply ? `${nextResupply.name} (mile ${nextResupply.mile})` : '—'}</div>
+        </div>
+        <div class="row2">
+          <div class="nk">Next shelter</div>
+          <div class="nv">{nextShelter ? `${nextShelter.name} (mile ${nextShelter.mile})` : '—'}</div>
+        </div>
+        <div class="row2">
+          <div class="nk">Next water</div>
+          <div class="nv">{nextWater ? `${nextWater.name} (mile ${nextWater.mile})` : '—'}</div>
+        </div>
+        <div class="row2">
+          <div class="nk">Next road crossing</div>
+          <div class="nv">{nextCrossing ? `${nextCrossing.name} (mile ${nextCrossing.mile})` : '—'}</div>
         </div>
       </div>
 
-      <div class="tabs" role="tablist">
-        <button class="tab" class:active={panelTab === 'layers'} type="button" on:click={() => (panelTab = 'layers')}>Layers</button>
-        <button class="tab" class:active={panelTab === 'nearby'} type="button" on:click={() => (panelTab = 'nearby')}>Nearby</button>
+      <div class="lists">
+        <div class="list">
+          <div class="lk">Upcoming shelters (≤ 25 mi)</div>
+          {#if !upcomingShelters.length}
+            <div class="lv">—</div>
+          {:else}
+            {#each upcomingShelters as s (s.name + s.mile)}
+              <div class="li">• {s.name} — mile {s.mile}</div>
+            {/each}
+          {/if}
+        </div>
+
+        <div class="list">
+          <div class="lk">Upcoming water (≤ 12 mi)</div>
+          {#if !upcomingWater.length}
+            <div class="lv">—</div>
+          {:else}
+            {#each upcomingWater as w (w.name + w.mile)}
+              <div class="li">• {w.name} — mile {w.mile}</div>
+            {/each}
+          {/if}
+        </div>
+
+        <div class="list">
+          <div class="lk">Upcoming road crossings (≤ 25 mi)</div>
+          {#if !upcomingCrossings.length}
+            <div class="lv">—</div>
+          {:else}
+            {#each upcomingCrossings as c (c.name + c.mile)}
+              <div class="li">• {c.name} — mile {c.mile}</div>
+            {/each}
+          {/if}
+        </div>
       </div>
 
-      {#if panelTab === 'layers'}
-        <div class="section">
-          <div class="row">
-            <button class="btn" type="button" on:click={() => locatePreviewFn?.()}>Use my location</button>
-            <button class="btn" type="button" disabled={selectedMile === savedMile} on:click={() => updateContext({ currentMile: selectedMile })}>Set as current</button>
-            <button class="btn ghost" type="button" on:click={() => (panelOpen = false)}>Close</button>
-          </div>
-
-          <div class="toggles">
-            <label class="toggle"><input type="checkbox" bind:checked={showHoggTracker} /> <span>Hogg tracker</span></label>
-            <label class="toggle"><input type="checkbox" bind:checked={showResupplyStops} /> <span>Resupply</span></label>
-            <label class="toggle"><input type="checkbox" bind:checked={showShelters} /> <span>Shelters</span></label>
-            <label class="toggle"><input type="checkbox" bind:checked={showWaterSources} /> <span>Water (zoom 11+)</span></label>
-            <label class="toggle"><input type="checkbox" bind:checked={showRoadCrossings} /> <span>Road crossings</span></label>
-            <label class="toggle"><input type="checkbox" bind:checked={showMileMarkers} /> <span>Mile markers</span></label>
-          </div>
-
-          <div class="hint">Tip: tap the map to move the mile marker. Drag the dot to fine-tune.</div>
-        </div>
-      {:else}
-        <div class="section">
-          <div class="row">
-            <button class="btn" type="button" on:click={() => locatePreviewFn?.()}>Use my location</button>
-            <button class="btn" type="button" disabled={selectedMile === savedMile} on:click={() => updateContext({ currentMile: selectedMile })}>Set as current</button>
-          </div>
-
-          <div class="time">
-            <div class="timeLabel">Time</div>
-            <div class="timeValue">{timeLabel(timeOffsetHours)}</div>
-            <input class="slider" type="range" min="0" max="24" step="3" bind:value={timeOffsetHours} aria-label="Time horizon" />
-            <div class="timeHint">3-hour steps • v1 uses this for POI temps next.</div>
-          </div>
-
-          <div class="hint">Nearby POIs list + temp badges are next in this iteration.</div>
-        </div>
-      {/if}
+      <div class="nearbyHint">Tap the map to move the dot. Drag the dot to fine‑tune.</div>
     </div>
   </aside>
+
+  <div class="mapWrap">
+    <div class="at-map" bind:this={container} aria-label="Appalachian Trail map" />
+  </div>
 </div>
 
 <style>
-  .wrap {
-    position: relative;
+  .explorer {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+
+  @media (max-width: 920px) {
+    .explorer {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .panel {
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 16px;
+    background: rgba(255,255,255,0.78);
+    box-shadow: 0 18px 52px rgba(0,0,0,0.12);
+    padding: 12px;
+    backdrop-filter: blur(8px);
+  }
+
+  .panelTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .k {
+    font-family: Oswald, system-ui, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(52, 66, 58, 0.82);
+    font-weight: 800;
+  }
+
+  .mile {
+    font-family: Anton, Oswald, system-ui, sans-serif;
+    font-size: 2.1rem;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    color: rgba(31, 41, 55, 0.92);
+  }
+
+  .sub {
+    margin-top: 2px;
+    font-size: 0.92rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .panelActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .panel .btn {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.86);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(31, 41, 55, 0.88);
+  }
+
+  .panel .btn:hover {
+    background: rgba(240, 224, 0, 0.18);
+    border-color: rgba(0,0,0,0.16);
+  }
+
+  .panel .btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .panel .btn.ghost {
+    background: rgba(255,255,255,0.0);
+  }
+
+  .mileSlider {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .panel .hint {
+    margin-top: 6px;
+    font-size: 0.92rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  details.layers {
+    margin-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    padding-top: 10px;
+  }
+
+  details.layers summary {
+    cursor: pointer;
+    user-select: none;
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+    color: rgba(31, 41, 55, 0.86);
+    margin-bottom: 10px;
+  }
+
+  .panel .toggles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+  }
+
+  .panel .toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.86);
+    user-select: none;
+  }
+
+  .nearby {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .nearbyHint {
+    margin-top: 10px;
+    font-size: 0.92rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .nextUp {
+    margin-top: 10px;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.65);
+  }
+
+  .row2 {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .row2:last-child {
+    border-bottom: none;
+  }
+
+  .nk {
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.75rem;
+    color: rgba(52, 66, 58, 0.75);
+    font-weight: 800;
+  }
+
+  .nv {
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.88);
+  }
+
+  .lists {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .list {
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.55);
+  }
+
+  .lk {
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.78rem;
+    color: rgba(31, 41, 55, 0.78);
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  .li {
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.86);
+    line-height: 1.35;
+    padding: 3px 0;
+  }
+
+  .lv {
+    font-size: 0.95rem;
+    color: rgba(55, 65, 81, 0.7);
+  }
+
+  @media (max-width: 520px) {
+    .row2 { grid-template-columns: 1fr; }
   }
 
   .mapWrap {
@@ -875,223 +1156,7 @@
     box-shadow: 0 10px 24px rgba(0,0,0,0.18);
   }
 
-  .fab {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 44px;
-    height: 44px;
-    border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.15);
-    background: rgba(255,255,255,0.85);
-    color: rgba(31, 41, 55, 0.9);
-    display: grid;
-    place-items: center;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.14);
-    cursor: pointer;
-  }
-
-  .fabIco {
-    width: 20px;
-    height: 20px;
-  }
-
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.35);
-    z-index: 999;
-  }
-
-  .sheet {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-    transform: translateY(102%);
-    transition: transform 220ms ease;
-    pointer-events: none;
-  }
-
-  .sheet.open {
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-
-  .sheetTop {
-    max-width: 1100px;
-    margin: 0 auto;
-    background: rgba(255,255,255,0.92);
-    border: 1px solid rgba(0,0,0,0.10);
-    border-bottom: none;
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 -18px 60px rgba(0,0,0,0.22);
-    padding: 10px 12px 14px;
-    backdrop-filter: blur(10px);
-  }
-
-  .handle {
-    width: 44px;
-    height: 5px;
-    border-radius: 999px;
-    background: rgba(0,0,0,0.18);
-    margin: 0 auto 10px;
-  }
-
-  .sheetHeader {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .title {
-    font-family: Oswald, system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 800;
-    color: rgba(31, 41, 55, 0.9);
-  }
-
-  .sub {
-    font-size: 0.95rem;
-    color: rgba(55, 65, 81, 0.72);
-  }
-
-  .tabs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .tab {
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.75);
-    border-radius: 12px;
-    padding: 10px 12px;
-    font-family: Oswald, system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 800;
-    color: rgba(31, 41, 55, 0.84);
-    cursor: pointer;
-  }
-
-  .tab.active {
-    background: rgba(240, 224, 0, 0.22);
-    border-color: rgba(0,0,0,0.18);
-  }
-
-  .section {
-    display: grid;
-    gap: 12px;
-  }
-
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .btn {
-    height: 40px;
-    padding: 0 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.82);
-    font-family: Oswald, system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    font-size: 0.78rem;
-    cursor: pointer;
-  }
-
-  .btn:disabled {
-    opacity: 0.55;
-    cursor: default;
-  }
-
-  .btn.ghost {
-    background: rgba(255,255,255,0.0);
-  }
-
-  .toggles {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 12px;
-  }
-
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.95rem;
-    color: rgba(31, 41, 55, 0.86);
-    user-select: none;
-  }
-
-  .hint {
-    font-size: 0.95rem;
-    color: rgba(55, 65, 81, 0.7);
-  }
-
-  .time {
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 14px;
-    padding: 10px 12px;
-    background: rgba(255,255,255,0.65);
-  }
-
-  .timeLabel {
-    font-family: Oswald, system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 0.8rem;
-    color: rgba(31, 41, 55, 0.75);
-    font-weight: 800;
-  }
-
-  .timeValue {
-    font-size: 1.2rem;
-    font-weight: 900;
-    color: rgba(31, 41, 55, 0.9);
-    margin-top: 2px;
-  }
-
-  .slider {
-    width: 100%;
-    margin-top: 8px;
-  }
-
-  .timeHint {
-    font-size: 0.9rem;
-    color: rgba(55, 65, 81, 0.65);
-    margin-top: 6px;
-  }
-
-  @media (min-width: 980px) {
-    /* Desktop: keep panel less intrusive */
-    .sheetTop {
-      border-radius: 18px;
-      margin-bottom: 16px;
-    }
-    .sheet {
-      left: auto;
-      right: 16px;
-      bottom: 16px;
-      max-width: 420px;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-    .backdrop { display: none; }
-    .fab { display: none; }
-  }
-
   @media (max-width: 520px) {
-    .toggles { grid-template-columns: 1fr; }
+    .panel .toggles { grid-template-columns: 1fr; }
   }
 </style>
