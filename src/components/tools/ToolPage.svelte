@@ -14,6 +14,8 @@
   // Default to visible in SSR so the tool shell isn't a blank page if hydration is delayed/blocked.
   let mounted = $state(true);
   let ToolComponent = $state<typeof import('svelte').SvelteComponent | null>(null);
+  let loadError = $state<string | null>(null);
+  let slowLoad = $state(false);
 
   // Tool component loaders
   const toolLoaders: Record<string, () => Promise<{ default: typeof import('svelte').SvelteComponent }>> = {
@@ -38,16 +40,27 @@
   onMount(async () => {
     loadContext();
 
+    loadError = null;
+    slowLoad = false;
+    const slowTimer = window.setTimeout(() => {
+      if (!ToolComponent && !loadError) slowLoad = true;
+    }, 3500);
+
     // Load the tool component
-    if (toolLoaders[toolId]) {
+    if (!toolLoaders[toolId]) {
+      loadError = `Unknown toolId: ${toolId}`;
+    } else {
       try {
         const module = await toolLoaders[toolId]();
         ToolComponent = module.default;
-      } catch (e) {
+      } catch (e: any) {
+        const msg = e?.message ? String(e.message) : String(e);
+        loadError = msg;
         console.error(`Failed to load tool: ${toolId}`, e);
       }
     }
 
+    window.clearTimeout(slowTimer);
     mounted = true;
   });
 
@@ -63,10 +76,24 @@
   <div class="tool-content">
     {#if ToolComponent}
       <svelte:component this={ToolComponent} {trailContext} />
+    {:else if loadError}
+      <div class="error">
+        <div class="error-title">Tool failed to load</div>
+        <div class="error-body">
+          <div><strong>{toolName}</strong></div>
+          <div class="error-msg">{loadError}</div>
+          <div class="error-hint">
+            Try a hard refresh (Cmd/Ctrl+Shift+R). If you have offline mode enabled, clear the site cache for hoggcountry.com.
+          </div>
+        </div>
+      </div>
     {:else}
       <div class="loading">
         <div class="spinner"></div>
         <span>Loading {toolName}...</span>
+        {#if slowLoad}
+          <span class="slow">Still loading… (likely a cached script/offline issue)</span>
+        {/if}
       </div>
     {/if}
   </div>
@@ -120,5 +147,45 @@
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  .slow {
+    font-size: 0.8rem;
+    color: var(--muted, #777);
+    text-transform: none;
+    letter-spacing: 0.01em;
+  }
+
+  .error {
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    background: rgba(220, 38, 38, 0.06);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+
+  .error-title {
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgb(153, 27, 27);
+    margin-bottom: 0.5rem;
+  }
+
+  .error-body {
+    color: rgba(31, 41, 55, 0.92);
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .error-msg {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+  }
+
+  .error-hint {
+    color: rgba(55, 65, 81, 0.75);
+    font-size: 0.9rem;
   }
 </style>

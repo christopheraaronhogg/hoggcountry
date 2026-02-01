@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v13';
+const CACHE_NAME = 'hogg-country-v14';
 
 // Core pages to precache on install
 const CORE_PAGES = [
@@ -11,6 +11,7 @@ const CORE_PAGES = [
   '/about/',
   '/tools/',
   // Individual tool pages
+  '/tools/character/',
   '/tools/milestone/',
   '/tools/weather/',
   '/tools/pack/',
@@ -34,6 +35,7 @@ const CORE_PAGES = [
 
 // Tool sub-pages (new /tools/ routed layout)
 const TOOL_PAGES = [
+  '/tools/character/',
   '/tools/milestone/',
   '/tools/weather/',
   '/tools/pack/',
