@@ -547,7 +547,20 @@
             Set as Current
           </button>
         {/if}
-        <button class="btn ghost" type="button" onclick={copyLink}>Copy link</button>
+        <button
+          class="btn ghost icon"
+          type="button"
+          onclick={copyLink}
+          title="Copy link"
+          aria-label="Copy link"
+        >
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              fill="currentColor"
+              d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16h-9V7h9v14Z"
+            />
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -723,6 +736,18 @@
 
   .btn.ghost:hover {
     background: rgba(255, 255, 255, 0.55);
+  }
+
+  .btn.icon {
+    padding: 0.5rem 0.55rem;
+    min-width: 42px;
+    justify-content: center;
+  }
+
+  .ico {
+    width: 18px;
+    height: 18px;
+    display: block;
   }
 
   .slider {
