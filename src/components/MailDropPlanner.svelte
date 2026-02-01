@@ -1,27 +1,30 @@
 <script>
   import { RESUPPLY_STOPS } from '../data/resupplyStops';
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   /** @type {{ trailContext: any }} */
   let { trailContext } = $props();
+
+  loadCharacter();
 
   // Active section
   let activeSection = $state('overview');
 
   // Hiker info
-  let hikerName = $state('');
+  let hikerName = $state(character.logistics.mail.hikerName || '');
 
   // Support person info
-  let supportName = $state('');
-  let supportPhone = $state('');
-  let returnAddress = $state('');
+  let supportName = $state(character.logistics.mail.supportName || '');
+  let supportPhone = $state(character.logistics.mail.supportPhone || '');
+  let returnAddress = $state(character.logistics.mail.returnAddress || '');
 
   // Current trail position (from context or manual)
   let currentMile = $derived(trailContext?.currentMile || 0);
   let pace = $derived(trailContext?.targetPace || trailContext?.pace || 15);
 
   // Global defaults
-  let triggerLeadMiles = $state(125); // ship ~125 miles before pickup
-  let defaultHoldTimeDays = $state(30);
+  let triggerLeadMiles = $state(character.logistics.mail.triggerLeadMiles ?? 125); // ship ~125 miles before pickup
+  let defaultHoldTimeDays = $state(character.logistics.mail.defaultHoldTimeDays ?? 30);
 
   /**
    * @typedef {'post-office' | 'hostel'} MailLocationKind
@@ -358,7 +361,7 @@
   });
 
   // User's planned drops with contents
-  let plannedDrops = $state({});
+  let plannedDrops = $state(character.logistics.mail.dropsById || {});
   let viewInitialized = $state(false);
 
   // Directory browsing (declared early so effects can safely reference it)
@@ -367,45 +370,77 @@
   let filterPO = $state(true);
   let filterHostel = $state(true);
 
-  // Load from localStorage
-  $effect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('mailDropPlannerV3');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          plannedDrops = parsed.drops || {};
-          hikerName = parsed.hikerName || '';
-          supportName = parsed.supportName || '';
-          supportPhone = parsed.supportPhone || '';
-          returnAddress = parsed.returnAddress || '';
-          triggerLeadMiles = parsed.triggerLeadMiles ?? triggerLeadMiles;
-          defaultHoldTimeDays = parsed.defaultHoldTimeDays ?? defaultHoldTimeDays;
-        } catch (e) {}
-      }
+  function computePersistSig() {
+    return JSON.stringify({
+      drops: plannedDrops,
+      hikerName,
+      supportName,
+      supportPhone,
+      returnAddress,
+      triggerLeadMiles,
+      defaultHoldTimeDays,
+    });
+  }
 
-      // Default UX: if you haven't picked any drops yet, start in "Browse Directory"
-      if (!viewInitialized) {
-        const hasPlanned = Object.values(plannedDrops).some((d) => d?.enabled);
-        showDirectory = !hasPlanned;
-        viewInitialized = true;
-      }
-    }
+  // One-time migration fallback for older sessions that still have localStorage data.
+  let legacyMigrated = $state(false);
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    if (legacyMigrated) return;
+    legacyMigrated = true;
+
+    const hasAny =
+      Object.values(plannedDrops).some((d) => d?.enabled) ||
+      !!String(hikerName || '').trim() ||
+      !!String(supportName || '').trim() ||
+      !!String(supportPhone || '').trim() ||
+      !!String(returnAddress || '').trim();
+    if (hasAny) return;
+
+    const saved = localStorage.getItem('mailDropPlannerV3');
+    if (!saved) return;
+
+    try {
+      const parsed = JSON.parse(saved);
+      plannedDrops = parsed.drops || plannedDrops;
+      hikerName = parsed.hikerName || hikerName;
+      supportName = parsed.supportName || supportName;
+      supportPhone = parsed.supportPhone || supportPhone;
+      returnAddress = parsed.returnAddress || returnAddress;
+      triggerLeadMiles = parsed.triggerLeadMiles ?? triggerLeadMiles;
+      defaultHoldTimeDays = parsed.defaultHoldTimeDays ?? defaultHoldTimeDays;
+    } catch (e) {}
   });
 
-  // Save to localStorage
+  // Default UX: if you haven't picked any drops yet, start in "Browse Directory"
   $effect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('mailDropPlannerV3', JSON.stringify({
-        drops: plannedDrops,
-        hikerName,
-        supportName,
-        supportPhone,
-        returnAddress,
-        triggerLeadMiles,
-        defaultHoldTimeDays,
-      }));
-    }
+    if (typeof window === 'undefined') return;
+    if (viewInitialized) return;
+    const hasPlanned = Object.values(plannedDrops).some((d) => d?.enabled);
+    showDirectory = !hasPlanned;
+    viewInitialized = true;
+  });
+
+  // Persist into the unified Character model (guarded to avoid reactive loops)
+  let _persistSig = $state(computePersistSig());
+  $effect(() => {
+    const nextSig = computePersistSig();
+    if (nextSig === _persistSig) return;
+    _persistSig = nextSig;
+
+    updateCharacter({
+      logistics: {
+        mail: {
+          dropsById: plannedDrops,
+          hikerName,
+          supportName,
+          supportPhone,
+          returnAddress,
+          triggerLeadMiles,
+          defaultHoldTimeDays,
+        },
+      },
+    });
   });
 
   // Get or create drop data

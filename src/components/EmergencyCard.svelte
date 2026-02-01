@@ -1,24 +1,29 @@
 <script>
   import { onMount } from 'svelte';
   import { AT_ROAD_CROSSINGS } from '../data/at-road-crossings';
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   let { trailContext = {} } = $props();
+
+  loadCharacter();
 
   let mounted = $state(false);
   let editMode = $state(false);
   let activeSection = $state('exits');
 
-  let contacts = $state([
-    { id: 1, name: '', relationship: '', phone: '' },
-  ]);
+  let contacts = $state(
+    Array.isArray(character.emergency.contacts) && character.emergency.contacts.length > 0
+      ? [...character.emergency.contacts]
+      : [{ id: 1, name: '', relationship: '', phone: '' }]
+  );
 
   let personal = $state({
-    bloodType: '',
-    allergies: '',
-    conditions: '',
-    medications: '',
-    insurance: '',
-    doctorPhone: '',
+    bloodType: character.emergency.personal?.bloodType || '',
+    allergies: character.emergency.personal?.allergies || '',
+    conditions: character.emergency.personal?.conditions || '',
+    medications: character.emergency.personal?.medications || '',
+    insurance: character.emergency.personal?.insurance || '',
+    doctorPhone: character.emergency.personal?.doctorPhone || '',
   });
 
   const medicalAccess = [
@@ -60,18 +65,28 @@
 
   onMount(() => {
     mounted = true;
-    const saved = localStorage.getItem('at-emergency-info');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        if (data.contacts?.length > 0) contacts = data.contacts;
-        if (data.personal) personal = { ...personal, ...data.personal };
-      } catch (e) {}
+
+    // One-time fallback migration for older sessions that still have localStorage data.
+    const hasAny =
+      contacts.some((c) => c.name || c.phone || c.relationship) ||
+      Object.values(personal).some(Boolean);
+
+    if (!hasAny) {
+      const saved = localStorage.getItem('at-emergency-info');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (data.contacts?.length > 0) contacts = data.contacts;
+          if (data.personal) personal = { ...personal, ...data.personal };
+
+          updateCharacter({ emergency: { contacts, personal } });
+        } catch (e) {}
+      }
     }
   });
 
   function saveData() {
-    localStorage.setItem('at-emergency-info', JSON.stringify({ contacts, personal }));
+    updateCharacter({ emergency: { contacts, personal } });
     editMode = false;
   }
 

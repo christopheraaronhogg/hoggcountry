@@ -1,15 +1,18 @@
 <script>
   import { onMount } from 'svelte';
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   let { trailContext = {} } = $props();
+
+  loadCharacter();
 
   let mounted = $state(false);
 
   // User inputs
   let startDate = $state(trailContext?.startDate || '2026-02-15');
-  let currentFitness = $state('moderate');
-  let hikingExperience = $state('some');
-  let weeklyHours = $state(10);
+  let currentFitness = $state(character.training.currentFitness || 'moderate');
+  let hikingExperience = $state(character.training.hikingExperience || 'some');
+  let weeklyHours = $state(character.training.weeklyHours ?? 10);
 
   // Sync with trail context
   $effect(() => {
@@ -20,24 +23,29 @@
 
   onMount(() => {
     mounted = true;
-    const saved = localStorage.getItem('at-training-planner');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        currentFitness = data.currentFitness || currentFitness;
-        hikingExperience = data.hikingExperience || hikingExperience;
-        weeklyHours = data.weeklyHours || weeklyHours;
-      } catch (e) {}
-    }
-  });
 
-  $effect(() => {
-    if (mounted) {
-      localStorage.setItem('at-training-planner', JSON.stringify({
-        currentFitness,
-        hikingExperience,
-        weeklyHours
-      }));
+    // One-time fallback migration for older sessions that still have localStorage data.
+    const hasAny =
+      String(character.training.currentFitness || 'moderate') !== 'moderate' ||
+      String(character.training.hikingExperience || 'some') !== 'some' ||
+      Number(character.training.weeklyHours ?? 10) !== 10 ||
+      Object.values(character.training.completedBenchmarks || {}).some(Boolean);
+
+    if (!hasAny) {
+      try {
+        const savedPlan = localStorage.getItem('at-training-planner');
+        if (savedPlan) {
+          const data = JSON.parse(savedPlan);
+          currentFitness = data.currentFitness || currentFitness;
+          hikingExperience = data.hikingExperience || hikingExperience;
+          weeklyHours = data.weeklyHours || weeklyHours;
+        }
+
+        const savedBench = localStorage.getItem('at-training-benchmarks');
+        if (savedBench) {
+          completedBenchmarks = JSON.parse(savedBench) || completedBenchmarks;
+        }
+      } catch (e) {}
     }
   });
 
@@ -204,23 +212,26 @@
     { id: 'b8', text: 'Navigate 5+ miles using only map/compass', category: 'skills' },
   ];
 
-  let completedBenchmarks = $state({});
+  let completedBenchmarks = $state(character.training.completedBenchmarks || {});
 
-  $effect(() => {
-    if (mounted) {
-      const saved = localStorage.getItem('at-training-benchmarks');
-      if (saved) {
-        try {
-          completedBenchmarks = JSON.parse(saved);
-        } catch (e) {}
-      }
-    }
-  });
+  function computePersistSig() {
+    return JSON.stringify({ currentFitness, hikingExperience, weeklyHours, completedBenchmarks });
+  }
 
+  let _persistSig = $state(computePersistSig());
   $effect(() => {
-    if (mounted && Object.keys(completedBenchmarks).length > 0) {
-      localStorage.setItem('at-training-benchmarks', JSON.stringify(completedBenchmarks));
-    }
+    if (!mounted) return;
+    const nextSig = computePersistSig();
+    if (nextSig === _persistSig) return;
+    _persistSig = nextSig;
+    updateCharacter({
+      training: {
+        currentFitness,
+        hikingExperience,
+        weeklyHours,
+        completedBenchmarks,
+      },
+    });
   });
 
   function toggleBenchmark(id) {

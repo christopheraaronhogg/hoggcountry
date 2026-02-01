@@ -1,8 +1,11 @@
 <script>
   import { onMount } from "svelte";
   import { fade, slide, scale } from "svelte/transition";
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   let { trailContext = {} } = $props();
+
+  loadCharacter();
 
   const DEFAULT_CATEGORIES = [
     { id: "food", name: "Resupply (Trail Food)", icon: "🛒", color: "#22c55e" },
@@ -76,9 +79,13 @@
   let currentMonthKey = $state(getMonthKey());
 
   // Data structure: { "2026-03": { food: 1200, ... } }
-  let monthlyBudgets = $state({});
-  let expenses = $state([]);
-  let uCategories = $state([...DEFAULT_CATEGORIES]); // Dynamic categories
+  let monthlyBudgets = $state(character.finance.monthlyBudgets || {});
+  let expenses = $state(character.finance.expenses || []);
+  let uCategories = $state(
+    Array.isArray(character.finance.categories) && character.finance.categories.length > 0
+      ? [...character.finance.categories]
+      : [...DEFAULT_CATEGORIES]
+  ); // Dynamic categories
 
   let showCategorySettings = $state(false);
   let activeEmojiPicker = $state(null); // ID of category being edited
@@ -100,38 +107,47 @@
     };
     window.addEventListener("click", handleClick);
 
-    const saved = localStorage.getItem("at-budget-v3");
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        monthlyBudgets = data.monthlyBudgets || {};
-        expenses = data.expenses || [];
-        if (data.uCategories) {
-          uCategories = data.uCategories.map((c) => {
-            let nc = { ...c };
-            if (nc.icon === "🍺") {
-              nc.icon = "🎉";
-              if (nc.name === "Town Fun") nc.name = "Misc / Fun";
-            }
-            if (nc.name === "Food & Resupply")
-              nc.name = "Resupply (Trail Food)";
-            return nc;
-          });
-        }
-      } catch (e) {
-        console.error("Failed to load budget data:", e);
-      }
-    } else {
-      // Migrate from v2
-      const legacy = localStorage.getItem("at-budget-v2");
-      if (legacy) {
+    // One-time fallback migration: if the unified Character finance slice is empty,
+    // import legacy localStorage budget data.
+    const storeEmpty =
+      (character.finance.expenses || []).length === 0 &&
+      (character.finance.categories || []).length === 0 &&
+      Object.keys(character.finance.monthlyBudgets || {}).length === 0;
+
+    if (storeEmpty) {
+      const saved = localStorage.getItem("at-budget-v3");
+      if (saved) {
         try {
-          const data = JSON.parse(legacy);
+          const data = JSON.parse(saved);
+          monthlyBudgets = data.monthlyBudgets || {};
           expenses = data.expenses || [];
-          if (data.envelopes || data.categories) {
-            monthlyBudgets[currentMonthKey] = data.envelopes || data.categories;
+          if (data.uCategories) {
+            uCategories = data.uCategories.map((c) => {
+              let nc = { ...c };
+              if (nc.icon === "🍺") {
+                nc.icon = "🎉";
+                if (nc.name === "Town Fun") nc.name = "Misc / Fun";
+              }
+              if (nc.name === "Food & Resupply")
+                nc.name = "Resupply (Trail Food)";
+              return nc;
+            });
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error("Failed to load legacy budget data:", e);
+        }
+      } else {
+        // Migrate from v2
+        const legacy = localStorage.getItem("at-budget-v2");
+        if (legacy) {
+          try {
+            const data = JSON.parse(legacy);
+            expenses = data.expenses || [];
+            if (data.envelopes || data.categories) {
+              monthlyBudgets[currentMonthKey] = data.envelopes || data.categories;
+            }
+          } catch (e) {}
+        }
       }
     }
 
@@ -140,6 +156,9 @@
       ensureBudgetTemplate(currentMonthKey);
     }
     if (uCategories.length > 0) newCategory = uCategories[0].id;
+
+    // Persist any initial seeding/migration into the unified Character model.
+    saveData();
 
     return () => window.removeEventListener("click", handleClick);
   });
@@ -165,8 +184,13 @@
 
   function saveData() {
     if (!mounted) return;
-    const data = { monthlyBudgets, expenses, uCategories };
-    localStorage.setItem("at-budget-v3", JSON.stringify(data));
+    updateCharacter({
+      finance: {
+        monthlyBudgets,
+        expenses,
+        categories: uCategories,
+      },
+    });
   }
 
   function selectEmoji(catId, emoji) {

@@ -3,6 +3,13 @@
   import { loadCharacter, character, updateCharacter, type CharacterV1 } from '../stores/character.svelte';
   import { trailContext, updateContext } from '../stores/trailContext.svelte';
 
+  import EquipmentTab from './character/tabs/EquipmentTab.svelte';
+  import ConsumablesTab from './character/tabs/ConsumablesTab.svelte';
+  import LogisticsTab from './character/tabs/LogisticsTab.svelte';
+  import FinanceTab from './character/tabs/FinanceTab.svelte';
+  import TrainingTab from './character/tabs/TrainingTab.svelte';
+  import EmergencyTab from './character/tabs/EmergencyTab.svelte';
+
   loadCharacter();
 
   // --- Local editing state (we persist on change) ---
@@ -115,7 +122,7 @@
     { id: 'emergency', glyph: '🆘', label: 'Emergency', note: 'Contacts + medical' },
   ];
 
-  function setTrailFromInputs(next: { startDate?: string; currentMile?: number; targetPace?: number; zeroDaysPerMonth?: number }) {
+  function setTrailFromInputs(next: { startDate?: string; currentMile?: number; targetPace?: number; zeroDaysPerMonth?: number; contextExpanded?: boolean }) {
     // Use trailContext updater so the ContextHero + banner updates immediately.
     updateContext(next);
   }
@@ -277,7 +284,7 @@
         <h2 class="h">Trail Core</h2>
         <p class="p">These drive the entire site: timeline, ETA windows, water plans, food assumptions, everything.</p>
 
-        <div class="form" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+        <div class="form" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
           <label class="field">
             <span class="k">Start date</span>
             <input
@@ -287,6 +294,20 @@
               onchange={(e) => setTrailFromInputs({ startDate: (e.currentTarget as HTMLInputElement).value })}
             />
           </label>
+
+          <label class="field">
+            <span class="k">Direction</span>
+            <select
+              class="in"
+              value={direction}
+              onchange={(e) => updateCharacter({ trail: { direction: (e.currentTarget as HTMLSelectElement).value } } as any)}
+            >
+              <option value="NOBO">NOBO</option>
+              <option value="SOBO">SOBO</option>
+              <option value="FLIP">FLIP</option>
+            </select>
+          </label>
+
           <label class="field">
             <span class="k">Current mile</span>
             <input
@@ -325,6 +346,17 @@
           </label>
         </div>
 
+        <div class="checks" style="margin-top: 0.9rem;">
+          <label class="check">
+            <input
+              type="checkbox"
+              checked={trailContext.contextExpanded}
+              onchange={(e) => setTrailFromInputs({ contextExpanded: (e.currentTarget as HTMLInputElement).checked })}
+            />
+            <span>Context panel expanded</span>
+          </label>
+        </div>
+
         <div class="mini">
           <div class="mini-card">
             <div class="mini-k">Mode</div>
@@ -345,15 +377,28 @@
         </div>
       </div>
 
+    {:else if tab === 'equipment'}
+      <EquipmentTab />
+
+    {:else if tab === 'consumables'}
+      <ConsumablesTab />
+
+    {:else if tab === 'logistics'}
+      <LogisticsTab />
+
+    {:else if tab === 'finance'}
+      <FinanceTab />
+
+    {:else if tab === 'training'}
+      <TrainingTab />
+
+    {:else if tab === 'emergency'}
+      <EmergencyTab />
+
     {:else}
       <div class="card">
         <h2 class="h">{tabs.find((x) => x.id === tab)?.label}</h2>
-        <p class="p">Wiring in progress. This section will be a WoW-style panel that edits the unified character data.</p>
-        <div class="todo">
-          <div class="todo-item">• Pack inventory + gear slots</div>
-          <div class="todo-item">• Mail drops + budgeting + training + emergency</div>
-          <div class="todo-item">• Optional: copyable AI portrait prompt + upload</div>
-        </div>
+        <p class="p">This tab is not wired yet.</p>
       </div>
     {/if}
   </section>
@@ -682,24 +727,24 @@
     padding: 1rem;
   }
 
-  .grid {
+  :global(.cs .grid) {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
   }
 
-  .card {
+  :global(.cs .card) {
     border: 1px solid rgba(0,0,0,0.07);
     border-radius: 16px;
     padding: 1rem;
     background: rgba(255,255,255,0.76);
   }
 
-  .card.wide {
+  :global(.cs .card.wide) {
     grid-column: 1 / -1;
   }
 
-  .h {
+  :global(.cs .h) {
     margin: 0;
     font-family: Anton, sans-serif;
     font-weight: 400;
@@ -709,24 +754,24 @@
     color: var(--ink);
   }
 
-  .p {
+  :global(.cs .p) {
     margin: 0.4rem 0 0.9rem;
     color: var(--muted);
     max-width: 70ch;
   }
 
-  .form {
+  :global(.cs .form) {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.75rem;
   }
 
-  .field {
+  :global(.cs .field) {
     display: grid;
     gap: 0.35rem;
   }
 
-  .k {
+  :global(.cs .k) {
     font-family: Oswald, sans-serif;
     font-weight: 700;
     text-transform: uppercase;
@@ -735,8 +780,8 @@
     color: rgba(52, 66, 58, 0.85);
   }
 
-  .in,
-  .ta {
+  :global(.cs .in),
+  :global(.cs .ta) {
     border-radius: 12px;
     border: 1px solid rgba(0,0,0,0.14);
     background: rgba(255,255,255,0.92);
@@ -744,18 +789,18 @@
     font: inherit;
   }
 
-  .in:focus,
-  .ta:focus {
+  :global(.cs .in:focus),
+  :global(.cs .ta:focus) {
     outline: 3px solid rgba(240,224,0,0.55);
     outline-offset: 2px;
   }
 
-  .checks {
+  :global(.cs .checks) {
     display: grid;
     gap: 0.45rem;
   }
 
-  .check {
+  :global(.cs .check) {
     display: flex;
     align-items: center;
     gap: 0.55rem;
@@ -785,14 +830,14 @@
     color: rgba(31,35,32,0.78);
   }
 
-  .actions {
+  :global(.cs .actions) {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
   }
 
-  .action {
+  :global(.cs .action) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -811,7 +856,7 @@
     transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
   }
 
-  .action:hover {
+  :global(.cs .action:hover) {
     transform: translateY(-1px);
     box-shadow: 0 14px 30px rgba(0,0,0,0.12);
     background: rgba(240,224,0,0.18);
@@ -864,21 +909,21 @@
     font-size: 0.8rem;
   }
 
-  .mini {
+  :global(.cs .mini) {
     margin-top: 1rem;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.75rem;
   }
 
-  .mini-card {
+  :global(.cs .mini-card) {
     border-radius: 14px;
     border: 1px solid rgba(0,0,0,0.08);
     background: rgba(255,255,255,0.74);
     padding: 0.8rem;
   }
 
-  .mini-k {
+  :global(.cs .mini-k) {
     color: var(--muted);
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -887,7 +932,7 @@
     font-weight: 700;
   }
 
-  .mini-v {
+  :global(.cs .mini-v) {
     margin-top: 0.25rem;
     font-family: Anton, sans-serif;
     letter-spacing: 0.04em;
@@ -909,8 +954,8 @@
   }
 
   @media (max-width: 720px) {
-    .grid { grid-template-columns: 1fr; }
-    .form { grid-template-columns: 1fr; }
-    .mini { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    :global(.cs .grid) { grid-template-columns: 1fr; }
+    :global(.cs .form) { grid-template-columns: 1fr; }
+    :global(.cs .mini) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>

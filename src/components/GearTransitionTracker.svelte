@@ -1,63 +1,50 @@
 <script lang="ts">
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
+
   let { trailContext = {} as any } = $props<{ trailContext?: any }>();
+
+  loadCharacter();
 
   type Transition = {
     id: string;
     mile: number;
     action: 'pick up' | 'send home' | 'swap';
     item: string;
-    note: string;
+    note?: string;
   };
 
-  const STORAGE_KEY = 'at-gear-transitions-v1';
-
-  let transitions = $state<Transition[]>([]);
+  let transitions = $derived((character.equipment.transitions || []) as Transition[]);
 
   let mile = $state(0);
   let action = $state<Transition['action']>('swap');
   let item = $state('');
   let note = $state('');
 
-  function load() {
-    if (typeof localStorage === 'undefined') return;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) transitions = parsed;
-    } catch {}
-  }
-
-  function save() {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(transitions));
-  }
-
   function add() {
     const trimmed = item.trim();
     if (!trimmed) return;
-    transitions = [
+
+    const next: Transition[] = [
       ...transitions,
       {
         id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()),
         mile: Math.max(0, Number(mile) || 0),
         action,
         item: trimmed,
-        note: note.trim(),
+        note: note.trim() ? note.trim() : undefined,
       },
     ].sort((a, b) => a.mile - b.mile);
 
+    updateCharacter({ equipment: { transitions: next } } as any);
+
     item = '';
     note = '';
-    save();
   }
 
   function remove(id: string) {
-    transitions = transitions.filter((t) => t.id !== id);
-    save();
+    const next = transitions.filter((t) => t.id !== id);
+    updateCharacter({ equipment: { transitions: next } } as any);
   }
-
-  load();
 
   let currentMile = $derived(Number(trailContext?.currentMile ?? 0));
   let upcoming = $derived(transitions.filter((t) => t.mile >= currentMile).slice(0, 8));
@@ -216,4 +203,3 @@
     font-size: 0.92rem;
   }
 </style>
-
