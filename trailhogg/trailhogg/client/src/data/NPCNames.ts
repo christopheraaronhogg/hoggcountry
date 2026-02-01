@@ -93,6 +93,92 @@ export const GREETINGS = {
   ],
 };
 
+// Companion dialogue - periodic comments when hiking with a buddy
+export const COMPANION_DIALOGUE = {
+  hiking: [
+    "Beautiful day for hiking!",
+    "Look at that view!",
+    "Only a few more miles to the shelter!",
+    "Want to take a break?",
+    "I'm so glad we're hiking together.",
+    "This section is gorgeous!",
+    "You're doing great! Keep it up!",
+    "I heard there's a good water source ahead.",
+    "Remember to stay hydrated!",
+    "I love this part of the trail.",
+    "Can you believe we're actually doing this?",
+    "The trail provides!",
+    "One foot in front of the other!",
+    "We're making good time today.",
+  ],
+  tired: [
+    "Need a snack break?",
+    "My legs are feeling it today...",
+    "Maybe we should slow down a bit?",
+    "I could use some water.",
+    "These miles are tough!",
+    "Ready for a rest when you are.",
+    "*huffing* That climb was something!",
+  ],
+  excited: [
+    "This is the life!",
+    "I can't believe we get to do this!",
+    "Best decision ever, hitting the trail!",
+    "Trail family for life!",
+    "This view is worth every blister!",
+    "We're gonna make it to Katahdin!",
+  ],
+  weather: {
+    rain: [
+      "At least the rain is keeping us cool!",
+      "Good thing we have rain gear!",
+      "Rain makes the forest smell amazing.",
+    ],
+    clear: [
+      "Perfect hiking weather!",
+      "Blue skies and good vibes!",
+    ],
+    fog: [
+      "Spooky fog today!",
+      "Can't see much, but it's atmospheric.",
+    ],
+  },
+  milestone: [
+    "We did it! Another milestone!",
+    "Can you believe how far we've come?",
+    "This calls for a celebration snack!",
+  ],
+};
+
+// Get random companion dialogue based on context
+export function getCompanionDialogue(
+  energy: number,
+  morale: number,
+  weather?: string
+): string {
+  // Check for weather-specific dialogue first (30% chance)
+  if (weather && Math.random() < 0.3 && COMPANION_DIALOGUE.weather[weather as keyof typeof COMPANION_DIALOGUE.weather]) {
+    const weatherLines = COMPANION_DIALOGUE.weather[weather as keyof typeof COMPANION_DIALOGUE.weather];
+    return weatherLines[Math.floor(Math.random() * weatherLines.length)];
+  }
+
+  // Tired dialogue if low energy
+  if (energy < 40) {
+    const lines = COMPANION_DIALOGUE.tired;
+    return lines[Math.floor(Math.random() * lines.length)];
+  }
+
+  // Excited dialogue if high morale
+  if (morale > 80) {
+    const lines = COMPANION_DIALOGUE.excited;
+    return lines[Math.floor(Math.random() * lines.length)];
+  }
+
+  // Default hiking dialogue
+  const lines = COMPANION_DIALOGUE.hiking;
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+
 // Encouraging trail tips shared between hikers
 export const TRAIL_TIPS = [
   "The sunrise from the next shelter is incredible!",

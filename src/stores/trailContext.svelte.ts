@@ -19,6 +19,7 @@
  */
 
 import { loadCharacter, character, updateCharacter } from './character.svelte';
+import { recordMileUpdate } from '../lib/progression';
 
 // Trail landmarks for mile context (used across multiple tools)
 export const landmarks = [
@@ -231,6 +232,8 @@ export function updateContext(updates: {
 }, options?: { persist?: boolean }): void {
   if (!_mounted) loadContext();
 
+  const prevMile = _currentMile;
+
   if (updates.currentMile !== undefined) _currentMile = updates.currentMile;
   if (updates.startDate !== undefined) _startDate = updates.startDate;
   if (updates.targetPace !== undefined) _targetPace = updates.targetPace;
@@ -252,6 +255,13 @@ export function updateContext(updates: {
 
   // Also persist legacy key for any remaining consumers.
   saveContext();
+
+  // Progression activity (local only): record mile updates for daily missions.
+  if (updates.currentMile !== undefined && prevMile !== _currentMile) {
+    try {
+      recordMileUpdate(prevMile, _currentMile);
+    } catch {}
+  }
 }
 
 /**

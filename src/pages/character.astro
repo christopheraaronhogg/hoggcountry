@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CharacterPage from '../components/CharacterPage.svelte';
+
+const title = 'Character — Hogg Country';
+const description = 'Your hiker sheet: Trailcraft level, daily missions, and gear-driven warmth stats.';
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero">
+    <span class="chapter font-chapter">AT 2026</span>
+    <h1 class="font-display">Character</h1>
+    <p>Your sheet, your progression, your kit.</p>
+  </section>
+
+  <div class="container character-container">
+    <CharacterPage client:load />
+  </div>
+</BaseLayout>
+
+<style>
+  .character-container {
+    padding: 0 0 4rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+</style>

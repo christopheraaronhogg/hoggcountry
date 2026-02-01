@@ -81,6 +81,24 @@ export type CharacterDevice = {
   chargeFreq: string;
 };
 
+export type CharacterProgressionActivityDay = {
+  toolsOpened: Record<string, number>;
+  milesAdvanced: number;
+  mileUpdates: number;
+};
+
+export type CharacterProgression = {
+  enabled: boolean;
+  xp: number;
+  marks: number;
+  unlocked: Record<string, boolean>; // perkId -> true
+  claimed: Record<string, boolean>; // `${YYYY-MM-DD}:${missionId}` -> true
+  activity: {
+    days: Record<string, CharacterProgressionActivityDay>; // YYYY-MM-DD -> counters
+    lastPrunedAt: string | null;
+  };
+};
+
 export type CharacterV1 = {
   version: CharacterVersion;
   updatedAt: string | null;
@@ -213,6 +231,8 @@ export type CharacterV1 = {
       doctorPhone: string;
     };
   };
+
+  progression: CharacterProgression;
 };
 
 const STORAGE_KEY = 'hcCharacter.v1';
@@ -353,6 +373,18 @@ function defaultCharacter(): CharacterV1 {
         doctorPhone: '',
       },
     },
+
+    progression: {
+      enabled: true,
+      xp: 0,
+      marks: 0,
+      unlocked: {},
+      claimed: {},
+      activity: {
+        days: {},
+        lastPrunedAt: null,
+      },
+    },
   };
 }
 
@@ -416,6 +448,18 @@ function mergeDefaults(base: CharacterV1, incoming: Partial<CharacterV1>): Chara
       ...(incoming.emergency || {}),
       contacts: (incoming.emergency?.contacts as any) ?? base.emergency.contacts,
       personal: { ...base.emergency.personal, ...(incoming.emergency?.personal || {}) },
+    },
+
+    progression: {
+      ...base.progression,
+      ...(incoming.progression || {}),
+      unlocked: { ...base.progression.unlocked, ...(incoming.progression?.unlocked || {}) },
+      claimed: { ...base.progression.claimed, ...(incoming.progression?.claimed || {}) },
+      activity: {
+        ...base.progression.activity,
+        ...(incoming.progression?.activity || {}),
+        days: (incoming.progression?.activity?.days as any) ?? base.progression.activity.days,
+      },
     },
   };
 }
@@ -648,6 +692,7 @@ export const character = {
   get finance() { return _character.finance; },
   get training() { return _character.training; },
   get emergency() { return _character.emergency; },
+  get progression() { return _character.progression; },
 };
 
 export function getCharacterSnapshot(): CharacterV1 {

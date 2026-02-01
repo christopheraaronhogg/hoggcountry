@@ -7,6 +7,9 @@ import { InventoryScene } from './scenes/InventoryScene';
 import { TownScene } from './scenes/TownScene';
 import { GuideScene } from './scenes/GuideScene';
 import { HikerBoxScene } from './scenes/HikerBoxScene';
+import { BearEncounterScene } from './scenes/BearEncounterScene';
+import { RiverCrossingScene } from './scenes/RiverCrossingScene';
+import { JournalScene } from './scenes/JournalScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -29,7 +32,7 @@ const config: Phaser.Types.Core.GameConfig = {
       height: 1440
     }
   },
-  scene: [BootScene, MenuScene, GameScene, UIScene, InventoryScene, TownScene, GuideScene, HikerBoxScene],
+  scene: [BootScene, MenuScene, GameScene, UIScene, InventoryScene, TownScene, GuideScene, HikerBoxScene, BearEncounterScene, RiverCrossingScene, JournalScene],
   physics: {
     default: 'arcade',
     arcade: {

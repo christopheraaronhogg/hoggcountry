@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { gameStorage, type HikerSaveData, type GameSaveData } from '../storage/GameStorage';
 import { bubbleSystem, type BubbleNPC } from '../systems/BubbleSystem';
+import { journalSystem } from '../systems/JournalSystem';
 import {
   SHELTERS, TOWNS, TERRAIN_ZONES, STATE_BOUNDARIES, PEAKS, TRAIL_TOTAL_MILES,
   getTerrainZone, getCurrentState, getNextShelter, getNextTown, getElevationAtMile,
@@ -420,16 +421,21 @@ export class GameScene extends Phaser.Scene {
 
   spawnObstacle() {
     const { width } = this.cameras.main;
-    const obstacleTypes = ['rock', 'roots', 'mud_puddle', 'boulder', 'fallen_log'];
-    const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+    const obstacleTypes = ['rock', 'roots', 'mud_puddle', 'boulder', 'fallen_log', 'river_crossing']; // Added river_crossing
+    
+    // River crossing more common in Maine/North
+    let type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+    if (this.hikerData && this.hikerData.mile > 2000 && Math.random() < 0.2) {
+       type = 'river_crossing';
+    }
 
     // Spawn at top of screen, random position on trail
     const x = width * 0.35 + Math.random() * (width * 0.3);
     const y = -30;
 
-    const obstacle = this.add.sprite(x, y, type);
+    const obstacle = this.add.sprite(x, y, type === 'river_crossing' ? 'stream_crossing' : type); // Use stream sprite for river
     obstacle.setDepth(5);
-    obstacle.setScale(0.8);
+    obstacle.setScale(type === 'river_crossing' ? 1.2 : 0.8);
     obstacle.setData('type', type);
     obstacle.setData('hit', false);
     this.obstacles.push(obstacle);
@@ -585,10 +591,21 @@ export class GameScene extends Phaser.Scene {
 
     // Bear encounter warning
     if (type.sprite === 'bear') {
-      this.events.emit('game-event', {
-        type: 'warning',
-        message: '🐻 Bear spotted nearby! Stay calm...'
-      });
+      // Log bear encounter to journal
+      if (this.hikerData && this.gameState) {
+        journalSystem.addEntry(
+          'encounter',
+          'Bear encounter!',
+          'A black bear appeared on the trail! Heart pounding...',
+          this.gameState.time.day,
+          this.gameState.time.hour,
+          this.hikerData.mile
+        );
+      }
+
+      // Pause game and launch encounter
+      this.scene.pause();
+      this.scene.launch('BearEncounterScene');
     }
   }
 
@@ -885,17 +902,31 @@ export class GameScene extends Phaser.Scene {
         trigger: () => {
           this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 5);
           const sights = [
-            '🦌 Spotted a doe with her fawn!',
-            '🌈 Beautiful rainbow in the distance!',
-            '🦅 Eagle soaring overhead!',
-            '🌸 Wildflowers blooming trailside!',
-            '🍄 Interesting mushrooms on a log!',
-            '🦋 Butterflies dancing around!'
+            { msg: '🦌 Spotted a doe with her fawn!', title: 'Wildlife sighting' },
+            { msg: '🌈 Beautiful rainbow in the distance!', title: 'Rainbow on trail' },
+            { msg: '🦅 Eagle soaring overhead!', title: 'Eagle sighting' },
+            { msg: '🌸 Wildflowers blooming trailside!', title: 'Wildflower bloom' },
+            { msg: '🍄 Interesting mushrooms on a log!', title: 'Trail treasures' },
+            { msg: '🦋 Butterflies dancing around!', title: 'Butterfly moment' }
           ];
+          const sight = sights[Math.floor(Math.random() * sights.length)];
           this.events.emit('game-event', {
             type: 'info',
-            message: sights[Math.floor(Math.random() * sights.length)]
+            message: sight.msg
           });
+
+          // Log scenic moments to journal (occasionally)
+          if (Math.random() < 0.5) {
+            journalSystem.addEntry(
+              'scenic',
+              sight.title,
+              sight.msg,
+              this.gameState.time.day,
+              this.gameState.time.hour,
+              this.hikerData.mile,
+              { weather: this.gameState.weather }
+            );
+          }
         }
       },
       {
@@ -1504,6 +1535,12 @@ export class GameScene extends Phaser.Scene {
           bubbleSystem.generateBubble(this.hikerData.mile, this.hikerData.daysOnTrail);
         }
 
+        // Restore journal entries if saved
+        if (saveData.game.journalData) {
+          journalSystem.deserialize(saveData.game.journalData);
+          console.log('Restored journal entries from save');
+        }
+
         this.events.emit('game-event', {
           type: 'success',
           message: `Welcome back, ${saveData.hikerName}!`
@@ -1618,15 +1655,16 @@ export class GameScene extends Phaser.Scene {
     if (!this.hikerData || !this.gameState) return;
 
     try {
-      // Include bubble data in save
-      const gameStateWithBubble = {
+      // Include bubble and journal data in save
+      const gameStateWithSystems = {
         ...this.gameState,
-        bubbleData: bubbleSystem.serialize()
+        bubbleData: bubbleSystem.serialize(),
+        journalData: journalSystem.serialize()
       };
 
       await gameStorage.save(
         this.hikerData as HikerSaveData,
-        gameStateWithBubble as GameSaveData,
+        gameStateWithSystems as GameSaveData,
         'autosave'
       );
       this.lastSaveTime = Date.now();
@@ -2027,6 +2065,9 @@ export class GameScene extends Phaser.Scene {
 
     // G to open field guide
     this.input.keyboard?.on('keydown-G', () => this.openGuide());
+
+    // J to open trail journal
+    this.input.keyboard?.on('keydown-J', () => this.openJournal());
 
     // H for emergency help/rescue (when in critical condition)
     this.input.keyboard?.on('keydown-H', () => this.requestEmergencyRescue());
@@ -2479,6 +2520,13 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  openJournal() {
+    // Pause the game scene and launch the journal
+    this.scene.pause('GameScene');
+    this.scene.pause('UIScene');
+    this.scene.launch('JournalScene');
+  }
+
   update(time: number, delta: number) {
     const { width, height } = this.cameras.main;
 
@@ -2574,56 +2622,45 @@ export class GameScene extends Phaser.Scene {
       });
 
       // Move obstacles down and check collisions
-      this.obstacles.forEach((obstacle, index) => {
-        obstacle.y += scrollSpeed;
-
-        // Check collision with hiker
-        if (!obstacle.getData('hit')) {
-          const dist = Phaser.Math.Distance.Between(
-            this.hiker.x, this.hiker.y,
-            obstacle.x, obstacle.y
-          );
-          if (dist < 25) {
-            // Hit obstacle!
-            obstacle.setData('hit', true);
-            obstacle.setTint(0xff6666);
-
-            // Apply penalty based on obstacle type
-            const type = obstacle.getData('type');
-            let penalty = 2;
-            let message = 'Tripped on a rock!';
-
-            if (type === 'roots') {
-              penalty = 3;
-              message = 'Caught foot on roots!';
-            } else if (type === 'mud_puddle') {
-              penalty = 1;
-              message = 'Stepped in mud!';
-            } else if (type === 'boulder') {
-              penalty = 4;
-              message = 'Stumbled over boulder!';
-            } else if (type === 'fallen_log') {
-              penalty = 2;
-              message = 'Tripped on fallen log!';
+          this.obstacles.forEach((s, o) => {
+            if (s.y += e, !s.getData('hit') && Phaser.Math.Distance.Between(this.hiker.x, this.hiker.y, s.x, s.y) < 25) {
+              s.setData('hit', true);
+              const type = s.getData('type');
+      
+              if (type === 'river_crossing') {
+                  this.scene.pause();
+                  this.scene.launch('RiverCrossingScene');
+              } else {
+                  s.setTint(0xff6666);
+                  let damage = 2;
+                  let msg = 'Tripped on a rock!';
+                  if (type === 'roots') {
+                    damage = 3;
+                    msg = 'Caught foot on roots!';
+                  } else if (type === 'mud_puddle') {
+                    damage = 1;
+                    msg = 'Stepped in mud!';
+                  } else if (type === 'boulder') {
+                    damage = 4;
+                    msg = 'Stumbled over boulder!';
+                  } else if (type === 'fallen_log') {
+                    damage = 2;
+                    msg = 'Tripped on fallen log!';
+                  }
+                  if (this.hikerData) {
+                    this.hikerData.energy = Math.max(0, this.hikerData.energy - damage);
+                  }
+                  this.events.emit('game-event', {
+                    type: 'warning',
+                    message: msg
+                  });
+              }
             }
-
-            if (this.hikerData) {
-              this.hikerData.energy = Math.max(0, this.hikerData.energy - penalty);
+            if (s.y > Q + 50) {
+              s.destroy();
+              this.obstacles.splice(o, 1);
             }
-            this.events.emit('game-event', {
-              type: 'warning',
-              message
-            });
-          }
-        }
-
-        // Remove when off screen
-        if (obstacle.y > height + 50) {
-          obstacle.destroy();
-          this.obstacles.splice(index, 1);
-        }
-      });
-
+          }),
       // Spawn new obstacles periodically
       this.nextObstacleSpawn -= delta;
       if (this.nextObstacleSpawn <= 0) {
@@ -2749,6 +2786,35 @@ export class GameScene extends Phaser.Scene {
               type: 'milestone',
               message: `🎉 ${stateBoundary.name}! Welcome to ${stateBoundary.state}!`
             });
+
+            // Log to journal
+            const milestoneTitle = `Crossed into ${stateBoundary.state}!`;
+            if (!journalSystem.hasMilestone(milestoneTitle)) {
+              journalSystem.addEntry(
+                'milestone',
+                milestoneTitle,
+                `${stateBoundary.name} - State #${STATE_BOUNDARIES.filter(b => b.mile <= currentMile).length} of 14`,
+                this.gameState.time.day,
+                this.gameState.time.hour,
+                currentMile,
+                { location: stateBoundary.name, state: stateBoundary.state }
+              );
+            }
+          }
+
+          // Log 100-mile markers to journal
+          if (currentMile % 100 === 0 && currentMile > 0) {
+            const milestoneTitle = `Reached ${currentMile} miles!`;
+            if (!journalSystem.hasMilestone(milestoneTitle)) {
+              journalSystem.addEntry(
+                'milestone',
+                milestoneTitle,
+                `${Math.round((currentMile / TRAIL_TOTAL_MILES) * 100)}% of the AT complete!`,
+                this.gameState.time.day,
+                this.gameState.time.hour,
+                currentMile
+              );
+            }
           }
         }
       }
@@ -2846,6 +2912,16 @@ export class GameScene extends Phaser.Scene {
               type: 'success',
               message: `✨ Trail Magic! ${magicData.name} (+${magicData.calories} cal)`
             });
+
+            // Log trail magic to journal
+            journalSystem.addEntry(
+              'memory',
+              'Trail Magic!',
+              `Found ${magicData.name} left by a kind trail angel. The hiking community is amazing!`,
+              this.gameState.time.day,
+              this.gameState.time.hour,
+              this.hikerData.mile
+            );
 
             // Visual feedback
             this.tweens.add({

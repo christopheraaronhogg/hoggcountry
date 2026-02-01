@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { loadContext, getContextSnapshot } from '../../stores/trailContext.svelte';
   import ContextBanner from './ContextBanner.svelte';
+  import { recordToolOpened } from '../../lib/progression';
 
   interface Props {
     toolId: string;
@@ -13,12 +14,13 @@
 
   // Default to visible in SSR so the tool shell isn't a blank page if hydration is delayed/blocked.
   let mounted = $state(true);
-  let ToolComponent = $state<typeof import('svelte').SvelteComponent | null>(null);
+  // Svelte 5 component typing varies by props; keep this permissive for dynamic tool loading.
+  let ToolComponent = $state<any>(null);
   let loadError = $state<string | null>(null);
   let slowLoad = $state(false);
 
   // Tool component loaders
-  const toolLoaders: Record<string, () => Promise<{ default: typeof import('svelte').SvelteComponent }>> = {
+  const toolLoaders: Record<string, () => Promise<{ default: any }>> = {
     character: () => import('../CharacterSheet.svelte'),
     milestone: () => import('../MilestoneCalculator.svelte'),
     weather: () => import('../WeatherAssessor.svelte'),
@@ -53,6 +55,7 @@
       try {
         const module = await toolLoaders[toolId]();
         ToolComponent = module.default;
+        recordToolOpened(toolId);
       } catch (e: any) {
         const msg = e?.message ? String(e.message) : String(e);
         loadError = msg;

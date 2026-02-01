@@ -33,6 +33,8 @@ export interface HikerSaveData {
   currentDayMiles: number;
   totalMilesHiked: number;
   daysOnTrail: number;
+  // Hiking buddy companion
+  activeCompanion?: string;  // NPC ID of current hiking buddy
   skills: {
     trailLegs: number;
     navigation: number;
@@ -77,6 +79,11 @@ export interface GameSaveData {
   temperature: number;
   // Bubble system - persistent NPC hikers
   bubbleData?: import('../systems/BubbleSystem').SerializedBubbleData;
+  // Journal system - trail memories
+  journalData?: import('../systems/JournalSystem').SerializedJournalData;
+  // Trail Angel mode
+  trailAngelUnlocked?: boolean;
+  trailAngelBoxes?: import('../systems/TrailAngelSystem').TrailAngelBox[];
 }
 
 class GameStorage {

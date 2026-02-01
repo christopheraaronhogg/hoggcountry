@@ -5,6 +5,7 @@ const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
 const isGenerate = pathname.startsWith('/generate');
 const isTools = pathname.startsWith('/tools');
+const isCharacter = pathname.startsWith('/character');
 const isAtMap = pathname.startsWith('/at-map');
 
 // Show tracking link only if enabled AND we're past the start date
@@ -22,6 +23,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     <div class="nav-right">
       <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
       <!-- <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a> -->
+      <a href="/character" class={`nav-link ${isCharacter ? 'is-active' : ''}`}>Character</a>
       <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
       <a href="/at-map" class={`nav-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
       {showTracking && (
