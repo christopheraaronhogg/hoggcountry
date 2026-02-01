@@ -1,26 +1,74 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { trailContext, loadContext, updateContext } from '../stores/trailContext.svelte';
   import 'leaflet/dist/leaflet.css';
 
   type Milepost = { mile: number; lat: number; lon: number; scaledTrailMiles?: number };
 
   let container: HTMLDivElement;
 
-  // URL params
-  function getInitialMile(): number {
-    if (typeof window === 'undefined') return 0;
+  const PREVIEW_KEY = 'hcAtWeather.previewMile';
+
+  function parseMileParam(): number | null {
+    if (typeof window === 'undefined') return null;
     const u = new URL(window.location.href);
     const raw = u.searchParams.get('mile');
-    const n = raw == null ? NaN : Number(raw);
-    if (!Number.isFinite(n)) return 0;
+    if (raw == null) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return null;
     return clamp(Math.round(n), 0, 2197);
+  }
+
+  function readSavedPreviewMile(): number | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(PREVIEW_KEY);
+      if (!raw) return null;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) return null;
+      return clamp(Math.round(n), 0, 2197);
+    } catch {
+      return null;
+    }
+  }
+
+  function savePreviewMile(m: number) {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(PREVIEW_KEY, String(Math.round(m)));
+    } catch {}
+  }
+
+  // Initial preview mile selection priority:
+  // 1) ?mile= (share link)
+  // 2) Character current mile (anchor)
+  // 3) last preview mile (local)
+  // 4) 0
+  function getInitialMile(): number {
+    const fromUrl = parseMileParam();
+    if (fromUrl != null) return fromUrl;
+
+    const c = Number(trailContext.currentMile);
+    const onTrail = Boolean(trailContext.isOnTrail);
+
+    // If we're on trail (or current mile is non-zero), anchor to Character by default.
+    if (Number.isFinite(c) && (onTrail || c > 0)) return clamp(Math.round(c), 0, 2197);
+
+    const fromSaved = readSavedPreviewMile();
+    if (fromSaved != null) return fromSaved;
+
+    return 0;
   }
 
   function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
   }
 
+  // Preview mile (explore-mode). This does NOT update Character unless user explicitly confirms.
   let mile = $state<number>(0);
+  let characterMile = $derived.by(() => Number(trailContext.currentMile) || 0);
+
+  let savedMsg = $state('');
   let milepostsByMile = $state<Milepost[]>([]);
   let milepostsList = $state<Milepost[]>([]);
 
@@ -147,8 +195,10 @@
   }
 
   function useMyLocation() {
+    // Preview-only: locate and snap preview mile, but do NOT update Character.
     if (typeof window === 'undefined') return;
     locationErr = '';
+    savedMsg = '';
 
     if (!('geolocation' in navigator)) {
       locationErr = 'Geolocation not supported on this device.';
@@ -182,6 +232,72 @@
         } else {
           userDistMeters = null;
         }
+      },
+      (e) => {
+        locating = false;
+        userDistMeters = null;
+        locationErr = e?.message || 'Location permission denied.';
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 60_000,
+      }
+    );
+  }
+
+  function setAsCurrentMile() {
+    savedMsg = '';
+    locationErr = '';
+    try {
+      updateContext({ currentMile: mile });
+      savedMsg = `Saved: current mile set to ${mile}.`;
+    } catch {
+      savedMsg = 'Saved.';
+    }
+  }
+
+  function syncGpsToCurrentMile() {
+    // Locate + snap to nearest mile AND update Character.
+    if (typeof window === 'undefined') return;
+    locationErr = '';
+    savedMsg = '';
+
+    if (!('geolocation' in navigator)) {
+      locationErr = 'Geolocation not supported on this device.';
+      return;
+    }
+
+    locating = true;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        locating = false;
+        const la = pos?.coords?.latitude;
+        const lo = pos?.coords?.longitude;
+        if (typeof la !== 'number' || typeof lo !== 'number') {
+          locationErr = 'Could not read location.';
+          return;
+        }
+
+        const m = nearestMileForLatLng(la, lo);
+        if (m == null) {
+          locationErr = 'Could not match your location to a trail mile.';
+          return;
+        }
+
+        const clamped = clamp(m, 0, 2197);
+        mile = clamped;
+
+        const mp = milepostsByMile[clamped];
+        if (mp) {
+          userDistMeters = haversineMeters([la, lo], [mp.lat, mp.lon]);
+        } else {
+          userDistMeters = null;
+        }
+
+        updateContext({ currentMile: clamped });
+        savedMsg = `Synced: current mile set to ${clamped}.`;
       },
       (e) => {
         locating = false;
@@ -318,11 +434,13 @@
   $effect(() => {
     if (!milepostsByMile.length) return;
     updateUrl(mile);
+    savePreviewMile(mile);
     fetchWeatherDebounced();
     if (_marker) _marker.setLatLng([lat, lon]);
   });
 
   onMount(async () => {
+    loadContext();
     mile = getInitialMile();
 
     try {
@@ -406,9 +524,13 @@
   <div class="controls card">
     <div class="row">
       <div>
-        <div class="k">Mile marker</div>
+        <div class="k">Preview mile</div>
         <div class="v">{mile}</div>
         <div class="sub">Lat {lat.toFixed(4)} • Lon {lon.toFixed(4)}</div>
+        <div class="sub small">Current (Character): <b>{characterMile}</b></div>
+        {#if savedMsg}
+          <div class="sub saved">{savedMsg}</div>
+        {/if}
         {#if userDistMeters != null}
           <div class="sub small">Nearest mile to you: ~{fmtMi(userDistMeters)} mi away</div>
         {/if}
@@ -418,7 +540,13 @@
       </div>
       <div class="actions">
         <button class="btn" type="button" onclick={useMyLocation} disabled={locating}>
-          {locating ? 'Locating…' : 'Use my location'}
+          {locating ? 'Locating…' : 'Use GPS (preview)'}
+        </button>
+        <button class="btn" type="button" onclick={syncGpsToCurrentMile} disabled={locating}>
+          {locating ? 'Locating…' : 'Sync GPS → Current'}
+        </button>
+        <button class="btn" type="button" onclick={setAsCurrentMile} disabled={mile === characterMile}>
+          Set as Current
         </button>
         <button class="btn" type="button" onclick={copyLink}>Copy link</button>
       </div>
@@ -562,9 +690,16 @@
     font-weight: 700;
   }
 
+  .sub.saved {
+    color: rgba(22, 101, 52, 0.95);
+    font-weight: 800;
+  }
+
   .actions {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .btn {

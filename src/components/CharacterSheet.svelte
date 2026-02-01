@@ -126,6 +126,89 @@
     // Use trailContext updater so the ContextHero + banner updates immediately.
     updateContext(next);
   }
+
+  // ===== AT Weather / GPS sync helpers =====
+  type Milepost = { mile: number; lat: number; lon: number };
+  let gpsSyncing = $state(false);
+  let gpsSyncMsg = $state('');
+  let gpsSyncErr = $state('');
+  let gpsMileposts = $state<Milepost[] | null>(null);
+
+  function haversineMeters(a: [number, number], b: [number, number]) {
+    const R = 6371000;
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const [lat1, lon1] = a;
+    const [lat2, lon2] = b;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const x =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+
+  async function ensureGpsMileposts(): Promise<Milepost[]> {
+    if (gpsMileposts) return gpsMileposts;
+    const res = await fetch('/at-mileposts.json', { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`mileposts fetch failed: ${res.status}`);
+    const data = await res.json();
+    const mps: any[] = Array.isArray(data) ? data : data?.mileposts || [];
+    gpsMileposts = mps.map((m) => ({ mile: Number(m.mile), lat: Number(m.lat), lon: Number(m.lon) })) as Milepost[];
+    return gpsMileposts;
+  }
+
+  function nearestMileForLatLng(list: Milepost[], lat: number, lon: number): number | null {
+    if (!list.length) return null;
+    let best = list[0].mile;
+    let bestD = Infinity;
+    for (const mp of list) {
+      const d = haversineMeters([lat, lon], [mp.lat, mp.lon]);
+      if (d < bestD) {
+        bestD = d;
+        best = mp.mile;
+      }
+    }
+    return best;
+  }
+
+  function getGeoPosition(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      if (!('geolocation' in navigator)) {
+        reject(new Error('Geolocation not supported on this device.'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 60_000,
+      });
+    });
+  }
+
+  async function syncGpsToCurrentMile() {
+    gpsSyncErr = '';
+    gpsSyncMsg = '';
+    gpsSyncing = true;
+
+    try {
+      const list = await ensureGpsMileposts();
+      const pos = await getGeoPosition();
+      const la = pos?.coords?.latitude;
+      const lo = pos?.coords?.longitude;
+      if (typeof la !== 'number' || typeof lo !== 'number') throw new Error('Could not read location.');
+
+      const m = nearestMileForLatLng(list, la, lo);
+      if (m == null) throw new Error('Could not match your location to a trail mile.');
+
+      const clamped = Math.max(0, Math.min(2197, Math.round(m)));
+      updateContext({ currentMile: clamped });
+      gpsSyncMsg = `Synced current mile to ${clamped}.`;
+    } catch (e: any) {
+      gpsSyncErr = e?.message || 'GPS sync failed.';
+    } finally {
+      gpsSyncing = false;
+    }
+  }
 </script>
 
 <div class="cs" transition:fade={{ duration: 120 }}>
@@ -344,6 +427,19 @@
               onchange={(e) => setTrailFromInputs({ zeroDaysPerMonth: Number((e.currentTarget as HTMLInputElement).value) })}
             />
           </label>
+        </div>
+
+        <div class="actions" style="margin-top: 0.85rem;">
+          <a class="action" href={`/at-weather?mile=${Number(trailContext.currentMile || 0)}`}>AT Weather</a>
+          <button class="action" type="button" onclick={syncGpsToCurrentMile} disabled={gpsSyncing}>
+            {gpsSyncing ? 'Syncing GPS…' : 'Sync GPS → Current'}
+          </button>
+          {#if gpsSyncMsg}
+            <span class="muted"><strong>{gpsSyncMsg}</strong></span>
+          {/if}
+          {#if gpsSyncErr}
+            <span class="muted" style="color: #b91c1c; font-weight: 800;">{gpsSyncErr}</span>
+          {/if}
         </div>
 
         <div class="checks" style="margin-top: 0.9rem;">
