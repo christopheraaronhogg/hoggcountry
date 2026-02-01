@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { loadContext, trailContext, updateContext } from "../stores/trailContext.svelte";
   import "leaflet/dist/leaflet.css";
 
   import atWaterSources from "../data/at-water-sources.json";
@@ -8,13 +9,119 @@
 
   let container: HTMLDivElement;
 
-  // UI state
-  let showMileMarkers = true;
-  let showWaterSources = false;
-  let showResupplyStops = true;
-  let showRoadCrossings = false;
-  let showShelters = true;
-  let showHoggTracker = false;
+  // UI state (Layers)
+  let showMileMarkers = $state(true);
+  let showWaterSources = $state(false);
+  let showResupplyStops = $state(true);
+  let showRoadCrossings = $state(false);
+  let showShelters = $state(true);
+  // Per request: tracker on by default.
+  let showHoggTracker = $state(true);
+
+  // Mobile panel
+  let panelOpen = $state(false);
+  let panelTab = $state<"layers" | "nearby">("layers");
+
+  // Mile selection (like AT Weather)
+  const PREVIEW_KEY = "hcAtMap.previewMile";
+
+  function clamp(n: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function parseMileParam(): number | null {
+    if (typeof window === "undefined") return null;
+    const u = new URL(window.location.href);
+    const raw = u.searchParams.get("mile");
+    if (raw == null) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return null;
+    return clamp(Math.round(n), 0, 2197);
+  }
+
+  function readSavedPreviewMile(): number | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(PREVIEW_KEY);
+      if (!raw) return null;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) return null;
+      return clamp(Math.round(n), 0, 2197);
+    } catch {
+      return null;
+    }
+  }
+
+  function savePreviewMile(m: number) {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(PREVIEW_KEY, String(Math.round(m)));
+    } catch {}
+  }
+
+  let selectedMile = $state<number>(0); // preview mile
+  let savedMile = $derived.by(() => Number(trailContext.currentMile) || 0);
+
+  let timeOffsetHours = $state<number>(0); // 0..24 step 3
+  let showPoiTempsOnMap = $state<boolean>(false);
+
+  // Map hooks (wired after Leaflet init)
+  let mapReady = $state(false);
+  let syncOverlaysFn: (() => void) | null = null;
+  let locatePreviewFn: (() => void) | null = null;
+  let centerOnSelectedFn: (() => void) | null = null;
+
+  function timeLabel(h: number) {
+    return h === 0 ? "Now" : `+${h}h`;
+  }
+
+  function updateUrl(nextMile: number) {
+    if (typeof window === "undefined") return;
+    const u = new URL(window.location.href);
+    u.searchParams.set("mile", String(Math.round(nextMile)));
+    window.history.replaceState({}, "", u.toString());
+  }
+
+  function getInitialMile(): number {
+    const fromUrl = parseMileParam();
+    if (fromUrl != null) return fromUrl;
+
+    const c = Number(trailContext.currentMile);
+    const onTrail = Boolean(trailContext.isOnTrail);
+    if (Number.isFinite(c) && (onTrail || c > 0)) return clamp(Math.round(c), 0, 2197);
+
+    const fromSaved = readSavedPreviewMile();
+    if (fromSaved != null) return fromSaved;
+
+    return 0;
+  }
+
+  // Keep URL + local "last mile" in sync as user explores.
+  $effect(() => {
+    updateUrl(selectedMile);
+    savePreviewMile(selectedMile);
+  });
+
+  // When toggles change, sync Leaflet overlays.
+  $effect(() => {
+    if (!mapReady || !syncOverlaysFn) return;
+    // touch reactive inputs
+    void showMileMarkers;
+    void showWaterSources;
+    void showResupplyStops;
+    void showRoadCrossings;
+    void showShelters;
+    void showHoggTracker;
+
+    syncOverlaysFn();
+  });
+
+  // When selected mile changes, move the selected-mile marker.
+  $effect(() => {
+    if (!mapReady || !centerOnSelectedFn) return;
+    void selectedMile;
+    centerOnSelectedFn();
+  });
 
   function haversineMeters(a: [number, number], b: [number, number]) {
     const R = 6371000;
@@ -31,6 +138,11 @@
 
   // Keep map init client-only.
   onMount(async () => {
+    loadContext();
+    selectedMile = getInitialMile();
+    updateUrl(selectedMile);
+    savePreviewMile(selectedMile);
+
     const L = await import("leaflet");
 
     const map = L.map(container, {
@@ -287,6 +399,44 @@
       console.error(err);
     }
 
+    // Selected mile marker (draggable)
+    const mileIcon = L.divIcon({
+      className: "hc-mile-pin",
+      html: '<div class="hc-mile-pin__dot"></div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    });
+
+    let selectedMarker: any = null;
+
+    function moveSelectedMarker(recenter: boolean = false) {
+      const ll = coordForMile(selectedMile);
+      if (!ll) return;
+
+      if (!selectedMarker) {
+        selectedMarker = L.marker(ll, { icon: mileIcon, draggable: true }).addTo(map);
+        selectedMarker.on("dragend", () => {
+          const pos = selectedMarker.getLatLng();
+          const m = nearestMileForLatLng(pos.lat, pos.lng);
+          if (m == null) return;
+          selectedMile = clamp(m, 0, 2197);
+        });
+      } else {
+        selectedMarker.setLatLng(ll);
+      }
+
+      if (recenter) {
+        map.setView(ll, Math.max(map.getZoom(), 12));
+      }
+    }
+
+    // Expose marker sync to Svelte UI
+    centerOnSelectedFn = () => moveSelectedMarker(false);
+
+    // Initial: jump to selected mile (Character/current) if available.
+    // (Do this after mileCoord is loaded so coordForMile works.)
+    moveSelectedMarker(true);
+
     // HoggCountry Tracker (Garmin inReach MapShare → Netlify Function → GeoJSON)
     let hoggLastFetchedAt = 0;
     let hoggLastUpdatedWhen: string | null = null;
@@ -449,6 +599,16 @@
     syncOverlays();
     map.on("zoomend", syncOverlays);
 
+    // Wire Svelte UI ↔ Leaflet
+    syncOverlaysFn = syncOverlays;
+    mapReady = true;
+
+    // Tracker ON by default
+    if (showHoggTracker) {
+      startHoggTrackerPolling();
+      refreshHoggTracker();
+    }
+
     // Click-to-mile + nearest info
     let infoPopup: any = null;
 
@@ -511,6 +671,10 @@
       if (typeof lat !== "number" || typeof lon !== "number") return;
 
       const mile = nearestMileForLatLng(lat, lon);
+      if (mile != null) {
+        selectedMile = clamp(mile, 0, 2197);
+        moveSelectedMarker(false);
+      }
 
       const water = mile == null ? { prev: null, next: null } : nearestByMile(atWaterSources as any[], mile);
       const resupply = mile == null ? { prev: null, next: null } : nearestByMile(RESUPPLY_STOPS, mile);
@@ -566,7 +730,15 @@
             .addTo(map)
             .bindPopup("<b>Your location</b>");
 
-          map.setView([lat, lon], Math.max(map.getZoom(), 12));
+          // Snap the selected mile to the nearest trail mile.
+          const m = nearestMileForLatLng(lat, lon);
+          if (m != null) {
+            selectedMile = clamp(m, 0, 2197);
+            moveSelectedMarker(true);
+          } else {
+            map.setView([lat, lon], Math.max(map.getZoom(), 12));
+          }
+
           myLocationMarker.openPopup();
         },
         (err) => {
@@ -579,108 +751,103 @@
       );
     }
 
-    // Custom little control UI
-    const Controls = L.Control.extend({
-      onAdd: function () {
-        const div = L.DomUtil.create("div", "hc-map-controls");
-        div.innerHTML = `
-          <div class="hc-map-controls-inner">
-            <label class="hc-toggle">
-              <input id="hc-mile-toggle" type="checkbox" ${showMileMarkers ? "checked" : ""} />
-              <span>Mile markers</span>
-            </label>
+    // Wire locate to the Svelte UI (bottom sheet button)
+    locatePreviewFn = () => locateMe();
 
-            <label class="hc-toggle">
-              <input id="hc-resupply-toggle" type="checkbox" ${showResupplyStops ? "checked" : ""} />
-              <span>Resupply</span>
-            </label>
-
-            <label class="hc-toggle">
-              <input id="hc-water-toggle" type="checkbox" ${showWaterSources ? "checked" : ""} />
-              <span>Water (zoom 11+)</span>
-            </label>
-
-            <label class="hc-toggle">
-              <input id="hc-shelter-toggle" type="checkbox" ${showShelters ? "checked" : ""} />
-              <span>Shelters (zoom 10+)</span>
-            </label>
-
-            <label class="hc-toggle">
-              <input id="hc-hogg-toggle" type="checkbox" ${showHoggTracker ? "checked" : ""} />
-              <span>Hogg tracker (live)</span>
-            </label>
-
-            <label class="hc-toggle">
-              <input id="hc-cross-toggle" type="checkbox" ${showRoadCrossings ? "checked" : ""} />
-              <span>Road crossings</span>
-            </label>
-
-            <button id="hc-locate" type="button">Locate me</button>
-          </div>
-        `;
-
-        // Prevent clicks from dragging the map.
-        L.DomEvent.disableClickPropagation(div);
-
-        const mileToggle = div.querySelector("#hc-mile-toggle") as HTMLInputElement;
-        const resupplyToggle = div.querySelector("#hc-resupply-toggle") as HTMLInputElement;
-        const waterToggle = div.querySelector("#hc-water-toggle") as HTMLInputElement;
-        const shelterToggle = div.querySelector("#hc-shelter-toggle") as HTMLInputElement;
-        const hoggToggle = div.querySelector("#hc-hogg-toggle") as HTMLInputElement;
-        const crossToggle = div.querySelector("#hc-cross-toggle") as HTMLInputElement;
-        const locate = div.querySelector("#hc-locate") as HTMLButtonElement;
-
-        mileToggle.addEventListener("change", () => {
-          showMileMarkers = mileToggle.checked;
-          syncOverlays();
-        });
-
-        resupplyToggle.addEventListener("change", () => {
-          showResupplyStops = resupplyToggle.checked;
-          syncOverlays();
-        });
-
-        waterToggle.addEventListener("change", () => {
-          showWaterSources = waterToggle.checked;
-          syncOverlays();
-        });
-
-        shelterToggle.addEventListener("change", () => {
-          showShelters = shelterToggle.checked;
-          syncOverlays();
-        });
-
-        hoggToggle.addEventListener("change", () => {
-          showHoggTracker = hoggToggle.checked;
-          syncOverlays();
-
-          if (showHoggTracker) {
-            startHoggTrackerPolling();
-            refreshHoggTracker();
-          } else {
-            stopHoggTrackerPolling();
-            clearHoggLayer();
-          }
-        });
-
-        crossToggle.addEventListener("change", () => {
-          showRoadCrossings = crossToggle.checked;
-          syncOverlays();
-        });
-
-        locate.addEventListener("click", () => locateMe());
-
-        return div;
-      },
-    });
-
-    new Controls({ position: "topright" }).addTo(map);
+    // Mobile-first UI: Leaflet's in-map checkbox panel removed.
+    // Controls now live in a bottom sheet (Svelte UI).
   });
 </script>
 
-<div class="at-map" bind:this={container} aria-label="Appalachian Trail map" />
+<div class="wrap">
+  <div class="mapWrap">
+    <div class="at-map" bind:this={container} aria-label="Appalachian Trail map" />
+
+    <button
+      class="fab"
+      type="button"
+      aria-label="Open map controls"
+      title="Layers & nearby"
+      on:click={() => (panelOpen = true)}
+    >
+      <svg class="fabIco" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          fill="currentColor"
+          d="M12 2 1 7l11 5 9-4.09V17h2V7L12 2Zm0 12L1 9v2l11 5 11-5V9l-11 5Zm0 6L1 15v2l11 5 11-5v-2l-11 5Z"
+        />
+      </svg>
+    </button>
+  </div>
+
+  {#if panelOpen}
+    <div class="backdrop" on:click={() => (panelOpen = false)} aria-hidden="true"></div>
+  {/if}
+
+  <aside class="sheet" class:open={panelOpen} aria-label="Map controls">
+    <div class="sheetTop" on:click|stopPropagation>
+      <div class="handle" aria-hidden="true"></div>
+
+      <div class="sheetHeader">
+        <div class="title">AT Map</div>
+        <div class="sub">
+          Mile <b>{selectedMile}</b> • Saved <b>{savedMile}</b>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab" class:active={panelTab === 'layers'} type="button" on:click={() => (panelTab = 'layers')}>Layers</button>
+        <button class="tab" class:active={panelTab === 'nearby'} type="button" on:click={() => (panelTab = 'nearby')}>Nearby</button>
+      </div>
+
+      {#if panelTab === 'layers'}
+        <div class="section">
+          <div class="row">
+            <button class="btn" type="button" on:click={() => locatePreviewFn?.()}>Use my location</button>
+            <button class="btn" type="button" disabled={selectedMile === savedMile} on:click={() => updateContext({ currentMile: selectedMile })}>Set as current</button>
+            <button class="btn ghost" type="button" on:click={() => (panelOpen = false)}>Close</button>
+          </div>
+
+          <div class="toggles">
+            <label class="toggle"><input type="checkbox" bind:checked={showHoggTracker} /> <span>Hogg tracker</span></label>
+            <label class="toggle"><input type="checkbox" bind:checked={showResupplyStops} /> <span>Resupply</span></label>
+            <label class="toggle"><input type="checkbox" bind:checked={showShelters} /> <span>Shelters</span></label>
+            <label class="toggle"><input type="checkbox" bind:checked={showWaterSources} /> <span>Water (zoom 11+)</span></label>
+            <label class="toggle"><input type="checkbox" bind:checked={showRoadCrossings} /> <span>Road crossings</span></label>
+            <label class="toggle"><input type="checkbox" bind:checked={showMileMarkers} /> <span>Mile markers</span></label>
+          </div>
+
+          <div class="hint">Tip: tap the map to move the mile marker. Drag the dot to fine-tune.</div>
+        </div>
+      {:else}
+        <div class="section">
+          <div class="row">
+            <button class="btn" type="button" on:click={() => locatePreviewFn?.()}>Use my location</button>
+            <button class="btn" type="button" disabled={selectedMile === savedMile} on:click={() => updateContext({ currentMile: selectedMile })}>Set as current</button>
+          </div>
+
+          <div class="time">
+            <div class="timeLabel">Time</div>
+            <div class="timeValue">{timeLabel(timeOffsetHours)}</div>
+            <input class="slider" type="range" min="0" max="24" step="3" bind:value={timeOffsetHours} aria-label="Time horizon" />
+            <div class="timeHint">3-hour steps • v1 uses this for POI temps next.</div>
+          </div>
+
+          <div class="hint">Nearby POIs list + temp badges are next in this iteration.</div>
+        </div>
+      {/if}
+    </div>
+  </aside>
+</div>
 
 <style>
+  .wrap {
+    position: relative;
+  }
+
+  .mapWrap {
+    position: relative;
+  }
+
   .at-map {
     width: 100%;
     height: min(72vh, 720px);
@@ -694,43 +861,237 @@
     font: inherit;
   }
 
-  :global(.hc-map-controls) {
-    background: rgba(15, 23, 42, 0.92);
-    color: #e2e8f0;
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    border-radius: 12px;
-    padding: 8px 10px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(8px);
+  :global(.hc-mile-pin) {
+    background: transparent;
+    border: none;
   }
 
-  :global(.hc-map-controls-inner) {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 140px;
+  :global(.hc-mile-pin__dot) {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #f0e000;
+    border: 2px solid #111827;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
   }
 
-  :global(.hc-toggle) {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-    user-select: none;
-  }
-
-  :global(.hc-map-controls button) {
-    background: rgba(34, 197, 94, 0.18);
-    color: #bbf7d0;
-    border: 1px solid rgba(34, 197, 94, 0.35);
-    border-radius: 10px;
-    padding: 6px 8px;
-    font-weight: 600;
+  .fab {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.15);
+    background: rgba(255,255,255,0.85);
+    color: rgba(31, 41, 55, 0.9);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.14);
     cursor: pointer;
   }
 
-  :global(.hc-map-controls button:hover) {
-    background: rgba(34, 197, 94, 0.26);
-    border-color: rgba(34, 197, 94, 0.5);
+  .fabIco {
+    width: 20px;
+    height: 20px;
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 999;
+  }
+
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    transform: translateY(102%);
+    transition: transform 220ms ease;
+    pointer-events: none;
+  }
+
+  .sheet.open {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .sheetTop {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(0,0,0,0.10);
+    border-bottom: none;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -18px 60px rgba(0,0,0,0.22);
+    padding: 10px 12px 14px;
+    backdrop-filter: blur(10px);
+  }
+
+  .handle {
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.18);
+    margin: 0 auto 10px;
+  }
+
+  .sheetHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .title {
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+    color: rgba(31, 41, 55, 0.9);
+  }
+
+  .sub {
+    font-size: 0.95rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .tab {
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.75);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+    color: rgba(31, 41, 55, 0.84);
+    cursor: pointer;
+  }
+
+  .tab.active {
+    background: rgba(240, 224, 0, 0.22);
+    border-color: rgba(0,0,0,0.18);
+  }
+
+  .section {
+    display: grid;
+    gap: 12px;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.82);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .btn.ghost {
+    background: rgba(255,255,255,0.0);
+  }
+
+  .toggles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+  }
+
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.86);
+    user-select: none;
+  }
+
+  .hint {
+    font-size: 0.95rem;
+    color: rgba(55, 65, 81, 0.7);
+  }
+
+  .time {
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.65);
+  }
+
+  .timeLabel {
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+    color: rgba(31, 41, 55, 0.75);
+    font-weight: 800;
+  }
+
+  .timeValue {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: rgba(31, 41, 55, 0.9);
+    margin-top: 2px;
+  }
+
+  .slider {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .timeHint {
+    font-size: 0.9rem;
+    color: rgba(55, 65, 81, 0.65);
+    margin-top: 6px;
+  }
+
+  @media (min-width: 980px) {
+    /* Desktop: keep panel less intrusive */
+    .sheetTop {
+      border-radius: 18px;
+      margin-bottom: 16px;
+    }
+    .sheet {
+      left: auto;
+      right: 16px;
+      bottom: 16px;
+      max-width: 420px;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .backdrop { display: none; }
+    .fab { display: none; }
+  }
+
+  @media (max-width: 520px) {
+    .toggles { grid-template-columns: 1fr; }
   }
 </style>
