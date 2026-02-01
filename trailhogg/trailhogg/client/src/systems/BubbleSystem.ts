@@ -127,7 +127,7 @@ export class BubbleSystem {
         memorableEvents: [],
       },
 
-      gossip: data.gossip,
+      trailTips: data.trailTips,
     };
   }
 
@@ -155,7 +155,7 @@ export class BubbleSystem {
         if (!isHikingHours) {
           // Stop for the night
           npc.state = 'resting';
-          npc.currentLocation = this.findNearestShelter(npc.mile);
+          npc.currentLocation = this.findNearestShelter(npc.mile) || undefined;
           break;
         }
 
@@ -380,11 +380,12 @@ export class BubbleSystem {
   }
 
   // Get random gossip from an NPC
-  getGossip(npcId: string): string | null {
+  // Get a helpful trail tip from an NPC
+  getTrailTip(npcId: string): string | null {
     const npc = this.npcs.get(npcId);
-    if (!npc || npc.gossip.length === 0) return null;
+    if (!npc || npc.trailTips.length === 0) return null;
 
-    return npc.gossip[Math.floor(Math.random() * npc.gossip.length)];
+    return npc.trailTips[Math.floor(Math.random() * npc.trailTips.length)];
   }
 
   // Yard sale access

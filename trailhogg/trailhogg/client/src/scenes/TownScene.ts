@@ -617,7 +617,7 @@ export class TownScene extends Phaser.Scene {
       color: '#ffffff'
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 125, 'Share stories, learn trail gossip, make friends', {
+    this.add.text(width / 2, 125, 'Share stories, make friends, get trail tips', {
       font: 'italic 11px Courier',
       color: '#aaaaaa'
     }).setOrigin(0.5);
@@ -635,7 +635,7 @@ export class TownScene extends Phaser.Scene {
       return;
     }
 
-    // Show each NPC with their story/gossip
+    // Show each NPC with their trail tips
     const startY = 160;
     const cardHeight = 80;
 
@@ -664,13 +664,13 @@ export class TownScene extends Phaser.Scene {
       });
       container.add(hometown);
 
-      // Get gossip from NPC
-      const gossip = bubbleSystem.getGossip(npc.id) || "Just enjoying the trail vibes...";
-      const gossipText = this.add.text(-width / 2 + 40, 18, `"${gossip.substring(0, 50)}${gossip.length > 50 ? '...' : ''}"`, {
+      // Get trail tip from NPC
+      const tip = bubbleSystem.getTrailTip(npc.id) || "Just enjoying the trail...";
+      const tipText = this.add.text(-width / 2 + 40, 18, `"${tip.substring(0, 50)}${tip.length > 50 ? '...' : ''}"`, {
         font: 'italic 10px Courier',
         color: '#aaddaa'
       });
-      container.add(gossipText);
+      container.add(tipText);
 
       // Chat button
       const chatBtn = this.add.rectangle(width / 2 - 60, 0, 60, 35, 0x2e5339);
