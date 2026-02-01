@@ -558,6 +558,83 @@ export class NetworkManager {
 
     console.log('[NetworkManager] Disconnected');
   }
+
+  // =================================================================================
+  // HIKER BOX SYSTEM (Async Social Simulation)
+  // Uses localStorage to simulate a persistent server for this prototype.
+  // In production, this would call the Colyseus server.
+  // =================================================================================
+
+  /**
+   * Get hiker box contents
+   */
+  async getHikerBox(boxId: string, locationName: string): Promise<{ boxId: string, locationName: string, items: any[] }> {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const storageKey = `hikerbox_${boxId}`;
+    const stored = localStorage.getItem(storageKey);
+    
+    let items = [];
+    if (stored) {
+      items = JSON.parse(stored);
+    } else {
+      // Initialize with random starter items if empty
+      if (Math.random() > 0.3) {
+        items = this.generateRandomBoxItems();
+        localStorage.setItem(storageKey, JSON.stringify(items));
+      }
+    }
+
+    return {
+      boxId,
+      locationName,
+      items
+    };
+  }
+
+  /**
+   * Update hiker box contents (leave/take)
+   */
+  async updateHikerBox(boxId: string, items: any[]): Promise<void> {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    const storageKey = `hikerbox_${boxId}`;
+    localStorage.setItem(storageKey, JSON.stringify(items));
+    
+    console.log(`[NetworkManager] Updated hiker box ${boxId}:`, items);
+  }
+
+  private generateRandomBoxItems(): any[] {
+    const items = [];
+    const count = Math.floor(Math.random() * 4); // 0-3 items
+    
+    const possibleItems = [
+      { name: 'Half-eaten Snickers', type: 'food', value: 125, weight: 0.05, leftBy: 'Trail Angel' },
+      { name: 'Ramen Packet', type: 'food', value: 400, weight: 0.2, leftBy: 'Hiker Trash' },
+      { name: 'Gas Canister (Partial)', type: 'gear', value: 30, weight: 0.3, leftBy: 'Early Riser' },
+      { name: 'Spare Stakes', type: 'gear', value: 80, weight: 0.1, leftBy: 'Gram Weenie' },
+      { name: 'Paperback Book', type: 'gear', value: 50, weight: 0.5, leftBy: 'Bookworm' },
+      { name: 'Oatmeal', type: 'food', value: 150, weight: 0.1, leftBy: 'Mom' }
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const template = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+      items.push({
+        id: `gen_${Date.now()}_${i}`,
+        name: template.name,
+        type: template.type,
+        value: template.value,
+        weight: template.weight,
+        quantity: 1,
+        leftBy: template.leftBy,
+        timestamp: Date.now() - Math.random() * 86400000 * 7 // Last week
+      });
+    }
+    
+    return items;
+  }
 }
 
 // Singleton instance

@@ -113,6 +113,8 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 
 ## Current Session Tasks
+- [ ] 2 and 3 sound great *(20:19)*
+- [x] Come up with 3 ideas to make our game more fun *(20:17)*
 - [ ] Good *(12:54)*
 - [x] Neee ability to remove highlights too *(12:47)*
 - [x] Well, the feature is there now like apparently i can highlight/add notes but they dont show anywhere *(12:40)*

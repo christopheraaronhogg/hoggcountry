@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { gameStorage, type HikerSaveData, type GameSaveData } from '../storage/GameStorage';
+import { bubbleSystem, type BubbleNPC } from '../systems/BubbleSystem';
 import {
   SHELTERS, TOWNS, TERRAIN_ZONES, STATE_BOUNDARIES, PEAKS, TRAIL_TOTAL_MILES,
   getTerrainZone, getCurrentState, getNextShelter, getNextTown, getElevationAtMile,
@@ -56,6 +57,11 @@ export class GameScene extends Phaser.Scene {
   // Other hikers
   private otherHikers: Phaser.GameObjects.Container[] = [];
   private nextHikerSpawn: number = 0;
+
+  // Bubble system - persistent NPC hikers
+  private bubbleSprites: Map<string, Phaser.GameObjects.Container> = new Map();
+  private lastBubbleSimulation: number = 0;
+  private bubbleSimulationInterval: number = 5000; // 5 seconds
 
   // Viewpoints
   private viewpoints: Phaser.GameObjects.Container[] = [];
@@ -429,32 +435,26 @@ export class GameScene extends Phaser.Scene {
     this.obstacles.push(obstacle);
   }
 
-  spawnLandmark(mile: number, name: string, hasWater: boolean = false) {
+  spawnLandmark(mile: number, name: string, hasWater: boolean = false, isTown: boolean = false) {
     const { width } = this.cameras.main;
-
-    // Create a container for the landmark
     const container = this.add.container(width / 2, -60);
 
-    // Shelter/sign background
     const bg = this.add.rectangle(0, 0, 200, 50, 0x2e5339, 0.9);
     bg.setStrokeStyle(2, 0x4a7d5a);
     container.add(bg);
 
-    // Landmark text
-    const text = this.add.text(0, -8, name, {
+    const nameText = this.add.text(0, -8, name, {
       font: '12px Courier',
       color: '#ffffff'
     }).setOrigin(0.5);
-    container.add(text);
+    container.add(nameText);
 
-    // Mile marker
     const mileText = this.add.text(0, 10, `Mile ${mile.toFixed(1)}`, {
       font: '10px Courier',
       color: '#aaffaa'
     }).setOrigin(0.5);
     container.add(mileText);
 
-    // Water indicator if available
     if (hasWater) {
       const waterIcon = this.add.text(80, 0, '💧', {
         font: '16px Arial'
@@ -462,10 +462,45 @@ export class GameScene extends Phaser.Scene {
       container.add(waterIcon);
     }
 
+    // Add Hiker Box for shelters and towns
+    if (name.includes('Shelter') || isTown) {
+      const boxBtn = this.add.rectangle(-80, 0, 30, 30, 0x8b4513);
+      boxBtn.setStrokeStyle(1, 0xcd853f);
+      boxBtn.setInteractive();
+      
+      const boxIcon = this.add.text(-80, 0, '📦', { font: '16px Arial' }).setOrigin(0.5);
+      
+      boxBtn.on('pointerdown', () => this.openHikerBox(name, mile));
+      boxBtn.on('pointerover', () => boxBtn.setFillStyle(0xa0522d));
+      boxBtn.on('pointerout', () => boxBtn.setFillStyle(0x8b4513));
+      
+      container.add([boxBtn, boxIcon]);
+    }
+
     container.setDepth(50);
     container.setData('mile', mile);
     container.setData('hasWater', hasWater);
+    
     this.landmarks.push(container);
+  }
+
+  async openHikerBox(locationName: string, mile: number) {
+    if (!this.hikerData) return;
+    
+    // Create a deterministic ID for this box based on location
+    const boxId = `box_${mile.toFixed(1).replace('.', '_')}`;
+    
+    // Pause game loop
+    this.scene.pause('GameScene');
+    
+    // Fetch box data (async)
+    const boxData = await networkManager.getHikerBox(boxId, locationName);
+    
+    // Launch scene
+    this.scene.launch('HikerBoxScene', {
+      boxData: boxData,
+      playerInventory: this.hikerData.inventory
+    });
   }
 
   spawnWaterSource() {
@@ -1216,7 +1251,8 @@ export class GameScene extends Phaser.Scene {
     // Launch TownScene as overlay
     this.scene.launch('TownScene', {
       town: town,
-      hiker: this.hikerData
+      hiker: this.hikerData,
+      gameTime: { hour: this.gameState.time.hour, day: this.gameState.time.day }
     });
 
     this.events.emit('game-event', {
@@ -1458,6 +1494,16 @@ export class GameScene extends Phaser.Scene {
         console.log('Loading saved game...');
         this.hikerData = saveData.hiker;
         this.gameState = saveData.game;
+
+        // Restore bubble NPCs if saved
+        if (saveData.game.bubbleData) {
+          bubbleSystem.deserialize(saveData.game.bubbleData);
+          console.log('Restored bubble NPCs from save');
+        } else {
+          // Generate bubble for existing save without bubble data
+          bubbleSystem.generateBubble(this.hikerData.mile, this.hikerData.daysOnTrail);
+        }
+
         this.events.emit('game-event', {
           type: 'success',
           message: `Welcome back, ${saveData.hikerName}!`
@@ -1558,6 +1604,9 @@ export class GameScene extends Phaser.Scene {
       temperature: 55,
       events: []
     };
+
+    // Generate bubble of NPC hikers around the player
+    bubbleSystem.generateBubble(this.hikerData.mile, this.hikerData.daysOnTrail);
   }
 
   private handleBeforeUnload = () => {
@@ -1569,9 +1618,15 @@ export class GameScene extends Phaser.Scene {
     if (!this.hikerData || !this.gameState) return;
 
     try {
+      // Include bubble data in save
+      const gameStateWithBubble = {
+        ...this.gameState,
+        bubbleData: bubbleSystem.serialize()
+      };
+
       await gameStorage.save(
         this.hikerData as HikerSaveData,
-        this.gameState as GameSaveData,
+        gameStateWithBubble as GameSaveData,
         'autosave'
       );
       this.lastSaveTime = Date.now();
@@ -1766,6 +1821,18 @@ export class GameScene extends Phaser.Scene {
       if (hasNoEnergy && hasNoCalories && hasNoHydration && hasNoFood && hasNoWater) {
         this.triggerIncapacitation();
       }
+    }
+
+    // Simulate bubble NPCs (every 5 seconds)
+    const now = Date.now();
+    if (now - this.lastBubbleSimulation >= this.bubbleSimulationInterval) {
+      this.lastBubbleSimulation = now;
+      bubbleSystem.simulateNPCs(
+        this.hikerData.mile,
+        this.gameState.time.hour,
+        this.gameState.time.day
+      );
+      this.updateBubbleNPCSprites();
     }
 
     // Emit update
@@ -2649,7 +2716,7 @@ export class GameScene extends Phaser.Scene {
             // Check for town near this mile
             const town = TOWNS.find(t => Math.floor(t.mile) === currentMile);
             if (town) {
-              this.spawnLandmark(currentMile, town.name, true);
+              this.spawnLandmark(currentMile, town.name, true, true);
               const services = [];
               if (town.hasStore) services.push('🏪');
               if (town.hasRestaurant) services.push('🍔');
@@ -3423,5 +3490,107 @@ export class GameScene extends Phaser.Scene {
         });
       }
     }
+  }
+
+  // ========================================
+  // BUBBLE SYSTEM - Persistent NPC Hikers
+  // ========================================
+
+  updateBubbleNPCSprites() {
+    if (!this.hikerData) return;
+
+    const { width, height } = this.cameras.main;
+    const playerMile = this.hikerData.mile;
+
+    // Get NPCs within 2 miles (visible range)
+    const nearbyNPCs = bubbleSystem.getNPCsNearMile(playerMile, 2);
+
+    // Track which NPCs we've seen this update
+    const seenIds = new Set<string>();
+
+    nearbyNPCs.forEach(npc => {
+      seenIds.add(npc.id);
+
+      const mileDiff = npc.mile - playerMile;
+      const yOffset = -mileDiff * 200; // 200 pixels per mile
+      const yPos = height * 0.65 + yOffset;
+
+      // Skip if off screen
+      if (yPos < -100 || yPos > height + 100) {
+        if (this.bubbleSprites.has(npc.id)) {
+          this.bubbleSprites.get(npc.id)?.setVisible(false);
+        }
+        return;
+      }
+
+      let container = this.bubbleSprites.get(npc.id);
+
+      if (!container) {
+        // Create new sprite for this NPC
+        container = this.createBubbleNPCSprite(npc);
+        this.bubbleSprites.set(npc.id, container);
+      }
+
+      // Update position
+      container.setY(yPos);
+      container.setX(width * 0.5 + (Math.sin(npc.id.charCodeAt(4) * 0.5) * 60)); // Slight horizontal variation
+      container.setVisible(true);
+
+      // Check for close encounter (within 0.1 miles, ~20 pixels)
+      if (Math.abs(yOffset) < 25 && npc.relationship.encounters === 0) {
+        this.triggerBubbleEncounter(npc);
+      }
+    });
+
+    // Hide sprites for NPCs no longer nearby
+    this.bubbleSprites.forEach((sprite, id) => {
+      if (!seenIds.has(id)) {
+        sprite.setVisible(false);
+      }
+    });
+  }
+
+  createBubbleNPCSprite(npc: BubbleNPC): Phaser.GameObjects.Container {
+    const { width, height } = this.cameras.main;
+
+    const container = this.add.container(width * 0.5, height * 0.5);
+    container.setDepth(9); // Between obstacles and player
+
+    // Create hiker sprite (use existing hiker sprite or simple shape)
+    const sprite = this.add.rectangle(0, 0, 16, 24, 0xffaa44); // Orange tint for bubble NPCs
+    sprite.setStrokeStyle(1, 0xcc8833);
+    container.add(sprite);
+
+    // Add name label
+    const nameLabel = this.add.text(0, -20, npc.trailName, {
+      font: 'bold 9px Courier',
+      color: '#ffdd88',
+      backgroundColor: '#00000088',
+      padding: { x: 2, y: 1 }
+    }).setOrigin(0.5);
+    container.add(nameLabel);
+
+    // Store NPC id in container data
+    container.setData('npcId', npc.id);
+    container.setData('trailName', npc.trailName);
+
+    return container;
+  }
+
+  triggerBubbleEncounter(npc: BubbleNPC) {
+    // Record the encounter
+    bubbleSystem.recordEncounter(npc.id, this.gameState.time.day);
+
+    // Get greeting
+    const greeting = bubbleSystem.getGreeting(npc.id);
+
+    // Show speech bubble / event
+    this.events.emit('game-event', {
+      type: 'info',
+      message: `${npc.trailName}: "${greeting}"`
+    });
+
+    // Small morale boost from social interaction
+    this.hikerData.moodles.morale = Math.min(100, (this.hikerData.moodles.morale || 50) + 2);
   }
 }

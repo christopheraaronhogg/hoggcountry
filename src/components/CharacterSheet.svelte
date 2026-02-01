@@ -51,8 +51,22 @@
   let startDate = $derived(trailContext.startDate || character.trail.startDate || '');
   let targetPace = $derived(trailContext.targetPace || character.trail.targetPace || 0);
 
-  // Persist identity/constraints changes
+  // Persist identity/constraints changes (guarded to avoid reactive update loops)
+  let _coreSig = $state('');
   $effect(() => {
+    const nextSig = JSON.stringify({
+      displayName,
+      nickname,
+      telegramUsername,
+      bio,
+      noHitchhiking,
+      cleanLanguage,
+      scriptureTranslation,
+    });
+
+    if (nextSig === _coreSig) return;
+    _coreSig = nextSig;
+
     updateCharacter({
       core: {
         displayName,

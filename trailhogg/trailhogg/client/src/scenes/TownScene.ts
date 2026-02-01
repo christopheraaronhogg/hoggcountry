@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { type Town } from '../data/TrailData';
+import { bubbleSystem, type BubbleNPC, type YardSaleItem } from '../systems/BubbleSystem';
 
 interface StoreItem {
   id: string;
@@ -31,6 +32,7 @@ const HOSTEL_PRICE = 45;
 export class TownScene extends Phaser.Scene {
   private townData!: Town;
   private hikerData: any;
+  private gameTime: { hour: number; day: number } = { hour: 12, day: 1 };
   private selectedCategory: string = 'main';
   private menuItems: Phaser.GameObjects.Container[] = [];
   private cartItems: StoreItem[] = [];
@@ -41,9 +43,10 @@ export class TownScene extends Phaser.Scene {
     super({ key: 'TownScene' });
   }
 
-  init(data: { town: Town; hiker: any }) {
+  init(data: { town: Town; hiker: any; gameTime?: { hour: number; day: number } }) {
     this.townData = data.town;
     this.hikerData = data.hiker;
+    this.gameTime = data.gameTime || { hour: 12, day: 1 };
     this.cartItems = [];
     this.cartTotal = 0;
   }
@@ -100,21 +103,45 @@ export class TownScene extends Phaser.Scene {
     const startY = 120;
     const spacing = 70;
 
-    const options = [
+    // Check for evening hours (campfire time!)
+    const isEvening = this.gameTime.hour >= 18 || this.gameTime.hour < 6;
+    const npcsInTown = bubbleSystem.getNPCsInTown(this.townData.name);
+    const hasYardSale = bubbleSystem.hasYardSaleItems();
+
+    const options: { id: string; label: string; available: boolean; price?: number; subtext?: string }[] = [
       { id: 'store', label: '🏪 General Store', available: this.townData.hasStore },
       { id: 'hostel', label: '🛏️ Hostel', available: this.townData.hasHostel, price: HOSTEL_PRICE },
       { id: 'restaurant', label: '🍔 Restaurant', available: this.townData.hasRestaurant },
       { id: 'outfitter', label: '🎒 Outfitter', available: this.townData.hasOutfitter },
-      { id: 'leave', label: '🥾 Hit the Trail', available: true },
     ];
+
+    // Add campfire stories if evening and there are NPCs around
+    if (isEvening && npcsInTown.length > 0) {
+      options.push({ id: 'campfire', label: '🔥 Campfire Stories', available: true, subtext: `${npcsInTown.length} hikers here` });
+    }
+
+    // Add yard sale if items available
+    if (hasYardSale) {
+      const itemCount = bubbleSystem.getYardSaleItems().length;
+      options.push({ id: 'yardsale', label: '🏷️ Gear Yard Sale', available: true, subtext: `${itemCount} items` });
+    }
+
+    // Add town special if available
+    if (this.townData.special) {
+      const costText = this.townData.special.cost > 0 ? `$${this.townData.special.cost}` : 'Free';
+      options.push({ id: 'special', label: `⭐ ${this.townData.special.label}`, available: true, subtext: costText });
+    }
+
+    options.push({ id: 'leave', label: '🥾 Hit the Trail', available: true });
 
     options.forEach((option, index) => {
       const y = startY + index * spacing;
+      const subtextDisplay = option.price ? `$${option.price}/night` : option.subtext;
       const container = this.createMenuButton(
         width / 2, y,
         option.label,
         option.available,
-        option.price ? `$${option.price}/night` : undefined
+        subtextDisplay
       );
 
       if (option.available) {
@@ -177,6 +204,15 @@ export class TownScene extends Phaser.Scene {
         break;
       case 'outfitter':
         this.showOutfitter();
+        break;
+      case 'campfire':
+        this.showCampfireStories();
+        break;
+      case 'yardsale':
+        this.showYardSale();
+        break;
+      case 'special':
+        this.doTownSpecial();
         break;
       case 'leave':
         this.leaveTown();
@@ -562,6 +598,292 @@ export class TownScene extends Phaser.Scene {
 
     this.showMessage(`Got ${gear.name}! Ready to hike!`, 'success');
     this.showOutfitter();
+  }
+
+  showCampfireStories() {
+    this.clearMenu();
+    this.selectedCategory = 'campfire';
+
+    const { width, height } = this.cameras.main;
+
+    // Back button
+    const backBtn = this.createMenuButton(80, 100, '← Back', true);
+    backBtn.setInteractive(new Phaser.Geom.Rectangle(-60, -20, 120, 40), Phaser.Geom.Rectangle.Contains);
+    backBtn.on('pointerdown', () => this.showMainMenu());
+    this.menuItems.push(backBtn);
+
+    this.add.text(width / 2, 100, '🔥 Campfire Stories', {
+      font: 'bold 18px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    this.add.text(width / 2, 125, 'Share stories, learn trail gossip, make friends', {
+      font: 'italic 11px Courier',
+      color: '#aaaaaa'
+    }).setOrigin(0.5);
+
+    // Get NPCs in town
+    const npcsInTown = bubbleSystem.getNPCsInTown(this.townData.name);
+
+    if (npcsInTown.length === 0) {
+      this.add.text(width / 2, height / 2, 'The campfire is quiet tonight...\nNo other hikers around.', {
+        font: '14px Courier',
+        color: '#888888',
+        align: 'center'
+      }).setOrigin(0.5);
+      this.showStats();
+      return;
+    }
+
+    // Show each NPC with their story/gossip
+    const startY = 160;
+    const cardHeight = 80;
+
+    npcsInTown.slice(0, 4).forEach((npc, index) => {
+      const y = startY + index * cardHeight;
+      const container = this.add.container(width / 2, y);
+
+      // Card background
+      const bg = this.add.rectangle(0, 0, width - 40, 70, 0x1a1a2e);
+      bg.setStrokeStyle(1, 0x4a4a6a);
+      container.add(bg);
+
+      // NPC name and relationship status
+      const encounters = npc.relationship.encounters;
+      const relationshipIcon = encounters === 0 ? '👋' : (encounters < 3 ? '🤝' : '❤️');
+      const nameText = this.add.text(-width / 2 + 40, -20, `${relationshipIcon} ${npc.trailName}`, {
+        font: 'bold 14px Courier',
+        color: '#ffffff'
+      });
+      container.add(nameText);
+
+      // NPC hometown
+      const hometown = this.add.text(-width / 2 + 40, 0, `${npc.realName} from ${npc.hometown}`, {
+        font: '11px Courier',
+        color: '#888888'
+      });
+      container.add(hometown);
+
+      // Get gossip from NPC
+      const gossip = bubbleSystem.getGossip(npc.id) || "Just enjoying the trail vibes...";
+      const gossipText = this.add.text(-width / 2 + 40, 18, `"${gossip.substring(0, 50)}${gossip.length > 50 ? '...' : ''}"`, {
+        font: 'italic 10px Courier',
+        color: '#aaddaa'
+      });
+      container.add(gossipText);
+
+      // Chat button
+      const chatBtn = this.add.rectangle(width / 2 - 60, 0, 60, 35, 0x2e5339);
+      chatBtn.setStrokeStyle(1, 0x4a7d5a);
+      container.add(chatBtn);
+
+      const chatText = this.add.text(width / 2 - 60, 0, 'Chat', {
+        font: '12px Courier',
+        color: '#ffffff'
+      }).setOrigin(0.5);
+      container.add(chatText);
+
+      chatBtn.setInteractive();
+      chatBtn.on('pointerdown', () => this.chatWithNPC(npc));
+      chatBtn.on('pointerover', () => chatBtn.setFillStyle(0x4a7d5a));
+      chatBtn.on('pointerout', () => chatBtn.setFillStyle(0x2e5339));
+
+      this.menuItems.push(container);
+    });
+
+    // Morale boost message
+    this.add.text(width / 2, height - 100, '🌟 Spending time with trail friends boosts morale!', {
+      font: '11px Courier',
+      color: '#88aa88'
+    }).setOrigin(0.5);
+
+    this.showStats();
+  }
+
+  chatWithNPC(npc: BubbleNPC) {
+    // Record the encounter
+    bubbleSystem.recordEncounter(npc.id, this.gameTime.day, `Campfire chat in ${this.townData.name}`);
+
+    // Get greeting based on relationship
+    const greeting = bubbleSystem.getGreeting(npc.id);
+
+    // Boost player morale
+    this.hikerData.moodles.morale = Math.min(100, (this.hikerData.moodles.morale || 50) + 5);
+
+    // Show the interaction
+    this.showMessage(`${npc.trailName}: "${greeting}" (+5 morale)`, 'success');
+
+    // Refresh the view after a moment
+    this.time.delayedCall(1500, () => {
+      this.showCampfireStories();
+    });
+  }
+
+  showYardSale() {
+    this.clearMenu();
+    this.selectedCategory = 'yardsale';
+
+    const { width, height } = this.cameras.main;
+
+    // Back button
+    const backBtn = this.createMenuButton(80, 100, '← Back', true);
+    backBtn.setInteractive(new Phaser.Geom.Rectangle(-60, -20, 120, 40), Phaser.Geom.Rectangle.Contains);
+    backBtn.on('pointerdown', () => this.showMainMenu());
+    this.menuItems.push(backBtn);
+
+    this.add.text(width / 2, 100, '🏷️ Hiker Gear Yard Sale', {
+      font: 'bold 18px Courier',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    this.add.text(width / 2, 125, 'Used gear from hikers who left the trail', {
+      font: 'italic 11px Courier',
+      color: '#aaaaaa'
+    }).setOrigin(0.5);
+
+    const items = bubbleSystem.getYardSaleItems();
+
+    if (items.length === 0) {
+      this.add.text(width / 2, height / 2, 'No gear for sale right now.\nCheck back later!', {
+        font: '14px Courier',
+        color: '#888888',
+        align: 'center'
+      }).setOrigin(0.5);
+      this.showStats();
+      return;
+    }
+
+    // Show items
+    const startY = 160;
+    const itemHeight = 65;
+
+    items.slice(0, 5).forEach((item, index) => {
+      const y = startY + index * itemHeight;
+      const canAfford = (this.hikerData?.inventory?.money || 0) >= item.salePrice;
+
+      const container = this.add.container(width / 2, y);
+
+      // Card background
+      const bg = this.add.rectangle(0, 0, width - 40, 55, canAfford ? 0x222222 : 0x1a1a1a);
+      bg.setStrokeStyle(1, 0x444444);
+      container.add(bg);
+
+      // Item name and condition
+      const condition = item.condition >= 70 ? 'Good' : (item.condition >= 50 ? 'Fair' : 'Worn');
+      const condColor = item.condition >= 70 ? '#4aff4a' : (item.condition >= 50 ? '#ffff4a' : '#ff8844');
+      const nameText = this.add.text(-width / 2 + 40, -12, `${item.name} (${condition})`, {
+        font: '13px Courier',
+        color: canAfford ? '#ffffff' : '#666666'
+      });
+      container.add(nameText);
+
+      // Seller info and reason
+      const sellerText = this.add.text(-width / 2 + 40, 6, `From: ${item.seller} - "${item.reason}"`, {
+        font: '10px Courier',
+        color: '#888888'
+      });
+      container.add(sellerText);
+
+      // Price comparison
+      const priceText = this.add.text(width / 2 - 110, -8, `$${item.salePrice}`, {
+        font: 'bold 14px Courier',
+        color: canAfford ? '#4aff4a' : '#ff4a4a'
+      }).setOrigin(0.5);
+      container.add(priceText);
+
+      const originalPrice = this.add.text(width / 2 - 110, 8, `was $${item.originalPrice}`, {
+        font: '9px Courier',
+        color: '#666666'
+      }).setOrigin(0.5);
+      container.add(originalPrice);
+
+      // Buy button
+      if (canAfford) {
+        const buyBtn = this.add.rectangle(width / 2 - 45, 0, 50, 35, 0x2e5339);
+        buyBtn.setStrokeStyle(1, 0x4a7d5a);
+        container.add(buyBtn);
+
+        const buyText = this.add.text(width / 2 - 45, 0, 'BUY', {
+          font: 'bold 11px Courier',
+          color: '#ffffff'
+        }).setOrigin(0.5);
+        container.add(buyText);
+
+        buyBtn.setInteractive();
+        buyBtn.on('pointerdown', () => this.buyYardSaleItem(item));
+        buyBtn.on('pointerover', () => buyBtn.setFillStyle(0x4a7d5a));
+        buyBtn.on('pointerout', () => buyBtn.setFillStyle(0x2e5339));
+      }
+
+      this.menuItems.push(container);
+    });
+
+    this.showStats();
+  }
+
+  buyYardSaleItem(item: YardSaleItem) {
+    if (!this.hikerData?.inventory) return;
+
+    const money = this.hikerData.inventory.money || 0;
+    if (money < item.salePrice) {
+      this.showMessage('Not enough money!', 'error');
+      return;
+    }
+
+    // Deduct money
+    this.hikerData.inventory.money -= item.salePrice;
+
+    // Remove from yard sale
+    bubbleSystem.purchaseYardSaleItem(item.id);
+
+    // Add to gear (simplified - just adds as generic gear)
+    this.hikerData.inventory.gear.push({
+      id: item.id,
+      name: item.name,
+      weight: item.weight,
+      condition: item.condition,
+      category: 'gear'
+    });
+
+    this.showMessage(`Bought ${item.name} from ${item.seller}!`, 'success');
+    this.showYardSale();
+  }
+
+  doTownSpecial() {
+    if (!this.townData.special) return;
+
+    const special = this.townData.special;
+    const money = this.hikerData?.inventory?.money || 0;
+
+    if (special.cost > 0 && money < special.cost) {
+      this.showMessage(`Need $${special.cost} for ${special.label}!`, 'error');
+      return;
+    }
+
+    // Deduct cost
+    if (special.cost > 0) {
+      this.hikerData.inventory.money -= special.cost;
+    }
+
+    // Apply effects
+    if (special.effects.morale) {
+      this.hikerData.moodles.morale = Math.min(100, (this.hikerData.moodles.morale || 50) + special.effects.morale);
+    }
+    if (special.effects.energy) {
+      this.hikerData.energy = Math.min(100, (this.hikerData.energy || 50) + special.effects.energy);
+    }
+    if (special.effects.calories) {
+      this.hikerData.calories = Math.min(3000, (this.hikerData.calories || 1000) + special.effects.calories);
+    }
+
+    // Build effect message
+    const effectParts: string[] = [];
+    if (special.effects.morale) effectParts.push(`+${special.effects.morale} morale`);
+    if (special.effects.energy) effectParts.push(`+${special.effects.energy} energy`);
+    if (special.effects.calories) effectParts.push(`+${special.effects.calories} cal`);
+
+    this.showMessage(`${special.label}! ${special.description} (${effectParts.join(', ')})`, 'success');
+    this.showMainMenu();
   }
 
   showStats() {

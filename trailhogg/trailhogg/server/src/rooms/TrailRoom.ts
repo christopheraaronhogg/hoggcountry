@@ -7,11 +7,23 @@ import {
   MoodlesSchema,
   InventorySchema,
   FoodItemSchema,
-  GearItemSchema
+  GearItemSchema,
+  HikerBoxSchema,
+  HikerBoxItemSchema
 } from "../schema/GameState";
 
 // Import trail data (we'll inline the key parts for now)
 const TRAIL_END_MILE = 30.7;
+
+// Key locations for Hiker Boxes (Mile markers)
+const HIKER_BOX_LOCATIONS = [
+  { id: "shelter_0.2", name: "Springer Mtn Shelter", mile: 0.2 },
+  { id: "shelter_2.8", name: "Stover Creek Shelter", mile: 2.8 },
+  { id: "shelter_8.1", name: "Hawk Mtn Shelter", mile: 8.1 },
+  { id: "shelter_15.7", name: "Gooch Mtn Shelter", mile: 15.7 },
+  { id: "shelter_27.7", name: "Woods Hole Shelter", mile: 27.7 },
+  { id: "neels_gap", name: "Neels Gap (Mountain Crossings)", mile: 30.7 }
+];
 
 // Pace configurations
 const PACE_CONFIG = {
@@ -59,6 +71,9 @@ export class TrailRoom extends Room<GameRoomState> {
     this.state.weather = "clear";
     this.state.temperature = 55;
     
+    // Initialize Hiker Boxes
+    this.initializeHikerBoxes();
+    
     // Register message handlers
     this.registerMessageHandlers();
     
@@ -66,10 +81,117 @@ export class TrailRoom extends Room<GameRoomState> {
     this.startGameLoop();
   }
   
+  initializeHikerBoxes() {
+    HIKER_BOX_LOCATIONS.forEach(loc => {
+      const box = new HikerBoxSchema();
+      box.locationId = loc.id;
+      
+      // Add some starter items to random boxes
+      if (Math.random() > 0.5) {
+        const starterItem = new HikerBoxItemSchema();
+        starterItem.id = `starter_${Date.now()}_${Math.random()}`;
+        starterItem.name = "Half-eaten Snickers";
+        starterItem.type = "food";
+        starterItem.value = 125; // Calories
+        starterItem.weight = 0.05;
+        starterItem.leftBy = "Trail Angel";
+        starterItem.timestamp = Date.now();
+        box.items.push(starterItem);
+      }
+      
+      this.state.hikerBoxes.set(loc.id, box);
+    });
+  }
+  
   registerMessageHandlers() {
     // Join with character info
     this.onMessage("create_hiker", (client, data) => {
       this.createHiker(client, data);
+    });
+
+    // Hiker Box Interactions
+    this.onMessage("hiker_box_take", (client, data) => {
+      const { boxId, itemId } = data;
+      const hiker = this.state.hikers.get(client.sessionId);
+      const box = this.state.hikerBoxes.get(boxId);
+      
+      if (hiker && box) {
+        const itemIndex = box.items.findIndex(i => i.id === itemId);
+        if (itemIndex !== -1) {
+          const item = box.items[itemIndex];
+          
+          // Add to player inventory
+          if (item.type === "food") {
+            const food = new FoodItemSchema();
+            food.id = item.id; // Keep original ID or gen new?
+            food.name = item.name;
+            food.calories = item.value;
+            food.weight = item.weight;
+            food.servings = item.quantity;
+            hiker.inventory.food.push(food);
+          } else {
+            const gear = new GearItemSchema();
+            gear.id = item.id;
+            gear.name = item.name;
+            gear.weight = item.weight;
+            gear.condition = item.value;
+            gear.category = item.type; // e.g. "misc"
+            hiker.inventory.gear.push(gear);
+          }
+          
+          // Remove from box
+          box.items.splice(itemIndex, 1);
+          
+          this.addEvent("hiker_box", `${hiker.name} took ${item.name} from hiker box`);
+        }
+      }
+    });
+
+    this.onMessage("hiker_box_leave", (client, data) => {
+      const { boxId, itemType, itemId } = data;
+      const hiker = this.state.hikers.get(client.sessionId);
+      const box = this.state.hikerBoxes.get(boxId);
+      
+      if (hiker && box) {
+        const boxItem = new HikerBoxItemSchema();
+        boxItem.leftBy = hiker.name;
+        boxItem.timestamp = Date.now();
+        
+        let removed = false;
+        
+        if (itemType === "food") {
+          const idx = hiker.inventory.food.findIndex(f => f.id === itemId);
+          if (idx !== -1) {
+            const food = hiker.inventory.food[idx];
+            boxItem.id = food.id;
+            boxItem.name = food.name;
+            boxItem.type = "food";
+            boxItem.value = food.calories;
+            boxItem.weight = food.weight;
+            boxItem.quantity = food.servings;
+            hiker.inventory.food.splice(idx, 1);
+            removed = true;
+          }
+        } else {
+          const idx = hiker.inventory.gear.findIndex(g => g.id === itemId);
+          if (idx !== -1) {
+            const gear = hiker.inventory.gear[idx];
+            boxItem.id = gear.id;
+            boxItem.name = gear.name;
+            boxItem.type = gear.category;
+            boxItem.value = gear.condition;
+            boxItem.weight = gear.weight;
+            boxItem.quantity = 1;
+            hiker.inventory.gear.splice(idx, 1);
+            removed = true;
+          }
+        }
+        
+        if (removed) {
+          box.items.push(boxItem);
+          this.addEvent("hiker_box", `${hiker.name} left ${boxItem.name} in hiker box`);
+        }
+      }
     });
     
     // Movement & hiking

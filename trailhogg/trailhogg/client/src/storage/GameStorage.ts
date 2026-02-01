@@ -75,6 +75,8 @@ export interface GameSaveData {
   phase: string;
   weather: string;
   temperature: number;
+  // Bubble system - persistent NPC hikers
+  bubbleData?: import('../systems/BubbleSystem').SerializedBubbleData;
 }
 
 class GameStorage {

@@ -486,6 +486,17 @@ export interface Town {
   hasLaundry: boolean;
   hasPO: boolean;
   notes?: string;
+  // Special town experience (unique to this town)
+  special?: {
+    label: string;
+    description: string;
+    cost: number;
+    effects: {
+      morale?: number;
+      energy?: number;
+      calories?: number;
+    };
+  };
 }
 
 export const TOWNS: Town[] = [
@@ -504,7 +515,7 @@ export const TOWNS: Town[] = [
   { mile: 165, name: 'Fontana Dam', state: 'NC', distance: '~1.5 mi', services: ['resort', 'store'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: 'Fontana Village resort, "Fontana Hilton" shelter' },
   { mile: 200, name: 'Gatlinburg', state: 'TN', distance: '~16 mi', services: ['full town'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: true, hasLaundry: true, hasPO: true, notes: 'Via Newfound Gap - major hitch required' },
   { mile: 241, name: 'Standing Bear Farm', state: 'NC', distance: '~0.2 mi', services: ['hostel', 'store'], hasHostel: true, hasStore: true, hasRestaurant: false, hasOutfitter: false, hasLaundry: true, hasPO: false, notes: 'Classic hiker hostel, trail history museum' },
-  { mile: 274, name: 'Hot Springs', state: 'NC', distance: 'On Trail', services: ['hostels', 'DG', 'restaurants', 'laundry', 'PO'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: 'Trail goes through downtown! Hot springs nearby' },
+  { mile: 274, name: 'Hot Springs', state: 'NC', distance: 'On Trail', services: ['hostels', 'DG', 'restaurants', 'laundry', 'PO'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: 'Trail goes through downtown! Hot springs nearby', special: { label: 'Hot Springs Soak', description: 'Soak your tired muscles in the natural hot springs by the river', cost: 8, effects: { morale: 30, energy: 25 } } },
   { mile: 342, name: 'Erwin', state: 'TN', distance: '~0.5 mi', services: ['hostel', 'DG', 'restaurants'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: "Uncle Johnny's Hostel, Johnson City medical nearby" },
   { mile: 365, name: 'Roan Mountain', state: 'TN', distance: '~5 mi', services: ['hostel', 'store'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: 'Borderline walkable, most hitch' },
   { mile: 420, name: 'Hampton', state: 'TN', distance: '~1 mi', services: ['hostel', 'DG'], hasHostel: true, hasStore: true, hasRestaurant: false, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: 'Walkable Dollar General' },
@@ -512,7 +523,7 @@ export const TOWNS: Town[] = [
   // ============================================================================
   // VIRGINIA (Mile 470-1020) - The Long State
   // ============================================================================
-  { mile: 469, name: 'Damascus', state: 'VA', distance: 'On Trail', services: ['hostels', 'outfitter', 'DG', 'restaurants', 'laundry', 'PO'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: true, hasLaundry: true, hasPO: true, notes: 'Trail Town USA! Trail Days festival, The Place hostel' },
+  { mile: 469, name: 'Damascus', state: 'VA', distance: 'On Trail', services: ['hostels', 'outfitter', 'DG', 'restaurants', 'laundry', 'PO'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: true, hasLaundry: true, hasPO: true, notes: 'Trail Town USA! Trail Days festival, The Place hostel', special: { label: 'Trail Days Vibe', description: 'Soak up the legendary hospitality of Trail Town USA', cost: 0, effects: { morale: 25 } } },
   { mile: 508, name: 'Bland', state: 'VA', distance: '~0.5 mi', services: ['motel', 'store'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: false, hasPO: false, notes: 'Big Walker Motel, quiet town' },
   { mile: 517, name: 'Bastian', state: 'VA', distance: '~0.5 mi', services: ['hostel'], hasHostel: true, hasStore: false, hasRestaurant: false, hasOutfitter: false, hasLaundry: false, hasPO: false, notes: 'Four Pines Hostel, very limited services' },
   { mile: 534, name: 'Partnership Shelter', state: 'VA', distance: 'On Trail', services: ['shelter'], hasHostel: false, hasStore: false, hasRestaurant: false, hasOutfitter: false, hasLaundry: false, hasPO: false, notes: 'Pizza delivery to shelter!' },
@@ -530,7 +541,7 @@ export const TOWNS: Town[] = [
   // ============================================================================
   // WEST VIRGINIA / MARYLAND (Mile 1020-1100)
   // ============================================================================
-  { mile: 1024, name: 'Harpers Ferry', state: 'WV', distance: 'On Trail', services: ['hostel', 'store', 'restaurants'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: false, hasPO: true, notes: 'ATC HQ! Psychological halfway point' },
+  { mile: 1024, name: 'Harpers Ferry', state: 'WV', distance: 'On Trail', services: ['hostel', 'store', 'restaurants'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: false, hasPO: true, notes: 'ATC HQ! Psychological halfway point', special: { label: 'ATC Photo Op', description: 'Get your thru-hiker photo taken at ATC headquarters and sign the register!', cost: 0, effects: { morale: 20 } } },
 
   // ============================================================================
   // PENNSYLVANIA (Mile 1100-1300) - The Rocks
@@ -567,7 +578,7 @@ export const TOWNS: Town[] = [
   // ============================================================================
   // NEW HAMPSHIRE (Mile 1790-1912)
   // ============================================================================
-  { mile: 1747, name: 'Hanover', state: 'NH', distance: 'On Trail', services: ['motels', 'co-op', 'restaurants', 'laundry', 'PO', 'hospital'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: 'Dartmouth College town! Fix everything before Whites' },
+  { mile: 1747, name: 'Hanover', state: 'NH', distance: 'On Trail', services: ['motels', 'co-op', 'restaurants', 'laundry', 'PO', 'hospital'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: 'Dartmouth College town! Fix everything before Whites', special: { label: 'Pizza at EBAs', description: 'Famous pizza spot on Main St - fuel up before the Whites!', cost: 15, effects: { morale: 15, calories: 2000 } } },
   { mile: 1804, name: 'Glencliff', state: 'NH', distance: '~0.5 mi', services: ['hostel'], hasHostel: true, hasStore: false, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: false, notes: 'Hikers Welcome Hostel, very limited' },
   { mile: 1823, name: 'Lincoln/Woodstock', state: 'NH', distance: '~5-6 mi', services: ['full town', 'outfitter'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: true, hasLaundry: true, hasPO: true, notes: 'Last major resupply before Whites - hitch required' },
   { mile: 1832, name: 'Franconia Notch', state: 'NH', distance: 'On Trail', services: ['limited', 'seasonal'], hasHostel: false, hasStore: false, hasRestaurant: true, hasOutfitter: false, hasLaundry: false, hasPO: false, notes: 'Just parking area, no lodging' },

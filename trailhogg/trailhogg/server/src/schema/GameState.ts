@@ -104,6 +104,24 @@ export class EventSchema extends Schema {
   @type("number") timestamp: number = 0;
 }
 
+export class HikerBoxItemSchema extends Schema {
+  @type("string") id: string = "";
+  @type("string") name: string = "";
+  @type("string") type: string = "misc"; // gear, food
+  @type("number") quantity: number = 1;
+  @type("string") leftBy: string = "Anonymous";
+  @type("number") timestamp: number = 0;
+  
+  // Specific properties
+  @type("number") value: number = 0; // calories for food, condition for gear
+  @type("number") weight: number = 0;
+}
+
+export class HikerBoxSchema extends Schema {
+  @type("string") locationId: string = "";
+  @type([HikerBoxItemSchema]) items = new ArraySchema<HikerBoxItemSchema>();
+}
+
 export class GameRoomState extends Schema {
   // Time
   @type(GameTimeSchema) time = new GameTimeSchema();
@@ -115,6 +133,9 @@ export class GameRoomState extends Schema {
   
   // Players
   @type({ map: HikerSchema }) hikers = new MapSchema<HikerSchema>();
+  
+  // Hiker Boxes (Persistent-ish state)
+  @type({ map: HikerBoxSchema }) hikerBoxes = new MapSchema<HikerBoxSchema>();
   
   // Events log (last 10)
   @type([EventSchema]) events = new ArraySchema<EventSchema>();
