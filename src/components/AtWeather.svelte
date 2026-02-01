@@ -53,6 +53,7 @@
     utc_offset_seconds?: number;
     latitude?: number;
     longitude?: number;
+    elevation?: number; // model/grid elevation (meters)
     current?: WeatherNow;
     hourly?: Record<string, any>;
     daily?: Record<string, any>;
@@ -61,6 +62,16 @@
   let wxLoading = $state(false);
   let wxErr = $state('');
   let wx = $state<OpenMeteoResponse | null>(null);
+
+  // Trail elevation (meters) from Open-Meteo elevation API (terrain/SRTM-like)
+  let trailElevM = $state<number | null>(null);
+  let elevLoading = $state(false);
+  let elevErr = $state('');
+
+  // Location assist
+  let locating = $state(false);
+  let locationErr = $state('');
+  let userDistMeters = $state<number | null>(null);
 
   function wxCodeLabel(code: unknown): string {
     const c = Number(code);
@@ -90,6 +101,33 @@
     return x.toFixed(digits);
   }
 
+  function mToFt(m: unknown) {
+    const x = Number(m);
+    if (!Number.isFinite(x)) return NaN;
+    return x * 3.28084;
+  }
+
+  const LAPSE_F_PER_1000_FT = 3.6;
+
+  let modelElevFt = $derived.by(() => mToFt(wx?.elevation));
+  let trailElevFt = $derived.by(() => mToFt(trailElevM));
+  let tempModelF = $derived.by(() => Number(wx?.current?.temperature_2m));
+
+  let deltaElevFt = $derived.by(() => {
+    if (!Number.isFinite(modelElevFt) || !Number.isFinite(trailElevFt)) return NaN;
+    return trailElevFt - modelElevFt;
+  });
+
+  let deltaTempF = $derived.by(() => {
+    if (!Number.isFinite(deltaElevFt)) return NaN;
+    return -(deltaElevFt / 1000) * LAPSE_F_PER_1000_FT;
+  });
+
+  let tempTrailEstF = $derived.by(() => {
+    if (!Number.isFinite(tempModelF) || !Number.isFinite(deltaTempF)) return NaN;
+    return tempModelF + deltaTempF;
+  });
+
   function updateUrl(nextMile: number) {
     if (typeof window === 'undefined') return;
     const u = new URL(window.location.href);
@@ -100,6 +138,62 @@
   function copyLink() {
     if (typeof window === 'undefined') return;
     navigator.clipboard?.writeText(window.location.href).catch(() => {});
+  }
+
+  function fmtMi(meters: unknown) {
+    const m = Number(meters);
+    if (!Number.isFinite(m)) return '—';
+    return (m / 1609.344).toFixed(1);
+  }
+
+  function useMyLocation() {
+    if (typeof window === 'undefined') return;
+    locationErr = '';
+
+    if (!('geolocation' in navigator)) {
+      locationErr = 'Geolocation not supported on this device.';
+      return;
+    }
+
+    locating = true;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        locating = false;
+        const la = pos?.coords?.latitude;
+        const lo = pos?.coords?.longitude;
+        if (typeof la !== 'number' || typeof lo !== 'number') {
+          locationErr = 'Could not read location.';
+          return;
+        }
+
+        const m = nearestMileForLatLng(la, lo);
+        if (m == null) {
+          locationErr = 'Could not match your location to a trail mile.';
+          return;
+        }
+
+        const clamped = clamp(m, 0, 2197);
+        mile = clamped;
+
+        const mp = milepostsByMile[clamped];
+        if (mp) {
+          userDistMeters = haversineMeters([la, lo], [mp.lat, mp.lon]);
+        } else {
+          userDistMeters = null;
+        }
+      },
+      (e) => {
+        locating = false;
+        userDistMeters = null;
+        locationErr = e?.message || 'Location permission denied.';
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 60_000,
+      }
+    );
   }
 
   // Nearest mile for click
@@ -136,11 +230,39 @@
     _debounce = setTimeout(fetchWeather, 450);
   }
 
+  async function fetchElevation() {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat === 0 || lon === 0) return;
+
+    elevLoading = true;
+    elevErr = '';
+
+    try {
+      const url = new URL('https://api.open-meteo.com/v1/elevation');
+      url.searchParams.set('latitude', String(lat));
+      url.searchParams.set('longitude', String(lon));
+      const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(`elevation fetch failed: ${res.status}`);
+      const data = await res.json();
+      const arr = data?.elevation;
+      const val = Array.isArray(arr) ? Number(arr[0]) : Number(arr);
+      trailElevM = Number.isFinite(val) ? val : null;
+    } catch (e: any) {
+      elevErr = e?.message || 'Failed to load elevation.';
+      trailElevM = null;
+    } finally {
+      elevLoading = false;
+    }
+  }
+
   async function fetchWeather() {
     if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat === 0 || lon === 0) return;
 
     wxLoading = true;
     wxErr = '';
+
+    // Reset derived inputs
+    trailElevM = null;
+    elevErr = '';
 
     try {
       const url = new URL('https://api.open-meteo.com/v1/forecast');
@@ -179,6 +301,10 @@
       const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error(`weather fetch failed: ${res.status}`);
       wx = await res.json();
+
+      // Terrain elevation is separate from the model/grid elevation in the forecast response.
+      // We fetch it explicitly so we can show an estimated temp at trail elevation.
+      fetchElevation();
     } catch (e: any) {
       wxErr = e?.message || 'Failed to load weather.';
       wx = null;
@@ -245,13 +371,21 @@
         }
       } catch {}
 
-      _marker = L.circleMarker([lat, lon], {
-        radius: 8,
-        color: '#111827',
-        weight: 2,
-        fillColor: '#f0e000',
-        fillOpacity: 0.95,
-      }).addTo(map);
+      const markerIcon = L.divIcon({
+        className: 'at-mile-dot',
+        html: '<div class="at-mile-dot__inner"></div>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      });
+
+      _marker = L.marker([lat, lon], { icon: markerIcon, draggable: true }).addTo(map);
+
+      _marker.on('dragend', () => {
+        const ll = _marker.getLatLng();
+        const m = nearestMileForLatLng(ll.lat, ll.lng);
+        if (m == null) return;
+        mile = clamp(m, 0, 2197);
+      });
 
       map.on('click', (ev: any) => {
         const la = ev?.latlng?.lat;
@@ -275,8 +409,17 @@
         <div class="k">Mile marker</div>
         <div class="v">{mile}</div>
         <div class="sub">Lat {lat.toFixed(4)} • Lon {lon.toFixed(4)}</div>
+        {#if userDistMeters != null}
+          <div class="sub small">Nearest mile to you: ~{fmtMi(userDistMeters)} mi away</div>
+        {/if}
+        {#if locationErr}
+          <div class="sub err">{locationErr}</div>
+        {/if}
       </div>
       <div class="actions">
+        <button class="btn" type="button" onclick={useMyLocation} disabled={locating}>
+          {locating ? 'Locating…' : 'Use my location'}
+        </button>
         <button class="btn" type="button" onclick={copyLink}>Copy link</button>
       </div>
     </div>
@@ -295,10 +438,6 @@
   </div>
 
   <div class="grid">
-    <div class="map card">
-      <div bind:this={container} class="map-inner" aria-label="Appalachian Trail map"></div>
-    </div>
-
     <div class="wx card">
       <h2 class="h">Forecast</h2>
 
@@ -312,28 +451,59 @@
         {:else if wxErr}
           <p class="p err">{wxErr}</p>
         {:else if wx?.current}
-          <div class="now">
-            <div class="big">
-              <div class="temp">{fmt(wx.current.temperature_2m, 0)}°F</div>
+          <div class="temps">
+            <div class="tempCard">
+              <div class="label">Forecast (Open‑Meteo model point)</div>
+              <div class="temp">{fmt(tempModelF, 0)}°F</div>
+              <div class="subline">Model elevation: {fmt(modelElevFt, 0)} ft</div>
               <div class="cond">{wxCodeLabel(wx.current.weather_code)}</div>
             </div>
-            <div class="meta">
-              <div><span class="mk">Feels</span> {fmt(wx.current.apparent_temperature, 0)}°</div>
-              <div><span class="mk">Wind</span> {fmt(wx.current.wind_speed_10m, 0)} mph</div>
-              <div><span class="mk">Gust</span> {fmt(wx.current.wind_gusts_10m, 0)} mph</div>
-              <div><span class="mk">Now</span> {wx.current.time ?? '—'} {wx.timezone_abbreviation ? `(${wx.timezone_abbreviation})` : ''}</div>
+
+            <div class="tempCard">
+              <div class="label">Estimated at trail elevation</div>
+              <div class="temp">~{fmt(tempTrailEstF, 0)}°F</div>
+              <div class="subline">
+                {#if elevLoading}
+                  Loading elevation…
+                {:else if elevErr}
+                  <span class="err">{elevErr}</span>
+                {:else}
+                  Trail elevation: {fmt(trailElevFt, 0)} ft
+                {/if}
+              </div>
+              <div class="tiny">
+                {#if Number.isFinite(deltaElevFt) && Number.isFinite(deltaTempF)}
+                  Δ {fmt(deltaElevFt, 0)} ft → {fmt(deltaTempF, 1)}°F (lapse‑rate estimate)
+                {:else}
+                  Lapse‑rate estimate: ~{LAPSE_F_PER_1000_FT}°F per 1000 ft
+                {/if}
+              </div>
             </div>
           </div>
 
           <div class="hr"></div>
 
+          <div class="meta">
+            <div><span class="mk">Feels</span> {fmt(wx.current.apparent_temperature, 0)}°</div>
+            <div><span class="mk">Wind</span> {fmt(wx.current.wind_speed_10m, 0)} mph</div>
+            <div><span class="mk">Gust</span> {fmt(wx.current.wind_gusts_10m, 0)} mph</div>
+            <div><span class="mk">Now</span> {wx.current.time ?? '—'} {wx.timezone_abbreviation ? `(${wx.timezone_abbreviation})` : ''}</div>
+          </div>
+
+          <div class="hr"></div>
+
           <p class="p small">
-            Ranger note: treat mountain forecasts like suggestions. If clouds drop and wind picks up, slow down early.
+            Ranger note: inversions happen. Treat the elevation-adjusted number as an estimate, not a promise.
           </p>
         {:else}
           <p class="p">No weather available for this point.</p>
         {/if}
       {/if}
+    </div>
+
+    <div class="map card">
+      <div bind:this={container} class="map-inner" aria-label="Appalachian Trail map"></div>
+      <div class="mapHint">Tip: click or drag the marker to set your mile.</div>
     </div>
   </div>
 </div>
@@ -383,6 +553,15 @@
     color: var(--muted);
   }
 
+  .sub.small {
+    font-size: 0.85rem;
+  }
+
+  .sub.err {
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
   .actions {
     display: flex;
     gap: 8px;
@@ -416,24 +595,54 @@
   .grid {
     display: grid;
     grid-template-columns: 1.25fr 0.75fr;
+    grid-template-areas: "map wx";
     gap: 14px;
   }
 
+  .map { grid-area: map; }
+  .wx { grid-area: wx; }
+
+  /* Mobile/tablet: forecast first, map second */
   @media (max-width: 980px) {
     .grid {
       grid-template-columns: 1fr;
+      grid-template-areas:
+        "wx"
+        "map";
     }
   }
 
   .map {
     padding: 0;
     overflow: hidden;
+    position: relative;
   }
 
   .map-inner {
     width: 100%;
     height: 62vh;
     min-height: 420px;
+  }
+
+  .mapHint {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    color: rgba(31, 41, 55, 0.85);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    max-width: calc(100% - 20px);
+  }
+
+  @media (max-width: 600px) {
+    .map-inner {
+      height: 45vh;
+      min-height: 300px;
+    }
   }
 
   .wx {
@@ -447,6 +656,51 @@
     text-transform: uppercase;
     font-size: 0.95rem;
     color: rgba(52, 66, 58, 0.85);
+  }
+
+  .temps {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .temps {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .tempCard {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.65);
+  }
+
+  .label {
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(52, 66, 58, 0.78);
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+
+  .subline {
+    margin-top: 2px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .tiny {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: rgba(52, 66, 58, 0.75);
+  }
+
+  .err {
+    color: #b91c1c;
+    font-weight: 800;
   }
 
   .p {
@@ -503,5 +757,20 @@
     height: 1px;
     background: rgba(0, 0, 0, 0.08);
     margin: 12px 0;
+  }
+
+  /* Leaflet divIcon marker */
+  :global(.at-mile-dot) {
+    background: transparent;
+    border: none;
+  }
+
+  :global(.at-mile-dot__inner) {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #f0e000;
+    border: 2px solid #111827;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
   }
 </style>
