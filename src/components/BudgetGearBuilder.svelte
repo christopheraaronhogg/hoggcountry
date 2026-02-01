@@ -1,16 +1,19 @@
 <script>
-  import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
   import gearData from '../data/gearRecommendations.json';
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   let { trailContext = {} } = $props();
 
-  // Core state
+  loadCharacter();
+
+  // Core state (Character-driven)
   let mounted = $state(false);
-  let budget = $state(1500);
-  let mode = $state('value'); // 'value' | 'weight' | 'durability'
-  let season = $state('3-season');
-  let shelterPref = $state('tent');
+  const _legacyBudget = character.equipment.recommendations.gearBudget.budget; // backward-compat for early v1
+  let budget = $state(character.equipment.recommendations.gearBudget.totalBudget ?? _legacyBudget ?? 1500);
+  let mode = $state(character.equipment.recommendations.gearBudget.mode ?? 'value'); // 'value' | 'weight' | 'durability'
+  let season = $state(character.equipment.recommendations.gearBudget.season ?? '3-season');
+  let shelterPref = $state(character.equipment.recommendations.gearBudget.shelterPref ?? 'tent');
 
   // UI state
   let expandedCategory = $state(null);
@@ -19,23 +22,9 @@
   let selectingCategory = $state(null); // Category being browsed for alternatives
 
   // User overrides - manually selected items by category
-  let userOverrides = $state({});
+  let userOverrides = $state(character.equipment.slots.overridesByCategory || {});
 
-  // Load saved preferences
-  onMount(() => {
-    mounted = true;
-    const saved = localStorage.getItem('at-gear-budget');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        if (data.budget) budget = data.budget;
-        if (data.mode) mode = data.mode;
-        if (data.season) season = data.season;
-        if (data.shelterPref) shelterPref = data.shelterPref;
-        if (data.userOverrides) userOverrides = data.userOverrides;
-      } catch (e) {}
-    }
-  });
+  mounted = true;
 
   // Lock body scroll when modal is open
   $effect(() => {
@@ -49,13 +38,20 @@
     }
   });
 
-  // Save preferences
+  // Persist to unified Character model
   $effect(() => {
-    if (mounted) {
-      localStorage.setItem('at-gear-budget', JSON.stringify({
-        budget, mode, season, shelterPref, userOverrides
-      }));
-    }
+    if (!mounted) return;
+
+    updateCharacter({
+      equipment: {
+        recommendations: {
+          gearBudget: { totalBudget: budget, mode, season, shelterPref },
+        },
+        slots: {
+          overridesByCategory: userOverrides,
+        },
+      },
+    });
   });
 
   // Get budget tier

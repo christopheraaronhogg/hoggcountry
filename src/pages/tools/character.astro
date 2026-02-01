@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolPage from '../../components/tools/ToolPage.svelte';
+
+const title = "Character Sheet — Trail Tools";
+const description = "Build your hiker character. Your character drives all tools.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="container tool-container">
+    <ToolPage client:load toolId="character" toolName="Character Sheet" />
+  </div>
+</BaseLayout>
+
+<style>
+  .tool-container {
+    padding: 2rem 0 4rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+</style>

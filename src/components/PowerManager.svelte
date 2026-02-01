@@ -1,12 +1,11 @@
 <script>
-  import { onMount } from 'svelte';
+  import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   /** @type {{ trailContext: any }} */
   let { trailContext } = $props();
 
   // Active section
   let activeSection = $state('budget');
-  let mounted = $state(false);
 
   // Common trail devices with typical power consumption
   const defaultDevices = [
@@ -28,23 +27,34 @@
     earbuds: 100
   };
 
-  // User's device setup (localStorage)
-  let devices = $state([...defaultDevices.slice(0, 4)]); // Start with phone, GPS/sat messenger, watch, headlamp
-  let powerBankCapacity = $state(30000); // mAh (rated)
-  let powerBankCurrent = $state(100); // percentage
+  loadCharacter();
+
+  // User's device setup (stored on Character)
+  function getDevice(id) {
+    return defaultDevices.find(d => d.id === id);
+  }
+
+  const charPower = character.consumables.power;
+  const initialDeviceIds = Array.isArray(charPower.devices) && charPower.devices.length > 0
+    ? charPower.devices.map(d => d.id)
+    : defaultDevices.slice(0, 4).map(d => d.id);
+
+  let devices = $state(initialDeviceIds.map((id) => getDevice(id)).filter(Boolean));
+  let powerBankCapacity = $state(charPower.powerBankCapacityMah ?? 30000); // mAh (rated)
+  let powerBankCurrent = $state(charPower.powerBankCurrentPct ?? 100); // percentage
 
   // USB output usable capacity estimate (accounts for voltage step-up + conversion losses)
   const USABLE_MAH_PER_10000_RATED = 6300;
   const USABLE_MAH_FACTOR = USABLE_MAH_PER_10000_RATED / 10000;
 
   // Device battery levels
-  let deviceLevels = $state({ ...defaultDeviceLevels });
+  let deviceLevels = $state({ ...defaultDeviceLevels, ...(charPower.deviceLevelsPct || {}) });
 
   // Days since last town charge
-  let daysSinceTown = $state(2);
+  let daysSinceTown = $state(charPower.daysSinceTown ?? 2);
 
   // Power save mode
-  let powerSaveMode = $state(false);
+  let powerSaveMode = $state(!!charPower.powerSaveMode);
 
   // Reset to defaults function
   function resetToDefaults() {
@@ -54,65 +64,31 @@
     deviceLevels = { ...defaultDeviceLevels };
     daysSinceTown = 2;
     powerSaveMode = false;
-    localStorage.removeItem('powerManager');
   }
 
-  // Load from localStorage on mount (runs once, before save effect)
-  onMount(() => {
-    try {
-      const saved = localStorage.getItem('powerManager');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const legacyIdMap = { garmin: 'gps' };
-
-        // Validate devices array
-        if (Array.isArray(parsed.devices) && parsed.devices.length > 0 && parsed.devices.every(d => d && d.id && typeof d.dailyDraw === 'number')) {
-          const normalizedDevices = parsed.devices
-            .map((d) => getDevice(legacyIdMap[d.id] || d.id))
-            .filter(Boolean);
-          if (normalizedDevices.length > 0) devices = normalizedDevices;
-        }
-        if (typeof parsed.powerBankCapacity === 'number' && parsed.powerBankCapacity > 0) {
-          powerBankCapacity = parsed.powerBankCapacity;
-        }
-        if (typeof parsed.powerBankCurrent === 'number' && parsed.powerBankCurrent >= 0 && parsed.powerBankCurrent <= 100) {
-          powerBankCurrent = parsed.powerBankCurrent;
-        }
-        if (parsed.deviceLevels && typeof parsed.deviceLevels === 'object') {
-          const migratedLevels = { ...parsed.deviceLevels };
-          if (typeof migratedLevels.garmin === 'number' && typeof migratedLevels.gps !== 'number') {
-            migratedLevels.gps = migratedLevels.garmin;
-          }
-          delete migratedLevels.garmin;
-          deviceLevels = { ...defaultDeviceLevels, ...migratedLevels };
-        }
-        if (typeof parsed.daysSinceTown === 'number') {
-          daysSinceTown = parsed.daysSinceTown;
-        }
-        if (typeof parsed.powerSaveMode === 'boolean') {
-          powerSaveMode = parsed.powerSaveMode;
-        }
-      }
-    } catch (e) {
-      // If localStorage is corrupted, reset to defaults
-      console.warn('PowerManager: Corrupted localStorage, resetting to defaults');
-      resetToDefaults();
-    }
-    mounted = true;
-  });
-
-  // Save to localStorage (only after mounted to prevent overwriting on init)
+  // Persist into the unified Character model
   $effect(() => {
-    if (mounted) {
-      localStorage.setItem('powerManager', JSON.stringify({
-        devices,
-        powerBankCapacity,
-        powerBankCurrent,
-        deviceLevels,
-        daysSinceTown,
-        powerSaveMode
-      }));
-    }
+    updateCharacter({
+      consumables: {
+        power: {
+          powerBankCapacityMah: powerBankCapacity,
+          powerBankCurrentPct: powerBankCurrent,
+          daysSinceTown,
+          powerSaveMode,
+          devices: (devices || []).map((d) => ({
+            id: d.id,
+            name: d.name,
+            icon: d.icon,
+            dailyDrawMah: d.dailyDraw,
+            batteryCapacityMah: d.capacity,
+            priority: d.priority,
+            essential: d.essential,
+            chargeFreq: d.chargeFreq,
+          })),
+          deviceLevelsPct: deviceLevels,
+        },
+      },
+    });
   });
 
   // Calculate daily power draw (mAh)
@@ -141,10 +117,7 @@
   // Should trigger power save mode?
   let shouldPowerSave = $derived(powerBankCurrent < 35 || daysRemaining < 2);
 
-  // Get device by id
-  function getDevice(id) {
-    return defaultDevices.find(d => d.id === id);
-  }
+  // Get device by id (defined above)
 
   // Toggle device in setup
   function toggleDevice(deviceId) {
