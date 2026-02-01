@@ -204,13 +204,15 @@ export function loadContext(): void {
 export function saveContext(): void {
   if (typeof window === 'undefined' || !_mounted) return;
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    currentMile: _currentMile,
-    startDate: _startDate,
-    targetPace: _targetPace,
-    zeroDaysPerMonth: _zeroDaysPerMonth,
-    contextExpanded: _contextExpanded,
-  }));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      currentMile: _currentMile,
+      startDate: _startDate,
+      targetPace: _targetPace,
+      zeroDaysPerMonth: _zeroDaysPerMonth,
+      contextExpanded: _contextExpanded,
+    }));
+  } catch {}
 }
 
 /**

@@ -221,6 +221,14 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function lsGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 function asNumber(value: unknown, fallback: number): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
@@ -419,7 +427,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   const patch: any = {};
 
   // --- Trail context ---
-  const legacyTrail = safeJsonParse<any>(localStorage.getItem('trailContext'));
+  const legacyTrail = safeJsonParse<any>(lsGet('trailContext'));
   if (legacyTrail) {
     patch.trail = {
       startDate: legacyTrail.startDate || legacyTrail.tripStartDate,
@@ -433,7 +441,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Pack Builder ---
-  const legacyPack = safeJsonParse<any>(localStorage.getItem('at-pack-builder-custom'));
+  const legacyPack = safeJsonParse<any>(lsGet('at-pack-builder-custom'));
   if (legacyPack) {
     const items = Array.isArray(legacyPack.items) ? legacyPack.items : [];
     patch.equipment = patch.equipment || {};
@@ -477,7 +485,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Gear Budget Builder ---
-  const legacyGearBudget = safeJsonParse<any>(localStorage.getItem('at-gear-budget'));
+  const legacyGearBudget = safeJsonParse<any>(lsGet('at-gear-budget'));
   if (legacyGearBudget) {
     patch.equipment = patch.equipment || {};
     patch.equipment.recommendations = patch.equipment.recommendations || {};
@@ -495,7 +503,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Gear transitions ---
-  const legacyTransitions = safeJsonParse<any>(localStorage.getItem('at-gear-transitions-v1'));
+  const legacyTransitions = safeJsonParse<any>(lsGet('at-gear-transitions-v1'));
   if (Array.isArray(legacyTransitions)) {
     patch.equipment = patch.equipment || {};
     patch.equipment.transitions = legacyTransitions.map((t: any) => ({
@@ -508,7 +516,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Food ---
-  const legacyFood = safeJsonParse<any>(localStorage.getItem('at-food-v1'));
+  const legacyFood = safeJsonParse<any>(lsGet('at-food-v1'));
   if (legacyFood) {
     patch.consumables = patch.consumables || {};
     patch.consumables.food = {
@@ -519,7 +527,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Water ---
-  const legacyWater = safeJsonParse<any>(localStorage.getItem('at-water-carry-v1'));
+  const legacyWater = safeJsonParse<any>(lsGet('at-water-carry-v1'));
   if (legacyWater) {
     patch.consumables = patch.consumables || {};
     patch.consumables.water = {
@@ -531,7 +539,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Power ---
-  const legacyPower = safeJsonParse<any>(localStorage.getItem('powerManager'));
+  const legacyPower = safeJsonParse<any>(lsGet('powerManager'));
   if (legacyPower) {
     patch.consumables = patch.consumables || {};
     patch.consumables.power = {
@@ -559,7 +567,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Resupply prefs ---
-  const legacyResupply = safeJsonParse<any>(localStorage.getItem('at-resupply-v1'));
+  const legacyResupply = safeJsonParse<any>(lsGet('at-resupply-v1'));
   if (legacyResupply) {
     patch.logistics = patch.logistics || {};
     patch.logistics.resupply = {
@@ -571,7 +579,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Mail drops ---
-  const legacyMail = safeJsonParse<any>(localStorage.getItem('mailDropPlannerV3'));
+  const legacyMail = safeJsonParse<any>(lsGet('mailDropPlannerV3'));
   if (legacyMail) {
     patch.logistics = patch.logistics || {};
     patch.logistics.mail = {
@@ -586,7 +594,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Budget ---
-  const legacyBudget = safeJsonParse<any>(localStorage.getItem('at-budget-v3'));
+  const legacyBudget = safeJsonParse<any>(lsGet('at-budget-v3'));
   if (legacyBudget) {
     patch.finance = {
       categories: Array.isArray(legacyBudget.uCategories) ? legacyBudget.uCategories : [],
@@ -596,8 +604,8 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Training ---
-  const legacyTraining = safeJsonParse<any>(localStorage.getItem('at-training-planner'));
-  const legacyBench = safeJsonParse<any>(localStorage.getItem('at-training-benchmarks'));
+  const legacyTraining = safeJsonParse<any>(lsGet('at-training-planner'));
+  const legacyBench = safeJsonParse<any>(lsGet('at-training-benchmarks'));
   if (legacyTraining || legacyBench) {
     patch.training = {
       currentFitness: String(legacyTraining?.currentFitness || 'moderate'),
@@ -608,7 +616,7 @@ function migrateFromLegacy(): Partial<CharacterV1> {
   }
 
   // --- Emergency ---
-  const legacyEmergency = safeJsonParse<any>(localStorage.getItem('at-emergency-info'));
+  const legacyEmergency = safeJsonParse<any>(lsGet('at-emergency-info'));
   if (legacyEmergency) {
     patch.emergency = {
       contacts: Array.isArray(legacyEmergency.contacts) && legacyEmergency.contacts.length > 0
@@ -653,7 +661,7 @@ export function loadCharacter(): void {
 
   const base = defaultCharacter();
 
-  const stored = safeJsonParse<Partial<CharacterV1>>(localStorage.getItem(STORAGE_KEY));
+  const stored = safeJsonParse<Partial<CharacterV1>>(lsGet(STORAGE_KEY));
   if (stored && stored.version === 1) {
     _character = mergeDefaults(base, stored);
     _loaded = true;

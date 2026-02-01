@@ -11,7 +11,8 @@
 
   let { toolId, toolName, children }: Props = $props();
 
-  let mounted = $state(false);
+  // Default to visible in SSR so the tool shell isn't a blank page if hydration is delayed/blocked.
+  let mounted = $state(true);
   let ToolComponent = $state<typeof import('svelte').SvelteComponent | null>(null);
 
   // Tool component loaders
