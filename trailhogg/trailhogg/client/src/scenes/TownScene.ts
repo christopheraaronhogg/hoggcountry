@@ -712,6 +712,13 @@ export class TownScene extends Phaser.Scene {
 
     // Show the interaction
     this.showMessage(`${npc.trailName}: "${greeting}" (+5 morale)`, 'success');
+    
+    // Check for companion invite
+    if (bubbleSystem.inviteCompanion(npc.id)) {
+        this.time.delayedCall(1000, () => {
+            this.showMessage(`${npc.trailName} agreed to hike with you!`, 'success');
+        });
+    }
 
     // Refresh the view after a moment
     this.time.delayedCall(1500, () => {

@@ -1278,6 +1278,19 @@ export class GameScene extends Phaser.Scene {
   enterTown(town: any) {
     // Mark as visiting
     this.visitedTowns.add(town.name);
+    
+    // Dismiss companion (they wait at edge of town / do their own thing)
+    // In a full implementation, they might rejoin later, but for now we reset.
+    // Or we could keep them "invited" but inactive.
+    // For simplicity: dismiss with message.
+    const companion = bubbleSystem.getActiveCompanion();
+    if (companion) {
+        this.events.emit('game-event', {
+            type: 'info',
+            message: `${companion.trailName}: "I'm gonna go resupply. Catch you later!"`
+        });
+        bubbleSystem.dismissCompanion();
+    }
 
     // Launch TownScene as overlay
     this.scene.launch('TownScene', {
@@ -1871,6 +1884,32 @@ export class GameScene extends Phaser.Scene {
         this.gameState.time.day
       );
       this.updateBubbleNPCSprites();
+      
+      // Companion Logic
+      const companion = bubbleSystem.getActiveCompanion();
+      if (companion) {
+          // Morale boost from companion (+1 per game hour ~ 5 real seconds? No, update rate is fast)
+          // Just small trickle
+          this.hikerData.moodles.morale = Math.min(100, this.hikerData.moodles.morale + 0.05);
+          
+          // Random companion dialogue (5% chance every 5s)
+          if (Math.random() < 0.05) {
+              const dialogues = [
+                  "Beautiful day for hiking!",
+                  "Only a few more miles to the shelter!",
+                  "Want to take a break soon?",
+                  "Look at that view!",
+                  "I'm craving pizza.",
+                  "Did you hear that bird?",
+                  "My pack feels heavy today."
+              ];
+              const msg = dialogues[Math.floor(Math.random() * dialogues.length)];
+              this.events.emit('game-event', {
+                  type: 'info',
+                  message: `${companion.trailName}: "${msg}"`
+              });
+          }
+      }
     }
 
     // Emit update
@@ -2622,45 +2661,52 @@ export class GameScene extends Phaser.Scene {
       });
 
       // Move obstacles down and check collisions
-          this.obstacles.forEach((s, o) => {
-            if (s.y += e, !s.getData('hit') && Phaser.Math.Distance.Between(this.hiker.x, this.hiker.y, s.x, s.y) < 25) {
-              s.setData('hit', true);
-              const type = s.getData('type');
-      
-              if (type === 'river_crossing') {
-                  this.scene.pause();
-                  this.scene.launch('RiverCrossingScene');
-              } else {
-                  s.setTint(0xff6666);
-                  let damage = 2;
-                  let msg = 'Tripped on a rock!';
-                  if (type === 'roots') {
-                    damage = 3;
-                    msg = 'Caught foot on roots!';
-                  } else if (type === 'mud_puddle') {
-                    damage = 1;
-                    msg = 'Stepped in mud!';
-                  } else if (type === 'boulder') {
-                    damage = 4;
-                    msg = 'Stumbled over boulder!';
-                  } else if (type === 'fallen_log') {
-                    damage = 2;
-                    msg = 'Tripped on fallen log!';
-                  }
-                  if (this.hikerData) {
-                    this.hikerData.energy = Math.max(0, this.hikerData.energy - damage);
-                  }
-                  this.events.emit('game-event', {
-                    type: 'warning',
-                    message: msg
-                  });
-              }
+      for (let i = this.obstacles.length - 1; i >= 0; i -= 1) {
+        const s = this.obstacles[i];
+        s.y += scrollSpeed;
+
+        if (!s.getData('hit') && Phaser.Math.Distance.Between(this.hiker.x, this.hiker.y, s.x, s.y) < 25) {
+          s.setData('hit', true);
+          const type = s.getData('type');
+
+          if (type === 'river_crossing') {
+            this.scene.pause();
+            this.scene.launch('RiverCrossingScene');
+          } else {
+            s.setTint(0xff6666);
+            let damage = 2;
+            let msg = 'Tripped on a rock!';
+
+            if (type === 'roots') {
+              damage = 3;
+              msg = 'Caught foot on roots!';
+            } else if (type === 'mud_puddle') {
+              damage = 1;
+              msg = 'Stepped in mud!';
+            } else if (type === 'boulder') {
+              damage = 4;
+              msg = 'Stumbled over boulder!';
+            } else if (type === 'fallen_log') {
+              damage = 2;
+              msg = 'Tripped on fallen log!';
             }
-            if (s.y > Q + 50) {
-              s.destroy();
-              this.obstacles.splice(o, 1);
+
+            if (this.hikerData) {
+              this.hikerData.energy = Math.max(0, this.hikerData.energy - damage);
             }
-          }),
+
+            this.events.emit('game-event', {
+              type: 'warning',
+              message: msg,
+            });
+          }
+        }
+
+        if (s.y > height + 50) {
+          s.destroy();
+          this.obstacles.splice(i, 1);
+        }
+      }
       // Spawn new obstacles periodically
       this.nextObstacleSpawn -= delta;
       if (this.nextObstacleSpawn <= 0) {
@@ -3577,6 +3623,7 @@ export class GameScene extends Phaser.Scene {
 
     const { width, height } = this.cameras.main;
     const playerMile = this.hikerData.mile;
+    const activeCompanion = bubbleSystem.getActiveCompanion();
 
     // Get NPCs within 2 miles (visible range)
     const nearbyNPCs = bubbleSystem.getNPCsNearMile(playerMile, 2);
@@ -3585,6 +3632,9 @@ export class GameScene extends Phaser.Scene {
     const seenIds = new Set<string>();
 
     nearbyNPCs.forEach(npc => {
+      // Skip active companion in general loop (handled separately)
+      if (activeCompanion && npc.id === activeCompanion.id) return;
+
       seenIds.add(npc.id);
 
       const mileDiff = npc.mile - playerMile;
@@ -3617,6 +3667,28 @@ export class GameScene extends Phaser.Scene {
         this.triggerBubbleEncounter(npc);
       }
     });
+
+    // Handle Active Companion
+    if (activeCompanion) {
+        seenIds.add(activeCompanion.id);
+        let compContainer = this.bubbleSprites.get(activeCompanion.id);
+        
+        if (!compContainer) {
+            compContainer = this.createBubbleNPCSprite(activeCompanion);
+            this.bubbleSprites.set(activeCompanion.id, compContainer);
+        }
+        
+        // Companion is always beside player
+        // Oscillate slightly for walking effect
+        const bob = this.hikerData.isHiking ? Math.sin(this.time.now / 200) * 5 : 0;
+        compContainer.setY(height * 0.65 + bob);
+        compContainer.setX(width * 0.5 + 50); // 50px to the right
+        compContainer.setVisible(true);
+        
+        // Highlight companion
+        const sprite = compContainer.list[0] as Phaser.GameObjects.Rectangle;
+        if (sprite) sprite.setFillStyle(0x44ff44); // Green for buddy
+    }
 
     // Hide sprites for NPCs no longer nearby
     this.bubbleSprites.forEach((sprite, id) => {

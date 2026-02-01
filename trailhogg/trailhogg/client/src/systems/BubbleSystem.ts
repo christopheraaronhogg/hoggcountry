@@ -47,6 +47,9 @@ export interface BubbleNPC {
   // Helpful trail tips they share
   trailTips: string[];
   quitReason?: string;
+  
+  // Companion status
+  companionStatus?: 'available' | 'invited' | 'active' | 'resting';
 }
 
 // Pace in miles per game hour
@@ -62,12 +65,14 @@ export class BubbleSystem {
   private npcs: Map<string, BubbleNPC> = new Map();
   private yardSaleItems: YardSaleItem[] = [];
   private lastSimulationTime: number = 0;
+  private activeCompanionId: string | null = null;
 
   constructor() {}
 
   // Generate initial bubble of 15-20 NPCs around the player's position
   generateBubble(playerMile: number, playerDaysOnTrail: number): void {
     this.npcs.clear();
+    this.activeCompanionId = null;
 
     const count = 15 + Math.floor(Math.random() * 6); // 15-20 NPCs
 
@@ -128,6 +133,7 @@ export class BubbleSystem {
       },
 
       trailTips: data.trailTips,
+      companionStatus: 'available'
     };
   }
 
@@ -139,8 +145,38 @@ export class BubbleSystem {
     for (const npc of this.npcs.values()) {
       if (npc.state === 'quit') continue;
 
-      this.simulateNPC(npc, playerMile, gameHour, gameDay, isHikingHours);
+      // Special handling for active companion
+      if (npc.id === this.activeCompanionId && npc.companionStatus === 'active') {
+        this.simulateCompanion(npc, playerMile, isHikingHours);
+      } else {
+        this.simulateNPC(npc, playerMile, gameHour, gameDay, isHikingHours);
+      }
     }
+  }
+
+  private simulateCompanion(npc: BubbleNPC, playerMile: number, isHikingHours: boolean): void {
+    // Companion syncs to player position
+    // If player is hiking, companion hikes.
+    // We assume this is called when player moves, or periodically.
+    // For simplicity, we snap companion to player mile with a small random offset
+    // so they appear to be hiking alongside.
+    
+    // Offset oscillates slightly to look natural
+    const offset = Math.sin(Date.now() / 1000) * 0.0005; 
+    npc.mile = playerMile - 0.001 + offset; // Always slightly behind/beside
+    
+    // Energy management
+    if (isHikingHours) {
+        // Drain energy slightly slower than alone because of morale boost? 
+        // Or same. Let's say standard drain.
+        npc.energy = Math.max(0, npc.energy - 0.4); 
+    } else {
+        // Resting
+        npc.energy = Math.min(100, npc.energy + 2);
+    }
+    
+    // Morale boost from being a companion
+    npc.morale = Math.min(100, npc.morale + 0.1);
   }
 
   private simulateNPC(
@@ -380,6 +416,64 @@ export class BubbleSystem {
   }
 
   // Get random gossip from an NPC
+  getGossip(npcId: string): string {
+    const npc = this.npcs.get(npcId);
+    if (!npc) return "Just hiking along...";
+    
+    const gossips = [
+        `I heard ${this.getRandomNPCName()} hiked 30 miles yesterday!`,
+        `Did you see that bear near the last shelter?`,
+        `Someone left amazing trail magic at the next gap.`,
+        `My feet are killing me today.`,
+        `I can't wait for a burger in town.`,
+        `The weather is supposed to turn nasty tomorrow.`,
+        `I lost my spork... eating with a tent stake now.`,
+        `Have you met ${this.getRandomNPCName()}? They're hilarious.`,
+        `This climb is brutal, isn't it?`
+    ];
+    return gossips[Math.floor(Math.random() * gossips.length)];
+  }
+
+  private getRandomNPCName(): string {
+      const ids = Array.from(this.npcs.keys());
+      if (ids.length === 0) return "some hiker";
+      const randomId = ids[Math.floor(Math.random() * ids.length)];
+      return this.npcs.get(randomId)?.trailName || "some hiker";
+  }
+
+  // Hiking Buddy Methods
+  inviteCompanion(npcId: string): boolean {
+      const npc = this.npcs.get(npcId);
+      if (!npc) return false;
+      if (this.activeCompanionId) return false; // Already have one
+      
+      // Check requirements
+      if (npc.relationship.encounters < 3 && npc.relationship.friendliness < 60) return false;
+      
+      this.activeCompanionId = npcId;
+      npc.companionStatus = 'active';
+      console.log(`[BubbleSystem] Invited ${npc.trailName} as companion`);
+      return true;
+  }
+  
+  dismissCompanion(): void {
+      if (!this.activeCompanionId) return;
+      
+      const npc = this.npcs.get(this.activeCompanionId);
+      if (npc) {
+          npc.companionStatus = 'available';
+          // Move them slightly away so they don't instantly re-trigger
+          npc.mile += 0.05; 
+      }
+      this.activeCompanionId = null;
+      console.log(`[BubbleSystem] Dismissed companion`);
+  }
+  
+  getActiveCompanion(): BubbleNPC | null {
+      if (!this.activeCompanionId) return null;
+      return this.npcs.get(this.activeCompanionId) || null;
+  }
+
   // Get a helpful trail tip from an NPC
   getTrailTip(npcId: string): string | null {
     const npc = this.npcs.get(npcId);
@@ -420,6 +514,7 @@ export class BubbleSystem {
     return {
       npcs: Array.from(this.npcs.values()),
       yardSaleItems: this.yardSaleItems,
+      activeCompanionId: this.activeCompanionId
     };
   }
 
@@ -429,6 +524,7 @@ export class BubbleSystem {
       this.npcs.set(npc.id, npc);
     }
     this.yardSaleItems = data.yardSaleItems || [];
+    this.activeCompanionId = data.activeCompanionId || null;
 
     console.log(`[BubbleSystem] Restored ${this.npcs.size} NPCs`);
   }
@@ -455,6 +551,7 @@ export interface YardSaleItem {
 export interface SerializedBubbleData {
   npcs: BubbleNPC[];
   yardSaleItems: YardSaleItem[];
+  activeCompanionId?: string | null;
 }
 
 // Singleton instance

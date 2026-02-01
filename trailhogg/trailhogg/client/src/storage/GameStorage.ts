@@ -83,7 +83,6 @@ export interface GameSaveData {
   journalData?: import('../systems/JournalSystem').SerializedJournalData;
   // Trail Angel mode
   trailAngelUnlocked?: boolean;
-  trailAngelBoxes?: import('../systems/TrailAngelSystem').TrailAngelBox[];
 }
 
 class GameStorage {
