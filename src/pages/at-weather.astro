@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import AtWeather from "../components/AtWeather.svelte";
+---
+
+<BaseLayout
+  title="Appalachian Trail Weather"
+  description="Drag the mile marker to get the forecast along the Appalachian Trail."
+>
+  <section class="content">
+    <h1>Appalachian Trail Weather</h1>
+    <p class="lede">
+      Drag the mile marker to get a forecast near that point on the A.T. (Open-Meteo).
+    </p>
+
+    <AtWeather client:only="svelte" />
+
+    <p class="fineprint">
+      Forecast data: <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a>.
+      Map data: <a href="https://www.openstreetmap.org/relation/156553" target="_blank" rel="noreferrer">OSM relation 156553</a>.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 16px 56px;
+  }
+
+  .lede {
+    margin-top: 0.25rem;
+    color: var(--muted);
+  }
+
+  .fineprint {
+    margin-top: 14px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+</style>

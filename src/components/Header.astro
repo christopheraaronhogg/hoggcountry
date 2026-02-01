@@ -7,6 +7,7 @@ const isGenerate = pathname.startsWith('/generate');
 const isTools = pathname.startsWith('/tools');
 const isCharacter = pathname.startsWith('/character');
 const isAtMap = pathname.startsWith('/at-map');
+const isAtWeather = pathname.startsWith('/at-weather');
 
 // Show tracking link only if enabled AND we're past the start date
 const now = new Date();
@@ -26,6 +27,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       <a href="/character" class={`nav-link ${isCharacter ? 'is-active' : ''}`}>Character</a>
       <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
       <a href="/at-map" class={`nav-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
+      <a href="/at-weather" class={`nav-link ${isAtWeather ? 'is-active' : ''}`}>AT Weather</a>
       {showTracking && (
         <a
           href={LIVE_TRACKING_URL}
