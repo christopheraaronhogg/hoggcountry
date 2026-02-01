@@ -66,6 +66,15 @@
   // Reserved for future “time horizon” exploration, but AT Map stays POI-first (no temps on-map).
   let timeOffsetHours = $state<number>(0); // 0..24 step 3 (unused for now)
 
+  // UI state
+  let layersOpen = $state(false);
+  let nearbyOpen = $state(false);
+  let nearbyTab = $state<"shelters" | "water" | "crossings" | "resupply">("shelters");
+
+  function adjustMile(delta: number) {
+    selectedMile = clamp(selectedMile + delta, 0, 2197);
+  }
+
   // Map hooks (wired after Leaflet init)
   let mapReady = $state(false);
   let syncOverlaysFn: (() => void) | null = null;
@@ -803,338 +812,165 @@
   });
 </script>
 
-<div class="explorer">
-  <aside class="panel" aria-label="AT map explorer">
-    <div class="panelTop">
-      <div>
-        <div class="k">Mile</div>
-        <div class="mile">{selectedMile}</div>
-        <div class="sub">Saved current: <b>{savedMile}</b></div>
-      </div>
+<svelte:window on:keydown={(e) => {
+  if (e.key === 'Escape') {
+    layersOpen = false;
+    nearbyOpen = false;
+  }
+}} />
 
-      <div class="panelActions">
-        <button class="btn" type="button" on:click={() => locatePreviewFn?.()}>Use my location</button>
-        <button class="btn" type="button" disabled={selectedMile === savedMile} on:click={() => updateContext({ currentMile: selectedMile })}>
-          Set as current
-        </button>
-        <a class="btn ghost" href={`/at-weather?mile=${selectedMile}`}>Weather →</a>
-      </div>
+<div class="mapShell" aria-label="AT Map Explorer">
+  <div class="at-map" bind:this={container} aria-label="Appalachian Trail map" />
+
+  <!-- Top HUD -->
+  <div class="hudTop" aria-label="Map status">
+    <div class="hudLeft">
+      <div class="hudK">Mile</div>
+      <div class="hudMile">{selectedMile}</div>
+      <div class="hudSub">Saved: <b>{savedMile}</b></div>
     </div>
 
-    <input class="mileSlider" type="range" min="0" max="2197" step="1" bind:value={selectedMile} aria-label="Mile slider" />
+    <div class="hudRight">
+      <button class="iconBtn" type="button" title="Use my location" aria-label="Use my location" on:click={() => locatePreviewFn?.()}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9.94 3A10 10 0 0 0 13 2.06V5a7 7 0 0 1 6 6h2.94ZM11 2.06A10 10 0 0 0 2.06 11H5a7 7 0 0 1 6-6V2.06ZM5 13H2.06A10 10 0 0 0 11 21.94V19a7 7 0 0 1-6-6Zm8 6v2.94A10 10 0 0 0 21.94 13H19a7 7 0 0 1-6 6Z"/></svg>
+      </button>
 
-    <div class="hint">Drag the slider or drag the dot on the map to explore what’s ahead.</div>
+      <a class="iconBtn" href={`/at-weather?mile=${selectedMile}`} title="Weather" aria-label="Weather">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 19h11a4 4 0 0 0 .4-7.98A6 6 0 0 0 5.1 9.7 4.5 4.5 0 0 0 6 19Zm9-14a4 4 0 0 1 3.9 3.1l.2 1 1 .2A2 2 0 0 1 19 13a2 2 0 0 1-2 2H6a2.5 2.5 0 0 1-.3-5l1-.1.4-.9A4 4 0 0 1 15 5Z"/></svg>
+      </a>
 
-    <details class="layers">
-      <summary>Layers</summary>
-      <div class="toggles">
-        <label class="toggle"><input type="checkbox" bind:checked={showHoggTracker} /> <span>Hogg tracker</span></label>
-        <label class="toggle"><input type="checkbox" bind:checked={showResupplyStops} /> <span>Resupply</span></label>
-        <label class="toggle"><input type="checkbox" bind:checked={showShelters} /> <span>Shelters</span></label>
-        <label class="toggle"><input type="checkbox" bind:checked={showWaterSources} /> <span>Water (zoom 11+)</span></label>
-        <label class="toggle"><input type="checkbox" bind:checked={showRoadCrossings} /> <span>Road crossings</span></label>
-        <label class="toggle"><input type="checkbox" bind:checked={showMileMarkers} /> <span>Mile markers</span></label>
+      <button class="iconBtn" type="button" title="Layers" aria-label="Layers" on:click={() => { layersOpen = true; nearbyOpen = false; }}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 1 7l11 5 9-4.09V17h2V7L12 2Zm0 12L1 9v2l11 5 11-5V9l-11 5Zm0 6L1 15v2l11 5 11-5v-2l-11 5Z"/></svg>
+      </button>
+
+      <button class="iconBtn" type="button" title="Nearby" aria-label="Nearby" on:click={() => { nearbyOpen = true; layersOpen = false; }}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom scrubber deck -->
+  <div class="hudBottom" aria-label="Mile scrubber">
+    <div class="scrubRow">
+      <button class="nudge" type="button" on:click={() => adjustMile(-5)}>-5</button>
+      <input class="heroSlider" type="range" min="0" max="2197" step="1" bind:value={selectedMile} aria-label="Mile" />
+      <button class="nudge" type="button" on:click={() => adjustMile(5)}>+5</button>
+    </div>
+
+    <button class="peek" type="button" on:click={() => { nearbyOpen = true; layersOpen = false; }}>
+      {#if nextShelter}
+        Next shelter: <b>{nextShelter.name}</b> (mile {nextShelter.mile})
+      {:else}
+        Tap for nearby points
+      {/if}
+    </button>
+  </div>
+
+  <!-- Layers modal -->
+  {#if layersOpen}
+    <div class="overlay" on:click={() => (layersOpen = false)} aria-hidden="true"></div>
+    <div class="modal" role="dialog" aria-modal="true" on:click|stopPropagation aria-label="Layers">
+      <div class="modalTitle">Layers</div>
+      <div class="modalRow">
+        <button class="modalBtn" type="button" on:click={() => { locatePreviewFn?.(); layersOpen = false; }}>Use my location</button>
+        <button class="modalBtn" type="button" disabled={selectedMile === savedMile} on:click={() => { updateContext({ currentMile: selectedMile }); layersOpen = false; }}>Set as current</button>
+        <button class="modalBtn ghost" type="button" on:click={() => (layersOpen = false)}>Close</button>
       </div>
-    </details>
 
-    <div class="nearby" aria-label="Nearby points of interest">
-      <div class="k">Nearby</div>
+      <div class="modalToggles">
+        <label class="t"><input type="checkbox" bind:checked={showHoggTracker} /> <span>Hogg tracker</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showResupplyStops} /> <span>Resupply</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showShelters} /> <span>Shelters</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showWaterSources} /> <span>Water (zoom 11+)</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showRoadCrossings} /> <span>Road crossings</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showMileMarkers} /> <span>Mile markers</span></label>
+      </div>
+    </div>
+  {/if}
 
-      <div class="nextUp">
-        <div class="row2">
-          <div class="nk">Next resupply</div>
-          <div class="nv">{nextResupply ? `${nextResupply.name} (mile ${nextResupply.mile})` : '—'}</div>
+  <!-- Nearby drawer -->
+  {#if nearbyOpen}
+    <div class="overlay" on:click={() => (nearbyOpen = false)} aria-hidden="true"></div>
+    <div class="drawer" role="dialog" aria-modal="true" on:click|stopPropagation aria-label="Nearby points">
+      <div class="drawerTop">
+        <div>
+          <div class="drawerTitle">Nearby</div>
+          <div class="drawerSub">Mile <b>{selectedMile}</b></div>
         </div>
-        <div class="row2">
-          <div class="nk">Next shelter</div>
-          <div class="nv">{nextShelter ? `${nextShelter.name} (mile ${nextShelter.mile})` : '—'}</div>
-        </div>
-        <div class="row2">
-          <div class="nk">Next water</div>
-          <div class="nv">{nextWater ? `${nextWater.name} (mile ${nextWater.mile})` : '—'}</div>
-        </div>
-        <div class="row2">
-          <div class="nk">Next road crossing</div>
-          <div class="nv">{nextCrossing ? `${nextCrossing.name} (mile ${nextCrossing.mile})` : '—'}</div>
-        </div>
+        <button class="iconBtn close" type="button" aria-label="Close" on:click={() => (nearbyOpen = false)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.71 2.89 18.3 9.17 12 2.89 5.71 4.3 4.29l6.29 6.3 6.3-6.3 1.41 1.42Z"/></svg>
+        </button>
       </div>
 
-      <div class="lists">
-        <div class="list">
-          <div class="lk">Upcoming shelters (≤ 25 mi)</div>
+      <div class="nextGrid">
+        <div class="kv"><div class="kk">Next resupply</div><div class="vv">{nextResupply ? `${nextResupply.name} (mile ${nextResupply.mile})` : '—'}</div></div>
+        <div class="kv"><div class="kk">Next shelter</div><div class="vv">{nextShelter ? `${nextShelter.name} (mile ${nextShelter.mile})` : '—'}</div></div>
+        <div class="kv"><div class="kk">Next water</div><div class="vv">{nextWater ? `${nextWater.name} (mile ${nextWater.mile})` : '—'}</div></div>
+        <div class="kv"><div class="kk">Next crossing</div><div class="vv">{nextCrossing ? `${nextCrossing.name} (mile ${nextCrossing.mile})` : '—'}</div></div>
+      </div>
+
+      <div class="chipRow" role="tablist">
+        <button class="chip" class:active={nearbyTab==='shelters'} type="button" on:click={() => (nearbyTab='shelters')}>Shelters</button>
+        <button class="chip" class:active={nearbyTab==='water'} type="button" on:click={() => (nearbyTab='water')}>Water</button>
+        <button class="chip" class:active={nearbyTab==='crossings'} type="button" on:click={() => (nearbyTab='crossings')}>Crossings</button>
+        <button class="chip" class:active={nearbyTab==='resupply'} type="button" on:click={() => (nearbyTab='resupply')}>Resupply</button>
+      </div>
+
+      <div class="listBox">
+        {#if nearbyTab === 'shelters'}
           {#if !upcomingShelters.length}
-            <div class="lv">—</div>
+            <div class="empty">—</div>
           {:else}
             {#each upcomingShelters as s (s.name + s.mile)}
               <div class="li">• {s.name} — mile {s.mile}</div>
             {/each}
           {/if}
-        </div>
-
-        <div class="list">
-          <div class="lk">Upcoming water (≤ 12 mi)</div>
+        {:else if nearbyTab === 'water'}
           {#if !upcomingWater.length}
-            <div class="lv">—</div>
+            <div class="empty">—</div>
           {:else}
             {#each upcomingWater as w (w.name + w.mile)}
               <div class="li">• {w.name} — mile {w.mile}</div>
             {/each}
           {/if}
-        </div>
-
-        <div class="list">
-          <div class="lk">Upcoming road crossings (≤ 25 mi)</div>
+        {:else if nearbyTab === 'crossings'}
           {#if !upcomingCrossings.length}
-            <div class="lv">—</div>
+            <div class="empty">—</div>
           {:else}
             {#each upcomingCrossings as c (c.name + c.mile)}
               <div class="li">• {c.name} — mile {c.mile}</div>
             {/each}
           {/if}
-        </div>
+        {:else}
+          {#if !upcomingResupply.length}
+            <div class="empty">—</div>
+          {:else}
+            {#each upcomingResupply as r (r.name + r.mile)}
+              <div class="li">• {r.name} — mile {r.mile}</div>
+            {/each}
+          {/if}
+        {/if}
       </div>
 
-      <div class="nearbyHint">Tap the map to move the dot. Drag the dot to fine‑tune.</div>
+      <div class="drawerHint">Tip: drag the bottom slider to “scrub” the trail.</div>
     </div>
-  </aside>
-
-  <div class="mapWrap">
-    <div class="at-map" bind:this={container} aria-label="Appalachian Trail map" />
-  </div>
+  {/if}
 </div>
 
 <style>
-  .explorer {
-    display: grid;
-    grid-template-columns: 380px 1fr;
-    gap: 14px;
-    align-items: start;
-  }
-
-  @media (max-width: 920px) {
-    .explorer {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .panel {
-    border: 1px solid rgba(0,0,0,0.10);
-    border-radius: 16px;
-    background: rgba(255,255,255,0.78);
-    box-shadow: 0 18px 52px rgba(0,0,0,0.12);
-    padding: 12px;
-    backdrop-filter: blur(8px);
-  }
-
-  .panelTop {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .k {
-    font-family: Oswald, system-ui, sans-serif;
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(52, 66, 58, 0.82);
-    font-weight: 800;
-  }
-
-  .mile {
-    font-family: Anton, Oswald, system-ui, sans-serif;
-    font-size: 2.1rem;
-    line-height: 1.05;
-    letter-spacing: 0.02em;
-    color: rgba(31, 41, 55, 0.92);
-  }
-
-  .sub {
-    margin-top: 2px;
-    font-size: 0.92rem;
-    color: rgba(55, 65, 81, 0.72);
-  }
-
-  .panelActions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-end;
-  }
-
-  .panel .btn {
-    height: 40px;
-    padding: 0 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.86);
-    font-family: Oswald, system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    font-size: 0.78rem;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(31, 41, 55, 0.88);
-  }
-
-  .panel .btn:hover {
-    background: rgba(240, 224, 0, 0.18);
-    border-color: rgba(0,0,0,0.16);
-  }
-
-  .panel .btn:disabled {
-    opacity: 0.55;
-    cursor: default;
-  }
-
-  .panel .btn.ghost {
-    background: rgba(255,255,255,0.0);
-  }
-
-  .mileSlider {
-    width: 100%;
-    margin-top: 10px;
-  }
-
-  .panel .hint {
-    margin-top: 6px;
-    font-size: 0.92rem;
-    color: rgba(55, 65, 81, 0.72);
-  }
-
-  details.layers {
-    margin-top: 10px;
-    border-top: 1px solid rgba(0,0,0,0.08);
-    padding-top: 10px;
-  }
-
-  details.layers summary {
-    cursor: pointer;
-    user-select: none;
-    font-family: Oswald, system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 800;
-    color: rgba(31, 41, 55, 0.86);
-    margin-bottom: 10px;
-  }
-
-  .panel .toggles {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 12px;
-  }
-
-  .panel .toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.95rem;
-    color: rgba(31, 41, 55, 0.86);
-    user-select: none;
-  }
-
-  .nearby {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(0,0,0,0.08);
-  }
-
-  .nearbyHint {
-    margin-top: 10px;
-    font-size: 0.92rem;
-    color: rgba(55, 65, 81, 0.72);
-  }
-
-  .nextUp {
-    margin-top: 10px;
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 14px;
-    padding: 10px 12px;
-    background: rgba(255,255,255,0.65);
-  }
-
-  .row2 {
-    display: grid;
-    grid-template-columns: 130px 1fr;
-    gap: 10px;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-  }
-
-  .row2:last-child {
-    border-bottom: none;
-  }
-
-  .nk {
-    font-family: Oswald, system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 0.75rem;
-    color: rgba(52, 66, 58, 0.75);
-    font-weight: 800;
-  }
-
-  .nv {
-    font-size: 0.95rem;
-    color: rgba(31, 41, 55, 0.88);
-  }
-
-  .lists {
-    margin-top: 12px;
-    display: grid;
-    gap: 10px;
-  }
-
-  .list {
-    border: 1px solid rgba(0,0,0,0.06);
-    border-radius: 14px;
-    padding: 10px 12px;
-    background: rgba(255,255,255,0.55);
-  }
-
-  .lk {
-    font-family: Oswald, system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 0.78rem;
-    color: rgba(31, 41, 55, 0.78);
-    font-weight: 800;
-    margin-bottom: 6px;
-  }
-
-  .li {
-    font-size: 0.95rem;
-    color: rgba(31, 41, 55, 0.86);
-    line-height: 1.35;
-    padding: 3px 0;
-  }
-
-  .lv {
-    font-size: 0.95rem;
-    color: rgba(55, 65, 81, 0.7);
-  }
-
-  @media (max-width: 520px) {
-    .row2 { grid-template-columns: 1fr; }
-  }
-
-  .mapWrap {
+  .mapShell {
     position: relative;
-  }
-
-  .at-map {
-    width: 100%;
-    height: min(72vh, 720px);
+    height: min(82vh, 820px);
     border-radius: 16px;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .at-map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
   :global(.leaflet-container) {
@@ -1156,7 +992,348 @@
     box-shadow: 0 10px 24px rgba(0,0,0,0.18);
   }
 
+  /* HUD */
+  .hudTop {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 600;
+    pointer-events: none;
+  }
+
+  .hudLeft {
+    pointer-events: auto;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 14px;
+    padding: 9px 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 14px 46px rgba(0,0,0,0.16);
+  }
+
+  .hudK {
+    font-family: Oswald, system-ui, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(52, 66, 58, 0.75);
+    font-weight: 800;
+  }
+
+  .hudMile {
+    font-family: Anton, Oswald, system-ui, sans-serif;
+    font-size: 1.85rem;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    color: rgba(31, 41, 55, 0.94);
+  }
+
+  .hudSub {
+    margin-top: 2px;
+    font-size: 0.9rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .hudRight {
+    pointer-events: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .iconBtn {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.82);
+    color: rgba(31, 41, 55, 0.90);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 14px 42px rgba(0,0,0,0.14);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .iconBtn:hover {
+    background: rgba(240, 224, 0, 0.18);
+    border-color: rgba(0,0,0,0.16);
+  }
+
+  .iconBtn svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+  }
+
+  .iconBtn.close {
+    width: 40px;
+    height: 40px;
+    box-shadow: none;
+  }
+
+  .hudBottom {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 600;
+    display: grid;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .scrubRow {
+    pointer-events: auto;
+    display: grid;
+    grid-template-columns: 56px 1fr 56px;
+    gap: 8px;
+    align-items: center;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 16px;
+    padding: 10px 10px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.18);
+  }
+
+  .nudge {
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.86);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    color: rgba(31, 41, 55, 0.88);
+    cursor: pointer;
+  }
+
+  .nudge:hover {
+    background: rgba(240, 224, 0, 0.18);
+  }
+
+  .heroSlider {
+    width: 100%;
+    height: 26px;
+    accent-color: #f0e000;
+  }
+
+  .peek {
+    pointer-events: auto;
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.82);
+    padding: 10px 12px;
+    text-align: left;
+    color: rgba(31, 41, 55, 0.88);
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.18);
+  }
+
+  /* Overlays */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 2000;
+  }
+
+  .modal {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 2100;
+    background: rgba(255,255,255,0.94);
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.24);
+    backdrop-filter: blur(12px);
+  }
+
+  .modalTitle {
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 900;
+    color: rgba(31, 41, 55, 0.88);
+    margin-bottom: 10px;
+  }
+
+  .modalRow {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .modalBtn {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.86);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+
+  .modalBtn.ghost {
+    background: rgba(255,255,255,0.0);
+  }
+
+  .modalToggles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+  }
+
+  .t {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.86);
+  }
+
+  .drawer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2100;
+    max-height: 74vh;
+    overflow: auto;
+    background: rgba(255,255,255,0.96);
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-bottom: none;
+    padding: 12px;
+    box-shadow: 0 -18px 60px rgba(0,0,0,0.24);
+    backdrop-filter: blur(12px);
+  }
+
+  .drawerTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .drawerTitle {
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 900;
+    color: rgba(31, 41, 55, 0.88);
+  }
+
+  .drawerSub {
+    font-size: 0.95rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .nextGrid {
+    display: grid;
+    gap: 8px;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.70);
+    margin-bottom: 10px;
+  }
+
+  .kv {
+    display: grid;
+    gap: 2px;
+  }
+
+  .kk {
+    font-family: Oswald, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.75rem;
+    color: rgba(52, 66, 58, 0.75);
+    font-weight: 900;
+  }
+
+  .vv {
+    font-size: 0.98rem;
+    color: rgba(31, 41, 55, 0.88);
+  }
+
+  .chipRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .chip {
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.82);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: rgba(31, 41, 55, 0.86);
+  }
+
+  .chip.active {
+    background: rgba(240, 224, 0, 0.22);
+  }
+
+  .listBox {
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.70);
+  }
+
+  .li {
+    font-size: 0.98rem;
+    color: rgba(31, 41, 55, 0.88);
+    line-height: 1.35;
+    padding: 4px 0;
+  }
+
+  .empty {
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .drawerHint {
+    margin-top: 10px;
+    font-size: 0.92rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  @media (min-width: 920px) {
+    /* Desktop: make HUD less wide */
+    .hudTop { left: 16px; right: 16px; }
+    .hudBottom { left: 16px; right: 16px; max-width: 560px; }
+    .drawer, .modal { left: auto; right: 16px; width: 420px; border-radius: 18px; bottom: 16px; }
+    .drawer { max-height: 70vh; }
+  }
+
   @media (max-width: 520px) {
-    .panel .toggles { grid-template-columns: 1fr; }
+    .modalToggles { grid-template-columns: 1fr; }
   }
 </style>
