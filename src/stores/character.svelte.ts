@@ -111,10 +111,9 @@ export type CharacterV1 = {
     telegramUsername: string;
     bio: string;
 
-    // "constraints" is intentionally open-ended.
+    // Core preferences used across tools.
     constraints: {
       noHitchhiking: boolean;
-      scriptureTranslation: 'KJV' | 'other';
       cleanLanguage: boolean;
     };
   };
@@ -278,7 +277,6 @@ function defaultCharacter(): CharacterV1 {
       bio: '',
       constraints: {
         noHitchhiking: true,
-        scriptureTranslation: 'KJV',
         cleanLanguage: true,
       },
     },
@@ -404,7 +402,15 @@ function mergeDefaults(base: CharacterV1, incoming: Partial<CharacterV1>): Chara
   return {
     ...base,
     ...incoming,
-    core: { ...base.core, ...(incoming.core || {}), constraints: { ...base.core.constraints, ...(incoming.core?.constraints || {}) } },
+    core: {
+      ...base.core,
+      ...(incoming.core || {}),
+      constraints: {
+        // Explicitly pick known keys so we can safely drop deprecated ones.
+        noHitchhiking: typeof incoming.core?.constraints?.noHitchhiking === 'boolean' ? incoming.core.constraints.noHitchhiking : base.core.constraints.noHitchhiking,
+        cleanLanguage: typeof incoming.core?.constraints?.cleanLanguage === 'boolean' ? incoming.core.constraints.cleanLanguage : base.core.constraints.cleanLanguage,
+      },
+    },
     trail: { ...base.trail, ...(incoming.trail || {}) },
     equipment: {
       ...base.equipment,

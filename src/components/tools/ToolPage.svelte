@@ -105,7 +105,7 @@
 
 <style>
   .tool-page {
-    max-width: 960px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 0 1rem;
     opacity: 0;

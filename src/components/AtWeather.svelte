@@ -524,10 +524,10 @@
   <div class="controls card">
     <div class="row">
       <div>
-        <div class="k">Preview mile</div>
+        <div class="k">Mile</div>
         <div class="v">{mile}</div>
         <div class="sub">Lat {lat.toFixed(4)} • Lon {lon.toFixed(4)}</div>
-        <div class="sub small">Current (Character): <b>{characterMile}</b></div>
+        <div class="sub small">Saved current mile: <b>{characterMile}</b></div>
         {#if savedMsg}
           <div class="sub saved">{savedMsg}</div>
         {/if}
@@ -540,15 +540,14 @@
       </div>
       <div class="actions">
         <button class="btn" type="button" onclick={useMyLocation} disabled={locating}>
-          {locating ? 'Locating…' : 'Use GPS (preview)'}
+          {locating ? 'Locating…' : 'Use my location'}
         </button>
-        <button class="btn" type="button" onclick={syncGpsToCurrentMile} disabled={locating}>
-          {locating ? 'Locating…' : 'Sync GPS → Current'}
-        </button>
-        <button class="btn" type="button" onclick={setAsCurrentMile} disabled={mile === characterMile}>
-          Set as Current
-        </button>
-        <button class="btn" type="button" onclick={copyLink}>Copy link</button>
+        {#if mile !== characterMile}
+          <button class="btn" type="button" onclick={setAsCurrentMile}>
+            Set as Current
+          </button>
+        {/if}
+        <button class="btn ghost" type="button" onclick={copyLink}>Copy link</button>
       </div>
     </div>
 
@@ -714,6 +713,16 @@
   .btn:hover {
     background: rgba(240, 224, 0, 0.18);
     border-color: rgba(0, 0, 0, 0.16);
+  }
+
+  .btn.ghost {
+    background: rgba(255, 255, 255, 0.0);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: rgba(31, 41, 55, 0.75);
+  }
+
+  .btn.ghost:hover {
+    background: rgba(255, 255, 255, 0.55);
   }
 
   .slider {

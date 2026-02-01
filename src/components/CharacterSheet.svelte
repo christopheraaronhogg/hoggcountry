@@ -19,14 +19,16 @@
   let telegramUsername = $state(character.core.telegramUsername || '');
   let bio = $state(character.core.bio || '');
 
-  // Constraints
+  // Preferences / constraints
   let noHitchhiking = $state(!!character.core.constraints.noHitchhiking);
   let cleanLanguage = $state(!!character.core.constraints.cleanLanguage);
-  let scriptureTranslation = $state(character.core.constraints.scriptureTranslation || 'KJV');
 
   // Tabs
   type Tab = 'overview' | 'trail' | 'equipment' | 'consumables' | 'logistics' | 'finance' | 'training' | 'emergency';
   let tab = $state<Tab>('overview');
+
+  // Progression toggle (XP + Marks)
+  let progressionEnabled = $state(!!character.progression.enabled);
 
   // Derived stats (from trailContext — already synced from Character on ToolPage mount)
   let mode = $derived(trailContext.mode || 'planning');
@@ -58,7 +60,7 @@
   let startDate = $derived(trailContext.startDate || character.trail.startDate || '');
   let targetPace = $derived(trailContext.targetPace || character.trail.targetPace || 0);
 
-  // Persist identity/constraints changes (guarded to avoid reactive update loops)
+  // Persist identity/preferences changes (guarded to avoid reactive update loops)
   let _coreSig = $state('');
   $effect(() => {
     const nextSig = JSON.stringify({
@@ -68,7 +70,6 @@
       bio,
       noHitchhiking,
       cleanLanguage,
-      scriptureTranslation,
     });
 
     if (nextSig === _coreSig) return;
@@ -83,7 +84,6 @@
         constraints: {
           noHitchhiking,
           cleanLanguage,
-          scriptureTranslation,
         },
       },
     } as Partial<CharacterV1>);
@@ -126,6 +126,15 @@
     // Use trailContext updater so the ContextHero + banner updates immediately.
     updateContext(next);
   }
+
+  // Persist progression enable/disable
+  let _progSig = $state('');
+  $effect(() => {
+    const nextSig = JSON.stringify({ progressionEnabled });
+    if (nextSig === _progSig) return;
+    _progSig = nextSig;
+    updateCharacter({ progression: { enabled: progressionEnabled } } as any);
+  });
 
   // ===== AT Weather / GPS sync helpers =====
   type Milepost = { mile: number; lat: number; lon: number };
@@ -311,25 +320,23 @@
         </div>
 
         <div class="card">
-          <h2 class="h">Constraints</h2>
-          <div class="checks">
+          <h2 class="h">Preferences</h2>
+          <p class="p" style="margin-top: -0.25rem;">Personal defaults that shape tools, prompts, and your trail routine.</p>
+
+          <div class="checks" style="margin-top: 0.5rem;">
             <label class="check">
               <input type="checkbox" bind:checked={noHitchhiking} />
               <span>No hitchhiking</span>
             </label>
             <label class="check">
               <input type="checkbox" bind:checked={cleanLanguage} />
-              <span>Clean language</span>
+              <span>Family-friendly language</span>
+            </label>
+            <label class="check">
+              <input type="checkbox" bind:checked={progressionEnabled} />
+              <span>Enable progression (XP + Marks)</span>
             </label>
           </div>
-
-          <label class="field" style="margin-top: 0.9rem;">
-            <span class="k">Scripture translation</span>
-            <select class="in" bind:value={scriptureTranslation}>
-              <option value="KJV">KJV</option>
-              <option value="other">Other</option>
-            </select>
-          </label>
 
           <div class="callout">
             <div class="callout-k">Pro tip</div>
@@ -367,7 +374,7 @@
         <h2 class="h">Trail Core</h2>
         <p class="p">These drive the entire site: timeline, ETA windows, water plans, food assumptions, everything.</p>
 
-        <div class="form" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
+        <div class="form">
           <label class="field">
             <span class="k">Start date</span>
             <input
@@ -1050,6 +1057,10 @@
   }
 
   @media (max-width: 720px) {
+    /* Reduce clutter on phones */
+    .portrait { display: none; }
+    .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
     :global(.cs .grid) { grid-template-columns: 1fr; }
     :global(.cs .form) { grid-template-columns: 1fr; }
     :global(.cs .mini) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
