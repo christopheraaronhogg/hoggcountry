@@ -42,6 +42,15 @@
     return Math.round(n);
   });
 
+  // Extra “sheet” stats (from Character slices)
+  let direction = $derived(character.trail.direction || 'NOBO');
+  let carryDays = $derived(character.logistics.resupply.carryDays || 0);
+  let typicalWaterCarry = $derived(character.equipment.packPrefs.typicalWaterCarryLiters || 0);
+  let powerBankMah = $derived(character.consumables.power.powerBankCapacityMah || 0);
+
+  let startDate = $derived(trailContext.startDate || character.trail.startDate || '');
+  let targetPace = $derived(trailContext.targetPace || character.trail.targetPace || 0);
+
   // Persist identity/constraints changes
   $effect(() => {
     updateCharacter({
@@ -118,9 +127,21 @@
           <span class="pill" data-tone="{mode}">
             {mode === 'trail' ? 'ON TRAIL' : 'PLANNING'}
           </span>
+
           <span class="muted">Nearest: <strong>{nearest}</strong></span>
           <span class="muted">Base weight: <strong>{baseWeightLbs} lb</strong></span>
           <span class="muted">Spent: <strong>${moneySpentAllTime}</strong></span>
+
+          <div class="chips" aria-label="Character quick stats">
+            <span class="chip"><span class="ck">Dir</span><span class="cv">{direction}</span></span>
+            {#if startDate}
+              <span class="chip"><span class="ck">Start</span><span class="cv">{new Date(startDate).toLocaleDateString('en-US')}</span></span>
+            {/if}
+            <span class="chip"><span class="ck">Pace</span><span class="cv">{Number(targetPace || 0).toFixed(1)} /day</span></span>
+            <span class="chip"><span class="ck">Carry</span><span class="cv">{carryDays} d</span></span>
+            <span class="chip"><span class="ck">Water</span><span class="cv">{typicalWaterCarry} L</span></span>
+            <span class="chip"><span class="ck">Bank</span><span class="cv">{powerBankMah.toLocaleString()} mAh</span></span>
+          </div>
         </div>
       </div>
     </div>
@@ -222,6 +243,18 @@
               <span>{milesRemaining} mi remaining</span>
             </div>
           </div>
+
+          <div class="actions" style="margin-top: 0.85rem;">
+            <a class="action" href="/tools/milestone/">Journey</a>
+            <a class="action" href="/tools/pack/">Pack</a>
+            <a class="action" href="/tools/resupply/">Resupply</a>
+            <a class="action" href="/tools/food/">Food</a>
+            <a class="action" href="/tools/water/">Water</a>
+            <a class="action" href="/tools/power/">Power</a>
+            <a class="action" href="/tools/budget/">Budget</a>
+            <a class="action" href="/tools/mail/">Mail Drops</a>
+            <a class="action" href="/tools/training/">Training</a>
+          </div>
         </div>
       </div>
 
@@ -318,20 +351,45 @@
      Pine + parchment + industrial accents. */
 
   .cs {
-    --ink: #1f2320;
-    --muted: rgba(31, 35, 32, 0.65);
-    --pine: #34423a;
-    --pine-2: #2a352f;
-    --bone: #f4f0e6;
-    --paper: rgba(255, 255, 255, 0.78);
-    --gold: #f0e000;
-    --copper: #d79b4b;
-    --blood: #dc2626;
-    --border: rgba(0,0,0,0.08);
-    --shadow: 0 20px 60px rgba(0,0,0,0.14);
+    /* Pull from the site-wide "logbook" tokens (src/styles/global.css) */
+    --text: var(--fg, #333333);
+    --ink: var(--ink, #1f2937);
+    --muted: rgba(92, 102, 90, 0.82);
 
-    color: var(--ink);
+    --pine: var(--pine, #4d594a);
+    --pine-2: #3d4a3a;
+    --bone: var(--bg, #f5f2e8);
+
+    /* "Paper" surfaces */
+    --paper: rgba(255, 255, 255, 0.84);
+    --paper-2: rgba(255, 255, 255, 0.70);
+
+    --gold: var(--marker, #f0e000);
+    --copper: var(--terra, #d97706);
+    --blood: #dc2626;
+    --border: rgba(0,0,0,0.10);
+    --shadow: 0 18px 52px rgba(0,0,0,0.12);
+
+    color: var(--text);
+    position: relative;
   }
+
+  .cs:before {
+    content: '';
+    position: absolute;
+    inset: -18px;
+    border-radius: 26px;
+    pointer-events: none;
+    opacity: 0.55;
+    background:
+      radial-gradient(900px 520px at 12% 0%, rgba(240, 224, 0, 0.20), rgba(240, 224, 0, 0) 65%),
+      radial-gradient(720px 480px at 85% 30%, rgba(166, 181, 137, 0.18), rgba(166, 181, 137, 0) 60%),
+      repeating-linear-gradient(135deg, rgba(0,0,0,0.025), rgba(0,0,0,0.025) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 13px);
+    filter: blur(0.2px);
+    z-index: 0;
+  }
+
+  .cs > * { position: relative; z-index: 1; }
 
   .top {
     display: grid;
@@ -408,6 +466,7 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     font-size: 1.6rem;
+    color: var(--ink);
   }
 
   .handle {
@@ -428,6 +487,43 @@
     flex-wrap: wrap;
     gap: 0.55rem 0.9rem;
     align-items: center;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.74);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
+  }
+
+  .ck {
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-size: 0.62rem;
+    color: var(--muted);
+  }
+
+  .cv {
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-size: 0.78rem;
+    color: rgba(31, 41, 55, 0.92);
   }
 
   .pill {
@@ -596,6 +692,7 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     font-size: 1.05rem;
+    color: var(--ink);
   }
 
   .p {
@@ -672,6 +769,38 @@
   .callout-v {
     margin-top: 0.25rem;
     color: rgba(31,35,32,0.78);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    padding: 0 0.75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.78);
+    color: rgba(31, 41, 55, 0.92);
+    text-decoration: none;
+    font-family: Oswald, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  }
+
+  .action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.12);
+    background: rgba(240,224,0,0.18);
   }
 
   .meter {
