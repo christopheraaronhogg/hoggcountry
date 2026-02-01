@@ -5,6 +5,14 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 60; // per minute
 const RATE_WINDOW = 60 * 1000;
 
+function jsonHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return { 'Content-Type': 'application/json; charset=utf-8', ...extra };
+}
+
+function geoJsonHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return { 'Content-Type': 'application/geo+json; charset=utf-8', ...extra };
+}
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const rec = rateLimitMap.get(ip);
@@ -151,7 +159,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   if (!checkRateLimit(ip)) {
     return {
       statusCode: 429,
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
       body: JSON.stringify({ error: 'Too many requests' }),
     };
   }
@@ -160,7 +168,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   if (!/^[a-zA-Z0-9_-]{2,64}$/.test(id)) {
     return {
       statusCode: 400,
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
       body: JSON.stringify({ error: 'Invalid id' }),
     };
   }
@@ -180,7 +188,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       const text = await res.text().catch(() => '');
       return {
         statusCode: 502,
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify({ error: 'Upstream fetch failed', status: res.status, details: text.slice(0, 200) }),
       };
     }
@@ -190,17 +198,16 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/geo+json; charset=utf-8',
+      headers: geoJsonHeaders({
         // Cache at the edge to feel live without hammering Garmin.
         'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400',
-      },
+      }),
       body: JSON.stringify(geojson),
     };
   } catch (err: any) {
     return {
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
       body: JSON.stringify({ error: 'Internal error', details: String(err?.message || err) }),
     };
   }

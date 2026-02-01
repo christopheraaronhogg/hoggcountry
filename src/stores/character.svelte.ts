@@ -7,6 +7,8 @@
  * - Migrate legacy tool keys on first load
  */
 
+import { untrack } from 'svelte';
+
 export type CharacterVersion = 1;
 
 export type TrailDirection = 'NOBO' | 'SOBO' | 'FLIP';
@@ -702,39 +704,49 @@ export function getCharacterSnapshot(): CharacterV1 {
 
 export function loadCharacter(): void {
   if (typeof window === 'undefined') return;
-  if (_loaded) return;
 
-  const base = defaultCharacter();
+  // Critical: this function is called from inside many components' $effect()s.
+  // If we read reactive state here in a tracked way, those effects can accidentally
+  // subscribe to store internals and trigger Svelte's "effect_update_depth_exceeded".
+  if (untrack(() => _loaded)) return;
 
-  const stored = safeJsonParse<Partial<CharacterV1>>(lsGet(STORAGE_KEY));
-  if (stored && stored.version === 1) {
-    _character = mergeDefaults(base, stored);
+  untrack(() => {
+    const base = defaultCharacter();
+
+    const stored = safeJsonParse<Partial<CharacterV1>>(lsGet(STORAGE_KEY));
+    if (stored && stored.version === 1) {
+      _character = mergeDefaults(base, stored);
+      _loaded = true;
+      return;
+    }
+
+    // Migrate
+    const migrated = migrateFromLegacy();
+    _character = mergeDefaults(base, migrated);
+    _character.updatedAt = nowIso();
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(_character));
+    } catch {}
+
     _loaded = true;
-    return;
-  }
-
-  // Migrate
-  const migrated = migrateFromLegacy();
-  _character = mergeDefaults(base, migrated);
-  _character.updatedAt = nowIso();
-
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_character));
-  } catch {}
-
-  _loaded = true;
+  });
 }
 
 export function updateCharacter(patch: Partial<CharacterV1>): void {
   // Ensure loaded so we don't clobber migrations.
   loadCharacter();
 
-  const merged = mergeDefaults(_character, patch as any);
-  merged.updatedAt = nowIso();
-  _character = merged;
+  // Same reasoning as loadCharacter(): keep reactive reads untracked to avoid
+  // creating accidental effect dependencies in calling components.
+  untrack(() => {
+    const merged = mergeDefaults(_character, patch as any);
+    merged.updatedAt = nowIso();
+    _character = merged;
 
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_character));
-  } catch {}
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(_character));
+    } catch {}
+  });
 }
