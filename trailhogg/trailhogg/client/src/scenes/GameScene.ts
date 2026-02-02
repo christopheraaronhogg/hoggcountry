@@ -54,6 +54,8 @@ export class GameScene extends Phaser.Scene {
   // Sky/atmosphere
   private skyOverlay!: Phaser.GameObjects.Rectangle;
   private sunMoon!: Phaser.GameObjects.Sprite;
+  private lastSkyColor: number = -1;
+  private lastSkyAlpha: number = -1;
 
   // Other hikers
   private otherHikers: Phaser.GameObjects.Container[] = [];
@@ -234,6 +236,8 @@ export class GameScene extends Phaser.Scene {
     // Headlamp light (visible at night)
     this.headlampLight = this.add.graphics();
     this.headlampLight.setDepth(149);
+    this.drawHeadlamp(); // Pre-draw
+    this.headlampLight.setVisible(false);
 
     // Elevation text (bottom left)
     this.elevationText = this.add.text(10, height - 30, '⛰️ 3,782 ft', {
@@ -710,7 +714,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Update sky overlay
-    this.skyOverlay.setFillStyle(skyColor, skyAlpha);
+    // ⚡ Bolt Optimization: Only update style if changed to save ~90% of calls in update loop
+    if (this.lastSkyColor !== skyColor || this.lastSkyAlpha !== skyAlpha) {
+      this.skyOverlay.setFillStyle(skyColor, skyAlpha);
+      this.lastSkyColor = skyColor;
+      this.lastSkyAlpha = skyAlpha;
+    }
 
     // Update sun/moon
     if (useSun) {
@@ -1080,11 +1089,31 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  drawHeadlamp() {
+    // ⚡ Bolt Optimization: Draw headlamp once relative to (0,0) and move it
+    // instead of clearing and redrawing every frame
+    this.headlampLight.clear();
+
+    // Draw headlamp cone pointing UP (negative Y)
+    this.headlampLight.fillStyle(0xffffcc, 0.3);
+    this.headlampLight.beginPath();
+
+    // Cone shape relative to 0,0
+    this.headlampLight.moveTo(0, -20);
+    this.headlampLight.lineTo(-80, -200);
+    this.headlampLight.lineTo(80, -200);
+    this.headlampLight.closePath();
+    this.headlampLight.fillPath();
+
+    // Add some glow around the cone
+    this.headlampLight.fillStyle(0xffffcc, 0.1);
+    this.headlampLight.fillCircle(0, -100, 100);
+  }
+
   updateNightVisibility() {
     if (!this.gameState) return;
 
     const hour = this.gameState.time.hour;
-    const { width, height } = this.cameras.main;
 
     // Determine darkness level
     let darkness = 0;
@@ -1101,29 +1130,23 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Update night overlay
-    this.nightOverlay.setAlpha(darkness);
+    // Only update if changed (another small optimization)
+    if (this.nightOverlay.alpha !== darkness) {
+      this.nightOverlay.setAlpha(darkness);
+    }
 
     // Update headlamp effect
-    this.headlampLight.clear();
-
     if (darkness > 0.3 && this.hikerData?.isHiking) {
-      // Draw headlamp cone
-      this.headlampLight.fillStyle(0xffffcc, 0.3);
-      this.headlampLight.beginPath();
-
-      // Cone shape pointing up from hiker
-      const hikerX = this.hiker.x;
-      const hikerY = this.hiker.y;
-
-      this.headlampLight.moveTo(hikerX, hikerY - 20);
-      this.headlampLight.lineTo(hikerX - 80, hikerY - 200);
-      this.headlampLight.lineTo(hikerX + 80, hikerY - 200);
-      this.headlampLight.closePath();
-      this.headlampLight.fillPath();
-
-      // Add some glow around the cone
-      this.headlampLight.fillStyle(0xffffcc, 0.1);
-      this.headlampLight.fillCircle(hikerX, hikerY - 100, 100);
+      if (!this.headlampLight.visible) {
+        this.headlampLight.setVisible(true);
+      }
+      // Move pre-drawn graphics to hiker position
+      this.headlampLight.x = this.hiker.x;
+      this.headlampLight.y = this.hiker.y;
+    } else {
+      if (this.headlampLight.visible) {
+        this.headlampLight.setVisible(false);
+      }
     }
 
     // Night hiking is harder!
@@ -2665,7 +2688,8 @@ export class GameScene extends Phaser.Scene {
         const s = this.obstacles[i];
         s.y += scrollSpeed;
 
-        if (!s.getData('hit') && Phaser.Math.Distance.Between(this.hiker.x, this.hiker.y, s.x, s.y) < 25) {
+        // ⚡ Bolt Optimization: Use Squared distance to avoid Math.sqrt() every frame (25^2 = 625)
+        if (!s.getData('hit') && Phaser.Math.Distance.Squared(this.hiker.x, this.hiker.y, s.x, s.y) < 625) {
           s.setData('hit', true);
           const type = s.getData('type');
 
@@ -2725,11 +2749,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check if hiker walks over water source
         if (!water.getData('used')) {
-          const dist = Phaser.Math.Distance.Between(
+          // ⚡ Bolt Optimization: Use Squared distance (40^2 = 1600)
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             water.x, water.y
           );
-          if (dist < 40) {
+          if (distSq < 1600) {
             // Auto-fill water
             water.setData('used', true);
             water.setTint(0x666666); // Visual feedback - used stream
@@ -2895,11 +2920,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check for snake collision
         if (animal.getData('type') === 'snake') {
-          const dist = Phaser.Math.Distance.Between(
+          // ⚡ Bolt Optimization: Use Squared distance (30^2 = 900)
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             animal.x, animal.y
           );
-          if (dist < 30 && !animal.getData('encountered')) {
+          if (distSq < 900 && !animal.getData('encountered')) {
             animal.setData('encountered', true);
             if (this.hikerData) {
               this.hikerData.energy = Math.max(0, this.hikerData.energy - 5);
@@ -2933,11 +2959,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check if hiker collects trail magic
         if (!magic.getData('collected')) {
-          const dist = Phaser.Math.Distance.Between(
+          // ⚡ Bolt Optimization: Use Squared distance (50^2 = 2500)
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             magic.x, magic.y
           );
-          if (dist < 50) {
+          if (distSq < 2500) {
             magic.setData('collected', true);
             const magicData = magic.getData('magic');
 
@@ -3021,11 +3048,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check for greeting when close
         if (!hiker.getData('greeted')) {
-          const dist = Phaser.Math.Distance.Between(
+          // ⚡ Bolt Optimization: Use Squared distance (80^2 = 6400)
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             hiker.x, hiker.y
           );
-          if (dist < 80) {
+          if (distSq < 6400) {
             hiker.setData('greeted', true);
             const name = hiker.getData('name');
             const greeting = hiker.getData('greeting');
@@ -3064,11 +3092,12 @@ export class GameScene extends Phaser.Scene {
 
         // Check if hiker visits viewpoint
         if (!viewpoint.getData('visited')) {
-          const dist = Phaser.Math.Distance.Between(
+          // ⚡ Bolt Optimization: Use Squared distance (60^2 = 3600)
+          const distSq = Phaser.Math.Distance.Squared(
             this.hiker.x, this.hiker.y,
             viewpoint.x, viewpoint.y
           );
-          if (dist < 60) {
+          if (distSq < 3600) {
             viewpoint.setData('visited', true);
             const name = viewpoint.getData('name');
 
