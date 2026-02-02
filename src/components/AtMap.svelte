@@ -184,8 +184,9 @@
     const L = await import("leaflet");
 
     const map = L.map(container, {
-      zoomControl: true,
-      attributionControl: true,
+      // We provide our own UI controls; disable Leaflet defaults that can overlap.
+      zoomControl: false,
+      attributionControl: false,
     });
 
     // Base maps (no API key). Note: CSP must allow tile domains.
@@ -205,18 +206,8 @@
     // Default to topo
     topo.addTo(map);
 
-    L.control
-      .layers(
-        {
-          Topo: topo,
-          Streets: osm,
-        },
-        undefined,
-        { position: "topleft", collapsed: true }
-      )
-      .addTo(map);
-
-    L.control.scale({ imperial: true, metric: false }).addTo(map);
+    // Leaflet's built-in controls (zoom/layers/scale) are intentionally disabled on this page.
+    // Base map switching can be added to the Layers modal later if needed.
 
     // Fallback view (roughly AT bounds)
     map.setView([39.0, -76.0], 5);
@@ -822,6 +813,10 @@
 <div class="mapShell" aria-label="AT Map Explorer">
   <div class="at-map" bind:this={container} aria-label="Appalachian Trail map" />
 
+  <div class="mapAttribution" aria-label="Map attribution">
+    Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors • Tiles © <a href="https://opentopomap.org" target="_blank" rel="noreferrer">OpenTopoMap</a>
+  </div>
+
   <!-- Top HUD -->
   <div class="hudTop" aria-label="Map status">
     <div class="hudLeft">
@@ -1135,6 +1130,27 @@
     cursor: pointer;
     backdrop-filter: blur(10px);
     box-shadow: 0 18px 60px rgba(0,0,0,0.18);
+  }
+
+  .mapAttribution {
+    position: absolute;
+    left: 12px;
+    bottom: 118px; /* sits above scrubber deck */
+    z-index: 550;
+    pointer-events: auto;
+    font-size: 0.78rem;
+    color: rgba(31, 41, 55, 0.78);
+    background: rgba(255,255,255,0.74);
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 12px;
+    padding: 6px 10px;
+    backdrop-filter: blur(10px);
+  }
+
+  .mapAttribution a {
+    color: rgba(31, 41, 55, 0.86);
+    text-decoration: underline;
+    text-decoration-color: rgba(31, 41, 55, 0.25);
   }
 
   /* Overlays */
