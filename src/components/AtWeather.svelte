@@ -176,6 +176,15 @@
     return tempModelF + deltaTempF;
   });
 
+  // Only show the elevation-adjusted temp when it meaningfully differs.
+  // If the model point elevation ~= trail elevation, the “estimate” adds no value.
+  let showElevationAdjustedCard = $derived.by(() => {
+    if (elevLoading) return true;
+    if (elevErr) return true;
+    const dt = Number(deltaTempF);
+    return Number.isFinite(dt) && Math.abs(dt) >= 1.0;
+  });
+
   function updateUrl(nextMile: number) {
     if (typeof window === 'undefined') return;
     const u = new URL(window.location.href);
@@ -599,26 +608,35 @@
               <div class="cond">{wxCodeLabel(wx.current.weather_code)}</div>
             </div>
 
-            <div class="tempCard">
-              <div class="label">Estimated at trail elevation</div>
-              <div class="temp">~{fmt(tempTrailEstF, 0)}°F</div>
-              <div class="subline">
-                {#if elevLoading}
-                  Loading elevation…
-                {:else if elevErr}
-                  <span class="err">{elevErr}</span>
-                {:else}
-                  Trail elevation: {fmt(trailElevFt, 0)} ft
-                {/if}
+            {#if showElevationAdjustedCard}
+              <div class="tempCard">
+                <div class="label">Estimated at trail elevation</div>
+                <div class="temp">~{fmt(tempTrailEstF, 0)}°F</div>
+                <div class="subline">
+                  {#if elevLoading}
+                    Loading elevation…
+                  {:else if elevErr}
+                    <span class="err">{elevErr}</span>
+                  {:else}
+                    Trail elevation: {fmt(trailElevFt, 0)} ft
+                  {/if}
+                </div>
+                <div class="tiny">
+                  {#if Number.isFinite(deltaElevFt) && Number.isFinite(deltaTempF)}
+                    Δ {fmt(deltaElevFt, 0)} ft → {fmt(deltaTempF, 1)}°F (lapse‑rate estimate)
+                  {:else}
+                    Lapse‑rate estimate: ~{LAPSE_F_PER_1000_FT}°F per 1000 ft
+                  {/if}
+                </div>
               </div>
-              <div class="tiny">
-                {#if Number.isFinite(deltaElevFt) && Number.isFinite(deltaTempF)}
-                  Δ {fmt(deltaElevFt, 0)} ft → {fmt(deltaTempF, 1)}°F (lapse‑rate estimate)
-                {:else}
-                  Lapse‑rate estimate: ~{LAPSE_F_PER_1000_FT}°F per 1000 ft
-                {/if}
+            {:else}
+              <div class="tempCard">
+                <div class="label">Trail elevation</div>
+                <div class="temp">{fmt(trailElevFt, 0)} ft</div>
+                <div class="subline">Matches model point — no adjustment needed.</div>
+                <div class="tiny">(We only show an elevation-adjusted temperature when it changes things by ~1°F+.)</div>
               </div>
-            </div>
+            {/if}
           </div>
 
           <div class="hr"></div>
@@ -632,9 +650,11 @@
 
           <div class="hr"></div>
 
-          <p class="p small">
-            Ranger note: inversions happen. Treat the elevation-adjusted number as an estimate, not a promise.
-          </p>
+          {#if showElevationAdjustedCard}
+            <p class="p small">
+              Ranger note: inversions happen. Treat the elevation-adjusted number as an estimate, not a promise.
+            </p>
+          {/if}
         {:else}
           <p class="p">No weather available for this point.</p>
         {/if}
