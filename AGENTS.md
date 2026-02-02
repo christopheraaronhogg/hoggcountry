@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Hogg Country is a digital hiking logbook built with Astro 5 (SSG). It displays trips, YouTube videos, and blog posts in a unified timeline with a warm, outdoorsy aesthetic.
 
+## Index (Important Docs)
+
+- **Platform “big picture” (Mermaid system architecture):** `docs/plans/2026-02-02-hoggcountry-platform-big-picture-diagram.md`
+
 ## Development Commands
 
 ```bash
