@@ -111,10 +111,7 @@
   let wxErr = $state('');
   let wx = $state<OpenMeteoResponse | null>(null);
 
-  // Trail elevation (meters) from Open-Meteo elevation API (terrain/SRTM-like)
-  let trailElevM = $state<number | null>(null);
-  let elevLoading = $state(false);
-  let elevErr = $state('');
+  // Trail elevation / lapse-rate adjustment removed (we show the forecast as-is).
 
   // Location assist
   let locating = $state(false);
@@ -155,35 +152,8 @@
     return x * 3.28084;
   }
 
-  const LAPSE_F_PER_1000_FT = 3.6;
-
   let modelElevFt = $derived.by(() => mToFt(wx?.elevation));
-  let trailElevFt = $derived.by(() => mToFt(trailElevM));
   let tempModelF = $derived.by(() => Number(wx?.current?.temperature_2m));
-
-  let deltaElevFt = $derived.by(() => {
-    if (!Number.isFinite(modelElevFt) || !Number.isFinite(trailElevFt)) return NaN;
-    return trailElevFt - modelElevFt;
-  });
-
-  let deltaTempF = $derived.by(() => {
-    if (!Number.isFinite(deltaElevFt)) return NaN;
-    return -(deltaElevFt / 1000) * LAPSE_F_PER_1000_FT;
-  });
-
-  let tempTrailEstF = $derived.by(() => {
-    if (!Number.isFinite(tempModelF) || !Number.isFinite(deltaTempF)) return NaN;
-    return tempModelF + deltaTempF;
-  });
-
-  // Only show the elevation-adjusted temp when it meaningfully differs.
-  // If the model point elevation ~= trail elevation, the “estimate” adds no value.
-  let showElevationAdjustedCard = $derived.by(() => {
-    if (elevLoading) return true;
-    if (elevErr) return true;
-    const dt = Number(deltaTempF);
-    return Number.isFinite(dt) && Math.abs(dt) >= 1.0;
-  });
 
   function updateUrl(nextMile: number) {
     if (typeof window === 'undefined') return;
@@ -355,29 +325,7 @@
     _debounce = setTimeout(fetchWeather, 450);
   }
 
-  async function fetchElevation() {
-    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat === 0 || lon === 0) return;
-
-    elevLoading = true;
-    elevErr = '';
-
-    try {
-      const url = new URL('https://api.open-meteo.com/v1/elevation');
-      url.searchParams.set('latitude', String(lat));
-      url.searchParams.set('longitude', String(lon));
-      const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error(`elevation fetch failed: ${res.status}`);
-      const data = await res.json();
-      const arr = data?.elevation;
-      const val = Array.isArray(arr) ? Number(arr[0]) : Number(arr);
-      trailElevM = Number.isFinite(val) ? val : null;
-    } catch (e: any) {
-      elevErr = e?.message || 'Failed to load elevation.';
-      trailElevM = null;
-    } finally {
-      elevLoading = false;
-    }
-  }
+  // (Removed) fetchElevation: we no longer adjust model temperature for trail elevation on this page.
 
   async function fetchWeather() {
     if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat === 0 || lon === 0) return;
@@ -386,8 +334,6 @@
     wxErr = '';
 
     // Reset derived inputs
-    trailElevM = null;
-    elevErr = '';
 
     try {
       const url = new URL('https://api.open-meteo.com/v1/forecast');
@@ -427,9 +373,7 @@
       if (!res.ok) throw new Error(`weather fetch failed: ${res.status}`);
       wx = await res.json();
 
-      // Terrain elevation is separate from the model/grid elevation in the forecast response.
-      // We fetch it explicitly so we can show an estimated temp at trail elevation.
-      fetchElevation();
+      // (Elevation-based adjustment removed; use model forecast as-is.)
     } catch (e: any) {
       wxErr = e?.message || 'Failed to load weather.';
       wx = null;
@@ -602,41 +546,11 @@
         {:else if wx?.current}
           <div class="temps">
             <div class="tempCard">
-              <div class="label">Forecast (Open‑Meteo model point)</div>
+              <div class="label">Forecast (Open‑Meteo)</div>
               <div class="temp">{fmt(tempModelF, 0)}°F</div>
               <div class="subline">Model elevation: {fmt(modelElevFt, 0)} ft</div>
               <div class="cond">{wxCodeLabel(wx.current.weather_code)}</div>
             </div>
-
-            {#if showElevationAdjustedCard}
-              <div class="tempCard">
-                <div class="label">Estimated at trail elevation</div>
-                <div class="temp">~{fmt(tempTrailEstF, 0)}°F</div>
-                <div class="subline">
-                  {#if elevLoading}
-                    Loading elevation…
-                  {:else if elevErr}
-                    <span class="err">{elevErr}</span>
-                  {:else}
-                    Trail elevation: {fmt(trailElevFt, 0)} ft
-                  {/if}
-                </div>
-                <div class="tiny">
-                  {#if Number.isFinite(deltaElevFt) && Number.isFinite(deltaTempF)}
-                    Δ {fmt(deltaElevFt, 0)} ft → {fmt(deltaTempF, 1)}°F (lapse‑rate estimate)
-                  {:else}
-                    Lapse‑rate estimate: ~{LAPSE_F_PER_1000_FT}°F per 1000 ft
-                  {/if}
-                </div>
-              </div>
-            {:else}
-              <div class="tempCard">
-                <div class="label">Trail elevation</div>
-                <div class="temp">{fmt(trailElevFt, 0)} ft</div>
-                <div class="subline">Matches model point — no adjustment needed.</div>
-                <div class="tiny">(We only show an elevation-adjusted temperature when it changes things by ~1°F+.)</div>
-              </div>
-            {/if}
           </div>
 
           <div class="hr"></div>
@@ -650,11 +564,7 @@
 
           <div class="hr"></div>
 
-          {#if showElevationAdjustedCard}
-            <p class="p small">
-              Ranger note: inversions happen. Treat the elevation-adjusted number as an estimate, not a promise.
-            </p>
-          {/if}
+          <!-- Elevation-adjusted estimate removed: show model forecast only. -->
         {:else}
           <p class="p">No weather available for this point.</p>
         {/if}
