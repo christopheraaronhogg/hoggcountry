@@ -69,9 +69,9 @@ const { title, description = SITE_DESCRIPTION } = Astro.props;
         });
       }
     </script>
-    <!-- Version Indicator (Temporary for verification) -->
-    <div style="position: fixed; bottom: 4px; right: 4px; background: var(--pine, #4d594a); color: white; padding: 2px 6px; font-size: 10px; z-index: 9999; border-radius: 4px; pointer-events: none; opacity: 0.8; font-family: monospace;">
-      v8
+    <!-- Version Stamp (temporary: helps us confirm deploy + SW cache refresh) -->
+    <div style="position: fixed; bottom: 4px; right: 4px; background: var(--pine, #4d594a); color: white; padding: 2px 6px; font-size: 10px; z-index: 9999; border-radius: 4px; pointer-events: none; opacity: 0.85; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;">
+      alpha 0.7
     </div>
   </body>
 </html>
