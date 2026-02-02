@@ -176,7 +176,42 @@
     };
   }
 
+  function pickDailyAtOffset(data: OpenMeteoResponse | null, offsetHours: number) {
+    const days: string[] | undefined = (data?.daily as any)?.time;
+    if (!days?.length) return null;
+
+    const baseTime = String(data?.current?.time ?? '');
+    const baseDay = baseTime ? baseTime.slice(0, 10) : days[0];
+
+    let d0 = baseDay ? days.indexOf(baseDay) : -1;
+    if (d0 < 0 && baseDay) {
+      for (let i = 0; i < days.length; i++) {
+        if (days[i] >= baseDay) {
+          d0 = i;
+          break;
+        }
+      }
+    }
+    if (d0 < 0) d0 = 0;
+
+    const dayOffset = Math.max(0, Math.floor(offsetHours / 24));
+    const idx = clamp(d0 + dayOffset, 0, days.length - 1);
+
+    const get = (k: string) => (Array.isArray((data?.daily as any)?.[k]) ? (data?.daily as any)[k][idx] : undefined);
+
+    return {
+      day: days[idx],
+      tz: data?.timezone_abbreviation,
+      tmaxF: get('temperature_2m_max'),
+      tminF: get('temperature_2m_min'),
+      popMax: get('precipitation_probability_max'),
+      windMaxMph: get('wind_speed_10m_max'),
+      code: get('weather_code'),
+    };
+  }
+
   const wxAtOffset = $derived.by(() => pickHourlyAtOffset(wx, forecastOffsetHours));
+  const wxDailyAtOffset = $derived.by(() => pickDailyAtOffset(wx, forecastOffsetHours));
 
   let _wxTimer: any = null;
   let _wxAbort: AbortController | null = null;
@@ -235,6 +270,18 @@
           'weather_code',
           'wind_speed_10m',
           'wind_gusts_10m',
+        ].join(',')
+      );
+
+      // Mini forecast (daily summary) for day-based chips and quick context.
+      url.searchParams.set(
+        'daily',
+        [
+          'temperature_2m_max',
+          'temperature_2m_min',
+          'precipitation_probability_max',
+          'weather_code',
+          'wind_speed_10m_max',
         ].join(',')
       );
 
@@ -1190,6 +1237,16 @@
         <div><span class="mk">POP</span> {fmt(wxAtOffset.pop, 0)}%</div>
         <div><span class="mk">Precip</span> {fmt(wxAtOffset.precipIn, 2)} in</div>
       </div>
+
+      {#if wxDailyAtOffset}
+        <div class="wxMini">
+          <div><span class="mk">High/Low</span> {fmt(wxDailyAtOffset.tmaxF, 0)}° / {fmt(wxDailyAtOffset.tminF, 0)}°</div>
+          <div><span class="mk">Wind max</span> {fmt(wxDailyAtOffset.windMaxMph, 0)} mph</div>
+          <div><span class="mk">POP max</span> {fmt(wxDailyAtOffset.popMax, 0)}%</div>
+          <div><span class="mk">Day</span> {wxDailyAtOffset.day}</div>
+        </div>
+      {/if}
+
       <div class="wxTime">{wxAtOffset.time}{wxAtOffset.tz ? ` ${wxAtOffset.tz}` : ''}</div>
       <a class="wxLink" href={`/at-weather?mile=${selectedMile}`}>Full forecast →</a>
     {:else}
@@ -1540,6 +1597,17 @@
     color: rgba(31, 41, 55, 0.86);
   }
 
+  .wxMini {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.86);
+  }
+
   .mk {
     display: inline-block;
     min-width: 50px;
@@ -1586,6 +1654,10 @@
     }
 
     .wxMeta {
+      grid-template-columns: 1fr;
+    }
+
+    .wxMini {
       grid-template-columns: 1fr;
     }
   }
