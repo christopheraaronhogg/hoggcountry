@@ -63,8 +63,192 @@
   // Shelter dataset indexed to nearest mile (used for Nearby panel)
   let sheltersWithMile = $state<Array<{ name: string; mile: number; lat: number; lon: number }>>([]);
 
-  // Reserved for future “time horizon” exploration, but AT Map stays POI-first (no temps on-map).
-  let timeOffsetHours = $state<number>(0); // 0..24 step 3 (unused for now)
+  // Selected marker coordinate (for weather + context cards)
+  let selectedLat = $state<number>(0);
+  let selectedLon = $state<number>(0);
+
+  // Weather (Open-Meteo) — compact “at-a-glance” forecast on the map page
+  type WeatherNow = {
+    time?: string;
+    temperature_2m?: number;
+    apparent_temperature?: number;
+    precipitation?: number;
+    weather_code?: number;
+    wind_speed_10m?: number;
+    wind_gusts_10m?: number;
+  };
+
+  type OpenMeteoResponse = {
+    timezone?: string;
+    timezone_abbreviation?: string;
+    utc_offset_seconds?: number;
+    latitude?: number;
+    longitude?: number;
+    elevation?: number;
+    current?: WeatherNow;
+    hourly?: Record<string, any>;
+    daily?: Record<string, any>;
+  };
+
+  const FORECAST_OFFSETS_HOURS = [0, 3, 6, 9, 12, 24, 48, 72, 96, 120, 144, 168, 240];
+  let forecastOffsetHours = $state<number>(3);
+
+  let wxLoading = $state(false);
+  let wxErr = $state('');
+  let wx = $state<OpenMeteoResponse | null>(null);
+
+  function wxCodeLabel(code: unknown): string {
+    const c = Number(code);
+    if (!Number.isFinite(c)) return '—';
+    if (c === 0) return 'Clear';
+    if (c === 1) return 'Mostly clear';
+    if (c === 2) return 'Partly cloudy';
+    if (c === 3) return 'Overcast';
+    if (c === 45 || c === 48) return 'Fog';
+    if (c === 51 || c === 53 || c === 55) return 'Drizzle';
+    if (c === 56 || c === 57) return 'Freezing drizzle';
+    if (c === 61 || c === 63 || c === 65) return 'Rain';
+    if (c === 66 || c === 67) return 'Freezing rain';
+    if (c === 71 || c === 73 || c === 75) return 'Snow';
+    if (c === 77) return 'Snow grains';
+    if (c === 80 || c === 81 || c === 82) return 'Rain showers';
+    if (c === 85 || c === 86) return 'Snow showers';
+    if (c === 95) return 'Thunderstorm';
+    if (c === 96 || c === 99) return 'Thunderstorm + hail';
+    return `Weather (${c})`;
+  }
+
+  function fmt(n: unknown, digits = 0): string {
+    const x = Number(n);
+    if (!Number.isFinite(x)) return '—';
+    return x.toFixed(digits);
+  }
+
+  function offsetLabel(hours: number) {
+    if (hours === 0) return 'Now';
+    if (hours < 24) return `+${hours}h`;
+    const d = Math.round(hours / 24);
+    return `+${d}d`;
+  }
+
+  function milesAheadLabel(targetMile: unknown): string {
+    const tm = Number(targetMile);
+    if (!Number.isFinite(tm)) return '—';
+    const diff = tm - selectedMile;
+    if (!Number.isFinite(diff)) return '—';
+    return diff <= 0 ? 'here' : `in ${diff.toFixed(1)} mi`;
+  }
+
+  function pickHourlyAtOffset(data: OpenMeteoResponse | null, offsetHours: number) {
+    const times: string[] | undefined = data?.hourly?.time;
+    if (!times?.length) return null;
+
+    const base = String(data?.current?.time ?? '');
+    let i0 = base ? times.indexOf(base) : -1;
+    if (i0 < 0) {
+      // ISO-like strings compare lexicographically.
+      const needle = base;
+      if (needle) {
+        for (let i = 0; i < times.length; i++) {
+          if (times[i] >= needle) {
+            i0 = i;
+            break;
+          }
+        }
+      }
+    }
+    if (i0 < 0) i0 = 0;
+
+    const idx = clamp(i0 + offsetHours, 0, times.length - 1);
+
+    const get = (k: string) => (Array.isArray((data?.hourly as any)?.[k]) ? (data?.hourly as any)[k][idx] : undefined);
+
+    return {
+      time: times[idx],
+      tz: data?.timezone_abbreviation,
+      tempF: get('temperature_2m'),
+      feelsF: get('apparent_temperature'),
+      windMph: get('wind_speed_10m'),
+      gustMph: get('wind_gusts_10m'),
+      precipIn: get('precipitation'),
+      pop: get('precipitation_probability'),
+      code: get('weather_code'),
+    };
+  }
+
+  const wxAtOffset = $derived.by(() => pickHourlyAtOffset(wx, forecastOffsetHours));
+
+  let _wxTimer: any = null;
+  let _wxAbort: AbortController | null = null;
+  let _lastWxKey: string | null = null;
+
+  function fetchWeatherDebounced() {
+    if (typeof window === 'undefined') return;
+    clearTimeout(_wxTimer);
+    _wxTimer = setTimeout(() => {
+      fetchWeather();
+    }, 350);
+  }
+
+  async function fetchWeather() {
+    if (!Number.isFinite(selectedLat) || !Number.isFinite(selectedLon) || selectedLat === 0 || selectedLon === 0) return;
+
+    const key = `${selectedLat.toFixed(4)},${selectedLon.toFixed(4)}`;
+    if (_lastWxKey === key && wx) return;
+    _lastWxKey = key;
+
+    _wxAbort?.abort();
+    _wxAbort = new AbortController();
+
+    wxLoading = true;
+    wxErr = '';
+
+    try {
+      const url = new URL('https://api.open-meteo.com/v1/forecast');
+      url.searchParams.set('latitude', String(selectedLat));
+      url.searchParams.set('longitude', String(selectedLon));
+      url.searchParams.set('timezone', 'auto');
+      url.searchParams.set('temperature_unit', 'fahrenheit');
+      url.searchParams.set('wind_speed_unit', 'mph');
+      url.searchParams.set('precipitation_unit', 'inch');
+      url.searchParams.set('forecast_days', '16');
+
+      url.searchParams.set(
+        'current',
+        [
+          'temperature_2m',
+          'apparent_temperature',
+          'precipitation',
+          'weather_code',
+          'wind_speed_10m',
+          'wind_gusts_10m',
+        ].join(',')
+      );
+
+      url.searchParams.set(
+        'hourly',
+        [
+          'temperature_2m',
+          'apparent_temperature',
+          'precipitation_probability',
+          'precipitation',
+          'weather_code',
+          'wind_speed_10m',
+          'wind_gusts_10m',
+        ].join(',')
+      );
+
+      const res = await fetch(url.toString(), { headers: { Accept: 'application/json' }, signal: _wxAbort.signal });
+      if (!res.ok) throw new Error(`weather fetch failed: ${res.status}`);
+      wx = await res.json();
+    } catch (e: any) {
+      if (e?.name === 'AbortError') return;
+      wxErr = e?.message || 'Failed to load weather.';
+      wx = null;
+    } finally {
+      wxLoading = false;
+    }
+  }
 
   // UI state
   let layersOpen = $state(false);
@@ -81,9 +265,7 @@
   let locatePreviewFn: (() => void) | null = null;
   let centerOnSelectedFn: (() => void) | null = null;
 
-  function timeLabel(h: number) {
-    return h === 0 ? "Now" : `+${h}h`;
-  }
+  // timeLabel removed (unused)
 
   function updateUrl(nextMile: number) {
     if (typeof window === "undefined") return;
@@ -453,9 +635,35 @@
 
     let selectedMarker: any = null;
 
+    let _selAnim: number | null = null;
+
     function moveSelectedMarker(recenter: boolean = false) {
       const ll = coordForMile(selectedMile);
       if (!ll) return;
+
+      // Keep “selected” coordinate available to the dashboard cards.
+      selectedLat = ll[0];
+      selectedLon = ll[1];
+      fetchWeatherDebounced();
+
+      const animateTo = (target: [number, number]) => {
+        if (!selectedMarker) return;
+        const from = selectedMarker.getLatLng();
+        const start = performance.now();
+        const dur = 180; // ms — small easing so it feels like it “glides”
+
+        const tick = (t: number) => {
+          const p = Math.min(1, (t - start) / dur);
+          const ease = 1 - Math.pow(1 - p, 3);
+          const lat = from.lat + (target[0] - from.lat) * ease;
+          const lng = from.lng + (target[1] - from.lng) * ease;
+          selectedMarker.setLatLng([lat, lng]);
+          if (p < 1) _selAnim = requestAnimationFrame(tick);
+        };
+
+        if (_selAnim != null) cancelAnimationFrame(_selAnim);
+        _selAnim = requestAnimationFrame(tick);
+      };
 
       if (!selectedMarker) {
         selectedMarker = L.marker(ll, { icon: mileIcon, draggable: true }).addTo(map);
@@ -466,11 +674,13 @@
           selectedMile = clamp(m, 0, 2197);
         });
       } else {
-        selectedMarker.setLatLng(ll);
+        animateTo(ll);
       }
 
       if (recenter) {
-        map.setView(ll, Math.max(map.getZoom(), 12));
+        // Keep existing zoom, but animate pan to feel “glidey”.
+        const z = Math.max(map.getZoom(), 12);
+        map.setView(ll, z, { animate: true, duration: 0.35 } as any);
       }
     }
 
@@ -952,6 +1162,67 @@
   {/if}
 </div>
 
+<!-- Dashboard cards (reactive to the selected mile marker) -->
+<div class="dashboard" aria-label="Trail dashboard">
+  <div class="dashCard weather">
+    <div class="dk">Weather</div>
+
+    <div class="wxChips" aria-label="Forecast time selector">
+      {#each FORECAST_OFFSETS_HOURS as h (h)}
+        <button class="wxChip" class:active={forecastOffsetHours === h} type="button" on:click={() => (forecastOffsetHours = h)}>
+          {offsetLabel(h)}
+        </button>
+      {/each}
+    </div>
+
+    {#if wxLoading}
+      <div class="dv">Loading forecast…</div>
+    {:else if wxErr}
+      <div class="dv err">{wxErr}</div>
+    {:else if wxAtOffset}
+      <div class="wxTop">
+        <div class="wxTemp">{fmt(wxAtOffset.tempF, 0)}°</div>
+        <div class="wxCond">{wxCodeLabel(wxAtOffset.code)}</div>
+      </div>
+      <div class="wxMeta">
+        <div><span class="mk">Wind</span> {fmt(wxAtOffset.windMph, 0)} mph</div>
+        <div><span class="mk">Gust</span> {fmt(wxAtOffset.gustMph, 0)} mph</div>
+        <div><span class="mk">POP</span> {fmt(wxAtOffset.pop, 0)}%</div>
+        <div><span class="mk">Precip</span> {fmt(wxAtOffset.precipIn, 2)} in</div>
+      </div>
+      <div class="wxTime">{wxAtOffset.time}{wxAtOffset.tz ? ` ${wxAtOffset.tz}` : ''}</div>
+      <a class="wxLink" href={`/at-weather?mile=${selectedMile}`}>Full forecast →</a>
+    {:else}
+      <div class="dv">—</div>
+      <a class="wxLink" href={`/at-weather?mile=${selectedMile}`}>Open AT Weather →</a>
+    {/if}
+  </div>
+
+  <button class="dashCard" type="button" on:click={() => { nearbyTab = 'water'; nearbyOpen = true; layersOpen = false; }}>
+    <div class="dk">Next water</div>
+    <div class="dv">{nextWater ? nextWater.name : '—'}</div>
+    <div class="ds">{nextWater ? milesAheadLabel(nextWater.mile) : ''}</div>
+  </button>
+
+  <button class="dashCard" type="button" on:click={() => { nearbyTab = 'shelters'; nearbyOpen = true; layersOpen = false; }}>
+    <div class="dk">Next shelter</div>
+    <div class="dv">{nextShelter ? nextShelter.name : '—'}</div>
+    <div class="ds">{nextShelter ? milesAheadLabel(nextShelter.mile) : ''}</div>
+  </button>
+
+  <button class="dashCard" type="button" on:click={() => { nearbyTab = 'resupply'; nearbyOpen = true; layersOpen = false; }}>
+    <div class="dk">Next resupply</div>
+    <div class="dv">{nextResupply ? nextResupply.name : '—'}</div>
+    <div class="ds">{nextResupply ? milesAheadLabel(nextResupply.mile) : ''}</div>
+  </button>
+
+  <button class="dashCard" type="button" on:click={() => { nearbyTab = 'crossings'; nearbyOpen = true; layersOpen = false; }}>
+    <div class="dk">Next crossing</div>
+    <div class="dv">{nextCrossing ? nextCrossing.name : '—'}</div>
+    <div class="ds">{nextCrossing ? milesAheadLabel(nextCrossing.mile) : ''}</div>
+  </button>
+</div>
+
 <style>
   .mapShell {
     position: relative;
@@ -1151,6 +1422,172 @@
     color: rgba(31, 41, 55, 0.86);
     text-decoration: underline;
     text-decoration-color: rgba(31, 41, 55, 0.25);
+  }
+
+  /* Dashboard cards */
+  .dashboard {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashCard {
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 16px;
+    background: rgba(255,255,255,0.78);
+    box-shadow: 0 18px 52px rgba(0,0,0,0.10);
+    padding: 12px;
+    backdrop-filter: blur(8px);
+    color: rgba(31, 41, 55, 0.90);
+    text-align: left;
+  }
+
+  button.dashCard {
+    cursor: pointer;
+  }
+
+  button.dashCard:hover {
+    border-color: rgba(0,0,0,0.16);
+    background: rgba(240, 224, 0, 0.10);
+  }
+
+  .dashCard.weather {
+    grid-column: 1 / -1;
+  }
+
+  .dk {
+    font-family: Oswald, system-ui, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(52, 66, 58, 0.78);
+    font-weight: 900;
+  }
+
+  .dv {
+    margin-top: 6px;
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: rgba(31, 41, 55, 0.92);
+    line-height: 1.2;
+  }
+
+  .ds {
+    margin-top: 6px;
+    font-size: 0.92rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .dv.err {
+    color: rgba(185, 28, 28, 0.92);
+  }
+
+  .wxChips {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .wxChip {
+    flex: 0 0 auto;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.86);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    cursor: pointer;
+    color: rgba(31, 41, 55, 0.86);
+  }
+
+  .wxChip.active {
+    background: rgba(240, 224, 0, 0.22);
+  }
+
+  .wxTop {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .wxTemp {
+    font-family: Anton, Oswald, system-ui, sans-serif;
+    font-size: 2.1rem;
+    line-height: 1;
+  }
+
+  .wxCond {
+    font-size: 0.98rem;
+    color: rgba(55, 65, 81, 0.78);
+    font-weight: 700;
+  }
+
+  .wxMeta {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.86);
+  }
+
+  .mk {
+    display: inline-block;
+    min-width: 50px;
+    color: rgba(52, 66, 58, 0.75);
+    font-weight: 900;
+  }
+
+  .wxTime {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .wxLink {
+    display: inline-block;
+    margin-top: 8px;
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    color: rgba(31, 41, 55, 0.88);
+    text-decoration: none;
+  }
+
+  .wxLink:hover {
+    text-decoration: underline;
+    text-decoration-color: rgba(31, 41, 55, 0.25);
+  }
+
+  @media (min-width: 920px) {
+    .dashboard {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .dashCard.weather {
+      grid-column: span 2;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .dashboard {
+      grid-template-columns: 1fr;
+    }
+
+    .wxMeta {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Overlays */
