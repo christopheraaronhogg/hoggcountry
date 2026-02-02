@@ -145,6 +145,9 @@ hoggcountry/
 │   ├── parse-master-guide.js # Master → chapters
 │   ├── generate-search-index.js
 │   ├── generate-asset-manifest.js
+│   ├── generate-at-mileposts.mjs # Builds /at-mileposts.json from NPS/ATC centerline
+│   ├── build-at-hydro-crossings.js # USGS NHD → near-trail stream crossings
+│   ├── validate-hydro-crossings.js
 │   └── generate-pdf.js
 ├── MASTER_NOBO_FIELD_GUIDE.md  # Source of truth for guide
 ├── CLAUDE.md                   # AI assistant instructions
@@ -407,6 +410,13 @@ The trail is {{trail.total_miles|commas}} miles long.
 ```
 
 Run `npm run update-guide` to regenerate chapters from YAML.
+
+### Hydro Stream Crossings (Open Data)
+
+`src/data/at-hydro-crossings.json` is generated from the USGS National Hydrography Dataset (NHD) flowlines and snapped to the AT mile system.
+
+- Build/update dataset: `npm run build:hydro`
+- Validate dataset: `npm run check:hydro`
 
 ---
 

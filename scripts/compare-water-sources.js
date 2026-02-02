@@ -32,12 +32,12 @@ function binLabel(mile) {
 }
 
 const sitePath = process.argv[2] || 'src/data/at-water-sources.json';
-const awolPath = process.argv[3] || 'src/data/awol-water-sources.json';
+const awolPath = process.argv[3] || 'private/awol/awol-water-sources.json';
 
 if (sitePath === '--help' || sitePath === '-h') {
   console.log('Usage: node scripts/compare-water-sources.js [siteJson] [awolJson]'); // eslint-disable-line no-console
   console.log('Default site: src/data/at-water-sources.json'); // eslint-disable-line no-console
-  console.log('Default awol: src/data/awol-water-sources.json'); // eslint-disable-line no-console
+  console.log('Default awol: private/awol/awol-water-sources.json'); // eslint-disable-line no-console
   process.exit(0);
 }
 
@@ -47,7 +47,7 @@ if (!fs.existsSync(sitePath)) {
 }
 if (!fs.existsSync(awolPath)) {
   console.error(`Missing AWOL dataset: ${awolPath}`); // eslint-disable-line no-console
-  console.error('Run: `npm run import:awol-water` after creating `src/data/awol-water-sources.csv`.'); // eslint-disable-line no-console
+  console.error('Run: `npm run import:awol-water` after creating `private/awol/awol-water-sources.csv`.'); // eslint-disable-line no-console
   process.exit(1);
 }
 

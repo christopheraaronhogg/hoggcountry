@@ -1,0 +1,5 @@
+*
+!.gitignore
+!README.md
+!awol-water-sources.template.csv
+!awol-water-sources.raw.template.txt

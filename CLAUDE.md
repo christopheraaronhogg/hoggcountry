@@ -113,6 +113,10 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 
 ## Current Session Tasks
+- [x] Hmmm *(00:59)*
+- [x] * can we perhaps pull the elements of the "your journey" into the at map? *(00:48)*
+- [x] You are a senior product designer + frontend engineer *(20:20)*
+- [x] You are a senior product designer + frontend engineer auditing and redesigning the mobile UX for an *(19:59)*
 - [x] These sound great *(20:52)*
 - [x] Come up with 3 ideas to make our game more fun *(20:49)*
 - [x] 2 and 3 sound great *(20:19)*

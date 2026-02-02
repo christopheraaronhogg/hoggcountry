@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# private / licensed datasets (keep out of git & public builds)
+src/data/awol-water-sources.csv
+src/data/awol-water-sources.json

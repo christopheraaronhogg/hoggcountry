@@ -1,0 +1,18 @@
+# Paste-friendly AWOL water source notes (template)
+#
+# Supported formats:
+#
+# 1) Pipe-separated (recommended):
+#    0.6 | Springer Mountain Spring | spring | 0.2
+#
+# 2) Tab-separated:
+#    0.6\tSpringer Mountain Spring\tspring\t0.2
+#
+# 3) Simple:
+#    0.6 Springer Mountain Spring +0.2
+#
+# Lines starting with # are ignored.
+
+0.6 | Springer Mountain Spring | spring | 0.2
+19.3 | Woody Gap - USFS | piped | 0.1
+273.7 | Hot Springs - Town | town | 0

@@ -66,19 +66,19 @@ function normalizeType(type) {
   return t;
 }
 
-const csvPath = process.argv[2] || 'src/data/awol-water-sources.csv';
-const outPath = process.argv[3] || 'src/data/awol-water-sources.json';
+const csvPath = process.argv[2] || 'private/awol/awol-water-sources.csv';
+const outPath = process.argv[3] || 'private/awol/awol-water-sources.json';
 
 if (csvPath === '--help' || csvPath === '-h') {
   console.log('Usage: node scripts/import-awol-water-sources.js [inputCsv] [outputJson]'); // eslint-disable-line no-console
-  console.log('Default input:  src/data/awol-water-sources.csv'); // eslint-disable-line no-console
-  console.log('Default output: src/data/awol-water-sources.json'); // eslint-disable-line no-console
+  console.log('Default input:  private/awol/awol-water-sources.csv'); // eslint-disable-line no-console
+  console.log('Default output: private/awol/awol-water-sources.json'); // eslint-disable-line no-console
   process.exit(0);
 }
 
 if (!fs.existsSync(csvPath)) {
   console.error(`Missing input CSV: ${csvPath}`); // eslint-disable-line no-console
-  console.error('Copy `src/data/awol-water-sources.template.csv` to that path and fill it in.'); // eslint-disable-line no-console
+  console.error('Copy `private/awol/awol-water-sources.template.csv` to that path and fill it in.'); // eslint-disable-line no-console
   process.exit(1);
 }
 
