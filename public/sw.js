@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v14';
+const CACHE_NAME = 'hogg-country-v15';
 
 // Core pages to precache on install
 const CORE_PAGES = [
