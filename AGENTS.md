@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Reference Table of Contents
+
+Use this as the “front of book” index to jump to the right docs/areas fast.
+
+- **Start here (orientation):** `README.md`, `developing.md`
+- **Design & UI:** `design.md`, `src/styles/global.css`
+- **Architecture (web + platform):** `architecture.md`, `docs/plans/2026-02-02-hoggcountry-platform-big-picture-diagram.md`
+- **Content model & collections:** `content-model.md`, `src/content.config.ts`, `src/content/`
+- **AT Field Guide pipeline:** `MASTER_NOBO_FIELD_GUIDE.md`, `scripts/parse-master-guide.js`, `src/content/guide/`
+- **AI chat (Trail AI):** `src/pages/ask.astro`, `src/components/TrailChat.svelte`, `netlify/functions/ask.ts`
+- **Maps & tracking:** `src/pages/at-map.astro`, `src/components/AtMap.svelte`, `src/pages/track.astro`, `netlify/functions/garmin-track.ts`
+- **Build/deploy/config:** `astro.config.mjs`, `netlify.toml`, `src/consts.ts`, `src/lib/config.ts`
+- **Validation & QA:** `link-verification.md`, `npm run astro -- check`, `npm run build`
+- **Plans & decisions:** `docs/plans/` (dated design notes / decisions)
+- **Skills (use these when applicable):**
+  - **Before design/features:** `$brainstorming`
+  - **When debugging bugs/tests:** `$systematic-debugging`
+  - **For SEO work:** `$seo-audit`
+  - **For site-wide audits:** `$audit-website`
+  - **For browser automation:** `$playwright`
+
 ## Project Overview
 
 Hogg Country is a digital hiking logbook built with Astro 5 (SSG). It displays trips, YouTube videos, and blog posts in a unified timeline with a warm, outdoorsy aesthetic.
