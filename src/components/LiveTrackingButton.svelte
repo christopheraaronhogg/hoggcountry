@@ -1,11 +1,13 @@
 <script>
+  import { LIVE_TRACKING_URL } from "../lib/config";
+
   // Live Tracking Button - Persistent floating button to track dad's AT hike
   // Toggle `enabled` to show/hide when tracking is active
 
   let {
-    enabled = false,  // Set to true when dad starts hiking
+    enabled = false, // Set to true when dad starts hiking
     label = "Track Live",
-    url = "https://share.garmin.com/theman1"
+    url = LIVE_TRACKING_URL,
   } = $props();
 
   let isHovered = $state(false);

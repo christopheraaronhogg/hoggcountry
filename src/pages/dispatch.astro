@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { LIVE_TRACKING_URL } from '../lib/config';
 ---
 
 <BaseLayout title="Ranger Radio Dispatch | Live Trail Tracking" description="Live tracking dispatches from the Appalachian Trail. Follow the hiker's position in real-time via ranger station radio transmissions.">
@@ -54,7 +55,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="map-container">
           <div class="screen-bezel">
             <iframe
-              src="https://share.garmin.com/theman1"
+              src={LIVE_TRACKING_URL}
               title="Live Garmin tracking map showing current hiker position on the Appalachian Trail"
               class="tracking-screen"
               loading="lazy"

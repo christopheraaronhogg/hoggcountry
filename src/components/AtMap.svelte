@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { loadContext, trailContext, updateContext } from "../stores/trailContext.svelte";
+  import { LIVE_TRACKING_URL } from "../lib/config";
   import "leaflet/dist/leaflet.css";
 
   import atWaterSources from "../data/at-water-sources.json";
@@ -26,6 +27,26 @@
   let showHoggTracker = $state(true);
   let showMailDrops = $state(false);
   let showMilestones = $state(true);
+
+  type HoggFix = { mile: number; lat: number; lon: number; when?: string };
+  let hoggFix = $state<HoggFix | null>(null);
+  let hoggLoading = $state(false);
+  let hoggError = $state<string>("");
+  let centerOnHoggFn: (() => void) | null = null;
+
+  function timeAgo(iso?: string): string {
+    if (!iso) return "";
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return "";
+    const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+    if (s < 60) return `${s}s ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 48) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    return `${d}d ago`;
+  }
 
   // Panel State
   let layersOpen = $state(false);
@@ -406,6 +427,97 @@
 
     await loadData();
 
+    // Hogg Tracker (Garmin MapShare → Netlify Function)
+    const trackingId = (() => {
+      try {
+        const u = new URL(LIVE_TRACKING_URL);
+        return u.pathname.replace(/^\/+/, "").split("/")[0] || "hoggcountry";
+      } catch {
+        return "hoggcountry";
+      }
+    })();
+
+    const hoggIcon = L.divIcon({
+      className: "hc-hogg-pin",
+      html: '<div class="hc-hogg-pin__dot"></div><div class="hc-hogg-pin__pulse"></div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    });
+
+    let hoggMarker: any = null;
+
+    async function refreshHoggTracker() {
+      hoggLoading = true;
+      hoggError = "";
+
+      try {
+        const url = new URL("/.netlify/functions/garmin-track", window.location.origin);
+        url.searchParams.set("id", trackingId);
+
+        const res = await fetch(url.toString(), {
+          headers: { Accept: "application/geo+json,application/json" },
+        });
+        if (!res.ok) throw new Error(`garmin-track failed: ${res.status}`);
+
+        const geojson: any = await res.json();
+
+        const lp = geojson?.properties?.latestPoint;
+        const coords = lp?.coords;
+        const when = lp?.when;
+
+        if (!Array.isArray(coords) || coords.length < 2) {
+          hoggFix = null;
+          return;
+        }
+
+        const lat = Number(coords[0]);
+        const lon = Number(coords[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          hoggFix = null;
+          return;
+        }
+
+        const mile = nearestMileForLatLng(lat, lon);
+        if (mile == null) {
+          hoggFix = null;
+          return;
+        }
+
+        hoggFix = {
+          mile,
+          lat,
+          lon,
+          when: typeof when === "string" ? when : undefined,
+        };
+
+        const ll: [number, number] = [lat, lon];
+        if (!hoggMarker) {
+          hoggMarker = L.marker(ll, { icon: hoggIcon });
+          hoggMarker.addTo(hoggLayer);
+        } else {
+          hoggMarker.setLatLng(ll);
+        }
+
+        hoggMarker.bindPopup(
+          `<b>HoggCountry</b><br/>Mile ~${mile.toFixed(1)}${when ? `<br/>Updated: ${when}` : ""}`
+        );
+
+        centerOnHoggFn = () => {
+          map.setView(ll, Math.max(map.getZoom(), 12), { animate: true, duration: 0.35 } as any);
+          selectedMile = clamp(Math.round(mile), 0, 2197);
+        };
+      } catch (e: any) {
+        hoggError = e?.message || String(e);
+        hoggFix = null;
+      } finally {
+        hoggLoading = false;
+      }
+    }
+
+    // Initial fetch + periodic refresh (edge-cached for 5 minutes)
+    refreshHoggTracker();
+    window.setInterval(refreshHoggTracker, 60 * 1000);
+
     // Marker Logic
     const mileIcon = L.divIcon({
         className: "hc-mile-pin",
@@ -523,9 +635,24 @@
             <span class="hudSectionSub">• {currentSection.percent}% thru {currentSection.section.name} {currentSection.section.emoji}</span>
         {/if}
       </div>
+
+      <div class="hudHoggRow">
+        {#if hoggFix}
+          <button class="hoggChip" onclick={() => centerOnHoggFn?.()} title={hoggFix.when || ''}>
+            🦾 Hogg @ mile {hoggFix.mile.toFixed(1)}{hoggFix.when ? ` • ${timeAgo(hoggFix.when)}` : ''}
+          </button>
+        {:else}
+          <div class="hoggChip muted" title={hoggError || ''}>
+            {hoggLoading ? '🦾 Acquiring signal…' : '🦾 No recent signal'}
+          </div>
+        {/if}
+      </div>
     </div>
 
     <div class="hudRight">
+      <button class="iconBtn" title="Center on Hogg" onclick={() => centerOnHoggFn?.()}>
+        <span>🦾</span>
+      </button>
       <button class="iconBtn" title="Character" onclick={() => { characterOpen = !characterOpen; budgetOpen = false; layersOpen = false; }}>
         <span>👤</span>
       </button>
@@ -617,10 +744,18 @@
 
 <style>
   :global(.leaflet-container) { background: #0b0b0b; font: inherit; }
+
   :global(.hc-mile-pin) { background: transparent; border: none; }
   :global(.hc-mile-pin__dot) { width: 14px; height: 14px; border-radius: 999px; background: #f0e000; border: 2px solid #111827; box-shadow: 0 10px 24px rgba(0,0,0,0.18); position: relative; z-index: 2; }
   :global(.hc-mile-pin__ring) { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; border-top-color: #f97316; animation: spin 2s linear infinite; }
+
+  :global(.hc-hogg-pin) { background: transparent; border: none; }
+  :global(.hc-hogg-pin__dot) { width: 14px; height: 14px; border-radius: 999px; background: #dc2626; border: 2px solid #111827; box-shadow: 0 10px 24px rgba(0,0,0,0.18); position: relative; z-index: 2; }
+  :global(.hc-hogg-pin__pulse) { position: absolute; inset: -7px; border-radius: 50%; background: rgba(220, 38, 38, 0.18); animation: hoggPulse 1.8s ease-out infinite; }
+
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes hoggPulse { from { transform: scale(0.65); opacity: 0.9; } to { transform: scale(1.5); opacity: 0; } }
+
   :global(.mail-drop-icon), :global(.milestone-icon) { font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
 
   .mapShell { position: relative; height: 100vh; max-height: 100vh; overflow: hidden; background: #000; color: #374151; }
@@ -634,7 +769,27 @@
   .hudMile { font-family: 'Oswald', sans-serif; font-size: 1.8rem; font-weight: 700; line-height: 1; color: #111827; }
   .hudSectionBadge { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #4b5563; }
   .hudProgressRow { font-size: 0.8rem; color: #4b5563; margin-top: 2px; white-space: nowrap; }
-  
+
+  .hudHoggRow { margin-top: 6px; }
+  .hoggChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.92);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #111827;
+  }
+  .hoggChip.muted {
+    cursor: default;
+    color: #6b7280;
+    background: rgba(255,255,255,0.65);
+  }
+
   .hudRight { pointer-events: auto; display: flex; gap: 8px; }
   .iconBtn { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.1s; }
   .iconBtn:active { transform: scale(0.95); }

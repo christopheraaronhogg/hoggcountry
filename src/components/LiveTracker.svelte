@@ -1,4 +1,6 @@
 <script>
+  import { LIVE_TRACKING_URL } from "../lib/config";
+
   // Trail Journal Live Entry - A living, breathing journal entry that updates in real-time
   // Like a page that's still being written
 
@@ -40,13 +42,13 @@
     <!-- Embedded map preview -->
     <div class="map-preview">
       <iframe
-        src="https://share.garmin.com/theman1"
+        src={LIVE_TRACKING_URL}
         title="Live trail location"
         loading="lazy"
       ></iframe>
       <div class="map-overlay">
         <a
-          href="https://share.garmin.com/theman1"
+          href={LIVE_TRACKING_URL}
           target="_blank"
           rel="noopener noreferrer"
           class="map-link"
