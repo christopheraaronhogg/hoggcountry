@@ -4,6 +4,7 @@
   import "leaflet/dist/leaflet.css";
 
   import atWaterSources from "../data/at-water-sources.json";
+  import atHydroCrossings from "../data/at-hydro-crossings.json";
   import { RESUPPLY_STOPS } from "../data/resupplyStops";
   import { AT_ROAD_CROSSINGS } from "../data/at-road-crossings";
 
@@ -12,6 +13,8 @@
   // UI state (Layers)
   let showMileMarkers = $state(true);
   let showWaterSources = $state(false);
+  let showPerennialStreams = $state(false);
+  let showIntermittentStreams = $state(false);
   let showResupplyStops = $state(true);
   let showRoadCrossings = $state(false);
   let showShelters = $state(true);
@@ -90,8 +93,20 @@
     daily?: Record<string, any>;
   };
 
-  const FORECAST_OFFSETS_HOURS = [0, 3, 6, 9, 12, 24, 48, 72, 96, 120, 144, 168, 240];
-  let forecastOffsetHours = $state<number>(3);
+  type WxTimeKey =
+    | "now"
+    | "h3"
+    | "h6"
+    | "h12"
+    | "tmrw"
+    | "d2"
+    | "d3"
+    | "d5"
+    | "d7"
+    | "d10";
+
+  const WX_RIBBON_KEYS: WxTimeKey[] = ["now", "h3", "h6", "h12", "tmrw", "d2", "d3", "d5", "d7", "d10"];
+  let wxTimeKey = $state<WxTimeKey>("now");
 
   let wxLoading = $state(false);
   let wxErr = $state('');
@@ -124,11 +139,47 @@
     return x.toFixed(digits);
   }
 
-  function offsetLabel(hours: number) {
-    if (hours === 0) return 'Now';
-    if (hours < 24) return `+${hours}h`;
-    const d = Math.round(hours / 24);
-    return `+${d}d`;
+  function wxIcon(code: unknown): string {
+    const c = Number(code);
+    if (!Number.isFinite(c)) return "•";
+    if (c === 0) return "☀️";
+    if (c === 1 || c === 2) return "⛅";
+    if (c === 3) return "☁️";
+    if (c === 45 || c === 48) return "🌫️";
+    if (c === 51 || c === 53 || c === 55) return "🌦️";
+    if (c === 56 || c === 57) return "🌧️";
+    if (c === 61 || c === 63 || c === 65) return "🌧️";
+    if (c === 66 || c === 67) return "🌧️";
+    if (c === 71 || c === 73 || c === 75 || c === 77) return "🌨️";
+    if (c === 80 || c === 81 || c === 82) return "🌧️";
+    if (c === 85 || c === 86) return "🌨️";
+    if (c === 95 || c === 96 || c === 99) return "⛈️";
+    return "⛅";
+  }
+
+  function wxKeyLabel(k: WxTimeKey) {
+    switch (k) {
+      case "now":
+        return "Now";
+      case "h3":
+        return "+3h";
+      case "h6":
+        return "+6h";
+      case "h12":
+        return "+12h";
+      case "tmrw":
+        return "Tomorrow";
+      case "d2":
+        return "+2d";
+      case "d3":
+        return "+3d";
+      case "d5":
+        return "+5d";
+      case "d7":
+        return "+7d";
+      case "d10":
+        return "+10d";
+    }
   }
 
   function milesAheadLabel(targetMile: unknown): string {
@@ -210,12 +261,104 @@
     };
   }
 
-  const wxAtOffset = $derived.by(() => pickHourlyAtOffset(wx, forecastOffsetHours));
-  const wxDailyAtOffset = $derived.by(() => pickDailyAtOffset(wx, forecastOffsetHours));
+  function keyToHourlyOffset(k: WxTimeKey): number | null {
+    if (k === "now") return 0;
+    if (k === "h3") return 3;
+    if (k === "h6") return 6;
+    if (k === "h12") return 12;
+    return null;
+  }
+
+  function keyToDayOffset(k: WxTimeKey): number | null {
+    if (k === "tmrw") return 1;
+    if (k === "d2") return 2;
+    if (k === "d3") return 3;
+    if (k === "d5") return 5;
+    if (k === "d7") return 7;
+    if (k === "d10") return 10;
+    return null;
+  }
+
+  function pickDailyByDayOffset(data: OpenMeteoResponse | null, dayOffset: number) {
+    const days: string[] | undefined = (data?.daily as any)?.time;
+    if (!days?.length) return null;
+
+    const baseTime = String(data?.current?.time ?? "");
+    const baseDay = baseTime ? baseTime.slice(0, 10) : days[0];
+
+    let d0 = baseDay ? days.indexOf(baseDay) : -1;
+    if (d0 < 0 && baseDay) {
+      for (let i = 0; i < days.length; i++) {
+        if (days[i] >= baseDay) {
+          d0 = i;
+          break;
+        }
+      }
+    }
+    if (d0 < 0) d0 = 0;
+
+    const idx = clamp(d0 + Math.max(0, dayOffset), 0, days.length - 1);
+    const get = (k: string) => (Array.isArray((data?.daily as any)?.[k]) ? (data?.daily as any)[k][idx] : undefined);
+
+    return {
+      day: days[idx],
+      tz: data?.timezone_abbreviation,
+      tmaxF: get("temperature_2m_max"),
+      tminF: get("temperature_2m_min"),
+      popMax: get("precipitation_probability_max"),
+      windMaxMph: get("wind_speed_10m_max"),
+      code: get("weather_code"),
+    };
+  }
+
+  const wxHourly = $derived.by(() => {
+    const off = keyToHourlyOffset(wxTimeKey);
+    if (off == null) return null;
+    return pickHourlyAtOffset(wx, off);
+  });
+
+  const wxDaily = $derived.by(() => {
+    const d = keyToDayOffset(wxTimeKey);
+    if (d == null) return null;
+    return pickDailyByDayOffset(wx, d);
+  });
+
+  const wxRibbonItems = $derived.by(() => {
+    return WX_RIBBON_KEYS.map((k) => {
+      const off = keyToHourlyOffset(k);
+      const dayOff = keyToDayOffset(k);
+
+      if (dayOff != null) {
+        const d = pickDailyByDayOffset(wx, dayOff);
+        return {
+          key: k,
+          label: wxKeyLabel(k),
+          icon: wxIcon(d?.code),
+          temp: d?.tmaxF,
+          pop: d?.popMax,
+        };
+      }
+
+      const h = pickHourlyAtOffset(wx, off ?? 0);
+      const temp = k === "now" ? wx?.current?.temperature_2m : h?.tempF;
+      const pop = h?.pop;
+      const code = k === "now" ? wx?.current?.weather_code : h?.code;
+
+      return {
+        key: k,
+        label: wxKeyLabel(k),
+        icon: wxIcon(code),
+        temp,
+        pop,
+      };
+    });
+  });
 
   let _wxTimer: any = null;
   let _wxAbort: AbortController | null = null;
-  let _lastWxKey: string | null = null;
+
+  const WX_CACHE_TTL_MS = 10 * 60 * 1000;
+  const wxCache = new Map<string, { ts: number; data: OpenMeteoResponse }>();
 
   function fetchWeatherDebounced() {
     if (typeof window === 'undefined') return;
@@ -228,9 +371,16 @@
   async function fetchWeather() {
     if (!Number.isFinite(selectedLat) || !Number.isFinite(selectedLon) || selectedLat === 0 || selectedLon === 0) return;
 
-    const key = `${selectedLat.toFixed(4)},${selectedLon.toFixed(4)}`;
-    if (_lastWxKey === key && wx) return;
-    _lastWxKey = key;
+    // Bucket coords so mile-scrubbing doesn't spam the API.
+    const key = `${selectedLat.toFixed(2)},${selectedLon.toFixed(2)}`;
+
+    const cached = wxCache.get(key);
+    if (cached && Date.now() - cached.ts < WX_CACHE_TTL_MS) {
+      wx = cached.data;
+      wxErr = '';
+      wxLoading = false;
+      return;
+    }
 
     _wxAbort?.abort();
     _wxAbort = new AbortController();
@@ -288,6 +438,9 @@
       const res = await fetch(url.toString(), { headers: { Accept: 'application/json' }, signal: _wxAbort.signal });
       if (!res.ok) throw new Error(`weather fetch failed: ${res.status}`);
       wx = await res.json();
+
+      // Cache successful responses for a short TTL.
+      if (wx) wxCache.set(key, { ts: Date.now(), data: wx });
     } catch (e: any) {
       if (e?.name === 'AbortError') return;
       wxErr = e?.message || 'Failed to load weather.';
@@ -300,7 +453,7 @@
   // UI state
   let layersOpen = $state(false);
   let nearbyOpen = $state(false);
-  let nearbyTab = $state<"shelters" | "water" | "crossings" | "resupply">("shelters");
+  let nearbyTab = $state<"shelters" | "water" | "streams" | "crossings" | "resupply">("shelters");
 
   function adjustMile(delta: number) {
     selectedMile = clamp(selectedMile + delta, 0, 2197);
@@ -353,13 +506,41 @@
       .slice(0, limit);
   }
 
+  type HydroCrossing = {
+    mile: number;
+    name: string;
+    type?: string;
+    flow?: string;
+    offTrail?: number;
+    lat?: number;
+    lon?: number;
+  };
+
+  const hydroCrossingsSorted: HydroCrossing[] = (Array.isArray(atHydroCrossings) ? atHydroCrossings : [])
+    .filter((s) => typeof s?.mile === "number" && typeof s?.name === "string")
+    .map((s) => ({
+      mile: s.mile,
+      name: s.name,
+      type: typeof s.type === "string" ? s.type : "stream",
+      flow: typeof s.flow === "string" ? s.flow : "unknown",
+      offTrail: typeof s.offTrail === "number" ? s.offTrail : 0,
+      lat: typeof s.lat === "number" ? s.lat : undefined,
+      lon: typeof s.lon === "number" ? s.lon : undefined,
+    }))
+    .sort((a, b) => a.mile - b.mile);
+
+  const perennialStreams: HydroCrossing[] = hydroCrossingsSorted.filter((s) => s.flow === "perennial");
+  const intermittentStreams: HydroCrossing[] = hydroCrossingsSorted.filter((s) => s.flow === "intermittent");
+
   const nextResupply = $derived.by(() => nextAfter(RESUPPLY_STOPS as any[], selectedMile));
   const nextWater = $derived.by(() => nextAfter(atWaterSources as any[], selectedMile));
+  const nextPerennialStream = $derived.by(() => nextAfter(perennialStreams as any[], selectedMile));
   const nextCrossing = $derived.by(() => nextAfter(AT_ROAD_CROSSINGS as any[], selectedMile));
   const nextShelter = $derived.by(() => nextAfter(sheltersWithMile as any[], selectedMile));
 
   const upcomingResupply = $derived.by(() => withinAhead(RESUPPLY_STOPS as any[], selectedMile, 40, 4));
   const upcomingWater = $derived.by(() => withinAhead(atWaterSources as any[], selectedMile, 12, 6));
+  const upcomingPerennialStreams = $derived.by(() => withinAhead(perennialStreams as any[], selectedMile, 12, 8));
   const upcomingCrossings = $derived.by(() => withinAhead(AT_ROAD_CROSSINGS as any[], selectedMile, 25, 5));
   const upcomingShelters = $derived.by(() => withinAhead(sheltersWithMile as any[], selectedMile, 25, 5));
 
@@ -375,6 +556,8 @@
     // touch reactive inputs
     void showMileMarkers;
     void showWaterSources;
+    void showPerennialStreams;
+    void showIntermittentStreams;
     void showResupplyStops;
     void showRoadCrossings;
     void showShelters;
@@ -470,6 +653,8 @@
     const canvasRenderer = L.canvas({ padding: 0.5 });
     const mileLayer = L.layerGroup();
     const waterLayer = L.layerGroup();
+    const perennialStreamLayer = L.layerGroup();
+    const intermittentStreamLayer = L.layerGroup();
     const resupplyLayer = L.layerGroup();
     const crossingLayer = L.layerGroup();
     const shelterLayer = L.layerGroup();
@@ -584,6 +769,45 @@
           .addTo(waterLayer);
       }
 
+      // NHD flowline crossings (placed by snapped lat/lon)
+      for (const src of hydroCrossingsSorted as any[]) {
+        const mile = src?.mile;
+        if (typeof mile !== "number") continue;
+
+        const lat = src?.lat;
+        const lon = src?.lon;
+        const ll =
+          typeof lat === "number" && typeof lon === "number"
+            ? ([lat, lon] as [number, number])
+            : coordForMile(mile);
+        if (!ll) continue;
+
+        const name = src?.name || "Stream";
+        const flow = src?.flow || "unknown";
+        if (flow !== "perennial" && flow !== "intermittent") continue;
+
+        const off = typeof src?.offTrail === "number" ? src.offTrail : 0;
+        const isPerennial = flow === "perennial";
+
+        const layer = isPerennial ? perennialStreamLayer : intermittentStreamLayer;
+        const stroke = isPerennial ? "#064e3b" : "#92400e"; // emerald-900 / amber-800
+        const fill = isPerennial ? "#34d399" : "#fbbf24"; // emerald-400 / amber-400
+
+        L.circleMarker(ll, {
+          radius: 3,
+          color: stroke,
+          weight: 1,
+          opacity: 0.9,
+          fillColor: fill,
+          fillOpacity: 0.7,
+          renderer: canvasRenderer,
+        })
+          .bindPopup(
+            `<b>${name}</b><br/>Mile ${mile}<br/><small>${flow}${off > 0 ? ` • ~${off.toFixed(2)} mi off` : ""}</small>`
+          )
+          .addTo(layer);
+      }
+
       // Road crossings / bailouts
       for (const x of AT_ROAD_CROSSINGS) {
         const ll = coordForMile(x.mile);
@@ -691,6 +915,10 @@
       // Keep “selected” coordinate available to the dashboard cards.
       selectedLat = ll[0];
       selectedLon = ll[1];
+
+      // Default back to “Now” when the user changes location along the trail.
+      wxTimeKey = "now";
+
       fetchWeatherDebounced();
 
       const animateTo = (target: [number, number]) => {
@@ -878,6 +1106,20 @@
         if (!map.hasLayer(waterLayer)) waterLayer.addTo(map);
       } else {
         if (map.hasLayer(waterLayer)) map.removeLayer(waterLayer);
+      }
+
+      // Stream crossings (NHD) — dense, so require higher zoom
+      const streamsAllowed = zoom >= 12;
+      if (showPerennialStreams && streamsAllowed) {
+        if (!map.hasLayer(perennialStreamLayer)) perennialStreamLayer.addTo(map);
+      } else {
+        if (map.hasLayer(perennialStreamLayer)) map.removeLayer(perennialStreamLayer);
+      }
+
+      if (showIntermittentStreams && streamsAllowed) {
+        if (!map.hasLayer(intermittentStreamLayer)) intermittentStreamLayer.addTo(map);
+      } else {
+        if (map.hasLayer(intermittentStreamLayer)) map.removeLayer(intermittentStreamLayer);
       }
 
       // Shelters (OSM-derived)
@@ -1134,6 +1376,8 @@
         <label class="t"><input type="checkbox" bind:checked={showResupplyStops} /> <span>Resupply</span></label>
         <label class="t"><input type="checkbox" bind:checked={showShelters} /> <span>Shelters</span></label>
         <label class="t"><input type="checkbox" bind:checked={showWaterSources} /> <span>Water (zoom 11+)</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showPerennialStreams} /> <span>Streams (perennial, zoom 12+)</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showIntermittentStreams} /> <span>Streams (intermittent, zoom 12+)</span></label>
         <label class="t"><input type="checkbox" bind:checked={showRoadCrossings} /> <span>Road crossings</span></label>
         <label class="t"><input type="checkbox" bind:checked={showMileMarkers} /> <span>Mile markers</span></label>
       </div>
@@ -1158,12 +1402,14 @@
         <div class="kv"><div class="kk">Next resupply</div><div class="vv">{nextResupply ? `${nextResupply.name} (mile ${nextResupply.mile})` : '—'}</div></div>
         <div class="kv"><div class="kk">Next shelter</div><div class="vv">{nextShelter ? `${nextShelter.name} (mile ${nextShelter.mile})` : '—'}</div></div>
         <div class="kv"><div class="kk">Next water</div><div class="vv">{nextWater ? `${nextWater.name} (mile ${nextWater.mile})` : '—'}</div></div>
+        <div class="kv"><div class="kk">Next stream (perennial)</div><div class="vv">{nextPerennialStream ? `${nextPerennialStream.name} (mile ${nextPerennialStream.mile})` : '—'}</div></div>
         <div class="kv"><div class="kk">Next crossing</div><div class="vv">{nextCrossing ? `${nextCrossing.name} (mile ${nextCrossing.mile})` : '—'}</div></div>
       </div>
 
       <div class="chipRow" role="tablist">
         <button class="chip" class:active={nearbyTab==='shelters'} type="button" on:click={() => (nearbyTab='shelters')}>Shelters</button>
         <button class="chip" class:active={nearbyTab==='water'} type="button" on:click={() => (nearbyTab='water')}>Water</button>
+        <button class="chip" class:active={nearbyTab==='streams'} type="button" on:click={() => (nearbyTab='streams')}>Streams</button>
         <button class="chip" class:active={nearbyTab==='crossings'} type="button" on:click={() => (nearbyTab='crossings')}>Crossings</button>
         <button class="chip" class:active={nearbyTab==='resupply'} type="button" on:click={() => (nearbyTab='resupply')}>Resupply</button>
       </div>
@@ -1183,6 +1429,14 @@
           {:else}
             {#each upcomingWater as w (w.name + w.mile)}
               <div class="li">• {w.name} — mile {w.mile}</div>
+            {/each}
+          {/if}
+        {:else if nearbyTab === 'streams'}
+          {#if !upcomingPerennialStreams.length}
+            <div class="empty">—</div>
+          {:else}
+            {#each upcomingPerennialStreams as s (s.name + s.mile)}
+              <div class="li">• {s.name} — mile {s.mile}</div>
             {/each}
           {/if}
         {:else if nearbyTab === 'crossings'}
@@ -1212,43 +1466,74 @@
 <!-- Dashboard cards (reactive to the selected mile marker) -->
 <div class="dashboard" aria-label="Trail dashboard">
   <div class="dashCard weather">
-    <div class="dk">Weather</div>
+    <div class="wxHead">
+      <div class="dk">Weather</div>
+      <a class="wxLink" href={`/at-weather?mile=${selectedMile}`}>Full forecast →</a>
+    </div>
 
-    <div class="wxChips" aria-label="Forecast time selector">
-      {#each FORECAST_OFFSETS_HOURS as h (h)}
-        <button class="wxChip" class:active={forecastOffsetHours === h} type="button" on:click={() => (forecastOffsetHours = h)}>
-          {offsetLabel(h)}
-        </button>
-      {/each}
+    <!-- Forecast Ribbon (progressive disclosure) -->
+    <div class="wxRibbonWrap" aria-label="Forecast ribbon">
+      <div class="wxRibbon" role="listbox" aria-label="Forecast time selection">
+        {#each wxRibbonItems as item (item.key)}
+          <button
+            class="wxSeg"
+            class:active={wxTimeKey === item.key}
+            type="button"
+            role="option"
+            aria-selected={wxTimeKey === item.key}
+            on:click={() => (wxTimeKey = item.key)}
+          >
+            <div class="wxSegTop">
+              <span class="wxSegIcon" aria-hidden="true">{item.icon}</span>
+              <span class="wxSegTemp">{Number.isFinite(Number(item.temp)) ? `${fmt(item.temp, 0)}°` : '—'}</span>
+            </div>
+            <div class="wxSegLabel">{item.label}</div>
+            {#if Number(item.pop) >= 30}
+              <div class="wxSegPop">{fmt(item.pop, 0)}%</div>
+            {/if}
+          </button>
+        {/each}
+      </div>
+      <div class="wxFade" aria-hidden="true"></div>
     </div>
 
     {#if wxLoading}
       <div class="dv">Loading forecast…</div>
     {:else if wxErr}
       <div class="dv err">{wxErr}</div>
-    {:else if wxAtOffset}
+    {:else if wxHourly}
       <div class="wxTop">
-        <div class="wxTemp">{fmt(wxAtOffset.tempF, 0)}°</div>
-        <div class="wxCond">{wxCodeLabel(wxAtOffset.code)}</div>
-      </div>
-      <div class="wxMeta">
-        <div><span class="mk">Wind</span> {fmt(wxAtOffset.windMph, 0)} mph</div>
-        <div><span class="mk">Gust</span> {fmt(wxAtOffset.gustMph, 0)} mph</div>
-        <div><span class="mk">POP</span> {fmt(wxAtOffset.pop, 0)}%</div>
-        <div><span class="mk">Precip</span> {fmt(wxAtOffset.precipIn, 2)} in</div>
-      </div>
-
-      {#if wxDailyAtOffset}
-        <div class="wxMini">
-          <div><span class="mk">High/Low</span> {fmt(wxDailyAtOffset.tmaxF, 0)}° / {fmt(wxDailyAtOffset.tminF, 0)}°</div>
-          <div><span class="mk">Wind max</span> {fmt(wxDailyAtOffset.windMaxMph, 0)} mph</div>
-          <div><span class="mk">POP max</span> {fmt(wxDailyAtOffset.popMax, 0)}%</div>
-          <div><span class="mk">Day</span> {wxDailyAtOffset.day}</div>
+        <div>
+          <div class="wxTemp">{fmt(wxHourly.tempF, 0)}°</div>
+          <div class="wxCond">{wxCodeLabel(wxHourly.code)}</div>
         </div>
-      {/if}
+        <div class="wxWhen">{wxKeyLabel(wxTimeKey)}</div>
+      </div>
 
-      <div class="wxTime">{wxAtOffset.time}{wxAtOffset.tz ? ` ${wxAtOffset.tz}` : ''}</div>
-      <a class="wxLink" href={`/at-weather?mile=${selectedMile}`}>Full forecast →</a>
+      <div class="wxMeta">
+        <div><span class="mk">Feels</span> {fmt(wxHourly.feelsF, 0)}°</div>
+        <div><span class="mk">Wind</span> {fmt(wxHourly.windMph, 0)} mph</div>
+        <div><span class="mk">Gust</span> {fmt(wxHourly.gustMph, 0)} mph</div>
+        <div><span class="mk">POP</span> {fmt(wxHourly.pop, 0)}%</div>
+        <div><span class="mk">Precip</span> {fmt(wxHourly.precipIn, 2)} in</div>
+      </div>
+
+      <div class="wxTime">{wxHourly.time}{wxHourly.tz ? ` ${wxHourly.tz}` : ''}</div>
+    {:else if wxDaily}
+      <div class="wxTop">
+        <div>
+          <div class="wxTemp">{fmt(wxDaily.tmaxF, 0)}° / {fmt(wxDaily.tminF, 0)}°</div>
+          <div class="wxCond">{wxCodeLabel(wxDaily.code)}</div>
+        </div>
+        <div class="wxWhen">{wxKeyLabel(wxTimeKey)}</div>
+      </div>
+
+      <div class="wxMini">
+        <div><span class="mk">High/Low</span> {fmt(wxDaily.tmaxF, 0)}° / {fmt(wxDaily.tminF, 0)}°</div>
+        <div><span class="mk">Wind max</span> {fmt(wxDaily.windMaxMph, 0)} mph</div>
+        <div><span class="mk">POP max</span> {fmt(wxDaily.popMax, 0)}%</div>
+        <div><span class="mk">Day</span> {wxDaily.day}</div>
+      </div>
     {:else}
       <div class="dv">—</div>
       <a class="wxLink" href={`/at-weather?mile=${selectedMile}`}>Open AT Weather →</a>
@@ -1259,6 +1544,12 @@
     <div class="dk">Next water</div>
     <div class="dv">{nextWater ? nextWater.name : '—'}</div>
     <div class="ds">{nextWater ? milesAheadLabel(nextWater.mile) : ''}</div>
+  </button>
+
+  <button class="dashCard" type="button" on:click={() => { nearbyTab = 'streams'; nearbyOpen = true; layersOpen = false; }}>
+    <div class="dk">Next stream (perennial)</div>
+    <div class="dv">{nextPerennialStream ? nextPerennialStream.name : '—'}</div>
+    <div class="ds">{nextPerennialStream ? milesAheadLabel(nextPerennialStream.mile) : ''}</div>
   </button>
 
   <button class="dashCard" type="button" on:click={() => { nearbyTab = 'shelters'; nearbyOpen = true; layersOpen = false; }}>
@@ -1540,32 +1831,106 @@
     color: rgba(185, 28, 28, 0.92);
   }
 
-  .wxChips {
-    margin-top: 10px;
+  .wxHead {
     display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 4px;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
   }
 
-  .wxChip {
+  .wxRibbonWrap {
+    position: relative;
+    margin-top: 10px;
+  }
+
+  .wxRibbon {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .wxSeg {
+    scroll-snap-align: start;
     flex: 0 0 auto;
-    height: 34px;
-    padding: 0 12px;
-    border-radius: 999px;
+    min-width: 84px;
+    height: 64px;
+    border-radius: 16px;
     border: 1px solid rgba(0,0,0,0.12);
     background: rgba(255,255,255,0.86);
-    font-family: Oswald, system-ui, sans-serif;
-    font-weight: 900;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    font-size: 0.72rem;
+    padding: 8px 10px;
+    text-align: left;
     cursor: pointer;
-    color: rgba(31, 41, 55, 0.86);
+    position: relative;
   }
 
-  .wxChip.active {
-    background: rgba(240, 224, 0, 0.22);
+  .wxSeg.active {
+    background: rgba(240, 224, 0, 0.14);
+    border-color: rgba(0,0,0,0.18);
+  }
+
+  .wxSegTop {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .wxSegIcon {
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+
+  .wxSegTemp {
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.90);
+  }
+
+  .wxSegLabel {
+    margin-top: 6px;
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    color: rgba(55, 65, 81, 0.72);
+  }
+
+  .wxSegPop {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 0.72rem;
+    font-weight: 900;
+    color: rgba(31, 41, 55, 0.86);
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 999px;
+    padding: 1px 7px;
+  }
+
+  .wxFade {
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 56px;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.92) 80%);
+  }
+
+  .wxWhen {
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    color: rgba(55, 65, 81, 0.74);
+    margin-top: 8px;
   }
 
   .wxTop {
