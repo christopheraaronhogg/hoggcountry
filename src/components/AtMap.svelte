@@ -89,6 +89,25 @@
     return Math.max(min, Math.min(max, n));
   }
 
+  function returnToSite() {
+    if (typeof window === "undefined") return;
+    const cameFromThisSite = (() => {
+      if (!document.referrer) return false;
+      try {
+        return new URL(document.referrer).origin === window.location.origin;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (cameFromThisSite && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    window.location.href = "/";
+  }
+
   function parseMileParam(): number | null {
     if (typeof window === "undefined") return null;
     const u = new URL(window.location.href);
@@ -958,6 +977,16 @@
     </div>
 
     <div class="hudActions" aria-label="Map actions">
+      <button
+        class="hudBtn"
+        title="Back to site"
+        aria-label="Back to site"
+        onclick={() => returnToSite()}
+        type="button"
+      >
+        <span class="hudBtnIcon">←</span>
+      </button>
+
       <button
         class="hudBtn"
         class:active={gpsWatching && gpsLock}
