@@ -89,25 +89,6 @@
     return Math.max(min, Math.min(max, n));
   }
 
-  function returnToSite() {
-    if (typeof window === "undefined") return;
-    const cameFromThisSite = (() => {
-      if (!document.referrer) return false;
-      try {
-        return new URL(document.referrer).origin === window.location.origin;
-      } catch {
-        return false;
-      }
-    })();
-
-    if (cameFromThisSite && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    window.location.href = "/";
-  }
-
   function parseMileParam(): number | null {
     if (typeof window === "undefined") return null;
     const u = new URL(window.location.href);
@@ -925,25 +906,21 @@
   <!-- HUD TOP: Progress & Sections -->
   <div class="hudTop">
     <div class="statusCard">
-      <div class="statusRow">
-        <div class="mile">{Math.round(hudMile)}</div>
-        <div class="sectionTag">{currentSection?.section.state || "—"}</div>
-        <div class="modeTag" class:plan={mode === "plan"}>{mode === "plan" ? "PLAN" : "NAV"}</div>
-      </div>
-
-      <div class="statusSub">
-        <span class="pct">{progressPercent}%</span>
-        {#if currentSection}
-          <span class="sub">• {currentSection.percent}% thru {currentSection.section.name} {currentSection.section.emoji}</span>
-        {/if}
-      </div>
-
-      <div class="statusMeta">
-        <div class="miniTabs" role="tablist" aria-label="Map mode">
-          <button class="tab" class:active={mode === "navigate"} onclick={() => switchToNavigateMode()} type="button">Nav</button>
-          <button class="tab" class:active={mode === "plan"} onclick={() => switchToPlanMode()} type="button">Plan</button>
+      <div class="statusGrid">
+        <!-- Row 1 -->
+        <div class="statusRow">
+          <div class="mile">{Math.round(hudMile)}</div>
+          <div class="sectionTag">{currentSection?.section.state || "—"}</div>
         </div>
+        <div class="modeTag" class:plan={mode === "plan"}>{mode === "plan" ? "PLAN" : "NAV"}</div>
 
+        <!-- Row 2 -->
+        <div class="statusSub">
+          <span class="pct">{progressPercent}%</span>
+          {#if currentSection}
+            <span class="sub">• {currentSection.percent}% thru {currentSection.section.name} {currentSection.section.emoji}</span>
+          {/if}
+        </div>
         <div class="gpsPill" class:live={Boolean(gpsFix)} title={gpsError || ""}>
           <span class="gpsDot"></span>
           {#if mode === "plan"}
@@ -959,32 +936,28 @@
             <span>GPS off</span>
           {/if}
         </div>
-      </div>
 
-      <div class="hudHoggRow">
-        {#if hoggFix}
-          <button class="hoggChip" onclick={() => centerOnHoggFn?.()} title={hoggFix.when || ""} type="button">
-            🐗 Hogg @ {hoggFix.mile.toFixed(1)}{hoggFix.when ? ` • ${timeAgo(hoggFix.when)}` : ""}
-          </button>
-        {:else}
-          <div class="hoggChip muted" title={hoggError || ""}>
-            {hoggLoading ? "📡 Acquiring signal…" : "📡 No recent signal"}
-          </div>
-        {/if}
+        <!-- Row 3 -->
+        <div class="hudHoggRow">
+          {#if hoggFix}
+            <button class="hoggChip" onclick={() => centerOnHoggFn?.()} title={hoggFix.when || ""} type="button">
+              <span class="hoggLeft">🐗 Hogg</span>
+              <span class="hoggRight">@ {hoggFix.mile.toFixed(1)}{hoggFix.when ? ` • ${timeAgo(hoggFix.when)}` : ""}</span>
+            </button>
+          {:else}
+            <div class="hoggChip muted" title={hoggError || ""}>
+              <span class="hoggLeft">{hoggLoading ? "📡 Acquiring signal…" : "📡 No recent signal"}</span>
+            </div>
+          {/if}
+        </div>
+        <div class="miniTabs" role="tablist" aria-label="Map mode">
+          <button class="tab" class:active={mode === "navigate"} onclick={() => switchToNavigateMode()} type="button">Nav</button>
+          <button class="tab" class:active={mode === "plan"} onclick={() => switchToPlanMode()} type="button">Plan</button>
+        </div>
       </div>
     </div>
 
     <div class="hudActions" aria-label="Map actions">
-      <button
-        class="hudBtn"
-        title="Back to site"
-        aria-label="Back to site"
-        onclick={() => returnToSite()}
-        type="button"
-      >
-        <span class="hudBtnIcon">←</span>
-      </button>
-
       <button
         class="hudBtn"
         class:active={gpsWatching && gpsLock}
