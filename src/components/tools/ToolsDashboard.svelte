@@ -9,44 +9,7 @@
   import WaterWidget from './widgets/WaterWidget.svelte';
   import BailoutWidget from './widgets/BailoutWidget.svelte';
   import atWaterSources from '../../data/at-water-sources.json';
-
-  // Tool definitions grouped by category
-  const toolGroups = [
-    {
-      name: 'Planning',
-      tools: [
-        { id: 'character', name: 'Character', icon: '🧙', desc: 'Build your hiker (drives every tool)' },
-        { id: 'pack', name: 'Pack', icon: '🎒', desc: 'Build & weigh your kit' },
-        { id: 'resupply', name: 'Resupply', icon: '🍽️', desc: 'Towns, food & mail drops' },
-        { id: 'food', name: 'Food', icon: '🍽️', desc: 'Calorie & weight calculator' },
-        { id: 'training', name: 'Train', icon: '🏋️', desc: 'Pre-trail preparation' },
-      ],
-    },
-    {
-      name: 'On Trail',
-      tools: [
-        { id: 'weather', name: 'Weather', icon: '🌤️', desc: 'Weather, heat zones & daylight' },
-        { id: 'water', name: 'Water', icon: '💧', desc: 'Water sources & carry calc' },
-        { id: 'shelter', name: 'Shelter', icon: '🏠', desc: 'Tent vs shelter decision' },
-        { id: 'layers', name: 'Layers', icon: '🧥', desc: 'What to wear for conditions' },
-      ],
-    },
-    {
-      name: 'Town Days',
-      tools: [
-        { id: 'budget', name: 'Budget', icon: '💰', desc: 'Track trail spending' },
-        { id: 'mail', name: 'Mail', icon: '📬', desc: 'Plan resupply mail drops' },
-        { id: 'power', name: 'Power', icon: '🔋', desc: 'Manage battery & devices' },
-        { id: 'geartrans', name: 'Swap', icon: '🔄', desc: 'Gear transition planner' },
-      ],
-    },
-    {
-      name: 'Always',
-      tools: [
-        { id: 'milestone', name: 'Journey', icon: '🗺️', desc: 'Plan your timeline & track progress' },
-      ],
-    },
-  ];
+  import { TRAIL_EMERGENCY_TOOL, TRAIL_TOOL_GROUPS } from '../../data/trailTools';
 
   // State
   let mounted = $state(false);
@@ -106,7 +69,7 @@
   <section class="tools-section">
     <h2 class="section-title">All Tools</h2>
 
-    {#each toolGroups as group}
+    {#each TRAIL_TOOL_GROUPS as group}
       <div class="tool-group">
         <h3 class="group-name">{group.name}</h3>
         <div class="tool-grid">
@@ -116,7 +79,7 @@
               name={tool.name}
               icon={tool.icon}
               description={tool.desc}
-              href={`/tools/${tool.id}/`}
+              href={tool.href}
             />
           {/each}
         </div>
@@ -126,11 +89,11 @@
     <!-- Emergency Tool - Special Treatment -->
     <div class="emergency-section">
       <ToolCard
-        id="emergency"
-        name="Emergency"
-        icon="🆘"
-        description="Emergency info & bailouts"
-        href="/tools/emergency/"
+        id={TRAIL_EMERGENCY_TOOL.id}
+        name={TRAIL_EMERGENCY_TOOL.name}
+        icon={TRAIL_EMERGENCY_TOOL.icon}
+        description={TRAIL_EMERGENCY_TOOL.desc}
+        href={TRAIL_EMERGENCY_TOOL.href}
         isEmergency={true}
       />
     </div>

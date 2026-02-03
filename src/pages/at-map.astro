@@ -7,53 +7,24 @@ import AtMap from "../components/AtMap.svelte";
   title="Appalachian Trail Map"
   description="Interactive map of the Appalachian Trail (OSM-derived)."
 >
-  <section class="content">
-    <AtMap client:only="svelte" />
-
-    <details class="about">
-      <summary>About this map</summary>
-      <p>
-        Interactive overview of the Appalachian Trail route. Data is derived from
-        OpenStreetMap and is available under the ODbL.
-      </p>
-      <p class="fineprint">
-        Data source:
-        <a href="https://www.openstreetmap.org/relation/156553" target="_blank" rel="noreferrer">OSM relation 156553</a>
-        •
-        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">&copy; OpenStreetMap contributors</a>
-      </p>
-    </details>
-  </section>
+  <AtMap client:only="svelte" />
 </BaseLayout>
 
 <style>
-  .content {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 14px 12px 40px;
+  :global(html),
+  :global(body) {
+    height: 100%;
+    overflow: hidden;
   }
 
-  details.about {
-    margin-top: 12px;
-    border-top: 1px solid rgba(0,0,0,0.10);
-    padding-top: 10px;
-    opacity: 0.92;
+  /* /at-map is the full-screen hub; navigation is provided via the HUD */
+  :global(#site-header),
+  :global(footer),
+  :global(#version-stamp) {
+    display: none;
   }
 
-  details.about summary {
-    cursor: pointer;
-    user-select: none;
-    font-family: Oswald, system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 900;
-    color: rgba(31, 41, 55, 0.86);
-    margin-bottom: 8px;
-  }
-
-  .fineprint {
-    margin-top: 10px;
-    font-size: 0.9rem;
-    opacity: 0.8;
+  :global(main#main-content) {
+    padding: 0;
   }
 </style>
