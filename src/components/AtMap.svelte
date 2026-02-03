@@ -1426,10 +1426,23 @@
     box-shadow: var(--hud-shadow);
   }
 
+  .statusGrid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "row mode"
+      "sub gps"
+      "hogg tabs";
+    gap: 8px 10px;
+    align-items: center;
+  }
+
   .statusRow {
+    grid-area: row;
     display: flex;
     align-items: baseline;
     gap: 10px;
+    min-width: 0;
   }
 
   .mile {
@@ -1454,7 +1467,8 @@
   }
 
   .modeTag {
-    margin-left: auto;
+    grid-area: mode;
+    justify-self: end;
     font-size: 0.7rem;
     font-weight: 900;
     text-transform: uppercase;
@@ -1473,13 +1487,15 @@
   }
 
   .statusSub {
-    margin-top: 4px;
+    grid-area: sub;
+    margin-top: 0;
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     align-items: baseline;
     color: var(--hud-muted);
     font-size: 0.86rem;
+    min-width: 0;
   }
 
   .pct {
@@ -1496,15 +1512,9 @@
     text-overflow: ellipsis;
   }
 
-  .statusMeta {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
   .miniTabs {
+    grid-area: tabs;
+    justify-self: end;
     display: flex;
     padding: 2px;
     border-radius: 999px;
@@ -1534,6 +1544,8 @@
   }
 
   .gpsPill {
+    grid-area: gps;
+    justify-self: end;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1567,13 +1579,18 @@
   }
 
   .hudHoggRow {
-    margin-top: 10px;
+    grid-area: hogg;
+    margin-top: 0;
+    min-width: 0;
   }
 
   .hoggChip {
-    display: inline-flex;
+    width: 100%;
+    min-width: 0;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 10px;
     padding: 6px 10px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1583,12 +1600,26 @@
     cursor: pointer;
     color: var(--hud-text);
     -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
   }
 
   .hoggChip.muted {
     cursor: default;
     color: rgba(255, 255, 255, 0.7);
     background: rgba(255, 255, 255, 0.06);
+  }
+
+  .hoggLeft {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hoggRight {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    opacity: 0.9;
   }
 
   .hudActions {
@@ -2137,6 +2168,13 @@
 
     .quickRow {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .tab {
+      padding: 4px 8px;
+      font-size: 0.72rem;
     }
   }
 </style>
