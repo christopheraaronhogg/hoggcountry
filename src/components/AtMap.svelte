@@ -139,8 +139,44 @@
   }
 
   let previewMile = $state<number>(0);
+  let previewMileDraft = $state<string>("");
+  let previewMileEditing = $state(false);
   let liveMile = $state<number>(0);
   let savedMile = $derived.by(() => Number(trailContext.currentMile) || 0);
+
+  function commitPreviewMileDraft() {
+    const raw = previewMileDraft.trim();
+    if (!raw || !/^\d+$/.test(raw)) {
+      previewMileDraft = String(Math.round(previewMile));
+      return;
+    }
+
+    const n = Number(raw);
+    if (!Number.isFinite(n)) {
+      previewMileDraft = String(Math.round(previewMile));
+      return;
+    }
+
+    previewMile = clamp(Math.round(n), 0, TRAIL_MAX_MILE);
+  }
+
+  function onPreviewMileKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter") {
+      commitPreviewMileDraft();
+      (e.currentTarget as HTMLInputElement | null)?.blur?.();
+      return;
+    }
+
+    if (e.key === "Escape") {
+      previewMileDraft = String(Math.round(previewMile));
+      (e.currentTarget as HTMLInputElement | null)?.blur?.();
+    }
+  }
+
+  $effect(() => {
+    if (previewMileEditing) return;
+    previewMileDraft = String(Math.round(previewMile));
+  });
 
   // Derived Journey Data
   const hudMile = $derived.by(() => {
@@ -1091,6 +1127,21 @@
         <button class="nudge" onclick={() => adjustMile(-5)} type="button">−5</button>
         <input class="heroSlider" type="range" min="0" max={TRAIL_MAX_MILE} step="1" bind:value={previewMile} />
         <button class="nudge" onclick={() => adjustMile(5)} type="button">+5</button>
+        <input
+          class="mileEditInput"
+          type="text"
+          aria-label="Mile marker"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="mi"
+          bind:value={previewMileDraft}
+          onfocus={() => (previewMileEditing = true)}
+          onblur={() => {
+            previewMileEditing = false;
+            commitPreviewMileDraft();
+          }}
+          onkeydown={onPreviewMileKeydown}
+        />
       </div>
     </div>
   {/if}
@@ -1785,6 +1836,32 @@
     cursor: grab;
   }
 
+  .mileEditInput {
+    width: 88px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--hud-text);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    text-align: center;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mileEditInput::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 800;
+  }
+
+  .mileEditInput:focus {
+    outline: 3px solid rgba(240, 224, 0, 0.7);
+    outline-offset: 2px;
+  }
+
   /* Modal/Overlay */
   .overlay {
     position: fixed;
@@ -2156,6 +2233,10 @@
 
     .poiDist {
       font-size: 0.9rem;
+    }
+
+    .mileEditInput {
+      width: 72px;
     }
   }
 
