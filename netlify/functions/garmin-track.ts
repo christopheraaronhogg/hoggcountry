@@ -191,7 +191,8 @@ const handler: Handler = async (event: HandlerEvent) => {
     };
   }
 
-  const sourceUrl = `https://inreach.garmin.com/Feed/Share/${encodeURIComponent(id)}`;
+  // Use explore.garmin.com directly (inreach.garmin.com 301s here via Cloudflare)
+  const sourceUrl = `https://explore.garmin.com/Feed/Share/${encodeURIComponent(id)}`;
 
   try {
     const res = await fetch(sourceUrl, {
