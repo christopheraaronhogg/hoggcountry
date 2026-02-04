@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import AtWeather from "../components/AtWeather.svelte";
+import AtWeatherIsland from "../components/AtWeather.svelte";
 ---
 
 <BaseLayout
@@ -13,7 +13,7 @@ import AtWeather from "../components/AtWeather.svelte";
       Drag the mile marker to get a forecast near that point on the A.T. (Open-Meteo).
     </p>
 
-    <AtWeather client:only="svelte" />
+    <AtWeatherIsland client:only="svelte" />
 
     <p class="fineprint">
       Forecast data: <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a>.

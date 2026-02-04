@@ -3,10 +3,14 @@
   // WPA poster aesthetic inspired by 1930s-40s national park posters
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 
-  let { videos = [] } = $props();
+  import { onMount } from "svelte";
+
+  let { videos: initialVideos = [] } = $props();
+  let videos = $state(initialVideos);
+  let _liveLoadError = $state("");
 
   // Get first 3 videos for the dispatches section
-  const displayVideos = videos.slice(0, 3);
+  const displayVideos = $derived(videos.slice(0, 3));
 
   // Format date for display
   function formatDate(isoDate) {
@@ -39,6 +43,31 @@
       img.style.display = 'none';
     }
   }
+
+  // This page is statically generated; keep the YouTube section "live" by re-fetching
+  // the feed at runtime from our own backend (browser can't fetch YouTube RSS due to CORS).
+  onMount(async () => {
+    try {
+      const url = new URL("/.netlify/functions/youtube-feed", window.location.origin);
+      url.searchParams.set("mode", "channel");
+
+      const res = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+      if (!res.ok) throw new Error(`youtube-feed failed: ${res.status}`);
+
+      const data = await res.json();
+      const items = Array.isArray(data?.items) ? data.items : [];
+
+      if (!items.length) return;
+
+      // Avoid pointless updates (keeps DOM stable).
+      if (videos?.[0]?.id && items?.[0]?.id && videos[0].id === items[0].id) return;
+
+      videos = items;
+    } catch (e) {
+      _liveLoadError = e?.message || String(e);
+      // Intentionally silent: we fall back to build-time videos.
+    }
+  });
 </script>
 
 <div class="ranger-station">

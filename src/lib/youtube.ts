@@ -8,11 +8,12 @@ export type YtVideo = {
   thumbnail: string;
 };
 
-let cache: { items: YtVideo[]; ts: number } | null = null;
+const cacheByFeedUrl = new Map<string, { items: YtVideo[]; ts: number }>();
 const TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
-  if (cache && Date.now() - cache.ts < TTL_MS) return cache.items;
+  const cached = cacheByFeedUrl.get(feedUrl);
+  if (cached && Date.now() - cached.ts < TTL_MS) return cached.items;
 
   try {
     const controller = new AbortController();
@@ -29,7 +30,7 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
     
     if (!res.ok) {
       console.warn(`YouTube RSS fetch failed: ${res.status}`);
-      return cache?.items || []; // Return cached data or empty array
+      return cached?.items || []; // Return cached data or empty array
     }
     
     const xml = await res.text();
@@ -71,11 +72,11 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
       })
       .filter((v: YtVideo) => v.id);
 
-    cache = { items, ts: Date.now() };
+    cacheByFeedUrl.set(feedUrl, { items, ts: Date.now() });
     return items;
     
   } catch (error) {
     console.warn('YouTube RSS fetch error:', error);
-    return cache?.items || []; // Return cached data or empty array on error
+    return cached?.items || []; // Return cached data or empty array on error
   }
 }

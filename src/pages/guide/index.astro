@@ -1345,53 +1345,55 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
 
       // Offline card functionality
       (function() {
-        const card = document.getElementById('offline-card');
-        const icon = document.getElementById('offline-icon');
-        const title = document.getElementById('offline-title');
-        const desc = document.getElementById('offline-desc');
-        const btn = document.getElementById('offline-btn');
+        const card = document.getElementById('offline-card') as HTMLDivElement | null;
+        const icon = document.getElementById('offline-icon') as HTMLDivElement | null;
+        const title = document.getElementById('offline-title') as HTMLDivElement | null;
+        const desc = document.getElementById('offline-desc') as HTMLDivElement | null;
+        const btn = document.getElementById('offline-btn') as HTMLButtonElement | null;
 
-        if (!card || !('serviceWorker' in navigator)) {
+        if (!card || !icon || !title || !desc || !btn || !('serviceWorker' in navigator)) {
           if (card) card.style.display = 'none';
           return;
         }
 
+        const els = { card, icon, title, desc, btn };
+
         function showSaved() {
-          card.className = 'offline-card saved';
-          icon.textContent = '✅';
-          title.textContent = 'Saved for Offline';
-          desc.textContent = 'Guide & Tools ready - works without cell service';
-          btn.textContent = 'Ready';
-          btn.disabled = true;
-          btn.className = 'offline-save-btn saved';
+          els.card.className = 'offline-card saved';
+          els.icon.textContent = '✅';
+          els.title.textContent = 'Saved for Offline';
+          els.desc.textContent = 'Guide & Tools ready - works without cell service';
+          els.btn.textContent = 'Ready';
+          els.btn.disabled = true;
+          els.btn.className = 'offline-save-btn saved';
         }
 
         function showSaving() {
-          card.className = 'offline-card saving';
-          icon.textContent = '⏳';
-          title.textContent = 'Saving...';
-          desc.textContent = 'Downloading guide for offline use';
-          btn.textContent = 'Saving...';
-          btn.disabled = true;
+          els.card.className = 'offline-card saving';
+          els.icon.textContent = '⏳';
+          els.title.textContent = 'Saving...';
+          els.desc.textContent = 'Downloading guide for offline use';
+          els.btn.textContent = 'Saving...';
+          els.btn.disabled = true;
         }
 
         function showOffline() {
-          card.className = 'offline-card saved';
-          icon.textContent = '📴';
-          title.textContent = 'Offline Mode';
-          desc.textContent = 'No service - using saved content';
-          btn.textContent = 'Offline';
-          btn.disabled = true;
+          els.card.className = 'offline-card saved';
+          els.icon.textContent = '📴';
+          els.title.textContent = 'Offline Mode';
+          els.desc.textContent = 'No service - using saved content';
+          els.btn.textContent = 'Offline';
+          els.btn.disabled = true;
         }
 
         function showReady() {
-          card.className = 'offline-card';
-          icon.textContent = '📶';
-          title.textContent = 'Save for Offline';
-          desc.textContent = 'Tap to save this guide for trail use without service';
-          btn.textContent = 'Save';
-          btn.disabled = false;
-          btn.className = 'offline-save-btn';
+          els.card.className = 'offline-card';
+          els.icon.textContent = '📶';
+          els.title.textContent = 'Save for Offline';
+          els.desc.textContent = 'Tap to save this guide for trail use without service';
+          els.btn.textContent = 'Save';
+          els.btn.disabled = false;
+          els.btn.className = 'offline-save-btn';
         }
 
         // Check current state
@@ -1413,7 +1415,7 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
         });
 
         // Save button click
-        btn.addEventListener('click', () => {
+        els.btn.addEventListener('click', () => {
           if (navigator.serviceWorker.controller) {
             showSaved();
             return;

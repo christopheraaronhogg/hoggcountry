@@ -1,13 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import AtMap from "../components/AtMap.svelte";
+import AtMapIsland from "../components/AtMap.svelte";
 ---
 
 <BaseLayout
   title="Appalachian Trail Map"
   description="Interactive map of the Appalachian Trail (OSM-derived)."
 >
-  <AtMap client:only="svelte" />
+  <AtMapIsland client:only="svelte" />
 </BaseLayout>
 
 <style>

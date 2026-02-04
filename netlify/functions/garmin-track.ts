@@ -78,7 +78,7 @@ function buildGeoJsonFromKml(kml: string, sourceUrl: string): GarminGeoJSON {
 
   // Placemarks: pull Point + LineString coords if present
   const placemarks = extractAllPlacemarkBlocks(kml);
-  let latestPoint: { name?: string; when?: string; coords?: [number, number] } | null = null;
+  const pointCandidates: { name?: string; when?: string; coords: [number, number] }[] = [];
 
   for (const pm of placemarks) {
     const name = textFromTag(pm, 'name') || undefined;
@@ -105,7 +105,8 @@ function buildGeoJsonFromKml(kml: string, sourceUrl: string): GarminGeoJSON {
             geometry: { type: 'Point', coordinates: [lon, lat] },
           });
 
-          latestPoint = { name, when, coords: [lat, lon] };
+          // Frontend expects [lat, lon] here (not GeoJSON order).
+          pointCandidates.push({ name, when, coords: [lat, lon] });
         }
       }
     }
@@ -130,6 +131,23 @@ function buildGeoJsonFromKml(kml: string, sourceUrl: string): GarminGeoJSON {
       }
     }
   }
+
+  const latestPoint = (() => {
+    if (!pointCandidates.length) return null;
+    return pointCandidates.reduce((best, cur) => {
+      const bt = best.when ? Date.parse(best.when) : Number.NaN;
+      const ct = cur.when ? Date.parse(cur.when) : Number.NaN;
+
+      const bOk = Number.isFinite(bt);
+      const cOk = Number.isFinite(ct);
+
+      if (bOk && cOk) return ct > bt ? cur : best;
+      if (!bOk && cOk) return cur;
+      if (bOk && !cOk) return best;
+      // Neither parses: keep the later-seen one.
+      return cur;
+    });
+  })();
 
   return {
     type: 'FeatureCollection',
@@ -200,7 +218,8 @@ const handler: Handler = async (event: HandlerEvent) => {
       statusCode: 200,
       headers: geoJsonHeaders({
         // Cache at the edge to feel live without hammering Garmin.
-        'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
+        'Netlify-CDN-Cache-Control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
       }),
       body: JSON.stringify(geojson),
     };

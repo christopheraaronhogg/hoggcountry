@@ -240,7 +240,8 @@ export function formatFact(path: string, format: 'raw' | 'commas' | 'round' | 'd
 
   // Handle raw values
   if (typeof current === 'number') {
-    return formatNumber(current, format === 'raw' ? 'raw' : format);
+    const numFmt = format === 'raw' ? 'raw' : format === 'round' ? 'round' : 'commas';
+    return formatNumber(current, numFmt);
   }
 
   return String(current);

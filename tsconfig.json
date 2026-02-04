@@ -1,7 +1,14 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"],
+  "include": [
+    ".astro/types.d.ts",
+    "src/**/*",
+    "netlify/functions/**/*",
+    "scripts/**/*",
+    "astro.config.mjs",
+    "svelte.config.js"
+  ],
+  "exclude": ["dist", "trailhogg", "audit-reports", "private", "node_modules"],
   "compilerOptions": {
     "strictNullChecks": true
   }
