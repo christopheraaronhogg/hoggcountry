@@ -35,6 +35,7 @@
   let hoggLoading = $state(false);
   let hoggError = $state<string>("");
   let centerOnHoggFn: (() => void) | null = null;
+  let didAutoCenterOnHogg = $state(false);
   let _hoggPoll: number | null = null;
 
   function timeAgo(iso?: string): string {
@@ -703,6 +704,22 @@
           gpsLock = false;
           previewMile = clamp(Math.round(mile), 0, TRAIL_MAX_MILE);
         };
+
+        // Auto-center on Hogg by default (unless user explicitly set a mile in the URL)
+        if (!didAutoCenterOnHogg && showHoggTracker) {
+          const hasMileQuery = (() => {
+            try {
+              return new URL(window.location.href).searchParams.has("mile");
+            } catch {
+              return false;
+            }
+          })();
+
+          if (!hasMileQuery) {
+            didAutoCenterOnHogg = true;
+            centerOnHoggFn();
+          }
+        }
       } catch (e: any) {
         hoggError = e?.message || String(e);
         hoggFix = null;
