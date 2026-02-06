@@ -21,28 +21,89 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       <img src="/logo.png" alt="Hogg Country" class="logo" />
     </a>
 
-    <div class="nav-right">
-      <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
-      <!-- <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a> -->
-      <a href="/character" class={`nav-link ${isCharacter ? 'is-active' : ''}`}>Character</a>
-      <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
-      <a href="/at-map" class={`nav-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
-      <a href="/at-weather" class={`nav-link ${isAtWeather ? 'is-active' : ''}`}>AT Weather</a>
+    <div class="nav-controls">
+      <div class="nav-right" aria-label="Primary navigation">
+        <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
+        <!-- <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a> -->
+        <a href="/character" class={`nav-link ${isCharacter ? 'is-active' : ''}`}>Character</a>
+        <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
+        <a href="/at-map" class={`nav-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
+        <a href="/at-weather" class={`nav-link ${isAtWeather ? 'is-active' : ''}`}>AT Weather</a>
+        {showTracking && (
+          <a
+            href={LIVE_TRACKING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="live-link"
+            title="Track my AT thru-hike on Garmin"
+          >
+            <span class="live-dot"></span>
+            <span class="live-text">Track Me</span>
+          </a>
+        )}
+      </div>
+
       {showTracking && (
         <a
           href={LIVE_TRACKING_URL}
           target="_blank"
           rel="noopener noreferrer"
-          class="live-link"
+          class="live-link mobile-header-live"
           title="Track my AT thru-hike on Garmin"
         >
           <span class="live-dot"></span>
           <span class="live-text">Track Me</span>
         </a>
       )}
+
+      <button
+        class="nav-toggle"
+        id="nav-toggle"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="mobile-drawer"
+      >
+        <span class="nav-toggle__bars" aria-hidden="true">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </span>
+      </button>
+
       <span id="offline-status" class="offline-badge" title="Offline status" style="display: none;"></span>
     </div>
   </nav>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-overlay" id="mobile-overlay" aria-hidden="true"></div>
+  <aside class="mobile-drawer" id="mobile-drawer" aria-label="Site menu" aria-hidden="true" tabindex="-1">
+    <div class="mobile-top">
+      <span class="mobile-title">Menu</span>
+      <button class="mobile-close" id="nav-close" type="button" aria-label="Close menu">×</button>
+    </div>
+
+    <div class="mobile-links">
+      {showTracking && (
+        <a
+          href={LIVE_TRACKING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="live-link mobile-live"
+          title="Track my AT thru-hike on Garmin"
+        >
+          <span class="live-dot"></span>
+          <span class="live-text">Track Me</span>
+        </a>
+      )}
+
+      <a href="/guide" class={`mobile-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
+      <a href="/character" class={`mobile-link ${isCharacter ? 'is-active' : ''}`}>Character</a>
+      <a href="/tools" class={`mobile-link ${isTools ? 'is-active' : ''}`}>Tools</a>
+      <a href="/at-map" class={`mobile-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
+      <a href="/at-weather" class={`mobile-link ${isAtWeather ? 'is-active' : ''}`}>AT Weather</a>
+    </div>
+  </aside>
 </header>
 
 <style>
@@ -85,11 +146,145 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     }
   }
 
+  .nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  :global(body.nav-locked) {
+    overflow: hidden;
+  }
+
   .nav-right {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
+
+  .nav-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .nav-toggle:active { transform: translateY(1px); }
+
+  .nav-toggle__bars {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nav-toggle__bars .bar {
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: rgba(31, 41, 55, 0.85);
+  }
+
+  .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+    z-index: 999;
+  }
+
+  .mobile-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: min(360px, 88vw);
+    background: var(--bg, #f5f2e8);
+    border-left: 1px solid var(--border, #e6e1d4);
+    box-shadow: -18px 0 40px rgba(0,0,0,0.18);
+    transform: translateX(110%);
+    transition: transform 220ms ease;
+    z-index: 1000;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .mobile-drawer.is-open {
+    transform: translateX(0);
+  }
+
+  .mobile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .mobile-title {
+    font-family: Oswald, system-ui, sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: rgba(31, 41, 55, 0.86);
+  }
+
+  .mobile-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.75);
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(31, 41, 55, 0.85);
+  }
+
+  .mobile-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 12px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--pine);
+    border: 1px solid rgba(0,0,0,0.06);
+    background: rgba(255,255,255,0.55);
+    font-weight: 600;
+  }
+
+  .mobile-link:hover { background: rgba(255,255,255,0.72); }
+
+  .mobile-link.is-active {
+    background: rgba(166, 181, 137, 0.22);
+    border-color: rgba(166, 181, 137, 0.35);
+  }
+
+  .mobile-live { justify-content: center; }
 
   /* Navigation links */
   .nav-link {
@@ -124,7 +319,12 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     border-radius: 6px;
     background: rgba(220, 38, 38, 0.08);
     border: 1px solid rgba(220, 38, 38, 0.2);
+    white-space: nowrap;
     transition: all 0.15s ease;
+  }
+
+  .mobile-header-live {
+    display: none;
   }
 
   .live-link:hover {
@@ -152,25 +352,32 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
   }
 
   /* Mobile */
-  @media (max-width: 600px) {
+  @media (max-width: 760px) {
     .nav-right {
-      gap: 0.25rem;
+      display: none;
     }
 
-    .nav-link {
-      font-size: 0.8rem;
-      padding: 0.2rem 0.4rem;
+    .mobile-header-live {
+      display: inline-flex;
+    }
+
+    .nav-toggle {
+      display: inline-flex;
+    }
+
+    .logo {
+      height: 32px;
     }
 
     .live-link {
-      font-size: 0.75rem;
-      padding: 0.2rem 0.45rem 0.2rem 0.35rem;
-      gap: 0.25rem;
+      font-size: 0.85rem;
     }
+  }
 
-    .live-dot {
-      width: 6px;
-      height: 6px;
+  @media (min-width: 761px) {
+    .mobile-overlay,
+    .mobile-drawer {
+      display: none;
     }
   }
 
@@ -273,5 +480,76 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     // Listen for online/offline
     window.addEventListener('online', updateStatus);
     window.addEventListener('offline', updateStatus);
+  })();
+
+  // Mobile drawer nav
+  (function() {
+    const toggle = document.getElementById('nav-toggle');
+    const close = document.getElementById('nav-close');
+    const drawer = document.getElementById('mobile-drawer');
+    const overlay = document.getElementById('mobile-overlay');
+
+    if (!toggle || !close || !drawer || !overlay) return;
+
+    const mq = window.matchMedia('(min-width: 761px)');
+
+    function setOpen(open) {
+      const isOpen = Boolean(open);
+
+      drawer.classList.toggle('is-open', isOpen);
+      overlay.classList.toggle('is-open', isOpen);
+
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      toggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+
+      overlay.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      drawer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+
+      document.body.classList.toggle('nav-locked', isOpen);
+
+      if (isOpen) {
+        // Focus first actionable item for keyboard users
+        const first = drawer.querySelector('a, button');
+        if (first && 'focus' in first) {
+          requestAnimationFrame(() => first.focus());
+        }
+      }
+    }
+
+    function openMenu() {
+      if (mq.matches) return; // don't open on desktop
+      setOpen(true);
+    }
+
+    function closeMenu() {
+      setOpen(false);
+    }
+
+    toggle.addEventListener('click', () => {
+      const isOpen = drawer.classList.contains('is-open');
+      setOpen(!isOpen);
+    });
+
+    close.addEventListener('click', closeMenu);
+    overlay.addEventListener('click', closeMenu);
+
+    // Close when clicking a link inside the drawer
+    drawer.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('a')) closeMenu();
+    });
+
+    // Close on Esc
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
+    });
+
+    // If we cross into desktop size, force-close
+    if ('addEventListener' in mq) {
+      mq.addEventListener('change', (e) => {
+        if (e.matches) closeMenu();
+      });
+    }
   })();
 </script>
