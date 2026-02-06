@@ -3,9 +3,10 @@ import { LIVE_TRACKING_ENABLED, LIVE_TRACKING_URL, LIVE_TRACKING_START_DATE } fr
 
 const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
-const isGenerate = pathname.startsWith('/generate');
 const isTools = pathname.startsWith('/tools');
-const isCharacter = pathname.startsWith('/character');
+const isCharacterTool = pathname.startsWith('/tools/character');
+const isAtMap = pathname.startsWith('/at-map');
+const isAtWeather = pathname.startsWith('/at-weather');
 
 // Show tracking link only if enabled AND we're past the start date
 const now = new Date();
@@ -20,44 +21,28 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     </a>
 
     <div class="nav-controls">
-      <div class="nav-right" aria-label="Primary navigation">
-        <a href="/guide" class={`nav-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
-        <!-- <a href="/generate" class={`nav-link ${isGenerate ? 'is-active' : ''}`}>My Guide</a> -->
-        <a href="/character" class={`nav-link ${isCharacter ? 'is-active' : ''}`}>Character</a>
-        <a href="/tools" class={`nav-link ${isTools ? 'is-active' : ''}`}>Tools</a>
-        <!-- moved: AT Map + AT Weather now live under /tools -->
+      <div class="nav-ctas" aria-label="Quick links">
+        <a href="/at-map" class={`map-link ${isAtMap ? 'is-active' : ''}`}>Map</a>
+
         {showTracking && (
           <a
             href={LIVE_TRACKING_URL}
             target="_blank"
             rel="noopener noreferrer"
             class="live-link"
-            title="Track my AT thru-hike on Garmin"
+            title="Track Dad on Garmin"
           >
             <span class="live-dot"></span>
-            <span class="live-text">Track Me</span>
+            <span class="live-text">Track Dad</span>
           </a>
         )}
       </div>
-
-      {showTracking && (
-        <a
-          href={LIVE_TRACKING_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="live-link mobile-header-live"
-          title="Track my AT thru-hike on Garmin"
-        >
-          <span class="live-dot"></span>
-          <span class="live-text">Track Me</span>
-        </a>
-      )}
 
       <button
         class="nav-toggle"
         id="nav-toggle"
         type="button"
-        aria-label="Open menu"
+        aria-label="Open tools menu"
         aria-expanded="false"
         aria-controls="mobile-drawer"
       >
@@ -66,17 +51,18 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
           <span class="bar"></span>
           <span class="bar"></span>
         </span>
+        <span class="nav-toggle__label">Tools</span>
       </button>
 
       <span id="offline-status" class="offline-badge" title="Offline status" style="display: none;"></span>
     </div>
   </nav>
 
-  <!-- Mobile Drawer -->
+  <!-- Tools Drawer (all screen sizes) -->
   <div class="mobile-overlay" id="mobile-overlay" aria-hidden="true"></div>
-  <aside class="mobile-drawer" id="mobile-drawer" aria-label="Site menu" aria-hidden="true" tabindex="-1">
+  <aside class="mobile-drawer" id="mobile-drawer" aria-label="Tools menu" aria-hidden="true" tabindex="-1">
     <div class="mobile-top">
-      <span class="mobile-title">Menu</span>
+      <span class="mobile-title">Tools</span>
       <button class="mobile-close" id="nav-close" type="button" aria-label="Close menu">×</button>
     </div>
 
@@ -87,17 +73,18 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
           target="_blank"
           rel="noopener noreferrer"
           class="live-link mobile-live"
-          title="Track my AT thru-hike on Garmin"
+          title="Track Dad on Garmin"
         >
           <span class="live-dot"></span>
-          <span class="live-text">Track Me</span>
+          <span class="live-text">Track Dad</span>
         </a>
       )}
 
+      <a href="/at-map" class={`mobile-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
+      <a href="/tools" class={`mobile-link ${isTools && !isCharacterTool ? 'is-active' : ''}`}>Trail Tools</a>
+      <a href="/tools/character" class={`mobile-link ${isCharacterTool ? 'is-active' : ''}`}>Character</a>
+      <a href="/at-weather" class={`mobile-link ${isAtWeather ? 'is-active' : ''}`}>AT Weather</a>
       <a href="/guide" class={`mobile-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
-      <a href="/character" class={`mobile-link ${isCharacter ? 'is-active' : ''}`}>Character</a>
-      <a href="/tools" class={`mobile-link ${isTools ? 'is-active' : ''}`}>Tools</a>
-      <!-- moved: AT Map + AT Weather now live under /tools -->
     </div>
   </aside>
 </header>
@@ -148,19 +135,19 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     gap: 0.5rem;
   }
 
+  .nav-ctas {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
   :global(body.nav-locked) {
     overflow: hidden;
   }
 
-  .nav-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
   .nav-toggle {
-    display: none;
-    width: 42px;
+    display: inline-flex;
+    gap: 0.5rem;
     height: 42px;
     border-radius: 10px;
     border: 1px solid rgba(0,0,0,0.10);
@@ -169,7 +156,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     cursor: pointer;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 0 12px;
   }
 
   .nav-toggle:active { transform: translateY(1px); }
@@ -185,6 +172,15 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     height: 2px;
     border-radius: 999px;
     background: rgba(31, 41, 55, 0.85);
+  }
+
+  .nav-toggle__label {
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    color: rgba(31, 41, 55, 0.86);
   }
 
   .mobile-overlay {
@@ -282,25 +278,30 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
   .mobile-live { justify-content: center; }
 
-  /* Navigation links */
-  .nav-link {
-    font-size: 0.9rem;
-    color: var(--muted);
+  /* Quick header map link */
+  .map-link {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: rgba(31, 41, 55, 0.86);
     text-decoration: none;
-    padding: 0.25rem 0.5rem;
-    border-radius: 6px;
-    transition: color 0.12s ease, background-color 0.12s ease;
+    padding: 0.25rem 0.55rem;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.55);
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease;
   }
 
-  .nav-link:hover {
-    color: var(--pine);
-    background: rgba(77, 89, 74, 0.08);
+  .map-link:hover {
+    background: rgba(255,255,255,0.75);
+    border-color: rgba(0,0,0,0.14);
   }
 
-  .nav-link.is-active {
-    color: var(--pine);
-    font-weight: 600;
-    background: rgba(166, 181, 137, 0.2);
+  .map-link.is-active {
+    background: rgba(166, 181, 137, 0.22);
+    border-color: rgba(166, 181, 137, 0.35);
   }
 
   /* Live tracking link */
@@ -319,9 +320,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     transition: all 0.15s ease;
   }
 
-  .mobile-header-live {
-    display: none;
-  }
+  /* (mobile header live link removed; Track Dad now shows in header everywhere) */
 
   .live-link:hover {
     background: rgba(220, 38, 38, 0.15);
@@ -349,30 +348,21 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
   /* Mobile */
   @media (max-width: 760px) {
-    .nav-right {
-      display: none;
-    }
-
-    .mobile-header-live {
-      display: inline-flex;
-    }
-
-    .nav-toggle {
-      display: inline-flex;
-    }
-
     .logo {
       height: 32px;
     }
 
     .live-link {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
+    }
+
+    .map-link {
+      font-size: 0.82rem;
     }
   }
 
-  @media (min-width: 761px) {
-    .mobile-overlay,
-    .mobile-drawer {
+  @media (max-width: 420px) {
+    .nav-toggle__label {
       display: none;
     }
   }
@@ -478,7 +468,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     window.addEventListener('offline', updateStatus);
   })();
 
-  // Mobile drawer nav
+  // Tools drawer nav (all screen sizes)
   (function() {
     const toggle = document.getElementById('nav-toggle');
     const close = document.getElementById('nav-close');
@@ -487,8 +477,6 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
     if (!toggle || !close || !drawer || !overlay) return;
 
-    const mq = window.matchMedia('(min-width: 761px)');
-
     function setOpen(open) {
       const isOpen = Boolean(open);
 
@@ -496,7 +484,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       overlay.classList.toggle('is-open', isOpen);
 
       toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      toggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+      toggle.setAttribute('aria-label', isOpen ? 'Close tools menu' : 'Open tools menu');
 
       overlay.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
       drawer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
@@ -504,17 +492,13 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       document.body.classList.toggle('nav-locked', isOpen);
 
       if (isOpen) {
-        // Focus first actionable item for keyboard users
         const first = drawer.querySelector('a, button');
         if (first && 'focus' in first) {
           requestAnimationFrame(() => first.focus());
         }
+      } else {
+        toggle.focus();
       }
-    }
-
-    function openMenu() {
-      if (mq.matches) return; // don't open on desktop
-      setOpen(true);
     }
 
     function closeMenu() {
@@ -540,12 +524,5 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') closeMenu();
     });
-
-    // If we cross into desktop size, force-close
-    if ('addEventListener' in mq) {
-      mq.addEventListener('change', (e) => {
-        if (e.matches) closeMenu();
-      });
-    }
   })();
 </script>
