@@ -74,8 +74,8 @@
   let characterOpen = $state(false);
   let budgetOpen = $state(false);
 
-  type HudMode = "navigate" | "plan";
-  let mode = $state<HudMode>("navigate");
+  type HudMode = "tracking" | "explore";
+  let mode = $state<HudMode>("tracking");
 
   let toolsOpen = $state(false);
   let searchOpen = $state(false);
@@ -182,7 +182,7 @@
   // Derived Journey Data
   const hudMile = $derived.by(() => {
     const base =
-      mode === "plan"
+      mode === "explore"
         ? previewMile
         : gpsFix?.mile ?? (Number.isFinite(liveMile) && liveMile > 0 ? liveMile : savedMile);
     return clamp(Number(base) || 0, 0, TRAIL_MAX_MILE);
@@ -281,26 +281,39 @@
     previewMile = clamp(previewMile + delta, 0, TRAIL_MAX_MILE);
   }
 
-  function switchToNavigateMode() {
-    mode = "navigate";
+  function switchToTrackingMode() {
+    mode = "tracking";
+
+    // Family-view default: track the hiker when we have a fix.
+    if (hoggFix && showHoggTracker) {
+      liveMile = hoggFix.mile;
+      hudLat = hoggFix.lat;
+      hudLon = hoggFix.lon;
+      fetchWeatherDebounced();
+      centerOnHoggFn?.();
+      return;
+    }
+
+    // Trail-view fallback: track the viewer/device.
     if (gpsFix) {
+      liveMile = gpsFix.mile;
       hudLat = gpsFix.lat;
       hudLon = gpsFix.lon;
       fetchWeatherDebounced();
+      if (gpsLock) centerOnUserFn?.();
     }
-    if (gpsLock) centerOnUserFn?.();
   }
 
-  function switchToPlanMode(targetMile?: number) {
+  function switchToExploreMode(targetMile?: number) {
     const m = targetMile ?? Math.round(hudMile);
-    mode = "plan";
+    mode = "explore";
     gpsLock = false;
     previewMile = clamp(Math.round(m), 0, TRAIL_MAX_MILE);
     centerOnPreviewFn?.();
   }
 
   function toggleGpsTracking() {
-    if (mode !== "navigate") switchToNavigateMode();
+    if (mode !== "tracking") switchToTrackingMode();
 
     if (!gpsWatching) {
       gpsLock = true;
@@ -316,7 +329,7 @@
   function jumpToMile() {
     const n = Number(searchMile);
     if (!Number.isFinite(n)) return;
-    switchToPlanMode(clamp(Math.round(n), 0, TRAIL_MAX_MILE));
+    switchToExploreMode(clamp(Math.round(n), 0, TRAIL_MAX_MILE));
     searchOpen = false;
   }
 
@@ -335,14 +348,14 @@
 
   function getInitialState(): { mode: HudMode; previewMile: number } {
     const fromUrl = parseMileParam();
-    if (fromUrl != null) return { mode: "plan", previewMile: fromUrl };
+    if (fromUrl != null) return { mode: "explore", previewMile: fromUrl };
 
     const fromSaved = readSavedPreviewMile();
     const c = Number(trailContext.currentMile);
     const fromContext = Number.isFinite(c) && c > 0 ? clamp(Math.round(c), 0, TRAIL_MAX_MILE) : 0;
 
     return {
-      mode: "navigate",
+      mode: "tracking",
       previewMile: fromSaved ?? fromContext,
     };
   }
@@ -392,7 +405,7 @@
 
   function flyToMile(mile: number | undefined) {
       if (mile == null) return;
-      mode = "plan";
+      mode = "explore";
       gpsLock = false;
       previewMile = clamp(Math.round(mile), 0, TRAIL_MAX_MILE);
       centerOnPreviewFn?.();
@@ -400,7 +413,7 @@
 
   // Effect: Sync URL/Local
   $effect(() => {
-    if (mode !== "plan") return;
+    if (mode !== "explore") return;
     updateUrl(previewMile);
     savePreviewMile(previewMile);
   });
@@ -428,7 +441,7 @@
   $effect(() => {
     if (!mapReady || !centerOnPreviewFn) return;
     void previewMile;
-    if (mode !== "plan") return;
+    if (mode !== "explore") return;
     centerOnPreviewFn();
   });
 
@@ -439,7 +452,7 @@
     mode = initial.mode;
     previewMile = initial.previewMile;
     liveMile = savedMile;
-    if (mode === "plan") gpsLock = false;
+    if (mode === "explore") gpsLock = false;
     
     const L = await import("leaflet");
 
@@ -700,12 +713,23 @@
 
         centerOnHoggFn = () => {
           map.setView(ll, Math.max(map.getZoom(), 12), { animate: true, duration: 0.35 } as any);
-          mode = "plan";
-          gpsLock = false;
-          previewMile = clamp(Math.round(mile), 0, TRAIL_MAX_MILE);
+          // If we’re exploring, keep the scrubber aligned with the hiker.
+          if (mode === "explore") {
+            previewMile = clamp(Math.round(mile), 0, TRAIL_MAX_MILE);
+          }
         };
 
-        // Auto-center on Hogg by default (unless user explicitly set a mile in the URL)
+        // In TRACK mode, keep HUD mile + weather synced to the hiker.
+        if (mode === "tracking" && showHoggTracker) {
+          liveMile = mile;
+          hudLat = lat;
+          hudLon = lon;
+          fetchWeatherDebounced();
+          // Follow the hiker unless the user switched to EXPLORE.
+          centerOnHoggFn?.();
+        }
+
+        // Auto-center on first load (unless user explicitly set a mile in the URL)
         if (!didAutoCenterOnHogg && showHoggTracker) {
           const hasMileQuery = (() => {
             try {
@@ -746,7 +770,7 @@
     function moveSelectedMarker(recenter = false) {
         const ll = coordForMile(previewMile);
         if (!ll) return;
-        if (mode === "plan") {
+        if (mode === "explore") {
           hudLat = ll[0];
           hudLon = ll[1];
           fetchWeatherDebounced();
@@ -772,7 +796,7 @@
                 const pos = selectedMarker.getLatLng();
                 const m = nearestMileForLatLng(pos.lat, pos.lng);
                 if (m != null) {
-                  mode = "plan";
+                  mode = "explore";
                   gpsLock = false;
                   previewMile = clamp(m, 0, TRAIL_MAX_MILE);
                 }
@@ -788,7 +812,7 @@
     moveSelectedMarker(true);
 
     // Initial HUD point (used for weather + POI when GPS is off)
-    if (mode === "navigate" && !gpsFix) {
+    if (mode === "tracking" && !gpsFix) {
       const ll = coordForMile(Number.isFinite(savedMile) && savedMile > 0 ? savedMile : previewMile);
       if (ll) {
         hudLat = ll[0];
@@ -830,14 +854,14 @@
     mapReady = true;
     syncOverlays();
 
-    // If the user manually drags the map while navigating, drop out of "follow" mode.
+    // If the user drags the map while tracking, switch to EXPLORE (stop auto-follow).
     map.on("dragstart", () => {
-      if (mode === "navigate") gpsLock = false;
+      if (mode !== "tracking") return;
+      gpsLock = false;
+      mode = "explore";
+      previewMile = clamp(Math.round(hudMile), 0, TRAIL_MAX_MILE);
     });
 
-    // Hogg Tracker (Simplified)
-    // ... (omitted polling logic for brevity, assumed preserved or simplified)
-    
     // Geolocation (real-time capable)
     let _gpsWatch: number | null = null;
 
@@ -872,7 +896,7 @@
 
       renderUserFix(lat, lon, accuracyM);
 
-      if (mode !== "navigate") return;
+      if (mode !== "tracking") return;
 
       hudLat = lat;
       hudLon = lon;
@@ -971,7 +995,7 @@
   searchOpen = false;
 }} />
 
-<div class="mapShell" class:plan={mode === "plan"}>
+<div class="mapShell" class:explore={mode === "explore"}>
   <div class="at-map" bind:this={container}></div>
   <div class="mapAttribution">Map data © OpenStreetMap • Tiles © OpenTopoMap</div>
 
@@ -984,7 +1008,7 @@
           <div class="mile">{Math.round(hudMile)}</div>
           <div class="sectionTag">{currentSection?.section.state || "—"}</div>
         </div>
-        <div class="modeTag" class:plan={mode === "plan"}>{mode === "plan" ? "PLAN" : "NAV"}</div>
+        <div class="modeTag" class:explore={mode === "explore"}>{mode === "explore" ? "EXPLORE" : "LIVE"}</div>
 
         <!-- Row 2 -->
         <div class="statusSub">
@@ -995,7 +1019,7 @@
         </div>
         <div class="gpsPill" class:live={Boolean(gpsFix)} title={gpsError || ""}>
           <span class="gpsDot"></span>
-          {#if mode === "plan"}
+          {#if mode === "explore"}
             <span>Exploring</span>
           {:else if gpsFix}
             <span>GPS</span>
@@ -1012,19 +1036,31 @@
         <!-- Row 3 -->
         <div class="hudHoggRow">
           {#if hoggFix}
-            <button class="hoggChip" onclick={() => centerOnHoggFn?.()} title={hoggFix.when || ""} type="button">
-              <span class="hoggLeft">🐗 Hogg</span>
-              <span class="hoggRight">@ {hoggFix.mile.toFixed(1)}{hoggFix.when ? ` • ${timeAgo(hoggFix.when)}` : ""}</span>
+            <button
+              class="hikerStatus"
+              class:clickable={mode === "explore"}
+              onclick={() => switchToTrackingMode()}
+              title={hoggFix.when || ""}
+              type="button"
+            >
+              <span class="statusDot pulse" aria-hidden="true"></span>
+              <span class="statusText">
+                <strong>Jimmy</strong> @ mile {hoggFix.mile.toFixed(1)}
+                {#if hoggFix.when}
+                  <span class="statusTime">({timeAgo(hoggFix.when)})</span>
+                {/if}
+              </span>
             </button>
           {:else}
-            <div class="hoggChip muted" title={hoggError || ""}>
-              <span class="hoggLeft">{hoggLoading ? "📡 Acquiring signal…" : "📡 No recent signal"}</span>
+            <div class="hikerStatus muted" title={hoggError || ""}>
+              <span class="statusDot" aria-hidden="true"></span>
+              <span class="statusText">{hoggLoading ? "Acquiring signal…" : "No recent signal"}</span>
             </div>
           {/if}
         </div>
         <div class="miniTabs" role="tablist" aria-label="Map mode">
-          <button class="tab" class:active={mode === "navigate"} onclick={() => switchToNavigateMode()} type="button">Nav</button>
-          <button class="tab" class:active={mode === "plan"} onclick={() => switchToPlanMode()} type="button">Plan</button>
+          <button class="tab" class:active={mode === "tracking"} onclick={() => switchToTrackingMode()} type="button" title="Follow Jimmy">LIVE</button>
+          <button class="tab" class:active={mode === "explore"} onclick={() => switchToExploreMode()} type="button" title="Pan and explore">EXPLORE</button>
         </div>
       </div>
     </div>
@@ -1040,15 +1076,7 @@
         <span class="hudBtnIcon">←</span>
       </button>
 
-      <button
-        class="hudBtn"
-        class:active={gpsWatching && gpsLock}
-        title={gpsWatching ? (gpsLock ? "Following you (tap to free-pan)" : "Free-pan (tap to follow)") : "Start GPS tracking"}
-        onclick={() => toggleGpsTracking()}
-        type="button"
-      >
-        <span class="hudBtnIcon">{gpsWatching ? (gpsLock ? "📍" : "⌖") : "⌖"}</span>
-      </button>
+      <!-- GPS toggle moved into Settings (⚙) to avoid confusing non-trail viewers -->
 
       <button
         class="hudBtn"
@@ -1099,6 +1127,12 @@
     </div>
   </div>
 
+  {#if mode === "explore" && hoggFix}
+    <button class="recenterBtn" onclick={() => switchToTrackingMode()} type="button">
+      📍 Follow Jimmy
+    </button>
+  {/if}
+
   <!-- POI BAR (Floating above scrubber) -->
   <div class="poiBar">
     <button class="poiItem" onclick={() => flyToMile(nextShelter?.mile)}>
@@ -1138,7 +1172,7 @@
   </div>
 
   <!-- BOTTOM SCRUBBER -->
-  {#if mode === "plan"}
+  {#if mode === "explore"}
     <div class="hudBottom">
       <div class="scrubRow">
         <button class="nudge" onclick={() => adjustMile(-5)} type="button">−5</button>
@@ -1282,7 +1316,7 @@
             <button
               class="chip"
               onclick={() => {
-                switchToPlanMode(lm.mile);
+                switchToExploreMode(lm.mile);
                 searchOpen = false;
               }}
               type="button"
@@ -1473,7 +1507,7 @@
     color: var(--hud-text);
   }
 
-  .mapShell.plan {
+  .mapShell.explore {
     --hud-poi-bottom: 96px;
   }
 
@@ -1563,7 +1597,7 @@
     color: rgba(19, 23, 19, 0.95);
   }
 
-  .modeTag.plan {
+  .modeTag.explore {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.14);
     color: var(--hud-text);
@@ -1667,6 +1701,70 @@
     margin-top: 10px;
   }
 
+  .hikerStatus {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--hud-text);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button.hikerStatus {
+    cursor: pointer;
+  }
+
+  button.hikerStatus.clickable:hover {
+    background: rgba(255, 255, 255, 0.11);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .hikerStatus.muted {
+    color: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .statusDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #dc2626;
+    box-shadow: 0 0 12px rgba(220, 38, 38, 0.35);
+    flex: 0 0 auto;
+  }
+
+  .statusDot.pulse {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.65);
+    animation: pulse-red 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-red {
+    0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); }
+    70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(220, 38, 38, 0); }
+    100% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  }
+
+  .statusText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .statusTime {
+    margin-left: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
   .hoggChip {
     display: inline-flex;
     align-items: center;
@@ -1726,6 +1824,33 @@
   .hudBtnIcon {
     font-size: 1.15rem;
     line-height: 1;
+  }
+
+  .recenterBtn {
+    position: absolute;
+    right: 12px;
+    bottom: calc(var(--hud-poi-bottom) + var(--hud-safe-bottom) + 80px);
+    z-index: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: var(--marker, #f0e000);
+    color: rgba(19, 23, 19, 0.95);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.40);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .recenterBtn:active {
+    transform: translateY(1px);
   }
 
   /* POI Bar */
