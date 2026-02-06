@@ -4,6 +4,7 @@
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 
   import { onMount } from "svelte";
+  import { YT_PLAYLIST_ID } from "../../lib/config";
 
   let { videos: initialVideos = [] } = $props();
   let videos = $state(initialVideos);
@@ -49,7 +50,7 @@
   onMount(async () => {
     try {
       const url = new URL("/.netlify/functions/youtube-feed", window.location.origin);
-      url.searchParams.set("mode", "channel");
+      url.searchParams.set("mode", YT_PLAYLIST_ID ? "playlist" : "channel");
 
       const res = await fetch(url.toString(), { headers: { Accept: "application/json" } });
       if (!res.ok) throw new Error(`youtube-feed failed: ${res.status}`);

@@ -13,7 +13,8 @@ export const LIVE_TRACKING_URL = 'https://share.garmin.com/hoggcountry';
 
 // Optional: Set a playlist ID to filter videos to a specific playlist
 // Leave empty to show all channel videos
-export const YT_PLAYLIST_ID = '';
+// Appalachian Trail playlist
+export const YT_PLAYLIST_ID = 'PLfcu9P1xhBSXb6ZtDe4fmSlfQliywdGoD';
 
 export const YT_CHANNEL_FEED_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YT_CHANNEL_ID}`;
 export const YT_PLAYLIST_FEED_URL = YT_PLAYLIST_ID

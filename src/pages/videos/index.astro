@@ -6,7 +6,8 @@ import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
 import { YT_FEED_URL } from '../../lib/config';
 import { fetchYouTubeRSS } from '../../lib/youtube';
 
-const videos = await fetchYouTubeRSS(YT_FEED_URL);
+// Limit to 5 (matches the YouTube playlist feed’s current size + keeps the page tight)
+const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 5);
 ---
 <html lang="en">
   <head>
