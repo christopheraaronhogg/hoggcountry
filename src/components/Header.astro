@@ -22,7 +22,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
     <div class="nav-controls">
       <div class="nav-ctas" aria-label="Quick links">
-        <a href="/at-map" class={`map-link ${isAtMap ? 'is-active' : ''}`}>Map</a>
+        <a href="/guide" class={`guide-link ${isGuide ? 'is-active' : ''}`}>Guide</a>
 
         {showTracking && (
           <a
@@ -278,8 +278,8 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
   .mobile-live { justify-content: center; }
 
-  /* Quick header map link */
-  .map-link {
+  /* Quick header guide link */
+  .guide-link {
     display: inline-flex;
     align-items: center;
     font-size: 0.85rem;
@@ -294,12 +294,12 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     transition: background 0.15s ease, border-color 0.15s ease;
   }
 
-  .map-link:hover {
+  .guide-link:hover {
     background: rgba(255,255,255,0.75);
     border-color: rgba(0,0,0,0.14);
   }
 
-  .map-link.is-active {
+  .guide-link.is-active {
     background: rgba(166, 181, 137, 0.22);
     border-color: rgba(166, 181, 137, 0.35);
   }
@@ -356,7 +356,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       font-size: 0.82rem;
     }
 
-    .map-link {
+    .guide-link {
       font-size: 0.82rem;
     }
   }
