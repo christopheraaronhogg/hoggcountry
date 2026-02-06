@@ -186,6 +186,101 @@
     </div>
   </section>
 
+  <section class="ranger-dispatches">
+    <div class="dispatches-container">
+      <div class="dispatches-header">
+        <div class="dispatches-stamp">
+          <span class="stamp-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="23 7 16 12 23 17 23 7" />
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+          </span>
+        </div>
+        <span class="dispatches-label">YOUTUBE</span>
+        <h2 class="dispatches-title">LATEST VIDEOS</h2>
+        <p class="dispatches-subtitle">Recent uploads from the trail</p>
+      </div>
+
+      <div class="dispatches-grid">
+        {#if displayVideos.length > 0}
+          <!-- Featured (first) video -->
+          <a href={displayVideos[0].link} target="_blank" rel="noopener" class="dispatch-card dispatch-featured">
+            <div class="dispatch-media">
+              <img
+                src={getThumbnail(displayVideos[0])}
+                alt={displayVideos[0].title}
+                class="dispatch-thumb"
+                onerror={(e) => handleImageError(e, displayVideos[0].id)}
+                loading="lazy"
+              />
+              <span class="dispatch-badge">LATEST</span>
+              <div class="dispatch-play">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+            <div class="dispatch-content">
+              <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
+              <h3 class="dispatch-title">{displayVideos[0].title}</h3>
+              <span class="dispatch-cta">Watch Video</span>
+            </div>
+          </a>
+
+          <!-- Secondary videos -->
+          {#each displayVideos.slice(1) as video}
+            <a href={video.link} target="_blank" rel="noopener" class="dispatch-card">
+              <div class="dispatch-media small">
+                <img
+                  src={getThumbnail(video)}
+                  alt={video.title}
+                  class="dispatch-thumb"
+                  onerror={(e) => handleImageError(e, video.id)}
+                  loading="lazy"
+                />
+                <div class="dispatch-play small">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="dispatch-content">
+                <time class="dispatch-date">{formatDate(video.published)}</time>
+                <h3 class="dispatch-title">{video.title}</h3>
+                <span class="dispatch-cta">Watch Video</span>
+              </div>
+            </a>
+          {/each}
+        {:else}
+          <!-- Fallback when no videos available -->
+          <div class="dispatch-card dispatch-featured dispatch-placeholder">
+            <div class="dispatch-media">
+              <div class="media-placeholder">
+                <svg viewBox="0 0 48 48" fill="currentColor">
+                  <path d="M20 14v20l14-10-14-10z"/>
+                </svg>
+              </div>
+            </div>
+            <div class="dispatch-content">
+              <h3 class="dispatch-title">Videos Coming Soon</h3>
+              <p class="dispatch-desc">New uploads will appear here once the expedition is underway.</p>
+            </div>
+          </div>
+        {/if}
+      </div>
+
+      <div class="dispatches-footer">
+        <a href="/videos" class="dispatches-cta">
+          <span>View All Videos</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- ========================================== -->
   <!-- HIKER CERTIFICATE - Vintage Badge Style   -->
   <!-- ========================================== -->
@@ -524,100 +619,7 @@
   <!-- ========================================== -->
   <!-- TRAIL DISPATCHES - Latest Videos          -->
   <!-- ========================================== -->
-  <section class="ranger-dispatches">
-    <div class="dispatches-container">
-      <div class="dispatches-header">
-        <div class="dispatches-stamp">
-          <span class="stamp-icon">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="23 7 16 12 23 17 23 7" />
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-            </svg>
-          </span>
-        </div>
-        <span class="dispatches-label">MOVING PICTURES</span>
-        <h2 class="dispatches-title">TRAIL DISPATCHES</h2>
-        <p class="dispatches-subtitle">Field reports and preparations from the expedition</p>
-      </div>
-
-      <div class="dispatches-grid">
-        {#if displayVideos.length > 0}
-          <!-- Featured (first) video -->
-          <a href={displayVideos[0].link} target="_blank" rel="noopener" class="dispatch-card dispatch-featured">
-            <div class="dispatch-media">
-              <img
-                src={getThumbnail(displayVideos[0])}
-                alt={displayVideos[0].title}
-                class="dispatch-thumb"
-                onerror={(e) => handleImageError(e, displayVideos[0].id)}
-                loading="lazy"
-              />
-              <span class="dispatch-badge">LATEST</span>
-              <div class="dispatch-play">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-            </div>
-            <div class="dispatch-content">
-              <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
-              <h3 class="dispatch-title">{displayVideos[0].title}</h3>
-              <span class="dispatch-cta">View Dispatch</span>
-            </div>
-          </a>
-
-          <!-- Secondary videos -->
-          {#each displayVideos.slice(1) as video}
-            <a href={video.link} target="_blank" rel="noopener" class="dispatch-card">
-              <div class="dispatch-media small">
-                <img
-                  src={getThumbnail(video)}
-                  alt={video.title}
-                  class="dispatch-thumb"
-                  onerror={(e) => handleImageError(e, video.id)}
-                  loading="lazy"
-                />
-                <div class="dispatch-play small">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </div>
-              </div>
-              <div class="dispatch-content">
-                <time class="dispatch-date">{formatDate(video.published)}</time>
-                <h3 class="dispatch-title">{video.title}</h3>
-                <span class="dispatch-cta">View Dispatch</span>
-              </div>
-            </a>
-          {/each}
-        {:else}
-          <!-- Fallback when no videos available -->
-          <div class="dispatch-card dispatch-featured dispatch-placeholder">
-            <div class="dispatch-media">
-              <div class="media-placeholder">
-                <svg viewBox="0 0 48 48" fill="currentColor">
-                  <path d="M20 14v20l14-10-14-10z"/>
-                </svg>
-              </div>
-            </div>
-            <div class="dispatch-content">
-              <h3 class="dispatch-title">Trail Dispatches Coming Soon</h3>
-              <p class="dispatch-desc">Videos from the trail will appear here once the expedition begins.</p>
-            </div>
-          </div>
-        {/if}
-      </div>
-
-      <div class="dispatches-footer">
-        <a href="/videos" class="dispatches-cta">
-          <span>View All Dispatches</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </a>
-      </div>
-    </div>
-  </section>
+  
 
   <!-- ========================================== -->
   <!-- THREE PANELS - Vintage Trail Sign Style   -->
