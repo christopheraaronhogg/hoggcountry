@@ -158,6 +158,7 @@ export class GameScene extends Phaser.Scene {
   private globalGameTime: GameTime | null = null;
   private globalWeather: Weather | null = null;
   private lastWeatherCheck: number = 0;
+  private lastVisualWeather: string = ''; // Cache to prevent constant recreation
   private weatherText!: Phaser.GameObjects.Text;
 
   // Real hiker ghosts (GPS data)
@@ -2017,6 +2018,10 @@ export class GameScene extends Phaser.Scene {
   }
   
   updateWeatherEffects(weather: string) {
+    // Check if weather has changed to avoid unnecessary recreation
+    if (this.lastVisualWeather === weather) return;
+    this.lastVisualWeather = weather;
+
     // Clear existing effects
     if (this.rainEmitter) {
       this.rainEmitter.stop();
@@ -2397,6 +2402,12 @@ export class GameScene extends Phaser.Scene {
 
     // Emit resize event for UIScene
     this.events.emit('game-resize', { width, height });
+
+    // Force update of weather effects to match new dimensions
+    this.lastVisualWeather = '';
+    if (this.gameState) {
+      this.updateWeatherEffects(this.gameState.weather);
+    }
   }
 
   toggleHiking() {
