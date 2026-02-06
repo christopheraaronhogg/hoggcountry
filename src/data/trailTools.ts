@@ -26,6 +26,8 @@ export const TRAIL_TOOL_GROUPS: TrailToolGroup[] = [
     name: "On Trail",
     tools: [
       { id: "weather", name: "Weather", icon: "🌤️", desc: "Weather, heat zones & daylight", href: "/tools/weather/" },
+      { id: "at-map", name: "AT Map", icon: "🗺️", desc: "Trail map + your live location", href: "/at-map/" },
+      { id: "at-weather", name: "AT Weather", icon: "🌦️", desc: "Weather along the trail", href: "/at-weather/" },
       { id: "water", name: "Water", icon: "💧", desc: "Water sources & carry calc", href: "/tools/water/" },
       { id: "shelter", name: "Shelter", icon: "🏠", desc: "Tent vs shelter decision", href: "/tools/shelter/" },
       { id: "layers", name: "Layers", icon: "🧥", desc: "What to wear for conditions", href: "/tools/layers/" },
