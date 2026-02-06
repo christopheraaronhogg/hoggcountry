@@ -5,6 +5,7 @@ const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
 const isTools = pathname.startsWith('/tools');
 const isCharacterTool = pathname.startsWith('/tools/character');
+const isVideos = pathname.startsWith('/videos');
 const isAtMap = pathname.startsWith('/at-map');
 const isAtWeather = pathname.startsWith('/at-weather');
 
@@ -81,6 +82,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       )}
 
       <a href="/at-map" class={`mobile-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
+      <a href="/videos" class={`mobile-link ${isVideos ? 'is-active' : ''}`}>Videos</a>
       <a href="/tools" class={`mobile-link ${isTools && !isCharacterTool ? 'is-active' : ''}`}>Trail Tools</a>
       <a href="/tools/character" class={`mobile-link ${isCharacterTool ? 'is-active' : ''}`}>Character</a>
       <a href="/at-weather" class={`mobile-link ${isAtWeather ? 'is-active' : ''}`}>AT Weather</a>
