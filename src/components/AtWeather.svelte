@@ -107,9 +107,30 @@
     daily?: Record<string, any>;
   };
 
+  type ForecastMode = 'now' | 'next24h' | 'next7d';
+
+  type HourlyForecastRow = {
+    time: string;
+    temperature?: number;
+    precipitationProbability?: number;
+    precipitation?: number;
+    windSpeed?: number;
+    weatherCode?: number;
+  };
+
+  type DailyForecastRow = {
+    time: string;
+    temperatureMax?: number;
+    temperatureMin?: number;
+    precipitationProbability?: number;
+    windSpeedMax?: number;
+    weatherCode?: number;
+  };
+
   let wxLoading = $state(false);
   let wxErr = $state('');
   let wx = $state<OpenMeteoResponse | null>(null);
+  let forecastMode = $state<ForecastMode>('next24h');
 
   // Trail elevation / lapse-rate adjustment removed (we show the forecast as-is).
 
@@ -154,6 +175,89 @@
 
   let modelElevFt = $derived.by(() => mToFt(wx?.elevation));
   let tempModelF = $derived.by(() => Number(wx?.current?.temperature_2m));
+
+  function formatHourLabel(iso: string): string {
+    if (typeof iso !== 'string' || iso.length < 13) return '—';
+    const hh = Number(iso.slice(11, 13));
+    if (!Number.isFinite(hh)) return '—';
+    const period = hh >= 12 ? 'PM' : 'AM';
+    const hour = ((hh + 11) % 12) + 1;
+    return `${hour}${period}`;
+  }
+
+  function formatDayLabel(iso: string): string {
+    if (typeof iso !== 'string') return '—';
+    const datePart = iso.split('T')[0] || iso;
+    const [yearS, monthS, dayS] = datePart.split('-');
+    const year = Number(yearS);
+    const month = Number(monthS);
+    const day = Number(dayS);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return datePart;
+    const utcDate = new Date(Date.UTC(year, month - 1, day));
+    const weekday = utcDate.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
+    return `${weekday} ${month}/${day}`;
+  }
+
+  let hourlyForecast = $derived.by(() => {
+    const hourly = wx?.hourly;
+    const times = Array.isArray(hourly?.time) ? hourly.time : [];
+    const temps = Array.isArray(hourly?.temperature_2m) ? hourly.temperature_2m : [];
+    const precipChance = Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability : [];
+    const precip = Array.isArray(hourly?.precipitation) ? hourly.precipitation : [];
+    const wind = Array.isArray(hourly?.wind_speed_10m) ? hourly.wind_speed_10m : [];
+    const weather = Array.isArray(hourly?.weather_code) ? hourly.weather_code : [];
+
+    const rows: HourlyForecastRow[] = [];
+    for (let i = 0; i < times.length; i++) {
+      if (typeof times[i] !== 'string') continue;
+      rows.push({
+        time: times[i],
+        temperature: Number(temps[i]),
+        precipitationProbability: Number(precipChance[i]),
+        precipitation: Number(precip[i]),
+        windSpeed: Number(wind[i]),
+        weatherCode: Number(weather[i]),
+      });
+    }
+
+    if (!rows.length) return [];
+    const nowRef = typeof wx?.current?.time === 'string' ? wx.current.time : '';
+    const startIndex = nowRef ? rows.findIndex((row) => row.time >= nowRef) : 0;
+    const start = startIndex >= 0 ? startIndex : 0;
+    return rows.slice(start, start + 24);
+  });
+
+  let hourlyForecastSteps = $derived.by(() => {
+    if (!hourlyForecast.length) return [];
+    return hourlyForecast
+      .filter((_, idx) => idx % 3 === 0 || idx === hourlyForecast.length - 1)
+      .slice(0, 9);
+  });
+
+  let dailyForecast = $derived.by(() => {
+    const daily = wx?.daily;
+    const times = Array.isArray(daily?.time) ? daily.time : [];
+    const maxTemps = Array.isArray(daily?.temperature_2m_max) ? daily.temperature_2m_max : [];
+    const minTemps = Array.isArray(daily?.temperature_2m_min) ? daily.temperature_2m_min : [];
+    const precipChance = Array.isArray(daily?.precipitation_probability_max) ? daily.precipitation_probability_max : [];
+    const wind = Array.isArray(daily?.wind_speed_10m_max) ? daily.wind_speed_10m_max : [];
+    const weather = Array.isArray(daily?.weather_code) ? daily.weather_code : [];
+
+    const rows: DailyForecastRow[] = [];
+    for (let i = 0; i < times.length; i++) {
+      if (typeof times[i] !== 'string') continue;
+      rows.push({
+        time: times[i],
+        temperatureMax: Number(maxTemps[i]),
+        temperatureMin: Number(minTemps[i]),
+        precipitationProbability: Number(precipChance[i]),
+        windSpeedMax: Number(wind[i]),
+        weatherCode: Number(weather[i]),
+      });
+    }
+
+    return rows.slice(0, 7);
+  });
 
   function updateUrl(nextMile: number) {
     if (typeof window === 'undefined') return;
@@ -533,6 +637,11 @@
   <div class="grid">
     <div class="wx card">
       <h2 class="h">Forecast</h2>
+      <div class="forecastModes" role="tablist" aria-label="Forecast range">
+        <button class="modeBtn" class:active={forecastMode === 'now'} onclick={() => (forecastMode = 'now')} type="button">Now</button>
+        <button class="modeBtn" class:active={forecastMode === 'next24h'} onclick={() => (forecastMode = 'next24h')} type="button">Next 24h</button>
+        <button class="modeBtn" class:active={forecastMode === 'next7d'} onclick={() => (forecastMode = 'next7d')} type="button">Next 7d</button>
+      </div>
 
       {#if loading}
         <p class="p">Loading…</p>
@@ -544,27 +653,60 @@
         {:else if wxErr}
           <p class="p err">{wxErr}</p>
         {:else if wx?.current}
-          <div class="temps">
-            <div class="tempCard">
-              <div class="label">Forecast (Open‑Meteo)</div>
-              <div class="temp">{fmt(tempModelF, 0)}°F</div>
-              <div class="subline">Model elevation: {fmt(modelElevFt, 0)} ft</div>
-              <div class="cond">{wxCodeLabel(wx.current.weather_code)}</div>
+          {#if forecastMode === 'now'}
+            <div class="temps">
+              <div class="tempCard">
+                <div class="label">Current (Open‑Meteo)</div>
+                <div class="temp">{fmt(tempModelF, 0)}°F</div>
+                <div class="subline">Model elevation: {fmt(modelElevFt, 0)} ft</div>
+                <div class="cond">{wxCodeLabel(wx.current.weather_code)}</div>
+              </div>
             </div>
-          </div>
 
-          <div class="hr"></div>
+            <div class="hr"></div>
 
-          <div class="meta">
-            <div><span class="mk">Feels</span> {fmt(wx.current.apparent_temperature, 0)}°</div>
-            <div><span class="mk">Wind</span> {fmt(wx.current.wind_speed_10m, 0)} mph</div>
-            <div><span class="mk">Gust</span> {fmt(wx.current.wind_gusts_10m, 0)} mph</div>
-            <div><span class="mk">Now</span> {wx.current.time ?? '—'} {wx.timezone_abbreviation ? `(${wx.timezone_abbreviation})` : ''}</div>
-          </div>
-
-          <div class="hr"></div>
-
-          <!-- Elevation-adjusted estimate removed: show model forecast only. -->
+            <div class="meta">
+              <div><span class="mk">Feels</span> {fmt(wx.current.apparent_temperature, 0)}°</div>
+              <div><span class="mk">Wind</span> {fmt(wx.current.wind_speed_10m, 0)} mph</div>
+              <div><span class="mk">Gust</span> {fmt(wx.current.wind_gusts_10m, 0)} mph</div>
+              <div><span class="mk">Now</span> {wx.current.time ?? '—'} {wx.timezone_abbreviation ? `(${wx.timezone_abbreviation})` : ''}</div>
+            </div>
+          {:else if forecastMode === 'next24h'}
+            {#if hourlyForecastSteps.length}
+              <div class="hourlyGrid">
+                {#each hourlyForecastSteps as hour}
+                  <article class="forecastTile">
+                    <div class="tileTime">{formatHourLabel(hour.time)}</div>
+                    <div class="tileTemp">{fmt(hour.temperature, 0)}°</div>
+                    <div class="tileCond">{wxCodeLabel(hour.weatherCode)}</div>
+                    <div class="tileMeta">Rain {fmt(hour.precipitationProbability, 0)}%</div>
+                    <div class="tileMeta">Wind {fmt(hour.windSpeed, 0)} mph</div>
+                  </article>
+                {/each}
+              </div>
+              <p class="p small">24-hour trend shown in 3-hour steps.</p>
+            {:else}
+              <p class="p">Hourly forecast unavailable for this point.</p>
+            {/if}
+          {:else}
+            {#if dailyForecast.length}
+              <div class="dailyList">
+                {#each dailyForecast as day}
+                  <article class="dailyRow">
+                    <div class="dayMain">
+                      <div class="dayLabel">{formatDayLabel(day.time)}</div>
+                      <div class="dayCond">{wxCodeLabel(day.weatherCode)}</div>
+                    </div>
+                    <div class="dayTemps">{fmt(day.temperatureMax, 0)}° / {fmt(day.temperatureMin, 0)}°</div>
+                    <div class="dayMeta">Rain {fmt(day.precipitationProbability, 0)}% • Wind {fmt(day.windSpeedMax, 0)} mph</div>
+                  </article>
+                {/each}
+              </div>
+              <p class="p small">7-day outlook for this mile marker.</p>
+            {:else}
+              <p class="p">Daily forecast unavailable for this point.</p>
+            {/if}
+          {/if}
         {:else}
           <p class="p">No weather available for this point.</p>
         {/if}
@@ -757,6 +899,33 @@
     color: rgba(52, 66, 58, 0.85);
   }
 
+  .forecastModes {
+    display: inline-flex;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.09);
+    background: rgba(255, 255, 255, 0.66);
+    margin-bottom: 10px;
+  }
+
+  .modeBtn {
+    border: none;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: rgba(52, 66, 58, 0.8);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .modeBtn.active {
+    background: rgba(166, 181, 137, 0.26);
+    color: rgba(35, 47, 42, 0.96);
+    box-shadow: inset 0 0 0 1px rgba(166, 181, 137, 0.4);
+  }
+
   .temps {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -843,6 +1012,101 @@
     gap: 6px;
     font-size: 0.95rem;
     color: rgba(31, 41, 55, 0.86);
+  }
+
+  .hourlyGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  @media (max-width: 640px) {
+    .hourlyGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .forecastTile {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 9px;
+    background: rgba(255, 255, 255, 0.62);
+    display: grid;
+    gap: 2px;
+  }
+
+  .tileTime {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(52, 66, 58, 0.74);
+    font-weight: 800;
+  }
+
+  .tileTemp {
+    font-family: Oswald, system-ui, sans-serif;
+    font-size: 1.2rem;
+    line-height: 1.05;
+    color: var(--ink, #1f2937);
+    font-weight: 900;
+  }
+
+  .tileCond {
+    font-size: 0.82rem;
+    color: var(--pine, #4d594a);
+    font-weight: 700;
+  }
+
+  .tileMeta {
+    font-size: 0.74rem;
+    color: rgba(31, 41, 55, 0.8);
+  }
+
+  .dailyList {
+    display: grid;
+    gap: 8px;
+  }
+
+  .dailyRow {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 9px 10px;
+    background: rgba(255, 255, 255, 0.62);
+    display: grid;
+    gap: 2px;
+  }
+
+  .dayMain {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .dayLabel {
+    font-family: Oswald, system-ui, sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.03em;
+    color: var(--ink, #1f2937);
+    font-weight: 800;
+  }
+
+  .dayCond {
+    font-size: 0.8rem;
+    color: var(--pine, #4d594a);
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .dayTemps {
+    font-size: 0.95rem;
+    color: rgba(31, 41, 55, 0.9);
+    font-weight: 800;
+  }
+
+  .dayMeta {
+    font-size: 0.8rem;
+    color: rgba(31, 41, 55, 0.78);
   }
 
   .mk {

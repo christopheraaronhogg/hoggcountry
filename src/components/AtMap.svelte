@@ -27,6 +27,7 @@
   let showShelters = $state(true);
   let showHoggTracker = $state(true);
   let showHoggProgress = $state(true);
+  let showCommunityTrackers = $state(true);
   let showMyLocation = $state(true);
   let showMailDrops = $state(false);
   let showMilestones = $state(true);
@@ -38,6 +39,14 @@
   let centerOnHoggFn: (() => void) | null = null;
   let didAutoCenterOnHogg = $state(false);
   let _hoggPoll: number | null = null;
+
+  type CommunityTracker = { id: string; name: string; color: string };
+  type CommunityFix = { id: string; name: string; color: string; mile: number; lat: number; lon: number; when?: string };
+  let communityTrackers = $state<CommunityTracker[]>([]);
+  let communityFixes = $state<CommunityFix[]>([]);
+  let communityLoading = $state(false);
+  let communityError = $state<string>("");
+  let _communityPoll: number | null = null;
 
   function timeAgo(iso?: string): string {
     if (!iso) return "";
@@ -432,6 +441,7 @@
     void showShelters;
     void showHoggTracker;
     void showHoggProgress;
+    void showCommunityTrackers;
     void showMyLocation;
     void showMailDrops;
     void showMilestones;
@@ -491,6 +501,7 @@
     const shelterLayer = L.layerGroup();
     const hoggLayer = L.layerGroup();
     const hoggProgressLayer = L.layerGroup();
+    const communityLayer = L.layerGroup();
     const userLayer = L.layerGroup();
     const mailDropLayer = L.layerGroup();
     const milestoneLayer = L.layerGroup();
@@ -649,6 +660,49 @@
       }
     })();
 
+    const communityPalette = ["#0ea5e9", "#a855f7", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4"];
+
+    function normalizeTracker(raw: any, idx: number): CommunityTracker | null {
+      const id = String(raw?.id ?? "").trim();
+      if (!/^[a-zA-Z0-9_-]{2,64}$/.test(id)) return null;
+      if (id === trackingId) return null;
+
+      const nameRaw = String(raw?.name ?? id).trim();
+      const name = nameRaw.length ? nameRaw.slice(0, 40) : id;
+
+      const colorRaw = String(raw?.color ?? "").trim();
+      const color = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(colorRaw)
+        ? colorRaw
+        : communityPalette[idx % communityPalette.length];
+
+      return { id, name, color };
+    }
+
+    async function loadCommunityTrackers() {
+      try {
+        const url = new URL("/.netlify/functions/community-trackers", window.location.origin);
+        url.searchParams.set("t", String(Date.now()));
+
+        const res = await fetch(url.toString(), {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(`community-trackers failed: ${res.status}`);
+
+        const payload = await res.json();
+        const list = Array.isArray(payload?.trackers) ? payload.trackers : [];
+        const normalized = list
+          .map((item: any, idx: number) => normalizeTracker(item, idx))
+          .filter(Boolean) as CommunityTracker[];
+
+        communityTrackers = normalized;
+        communityError = "";
+      } catch (e: any) {
+        communityError = e?.message || String(e);
+        communityTrackers = [];
+      }
+    }
+
     const hoggIcon = L.divIcon({
       className: "hc-hogg-pin",
       html: '<div class="hc-hogg-pin__dot"></div><div class="hc-hogg-pin__pulse"></div>',
@@ -657,6 +711,31 @@
     });
 
     let hoggMarker: any = null;
+    const communityMarkers = new Map<string, any>();
+
+    function communityIcon(color: string) {
+      return L.divIcon({
+        className: "hc-community-pin",
+        html: `<div class="hc-community-pin__dot" style="--community-pin:${color}"></div><div class="hc-community-pin__ring" style="--community-pin:${color}"></div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      });
+    }
+
+    function upsertCommunityMarker(fix: CommunityFix) {
+      const ll: [number, number] = [fix.lat, fix.lon];
+      let marker = communityMarkers.get(fix.id);
+      if (!marker) {
+        marker = L.marker(ll, { icon: communityIcon(fix.color) }).addTo(communityLayer);
+        communityMarkers.set(fix.id, marker);
+      } else {
+        marker.setLatLng(ll);
+      }
+
+      marker.bindPopup(
+        `<b>${fix.name}</b><br/>Mile ~${fix.mile.toFixed(1)}${fix.when ? `<br/>Updated: ${fix.when}` : ""}`
+      );
+    }
 
     function sampleSequence<T>(items: T[], maxCount: number): T[] {
       if (items.length <= maxCount) return items;
@@ -863,9 +942,95 @@
       }
     }
 
+    async function refreshCommunityTrackers() {
+      communityLoading = true;
+
+      try {
+        if (!communityTrackers.length) {
+          communityFixes = [];
+          for (const marker of communityMarkers.values()) {
+            communityLayer.removeLayer(marker);
+          }
+          communityMarkers.clear();
+          return;
+        }
+
+        const fixes = await Promise.all(
+          communityTrackers.map(async (tracker) => {
+            try {
+              const url = new URL("/.netlify/functions/garmin-track", window.location.origin);
+              url.searchParams.set("id", tracker.id);
+              url.searchParams.set("t", String(Date.now()));
+
+              const res = await fetch(url.toString(), {
+                headers: { Accept: "application/geo+json,application/json" },
+                cache: "no-store",
+              });
+              if (!res.ok) return null;
+
+              const geojson: any = await res.json();
+              const lp = geojson?.properties?.latestPoint;
+              const coords = lp?.coords;
+              const when = lp?.when;
+              if (!Array.isArray(coords) || coords.length < 2) return null;
+
+              const lat = Number(coords[0]);
+              const lon = Number(coords[1]);
+              if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+              const mile = nearestMileForLatLng(lat, lon);
+              if (mile == null) return null;
+
+              return {
+                id: tracker.id,
+                name: tracker.name,
+                color: tracker.color,
+                mile,
+                lat,
+                lon,
+                when: typeof when === "string" ? when : undefined,
+              } as CommunityFix;
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        const liveFixes = fixes.filter(Boolean) as CommunityFix[];
+        communityFixes = liveFixes;
+
+        const liveIds = new Set(liveFixes.map((fix) => fix.id));
+        for (const fix of liveFixes) upsertCommunityMarker(fix);
+
+        for (const [id, marker] of communityMarkers.entries()) {
+          if (liveIds.has(id)) continue;
+          communityLayer.removeLayer(marker);
+          communityMarkers.delete(id);
+        }
+
+        if (!liveFixes.length) {
+          communityError = "No live community signals yet.";
+        }
+      } catch (e: any) {
+        communityError = e?.message || String(e);
+        communityFixes = [];
+      } finally {
+        communityLoading = false;
+      }
+    }
+
+    async function refreshCommunityData() {
+      await loadCommunityTrackers();
+      await refreshCommunityTrackers();
+    }
+
     // Initial fetch + periodic refresh (live endpoint, 30s cadence)
     refreshHoggTracker();
     _hoggPoll = window.setInterval(refreshHoggTracker, 30 * 1000);
+    refreshCommunityData();
+    _communityPoll = window.setInterval(() => {
+      void refreshCommunityData();
+    }, 45 * 1000);
 
     // Marker Logic
     const mileIcon = L.divIcon({
@@ -955,6 +1120,7 @@
         toggle(streamLayer, (showPerennialStreams || showIntermittentStreams) && z >= 12);
         toggle(hoggLayer, showHoggTracker);
         toggle(hoggProgressLayer, showHoggProgress);
+        toggle(communityLayer, showCommunityTrackers);
         toggle(userLayer, showMyLocation);
         toggle(mailDropLayer, showMailDrops);
         toggle(milestoneLayer, showMilestones);
@@ -1090,6 +1256,13 @@
       _hoggPoll = null;
     }
 
+    if (_communityPoll != null) {
+      try {
+        window.clearInterval(_communityPoll);
+      } catch {}
+      _communityPoll = null;
+    }
+
     try {
       clearTimeout(_wxTimer);
     } catch {}
@@ -1170,6 +1343,17 @@
             </div>
           {/if}
         </div>
+        {#if communityTrackers.length}
+          <div class="communityStatus" title={communityError || ""}>
+            <span class="communityDot" aria-hidden="true"></span>
+            <span class="communityText">
+              <strong>{communityFixes.length}</strong> of {communityTrackers.length} community hikers live
+            </span>
+            {#if communityLoading}
+              <span class="communityLoading">updating…</span>
+            {/if}
+          </div>
+        {/if}
         <div class="miniTabs" role="tablist" aria-label="Map mode">
           <button class="tab" class:active={mode === "tracking"} onclick={() => switchToTrackingMode()} type="button" title="Follow Jimmy">LIVE</button>
           <button class="tab" class:active={mode === "explore"} onclick={() => switchToExploreMode()} type="button" title="Pan and explore">EXPLORE</button>
@@ -1466,6 +1650,7 @@
         <label class="t"><input type="checkbox" bind:checked={gpsLock} disabled={!gpsWatching} /> <span>Follow me</span></label>
         <label class="t"><input type="checkbox" bind:checked={showHoggTracker} /> <span>Hogg Tracker</span></label>
         <label class="t"><input type="checkbox" bind:checked={showHoggProgress} /> <span>Dad Track Dots</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showCommunityTrackers} /> <span>Community Hikers</span></label>
         <label class="t"><input type="checkbox" bind:checked={showMyLocation} /> <span>My Location</span></label>
         <label class="t"><input type="checkbox" bind:checked={showResupplyStops} /> <span>Resupply</span></label>
         <label class="t"><input type="checkbox" bind:checked={showShelters} /> <span>Shelters</span></label>
@@ -1473,6 +1658,14 @@
         <label class="t"><input type="checkbox" bind:checked={showMilestones} /> <span>Milestones (🎉)</span></label>
         <label class="t"><input type="checkbox" bind:checked={showWaterSources} /> <span>Water (Zoom 11+)</span></label>
       </div>
+      {#if communityTrackers.length}
+        <div class="toggleNote">
+          Community feed: {communityFixes.length}/{communityTrackers.length} live
+          {#if communityLoading} (updating…){/if}
+        </div>
+      {:else}
+        <div class="toggleNote muted">No community trackers configured yet.</div>
+      {/if}
 
       <div class="credits">
         <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
@@ -1556,6 +1749,31 @@
     animation: userPulse 2.2s ease-out infinite;
   }
 
+  :global(.hc-community-pin) {
+    background: transparent;
+    border: none;
+  }
+  :global(.hc-community-pin__dot) {
+    --community-pin: #0ea5e9;
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    background: var(--community-pin);
+    border: 2px solid #111827;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    position: relative;
+    z-index: 2;
+  }
+  :global(.hc-community-pin__ring) {
+    --community-pin: #0ea5e9;
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 2px solid var(--community-pin);
+    opacity: 0.55;
+    animation: communityPulse 2.8s ease-out infinite;
+  }
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -1584,11 +1802,22 @@
       opacity: 0;
     }
   }
+  @keyframes communityPulse {
+    from {
+      transform: scale(0.72);
+      opacity: 0.75;
+    }
+    to {
+      transform: scale(1.32);
+      opacity: 0;
+    }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     :global(.hc-mile-pin__ring),
     :global(.hc-hogg-pin__pulse),
-    :global(.hc-user-pin__ring) {
+    :global(.hc-user-pin__ring),
+    :global(.hc-community-pin__ring) {
       animation: none;
     }
   }
@@ -1875,6 +2104,35 @@
     margin-left: 6px;
     font-size: 0.85em;
     font-weight: 600;
+    opacity: 0.8;
+  }
+
+  .communityStatus {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--hud-muted);
+    font-size: 0.82rem;
+  }
+
+  .communityDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.55);
+  }
+
+  .communityText strong {
+    color: var(--hud-text);
+  }
+
+  .communityLoading {
+    margin-left: auto;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     opacity: 0.8;
   }
 
@@ -2188,6 +2446,16 @@
     font-size: 0.9rem;
     cursor: pointer;
     color: var(--hud-text);
+  }
+
+  .toggleNote {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .toggleNote.muted {
+    color: rgba(255, 255, 255, 0.62);
   }
 
   /* Bottom Sheets (Tools / Search) */
