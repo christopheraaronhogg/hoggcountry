@@ -21,6 +21,24 @@
   let syncTicker: number | null = null;
   let noticeTimer: number | null = null;
   let permissionStatus: PermissionStatus | null = null;
+  let trackerNoticeTimer: number | null = null;
+
+  type CommunityTrackerRecord = {
+    id: string;
+    label: string;
+    garmin_share_id: string;
+    color: string;
+    is_public: boolean;
+  };
+
+  let trackerLoading = $state(false);
+  let trackerSaving = $state(false);
+  let trackerError = $state('');
+  let trackerSuccess = $state('');
+  let trackerRecordId = $state<string | null>(null);
+  let trackerShareId = $state('');
+  let trackerColor = $state('#f97316');
+  let trackerIsPublic = $state(true);
 
   const FALLBACK_LOGIN_REDIRECT = '/trail/';
 
@@ -316,6 +334,184 @@
     return 'Local-first';
   }
 
+  function clearTrackerFeedback(): void {
+    trackerError = '';
+    trackerSuccess = '';
+  }
+
+  function clearTrackerForm(): void {
+    trackerRecordId = null;
+    trackerShareId = '';
+    trackerColor = '#f97316';
+    trackerIsPublic = true;
+  }
+
+  function normalizeGarminShareId(raw: string): string {
+    const value = String(raw || '').trim();
+    if (!value) return '';
+
+    const feedPrefix = 'https://explore.garmin.com/Feed/Share/';
+    if (value.toLowerCase().startsWith(feedPrefix.toLowerCase())) {
+      return value.slice(feedPrefix.length).split(/[/?#]/)[0]?.trim() || '';
+    }
+
+    if (value.includes('://')) {
+      try {
+        const url = new URL(value);
+        const parts = url.pathname.split('/').filter(Boolean);
+        const shareIdx = parts.findIndex((part) => part.toLowerCase() === 'share');
+        if (shareIdx >= 0 && parts[shareIdx + 1]) return parts[shareIdx + 1].trim();
+        return parts[parts.length - 1]?.trim() || '';
+      } catch {
+        return value;
+      }
+    }
+
+    return value;
+  }
+
+  function parseTrackerRecord(raw: any): CommunityTrackerRecord | null {
+    if (!raw || typeof raw !== 'object') return null;
+
+    const id = String(raw.id || '').trim();
+    const garminShareId = String(raw.garmin_share_id || '').trim();
+    if (!id || !garminShareId) return null;
+
+    const label = String(raw.label || '').trim() || 'HoggCountry';
+    const color = String(raw.color || '#f97316').trim() || '#f97316';
+    const isPublic = Boolean(raw.is_public);
+
+    return {
+      id,
+      label,
+      garmin_share_id: garminShareId,
+      color,
+      is_public: isPublic,
+    };
+  }
+
+  function applyTrackerRecord(record: CommunityTrackerRecord): void {
+    trackerRecordId = record.id;
+    trackerShareId = record.garmin_share_id;
+    trackerColor = record.color;
+    trackerIsPublic = record.is_public;
+  }
+
+  async function loadTrackerSettings(): Promise<void> {
+    const token = readAuthToken();
+    if (!token) {
+      clearTrackerForm();
+      clearTrackerFeedback();
+      return;
+    }
+
+    trackerLoading = true;
+    clearTrackerFeedback();
+
+    try {
+      const response = await fetch(`${API_BASE}/community/trackers`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          clearTrackerForm();
+          trackerError = 'Sign in again to manage Garmin tracking.';
+          return;
+        }
+
+        trackerError = 'Could not load tracker settings right now.';
+        return;
+      }
+
+      const payload = await response.json().catch(() => null);
+      const rows = Array.isArray(payload?.data?.trackers) ? payload.data.trackers : [];
+
+      const primary = rows[0] ? parseTrackerRecord(rows[0]) : null;
+      if (!primary) {
+        clearTrackerForm();
+        return;
+      }
+
+      applyTrackerRecord(primary);
+    } catch {
+      trackerError = 'Could not load tracker settings right now.';
+    } finally {
+      trackerLoading = false;
+    }
+  }
+
+  async function saveTrackerSettings(): Promise<void> {
+    const token = readAuthToken();
+    if (!token) {
+      trackerError = 'Sign in with Google first, then save your Garmin Share ID.';
+      return;
+    }
+
+    const garminShareId = normalizeGarminShareId(trackerShareId);
+    if (!garminShareId) {
+      trackerError = 'Enter a Garmin Share ID (or full Garmin feed URL).';
+      return;
+    }
+
+    trackerSaving = true;
+    clearTrackerFeedback();
+
+    try {
+      const response = await fetch(
+        trackerRecordId
+          ? `${API_BASE}/community/trackers/${trackerRecordId}`
+          : `${API_BASE}/community/trackers`,
+        {
+          method: trackerRecordId ? 'PATCH' : 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            label: (displayName() || 'HoggCountry').trim().slice(0, 120),
+            garmin_share_id: garminShareId,
+            color: (trackerColor || '#f97316').trim(),
+            is_public: trackerIsPublic,
+          }),
+        }
+      );
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        trackerError = String(payload?.error?.message || 'Could not save tracker settings.');
+        return;
+      }
+
+      const saved = parseTrackerRecord(payload?.data?.tracker);
+      if (!saved) {
+        trackerError = 'Tracker saved, but response payload was invalid.';
+        return;
+      }
+
+      applyTrackerRecord(saved);
+      trackerSuccess = 'Tracker saved. Live map refresh runs automatically every minute.';
+      trailShell.setNotice('Garmin tracker saved. You can now appear on the live map when fixes are available.');
+
+      if (trackerNoticeTimer) {
+        window.clearTimeout(trackerNoticeTimer);
+      }
+
+      trackerNoticeTimer = window.setTimeout(() => {
+        trackerSuccess = '';
+      }, 4200);
+    } catch {
+      trackerError = 'Could not save tracker settings.';
+    } finally {
+      trackerSaving = false;
+    }
+  }
+
   onMount(() => {
     loadCharacter();
     loadContext();
@@ -327,6 +523,7 @@
 
     void hydrateMe();
     void syncBootstrap();
+    void loadTrackerSettings();
 
     if (syncTicker) {
       window.clearInterval(syncTicker);
@@ -369,6 +566,11 @@
       if (noticeTimer) {
         window.clearTimeout(noticeTimer);
         noticeTimer = null;
+      }
+
+      if (trackerNoticeTimer) {
+        window.clearTimeout(trackerNoticeTimer);
+        trackerNoticeTimer = null;
       }
     };
   });
@@ -455,6 +657,58 @@
       Private by default. Public visibility only applies when GPS permission is granted and live tracking is active.
     </p>
   </div>
+
+  {#if $trailShell.user}
+    <section class="tracker-strip" aria-label="Garmin tracker settings">
+      <div class="tracker-head">
+        <p class="tracker-kicker">Garmin MapShare</p>
+        <span class="tracker-state">
+          {#if trackerLoading}
+            Loading...
+          {:else if trackerSaving}
+            Saving...
+          {:else if trackerRecordId}
+            Saved
+          {:else}
+            Not configured
+          {/if}
+        </span>
+      </div>
+
+      <label for="tracker-share-id">Share ID or Garmin Feed URL</label>
+      <input
+        id="tracker-share-id"
+        type="text"
+        value={trackerShareId}
+        placeholder="hoggcountry or https://explore.garmin.com/Feed/Share/..."
+        oninput={(event) => {
+          trackerShareId = (event.currentTarget as HTMLInputElement).value;
+          if (trackerError) trackerError = '';
+        }}
+      />
+
+      <div class="tracker-actions">
+        <button type="button" onclick={saveTrackerSettings} disabled={trackerSaving || trackerLoading}>
+          {trackerSaving ? 'Saving...' : 'Save Tracker'}
+        </button>
+        <button type="button" class="secondary" onclick={loadTrackerSettings} disabled={trackerSaving || trackerLoading}>
+          Refresh
+        </button>
+      </div>
+
+      {#if trackerError}
+        <p class="tracker-feedback error">{trackerError}</p>
+      {/if}
+
+      {#if trackerSuccess}
+        <p class="tracker-feedback success">{trackerSuccess}</p>
+      {/if}
+
+      <p class="tracker-help">
+        Paste either the share ID or full Garmin feed link. We poll Garmin every minute on the backend and refresh the map automatically.
+      </p>
+    </section>
+  {/if}
 
   <nav class="quick-actions" aria-label="Contextual trail actions">
     {#each quickActions as action}
@@ -669,6 +923,105 @@
   .presence-strip p {
     margin: 0;
     font-size: 0.75rem;
+    line-height: 1.4;
+    color: rgba(31, 41, 55, 0.7);
+  }
+
+  .tracker-strip {
+    margin-top: 0.72rem;
+    display: grid;
+    gap: 0.42rem;
+    border-radius: 14px;
+    border: 1px solid rgba(77, 89, 74, 0.17);
+    background: rgba(255, 255, 255, 0.82);
+    padding: 0.66rem 0.74rem 0.7rem;
+  }
+
+  .tracker-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tracker-kicker {
+    margin: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(31, 41, 55, 0.75);
+    font-family: Oswald, sans-serif;
+  }
+
+  .tracker-state {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(31, 41, 55, 0.7);
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    border-radius: 999px;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 255, 255, 0.86);
+  }
+
+  .tracker-strip label {
+    font-size: 0.72rem;
+    color: rgba(31, 41, 55, 0.75);
+  }
+
+  .tracker-strip input {
+    width: 100%;
+    border-radius: 9px;
+    border: 1px solid rgba(77, 89, 74, 0.24);
+    background: rgba(255, 255, 255, 0.95);
+    color: #1f2937;
+    padding: 0.5rem 0.56rem;
+    font-size: 0.86rem;
+  }
+
+  .tracker-actions {
+    display: flex;
+    gap: 0.42rem;
+  }
+
+  .tracker-actions button {
+    border-radius: 9px;
+    border: 1px solid rgba(77, 89, 74, 0.25);
+    background: rgba(77, 89, 74, 0.9);
+    color: #fff;
+    padding: 0.48rem 0.72rem;
+    font-size: 0.79rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .tracker-actions button.secondary {
+    background: rgba(255, 255, 255, 0.9);
+    color: #1f2937;
+  }
+
+  .tracker-actions button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .tracker-feedback {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .tracker-feedback.error {
+    color: #b91c1c;
+  }
+
+  .tracker-feedback.success {
+    color: #166534;
+  }
+
+  .tracker-help {
+    margin: 0;
+    font-size: 0.73rem;
     line-height: 1.4;
     color: rgba(31, 41, 55, 0.7);
   }
