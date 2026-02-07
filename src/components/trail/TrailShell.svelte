@@ -36,9 +36,35 @@
   let trackerError = $state('');
   let trackerSuccess = $state('');
   let trackerRecordId = $state<string | null>(null);
+  let trackerLabel = $state('HoggCountry');
   let trackerShareId = $state('');
   let trackerColor = $state('#f97316');
   let trackerIsPublic = $state(true);
+  let trackerSignalStatus = $state<'unknown' | 'live' | 'stale' | 'not_configured' | 'private' | 'error'>('unknown');
+  let trackerSignalError = $state('');
+  let trackerSignalObservedAt = $state<string | null>(null);
+  let trackerHistoryPointCount = $state(0);
+  let trackerSignalTicker: number | null = null;
+  let clockTicker: number | null = null;
+  let shellNowMs = $state(Date.now());
+
+  type MissionIntent =
+    | { kind: 'open-map' }
+    | { kind: 'open-tool'; toolId: ToolId }
+    | { kind: 'start-hike' }
+    | { kind: 'stop-hike' };
+
+  type MissionCard = {
+    id: string;
+    title: string;
+    summary: string;
+    cta: string;
+    intent: MissionIntent;
+  };
+
+  const TRACKER_STALE_MS = 30 * 60 * 1000;
+  const TRACKER_SIGNAL_POLL_MS = 90 * 1000;
+  const CLOCK_TICK_MS = 30 * 1000;
 
   const FALLBACK_LOGIN_REDIRECT = '/trail/';
 
@@ -70,6 +96,148 @@
   });
 
   let quickActions = $derived.by(() => quickActionsForMode($trailShell.mode));
+
+  let modeLabel = $derived.by(() => {
+    if ($trailShell.mode === 'live') return 'Live Trail';
+    if ($trailShell.mode === 'post') return 'Post Trail';
+    return 'Mile 0 Prep';
+  });
+
+  let modeSummary = $derived.by(() => {
+    if ($trailShell.mode === 'live') return 'On-trail decisions, pace, and safety tools front and center.';
+    if ($trailShell.mode === 'post') return 'Capture lessons and shape the next section strategy.';
+    return 'Plan your kit, miles, and conditions before you go live.';
+  });
+
+  function parseIso(value: string | null | undefined): number | null {
+    if (!value) return null;
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function formatDuration(ms: number): string {
+    const totalMinutes = Math.max(0, Math.floor(ms / 60000));
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  }
+
+  function formatAge(iso: string | null): string {
+    const parsed = parseIso(iso);
+    if (parsed == null) return 'No data';
+    const elapsedMs = Math.max(0, shellNowMs - parsed);
+    if (elapsedMs < 60 * 1000) return 'Just now';
+    if (elapsedMs < 60 * 60 * 1000) return `${Math.floor(elapsedMs / 60000)}m ago`;
+    if (elapsedMs < 24 * 60 * 60 * 1000) return `${Math.floor(elapsedMs / (60 * 60 * 1000))}h ago`;
+    return `${Math.floor(elapsedMs / (24 * 60 * 60 * 1000))}d ago`;
+  }
+
+  let sessionRuntimeLabel = $derived.by(() => {
+    const startedAt = parseIso($trailShell.session.startedAt);
+    if (startedAt == null) return 'Not started';
+
+    const endedAt = parseIso($trailShell.session.endedAt);
+    const endTs = $trailShell.session.isActive ? shellNowMs : endedAt ?? shellNowMs;
+    return formatDuration(Math.max(0, endTs - startedAt));
+  });
+
+  let syncFreshnessLabel = $derived.by(() => {
+    if (!$trailShell.lastSyncAt) return 'Waiting for first sync';
+    return formatAge($trailShell.lastSyncAt);
+  });
+
+  let trackerSignalAgeLabel = $derived.by(() => formatAge(trackerSignalObservedAt));
+
+  let trackerSignalBadgeLabel = $derived.by(() => {
+    if (trackerSignalStatus === 'live') return 'Signal live';
+    if (trackerSignalStatus === 'stale') return 'Signal stale';
+    if (trackerSignalStatus === 'private') return 'Private signal';
+    if (trackerSignalStatus === 'not_configured') return 'No signal';
+    if (trackerSignalStatus === 'error') return 'Signal error';
+    return 'Signal pending';
+  });
+
+  let missionCards = $derived.by((): MissionCard[] => {
+    if ($trailShell.mode === 'live') {
+      return [
+        {
+          id: 'live-map',
+          title: 'Hold Position',
+          summary: 'Open map overlay and verify your latest fix + heading context.',
+          cta: 'Open Map',
+          intent: { kind: 'open-map' },
+        },
+        {
+          id: 'live-water',
+          title: 'Water Check',
+          summary: 'Update carry decisions before the next dry stretch.',
+          cta: 'Open Water Tool',
+          intent: { kind: 'open-tool', toolId: 'water' },
+        },
+        {
+          id: 'live-stop',
+          title: 'End Active Session',
+          summary: 'Stop live mode once you are off trail for the day.',
+          cta: 'Stop Hike',
+          intent: { kind: 'stop-hike' },
+        },
+      ];
+    }
+
+    if ($trailShell.mode === 'post') {
+      return [
+        {
+          id: 'post-review',
+          title: 'Review Progress',
+          summary: 'Capture completion velocity and compare against your target pace.',
+          cta: 'Open Goals',
+          intent: { kind: 'open-tool', toolId: 'goals' },
+        },
+        {
+          id: 'post-notes',
+          title: 'Record Trail Notes',
+          summary: 'Lock in what worked before memory fades.',
+          cta: 'Open Notes',
+          intent: { kind: 'open-tool', toolId: 'notes' },
+        },
+        {
+          id: 'post-map',
+          title: 'Inspect Route',
+          summary: 'Open the map and review line placement around key sections.',
+          cta: 'Open Map',
+          intent: { kind: 'open-map' },
+        },
+      ];
+    }
+
+    return [
+      {
+        id: 'prep-pack',
+        title: 'Pack Calibration',
+        summary: 'Tune worn vs packed gear and keep base weight in range.',
+        cta: 'Open Pack Builder',
+        intent: { kind: 'open-tool', toolId: 'pack' },
+      },
+      {
+        id: 'prep-weather',
+        title: 'Weather Check',
+        summary: 'Read forecast context before locking today’s movement plan.',
+        cta: 'Open Weather',
+        intent: { kind: 'open-tool', toolId: 'weather' },
+      },
+      {
+        id: 'prep-go-live',
+        title: 'Go Live',
+        summary: 'Switch to live mode when you are ready to track in motion.',
+        cta: 'Start Hike',
+        intent: { kind: 'start-hike' },
+      },
+    ];
+  });
 
   function updateOverlayUrl(method: 'push' | 'replace'): void {
     if (typeof window === 'undefined') return;
@@ -161,6 +329,25 @@
     if (action.intent === 'stop-hike') {
       stopHike();
     }
+  }
+
+  function runMissionIntent(intent: MissionIntent): void {
+    if (intent.kind === 'open-map') {
+      openMapOverlay();
+      return;
+    }
+
+    if (intent.kind === 'open-tool') {
+      openToolOverlay(intent.toolId);
+      return;
+    }
+
+    if (intent.kind === 'start-hike') {
+      startHike();
+      return;
+    }
+
+    stopHike();
   }
 
   async function hydrateMe(): Promise<void> {
@@ -341,9 +528,36 @@
 
   function clearTrackerForm(): void {
     trackerRecordId = null;
+    trackerLabel = displayName();
     trackerShareId = '';
     trackerColor = '#f97316';
     trackerIsPublic = true;
+  }
+
+  function clearTrackerSignal(): void {
+    trackerSignalStatus = trackerRecordId ? 'unknown' : 'not_configured';
+    trackerSignalError = '';
+    trackerSignalObservedAt = null;
+    trackerHistoryPointCount = 0;
+  }
+
+  function trackerLookupLabel(): string {
+    const value = String(trackerLabel || displayName() || '').trim();
+    return value;
+  }
+
+  function pickLabelMatch<T extends { label?: string }>(rows: T[], label: string): T | null {
+    if (!rows.length) return null;
+    const normalized = label.trim().toLowerCase();
+    if (!normalized) return rows[0];
+
+    const exact = rows.find((row) => String(row.label || '').trim().toLowerCase() === normalized);
+    if (exact) return exact;
+
+    const fuzzy = rows.find((row) => String(row.label || '').toLowerCase().includes(normalized));
+    if (fuzzy) return fuzzy;
+
+    return rows[0];
   }
 
   function normalizeGarminShareId(raw: string): string {
@@ -392,9 +606,88 @@
 
   function applyTrackerRecord(record: CommunityTrackerRecord): void {
     trackerRecordId = record.id;
+    trackerLabel = record.label;
     trackerShareId = record.garmin_share_id;
     trackerColor = record.color;
     trackerIsPublic = record.is_public;
+  }
+
+  async function loadPublicTrackerSignal(): Promise<void> {
+    if (!trackerRecordId) {
+      trackerSignalStatus = 'not_configured';
+      trackerSignalError = '';
+      trackerSignalObservedAt = null;
+      trackerHistoryPointCount = 0;
+      return;
+    }
+
+    if (!trackerIsPublic) {
+      trackerSignalStatus = 'private';
+      trackerSignalError = '';
+      trackerSignalObservedAt = null;
+      trackerHistoryPointCount = 0;
+      return;
+    }
+
+    const label = trackerLookupLabel();
+    if (!label) {
+      trackerSignalStatus = 'error';
+      trackerSignalError = 'Tracker label is missing.';
+      return;
+    }
+
+    try {
+      const liveUrl = new URL(`${API_BASE}/trackers/public/live`);
+      liveUrl.searchParams.set('label', label);
+
+      const historyUrl = new URL(`${API_BASE}/trackers/public/history`);
+      historyUrl.searchParams.set('label', label);
+      historyUrl.searchParams.set('limit', '1200');
+
+      const [liveRes, historyRes] = await Promise.all([
+        fetch(liveUrl.toString(), { headers: { Accept: 'application/json' }, cache: 'no-store' }),
+        fetch(historyUrl.toString(), { headers: { Accept: 'application/json' }, cache: 'no-store' }),
+      ]);
+
+      const livePayload = await liveRes.json().catch(() => null);
+      const historyPayload = await historyRes.json().catch(() => null);
+
+      const liveRows = (Array.isArray(livePayload?.data?.fixes) ? livePayload.data.fixes : []) as Array<{
+        label?: string;
+        observed_at?: string;
+      }>;
+      const historyRows = (Array.isArray(historyPayload?.data?.trackers) ? historyPayload.data.trackers : []) as Array<{
+        label?: string;
+        points?: unknown[];
+      }>;
+
+      const liveRow = pickLabelMatch(liveRows, label);
+      const historyRow = pickLabelMatch(historyRows, label);
+      const points = Array.isArray(historyRow?.points) ? historyRow.points : [];
+
+      trackerHistoryPointCount = points.length;
+      trackerSignalObservedAt = typeof liveRow?.observed_at === 'string'
+        ? liveRow.observed_at
+        : (
+            points.length && typeof (points[points.length - 1] as any)?.observed_at === 'string'
+              ? String((points[points.length - 1] as any).observed_at)
+              : null
+          );
+
+      trackerSignalError = '';
+
+      const observedAtMs = parseIso(trackerSignalObservedAt);
+      if (observedAtMs == null) {
+        trackerSignalStatus = 'stale';
+        return;
+      }
+
+      const age = shellNowMs - observedAtMs;
+      trackerSignalStatus = age <= TRACKER_STALE_MS ? 'live' : 'stale';
+    } catch {
+      trackerSignalStatus = 'error';
+      trackerSignalError = 'Could not read public tracker signal.';
+    }
   }
 
   async function loadTrackerSettings(): Promise<void> {
@@ -402,6 +695,7 @@
     if (!token) {
       clearTrackerForm();
       clearTrackerFeedback();
+      clearTrackerSignal();
       return;
     }
 
@@ -419,6 +713,7 @@
       if (!response.ok) {
         if (response.status === 401) {
           clearTrackerForm();
+          clearTrackerSignal();
           trackerError = 'Sign in again to manage Garmin tracking.';
           return;
         }
@@ -433,12 +728,16 @@
       const primary = rows[0] ? parseTrackerRecord(rows[0]) : null;
       if (!primary) {
         clearTrackerForm();
+        clearTrackerSignal();
         return;
       }
 
       applyTrackerRecord(primary);
+      await loadPublicTrackerSignal();
     } catch {
       trackerError = 'Could not load tracker settings right now.';
+      trackerSignalStatus = trackerRecordId ? 'error' : 'not_configured';
+      trackerSignalError = 'Could not load tracker signal.';
     } finally {
       trackerLoading = false;
     }
@@ -473,7 +772,7 @@
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            label: (displayName() || 'HoggCountry').trim().slice(0, 120),
+            label: (trackerLabel || displayName() || 'HoggCountry').trim().slice(0, 120),
             garmin_share_id: garminShareId,
             color: (trackerColor || '#f97316').trim(),
             is_public: trackerIsPublic,
@@ -497,6 +796,7 @@
       applyTrackerRecord(saved);
       trackerSuccess = 'Tracker saved. Live map refresh runs automatically every minute.';
       trailShell.setNotice('Garmin tracker saved. You can now appear on the live map when fixes are available.');
+      await loadPublicTrackerSignal();
 
       if (trackerNoticeTimer) {
         window.clearTimeout(trackerNoticeTimer);
@@ -523,6 +823,7 @@
 
     void hydrateMe();
     void syncBootstrap();
+    clearTrackerSignal();
     void loadTrackerSettings();
 
     if (syncTicker) {
@@ -532,6 +833,22 @@
     syncTicker = window.setInterval(() => {
       void syncBootstrap();
     }, 180000);
+
+    if (clockTicker) {
+      window.clearInterval(clockTicker);
+    }
+
+    clockTicker = window.setInterval(() => {
+      shellNowMs = Date.now();
+    }, CLOCK_TICK_MS);
+
+    if (trackerSignalTicker) {
+      window.clearInterval(trackerSignalTicker);
+    }
+
+    trackerSignalTicker = window.setInterval(() => {
+      void loadPublicTrackerSignal();
+    }, TRACKER_SIGNAL_POLL_MS);
 
     const removeOnlineWatchers = setupOnlineWatchers();
 
@@ -561,6 +878,16 @@
       if (syncTicker) {
         window.clearInterval(syncTicker);
         syncTicker = null;
+      }
+
+      if (clockTicker) {
+        window.clearInterval(clockTicker);
+        clockTicker = null;
+      }
+
+      if (trackerSignalTicker) {
+        window.clearInterval(trackerSignalTicker);
+        trackerSignalTicker = null;
       }
 
       if (noticeTimer) {
@@ -631,12 +958,82 @@
     </div>
   </header>
 
-  <button class="map-fab" type="button" onclick={openMapOverlay} aria-label="Open full-screen map">
+  <button
+    class="map-fab"
+    class:signal-live={trackerSignalStatus === 'live'}
+    class:signal-stale={trackerSignalStatus === 'stale'}
+    type="button"
+    onclick={openMapOverlay}
+    aria-label="Open full-screen map"
+  >
     <span class="fab-main">🗺️ Map</span>
-    <span class="fab-meta">Mile {mapBadge.mile.toFixed(1)} • {mapBadge.remaining.toFixed(0)} left</span>
+    <span class="fab-meta">Mile {mapBadge.mile.toFixed(1)} • {mapBadge.remaining.toFixed(0)} left • {trackerSignalBadgeLabel}</span>
   </button>
 
+  <section class="command-deck" aria-label="Trail command deck">
+    <header class="deck-head">
+      <div>
+        <p class="deck-kicker">Command Deck</p>
+        <h2>{modeLabel}</h2>
+      </div>
+      <p>{modeSummary}</p>
+    </header>
+
+    <div class="deck-grid">
+      <article class="deck-card">
+        <span class="deck-label">Session Runtime</span>
+        <strong>{sessionRuntimeLabel}</strong>
+        <p>{$trailShell.session.isActive ? 'Active trail session is running now.' : 'Session has not started yet.'}</p>
+      </article>
+
+      <article class="deck-card">
+        <span class="deck-label">Sync Freshness</span>
+        <strong>{syncStatusLabel()}</strong>
+        <p>{syncFreshnessLabel}</p>
+      </article>
+
+      <article
+        class="deck-card tracker-signal-card"
+        class:signal-live={trackerSignalStatus === 'live'}
+        class:signal-stale={trackerSignalStatus === 'stale'}
+        class:signal-private={trackerSignalStatus === 'private'}
+        class:signal-error={trackerSignalStatus === 'error'}
+      >
+        <span class="deck-label">Tracker Signal</span>
+        <strong>{trackerSignalBadgeLabel}</strong>
+        <p>
+          {#if trackerSignalStatus === 'not_configured'}
+            Add your Garmin tracker below to enable reliable live confidence checks.
+          {:else if trackerSignalStatus === 'private'}
+            Tracker is private. Public map signal is intentionally hidden.
+          {:else if trackerSignalStatus === 'error'}
+            {trackerSignalError || 'Could not reach public tracker signal.'}
+          {:else}
+            Last fix {trackerSignalAgeLabel} • {trackerHistoryPointCount} saved path points
+          {/if}
+        </p>
+      </article>
+    </div>
+  </section>
+
   <CharacterHub mode={$trailShell.mode} user={$trailShell.user} visibility={$trailShell.session.visibility} />
+
+  <section class="mission-board" aria-label="Mode missions">
+    <header>
+      <p class="deck-kicker">Mode Missions</p>
+      <h3>Next Best Actions</h3>
+    </header>
+
+    <div class="mission-grid">
+      {#each missionCards as mission}
+        <article class="mission-card">
+          <strong>{mission.title}</strong>
+          <p>{mission.summary}</p>
+          <button type="button" onclick={() => runMissionIntent(mission.intent)}>{mission.cta}</button>
+        </article>
+      {/each}
+    </div>
+  </section>
 
   <div class="presence-strip">
     <label for="presence-select">Community map visibility</label>
@@ -686,6 +1083,30 @@
           if (trackerError) trackerError = '';
         }}
       />
+
+      <label for="tracker-label">Public Tracker Label</label>
+      <input
+        id="tracker-label"
+        type="text"
+        value={trackerLabel}
+        maxlength="120"
+        placeholder="HoggCountry"
+        oninput={(event) => {
+          trackerLabel = (event.currentTarget as HTMLInputElement).value;
+          if (trackerError) trackerError = '';
+        }}
+      />
+
+      <label class="tracker-public-toggle">
+        <input
+          type="checkbox"
+          checked={trackerIsPublic}
+          onchange={(event) => {
+            trackerIsPublic = (event.currentTarget as HTMLInputElement).checked;
+          }}
+        />
+        <span>Expose this tracker on the public map feed</span>
+      </label>
 
       <div class="tracker-actions">
         <button type="button" onclick={saveTrackerSettings} disabled={trackerSaving || trackerLoading}>
@@ -892,8 +1313,176 @@
     color: rgba(31, 41, 55, 0.74);
   }
 
+  .map-fab.signal-live {
+    border-color: rgba(22, 163, 74, 0.44);
+    box-shadow: 0 18px 34px rgba(22, 163, 74, 0.2);
+  }
+
+  .map-fab.signal-stale {
+    border-color: rgba(217, 119, 6, 0.46);
+  }
+
+  .command-deck {
+    margin-top: 0.74rem;
+    border-radius: 16px;
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    background:
+      radial-gradient(740px 240px at 92% -64%, rgba(166, 181, 137, 0.25), transparent 60%),
+      linear-gradient(170deg, rgba(255,255,255,0.9), rgba(245, 240, 226, 0.86));
+    padding: 0.72rem;
+    display: grid;
+    gap: 0.62rem;
+    box-shadow: 0 12px 26px rgba(30, 42, 31, 0.12);
+  }
+
+  .deck-head {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .deck-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+
+  .deck-head p {
+    margin: 0;
+    font-size: 0.79rem;
+    line-height: 1.38;
+    color: rgba(31, 41, 55, 0.72);
+  }
+
+  .deck-kicker {
+    margin: 0;
+    font-size: 0.67rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(31, 41, 55, 0.65);
+    font-family: Oswald, sans-serif;
+  }
+
+  .deck-grid {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .deck-card {
+    border-radius: 12px;
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    background: rgba(255, 255, 255, 0.88);
+    padding: 0.56rem 0.62rem;
+    display: grid;
+    gap: 0.16rem;
+    min-height: 96px;
+  }
+
+  .deck-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(31, 41, 55, 0.62);
+  }
+
+  .deck-card strong {
+    font-size: 0.87rem;
+    color: #111827;
+  }
+
+  .deck-card p {
+    margin: 0;
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: rgba(31, 41, 55, 0.72);
+  }
+
+  .tracker-signal-card {
+    grid-column: 1 / -1;
+  }
+
+  .tracker-signal-card.signal-live {
+    border-color: rgba(22, 163, 74, 0.44);
+    background: rgba(236, 253, 245, 0.88);
+  }
+
+  .tracker-signal-card.signal-stale {
+    border-color: rgba(217, 119, 6, 0.44);
+    background: rgba(255, 247, 237, 0.88);
+  }
+
+  .tracker-signal-card.signal-private {
+    border-color: rgba(59, 130, 246, 0.38);
+    background: rgba(239, 246, 255, 0.9);
+  }
+
+  .tracker-signal-card.signal-error {
+    border-color: rgba(185, 28, 28, 0.38);
+    background: rgba(254, 242, 242, 0.9);
+  }
+
+  .mission-board {
+    margin-top: 0.72rem;
+    border-radius: 16px;
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    background: rgba(255, 255, 255, 0.82);
+    padding: 0.68rem 0.72rem;
+    display: grid;
+    gap: 0.54rem;
+  }
+
+  .mission-board header {
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .mission-board h3 {
+    margin: 0;
+    font-size: 0.96rem;
+    color: #1f2937;
+  }
+
+  .mission-grid {
+    display: grid;
+    gap: 0.46rem;
+  }
+
+  .mission-card {
+    border-radius: 12px;
+    border: 1px solid rgba(77, 89, 74, 0.16);
+    background: rgba(249, 247, 240, 0.9);
+    padding: 0.56rem 0.58rem;
+    display: grid;
+    gap: 0.28rem;
+  }
+
+  .mission-card strong {
+    font-size: 0.84rem;
+    color: #1f2937;
+  }
+
+  .mission-card p {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: rgba(31, 41, 55, 0.74);
+  }
+
+  .mission-card button {
+    justify-self: start;
+    border-radius: 9px;
+    border: 1px solid rgba(77, 89, 74, 0.28);
+    background: rgba(77, 89, 74, 0.92);
+    color: #fff;
+    padding: 0.42rem 0.62rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 44px;
+  }
+
   .presence-strip {
-    margin-top: 0.75rem;
+    margin-top: 0.72rem;
     display: grid;
     gap: 0.36rem;
     border-radius: 14px;
@@ -977,6 +1566,20 @@
     color: #1f2937;
     padding: 0.5rem 0.56rem;
     font-size: 0.86rem;
+  }
+
+  .tracker-public-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.46rem;
+    font-size: 0.77rem;
+    color: rgba(31, 41, 55, 0.75);
+  }
+
+  .tracker-public-toggle input {
+    width: 16px;
+    height: 16px;
+    accent-color: #4d594a;
   }
 
   .tracker-actions {
@@ -1111,6 +1714,18 @@
       grid-template-columns: repeat(6, minmax(0, 1fr));
       max-width: 980px;
       margin-inline: auto;
+    }
+
+    .deck-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .tracker-signal-card {
+      grid-column: auto;
+    }
+
+    .mission-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
