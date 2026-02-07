@@ -548,7 +548,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.4);
-    z-index: 600;
+    z-index: 1100;
     animation: fadeIn 0.2s ease;
   }
 
@@ -566,7 +566,7 @@
     bottom: 0;
     width: min(320px, 85vw);
     background: var(--bg, #f5f2e8);
-    z-index: 700;
+    z-index: 1110;
     animation: slideIn 0.25s ease;
     flex-direction: column;
   }
