@@ -164,7 +164,13 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
       googleButton.disabled = true;
       setStatus('Redirecting to Google...', 'info');
       sessionStorage.setItem(REDIRECT_KEY, redirectTo);
-      window.location.assign(`${API_BASE}/auth/google/redirect`);
+      const callbackUrl = new URL('/login', window.location.origin);
+      if (queryRedirect) {
+        callbackUrl.searchParams.set('redirect', queryRedirect);
+      }
+      const oauthUrl = new URL(`${API_BASE}/auth/google/redirect`);
+      oauthUrl.searchParams.set('callback', callbackUrl.toString());
+      window.location.assign(oauthUrl.toString());
     });
 
     logoutButton.addEventListener('click', async () => {

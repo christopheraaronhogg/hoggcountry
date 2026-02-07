@@ -35,8 +35,9 @@
   - `GOOGLE_CLIENT_SECRET`
   - `GOOGLE_REDIRECT_URI` (example: `http://127.0.0.1:8000/api/v1/auth/google/callback`)
   - `FRONTEND_AUTH_CALLBACK_URL` (example: `http://localhost:4321/login`)
+  - `FRONTEND_AUTH_ALLOWED_HOSTS` (comma-separated host allowlist for callback URLs)
 - Login endpoints:
-  - `GET /api/v1/auth/google/redirect`
+  - `GET /api/v1/auth/google/redirect?callback=<frontend-url>`
   - `GET /api/v1/auth/google/callback`
 
 ### Project scripts

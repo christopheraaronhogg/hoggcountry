@@ -7,6 +7,7 @@ use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -155,14 +156,21 @@ class AuthController extends ApiController
         ]);
     }
 
-    public function googleRedirect()
+    public function googleRedirect(Request $request)
     {
-        return Socialite::driver('google')
-            ->stateless()
-            ->redirect();
+        $callback = $this->resolveFrontendCallbackUrl($request->query('callback'));
+
+        $driver = Socialite::driver('google')->stateless();
+        if ($callback) {
+            $state = Str::random(64);
+            Cache::put($this->googleStateCacheKey($state), $callback, now()->addMinutes(10));
+            $driver = $driver->with(['state' => $state]);
+        }
+
+        return $driver->redirect();
     }
 
-    public function googleCallback()
+    public function googleCallback(Request $request)
     {
         try {
             $googleUser = Socialite::driver('google')
@@ -249,11 +257,25 @@ class AuthController extends ApiController
 
         $token = $user->createToken('google-oauth')->plainTextToken;
 
-        $frontendCallbackUrl = config('app.frontend_auth_callback_url');
+        $frontendCallbackUrl = null;
+        $state = $request->query('state');
+        if (is_string($state) && $state !== '') {
+            $stateCallback = Cache::pull($this->googleStateCacheKey($state));
+            if (is_string($stateCallback)) {
+                $frontendCallbackUrl = $this->resolveFrontendCallbackUrl($stateCallback);
+            }
+        }
+
+        if (! $frontendCallbackUrl) {
+            $configured = config('app.frontend_auth_callback_url');
+            if (is_string($configured)) {
+                $frontendCallbackUrl = $this->resolveFrontendCallbackUrl($configured);
+            }
+        }
+
         if (
-            ! request()->expectsJson() &&
-            is_string($frontendCallbackUrl) &&
-            filter_var($frontendCallbackUrl, FILTER_VALIDATE_URL)
+            ! $request->expectsJson() &&
+            is_string($frontendCallbackUrl)
         ) {
             $fragment = http_build_query([
                 'token' => $token,
@@ -268,6 +290,72 @@ class AuthController extends ApiController
             'user' => $this->userPayload($user->load('profile')),
             'provider' => 'google',
         ]);
+    }
+
+    private function googleStateCacheKey(string $state): string
+    {
+        return "oauth_google_state:{$state}";
+    }
+
+    private function resolveFrontendCallbackUrl(?string $candidate): ?string
+    {
+        if (! is_string($candidate)) {
+            return null;
+        }
+
+        $candidate = trim($candidate);
+        if ($candidate === '') {
+            return null;
+        }
+
+        if (! filter_var($candidate, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $host = strtolower((string) parse_url($candidate, PHP_URL_HOST));
+        $scheme = strtolower((string) parse_url($candidate, PHP_URL_SCHEME));
+        if ($host === '' || ! in_array($scheme, ['https', 'http'], true)) {
+            return null;
+        }
+
+        if ($scheme === 'http' && ! in_array($host, ['localhost', '127.0.0.1'], true)) {
+            return null;
+        }
+
+        $allowedHosts = $this->allowedFrontendHosts();
+        if (count($allowedHosts) > 0 && ! in_array($host, $allowedHosts, true)) {
+            return null;
+        }
+
+        return $candidate;
+    }
+
+    private function allowedFrontendHosts(): array
+    {
+        $hosts = [];
+
+        $configured = config('app.frontend_auth_callback_url');
+        if (is_string($configured) && filter_var($configured, FILTER_VALIDATE_URL)) {
+            $configuredHost = strtolower((string) parse_url($configured, PHP_URL_HOST));
+            if ($configuredHost !== '') {
+                $hosts[] = $configuredHost;
+            }
+        }
+
+        $extra = config('app.frontend_auth_allowed_hosts', []);
+        if (is_array($extra)) {
+            foreach ($extra as $host) {
+                if (! is_string($host)) {
+                    continue;
+                }
+                $trimmed = trim(strtolower($host));
+                if ($trimmed !== '') {
+                    $hosts[] = $trimmed;
+                }
+            }
+        }
+
+        return array_values(array_unique($hosts));
     }
 
     private function userPayload(User $user): array
