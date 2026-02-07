@@ -16,7 +16,7 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
   <div class="container auth-wrap">
     <div class="auth-card">
       <button id="google-login" type="button" class="google-button">Continue with Google</button>
-      <a id="login-continue" class="continue-link" href="/tools/character/" hidden>Continue to My Profile</a>
+      <a id="login-continue" class="continue-link" href="/trail/" hidden>Continue to Trail Hub</a>
       <button id="logout-button" type="button" class="logout-button" hidden>Log Out</button>
       <p id="login-user" class="user" hidden></p>
       <p id="login-status" class="status" aria-live="polite"></p>
@@ -117,7 +117,7 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
     const searchParams = new URLSearchParams(window.location.search);
     const queryRedirect = normalizeRedirect(searchParams.get('redirect') || '');
     const storedRedirect = normalizeRedirect(sessionStorage.getItem(REDIRECT_KEY) || '');
-    const redirectTo = queryRedirect || storedRedirect || '/tools/character/';
+    const redirectTo = queryRedirect || storedRedirect || '/trail/';
     if (queryRedirect) sessionStorage.setItem(REDIRECT_KEY, queryRedirect);
 
     const hashParams = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '');

@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TrailShell from '../components/trail/TrailShell.svelte';
+
+const title = 'Trail Hub — Hogg Country';
+const description = 'Character-first trail command center with full-screen map and contextual tool overlays.';
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero trail-hero">
+    <span class="chapter font-chapter">Trail HQ</span>
+    <h1 class="font-display">Character + Map</h1>
+    <p>One local-first mobile shell for planning, live trail decisions, and social map visibility.</p>
+  </section>
+
+  <div class="container trail-shell-wrap">
+    <TrailShell client:load />
+  </div>
+</BaseLayout>
+
+<style>
+  .trail-hero {
+    padding-bottom: 1.1rem;
+  }
+
+  .trail-shell-wrap {
+    padding-bottom: 4rem;
+    max-width: 100%;
+  }
+
+  @media (max-width: 640px) {
+    .trail-hero {
+      padding-top: 1.35rem;
+    }
+  }
+</style>

@@ -25,6 +25,15 @@
   --contour-thin: 0.8px; /* Regular contour thickness */
   /* Additional variables for new features */
   --stream-line: rgba(100, 110, 115, 0.1);
+  /* Trail shell layers + HUD tokens */
+  --layer-character: 20;
+  --layer-map: 70;
+  --layer-tool: 85;
+  --layer-toast: 95;
+  --hud-bg: rgba(255, 255, 255, 0.88);
+  --hud-border: rgba(77, 89, 74, 0.24);
+  --status-live: #166534;
+  --status-prep: #4d594a;
 }
 
 /* Paper background with subtle texture */
