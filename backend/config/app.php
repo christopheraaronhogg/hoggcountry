@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend Auth Callback URL
+    |--------------------------------------------------------------------------
+    |
+    | Browser-based OAuth callbacks can be redirected back to this frontend
+    | URL with auth data encoded in the URL fragment.
+    |
+    */
+
+    'frontend_auth_callback_url' => env('FRONTEND_AUTH_CALLBACK_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

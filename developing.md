@@ -27,12 +27,14 @@
 - Backend uses `backend/.env` (`.env.example` as template).
 - Default DB is SQLite (`backend/database/database.sqlite`) unless you change `DB_*` vars.
 - For local frontend integration, point the web app API base to `http://127.0.0.1:8000/api/v1`.
+- Frontend can set `PUBLIC_API_BASE_URL` for browser calls (defaults to `https://hoggcountry.on-forge.com/api/v1`).
 
 ### Google OAuth (Laravel Socialite)
 - Required backend env vars:
   - `GOOGLE_CLIENT_ID`
   - `GOOGLE_CLIENT_SECRET`
   - `GOOGLE_REDIRECT_URI` (example: `http://127.0.0.1:8000/api/v1/auth/google/callback`)
+  - `FRONTEND_AUTH_CALLBACK_URL` (example: `http://localhost:4321/login`)
 - Login endpoints:
   - `GET /api/v1/auth/google/redirect`
   - `GET /api/v1/auth/google/callback`
@@ -64,18 +66,6 @@
 ### YouTube feed
 - Update the channel ID in `src/lib/config.ts` if needed.
 - Videos are fetched at build time with a 10‑minute cache (`src/lib/youtube.ts`).
-
-### Auth backend (bootstrap)
-- Functions:
-  - `/.netlify/functions/auth-login` (POST)
-  - `/.netlify/functions/auth-session` (GET)
-  - `/.netlify/functions/auth-logout` (POST)
-- Required env vars:
-  - `AUTH_SESSION_SECRET` (minimum 32 chars)
-  - `AUTH_USERS_JSON` (JSON array of user records with `id`, `email`, `name`, `salt`, `passwordHash`)
-- Generate a user record:
-  - `npm run auth:user -- user@example.com "your-password" "Display Name"`
-  - Copy the JSON output into `AUTH_USERS_JSON`.
 
 ### Debug tips
 - Use `npm run astro -- check` to type‑check content collections and pages.

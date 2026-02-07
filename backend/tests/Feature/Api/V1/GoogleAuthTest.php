@@ -99,6 +99,35 @@ class GoogleAuthTest extends TestCase
         $this->assertNotNull($user->email_verified_at);
     }
 
+    public function test_google_callback_redirects_browser_to_frontend_callback_url_when_configured(): void
+    {
+        config()->set('app.frontend_auth_callback_url', 'https://frontend.example.com/login');
+
+        $socialUser = $this->fakeGoogleUser(
+            id: 'google-777',
+            email: 'frontend@example.com',
+            name: 'Frontend User'
+        );
+
+        Socialite::shouldReceive('driver->stateless->user')
+            ->once()
+            ->andReturn($socialUser);
+
+        $response = $this->get('/api/v1/auth/google/callback');
+
+        $response->assertStatus(302);
+        $location = $response->headers->get('Location');
+        $this->assertNotNull($location);
+        $this->assertStringStartsWith('https://frontend.example.com/login#', $location);
+
+        $fragment = (string) parse_url($location, PHP_URL_FRAGMENT);
+        parse_str($fragment, $fragmentParams);
+
+        $this->assertSame('google', $fragmentParams['provider'] ?? null);
+        $this->assertIsString($fragmentParams['token'] ?? null);
+        $this->assertNotSame('', (string) ($fragmentParams['token'] ?? ''));
+    }
+
     private function fakeGoogleUser(string $id, string $email, string $name): SocialiteUser
     {
         $user = new SocialiteUser;

@@ -58,3 +58,4 @@ npm run backend:test
 - Sanctum token auth is enabled for API routes.
 - Sync conflicts use deterministic checks based on `client_updated_at` and `device_id`.
 - Google OAuth uses `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.
+- Optional browser callback redirect: `FRONTEND_AUTH_CALLBACK_URL` (e.g., `https://hoggcountry.com/login`).

@@ -249,6 +249,20 @@ class AuthController extends ApiController
 
         $token = $user->createToken('google-oauth')->plainTextToken;
 
+        $frontendCallbackUrl = config('app.frontend_auth_callback_url');
+        if (
+            ! request()->expectsJson() &&
+            is_string($frontendCallbackUrl) &&
+            filter_var($frontendCallbackUrl, FILTER_VALIDATE_URL)
+        ) {
+            $fragment = http_build_query([
+                'token' => $token,
+                'provider' => 'google',
+            ]);
+
+            return redirect()->away("{$frontendCallbackUrl}#{$fragment}");
+        }
+
         return $this->ok([
             'token' => $token,
             'user' => $this->userPayload($user->load('profile')),

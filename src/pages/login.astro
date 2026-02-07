@@ -1,88 +1,205 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const title = 'Log In — Hogg Country';
-const description = 'Log in to sync your profile and future backend-powered trail tools.';
+const title = 'Account — Hogg Country';
+const description = 'Sign in with Google to sync your profile and trail data across devices.';
+const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
 ---
 
 <BaseLayout title={title} description={description}>
   <section class="hero">
     <span class="chapter font-chapter">Account</span>
-    <h1 class="font-display">Log In</h1>
-    <p>Sign in to access your synced profile and upcoming account features.</p>
+    <h1 class="font-display">Sign In</h1>
+    <p>Use Google for a fast login. We keep your trail model local-first and sync in the background.</p>
   </section>
 
   <div class="container auth-wrap">
-    <form id="login-form" class="auth-card">
-      <label class="field">
-        <span>Email</span>
-        <input id="login-email" name="email" type="email" autocomplete="email" required />
-      </label>
-
-      <label class="field">
-        <span>Password</span>
-        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
-      </label>
-
-      <button type="submit" id="login-submit">Log In</button>
+    <div class="auth-card">
+      <button id="google-login" type="button" class="google-button">Continue with Google</button>
+      <a id="login-continue" class="continue-link" href="/tools/character/" hidden>Continue to My Profile</a>
+      <button id="logout-button" type="button" class="logout-button" hidden>Log Out</button>
+      <p id="login-user" class="user" hidden></p>
       <p id="login-status" class="status" aria-live="polite"></p>
-    </form>
+    </div>
   </div>
 </BaseLayout>
 
-<script is:inline>
+<script is:inline define:vars={{ apiBase }}>
   (() => {
-    const form = document.getElementById('login-form');
+    const API_BASE = apiBase;
+    const AUTH_KEY = 'hcApiAuth.v1';
+    const REDIRECT_KEY = 'hcLoginRedirect.v1';
+
+    const googleButton = document.getElementById('google-login');
+    const continueLink = document.getElementById('login-continue');
+    const logoutButton = document.getElementById('logout-button');
     const status = document.getElementById('login-status');
-    const submit = document.getElementById('login-submit');
+    const userEl = document.getElementById('login-user');
 
-    if (!(form instanceof HTMLFormElement) || !(status instanceof HTMLElement) || !(submit instanceof HTMLButtonElement)) return;
+    if (
+      !(googleButton instanceof HTMLButtonElement) ||
+      !(continueLink instanceof HTMLAnchorElement) ||
+      !(logoutButton instanceof HTMLButtonElement) ||
+      !(status instanceof HTMLElement) ||
+      !(userEl instanceof HTMLElement)
+    ) return;
 
-    const redirectParam = new URLSearchParams(window.location.search).get('redirect');
-    const redirectTo = redirectParam || '/tools/character/';
+    function parseJson(raw) {
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
 
-    async function setStatus(message, type = 'info') {
+    function readAuth() {
+      const data = parseJson(localStorage.getItem(AUTH_KEY));
+      if (!data || typeof data !== 'object' || typeof data.token !== 'string' || !data.token) return null;
+      return data;
+    }
+
+    function writeAuth(payload) {
+      localStorage.setItem(AUTH_KEY, JSON.stringify({
+        token: payload.token,
+        provider: payload.provider || 'google',
+        user: payload.user || null,
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+
+    function clearAuth() {
+      localStorage.removeItem(AUTH_KEY);
+    }
+
+    function normalizeRedirect(value) {
+      if (typeof value !== 'string') return '';
+      if (!value.startsWith('/')) return '';
+      if (value.startsWith('//')) return '';
+      return value;
+    }
+
+    function setStatus(message, type = 'info') {
       status.textContent = message;
       status.dataset.type = type;
     }
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      submit.disabled = true;
-      await setStatus('Signing you in...', 'info');
+    function setLoggedOut() {
+      googleButton.hidden = false;
+      googleButton.disabled = false;
+      continueLink.hidden = true;
+      logoutButton.hidden = true;
+      userEl.hidden = true;
+      userEl.textContent = '';
+    }
 
-      const emailField = document.getElementById('login-email');
-      const passwordField = document.getElementById('login-password');
-      const email = emailField instanceof HTMLInputElement ? emailField.value.trim() : '';
-      const password = passwordField instanceof HTMLInputElement ? passwordField.value : '';
+    function setLoggedIn(user, redirectTo) {
+      googleButton.hidden = true;
+      continueLink.hidden = false;
+      continueLink.href = redirectTo;
+      logoutButton.hidden = false;
+      userEl.hidden = false;
+      userEl.textContent = `Signed in as ${user.name || user.email}`;
+    }
 
-      try {
-        const res = await fetch('/.netlify/functions/auth-login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
+    async function fetchMe(token) {
+      const response = await fetch(`${API_BASE}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          await setStatus(data?.error || 'Log in failed.', 'error');
-          submit.disabled = false;
-          return;
-        }
+      if (!response.ok) return null;
+      const payload = await response.json().catch(() => null);
+      return payload?.data || null;
+    }
 
-        await setStatus('Logged in. Redirecting...', 'success');
-        window.location.assign(redirectTo);
-      } catch (error) {
-        await setStatus('Network error. Please try again.', 'error');
-        submit.disabled = false;
+    const searchParams = new URLSearchParams(window.location.search);
+    const queryRedirect = normalizeRedirect(searchParams.get('redirect') || '');
+    const storedRedirect = normalizeRedirect(sessionStorage.getItem(REDIRECT_KEY) || '');
+    const redirectTo = queryRedirect || storedRedirect || '/tools/character/';
+    if (queryRedirect) sessionStorage.setItem(REDIRECT_KEY, queryRedirect);
+
+    const hashParams = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '');
+    const tokenFromHash = hashParams.get('token');
+    const providerFromHash = hashParams.get('provider') || 'google';
+    const returnedFromProvider = Boolean(tokenFromHash);
+
+    if (tokenFromHash) {
+      writeAuth({ token: tokenFromHash, provider: providerFromHash });
+      history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    }
+
+    async function hydrate() {
+      const auth = readAuth();
+      if (!auth) {
+        setLoggedOut();
+        setStatus('Sign in to sync your profile across devices.', 'info');
+        return;
       }
+
+      setStatus('Verifying session...', 'info');
+      const me = await fetchMe(auth.token);
+      if (!me) {
+        clearAuth();
+        setLoggedOut();
+        setStatus('Your session expired. Please sign in again.', 'error');
+        return;
+      }
+
+      writeAuth({ token: auth.token, provider: auth.provider, user: me });
+      setLoggedIn(me, redirectTo);
+
+      if (returnedFromProvider) {
+        setStatus('Signed in with Google. Redirecting...', 'success');
+        setTimeout(() => {
+          window.location.assign(redirectTo);
+        }, 500);
+      } else {
+        setStatus('You are signed in.', 'success');
+      }
+    }
+
+    googleButton.addEventListener('click', () => {
+      googleButton.disabled = true;
+      setStatus('Redirecting to Google...', 'info');
+      sessionStorage.setItem(REDIRECT_KEY, redirectTo);
+      window.location.assign(`${API_BASE}/auth/google/redirect`);
     });
+
+    logoutButton.addEventListener('click', async () => {
+      const auth = readAuth();
+      if (!auth) {
+        setLoggedOut();
+        return;
+      }
+
+      logoutButton.disabled = true;
+      setStatus('Signing out...', 'info');
+      try {
+        await fetch(`${API_BASE}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        });
+      } catch {
+        // Logout token revocation can fail silently; local removal still signs user out in UI.
+      }
+
+      clearAuth();
+      logoutButton.disabled = false;
+      setLoggedOut();
+      setStatus('Signed out.', 'success');
+    });
+
+    hydrate();
   })();
 </script>
 
 <style>
   .auth-wrap {
-    max-width: 520px;
+    max-width: 560px;
     padding: 0 1rem 4rem;
   }
 
@@ -96,46 +213,46 @@ const description = 'Log in to sync your profile and future backend-powered trai
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   }
 
-  .field {
-    display: grid;
-    gap: 0.35rem;
-    font-size: 0.9rem;
-    color: var(--muted, #5c665a);
-  }
-
-  .field span {
-    font-family: Oswald, sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  input {
-    border: 1px solid var(--border, #d8d2c4);
-    border-radius: 8px;
-    padding: 0.65rem 0.7rem;
-    font-size: 0.95rem;
-    background: #fff;
-  }
-
-  input:focus {
-    outline: 2px solid rgba(166, 181, 137, 0.6);
-    border-color: var(--alpine, #a6b589);
-  }
-
-  button[type='submit'] {
-    border: 0;
+  .google-button,
+  .continue-link,
+  .logout-button {
     border-radius: 9px;
     padding: 0.72rem 0.9rem;
     font-weight: 700;
-    cursor: pointer;
-    color: #fff;
-    background: var(--pine, #4d594a);
+    font-size: 0.95rem;
+    text-align: center;
   }
 
-  button[type='submit']:disabled {
+  .google-button {
+    border: 1px solid var(--border, #d8d2c4);
+    background: #fff;
+    color: #1f2937;
+    cursor: pointer;
+  }
+
+  .google-button:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+  }
+
+  .continue-link {
+    border: 0;
+    color: #fff;
+    background: var(--pine, #4d594a);
+    text-decoration: none;
+  }
+
+  .logout-button {
+    border: 1px solid var(--border, #d8d2c4);
+    background: #fff;
+    color: #1f2937;
+    cursor: pointer;
+  }
+
+  .user {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted, #5c665a);
   }
 
   .status {
