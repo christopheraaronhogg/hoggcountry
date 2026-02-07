@@ -199,34 +199,55 @@ class RefreshTrackersCommand extends Command
         preg_match_all('/<Placemark[\\s\\S]*?<\\/Placemark>/i', $kml, $placemarkBlocks);
 
         $candidates = [];
+        $position = 0;
 
-        foreach (($placemarkBlocks[0] ?? []) as $idx => $placemark) {
-            $pointBlock = $this->extractFirstTagContent($placemark, 'Point');
-            if ($pointBlock === null) {
-                continue;
-            }
-
-            $coordsText = $this->extractFirstTagContent($pointBlock, 'coordinates');
-            if ($coordsText === null) {
-                continue;
-            }
-
-            $coords = $this->parseFirstCoordinate($coordsText);
-            if (! $coords) {
-                continue;
-            }
-
-            $whenRaw = $this->extractFirstTagContent($placemark, 'when');
+        foreach (($placemarkBlocks[0] ?? []) as $placemark) {
             $description = $this->extractFirstTagContent($placemark, 'description');
+            $mile = $this->extractMileHint($description);
 
-            $candidates[] = [
-                'lat' => $coords['lat'],
-                'lon' => $coords['lon'],
-                'mile' => $this->extractMileHint($description),
-                'observed_at' => $this->parseObservedAt($whenRaw),
-                'observed_raw' => $whenRaw ? trim($whenRaw) : null,
-                'idx' => $idx,
-            ];
+            $pointBlock = $this->extractFirstTagContent($placemark, 'Point');
+            if ($pointBlock !== null) {
+                $coordsText = $this->extractFirstTagContent($pointBlock, 'coordinates');
+                if ($coordsText !== null) {
+                    $coords = $this->parseFirstCoordinate($coordsText);
+                    if ($coords) {
+                        $whenRaw = $this->extractFirstTagContent($placemark, 'when');
+
+                        $candidates[] = [
+                            'lat' => $coords['lat'],
+                            'lon' => $coords['lon'],
+                            'mile' => $mile,
+                            'observed_at' => $this->parseObservedAt($whenRaw),
+                            'observed_raw' => $whenRaw ? trim($whenRaw) : null,
+                            'idx' => $position++,
+                        ];
+                    }
+                }
+            }
+
+            $trackBlock = $this->extractFirstTagContent($placemark, 'gx:Track');
+            if ($trackBlock !== null) {
+                $whenValues = $this->extractAllTagContents($trackBlock, 'when');
+                $coordValues = $this->extractAllTagContents($trackBlock, 'gx:coord');
+
+                foreach ($coordValues as $trackIdx => $coordRaw) {
+                    $coords = $this->parseGxCoordinate($coordRaw);
+                    if (! $coords) {
+                        continue;
+                    }
+
+                    $whenRaw = $whenValues[$trackIdx] ?? null;
+
+                    $candidates[] = [
+                        'lat' => $coords['lat'],
+                        'lon' => $coords['lon'],
+                        'mile' => $mile,
+                        'observed_at' => $this->parseObservedAt($whenRaw),
+                        'observed_raw' => $whenRaw ? trim($whenRaw) : null,
+                        'idx' => $position++,
+                    ];
+                }
+            }
         }
 
         return $candidates;
@@ -241,6 +262,24 @@ class RefreshTrackersCommand extends Command
         }
 
         return trim(html_entity_decode($matches[1], ENT_QUOTES | ENT_XML1, 'UTF-8'));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function extractAllTagContents(string $xml, string $tag): array
+    {
+        $pattern = sprintf('/<%s[^>]*>([\\s\\S]*?)<\\/%s>/i', preg_quote($tag, '/'), preg_quote($tag, '/'));
+
+        $matched = preg_match_all($pattern, $xml, $matches);
+        if (! $matched) {
+            return [];
+        }
+
+        return array_map(
+            static fn (string $value): string => trim(html_entity_decode($value, ENT_QUOTES | ENT_XML1, 'UTF-8')),
+            $matches[1]
+        );
     }
 
     /**
@@ -273,6 +312,28 @@ class RefreshTrackersCommand extends Command
         }
 
         return null;
+    }
+
+    /**
+     * @return array{lat: float, lon: float}|null
+     */
+    private function parseGxCoordinate(string $coordsText): ?array
+    {
+        $parts = preg_split('/\s+/', trim($coordsText)) ?: [];
+        if (count($parts) < 2) {
+            return null;
+        }
+
+        $lon = (float) $parts[0];
+        $lat = (float) $parts[1];
+        if (! is_finite($lat) || ! is_finite($lon)) {
+            return null;
+        }
+
+        return [
+            'lat' => $lat,
+            'lon' => $lon,
+        ];
     }
 
     private function parseObservedAt(?string $value): ?CarbonImmutable
