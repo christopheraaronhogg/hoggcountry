@@ -52,6 +52,26 @@ Authenticated (`Authorization: Bearer <token>`):
 npm run backend:test
 ```
 
+## Scheduler
+
+The heartbeat command in Forge should run every minute:
+
+```bash
+php8.3 /home/forge/hoggcountry.on-forge.com/current/backend/artisan schedule:run >> /home/forge/hoggcountry.on-forge.com/current/backend/storage/logs/scheduler.log 2>&1
+```
+
+Laravel schedule tasks:
+
+- `trackers:refresh` (every minute) polls Garmin MapShare for each saved tracker and upserts fresh points into `tracker_fixes`.
+
+Manual verification:
+
+```bash
+php artisan schedule:list
+php artisan trackers:refresh
+tail -f storage/logs/trackers-refresh.log
+```
+
 ## Notes
 
 - Default DB is SQLite (`backend/database/database.sqlite`).
