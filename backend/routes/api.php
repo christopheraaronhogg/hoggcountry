@@ -34,6 +34,11 @@ Route::prefix('v1')->group(function (): void {
             ->name('verification.verify');
     });
 
+    Route::prefix('trackers/public')->group(function (): void {
+        Route::get('/live', [TrackerLiveController::class, 'publicLive']);
+        Route::get('/history', [TrackerLiveController::class, 'publicHistory']);
+    });
+
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::prefix('auth')->group(function (): void {
             Route::post('/logout', [AuthController::class, 'logout']);

@@ -95,8 +95,7 @@
   const PREVIEW_KEY = "hcAtMap.previewMile";
   const TRAIL_MAX_MILE = 2197;
   const TRAIL_TOTAL_MILES = 2197.4;
-  const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "").replace(/\/+$/, "");
-  const AUTH_KEY = "hcApiAuth.v1";
+  const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "https://hoggcountry.on-forge.com/api/v1").replace(/\/+$/, "");
   const HOGG_LABEL = "hoggcountry";
   const HOGG_FIX_STALE_MS = 6 * 60 * 1000;
   const HOGG_PROGRESS_REFRESH_MS = 2 * 60 * 1000;
@@ -854,18 +853,6 @@
       }
     }
 
-    function readAuthToken(): string | null {
-      try {
-        const raw = localStorage.getItem(AUTH_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed.token !== "string" || !parsed.token) return null;
-        return parsed.token;
-      } catch {
-        return null;
-      }
-    }
-
     function pickHoggBackendFix(payload: any): any | null {
       const fixes = Array.isArray(payload?.data?.fixes) ? payload.data.fixes : [];
       if (!fixes.length) return null;
@@ -877,6 +864,62 @@
       if (fuzzy) return fuzzy;
 
       return fixes[0];
+    }
+
+    function pickHoggBackendHistory(payload: any): any | null {
+      const trackers = Array.isArray(payload?.data?.trackers) ? payload.data.trackers : [];
+      if (!trackers.length) return null;
+
+      const exact = trackers.find((tracker: any) => String(tracker?.label ?? "").trim().toLowerCase() === HOGG_LABEL);
+      if (exact) return exact;
+
+      const fuzzy = trackers.find((tracker: any) => String(tracker?.label ?? "").toLowerCase().includes("hogg"));
+      if (fuzzy) return fuzzy;
+
+      return trackers[0];
+    }
+
+    function parseBackendHistoryAsGeoJson(raw: any): any | null {
+      const points = Array.isArray(raw?.points) ? raw.points : [];
+      if (!points.length) return null;
+
+      const features: any[] = [];
+
+      for (const point of points) {
+        const lat = Number(point?.lat);
+        const lon = Number(point?.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+        features.push({
+          type: "Feature",
+          properties: {
+            kind: "point",
+            name: String(raw?.label || "HoggCountry"),
+            when: typeof point?.observed_at === "string" ? point.observed_at : "",
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [lon, lat],
+          },
+        });
+      }
+
+      if (!features.length) return null;
+
+      const latest = points[points.length - 1];
+
+      return {
+        type: "FeatureCollection",
+        properties: {
+          source: "hoggcountry-api",
+          latestPoint: {
+            name: String(raw?.label || "HoggCountry"),
+            when: typeof latest?.observed_at === "string" ? latest.observed_at : "",
+            coords: [Number(latest?.lat), Number(latest?.lon)],
+          },
+        },
+        features,
+      };
     }
 
     function parseBackendFix(raw: any): HoggFix | null {
@@ -901,17 +944,15 @@
 
     async function fetchHoggFixFromBackend(): Promise<HoggFix | null> {
       if (!API_BASE) return null;
-      const token = readAuthToken();
-      if (!token) return null;
 
       try {
-        const url = new URL(`${API_BASE}/trackers/live`);
+        const url = new URL(`${API_BASE}/trackers/public/live`);
+        url.searchParams.set("label", HOGG_LABEL);
         url.searchParams.set("t", String(Date.now()));
 
         const res = await fetch(url.toString(), {
           headers: {
             Accept: "application/json",
-            Authorization: `Bearer ${token}`,
           },
           cache: "no-store",
         });
@@ -920,6 +961,31 @@
         const payload = await res.json().catch(() => null);
         const selected = pickHoggBackendFix(payload);
         return parseBackendFix(selected);
+      } catch {
+        return null;
+      }
+    }
+
+    async function fetchHoggHistoryFromBackend(): Promise<any | null> {
+      if (!API_BASE) return null;
+
+      try {
+        const url = new URL(`${API_BASE}/trackers/public/history`);
+        url.searchParams.set("label", HOGG_LABEL);
+        url.searchParams.set("limit", "1600");
+        url.searchParams.set("t", String(Date.now()));
+
+        const res = await fetch(url.toString(), {
+          headers: {
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        });
+        if (!res.ok) return null;
+
+        const payload = await res.json().catch(() => null);
+        const selected = pickHoggBackendHistory(payload);
+        return parseBackendHistoryAsGeoJson(selected);
       } catch {
         return null;
       }
@@ -1012,6 +1078,7 @@
 
       try {
         let hasLiveFix = false;
+        let hasProgress = false;
 
         const backendFix = await fetchHoggFixFromBackend();
         if (backendFix) {
@@ -1021,10 +1088,28 @@
 
         const shouldRefreshProgress = Date.now() - _hoggProgressFetchedAt > HOGG_PROGRESS_REFRESH_MS;
         if (!hasLiveFix || shouldRefreshProgress) {
+          const backendHistoryGeoJson = await fetchHoggHistoryFromBackend();
+          if (backendHistoryGeoJson) {
+            renderHoggProgress(backendHistoryGeoJson);
+            _hoggProgressFetchedAt = Date.now();
+            hasProgress = true;
+
+            if (!hasLiveFix) {
+              const historyFix = parseGarminLatestFix(backendHistoryGeoJson);
+              if (historyFix) {
+                applyHoggFix(historyFix);
+                hasLiveFix = true;
+              }
+            }
+          }
+        }
+
+        if (!hasLiveFix || !hasProgress || shouldRefreshProgress) {
           try {
             const geojson = await fetchHoggGeoJson();
             renderHoggProgress(geojson);
             _hoggProgressFetchedAt = Date.now();
+            hasProgress = true;
 
             if (!hasLiveFix) {
               const fallbackFix = parseGarminLatestFix(geojson);
@@ -1034,7 +1119,7 @@
               }
             }
           } catch (fallbackError: any) {
-            if (!hasLiveFix) {
+            if (!hasLiveFix && !hasProgress) {
               throw fallbackError;
             }
           }

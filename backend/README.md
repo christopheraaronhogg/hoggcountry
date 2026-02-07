@@ -29,6 +29,8 @@ Public:
 - `POST /api/v1/auth/reset-password`
 - `GET /api/v1/auth/verify-email/{id}/{hash}`
 - `GET /api/v1/health`
+- `GET /api/v1/trackers/public/live`
+- `GET /api/v1/trackers/public/history`
 
 Authenticated (`Authorization: Bearer <token>`):
 
