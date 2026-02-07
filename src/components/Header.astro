@@ -40,11 +40,11 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
             href={LIVE_TRACKING_URL}
             target="_blank"
             rel="noopener noreferrer"
-            class="live-link"
-            title="Track Dad on Garmin"
+            class="live-link live-link--header"
+            title="Track Me on Garmin"
           >
             <span class="live-dot"></span>
-            <span class="live-text">Track Dad</span>
+            <span class="live-text">Track Me</span>
           </a>
         )}
       </div>
@@ -84,10 +84,10 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
           target="_blank"
           rel="noopener noreferrer"
           class="live-link mobile-live"
-          title="Track Dad on Garmin"
+          title="Track Me on Garmin"
         >
           <span class="live-dot"></span>
-          <span class="live-text">Track Dad</span>
+          <span class="live-text">Track Me</span>
         </a>
       )}
 
@@ -347,7 +347,11 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     transition: all 0.15s ease;
   }
 
-  /* (mobile header live link removed; Track Dad now shows in header everywhere) */
+  .live-link--header {
+    height: 42px;
+    border-radius: 10px;
+    padding: 0 12px;
+  }
 
   .live-link:hover {
     background: rgba(220, 38, 38, 0.15);

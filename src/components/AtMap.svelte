@@ -26,6 +26,7 @@
   let showRoadCrossings = $state(false);
   let showShelters = $state(true);
   let showHoggTracker = $state(true);
+  let showHoggProgress = $state(true);
   let showMyLocation = $state(true);
   let showMailDrops = $state(false);
   let showMilestones = $state(true);
@@ -430,6 +431,7 @@
     void showRoadCrossings;
     void showShelters;
     void showHoggTracker;
+    void showHoggProgress;
     void showMyLocation;
     void showMailDrops;
     void showMilestones;
@@ -488,6 +490,7 @@
     const crossingLayer = L.layerGroup();
     const shelterLayer = L.layerGroup();
     const hoggLayer = L.layerGroup();
+    const hoggProgressLayer = L.layerGroup();
     const userLayer = L.layerGroup();
     const mailDropLayer = L.layerGroup();
     const milestoneLayer = L.layerGroup();
@@ -655,6 +658,111 @@
 
     let hoggMarker: any = null;
 
+    function sampleSequence<T>(items: T[], maxCount: number): T[] {
+      if (items.length <= maxCount) return items;
+      const step = Math.ceil(items.length / maxCount);
+      return items.filter((_, idx) => idx % step === 0 || idx === items.length - 1);
+    }
+
+    function extractHoggProgress(geojson: any): { segments: [number, number][][]; dots: [number, number][] } {
+      const features = Array.isArray(geojson?.features) ? geojson.features : [];
+      const lineSegments: [number, number][][] = [];
+      const points: { lat: number; lon: number; ts: number; idx: number }[] = [];
+      let pointIdx = 0;
+
+      for (const ft of features) {
+        const geom = ft?.geometry;
+        const type = geom?.type;
+        const coords = geom?.coordinates;
+
+        if (type === "LineString" && Array.isArray(coords)) {
+          const segment = coords
+            .map((c: any) => {
+              const lon = Number(c?.[0]);
+              const lat = Number(c?.[1]);
+              return Number.isFinite(lat) && Number.isFinite(lon) ? ([lat, lon] as [number, number]) : null;
+            })
+            .filter(Boolean) as [number, number][];
+
+          if (segment.length >= 2) lineSegments.push(sampleSequence(segment, 1200));
+          continue;
+        }
+
+        if (type === "MultiLineString" && Array.isArray(coords)) {
+          for (const part of coords) {
+            if (!Array.isArray(part)) continue;
+            const segment = part
+              .map((c: any) => {
+                const lon = Number(c?.[0]);
+                const lat = Number(c?.[1]);
+                return Number.isFinite(lat) && Number.isFinite(lon) ? ([lat, lon] as [number, number]) : null;
+              })
+              .filter(Boolean) as [number, number][];
+            if (segment.length >= 2) lineSegments.push(sampleSequence(segment, 1200));
+          }
+          continue;
+        }
+
+        if (type === "Point" && Array.isArray(coords) && coords.length >= 2) {
+          const lon = Number(coords[0]);
+          const lat = Number(coords[1]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+          const whenRaw = typeof ft?.properties?.when === "string" ? ft.properties.when : "";
+          const ts = Date.parse(whenRaw);
+          points.push({ lat, lon, ts: Number.isFinite(ts) ? ts : Number.NaN, idx: pointIdx++ });
+        }
+      }
+
+      const orderedPoints = points.sort((a, b) => {
+        const aOk = Number.isFinite(a.ts);
+        const bOk = Number.isFinite(b.ts);
+        if (aOk && bOk) return a.ts - b.ts;
+        if (aOk && !bOk) return -1;
+        if (!aOk && bOk) return 1;
+        return a.idx - b.idx;
+      });
+
+      if (lineSegments.length === 0 && orderedPoints.length >= 2) {
+        lineSegments.push(orderedPoints.map((p) => [p.lat, p.lon] as [number, number]));
+      }
+
+      const dotCandidates = orderedPoints.length
+        ? orderedPoints.map((p) => [p.lat, p.lon] as [number, number])
+        : lineSegments.flat();
+
+      return {
+        segments: lineSegments,
+        dots: sampleSequence(dotCandidates, 350),
+      };
+    }
+
+    function renderHoggProgress(geojson: any) {
+      hoggProgressLayer.clearLayers();
+      const { segments, dots } = extractHoggProgress(geojson);
+
+      for (const segment of segments) {
+        if (segment.length < 2) continue;
+        L.polyline(segment, {
+          color: "#1d4ed8",
+          weight: 3.5,
+          opacity: 0.92,
+          lineCap: "round",
+          lineJoin: "round",
+        }).addTo(hoggProgressLayer);
+      }
+
+      for (const ll of dots) {
+        L.circleMarker(ll, {
+          radius: 4,
+          color: "#0f172a",
+          weight: 1.2,
+          fillColor: "#2563eb",
+          fillOpacity: 0.95,
+          renderer: canvasRenderer,
+        }).addTo(hoggProgressLayer);
+      }
+    }
+
     async function refreshHoggTracker() {
       hoggLoading = true;
       hoggError = "";
@@ -669,6 +777,7 @@
         if (!res.ok) throw new Error(`garmin-track failed: ${res.status}`);
 
         const geojson: any = await res.json();
+        renderHoggProgress(geojson);
 
         const lp = geojson?.properties?.latestPoint;
         const coords = lp?.coords;
@@ -843,6 +952,7 @@
         toggle(waterLayer, showWaterSources && z >= 11);
         toggle(streamLayer, (showPerennialStreams || showIntermittentStreams) && z >= 12);
         toggle(hoggLayer, showHoggTracker);
+        toggle(hoggProgressLayer, showHoggProgress);
         toggle(userLayer, showMyLocation);
         toggle(mailDropLayer, showMailDrops);
         toggle(milestoneLayer, showMilestones);
@@ -1353,6 +1463,7 @@
         <label class="t"><input type="checkbox" bind:checked={gpsHighAccuracy} /> <span>High accuracy GPS</span></label>
         <label class="t"><input type="checkbox" bind:checked={gpsLock} disabled={!gpsWatching} /> <span>Follow me</span></label>
         <label class="t"><input type="checkbox" bind:checked={showHoggTracker} /> <span>Hogg Tracker</span></label>
+        <label class="t"><input type="checkbox" bind:checked={showHoggProgress} /> <span>Dad Track Dots</span></label>
         <label class="t"><input type="checkbox" bind:checked={showMyLocation} /> <span>My Location</span></label>
         <label class="t"><input type="checkbox" bind:checked={showResupplyStops} /> <span>Resupply</span></label>
         <label class="t"><input type="checkbox" bind:checked={showShelters} /> <span>Shelters</span></label>
