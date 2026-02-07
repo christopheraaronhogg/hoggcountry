@@ -23,6 +23,8 @@ Public:
 
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
+- `GET /api/v1/auth/google/redirect`
+- `GET /api/v1/auth/google/callback`
 - `POST /api/v1/auth/forgot-password`
 - `POST /api/v1/auth/reset-password`
 - `GET /api/v1/auth/verify-email/{id}/{hash}`
@@ -55,3 +57,4 @@ npm run backend:test
 - Default DB is SQLite (`backend/database/database.sqlite`).
 - Sanctum token auth is enabled for API routes.
 - Sync conflicts use deterministic checks based on `client_updated_at` and `device_id`.
+- Google OAuth uses `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.

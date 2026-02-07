@@ -28,6 +28,15 @@
 - Default DB is SQLite (`backend/database/database.sqlite`) unless you change `DB_*` vars.
 - For local frontend integration, point the web app API base to `http://127.0.0.1:8000/api/v1`.
 
+### Google OAuth (Laravel Socialite)
+- Required backend env vars:
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+  - `GOOGLE_REDIRECT_URI` (example: `http://127.0.0.1:8000/api/v1/auth/google/callback`)
+- Login endpoints:
+  - `GET /api/v1/auth/google/redirect`
+  - `GET /api/v1/auth/google/callback`
+
 ### Project scripts
 - `dev`: Astro dev server
 - `build`: Astro build

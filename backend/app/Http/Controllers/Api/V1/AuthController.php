@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Profile;
+use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends ApiController
 {
@@ -149,6 +152,107 @@ class AuthController extends ApiController
 
         return $this->ok([
             'message' => 'Email verified.',
+        ]);
+    }
+
+    public function googleRedirect()
+    {
+        return Socialite::driver('google')
+            ->stateless()
+            ->redirect();
+    }
+
+    public function googleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')
+                ->stateless()
+                ->user();
+        } catch (\Throwable $exception) {
+            return $this->fail('oauth_failed', 'Google authentication failed.', 422, [
+                'provider' => 'google',
+                'hint' => 'Check GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and redirect URI settings.',
+            ]);
+        }
+
+        $providerUserId = trim((string) $googleUser->getId());
+        $email = Str::lower(trim((string) $googleUser->getEmail()));
+
+        if ($providerUserId === '' || $email === '') {
+            return $this->fail('oauth_invalid_user', 'Google account did not return required identity fields.', 422, [
+                'provider' => 'google',
+            ]);
+        }
+
+        $user = DB::transaction(function () use ($googleUser, $providerUserId, $email): User {
+            $social = SocialAccount::query()
+                ->where('provider', 'google')
+                ->where('provider_user_id', $providerUserId)
+                ->first();
+
+            if ($social) {
+                return $social->user;
+            }
+
+            $existingUser = User::query()
+                ->where('email', $email)
+                ->first();
+
+            if (! $existingUser) {
+                $displayName = trim((string) $googleUser->getName());
+                $fallbackName = Str::headline(Str::before($email, '@'));
+
+                $existingUser = User::query()->create([
+                    'name' => $displayName !== '' ? $displayName : $fallbackName,
+                    'email' => $email,
+                    'password' => Str::random(40),
+                ]);
+
+                $existingUser->forceFill([
+                    'email_verified_at' => now(),
+                ])->save();
+            } elseif (! $existingUser->email_verified_at) {
+                $existingUser->forceFill([
+                    'email_verified_at' => now(),
+                ])->save();
+            }
+
+            $profile = $existingUser->profile()->firstOrCreate(
+                ['user_id' => $existingUser->id],
+                ['display_name' => $existingUser->name]
+            );
+
+            if (! $profile->avatar_url && $googleUser->getAvatar()) {
+                $profile->forceFill(['avatar_url' => (string) $googleUser->getAvatar()])->save();
+            }
+
+            SocialAccount::query()->updateOrCreate(
+                [
+                    'provider' => 'google',
+                    'provider_user_id' => $providerUserId,
+                ],
+                [
+                    'user_id' => $existingUser->id,
+                    'email' => $email,
+                    'avatar_url' => $googleUser->getAvatar(),
+                    'raw_user' => [
+                        'nickname' => $googleUser->getNickname(),
+                        'name' => $googleUser->getName(),
+                        'email' => $googleUser->getEmail(),
+                        'avatar' => $googleUser->getAvatar(),
+                    ],
+                ]
+            );
+
+            return $existingUser;
+        });
+
+        $token = $user->createToken('google-oauth')->plainTextToken;
+
+        return $this->ok([
+            'token' => $token,
+            'user' => $this->userPayload($user->load('profile')),
+            'provider' => 'google',
         ]);
     }
 
