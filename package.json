@@ -24,6 +24,7 @@
     "awol:build-water": "npm run awol:pdf-to-text && npm run awol:extract-water && npm run import:awol-water && npm run ref:awol-water",
     "build:hydro": "node scripts/build-at-hydro-crossings.js",
     "compare:water": "node scripts/compare-water-sources.js",
+    "auth:user": "node scripts/generate-auth-user.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

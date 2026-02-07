@@ -3,6 +3,7 @@ import { XMLParser } from 'fast-xml-parser';
 export type YtVideo = {
   id: string;
   title: string;
+  description: string;
   published: string; // ISO
   link: string;
   thumbnail: string;
@@ -10,6 +11,16 @@ export type YtVideo = {
 
 const cacheByFeedUrl = new Map<string, { items: YtVideo[]; ts: number }>();
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function pickText(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    if (typeof record['#text'] === 'string') return record['#text'].trim();
+    if (typeof record['__cdata'] === 'string') return record['__cdata'].trim();
+  }
+  return '';
+}
 
 export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
   const cached = cacheByFeedUrl.get(feedUrl);
@@ -59,8 +70,13 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
         }
         const published = e.published || '';
         const videoId = e['yt:videoId'] || (link ? new URL(link).searchParams.get('v') : '') || '';
-        let thumbnail = '';
         const mg = e['media:group'];
+        const description =
+          pickText(mg?.['media:description']) ||
+          pickText(e['media:description']) ||
+          pickText(e.content) ||
+          '';
+        let thumbnail = '';
         if (mg && mg['media:thumbnail'] && mg['media:thumbnail'].url) {
           thumbnail = mg['media:thumbnail'].url;
         } else if (e['media:thumbnail'] && e['media:thumbnail'].url) {
@@ -68,7 +84,7 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
         } else if (videoId) {
           thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
         }
-        return { id: videoId, title, published, link, thumbnail } as YtVideo;
+        return { id: videoId, title, description, published, link, thumbnail } as YtVideo;
       })
       .filter((v: YtVideo) => v.id);
 

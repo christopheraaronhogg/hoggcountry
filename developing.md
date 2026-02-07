@@ -34,6 +34,18 @@
 - Update the channel ID in `src/lib/config.ts` if needed.
 - Videos are fetched at build time with a 10‑minute cache (`src/lib/youtube.ts`).
 
+### Auth backend (bootstrap)
+- Functions:
+  - `/.netlify/functions/auth-login` (POST)
+  - `/.netlify/functions/auth-session` (GET)
+  - `/.netlify/functions/auth-logout` (POST)
+- Required env vars:
+  - `AUTH_SESSION_SECRET` (minimum 32 chars)
+  - `AUTH_USERS_JSON` (JSON array of user records with `id`, `email`, `name`, `salt`, `passwordHash`)
+- Generate a user record:
+  - `npm run auth:user -- user@example.com "your-password" "Display Name"`
+  - Copy the JSON output into `AUTH_USERS_JSON`.
+
 ### Debug tips
 - Use `npm run astro -- check` to type‑check content collections and pages.
 - If the RSS or sitemap use the wrong URLs, ensure `site` in `astro.config.mjs` is correct.

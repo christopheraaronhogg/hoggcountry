@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Log In — Hogg Country';
+const description = 'Log in to sync your profile and future backend-powered trail tools.';
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero">
+    <span class="chapter font-chapter">Account</span>
+    <h1 class="font-display">Log In</h1>
+    <p>Sign in to access your synced profile and upcoming account features.</p>
+  </section>
+
+  <div class="container auth-wrap">
+    <form id="login-form" class="auth-card">
+      <label class="field">
+        <span>Email</span>
+        <input id="login-email" name="email" type="email" autocomplete="email" required />
+      </label>
+
+      <label class="field">
+        <span>Password</span>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+      </label>
+
+      <button type="submit" id="login-submit">Log In</button>
+      <p id="login-status" class="status" aria-live="polite"></p>
+    </form>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  (() => {
+    const form = document.getElementById('login-form');
+    const status = document.getElementById('login-status');
+    const submit = document.getElementById('login-submit');
+
+    if (!(form instanceof HTMLFormElement) || !(status instanceof HTMLElement) || !(submit instanceof HTMLButtonElement)) return;
+
+    const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+    const redirectTo = redirectParam || '/tools/character/';
+
+    async function setStatus(message, type = 'info') {
+      status.textContent = message;
+      status.dataset.type = type;
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      submit.disabled = true;
+      await setStatus('Signing you in...', 'info');
+
+      const emailField = document.getElementById('login-email');
+      const passwordField = document.getElementById('login-password');
+      const email = emailField instanceof HTMLInputElement ? emailField.value.trim() : '';
+      const password = passwordField instanceof HTMLInputElement ? passwordField.value : '';
+
+      try {
+        const res = await fetch('/.netlify/functions/auth-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          await setStatus(data?.error || 'Log in failed.', 'error');
+          submit.disabled = false;
+          return;
+        }
+
+        await setStatus('Logged in. Redirecting...', 'success');
+        window.location.assign(redirectTo);
+      } catch (error) {
+        await setStatus('Network error. Please try again.', 'error');
+        submit.disabled = false;
+      }
+    });
+  })();
+</script>
+
+<style>
+  .auth-wrap {
+    max-width: 520px;
+    padding: 0 1rem 4rem;
+  }
+
+  .auth-card {
+    display: grid;
+    gap: 0.9rem;
+    background: var(--card, #fff);
+    border: 1px solid var(--border, #e6e1d4);
+    border-radius: 12px;
+    padding: 1.1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: var(--muted, #5c665a);
+  }
+
+  .field span {
+    font-family: Oswald, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input {
+    border: 1px solid var(--border, #d8d2c4);
+    border-radius: 8px;
+    padding: 0.65rem 0.7rem;
+    font-size: 0.95rem;
+    background: #fff;
+  }
+
+  input:focus {
+    outline: 2px solid rgba(166, 181, 137, 0.6);
+    border-color: var(--alpine, #a6b589);
+  }
+
+  button[type='submit'] {
+    border: 0;
+    border-radius: 9px;
+    padding: 0.72rem 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #fff;
+    background: var(--pine, #4d594a);
+  }
+
+  button[type='submit']:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .status {
+    margin: 0;
+    min-height: 1.1rem;
+    font-size: 0.86rem;
+    color: var(--muted, #5c665a);
+  }
+
+  .status[data-type='error'] {
+    color: #b91c1c;
+  }
+
+  .status[data-type='success'] {
+    color: #166534;
+  }
+</style>

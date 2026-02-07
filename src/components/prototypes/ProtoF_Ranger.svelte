@@ -20,6 +20,14 @@
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   }
 
+  function getVideoExcerpt(video, limit = 150) {
+    const raw = typeof video?.description === 'string' ? video.description : '';
+    const normalized = raw.replace(/\s+/g, ' ').trim();
+    if (!normalized) return 'Latest trail dispatch from HoggCountry.';
+    if (normalized.length <= limit) return normalized;
+    return `${normalized.slice(0, limit).trimEnd()}...`;
+  }
+
   // Get reliable thumbnail URL - YouTube has multiple CDN hosts
   function getThumbnail(video) {
     if (!video?.id) return '';
@@ -225,6 +233,7 @@
             <div class="dispatch-content">
               <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
               <h3 class="dispatch-title">{displayVideos[0].title}</h3>
+              <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], 170)}</p>
               <span class="dispatch-cta">Watch Video</span>
             </div>
           </a>
@@ -249,6 +258,7 @@
               <div class="dispatch-content">
                 <time class="dispatch-date">{formatDate(video.published)}</time>
                 <h3 class="dispatch-title">{video.title}</h3>
+                <p class="dispatch-desc">{getVideoExcerpt(video, 110)}</p>
                 <span class="dispatch-cta">Watch Video</span>
               </div>
             </a>
@@ -2070,6 +2080,9 @@
 
   .dispatch-content {
     padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
   }
 
   .dispatch-date {
@@ -2100,7 +2113,16 @@
     font-size: 0.9rem;
     color: var(--muted);
     line-height: 1.5;
-    margin: 0 0 1rem;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .dispatch-card:not(.dispatch-featured) .dispatch-desc {
+    font-size: 0.85rem;
+    -webkit-line-clamp: 2;
   }
 
   .dispatch-cta {
@@ -2110,6 +2132,7 @@
     letter-spacing: 0.05em;
     color: var(--terra);
     transition: color 0.2s ease;
+    margin-top: auto;
   }
 
   .dispatch-card:hover .dispatch-cta {

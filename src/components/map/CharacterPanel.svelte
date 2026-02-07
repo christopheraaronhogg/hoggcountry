@@ -47,7 +47,7 @@
         <div class="item">😴 {character.equipment.slots.overridesByCategory?.sleep || 'Sleep System'}</div>
     </div>
 
-    <a class="panelLink" href="/tools/character">Manage Gear & Character →</a>
+    <a class="panelLink" href="/tools/character">Manage Gear & My Profile →</a>
   </div>
 </div>
 

@@ -15,7 +15,7 @@ export const TRAIL_TOOL_GROUPS: TrailToolGroup[] = [
   {
     name: "Planning",
     tools: [
-      { id: "character", name: "Character", icon: "🧙", desc: "Build your hiker (drives every tool)", href: "/tools/character/" },
+      { id: "character", name: "My Profile", icon: "👤", desc: "Set your hiker defaults (drives every tool)", href: "/tools/character/" },
       { id: "pack", name: "Pack", icon: "🎒", desc: "Build & weigh your kit", href: "/tools/pack/" },
       { id: "resupply", name: "Resupply", icon: "🍽️", desc: "Towns, food & mail drops", href: "/tools/resupply/" },
       { id: "food", name: "Food", icon: "🍽️", desc: "Calorie & weight calculator", href: "/tools/food/" },
@@ -55,4 +55,3 @@ export const TRAIL_EMERGENCY_TOOL: TrailTool = {
   desc: "Emergency info & bailouts",
   href: "/tools/emergency/",
 };
-

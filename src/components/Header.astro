@@ -5,6 +5,7 @@ const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
 const isTools = pathname.startsWith('/tools');
 const isCharacterTool = pathname.startsWith('/tools/character');
+const isLogin = pathname.startsWith('/login');
 const isVideos = pathname.startsWith('/videos');
 const isAtMap = pathname.startsWith('/at-map');
 const isAtWeather = pathname.startsWith('/at-weather');
@@ -23,7 +24,16 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
     <div class="nav-controls">
       <div class="nav-ctas" aria-label="Quick links">
-        <a href="/guide" class={`guide-link ${isGuide ? 'is-active' : ''}`}>Guide</a>
+        <a href="/guide" class={`guide-link ${isGuide ? 'is-active' : ''}`}>
+          <span class="guide-link__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 5.5A2.5 2.5 0 015.5 3H10a3 3 0 013 3v15a2 2 0 00-2-2H5.5A2.5 2.5 0 013 16.5z" />
+              <path d="M13 6a3 3 0 013-3h4.5A2.5 2.5 0 0123 5.5v11a2.5 2.5 0 01-2.5 2.5H15a2 2 0 00-2 2z" />
+              <path d="M7 7h3M7 10h3" />
+            </svg>
+          </span>
+          <span>Guide</span>
+        </a>
 
         {showTracking && (
           <a
@@ -84,7 +94,8 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       <a href="/at-map" class={`mobile-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
       <a href="/videos" class={`mobile-link ${isVideos ? 'is-active' : ''}`}>Videos</a>
       <a href="/tools" class={`mobile-link ${isTools && !isCharacterTool ? 'is-active' : ''}`}>Trail Tools</a>
-      <a href="/tools/character" class={`mobile-link ${isCharacterTool ? 'is-active' : ''}`}>Character</a>
+      <a href="/tools/character" class={`mobile-link ${isCharacterTool ? 'is-active' : ''}`}>My Profile</a>
+      <a href="/login" class={`mobile-link ${isLogin ? 'is-active' : ''}`}>Log In</a>
       <a href="/at-weather" class={`mobile-link ${isAtWeather ? 'is-active' : ''}`}>AT Weather</a>
       <a href="/guide" class={`mobile-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
     </div>
@@ -284,11 +295,13 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
   .guide-link {
     display: inline-flex;
     align-items: center;
+    gap: 0.45rem;
+    height: 42px;
     font-size: 0.85rem;
     font-weight: 700;
     color: rgba(31, 41, 55, 0.86);
     text-decoration: none;
-    padding: 0.25rem 0.55rem;
+    padding: 0 12px;
     border-radius: 10px;
     border: 1px solid rgba(0,0,0,0.10);
     background: rgba(255,255,255,0.55);
@@ -304,6 +317,18 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
   .guide-link.is-active {
     background: rgba(166, 181, 137, 0.22);
     border-color: rgba(166, 181, 137, 0.35);
+  }
+
+  .guide-link__icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    opacity: 0.9;
+  }
+
+  .guide-link__icon svg {
+    width: 100%;
+    height: 100%;
   }
 
   /* Live tracking link */

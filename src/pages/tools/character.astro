@@ -2,13 +2,13 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ToolPage from '../../components/tools/ToolPage.svelte';
 
-const title = "Character Sheet — Trail Tools";
-const description = "Build your hiker character. Your character drives all tools.";
+const title = "My Profile — Trail Tools";
+const description = "Manage your profile defaults. Your profile drives every tool.";
 ---
 
 <BaseLayout title={title} description={description}>
   <div class="container tool-container">
-    <ToolPage client:load toolId="character" toolName="Character Sheet" />
+    <ToolPage client:load toolId="character" toolName="My Profile" />
   </div>
 </BaseLayout>
 
