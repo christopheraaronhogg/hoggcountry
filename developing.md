@@ -3,6 +3,8 @@
 ### Prerequisites
 - Node.js 20+ (LTS recommended)
 - npm (comes with Node)
+- PHP 8.2+ (8.5 tested)
+- Composer 2+
 
 ### Install and run
 - Install: `npm install`
@@ -10,11 +12,31 @@
 - Build: `npm run build` (outputs to `dist/`)
 - Preview production build: `npm run preview`
 
+### Laravel API backend (monorepo)
+- App path: `backend/` (Laravel 12 + Sanctum)
+- First-time setup:
+  - `npm run backend:install`
+- Run backend locally:
+  - `npm run backend:dev`
+  - API base: `http://127.0.0.1:8000/api/v1`
+- Backend maintenance:
+  - `npm run backend:migrate`
+  - `npm run backend:test`
+
+### Backend env defaults
+- Backend uses `backend/.env` (`.env.example` as template).
+- Default DB is SQLite (`backend/database/database.sqlite`) unless you change `DB_*` vars.
+- For local frontend integration, point the web app API base to `http://127.0.0.1:8000/api/v1`.
+
 ### Project scripts
 - `dev`: Astro dev server
 - `build`: Astro build
 - `preview`: Astro preview
 - `astro`: Run Astro CLI (e.g., `npm run astro -- check`)
+- `backend:install`: Install PHP deps and bootstrap Laravel env/migrations
+- `backend:dev`: Run Laravel dev stack (server/queue/logs/vite)
+- `backend:migrate`: Run Laravel migrations
+- `backend:test`: Run Laravel tests
 
 ### Configuration
 - `astro.config.mjs`: integrations (MDX, sitemap, Svelte), Tailwind Vite plugin, and `site` URL. Update `site` to your production domain for correct canonical URLs, RSS, and sitemaps.
