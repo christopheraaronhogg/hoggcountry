@@ -95,6 +95,18 @@
   const PREVIEW_KEY = "hcAtMap.previewMile";
   const TRAIL_MAX_MILE = 2197;
   const TRAIL_TOTAL_MILES = 2197.4;
+  const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "").replace(/\/+$/, "");
+  const AUTH_KEY = "hcApiAuth.v1";
+  const HOGG_LABEL = "hoggcountry";
+  const HOGG_FIX_STALE_MS = 6 * 60 * 1000;
+  const HOGG_PROGRESS_REFRESH_MS = 2 * 60 * 1000;
+  const HOGG_POLL_FOREGROUND_MS = 15 * 1000;
+  const HOGG_POLL_BACKGROUND_MS = 60 * 1000;
+
+  let _hoggProgressFetchedAt = 0;
+  let _onWindowFocus: (() => void) | null = null;
+  let _onWindowOnline: (() => void) | null = null;
+  let _onDocumentVisibility: (() => void) | null = null;
 
   function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
@@ -842,106 +854,205 @@
       }
     }
 
+    function readAuthToken(): string | null {
+      try {
+        const raw = localStorage.getItem(AUTH_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed.token !== "string" || !parsed.token) return null;
+        return parsed.token;
+      } catch {
+        return null;
+      }
+    }
+
+    function pickHoggBackendFix(payload: any): any | null {
+      const fixes = Array.isArray(payload?.data?.fixes) ? payload.data.fixes : [];
+      if (!fixes.length) return null;
+
+      const exact = fixes.find((fix: any) => String(fix?.label ?? "").trim().toLowerCase() === HOGG_LABEL);
+      if (exact) return exact;
+
+      const fuzzy = fixes.find((fix: any) => String(fix?.label ?? "").toLowerCase().includes("hogg"));
+      if (fuzzy) return fuzzy;
+
+      return fixes[0];
+    }
+
+    function parseBackendFix(raw: any): HoggFix | null {
+      const lat = Number(raw?.lat);
+      const lon = Number(raw?.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+      const mileRaw = Number(raw?.mile);
+      const mile = Number.isFinite(mileRaw) ? mileRaw : nearestMileForLatLng(lat, lon);
+      if (mile == null) return null;
+
+      const when = typeof raw?.observed_at === "string" ? raw.observed_at : undefined;
+      if (when) {
+        const ts = Date.parse(when);
+        if (Number.isFinite(ts) && Date.now() - ts > HOGG_FIX_STALE_MS) {
+          return null;
+        }
+      }
+
+      return { mile, lat, lon, when };
+    }
+
+    async function fetchHoggFixFromBackend(): Promise<HoggFix | null> {
+      if (!API_BASE) return null;
+      const token = readAuthToken();
+      if (!token) return null;
+
+      try {
+        const url = new URL(`${API_BASE}/trackers/live`);
+        url.searchParams.set("t", String(Date.now()));
+
+        const res = await fetch(url.toString(), {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        });
+        if (!res.ok) return null;
+
+        const payload = await res.json().catch(() => null);
+        const selected = pickHoggBackendFix(payload);
+        return parseBackendFix(selected);
+      } catch {
+        return null;
+      }
+    }
+
+    async function fetchHoggGeoJson(): Promise<any> {
+      const url = new URL("/.netlify/functions/garmin-track", window.location.origin);
+      url.searchParams.set("id", trackingId);
+      url.searchParams.set("t", String(Date.now()));
+
+      const res = await fetch(url.toString(), {
+        headers: { Accept: "application/geo+json,application/json" },
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`garmin-track failed: ${res.status}`);
+      return await res.json();
+    }
+
+    function parseGarminLatestFix(geojson: any): HoggFix | null {
+      const lp = geojson?.properties?.latestPoint;
+      const coords = lp?.coords;
+      const when = lp?.when;
+
+      if (!Array.isArray(coords) || coords.length < 2) return null;
+
+      const lat = Number(coords[0]);
+      const lon = Number(coords[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+      const mile = nearestMileForLatLng(lat, lon);
+      if (mile == null) return null;
+
+      return {
+        mile,
+        lat,
+        lon,
+        when: typeof when === "string" ? when : undefined,
+      };
+    }
+
+    function applyHoggFix(fix: HoggFix) {
+      hoggFix = fix;
+
+      const ll: [number, number] = [fix.lat, fix.lon];
+      if (!hoggMarker) {
+        hoggMarker = L.marker(ll, { icon: hoggIcon });
+        hoggMarker.addTo(hoggLayer);
+      } else {
+        hoggMarker.setLatLng(ll);
+      }
+
+      hoggMarker.bindPopup(
+        `<b>HoggCountry</b><br/>Mile ~${fix.mile.toFixed(1)}${fix.when ? `<br/>Updated: ${fix.when}` : ""}`
+      );
+
+      centerOnHoggFn = () => {
+        map.setView(ll, Math.max(map.getZoom(), 12), { animate: true, duration: 0.35 } as any);
+        if (mode === "explore") {
+          previewMile = clamp(Math.round(fix.mile), 0, TRAIL_MAX_MILE);
+        }
+      };
+
+      if (mode === "tracking" && showHoggTracker) {
+        liveMile = fix.mile;
+        hudLat = fix.lat;
+        hudLon = fix.lon;
+        fetchWeatherDebounced();
+        centerOnHoggFn?.();
+      }
+
+      if (!didAutoCenterOnHogg && showHoggTracker) {
+        const hasMileQuery = (() => {
+          try {
+            return new URL(window.location.href).searchParams.has("mile");
+          } catch {
+            return false;
+          }
+        })();
+
+        if (!hasMileQuery) {
+          didAutoCenterOnHogg = true;
+          centerOnHoggFn();
+        }
+      }
+    }
+
     async function refreshHoggTracker() {
       hoggLoading = true;
       hoggError = "";
 
       try {
-        const url = new URL("/.netlify/functions/garmin-track", window.location.origin);
-        url.searchParams.set("id", trackingId);
-        url.searchParams.set("t", String(Date.now()));
+        let hasLiveFix = false;
 
-        const res = await fetch(url.toString(), {
-          headers: { Accept: "application/geo+json,application/json" },
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`garmin-track failed: ${res.status}`);
-
-        const geojson: any = await res.json();
-        renderHoggProgress(geojson);
-
-        const lp = geojson?.properties?.latestPoint;
-        const coords = lp?.coords;
-        const when = lp?.when;
-
-        if (!Array.isArray(coords) || coords.length < 2) {
-          hoggFix = null;
-          return;
+        const backendFix = await fetchHoggFixFromBackend();
+        if (backendFix) {
+          applyHoggFix(backendFix);
+          hasLiveFix = true;
         }
 
-        const lat = Number(coords[0]);
-        const lon = Number(coords[1]);
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-          hoggFix = null;
-          return;
-        }
+        const shouldRefreshProgress = Date.now() - _hoggProgressFetchedAt > HOGG_PROGRESS_REFRESH_MS;
+        if (!hasLiveFix || shouldRefreshProgress) {
+          try {
+            const geojson = await fetchHoggGeoJson();
+            renderHoggProgress(geojson);
+            _hoggProgressFetchedAt = Date.now();
 
-        const mile = nearestMileForLatLng(lat, lon);
-        if (mile == null) {
-          hoggFix = null;
-          return;
-        }
-
-        hoggFix = {
-          mile,
-          lat,
-          lon,
-          when: typeof when === "string" ? when : undefined,
-        };
-
-        const ll: [number, number] = [lat, lon];
-        if (!hoggMarker) {
-          hoggMarker = L.marker(ll, { icon: hoggIcon });
-          hoggMarker.addTo(hoggLayer);
-        } else {
-          hoggMarker.setLatLng(ll);
-        }
-
-        hoggMarker.bindPopup(
-          `<b>HoggCountry</b><br/>Mile ~${mile.toFixed(1)}${when ? `<br/>Updated: ${when}` : ""}`
-        );
-
-        centerOnHoggFn = () => {
-          map.setView(ll, Math.max(map.getZoom(), 12), { animate: true, duration: 0.35 } as any);
-          // If we’re exploring, keep the scrubber aligned with the hiker.
-          if (mode === "explore") {
-            previewMile = clamp(Math.round(mile), 0, TRAIL_MAX_MILE);
-          }
-        };
-
-        // In TRACK mode, keep HUD mile + weather synced to the hiker.
-        if (mode === "tracking" && showHoggTracker) {
-          liveMile = mile;
-          hudLat = lat;
-          hudLon = lon;
-          fetchWeatherDebounced();
-          // Follow the hiker unless the user switched to EXPLORE.
-          centerOnHoggFn?.();
-        }
-
-        // Auto-center on first load (unless user explicitly set a mile in the URL)
-        if (!didAutoCenterOnHogg && showHoggTracker) {
-          const hasMileQuery = (() => {
-            try {
-              return new URL(window.location.href).searchParams.has("mile");
-            } catch {
-              return false;
+            if (!hasLiveFix) {
+              const fallbackFix = parseGarminLatestFix(geojson);
+              if (fallbackFix) {
+                applyHoggFix(fallbackFix);
+                hasLiveFix = true;
+              }
             }
-          })();
-
-          if (!hasMileQuery) {
-            didAutoCenterOnHogg = true;
-            centerOnHoggFn();
+          } catch (fallbackError: any) {
+            if (!hasLiveFix) {
+              throw fallbackError;
+            }
           }
+        }
+
+        if (!hasLiveFix) {
+          hoggFix = null;
+          throw new Error("No live HoggCountry signal available.");
         }
       } catch (e: any) {
         hoggError = e?.message || String(e);
-        hoggFix = null;
+        if (!hoggFix) {
+          hoggFix = null;
+        }
       } finally {
         hoggLoading = false;
       }
     }
-
     async function refreshCommunityTrackers() {
       communityLoading = true;
 
@@ -1024,9 +1135,45 @@
       await refreshCommunityTrackers();
     }
 
-    // Initial fetch + periodic refresh (live endpoint, 30s cadence)
-    refreshHoggTracker();
-    _hoggPoll = window.setInterval(refreshHoggTracker, 30 * 1000);
+    function currentHoggPollMs(): number {
+      if (typeof document !== "undefined" && document.hidden) return HOGG_POLL_BACKGROUND_MS;
+      return HOGG_POLL_FOREGROUND_MS;
+    }
+
+    function startHoggPolling() {
+      if (_hoggPoll != null) {
+        try {
+          window.clearInterval(_hoggPoll);
+        } catch {}
+      }
+
+      _hoggPoll = window.setInterval(() => {
+        void refreshHoggTracker();
+      }, currentHoggPollMs());
+    }
+
+    // Initial fetch + periodic refresh (foreground 15s, background 60s).
+    void refreshHoggTracker();
+    startHoggPolling();
+
+    _onDocumentVisibility = () => {
+      startHoggPolling();
+      if (typeof document !== "undefined" && !document.hidden) {
+        void refreshHoggTracker();
+      }
+    };
+    document.addEventListener("visibilitychange", _onDocumentVisibility);
+
+    _onWindowFocus = () => {
+      void refreshHoggTracker();
+    };
+    window.addEventListener("focus", _onWindowFocus);
+
+    _onWindowOnline = () => {
+      void refreshHoggTracker();
+    };
+    window.addEventListener("online", _onWindowOnline);
+
     refreshCommunityData();
     _communityPoll = window.setInterval(() => {
       void refreshCommunityData();
@@ -1249,6 +1396,21 @@
   onDestroy(() => {
     stopGpsWatchFn?.();
 
+    if (_onDocumentVisibility) {
+      document.removeEventListener("visibilitychange", _onDocumentVisibility);
+      _onDocumentVisibility = null;
+    }
+
+    if (_onWindowFocus) {
+      window.removeEventListener("focus", _onWindowFocus);
+      _onWindowFocus = null;
+    }
+
+    if (_onWindowOnline) {
+      window.removeEventListener("online", _onWindowOnline);
+      _onWindowOnline = null;
+    }
+
     if (_hoggPoll != null) {
       try {
         window.clearInterval(_hoggPoll);
@@ -1330,7 +1492,7 @@
             >
               <span class="statusDot pulse" aria-hidden="true"></span>
               <span class="statusText">
-                <strong>Jimmy</strong> @ mile {hoggFix.mile.toFixed(1)}
+                <strong>HoggCountry</strong> @ mile {hoggFix.mile.toFixed(1)}
                 {#if hoggFix.when}
                   <span class="statusTime">({timeAgo(hoggFix.when)})</span>
                 {/if}
@@ -1355,7 +1517,7 @@
           </div>
         {/if}
         <div class="miniTabs" role="tablist" aria-label="Map mode">
-          <button class="tab" class:active={mode === "tracking"} onclick={() => switchToTrackingMode()} type="button" title="Follow Jimmy">LIVE</button>
+          <button class="tab" class:active={mode === "tracking"} onclick={() => switchToTrackingMode()} type="button" title="Follow HoggCountry">LIVE</button>
           <button class="tab" class:active={mode === "explore"} onclick={() => switchToExploreMode()} type="button" title="Pan and explore">EXPLORE</button>
         </div>
       </div>
@@ -1425,7 +1587,7 @@
 
   {#if mode === "explore" && hoggFix}
     <button class="recenterBtn" onclick={() => switchToTrackingMode()} type="button">
-      📍 Follow Jimmy
+      📍 Follow HoggCountry
     </button>
   {/if}
 
