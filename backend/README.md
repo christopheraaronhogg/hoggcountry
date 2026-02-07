@@ -69,8 +69,11 @@ Manual verification:
 ```bash
 php artisan schedule:list
 php artisan trackers:refresh
-tail -f storage/logs/trackers-refresh.log
+tail -f storage/logs/scheduler.log
+tail -f storage/logs/laravel.log
 ```
+
+`No trackers found for refresh.` means no `community_trackers` records exist yet for your user.
 
 ## Notes
 
