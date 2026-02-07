@@ -770,9 +770,11 @@
       try {
         const url = new URL("/.netlify/functions/garmin-track", window.location.origin);
         url.searchParams.set("id", trackingId);
+        url.searchParams.set("t", String(Date.now()));
 
         const res = await fetch(url.toString(), {
           headers: { Accept: "application/geo+json,application/json" },
+          cache: "no-store",
         });
         if (!res.ok) throw new Error(`garmin-track failed: ${res.status}`);
 
@@ -861,9 +863,9 @@
       }
     }
 
-    // Initial fetch + periodic refresh (edge-cached for 5 minutes)
+    // Initial fetch + periodic refresh (live endpoint, 30s cadence)
     refreshHoggTracker();
-    _hoggPoll = window.setInterval(refreshHoggTracker, 60 * 1000);
+    _hoggPoll = window.setInterval(refreshHoggTracker, 30 * 1000);
 
     // Marker Logic
     const mileIcon = L.divIcon({

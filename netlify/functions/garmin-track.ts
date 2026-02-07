@@ -218,9 +218,9 @@ const handler: Handler = async (event: HandlerEvent) => {
     return {
       statusCode: 200,
       headers: geoJsonHeaders({
-        // Cache at the edge to feel live without hammering Garmin.
-        'Cache-Control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
-        'Netlify-CDN-Cache-Control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
+        // Live tracking endpoint: always serve fresh data.
+        'Cache-Control': 'no-store',
+        'Netlify-CDN-Cache-Control': 'no-store',
       }),
       body: JSON.stringify(geojson),
     };

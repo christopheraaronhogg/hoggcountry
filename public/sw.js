@@ -3,7 +3,7 @@
  * Full site offline support - caches all pages and assets
  */
 
-const CACHE_NAME = 'hogg-country-v15';
+const CACHE_NAME = 'hogg-country-v16';
 
 // Core pages to precache on install
 const CORE_PAGES = [
@@ -180,6 +180,12 @@ self.addEventListener('fetch', (event) => {
 
   // Skip admin routes
   if (url.pathname.startsWith('/admin')) {
+    return;
+  }
+
+  // Netlify Functions should always be live (no SW cache)
+  if (url.pathname.startsWith('/.netlify/functions/')) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
     return;
   }
 
