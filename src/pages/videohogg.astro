@@ -158,6 +158,7 @@ const allowedEmailsCsv = (
 
     let clips = [];
     let auth = null;
+    let draggingClipId = null;
 
     function parseJson(raw) {
       if (!raw) return null;
@@ -307,6 +308,7 @@ const allowedEmailsCsv = (
         const card = document.createElement('article');
         card.className = 'clip-card';
         card.dataset.clipId = clip.id;
+        card.draggable = true;
 
         const preview = document.createElement('div');
         preview.className = 'clip-preview';
@@ -334,13 +336,21 @@ const allowedEmailsCsv = (
         title.className = 'clip-title';
         title.textContent = clip.file.name;
 
+        const controls = document.createElement('div');
+        controls.className = 'clip-controls';
+
+        const dragHint = document.createElement('span');
+        dragHint.className = 'drag-hint';
+        dragHint.textContent = 'Drag';
+
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'remove';
         remove.textContent = 'Remove';
         remove.dataset.removeClipId = clip.id;
 
-        heading.append(title, remove);
+        controls.append(dragHint, remove);
+        heading.append(title, controls);
 
         const meta = document.createElement('p');
         meta.className = 'clip-meta';
@@ -410,6 +420,35 @@ const allowedEmailsCsv = (
       const [removed] = clips.splice(index, 1);
       releaseClipUrl(removed);
       renderClips();
+    }
+
+    function reorderClips(sourceId, targetId, insertBefore) {
+      if (!sourceId || !targetId || sourceId === targetId) return;
+
+      const sourceIndex = clips.findIndex((entry) => entry.id === sourceId);
+      const targetIndex = clips.findIndex((entry) => entry.id === targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return;
+
+      const [moved] = clips.splice(sourceIndex, 1);
+
+      let destination = targetIndex;
+      if (sourceIndex < targetIndex) {
+        destination -= 1;
+      }
+      if (!insertBefore) {
+        destination += 1;
+      }
+
+      destination = Math.max(0, Math.min(clips.length, destination));
+      clips.splice(destination, 0, moved);
+      renderClips();
+    }
+
+    function clearDropIndicators() {
+      clipBoard.querySelectorAll('.clip-card').forEach((node) => {
+        if (!(node instanceof HTMLElement)) return;
+        node.classList.remove('drop-before', 'drop-after', 'is-dragging');
+      });
     }
 
     function setUploadingState(isUploading) {
@@ -571,6 +610,88 @@ const allowedEmailsCsv = (
       const clip = clips.find((entry) => entry.id === clipId);
       if (!clip) return;
       clip.note = target.value;
+    });
+
+    clipBoard.addEventListener('dragstart', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const card = target.closest('.clip-card[data-clip-id]');
+      if (!(card instanceof HTMLElement)) return;
+
+      const clipId = card.dataset.clipId;
+      if (!clipId) return;
+
+      draggingClipId = clipId;
+      card.classList.add('is-dragging');
+
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', clipId);
+      }
+    });
+
+    clipBoard.addEventListener('dragover', (event) => {
+      if (!draggingClipId) return;
+
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const card = target.closest('.clip-card[data-clip-id]');
+      if (!(card instanceof HTMLElement)) return;
+
+      const targetId = card.dataset.clipId;
+      if (!targetId || targetId === draggingClipId) return;
+
+      event.preventDefault();
+      clearDropIndicators();
+
+      const rect = card.getBoundingClientRect();
+      const insertBefore = event.clientY < rect.top + rect.height / 2;
+      card.classList.add(insertBefore ? 'drop-before' : 'drop-after');
+
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+    });
+
+    clipBoard.addEventListener('drop', (event) => {
+      if (!draggingClipId) return;
+
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        draggingClipId = null;
+        clearDropIndicators();
+        return;
+      }
+
+      const card = target.closest('.clip-card[data-clip-id]');
+      if (!(card instanceof HTMLElement)) {
+        draggingClipId = null;
+        clearDropIndicators();
+        return;
+      }
+
+      const targetId = card.dataset.clipId;
+      if (!targetId) {
+        draggingClipId = null;
+        clearDropIndicators();
+        return;
+      }
+
+      event.preventDefault();
+
+      const rect = card.getBoundingClientRect();
+      const insertBefore = event.clientY < rect.top + rect.height / 2;
+      reorderClips(draggingClipId, targetId, insertBefore);
+
+      draggingClipId = null;
+      clearDropIndicators();
+    });
+
+    clipBoard.addEventListener('dragend', () => {
+      draggingClipId = null;
+      clearDropIndicators();
     });
 
     clipBoard.addEventListener('click', (event) => {
@@ -757,6 +878,24 @@ const allowedEmailsCsv = (
     overflow: hidden;
     display: grid;
     grid-template-rows: auto 1fr;
+    cursor: grab;
+    transition: box-shadow 120ms ease, border-color 120ms ease, opacity 120ms ease;
+  }
+
+  .clip-card:active {
+    cursor: grabbing;
+  }
+
+  .clip-card.is-dragging {
+    opacity: 0.45;
+  }
+
+  .clip-card.drop-before {
+    border-top: 3px solid rgba(77, 89, 74, 0.9);
+  }
+
+  .clip-card.drop-after {
+    border-bottom: 3px solid rgba(77, 89, 74, 0.9);
   }
 
   .clip-preview {
@@ -804,6 +943,25 @@ const allowedEmailsCsv = (
     color: #1f2937;
     line-height: 1.35;
     word-break: break-word;
+  }
+
+  .clip-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    flex-shrink: 0;
+  }
+
+  .drag-hint {
+    border: 1px solid rgba(77, 89, 74, 0.24);
+    background: rgba(77, 89, 74, 0.08);
+    color: var(--pine, #4d594a);
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.18rem 0.46rem;
+    line-height: 1.2;
+    user-select: none;
   }
 
   .remove {
