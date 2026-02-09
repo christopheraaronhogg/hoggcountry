@@ -88,12 +88,12 @@ const allowedEmailsCsv = (
         <section class="panel panel-remotion">
           <div class="panel-head panel-head--stack">
             <div class="panel-head-title">
-              <h3 class="font-display">4) Remotion Player <span class="beta-badge">Beta</span></h3>
-              <span class="hint">Full embedded player preview before upload</span>
+              <h3 class="font-display">4) Remotion Editor <span class="beta-badge">Beta</span></h3>
+              <span class="hint">Timeline edit like Remotion · then upload</span>
             </div>
           </div>
           <p class="summary">
-            Preview the full sequence with native player controls before creating your run.
+            Pick a clip, trim with sliders or timeline handles, reorder in the lane, and preview instantly.
           </p>
           <div id="remotion-editor-root" class="remotion-editor-root"></div>
         </section>
@@ -1415,8 +1415,8 @@ const allowedEmailsCsv = (
 
   .vh-remotion-grid {
     display: grid;
-    grid-template-columns: minmax(320px, 1.1fr) minmax(280px, 1fr);
-    gap: 0.85rem;
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
   }
 
   .vh-remotion-player-wrap {
@@ -1447,12 +1447,366 @@ const allowedEmailsCsv = (
     color: #64748b;
   }
 
-  .vh-remotion-controls {
+  .vh-remotion-timeline-shell {
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.88));
+    padding: 0.6rem;
     display: grid;
-    gap: 0.58rem;
-    max-height: 500px;
-    overflow-y: auto;
-    padding-right: 0.12rem;
+    gap: 0.45rem;
+  }
+
+  .vh-remotion-ruler {
+    position: relative;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(255, 255, 255, 0.84);
+    padding: 0.3rem 0.45rem 0.45rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .vh-remotion-ruler-ticks {
+    position: relative;
+    height: 20px;
+    min-width: 100%;
+  }
+
+  .vh-remotion-ruler-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: grid;
+    justify-items: center;
+    gap: 0.08rem;
+    color: #64748b;
+    font-size: 0.66rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vh-remotion-ruler-tick::before {
+    content: '';
+    width: 1px;
+    height: 7px;
+    background: rgba(100, 116, 139, 0.38);
+    border-radius: 999px;
+  }
+
+  .vh-remotion-scrub {
+    width: 100%;
+    margin-top: 0.1rem;
+    accent-color: #4d594a;
+    cursor: ew-resize;
+    min-height: 28px;
+  }
+
+  .vh-remotion-track-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.16);
+    background: linear-gradient(180deg, #172033, #111827);
+    scrollbar-width: thin;
+  }
+
+  .vh-remotion-track {
+    position: relative;
+    min-height: 92px;
+  }
+
+  .vh-remotion-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(240, 224, 0, 0.95);
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.35);
+    z-index: 4;
+    pointer-events: auto;
+    cursor: ew-resize;
+  }
+
+  .vh-remotion-playhead-cap {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -30%);
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.36);
+    background: #facc15;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.25);
+  }
+
+  .vh-remotion-playhead.is-scrubbing {
+    background: rgba(253, 224, 71, 1);
+  }
+
+  .vh-remotion-segment {
+    position: absolute;
+    top: 24px;
+    height: 48px;
+    display: grid;
+    grid-template-columns: 14px 1fr 14px;
+    align-items: stretch;
+    border-radius: 9px;
+    border: 1px solid rgba(134, 239, 172, 0.42);
+    background: linear-gradient(120deg, rgba(22, 101, 52, 0.78), rgba(21, 128, 61, 0.58));
+    color: #f8fafc;
+    box-shadow: 0 8px 18px rgba(2, 44, 34, 0.26);
+    overflow: hidden;
+    user-select: none;
+    cursor: grab;
+  }
+
+  .vh-remotion-segment:active {
+    cursor: grabbing;
+  }
+
+  .vh-remotion-segment.is-dragging {
+    opacity: 0.55;
+  }
+
+  .vh-remotion-segment.is-selected {
+    border-color: rgba(250, 204, 21, 0.78);
+    box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.26), 0 10px 20px rgba(2, 44, 34, 0.28);
+  }
+
+  .vh-remotion-segment.is-drop-before::before,
+  .vh-remotion-segment.is-drop-after::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    width: 3px;
+    border-radius: 999px;
+    background: #facc15;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.45);
+  }
+
+  .vh-remotion-segment.is-drop-before::before {
+    left: -2px;
+  }
+
+  .vh-remotion-segment.is-drop-after::after {
+    right: -2px;
+  }
+
+  .vh-remotion-segment-body {
+    min-width: 0;
+    display: grid;
+    align-content: center;
+    gap: 0.05rem;
+    padding: 0 0.32rem;
+  }
+
+  .vh-remotion-segment-title {
+    margin: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vh-remotion-segment-meta {
+    margin: 0;
+    font-size: 0.62rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(226, 232, 240, 0.95);
+    line-height: 1.1;
+  }
+
+  .vh-remotion-trim-handle {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 0.72rem;
+    line-height: 1;
+    color: rgba(226, 232, 240, 0.95);
+    background: rgba(15, 23, 42, 0.26);
+    cursor: ew-resize;
+  }
+
+  .vh-remotion-trim-handle:hover {
+    background: rgba(15, 23, 42, 0.42);
+  }
+
+  .vh-remotion-trim-handle--start {
+    border-right: 1px solid rgba(226, 232, 240, 0.18);
+  }
+
+  .vh-remotion-trim-handle--end {
+    border-left: 1px solid rgba(226, 232, 240, 0.18);
+  }
+
+  .vh-remotion-excluded-rack {
+    border: 1px dashed rgba(100, 116, 139, 0.4);
+    border-radius: 9px;
+    background: rgba(248, 250, 252, 0.82);
+    padding: 0.45rem 0.55rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .vh-remotion-excluded-label {
+    margin: 0;
+    font-size: 0.68rem;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .vh-remotion-excluded-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .vh-remotion-excluded-chip {
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    border-radius: 999px;
+    background: #fff;
+    color: #334155;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 0.28rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .vh-remotion-excluded-chip:hover {
+    border-color: rgba(22, 101, 52, 0.45);
+    color: #166534;
+    background: rgba(22, 101, 52, 0.08);
+  }
+
+  .vh-remotion-mobile-clip-nav {
+    display: flex;
+    flex-wrap: wrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    gap: 0.4rem;
+    padding-bottom: 0.12rem;
+  }
+
+  .vh-remotion-mobile-clip-pill {
+    border: 1px solid rgba(148, 163, 184, 0.42);
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 10px;
+    padding: 0.4rem 0.56rem;
+    min-width: 154px;
+    max-width: 220px;
+    color: #1f2937;
+    display: grid;
+    justify-items: flex-start;
+    gap: 0.14rem;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .vh-remotion-mobile-clip-pill.is-selected {
+    border-color: rgba(22, 101, 52, 0.45);
+    background: rgba(236, 253, 245, 0.84);
+    box-shadow: 0 0 0 1px rgba(22, 101, 52, 0.18);
+  }
+
+  .vh-remotion-mobile-clip-pill.is-excluded {
+    opacity: 0.8;
+    background: rgba(241, 245, 249, 0.94);
+  }
+
+  .vh-remotion-mobile-clip-pill-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    border: 1px solid rgba(77, 89, 74, 0.28);
+    background: rgba(77, 89, 74, 0.08);
+    font-size: 0.64rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .vh-remotion-mobile-clip-pill-name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+
+  .vh-remotion-mobile-clip-pill-flag {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .vh-remotion-mobile-inspector {
+    display: grid;
+    border: 1px solid rgba(77, 89, 74, 0.22);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.65rem;
+    gap: 0.55rem;
+  }
+
+  .vh-remotion-mobile-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .vh-remotion-mobile-kicker {
+    margin: 0;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    font-weight: 800;
+  }
+
+  .vh-remotion-mobile-title {
+    margin: 0.1rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: #1f2937;
+    font-weight: 800;
+    word-break: break-word;
+  }
+
+  .vh-remotion-mobile-sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.7rem;
+    color: var(--muted-accessible, #4a5448);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vh-remotion-mobile-reorder {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .vh-remotion-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .vh-remotion-controls {
+    display: none;
   }
 
   .vh-remotion-clip {
@@ -1474,6 +1828,10 @@ const allowedEmailsCsv = (
     border-color: rgba(148, 163, 184, 0.34);
     background: rgba(248, 250, 252, 0.9);
     opacity: 0.78;
+  }
+
+  .vh-remotion-clip--active {
+    box-shadow: 0 0 0 2px rgba(77, 89, 74, 0.16);
   }
 
   .vh-remotion-clip-head {
@@ -1747,9 +2105,53 @@ const allowedEmailsCsv = (
       gap: 1rem;
     }
 
+    .vh-remotion-mobile-clip-nav {
+      display: flex;
+      padding-bottom: 0.2rem;
+    }
+
+    .vh-remotion-mobile-inspector {
+      display: grid;
+    }
+
     .vh-remotion-controls {
-      max-height: none;
-      gap: 0.75rem;
+      display: none;
+    }
+
+    .vh-remotion-timeline-shell {
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .vh-remotion-ruler {
+      padding: 0.25rem 0.35rem 0.38rem;
+    }
+
+    .vh-remotion-track {
+      min-height: 96px;
+    }
+
+    .vh-remotion-segment {
+      top: 26px;
+      height: 50px;
+      grid-template-columns: 18px 1fr 18px;
+    }
+
+    .vh-remotion-segment-title {
+      font-size: 0.72rem;
+    }
+
+    .vh-remotion-segment-meta {
+      font-size: 0.64rem;
+    }
+
+    .vh-remotion-trim-handle {
+      font-size: 0.84rem;
+    }
+
+    .vh-remotion-playhead-cap {
+      width: 14px;
+      height: 14px;
     }
 
     .vh-remotion-clip {
@@ -1797,6 +2199,13 @@ const allowedEmailsCsv = (
       padding: 0.55rem 0.75rem;
       font-size: 0.85rem;
       min-height: 44px;
+    }
+
+    .vh-remotion-mobile-actions .vh-remotion-include-btn,
+    .vh-remotion-mobile-actions .vh-remotion-reset-btn {
+      width: auto;
+      flex: 1 1 0;
+      min-width: 0;
     }
   }
 </style>

@@ -1,7 +1,7 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {AbsoluteFill, Html5Video, Sequence} from 'remotion';
-import {Player} from '@remotion/player';
+import {Player, type PlayerRef} from '@remotion/player';
 
 type IncomingClip = {
   id: string;
@@ -23,8 +23,24 @@ type ClipsChangedDetail = {
   clips?: IncomingClip[];
 };
 
+type TimelineSegment = {
+  clip: EditorClip;
+  startFrame: number;
+  durationFrames: number;
+};
+
+type TrimDragState = {
+  clipId: string;
+  side: 'start' | 'end';
+  startClientX: number;
+  initialStart: number;
+  initialEnd: number;
+  sourceDuration: number;
+};
+
 const FPS = 30;
 const MIN_SEGMENT_SECONDS = 0.25;
+const TIMELINE_PX_PER_SECOND = 56;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -116,8 +132,57 @@ const VideoHoggPreview: React.FC<PreviewProps> = ({clips}) => {
   );
 };
 
+const moveBy = <T,>(items: T[], index: number, delta: number): T[] => {
+  const next = [...items];
+  const destination = clamp(index + delta, 0, next.length - 1);
+  if (destination === index) return next;
+
+  const [item] = next.splice(index, 1);
+  next.splice(destination, 0, item);
+  return next;
+};
+
+const reorderById = (
+  list: EditorClip[],
+  sourceId: string,
+  targetId: string,
+  insertBefore: boolean,
+): EditorClip[] => {
+  if (!sourceId || !targetId || sourceId === targetId) return list;
+
+  const sourceIndex = list.findIndex((clip) => clip.id === sourceId);
+  const targetIndex = list.findIndex((clip) => clip.id === targetId);
+
+  if (sourceIndex < 0 || targetIndex < 0) return list;
+
+  const next = [...list];
+  const [moved] = next.splice(sourceIndex, 1);
+
+  let destination = targetIndex;
+  if (sourceIndex < targetIndex) {
+    destination -= 1;
+  }
+  if (!insertBefore) {
+    destination += 1;
+  }
+
+  destination = clamp(destination, 0, next.length);
+  next.splice(destination, 0, moved);
+
+  return next;
+};
+
 const RemotionEditorShell: React.FC = () => {
   const [clips, setClips] = useState<EditorClip[]>([]);
+  const [playerHandle, setPlayerHandle] = useState<PlayerRef | null>(null);
+  const [playerFrame, setPlayerFrame] = useState(0);
+  const [draggingSegmentId, setDraggingSegmentId] = useState<string | null>(null);
+  const [dropHint, setDropHint] = useState<{targetId: string; before: boolean} | null>(null);
+  const [trimDrag, setTrimDrag] = useState<TrimDragState | null>(null);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+
+  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleChanged = (event: Event) => {
@@ -127,7 +192,7 @@ const RemotionEditorShell: React.FC = () => {
       setClips((previous) => {
         const previousMap = new Map(previous.map((clip, index) => [clip.id, {clip, index}]));
 
-        return incoming
+        const merged = incoming
           .map((clip, incomingIndex) => {
             const existing = previousMap.get(clip.id)?.clip;
             const sourceDurationSeconds = sanitizeDuration(clip.durationSeconds);
@@ -165,6 +230,8 @@ const RemotionEditorShell: React.FC = () => {
             if (typeof prevB === 'number') return 1;
             return (a.order ?? 0) - (b.order ?? 0);
           });
+
+        return merged;
       });
     };
 
@@ -218,47 +285,569 @@ const RemotionEditorShell: React.FC = () => {
     return Math.max(FPS * 2, sum);
   }, [previewClips]);
 
-  const includedCount = clips.filter((clip) => clip.include).length;
-  const excludedCount = clips.length - includedCount;
+  const includedClips = useMemo(() => clips.filter((clip) => clip.include), [clips]);
+  const excludedClips = useMemo(() => clips.filter((clip) => !clip.include), [clips]);
+
+  useEffect(() => {
+    if (clips.length === 0) {
+      setSelectedClipId(null);
+      return;
+    }
+
+    setSelectedClipId((previous) => {
+      if (previous && clips.some((clip) => clip.id === previous)) {
+        return previous;
+      }
+
+      return clips.find((clip) => clip.include)?.id ?? clips[0]?.id ?? null;
+    });
+  }, [clips]);
+
+  const timelineSegments = useMemo<TimelineSegment[]>(() => {
+    const previewById = new Map(previewClips.map((clip) => [clip.id, clip]));
+    let cursorFrames = 0;
+
+    return includedClips.map((clip) => {
+      const preview = previewById.get(clip.id);
+      const durationFrames = preview?.durationInFrames ?? Math.max(1, toFrames(clip.trimEnd - clip.trimStart));
+      const segment = {
+        clip,
+        startFrame: cursorFrames,
+        durationFrames,
+      } satisfies TimelineSegment;
+
+      cursorFrames += durationFrames;
+      return segment;
+    });
+  }, [includedClips, previewClips]);
+
+  const timelineFrames = useMemo(() => {
+    const sum = timelineSegments.reduce((acc, segment) => acc + segment.durationFrames, 0);
+    return Math.max(1, sum);
+  }, [timelineSegments]);
+
+  const timelineWidthPx = useMemo(() => {
+    const seconds = timelineFrames / FPS;
+    return Math.max(680, Math.round(seconds * TIMELINE_PX_PER_SECOND));
+  }, [timelineFrames]);
+
+  const maxFrame = Math.max(0, totalFrames - 1);
+
+  const includedCount = includedClips.length;
+  const excludedCount = excludedClips.length;
   const trimmedCount = clips.filter((clip) => clip.trimStart > 0 || clip.trimEnd < clip.sourceDurationSeconds).length;
+  const selectedClip = clips.find((clip) => clip.id === selectedClipId) ?? null;
+  const selectedClipIndex = selectedClip ? clips.findIndex((clip) => clip.id === selectedClip.id) : -1;
+  const selectedClipIsTrimmed = selectedClip
+    ? selectedClip.trimStart > 0 || selectedClip.trimEnd < selectedClip.sourceDurationSeconds
+    : false;
+
+  const updateClip = useCallback((clipId: string, updater: (current: EditorClip) => EditorClip) => {
+    setClips((previous) => previous.map((clip) => (clip.id === clipId ? updater(clip) : clip)));
+  }, []);
+
+  const seekToFrame = useCallback(
+    (frame: number) => {
+      const bounded = clamp(Math.round(frame), 0, maxFrame);
+      setPlayerFrame(bounded);
+      playerHandle?.seekTo(bounded);
+    },
+    [maxFrame, playerHandle],
+  );
+
+  useEffect(() => {
+    if (!playerHandle) return;
+
+    const onFrameUpdate = (event: {detail: {frame: number}}) => {
+      setPlayerFrame(event.detail.frame);
+    };
+
+    playerHandle.addEventListener('frameupdate', onFrameUpdate);
+    setPlayerFrame(playerHandle.getCurrentFrame());
+
+    return () => {
+      playerHandle.removeEventListener('frameupdate', onFrameUpdate);
+    };
+  }, [playerHandle]);
+
+  useEffect(() => {
+    if (playerFrame > maxFrame) {
+      seekToFrame(maxFrame);
+    }
+  }, [maxFrame, playerFrame, seekToFrame]);
+
+  const seekFromPointer = useCallback(
+    (clientX: number) => {
+      const scroller = timelineScrollRef.current;
+      if (!scroller) return;
+
+      const rect = scroller.getBoundingClientRect();
+      const x = clamp(clientX - rect.left + scroller.scrollLeft, 0, timelineWidthPx);
+      const ratio = timelineWidthPx > 0 ? x / timelineWidthPx : 0;
+      seekToFrame(ratio * maxFrame);
+    },
+    [maxFrame, seekToFrame, timelineWidthPx],
+  );
+
+  useEffect(() => {
+    if (!isScrubbing) return;
+
+    const onMove = (event: PointerEvent) => {
+      seekFromPointer(event.clientX);
+    };
+
+    const onUp = () => {
+      setIsScrubbing(false);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, {once: true});
+
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, [isScrubbing, seekFromPointer]);
+
+  useEffect(() => {
+    if (!trimDrag) return;
+
+    const onMove = (event: PointerEvent) => {
+      const deltaSec = (event.clientX - trimDrag.startClientX) / TIMELINE_PX_PER_SECOND;
+
+      setClips((previous) =>
+        previous.map((clip) => {
+          if (clip.id !== trimDrag.clipId) return clip;
+
+          if (trimDrag.side === 'start') {
+            const nextStart = clamp(
+              trimDrag.initialStart + deltaSec,
+              0,
+              Math.max(0, trimDrag.initialEnd - MIN_SEGMENT_SECONDS),
+            );
+
+            return {
+              ...clip,
+              trimStart: nextStart,
+              trimEnd: Math.max(nextStart + MIN_SEGMENT_SECONDS, clip.trimEnd),
+            };
+          }
+
+          const nextEnd = clamp(
+            trimDrag.initialEnd + deltaSec,
+            trimDrag.initialStart + MIN_SEGMENT_SECONDS,
+            trimDrag.sourceDuration,
+          );
+
+          return {
+            ...clip,
+            trimEnd: nextEnd,
+            trimStart: Math.min(clip.trimStart, Math.max(0, nextEnd - MIN_SEGMENT_SECONDS)),
+          };
+        }),
+      );
+    };
+
+    const onUp = () => {
+      setTrimDrag(null);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, {once: true});
+
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, [trimDrag]);
+
+  const beginTrimDrag = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>, clip: EditorClip, side: 'start' | 'end') => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (!clip.include) return;
+
+      setTrimDrag({
+        clipId: clip.id,
+        side,
+        startClientX: event.clientX,
+        initialStart: clip.trimStart,
+        initialEnd: clip.trimEnd,
+        sourceDuration: clip.sourceDurationSeconds,
+      });
+    },
+    [],
+  );
+
+  const playheadLeftPx = maxFrame > 0 ? (clamp(playerFrame, 0, maxFrame) / maxFrame) * timelineWidthPx : 0;
+
+  const timelineTickFrames = useMemo(() => {
+    const seconds = timelineFrames / FPS;
+    const tickSeconds = seconds > 180 ? 20 : seconds > 120 ? 15 : seconds > 60 ? 10 : 5;
+    const stepFrames = Math.max(1, Math.round(tickSeconds * FPS));
+
+    const ticks: number[] = [];
+    for (let frame = 0; frame <= timelineFrames; frame += stepFrames) {
+      ticks.push(frame);
+    }
+
+    if (ticks[ticks.length - 1] !== timelineFrames) {
+      ticks.push(timelineFrames);
+    }
+
+    return ticks;
+  }, [timelineFrames]);
 
   if (clips.length === 0) {
-    return <p className="vh-remotion-empty">Add clips above to preview the full Remotion player.</p>;
+    return <p className="vh-remotion-empty">Add clips above to unlock manual timeline editing.</p>;
   }
 
   const totalSeconds = totalFrames / FPS;
+  const selectedMaxStart = selectedClip
+    ? Math.max(0, selectedClip.trimEnd - MIN_SEGMENT_SECONDS)
+    : 0;
+  const selectedMinEnd = selectedClip
+    ? Math.min(selectedClip.sourceDurationSeconds, selectedClip.trimStart + MIN_SEGMENT_SECONDS)
+    : MIN_SEGMENT_SECONDS;
+  const selectedSegmentSeconds = selectedClip
+    ? Math.max(0, selectedClip.trimEnd - selectedClip.trimStart)
+    : 0;
 
   return (
     <div className="vh-remotion-shell">
-      <div className="vh-remotion-player-wrap vh-remotion-player-wrap--full">
-        <Player
-          component={VideoHoggPreview}
-          durationInFrames={totalFrames}
-          compositionWidth={1280}
-          compositionHeight={720}
-          fps={FPS}
-          controls
-          clickToPlay
-          allowFullscreen
-          doubleClickToFullscreen
-          spaceKeyToPlayOrPause
-          showVolumeControls
-          showPlaybackRateControl
-          inputProps={{clips: previewClips}}
-          style={{width: '100%', aspectRatio: '16 / 9', borderRadius: 12, overflow: 'hidden'}}
-        />
+      <div className="vh-remotion-grid">
+        <div className="vh-remotion-player-wrap">
+          <Player
+            ref={(instance) => setPlayerHandle(instance)}
+            component={VideoHoggPreview}
+            durationInFrames={totalFrames}
+            compositionWidth={1280}
+            compositionHeight={720}
+            fps={FPS}
+            controls
+            clickToPlay
+            showVolumeControls={false}
+            inputProps={{clips: previewClips}}
+            style={{width: '100%', aspectRatio: '16 / 9', borderRadius: 12, overflow: 'hidden'}}
+          />
 
-        <div className="vh-remotion-status-bar">
-          <p className="vh-remotion-meta">
-            <strong>Full player mode</strong>
-            {' · '}
-            <strong>{includedCount}/{clips.length}</strong> clips
-            {excludedCount > 0 && <span className="vh-remotion-meta-dim"> · {excludedCount} excluded</span>}
-            {trimmedCount > 0 && <span className="vh-remotion-meta-dim"> · {trimmedCount} trimmed</span>}
-            {' · '}
-            <strong>{formatTime(totalSeconds)}</strong>
-          </p>
+          <div className="vh-remotion-status-bar">
+            <p className="vh-remotion-meta">
+              <strong>{includedCount}/{clips.length}</strong> clips
+              {excludedCount > 0 && <span className="vh-remotion-meta-dim"> · {excludedCount} excluded</span>}
+              {trimmedCount > 0 && <span className="vh-remotion-meta-dim"> · {trimmedCount} trimmed</span>}
+              {' · '}
+              <strong>{formatTime(totalSeconds)}</strong>
+            </p>
+          </div>
+
+          <section className="vh-remotion-timeline-shell" aria-label="Timeline editor">
+            <div className="vh-remotion-ruler">
+              <div className="vh-remotion-ruler-ticks" style={{width: `${timelineWidthPx}px`}}>
+                {timelineTickFrames.map((frame) => {
+                  const left = timelineFrames > 0 ? (frame / timelineFrames) * timelineWidthPx : 0;
+
+                  return (
+                    <div key={frame} className="vh-remotion-ruler-tick" style={{left: `${left}px`}}>
+                      <span>{formatTime(frame / FPS)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <input
+                className="vh-remotion-scrub"
+                type="range"
+                min={0}
+                max={maxFrame}
+                step={1}
+                value={clamp(playerFrame, 0, maxFrame)}
+                onChange={(event) => seekToFrame(Number(event.currentTarget.value))}
+                aria-label="Scrub timeline"
+              />
+            </div>
+
+            <div
+              ref={timelineScrollRef}
+              className="vh-remotion-track-scroll"
+              onClick={(event) => {
+                const target = event.target as HTMLElement;
+                if (target.closest('[data-segment-id]')) return;
+                seekFromPointer(event.clientX);
+              }}
+            >
+              <div className="vh-remotion-track" style={{width: `${timelineWidthPx}px`}}>
+                <div
+                  className={`vh-remotion-playhead ${isScrubbing ? 'is-scrubbing' : ''}`}
+                  style={{left: `${playheadLeftPx}px`}}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setIsScrubbing(true);
+                    seekFromPointer(event.clientX);
+                  }}
+                >
+                  <span className="vh-remotion-playhead-cap" />
+                </div>
+
+                {timelineSegments.map((segment) => {
+                  const left = timelineFrames > 0 ? (segment.startFrame / timelineFrames) * timelineWidthPx : 0;
+                  const width = timelineFrames > 0
+                    ? (segment.durationFrames / timelineFrames) * timelineWidthPx
+                    : timelineWidthPx;
+
+                  const dropBefore = dropHint?.targetId === segment.clip.id && dropHint.before;
+                  const dropAfter = dropHint?.targetId === segment.clip.id && !dropHint.before;
+
+                  return (
+                    <article
+                      key={segment.clip.id}
+                      data-segment-id={segment.clip.id}
+                      className={`vh-remotion-segment ${draggingSegmentId === segment.clip.id ? 'is-dragging' : ''} ${dropBefore ? 'is-drop-before' : ''} ${dropAfter ? 'is-drop-after' : ''} ${selectedClipId === segment.clip.id ? 'is-selected' : ''}`}
+                      style={{left: `${left}px`, width: `${width}px`}}
+                      draggable
+                      onClick={() => {
+                        setSelectedClipId(segment.clip.id);
+                        seekToFrame(segment.startFrame);
+                      }}
+                      onDragStart={(event) => {
+                        setDraggingSegmentId(segment.clip.id);
+                        setSelectedClipId(segment.clip.id);
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', segment.clip.id);
+                      }}
+                      onDragOver={(event) => {
+                        if (!draggingSegmentId || draggingSegmentId === segment.clip.id) return;
+
+                        event.preventDefault();
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const before = event.clientX < rect.left + rect.width / 2;
+                        setDropHint({targetId: segment.clip.id, before});
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+
+                        if (!draggingSegmentId || draggingSegmentId === segment.clip.id) {
+                          setDropHint(null);
+                          return;
+                        }
+
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const before = event.clientX < rect.left + rect.width / 2;
+
+                        setClips((previous) => reorderById(previous, draggingSegmentId, segment.clip.id, before));
+                        setDropHint(null);
+                        setDraggingSegmentId(null);
+                      }}
+                      onDragEnd={() => {
+                        setDropHint(null);
+                        setDraggingSegmentId(null);
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="vh-remotion-trim-handle vh-remotion-trim-handle--start"
+                        title="Drag to trim start"
+                        aria-label={`Trim start for ${segment.clip.name}`}
+                        onPointerDown={(event) => beginTrimDrag(event, segment.clip, 'start')}
+                      >
+                        ⋮
+                      </button>
+
+                      <div className="vh-remotion-segment-body">
+                        <p className="vh-remotion-segment-title">{segment.clip.name}</p>
+                        <p className="vh-remotion-segment-meta">
+                          {formatTime(Math.max(0, segment.clip.trimEnd - segment.clip.trimStart))}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="vh-remotion-trim-handle vh-remotion-trim-handle--end"
+                        title="Drag to trim end"
+                        aria-label={`Trim end for ${segment.clip.name}`}
+                        onPointerDown={(event) => beginTrimDrag(event, segment.clip, 'end')}
+                      >
+                        ⋮
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="vh-remotion-mobile-clip-nav" role="tablist" aria-label="Clip picker">
+              {clips.map((clip, index) => {
+                const isSelected = selectedClipId === clip.id;
+
+                return (
+                  <button
+                    key={clip.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                    className={`vh-remotion-mobile-clip-pill ${isSelected ? 'is-selected' : ''} ${clip.include ? '' : 'is-excluded'}`}
+                    onClick={() => {
+                      setSelectedClipId(clip.id);
+
+                      const segment = timelineSegments.find((entry) => entry.clip.id === clip.id);
+                      if (segment) {
+                        seekToFrame(segment.startFrame);
+                      }
+                    }}
+                  >
+                    <span className="vh-remotion-mobile-clip-pill-num">{index + 1}</span>
+                    <span className="vh-remotion-mobile-clip-pill-name">{clip.name}</span>
+                    {!clip.include && <span className="vh-remotion-mobile-clip-pill-flag">Skipped</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedClip && (
+              <section className="vh-remotion-mobile-inspector" aria-label="Selected clip quick edit">
+                <header className="vh-remotion-mobile-head">
+                  <div>
+                    <p className="vh-remotion-mobile-kicker">Selected clip</p>
+                    <p className="vh-remotion-mobile-title">{selectedClip.name}</p>
+                    <p className="vh-remotion-mobile-sub">
+                      {formatTime(selectedClip.sourceDurationSeconds)} total
+                      {selectedClip.include ? ` · ${formatTime(selectedSegmentSeconds)} used` : ' · currently excluded'}
+                    </p>
+                  </div>
+                  <div className="vh-remotion-mobile-reorder">
+                    <button
+                      type="button"
+                      className="vh-remotion-btn"
+                      title="Move clip left"
+                      aria-label="Move selected clip left"
+                      disabled={selectedClipIndex <= 0}
+                      onClick={() => {
+                        if (selectedClipIndex < 0) return;
+                        setClips((previous) => moveBy(previous, selectedClipIndex, -1));
+                      }}
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      className="vh-remotion-btn"
+                      title="Move clip right"
+                      aria-label="Move selected clip right"
+                      disabled={selectedClipIndex < 0 || selectedClipIndex >= clips.length - 1}
+                      onClick={() => {
+                        if (selectedClipIndex < 0) return;
+                        setClips((previous) => moveBy(previous, selectedClipIndex, 1));
+                      }}
+                    >
+                      →
+                    </button>
+                  </div>
+                </header>
+
+                <label className={`vh-remotion-field ${!selectedClip.include ? 'vh-remotion-field--disabled' : ''}`}>
+                  <span>
+                    Start
+                    <span className="vh-remotion-time">{selectedClip.trimStart.toFixed(1)}s</span>
+                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={selectedMaxStart}
+                    step={0.05}
+                    value={selectedClip.trimStart}
+                    disabled={!selectedClip.include}
+                    onChange={(event) => {
+                      const nextStart = Number(event.currentTarget.value);
+                      updateClip(selectedClip.id, (current) => ({
+                        ...current,
+                        trimStart: nextStart,
+                        trimEnd: Math.max(nextStart + MIN_SEGMENT_SECONDS, current.trimEnd),
+                      }));
+                    }}
+                  />
+                </label>
+
+                <label className={`vh-remotion-field ${!selectedClip.include ? 'vh-remotion-field--disabled' : ''}`}>
+                  <span>
+                    End
+                    <span className="vh-remotion-time">{selectedClip.trimEnd.toFixed(1)}s</span>
+                  </span>
+                  <input
+                    type="range"
+                    min={selectedMinEnd}
+                    max={selectedClip.sourceDurationSeconds}
+                    step={0.05}
+                    value={selectedClip.trimEnd}
+                    disabled={!selectedClip.include}
+                    onChange={(event) => {
+                      const nextEnd = Number(event.currentTarget.value);
+                      updateClip(selectedClip.id, (current) => ({
+                        ...current,
+                        trimEnd: nextEnd,
+                        trimStart: Math.min(current.trimStart, Math.max(0, nextEnd - MIN_SEGMENT_SECONDS)),
+                      }));
+                    }}
+                  />
+                </label>
+
+                <footer className="vh-remotion-mobile-actions">
+                  <button
+                    type="button"
+                    className={`vh-remotion-include-btn ${selectedClip.include ? 'vh-remotion-include-btn--active' : 'vh-remotion-include-btn--inactive'}`}
+                    onClick={() =>
+                      updateClip(selectedClip.id, (current) => ({
+                        ...current,
+                        include: !current.include,
+                      }))
+                    }
+                  >
+                    {selectedClip.include ? '✓ Included' : '○ Excluded'}
+                  </button>
+
+                  {selectedClipIsTrimmed && selectedClip.include && (
+                    <button
+                      type="button"
+                      className="vh-remotion-reset-btn"
+                      onClick={() =>
+                        updateClip(selectedClip.id, (current) => ({
+                          ...current,
+                          trimStart: 0,
+                          trimEnd: current.sourceDurationSeconds,
+                        }))
+                      }
+                    >
+                      Reset trim
+                    </button>
+                  )}
+                </footer>
+              </section>
+            )}
+
+            {excludedClips.length > 0 && (
+              <div className="vh-remotion-excluded-rack">
+                <p className="vh-remotion-excluded-label">Excluded clips (click to add back):</p>
+                <div className="vh-remotion-excluded-list">
+                  {excludedClips.map((clip) => (
+                    <button
+                      key={clip.id}
+                      type="button"
+                      className="vh-remotion-excluded-chip"
+                      onClick={() => {
+                        setSelectedClipId(clip.id);
+                        updateClip(clip.id, (current) => ({...current, include: true}));
+                      }}
+                    >
+                      + {clip.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
         </div>
+
       </div>
     </div>
   );
