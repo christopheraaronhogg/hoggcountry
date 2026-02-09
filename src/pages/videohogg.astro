@@ -1447,6 +1447,237 @@ const allowedEmailsCsv = (
     color: #64748b;
   }
 
+  .vh-remotion-timeline-shell {
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.88));
+    padding: 0.6rem;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .vh-remotion-ruler {
+    position: relative;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(255, 255, 255, 0.84);
+    padding: 0.3rem 0.45rem 0.45rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .vh-remotion-ruler-ticks {
+    position: relative;
+    height: 20px;
+    min-width: 100%;
+  }
+
+  .vh-remotion-ruler-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: grid;
+    justify-items: center;
+    gap: 0.08rem;
+    color: #64748b;
+    font-size: 0.66rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vh-remotion-ruler-tick::before {
+    content: '';
+    width: 1px;
+    height: 7px;
+    background: rgba(100, 116, 139, 0.38);
+    border-radius: 999px;
+  }
+
+  .vh-remotion-scrub {
+    width: 100%;
+    margin-top: 0.1rem;
+    accent-color: #4d594a;
+    cursor: ew-resize;
+    min-height: 28px;
+  }
+
+  .vh-remotion-track-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.16);
+    background: linear-gradient(180deg, #172033, #111827);
+    scrollbar-width: thin;
+  }
+
+  .vh-remotion-track {
+    position: relative;
+    min-height: 92px;
+  }
+
+  .vh-remotion-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(240, 224, 0, 0.95);
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.35);
+    z-index: 4;
+    pointer-events: auto;
+    cursor: ew-resize;
+  }
+
+  .vh-remotion-playhead-cap {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -30%);
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.36);
+    background: #facc15;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.25);
+  }
+
+  .vh-remotion-playhead.is-scrubbing {
+    background: rgba(253, 224, 71, 1);
+  }
+
+  .vh-remotion-segment {
+    position: absolute;
+    top: 24px;
+    height: 48px;
+    display: grid;
+    grid-template-columns: 14px 1fr 14px;
+    align-items: stretch;
+    border-radius: 9px;
+    border: 1px solid rgba(134, 239, 172, 0.42);
+    background: linear-gradient(120deg, rgba(22, 101, 52, 0.78), rgba(21, 128, 61, 0.58));
+    color: #f8fafc;
+    box-shadow: 0 8px 18px rgba(2, 44, 34, 0.26);
+    overflow: hidden;
+    user-select: none;
+    cursor: grab;
+  }
+
+  .vh-remotion-segment:active {
+    cursor: grabbing;
+  }
+
+  .vh-remotion-segment.is-dragging {
+    opacity: 0.55;
+  }
+
+  .vh-remotion-segment.is-drop-before::before,
+  .vh-remotion-segment.is-drop-after::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    width: 3px;
+    border-radius: 999px;
+    background: #facc15;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.45);
+  }
+
+  .vh-remotion-segment.is-drop-before::before {
+    left: -2px;
+  }
+
+  .vh-remotion-segment.is-drop-after::after {
+    right: -2px;
+  }
+
+  .vh-remotion-segment-body {
+    min-width: 0;
+    display: grid;
+    align-content: center;
+    gap: 0.05rem;
+    padding: 0 0.32rem;
+  }
+
+  .vh-remotion-segment-title {
+    margin: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vh-remotion-segment-meta {
+    margin: 0;
+    font-size: 0.62rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(226, 232, 240, 0.95);
+    line-height: 1.1;
+  }
+
+  .vh-remotion-trim-handle {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 0.72rem;
+    line-height: 1;
+    color: rgba(226, 232, 240, 0.95);
+    background: rgba(15, 23, 42, 0.26);
+    cursor: ew-resize;
+  }
+
+  .vh-remotion-trim-handle:hover {
+    background: rgba(15, 23, 42, 0.42);
+  }
+
+  .vh-remotion-trim-handle--start {
+    border-right: 1px solid rgba(226, 232, 240, 0.18);
+  }
+
+  .vh-remotion-trim-handle--end {
+    border-left: 1px solid rgba(226, 232, 240, 0.18);
+  }
+
+  .vh-remotion-excluded-rack {
+    border: 1px dashed rgba(100, 116, 139, 0.4);
+    border-radius: 9px;
+    background: rgba(248, 250, 252, 0.82);
+    padding: 0.45rem 0.55rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .vh-remotion-excluded-label {
+    margin: 0;
+    font-size: 0.68rem;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .vh-remotion-excluded-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .vh-remotion-excluded-chip {
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    border-radius: 999px;
+    background: #fff;
+    color: #334155;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 0.28rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .vh-remotion-excluded-chip:hover {
+    border-color: rgba(22, 101, 52, 0.45);
+    color: #166534;
+    background: rgba(22, 101, 52, 0.08);
+  }
+
   .vh-remotion-controls {
     display: grid;
     gap: 0.58rem;
@@ -1750,6 +1981,29 @@ const allowedEmailsCsv = (
     .vh-remotion-controls {
       max-height: none;
       gap: 0.75rem;
+    }
+
+    .vh-remotion-timeline-shell {
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .vh-remotion-ruler {
+      padding: 0.25rem 0.35rem 0.38rem;
+    }
+
+    .vh-remotion-track {
+      min-height: 96px;
+    }
+
+    .vh-remotion-segment {
+      top: 26px;
+      height: 50px;
+    }
+
+    .vh-remotion-playhead-cap {
+      width: 14px;
+      height: 14px;
     }
 
     .vh-remotion-clip {
