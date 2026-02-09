@@ -38,6 +38,14 @@ const sanitizeDuration = (durationSeconds: number | null | undefined) => {
 
 const toFrames = (seconds: number) => Math.max(1, Math.round(seconds * FPS));
 
+const formatTime = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const total = Math.round(seconds);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
 type PreviewProps = {
   clips: Array<{
     id: string;
@@ -222,6 +230,10 @@ const RemotionEditorShell: React.FC = () => {
     return Math.max(FPS * 2, sum);
   }, [previewClips]);
 
+  const includedCount = clips.filter((c) => c.include).length;
+  const excludedCount = clips.length - includedCount;
+  const trimmedCount = clips.filter((c) => c.trimStart > 0 || c.trimEnd < c.sourceDurationSeconds).length;
+
   const updateClip = (clipId: string, updater: (current: EditorClip) => EditorClip) => {
     setClips((previous) => previous.map((clip) => (clip.id === clipId ? updater(clip) : clip)));
   };
@@ -229,6 +241,8 @@ const RemotionEditorShell: React.FC = () => {
   if (clips.length === 0) {
     return <p className="vh-remotion-empty">Add clips above to unlock manual timeline editing.</p>;
   }
+
+  const totalSeconds = totalFrames / FPS;
 
   return (
     <div className="vh-remotion-shell">
@@ -246,27 +260,45 @@ const RemotionEditorShell: React.FC = () => {
             inputProps={{clips: previewClips}}
             style={{width: '100%', aspectRatio: '16 / 9', borderRadius: 12, overflow: 'hidden'}}
           />
-          <p className="vh-remotion-meta">
-            {previewClips.length} included clip{previewClips.length === 1 ? '' : 's'} • {(totalFrames / FPS).toFixed(1)}s draft
-          </p>
+          <div className="vh-remotion-status-bar">
+            <p className="vh-remotion-meta">
+              <strong>{includedCount}</strong> included{' '}
+              {excludedCount > 0 && <span className="vh-remotion-meta-dim">({excludedCount} excluded)</span>}
+              {' · '}
+              <strong>{formatTime(totalSeconds)}</strong> draft
+              {trimmedCount > 0 && <span className="vh-remotion-meta-dim"> · {trimmedCount} trimmed</span>}
+            </p>
+          </div>
         </div>
 
         <div className="vh-remotion-controls" role="group" aria-label="Remotion clip controls">
           {clips.map((clip, index) => {
             const maxStart = Math.max(0, clip.trimEnd - MIN_SEGMENT_SECONDS);
             const minEnd = Math.min(clip.sourceDurationSeconds, clip.trimStart + MIN_SEGMENT_SECONDS);
+            const segmentLength = Math.max(0, clip.trimEnd - clip.trimStart);
+            const isTrimmed = clip.trimStart > 0 || clip.trimEnd < clip.sourceDurationSeconds;
 
             return (
-              <article key={clip.id} className="vh-remotion-clip">
+              <article
+                key={clip.id}
+                className={`vh-remotion-clip ${clip.include ? 'vh-remotion-clip--included' : 'vh-remotion-clip--excluded'}`}
+              >
                 <header className="vh-remotion-clip-head">
-                  <div>
-                    <p className="vh-remotion-clip-title">{clip.name}</p>
-                    <p className="vh-remotion-clip-sub">Source {clip.sourceDurationSeconds.toFixed(2)}s</p>
+                  <div className="vh-remotion-clip-info">
+                    <div className="vh-remotion-clip-title-row">
+                      <span className="vh-remotion-clip-num">{index + 1}</span>
+                      <p className="vh-remotion-clip-title">{clip.name}</p>
+                    </div>
+                    <p className="vh-remotion-clip-sub">
+                      {formatTime(clip.sourceDurationSeconds)} source
+                      {isTrimmed && ` · ${formatTime(segmentLength)} segment`}
+                    </p>
                   </div>
                   <div className="vh-remotion-actions">
                     <button
                       type="button"
                       className="vh-remotion-btn"
+                      title="Move up"
                       onClick={() => setClips((prev) => moveBy(prev, index, -1))}
                       disabled={index === 0}
                     >
@@ -275,68 +307,94 @@ const RemotionEditorShell: React.FC = () => {
                     <button
                       type="button"
                       className="vh-remotion-btn"
+                      title="Move down"
                       onClick={() => setClips((prev) => moveBy(prev, index, 1))}
                       disabled={index === clips.length - 1}
                     >
                       ↓
                     </button>
-                    <label className="vh-remotion-toggle">
-                      <input
-                        type="checkbox"
-                        checked={clip.include}
-                        onChange={(event) =>
-                          updateClip(clip.id, (current) => ({
-                            ...current,
-                            include: event.currentTarget.checked,
-                          }))
-                        }
-                      />
-                      Include
-                    </label>
                   </div>
                 </header>
 
-                <label className="vh-remotion-field">
-                  <span>Trim start: {clip.trimStart.toFixed(2)}s</span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={maxStart}
-                    step={0.05}
-                    value={clip.trimStart}
-                    onChange={(event) => {
-                      const nextStart = Number(event.currentTarget.value);
+                <div className="vh-remotion-clip-body">
+                  <label className="vh-remotion-field">
+                    <span>
+                      Start {clip.trimStart.toFixed(1)}s
+                      {clip.trimStart > 0 && <span className="vh-remotion-field-badge">trimmed</span>}
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={maxStart}
+                      step={0.05}
+                      value={clip.trimStart}
+                      disabled={!clip.include}
+                      onChange={(event) => {
+                        const nextStart = Number(event.currentTarget.value);
+                        updateClip(clip.id, (current) => ({
+                          ...current,
+                          trimStart: nextStart,
+                          trimEnd: Math.max(nextStart + MIN_SEGMENT_SECONDS, current.trimEnd),
+                        }));
+                      }}
+                    />
+                  </label>
+
+                  <label className="vh-remotion-field">
+                    <span>
+                      End {clip.trimEnd.toFixed(1)}s
+                      {clip.trimEnd < clip.sourceDurationSeconds && (
+                        <span className="vh-remotion-field-badge">trimmed</span>
+                      )}
+                    </span>
+                    <input
+                      type="range"
+                      min={minEnd}
+                      max={clip.sourceDurationSeconds}
+                      step={0.05}
+                      value={clip.trimEnd}
+                      disabled={!clip.include}
+                      onChange={(event) => {
+                        const nextEnd = Number(event.currentTarget.value);
+                        updateClip(clip.id, (current) => ({
+                          ...current,
+                          trimEnd: nextEnd,
+                          trimStart: Math.min(current.trimStart, Math.max(0, nextEnd - MIN_SEGMENT_SECONDS)),
+                        }));
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <footer className="vh-remotion-clip-footer">
+                  <button
+                    type="button"
+                    className={`vh-remotion-include-btn ${clip.include ? 'vh-remotion-include-btn--active' : 'vh-remotion-include-btn--inactive'}`}
+                    onClick={() =>
                       updateClip(clip.id, (current) => ({
                         ...current,
-                        trimStart: nextStart,
-                        trimEnd: Math.max(nextStart + MIN_SEGMENT_SECONDS, current.trimEnd),
-                      }));
-                    }}
-                  />
-                </label>
-
-                <label className="vh-remotion-field">
-                  <span>Trim end: {clip.trimEnd.toFixed(2)}s</span>
-                  <input
-                    type="range"
-                    min={minEnd}
-                    max={clip.sourceDurationSeconds}
-                    step={0.05}
-                    value={clip.trimEnd}
-                    onChange={(event) => {
-                      const nextEnd = Number(event.currentTarget.value);
-                      updateClip(clip.id, (current) => ({
-                        ...current,
-                        trimEnd: nextEnd,
-                        trimStart: Math.min(current.trimStart, Math.max(0, nextEnd - MIN_SEGMENT_SECONDS)),
-                      }));
-                    }}
-                  />
-                </label>
-
-                <p className="vh-remotion-clip-sub">
-                  Segment length: {Math.max(0, clip.trimEnd - clip.trimStart).toFixed(2)}s
-                </p>
+                        include: !current.include,
+                      }))
+                    }
+                  >
+                    {clip.include ? 'Included' : 'Excluded'}
+                  </button>
+                  {isTrimmed && clip.include && (
+                    <button
+                      type="button"
+                      className="vh-remotion-reset-btn"
+                      onClick={() =>
+                        updateClip(clip.id, (current) => ({
+                          ...current,
+                          trimStart: 0,
+                          trimEnd: current.sourceDurationSeconds,
+                        }))
+                      }
+                    >
+                      Reset trim
+                    </button>
+                  )}
+                </footer>
               </article>
             );
           })}
