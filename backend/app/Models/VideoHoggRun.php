@@ -10,6 +10,8 @@ class VideoHoggRun extends Model
 {
     use HasFactory;
 
+    protected $table = 'videohogg_runs';
+
     protected $fillable = [
         'run_id',
         'user_id',

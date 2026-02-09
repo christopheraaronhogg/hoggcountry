@@ -224,7 +224,7 @@ class VideoHoggQueueController extends ApiController
         ]);
     }
 
-    public function fail(Request $request, string $runId)
+    public function markFailed(Request $request, string $runId)
     {
         $user = $request->user();
         if (! $user) {
