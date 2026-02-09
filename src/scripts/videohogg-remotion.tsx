@@ -180,6 +180,7 @@ const RemotionEditorShell: React.FC = () => {
   const [dropHint, setDropHint] = useState<{targetId: string; before: boolean} | null>(null);
   const [trimDrag, setTrimDrag] = useState<TrimDragState | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
 
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -287,6 +288,21 @@ const RemotionEditorShell: React.FC = () => {
   const includedClips = useMemo(() => clips.filter((clip) => clip.include), [clips]);
   const excludedClips = useMemo(() => clips.filter((clip) => !clip.include), [clips]);
 
+  useEffect(() => {
+    if (clips.length === 0) {
+      setSelectedClipId(null);
+      return;
+    }
+
+    setSelectedClipId((previous) => {
+      if (previous && clips.some((clip) => clip.id === previous)) {
+        return previous;
+      }
+
+      return clips.find((clip) => clip.include)?.id ?? clips[0]?.id ?? null;
+    });
+  }, [clips]);
+
   const timelineSegments = useMemo<TimelineSegment[]>(() => {
     const previewById = new Map(previewClips.map((clip) => [clip.id, clip]));
     let cursorFrames = 0;
@@ -320,6 +336,11 @@ const RemotionEditorShell: React.FC = () => {
   const includedCount = includedClips.length;
   const excludedCount = excludedClips.length;
   const trimmedCount = clips.filter((clip) => clip.trimStart > 0 || clip.trimEnd < clip.sourceDurationSeconds).length;
+  const selectedClip = clips.find((clip) => clip.id === selectedClipId) ?? null;
+  const selectedClipIndex = selectedClip ? clips.findIndex((clip) => clip.id === selectedClip.id) : -1;
+  const selectedClipIsTrimmed = selectedClip
+    ? selectedClip.trimStart > 0 || selectedClip.trimEnd < selectedClip.sourceDurationSeconds
+    : false;
 
   const updateClip = useCallback((clipId: string, updater: (current: EditorClip) => EditorClip) => {
     setClips((previous) => previous.map((clip) => (clip.id === clipId ? updater(clip) : clip)));
@@ -483,6 +504,15 @@ const RemotionEditorShell: React.FC = () => {
   }
 
   const totalSeconds = totalFrames / FPS;
+  const selectedMaxStart = selectedClip
+    ? Math.max(0, selectedClip.trimEnd - MIN_SEGMENT_SECONDS)
+    : 0;
+  const selectedMinEnd = selectedClip
+    ? Math.min(selectedClip.sourceDurationSeconds, selectedClip.trimStart + MIN_SEGMENT_SECONDS)
+    : MIN_SEGMENT_SECONDS;
+  const selectedSegmentSeconds = selectedClip
+    ? Math.max(0, selectedClip.trimEnd - selectedClip.trimStart)
+    : 0;
 
   return (
     <div className="vh-remotion-shell">
@@ -574,11 +604,16 @@ const RemotionEditorShell: React.FC = () => {
                     <article
                       key={segment.clip.id}
                       data-segment-id={segment.clip.id}
-                      className={`vh-remotion-segment ${draggingSegmentId === segment.clip.id ? 'is-dragging' : ''} ${dropBefore ? 'is-drop-before' : ''} ${dropAfter ? 'is-drop-after' : ''}`}
+                      className={`vh-remotion-segment ${draggingSegmentId === segment.clip.id ? 'is-dragging' : ''} ${dropBefore ? 'is-drop-before' : ''} ${dropAfter ? 'is-drop-after' : ''} ${selectedClipId === segment.clip.id ? 'is-selected' : ''}`}
                       style={{left: `${left}px`, width: `${width}px`}}
                       draggable
+                      onClick={() => {
+                        setSelectedClipId(segment.clip.id);
+                        seekToFrame(segment.startFrame);
+                      }}
                       onDragStart={(event) => {
                         setDraggingSegmentId(segment.clip.id);
+                        setSelectedClipId(segment.clip.id);
                         event.dataTransfer.effectAllowed = 'move';
                         event.dataTransfer.setData('text/plain', segment.clip.id);
                       }}
@@ -642,6 +677,154 @@ const RemotionEditorShell: React.FC = () => {
               </div>
             </div>
 
+            <div className="vh-remotion-mobile-clip-nav" role="tablist" aria-label="Clip picker">
+              {clips.map((clip, index) => {
+                const isSelected = selectedClipId === clip.id;
+
+                return (
+                  <button
+                    key={clip.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                    className={`vh-remotion-mobile-clip-pill ${isSelected ? 'is-selected' : ''} ${clip.include ? '' : 'is-excluded'}`}
+                    onClick={() => {
+                      setSelectedClipId(clip.id);
+
+                      const segment = timelineSegments.find((entry) => entry.clip.id === clip.id);
+                      if (segment) {
+                        seekToFrame(segment.startFrame);
+                      }
+                    }}
+                  >
+                    <span className="vh-remotion-mobile-clip-pill-num">{index + 1}</span>
+                    <span className="vh-remotion-mobile-clip-pill-name">{clip.name}</span>
+                    {!clip.include && <span className="vh-remotion-mobile-clip-pill-flag">Skipped</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedClip && (
+              <section className="vh-remotion-mobile-inspector" aria-label="Selected clip quick edit">
+                <header className="vh-remotion-mobile-head">
+                  <div>
+                    <p className="vh-remotion-mobile-kicker">Selected clip</p>
+                    <p className="vh-remotion-mobile-title">{selectedClip.name}</p>
+                    <p className="vh-remotion-mobile-sub">
+                      {formatTime(selectedClip.sourceDurationSeconds)} total
+                      {selectedClip.include ? ` · ${formatTime(selectedSegmentSeconds)} used` : ' · currently excluded'}
+                    </p>
+                  </div>
+                  <div className="vh-remotion-mobile-reorder">
+                    <button
+                      type="button"
+                      className="vh-remotion-btn"
+                      title="Move clip left"
+                      aria-label="Move selected clip left"
+                      disabled={selectedClipIndex <= 0}
+                      onClick={() => {
+                        if (selectedClipIndex < 0) return;
+                        setClips((previous) => moveBy(previous, selectedClipIndex, -1));
+                      }}
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      className="vh-remotion-btn"
+                      title="Move clip right"
+                      aria-label="Move selected clip right"
+                      disabled={selectedClipIndex < 0 || selectedClipIndex >= clips.length - 1}
+                      onClick={() => {
+                        if (selectedClipIndex < 0) return;
+                        setClips((previous) => moveBy(previous, selectedClipIndex, 1));
+                      }}
+                    >
+                      →
+                    </button>
+                  </div>
+                </header>
+
+                <label className={`vh-remotion-field ${!selectedClip.include ? 'vh-remotion-field--disabled' : ''}`}>
+                  <span>
+                    Start
+                    <span className="vh-remotion-time">{selectedClip.trimStart.toFixed(1)}s</span>
+                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={selectedMaxStart}
+                    step={0.05}
+                    value={selectedClip.trimStart}
+                    disabled={!selectedClip.include}
+                    onChange={(event) => {
+                      const nextStart = Number(event.currentTarget.value);
+                      updateClip(selectedClip.id, (current) => ({
+                        ...current,
+                        trimStart: nextStart,
+                        trimEnd: Math.max(nextStart + MIN_SEGMENT_SECONDS, current.trimEnd),
+                      }));
+                    }}
+                  />
+                </label>
+
+                <label className={`vh-remotion-field ${!selectedClip.include ? 'vh-remotion-field--disabled' : ''}`}>
+                  <span>
+                    End
+                    <span className="vh-remotion-time">{selectedClip.trimEnd.toFixed(1)}s</span>
+                  </span>
+                  <input
+                    type="range"
+                    min={selectedMinEnd}
+                    max={selectedClip.sourceDurationSeconds}
+                    step={0.05}
+                    value={selectedClip.trimEnd}
+                    disabled={!selectedClip.include}
+                    onChange={(event) => {
+                      const nextEnd = Number(event.currentTarget.value);
+                      updateClip(selectedClip.id, (current) => ({
+                        ...current,
+                        trimEnd: nextEnd,
+                        trimStart: Math.min(current.trimStart, Math.max(0, nextEnd - MIN_SEGMENT_SECONDS)),
+                      }));
+                    }}
+                  />
+                </label>
+
+                <footer className="vh-remotion-mobile-actions">
+                  <button
+                    type="button"
+                    className={`vh-remotion-include-btn ${selectedClip.include ? 'vh-remotion-include-btn--active' : 'vh-remotion-include-btn--inactive'}`}
+                    onClick={() =>
+                      updateClip(selectedClip.id, (current) => ({
+                        ...current,
+                        include: !current.include,
+                      }))
+                    }
+                  >
+                    {selectedClip.include ? '✓ Included' : '○ Excluded'}
+                  </button>
+
+                  {selectedClipIsTrimmed && selectedClip.include && (
+                    <button
+                      type="button"
+                      className="vh-remotion-reset-btn"
+                      onClick={() =>
+                        updateClip(selectedClip.id, (current) => ({
+                          ...current,
+                          trimStart: 0,
+                          trimEnd: current.sourceDurationSeconds,
+                        }))
+                      }
+                    >
+                      Reset trim
+                    </button>
+                  )}
+                </footer>
+              </section>
+            )}
+
             {excludedClips.length > 0 && (
               <div className="vh-remotion-excluded-rack">
                 <p className="vh-remotion-excluded-label">Excluded clips (click to add back):</p>
@@ -651,7 +834,10 @@ const RemotionEditorShell: React.FC = () => {
                       key={clip.id}
                       type="button"
                       className="vh-remotion-excluded-chip"
-                      onClick={() => updateClip(clip.id, (current) => ({...current, include: true}))}
+                      onClick={() => {
+                        setSelectedClipId(clip.id);
+                        updateClip(clip.id, (current) => ({...current, include: true}));
+                      }}
                     >
                       + {clip.name}
                     </button>
@@ -672,7 +858,8 @@ const RemotionEditorShell: React.FC = () => {
             return (
               <article
                 key={clip.id}
-                className={`vh-remotion-clip ${clip.include ? 'vh-remotion-clip--included' : 'vh-remotion-clip--excluded'}`}
+                className={`vh-remotion-clip ${clip.include ? 'vh-remotion-clip--included' : 'vh-remotion-clip--excluded'} ${selectedClipId === clip.id ? 'vh-remotion-clip--active' : ''}`}
+                onClick={() => setSelectedClipId(clip.id)}
               >
                 <header className="vh-remotion-clip-head">
                   <div className="vh-remotion-clip-info">
