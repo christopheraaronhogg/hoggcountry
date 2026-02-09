@@ -75,6 +75,12 @@ type PreviewProps = {
 };
 
 const VideoHoggPreview: React.FC<PreviewProps> = ({clips}) => {
+  const [failedClipIds, setFailedClipIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setFailedClipIds((previous) => previous.filter((id) => clips.some((clip) => clip.id === id)));
+  }, [clips]);
+
   let cursor = 0;
 
   return (
@@ -83,21 +89,60 @@ const VideoHoggPreview: React.FC<PreviewProps> = ({clips}) => {
         const from = cursor;
         cursor += clip.durationInFrames;
 
+        const failedToDecode = failedClipIds.includes(clip.id);
+
         return (
           <Sequence key={clip.id} from={from} durationInFrames={clip.durationInFrames} name={clip.name}>
             <AbsoluteFill>
-              <Html5Video
-                src={clip.url}
-                trimBefore={clip.trimBefore}
-                trimAfter={clip.trimAfter}
-                muted
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  backgroundColor: '#030712',
-                }}
-              />
+              {failedToDecode ? (
+                <AbsoluteFill
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 36,
+                    background:
+                      'radial-gradient(circle at 20% 20%, rgba(51, 65, 85, 0.4), rgba(3, 7, 18, 0.95))',
+                    color: '#e2e8f0',
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: '70%',
+                      border: '1px solid rgba(148, 163, 184, 0.35)',
+                      borderRadius: 12,
+                      padding: '14px 16px',
+                      background: 'rgba(15, 23, 42, 0.62)',
+                      fontSize: 14,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <strong style={{display: 'block', marginBottom: 6}}>Preview decode issue</strong>
+                    <span>
+                      This clip could not be decoded by this browser for timeline preview.
+                    </span>
+                  </div>
+                </AbsoluteFill>
+              ) : (
+                <Html5Video
+                  src={clip.url}
+                  trimBefore={clip.trimBefore}
+                  trimAfter={clip.trimAfter}
+                  muted
+                  pauseWhenBuffering
+                  acceptableTimeShiftInSeconds={2}
+                  playsInline
+                  onError={() => {
+                    setFailedClipIds((previous) => (previous.includes(clip.id) ? previous : [...previous, clip.id]));
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    backgroundColor: '#030712',
+                  }}
+                />
+              )}
+
               {clip.note ? (
                 <AbsoluteFill
                   style={{
