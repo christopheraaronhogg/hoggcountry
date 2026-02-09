@@ -59,9 +59,10 @@ A complete 21-chapter thru-hiking manual covering gear, clothing, water, shelter
 Private upload surface for Dad’s production workflow:
 - Google-auth gated using existing account session
 - Email allowlist gate (`PUBLIC_VIDEOHOGG_ALLOWED_EMAILS` in frontend, `VIDEOHOGG_ALLOWED_EMAILS` in backend)
-- Multi-file video upload + plain-text instruction notes
-- Quick note chips (intro/outro/stabilize/order/must-keep)
-- Creates a run payload via `POST /api/v1/videohogg/runs`
+- Multi-file video upload with per-clip cards, per-clip notes, and drag/drop ordering
+- Thumbnail generation with fallback inline preview when browser codecs block frame extraction
+- Creates run payloads via `POST /api/v1/videohogg/runs`
+- Queue endpoints for worker automation (`queued → processing → done/failed`)
 
 ### Offline Support (PWA)
 Full offline capability via service worker:

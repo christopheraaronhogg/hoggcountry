@@ -48,6 +48,11 @@ Authenticated (`Authorization: Bearer <token>`):
 - `DELETE /api/v1/community/trackers/{trackerId}`
 - `GET /api/v1/trackers/live`
 - `POST /api/v1/videohogg/runs`
+- `GET /api/v1/videohogg/runs`
+- `POST /api/v1/videohogg/runs/claim`
+- `POST /api/v1/videohogg/runs/{runId}/heartbeat`
+- `POST /api/v1/videohogg/runs/{runId}/complete`
+- `POST /api/v1/videohogg/runs/{runId}/fail`
 
 ## Testing
 
@@ -87,3 +92,6 @@ tail -f storage/logs/laravel.log
 - Optional browser callback redirect: `FRONTEND_AUTH_CALLBACK_URL` (e.g., `https://hoggcountry.com/login`).
 - Optional callback host allowlist: `FRONTEND_AUTH_ALLOWED_HOSTS` (comma-separated).
 - VideoHogg intake allowlist: `VIDEOHOGG_ALLOWED_EMAILS` (comma-separated emails allowed to upload).
+- VideoHogg storage disk: `VIDEOHOGG_STORAGE_DISK` (`public` default, set to `s3` for Cloudflare R2/S3-backed storage).
+- R2/S3 endpoint settings use standard Laravel AWS vars (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, `AWS_ENDPOINT`, `AWS_URL`, `AWS_DEFAULT_REGION`, `AWS_USE_PATH_STYLE_ENDPOINT`).
+- VideoHogg queue statuses: `queued`, `processing`, `done`, `failed`.

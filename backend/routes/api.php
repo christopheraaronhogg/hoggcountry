@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TrackerLiveController;
 use App\Http\Controllers\Api\V1\VideoHoggController;
+use App\Http\Controllers\Api\V1\VideoHoggQueueController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -69,6 +70,11 @@ Route::prefix('v1')->group(function (): void {
 
         Route::prefix('videohogg')->group(function (): void {
             Route::post('/runs', [VideoHoggController::class, 'store']);
+            Route::get('/runs', [VideoHoggQueueController::class, 'index']);
+            Route::post('/runs/claim', [VideoHoggQueueController::class, 'claim']);
+            Route::post('/runs/{runId}/heartbeat', [VideoHoggQueueController::class, 'heartbeat']);
+            Route::post('/runs/{runId}/complete', [VideoHoggQueueController::class, 'complete']);
+            Route::post('/runs/{runId}/fail', [VideoHoggQueueController::class, 'fail']);
         });
     });
 });

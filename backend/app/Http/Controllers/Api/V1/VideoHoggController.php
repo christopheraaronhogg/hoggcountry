@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\VideoHoggRun;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 class VideoHoggController extends ApiController
 {
@@ -22,22 +24,20 @@ class VideoHoggController extends ApiController
             return $this->fail('unauthenticated', 'Authentication required.', 401);
         }
 
-        $allowedEmails = collect(explode(',', (string) env('VIDEOHOGG_ALLOWED_EMAILS', 'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com')))
-            ->map(static fn (string $email): string => Str::lower(trim($email)))
-            ->filter(static fn (string $email): bool => $email !== '')
-            ->values();
-
-        if ($allowedEmails->isEmpty()) {
-            return $this->fail(
-                'videohogg_not_configured',
-                'VideoHogg allowlist is not configured. Set VIDEOHOGG_ALLOWED_EMAILS in backend environment.',
-                503
-            );
+        if (! $this->isAllowedEmail((string) $user->email)) {
+            return $this->fail('forbidden', 'This account is not allowed to use VideoHogg intake.', 403);
         }
 
-        $userEmail = Str::lower((string) $user->email);
-        if (! $allowedEmails->contains($userEmail)) {
-            return $this->fail('forbidden', 'This account is not allowed to use VideoHogg intake.', 403);
+        $diskName = trim((string) env('VIDEOHOGG_STORAGE_DISK', 'public')) ?: 'public';
+
+        try {
+            $disk = Storage::disk($diskName);
+        } catch (Throwable) {
+            return $this->fail(
+                'storage_not_configured',
+                sprintf('Storage disk "%s" is not configured for VideoHogg.', $diskName),
+                503
+            );
         }
 
         $runId = 'vh_'.Str::lower(Str::random(12));
@@ -100,7 +100,7 @@ class VideoHoggController extends ApiController
             }
 
             $storedName = sprintf('%03d-%s.%s', $index + 1, $safeStem, $extension);
-            $storedPath = Storage::disk('public')->putFileAs($basePath, $file, $storedName);
+            $storedPath = $disk->putFileAs($basePath, $file, $storedName);
 
             if (! is_string($storedPath) || $storedPath === '') {
                 return $this->fail('upload_failed', 'Failed to store one or more uploaded files.', 500);
@@ -112,7 +112,7 @@ class VideoHoggController extends ApiController
             $clipNote = $fileNotesByIndex[$index] ?? '';
             if ($clipNote !== '') {
                 $notedCount += 1;
-                Storage::disk('public')->put("{$basePath}/notes/{$storedName}.txt", $clipNote);
+                $disk->put("{$basePath}/notes/{$storedName}.txt", $clipNote);
             }
 
             $uploaded[] = [
@@ -120,7 +120,7 @@ class VideoHoggController extends ApiController
                 'original_name' => $originalName,
                 'stored_name' => $storedName,
                 'path' => $storedPath,
-                'url' => Storage::disk('public')->url($storedPath),
+                'url' => $this->resolveUrl($diskName, $storedPath),
                 'size_bytes' => $sizeBytes,
                 'mime_type' => $file->getClientMimeType() ?: null,
                 'note' => $clipNote !== '' ? $clipNote : null,
@@ -142,24 +142,81 @@ class VideoHoggController extends ApiController
             'files' => $uploaded,
         ];
 
-        Storage::disk('public')->put(
-            "{$basePath}/manifest.json",
+        $manifestPath = "{$basePath}/manifest.json";
+        $disk->put(
+            $manifestPath,
             (string) json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
 
+        $notesPath = null;
         if ($notes !== '') {
-            Storage::disk('public')->put("{$basePath}/notes.txt", $notes);
+            $notesPath = "{$basePath}/notes.txt";
+            $disk->put($notesPath, $notes);
         }
+
+        $manifestUrl = $this->resolveUrl($diskName, $manifestPath);
+
+        VideoHoggRun::query()->updateOrCreate(
+            ['run_id' => $runId],
+            [
+                'user_id' => $user->id,
+                'status' => 'queued',
+                'storage_disk' => $diskName,
+                'base_path' => $basePath,
+                'manifest_path' => $manifestPath,
+                'manifest_url' => $manifestUrl,
+                'notes_path' => $notesPath,
+                'uploaded_count' => count($uploaded),
+                'noted_count' => $notedCount,
+                'total_bytes' => $totalBytes,
+                'claimed_by' => null,
+                'claimed_at' => null,
+                'claim_expires_at' => null,
+                'started_at' => null,
+                'completed_at' => null,
+                'failed_at' => null,
+                'failure_code' => null,
+                'failure_message' => null,
+                'extra' => [
+                    'owner_email' => $user->email,
+                    'owner_name' => $user->name,
+                ],
+            ]
+        );
 
         return $this->ok([
             'run_id' => $runId,
             'created_at' => $createdAt,
+            'status' => 'queued',
             'uploaded_count' => count($uploaded),
             'noted_count' => $notedCount,
             'total_bytes' => $totalBytes,
-            'manifest_path' => "{$basePath}/manifest.json",
-            'manifest_url' => Storage::disk('public')->url("{$basePath}/manifest.json"),
+            'manifest_path' => $manifestPath,
+            'manifest_url' => $manifestUrl,
             'files' => $uploaded,
         ], 201);
+    }
+
+    private function resolveUrl(string $diskName, string $path): ?string
+    {
+        try {
+            return Storage::disk($diskName)->url($path);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function isAllowedEmail(string $email): bool
+    {
+        $allowedEmails = collect(explode(',', (string) env('VIDEOHOGG_ALLOWED_EMAILS', 'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com')))
+            ->map(static fn (string $value): string => Str::lower(trim($value)))
+            ->filter(static fn (string $value): bool => $value !== '')
+            ->values();
+
+        if ($allowedEmails->isEmpty()) {
+            return false;
+        }
+
+        return $allowedEmails->contains(Str::lower(trim($email)));
     }
 }

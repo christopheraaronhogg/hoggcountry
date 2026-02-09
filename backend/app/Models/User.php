@@ -79,4 +79,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(SocialAccount::class);
     }
+
+    public function videohoggRuns(): HasMany
+    {
+        return $this->hasMany(VideoHoggRun::class);
+    }
 }
