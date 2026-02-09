@@ -54,6 +54,16 @@ Authenticated (`Authorization: Bearer <token>`):
 - `POST /api/v1/videohogg/runs/{runId}/complete`
 - `POST /api/v1/videohogg/runs/{runId}/fail`
 
+## VideoHogg worker token (for queue watcher)
+
+Create a Sanctum token for an allowlisted account:
+
+```bash
+php artisan tinker --execute="$u = App\\Models\\User::where('email','you@example.com')->first(); echo $u?->createToken('videohogg-worker')->plainTextToken;"
+```
+
+Use the token as `VIDEOHOGG_TOKEN` for the queue watcher process.
+
 ## Testing
 
 ```bash
