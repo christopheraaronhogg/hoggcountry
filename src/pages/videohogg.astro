@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 const title = 'VideoHogg — Intake';
 const description = 'Upload raw clips and notes for VideoHogg production runs.';
 const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
-const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || import.meta.env.PUBLIC_VIDEOHOGG_DAD_EMAIL || '').trim();
+const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || import.meta.env.PUBLIC_VIDEOHOGG_DAD_EMAIL || 'hoggj@gmail.com,jhogg@gmail.com').trim();
 ---
 
 <BaseLayout title={title} description={description}>

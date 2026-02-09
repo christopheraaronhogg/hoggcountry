@@ -21,7 +21,7 @@ class VideoHoggController extends ApiController
             return $this->fail('unauthenticated', 'Authentication required.', 401);
         }
 
-        $allowedEmails = collect(explode(',', (string) env('VIDEOHOGG_ALLOWED_EMAILS', '')))
+        $allowedEmails = collect(explode(',', (string) env('VIDEOHOGG_ALLOWED_EMAILS', 'hoggj@gmail.com,jhogg@gmail.com')))
             ->map(static fn (string $email): string => Str::lower(trim($email)))
             ->filter(static fn (string $email): bool => $email !== '')
             ->values();
