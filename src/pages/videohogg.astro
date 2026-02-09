@@ -2,16 +2,20 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const title = 'VideoHogg — Intake';
-const description = 'Upload raw clips and notes for VideoHogg production runs.';
+const description = 'Upload raw clips and add per-video notes for VideoHogg production runs.';
 const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
-const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || import.meta.env.PUBLIC_VIDEOHOGG_DAD_EMAIL || 'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com').trim();
+const allowedEmailsCsv = (
+  import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS ||
+  import.meta.env.PUBLIC_VIDEOHOGG_DAD_EMAIL ||
+  'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com'
+).trim();
 ---
 
 <BaseLayout title={title} description={description}>
   <section class="hero">
     <span class="chapter font-chapter">VideoHogg</span>
-    <h1 class="font-display">Upload + Notes Intake</h1>
-    <p>Drop clips, add plain-text edit notes, and start a production run in one pass.</p>
+    <h1 class="font-display">Per-Video Upload + Notes</h1>
+    <p>Upload clips, attach notes to each clip, and create a run fast.</p>
   </section>
 
   <section class="container intake-wrap">
@@ -29,7 +33,7 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
         <section class="panel panel-upload">
           <div class="panel-head">
             <h3 class="font-display">1) Upload Clips</h3>
-            <button id="clear-files" type="button" class="ghost">Clear</button>
+            <button id="clear-files" type="button" class="ghost">Clear All</button>
           </div>
 
           <label class="dropzone" id="dropzone" for="video-files">
@@ -39,35 +43,30 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
           </label>
 
           <p id="file-summary" class="summary">No files selected yet.</p>
-          <ul id="file-list" class="file-list" aria-live="polite"></ul>
         </section>
 
-        <section class="panel panel-notes">
+        <section class="panel panel-clips">
           <div class="panel-head">
-            <h3 class="font-display">2) Notes for the AI Editor</h3>
-            <span class="hint">Plain text works best</span>
+            <h3 class="font-display">2) Notes Per Video</h3>
+            <span class="hint">Each clip has its own preview + notes</span>
           </div>
 
-          <div class="quick-row" role="group" aria-label="Quick insert actions">
-            <button type="button" class="chip" data-snippet="[Intro]\nUse first 10-20 seconds as intro.\n">Intro</button>
-            <button type="button" class="chip" data-snippet="[Outro]\nUse final 10-20 seconds as outro.\n">Outro</button>
-            <button type="button" class="chip" data-snippet="[Stabilize]\nApply heavy stabilization to clip: ">Stabilize</button>
-            <button type="button" class="chip" data-snippet="[Order]\nPreferred clip order: 1, 2, 3, 4\n">Order</button>
-            <button type="button" class="chip" data-snippet="[Keep]\nMust-keep moments:\n- ">Must Keep</button>
-          </div>
-
-          <textarea
-            id="notes"
-            rows="10"
-            placeholder="Example:\nUse clip 1 as intro.\nStabilize clip 3 heavily.\nKeep the river crossing and campfire close.\nAdd simple lower-thirds for mile marker mentions."
-          ></textarea>
+          <p id="clip-empty" class="clip-empty">Upload clips to start adding per-video notes.</p>
+          <div id="clip-board" class="clip-board" aria-live="polite"></div>
         </section>
 
         <section class="panel panel-run">
           <div class="panel-head">
-            <h3 class="font-display">3) Start Run</h3>
-            <span class="hint">Uploads then creates a run</span>
+            <h3 class="font-display">3) Create Run</h3>
+            <span class="hint">Uploads then writes run manifest</span>
           </div>
+
+          <label class="run-notes-label" for="run-notes">Run-wide notes (optional)</label>
+          <textarea
+            id="run-notes"
+            rows="4"
+            placeholder="Optional instructions that apply to the whole run. Example: Target 8-10 minutes and include chapter markers."
+          ></textarea>
 
           <button id="start-run" type="button" class="btn btn-primary start">Upload + Create Run</button>
 
@@ -81,6 +80,7 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
           <div id="run-result" class="result" hidden>
             <p><strong>Run created:</strong> <span id="run-id"></span></p>
             <p><strong>Uploaded clips:</strong> <span id="uploaded-count"></span></p>
+            <p><strong>Clip notes attached:</strong> <span id="noted-count"></span></p>
           </div>
         </section>
       </div>
@@ -99,6 +99,15 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
     const AUTH_KEY = 'hcApiAuth.v1';
     const MAX_FILES = 120;
 
+    const NOTE_TEMPLATES = [
+      { key: 'intro', label: 'Intro', snippet: 'Use this clip as intro. Keep first 8-12 seconds.' },
+      { key: 'outro', label: 'Outro', snippet: 'Use this clip as outro. Favor final 8-12 seconds.' },
+      { key: 'stabilize-heavy', label: 'Stabilize Heavy', snippet: 'Apply heavy stabilization to this clip.' },
+      { key: 'stabilize-light', label: 'Stabilize Light', snippet: 'Apply light stabilization to this clip.' },
+      { key: 'highlight', label: 'Highlight', snippet: 'Prioritize this clip as a highlight moment.' },
+      { key: 'skip', label: 'Skip', snippet: 'Skip this clip unless needed for continuity.' },
+    ];
+
     const gateStatus = document.getElementById('gate-status');
     const gateActions = document.getElementById('gate-actions');
     const loginLink = document.getElementById('login-link');
@@ -108,9 +117,11 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
     const dropzone = document.getElementById('dropzone');
     const clearFiles = document.getElementById('clear-files');
     const fileSummary = document.getElementById('file-summary');
-    const fileList = document.getElementById('file-list');
 
-    const notes = document.getElementById('notes');
+    const clipEmpty = document.getElementById('clip-empty');
+    const clipBoard = document.getElementById('clip-board');
+
+    const runNotes = document.getElementById('run-notes');
     const startRun = document.getElementById('start-run');
     const runStatus = document.getElementById('run-status');
     const progressBar = document.getElementById('progress-bar');
@@ -119,6 +130,7 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
     const runResult = document.getElementById('run-result');
     const runId = document.getElementById('run-id');
     const uploadedCount = document.getElementById('uploaded-count');
+    const notedCount = document.getElementById('noted-count');
 
     if (
       !(gateStatus instanceof HTMLElement) ||
@@ -129,20 +141,22 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
       !(dropzone instanceof HTMLElement) ||
       !(clearFiles instanceof HTMLButtonElement) ||
       !(fileSummary instanceof HTMLElement) ||
-      !(fileList instanceof HTMLElement) ||
-      !(notes instanceof HTMLTextAreaElement) ||
+      !(clipEmpty instanceof HTMLElement) ||
+      !(clipBoard instanceof HTMLElement) ||
+      !(runNotes instanceof HTMLTextAreaElement) ||
       !(startRun instanceof HTMLButtonElement) ||
       !(runStatus instanceof HTMLElement) ||
       !(progressBar instanceof HTMLElement) ||
       !(progressTrack instanceof HTMLElement) ||
       !(runResult instanceof HTMLElement) ||
       !(runId instanceof HTMLElement) ||
-      !(uploadedCount instanceof HTMLElement)
+      !(uploadedCount instanceof HTMLElement) ||
+      !(notedCount instanceof HTMLElement)
     ) {
       return;
     }
 
-    let selectedFiles = [];
+    let clips = [];
     let auth = null;
 
     function parseJson(raw) {
@@ -203,66 +217,25 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
       return `${size.toFixed(size >= 100 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
     }
 
-    function totalBytes() {
-      return selectedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+    function formatDuration(seconds) {
+      if (!Number.isFinite(seconds) || seconds <= 0) return '—';
+      const total = Math.round(seconds);
+      const minutes = Math.floor(total / 60);
+      const remainder = total % 60;
+      return `${minutes}:${String(remainder).padStart(2, '0')}`;
     }
 
-    function renderFiles() {
-      fileList.innerHTML = '';
-
-      if (selectedFiles.length === 0) {
-        fileSummary.textContent = 'No files selected yet.';
-        return;
-      }
-
-      fileSummary.textContent = `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'} • ${bytesToHuman(totalBytes())}`;
-
-      const fragment = document.createDocumentFragment();
-
-      selectedFiles.forEach((file, index) => {
-        const item = document.createElement('li');
-        item.className = 'file-item';
-
-        const name = document.createElement('span');
-        name.className = 'file-name';
-        name.textContent = `${index + 1}. ${file.name}`;
-
-        const meta = document.createElement('span');
-        meta.className = 'file-meta';
-        meta.textContent = bytesToHuman(file.size || 0);
-
-        item.append(name, meta);
-        fragment.appendChild(item);
-      });
-
-      fileList.appendChild(fragment);
+    function createClipId(file) {
+      const base = `${file.name || 'clip'}-${file.size || 0}-${file.lastModified || Date.now()}`;
+      const suffix = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID().slice(0, 8)
+        : Math.random().toString(36).slice(2, 10);
+      return `${base}-${suffix}`;
     }
 
-    function addFiles(fileListLike) {
-      const incoming = Array.from(fileListLike || []);
-      if (incoming.length === 0) return;
-
-      const seen = new Set(selectedFiles.map((file) => `${file.name}::${file.size}::${file.lastModified}`));
-
-      for (const file of incoming) {
-        const key = `${file.name}::${file.size}::${file.lastModified}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        selectedFiles.push(file);
-        if (selectedFiles.length >= MAX_FILES) break;
-      }
-
-      renderFiles();
-    }
-
-    function setUploadingState(isUploading) {
-      startRun.disabled = isUploading;
-      fileInput.disabled = isUploading;
-      clearFiles.disabled = isUploading;
-      if (isUploading) {
-        startRun.textContent = 'Uploading...';
-      } else {
-        startRun.textContent = 'Upload + Create Run';
+    function releaseClipUrl(clip) {
+      if (clip && typeof clip.url === 'string' && clip.url.startsWith('blob:')) {
+        URL.revokeObjectURL(clip.url);
       }
     }
 
@@ -272,18 +245,184 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
       progressTrack.setAttribute('aria-valuenow', String(bounded));
     }
 
-    function appendSnippet(snippet) {
+    function totalBytes() {
+      return clips.reduce((sum, clip) => sum + (clip.file?.size || 0), 0);
+    }
+
+    function buildTemplateButtons(clipId) {
+      const row = document.createElement('div');
+      row.className = 'chip-row';
+
+      NOTE_TEMPLATES.forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'chip';
+        button.dataset.clipId = clipId;
+        button.dataset.snippet = item.snippet;
+        button.textContent = item.label;
+        row.appendChild(button);
+      });
+
+      return row;
+    }
+
+    function appendSnippetToClip(clipId, snippet) {
+      const clip = clips.find((entry) => entry.id === clipId);
+      if (!clip) return;
+
       const text = String(snippet || '').trim();
       if (!text) return;
 
-      if (notes.value.trim().length === 0) {
-        notes.value = `${text}\n`;
+      if (!clip.note || clip.note.trim() === '') {
+        clip.note = text;
       } else {
-        const needsBreak = notes.value.endsWith('\n') ? '' : '\n';
-        notes.value = `${notes.value}${needsBreak}${text}\n`;
+        clip.note = `${clip.note.trimEnd()}\n${text}`;
       }
-      notes.focus();
-      notes.setSelectionRange(notes.value.length, notes.value.length);
+
+      renderClips();
+      const textarea = Array.from(clipBoard.querySelectorAll('textarea[data-clip-id]')).find(
+        (element) => element instanceof HTMLTextAreaElement && element.dataset.clipId === clipId
+      );
+      if (textarea instanceof HTMLTextAreaElement) {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }
+    }
+
+    function renderClips() {
+      clipBoard.innerHTML = '';
+
+      if (clips.length === 0) {
+        clipEmpty.hidden = false;
+        fileSummary.textContent = 'No files selected yet.';
+        return;
+      }
+
+      clipEmpty.hidden = true;
+      fileSummary.textContent = `${clips.length} clip${clips.length === 1 ? '' : 's'} • ${bytesToHuman(totalBytes())}`;
+
+      const fragment = document.createDocumentFragment();
+
+      clips.forEach((clip, index) => {
+        const card = document.createElement('article');
+        card.className = 'clip-card';
+        card.dataset.clipId = clip.id;
+
+        const preview = document.createElement('div');
+        preview.className = 'clip-preview';
+
+        const video = document.createElement('video');
+        video.className = 'clip-thumb';
+        video.src = clip.url;
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+
+        const badge = document.createElement('span');
+        badge.className = 'clip-index';
+        badge.textContent = `Clip ${index + 1}`;
+
+        preview.append(video, badge);
+
+        const body = document.createElement('div');
+        body.className = 'clip-body';
+
+        const heading = document.createElement('div');
+        heading.className = 'clip-heading';
+
+        const title = document.createElement('p');
+        title.className = 'clip-title';
+        title.textContent = clip.file.name;
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'remove';
+        remove.textContent = 'Remove';
+        remove.dataset.removeClipId = clip.id;
+
+        heading.append(title, remove);
+
+        const meta = document.createElement('p');
+        meta.className = 'clip-meta';
+        meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
+
+        video.addEventListener('loadedmetadata', () => {
+          clip.durationSeconds = Number.isFinite(video.duration) ? video.duration : null;
+          meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
+        }, { once: true });
+
+        const noteLabel = document.createElement('label');
+        noteLabel.className = 'note-label';
+        noteLabel.textContent = 'Notes for this video';
+
+        const noteInput = document.createElement('textarea');
+        noteInput.className = 'note-input';
+        noteInput.rows = 4;
+        noteInput.dataset.clipId = clip.id;
+        noteInput.placeholder = 'Example: stabilize heavily, use first 12 seconds, add in middle section.';
+        noteInput.value = clip.note;
+
+        body.append(heading, meta, noteLabel, noteInput, buildTemplateButtons(clip.id));
+
+        card.append(preview, body);
+        fragment.appendChild(card);
+      });
+
+      clipBoard.appendChild(fragment);
+    }
+
+    function clearClips() {
+      clips.forEach(releaseClipUrl);
+      clips = [];
+      renderClips();
+    }
+
+    function addFiles(fileListLike) {
+      const incoming = Array.from(fileListLike || []);
+      if (incoming.length === 0) return;
+
+      const seen = new Set(clips.map((clip) => `${clip.file.name}::${clip.file.size}::${clip.file.lastModified}`));
+
+      for (const file of incoming) {
+        if (!(file instanceof File)) continue;
+
+        const key = `${file.name}::${file.size}::${file.lastModified}`;
+        if (seen.has(key)) continue;
+        if (clips.length >= MAX_FILES) break;
+
+        seen.add(key);
+        clips.push({
+          id: createClipId(file),
+          file,
+          url: URL.createObjectURL(file),
+          note: '',
+          durationSeconds: null,
+        });
+      }
+
+      renderClips();
+    }
+
+    function removeClip(clipId) {
+      const index = clips.findIndex((entry) => entry.id === clipId);
+      if (index < 0) return;
+
+      const [removed] = clips.splice(index, 1);
+      releaseClipUrl(removed);
+      renderClips();
+    }
+
+    function setUploadingState(isUploading) {
+      startRun.disabled = isUploading;
+      fileInput.disabled = isUploading;
+      clearFiles.disabled = isUploading;
+      runNotes.disabled = isUploading;
+
+      if (isUploading) {
+        startRun.textContent = 'Uploading...';
+      } else {
+        startRun.textContent = 'Upload + Create Run';
+      }
     }
 
     async function guardAccess() {
@@ -330,16 +469,23 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
         return;
       }
 
-      if (selectedFiles.length === 0) {
+      if (clips.length === 0) {
         runStatus.textContent = 'Add at least one video file before creating a run.';
         return;
       }
 
+      const fileNotesPayload = clips.map((clip, index) => ({
+        index,
+        name: clip.file.name,
+        note: (clip.note || '').trim(),
+      }));
+
       const formData = new FormData();
-      selectedFiles.forEach((file) => {
-        formData.append('files[]', file);
+      clips.forEach((clip) => {
+        formData.append('files[]', clip.file, clip.file.name);
       });
-      formData.append('notes', notes.value.trim());
+      formData.append('file_notes_json', JSON.stringify(fileNotesPayload));
+      formData.append('notes', runNotes.value.trim());
 
       setUploadingState(true);
       runResult.hidden = true;
@@ -373,10 +519,13 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
         });
 
         const run = payload?.data || {};
+        const noted = fileNotesPayload.filter((entry) => entry.note.length > 0).length;
+
         setProgress(100);
         runStatus.textContent = 'Run created successfully.';
         runId.textContent = run.run_id || 'unknown';
-        uploadedCount.textContent = String(run.uploaded_count || selectedFiles.length);
+        uploadedCount.textContent = String(run.uploaded_count || clips.length);
+        notedCount.textContent = String(run.noted_count ?? noted);
         runResult.hidden = false;
       } catch (error) {
         setProgress(0);
@@ -407,25 +556,54 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
     });
 
     clearFiles.addEventListener('click', () => {
-      selectedFiles = [];
-      renderFiles();
+      clearClips();
+      runStatus.textContent = 'Ready.';
+      runResult.hidden = true;
+      setProgress(0);
     });
 
-    document.querySelectorAll('.chip[data-snippet]').forEach((button) => {
-      if (!(button instanceof HTMLButtonElement)) return;
-      button.addEventListener('click', () => appendSnippet(button.dataset.snippet || ''));
+    clipBoard.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLTextAreaElement)) return;
+      const clipId = target.dataset.clipId;
+      if (!clipId) return;
+
+      const clip = clips.find((entry) => entry.id === clipId);
+      if (!clip) return;
+      clip.note = target.value;
+    });
+
+    clipBoard.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const removeButton = target.closest('button[data-remove-clip-id]');
+      if (removeButton instanceof HTMLButtonElement) {
+        const clipId = removeButton.dataset.removeClipId;
+        if (clipId) removeClip(clipId);
+        return;
+      }
+
+      const chipButton = target.closest('button.chip[data-clip-id][data-snippet]');
+      if (chipButton instanceof HTMLButtonElement) {
+        const clipId = chipButton.dataset.clipId;
+        const snippet = chipButton.dataset.snippet;
+        if (clipId && snippet) {
+          appendSnippetToClip(clipId, snippet);
+        }
+      }
     });
 
     startRun.addEventListener('click', submitRun);
 
     guardAccess();
-    renderFiles();
+    renderClips();
   })();
 </script>
 
 <style>
   .intake-wrap {
-    max-width: 980px;
+    max-width: 1080px;
     padding-bottom: 4rem;
   }
 
@@ -559,55 +737,96 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
     font-size: 0.84rem;
   }
 
-  .file-list {
-    list-style: none;
-    margin: 0.55rem 0 0;
-    padding: 0;
-    display: grid;
-    gap: 0.45rem;
-    max-height: 220px;
-    overflow: auto;
-  }
-
-  .file-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.52rem 0.6rem;
-    border: 1px solid rgba(77, 89, 74, 0.2);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.95);
-  }
-
-  .file-name {
+  .clip-empty {
+    margin: 0;
+    color: var(--muted-accessible, #4a5448);
     font-size: 0.86rem;
+  }
+
+  .clip-board {
+    margin-top: 0.7rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .clip-card {
+    border: 1px solid rgba(77, 89, 74, 0.22);
+    border-radius: 12px;
+    background: #fffef8;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+
+  .clip-preview {
+    position: relative;
+    background: #0f172a;
+  }
+
+  .clip-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    background: #0f172a;
+  }
+
+  .clip-index {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: rgba(15, 23, 42, 0.8);
+    color: #f8fafc;
+  }
+
+  .clip-body {
+    padding: 0.62rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .clip-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .clip-title {
+    margin: 0;
+    font-size: 0.85rem;
     color: #1f2937;
+    line-height: 1.35;
     word-break: break-word;
   }
 
-  .file-meta {
-    font-size: 0.76rem;
-    color: var(--muted-accessible, #4a5448);
-    white-space: nowrap;
-  }
-
-  .quick-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    margin-bottom: 0.65rem;
-  }
-
-  .chip {
-    border: 1px solid rgba(77, 89, 74, 0.22);
-    background: #fff;
-    color: var(--pine, #4d594a);
-    border-radius: 999px;
-    padding: 0.36rem 0.68rem;
-    font-size: 0.78rem;
+  .remove {
+    border: 1px solid rgba(185, 28, 28, 0.25);
+    background: rgba(185, 28, 28, 0.07);
+    color: #991b1b;
+    border-radius: 8px;
+    font-size: 0.72rem;
     font-weight: 700;
+    padding: 0.2rem 0.45rem;
     cursor: pointer;
+  }
+
+  .clip-meta {
+    margin: 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.75rem;
+  }
+
+  .note-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--pine, #4d594a);
   }
 
   textarea {
@@ -623,9 +842,40 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
     box-sizing: border-box;
   }
 
+  .note-input {
+    min-height: 84px;
+    font-size: 0.84rem;
+  }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.36rem;
+  }
+
+  .chip {
+    border: 1px solid rgba(77, 89, 74, 0.22);
+    background: #fff;
+    color: var(--pine, #4d594a);
+    border-radius: 999px;
+    padding: 0.3rem 0.62rem;
+    font-size: 0.73rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .run-notes-label {
+    display: inline-block;
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--pine, #4d594a);
+  }
+
   .start {
     width: 100%;
     justify-content: center;
+    margin-top: 0.65rem;
   }
 
   .progress-wrap {
@@ -677,6 +927,10 @@ const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || imp
 
     .panel {
       padding: 0.72rem;
+    }
+
+    .clip-board {
+      grid-template-columns: 1fr;
     }
   }
 </style>

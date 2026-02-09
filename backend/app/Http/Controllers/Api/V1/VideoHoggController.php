@@ -12,6 +12,7 @@ class VideoHoggController extends ApiController
     {
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:20000'],
+            'file_notes_json' => ['nullable', 'string', 'max:300000'],
             'files' => ['required', 'array', 'min:1', 'max:120'],
             'files.*' => ['required', 'file', 'max:512000'], // 500MB each (subject to php.ini limits)
         ]);
@@ -43,8 +44,40 @@ class VideoHoggController extends ApiController
         $createdAt = now()->toIso8601String();
         $basePath = "videohogg/{$user->id}/{$runId}";
 
+        $notes = trim((string) ($validated['notes'] ?? ''));
+        $fileNotesByIndex = [];
+
+        $fileNotesRaw = trim((string) ($validated['file_notes_json'] ?? ''));
+        if ($fileNotesRaw !== '') {
+            $decoded = json_decode($fileNotesRaw, true);
+            if (! is_array($decoded)) {
+                return $this->fail('invalid_file_notes', 'file_notes_json must be a valid JSON array.', 422);
+            }
+
+            foreach ($decoded as $position => $entry) {
+                if (is_array($entry)) {
+                    $index = isset($entry['index']) ? (int) $entry['index'] : (int) $position;
+                    $noteValue = trim((string) ($entry['note'] ?? ''));
+                } else {
+                    $index = (int) $position;
+                    $noteValue = trim((string) $entry);
+                }
+
+                if ($noteValue === '') {
+                    continue;
+                }
+
+                $fileNotesByIndex[$index] = Str::of($noteValue)
+                    ->replace("\r\n", "\n")
+                    ->replace("\r", "\n")
+                    ->limit(4000, '')
+                    ->toString();
+            }
+        }
+
         $uploaded = [];
         $totalBytes = 0;
+        $notedCount = 0;
 
         foreach ($request->file('files', []) as $index => $file) {
             if (! $file) {
@@ -76,17 +109,23 @@ class VideoHoggController extends ApiController
             $sizeBytes = (int) ($file->getSize() ?? 0);
             $totalBytes += $sizeBytes;
 
+            $clipNote = $fileNotesByIndex[$index] ?? '';
+            if ($clipNote !== '') {
+                $notedCount += 1;
+                Storage::disk('public')->put("{$basePath}/notes/{$storedName}.txt", $clipNote);
+            }
+
             $uploaded[] = [
+                'index' => $index,
                 'original_name' => $originalName,
                 'stored_name' => $storedName,
                 'path' => $storedPath,
                 'url' => Storage::disk('public')->url($storedPath),
                 'size_bytes' => $sizeBytes,
                 'mime_type' => $file->getClientMimeType() ?: null,
+                'note' => $clipNote !== '' ? $clipNote : null,
             ];
         }
-
-        $notes = $validated['notes'] ?? '';
 
         $manifest = [
             'run_id' => $runId,
@@ -98,6 +137,7 @@ class VideoHoggController extends ApiController
             ],
             'notes' => $notes,
             'uploaded_count' => count($uploaded),
+            'noted_count' => $notedCount,
             'total_bytes' => $totalBytes,
             'files' => $uploaded,
         ];
@@ -115,6 +155,7 @@ class VideoHoggController extends ApiController
             'run_id' => $runId,
             'created_at' => $createdAt,
             'uploaded_count' => count($uploaded),
+            'noted_count' => $notedCount,
             'total_bytes' => $totalBytes,
             'manifest_path' => "{$basePath}/manifest.json",
             'manifest_url' => Storage::disk('public')->url("{$basePath}/manifest.json"),
