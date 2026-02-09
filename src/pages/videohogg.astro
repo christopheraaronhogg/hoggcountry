@@ -1,0 +1,682 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'VideoHogg — Intake';
+const description = 'Upload raw clips and notes for VideoHogg production runs.';
+const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
+const allowedEmailsCsv = (import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS || import.meta.env.PUBLIC_VIDEOHOGG_DAD_EMAIL || '').trim();
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="hero">
+    <span class="chapter font-chapter">VideoHogg</span>
+    <h1 class="font-display">Upload + Notes Intake</h1>
+    <p>Drop clips, add plain-text edit notes, and start a production run in one pass.</p>
+  </section>
+
+  <section class="container intake-wrap">
+    <article class="intake-card">
+      <header class="intake-head">
+        <h2 class="font-display">Gate Check</h2>
+        <p id="gate-status" class="gate-status" aria-live="polite">Checking account access...</p>
+      </header>
+
+      <div id="gate-actions" class="gate-actions" hidden>
+        <a id="login-link" class="btn btn-primary" href="/login?redirect=%2Fvideohogg">Sign in with Google</a>
+      </div>
+
+      <div id="workspace" class="workspace" hidden>
+        <section class="panel panel-upload">
+          <div class="panel-head">
+            <h3 class="font-display">1) Upload Clips</h3>
+            <button id="clear-files" type="button" class="ghost">Clear</button>
+          </div>
+
+          <label class="dropzone" id="dropzone" for="video-files">
+            <input id="video-files" type="file" accept="video/*" multiple />
+            <span class="dropzone-title">Drop videos here or click to browse</span>
+            <span class="dropzone-sub">Supports MP4, MOV, M4V, MKV, WEBM, AVI, MPEG.</span>
+          </label>
+
+          <p id="file-summary" class="summary">No files selected yet.</p>
+          <ul id="file-list" class="file-list" aria-live="polite"></ul>
+        </section>
+
+        <section class="panel panel-notes">
+          <div class="panel-head">
+            <h3 class="font-display">2) Notes for the AI Editor</h3>
+            <span class="hint">Plain text works best</span>
+          </div>
+
+          <div class="quick-row" role="group" aria-label="Quick insert actions">
+            <button type="button" class="chip" data-snippet="[Intro]\nUse first 10-20 seconds as intro.\n">Intro</button>
+            <button type="button" class="chip" data-snippet="[Outro]\nUse final 10-20 seconds as outro.\n">Outro</button>
+            <button type="button" class="chip" data-snippet="[Stabilize]\nApply heavy stabilization to clip: ">Stabilize</button>
+            <button type="button" class="chip" data-snippet="[Order]\nPreferred clip order: 1, 2, 3, 4\n">Order</button>
+            <button type="button" class="chip" data-snippet="[Keep]\nMust-keep moments:\n- ">Must Keep</button>
+          </div>
+
+          <textarea
+            id="notes"
+            rows="10"
+            placeholder="Example:\nUse clip 1 as intro.\nStabilize clip 3 heavily.\nKeep the river crossing and campfire close.\nAdd simple lower-thirds for mile marker mentions."
+          ></textarea>
+        </section>
+
+        <section class="panel panel-run">
+          <div class="panel-head">
+            <h3 class="font-display">3) Start Run</h3>
+            <span class="hint">Uploads then creates a run</span>
+          </div>
+
+          <button id="start-run" type="button" class="btn btn-primary start">Upload + Create Run</button>
+
+          <div class="progress-wrap" aria-live="polite">
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <p id="run-status" class="status">Ready.</p>
+          </div>
+
+          <div id="run-result" class="result" hidden>
+            <p><strong>Run created:</strong> <span id="run-id"></span></p>
+            <p><strong>Uploaded clips:</strong> <span id="uploaded-count"></span></p>
+          </div>
+        </section>
+      </div>
+    </article>
+  </section>
+</BaseLayout>
+
+<script is:inline define:vars={{ apiBase, allowedEmailsCsv }}>
+  (() => {
+    const API_BASE = apiBase;
+    const ALLOWED_EMAILS = String(allowedEmailsCsv || '')
+      .split(',')
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+
+    const AUTH_KEY = 'hcApiAuth.v1';
+    const MAX_FILES = 120;
+
+    const gateStatus = document.getElementById('gate-status');
+    const gateActions = document.getElementById('gate-actions');
+    const loginLink = document.getElementById('login-link');
+    const workspace = document.getElementById('workspace');
+
+    const fileInput = document.getElementById('video-files');
+    const dropzone = document.getElementById('dropzone');
+    const clearFiles = document.getElementById('clear-files');
+    const fileSummary = document.getElementById('file-summary');
+    const fileList = document.getElementById('file-list');
+
+    const notes = document.getElementById('notes');
+    const startRun = document.getElementById('start-run');
+    const runStatus = document.getElementById('run-status');
+    const progressBar = document.getElementById('progress-bar');
+    const progressTrack = document.querySelector('.progress-track');
+
+    const runResult = document.getElementById('run-result');
+    const runId = document.getElementById('run-id');
+    const uploadedCount = document.getElementById('uploaded-count');
+
+    if (
+      !(gateStatus instanceof HTMLElement) ||
+      !(gateActions instanceof HTMLElement) ||
+      !(loginLink instanceof HTMLAnchorElement) ||
+      !(workspace instanceof HTMLElement) ||
+      !(fileInput instanceof HTMLInputElement) ||
+      !(dropzone instanceof HTMLElement) ||
+      !(clearFiles instanceof HTMLButtonElement) ||
+      !(fileSummary instanceof HTMLElement) ||
+      !(fileList instanceof HTMLElement) ||
+      !(notes instanceof HTMLTextAreaElement) ||
+      !(startRun instanceof HTMLButtonElement) ||
+      !(runStatus instanceof HTMLElement) ||
+      !(progressBar instanceof HTMLElement) ||
+      !(progressTrack instanceof HTMLElement) ||
+      !(runResult instanceof HTMLElement) ||
+      !(runId instanceof HTMLElement) ||
+      !(uploadedCount instanceof HTMLElement)
+    ) {
+      return;
+    }
+
+    let selectedFiles = [];
+    let auth = null;
+
+    function parseJson(raw) {
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+
+    function readAuth() {
+      const payload = parseJson(localStorage.getItem(AUTH_KEY));
+      if (!payload || typeof payload !== 'object' || typeof payload.token !== 'string' || !payload.token) {
+        return null;
+      }
+      return payload;
+    }
+
+    function setGate(message, type = 'info') {
+      gateStatus.textContent = message;
+      gateStatus.dataset.type = type;
+    }
+
+    function showLogin() {
+      gateActions.hidden = false;
+      workspace.hidden = true;
+      const redirect = encodeURIComponent('/videohogg');
+      loginLink.href = `/login?redirect=${redirect}`;
+    }
+
+    function showWorkspace() {
+      gateActions.hidden = true;
+      workspace.hidden = false;
+    }
+
+    async function fetchMe(token) {
+      const response = await fetch(`${API_BASE}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) return null;
+      const payload = await response.json().catch(() => null);
+      return payload?.data || null;
+    }
+
+    function bytesToHuman(bytes) {
+      if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let size = bytes;
+      let unitIndex = 0;
+      while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex += 1;
+      }
+      return `${size.toFixed(size >= 100 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    }
+
+    function totalBytes() {
+      return selectedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+    }
+
+    function renderFiles() {
+      fileList.innerHTML = '';
+
+      if (selectedFiles.length === 0) {
+        fileSummary.textContent = 'No files selected yet.';
+        return;
+      }
+
+      fileSummary.textContent = `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'} • ${bytesToHuman(totalBytes())}`;
+
+      const fragment = document.createDocumentFragment();
+
+      selectedFiles.forEach((file, index) => {
+        const item = document.createElement('li');
+        item.className = 'file-item';
+
+        const name = document.createElement('span');
+        name.className = 'file-name';
+        name.textContent = `${index + 1}. ${file.name}`;
+
+        const meta = document.createElement('span');
+        meta.className = 'file-meta';
+        meta.textContent = bytesToHuman(file.size || 0);
+
+        item.append(name, meta);
+        fragment.appendChild(item);
+      });
+
+      fileList.appendChild(fragment);
+    }
+
+    function addFiles(fileListLike) {
+      const incoming = Array.from(fileListLike || []);
+      if (incoming.length === 0) return;
+
+      const seen = new Set(selectedFiles.map((file) => `${file.name}::${file.size}::${file.lastModified}`));
+
+      for (const file of incoming) {
+        const key = `${file.name}::${file.size}::${file.lastModified}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        selectedFiles.push(file);
+        if (selectedFiles.length >= MAX_FILES) break;
+      }
+
+      renderFiles();
+    }
+
+    function setUploadingState(isUploading) {
+      startRun.disabled = isUploading;
+      fileInput.disabled = isUploading;
+      clearFiles.disabled = isUploading;
+      if (isUploading) {
+        startRun.textContent = 'Uploading...';
+      } else {
+        startRun.textContent = 'Upload + Create Run';
+      }
+    }
+
+    function setProgress(percent) {
+      const bounded = Math.max(0, Math.min(100, Math.round(percent)));
+      progressBar.style.width = `${bounded}%`;
+      progressTrack.setAttribute('aria-valuenow', String(bounded));
+    }
+
+    function appendSnippet(snippet) {
+      const text = String(snippet || '').trim();
+      if (!text) return;
+
+      if (notes.value.trim().length === 0) {
+        notes.value = `${text}\n`;
+      } else {
+        const needsBreak = notes.value.endsWith('\n') ? '' : '\n';
+        notes.value = `${notes.value}${needsBreak}${text}\n`;
+      }
+      notes.focus();
+      notes.setSelectionRange(notes.value.length, notes.value.length);
+    }
+
+    async function guardAccess() {
+      auth = readAuth();
+      if (!auth) {
+        setGate('Sign in required to access VideoHogg.', 'error');
+        showLogin();
+        return false;
+      }
+
+      setGate('Verifying account...', 'info');
+      const me = await fetchMe(auth.token);
+      if (!me || typeof me.email !== 'string') {
+        localStorage.removeItem(AUTH_KEY);
+        setGate('Session expired. Please sign in again.', 'error');
+        showLogin();
+        return false;
+      }
+
+      const email = me.email.trim().toLowerCase();
+      const localhostBypass = window.location.hostname === 'localhost' && ALLOWED_EMAILS.length === 0;
+
+      if (!localhostBypass && ALLOWED_EMAILS.length === 0) {
+        setGate('VideoHogg allowlist is not configured yet.', 'error');
+        showLogin();
+        return false;
+      }
+
+      if (!localhostBypass && !ALLOWED_EMAILS.includes(email)) {
+        setGate(`Signed in as ${me.email}, but this account is not on the VideoHogg allowlist.`, 'error');
+        showLogin();
+        return false;
+      }
+
+      setGate(`Access granted for ${me.email}.`, 'success');
+      showWorkspace();
+      return true;
+    }
+
+    async function submitRun() {
+      if (!auth?.token) {
+        setGate('Session missing. Please sign in again.', 'error');
+        showLogin();
+        return;
+      }
+
+      if (selectedFiles.length === 0) {
+        runStatus.textContent = 'Add at least one video file before creating a run.';
+        return;
+      }
+
+      const formData = new FormData();
+      selectedFiles.forEach((file) => {
+        formData.append('files[]', file);
+      });
+      formData.append('notes', notes.value.trim());
+
+      setUploadingState(true);
+      runResult.hidden = true;
+      setProgress(0);
+      runStatus.textContent = 'Uploading files...';
+
+      try {
+        const payload = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', `${API_BASE}/videohogg/runs`);
+          xhr.setRequestHeader('Authorization', `Bearer ${auth.token}`);
+
+          xhr.upload.onprogress = (event) => {
+            if (!event.lengthComputable) return;
+            const percent = (event.loaded / event.total) * 100;
+            setProgress(percent);
+          };
+
+          xhr.onload = () => {
+            const parsed = parseJson(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(parsed);
+            } else {
+              reject(parsed?.error?.message || `Upload failed with status ${xhr.status}.`);
+            }
+          };
+
+          xhr.onerror = () => reject('Network error while uploading files.');
+          xhr.onabort = () => reject('Upload was aborted.');
+          xhr.send(formData);
+        });
+
+        const run = payload?.data || {};
+        setProgress(100);
+        runStatus.textContent = 'Run created successfully.';
+        runId.textContent = run.run_id || 'unknown';
+        uploadedCount.textContent = String(run.uploaded_count || selectedFiles.length);
+        runResult.hidden = false;
+      } catch (error) {
+        setProgress(0);
+        runStatus.textContent = typeof error === 'string' ? error : 'Upload failed.';
+      } finally {
+        setUploadingState(false);
+      }
+    }
+
+    fileInput.addEventListener('change', () => {
+      addFiles(fileInput.files);
+      fileInput.value = '';
+    });
+
+    dropzone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropzone.classList.add('is-dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('is-dragover');
+    });
+
+    dropzone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropzone.classList.remove('is-dragover');
+      addFiles(event.dataTransfer?.files || []);
+    });
+
+    clearFiles.addEventListener('click', () => {
+      selectedFiles = [];
+      renderFiles();
+    });
+
+    document.querySelectorAll('.chip[data-snippet]').forEach((button) => {
+      if (!(button instanceof HTMLButtonElement)) return;
+      button.addEventListener('click', () => appendSnippet(button.dataset.snippet || ''));
+    });
+
+    startRun.addEventListener('click', submitRun);
+
+    guardAccess();
+    renderFiles();
+  })();
+</script>
+
+<style>
+  .intake-wrap {
+    max-width: 980px;
+    padding-bottom: 4rem;
+  }
+
+  .intake-card {
+    border: 1px solid var(--border, #e6e1d4);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.82));
+    box-shadow: 0 20px 42px rgba(34, 33, 29, 0.10);
+    overflow: hidden;
+  }
+
+  .intake-head {
+    padding: 1rem 1.1rem 0.6rem;
+    border-bottom: 1px dashed rgba(77, 89, 74, 0.25);
+    background:
+      repeating-linear-gradient(
+        -15deg,
+        rgba(166, 181, 137, 0.08),
+        rgba(166, 181, 137, 0.08) 10px,
+        rgba(240, 224, 0, 0.10) 10px,
+        rgba(240, 224, 0, 0.10) 20px
+      );
+  }
+
+  .intake-head h2 {
+    margin: 0;
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+  }
+
+  .gate-status {
+    margin: 0.45rem 0 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.92rem;
+  }
+
+  .gate-status[data-type='error'] {
+    color: #b91c1c;
+  }
+
+  .gate-status[data-type='success'] {
+    color: #166534;
+  }
+
+  .gate-actions {
+    padding: 1rem 1.1rem 1.2rem;
+  }
+
+  .workspace {
+    display: grid;
+    gap: 0.95rem;
+    padding: 1rem;
+  }
+
+  .panel {
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 0.85rem;
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .panel-head h3 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .hint {
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.78rem;
+  }
+
+  .ghost {
+    border: 1px solid rgba(77, 89, 74, 0.24);
+    background: #fff;
+    color: var(--pine, #4d594a);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .dropzone {
+    display: grid;
+    gap: 0.25rem;
+    border: 2px dashed rgba(77, 89, 74, 0.35);
+    border-radius: 12px;
+    background: rgba(245, 242, 232, 0.95);
+    padding: 1rem;
+    cursor: pointer;
+    transition: border-color 120ms ease, background 120ms ease;
+  }
+
+  .dropzone:hover,
+  .dropzone.is-dragover {
+    border-color: rgba(77, 89, 74, 0.7);
+    background: rgba(240, 224, 0, 0.14);
+  }
+
+  .dropzone input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .dropzone-title {
+    font-family: Oswald, Impact, sans-serif;
+    letter-spacing: 0.01em;
+    color: var(--ink, #1f2937);
+    font-size: 1rem;
+  }
+
+  .dropzone-sub {
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.82rem;
+  }
+
+  .summary {
+    margin: 0.6rem 0 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.84rem;
+  }
+
+  .file-list {
+    list-style: none;
+    margin: 0.55rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+    max-height: 220px;
+    overflow: auto;
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.52rem 0.6rem;
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  .file-name {
+    font-size: 0.86rem;
+    color: #1f2937;
+    word-break: break-word;
+  }
+
+  .file-meta {
+    font-size: 0.76rem;
+    color: var(--muted-accessible, #4a5448);
+    white-space: nowrap;
+  }
+
+  .quick-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .chip {
+    border: 1px solid rgba(77, 89, 74, 0.22);
+    background: #fff;
+    color: var(--pine, #4d594a);
+    border-radius: 999px;
+    padding: 0.36rem 0.68rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid rgba(77, 89, 74, 0.32);
+    border-radius: 10px;
+    padding: 0.7rem;
+    font: inherit;
+    line-height: 1.45;
+    background: #fffef8;
+    color: #1f2937;
+    box-sizing: border-box;
+  }
+
+  .start {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .progress-wrap {
+    margin-top: 0.65rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(77, 89, 74, 0.18);
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #4d594a, #a6b589);
+    transition: width 120ms linear;
+  }
+
+  .status {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--muted-accessible, #4a5448);
+  }
+
+  .result {
+    margin-top: 0.65rem;
+    border: 1px solid rgba(22, 101, 52, 0.25);
+    border-radius: 10px;
+    background: rgba(22, 101, 52, 0.08);
+    padding: 0.55rem 0.6rem;
+    color: #14532d;
+  }
+
+  .result p {
+    margin: 0;
+    line-height: 1.45;
+    font-size: 0.86rem;
+  }
+
+  @media (max-width: 760px) {
+    .workspace {
+      padding: 0.8rem;
+    }
+
+    .panel {
+      padding: 0.72rem;
+    }
+  }
+</style>

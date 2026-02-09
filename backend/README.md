@@ -47,6 +47,7 @@ Authenticated (`Authorization: Bearer <token>`):
 - `PATCH /api/v1/community/trackers/{trackerId}`
 - `DELETE /api/v1/community/trackers/{trackerId}`
 - `GET /api/v1/trackers/live`
+- `POST /api/v1/videohogg/runs`
 
 ## Testing
 
@@ -85,3 +86,4 @@ tail -f storage/logs/laravel.log
 - Google OAuth uses `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.
 - Optional browser callback redirect: `FRONTEND_AUTH_CALLBACK_URL` (e.g., `https://hoggcountry.com/login`).
 - Optional callback host allowlist: `FRONTEND_AUTH_ALLOWED_HOSTS` (comma-separated).
+- VideoHogg intake allowlist: `VIDEOHOGG_ALLOWED_EMAILS` (comma-separated emails allowed to upload).

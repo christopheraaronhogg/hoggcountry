@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CommunityTrackerController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TrackerLiveController;
+use App\Http\Controllers\Api\V1\VideoHoggController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -65,5 +66,9 @@ Route::prefix('v1')->group(function (): void {
         });
 
         Route::get('/trackers/live', [TrackerLiveController::class, 'index']);
+
+        Route::prefix('videohogg')->group(function (): void {
+            Route::post('/runs', [VideoHoggController::class, 'store']);
+        });
     });
 });
