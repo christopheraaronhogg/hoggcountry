@@ -76,9 +76,17 @@ type PreviewProps = {
 
 const VideoHoggPreview: React.FC<PreviewProps> = ({clips}) => {
   const [failedClipIds, setFailedClipIds] = useState<string[]>([]);
+  const errorCountsRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     setFailedClipIds((previous) => previous.filter((id) => clips.some((clip) => clip.id === id)));
+
+    const validIds = new Set(clips.map((clip) => clip.id));
+    for (const clipId of errorCountsRef.current.keys()) {
+      if (!validIds.has(clipId)) {
+        errorCountsRef.current.delete(clipId);
+      }
+    }
   }, [clips]);
 
   let cursor = 0;
@@ -131,7 +139,20 @@ const VideoHoggPreview: React.FC<PreviewProps> = ({clips}) => {
                   pauseWhenBuffering
                   acceptableTimeShiftInSeconds={2}
                   playsInline
+                  onLoadedData={() => {
+                    errorCountsRef.current.delete(clip.id);
+                    setFailedClipIds((previous) => previous.filter((id) => id !== clip.id));
+                  }}
                   onError={() => {
+                    const nextCount = (errorCountsRef.current.get(clip.id) ?? 0) + 1;
+                    errorCountsRef.current.set(clip.id, nextCount);
+
+                    // The player can emit transient media errors during seek/buffer churn.
+                    // Only mark the clip as failed after repeated errors.
+                    if (nextCount < 3) {
+                      return;
+                    }
+
                     setFailedClipIds((previous) => (previous.includes(clip.id) ? previous : [...previous, clip.id]));
                   }}
                   style={{
