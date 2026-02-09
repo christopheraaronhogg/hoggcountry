@@ -262,11 +262,11 @@ const RemotionEditorShell: React.FC = () => {
           />
           <div className="vh-remotion-status-bar">
             <p className="vh-remotion-meta">
-              <strong>{includedCount}</strong> included{' '}
-              {excludedCount > 0 && <span className="vh-remotion-meta-dim">({excludedCount} excluded)</span>}
-              {' · '}
-              <strong>{formatTime(totalSeconds)}</strong> draft
+              <strong>{includedCount}/{clips.length}</strong> clips
+              {excludedCount > 0 && <span className="vh-remotion-meta-dim"> · {excludedCount} excluded</span>}
               {trimmedCount > 0 && <span className="vh-remotion-meta-dim"> · {trimmedCount} trimmed</span>}
+              {' · '}
+              <strong>{formatTime(totalSeconds)}</strong>
             </p>
           </div>
         </div>
@@ -286,12 +286,15 @@ const RemotionEditorShell: React.FC = () => {
                 <header className="vh-remotion-clip-head">
                   <div className="vh-remotion-clip-info">
                     <div className="vh-remotion-clip-title-row">
-                      <span className="vh-remotion-clip-num">{index + 1}</span>
-                      <p className="vh-remotion-clip-title">{clip.name}</p>
+                      <span className={`vh-remotion-clip-num ${!clip.include ? 'vh-remotion-clip-num--excluded' : ''}`}>{index + 1}</span>
+                      <p className={`vh-remotion-clip-title ${!clip.include ? 'vh-remotion-clip-title--excluded' : ''}`}>{clip.name}</p>
+                      {!clip.include && <span className="vh-remotion-status-badge vh-remotion-status-badge--excluded">Skipped</span>}
                     </div>
                     <p className="vh-remotion-clip-sub">
-                      {formatTime(clip.sourceDurationSeconds)} source
-                      {isTrimmed && ` · ${formatTime(segmentLength)} segment`}
+                      {formatTime(clip.sourceDurationSeconds)} total
+                      {isTrimmed && clip.include && (
+                        <span className="vh-remotion-clip-sub--trimmed"> → {formatTime(segmentLength)} used</span>
+                      )}
                     </p>
                   </div>
                   <div className="vh-remotion-actions">
@@ -299,6 +302,7 @@ const RemotionEditorShell: React.FC = () => {
                       type="button"
                       className="vh-remotion-btn"
                       title="Move up"
+                      aria-label="Move clip up"
                       onClick={() => setClips((prev) => moveBy(prev, index, -1))}
                       disabled={index === 0}
                     >
@@ -308,6 +312,7 @@ const RemotionEditorShell: React.FC = () => {
                       type="button"
                       className="vh-remotion-btn"
                       title="Move down"
+                      aria-label="Move clip down"
                       onClick={() => setClips((prev) => moveBy(prev, index, 1))}
                       disabled={index === clips.length - 1}
                     >
@@ -317,10 +322,11 @@ const RemotionEditorShell: React.FC = () => {
                 </header>
 
                 <div className="vh-remotion-clip-body">
-                  <label className="vh-remotion-field">
+                  <label className={`vh-remotion-field ${!clip.include ? 'vh-remotion-field--disabled' : ''}`}>
                     <span>
-                      Start {clip.trimStart.toFixed(1)}s
-                      {clip.trimStart > 0 && <span className="vh-remotion-field-badge">trimmed</span>}
+                      Start
+                      <span className="vh-remotion-time">{clip.trimStart.toFixed(1)}s</span>
+                      {clip.trimStart > 0 && <span className="vh-remotion-badge vh-remotion-badge--trim">Trimmed</span>}
                     </span>
                     <input
                       type="range"
@@ -340,11 +346,12 @@ const RemotionEditorShell: React.FC = () => {
                     />
                   </label>
 
-                  <label className="vh-remotion-field">
+                  <label className={`vh-remotion-field ${!clip.include ? 'vh-remotion-field--disabled' : ''}`}>
                     <span>
-                      End {clip.trimEnd.toFixed(1)}s
+                      End
+                      <span className="vh-remotion-time">{clip.trimEnd.toFixed(1)}s</span>
                       {clip.trimEnd < clip.sourceDurationSeconds && (
-                        <span className="vh-remotion-field-badge">trimmed</span>
+                        <span className="vh-remotion-badge vh-remotion-badge--trim">Trimmed</span>
                       )}
                     </span>
                     <input
@@ -377,7 +384,7 @@ const RemotionEditorShell: React.FC = () => {
                       }))
                     }
                   >
-                    {clip.include ? 'Included' : 'Excluded'}
+                    {clip.include ? '✓ Included' : '○ Excluded'}
                   </button>
                   {isTrimmed && clip.include && (
                     <button
@@ -391,7 +398,7 @@ const RemotionEditorShell: React.FC = () => {
                         }))
                       }
                     >
-                      Reset trim
+                      Reset
                     </button>
                   )}
                 </footer>
