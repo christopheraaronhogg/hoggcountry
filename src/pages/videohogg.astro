@@ -238,6 +238,9 @@ const allowedEmailsCsv = (
       if (clip && typeof clip.url === 'string' && clip.url.startsWith('blob:')) {
         URL.revokeObjectURL(clip.url);
       }
+      if (clip && typeof clip.thumbUrl === 'string' && clip.thumbUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(clip.thumbUrl);
+      }
     }
 
     function setProgress(percent) {
@@ -248,6 +251,134 @@ const allowedEmailsCsv = (
 
     function totalBytes() {
       return clips.reduce((sum, clip) => sum + (clip.file?.size || 0), 0);
+    }
+
+    function requestThumbnail(clip) {
+      if (!clip || clip.thumbStatus === 'loading' || clip.thumbStatus === 'ready' || clip.thumbStatus === 'failed') {
+        return;
+      }
+
+      clip.thumbStatus = 'loading';
+
+      const probe = document.createElement('video');
+      probe.preload = 'metadata';
+      probe.muted = true;
+      probe.playsInline = true;
+      probe.src = clip.url;
+
+      const clipId = clip.id;
+      let closed = false;
+      const timeoutId = window.setTimeout(() => fail(), 8000);
+
+      function clipStillExists() {
+        return clips.some((entry) => entry.id === clipId);
+      }
+
+      function cleanup() {
+        if (closed) return;
+        closed = true;
+        window.clearTimeout(timeoutId);
+        probe.pause();
+        probe.removeAttribute('src');
+        try {
+          probe.load();
+        } catch {
+          // no-op
+        }
+      }
+
+      function fail() {
+        if (!clipStillExists()) {
+          cleanup();
+          return;
+        }
+        clip.thumbStatus = 'failed';
+        cleanup();
+        renderClips();
+      }
+
+      function finalize(blob) {
+        if (!clipStillExists()) {
+          cleanup();
+          return;
+        }
+
+        if (!(blob instanceof Blob)) {
+          fail();
+          return;
+        }
+
+        if (typeof clip.thumbUrl === 'string' && clip.thumbUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(clip.thumbUrl);
+        }
+
+        clip.thumbUrl = URL.createObjectURL(blob);
+        clip.thumbStatus = 'ready';
+        cleanup();
+        renderClips();
+      }
+
+      function captureFrame() {
+        if (!clipStillExists()) {
+          cleanup();
+          return;
+        }
+
+        if (!Number.isFinite(probe.videoWidth) || probe.videoWidth < 2 || !Number.isFinite(probe.videoHeight) || probe.videoHeight < 2) {
+          fail();
+          return;
+        }
+
+        const targetWidth = 480;
+        const targetHeight = Math.max(1, Math.round((probe.videoHeight / probe.videoWidth) * targetWidth));
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        const context = canvas.getContext('2d');
+        if (!context) {
+          fail();
+          return;
+        }
+
+        context.drawImage(probe, 0, 0, targetWidth, targetHeight);
+        canvas.toBlob((blob) => finalize(blob || null), 'image/jpeg', 0.82);
+      }
+
+      probe.addEventListener('loadedmetadata', () => {
+        if (Number.isFinite(probe.duration) && probe.duration > 0) {
+          clip.durationSeconds = probe.duration;
+        }
+
+        const seekTarget = Number.isFinite(probe.duration) && probe.duration > 0.4
+          ? Math.min(1.2, probe.duration * 0.2)
+          : 0;
+
+        if (seekTarget <= 0) {
+          if (probe.readyState >= 2) {
+            captureFrame();
+          } else {
+            probe.addEventListener('loadeddata', captureFrame, { once: true });
+          }
+          return;
+        }
+
+        const onSeeked = () => captureFrame();
+        probe.addEventListener('seeked', onSeeked, { once: true });
+
+        try {
+          probe.currentTime = seekTarget;
+        } catch {
+          probe.removeEventListener('seeked', onSeeked);
+          if (probe.readyState >= 2) {
+            captureFrame();
+          } else {
+            probe.addEventListener('loadeddata', captureFrame, { once: true });
+          }
+        }
+      }, { once: true });
+
+      probe.addEventListener('error', fail, { once: true });
     }
 
     function buildTemplateButtons(clipId) {
@@ -313,18 +444,50 @@ const allowedEmailsCsv = (
         const preview = document.createElement('div');
         preview.className = 'clip-preview';
 
-        const video = document.createElement('video');
-        video.className = 'clip-thumb';
-        video.src = clip.url;
-        video.preload = 'metadata';
-        video.muted = true;
-        video.playsInline = true;
-
         const badge = document.createElement('span');
         badge.className = 'clip-index';
         badge.textContent = `Clip ${index + 1}`;
 
-        preview.append(video, badge);
+        const meta = document.createElement('p');
+        meta.className = 'clip-meta';
+        meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
+
+        if (clip.thumbStatus === 'ready' && clip.thumbUrl) {
+          const image = document.createElement('img');
+          image.className = 'clip-thumb';
+          image.src = clip.thumbUrl;
+          image.alt = `${clip.file.name} thumbnail`;
+          image.loading = 'lazy';
+          preview.append(image, badge);
+        } else {
+          const video = document.createElement('video');
+          video.className = 'clip-thumb';
+          video.src = clip.url;
+          video.preload = 'metadata';
+          video.muted = true;
+          video.playsInline = true;
+          video.controls = true;
+          video.disablePictureInPicture = true;
+          video.setAttribute('controlsList', 'nodownload noplaybackrate');
+
+          video.addEventListener('loadedmetadata', () => {
+            clip.durationSeconds = Number.isFinite(video.duration) ? video.duration : clip.durationSeconds;
+            meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
+          }, { once: true });
+
+          preview.append(video, badge);
+
+          const previewStatus = document.createElement('span');
+          previewStatus.className = 'clip-preview-status';
+          previewStatus.textContent = clip.thumbStatus === 'failed'
+            ? 'Preview unavailable for this video format on this browser.'
+            : 'Generating thumbnail...';
+          preview.append(previewStatus);
+
+          if (clip.thumbStatus === 'idle') {
+            requestThumbnail(clip);
+          }
+        }
 
         const body = document.createElement('div');
         body.className = 'clip-body';
@@ -351,15 +514,6 @@ const allowedEmailsCsv = (
 
         controls.append(dragHint, remove);
         heading.append(title, controls);
-
-        const meta = document.createElement('p');
-        meta.className = 'clip-meta';
-        meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
-
-        video.addEventListener('loadedmetadata', () => {
-          clip.durationSeconds = Number.isFinite(video.duration) ? video.duration : null;
-          meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
-        }, { once: true });
 
         const noteLabel = document.createElement('label');
         noteLabel.className = 'note-label';
@@ -405,6 +559,8 @@ const allowedEmailsCsv = (
           id: createClipId(file),
           file,
           url: URL.createObjectURL(file),
+          thumbUrl: '',
+          thumbStatus: 'idle',
           note: '',
           durationSeconds: null,
         });
@@ -909,6 +1065,20 @@ const allowedEmailsCsv = (
     object-fit: cover;
     display: block;
     background: #0f172a;
+  }
+
+  .clip-preview-status {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    max-width: calc(100% - 16px);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.76);
+    color: #e5e7eb;
+    font-size: 0.67rem;
+    line-height: 1.2;
+    padding: 0.25rem 0.38rem;
+    pointer-events: none;
   }
 
   .clip-index {
