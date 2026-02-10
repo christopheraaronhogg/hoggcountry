@@ -7,15 +7,19 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
 const allowedEmailsCsv = (
   import.meta.env.PUBLIC_VIDEOHOGG_ALLOWED_EMAILS ||
   import.meta.env.PUBLIC_VIDEOHOGG_DAD_EMAIL ||
-  'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com'
+  'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com,chris.stitchscreen@gmail.com'
+).trim();
+const youtubeIdeasAllowedEmailsCsv = (
+  import.meta.env.PUBLIC_VIDEOHOGG_YOUTUBE_IDEA_EMAILS ||
+  'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com,chris.stitchscreen@gmail.com'
 ).trim();
 ---
 
 <BaseLayout title={title} description={description}>
   <section class="hero">
     <span class="chapter font-chapter">VideoHogg</span>
-    <h1 class="font-display">Per-Video Upload + Notes</h1>
-    <p>Upload clips, attach notes to each clip, and create a run fast.</p>
+    <h1 class="font-display">Self-Edit + Batch Handoff</h1>
+    <p>Upload clips, edit timeline, set channel defaults, and ship a deterministic run.</p>
   </section>
 
   <section class="container intake-wrap">
@@ -26,7 +30,26 @@ const allowedEmailsCsv = (
       </header>
 
       <div id="gate-actions" class="gate-actions" hidden>
-        <a id="login-link" class="btn btn-primary" href="/login?redirect=%2Fvideohogg">Sign in with Google</a>
+        <section class="coming-soon" aria-labelledby="coming-soon-title">
+          <p class="coming-soon-kicker font-chapter">Private Family Beta</p>
+          <h3 id="coming-soon-title" class="font-display">VideoHogg is almost ready.</h3>
+          <p class="coming-soon-copy">
+            We’re polishing the self-edit workflow and MiniHogg handoff pipeline.
+            For now, this page is only available to Dad + CodeHogg accounts.
+          </p>
+
+          <div class="coming-soon-grid" role="list" aria-label="What is coming soon">
+            <p class="coming-soon-chip" role="listitem">Timeline trims + smart batch handoff</p>
+            <p class="coming-soon-chip" role="listitem">YouTube link → title/description options</p>
+            <p class="coming-soon-chip" role="listitem">Channel defaults + deterministic manifests</p>
+            <p class="coming-soon-chip" role="listitem">MiniHogg queue processing + return package</p>
+          </div>
+
+          <div class="coming-soon-actions">
+            <a id="login-link" class="btn btn-primary" href="/login?redirect=%2Fvideohogg">Sign in with Google</a>
+            <p class="coming-soon-note">Allowed family emails are currently private-beta only.</p>
+          </div>
+        </section>
       </div>
 
       <div id="workspace" class="workspace" hidden>
@@ -55,10 +78,132 @@ const allowedEmailsCsv = (
           <div id="clip-board" class="clip-board" aria-live="polite"></div>
         </section>
 
+        <section class="panel panel-remotion">
+          <div class="panel-head panel-head--stack">
+            <div class="panel-head-title">
+              <h3 class="font-display">3) Remotion Editor <span class="beta-badge">Beta</span></h3>
+              <span class="hint">Self-edit first, then hand off batch package</span>
+            </div>
+          </div>
+          <p class="summary">
+            Trim, reorder, and exclude clips in timeline before queue submission.
+          </p>
+          <div id="remotion-editor-root" class="remotion-editor-root"></div>
+        </section>
+
+        <section class="panel panel-settings">
+          <div class="panel-head panel-head--stack">
+            <div class="panel-head-title">
+              <h3 class="font-display">4) Channel Profile + Handoff Defaults</h3>
+              <span class="hint">Priority: job overrides → channel defaults → system defaults</span>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <label class="setting-field" for="channel-profile-select">
+              <span>Channel profile</span>
+              <select id="channel-profile-select">
+                <option value="youtube_longform">YouTube Long Form</option>
+                <option value="youtube_short">YouTube Shorts</option>
+                <option value="tiktok">TikTok</option>
+                <option value="instagram_reel">Instagram Reel</option>
+              </select>
+            </label>
+
+            <label class="setting-field" for="target-duration-minutes">
+              <span>Run target (minutes)</span>
+              <input id="target-duration-minutes" type="number" min="1" max="60" step="1" value="9" />
+            </label>
+
+            <label class="setting-field" for="title-options-count">
+              <span>Title options</span>
+              <input id="title-options-count" type="number" min="1" max="8" step="1" value="3" />
+            </label>
+
+            <label class="setting-field" for="description-options-count">
+              <span>Description options</span>
+              <input id="description-options-count" type="number" min="1" max="8" step="1" value="3" />
+            </label>
+
+            <label class="setting-field" for="aspect-ratio-override">
+              <span>Aspect ratio override</span>
+              <select id="aspect-ratio-override">
+                <option value="auto">Use channel default</option>
+                <option value="16:9">16:9 Landscape</option>
+                <option value="9:16">9:16 Vertical</option>
+                <option value="1:1">1:1 Square</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="settings-switches">
+            <label><input id="chapter-toggle" type="checkbox" checked /> Include chapter timestamps</label>
+            <label><input id="transcript-toggle" type="checkbox" checked /> Include transcript</label>
+            <label><input id="short-toggle" type="checkbox" checked /> Include short social clip</label>
+          </div>
+
+          <label class="run-notes-label" for="handoff-instructions">Editor handoff instructions (optional)</label>
+          <textarea
+            id="handoff-instructions"
+            rows="3"
+            placeholder="Tell the editor what matters: hook focus, pacing, must-keep moments, CTA, scripture/theme anchors, etc."
+          ></textarea>
+
+          <div class="panel-head panel-head--compact">
+            <h4>Thumbnail reference assets</h4>
+            <button id="clear-thumbnail-refs" type="button" class="ghost">Clear Refs</button>
+          </div>
+          <label class="dropzone dropzone--thumb" for="thumbnail-ref-files">
+            <input id="thumbnail-ref-files" type="file" accept="image/*" multiple />
+            <span class="dropzone-title">Add thumbnail references</span>
+            <span class="dropzone-sub">Upload examples of style, framing, and typography to guide output.</span>
+          </label>
+
+          <p id="thumbnail-ref-summary" class="summary">No thumbnail references attached.</p>
+          <div id="thumbnail-ref-board" class="thumb-ref-board" aria-live="polite"></div>
+        </section>
+
+        <section class="panel panel-youtube-ideas" id="youtube-ideas-panel" hidden>
+          <div class="panel-head panel-head--stack">
+            <div class="panel-head-title">
+              <h3 class="font-display">5) Dad Quick: Existing YouTube → 3+3 Options</h3>
+              <span class="hint">MiniHogg queue request for title + description options (YouTube URL only)</span>
+            </div>
+          </div>
+
+          <label class="run-notes-label" for="youtube-ideas-url">YouTube video URL</label>
+          <input id="youtube-ideas-url" class="ideas-input" type="url" placeholder="https://www.youtube.com/watch?v=..." />
+
+          <label class="run-notes-label" for="youtube-ideas-notes">Optional focus notes</label>
+          <textarea
+            id="youtube-ideas-notes"
+            rows="3"
+            placeholder="Optional context for better options: audience, hook angle, verse/theme, key moment, CTA..."
+          ></textarea>
+
+          <button id="youtube-ideas-start" type="button" class="btn btn-primary start">Queue MiniHogg Ideas</button>
+
+          <p id="youtube-ideas-status" class="status">Ready.</p>
+
+          <div id="youtube-ideas-result" class="result" hidden>
+            <p><strong>Request run:</strong> <span id="youtube-ideas-run-id"></span></p>
+            <div class="ideas-columns">
+              <div>
+                <p class="ideas-title">Title options</p>
+                <ol id="youtube-ideas-title-list" class="ideas-list"></ol>
+              </div>
+              <div>
+                <p class="ideas-title">Description options</p>
+                <ol id="youtube-ideas-description-list" class="ideas-list"></ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="panel panel-run">
           <div class="panel-head">
-            <h3 class="font-display">3) Create Run</h3>
-            <span class="hint">Uploads then writes run manifest</span>
+            <h3 class="font-display">6) Create Run</h3>
+            <span class="hint">Uploads assets and writes deterministic manifest</span>
           </div>
 
           <label class="run-notes-label" for="run-notes">Run-wide notes (optional)</label>
@@ -82,30 +227,23 @@ const allowedEmailsCsv = (
             <p><strong>Uploaded clips:</strong> <span id="uploaded-count"></span></p>
             <p><strong>Clip notes attached:</strong> <span id="noted-count"></span></p>
             <p id="edits-line" hidden><strong>Remotion edits:</strong> <span id="edits-summary"></span></p>
+            <p id="settings-line" hidden><strong>Resolved settings:</strong> <span id="settings-summary"></span></p>
+            <p id="thumbnail-line" hidden><strong>Thumbnail refs:</strong> <span id="thumbnail-summary"></span></p>
           </div>
-        </section>
-
-        <section class="panel panel-remotion">
-          <div class="panel-head panel-head--stack">
-            <div class="panel-head-title">
-              <h3 class="font-display">4) Remotion Editor <span class="beta-badge">Beta</span></h3>
-              <span class="hint">Timeline edit like Remotion · then upload</span>
-            </div>
-          </div>
-          <p class="summary">
-            Pick a clip, trim with sliders or timeline handles, reorder in the lane, and preview instantly.
-          </p>
-          <div id="remotion-editor-root" class="remotion-editor-root"></div>
         </section>
       </div>
     </article>
   </section>
 </BaseLayout>
 
-<script is:inline define:vars={{ apiBase, allowedEmailsCsv }}>
+<script is:inline define:vars={{ apiBase, allowedEmailsCsv, youtubeIdeasAllowedEmailsCsv }}>
   (() => {
     const API_BASE = apiBase;
     const ALLOWED_EMAILS = String(allowedEmailsCsv || '')
+      .split(',')
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+    const YOUTUBE_IDEA_EMAILS = String(youtubeIdeasAllowedEmailsCsv || '')
       .split(',')
       .map((value) => value.trim().toLowerCase())
       .filter(Boolean);
@@ -122,6 +260,97 @@ const allowedEmailsCsv = (
       { key: 'skip', label: 'Skip', snippet: 'Skip this clip unless needed for continuity.' },
     ];
 
+    const CHANNEL_PROFILES = {
+      youtube_longform: {
+        id: 'youtube_longform',
+        name: 'YouTube Long Form',
+        defaults: {
+          output: {
+            target_platform: 'youtube',
+            aspect_ratio: '16:9',
+            duration_target_minutes: 9,
+            deliverables: {
+              final_video: true,
+              transcript: true,
+              title_options: 3,
+              description_options: 3,
+              chapter_timestamps: true,
+              social_short_clip: true,
+            },
+          },
+          handoff: {
+            mode: 'self-edit-then-batch',
+          },
+        },
+      },
+      youtube_short: {
+        id: 'youtube_short',
+        name: 'YouTube Shorts',
+        defaults: {
+          output: {
+            target_platform: 'youtube_shorts',
+            aspect_ratio: '9:16',
+            duration_target_minutes: 1,
+            deliverables: {
+              final_video: true,
+              transcript: true,
+              title_options: 3,
+              description_options: 2,
+              chapter_timestamps: false,
+              social_short_clip: true,
+            },
+          },
+          handoff: {
+            mode: 'self-edit-then-batch',
+          },
+        },
+      },
+      tiktok: {
+        id: 'tiktok',
+        name: 'TikTok',
+        defaults: {
+          output: {
+            target_platform: 'tiktok',
+            aspect_ratio: '9:16',
+            duration_target_minutes: 1,
+            deliverables: {
+              final_video: true,
+              transcript: true,
+              title_options: 3,
+              description_options: 1,
+              chapter_timestamps: false,
+              social_short_clip: true,
+            },
+          },
+          handoff: {
+            mode: 'self-edit-then-batch',
+          },
+        },
+      },
+      instagram_reel: {
+        id: 'instagram_reel',
+        name: 'Instagram Reel',
+        defaults: {
+          output: {
+            target_platform: 'instagram_reel',
+            aspect_ratio: '9:16',
+            duration_target_minutes: 1,
+            deliverables: {
+              final_video: true,
+              transcript: true,
+              title_options: 3,
+              description_options: 2,
+              chapter_timestamps: false,
+              social_short_clip: true,
+            },
+          },
+          handoff: {
+            mode: 'self-edit-then-batch',
+          },
+        },
+      },
+    };
+
     const gateStatus = document.getElementById('gate-status');
     const gateActions = document.getElementById('gate-actions');
     const loginLink = document.getElementById('login-link');
@@ -135,6 +364,20 @@ const allowedEmailsCsv = (
     const clipEmpty = document.getElementById('clip-empty');
     const clipBoard = document.getElementById('clip-board');
 
+    const channelProfileSelect = document.getElementById('channel-profile-select');
+    const targetDurationMinutes = document.getElementById('target-duration-minutes');
+    const titleOptionsCount = document.getElementById('title-options-count');
+    const descriptionOptionsCount = document.getElementById('description-options-count');
+    const aspectRatioOverride = document.getElementById('aspect-ratio-override');
+    const chapterToggle = document.getElementById('chapter-toggle');
+    const transcriptToggle = document.getElementById('transcript-toggle');
+    const shortToggle = document.getElementById('short-toggle');
+    const handoffInstructions = document.getElementById('handoff-instructions');
+    const thumbnailRefFiles = document.getElementById('thumbnail-ref-files');
+    const clearThumbnailRefs = document.getElementById('clear-thumbnail-refs');
+    const thumbnailRefSummary = document.getElementById('thumbnail-ref-summary');
+    const thumbnailRefBoard = document.getElementById('thumbnail-ref-board');
+
     const runNotes = document.getElementById('run-notes');
     const startRun = document.getElementById('start-run');
     const runStatus = document.getElementById('run-status');
@@ -147,6 +390,20 @@ const allowedEmailsCsv = (
     const notedCount = document.getElementById('noted-count');
     const editsLine = document.getElementById('edits-line');
     const editsSummary = document.getElementById('edits-summary');
+    const settingsLine = document.getElementById('settings-line');
+    const settingsSummary = document.getElementById('settings-summary');
+    const thumbnailLine = document.getElementById('thumbnail-line');
+    const thumbnailSummary = document.getElementById('thumbnail-summary');
+
+    const youtubeIdeasPanel = document.getElementById('youtube-ideas-panel');
+    const youtubeIdeasUrl = document.getElementById('youtube-ideas-url');
+    const youtubeIdeasNotes = document.getElementById('youtube-ideas-notes');
+    const youtubeIdeasStart = document.getElementById('youtube-ideas-start');
+    const youtubeIdeasStatus = document.getElementById('youtube-ideas-status');
+    const youtubeIdeasResult = document.getElementById('youtube-ideas-result');
+    const youtubeIdeasRunId = document.getElementById('youtube-ideas-run-id');
+    const youtubeIdeasTitleList = document.getElementById('youtube-ideas-title-list');
+    const youtubeIdeasDescriptionList = document.getElementById('youtube-ideas-description-list');
 
     if (
       !(gateStatus instanceof HTMLElement) ||
@@ -159,6 +416,19 @@ const allowedEmailsCsv = (
       !(fileSummary instanceof HTMLElement) ||
       !(clipEmpty instanceof HTMLElement) ||
       !(clipBoard instanceof HTMLElement) ||
+      !(channelProfileSelect instanceof HTMLSelectElement) ||
+      !(targetDurationMinutes instanceof HTMLInputElement) ||
+      !(titleOptionsCount instanceof HTMLInputElement) ||
+      !(descriptionOptionsCount instanceof HTMLInputElement) ||
+      !(aspectRatioOverride instanceof HTMLSelectElement) ||
+      !(chapterToggle instanceof HTMLInputElement) ||
+      !(transcriptToggle instanceof HTMLInputElement) ||
+      !(shortToggle instanceof HTMLInputElement) ||
+      !(handoffInstructions instanceof HTMLTextAreaElement) ||
+      !(thumbnailRefFiles instanceof HTMLInputElement) ||
+      !(clearThumbnailRefs instanceof HTMLButtonElement) ||
+      !(thumbnailRefSummary instanceof HTMLElement) ||
+      !(thumbnailRefBoard instanceof HTMLElement) ||
       !(runNotes instanceof HTMLTextAreaElement) ||
       !(startRun instanceof HTMLButtonElement) ||
       !(runStatus instanceof HTMLElement) ||
@@ -169,15 +439,31 @@ const allowedEmailsCsv = (
       !(uploadedCount instanceof HTMLElement) ||
       !(notedCount instanceof HTMLElement) ||
       !(editsLine instanceof HTMLElement) ||
-      !(editsSummary instanceof HTMLElement)
+      !(editsSummary instanceof HTMLElement) ||
+      !(settingsLine instanceof HTMLElement) ||
+      !(settingsSummary instanceof HTMLElement) ||
+      !(thumbnailLine instanceof HTMLElement) ||
+      !(thumbnailSummary instanceof HTMLElement) ||
+      !(youtubeIdeasPanel instanceof HTMLElement) ||
+      !(youtubeIdeasUrl instanceof HTMLInputElement) ||
+      !(youtubeIdeasNotes instanceof HTMLTextAreaElement) ||
+      !(youtubeIdeasStart instanceof HTMLButtonElement) ||
+      !(youtubeIdeasStatus instanceof HTMLElement) ||
+      !(youtubeIdeasResult instanceof HTMLElement) ||
+      !(youtubeIdeasRunId instanceof HTMLElement) ||
+      !(youtubeIdeasTitleList instanceof HTMLOListElement) ||
+      !(youtubeIdeasDescriptionList instanceof HTMLOListElement)
     ) {
       return;
     }
 
     let clips = [];
+    let thumbnailRefs = [];
     let auth = null;
     let draggingClipId = null;
     let remotionEdits = [];
+    let youtubeIdeasPollTimer = null;
+    let youtubeIdeasPollAttempts = 0;
 
     function parseJson(raw) {
       if (!raw) return null;
@@ -201,11 +487,15 @@ const allowedEmailsCsv = (
       gateStatus.dataset.type = type;
     }
 
-    function showLogin() {
+    function showLogin(options = {}) {
       gateActions.hidden = false;
       workspace.hidden = true;
       const redirect = encodeURIComponent('/videohogg');
       loginLink.href = `/login?redirect=${redirect}`;
+      const cta = typeof options?.cta === 'string' && options.cta.trim() !== ''
+        ? options.cta.trim()
+        : 'Sign in with Google';
+      loginLink.textContent = cta;
     }
 
     function showWorkspace() {
@@ -245,12 +535,155 @@ const allowedEmailsCsv = (
       return `${minutes}:${String(remainder).padStart(2, '0')}`;
     }
 
-    function createClipId(file) {
-      const base = `${file.name || 'clip'}-${file.size || 0}-${file.lastModified || Date.now()}`;
+    function createAssetId(file, prefix = 'asset') {
+      const base = `${file?.name || prefix}-${file?.size || 0}-${file?.lastModified || Date.now()}`;
       const suffix = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
         ? crypto.randomUUID().slice(0, 8)
         : Math.random().toString(36).slice(2, 10);
       return `${base}-${suffix}`;
+    }
+
+    function createClipId(file) {
+      return createAssetId(file, 'clip');
+    }
+
+    function deepClone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function clampInt(value, fallback, min = 1, max = 60) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return fallback;
+      return Math.max(min, Math.min(max, Math.round(numeric)));
+    }
+
+    function getSelectedChannelProfile() {
+      const selected = CHANNEL_PROFILES[channelProfileSelect.value] || CHANNEL_PROFILES.youtube_longform;
+      return deepClone(selected);
+    }
+
+    function syncSettingsFromProfile(profile) {
+      const defaults = profile?.defaults?.output?.deliverables || {};
+      const outputDefaults = profile?.defaults?.output || {};
+
+      if (Number.isFinite(outputDefaults.duration_target_minutes)) {
+        targetDurationMinutes.value = String(outputDefaults.duration_target_minutes);
+      }
+
+      if (Number.isFinite(defaults.title_options)) {
+        titleOptionsCount.value = String(defaults.title_options);
+      }
+
+      if (Number.isFinite(defaults.description_options)) {
+        descriptionOptionsCount.value = String(defaults.description_options);
+      }
+
+      chapterToggle.checked = Boolean(defaults.chapter_timestamps);
+      transcriptToggle.checked = Boolean(defaults.transcript);
+      shortToggle.checked = Boolean(defaults.social_short_clip);
+      aspectRatioOverride.value = 'auto';
+    }
+
+    function buildChannelProfilePayload() {
+      const profile = getSelectedChannelProfile();
+      return {
+        id: profile.id,
+        name: profile.name,
+        defaults: profile.defaults,
+      };
+    }
+
+    function buildJobOverridesPayload(channelProfile) {
+      const outputDefaults = channelProfile?.defaults?.output || {};
+      const deliverableDefaults = outputDefaults.deliverables || {};
+
+      const duration = clampInt(
+        targetDurationMinutes.value,
+        clampInt(outputDefaults.duration_target_minutes, 9, 1, 60),
+        1,
+        60,
+      );
+      const titles = clampInt(
+        titleOptionsCount.value,
+        clampInt(deliverableDefaults.title_options, 3, 1, 8),
+        1,
+        8,
+      );
+      const descriptions = clampInt(
+        descriptionOptionsCount.value,
+        clampInt(deliverableDefaults.description_options, 3, 1, 8),
+        1,
+        8,
+      );
+
+      const overrides = {
+        output: {
+          deliverables: {},
+        },
+      };
+
+      if (duration !== outputDefaults.duration_target_minutes) {
+        overrides.output.duration_target_minutes = duration;
+      }
+
+      if (titles !== deliverableDefaults.title_options) {
+        overrides.output.deliverables.title_options = titles;
+      }
+
+      if (descriptions !== deliverableDefaults.description_options) {
+        overrides.output.deliverables.description_options = descriptions;
+      }
+
+      if (chapterToggle.checked !== Boolean(deliverableDefaults.chapter_timestamps)) {
+        overrides.output.deliverables.chapter_timestamps = chapterToggle.checked;
+      }
+
+      if (transcriptToggle.checked !== Boolean(deliverableDefaults.transcript)) {
+        overrides.output.deliverables.transcript = transcriptToggle.checked;
+      }
+
+      if (shortToggle.checked !== Boolean(deliverableDefaults.social_short_clip)) {
+        overrides.output.deliverables.social_short_clip = shortToggle.checked;
+      }
+
+      if (aspectRatioOverride.value !== 'auto') {
+        overrides.output.aspect_ratio = aspectRatioOverride.value;
+      }
+
+      const instructions = handoffInstructions.value.trim();
+      if (instructions) {
+        overrides.handoff = {
+          instructions,
+        };
+      }
+
+      if (Object.keys(overrides.output.deliverables).length === 0) {
+        delete overrides.output.deliverables;
+      }
+
+      if (Object.keys(overrides.output).length === 0) {
+        delete overrides.output;
+      }
+
+      if (!overrides.handoff && !overrides.output) {
+        return {};
+      }
+
+      return overrides;
+    }
+
+    function summarizeResolvedSettings(payload) {
+      const resolved = payload?.output || {};
+      const deliverables = resolved?.deliverables || {};
+      const platform = resolved?.target_platform || 'default';
+      const aspect = resolved?.aspect_ratio || 'default';
+      const duration = Number.isFinite(Number(resolved?.duration_target_minutes))
+        ? `${resolved.duration_target_minutes}m`
+        : 'n/a';
+      const titles = Number.isFinite(Number(deliverables?.title_options)) ? deliverables.title_options : 'n/a';
+      const descriptions = Number.isFinite(Number(deliverables?.description_options)) ? deliverables.description_options : 'n/a';
+
+      return `${platform} · ${aspect} · ${duration} · ${titles} titles · ${descriptions} desc`;
     }
 
     function releaseClipUrl(clip) {
@@ -259,6 +692,12 @@ const allowedEmailsCsv = (
       }
       if (clip && typeof clip.thumbUrl === 'string' && clip.thumbUrl.startsWith('blob:')) {
         URL.revokeObjectURL(clip.thumbUrl);
+      }
+    }
+
+    function releaseThumbnailRefUrl(ref) {
+      if (ref && typeof ref.url === 'string' && ref.url.startsWith('blob:')) {
+        URL.revokeObjectURL(ref.url);
       }
     }
 
@@ -700,11 +1139,200 @@ const allowedEmailsCsv = (
       }
     }
 
+    function setYoutubeIdeasStatus(message, type = 'info') {
+      youtubeIdeasStatus.textContent = message;
+      youtubeIdeasStatus.dataset.type = type;
+    }
+
+    function clearYoutubeIdeasResult() {
+      youtubeIdeasTitleList.innerHTML = '';
+      youtubeIdeasDescriptionList.innerHTML = '';
+      youtubeIdeasResult.hidden = true;
+    }
+
+    function normalizeOptionList(values, maxCount = 3, maxLength = 240) {
+      if (!Array.isArray(values)) return [];
+      return values
+        .map((entry) => String(entry || '').trim())
+        .filter(Boolean)
+        .map((entry) => entry.replace(/\s+/g, ' ').slice(0, maxLength))
+        .slice(0, maxCount);
+    }
+
+    function renderYoutubeIdeas(ideas) {
+      const titles = normalizeOptionList(ideas?.title_options, 6, 140);
+      const descriptions = normalizeOptionList(ideas?.description_options, 6, 600);
+
+      if (titles.length === 0 || descriptions.length === 0) {
+        setYoutubeIdeasStatus('MiniHogg finished, but no valid options were returned. Try one more time with extra notes.', 'error');
+        clearYoutubeIdeasResult();
+        return;
+      }
+
+      youtubeIdeasTitleList.innerHTML = '';
+      youtubeIdeasDescriptionList.innerHTML = '';
+
+      titles.forEach((text) => {
+        const item = document.createElement('li');
+        item.textContent = text;
+        youtubeIdeasTitleList.appendChild(item);
+      });
+
+      descriptions.forEach((text) => {
+        const item = document.createElement('li');
+        item.textContent = text;
+        youtubeIdeasDescriptionList.appendChild(item);
+      });
+
+      youtubeIdeasResult.hidden = false;
+      setYoutubeIdeasStatus('Done. MiniHogg generated title and description options.', 'success');
+    }
+
+    function stopYoutubeIdeasPolling() {
+      if (youtubeIdeasPollTimer) {
+        window.clearInterval(youtubeIdeasPollTimer);
+        youtubeIdeasPollTimer = null;
+      }
+      youtubeIdeasPollAttempts = 0;
+    }
+
+    function setYoutubeIdeasSubmitting(isSubmitting) {
+      youtubeIdeasStart.disabled = isSubmitting;
+      youtubeIdeasUrl.disabled = isSubmitting;
+      youtubeIdeasNotes.disabled = isSubmitting;
+      youtubeIdeasStart.textContent = isSubmitting ? 'Queuing...' : 'Queue MiniHogg Ideas';
+    }
+
+    function looksLikeYouTubeUrl(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return false;
+      return /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(raw);
+    }
+
+    async function fetchRunById(runId) {
+      if (!auth?.token) return null;
+      const response = await fetch(`${API_BASE}/videohogg/runs/${encodeURIComponent(runId)}`, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error?.message || `Unable to fetch run status (${response.status}).`);
+      }
+
+      return payload?.data?.run || null;
+    }
+
+    async function pollYoutubeIdeasRun(runId) {
+      if (!runId) return;
+
+      youtubeIdeasPollAttempts += 1;
+
+      try {
+        const run = await fetchRunById(runId);
+        if (!run) return;
+
+        if (run.status === 'done') {
+          stopYoutubeIdeasPolling();
+          const ideas = run?.extra?.youtube_ideas || null;
+          if (ideas) {
+            renderYoutubeIdeas(ideas);
+          } else {
+            setYoutubeIdeasStatus('Done, but no options were attached. Try again or check watcher logs.', 'error');
+          }
+          return;
+        }
+
+        if (run.status === 'failed') {
+          stopYoutubeIdeasPolling();
+          const reason = String(run?.failure_message || 'MiniHogg worker failed this request.');
+          setYoutubeIdeasStatus(reason, 'error');
+          return;
+        }
+
+        if (youtubeIdeasPollAttempts >= 90) {
+          stopYoutubeIdeasPolling();
+          setYoutubeIdeasStatus('Still processing. You can leave this page open, or check back in a few minutes.', 'info');
+          return;
+        }
+
+        setYoutubeIdeasStatus(`Queued with MiniHogg (run ${runId}). Checking status...`, 'info');
+      } catch (error) {
+        stopYoutubeIdeasPolling();
+        setYoutubeIdeasStatus(error instanceof Error ? error.message : 'Could not check request status.', 'error');
+      }
+    }
+
+    function startYoutubeIdeasPolling(runId) {
+      stopYoutubeIdeasPolling();
+      pollYoutubeIdeasRun(runId);
+      youtubeIdeasPollTimer = window.setInterval(() => {
+        pollYoutubeIdeasRun(runId);
+      }, 7000);
+    }
+
+    async function submitYoutubeIdeas() {
+      if (!auth?.token) {
+        setYoutubeIdeasStatus('Session expired. Please sign in again.', 'error');
+        showLogin({ cta: 'Sign in again' });
+        return;
+      }
+
+      const youtubeUrl = youtubeIdeasUrl.value.trim();
+      if (!looksLikeYouTubeUrl(youtubeUrl)) {
+        setYoutubeIdeasStatus('Paste a full YouTube video URL (youtube.com or youtu.be).', 'error');
+        return;
+      }
+
+      const notes = youtubeIdeasNotes.value.trim();
+      clearYoutubeIdeasResult();
+      stopYoutubeIdeasPolling();
+      setYoutubeIdeasSubmitting(true);
+      setYoutubeIdeasStatus('Queuing request with MiniHogg...', 'info');
+
+      try {
+        const response = await fetch(`${API_BASE}/videohogg/youtube-ideas`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            youtube_url: youtubeUrl,
+            notes,
+            title_options: 3,
+            description_options: 3,
+          }),
+        });
+
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(payload?.error?.message || `Could not queue request (${response.status}).`);
+        }
+
+        const run = payload?.data || {};
+        const id = String(run.run_id || '').trim();
+        if (!id) {
+          throw new Error('Run ID missing from API response.');
+        }
+
+        youtubeIdeasRunId.textContent = id;
+        setYoutubeIdeasStatus(`Queued as ${id}. Waiting on MiniHogg...`, 'info');
+        startYoutubeIdeasPolling(id);
+      } catch (error) {
+        setYoutubeIdeasStatus(error instanceof Error ? error.message : 'Could not queue YouTube ideas request.', 'error');
+      } finally {
+        setYoutubeIdeasSubmitting(false);
+      }
+    }
+
     async function guardAccess() {
       auth = readAuth();
       if (!auth) {
-        setGate('Sign in required to access VideoHogg.', 'error');
-        showLogin();
+        setGate('Private beta: sign in with an approved family account to continue.', 'error');
+        showLogin({ cta: 'Sign in with Google' });
         return false;
       }
 
@@ -713,7 +1341,7 @@ const allowedEmailsCsv = (
       if (!me || typeof me.email !== 'string') {
         localStorage.removeItem(AUTH_KEY);
         setGate('Session expired. Please sign in again.', 'error');
-        showLogin();
+        showLogin({ cta: 'Sign in again' });
         return false;
       }
 
@@ -722,14 +1350,22 @@ const allowedEmailsCsv = (
 
       if (!localhostBypass && ALLOWED_EMAILS.length === 0) {
         setGate('VideoHogg allowlist is not configured yet.', 'error');
-        showLogin();
+        showLogin({ cta: 'Sign in with Google' });
         return false;
       }
 
       if (!localhostBypass && !ALLOWED_EMAILS.includes(email)) {
-        setGate(`Signed in as ${me.email}, but this account is not on the VideoHogg allowlist.`, 'error');
-        showLogin();
+        setGate(`Signed in as ${me.email}. VideoHogg remains in private family beta for now.`, 'error');
+        showLogin({ cta: 'Switch Google account' });
         return false;
+      }
+
+      const youtubeIdeasAllowed = localhostBypass || YOUTUBE_IDEA_EMAILS.includes(email);
+      youtubeIdeasPanel.hidden = !youtubeIdeasAllowed;
+      if (youtubeIdeasAllowed) {
+        setYoutubeIdeasStatus('Ready. Paste a YouTube URL to queue 3 title + 3 description options.', 'info');
+      } else {
+        setYoutubeIdeasStatus('This quick feature is restricted to Dad + CodeHogg emails.', 'error');
       }
 
       setGate(`Access granted for ${me.email}.`, 'success');
@@ -740,7 +1376,7 @@ const allowedEmailsCsv = (
     async function submitRun() {
       if (!auth?.token) {
         setGate('Session missing. Please sign in again.', 'error');
-        showLogin();
+        showLogin({ cta: 'Sign in again' });
         return;
       }
 
@@ -981,6 +1617,14 @@ const allowedEmailsCsv = (
 
     window.addEventListener('videohogg:clips-request', publishRemotionState);
 
+    youtubeIdeasStart.addEventListener('click', submitYoutubeIdeas);
+    youtubeIdeasUrl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        submitYoutubeIdeas();
+      }
+    });
+
     startRun.addEventListener('click', submitRun);
 
     guardAccess();
@@ -1040,6 +1684,72 @@ const allowedEmailsCsv = (
 
   .gate-actions {
     padding: 1rem 1.1rem 1.2rem;
+  }
+
+  .coming-soon {
+    border: 1px solid rgba(77, 89, 74, 0.24);
+    border-radius: 14px;
+    padding: 1rem;
+    background:
+      radial-gradient(120% 90% at 5% 0%, rgba(240, 224, 0, 0.16), transparent 56%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.86));
+    box-shadow: 0 14px 28px rgba(34, 33, 29, 0.08);
+  }
+
+  .coming-soon-kicker {
+    margin: 0;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--pine, #4d594a);
+  }
+
+  .coming-soon h3 {
+    margin: 0.28rem 0 0;
+    font-size: clamp(1.2rem, 2vw, 1.45rem);
+    line-height: 1.15;
+  }
+
+  .coming-soon-copy {
+    margin: 0.55rem 0 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.9rem;
+    max-width: 62ch;
+    line-height: 1.55;
+  }
+
+  .coming-soon-grid {
+    margin-top: 0.75rem;
+    display: grid;
+    gap: 0.45rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .coming-soon-chip {
+    margin: 0;
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    color: #1f2937;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.25;
+    padding: 0.42rem 0.72rem;
+  }
+
+  .coming-soon-actions {
+    margin-top: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem 0.8rem;
+  }
+
+  .coming-soon-note {
+    margin: 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.76rem;
+    line-height: 1.35;
   }
 
   .workspace {
@@ -1374,6 +2084,14 @@ const allowedEmailsCsv = (
     color: var(--muted-accessible, #4a5448);
   }
 
+  .status[data-type='error'] {
+    color: #991b1b;
+  }
+
+  .status[data-type='success'] {
+    color: #166534;
+  }
+
   .result {
     margin-top: 0.65rem;
     border: 1px solid rgba(22, 101, 52, 0.25);
@@ -1381,6 +2099,45 @@ const allowedEmailsCsv = (
     background: rgba(22, 101, 52, 0.08);
     padding: 0.55rem 0.6rem;
     color: #14532d;
+  }
+
+  .ideas-input {
+    width: 100%;
+    border: 1px solid rgba(77, 89, 74, 0.32);
+    border-radius: 10px;
+    padding: 0.62rem 0.7rem;
+    font: inherit;
+    line-height: 1.4;
+    background: #fffef8;
+    color: #1f2937;
+    box-sizing: border-box;
+    margin-bottom: 0.55rem;
+  }
+
+  .ideas-columns {
+    margin-top: 0.5rem;
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .ideas-title {
+    margin: 0 0 0.24rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #14532d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .ideas-list {
+    margin: 0;
+    padding-left: 1.05rem;
+    display: grid;
+    gap: 0.26rem;
+    color: #14532d;
+    font-size: 0.84rem;
+    line-height: 1.35;
   }
 
   .result p {
@@ -2088,6 +2845,23 @@ const allowedEmailsCsv = (
   }
 
   @media (max-width: 760px) {
+    .coming-soon {
+      padding: 0.85rem;
+    }
+
+    .coming-soon-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .coming-soon-actions {
+      align-items: stretch;
+    }
+
+    .coming-soon-actions .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
     .workspace {
       padding: 0.75rem;
     }

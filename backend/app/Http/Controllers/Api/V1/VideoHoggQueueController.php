@@ -49,6 +49,38 @@ class VideoHoggQueueController extends ApiController
         ]);
     }
 
+    public function show(Request $request, string $runId)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return $this->fail('unauthenticated', 'Authentication required.', 401);
+        }
+
+        if (! $this->isAllowedEmail((string) $user->email)) {
+            return $this->fail('forbidden', 'This account is not allowed to access VideoHogg queue.', 403);
+        }
+
+        $validated = $request->validate([
+            'with_manifest' => ['nullable', 'boolean'],
+        ]);
+
+        /** @var VideoHoggRun|null $run */
+        $run = VideoHoggRun::query()->where('run_id', $runId)->first();
+        if (! $run) {
+            return $this->fail('not_found', 'Run not found.', 404);
+        }
+
+        if ((string) $run->user_id !== (string) $user->id) {
+            return $this->fail('forbidden', 'You can only access your own VideoHogg runs.', 403);
+        }
+
+        $withManifest = filter_var($validated['with_manifest'] ?? false, FILTER_VALIDATE_BOOL);
+
+        return $this->ok([
+            'run' => $this->serializeRun($run, $withManifest),
+        ]);
+    }
+
     public function claim(Request $request)
     {
         $user = $request->user();
@@ -329,7 +361,7 @@ class VideoHoggQueueController extends ApiController
 
     private function isAllowedEmail(string $email): bool
     {
-        $allowedEmails = collect(explode(',', (string) env('VIDEOHOGG_ALLOWED_EMAILS', 'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com')))
+        $allowedEmails = collect(explode(',', (string) env('VIDEOHOGG_ALLOWED_EMAILS', 'hoggj@gmail.com,jhogg@gmail.com,christopheraaronhogg@gmail.com,chris.stitchscreen@gmail.com')))
             ->map(static fn (string $value): string => Str::lower(trim($value)))
             ->filter(static fn (string $value): bool => $value !== '')
             ->values();

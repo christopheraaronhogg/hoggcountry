@@ -70,7 +70,9 @@ Route::prefix('v1')->group(function (): void {
 
         Route::prefix('videohogg')->group(function (): void {
             Route::post('/runs', [VideoHoggController::class, 'store']);
+            Route::post('/youtube-ideas', [VideoHoggController::class, 'storeYouTubeIdeas']);
             Route::get('/runs', [VideoHoggQueueController::class, 'index']);
+            Route::get('/runs/{runId}', [VideoHoggQueueController::class, 'show']);
             Route::post('/runs/claim', [VideoHoggQueueController::class, 'claim']);
             Route::post('/runs/{runId}/heartbeat', [VideoHoggQueueController::class, 'heartbeat']);
             Route::post('/runs/{runId}/complete', [VideoHoggQueueController::class, 'complete']);
