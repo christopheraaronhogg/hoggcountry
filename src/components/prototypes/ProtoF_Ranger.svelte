@@ -244,7 +244,7 @@
             <div class="dispatch-content">
               <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
               <h3 class="dispatch-title">{displayVideos[0].title}</h3>
-              <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], 170)}</p>
+              <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], 420)}</p>
               <span class="dispatch-cta">Watch Video</span>
             </div>
           </a>
@@ -2131,6 +2131,10 @@
     overflow: hidden;
   }
 
+  .dispatch-featured .dispatch-desc {
+    -webkit-line-clamp: 10;
+  }
+
   .dispatch-card:not(.dispatch-featured) .dispatch-desc {
     font-size: 0.85rem;
     -webkit-line-clamp: 2;
@@ -2873,6 +2877,10 @@
 
     .dispatch-card.dispatch-featured {
       grid-row: span 1;
+    }
+
+    .dispatch-featured .dispatch-desc {
+      -webkit-line-clamp: 5;
     }
   }
 
