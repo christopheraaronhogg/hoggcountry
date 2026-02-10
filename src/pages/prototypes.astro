@@ -2,12 +2,12 @@
 import HomepagePrototypes from '../components/HomepagePrototypes.svelte';
 import BackgroundWidget from '../components/BackgroundWidget.svelte';
 import { fetchYouTubeRSS } from '../lib/youtube';
-import { YT_FEED_URL } from '../lib/config';
+import { YT_CHANNEL_FEED_URL } from '../lib/config';
 
 const title = "Homepage Prototypes — Hogg Country";
 
-// Fetch videos at build time
-const videos = await fetchYouTubeRSS(YT_FEED_URL);
+// Build-time fallback only; live refresh runs in the client.
+const videos = await fetchYouTubeRSS(YT_CHANNEL_FEED_URL);
 ---
 
 <!doctype html>

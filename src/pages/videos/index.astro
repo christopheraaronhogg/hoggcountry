@@ -3,11 +3,13 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
-import { YT_FEED_URL } from '../../lib/config';
+import { YT_CHANNEL_FEED_URL } from '../../lib/config';
 import { fetchYouTubeRSS } from '../../lib/youtube';
 
-// Limit to 5 (matches the YouTube playlist feed’s current size + keeps the page tight)
-const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 5);
+const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
+
+// Build-time fallback only. Runtime script below refreshes from Laravel API.
+const videos = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 12);
 ---
 <html lang="en">
   <head>
@@ -20,18 +22,20 @@ const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 5);
         <div class="container">
           <h1 class="font-display">Videos</h1>
           <p>Recent uploads from @hoggcountry7483</p>
+          <p id="videos-status" class="videos-status" aria-live="polite">Loading latest videos...</p>
         </div>
       </section>
       <section>
         <div class="container">
-          <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+          <div id="videos-grid" class="videos-grid">
             {videos.map((v) => (
               <article class="card">
                 <div class="video-frame">
                   <YouTubeEmbed id={v.id} title={v.title} />
                 </div>
-                <div style="padding:.75rem 1rem;">
+                <div class="video-copy">
                   <h2 class="video-title clamp-2">{v.title}</h2>
+                  <a class="video-link" href={v.link} target="_blank" rel="noopener">Watch on YouTube</a>
                 </div>
               </article>
             ))}
@@ -40,5 +44,151 @@ const videos = (await fetchYouTubeRSS(YT_FEED_URL)).slice(0, 5);
       </section>
     </main>
     <Footer />
+
+    <script is:inline define:vars={{ apiBase }}>
+      (() => {
+        const grid = document.getElementById('videos-grid');
+        const status = document.getElementById('videos-status');
+        const endpoint = `${apiBase}/videos/latest?limit=12&source=channel`;
+
+        if (!(grid instanceof HTMLElement) || !(status instanceof HTMLElement)) {
+          return;
+        }
+
+        let pollHandle = null;
+        let latestFirstId = '';
+
+        function escapeHtml(value) {
+          return String(value || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+        }
+
+        function formatDate(value) {
+          if (!value) return '';
+          const parsed = new Date(value);
+          if (Number.isNaN(parsed.getTime())) return '';
+          return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function renderVideos(items) {
+          const cards = items.map((video) => {
+            const id = escapeHtml(video.id);
+            const title = escapeHtml(video.title || 'Untitled');
+            const link = escapeHtml(video.link || `https://www.youtube.com/watch?v=${id}`);
+            const published = formatDate(video.published);
+            const dateLine = published ? `<p class="video-meta">${escapeHtml(published)}</p>` : '';
+
+            return `
+              <article class="card">
+                <div class="video-frame">
+                  <iframe
+                    src="https://www.youtube-nocookie.com/embed/${id}"
+                    title="${title}"
+                    loading="lazy"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                    referrerpolicy="strict-origin-when-cross-origin"
+                  ></iframe>
+                </div>
+                <div class="video-copy">
+                  <h2 class="video-title clamp-2">${title}</h2>
+                  ${dateLine}
+                  <a class="video-link" href="${link}" target="_blank" rel="noopener">Watch on YouTube</a>
+                </div>
+              </article>
+            `;
+          });
+
+          grid.innerHTML = cards.join('');
+        }
+
+        async function refresh() {
+          try {
+            const response = await fetch(endpoint, {
+              headers: {
+                Accept: 'application/json',
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error(`videos/latest failed: ${response.status}`);
+            }
+
+            const payload = await response.json();
+            const items = Array.isArray(payload?.data?.items) ? payload.data.items : [];
+
+            if (items.length === 0) {
+              status.textContent = 'No videos returned yet. Showing fallback list.';
+              return;
+            }
+
+            const firstId = String(items?.[0]?.id || '');
+            if (firstId !== '' && firstId !== latestFirstId) {
+              renderVideos(items);
+              latestFirstId = firstId;
+            }
+
+            status.textContent = `Live feed active • last checked ${new Date().toLocaleTimeString()}`;
+          } catch (error) {
+            status.textContent = 'Live refresh unavailable right now. Showing fallback list.';
+          }
+        }
+
+        refresh();
+        pollHandle = window.setInterval(refresh, 20000);
+
+        window.addEventListener('beforeunload', () => {
+          if (pollHandle) {
+            window.clearInterval(pollHandle);
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
+
+<style>
+  .videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+
+  .video-frame iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    border: 0;
+    display: block;
+  }
+
+  .video-copy {
+    padding: 0.75rem 1rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .video-meta {
+    margin: 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.78rem;
+  }
+
+  .video-link {
+    display: inline-flex;
+    width: fit-content;
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .videos-status {
+    margin: 0.35rem 0 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.8rem;
+  }
+</style>

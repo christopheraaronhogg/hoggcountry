@@ -4,7 +4,8 @@
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 
   import { onMount } from "svelte";
-  import { YT_PLAYLIST_ID } from "../../lib/config";
+
+  const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "https://hoggcountry.on-forge.com/api/v1").replace(/\/+$/, "");
 
   let { videos: initialVideos = [] } = $props();
   let videos = $state(initialVideos);
@@ -53,29 +54,39 @@
     }
   }
 
-  // This page is statically generated; keep the YouTube section "live" by re-fetching
-  // the feed at runtime from our own backend (browser can't fetch YouTube RSS due to CORS).
-  onMount(async () => {
-    try {
-      const url = new URL("/.netlify/functions/youtube-feed", window.location.origin);
-      url.searchParams.set("mode", YT_PLAYLIST_ID ? "playlist" : "channel");
+  // This page is statically generated; keep videos live by polling the Laravel API.
+  onMount(() => {
+    let timer = null;
 
-      const res = await fetch(url.toString(), { headers: { Accept: "application/json" } });
-      if (!res.ok) throw new Error(`youtube-feed failed: ${res.status}`);
+    async function refreshVideos() {
+      try {
+        const url = `${API_BASE}/videos/latest?limit=8&source=channel`;
+        const res = await fetch(url, { headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error(`videos/latest failed: ${res.status}`);
 
-      const data = await res.json();
-      const items = Array.isArray(data?.items) ? data.items : [];
+        const payload = await res.json();
+        const items = Array.isArray(payload?.data?.items) ? payload.data.items : [];
 
-      if (!items.length) return;
+        if (!items.length) return;
 
-      // Avoid pointless updates (keeps DOM stable).
-      if (videos?.[0]?.id && items?.[0]?.id && videos[0].id === items[0].id) return;
+        // Avoid pointless updates (keeps DOM stable).
+        if (videos?.[0]?.id && items?.[0]?.id && videos[0].id === items[0].id) return;
 
-      videos = items;
-    } catch (e) {
-      _liveLoadError = e?.message || String(e);
-      // Intentionally silent: we fall back to build-time videos.
+        videos = items;
+      } catch (e) {
+        _liveLoadError = e?.message || String(e);
+        // Intentionally silent: we fall back to build-time videos.
+      }
     }
+
+    refreshVideos();
+    timer = window.setInterval(refreshVideos, 20000);
+
+    return () => {
+      if (timer) {
+        window.clearInterval(timer);
+      }
+    };
   });
 </script>
 

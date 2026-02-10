@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import { YT_FEED_URL } from '../lib/config';
+import { YT_CHANNEL_FEED_URL } from '../lib/config';
 import { fetchYouTubeRSS } from '../lib/youtube';
 import { getCollection } from 'astro:content';
 
@@ -20,7 +20,7 @@ const trips = (await getCollection('trips')).map(t => ({
   },
 }));
 
-const vids = (await fetchYouTubeRSS(YT_FEED_URL)).map(v => ({
+const vids = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).map(v => ({
   kind: 'video' as const,
   id: v.id,
   title: v.title,
