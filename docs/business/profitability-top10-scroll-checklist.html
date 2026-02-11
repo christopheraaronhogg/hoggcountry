@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>HoggCountry Top 10 Checklist (Plain English)</title>
+  <title>HoggCountry Profitability Dashboard v2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
@@ -29,204 +29,519 @@
         radial-gradient(900px 600px at 10% -10%, rgba(0,0,0,0.035), transparent 65%),
         radial-gradient(750px 500px at 90% 0%, rgba(0,0,0,0.025), transparent 60%);
       min-height: 100vh;
-      padding: 22px 14px;
+      padding: 20px 12px;
     }
-    .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }
+
+    .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 12px; }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 10px 20px var(--shadow); }
-    .header { padding: 18px 20px; display: grid; gap: 10px; }
-    .eyebrow { display:inline-flex; width: fit-content; padding:4px 10px; border-radius:999px; border:1px solid #d4cc9f; background:#fcf8d0; color:#554d00; font-weight:700; font-size:12px; letter-spacing:.03em; text-transform:uppercase; }
-    h1 { margin: 0; font-family: 'Oswald', Impact, sans-serif; color: var(--pine); letter-spacing: .02em; font-size: clamp(1.45rem, 1.1rem + 1.6vw, 2rem); line-height: 1.1; }
-    .sub { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.45; }
+    .header { padding: 16px 18px; display: grid; gap: 10px; }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #d4cc9f;
+      background: #fcf8d0;
+      color: #554d00;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: 'Oswald', Impact, sans-serif;
+      color: var(--pine);
+      letter-spacing: .02em;
+      font-size: clamp(1.35rem, 1.05rem + 1.4vw, 1.95rem);
+      line-height: 1.1;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.4;
+    }
+
     .stats { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .stat { border: 1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:.86rem; background:#fff; color: var(--pine); font-weight:700; }
-    .controls { display:flex; flex-wrap: wrap; gap:8px; align-items:center; justify-content:space-between; padding:0 20px 16px; }
-    .left-controls,.right-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    button { appearance:none; border:1px solid #d6cfbc; background:#fff; color:var(--pine); border-radius:10px; padding:7px 11px; font:inherit; font-size:.86rem; font-weight:700; cursor:pointer; }
-    button:hover { border-color:#c8bfa8; transform: translateY(-1px); }
-    button.primary { background:var(--marker); border-color:#dbce00; color:#2f321f; }
-    .toggle-wrap { display:inline-flex; align-items:center; gap:6px; font-size:.82rem; color: var(--muted); padding:5px 8px; border:1px dashed #d7cfbc; border-radius:8px; background:#fff; }
-    .scroll { max-height:min(72vh, 900px); overflow:auto; padding:12px; border-radius:14px; border:1px solid var(--border); background: linear-gradient(to bottom, rgba(255,255,255,.92), rgba(255,255,255,.96)); }
-    details.parent { border:1px solid var(--border); border-radius:12px; background:#fff; margin-bottom:10px; overflow:hidden; }
-    details.parent[open] { box-shadow:0 8px 18px rgba(0,0,0,.06); }
-    summary { list-style:none; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; cursor:pointer; padding:12px 14px; background:#f9f7ef; border-bottom:1px solid var(--border); }
-    summary::-webkit-details-marker { display:none; }
-    .rank { width:30px; height:30px; border-radius:999px; display:grid; place-items:center; border:1px solid #c6beaa; background:#fff; color:var(--pine); font-family:'Oswald',sans-serif; font-size:15px; }
-    .step-label { font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; color:#687261; font-weight:700; margin-bottom:3px; }
-    .parent-title { margin:0; font-size:1rem; color:#2f3a2d; line-height:1.3; font-weight:700; }
-    .parent-desc { margin-top:3px; color:#5c6656; font-size:.86rem; line-height:1.35; }
-    .parent-check { width:22px; height:22px; accent-color:var(--ok); }
-    .children { margin:0; padding:8px 12px 12px; list-style:none; display:grid; gap:8px; }
-    .child { display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start; border:1px solid #ece7da; border-radius:10px; background:#fff; padding:10px; }
-    .child input[type="checkbox"] { width:20px; height:20px; margin-top:2px; accent-color:var(--ok); }
-    .child-title { color:#253024; line-height:1.35; font-size:.93rem; }
-    .meta { margin-top:5px; color:#6e776c; font-size:.75rem; }
-    .internal-id { margin-top:4px; color:#7b8377; font-size:.72rem; display:none; }
-    .show-ids .internal-id { display:block; }
-    .done .child-title { text-decoration: line-through; color:#6d786b; }
-    .footer-note { margin:0; padding:8px 4px 0; color:#626b5f; font-size:.8rem; line-height:1.35; }
-    @media (max-width:700px) {
-      summary { grid-template-columns:auto 1fr; }
-      .parent-check { grid-column:1/-1; justify-self:start; }
+    .stat {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .84rem;
+      background: #fff;
+      color: var(--pine);
+      font-weight: 700;
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 8px;
+      padding: 0 18px 16px;
+    }
+
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    .search {
+      min-width: 260px;
+      flex: 1;
+      border: 1px solid #d6cfbc;
+      background: #fff;
+      color: #2f3b2d;
+      border-radius: 10px;
+      padding: 9px 11px;
+      font: inherit;
+      font-size: .9rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #d6cfbc;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #fff;
+      font-size: .8rem;
+      color: #4c5849;
+      font-weight: 700;
+    }
+
+    .chip input { accent-color: var(--ok); }
+
+    button {
+      appearance: none;
+      border: 1px solid #d6cfbc;
+      background: #fff;
+      color: var(--pine);
+      border-radius: 10px;
+      padding: 7px 11px;
+      font: inherit;
+      font-size: .84rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: #c8bfa8; transform: translateY(-1px); }
+    button.primary { background: var(--marker); border-color: #dbce00; color: #2f321f; }
+
+    .scroll {
+      max-height: min(74vh, 980px);
+      overflow: auto;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: linear-gradient(to bottom, rgba(255,255,255,.92), rgba(255,255,255,.96));
+    }
+
+    .phase-block {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .phase-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      background: #f6f4ec;
+      border-bottom: 1px solid var(--border);
+      padding: 9px 11px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .phase-title { font-family: 'Oswald', Impact, sans-serif; letter-spacing: .02em; color: #304031; font-size: 1rem; }
+    .phase-count { font-size: .78rem; color: #5f6a5c; font-weight: 700; }
+
+    .parent {
+      border-top: 1px solid #eee8d8;
+    }
+
+    .parent-summary {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 11px;
+      background: #fdfcf8;
+      border-bottom: 1px solid #f0ebdf;
+      cursor: pointer;
+    }
+
+    .rank {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #c6beaa;
+      background: #fff;
+      color: var(--pine);
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+    }
+
+    .parent-title { margin: 0; font-size: .93rem; color: #2f3a2d; font-weight: 700; line-height: 1.25; }
+    .parent-desc { margin-top: 2px; color: #60705b; font-size: .8rem; }
+    .parent-meta { color: #6f7969; font-size: .75rem; font-weight: 700; }
+
+    .task-list { list-style: none; margin: 0; padding: 8px 10px 10px 10px; display: grid; gap: 7px; }
+
+    .task {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 9px;
+      align-items: start;
+      border: 1px solid #ece7da;
+      border-radius: 10px;
+      background: #fff;
+      padding: 8px 9px;
+    }
+
+    .task input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--ok); }
+    .task-title { color: #253024; line-height: 1.3; font-size: .9rem; }
+    .task-meta { margin-top: 4px; color: #6e776c; font-size: .74rem; }
+    .internal-id { margin-top: 3px; color: #7f877c; font-size: .72rem; display: none; }
+    .show-ids .internal-id { display: block; }
+    .done .task-title { text-decoration: line-through; color: #687467; }
+
+    .empty {
+      padding: 22px;
+      text-align: center;
+      color: #667264;
+      font-size: .92rem;
+    }
+
+    .footer-note { margin: 0; padding: 8px 4px 0; color: #626b5f; font-size: .8rem; line-height: 1.35; }
+
+    @media (max-width: 760px) {
+      .parent-summary { grid-template-columns: auto 1fr; }
+      .parent-meta { grid-column: 1 / -1; }
+      .search { min-width: 100%; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <section class="card header">
-      <span class="eyebrow">HoggCountry • Start Here</span>
-      <h1>Top 10 Profitability Checklist (Plain-English View)</h1>
-      <p class="sub">No BH jargon by default. Just the work in plain language so you can execute fast.</p>
+      <span class="eyebrow">HoggCountry • Profitability</span>
+      <h1>Execution Dashboard v2 (All 126 Tasks)</h1>
+      <p class="sub">Search, filter by phase, and check off tasks as you complete them. Internal IDs are hidden by default.</p>
       <div class="stats" id="stats"></div>
-      <div class="controls">
-        <div class="left-controls">
-          <button type="button" id="expandBtn">Expand all</button>
-          <button type="button" id="collapseBtn">Collapse all</button>
-          <button type="button" id="markAllBtn" class="primary">Mark all complete</button>
-          <button type="button" id="clearBtn">Clear all</button>
+      <div class="toolbar">
+        <div class="row">
+          <input id="searchInput" class="search" type="search" placeholder="Search tasks (example: lead capture, scorecard, checkout, referral)" />
         </div>
-        <div class="right-controls">
-          <label class="toggle-wrap">
-            <input type="checkbox" id="toggleIds" />
-            Show internal IDs
-          </label>
+        <div class="row" id="phaseFilters"></div>
+        <div class="row">
+          <label class="chip"><input type="checkbox" id="top10Only" /> Top-10 only</label>
+          <label class="chip"><input type="checkbox" id="showIds" /> Show internal IDs</label>
+          <button type="button" id="expandAllBtn">Expand all</button>
+          <button type="button" id="collapseAllBtn">Collapse all</button>
+          <button type="button" id="markVisibleBtn" class="primary">Mark visible complete</button>
+          <button type="button" id="clearVisibleBtn">Clear visible</button>
+          <button type="button" id="resetFiltersBtn">Reset filters</button>
         </div>
       </div>
     </section>
 
-    <section class="card scroll" id="checklist"></section>
+    <section class="card scroll" id="board"></section>
 
-    <p class="footer-note">Data source: <code>docs/business/profitability-execution-backlog-start-here.csv</code> (Top 10 groups, 40 atomic tasks). Checkbox state is saved locally in your browser.</p>
+    <p class="footer-note">Source: <code>docs/business/profitability-execution-backlog-start-here.csv</code>. Progress saves locally in your browser.</p>
   </div>
 
   <script>
-    const STORAGE_KEY = 'hoggcountry.top10.checklist.v3';
-    const STORAGE_SHOW_IDS = 'hoggcountry.top10.checklist.showIds';
-    const groups = [{"rank": 1, "parent_id": "BH-001", "title": "Define what success and tracking mean", "desc": "Create one shared KPI/event dictionary so all reporting is consistent.", "items": [{"id": "BH-001.01", "title": "List where tracking already exists and where it is missing.", "owner": "Product/Ops", "effort": "XS (2-4h)"}, {"id": "BH-001.02", "title": "Define one standard event naming format and payload template.", "owner": "Product/Ops", "effort": "S (0.5-1d)"}, {"id": "BH-001.03", "title": "Map each event to a funnel stage and KPI owner.", "owner": "Product/Ops", "effort": "S (0.5-1d)"}, {"id": "BH-001.04", "title": "Get sign-off and lock the v1 tracking dictionary.", "owner": "Product/Ops", "effort": "XS-S (3-6h)"}]}, {"rank": 2, "parent_id": "BH-002", "title": "Track key user actions on the site", "desc": "Instrument high-traffic pages so we can see real funnel behavior.", "items": [{"id": "BH-002.01", "title": "Add a shared tracking helper loaded site-wide.", "owner": "Frontend", "effort": "XS (2-4h)"}, {"id": "BH-002.02", "title": "Track guide downloads, gear clicks, and tools CTAs.", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-002.03", "title": "Track trail chat, videos, and homepage CTA actions.", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-002.04", "title": "Run click tests and verify event payloads are correct.", "owner": "Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 3, "parent_id": "BH-003", "title": "Store tracking data in the backend", "desc": "Persist events reliably so weekly numbers are trustworthy.", "items": [{"id": "BH-003.01", "title": "Create the analytics events database table with indexes.", "owner": "Backend", "effort": "XS (2-4h)"}, {"id": "BH-003.02", "title": "Build backend endpoint to validate and batch-save events.", "owner": "Backend", "effort": "S (0.5-1d)"}, {"id": "BH-003.03", "title": "Protect the endpoint with auth and rate limits.", "owner": "Backend", "effort": "S (0.5-1d)"}, {"id": "BH-003.04", "title": "Add tests and run a basic load sanity check.", "owner": "Backend", "effort": "XS-S (3-6h)"}]}, {"rank": 4, "parent_id": "BH-004", "title": "Generate weekly profitability scorecards", "desc": "Turn activity + money metrics into one weekly operating view.", "items": [{"id": "BH-004.01", "title": "Define the weekly scorecard template and required fields.", "owner": "Ops/Finance", "effort": "XS (2-4h)"}, {"id": "BH-004.02", "title": "Build rollup logic for completion, funnel, and money metrics.", "owner": "Ops/Finance", "effort": "S (0.5-1d)"}, {"id": "BH-004.03", "title": "Automate Monday scorecard generation.", "owner": "Ops/Finance", "effort": "S (0.5-1d)"}, {"id": "BH-004.04", "title": "Publish first two scorecards and reconcile with source data.", "owner": "Ops/Finance", "effort": "XS-S (3-6h)"}]}, {"rank": 5, "parent_id": "BH-005", "title": "Track outbound gear clicks before redirect", "desc": "Capture attribution before sending users to partner stores.", "items": [{"id": "BH-005.01", "title": "Define how tracked redirects should work.", "owner": "Backend + Frontend", "effort": "XS (2-4h)"}, {"id": "BH-005.02", "title": "Build redirect endpoint that logs clicks then forwards users.", "owner": "Backend + Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-005.03", "title": "Switch Buy buttons to tracked redirect links.", "owner": "Backend + Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-005.04", "title": "QA sample links for logging accuracy and destination accuracy.", "owner": "Backend + Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 6, "parent_id": "BH-006", "title": "Standardize affiliate links and tagging", "desc": "Fix dead/untagged links so revenue is not leaking.", "items": [{"id": "BH-006.01", "title": "Audit gear links for duplicates, dead links, and missing tags.", "owner": "Growth/Content", "effort": "XS (2-4h)"}, {"id": "BH-006.02", "title": "Create affiliate parameter and disclosure mapping.", "owner": "Growth/Content", "effort": "S (0.5-1d)"}, {"id": "BH-006.03", "title": "Run normalization script and fix all catalog violations.", "owner": "Growth/Content", "effort": "S (0.5-1d)"}, {"id": "BH-006.04", "title": "Publish report showing 100% monetizable-link tagging coverage.", "owner": "Growth/Content", "effort": "XS-S (3-6h)"}]}, {"rank": 7, "parent_id": "BH-007", "title": "Capture leads before guide downloads", "desc": "Convert free-guide demand into contactable leads.", "items": [{"id": "BH-007.01", "title": "Design a simple lead gate before guide download.", "owner": "Frontend", "effort": "XS (2-4h)"}, {"id": "BH-007.02", "title": "Build lead form validation and modal flow.", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-007.03", "title": "Unlock download only after successful lead capture.", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-007.04", "title": "QA desktop/mobile lead-to-download flow.", "owner": "Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 8, "parent_id": "BH-008", "title": "Launch automated 5-email follow-up", "desc": "Nurture new leads quickly instead of letting them go cold.", "items": [{"id": "BH-008.01", "title": "Finalize email provider setup and credentials.", "owner": "Backend/Growth", "effort": "XS (2-4h)"}, {"id": "BH-008.02", "title": "Connect lead capture to contact creation and welcome trigger.", "owner": "Backend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-008.03", "title": "Write the five-message welcome sequence.", "owner": "Backend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-008.04", "title": "Test deliverability and first-email send speed.", "owner": "Backend/Growth", "effort": "XS-S (3-6h)"}]}, {"rank": 9, "parent_id": "BH-009", "title": "Add monetization CTAs to high-traffic areas", "desc": "Place offer entry points where users already engage.", "items": [{"id": "BH-009.01", "title": "Define CTA placement map across key pages.", "owner": "Frontend/Growth", "effort": "XS (2-4h)"}, {"id": "BH-009.02", "title": "Add contextual CTAs for lead magnet, trail kit, and VideoHogg.", "owner": "Frontend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-009.03", "title": "Attach tracking parameters to every CTA placement.", "owner": "Frontend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-009.04", "title": "Review 14-day click data and improve weak CTA placements.", "owner": "Frontend/Growth", "effort": "XS-S (3-6h)"}]}, {"rank": 10, "parent_id": "BH-010", "title": "Launch a clear offers landing page", "desc": "Give visitors one clean destination for free/core/premium offers.", "items": [{"id": "BH-010.01", "title": "Draft offer hierarchy and messaging blocks.", "owner": "Product/Content", "effort": "XS (2-4h)"}, {"id": "BH-010.02", "title": "Build the offers landing page.", "owner": "Product/Content", "effort": "S (0.5-1d)"}, {"id": "BH-010.03", "title": "Add OG image and SEO metadata wiring.", "owner": "Product/Content", "effort": "S (0.5-1d)"}, {"id": "BH-010.04", "title": "Verify links/tracking and record launch proof.", "owner": "Product/Content", "effort": "XS-S (3-6h)"}]}];
+    const TASKS = [{"id": "BH-001.01", "parentId": "BH-001", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 1, "title": "List where tracking already exists and where it is missing.", "internalTitle": "Audit existing tracked vs untracked user actions across BaseLayout, DownloadModal, BudgetGearBuilder, and TrailChat", "owner": "Product/Ops", "effort": "XS (2-4h)", "dependencies": "—", "kpi": "BH-001 scope signed off with file-level acceptance criteria"}, {"id": "BH-001.02", "parentId": "BH-001", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 1, "title": "Define one standard event naming format and payload template.", "internalTitle": "Define v1 event naming convention and payload schema (source, campaign, value, session) in profitability-event-taxonomy-start-here.md", "owner": "Product/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-001.01", "kpi": "Core build for BH-001 merged to main with green CI"}, {"id": "BH-001.03", "parentId": "BH-001", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 1, "title": "Map each event to a funnel stage and KPI owner.", "internalTitle": "Map each event to funnel stage, KPI owner, and weekly scorecard metric in the dictionary", "owner": "Product/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-001.02", "kpi": "BH-001 QA checklist passes with zero P1 defects"}, {"id": "BH-001.04", "parentId": "BH-001", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 1, "title": "Get sign-off and lock the v1 tracking dictionary.", "internalTitle": "Run taxonomy sign-off review and lock v1 changelog + instrumentation acceptance checklist", "owner": "Product/Ops", "effort": "XS-S (3-6h)", "dependencies": "BH-001.03", "kpi": ">=25 named events mapped to funnel stages and owners"}, {"id": "BH-002.01", "parentId": "BH-002", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 2, "title": "Add a shared tracking helper loaded site-wide.", "internalTitle": "Add shared client tracking helper and BaseLayout bootstrap hook for reliable event dispatch", "owner": "Frontend", "effort": "XS (2-4h)", "dependencies": "BH-001.04", "kpi": "BH-002 scope signed off with file-level acceptance criteria"}, {"id": "BH-002.02", "parentId": "BH-002", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 2, "title": "Track guide downloads, gear clicks, and tools CTAs.", "internalTitle": "Instrument guide/download and gear/tool CTA events in DownloadModal, BudgetGearBuilder, and ToolsDashboard", "owner": "Frontend", "effort": "S (0.5-1d)", "dependencies": "BH-002.01", "kpi": "Core build for BH-002 merged to main with green CI"}, {"id": "BH-002.03", "parentId": "BH-002", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 2, "title": "Track trail chat, videos, and homepage CTA actions.", "internalTitle": "Instrument TrailChat, videos index, and ProtoF Ranger/home CTA blocks with taxonomy-compliant events", "owner": "Frontend", "effort": "S (0.5-1d)", "dependencies": "BH-002.02", "kpi": "BH-002 QA checklist passes with zero P1 defects"}, {"id": "BH-002.04", "parentId": "BH-002", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 2, "title": "Run click tests and verify event payloads are correct.", "internalTitle": "Execute click-through QA matrix and capture payload evidence for priority funnel events", "owner": "Frontend", "effort": "XS-S (3-6h)", "dependencies": "BH-002.03", "kpi": ">=90% of priority CTA clicks emit trackable events"}, {"id": "BH-003.01", "parentId": "BH-003", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 3, "title": "Create the analytics events database table with indexes.", "internalTitle": "Create analytics_events migration with indexed event_name, source, session/user, and occurred_at columns", "owner": "Backend", "effort": "XS (2-4h)", "dependencies": "BH-001.04", "kpi": "BH-003 scope signed off with file-level acceptance criteria"}, {"id": "BH-003.02", "parentId": "BH-003", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 3, "title": "Build backend endpoint to validate and batch-save events.", "internalTitle": "Implement AnalyticsEventController request validation, auth handling, and batched insert flow", "owner": "Backend", "effort": "S (0.5-1d)", "dependencies": "BH-003.01", "kpi": "Core build for BH-003 merged to main with green CI"}, {"id": "BH-003.03", "parentId": "BH-003", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 3, "title": "Protect the endpoint with auth and rate limits.", "internalTitle": "Register /api/v1/analytics/events route with rate limiting and abuse protection", "owner": "Backend", "effort": "S (0.5-1d)", "dependencies": "BH-003.02", "kpi": "BH-003 QA checklist passes with zero P1 defects"}, {"id": "BH-003.04", "parentId": "BH-003", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 3, "title": "Add tests and run a basic load sanity check.", "internalTitle": "Add API tests plus load sanity run proving valid event persistence under expected traffic", "owner": "Backend", "effort": "XS-S (3-6h)", "dependencies": "BH-003.03", "kpi": "100% valid events persisted with <2s write latency"}, {"id": "BH-004.01", "parentId": "BH-004", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 4, "title": "Define the weekly scorecard template and required fields.", "internalTitle": "Define weekly profitability scorecard schema and markdown output template in docs/business/scorecards/", "owner": "Ops/Finance", "effort": "XS (2-4h)", "dependencies": "BH-002.04; BH-003.04", "kpi": "BH-004 scope signed off with file-level acceptance criteria"}, {"id": "BH-004.02", "parentId": "BH-004", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 4, "title": "Build rollup logic for completion, funnel, and money metrics.", "internalTitle": "Build BuildProfitabilityScorecard aggregation logic for completion %, funnel, and money KPIs", "owner": "Ops/Finance", "effort": "S (0.5-1d)", "dependencies": "BH-004.01", "kpi": "Core build for BH-004 merged to main with green CI"}, {"id": "BH-004.03", "parentId": "BH-004", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 4, "title": "Automate Monday scorecard generation.", "internalTitle": "Wire scripts/profitability-scorecard.mjs and scheduling config for Monday automated generation", "owner": "Ops/Finance", "effort": "S (0.5-1d)", "dependencies": "BH-004.02", "kpi": "BH-004 QA checklist passes with zero P1 defects"}, {"id": "BH-004.04", "parentId": "BH-004", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 4, "title": "Publish first two scorecards and reconcile with source data.", "internalTitle": "Publish first two real weekly scorecards and reconcile metrics against source event/order data", "owner": "Ops/Finance", "effort": "XS-S (3-6h)", "dependencies": "BH-004.03", "kpi": "Automated weekly scorecard generated every Monday by 8am"}, {"id": "BH-005.01", "parentId": "BH-005", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 5, "title": "Define how tracked redirects should work.", "internalTitle": "Design outbound redirect contract (item_id, source, campaign, destination, signed token)", "owner": "Backend + Frontend", "effort": "XS (2-4h)", "dependencies": "BH-003.04", "kpi": "BH-005 scope signed off with file-level acceptance criteria"}, {"id": "BH-005.02", "parentId": "BH-005", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 5, "title": "Build redirect endpoint that logs clicks then forwards users.", "internalTitle": "Implement OutboundLinkController redirect endpoint to log click data then issue safe 302", "owner": "Backend + Frontend", "effort": "S (0.5-1d)", "dependencies": "BH-005.01", "kpi": "Core build for BH-005 merged to main with green CI"}, {"id": "BH-005.03", "parentId": "BH-005", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 5, "title": "Switch Buy buttons to tracked redirect links.", "internalTitle": "Refactor BudgetGearBuilder Buy buttons to use src/lib/outboundLinks.ts tracked redirect URLs", "owner": "Backend + Frontend", "effort": "S (0.5-1d)", "dependencies": "BH-005.02", "kpi": "BH-005 QA checklist passes with zero P1 defects"}, {"id": "BH-005.04", "parentId": "BH-005", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 5, "title": "QA sample links for logging and destination accuracy.", "internalTitle": "QA 20 sampled gear links confirming click records and final merchant destination accuracy", "owner": "Backend + Frontend", "effort": "XS-S (3-6h)", "dependencies": "BH-005.03", "kpi": ">=95% product-link clicks recorded with source + item_id"}, {"id": "BH-006.01", "parentId": "BH-006", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 6, "title": "Audit gear links for duplicates, dead links, and missing tags.", "internalTitle": "Audit gearRecommendations.json for duplicate SKUs, dead links, and missing monetization flags", "owner": "Growth/Content", "effort": "XS (2-4h)", "dependencies": "BH-005.04", "kpi": "BH-006 scope signed off with file-level acceptance criteria"}, {"id": "BH-006.02", "parentId": "BH-006", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 6, "title": "Create affiliate parameter and disclosure mapping.", "internalTitle": "Create affiliateMap.json with partner parameter rules, disclosure tags, and exceptions", "owner": "Growth/Content", "effort": "S (0.5-1d)", "dependencies": "BH-006.01", "kpi": "Core build for BH-006 merged to main with green CI"}, {"id": "BH-006.03", "parentId": "BH-006", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 6, "title": "Run normalization script and fix all catalog violations.", "internalTitle": "Implement normalize-gear-links.mjs lint/normalize pass and remediate all catalog violations", "owner": "Growth/Content", "effort": "S (0.5-1d)", "dependencies": "BH-006.02", "kpi": "BH-006 QA checklist passes with zero P1 defects"}, {"id": "BH-006.04", "parentId": "BH-006", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 6, "title": "Publish report showing 100% monetizable-link tagging coverage.", "internalTitle": "Publish partner-terms + tagging coverage report showing 100% monetizable-link classification", "owner": "Growth/Content", "effort": "XS-S (3-6h)", "dependencies": "BH-006.03", "kpi": "100% monetizable links tagged OR explicitly marked non-affiliate"}, {"id": "BH-007.01", "parentId": "BH-007", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 7, "title": "Design a simple lead gate before guide download.", "internalTitle": "Design low-friction /guide lead gate UX and copy with email-only required field policy", "owner": "Frontend", "effort": "XS (2-4h)", "dependencies": "BH-002.04; BH-003.04", "kpi": "BH-007 scope signed off with file-level acceptance criteria"}, {"id": "BH-007.02", "parentId": "BH-007", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 7, "title": "Build lead form validation and modal flow.", "internalTitle": "Implement lead form validation and modal state flow in DownloadModal and DownloadGuideButton", "owner": "Frontend", "effort": "S (0.5-1d)", "dependencies": "BH-007.01", "kpi": "Core build for BH-007 merged to main with green CI"}, {"id": "BH-007.03", "parentId": "BH-007", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 7, "title": "Unlock download only after successful lead capture.", "internalTitle": "Wire lead submit API call and unlock PDF/Markdown download only after successful capture event", "owner": "Frontend", "effort": "S (0.5-1d)", "dependencies": "BH-007.02", "kpi": "BH-007 QA checklist passes with zero P1 defects"}, {"id": "BH-007.04", "parentId": "BH-007", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 7, "title": "QA desktop/mobile lead-to-download flow.", "internalTitle": "Run desktop/mobile funnel QA proving lead_created then asset_downloaded sequence integrity", "owner": "Frontend", "effort": "XS-S (3-6h)", "dependencies": "BH-007.03", "kpi": "Guide lead capture rate >=8% of unique /guide visitors"}, {"id": "BH-008.01", "parentId": "BH-008", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 8, "title": "Finalize email provider setup and credentials.", "internalTitle": "Finalize email provider integration approach and configure credentials/env documentation", "owner": "Backend/Growth", "effort": "XS (2-4h)", "dependencies": "BH-007.04", "kpi": "BH-008 scope signed off with file-level acceptance criteria"}, {"id": "BH-008.02", "parentId": "BH-008", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 8, "title": "Connect lead capture to contact creation and welcome trigger.", "internalTitle": "Implement LeadCaptureController contact upsert + SendLeadWelcomeSequence trigger", "owner": "Backend/Growth", "effort": "S (0.5-1d)", "dependencies": "BH-008.01", "kpi": "Core build for BH-008 merged to main with green CI"}, {"id": "BH-008.03", "parentId": "BH-008", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 8, "title": "Write the five-message welcome sequence.", "internalTitle": "Author five-message welcome sequence (timing, objective, CTA) in start-here-welcome.md", "owner": "Backend/Growth", "effort": "S (0.5-1d)", "dependencies": "BH-008.02", "kpi": "BH-008 QA checklist passes with zero P1 defects"}, {"id": "BH-008.04", "parentId": "BH-008", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 8, "title": "Test deliverability and first-email send speed.", "internalTitle": "Validate deliverability with seed tests, bounce/error logging, and <5 minute first-send SLA", "owner": "Backend/Growth", "effort": "XS-S (3-6h)", "dependencies": "BH-008.03", "kpi": ">=95% of new leads receive email #1 within 5 minutes"}, {"id": "BH-009.01", "parentId": "BH-009", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 9, "title": "Define CTA placement map across key pages.", "internalTitle": "Define monetization CTA placement map for homepage/proto ranger, videos index, and tools hub", "owner": "Frontend/Growth", "effort": "XS (2-4h)", "dependencies": "BH-007.04; BH-008.04", "kpi": "BH-009 scope signed off with file-level acceptance criteria"}, {"id": "BH-009.02", "parentId": "BH-009", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 9, "title": "Add contextual CTAs for lead magnet, trail kit, and VideoHogg.", "internalTitle": "Implement contextual CTA modules for Lead Magnet, Trail Launch Kit, and VideoHogg pilot paths", "owner": "Frontend/Growth", "effort": "S (0.5-1d)", "dependencies": "BH-009.01", "kpi": "Core build for BH-009 merged to main with green CI"}, {"id": "BH-009.03", "parentId": "BH-009", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 9, "title": "Attach tracking parameters to every CTA placement.", "internalTitle": "Attach attribution parameters and event tracking to each CTA variant and location", "owner": "Frontend/Growth", "effort": "S (0.5-1d)", "dependencies": "BH-009.02", "kpi": "BH-009 QA checklist passes with zero P1 defects"}, {"id": "BH-009.04", "parentId": "BH-009", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 9, "title": "Review 14-day click data and improve weak CTA placements.", "internalTitle": "Publish 14-day baseline CTR report and iterate weak placements/copy before scale", "owner": "Frontend/Growth", "effort": "XS-S (3-6h)", "dependencies": "BH-009.03", "kpi": "Sitewide offer CTA CTR >=3% in first 14 days"}, {"id": "BH-010.01", "parentId": "BH-010", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 10, "title": "Draft offer hierarchy and messaging blocks.", "internalTitle": "Draft offer hierarchy and messaging blocks for free/core/premium stack on start-here-offers page", "owner": "Product/Content", "effort": "XS (2-4h)", "dependencies": "BH-009.04", "kpi": "BH-010 scope signed off with file-level acceptance criteria"}, {"id": "BH-010.02", "parentId": "BH-010", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 10, "title": "Build the offers landing page.", "internalTitle": "Build src/pages/start-here-offers.astro with proof blocks, CTA hierarchy, and route metadata", "owner": "Product/Content", "effort": "S (0.5-1d)", "dependencies": "BH-010.01", "kpi": "Core build for BH-010 merged to main with green CI"}, {"id": "BH-010.03", "parentId": "BH-010", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 10, "title": "Add OG image and SEO metadata wiring.", "internalTitle": "Add OG asset + SEO metadata wiring (BaseHead, og image, canonical, social tags)", "owner": "Product/Content", "effort": "S (0.5-1d)", "dependencies": "BH-010.02", "kpi": "BH-010 QA checklist passes with zero P1 defects"}, {"id": "BH-010.04", "parentId": "BH-010", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": 10, "title": "Verify links/tracking and record launch proof.", "internalTitle": "Validate conversion links + analytics events on offers page and log launch evidence in scorecard", "owner": "Product/Content", "effort": "XS-S (3-6h)", "dependencies": "BH-010.03", "kpi": "Landing page lead-to-interest click rate >=5%"}, {"id": "BH-011.01", "parentId": "BH-011", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": null, "title": "Inventory variable/fixed cost inputs for TrailChat, VideoHogg, infra, and third-party tooling", "internalTitle": "Inventory variable/fixed cost inputs for TrailChat, VideoHogg, infra, and third-party tooling", "owner": "Finance/Ops", "effort": "XS (2-4h)", "dependencies": "BH-003.04", "kpi": "BH-011 scope signed off with file-level acceptance criteria"}, {"id": "BH-011.02", "parentId": "BH-011", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": null, "title": "Build baseline unit-economics model with assumptions and formulas in unit-economics-baseline.md", "internalTitle": "Build baseline unit-economics model with assumptions and formulas in unit-economics-baseline.md", "owner": "Finance/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-011.01", "kpi": "Core build for BH-011 merged to main with green CI"}, {"id": "BH-011.03", "parentId": "BH-011", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": null, "title": "Attach source queries/log extracts for cost-per-100 asks and cost-per-VideoHogg run calculations", "internalTitle": "Attach source queries/log extracts for cost-per-100 asks and cost-per-VideoHogg run calculations", "owner": "Finance/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-011.02", "kpi": "BH-011 QA checklist passes with zero P1 defects"}, {"id": "BH-011.04", "parentId": "BH-011", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": null, "title": "Review and lock weekly unit-economics refresh cadence with threshold alerts", "internalTitle": "Review and lock weekly unit-economics refresh cadence with threshold alerts", "owner": "Finance/Ops", "effort": "XS-S (3-6h)", "dependencies": "BH-011.03", "kpi": "Cost per 100 asks and cost per VideoHogg run calculated weekly"}, {"id": "BH-012.01", "parentId": "BH-012", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": null, "title": "Define AI usage guardrail policy: per-user quotas, caching behavior, fallback responses, and hard caps", "internalTitle": "Define AI usage guardrail policy: per-user quotas, caching behavior, fallback responses, and hard caps", "owner": "Backend/Ops", "effort": "XS (2-4h)", "dependencies": "BH-011.04", "kpi": "BH-012 scope signed off with file-level acceptance criteria"}, {"id": "BH-012.02", "parentId": "BH-012", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": null, "title": "Implement guardrail enforcement in ask.ts, TrailChat UX, and supporting backend routes", "internalTitle": "Implement guardrail enforcement in ask.ts, TrailChat UX, and supporting backend routes", "owner": "Backend/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-012.01", "kpi": "Core build for BH-012 merged to main with green CI"}, {"id": "BH-012.03", "parentId": "BH-012", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": null, "title": "Add monitoring counters for over-limit events, cache hit rate, and cost-per-active-user trend", "internalTitle": "Add monitoring counters for over-limit events, cache hit rate, and cost-per-active-user trend", "owner": "Backend/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-012.02", "kpi": "BH-012 QA checklist passes with zero P1 defects"}, {"id": "BH-012.04", "parentId": "BH-012", "phase": "0-14d", "phaseLabel": "Phase 0 (0-14d)", "criticalRank": null, "title": "Run before/after analysis proving >=30% cost reduction without core UX regression", "internalTitle": "Run before/after analysis proving >=30% cost reduction without core UX regression", "owner": "Backend/Ops", "effort": "XS-S (3-6h)", "dependencies": "BH-012.03", "kpi": "Reduce ask API cost per active user by >=30%"}, {"id": "BH-013.01", "parentId": "BH-013", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Evaluate checkout providers against HoggCountry requirements and document weighted decision record", "internalTitle": "Evaluate checkout providers against HoggCountry requirements and document weighted decision record", "owner": "Product/Backend", "effort": "XS (2-4h)", "dependencies": "BH-010.04", "kpi": "BH-013 scope signed off with file-level acceptance criteria"}, {"id": "BH-013.02", "parentId": "BH-013", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Configure selected provider credentials, webhook endpoints, and .env example values", "internalTitle": "Configure selected provider credentials, webhook endpoints, and .env example values", "owner": "Product/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-013.01", "kpi": "Core build for BH-013 merged to main with green CI"}, {"id": "BH-013.03", "parentId": "BH-013", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Execute staging + production-test-mode transaction walkthrough with replayable evidence", "internalTitle": "Execute staging + production-test-mode transaction walkthrough with replayable evidence", "owner": "Product/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-013.02", "kpi": "1 end-to-end test payment succeeds in staging and production test mode"}, {"id": "BH-014.01", "parentId": "BH-014", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Define initial paid SKU set (digital, add-on, service) with buyer segment mapping", "internalTitle": "Define initial paid SKU set (digital, add-on, service) with buyer segment mapping", "owner": "Product/Finance", "effort": "XS (2-4h)", "dependencies": "BH-011.04; BH-013.03", "kpi": "BH-014 scope signed off with file-level acceptance criteria"}, {"id": "BH-014.02", "parentId": "BH-014", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Build pricing matrix with list price, COGS, margin %, fulfillment owner, and risk notes", "internalTitle": "Build pricing matrix with list price, COGS, margin %, fulfillment owner, and risk notes", "owner": "Product/Finance", "effort": "S (0.5-1d)", "dependencies": "BH-014.01", "kpi": "Core build for BH-014 merged to main with green CI"}, {"id": "BH-014.03", "parentId": "BH-014", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Publish products.json + pricing-matrix-start-here.md and obtain owner sign-off", "internalTitle": "Publish products.json + pricing-matrix-start-here.md and obtain owner sign-off", "owner": "Product/Finance", "effort": "S (0.5-1d)", "dependencies": "BH-014.02", "kpi": ">=3 paid offers with projected gross margin >=70%"}, {"id": "BH-015.01", "parentId": "BH-015", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Design order lifecycle state machine and webhook event-to-state transition map", "internalTitle": "Design order lifecycle state machine and webhook event-to-state transition map", "owner": "Backend", "effort": "XS (2-4h)", "dependencies": "BH-013.03; BH-014.03", "kpi": "BH-015 scope signed off with file-level acceptance criteria"}, {"id": "BH-015.02", "parentId": "BH-015", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Implement orders schema/model plus webhook signature verification and idempotency controls", "internalTitle": "Implement orders schema/model plus webhook signature verification and idempotency controls", "owner": "Backend", "effort": "S (0.5-1d)", "dependencies": "BH-015.01", "kpi": "Core build for BH-015 merged to main with green CI"}, {"id": "BH-015.03", "parentId": "BH-015", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Add fulfillment event logging, retry queue behavior, and failure alert hooks", "internalTitle": "Add fulfillment event logging, retry queue behavior, and failure alert hooks", "owner": "Backend", "effort": "S (0.5-1d)", "dependencies": "BH-015.02", "kpi": "BH-015 QA checklist passes with zero P1 defects"}, {"id": "BH-015.04", "parentId": "BH-015", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Run webhook/payment test suite proving every successful payment yields a valid order record", "internalTitle": "Run webhook/payment test suite proving every successful payment yields a valid order record", "owner": "Backend", "effort": "XS-S (3-6h)", "dependencies": "BH-015.03", "kpi": "100% successful payments create order + fulfillment event"}, {"id": "BH-016.01", "parentId": "BH-016", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Package Trail Launch Kit assets from existing guide/tools into versioned paid deliverable bundle", "internalTitle": "Package Trail Launch Kit assets from existing guide/tools into versioned paid deliverable bundle", "owner": "Content/Product", "effort": "XS (2-4h)", "dependencies": "BH-014.03; BH-015.04", "kpi": "BH-016 scope signed off with file-level acceptance criteria"}, {"id": "BH-016.02", "parentId": "BH-016", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Build trail-launch-kit offer page with value stack, FAQs, and checkout integration", "internalTitle": "Build trail-launch-kit offer page with value stack, FAQs, and checkout integration", "owner": "Content/Product", "effort": "S (0.5-1d)", "dependencies": "BH-016.01", "kpi": "Core build for BH-016 merged to main with green CI"}, {"id": "BH-016.03", "parentId": "BH-016", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Implement automated post-purchase digital delivery and support instructions", "internalTitle": "Implement automated post-purchase digital delivery and support instructions", "owner": "Content/Product", "effort": "S (0.5-1d)", "dependencies": "BH-016.02", "kpi": "BH-016 QA checklist passes with zero P1 defects"}, {"id": "BH-016.04", "parentId": "BH-016", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Launch offer and run daily conversion checks until first 20 paid sales milestone", "internalTitle": "Launch offer and run daily conversion checks until first 20 paid sales milestone", "owner": "Content/Product", "effort": "XS-S (3-6h)", "dependencies": "BH-016.03", "kpi": "20 paid sales within 30 days of launch"}, {"id": "BH-017.01", "parentId": "BH-017", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Define upsell trigger points inside PackBuilder, BudgetCalculator, and GearBuilder user flows", "internalTitle": "Define upsell trigger points inside PackBuilder, BudgetCalculator, and GearBuilder user flows", "owner": "Frontend/Growth", "effort": "XS (2-4h)", "dependencies": "BH-016.04", "kpi": "BH-017 scope signed off with file-level acceptance criteria"}, {"id": "BH-017.02", "parentId": "BH-017", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Implement upsell components with suppression/frequency rules across tool surfaces", "internalTitle": "Implement upsell components with suppression/frequency rules across tool surfaces", "owner": "Frontend/Growth", "effort": "S (0.5-1d)", "dependencies": "BH-017.01", "kpi": "Core build for BH-017 merged to main with green CI"}, {"id": "BH-017.03", "parentId": "BH-017", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Validate attach-rate telemetry and optimize offer copy/rules to hit >=20% attach target", "internalTitle": "Validate attach-rate telemetry and optimize offer copy/rules to hit >=20% attach target", "owner": "Frontend/Growth", "effort": "S (0.5-1d)", "dependencies": "BH-017.02", "kpi": "Attach rate >=20% for one add-on offer"}, {"id": "BH-018.01", "parentId": "BH-018", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Define referral program mechanics (code format, credit rules, expiration, anti-abuse constraints)", "internalTitle": "Define referral program mechanics (code format, credit rules, expiration, anti-abuse constraints)", "owner": "Backend/Growth", "effort": "XS (2-4h)", "dependencies": "BH-015.04", "kpi": "BH-018 scope signed off with file-level acceptance criteria"}, {"id": "BH-018.02", "parentId": "BH-018", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Implement referrals table/model/controller plus code generation and redemption flow", "internalTitle": "Implement referrals table/model/controller plus code generation and redemption flow", "owner": "Backend/Growth", "effort": "S (0.5-1d)", "dependencies": "BH-018.01", "kpi": "Core build for BH-018 merged to main with green CI"}, {"id": "BH-018.03", "parentId": "BH-018", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Build referrals page/account view with share links, redemption status, and event tracking", "internalTitle": "Build referrals page/account view with share links, redemption status, and event tracking", "owner": "Backend/Growth", "effort": "S (0.5-1d)", "dependencies": "BH-018.02", "kpi": "BH-018 QA checklist passes with zero P1 defects"}, {"id": "BH-018.04", "parentId": "BH-018", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Publish payout/credit reconciliation process and validate referral attribution reporting", "internalTitle": "Publish payout/credit reconciliation process and validate referral attribution reporting", "owner": "Backend/Growth", "effort": "XS-S (3-6h)", "dependencies": "BH-018.03", "kpi": ">=15% of paid buyers from referral channel by day 45"}, {"id": "BH-019.01", "parentId": "BH-019", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Implement retargeting base pixel loading in BaseLayout/netlify config with privacy-safe controls", "internalTitle": "Implement retargeting base pixel loading in BaseLayout/netlify config with privacy-safe controls", "owner": "Growth/Frontend", "effort": "XS (2-4h)", "dependencies": "BH-002.04; BH-010.04", "kpi": "BH-019 scope signed off with file-level acceptance criteria"}, {"id": "BH-019.02", "parentId": "BH-019", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Map and fire Lead/InitiateCheckout/Purchase conversion events from tracked funnel actions", "internalTitle": "Map and fire Lead/InitiateCheckout/Purchase conversion events from tracked funnel actions", "owner": "Growth/Frontend", "effort": "S (0.5-1d)", "dependencies": "BH-019.01", "kpi": "Core build for BH-019 merged to main with green CI"}, {"id": "BH-019.03", "parentId": "BH-019", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Validate audience growth and event diagnostics in ad manager with screenshot evidence", "internalTitle": "Validate audience growth and event diagnostics in ad manager with screenshot evidence", "owner": "Growth/Frontend", "effort": "S (0.5-1d)", "dependencies": "BH-019.02", "kpi": "Retargeting audience >=500 users in 30 days"}, {"id": "BH-020.01", "parentId": "BH-020", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Create 90-day marketing calendar with channel, asset, owner, publish date, and KPI target fields", "internalTitle": "Create 90-day marketing calendar with channel, asset, owner, publish date, and KPI target fields", "owner": "Growth/Owner", "effort": "XS (2-4h)", "dependencies": "BH-010.04", "kpi": "BH-020 scope signed off with file-level acceptance criteria"}, {"id": "BH-020.02", "parentId": "BH-020", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Convert calendar into weekly operating checklist with proof-link requirements", "internalTitle": "Convert calendar into weekly operating checklist with proof-link requirements", "owner": "Growth/Owner", "effort": "S (0.5-1d)", "dependencies": "BH-020.01", "kpi": "Core build for BH-020 merged to main with green CI"}, {"id": "BH-020.03", "parentId": "BH-020", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Complete first 4 execution weeks (>=5 actions/week) and publish cadence performance recap", "internalTitle": "Complete first 4 execution weeks (>=5 actions/week) and publish cadence performance recap", "owner": "Growth/Owner", "effort": "S (0.5-1d)", "dependencies": "BH-020.02", "kpi": ">=5 publish/promote actions per week for 4 consecutive weeks"}, {"id": "BH-021.01", "parentId": "BH-021", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Prioritize SEO audit backlog fixes by impact (schema, metadata, internal links, alt coverage)", "internalTitle": "Prioritize SEO audit backlog fixes by impact (schema, metadata, internal links, alt coverage)", "owner": "Frontend/SEO", "effort": "XS (2-4h)", "dependencies": "BH-020.03", "kpi": "BH-021 scope signed off with file-level acceptance criteria"}, {"id": "BH-021.02", "parentId": "BH-021", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Implement critical SEO fixes in BaseHead, BlogPost layout, Footer, and blog index templates", "internalTitle": "Implement critical SEO fixes in BaseHead, BlogPost layout, Footer, and blog index templates", "owner": "Frontend/SEO", "effort": "S (0.5-1d)", "dependencies": "BH-021.01", "kpi": "Core build for BH-021 merged to main with green CI"}, {"id": "BH-021.03", "parentId": "BH-021", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Run post-fix crawl/search-console validation and log baseline for 60-day organic growth tracking", "internalTitle": "Run post-fix crawl/search-console validation and log baseline for 60-day organic growth tracking", "owner": "Frontend/SEO", "effort": "S (0.5-1d)", "dependencies": "BH-021.02", "kpi": "+30% non-brand organic clicks within 60 days"}, {"id": "BH-022.01", "parentId": "BH-022", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Create enforceable article upload checklist template with required SEO fields", "internalTitle": "Create enforceable article upload checklist template with required SEO fields", "owner": "Content/Ops", "effort": "XS (2-4h)", "dependencies": "BH-021.03", "kpi": "BH-022 scope signed off with file-level acceptance criteria"}, {"id": "BH-022.02", "parentId": "BH-022", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Implement content-seo-lint.mjs and integrate checklist validation into publishing workflow", "internalTitle": "Implement content-seo-lint.mjs and integrate checklist validation into publishing workflow", "owner": "Content/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-022.01", "kpi": "Core build for BH-022 merged to main with green CI"}, {"id": "BH-022.03", "parentId": "BH-022", "phase": "15-45d", "phaseLabel": "Phase 1 (15-45d)", "criticalRank": null, "title": "Ship 12 high-intent posts with completed checklist evidence in content/published-log.csv", "internalTitle": "Ship 12 high-intent posts with completed checklist evidence in content/published-log.csv", "owner": "Content/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-022.02", "kpi": "100% of published posts pass checklist; 12 high-intent posts shipped in 30d"}, {"id": "BH-023.01", "parentId": "BH-023", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Draft premium live-map offer PRD with feature bundle, value narrative, and pricing hypothesis", "internalTitle": "Draft premium live-map offer PRD with feature bundle, value narrative, and pricing hypothesis", "owner": "Product", "effort": "XS (2-4h)", "dependencies": "BH-014.03", "kpi": "BH-023 scope signed off with file-level acceptance criteria"}, {"id": "BH-023.02", "parentId": "BH-023", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Add waitlist/preorder capture surfaces on map/trail shell experiences", "internalTitle": "Add waitlist/preorder capture surfaces on map/trail shell experiences", "owner": "Product", "effort": "S (0.5-1d)", "dependencies": "BH-023.01", "kpi": "Core build for BH-023 merged to main with green CI"}, {"id": "BH-023.03", "parentId": "BH-023", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Evaluate demand signals (waitlist/preorders) and record build/iterate/kill decision", "internalTitle": "Evaluate demand signals (waitlist/preorders) and record build/iterate/kill decision", "owner": "Product", "effort": "S (0.5-1d)", "dependencies": "BH-023.02", "kpi": "100 waitlist signups OR 10 paid preorders"}, {"id": "BH-024.01", "parentId": "BH-024", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Design plans/subscriptions/invoices schema covering statuses, periods, taxes, and ledger relationships", "internalTitle": "Design plans/subscriptions/invoices schema covering statuses, periods, taxes, and ledger relationships", "owner": "Backend", "effort": "XS (2-4h)", "dependencies": "BH-013.03; BH-023.03", "kpi": "BH-024 scope signed off with file-level acceptance criteria"}, {"id": "BH-024.02", "parentId": "BH-024", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Implement migrations/models/APIs for subscription create, renew, pause/cancel lifecycle actions", "internalTitle": "Implement migrations/models/APIs for subscription create, renew, pause/cancel lifecycle actions", "owner": "Backend", "effort": "S (0.5-1d)", "dependencies": "BH-024.01", "kpi": "Core build for BH-024 merged to main with green CI"}, {"id": "BH-024.03", "parentId": "BH-024", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Integrate invoice/subscription event handling and state reconciliation logic", "internalTitle": "Integrate invoice/subscription event handling and state reconciliation logic", "owner": "Backend", "effort": "S (0.5-1d)", "dependencies": "BH-024.02", "kpi": "BH-024 QA checklist passes with zero P1 defects"}, {"id": "BH-024.04", "parentId": "BH-024", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Execute lifecycle QA tests proving invoice accuracy and state integrity end-to-end", "internalTitle": "Execute lifecycle QA tests proving invoice accuracy and state integrity end-to-end", "owner": "Backend", "effort": "XS-S (3-6h)", "dependencies": "BH-024.03", "kpi": "Create/cancel subscription in test mode with accurate invoice records"}, {"id": "BH-025.01", "parentId": "BH-025", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Build account billing UI for plan visibility, payment method management, and cancel/reactivate actions", "internalTitle": "Build account billing UI for plan visibility, payment method management, and cancel/reactivate actions", "owner": "Frontend + Backend", "effort": "XS (2-4h)", "dependencies": "BH-024.04", "kpi": "BH-025 scope signed off with file-level acceptance criteria"}, {"id": "BH-025.02", "parentId": "BH-025", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Enforce premium feature access controls in TrailShell/login flows using subscription state checks", "internalTitle": "Enforce premium feature access controls in TrailShell/login flows using subscription state checks", "owner": "Frontend + Backend", "effort": "S (0.5-1d)", "dependencies": "BH-025.01", "kpi": "Core build for BH-025 merged to main with green CI"}, {"id": "BH-025.03", "parentId": "BH-025", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "QA billing self-serve success and unauthorized-access prevention across critical scenarios", "internalTitle": "QA billing self-serve success and unauthorized-access prevention across critical scenarios", "owner": "Frontend + Backend", "effort": "S (0.5-1d)", "dependencies": "BH-025.02", "kpi": "0 unauthorized premium access in QA; billing self-serve success >=95%"}, {"id": "BH-026.01", "parentId": "BH-026", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Define paid VideoHogg pilot package, SLA promises, and qualification rubric", "internalTitle": "Define paid VideoHogg pilot package, SLA promises, and qualification rubric", "owner": "Product/Backend", "effort": "XS (2-4h)", "dependencies": "BH-015.04; BH-014.03", "kpi": "BH-026 scope signed off with file-level acceptance criteria"}, {"id": "BH-026.02", "parentId": "BH-026", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Implement paid pilot application/onboarding flow on videohogg page with payment/invite gating", "internalTitle": "Implement paid pilot application/onboarding flow on videohogg page with payment/invite gating", "owner": "Product/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-026.01", "kpi": "Core build for BH-026 merged to main with green CI"}, {"id": "BH-026.03", "parentId": "BH-026", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Add backend processing states and client communication checkpoints for pilot jobs", "internalTitle": "Add backend processing states and client communication checkpoints for pilot jobs", "owner": "Product/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-026.02", "kpi": "BH-026 QA checklist passes with zero P1 defects"}, {"id": "BH-026.04", "parentId": "BH-026", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Close and document first paid pilot cohort outcomes (5 clients or 15 qualified applications)", "internalTitle": "Close and document first paid pilot cohort outcomes (5 clients or 15 qualified applications)", "owner": "Product/Backend", "effort": "XS-S (3-6h)", "dependencies": "BH-026.03", "kpi": "5 paid pilot clients OR 15 qualified applications"}, {"id": "BH-027.01", "parentId": "BH-027", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Design post-purchase NPS survey schedule, question set, and automation triggers", "internalTitle": "Design post-purchase NPS survey schedule, question set, and automation triggers", "owner": "Growth/Ops", "effort": "XS (2-4h)", "dependencies": "BH-016.04; BH-015.04", "kpi": "BH-027 scope signed off with file-level acceptance criteria"}, {"id": "BH-027.02", "parentId": "BH-027", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Implement checkout-success follow-up and detractor escalation workflow", "internalTitle": "Implement checkout-success follow-up and detractor escalation workflow", "owner": "Growth/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-027.01", "kpi": "Core build for BH-027 merged to main with green CI"}, {"id": "BH-027.03", "parentId": "BH-027", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Review weekly NPS/refund metrics and execute customer wow recovery actions", "internalTitle": "Review weekly NPS/refund metrics and execute customer wow recovery actions", "owner": "Growth/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-027.02", "kpi": "NPS >=40 and refund rate <5% by day 90"}, {"id": "BH-028.01", "parentId": "BH-028", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Define bundle recommendation logic matrix and margin thresholds for post-purchase offers", "internalTitle": "Define bundle recommendation logic matrix and margin thresholds for post-purchase offers", "owner": "Product/Backend", "effort": "XS (2-4h)", "dependencies": "BH-017.03; BH-015.04", "kpi": "BH-028 scope signed off with file-level acceptance criteria"}, {"id": "BH-028.02", "parentId": "BH-028", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Implement OfferEngine bundle rules and checkout-success upsell surfaces", "internalTitle": "Implement OfferEngine bundle rules and checkout-success upsell surfaces", "owner": "Product/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-028.01", "kpi": "Core build for BH-028 merged to main with green CI"}, {"id": "BH-028.03", "parentId": "BH-028", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Validate attach/conversion telemetry and iterate rules to reach >=20% post-purchase attach rate", "internalTitle": "Validate attach/conversion telemetry and iterate rules to reach >=20% post-purchase attach rate", "owner": "Product/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-028.02", "kpi": "Post-purchase attach rate >=20%"}, {"id": "BH-029.01", "parentId": "BH-029", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Define dormant lead/customer segments and winback trigger/suppression criteria", "internalTitle": "Define dormant lead/customer segments and winback trigger/suppression criteria", "owner": "Growth/Backend", "effort": "XS (2-4h)", "dependencies": "BH-008.04; BH-027.03", "kpi": "BH-029 scope signed off with file-level acceptance criteria"}, {"id": "BH-029.02", "parentId": "BH-029", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Implement RunWinbackSequence job orchestration and email template variants", "internalTitle": "Implement RunWinbackSequence job orchestration and email template variants", "owner": "Growth/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-029.01", "kpi": "Core build for BH-029 merged to main with green CI"}, {"id": "BH-029.03", "parentId": "BH-029", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Publish weekly reactivation report and optimize offers/subject lines from results", "internalTitle": "Publish weekly reactivation report and optimize offers/subject lines from results", "owner": "Growth/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-029.02", "kpi": "Re-activate >=10% dormant leads/customers in 45 days"}, {"id": "BH-030.01", "parentId": "BH-030", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Create quarterly pricing experiment backlog with hypotheses, guardrails, and success criteria", "internalTitle": "Create quarterly pricing experiment backlog with hypotheses, guardrails, and success criteria", "owner": "Finance/Product", "effort": "XS (2-4h)", "dependencies": "BH-014.03; BH-027.03", "kpi": "BH-030 scope signed off with file-level acceptance criteria"}, {"id": "BH-030.02", "parentId": "BH-030", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Run controlled pricing tests with control vs variant instrumentation on selected offers", "internalTitle": "Run controlled pricing tests with control vs variant instrumentation on selected offers", "owner": "Finance/Product", "effort": "S (0.5-1d)", "dependencies": "BH-030.01", "kpi": "Core build for BH-030 merged to main with green CI"}, {"id": "BH-030.03", "parentId": "BH-030", "phase": "46-90d", "phaseLabel": "Phase 2 (46-90d)", "criticalRank": null, "title": "Publish experiment postmortems with keep/kill decisions and gross-profit impact analysis", "internalTitle": "Publish experiment postmortems with keep/kill decisions and gross-profit impact analysis", "owner": "Finance/Product", "effort": "S (0.5-1d)", "dependencies": "BH-030.02", "kpi": "Gross profit/order +12% with conversion drop <=10%"}, {"id": "BH-031.01", "parentId": "BH-031", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Audit affiliate surfaces for disclosure placement, tracking completeness, and policy gaps", "internalTitle": "Audit affiliate surfaces for disclosure placement, tracking completeness, and policy gaps", "owner": "Growth/Ops", "effort": "XS (2-4h)", "dependencies": "BH-006.04; BH-005.04", "kpi": "BH-031 scope signed off with file-level acceptance criteria"}, {"id": "BH-031.02", "parentId": "BH-031", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Implement disclosures page and inline disclosure components on affiliate-linked surfaces", "internalTitle": "Implement disclosures page and inline disclosure components on affiliate-linked surfaces", "owner": "Growth/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-031.01", "kpi": "Core build for BH-031 merged to main with green CI"}, {"id": "BH-031.03", "parentId": "BH-031", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Publish monthly affiliate compliance + revenue reconciliation report with evidence links", "internalTitle": "Publish monthly affiliate compliance + revenue reconciliation report with evidence links", "owner": "Growth/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-031.02", "kpi": "100% affiliate surfaces show disclosure; monthly affiliate report published"}, {"id": "BH-032.01", "parentId": "BH-032", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Build sponsor/media kit narrative with audience metrics, deliverables, and package tiers", "internalTitle": "Build sponsor/media kit narrative with audience metrics, deliverables, and package tiers", "owner": "Content/Sales", "effort": "XS (2-4h)", "dependencies": "BH-020.03; BH-021.03", "kpi": "BH-032 scope signed off with file-level acceptance criteria"}, {"id": "BH-032.02", "parentId": "BH-032", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Publish sponsor landing page + downloadable media kit with tracked inquiry CTA", "internalTitle": "Publish sponsor landing page + downloadable media kit with tracked inquiry CTA", "owner": "Content/Sales", "effort": "S (0.5-1d)", "dependencies": "BH-032.01", "kpi": "Core build for BH-032 merged to main with green CI"}, {"id": "BH-032.03", "parentId": "BH-032", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Execute sponsor outreach cadence and log inquiry-to-close performance each month", "internalTitle": "Execute sponsor outreach cadence and log inquiry-to-close performance each month", "owner": "Content/Sales", "effort": "S (0.5-1d)", "dependencies": "BH-032.02", "kpi": "10 sponsor inquiries/quarter and 2 signed deals"}, {"id": "BH-033.01", "parentId": "BH-033", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Define B2B licensing offer structure, onboarding flow, and commercial terms for groups/churches/clubs", "internalTitle": "Define B2B licensing offer structure, onboarding flow, and commercial terms for groups/churches/clubs", "owner": "Product/Sales", "effort": "XS (2-4h)", "dependencies": "BH-015.04; BH-016.04", "kpi": "BH-033 scope signed off with file-level acceptance criteria"}, {"id": "BH-033.02", "parentId": "BH-033", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Implement b2b offer page plus org-account schema prerequisites for pilot deals", "internalTitle": "Implement b2b offer page plus org-account schema prerequisites for pilot deals", "owner": "Product/Sales", "effort": "S (0.5-1d)", "dependencies": "BH-033.01", "kpi": "Core build for BH-033 merged to main with green CI"}, {"id": "BH-033.03", "parentId": "BH-033", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Close first three pilot org opportunities and document repeatable onboarding playbook", "internalTitle": "Close first three pilot org opportunities and document repeatable onboarding playbook", "owner": "Product/Sales", "effort": "S (0.5-1d)", "dependencies": "BH-033.02", "kpi": "3 pilot org customers in first quarter"}, {"id": "BH-034.01", "parentId": "BH-034", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Build marketing tracking wall template tied directly to weekly scorecard KPIs", "internalTitle": "Build marketing tracking wall template tied directly to weekly scorecard KPIs", "owner": "Owner/Ops", "effort": "XS (2-4h)", "dependencies": "BH-004.04; BH-020.03; BH-030.03", "kpi": "BH-034 scope signed off with file-level acceptance criteria"}, {"id": "BH-034.02", "parentId": "BH-034", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Run weekly accountability meeting ritual with action-item ownership and deadlines", "internalTitle": "Run weekly accountability meeting ritual with action-item ownership and deadlines", "owner": "Owner/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-034.01", "kpi": "Core build for BH-034 merged to main with green CI"}, {"id": "BH-034.03", "parentId": "BH-034", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Maintain 12-week meeting streak evidence and <24h corrective-action turnaround logs", "internalTitle": "Maintain 12-week meeting streak evidence and <24h corrective-action turnaround logs", "owner": "Owner/Ops", "effort": "S (0.5-1d)", "dependencies": "BH-034.02", "kpi": "12 consecutive weekly accountability sessions completed"}, {"id": "BH-035.01", "parentId": "BH-035", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Define finance control matrix for approvals, reconciliation, refunds/chargebacks, and fraud checks", "internalTitle": "Define finance control matrix for approvals, reconciliation, refunds/chargebacks, and fraud checks", "owner": "Finance/Backend", "effort": "XS (2-4h)", "dependencies": "BH-015.04", "kpi": "BH-035 scope signed off with file-level acceptance criteria"}, {"id": "BH-035.02", "parentId": "BH-035", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Implement finance audit-log schema/policies and dual-approval checkpoints in backend flows", "internalTitle": "Implement finance audit-log schema/policies and dual-approval checkpoints in backend flows", "owner": "Finance/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-035.01", "kpi": "Core build for BH-035 merged to main with green CI"}, {"id": "BH-035.03", "parentId": "BH-035", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Build monthly close checklist with discrepancy investigation and escalation steps", "internalTitle": "Build monthly close checklist with discrepancy investigation and escalation steps", "owner": "Finance/Backend", "effort": "S (0.5-1d)", "dependencies": "BH-035.02", "kpi": "BH-035 QA checklist passes with zero P1 defects"}, {"id": "BH-035.04", "parentId": "BH-035", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Complete two monthly close cycles with zero unexplained payment discrepancies above $10", "internalTitle": "Complete two monthly close cycles with zero unexplained payment discrepancies above $10", "owner": "Finance/Backend", "effort": "XS-S (3-6h)", "dependencies": "BH-035.03", "kpi": "0 unexplained payment discrepancies >$10; monthly close by day 5"}, {"id": "BH-036.01", "parentId": "BH-036", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Identify recurring growth/ops tasks to delegate with primary/backup owner assignments", "internalTitle": "Identify recurring growth/ops tasks to delegate with primary/backup owner assignments", "owner": "Owner/Operations", "effort": "XS (2-4h)", "dependencies": "BH-034.03", "kpi": "BH-036 scope signed off with file-level acceptance criteria"}, {"id": "BH-036.02", "parentId": "BH-036", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Document SOP library for traffic, lead capture, sales, fulfillment, and support execution", "internalTitle": "Document SOP library for traffic, lead capture, sales, fulfillment, and support execution", "owner": "Owner/Operations", "effort": "S (0.5-1d)", "dependencies": "BH-036.01", "kpi": "Core build for BH-036 merged to main with green CI"}, {"id": "BH-036.03", "parentId": "BH-036", "phase": "90+d", "phaseLabel": "Phase 3 (90+d)", "criticalRank": null, "title": "Validate >=80% owner-hands-off execution and revise SOPs from observed handoff gaps", "internalTitle": "Validate >=80% owner-hands-off execution and revise SOPs from observed handoff gaps", "owner": "Owner/Operations", "effort": "S (0.5-1d)", "dependencies": "BH-036.02", "kpi": ">=80% of recurring weekly tasks executed without owner intervention"}];
+    const PARENTS = {"BH-001": {"parentId": "BH-001", "title": "Define what success and tracking mean", "desc": "Create one shared KPI/event dictionary so all reporting is consistent.", "internalTitle": "Lock profitability event taxonomy + KPI dictionary", "criticalRank": 1}, "BH-002": {"parentId": "BH-002", "title": "Track key user actions on the site", "desc": "Instrument high-traffic pages so we can see real funnel behavior.", "internalTitle": "Instrument client-side funnel events across high-traffic surfaces", "criticalRank": 2}, "BH-003": {"parentId": "BH-003", "title": "Store tracking data in the backend", "desc": "Persist events reliably so weekly numbers are trustworthy.", "internalTitle": "Create backend event ingestion API + analytics_events table", "criticalRank": 3}, "BH-004": {"parentId": "BH-004", "title": "Generate weekly profitability scorecards", "desc": "Turn activity + money metrics into one weekly operating view.", "internalTitle": "Ship weekly profitability scorecard generation (execution KPIs + money KPIs)", "criticalRank": 4}, "BH-005": {"parentId": "BH-005", "title": "Track outbound gear clicks before redirect", "desc": "Capture attribution before sending users to partner stores.", "internalTitle": "Replace direct outbound gear links with tracked redirect flow", "criticalRank": 5}, "BH-006": {"parentId": "BH-006", "title": "Standardize affiliate links and tagging", "desc": "Fix dead/untagged links so revenue is not leaking.", "internalTitle": "Normalize gear link catalog + affiliate parameter map", "criticalRank": 6}, "BH-007": {"parentId": "BH-007", "title": "Capture leads before guide downloads", "desc": "Convert free-guide demand into contactable leads.", "internalTitle": "Add lead capture gate before Field Guide download", "criticalRank": 7}, "BH-008": {"parentId": "BH-008", "title": "Launch automated 5-email follow-up", "desc": "Nurture new leads quickly instead of letting them go cold.", "internalTitle": "Integrate email service + 5-message welcome sequence", "criticalRank": 8}, "BH-009": {"parentId": "BH-009", "title": "Add monetization CTAs to high-traffic areas", "desc": "Place offer entry points where users already engage.", "internalTitle": "Insert monetization CTAs in homepage, videos, and tools hub", "criticalRank": 9}, "BH-010": {"parentId": "BH-010", "title": "Launch a clear offers landing page", "desc": "Give visitors one clean destination for free/core/premium offers.", "internalTitle": "Launch Start Here-aligned offers landing page", "criticalRank": 10}, "BH-011": {"parentId": "BH-011", "title": "Document unit economics baseline (chat + VideoHogg + infra)", "desc": "", "internalTitle": "Document unit economics baseline (chat + VideoHogg + infra)", "criticalRank": null}, "BH-012": {"parentId": "BH-012", "title": "Implement AI usage guardrails to cap variable cost", "desc": "", "internalTitle": "Implement AI usage guardrails to cap variable cost", "criticalRank": null}, "BH-013": {"parentId": "BH-013", "title": "Finalize checkout provider and run first successful test transaction", "desc": "", "internalTitle": "Finalize checkout provider and run first successful test transaction", "criticalRank": null}, "BH-014": {"parentId": "BH-014", "title": "Create product catalog and pricing matrix (quick-pay buyers first)", "desc": "", "internalTitle": "Create product catalog and pricing matrix (quick-pay buyers first)", "criticalRank": null}, "BH-015": {"parentId": "BH-015", "title": "Build orders + payment webhook + fulfillment state machine", "desc": "", "internalTitle": "Build orders + payment webhook + fulfillment state machine", "criticalRank": null}, "BH-016": {"parentId": "BH-016", "title": "Launch paid “Trail Launch Kit” digital offer from existing guide/tool assets", "desc": "", "internalTitle": "Launch paid “Trail Launch Kit” digital offer from existing guide/tool assets", "criticalRank": null}, "BH-017": {"parentId": "BH-017", "title": "Implement checklist-driven cross-sell / upsell prompts in tools", "desc": "", "internalTitle": "Implement checklist-driven cross-sell / upsell prompts in tools", "criticalRank": null}, "BH-018": {"parentId": "BH-018", "title": "Create intentional referral system (codes, credits, reporting)", "desc": "", "internalTitle": "Create intentional referral system (codes, credits, reporting)", "criticalRank": null}, "BH-019": {"parentId": "BH-019", "title": "Enable retargeting pixels and conversion event map", "desc": "", "internalTitle": "Enable retargeting pixels and conversion event map", "criticalRank": null}, "BH-020": {"parentId": "BH-020", "title": "Build and execute 90-day marketing calendar", "desc": "", "internalTitle": "Build and execute 90-day marketing calendar", "criticalRank": null}, "BH-021": {"parentId": "BH-021", "title": "Implement SEO critical fixes from existing audit backlog", "desc": "", "internalTitle": "Implement SEO critical fixes from existing audit backlog", "criticalRank": null}, "BH-022": {"parentId": "BH-022", "title": "Operationalize article publishing checklist for SEO content", "desc": "", "internalTitle": "Operationalize article publishing checklist for SEO content", "criticalRank": null}, "BH-023": {"parentId": "BH-023", "title": "Define premium live-map offer (paid layer/features) and validate demand", "desc": "", "internalTitle": "Define premium live-map offer (paid layer/features) and validate demand", "criticalRank": null}, "BH-024": {"parentId": "BH-024", "title": "Add plans/subscriptions/invoices schema and APIs", "desc": "", "internalTitle": "Add plans/subscriptions/invoices schema and APIs", "criticalRank": null}, "BH-025": {"parentId": "BH-025", "title": "Build billing UI + premium access enforcement", "desc": "", "internalTitle": "Build billing UI + premium access enforcement", "criticalRank": null}, "BH-026": {"parentId": "BH-026", "title": "Commercialize VideoHogg from family beta to paid pilot", "desc": "", "internalTitle": "Commercialize VideoHogg from family beta to paid pilot", "criticalRank": null}, "BH-027": {"parentId": "BH-027", "title": "Launch NPS + customer wow loop post-purchase", "desc": "", "internalTitle": "Launch NPS + customer wow loop post-purchase", "criticalRank": null}, "BH-028": {"parentId": "BH-028", "title": "Build bundle engine for post-purchase cross-sell", "desc": "", "internalTitle": "Build bundle engine for post-purchase cross-sell", "criticalRank": null}, "BH-029": {"parentId": "BH-029", "title": "Automate lead/customer winback sequences", "desc": "", "internalTitle": "Automate lead/customer winback sequences", "criticalRank": null}, "BH-030": {"parentId": "BH-030", "title": "Run quarterly pricing experiments and document outcomes", "desc": "", "internalTitle": "Run quarterly pricing experiments and document outcomes", "criticalRank": null}, "BH-031": {"parentId": "BH-031", "title": "Finalize affiliate compliance + monthly revenue reporting", "desc": "", "internalTitle": "Finalize affiliate compliance + monthly revenue reporting", "criticalRank": null}, "BH-032": {"parentId": "BH-032", "title": "Publish sponsor/media kit and package page", "desc": "", "internalTitle": "Publish sponsor/media kit and package page", "criticalRank": null}, "BH-033": {"parentId": "BH-033", "title": "Create B2B licensing offer for clubs/church/groups", "desc": "", "internalTitle": "Create B2B licensing offer for clubs/church/groups", "criticalRank": null}, "BH-034": {"parentId": "BH-034", "title": "Run marketing tracking wall + weekly accountability meeting ritual", "desc": "", "internalTitle": "Run marketing tracking wall + weekly accountability meeting ritual", "criticalRank": null}, "BH-035": {"parentId": "BH-035", "title": "Implement finance controls, reconciliation, and anti-fraud guardrails", "desc": "", "internalTitle": "Implement finance controls, reconciliation, and anti-fraud guardrails", "criticalRank": null}, "BH-036": {"parentId": "BH-036", "title": "Create delegation SOP library so owner can run system, not tasks", "desc": "", "internalTitle": "Create delegation SOP library so owner can run system, not tasks", "criticalRank": null}};
+    const PHASE_ORDER = ["0-14d", "15-45d", "46-90d", "90+d"];
+    const PHASE_COUNTS = {"0-14d": 48, "15-45d": 33, "46-90d": 26, "90+d": 19};
+    const PHASE_LABELS = {"0-14d": "Phase 0 (0-14d)", "15-45d": "Phase 1 (15-45d)", "46-90d": "Phase 2 (46-90d)", "90+d": "Phase 3 (90+d)"};
+
+    const STORAGE_KEY = 'hoggcountry.dashboard.v2.checked';
+    const STORAGE_SETTINGS = 'hoggcountry.dashboard.v2.settings';
 
     let checked = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
-    let showIds = localStorage.getItem(STORAGE_SHOW_IDS) === '1';
+    let settings = Object.assign({
+      search: '',
+      phases: [...PHASE_ORDER],
+      top10Only: false,
+      showIds: false,
+      openAll: true,
+    }, JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || '{}'));
 
-    const checklistEl = document.getElementById('checklist');
+    const boardEl = document.getElementById('board');
     const statsEl = document.getElementById('stats');
-    const toggleIdsEl = document.getElementById('toggleIds');
-    toggleIdsEl.checked = showIds;
+    const phaseFiltersEl = document.getElementById('phaseFilters');
 
-    function save() {
+    const searchInput = document.getElementById('searchInput');
+    const top10OnlyInput = document.getElementById('top10Only');
+    const showIdsInput = document.getElementById('showIds');
+
+    function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([...checked]));
-      localStorage.setItem(STORAGE_SHOW_IDS, showIds ? '1' : '0');
+      localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings));
     }
 
-    function parentChildren(parentId) {
-      const group = groups.find(g => g.parent_id === parentId);
-      return group ? group.items.map(i => i.id) : [];
+    function parentNumber(parentId) {
+      const m = parentId.match(/BH-(\d{3})/);
+      return m ? parseInt(m[1], 10) : 999;
     }
 
-    function parentComplete(parentId) {
-      const children = parentChildren(parentId);
-      return children.length > 0 && children.every(id => checked.has(id));
+    function taskNumber(taskId) {
+      const m = taskId.match(/\.(\d{2})$/);
+      return m ? parseInt(m[1], 10) : 999;
     }
 
-    function updateStats() {
-      const allChildren = groups.flatMap(g => g.items);
-      const doneChildren = allChildren.filter(i => checked.has(i.id)).length;
-      const totalChildren = allChildren.length;
-      const doneParents = groups.filter(g => parentComplete(g.parent_id)).length;
-      const pct = totalChildren ? Math.round((doneChildren / totalChildren) * 100) : 0;
+    function phaseSelected(phase) {
+      return settings.phases.includes(phase);
+    }
+
+    function filteredTasks() {
+      const q = (settings.search || '').trim().toLowerCase();
+      return TASKS.filter(task => {
+        if (!phaseSelected(task.phase)) return false;
+        if (settings.top10Only && !task.criticalRank) return false;
+        if (!q) return true;
+
+        const parent = PARENTS[task.parentId] || {};
+        const haystack = [
+          task.title,
+          task.internalTitle,
+          task.owner,
+          task.phaseLabel,
+          parent.title || '',
+          parent.internalTitle || '',
+          task.id,
+          task.parentId,
+        ].join(' ').toLowerCase();
+
+        return haystack.includes(q);
+      });
+    }
+
+    function groupedTasks(items) {
+      const phases = {};
+      for (const p of PHASE_ORDER) phases[p] = {};
+
+      for (const task of items) {
+        if (!phases[task.phase]) phases[task.phase] = {};
+        if (!phases[task.phase][task.parentId]) phases[task.phase][task.parentId] = [];
+        phases[task.phase][task.parentId].push(task);
+      }
+
+      // sort parent groups + tasks
+      for (const phase of Object.keys(phases)) {
+        for (const parentId of Object.keys(phases[phase])) {
+          phases[phase][parentId].sort((a, b) => taskNumber(a.id) - taskNumber(b.id));
+        }
+      }
+
+      return phases;
+    }
+
+    function renderPhaseFilters() {
+      phaseFiltersEl.innerHTML = PHASE_ORDER.map(phase => {
+        const checkedAttr = phaseSelected(phase) ? 'checked' : '';
+        const count = PHASE_COUNTS[phase] || 0;
+        return `<label class="chip"><input type="checkbox" data-phase="${phase}" ${checkedAttr} /> ${PHASE_LABELS[phase] || phase} (${count})</label>`;
+      }).join('');
+    }
+
+    function updateStats(visibleItems) {
+      const visibleDone = visibleItems.filter(t => checked.has(t.id)).length;
+      const totalVisible = visibleItems.length;
+      const totalAll = TASKS.length;
+      const doneAll = TASKS.filter(t => checked.has(t.id)).length;
+
+      const pctVisible = totalVisible ? Math.round((visibleDone / totalVisible) * 100) : 0;
+      const pctAll = totalAll ? Math.round((doneAll / totalAll) * 100) : 0;
+
       statsEl.innerHTML = `
-        <span class="stat">Top-10 complete: <strong>${doneParents}/10</strong></span>
-        <span class="stat">Atomic tasks complete: <strong>${doneChildren}/${totalChildren}</strong></span>
-        <span class="stat">Progress: <strong>${pct}%</strong></span>
+        <span class="stat">Visible complete: <strong>${visibleDone}/${totalVisible}</strong></span>
+        <span class="stat">Visible progress: <strong>${pctVisible}%</strong></span>
+        <span class="stat">Overall complete: <strong>${doneAll}/${totalAll}</strong></span>
+        <span class="stat">Overall progress: <strong>${pctAll}%</strong></span>
       `;
     }
 
-    function render() {
-      checklistEl.classList.toggle('show-ids', showIds);
-      checklistEl.innerHTML = groups.map(group => {
-        const parentDone = parentComplete(group.parent_id);
-        const childrenHtml = group.items.map((item, idx) => {
-          const isDone = checked.has(item.id);
-          return `
-            <li class="child ${isDone ? 'done' : ''}">
-              <input type="checkbox" data-child="${item.id}" ${isDone ? 'checked' : ''} />
-              <div>
-                <div class="child-title">${idx + 1}. ${item.title}</div>
-                <div class="meta">Owner: ${item.owner || '—'} · Effort: ${item.effort || '—'}</div>
-                <div class="internal-id">Internal ID: ${item.id}</div>
-              </div>
-            </li>
-          `;
-        }).join('');
+    function renderBoard() {
+      const items = filteredTasks();
+      const grouped = groupedTasks(items);
 
-        return `
-          <details class="parent" data-parent="${group.parent_id}" open>
-            <summary>
-              <span class="rank">${group.rank}</span>
-              <div>
-                <div class="step-label">Step ${group.rank} of 10</div>
-                <p class="parent-title">${group.title}</p>
-                <div class="parent-desc">${group.desc}</div>
-                <div class="internal-id">Internal ID: ${group.parent_id}</div>
-              </div>
-              <input type="checkbox" class="parent-check" data-parent-check="${group.parent_id}" ${parentDone ? 'checked' : ''} title="Toggle all sub-tasks" />
-            </summary>
-            <ul class="children">${childrenHtml}</ul>
-          </details>
-        `;
-      }).join('');
+      boardEl.classList.toggle('show-ids', !!settings.showIds);
 
-      updateStats();
-    }
-
-    checklistEl.addEventListener('change', (event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLInputElement)) return;
-
-      if (target.dataset.child) {
-        const id = target.dataset.child;
-        if (target.checked) checked.add(id);
-        else checked.delete(id);
-        save();
-        render();
+      if (items.length === 0) {
+        boardEl.innerHTML = '<div class="empty">No tasks match your current search/filter settings.</div>';
+        updateStats([]);
         return;
       }
 
-      if (target.dataset.parentCheck) {
-        const parentId = target.dataset.parentCheck;
-        const ids = parentChildren(parentId);
-        if (target.checked) ids.forEach(id => checked.add(id));
-        else ids.forEach(id => checked.delete(id));
-        save();
-        render();
+      let html = '';
+
+      for (const phase of PHASE_ORDER) {
+        const parentMap = grouped[phase] || {};
+        const parentIds = Object.keys(parentMap).sort((a, b) => parentNumber(a) - parentNumber(b));
+        if (!parentIds.length) continue;
+
+        const phaseTaskCount = parentIds.reduce((sum, pid) => sum + parentMap[pid].length, 0);
+        const phaseDoneCount = parentIds.reduce((sum, pid) => sum + parentMap[pid].filter(t => checked.has(t.id)).length, 0);
+
+        html += `
+          <section class="phase-block" data-phase="${phase}">
+            <div class="phase-header">
+              <div class="phase-title">${PHASE_LABELS[phase] || phase}</div>
+              <div class="phase-count">${phaseDoneCount}/${phaseTaskCount} complete</div>
+            </div>
+        `;
+
+        for (const parentId of parentIds) {
+          const parent = PARENTS[parentId] || { title: parentId, internalTitle: parentId, desc: '', criticalRank: null };
+          const tasks = parentMap[parentId];
+          const done = tasks.filter(t => checked.has(t.id)).length;
+          const total = tasks.length;
+          const criticalBadge = parent.criticalRank ? `<span class="rank">${parent.criticalRank}</span>` : '<span class="rank">•</span>';
+
+          const taskRows = tasks.map((task, idx) => {
+            const isDone = checked.has(task.id);
+            return `
+              <li class="task ${isDone ? 'done' : ''}">
+                <input type="checkbox" data-task-id="${task.id}" ${isDone ? 'checked' : ''} />
+                <div>
+                  <div class="task-title">${idx + 1}. ${task.title}</div>
+                  <div class="task-meta">Owner: ${task.owner || '—'} · Effort: ${task.effort || '—'}</div>
+                  <div class="internal-id">Task ID: ${task.id} · Parent: ${task.parentId}</div>
+                </div>
+              </li>
+            `;
+          }).join('');
+
+          html += `
+            <details class="parent" ${settings.openAll ? 'open' : ''}>
+              <summary class="parent-summary">
+                ${criticalBadge}
+                <div>
+                  <p class="parent-title">${parent.title}</p>
+                  ${parent.desc ? `<div class="parent-desc">${parent.desc}</div>` : ''}
+                  <div class="internal-id">Internal title: ${parent.internalTitle}</div>
+                </div>
+                <div class="parent-meta">${done}/${total} complete</div>
+              </summary>
+              <ul class="task-list">
+                ${taskRows}
+              </ul>
+            </details>
+          `;
+        }
+
+        html += '</section>';
       }
+
+      boardEl.innerHTML = html;
+      updateStats(items);
+    }
+
+    function refresh() {
+      renderPhaseFilters();
+      renderBoard();
+      searchInput.value = settings.search || '';
+      top10OnlyInput.checked = !!settings.top10Only;
+      showIdsInput.checked = !!settings.showIds;
+    }
+
+    // events
+    searchInput.addEventListener('input', () => {
+      settings.search = searchInput.value;
+      saveState();
+      renderBoard();
     });
 
-    toggleIdsEl.addEventListener('change', () => {
-      showIds = toggleIdsEl.checked;
-      save();
-      render();
+    phaseFiltersEl.addEventListener('change', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (!target.dataset.phase) return;
+
+      const phase = target.dataset.phase;
+      if (target.checked) {
+        if (!settings.phases.includes(phase)) settings.phases.push(phase);
+      } else {
+        settings.phases = settings.phases.filter(p => p !== phase);
+      }
+
+      // keep deterministic order
+      settings.phases = PHASE_ORDER.filter(p => settings.phases.includes(p));
+      saveState();
+      refresh();
     });
 
-    document.getElementById('expandBtn').addEventListener('click', () => {
-      document.querySelectorAll('details.parent').forEach(el => el.open = true);
+    top10OnlyInput.addEventListener('change', () => {
+      settings.top10Only = top10OnlyInput.checked;
+      saveState();
+      renderBoard();
     });
 
-    document.getElementById('collapseBtn').addEventListener('click', () => {
-      document.querySelectorAll('details.parent').forEach(el => el.open = false);
+    showIdsInput.addEventListener('change', () => {
+      settings.showIds = showIdsInput.checked;
+      saveState();
+      renderBoard();
     });
 
-    document.getElementById('markAllBtn').addEventListener('click', () => {
-      groups.flatMap(g => g.items).forEach(item => checked.add(item.id));
-      save();
-      render();
+    boardEl.addEventListener('change', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const id = target.dataset.taskId;
+      if (!id) return;
+
+      if (target.checked) checked.add(id);
+      else checked.delete(id);
+      saveState();
+      renderBoard();
     });
 
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      checked.clear();
-      save();
-      render();
+    document.getElementById('expandAllBtn').addEventListener('click', () => {
+      settings.openAll = true;
+      saveState();
+      boardEl.querySelectorAll('details.parent').forEach(el => el.open = true);
     });
 
-    render();
+    document.getElementById('collapseAllBtn').addEventListener('click', () => {
+      settings.openAll = false;
+      saveState();
+      boardEl.querySelectorAll('details.parent').forEach(el => el.open = false);
+    });
+
+    document.getElementById('markVisibleBtn').addEventListener('click', () => {
+      for (const task of filteredTasks()) checked.add(task.id);
+      saveState();
+      renderBoard();
+    });
+
+    document.getElementById('clearVisibleBtn').addEventListener('click', () => {
+      for (const task of filteredTasks()) checked.delete(task.id);
+      saveState();
+      renderBoard();
+    });
+
+    document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+      settings = {
+        search: '',
+        phases: [...PHASE_ORDER],
+        top10Only: false,
+        showIds: false,
+        openAll: true,
+      };
+      saveState();
+      refresh();
+    });
+
+    refresh();
   </script>
 </body>
 </html>
