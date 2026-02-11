@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>HoggCountry Top 10 Profitability Checklist</title>
+  <title>HoggCountry Top 10 Checklist (Plain English)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
@@ -18,7 +18,6 @@
       --border: #e6e1d4;
       --muted: #4a5448;
       --ok: #166534;
-      --warn: #8a6f00;
       --shadow: rgba(0,0,0,0.08);
     }
 
@@ -36,12 +35,7 @@
       padding: 22px 14px;
     }
 
-    .wrap {
-      max-width: 1080px;
-      margin: 0 auto;
-      display: grid;
-      gap: 14px;
-    }
+    .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }
 
     .card {
       background: var(--card);
@@ -50,11 +44,7 @@
       box-shadow: 0 10px 20px var(--shadow);
     }
 
-    .header {
-      padding: 18px 20px;
-      display: grid;
-      gap: 10px;
-    }
+    .header { padding: 18px 20px; display: grid; gap: 10px; }
 
     .eyebrow {
       display: inline-flex;
@@ -86,12 +76,7 @@
       line-height: 1.45;
     }
 
-    .stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
+    .stats { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
     .stat {
       border: 1px solid var(--border);
@@ -112,7 +97,7 @@
       padding: 0 20px 16px;
     }
 
-    .left-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .left-controls, .right-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
     button {
       appearance: none;
@@ -127,15 +112,24 @@
       cursor: pointer;
     }
 
-    button:hover {
-      border-color: #c8bfa8;
-      transform: translateY(-1px);
-    }
+    button:hover { border-color: #c8bfa8; transform: translateY(-1px); }
 
     button.primary {
       background: var(--marker);
       border-color: #dbce00;
       color: #2f321f;
+    }
+
+    .toggle-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .82rem;
+      color: var(--muted);
+      padding: 5px 8px;
+      border: 1px dashed #d7cfbc;
+      border-radius: 8px;
+      background: #fff;
     }
 
     .scroll {
@@ -155,9 +149,7 @@
       overflow: hidden;
     }
 
-    details.parent[open] {
-      box-shadow: 0 8px 18px rgba(0,0,0,.06);
-    }
+    details.parent[open] { box-shadow: 0 8px 18px rgba(0,0,0,.06); }
 
     summary {
       list-style: none;
@@ -186,34 +178,33 @@
       font-size: 15px;
     }
 
+    .step-label {
+      font-size: .72rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #687261;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
     .parent-title {
       margin: 0;
-      font-size: 0.99rem;
+      font-size: 1rem;
       color: #2f3a2d;
       line-height: 1.3;
-    }
-
-    .parent-id {
-      font-size: .76rem;
-      color: var(--muted);
-      margin-top: 2px;
       font-weight: 700;
-      letter-spacing: .03em;
     }
 
-    .parent-check {
-      width: 22px;
-      height: 22px;
-      accent-color: var(--ok);
+    .parent-desc {
+      margin-top: 3px;
+      color: #5c6656;
+      font-size: .86rem;
+      line-height: 1.35;
     }
 
-    .children {
-      margin: 0;
-      padding: 8px 12px 12px 12px;
-      list-style: none;
-      display: grid;
-      gap: 8px;
-    }
+    .parent-check { width: 22px; height: 22px; accent-color: var(--ok); }
+
+    .children { margin: 0; padding: 8px 12px 12px 12px; list-style: none; display: grid; gap: 8px; }
 
     .child {
       display: grid;
@@ -223,7 +214,7 @@
       border: 1px solid #ece7da;
       border-radius: 10px;
       background: #fff;
-      padding: 9px 10px;
+      padding: 10px;
     }
 
     .child input[type="checkbox"] {
@@ -233,47 +224,21 @@
       accent-color: var(--ok);
     }
 
-    .child-id {
-      color: #697066;
-      font-size: .75rem;
-      font-weight: 700;
-      letter-spacing: .03em;
-      margin-bottom: 2px;
-    }
+    .child-title { color: #253024; line-height: 1.35; font-size: .93rem; }
 
-    .child-title {
-      color: #253024;
-      line-height: 1.35;
-      font-size: .92rem;
-    }
+    .meta { margin-top: 5px; color: #6e776c; font-size: .75rem; }
 
-    .meta {
-      margin-top: 4px;
-      color: #6e776c;
-      font-size: .75rem;
-    }
+    .internal-id { margin-top: 4px; color: #7b8377; font-size: .72rem; display: none; }
 
-    .done .child-title {
-      text-decoration: line-through;
-      color: #6d786b;
-    }
+    .show-ids .internal-id { display: block; }
 
-    .footer-note {
-      margin: 0;
-      padding: 8px 4px 0;
-      color: #626b5f;
-      font-size: .8rem;
-      line-height: 1.35;
-    }
+    .done .child-title { text-decoration: line-through; color: #6d786b; }
+
+    .footer-note { margin: 0; padding: 8px 4px 0; color: #626b5f; font-size: .8rem; line-height: 1.35; }
 
     @media (max-width: 700px) {
-      summary {
-        grid-template-columns: auto 1fr;
-      }
-      .parent-check {
-        grid-column: 1 / -1;
-        justify-self: start;
-      }
+      summary { grid-template-columns: auto 1fr; }
+      .parent-check { grid-column: 1 / -1; justify-self: start; }
     }
   </style>
 </head>
@@ -281,8 +246,8 @@
   <div class="wrap">
     <section class="card header">
       <span class="eyebrow">HoggCountry • Start Here</span>
-      <h1>Top 10 Profitability Checklist (Scrollable + Checkable)</h1>
-      <p class="sub">This is your critical path. Checkboxes save locally in your browser so you can close and come back.</p>
+      <h1>Top 10 Profitability Checklist (Plain-English View)</h1>
+      <p class="sub">Internal BH codes are hidden by default. This view is designed for quick execution: scroll, check off, keep moving.</p>
       <div class="stats" id="stats"></div>
       <div class="controls">
         <div class="left-controls">
@@ -291,25 +256,37 @@
           <button type="button" id="markAllBtn" class="primary">Mark all complete</button>
           <button type="button" id="clearBtn">Clear all</button>
         </div>
+        <div class="right-controls">
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggleIds" />
+            Show internal IDs
+          </label>
+        </div>
       </div>
     </section>
 
     <section class="card scroll" id="checklist"></section>
 
-    <p class="footer-note">Data source: <code>docs/business/profitability-execution-backlog-start-here.csv</code> (Top 10 groups only, 40 atomic tasks).</p>
+    <p class="footer-note">Data source: <code>docs/business/profitability-execution-backlog-start-here.csv</code> (Top 10 groups, 40 atomic tasks). Checkbox state is saved locally in your browser.</p>
   </div>
 
   <script>
-    const STORAGE_KEY = 'hoggcountry.top10.checklist.v1';
-    const groups = [{"rank": 1, "parent_id": "BH-001", "parent_title": "Lock profitability event taxonomy + KPI dictionary", "items": [{"id": "BH-001.01", "title": "Audit existing tracked vs untracked user actions across BaseLayout, DownloadModal, BudgetGearBuilder, and TrailChat", "owner": "Product/Ops", "effort": "XS (2-4h)"}, {"id": "BH-001.02", "title": "Define v1 event naming convention and payload schema (source, campaign, value, session) in profitability-event-taxonomy-start-here.md", "owner": "Product/Ops", "effort": "S (0.5-1d)"}, {"id": "BH-001.03", "title": "Map each event to funnel stage, KPI owner, and weekly scorecard metric in the dictionary", "owner": "Product/Ops", "effort": "S (0.5-1d)"}, {"id": "BH-001.04", "title": "Run taxonomy sign-off review and lock v1 changelog + instrumentation acceptance checklist", "owner": "Product/Ops", "effort": "XS-S (3-6h)"}]}, {"rank": 2, "parent_id": "BH-002", "parent_title": "Instrument client-side funnel events across high-traffic surfaces", "items": [{"id": "BH-002.01", "title": "Add shared client tracking helper and BaseLayout bootstrap hook for reliable event dispatch", "owner": "Frontend", "effort": "XS (2-4h)"}, {"id": "BH-002.02", "title": "Instrument guide/download and gear/tool CTA events in DownloadModal, BudgetGearBuilder, and ToolsDashboard", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-002.03", "title": "Instrument TrailChat, videos index, and ProtoF Ranger/home CTA blocks with taxonomy-compliant events", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-002.04", "title": "Execute click-through QA matrix and capture payload evidence for priority funnel events", "owner": "Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 3, "parent_id": "BH-003", "parent_title": "Create backend event ingestion API + analytics_events table", "items": [{"id": "BH-003.01", "title": "Create analytics_events migration with indexed event_name, source, session/user, and occurred_at columns", "owner": "Backend", "effort": "XS (2-4h)"}, {"id": "BH-003.02", "title": "Implement AnalyticsEventController request validation, auth handling, and batched insert flow", "owner": "Backend", "effort": "S (0.5-1d)"}, {"id": "BH-003.03", "title": "Register /api/v1/analytics/events route with rate limiting and abuse protection", "owner": "Backend", "effort": "S (0.5-1d)"}, {"id": "BH-003.04", "title": "Add API tests plus load sanity run proving valid event persistence under expected traffic", "owner": "Backend", "effort": "XS-S (3-6h)"}]}, {"rank": 4, "parent_id": "BH-004", "parent_title": "Ship weekly profitability scorecard generation (execution KPIs + money KPIs)", "items": [{"id": "BH-004.01", "title": "Define weekly profitability scorecard schema and markdown output template in docs/business/scorecards/", "owner": "Ops/Finance", "effort": "XS (2-4h)"}, {"id": "BH-004.02", "title": "Build BuildProfitabilityScorecard aggregation logic for completion %, funnel, and money KPIs", "owner": "Ops/Finance", "effort": "S (0.5-1d)"}, {"id": "BH-004.03", "title": "Wire scripts/profitability-scorecard.mjs and scheduling config for Monday automated generation", "owner": "Ops/Finance", "effort": "S (0.5-1d)"}, {"id": "BH-004.04", "title": "Publish first two real weekly scorecards and reconcile metrics against source event/order data", "owner": "Ops/Finance", "effort": "XS-S (3-6h)"}]}, {"rank": 5, "parent_id": "BH-005", "parent_title": "Replace direct outbound gear links with tracked redirect flow", "items": [{"id": "BH-005.01", "title": "Design outbound redirect contract (item_id, source, campaign, destination, signed token)", "owner": "Backend + Frontend", "effort": "XS (2-4h)"}, {"id": "BH-005.02", "title": "Implement OutboundLinkController redirect endpoint to log click data then issue safe 302", "owner": "Backend + Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-005.03", "title": "Refactor BudgetGearBuilder Buy buttons to use src/lib/outboundLinks.ts tracked redirect URLs", "owner": "Backend + Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-005.04", "title": "QA 20 sampled gear links confirming click records and final merchant destination accuracy", "owner": "Backend + Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 6, "parent_id": "BH-006", "parent_title": "Normalize gear link catalog + affiliate parameter map", "items": [{"id": "BH-006.01", "title": "Audit gearRecommendations.json for duplicate SKUs, dead links, and missing monetization flags", "owner": "Growth/Content", "effort": "XS (2-4h)"}, {"id": "BH-006.02", "title": "Create affiliateMap.json with partner parameter rules, disclosure tags, and exceptions", "owner": "Growth/Content", "effort": "S (0.5-1d)"}, {"id": "BH-006.03", "title": "Implement normalize-gear-links.mjs lint/normalize pass and remediate all catalog violations", "owner": "Growth/Content", "effort": "S (0.5-1d)"}, {"id": "BH-006.04", "title": "Publish partner-terms + tagging coverage report showing 100% monetizable-link classification", "owner": "Growth/Content", "effort": "XS-S (3-6h)"}]}, {"rank": 7, "parent_id": "BH-007", "parent_title": "Add lead capture gate before Field Guide download", "items": [{"id": "BH-007.01", "title": "Design low-friction /guide lead gate UX and copy with email-only required field policy", "owner": "Frontend", "effort": "XS (2-4h)"}, {"id": "BH-007.02", "title": "Implement lead form validation and modal state flow in DownloadModal and DownloadGuideButton", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-007.03", "title": "Wire lead submit API call and unlock PDF/Markdown download only after successful capture event", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-007.04", "title": "Run desktop/mobile funnel QA proving lead_created then asset_downloaded sequence integrity", "owner": "Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 8, "parent_id": "BH-008", "parent_title": "Integrate email service + 5-message welcome sequence", "items": [{"id": "BH-008.01", "title": "Finalize email provider integration approach and configure credentials/env documentation", "owner": "Backend/Growth", "effort": "XS (2-4h)"}, {"id": "BH-008.02", "title": "Implement LeadCaptureController contact upsert + SendLeadWelcomeSequence trigger", "owner": "Backend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-008.03", "title": "Author five-message welcome sequence (timing, objective, CTA) in start-here-welcome.md", "owner": "Backend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-008.04", "title": "Validate deliverability with seed tests, bounce/error logging, and <5 minute first-send SLA", "owner": "Backend/Growth", "effort": "XS-S (3-6h)"}]}, {"rank": 9, "parent_id": "BH-009", "parent_title": "Insert monetization CTAs in homepage, videos, and tools hub", "items": [{"id": "BH-009.01", "title": "Define monetization CTA placement map for homepage/proto ranger, videos index, and tools hub", "owner": "Frontend/Growth", "effort": "XS (2-4h)"}, {"id": "BH-009.02", "title": "Implement contextual CTA modules for Lead Magnet, Trail Launch Kit, and VideoHogg pilot paths", "owner": "Frontend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-009.03", "title": "Attach attribution parameters and event tracking to each CTA variant and location", "owner": "Frontend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-009.04", "title": "Publish 14-day baseline CTR report and iterate weak placements/copy before scale", "owner": "Frontend/Growth", "effort": "XS-S (3-6h)"}]}, {"rank": 10, "parent_id": "BH-010", "parent_title": "Launch Start Here-aligned offers landing page", "items": [{"id": "BH-010.01", "title": "Draft offer hierarchy and messaging blocks for free/core/premium stack on start-here-offers page", "owner": "Product/Content", "effort": "XS (2-4h)"}, {"id": "BH-010.02", "title": "Build src/pages/start-here-offers.astro with proof blocks, CTA hierarchy, and route metadata", "owner": "Product/Content", "effort": "S (0.5-1d)"}, {"id": "BH-010.03", "title": "Add OG asset + SEO metadata wiring (BaseHead, og image, canonical, social tags)", "owner": "Product/Content", "effort": "S (0.5-1d)"}, {"id": "BH-010.04", "title": "Validate conversion links + analytics events on offers page and log launch evidence in scorecard", "owner": "Product/Content", "effort": "XS-S (3-6h)"}]}];
+    const STORAGE_KEY = 'hoggcountry.top10.checklist.v2';
+    const STORAGE_SHOW_IDS = 'hoggcountry.top10.checklist.showIds';
+    const groups = [{"rank": 1, "parent_id": "BH-001", "title": "Define what success and tracking mean", "desc": "Create one shared KPI/event dictionary so all reporting is consistent.", "items": [{"id": "BH-001.01", "title": "Audit existing tracked vs untracked user actions across BaseLayout, DownloadModal, BudgetGearBuilder, and TrailChat", "owner": "Product/Ops", "effort": "XS (2-4h)"}, {"id": "BH-001.02", "title": "Define v1 event naming convention and payload schema (source, campaign, value, session) in profitability-event-taxonomy-start-here.md", "owner": "Product/Ops", "effort": "S (0.5-1d)"}, {"id": "BH-001.03", "title": "Map each event to funnel stage, KPI owner, and weekly scorecard metric in the dictionary", "owner": "Product/Ops", "effort": "S (0.5-1d)"}, {"id": "BH-001.04", "title": "Run taxonomy sign-off review and lock v1 changelog + instrumentation acceptance checklist", "owner": "Product/Ops", "effort": "XS-S (3-6h)"}]}, {"rank": 2, "parent_id": "BH-002", "title": "Track key user actions on the site", "desc": "Instrument the highest-traffic pages so we can see funnel behavior.", "items": [{"id": "BH-002.01", "title": "Add shared client tracking helper and BaseLayout bootstrap hook for reliable event dispatch", "owner": "Frontend", "effort": "XS (2-4h)"}, {"id": "BH-002.02", "title": "Instrument guide/download and gear/tool CTA events in DownloadModal, BudgetGearBuilder, and ToolsDashboard", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-002.03", "title": "Instrument TrailChat, videos index, and ProtoF Ranger/home CTA blocks with taxonomy-compliant events", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-002.04", "title": "Execute click-through QA matrix and capture payload evidence for priority funnel events", "owner": "Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 3, "parent_id": "BH-003", "title": "Store tracking data in the backend", "desc": "Persist events via API + database so metrics are reliable.", "items": [{"id": "BH-003.01", "title": "Create analytics_events migration with indexed event_name, source, session/user, and occurred_at columns", "owner": "Backend", "effort": "XS (2-4h)"}, {"id": "BH-003.02", "title": "Implement AnalyticsEventController request validation, auth handling, and batched insert flow", "owner": "Backend", "effort": "S (0.5-1d)"}, {"id": "BH-003.03", "title": "Register /api/v1/analytics/events route with rate limiting and abuse protection", "owner": "Backend", "effort": "S (0.5-1d)"}, {"id": "BH-003.04", "title": "Add API tests plus load sanity run proving valid event persistence under expected traffic", "owner": "Backend", "effort": "XS-S (3-6h)"}]}, {"rank": 4, "parent_id": "BH-004", "title": "Generate weekly profitability scorecards", "desc": "Turn raw events and money metrics into a weekly operating view.", "items": [{"id": "BH-004.01", "title": "Define weekly profitability scorecard schema and markdown output template in docs/business/scorecards/", "owner": "Ops/Finance", "effort": "XS (2-4h)"}, {"id": "BH-004.02", "title": "Build BuildProfitabilityScorecard aggregation logic for completion %, funnel, and money KPIs", "owner": "Ops/Finance", "effort": "S (0.5-1d)"}, {"id": "BH-004.03", "title": "Wire scripts/profitability-scorecard.mjs and scheduling config for Monday automated generation", "owner": "Ops/Finance", "effort": "S (0.5-1d)"}, {"id": "BH-004.04", "title": "Publish first two real weekly scorecards and reconcile metrics against source event/order data", "owner": "Ops/Finance", "effort": "XS-S (3-6h)"}]}, {"rank": 5, "parent_id": "BH-005", "title": "Track outbound gear clicks before redirect", "desc": "Capture attribution for monetized click-outs to partner sites.", "items": [{"id": "BH-005.01", "title": "Design outbound redirect contract (item_id, source, campaign, destination, signed token)", "owner": "Backend + Frontend", "effort": "XS (2-4h)"}, {"id": "BH-005.02", "title": "Implement OutboundLinkController redirect endpoint to log click data then issue safe 302", "owner": "Backend + Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-005.03", "title": "Refactor BudgetGearBuilder Buy buttons to use src/lib/outboundLinks.ts tracked redirect URLs", "owner": "Backend + Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-005.04", "title": "QA 20 sampled gear links confirming click records and final merchant destination accuracy", "owner": "Backend + Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 6, "parent_id": "BH-006", "title": "Standardize affiliate links and tagging", "desc": "Eliminate dead/untagged links and prevent revenue leakage.", "items": [{"id": "BH-006.01", "title": "Audit gearRecommendations.json for duplicate SKUs, dead links, and missing monetization flags", "owner": "Growth/Content", "effort": "XS (2-4h)"}, {"id": "BH-006.02", "title": "Create affiliateMap.json with partner parameter rules, disclosure tags, and exceptions", "owner": "Growth/Content", "effort": "S (0.5-1d)"}, {"id": "BH-006.03", "title": "Implement normalize-gear-links.mjs lint/normalize pass and remediate all catalog violations", "owner": "Growth/Content", "effort": "S (0.5-1d)"}, {"id": "BH-006.04", "title": "Publish partner-terms + tagging coverage report showing 100% monetizable-link classification", "owner": "Growth/Content", "effort": "XS-S (3-6h)"}]}, {"rank": 7, "parent_id": "BH-007", "title": "Capture leads before guide downloads", "desc": "Convert free-guide demand into contactable leads.", "items": [{"id": "BH-007.01", "title": "Design low-friction /guide lead gate UX and copy with email-only required field policy", "owner": "Frontend", "effort": "XS (2-4h)"}, {"id": "BH-007.02", "title": "Implement lead form validation and modal state flow in DownloadModal and DownloadGuideButton", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-007.03", "title": "Wire lead submit API call and unlock PDF/Markdown download only after successful capture event", "owner": "Frontend", "effort": "S (0.5-1d)"}, {"id": "BH-007.04", "title": "Run desktop/mobile funnel QA proving lead_created then asset_downloaded sequence integrity", "owner": "Frontend", "effort": "XS-S (3-6h)"}]}, {"rank": 8, "parent_id": "BH-008", "title": "Launch automated 5-email welcome follow-up", "desc": "Nurture new leads quickly instead of letting them go cold.", "items": [{"id": "BH-008.01", "title": "Finalize email provider integration approach and configure credentials/env documentation", "owner": "Backend/Growth", "effort": "XS (2-4h)"}, {"id": "BH-008.02", "title": "Implement LeadCaptureController contact upsert + SendLeadWelcomeSequence trigger", "owner": "Backend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-008.03", "title": "Author five-message welcome sequence (timing, objective, CTA) in start-here-welcome.md", "owner": "Backend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-008.04", "title": "Validate deliverability with seed tests, bounce/error logging, and <5 minute first-send SLA", "owner": "Backend/Growth", "effort": "XS-S (3-6h)"}]}, {"rank": 9, "parent_id": "BH-009", "title": "Add monetization CTAs to high-traffic areas", "desc": "Place tracked offer entry points where users already engage.", "items": [{"id": "BH-009.01", "title": "Define monetization CTA placement map for homepage/proto ranger, videos index, and tools hub", "owner": "Frontend/Growth", "effort": "XS (2-4h)"}, {"id": "BH-009.02", "title": "Implement contextual CTA modules for Lead Magnet, Trail Launch Kit, and VideoHogg pilot paths", "owner": "Frontend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-009.03", "title": "Attach attribution parameters and event tracking to each CTA variant and location", "owner": "Frontend/Growth", "effort": "S (0.5-1d)"}, {"id": "BH-009.04", "title": "Publish 14-day baseline CTR report and iterate weak placements/copy before scale", "owner": "Frontend/Growth", "effort": "XS-S (3-6h)"}]}, {"rank": 10, "parent_id": "BH-010", "title": "Launch a clear offers landing page", "desc": "Give visitors one clean destination for free/core/premium offers.", "items": [{"id": "BH-010.01", "title": "Draft offer hierarchy and messaging blocks for free/core/premium stack on start-here-offers page", "owner": "Product/Content", "effort": "XS (2-4h)"}, {"id": "BH-010.02", "title": "Build src/pages/start-here-offers.astro with proof blocks, CTA hierarchy, and route metadata", "owner": "Product/Content", "effort": "S (0.5-1d)"}, {"id": "BH-010.03", "title": "Add OG asset + SEO metadata wiring (BaseHead, og image, canonical, social tags)", "owner": "Product/Content", "effort": "S (0.5-1d)"}, {"id": "BH-010.04", "title": "Validate conversion links + analytics events on offers page and log launch evidence in scorecard", "owner": "Product/Content", "effort": "XS-S (3-6h)"}]}];
 
     let checked = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+    let showIds = localStorage.getItem(STORAGE_SHOW_IDS) === '1';
 
     const checklistEl = document.getElementById('checklist');
     const statsEl = document.getElementById('stats');
+    const toggleIdsEl = document.getElementById('toggleIds');
+
+    toggleIdsEl.checked = showIds;
 
     function save() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([...checked]));
+      localStorage.setItem(STORAGE_SHOW_IDS, showIds ? '1' : '0');
     }
 
     function parentChildren(parentId) {
@@ -327,8 +304,8 @@
       const doneChildren = allChildren.filter(i => checked.has(i.id)).length;
       const totalChildren = allChildren.length;
       const doneParents = groups.filter(g => parentComplete(g.parent_id)).length;
-
       const pct = totalChildren ? Math.round((doneChildren / totalChildren) * 100) : 0;
+
       statsEl.innerHTML = `
         <span class="stat">Top-10 complete: <strong>${doneParents}/10</strong></span>
         <span class="stat">Atomic tasks complete: <strong>${doneChildren}/${totalChildren}</strong></span>
@@ -337,17 +314,20 @@
     }
 
     function render() {
+      checklistEl.classList.toggle('show-ids', showIds);
+
       checklistEl.innerHTML = groups.map(group => {
         const parentDone = parentComplete(group.parent_id);
-        const childrenHtml = group.items.map(item => {
+
+        const childrenHtml = group.items.map((item, idx) => {
           const isDone = checked.has(item.id);
           return `
             <li class="child ${isDone ? 'done' : ''}">
               <input type="checkbox" data-child="${item.id}" ${isDone ? 'checked' : ''} />
               <div>
-                <div class="child-id">${item.id}</div>
-                <div class="child-title">${item.title}</div>
+                <div class="child-title">${idx + 1}. ${item.title}</div>
                 <div class="meta">Owner: ${item.owner || '—'} · Effort: ${item.effort || '—'}</div>
+                <div class="internal-id">Internal ID: ${item.id}</div>
               </div>
             </li>
           `;
@@ -358,8 +338,10 @@
             <summary>
               <span class="rank">${group.rank}</span>
               <div>
-                <p class="parent-title">${group.parent_title}</p>
-                <div class="parent-id">${group.parent_id}</div>
+                <div class="step-label">Step ${group.rank} of 10</div>
+                <p class="parent-title">${group.title}</p>
+                <div class="parent-desc">${group.desc}</div>
+                <div class="internal-id">Internal ID: ${group.parent_id}</div>
               </div>
               <input type="checkbox" class="parent-check" data-parent-check="${group.parent_id}" ${parentDone ? 'checked' : ''} title="Toggle all sub-tasks" />
             </summary>
@@ -392,6 +374,12 @@
         save();
         render();
       }
+    });
+
+    toggleIdsEl.addEventListener('change', () => {
+      showIds = toggleIdsEl.checked;
+      save();
+      render();
     });
 
     document.getElementById('expandBtn').addEventListener('click', () => {
