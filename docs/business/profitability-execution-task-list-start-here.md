@@ -6,6 +6,28 @@
 
 ---
 
+## Executive summary (1 page max)
+
+HoggCountry already has strong product assets (AT guide depth, interactive tools, live map/tracker features, and a working VideoHogg intake pipeline), but it does **not** yet have the full profitability system needed to operate like a business.
+
+Using *Start Here* sequencing, this roadmap is intentionally ordered to avoid “scale a fail” mistakes:
+
+1. **Phase 0 (Days 0-14):** lock KPI definitions, ship event tracking, capture leads, and create the weekly scorecard loop.
+2. **Phase 1 (Days 15-45):** activate checkout + first paid offer + referrals/retargeting + 90-day marketing cadence.
+3. **Phase 2 (Days 46-90):** add subscription rails, retention loops (NPS/winback), and pricing experiments.
+4. **Phase 3 (90+):** harden compliance/finance controls, add sponsor/B2B channels, and delegate via SOPs.
+
+If executed in order, this converts HoggCountry from a high-value content/tool property into a measurable revenue engine with accountability controls:
+- attributed funnel visibility,
+- repeatable lead capture + nurture,
+- paid conversion + fulfillment reliability,
+- retention/upsell mechanisms,
+- and weekly operator cadence tied to scorecard math.
+
+This is a **repo-aware execution plan**, not generic strategy: every task maps to concrete files/routes/components in this codebase and has KPI targets + Definition of Done.
+
+---
+
 ## Why this exists (repo-grounded reality, not generic advice)
 
 Current repo signals show strong product depth but weak monetization plumbing:
@@ -98,6 +120,35 @@ So this plan starts with prerequisites (measurement + lead capture + offer rails
 | 90+d | BH-034 | — | Run marketing tracking wall + weekly accountability meeting ritual | Execution reliability | docs/business/marketing-tracking-wall.md (new); docs/business/scorecards/weekly-*.md | Owner/Ops | M (ongoing) | BH-004; BH-020; BH-030 | 12 consecutive weekly accountability sessions completed | Meeting cadence fixed, metrics reviewed weekly, corrective actions logged within 24h | Not Started |  |  |  |
 | 90+d | BH-035 | — | Implement finance controls, reconciliation, and anti-fraud guardrails | Leak prevention | docs/business/finance-guardrails.md (new); backend/database/migrations/*finance_audit_logs_table.php (new); backend/app/Policies/* | Finance/Backend | L (4d) | BH-015 | 0 unexplained payment discrepancies >$10; monthly close by day 5 | Dual-approval rules, refund audit trail, and monthly reconciliation checklist operational | Not Started |  |  |  |
 | 90+d | BH-036 | — | Create delegation SOP library so owner can run system, not tasks | Scalability + owner capacity | docs/business/sops/ (new); docs/business/completion-protocol.md (new); docs/business/marketing-calendar-90-day.md | Owner/Operations | L (4-6d) | BH-034 | >=80% of recurring weekly tasks executed without owner intervention | SOPs for traffic, lead capture, sales, fulfillment, and support are documented + assigned backups | Not Started |  |  |  |
+
+---
+
+## Weekly operating cadence (scorecard + review rhythm)
+
+**Monday (Planning + Assignment, 45 min)**
+- Pull previous week scorecard.
+- Select weekly sprint lines from current phase only.
+- Confirm owners, dependencies, and “by-when” for each in-progress task.
+
+**Tuesday–Thursday (Execution + Daily control loop, 15 min/day)**
+- Review active blockers, update status/evidence fields in backlog.
+- Enforce WIP limits by owner lane.
+- Push unblock decisions within 24h when work stalls.
+
+**Wednesday (Midweek Unblock Review, 30 min)**
+- Blocked-only review.
+- Escalate dependency or scope decisions immediately.
+- Reassign tasks if ownership bandwidth is broken.
+
+**Friday (Scorecard + Review Rhythm, 45 min)**
+- Calculate completion metrics (overall %, by-phase %, top-10 %).
+- Review leads, conversion, revenue, CAC, AOV, gross margin, and MRR (if active).
+- Log keep/kill/adjust decisions for next week.
+
+**Month-end (Finance + Risk, 60 min)**
+- Reconcile cash collection, refunds, and partner payouts.
+- Review risk register and mitigation status.
+- Confirm pricing and unit-economics assumptions still hold.
 
 ---
 
