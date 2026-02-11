@@ -18,8 +18,8 @@ const youtubeIdeasAllowedEmailsCsv = (
 <BaseLayout title={title} description={description}>
   <section class="hero">
     <span class="chapter font-chapter">VideoHogg</span>
-    <h1 class="font-display">Self-Edit + Batch Handoff</h1>
-    <p>Upload clips, edit timeline, set channel defaults, and ship a deterministic run.</p>
+    <h1 class="font-display">Simple Upload → Edited Package</h1>
+    <p>Send whatever clips you have, add notes per file + job notes, and get back the standard VideoHogg package.</p>
   </section>
 
   <section class="container intake-wrap">
@@ -53,16 +53,24 @@ const youtubeIdeasAllowedEmailsCsv = (
       </div>
 
       <div id="workspace" class="workspace" hidden>
+        <section class="simple-flow-intro" aria-label="Quick flow">
+          <p class="simple-flow-kicker">Keep it simple</p>
+          <h3 class="font-display">Upload files. Add notes. Submit.</h3>
+          <p class="simple-flow-copy">
+            Standard return package: final edited video, transcript, chapter timestamps, 3 title options, 3 description options, and 1 short social clip.
+          </p>
+        </section>
+
         <section class="panel panel-upload">
           <div class="panel-head">
-            <h3 class="font-display">1) Upload Clips</h3>
+            <h3 class="font-display">1) Upload files</h3>
             <button id="clear-files" type="button" class="ghost">Clear All</button>
           </div>
 
           <label class="dropzone" id="dropzone" for="video-files">
             <input id="video-files" type="file" accept="video/*" multiple />
             <span class="dropzone-title">Drop videos here or click to browse</span>
-            <span class="dropzone-sub">Supports MP4, MOV, M4V, MKV, WEBM, AVI, MPEG.</span>
+            <span class="dropzone-sub">Any raw clips are fine (MP4, MOV, M4V, MKV, WEBM, AVI, MPEG).</span>
           </label>
 
           <p id="file-summary" class="summary">No files selected yet.</p>
@@ -70,19 +78,23 @@ const youtubeIdeasAllowedEmailsCsv = (
 
         <section class="panel panel-clips">
           <div class="panel-head">
-            <h3 class="font-display">2) Notes Per Video</h3>
-            <span class="hint">Each clip has its own preview + notes</span>
+            <h3 class="font-display">2) Add notes per file</h3>
+            <span class="hint">Each file gets its own preview card and notes field</span>
           </div>
 
-          <p id="clip-empty" class="clip-empty">Upload clips to start adding per-video notes.</p>
+          <p id="clip-empty" class="clip-empty">Upload files to start adding per-file notes.</p>
           <div id="clip-board" class="clip-board" aria-live="polite"></div>
         </section>
+
+        <details class="advanced-tools">
+          <summary>Advanced tools (optional)</summary>
+          <p class="advanced-tools-copy">Skip this unless you want to self-edit timeline details or override defaults.</p>
 
         <section class="panel panel-remotion">
           <div class="panel-head panel-head--stack">
             <div class="panel-head-title">
-              <h3 class="font-display">3) Remotion Editor <span class="beta-badge">Beta</span></h3>
-              <span class="hint">Self-edit first, then hand off batch package</span>
+              <h3 class="font-display">Advanced: Remotion timeline editor <span class="beta-badge">Beta</span></h3>
+              <span class="hint">Optional self-editing before handoff</span>
             </div>
           </div>
           <p class="summary">
@@ -94,7 +106,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         <section class="panel panel-settings">
           <div class="panel-head panel-head--stack">
             <div class="panel-head-title">
-              <h3 class="font-display">4) Channel Profile + Handoff Defaults</h3>
+              <h3 class="font-display">Advanced: output + handoff overrides</h3>
               <span class="hint">Priority: job overrides → channel defaults → system defaults</span>
             </div>
           </div>
@@ -166,7 +178,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         <section class="panel panel-youtube-ideas" id="youtube-ideas-panel" hidden>
           <div class="panel-head panel-head--stack">
             <div class="panel-head-title">
-              <h3 class="font-display">5) Dad Quick: Existing YouTube → 3+3 Options</h3>
+              <h3 class="font-display">Advanced: YouTube URL → 3+3 options</h3>
               <span class="hint">MiniHogg queue request for title + description options (YouTube URL only)</span>
             </div>
           </div>
@@ -199,21 +211,24 @@ const youtubeIdeasAllowedEmailsCsv = (
             </div>
           </div>
         </section>
+        </details>
 
         <section class="panel panel-run">
-          <div class="panel-head">
-            <h3 class="font-display">6) Create Run</h3>
-            <span class="hint">Uploads assets and writes deterministic manifest</span>
+          <div class="panel-head panel-head--stack">
+            <div class="panel-head-title">
+              <h3 class="font-display">3) Submit job</h3>
+              <span class="hint">We’ll return the standard VideoHogg package automatically.</span>
+            </div>
           </div>
 
-          <label class="run-notes-label" for="run-notes">Run-wide notes (optional)</label>
+          <label class="run-notes-label" for="run-notes">Job notes (optional)</label>
           <textarea
             id="run-notes"
             rows="4"
-            placeholder="Optional instructions that apply to the whole run. Example: Target 8-10 minutes and include chapter markers."
+            placeholder="Anything that applies to the whole job: mood, pacing, must-keep moments, call-to-action, scripture/theme anchors, etc."
           ></textarea>
 
-          <button id="start-run" type="button" class="btn btn-primary start">Upload + Create Run</button>
+          <button id="start-run" type="button" class="btn btn-primary start">Submit Files for Editing</button>
 
           <div class="progress-wrap" aria-live="polite">
             <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -223,7 +238,7 @@ const youtubeIdeasAllowedEmailsCsv = (
           </div>
 
           <div id="run-result" class="result" hidden>
-            <p><strong>Run created:</strong> <span id="run-id"></span></p>
+            <p><strong>Job ID:</strong> <span id="run-id"></span></p>
             <p><strong>Uploaded clips:</strong> <span id="uploaded-count"></span></p>
             <p><strong>Clip notes attached:</strong> <span id="noted-count"></span></p>
             <p id="edits-line" hidden><strong>Remotion edits:</strong> <span id="edits-summary"></span></p>
@@ -1225,7 +1240,7 @@ const youtubeIdeasAllowedEmailsCsv = (
       if (isUploading) {
         startRun.textContent = 'Uploading...';
       } else {
-        startRun.textContent = 'Upload + Create Run';
+        startRun.textContent = 'Submit Files for Editing';
       }
     }
 
@@ -1728,7 +1743,7 @@ const youtubeIdeasAllowedEmailsCsv = (
       }
 
       if (clips.length === 0) {
-        runStatus.textContent = 'Add at least one video file before creating a run.';
+        runStatus.textContent = 'Add at least one video file before submitting.';
         return;
       }
 
@@ -1791,7 +1806,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         const noted = fileNotesPayload.filter((entry) => entry.note.length > 0).length;
 
         setProgress(100);
-        runStatus.textContent = 'Done. Run created.';
+        runStatus.textContent = 'Done. Job submitted.';
         runId.textContent = run.run_id || '—';
         uploadedCount.textContent = String(run.uploaded_count || clips.length);
         notedCount.textContent = String(run.noted_count ?? noted);
@@ -2193,6 +2208,78 @@ const youtubeIdeasAllowedEmailsCsv = (
 
   .panel-settings {
     border-style: dashed;
+  }
+
+  .simple-flow-intro {
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 242, 232, 0.9));
+    padding: 0.95rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .simple-flow-kicker {
+    margin: 0;
+    color: var(--pine, #4d594a);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .simple-flow-intro h3 {
+    margin: 0.35rem 0 0;
+    font-size: 1.05rem;
+    line-height: 1.2;
+  }
+
+  .simple-flow-copy {
+    margin: 0.55rem 0 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.84rem;
+    line-height: 1.5;
+  }
+
+  .advanced-tools {
+    border: 1px dashed rgba(77, 89, 74, 0.32);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+    padding: 0.72rem;
+    margin-top: 0.1rem;
+  }
+
+  .advanced-tools > summary {
+    cursor: pointer;
+    list-style: none;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.94rem;
+    color: var(--pine, #4d594a);
+    letter-spacing: 0.01em;
+  }
+
+  .advanced-tools > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .advanced-tools > summary::after {
+    content: '＋';
+    float: right;
+    color: var(--pine, #4d594a);
+    font-size: 0.94rem;
+  }
+
+  .advanced-tools[open] > summary::after {
+    content: '－';
+  }
+
+  .advanced-tools-copy {
+    margin: 0.52rem 0 0.72rem;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.8rem;
+  }
+
+  .advanced-tools .panel {
+    margin-top: 0.6rem;
   }
 
   .settings-grid {
