@@ -230,6 +230,36 @@ const youtubeIdeasAllowedEmailsCsv = (
             <p id="settings-line" hidden><strong>Resolved settings:</strong> <span id="settings-summary"></span></p>
             <p id="thumbnail-line" hidden><strong>Thumbnail refs:</strong> <span id="thumbnail-summary"></span></p>
           </div>
+
+          <div id="service-status-card" class="service-status-card" hidden>
+            <div class="service-status-head">
+              <p class="service-kicker">VideoHogg service lifecycle</p>
+              <span id="service-status-chip" class="service-status-chip">Submitted</span>
+            </div>
+            <p id="service-status-message" class="service-status-message">
+              Request captured. MiniHogg will move this into active work soon.
+            </p>
+            <p id="service-status-note-line" class="service-status-note" hidden>
+              <strong>Latest note:</strong> <span id="service-status-note"></span>
+            </p>
+
+            <ul id="service-status-timeline" class="service-status-timeline" aria-live="polite"></ul>
+
+            <div id="delivery-package" class="delivery-package" hidden>
+              <p class="ideas-title">Final delivery package</p>
+              <div class="ideas-columns">
+                <div>
+                  <p class="ideas-title">Title options</p>
+                  <ol id="delivery-title-list" class="ideas-list"></ol>
+                </div>
+                <div>
+                  <p class="ideas-title">Description options</p>
+                  <ol id="delivery-description-list" class="ideas-list"></ol>
+                </div>
+              </div>
+              <ul id="delivery-links" class="delivery-links"></ul>
+            </div>
+          </div>
         </section>
       </div>
     </article>
@@ -395,6 +425,17 @@ const youtubeIdeasAllowedEmailsCsv = (
     const thumbnailLine = document.getElementById('thumbnail-line');
     const thumbnailSummary = document.getElementById('thumbnail-summary');
 
+    const serviceStatusCard = document.getElementById('service-status-card');
+    const serviceStatusChip = document.getElementById('service-status-chip');
+    const serviceStatusMessage = document.getElementById('service-status-message');
+    const serviceStatusNoteLine = document.getElementById('service-status-note-line');
+    const serviceStatusNote = document.getElementById('service-status-note');
+    const serviceStatusTimeline = document.getElementById('service-status-timeline');
+    const deliveryPackage = document.getElementById('delivery-package');
+    const deliveryTitleList = document.getElementById('delivery-title-list');
+    const deliveryDescriptionList = document.getElementById('delivery-description-list');
+    const deliveryLinks = document.getElementById('delivery-links');
+
     const youtubeIdeasPanel = document.getElementById('youtube-ideas-panel');
     const youtubeIdeasUrl = document.getElementById('youtube-ideas-url');
     const youtubeIdeasNotes = document.getElementById('youtube-ideas-notes');
@@ -444,6 +485,16 @@ const youtubeIdeasAllowedEmailsCsv = (
       !(settingsSummary instanceof HTMLElement) ||
       !(thumbnailLine instanceof HTMLElement) ||
       !(thumbnailSummary instanceof HTMLElement) ||
+      !(serviceStatusCard instanceof HTMLElement) ||
+      !(serviceStatusChip instanceof HTMLElement) ||
+      !(serviceStatusMessage instanceof HTMLElement) ||
+      !(serviceStatusNoteLine instanceof HTMLElement) ||
+      !(serviceStatusNote instanceof HTMLElement) ||
+      !(serviceStatusTimeline instanceof HTMLElement) ||
+      !(deliveryPackage instanceof HTMLElement) ||
+      !(deliveryTitleList instanceof HTMLOListElement) ||
+      !(deliveryDescriptionList instanceof HTMLOListElement) ||
+      !(deliveryLinks instanceof HTMLUListElement) ||
       !(youtubeIdeasPanel instanceof HTMLElement) ||
       !(youtubeIdeasUrl instanceof HTMLInputElement) ||
       !(youtubeIdeasNotes instanceof HTMLTextAreaElement) ||
@@ -464,6 +515,45 @@ const youtubeIdeasAllowedEmailsCsv = (
     let remotionEdits = [];
     let youtubeIdeasPollTimer = null;
     let youtubeIdeasPollAttempts = 0;
+    let serviceRunPollTimer = null;
+    let serviceRunPollAttempts = 0;
+    let activeServiceRunId = '';
+
+    const SERVICE_STATUS_ORDER = ['submitted', 'in_hands', 'in_progress', 'packaging', 'delivered', 'revision_requested', 'completed', 'blocked'];
+    const SERVICE_STATUS_META = {
+      submitted: {
+        label: 'Submitted',
+        message: 'Request captured. MiniHogg will move this into active work soon.',
+      },
+      in_hands: {
+        label: 'In Our Hands',
+        message: 'Your request is accepted and officially in our hands.',
+      },
+      in_progress: {
+        label: 'In Progress',
+        message: 'Active editing is underway right now.',
+      },
+      packaging: {
+        label: 'Packaging',
+        message: 'Final files and metadata are being packaged for delivery.',
+      },
+      delivered: {
+        label: 'Delivered',
+        message: 'Final package is ready with title/description options.',
+      },
+      revision_requested: {
+        label: 'Revision Requested',
+        message: 'A revision is requested and queued for another pass.',
+      },
+      completed: {
+        label: 'Completed',
+        message: 'Delivery accepted. This request is complete.',
+      },
+      blocked: {
+        label: 'Blocked',
+        message: 'Work is blocked. Check the latest note for details.',
+      },
+    };
 
     function parseJson(raw) {
       if (!raw) return null;
@@ -1188,6 +1278,263 @@ const youtubeIdeasAllowedEmailsCsv = (
       setYoutubeIdeasStatus('Done. MiniHogg generated title and description options.', 'success');
     }
 
+    function stopServiceRunPolling() {
+      if (serviceRunPollTimer) {
+        window.clearInterval(serviceRunPollTimer);
+        serviceRunPollTimer = null;
+      }
+      serviceRunPollAttempts = 0;
+    }
+
+    function formatRunTimestamp(iso) {
+      if (typeof iso !== 'string' || iso.trim() === '') return null;
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return null;
+      return date.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    }
+
+    function setServiceStatusChip(status) {
+      const meta = SERVICE_STATUS_META[status] || SERVICE_STATUS_META.submitted;
+      serviceStatusChip.textContent = meta.label;
+      serviceStatusChip.dataset.status = status;
+      serviceStatusMessage.textContent = meta.message;
+    }
+
+    function getRunServiceStatus(run) {
+      const raw = typeof run?.service_status === 'string' ? run.service_status.trim() : '';
+      if (!raw) return 'submitted';
+      return SERVICE_STATUS_META[raw] ? raw : 'submitted';
+    }
+
+    function normalizeOutputPackage(run) {
+      const extra = run && typeof run === 'object' ? run.extra : null;
+      if (!extra || typeof extra !== 'object') return null;
+
+      if (extra.output_package && typeof extra.output_package === 'object' && !Array.isArray(extra.output_package)) {
+        return extra.output_package;
+      }
+
+      if (extra.youtube_ideas && typeof extra.youtube_ideas === 'object' && !Array.isArray(extra.youtube_ideas)) {
+        return {
+          title_options: extra.youtube_ideas.title_options,
+          description_options: extra.youtube_ideas.description_options,
+        };
+      }
+
+      return null;
+    }
+
+    function renderDeliveryPackage(run) {
+      const outputPackage = normalizeOutputPackage(run);
+      if (!outputPackage) {
+        deliveryPackage.hidden = true;
+        deliveryTitleList.innerHTML = '';
+        deliveryDescriptionList.innerHTML = '';
+        deliveryLinks.innerHTML = '';
+        return;
+      }
+
+      const titles = normalizeOptionList(outputPackage.title_options, 8, 180);
+      const descriptions = normalizeOptionList(outputPackage.description_options, 8, 1200);
+
+      if (titles.length === 0 && descriptions.length === 0) {
+        deliveryPackage.hidden = true;
+        deliveryTitleList.innerHTML = '';
+        deliveryDescriptionList.innerHTML = '';
+        deliveryLinks.innerHTML = '';
+        return;
+      }
+
+      deliveryTitleList.innerHTML = '';
+      deliveryDescriptionList.innerHTML = '';
+      deliveryLinks.innerHTML = '';
+
+      titles.forEach((text) => {
+        const item = document.createElement('li');
+        item.textContent = text;
+        deliveryTitleList.appendChild(item);
+      });
+
+      descriptions.forEach((text) => {
+        const item = document.createElement('li');
+        item.textContent = text;
+        deliveryDescriptionList.appendChild(item);
+      });
+
+      const linkCandidates = [
+        { label: 'Final video', value: outputPackage.final_video_url || outputPackage.final_video_path },
+        { label: 'Short clip', value: outputPackage.short_clip_url || outputPackage.social_short_clip_url },
+        { label: 'Transcript', value: outputPackage.transcript_url || outputPackage.transcript_path },
+      ];
+
+      linkCandidates.forEach((candidate) => {
+        const value = String(candidate.value || '').trim();
+        if (!value) return;
+
+        const item = document.createElement('li');
+        const label = document.createElement('strong');
+        label.textContent = `${candidate.label}: `;
+        item.appendChild(label);
+
+        if (/^https?:\/\//i.test(value)) {
+          const anchor = document.createElement('a');
+          anchor.href = value;
+          anchor.target = '_blank';
+          anchor.rel = 'noopener noreferrer';
+          anchor.textContent = value;
+          item.appendChild(anchor);
+        } else {
+          const text = document.createElement('span');
+          text.textContent = value;
+          item.appendChild(text);
+        }
+
+        deliveryLinks.appendChild(item);
+      });
+
+      deliveryPackage.hidden = false;
+    }
+
+    function renderServiceTimeline(run) {
+      const status = getRunServiceStatus(run);
+      const currentIndex = SERVICE_STATUS_ORDER.indexOf(status);
+      const timestamps = run && typeof run.service_timestamps === 'object' ? run.service_timestamps : {};
+      const serviceStatusChangedAt = typeof run?.service_status_changed_at === 'string' ? run.service_status_changed_at : '';
+      const createdAt = typeof run?.created_at === 'string' ? run.created_at : '';
+
+      const eventMap = {
+        submitted: createdAt,
+        in_hands: timestamps?.in_hands_at,
+        in_progress: timestamps?.in_progress_at,
+        packaging: timestamps?.packaging_at,
+        delivered: timestamps?.delivered_at,
+        revision_requested: timestamps?.revision_requested_at,
+        completed: timestamps?.service_completed_at,
+        blocked: timestamps?.blocked_at,
+      };
+
+      if (!eventMap[status] && serviceStatusChangedAt) {
+        eventMap[status] = serviceStatusChangedAt;
+      }
+
+      serviceStatusTimeline.innerHTML = '';
+
+      SERVICE_STATUS_ORDER.forEach((step, index) => {
+        const row = document.createElement('li');
+        row.className = 'service-status-row';
+
+        const tone = index < currentIndex ? 'done' : (index === currentIndex ? 'current' : 'upcoming');
+        row.dataset.tone = tone;
+        if (status === 'blocked' && step !== 'blocked') {
+          row.dataset.tone = index < currentIndex ? 'done' : 'upcoming';
+        }
+
+        const title = document.createElement('p');
+        title.className = 'service-status-row-title';
+        title.textContent = (SERVICE_STATUS_META[step] || SERVICE_STATUS_META.submitted).label;
+
+        const stamp = document.createElement('p');
+        stamp.className = 'service-status-row-time';
+        const prettyTime = formatRunTimestamp(eventMap[step]);
+        stamp.textContent = prettyTime || '—';
+
+        row.appendChild(title);
+        row.appendChild(stamp);
+        serviceStatusTimeline.appendChild(row);
+      });
+    }
+
+    function renderServiceRunStatus(run, runIdValue) {
+      serviceStatusCard.hidden = false;
+
+      const status = getRunServiceStatus(run);
+      const meta = SERVICE_STATUS_META[status] || SERVICE_STATUS_META.submitted;
+      setServiceStatusChip(status);
+
+      const note = typeof run?.service_status_note === 'string' ? run.service_status_note.trim() : '';
+      if (note) {
+        serviceStatusMessage.textContent = note;
+        serviceStatusNote.textContent = note;
+        serviceStatusNoteLine.hidden = false;
+      } else {
+        serviceStatusMessage.textContent = meta.message;
+        serviceStatusNote.textContent = '';
+        serviceStatusNoteLine.hidden = true;
+      }
+
+      renderServiceTimeline(run || {});
+      renderDeliveryPackage(run || {});
+
+      const serviceLabel = (SERVICE_STATUS_META[status] || SERVICE_STATUS_META.submitted).label;
+      runStatus.textContent = `Run ${runIdValue} · ${serviceLabel}`;
+    }
+
+    async function pollServiceRun(runIdValue) {
+      if (!runIdValue) return;
+      serviceRunPollAttempts += 1;
+
+      try {
+        const run = await fetchRunById(runIdValue);
+        if (!run) return;
+
+        renderServiceRunStatus(run, runIdValue);
+
+        const serviceStatus = getRunServiceStatus(run);
+        if (['completed', 'blocked'].includes(serviceStatus)) {
+          stopServiceRunPolling();
+          return;
+        }
+
+        if (serviceRunPollAttempts >= 180) {
+          stopServiceRunPolling();
+          serviceStatusMessage.textContent = 'Still processing. This run stays in queue history and can be checked again shortly.';
+        }
+      } catch (error) {
+        stopServiceRunPolling();
+        serviceStatusMessage.textContent = error instanceof Error
+          ? error.message
+          : 'Could not refresh service status right now.';
+      }
+    }
+
+    function startServiceRunPolling(runIdValue) {
+      stopServiceRunPolling();
+      activeServiceRunId = String(runIdValue || '').trim();
+      if (!activeServiceRunId) return;
+
+      serviceStatusCard.hidden = false;
+      setServiceStatusChip('submitted');
+      serviceStatusMessage.textContent = `Tracking ${activeServiceRunId}...`;
+      serviceStatusNote.textContent = '';
+      serviceStatusNoteLine.hidden = true;
+      serviceStatusTimeline.innerHTML = '';
+      deliveryPackage.hidden = true;
+
+      pollServiceRun(activeServiceRunId);
+      serviceRunPollTimer = window.setInterval(() => {
+        pollServiceRun(activeServiceRunId);
+      }, 8000);
+    }
+
+    function resetServiceRunStatus() {
+      stopServiceRunPolling();
+      activeServiceRunId = '';
+      serviceStatusCard.hidden = true;
+      serviceStatusTimeline.innerHTML = '';
+      deliveryPackage.hidden = true;
+      deliveryTitleList.innerHTML = '';
+      deliveryDescriptionList.innerHTML = '';
+      deliveryLinks.innerHTML = '';
+      serviceStatusNote.textContent = '';
+      serviceStatusNoteLine.hidden = true;
+      setServiceStatusChip('submitted');
+    }
+
     function stopYoutubeIdeasPolling() {
       if (youtubeIdeasPollTimer) {
         window.clearInterval(youtubeIdeasPollTimer);
@@ -1408,6 +1755,7 @@ const youtubeIdeasAllowedEmailsCsv = (
 
       setUploadingState(true);
       runResult.hidden = true;
+      resetServiceRunStatus();
       setProgress(0);
       runStatus.textContent = hasEdits
         ? `Uploading ${clips.length} clip${clips.length === 1 ? '' : 's'} with edits...`
@@ -1459,6 +1807,11 @@ const youtubeIdeasAllowedEmailsCsv = (
         }
 
         runResult.hidden = false;
+
+        const createdRunId = String(run.run_id || '').trim();
+        if (createdRunId) {
+          startServiceRunPolling(createdRunId);
+        }
       } catch (error) {
         setProgress(0);
         runStatus.textContent = typeof error === 'string' ? error : 'Upload failed. Try again.';
@@ -1492,6 +1845,7 @@ const youtubeIdeasAllowedEmailsCsv = (
       runStatus.textContent = 'Ready.';
       runResult.hidden = true;
       setProgress(0);
+      resetServiceRunStatus();
     });
 
     clipBoard.addEventListener('input', (event) => {
@@ -1627,6 +1981,9 @@ const youtubeIdeasAllowedEmailsCsv = (
 
     startRun.addEventListener('click', submitRun);
 
+    window.addEventListener('beforeunload', stopServiceRunPolling);
+
+    resetServiceRunStatus();
     guardAccess();
     renderClips();
   })();
@@ -2248,6 +2605,176 @@ const youtubeIdeasAllowedEmailsCsv = (
     margin: 0;
     line-height: 1.45;
     font-size: 0.86rem;
+  }
+
+  .service-status-card {
+    margin-top: 0.75rem;
+    border: 1px solid rgba(77, 89, 74, 0.26);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 242, 232, 0.86));
+    padding: 0.7rem;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .service-status-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .service-kicker {
+    margin: 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .service-status-chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(77, 89, 74, 0.28);
+    border-radius: 999px;
+    padding: 0.22rem 0.6rem;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: #1f2937;
+    background: rgba(255, 255, 255, 0.84);
+  }
+
+  .service-status-chip[data-status='submitted'] {
+    background: rgba(30, 64, 175, 0.10);
+    border-color: rgba(30, 64, 175, 0.3);
+    color: #1e3a8a;
+  }
+
+  .service-status-chip[data-status='in_hands'] {
+    background: rgba(29, 78, 216, 0.14);
+    border-color: rgba(29, 78, 216, 0.35);
+    color: #1e40af;
+  }
+
+  .service-status-chip[data-status='in_progress'] {
+    background: rgba(22, 101, 52, 0.15);
+    border-color: rgba(22, 101, 52, 0.33);
+    color: #166534;
+  }
+
+  .service-status-chip[data-status='packaging'] {
+    background: rgba(120, 53, 15, 0.14);
+    border-color: rgba(120, 53, 15, 0.35);
+    color: #7c2d12;
+  }
+
+  .service-status-chip[data-status='delivered'],
+  .service-status-chip[data-status='completed'] {
+    background: rgba(21, 128, 61, 0.16);
+    border-color: rgba(21, 128, 61, 0.36);
+    color: #14532d;
+  }
+
+  .service-status-chip[data-status='revision_requested'] {
+    background: rgba(146, 64, 14, 0.16);
+    border-color: rgba(146, 64, 14, 0.35);
+    color: #9a3412;
+  }
+
+  .service-status-chip[data-status='blocked'] {
+    background: rgba(185, 28, 28, 0.16);
+    border-color: rgba(185, 28, 28, 0.35);
+    color: #991b1b;
+  }
+
+  .service-status-message {
+    margin: 0;
+    color: #1f2937;
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .service-status-note {
+    margin: 0;
+    color: #374151;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .service-status-timeline {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .service-status-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.55rem;
+    align-items: baseline;
+    border: 1px dashed rgba(77, 89, 74, 0.24);
+    border-radius: 9px;
+    padding: 0.38rem 0.5rem;
+    background: rgba(255, 255, 255, 0.76);
+  }
+
+  .service-status-row[data-tone='done'] {
+    border-color: rgba(22, 101, 52, 0.28);
+    background: rgba(22, 101, 52, 0.08);
+  }
+
+  .service-status-row[data-tone='current'] {
+    border-color: rgba(29, 78, 216, 0.38);
+    background: rgba(29, 78, 216, 0.10);
+  }
+
+  .service-status-row[data-tone='upcoming'] {
+    opacity: 0.78;
+  }
+
+  .service-status-row-title {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #1f2937;
+    line-height: 1.25;
+  }
+
+  .service-status-row-time {
+    margin: 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.72rem;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .delivery-package {
+    border-top: 1px dashed rgba(77, 89, 74, 0.3);
+    padding-top: 0.55rem;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .delivery-links {
+    margin: 0;
+    padding-left: 1rem;
+    display: grid;
+    gap: 0.24rem;
+    color: #14532d;
+    font-size: 0.8rem;
+    line-height: 1.35;
+  }
+
+  .delivery-links a {
+    color: #14532d;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    word-break: break-all;
   }
 
   .panel-remotion {

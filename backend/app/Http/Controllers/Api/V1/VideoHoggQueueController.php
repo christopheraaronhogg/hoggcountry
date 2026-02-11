@@ -7,10 +7,33 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Throwable;
 
 class VideoHoggQueueController extends ApiController
 {
+    private const SERVICE_STATUSES = [
+        'submitted',
+        'in_hands',
+        'in_progress',
+        'packaging',
+        'delivered',
+        'revision_requested',
+        'completed',
+        'blocked',
+    ];
+
+    private const SERVICE_TRANSITIONS = [
+        'submitted' => ['in_hands', 'blocked'],
+        'in_hands' => ['in_progress', 'blocked'],
+        'in_progress' => ['packaging', 'blocked'],
+        'packaging' => ['in_progress', 'delivered', 'blocked'],
+        'delivered' => ['revision_requested', 'completed', 'blocked'],
+        'revision_requested' => ['in_hands', 'in_progress', 'blocked'],
+        'completed' => ['revision_requested'],
+        'blocked' => ['in_hands', 'in_progress', 'packaging', 'delivered', 'completed'],
+    ];
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -24,6 +47,7 @@ class VideoHoggQueueController extends ApiController
 
         $validated = $request->validate([
             'status' => ['nullable', 'string', 'in:queued,processing,done,failed'],
+            'service_status' => ['nullable', 'string', Rule::in(self::SERVICE_STATUSES)],
             'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
             'mine_only' => ['nullable', 'boolean'],
         ]);
@@ -35,6 +59,10 @@ class VideoHoggQueueController extends ApiController
 
         if (! empty($validated['status'])) {
             $query->where('status', $validated['status']);
+        }
+
+        if (! empty($validated['service_status'])) {
+            $query->where('service_status', $validated['service_status']);
         }
 
         if ($mineOnly) {
@@ -141,6 +169,18 @@ class VideoHoggQueueController extends ApiController
             $candidate->claim_expires_at = $now->copy()->addSeconds($claimTtl);
             $candidate->last_heartbeat_at = $now;
             $candidate->started_at = $candidate->started_at ?? $now;
+
+            $serviceStatus = $this->resolveServiceStatus($candidate);
+            if (in_array($serviceStatus, ['submitted', 'revision_requested', 'blocked'], true)) {
+                $this->applyServiceStatus(
+                    $candidate,
+                    'in_hands',
+                    'Accepted by VideoHogg and moved into active queue.',
+                    $workerId,
+                    $now,
+                );
+            }
+
             $candidate->save();
 
             return $candidate->fresh();
@@ -175,6 +215,7 @@ class VideoHoggQueueController extends ApiController
         $validated = $request->validate([
             'worker_id' => ['required', 'string', 'max:120'],
             'claim_ttl_seconds' => ['nullable', 'integer', 'min:60', 'max:7200'],
+            'service_status' => ['nullable', 'string', Rule::in(['in_progress', 'packaging'])],
         ]);
 
         $workerId = trim((string) $validated['worker_id']);
@@ -198,6 +239,31 @@ class VideoHoggQueueController extends ApiController
         $run->claimed_by = $workerId;
         $run->last_heartbeat_at = $now;
         $run->claim_expires_at = $now->copy()->addSeconds($claimTtl);
+
+        $requestedServiceStatus = trim((string) ($validated['service_status'] ?? ''));
+        if ($requestedServiceStatus !== '') {
+            $this->applyServiceStatus(
+                $run,
+                $requestedServiceStatus,
+                $requestedServiceStatus === 'packaging'
+                    ? 'Packaging final delivery assets.'
+                    : 'Actively editing and assembling deliverables.',
+                $workerId,
+                $now,
+            );
+        } else {
+            $currentServiceStatus = $this->resolveServiceStatus($run);
+            if (in_array($currentServiceStatus, ['submitted', 'in_hands', 'revision_requested', 'blocked'], true)) {
+                $this->applyServiceStatus(
+                    $run,
+                    'in_progress',
+                    'Actively editing and assembling deliverables.',
+                    $workerId,
+                    $now,
+                );
+            }
+        }
+
         $run->save();
 
         return $this->ok([
@@ -235,6 +301,10 @@ class VideoHoggQueueController extends ApiController
             return $this->fail('claim_mismatch', 'Run is claimed by a different worker.', 409);
         }
 
+        $mergedExtra = is_array($validated['extra'] ?? null)
+            ? array_merge((array) $run->extra, $validated['extra'])
+            : (array) $run->extra;
+
         $run->status = 'done';
         $run->completed_at = now();
         $run->failed_at = null;
@@ -246,9 +316,26 @@ class VideoHoggQueueController extends ApiController
         $run->last_heartbeat_at = null;
         $run->output_path = trim((string) ($validated['output_path'] ?? '')) ?: null;
         $run->output_url = trim((string) ($validated['output_url'] ?? '')) ?: null;
-        $run->extra = is_array($validated['extra'] ?? null)
-            ? array_merge((array) $run->extra, $validated['extra'])
-            : $run->extra;
+        $run->extra = $mergedExtra;
+
+        if ($this->hasValidDeliveryPackage($mergedExtra)) {
+            $this->applyServiceStatus(
+                $run,
+                'delivered',
+                'Final delivery package is ready with title and description options.',
+                $workerId !== '' ? $workerId : null,
+                now(),
+            );
+        } elseif ($this->resolveServiceStatus($run) !== 'completed') {
+            $this->applyServiceStatus(
+                $run,
+                'packaging',
+                'Render complete; final delivery package is still being assembled.',
+                $workerId !== '' ? $workerId : null,
+                now(),
+            );
+        }
+
         $run->save();
 
         return $this->ok([
@@ -296,6 +383,102 @@ class VideoHoggQueueController extends ApiController
         $run->extra = is_array($validated['extra'] ?? null)
             ? array_merge((array) $run->extra, $validated['extra'])
             : $run->extra;
+
+        $this->applyServiceStatus(
+            $run,
+            'blocked',
+            $run->failure_message,
+            $workerId !== '' ? $workerId : null,
+            now(),
+        );
+
+        $run->save();
+
+        return $this->ok([
+            'run' => $this->serializeRun($run),
+        ]);
+    }
+
+    public function updateServiceStatus(Request $request, string $runId)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return $this->fail('unauthenticated', 'Authentication required.', 401);
+        }
+
+        if (! $this->isAllowedEmail((string) $user->email)) {
+            return $this->fail('forbidden', 'This account is not allowed to process VideoHogg queue.', 403);
+        }
+
+        $validated = $request->validate([
+            'worker_id' => ['nullable', 'string', 'max:120'],
+            'service_status' => ['required', 'string', Rule::in(self::SERVICE_STATUSES)],
+            'note' => ['nullable', 'string', 'max:2000'],
+            'extra' => ['nullable', 'array'],
+            'output_package' => ['nullable', 'array'],
+        ]);
+
+        /** @var VideoHoggRun|null $run */
+        $run = VideoHoggRun::query()->where('run_id', $runId)->first();
+        if (! $run) {
+            return $this->fail('not_found', 'Run not found.', 404);
+        }
+
+        $workerId = trim((string) ($validated['worker_id'] ?? ''));
+        if ($workerId !== '' && ! is_null($run->claimed_by) && $run->claimed_by !== $workerId) {
+            return $this->fail('claim_mismatch', 'Run is claimed by a different worker.', 409);
+        }
+
+        $targetStatus = (string) $validated['service_status'];
+        $currentStatus = $this->resolveServiceStatus($run);
+
+        if (! $this->canTransitionServiceStatus($currentStatus, $targetStatus)) {
+            return $this->fail(
+                'invalid_service_transition',
+                sprintf('Cannot move service status from %s to %s.', $currentStatus, $targetStatus),
+                409,
+            );
+        }
+
+        $mergedExtra = is_array($validated['extra'] ?? null)
+            ? array_merge((array) $run->extra, $validated['extra'])
+            : (array) $run->extra;
+
+        if (is_array($validated['output_package'] ?? null)) {
+            $mergedExtra['output_package'] = $validated['output_package'];
+        }
+
+        if (in_array($targetStatus, ['delivered', 'completed'], true) && ! $this->hasValidDeliveryPackage($mergedExtra)) {
+            return $this->fail(
+                'missing_delivery_package',
+                'Delivered/completed status requires at least 3 title options and 3 description options in output_package.',
+                422,
+            );
+        }
+
+        $run->extra = $mergedExtra;
+
+        if ($targetStatus === 'completed') {
+            $run->status = 'done';
+            $run->completed_at = $run->completed_at ?? now();
+            $run->failed_at = null;
+            $run->failure_code = null;
+            $run->failure_message = null;
+        }
+
+        $note = trim((string) ($validated['note'] ?? ''));
+        if ($note === '') {
+            $note = null;
+        }
+
+        $this->applyServiceStatus(
+            $run,
+            $targetStatus,
+            $note,
+            $workerId !== '' ? $workerId : (string) $user->email,
+            now(),
+        );
+
         $run->save();
 
         return $this->ok([
@@ -305,9 +488,24 @@ class VideoHoggQueueController extends ApiController
 
     private function serializeRun(VideoHoggRun $run, bool $withManifest = false): array
     {
+        $serviceStatus = $this->resolveServiceStatus($run);
+
         $payload = [
             'run_id' => $run->run_id,
             'status' => $run->status,
+            'service_status' => $serviceStatus,
+            'service_status_label' => $this->serviceStatusLabel($serviceStatus),
+            'service_status_note' => $run->service_status_note,
+            'service_status_changed_at' => optional($run->service_status_changed_at)?->toIso8601String(),
+            'service_timestamps' => [
+                'in_hands_at' => optional($run->in_hands_at)?->toIso8601String(),
+                'in_progress_at' => optional($run->in_progress_at)?->toIso8601String(),
+                'packaging_at' => optional($run->packaging_at)?->toIso8601String(),
+                'delivered_at' => optional($run->delivered_at)?->toIso8601String(),
+                'revision_requested_at' => optional($run->revision_requested_at)?->toIso8601String(),
+                'service_completed_at' => optional($run->service_completed_at)?->toIso8601String(),
+                'blocked_at' => optional($run->blocked_at)?->toIso8601String(),
+            ],
             'user_id' => (string) $run->user_id,
             'storage_disk' => $run->storage_disk,
             'base_path' => $run->base_path,
@@ -357,6 +555,149 @@ class VideoHoggQueueController extends ApiController
         } catch (Throwable) {
             return null;
         }
+    }
+
+    private function resolveServiceStatus(VideoHoggRun $run): string
+    {
+        $serviceStatus = trim((string) ($run->service_status ?? ''));
+        if (in_array($serviceStatus, self::SERVICE_STATUSES, true)) {
+            return $serviceStatus;
+        }
+
+        return match ((string) $run->status) {
+            'processing' => 'in_progress',
+            'done' => 'delivered',
+            'failed' => 'blocked',
+            default => 'submitted',
+        };
+    }
+
+    private function serviceStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'submitted' => 'Submitted',
+            'in_hands' => 'In Our Hands',
+            'in_progress' => 'In Progress',
+            'packaging' => 'Packaging',
+            'delivered' => 'Delivered',
+            'revision_requested' => 'Revision Requested',
+            'completed' => 'Completed',
+            'blocked' => 'Blocked',
+            default => 'Submitted',
+        };
+    }
+
+    private function canTransitionServiceStatus(string $from, string $to): bool
+    {
+        if ($from === $to) {
+            return true;
+        }
+
+        $allowed = self::SERVICE_TRANSITIONS[$from] ?? [];
+
+        return in_array($to, $allowed, true);
+    }
+
+    private function hasValidDeliveryPackage(array $extra): bool
+    {
+        $outputPackage = is_array($extra['output_package'] ?? null)
+            ? $extra['output_package']
+            : null;
+
+        if (! $outputPackage && is_array($extra['youtube_ideas'] ?? null)) {
+            $outputPackage = [
+                'title_options' => $extra['youtube_ideas']['title_options'] ?? [],
+                'description_options' => $extra['youtube_ideas']['description_options'] ?? [],
+            ];
+        }
+
+        if (! is_array($outputPackage)) {
+            return false;
+        }
+
+        $titles = $this->normalizeOptionList($outputPackage['title_options'] ?? [], 12, 180);
+        $descriptions = $this->normalizeOptionList($outputPackage['description_options'] ?? [], 12, 1200);
+
+        return count($titles) >= 3 && count($descriptions) >= 3;
+    }
+
+    private function normalizeOptionList(mixed $value, int $maxItems, int $maxLength): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($value as $entry) {
+            $text = trim((string) $entry);
+            if ($text === '') {
+                continue;
+            }
+
+            $normalized[] = Str::limit($text, $maxLength, '');
+            if (count($normalized) >= $maxItems) {
+                break;
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function applyServiceStatus(
+        VideoHoggRun $run,
+        string $serviceStatus,
+        ?string $note = null,
+        ?string $actor = null,
+        $at = null,
+    ): void {
+        $now = $at ?? now();
+
+        $run->service_status = $serviceStatus;
+        $run->service_status_changed_at = $now;
+        $run->service_status_note = $note;
+
+        switch ($serviceStatus) {
+            case 'in_hands':
+                $run->in_hands_at = $run->in_hands_at ?? $now;
+                break;
+            case 'in_progress':
+                $run->in_progress_at = $run->in_progress_at ?? $now;
+                break;
+            case 'packaging':
+                $run->packaging_at = $run->packaging_at ?? $now;
+                break;
+            case 'delivered':
+                $run->delivered_at = $run->delivered_at ?? $now;
+                break;
+            case 'revision_requested':
+                $run->revision_requested_at = $now;
+                break;
+            case 'completed':
+                $run->service_completed_at = $run->service_completed_at ?? $now;
+                break;
+            case 'blocked':
+                $run->blocked_at = $now;
+                break;
+        }
+
+        $extra = (array) $run->extra;
+        $history = is_array($extra['service_history'] ?? null)
+            ? $extra['service_history']
+            : [];
+
+        $history[] = array_filter([
+            'at' => method_exists($now, 'toIso8601String') ? $now->toIso8601String() : null,
+            'status' => $serviceStatus,
+            'note' => $note,
+            'actor' => $actor,
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+        if (count($history) > 100) {
+            $history = array_slice($history, -100);
+        }
+
+        $extra['service_history'] = $history;
+        $run->extra = $extra;
     }
 
     private function isAllowedEmail(string $email): bool

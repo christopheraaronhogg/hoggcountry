@@ -82,6 +82,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/runs/{runId}/heartbeat', [VideoHoggQueueController::class, 'heartbeat']);
             Route::post('/runs/{runId}/complete', [VideoHoggQueueController::class, 'complete']);
             Route::post('/runs/{runId}/fail', [VideoHoggQueueController::class, 'markFailed']);
+            Route::post('/runs/{runId}/service-status', [VideoHoggQueueController::class, 'updateServiceStatus']);
         });
     });
 });

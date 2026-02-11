@@ -53,6 +53,7 @@ Authenticated (`Authorization: Bearer <token>`):
 - `POST /api/v1/videohogg/runs/{runId}/heartbeat`
 - `POST /api/v1/videohogg/runs/{runId}/complete`
 - `POST /api/v1/videohogg/runs/{runId}/fail`
+- `POST /api/v1/videohogg/runs/{runId}/service-status`
 
 ## VideoHogg worker token (for queue watcher)
 
@@ -108,3 +109,4 @@ tail -f storage/logs/laravel.log
 - Public live videos API: `GET /api/v1/videos/latest?limit=12&source=channel` (returns latest feed entries with no-cache headers for always-fresh UI polling).
 - R2/S3 endpoint settings use standard Laravel AWS vars (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, `AWS_ENDPOINT`, `AWS_URL`, `AWS_DEFAULT_REGION`, `AWS_USE_PATH_STYLE_ENDPOINT`).
 - VideoHogg queue statuses: `queued`, `processing`, `done`, `failed`.
+- VideoHogg service lifecycle statuses: `submitted`, `in_hands`, `in_progress`, `packaging`, `delivered`, `revision_requested`, `completed`, `blocked`.
