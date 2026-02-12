@@ -69,6 +69,12 @@ const youtubeIdeasAllowedEmailsCsv = (
           <button id="dad-quick-start" type="button" class="btn btn-primary dad-quick-start">Dad Quick Start</button>
           <p id="flow-mode-copy" class="flow-mode-copy">Fast Track is optimized for Dad on the trail. Builder keeps everything open.</p>
         </div>
+        <div id="flow-rail" class="flow-rail" aria-label="VideoHogg flow progress">
+          <p id="flow-step-upload" class="flow-step" data-state="todo">1. Upload</p>
+          <p id="flow-step-notes" class="flow-step" data-state="todo">2. Notes</p>
+          <p id="flow-step-submit" class="flow-step" data-state="todo">3. Submit</p>
+        </div>
+        <p id="flow-rail-status" class="flow-rail-status">Add at least one video clip to unlock submit.</p>
 
         <section class="panel panel-upload">
           <div class="panel-head">
@@ -146,6 +152,7 @@ const youtubeIdeasAllowedEmailsCsv = (
             rows="2"
             placeholder="End with a line, question, or call for comments."
           ></textarea>
+          <p id="brief-draft-status" class="summary brief-draft-status">Draft: no optional editor brief yet.</p>
         </section>
 
         <section class="advanced-tools" id="advanced-tools-section">
@@ -300,6 +307,7 @@ const youtubeIdeasAllowedEmailsCsv = (
           ></textarea>
 
           <button id="start-run" type="button" class="btn btn-primary start">Submit Files for Editing</button>
+          <p id="run-readiness-note" class="run-readiness-note">Add at least one clip to unlock submit.</p>
 
           <div class="progress-wrap" aria-live="polite">
             <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -347,6 +355,11 @@ const youtubeIdeasAllowedEmailsCsv = (
               <ul id="delivery-links" class="delivery-links"></ul>
             </div>
           </div>
+        </section>
+
+        <section class="mobile-submit-dock" aria-label="Mobile submit controls">
+          <p id="mobile-submit-meta" class="mobile-submit-meta">Add at least one clip to unlock submit.</p>
+          <button id="mobile-submit-button" type="button" class="btn btn-primary mobile-submit-button">Submit Files for Editing</button>
         </section>
       </div>
     </article>
@@ -477,6 +490,11 @@ const youtubeIdeasAllowedEmailsCsv = (
     const flowModeBuilderButton = document.getElementById('flow-mode-builder');
     const flowModeCopy = document.getElementById('flow-mode-copy');
     const dadQuickStartButton = document.getElementById('dad-quick-start');
+    const flowRail = document.getElementById('flow-rail');
+    const flowStepUpload = document.getElementById('flow-step-upload');
+    const flowStepNotes = document.getElementById('flow-step-notes');
+    const flowStepSubmit = document.getElementById('flow-step-submit');
+    const flowRailStatus = document.getElementById('flow-rail-status');
     const advancedToolsSection = document.getElementById('advanced-tools-section');
     const briefPresetDad = document.getElementById('brief-preset-dad');
     const briefPresetFamily = document.getElementById('brief-preset-family');
@@ -507,6 +525,9 @@ const youtubeIdeasAllowedEmailsCsv = (
 
     const runNotes = document.getElementById('run-notes');
     const startRun = document.getElementById('start-run');
+    const runReadinessNote = document.getElementById('run-readiness-note');
+    const mobileSubmitMeta = document.getElementById('mobile-submit-meta');
+    const mobileSubmitButton = document.getElementById('mobile-submit-button');
     const runStatus = document.getElementById('run-status');
     const progressBar = document.getElementById('progress-bar');
     const progressTrack = document.querySelector('.progress-track');
@@ -550,6 +571,7 @@ const youtubeIdeasAllowedEmailsCsv = (
     const briefMustKeep = document.getElementById('editor-brief-must-keep');
     const briefSkip = document.getElementById('editor-brief-skip');
     const briefCta = document.getElementById('editor-brief-cta');
+    const briefDraftStatus = document.getElementById('brief-draft-status');
 
     if (
       !(gateStatus instanceof HTMLElement) ||
@@ -560,6 +582,11 @@ const youtubeIdeasAllowedEmailsCsv = (
       !(flowModeFastButton instanceof HTMLButtonElement) ||
       !(flowModeBuilderButton instanceof HTMLButtonElement) ||
       !(dadQuickStartButton instanceof HTMLButtonElement) ||
+      !(flowRail instanceof HTMLElement) ||
+      !(flowStepUpload instanceof HTMLElement) ||
+      !(flowStepNotes instanceof HTMLElement) ||
+      !(flowStepSubmit instanceof HTMLElement) ||
+      !(flowRailStatus instanceof HTMLElement) ||
       !(flowModeCopy instanceof HTMLElement) ||
       !(advancedToolsSection instanceof HTMLElement) ||
       !(briefPresetDad instanceof HTMLButtonElement) ||
@@ -587,6 +614,9 @@ const youtubeIdeasAllowedEmailsCsv = (
       !(thumbnailRefNotes instanceof HTMLTextAreaElement) ||
       !(runNotes instanceof HTMLTextAreaElement) ||
       !(startRun instanceof HTMLButtonElement) ||
+      !(runReadinessNote instanceof HTMLElement) ||
+      !(mobileSubmitMeta instanceof HTMLElement) ||
+      !(mobileSubmitButton instanceof HTMLButtonElement) ||
       !(runStatus instanceof HTMLElement) ||
       !(progressBar instanceof HTMLElement) ||
       !(progressTrack instanceof HTMLElement) ||
@@ -624,6 +654,7 @@ const youtubeIdeasAllowedEmailsCsv = (
       !(briefMustKeep instanceof HTMLTextAreaElement) ||
       !(briefSkip instanceof HTMLTextAreaElement) ||
       !(briefCta instanceof HTMLTextAreaElement) ||
+      !(briefDraftStatus instanceof HTMLElement) ||
       !(briefLine instanceof HTMLElement) ||
       !(briefSummary instanceof HTMLElement)
     ) {
@@ -641,6 +672,7 @@ const youtubeIdeasAllowedEmailsCsv = (
     let serviceRunPollAttempts = 0;
     let activeServiceRunId = '';
     let currentFlowMode = 'fast';
+    let isUploadingRun = false;
 
     const SERVICE_STATUS_ORDER = ['submitted', 'in_hands', 'in_progress', 'packaging', 'delivered', 'revision_requested', 'completed', 'blocked'];
     const SERVICE_STATUS_META = {
@@ -723,6 +755,47 @@ const youtubeIdeasAllowedEmailsCsv = (
         : 'Builder mode gives you full control over timeline, profiles, and all output settings.';
 
       persistDraft();
+      updateFlowProgress();
+    }
+
+    function setFlowStepState(node, state) {
+      node.dataset.state = state;
+    }
+
+    function countNotedClips() {
+      return clips.reduce((count, clip) => {
+        return clip?.note && clip.note.trim() !== '' ? count + 1 : count;
+      }, 0);
+    }
+
+    function updateFlowProgress() {
+      const clipCount = clips.length;
+      const notedClipCount = countNotedClips();
+      const brief = buildEditorBriefPayload();
+      const hasBrief = Boolean(brief);
+      const hasJobNotes = runNotes.value.trim() !== '';
+      const hasAnyNotes = notedClipCount > 0 || hasBrief || hasJobNotes;
+      const canSubmit = clipCount > 0 && !isUploadingRun;
+
+      setFlowStepState(flowStepUpload, clipCount > 0 ? 'done' : 'todo');
+      setFlowStepState(flowStepNotes, hasAnyNotes ? 'done' : (clipCount > 0 ? 'active' : 'todo'));
+      setFlowStepState(flowStepSubmit, canSubmit ? 'ready' : (clipCount > 0 ? 'active' : 'todo'));
+
+      const buttonText = isUploadingRun ? 'Uploading...' : 'Submit Files for Editing';
+      startRun.textContent = buttonText;
+      mobileSubmitButton.textContent = buttonText;
+      startRun.disabled = !canSubmit;
+      mobileSubmitButton.disabled = !canSubmit;
+
+      const statusText = clipCount === 0
+        ? 'Add at least one video clip to unlock submit.'
+        : hasAnyNotes
+          ? `${clipCount} clip${clipCount === 1 ? '' : 's'} loaded • ${notedClipCount} clip note${notedClipCount === 1 ? '' : 's'} • Ready to submit.`
+          : `${clipCount} clip${clipCount === 1 ? '' : 's'} loaded • Add optional notes or submit now.`;
+
+      flowRailStatus.textContent = statusText;
+      runReadinessNote.textContent = statusText;
+      mobileSubmitMeta.textContent = statusText;
     }
 
     function applyDadQuickStart() {
@@ -749,6 +822,7 @@ const youtubeIdeasAllowedEmailsCsv = (
 
       persistDraft();
       refreshDraftSummary();
+      updateFlowProgress();
     }
 
     function buildEditorBriefPayload() {
@@ -849,10 +923,10 @@ const youtubeIdeasAllowedEmailsCsv = (
     }
 
     function refreshDraftSummary() {
-      if (briefSummary instanceof HTMLElement) {
+      if (briefDraftStatus instanceof HTMLElement) {
         const brief = buildEditorBriefPayload();
         if (!brief) {
-          briefSummary.textContent = 'Draft: no optional editor brief yet.';
+          briefDraftStatus.textContent = 'Draft: no optional editor brief yet.';
           return;
         }
 
@@ -862,7 +936,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         if (brief.must_keep) parts.push('must-keep moments');
         if (brief.avoid) parts.push('avoid list');
         if (brief.cta) parts.push('CTA');
-        briefSummary.textContent = `Draft: ${parts.join(' · ')}`;
+        briefDraftStatus.textContent = `Draft: ${parts.join(' · ')}`;
       }
     }
 
@@ -946,8 +1020,8 @@ const youtubeIdeasAllowedEmailsCsv = (
       } catch {
         // best effort only
       }
-      if (briefSummary instanceof HTMLElement) {
-        briefSummary.textContent = 'Draft reset.';
+      if (briefDraftStatus instanceof HTMLElement) {
+        briefDraftStatus.textContent = 'Draft reset.';
       }
     }
 
@@ -1554,6 +1628,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         clipEmpty.hidden = false;
         fileSummary.textContent = 'No files selected yet.';
         publishRemotionState();
+        updateFlowProgress();
         return;
       }
 
@@ -1661,6 +1736,7 @@ const youtubeIdeasAllowedEmailsCsv = (
 
       clipBoard.appendChild(fragment);
       publishRemotionState();
+      updateFlowProgress();
     }
 
     function clearClips() {
@@ -1736,16 +1812,12 @@ const youtubeIdeasAllowedEmailsCsv = (
     }
 
     function setUploadingState(isUploading) {
-      startRun.disabled = isUploading;
+      isUploadingRun = isUploading;
       fileInput.disabled = isUploading;
       clearFiles.disabled = isUploading;
       runNotes.disabled = isUploading;
-
-      if (isUploading) {
-        startRun.textContent = 'Uploading...';
-      } else {
-        startRun.textContent = 'Submit Files for Editing';
-      }
+      mobileSubmitButton.disabled = isUploading;
+      updateFlowProgress();
     }
 
     function setYoutubeIdeasStatus(message, type = 'info') {
@@ -2424,6 +2496,7 @@ const youtubeIdeasAllowedEmailsCsv = (
       if (!clip) return;
       clip.note = target.value;
       publishRemotionState();
+      updateFlowProgress();
     });
 
     clipBoard.addEventListener('dragstart', (event) => {
@@ -2568,22 +2641,27 @@ const youtubeIdeasAllowedEmailsCsv = (
     briefTone.addEventListener('change', () => {
       persistDraft();
       refreshDraftSummary();
+      updateFlowProgress();
     });
     briefIntent.addEventListener('input', () => {
       persistDraft();
       refreshDraftSummary();
+      updateFlowProgress();
     });
     briefMustKeep.addEventListener('input', () => {
       persistDraft();
       refreshDraftSummary();
+      updateFlowProgress();
     });
     briefSkip.addEventListener('input', () => {
       persistDraft();
       refreshDraftSummary();
+      updateFlowProgress();
     });
     briefCta.addEventListener('input', () => {
       persistDraft();
       refreshDraftSummary();
+      updateFlowProgress();
     });
 
     thumbnailRefFiles.addEventListener('change', () => {
@@ -2611,7 +2689,10 @@ const youtubeIdeasAllowedEmailsCsv = (
       }
     });
 
-    runNotes.addEventListener('input', persistDraft);
+    runNotes.addEventListener('input', () => {
+      persistDraft();
+      updateFlowProgress();
+    });
 
     youtubeIdeasStart.addEventListener('click', submitYoutubeIdeas);
     youtubeIdeasUrl.addEventListener('keydown', (event) => {
@@ -2630,6 +2711,7 @@ const youtubeIdeasAllowedEmailsCsv = (
     });
 
     startRun.addEventListener('click', submitRun);
+    mobileSubmitButton.addEventListener('click', submitRun);
 
     window.addEventListener('beforeunload', () => {
       stopServiceRunPolling();
@@ -2654,15 +2736,27 @@ const youtubeIdeasAllowedEmailsCsv = (
 
 <style is:global>
   .intake-wrap {
+    --vh-ink: #1f2937;
+    --vh-muted: #4a5448;
+    --vh-pine: #4d594a;
+    --vh-lime: #a6b589;
+    --vh-gold: #f0e000;
+    --vh-panel-bg: rgba(255, 255, 255, 0.88);
+    --vh-panel-border: rgba(77, 89, 74, 0.22);
     max-width: 1080px;
     padding-bottom: 4rem;
   }
 
   .intake-card {
-    border: 1px solid var(--border, #e6e1d4);
-    border-radius: 16px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.82));
-    box-shadow: 0 20px 42px rgba(34, 33, 29, 0.10);
+    border: 1px solid rgba(77, 89, 74, 0.24);
+    border-radius: 18px;
+    background:
+      radial-gradient(120% 88% at 96% 2%, rgba(166, 181, 137, 0.24), transparent 62%),
+      radial-gradient(140% 84% at 0% 100%, rgba(240, 224, 0, 0.16), transparent 64%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84));
+    box-shadow:
+      0 24px 44px rgba(34, 33, 29, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
     overflow: hidden;
   }
 
@@ -2770,15 +2864,18 @@ const youtubeIdeasAllowedEmailsCsv = (
 
   .workspace {
     display: grid;
-    gap: 0.95rem;
-    padding: 1rem;
+    gap: 1rem;
+    padding: 1rem 1rem 1.2rem;
   }
 
   .panel {
-    border: 1px solid rgba(77, 89, 74, 0.18);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.85);
-    padding: 0.85rem;
+    border: 1px solid var(--vh-panel-border);
+    border-radius: 14px;
+    background: var(--vh-panel-bg);
+    box-shadow:
+      0 10px 24px rgba(31, 41, 55, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    padding: 0.9rem;
   }
 
   .panel-head {
@@ -2877,25 +2974,29 @@ const youtubeIdeasAllowedEmailsCsv = (
   }
 
   .simple-flow-intro {
-    border: 1px solid rgba(77, 89, 74, 0.2);
-    border-radius: 12px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 242, 232, 0.9));
+    border: 1px solid rgba(77, 89, 74, 0.24);
+    border-radius: 14px;
+    background:
+      radial-gradient(120% 130% at 95% 0%, rgba(166, 181, 137, 0.2), transparent 48%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(245, 242, 232, 0.9));
     padding: 0.95rem 1rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem;
   }
 
   .mode-switch {
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     border-radius: 999px;
-    border: 1px solid rgba(77, 89, 74, 0.35);
+    border: 1px solid rgba(77, 89, 74, 0.3);
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.82);
+    max-width: 320px;
   }
 
   .mode-btn {
     border: 0;
     background: transparent;
-    padding: 0.45rem 0.9rem;
+    padding: 0.52rem 0.9rem;
     font: inherit;
     font-weight: 700;
     cursor: pointer;
@@ -2926,6 +3027,57 @@ const youtubeIdeasAllowedEmailsCsv = (
     font-weight: 800;
     letter-spacing: 0.01em;
     padding: 0.42rem 0.75rem;
+  }
+
+  .flow-rail {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.42rem;
+    margin-top: 0.1rem;
+  }
+
+  .flow-step {
+    margin: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(77, 89, 74, 0.22);
+    background: rgba(255, 255, 255, 0.8);
+    color: #4b5563;
+    font-size: 0.74rem;
+    line-height: 1.25;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .flow-step[data-state='active'] {
+    border-color: rgba(77, 89, 74, 0.35);
+    color: #374151;
+    background: rgba(245, 242, 232, 0.9);
+  }
+
+  .flow-step[data-state='done'],
+  .flow-step[data-state='ready'] {
+    border-color: rgba(22, 101, 52, 0.35);
+    color: #14532d;
+    background: rgba(220, 252, 231, 0.72);
+  }
+
+  .flow-rail-status {
+    margin: -0.1rem 0 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+
+  .brief-draft-status {
+    margin-top: 0.6rem;
+    border-radius: 9px;
+    border: 1px dashed rgba(77, 89, 74, 0.3);
+    background: rgba(245, 242, 232, 0.62);
+    padding: 0.45rem 0.55rem;
+    font-size: 0.78rem;
   }
 
   .simple-flow-kicker {
@@ -3313,6 +3465,17 @@ const youtubeIdeasAllowedEmailsCsv = (
     width: 100%;
     justify-content: center;
     margin-top: 0.65rem;
+  }
+
+  .run-readiness-note {
+    margin: 0.5rem 0 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .mobile-submit-dock {
+    display: none;
   }
 
   .progress-wrap {
@@ -4272,7 +4435,65 @@ const youtubeIdeasAllowedEmailsCsv = (
     border-color: rgba(77, 89, 74, 0.35);
   }
 
+  @keyframes vh-panel-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .workspace > .simple-flow-intro,
+  .workspace > .mode-switch,
+  .workspace > .flow-mode-actions,
+  .workspace > .flow-rail,
+  .workspace > .flow-rail-status,
+  .workspace > .panel,
+  .workspace > .advanced-tools {
+    animation: vh-panel-enter 260ms ease both;
+  }
+
   @media (max-width: 760px) {
+    .workspace {
+      padding: 0.75rem 0.75rem calc(7.2rem + env(safe-area-inset-bottom));
+      gap: 0.85rem;
+    }
+
+    .simple-flow-intro {
+      padding: 0.9rem 0.85rem;
+      margin-bottom: 0;
+    }
+
+    .mode-switch {
+      width: 100%;
+      max-width: none;
+    }
+
+    .mode-btn {
+      min-height: 44px;
+    }
+
+    .dad-quick-start {
+      min-height: 44px;
+      width: 100%;
+      font-size: 0.84rem;
+    }
+
+    .flow-step {
+      font-size: 0.68rem;
+      padding: 0.38rem 0.36rem;
+      min-height: 36px;
+      display: grid;
+      place-items: center;
+    }
+
+    .flow-rail-status {
+      font-size: 0.77rem;
+    }
+
     .coming-soon {
       padding: 0.85rem;
     }
@@ -4305,16 +4526,50 @@ const youtubeIdeasAllowedEmailsCsv = (
       margin-top: 0.65rem;
     }
 
-    .workspace {
-      padding: 0.75rem;
-    }
-
     .panel {
       padding: 0.85rem;
+      border-radius: 13px;
     }
 
     .clip-board {
       grid-template-columns: 1fr;
+    }
+
+    .panel-run .start,
+    .run-readiness-note {
+      display: none;
+    }
+
+    .mobile-submit-dock {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 55;
+      display: grid;
+      gap: 0.46rem;
+      padding: 0.58rem 0.75rem calc(0.58rem + env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(77, 89, 74, 0.24);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(245, 242, 232, 0.97));
+      backdrop-filter: blur(8px);
+      box-shadow: 0 -12px 26px rgba(31, 41, 55, 0.12);
+    }
+
+    .mobile-submit-meta {
+      margin: 0;
+      color: #374151;
+      font-size: 0.74rem;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .mobile-submit-button {
+      width: 100%;
+      min-height: 46px;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 800;
     }
 
     .vh-remotion-grid {
@@ -4423,6 +4678,12 @@ const youtubeIdeasAllowedEmailsCsv = (
       width: auto;
       flex: 1 1 0;
       min-width: 0;
+    }
+  }
+
+  @media (min-width: 761px) {
+    .mobile-submit-dock {
+      display: none !important;
     }
   }
 </style>
