@@ -11,6 +11,7 @@ const isVideos = pathname.startsWith('/videos');
 const isAtMap = pathname.startsWith('/at-map');
 const isAtWeather = pathname.startsWith('/at-weather');
 const isVideoHogg = pathname.startsWith('/videohogg');
+const isAppLanding = pathname.startsWith('/app');
 
 // Show tracking link only if enabled AND we're past the start date
 const now = new Date();
@@ -26,6 +27,10 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
     <div class="nav-controls">
       <div class="nav-ctas" aria-label="Quick links">
+        <a href="/app" class={`app-link ${isAppLanding ? 'is-active' : ''}`}>
+          <span>Get App</span>
+        </a>
+
         <a href="/guide" class={`guide-link ${isGuide ? 'is-active' : ''}`}>
           <span class="guide-link__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -94,6 +99,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       )}
 
       <a href="/at-map" class={`mobile-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
+      <a href="/app" class={`mobile-link ${isAppLanding ? 'is-active' : ''}`}>Get the App</a>
       <a href="/trail" class={`mobile-link ${isTrailHub ? 'is-active' : ''}`}>Trail Hub</a>
       <a href="/videos" class={`mobile-link ${isVideos ? 'is-active' : ''}`}>Videos</a>
       <a href="/tools" class={`mobile-link ${isTools && !isCharacterTool ? 'is-active' : ''}`}>Trail Tools</a>
@@ -311,6 +317,37 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
     background: rgba(255,255,255,0.55);
     white-space: nowrap;
     transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .app-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    height: 42px;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #1f2937;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(217, 119, 6, 0.45);
+    background: linear-gradient(170deg, rgba(240, 224, 0, 0.82), rgba(255, 253, 230, 0.95));
+    white-space: nowrap;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .app-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(120, 53, 15, 0.2);
+    border-color: rgba(217, 119, 6, 0.6);
+  }
+
+  .app-link.is-active {
+    border-color: rgba(217, 119, 6, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(217, 119, 6, 0.33);
   }
 
   .guide-link:hover {

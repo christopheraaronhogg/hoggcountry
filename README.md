@@ -19,6 +19,9 @@ Hogg Country is more than a blog — it's a trail-ready command center that work
 ### Timeline (`/`)
 A chronological scrapbook merging trip logs, YouTube videos, and blog posts into a unified "stitched trail" timeline. Each entry type has its own visual identity (alpine green for trips, marker yellow for videos, terracotta for stories).
 
+### App Landing (`/app`)
+Mobile-first launch page that routes hikers to iOS App Store / Google Play listings and early-access signup while native builds are in flight.
+
 ### AT Field Guide (`/guide`)
 A complete 21-chapter thru-hiking manual covering gear, clothing, water, shelter, weather, food, resupply, town strategy, permits, mail drops, power, medical, safety, trail sections, content creation, and financial planning. Plus 5 quick-reference cards for on-trail decisions.
 
@@ -81,6 +84,8 @@ Full offline capability via service worker:
 | Content | Markdown collections with Zod schemas |
 | Build | Vite with code-splitting |
 | Types | TypeScript throughout |
+| API/Auth | Laravel 12 + Sanctum + Socialite |
+| Native App Shell | Laravel Inertia + Svelte 5 (`backend` route `/native`) |
 
 ## Architecture
 
@@ -120,6 +125,11 @@ Full offline capability via service worker:
 
 ```
 hoggcountry/
+├── backend/                  # Laravel API/Auth + Inertia/Svelte native shell
+│   ├── routes/api.php
+│   ├── routes/web.php        # includes /native app shell route
+│   ├── resources/js/Pages/   # Inertia Svelte pages
+│   └── app/Http/Controllers/Api/V1/
 ├── src/
 │   ├── components/           # Astro + Svelte components
 │   │   ├── ToolsApp.svelte   # Main tools orchestrator
@@ -139,6 +149,7 @@ hoggcountry/
 │   │   └── blog/             # MDX blog entries
 │   ├── pages/
 │   │   ├── index.astro       # Timeline homepage
+│   │   ├── app.astro         # App Store / Play Store landing page
 │   │   ├── guide/
 │   │   │   ├── index.astro   # Full guide (single page)
 │   │   │   └── [...slug].astro

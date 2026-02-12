@@ -4,8 +4,34 @@
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
+@source '../**/*.svelte';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Lato', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+:root {
+    --hc-ink: #1f2937;
+    --hc-pine: #4d594a;
+    --hc-alpine: #a6b589;
+    --hc-marker: #f0e000;
+    --hc-terra: #d97706;
+    --hc-paper: #f5f2e8;
+    --hc-card: #fffcf3;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Lato', var(--font-sans);
+    color: var(--hc-ink);
+    background:
+        radial-gradient(circle at 14% 8%, rgba(217, 119, 6, 0.12), transparent 36%),
+        radial-gradient(circle at 88% 14%, rgba(77, 89, 74, 0.2), transparent 42%),
+        var(--hc-paper);
 }

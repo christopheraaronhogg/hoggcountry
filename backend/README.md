@@ -2,6 +2,8 @@
 
 Laravel 12 API backend for account auth, device registration, and local-first sync.
 
+This backend now also hosts the first native app shell foundation with Inertia + Svelte at `/native`.
+
 ## Local Run
 
 From the monorepo root:
@@ -15,6 +17,12 @@ API base URL:
 
 ```text
 http://127.0.0.1:8000/api/v1
+```
+
+Native shell route:
+
+```text
+http://127.0.0.1:8000/native
 ```
 
 ## Core Endpoints

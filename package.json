@@ -27,8 +27,12 @@
     "auth:user": "node scripts/generate-auth-user.mjs",
     "backend:install": "sh -c 'cd backend && composer install && (test -f .env || cp .env.example .env) && (grep -q \"^APP_KEY=base64:\" .env || php artisan key:generate) && php artisan migrate'",
     "backend:dev": "cd backend && composer run dev",
+    "backend:frontend:dev": "cd backend && npm run dev",
+    "backend:frontend:build": "cd backend && npm run build",
     "backend:migrate": "cd backend && php artisan migrate",
     "backend:test": "cd backend && php artisan test",
+    "monorepo:dev": "npx concurrently -k -n web,api \"npm run dev\" \"npm run backend:dev\"",
+    "monorepo:check": "npm run build && npm run backend:frontend:build && npm run backend:test",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -60,6 +64,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "concurrently": "^9.2.1",
     "puppeteer": "^24.34.0"
   }
 }
