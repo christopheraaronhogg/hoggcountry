@@ -696,6 +696,9 @@ const youtubeIdeasAllowedEmailsCsv = (
     let activeServiceRunId = '';
     let currentFlowMode = 'fast';
     let isUploadingRun = false;
+    const canDragReorder = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(pointer: fine)').matches
+      : true;
 
     const SERVICE_STATUS_ORDER = ['submitted', 'in_hands', 'in_progress', 'packaging', 'delivered', 'revision_requested', 'completed', 'blocked'];
     const SERVICE_STATUS_META = {
@@ -1114,6 +1117,21 @@ const youtubeIdeasAllowedEmailsCsv = (
       const minutes = Math.floor(total / 60);
       const remainder = total % 60;
       return `${minutes}:${String(remainder).padStart(2, '0')}`;
+    }
+
+    function describeMediaError(error, fileType = '') {
+      const code = Number(error?.code || 0);
+      const type = String(fileType || '').toLowerCase();
+      if (code === 1) return 'Preview aborted before load completed.';
+      if (code === 2) return 'Network error while reading local file preview.';
+      if (code === 3) return 'Preview decode failed (codec not supported in this browser).';
+      if (code === 4) {
+        if (type.includes('quicktime') || type.includes('hevc') || type.includes('h265') || type.includes('hvc1')) {
+          return 'This QuickTime/HEVC clip may not preview in this browser. Upload still works.';
+        }
+        return 'Preview format is not supported in this browser.';
+      }
+      return 'Preview failed in this browser for this clip.';
     }
 
     function createAssetId(file, prefix = 'asset') {
@@ -1716,7 +1734,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         const card = document.createElement('article');
         card.className = 'clip-card';
         card.dataset.clipId = clip.id;
-        card.draggable = true;
+        card.draggable = canDragReorder;
 
         const preview = document.createElement('div');
         preview.className = 'clip-preview';
@@ -1732,9 +1750,10 @@ const youtubeIdeasAllowedEmailsCsv = (
         const video = document.createElement('video');
         video.className = 'clip-thumb';
         video.src = clip.url;
-        video.preload = 'metadata';
-        video.muted = true;
+        video.preload = 'auto';
+        video.muted = false;
         video.playsInline = true;
+        video.setAttribute('webkit-playsinline', 'true');
         video.controls = true;
         video.disablePictureInPicture = true;
         video.setAttribute('controlsList', 'nodownload noplaybackrate');
@@ -1747,12 +1766,32 @@ const youtubeIdeasAllowedEmailsCsv = (
           meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
         }, { once: true });
 
+        video.addEventListener('loadeddata', () => {
+          if (clip.previewError) {
+            clip.previewError = '';
+            renderClips();
+          }
+        }, { once: true });
+
+        video.addEventListener('error', () => {
+          const message = describeMediaError(video.error, clip.file?.type || '');
+          if (clip.previewError !== message) {
+            clip.previewError = message;
+            renderClips();
+          }
+        }, { once: true });
+
         preview.append(video, badge);
 
-        if (clip.thumbStatus === 'failed') {
+        if (clip.previewError) {
           const previewStatus = document.createElement('span');
           previewStatus.className = 'clip-preview-status';
-          previewStatus.textContent = 'Preview may not play in this browser for this codec.';
+          previewStatus.textContent = clip.previewError;
+          preview.append(previewStatus);
+        } else if (clip.thumbStatus === 'failed') {
+          const previewStatus = document.createElement('span');
+          previewStatus.className = 'clip-preview-status';
+          previewStatus.textContent = 'Preview image failed. Video playback still available below.';
           preview.append(previewStatus);
         }
 
@@ -1776,6 +1815,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         const dragHint = document.createElement('span');
         dragHint.className = 'drag-hint';
         dragHint.textContent = 'Drag';
+        dragHint.hidden = !canDragReorder;
 
         const remove = document.createElement('button');
         remove.type = 'button';
@@ -1834,6 +1874,7 @@ const youtubeIdeasAllowedEmailsCsv = (
           url: URL.createObjectURL(file),
           thumbUrl: '',
           thumbStatus: 'idle',
+          previewError: '',
           note: '',
           durationSeconds: null,
         });
@@ -2549,8 +2590,10 @@ const youtubeIdeasAllowedEmailsCsv = (
     });
 
     clipBoard.addEventListener('dragstart', (event) => {
+      if (!canDragReorder) return;
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
+      if (target.closest('video, textarea, input, button, select, label')) return;
 
       const card = target.closest('.clip-card[data-clip-id]');
       if (!(card instanceof HTMLElement)) return;
@@ -2568,6 +2611,7 @@ const youtubeIdeasAllowedEmailsCsv = (
     });
 
     clipBoard.addEventListener('dragover', (event) => {
+      if (!canDragReorder) return;
       if (!draggingClipId) return;
 
       const target = event.target;
@@ -2592,6 +2636,7 @@ const youtubeIdeasAllowedEmailsCsv = (
     });
 
     clipBoard.addEventListener('drop', (event) => {
+      if (!canDragReorder) return;
       if (!draggingClipId) return;
 
       const target = event.target;
@@ -2626,6 +2671,7 @@ const youtubeIdeasAllowedEmailsCsv = (
     });
 
     clipBoard.addEventListener('dragend', () => {
+      if (!canDragReorder) return;
       draggingClipId = null;
       clearDropIndicators();
     });
@@ -3486,12 +3532,18 @@ const youtubeIdeasAllowedEmailsCsv = (
     overflow: hidden;
     display: grid;
     grid-template-rows: auto 1fr;
-    cursor: grab;
+    cursor: default;
     transition: box-shadow 120ms ease, border-color 120ms ease, opacity 120ms ease;
   }
 
-  .clip-card:active {
-    cursor: grabbing;
+  @media (pointer: fine) {
+    .clip-card {
+      cursor: grab;
+    }
+
+    .clip-card:active {
+      cursor: grabbing;
+    }
   }
 
   .clip-card.is-dragging {
