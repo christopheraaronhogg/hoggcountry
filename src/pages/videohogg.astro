@@ -18,8 +18,8 @@ const youtubeIdeasAllowedEmailsCsv = (
 <BaseLayout title={title} description={description}>
   <section class="hero">
     <span class="chapter font-chapter">VideoHogg</span>
-    <h1 class="font-display">Simple Upload → Edited Package</h1>
-    <p>Send whatever clips you have, add notes per file + job notes, and get back the standard VideoHogg package.</p>
+    <h1 class="font-display">Upload Clips. Send. Done.</h1>
+    <p>Phone-first intake for fast trail uploads with minimal typing.</p>
   </section>
 
   <section class="container intake-wrap">
@@ -58,7 +58,7 @@ const youtubeIdeasAllowedEmailsCsv = (
             <div class="studio-identity">
               <p class="studio-kicker">First-Class Tooling</p>
               <h3 class="font-display">VideoHogg Studio</h3>
-              <p class="studio-copy">Built for fast trail capture now, and shaped for future NativePHP + Laravel + Inertia + Svelte 5 workflows.</p>
+              <p class="studio-copy">Fast clip handoff from the trail. Minimal taps, clear status, quick exit.</p>
             </div>
             <div class="studio-meta">
               <p id="studio-account-chip" class="studio-chip studio-chip--account">Account: checking...</p>
@@ -77,27 +77,27 @@ const youtubeIdeasAllowedEmailsCsv = (
         </section>
 
         <section class="simple-flow-intro" aria-label="Quick flow">
-          <p class="simple-flow-kicker">Keep it simple</p>
-          <h3 class="font-display">Upload files. Add notes. Submit.</h3>
+          <p class="simple-flow-kicker">Quick Send</p>
+          <h3 class="font-display">Upload clips, tag what matters, submit.</h3>
           <p class="simple-flow-copy">
-            Standard return package: final edited video, transcript, chapter timestamps, 3 title options, 3 description options, and 1 short social clip.
+            Standard package returns automatically after processing.
           </p>
         </section>
 
         <div class="mode-switch" id="flow-mode-switch" data-mode="fast" aria-label="Workflow mode">
-          <button id="flow-mode-fast" type="button" class="mode-btn is-active" aria-pressed="true" data-mode-value="fast">Fast Track</button>
-          <button id="flow-mode-builder" type="button" class="mode-btn" aria-pressed="false" data-mode-value="builder">Builder</button>
+          <button id="flow-mode-fast" type="button" class="mode-btn is-active" aria-pressed="true" data-mode-value="fast">Quick Send Mode</button>
+          <button id="flow-mode-builder" type="button" class="mode-btn mode-btn-hidden" aria-pressed="false" data-mode-value="builder" hidden aria-hidden="true" tabindex="-1">Builder</button>
         </div>
         <div class="flow-mode-actions">
-          <button id="dad-quick-start" type="button" class="btn btn-primary dad-quick-start">Dad Quick Start</button>
-          <p id="flow-mode-copy" class="flow-mode-copy">Fast Track is optimized for Dad on the trail. Builder keeps everything open.</p>
+          <button id="dad-quick-start" type="button" class="btn btn-primary dad-quick-start">Use Dad Defaults</button>
+          <p id="flow-mode-copy" class="flow-mode-copy">Optimized for phone upload and fast submission.</p>
         </div>
         <div id="flow-rail" class="flow-rail" aria-label="VideoHogg flow progress">
           <p id="flow-step-upload" class="flow-step" data-state="todo">1. Upload</p>
           <p id="flow-step-notes" class="flow-step" data-state="todo">2. Notes</p>
           <p id="flow-step-submit" class="flow-step" data-state="todo">3. Submit</p>
         </div>
-        <p id="flow-rail-status" class="flow-rail-status">Add at least one video clip to unlock submit.</p>
+        <p id="flow-rail-status" class="flow-rail-status">Add clips to unlock submit.</p>
 
         <section id="vh-upload" class="panel panel-upload">
           <div class="panel-head">
@@ -125,57 +125,55 @@ const youtubeIdeasAllowedEmailsCsv = (
         </section>
 
         <section id="vh-brief" class="panel panel-brief">
-          <div class="panel-head panel-head--stack">
-            <div class="panel-head-title">
-              <h3 class="font-display">Editor brief for remotion (optional)</h3>
-              <span class="hint">This helps the editor agent lock your intent before cutting.</span>
+          <details class="brief-details">
+            <summary>Optional: editing goals</summary>
+            <p class="advanced-tools-copy">Skip this unless you want to direct style, pacing, and CTA.</p>
+
+            <p class="brief-presets-label">Quick starter from Dad:</p>
+            <div id="editor-brief-presets" class="brief-presets" role="group" aria-label="Quick brief presets">
+              <button id="brief-preset-dad" type="button" class="preset-btn" data-preset="dad">Dad on the AT</button>
+              <button id="brief-preset-family" type="button" class="preset-btn" data-preset="family">Family recap</button>
+              <button id="brief-preset-inspiration" type="button" class="preset-btn" data-preset="inspiration">Inspiration video</button>
             </div>
-          </div>
 
-          <p class="brief-presets-label">Quick starter from Dad:</p>
-          <div id="editor-brief-presets" class="brief-presets" role="group" aria-label="Quick brief presets">
-            <button id="brief-preset-dad" type="button" class="preset-btn" data-preset="dad">Dad on the AT</button>
-            <button id="brief-preset-family" type="button" class="preset-btn" data-preset="family">Family recap</button>
-            <button id="brief-preset-inspiration" type="button" class="preset-btn" data-preset="inspiration">Inspiration video</button>
-          </div>
+            <label class="run-notes-label" for="editor-brief-tone">Audience + tone</label>
+            <select id="editor-brief-tone">
+              <option value="">Pick one</option>
+              <option value="dad-on-the-at">Dad on the AT</option>
+              <option value="family-recaps">Family recap</option>
+              <option value="inspiration-video">Inspiration / motivation</option>
+              <option value="training-log">Training log</option>
+            </select>
 
-          <label class="run-notes-label" for="editor-brief-tone">Audience + tone</label>
-          <select id="editor-brief-tone">
-            <option value="">Pick one</option>
-            <option value="dad-on-the-at">Dad on the AT</option>
-            <option value="family-recaps">Family recap</option>
-            <option value="inspiration-video">Inspiration / motivation</option>
-            <option value="training-log">Training log</option>
-          </select>
+            <label class="run-notes-label" for="editor-brief-intent">Cut feel</label>
+            <textarea
+              id="editor-brief-intent"
+              rows="2"
+              placeholder="Hook tone, energy, pacing."
+            ></textarea>
 
-          <label class="run-notes-label" for="editor-brief-intent">What should this cut feel like?</label>
-          <textarea
-            id="editor-brief-intent"
-            rows="3"
-            placeholder="Hook tone, emotional arc, energy level, pacing preference."
-          ></textarea>
+            <label class="run-notes-label" for="editor-brief-must-keep">Must keep</label>
+            <textarea
+              id="editor-brief-must-keep"
+              rows="2"
+              placeholder="Critical moments or lines."
+            ></textarea>
 
-          <label class="run-notes-label" for="editor-brief-must-keep">Must-keep moments or lines</label>
-          <textarea
-            id="editor-brief-must-keep"
-            rows="3"
-            placeholder="Examples: first 10 seconds, steep climb, campfire chat with Dad, creek crossing."
-          ></textarea>
+            <label class="run-notes-label" for="editor-brief-skip">Avoid</label>
+            <textarea
+              id="editor-brief-skip"
+              rows="2"
+              placeholder="What to skip."
+            ></textarea>
 
-          <label class="run-notes-label" for="editor-brief-skip">What should be avoided / skipped?</label>
-          <textarea
-            id="editor-brief-skip"
-            rows="3"
-            placeholder="Examples: slow setup shots, duplicate clips, private moments."
-          ></textarea>
-
-          <label class="run-notes-label" for="editor-brief-cta">Final CTA (how to wrap)</label>
-          <textarea
-            id="editor-brief-cta"
-            rows="2"
-            placeholder="End with a line, question, or call for comments."
-          ></textarea>
-          <p id="brief-draft-status" class="summary brief-draft-status">Draft: no optional editor brief yet.</p>
+            <label class="run-notes-label" for="editor-brief-cta">Final CTA</label>
+            <textarea
+              id="editor-brief-cta"
+              rows="2"
+              placeholder="How to end."
+            ></textarea>
+            <p id="brief-draft-status" class="summary brief-draft-status">Draft: no optional editor brief yet.</p>
+          </details>
         </section>
 
         <section class="advanced-tools" id="advanced-tools-section">
@@ -330,7 +328,7 @@ const youtubeIdeasAllowedEmailsCsv = (
           ></textarea>
 
           <button id="start-run" type="button" class="btn btn-primary start">Submit Files for Editing</button>
-          <p id="run-readiness-note" class="run-readiness-note">Add at least one clip to unlock submit.</p>
+          <p id="run-readiness-note" class="run-readiness-note">Add clips to unlock submit.</p>
 
           <div class="progress-wrap" aria-live="polite">
             <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -381,7 +379,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         </section>
 
         <section class="mobile-submit-dock" aria-label="Mobile submit controls">
-          <p id="mobile-submit-meta" class="mobile-submit-meta">Add at least one clip to unlock submit.</p>
+          <p id="mobile-submit-meta" class="mobile-submit-meta">Add clips to unlock submit.</p>
           <button id="mobile-submit-button" type="button" class="btn btn-primary mobile-submit-button">Submit Files for Editing</button>
         </section>
       </div>
@@ -771,13 +769,11 @@ const youtubeIdeasAllowedEmailsCsv = (
       flowModeSwitch.dataset.mode = mode;
       flowModeFastButton.classList.toggle('is-active', mode === FLOW_MODE_FAST);
       flowModeBuilderButton.classList.toggle('is-active', mode === FLOW_MODE_BUILDER);
-      advancedToolsSection.hidden = mode !== FLOW_MODE_BUILDER;
+      advancedToolsSection.hidden = false;
       flowModeFastButton.setAttribute('aria-pressed', mode === FLOW_MODE_FAST ? 'true' : 'false');
       flowModeBuilderButton.setAttribute('aria-pressed', mode === FLOW_MODE_BUILDER ? 'true' : 'false');
 
-      flowModeCopy.textContent = mode === FLOW_MODE_FAST
-        ? 'Fast Track is optimized for Dad on the trail. Builder keeps everything open.'
-        : 'Builder mode gives you full control over timeline, profiles, and all output settings.';
+      flowModeCopy.textContent = 'Optimized for phone upload and fast submission.';
 
       persistDraft();
       updateFlowProgress();
@@ -813,10 +809,10 @@ const youtubeIdeasAllowedEmailsCsv = (
       mobileSubmitButton.disabled = !canSubmit;
 
       const statusText = clipCount === 0
-        ? 'Add at least one video clip to unlock submit.'
+        ? 'Add clips to unlock submit.'
         : hasAnyNotes
-          ? `${clipCount} clip${clipCount === 1 ? '' : 's'} loaded • ${notedClipCount} clip note${notedClipCount === 1 ? '' : 's'} • Ready to submit.`
-          : `${clipCount} clip${clipCount === 1 ? '' : 's'} loaded • Add optional notes or submit now.`;
+          ? `${clipCount} clip${clipCount === 1 ? '' : 's'} • ${notedClipCount} note${notedClipCount === 1 ? '' : 's'} • Ready`
+          : `${clipCount} clip${clipCount === 1 ? '' : 's'} • Ready`;
 
       flowRailStatus.textContent = statusText;
       runReadinessNote.textContent = statusText;
@@ -1733,41 +1729,35 @@ const youtubeIdeasAllowedEmailsCsv = (
         meta.className = 'clip-meta';
         meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
 
+        const video = document.createElement('video');
+        video.className = 'clip-thumb';
+        video.src = clip.url;
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        video.controls = true;
+        video.disablePictureInPicture = true;
+        video.setAttribute('controlsList', 'nodownload noplaybackrate');
         if (clip.thumbStatus === 'ready' && clip.thumbUrl) {
-          const image = document.createElement('img');
-          image.className = 'clip-thumb';
-          image.src = clip.thumbUrl;
-          image.alt = `${clip.file.name} thumbnail`;
-          image.loading = 'lazy';
-          preview.append(image, badge);
-        } else {
-          const video = document.createElement('video');
-          video.className = 'clip-thumb';
-          video.src = clip.url;
-          video.preload = 'metadata';
-          video.muted = true;
-          video.playsInline = true;
-          video.controls = true;
-          video.disablePictureInPicture = true;
-          video.setAttribute('controlsList', 'nodownload noplaybackrate');
+          video.poster = clip.thumbUrl;
+        }
 
-          video.addEventListener('loadedmetadata', () => {
-            clip.durationSeconds = Number.isFinite(video.duration) ? video.duration : clip.durationSeconds;
-            meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
-          }, { once: true });
+        video.addEventListener('loadedmetadata', () => {
+          clip.durationSeconds = Number.isFinite(video.duration) ? video.duration : clip.durationSeconds;
+          meta.textContent = `${bytesToHuman(clip.file.size || 0)} • ${formatDuration(clip.durationSeconds)}`;
+        }, { once: true });
 
-          preview.append(video, badge);
+        preview.append(video, badge);
 
+        if (clip.thumbStatus === 'failed') {
           const previewStatus = document.createElement('span');
           previewStatus.className = 'clip-preview-status';
-          previewStatus.textContent = clip.thumbStatus === 'failed'
-            ? 'Preview unavailable for this video format on this browser.'
-            : 'Generating thumbnail...';
+          previewStatus.textContent = 'Preview may not play in this browser for this codec.';
           preview.append(previewStatus);
+        }
 
-          if (clip.thumbStatus === 'idle') {
-            requestThumbnail(clip);
-          }
+        if (clip.thumbStatus === 'idle') {
+          requestThumbnail(clip);
         }
 
         const body = document.createElement('div');
@@ -3153,8 +3143,7 @@ const youtubeIdeasAllowedEmailsCsv = (
   }
 
   .mode-switch {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: inline-flex;
     border-radius: 999px;
     border: 1px solid rgba(77, 89, 74, 0.3);
     overflow: hidden;
@@ -3196,6 +3185,39 @@ const youtubeIdeasAllowedEmailsCsv = (
     font-weight: 800;
     letter-spacing: 0.01em;
     padding: 0.42rem 0.75rem;
+  }
+
+  .brief-details {
+    border: 1px dashed rgba(77, 89, 74, 0.3);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.76);
+    padding: 0.55rem 0.6rem;
+  }
+
+  .brief-details > summary {
+    cursor: pointer;
+    list-style: none;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.9rem;
+    color: var(--pine, #4d594a);
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brief-details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .brief-details > summary::after {
+    content: '＋';
+    font-size: 0.9rem;
+    color: var(--pine, #4d594a);
+  }
+
+  .brief-details[open] > summary::after {
+    content: '－';
   }
 
   .flow-rail {
