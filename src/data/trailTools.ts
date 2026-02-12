@@ -44,7 +44,10 @@ export const TRAIL_TOOL_GROUPS: TrailToolGroup[] = [
   },
   {
     name: "Always",
-    tools: [{ id: "milestone", name: "Journey", icon: "🗺️", desc: "Plan your timeline & track progress", href: "/tools/milestone/" }],
+    tools: [
+      { id: "milestone", name: "Journey", icon: "🗺️", desc: "Plan your timeline & track progress", href: "/tools/milestone/" },
+      { id: "videohogg", name: "VideoHogg", icon: "🎬", desc: "Upload trail clips and queue edits (beta)", href: "/videohogg/" },
+    ],
   },
 ];
 

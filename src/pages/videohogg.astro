@@ -53,6 +53,29 @@ const youtubeIdeasAllowedEmailsCsv = (
       </div>
 
       <div id="workspace" class="workspace" hidden>
+        <section class="studio-shell" aria-label="VideoHogg studio shell">
+          <div class="studio-head">
+            <div class="studio-identity">
+              <p class="studio-kicker">First-Class Tooling</p>
+              <h3 class="font-display">VideoHogg Studio</h3>
+              <p class="studio-copy">Built for fast trail capture now, and shaped for future NativePHP + Laravel + Inertia + Svelte 5 workflows.</p>
+            </div>
+            <div class="studio-meta">
+              <p id="studio-account-chip" class="studio-chip studio-chip--account">Account: checking...</p>
+              <p class="studio-chip studio-chip--state">Draft autosave: on</p>
+              <p class="studio-chip studio-chip--state">Queue handoff: MiniHogg</p>
+            </div>
+          </div>
+
+          <nav class="studio-nav" aria-label="VideoHogg sections">
+            <a class="studio-nav-link" href="#vh-upload">Upload</a>
+            <a class="studio-nav-link" href="#vh-clips">Clip Notes</a>
+            <a class="studio-nav-link" href="#vh-brief">Editor Brief</a>
+            <a class="studio-nav-link" href="#advanced-tools-section">Advanced</a>
+            <a class="studio-nav-link" href="#vh-submit">Submit</a>
+          </nav>
+        </section>
+
         <section class="simple-flow-intro" aria-label="Quick flow">
           <p class="simple-flow-kicker">Keep it simple</p>
           <h3 class="font-display">Upload files. Add notes. Submit.</h3>
@@ -76,7 +99,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         </div>
         <p id="flow-rail-status" class="flow-rail-status">Add at least one video clip to unlock submit.</p>
 
-        <section class="panel panel-upload">
+        <section id="vh-upload" class="panel panel-upload">
           <div class="panel-head">
             <h3 class="font-display">1) Upload files</h3>
             <button id="clear-files" type="button" class="ghost">Clear All</button>
@@ -91,7 +114,7 @@ const youtubeIdeasAllowedEmailsCsv = (
           <p id="file-summary" class="summary">No files selected yet.</p>
         </section>
 
-        <section class="panel panel-clips">
+        <section id="vh-clips" class="panel panel-clips">
           <div class="panel-head">
             <h3 class="font-display">2) Add notes per file</h3>
             <span class="hint">Each file gets its own preview card and notes field</span>
@@ -101,7 +124,7 @@ const youtubeIdeasAllowedEmailsCsv = (
           <div id="clip-board" class="clip-board" aria-live="polite"></div>
         </section>
 
-        <section class="panel panel-brief">
+        <section id="vh-brief" class="panel panel-brief">
           <div class="panel-head panel-head--stack">
             <div class="panel-head-title">
               <h3 class="font-display">Editor brief for remotion (optional)</h3>
@@ -291,7 +314,7 @@ const youtubeIdeasAllowedEmailsCsv = (
         </details>
         </section>
 
-        <section class="panel panel-run">
+        <section id="vh-submit" class="panel panel-run">
           <div class="panel-head panel-head--stack">
             <div class="panel-head-title">
               <h3 class="font-display">3) Submit job</h3>
@@ -485,6 +508,7 @@ const youtubeIdeasAllowedEmailsCsv = (
     const gateActions = document.getElementById('gate-actions');
     const loginLink = document.getElementById('login-link');
     const workspace = document.getElementById('workspace');
+    const studioAccountChip = document.getElementById('studio-account-chip');
     const flowModeSwitch = document.getElementById('flow-mode-switch');
     const flowModeFastButton = document.getElementById('flow-mode-fast');
     const flowModeBuilderButton = document.getElementById('flow-mode-builder');
@@ -578,6 +602,7 @@ const youtubeIdeasAllowedEmailsCsv = (
       !(gateActions instanceof HTMLElement) ||
       !(loginLink instanceof HTMLAnchorElement) ||
       !(workspace instanceof HTMLElement) ||
+      !(studioAccountChip instanceof HTMLElement) ||
       !(flowModeSwitch instanceof HTMLElement) ||
       !(flowModeFastButton instanceof HTMLButtonElement) ||
       !(flowModeBuilderButton instanceof HTMLButtonElement) ||
@@ -1136,6 +1161,60 @@ const youtubeIdeasAllowedEmailsCsv = (
         name: entry.name,
         note,
       }));
+    }
+
+    // Keep request composition isolated so this can move to Inertia/Svelte stores with minimal change.
+    function buildRunRequestSnapshot() {
+      const fileNotesPayload = clips.map((clip, index) => ({
+        index,
+        name: clip.file.name,
+        note: (clip.note || '').trim(),
+      }));
+
+      const channelProfilePayload = buildChannelProfilePayload();
+      const jobOverridesPayload = buildJobOverridesPayload(channelProfilePayload);
+      const thumbnailRefsPayload = buildThumbnailRefsPayload();
+      const editorBrief = buildEditorBriefPayload();
+      const editsPayload = Array.isArray(remotionEdits) && remotionEdits.length > 0 ? remotionEdits : null;
+
+      return {
+        files: clips.map((clip) => clip.file),
+        notes: runNotes.value.trim(),
+        fileNotesPayload,
+        channelProfilePayload,
+        jobOverridesPayload,
+        editorBrief,
+        editsPayload,
+        thumbnailRefsPayload,
+      };
+    }
+
+    function buildRunFormData(snapshot) {
+      const formData = new FormData();
+      snapshot.files.forEach((file) => {
+        formData.append('files[]', file, file.name);
+      });
+      formData.append('file_notes_json', JSON.stringify(snapshot.fileNotesPayload));
+      formData.append('notes', snapshot.notes);
+      formData.append('channel_profile_json', JSON.stringify(snapshot.channelProfilePayload));
+      formData.append('job_overrides_json', JSON.stringify(snapshot.jobOverridesPayload));
+
+      if (snapshot.editorBrief) {
+        formData.append('editor_brief_json', JSON.stringify(snapshot.editorBrief));
+      }
+
+      if (snapshot.editsPayload) {
+        formData.append('remotion_edits_json', JSON.stringify(snapshot.editsPayload));
+      }
+
+      if (snapshot.thumbnailRefsPayload.length > 0) {
+        formData.append('thumbnail_refs_json', JSON.stringify(snapshot.thumbnailRefsPayload));
+        thumbnailRefs.forEach((entry) => {
+          formData.append('thumbnail_refs[]', entry.file, entry.name);
+        });
+      }
+
+      return formData;
     }
 
     function removeThumbnailRef(refId) {
@@ -2267,8 +2346,10 @@ const youtubeIdeasAllowedEmailsCsv = (
     }
 
     async function guardAccess() {
+      studioAccountChip.textContent = 'Account: checking...';
       auth = readAuth();
       if (!auth) {
+        studioAccountChip.textContent = 'Account: not signed in';
         setGate('Private beta: sign in with an approved family account to continue.', 'error');
         showLogin({ cta: 'Sign in with Google' });
         return false;
@@ -2278,6 +2359,7 @@ const youtubeIdeasAllowedEmailsCsv = (
       const me = await fetchMe(auth.token);
       if (!me || typeof me.email !== 'string') {
         localStorage.removeItem(AUTH_KEY);
+        studioAccountChip.textContent = 'Account: session expired';
         setGate('Session expired. Please sign in again.', 'error');
         showLogin({ cta: 'Sign in again' });
         return false;
@@ -2287,12 +2369,14 @@ const youtubeIdeasAllowedEmailsCsv = (
       const localhostBypass = window.location.hostname === 'localhost' && ALLOWED_EMAILS.length === 0;
 
       if (!localhostBypass && ALLOWED_EMAILS.length === 0) {
+        studioAccountChip.textContent = `Account: ${me.email}`;
         setGate('VideoHogg allowlist is not configured yet.', 'error');
         showLogin({ cta: 'Sign in with Google' });
         return false;
       }
 
       if (!localhostBypass && !ALLOWED_EMAILS.includes(email)) {
+        studioAccountChip.textContent = `Account: ${me.email} (restricted)`;
         setGate(`Signed in as ${me.email}. VideoHogg remains in private family beta for now.`, 'error');
         showLogin({ cta: 'Switch Google account' });
         return false;
@@ -2307,6 +2391,7 @@ const youtubeIdeasAllowedEmailsCsv = (
       }
 
       setGate(`Access granted for ${me.email}.`, 'success');
+      studioAccountChip.textContent = `Account: ${me.email}`;
       showWorkspace();
       return true;
     }
@@ -2323,37 +2408,11 @@ const youtubeIdeasAllowedEmailsCsv = (
         return;
       }
 
-      const fileNotesPayload = clips.map((clip, index) => ({
-        index,
-        name: clip.file.name,
-        note: (clip.note || '').trim(),
-      }));
-
-      const formData = new FormData();
-      const channelProfilePayload = buildChannelProfilePayload();
-      const jobOverridesPayload = buildJobOverridesPayload(channelProfilePayload);
-      const thumbnailRefsPayload = buildThumbnailRefsPayload();
-
-      clips.forEach((clip) => {
-        formData.append('files[]', clip.file, clip.file.name);
-      });
-      formData.append('file_notes_json', JSON.stringify(fileNotesPayload));
-      formData.append('notes', runNotes.value.trim());
-      formData.append('channel_profile_json', JSON.stringify(channelProfilePayload));
-      formData.append('job_overrides_json', JSON.stringify(jobOverridesPayload));
-      const editorBrief = buildEditorBriefPayload();
-      if (editorBrief) {
-        formData.append('editor_brief_json', JSON.stringify(editorBrief));
-      }
-      if (Array.isArray(remotionEdits) && remotionEdits.length > 0) {
-        formData.append('remotion_edits_json', JSON.stringify(remotionEdits));
-      }
-      if (thumbnailRefsPayload.length > 0) {
-        formData.append('thumbnail_refs_json', JSON.stringify(thumbnailRefsPayload));
-        thumbnailRefs.forEach((entry) => {
-          formData.append('thumbnail_refs[]', entry.file, entry.name);
-        });
-      }
+      const snapshot = buildRunRequestSnapshot();
+      const fileNotesPayload = snapshot.fileNotesPayload;
+      const editorBrief = snapshot.editorBrief;
+      const thumbnailRefsPayload = snapshot.thumbnailRefsPayload;
+      const formData = buildRunFormData(snapshot);
 
       editsLine.hidden = true;
       briefLine.hidden = true;
@@ -2866,6 +2925,116 @@ const youtubeIdeasAllowedEmailsCsv = (
     display: grid;
     gap: 1rem;
     padding: 1rem 1rem 1.2rem;
+  }
+
+  .studio-shell {
+    border: 1px solid rgba(77, 89, 74, 0.24);
+    border-radius: 14px;
+    background:
+      radial-gradient(145% 120% at 100% 0%, rgba(240, 224, 0, 0.16), transparent 64%),
+      radial-gradient(130% 130% at 0% 100%, rgba(166, 181, 137, 0.2), transparent 62%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(252, 251, 245, 0.9));
+    box-shadow: 0 12px 26px rgba(31, 41, 55, 0.08);
+    padding: 0.85rem;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .studio-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .studio-identity {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 220px;
+    flex: 1;
+  }
+
+  .studio-kicker {
+    margin: 0;
+    color: var(--pine, #4d594a);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .studio-identity h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.15;
+  }
+
+  .studio-copy {
+    margin: 0;
+    color: var(--muted-accessible, #4a5448);
+    font-size: 0.8rem;
+    line-height: 1.45;
+    max-width: 60ch;
+  }
+
+  .studio-meta {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 220px;
+    justify-items: end;
+  }
+
+  .studio-chip {
+    margin: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(77, 89, 74, 0.26);
+    background: rgba(255, 255, 255, 0.82);
+    color: #374151;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.58rem;
+    width: fit-content;
+  }
+
+  .studio-chip--account {
+    border-color: rgba(22, 101, 52, 0.28);
+    background: rgba(220, 252, 231, 0.62);
+    color: #14532d;
+  }
+
+  .studio-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.42rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding-bottom: 0.1rem;
+  }
+
+  .studio-nav-link {
+    text-decoration: none;
+    border-radius: 999px;
+    border: 1px solid rgba(77, 89, 74, 0.22);
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--pine, #4d594a);
+    font-size: 0.73rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.62rem;
+    white-space: nowrap;
+    transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  }
+
+  .studio-nav-link:hover {
+    border-color: rgba(77, 89, 74, 0.42);
+    background: rgba(240, 224, 0, 0.18);
+    color: #1f2937;
   }
 
   .panel {
@@ -4460,6 +4629,29 @@ const youtubeIdeasAllowedEmailsCsv = (
     .workspace {
       padding: 0.75rem 0.75rem calc(7.2rem + env(safe-area-inset-bottom));
       gap: 0.85rem;
+    }
+
+    .studio-shell {
+      padding: 0.8rem 0.75rem;
+      gap: 0.62rem;
+    }
+
+    .studio-head {
+      gap: 0.72rem;
+    }
+
+    .studio-meta {
+      justify-items: flex-start;
+      min-width: 0;
+      width: 100%;
+      grid-template-columns: repeat(auto-fit, minmax(140px, max-content));
+      align-items: center;
+      gap: 0.38rem;
+    }
+
+    .studio-chip {
+      font-size: 0.66rem;
+      padding: 0.3rem 0.52rem;
     }
 
     .simple-flow-intro {
