@@ -15,6 +15,7 @@ class VideoHoggController extends ApiController
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:20000'],
             'file_notes_json' => ['nullable', 'string', 'max:300000'],
+            'editor_brief_json' => ['nullable', 'string', 'max:250000'],
             'remotion_edits_json' => ['nullable', 'string', 'max:500000'],
             'channel_profile_json' => ['nullable', 'string', 'max:250000'],
             'job_overrides_json' => ['nullable', 'string', 'max:250000'],
@@ -51,6 +52,22 @@ class VideoHoggController extends ApiController
         $basePath = "videohogg/{$user->id}/{$runId}";
 
         $notes = $this->normalizeText((string) ($validated['notes'] ?? ''), 20000);
+
+        $editorBrief = [];
+        $editorBriefRaw = trim((string) ($validated['editor_brief_json'] ?? ''));
+        if ($editorBriefRaw !== '') {
+            try {
+                $decodedBrief = json_decode($editorBriefRaw, true, 512, JSON_THROW_ON_ERROR);
+            } catch (Throwable) {
+                return $this->fail('invalid_editor_brief', 'editor_brief_json must be a valid JSON object.', 422);
+            }
+
+            if (! is_array($decodedBrief) || array_is_list($decodedBrief)) {
+                return $this->fail('invalid_editor_brief', 'editor_brief_json must be a valid JSON object.', 422);
+            }
+
+            $editorBrief = $this->normalizeEditorBrief($decodedBrief);
+        }
 
         $fileNotesByIndex = [];
         $fileNotesRaw = trim((string) ($validated['file_notes_json'] ?? ''));
@@ -378,6 +395,7 @@ class VideoHoggController extends ApiController
                 'name' => $user->name,
             ],
             'notes' => $notes,
+            'editor_brief' => $editorBrief,
             'uploaded_count' => count($uploaded),
             'noted_count' => $notedCount,
             'total_bytes' => $totalBytes,
@@ -440,6 +458,7 @@ class VideoHoggController extends ApiController
                 'extra' => [
                     'owner_email' => $user->email,
                     'owner_name' => $user->name,
+                    'editor_brief' => $editorBrief,
                     'channel_profile_id' => $channelProfile['id'] ?? null,
                     'settings_resolution' => $settingsResolution,
                     'remotion_edits_count' => $remotionSummary['clip_count'],
@@ -462,6 +481,7 @@ class VideoHoggController extends ApiController
             'total_bytes' => $totalBytes,
             'manifest_path' => $manifestPath,
             'manifest_url' => $manifestUrl,
+            'editor_brief' => $editorBrief,
             'files' => $uploaded,
             'channel_profile' => [
                 'id' => $channelProfile['id'] ?? null,
@@ -637,6 +657,38 @@ class VideoHoggController extends ApiController
         } catch (Throwable) {
             return null;
         }
+    }
+
+    private function normalizeEditorBrief(array $payload): array
+    {
+        $clean = ['version' => 1];
+        $allowedFields = ['tone', 'intent', 'must_keep', 'avoid', 'cta'];
+        $hasValue = false;
+
+        foreach ($allowedFields as $field) {
+            $value = $payload[$field] ?? null;
+            if (! is_string($value)) {
+                if (! is_null($value) && $value !== '') {
+                    $value = (string) $value;
+                } else {
+                    $value = '';
+                }
+            }
+
+            $value = $this->normalizeText((string) $value, 2000);
+            if ($value === '') {
+                continue;
+            }
+
+            $clean[$field] = $value;
+            $hasValue = true;
+        }
+
+        if (! $hasValue) {
+            return [];
+        }
+
+        return $clean;
     }
 
     private function normalizeText(string $value, int $limit = 4000): string

@@ -83,6 +83,60 @@ class VideoHoggQueueTest extends TestCase
         $this->assertSame(2, $manifest['noted_count'] ?? null);
     }
 
+    public function test_upload_stores_editor_brief_payload_in_manifest_and_run_extra(): void
+    {
+        $user = User::factory()->create(['email' => 'brief@example.com']);
+        $token = $user->createToken('brief-token')->plainTextToken;
+
+        putenv('VIDEOHOGG_ALLOWED_EMAILS=brief@example.com');
+        $_ENV['VIDEOHOGG_ALLOWED_EMAILS'] = 'brief@example.com';
+        $_SERVER['VIDEOHOGG_ALLOWED_EMAILS'] = 'brief@example.com';
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/videohogg/runs', [
+                'notes' => 'Brief-focused run',
+                'editor_brief_json' => json_encode([
+                    'tone' => 'dad-on-the-at',
+                    'intent' => 'Energetic opening, steady middle, quiet ending.',
+                    'must_keep' => 'First ascent sequence, final sunset.',
+                    'avoid' => 'Repetitive uphill sections.',
+                    'cta' => 'Tell people to follow for the next section.',
+                ], JSON_THROW_ON_ERROR),
+                'file_notes_json' => json_encode([
+                    ['index' => 0, 'note' => 'Use this shot for opening'],
+                ], JSON_THROW_ON_ERROR),
+                'files' => [
+                    UploadedFile::fake()->create('brief-clip.mp4', 1024, 'video/mp4'),
+                ],
+            ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'queued')
+            ->assertJsonPath('data.editor_brief.tone', 'dad-on-the-at')
+            ->assertJsonStructure([
+                'data' => [
+                    'run_id',
+                    'status',
+                    'manifest_path',
+                    'editor_brief',
+                ],
+            ]);
+
+        $runId = (string) $response->json('data.run_id');
+        $run = VideoHoggRun::query()->where('run_id', $runId)->first();
+
+        $this->assertNotNull($run);
+        $this->assertSame('dad-on-the-at', (string) data_get($run->extra, 'editor_brief.tone'));
+        $this->assertSame('Tell people to follow for the next section.', (string) data_get($run->extra, 'editor_brief.cta'));
+        $this->assertSame('dad-on-the-at', $run->extra['editor_brief']['tone']);
+
+        Storage::disk('public')->assertExists($run->manifest_path);
+        $manifest = json_decode(Storage::disk('public')->get((string) $run->manifest_path), true);
+        $this->assertSame('dad-on-the-at', (string) ($manifest['editor_brief']['tone'] ?? ''));
+        $this->assertSame('Energetic opening, steady middle, quiet ending.', (string) ($manifest['editor_brief']['intent'] ?? ''));
+    }
+
     public function test_worker_can_claim_heartbeat_and_complete_a_run(): void
     {
         $user = User::factory()->create(['email' => 'worker@example.com']);
