@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CommunityTrackerController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TrackerLiveController;
+use App\Http\Controllers\Api\V1\TrailAssistantIntakeController;
 use App\Http\Controllers\Api\V1\VideoFeedController;
 use App\Http\Controllers\Api\V1\VideoHoggController;
 use App\Http\Controllers\Api\V1\VideoHoggQueueController;
@@ -44,6 +45,10 @@ Route::prefix('v1')->group(function (): void {
 
     Route::prefix('videos')->group(function (): void {
         Route::get('/latest', [VideoFeedController::class, 'latest']);
+    });
+
+    Route::prefix('trail-assistant')->group(function (): void {
+        Route::post('/intake', [TrailAssistantIntakeController::class, 'store']);
     });
 
     Route::middleware('auth:sanctum')->group(function (): void {

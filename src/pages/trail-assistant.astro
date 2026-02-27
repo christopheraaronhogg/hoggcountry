@@ -1,0 +1,202 @@
+---
+const title = 'Trail Assistant — Appalachian Trail Planning & On‑Trail Support';
+const description = 'Get practical help planning your Appalachian Trail hike and handling on-trail logistics.';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --line: #334155;
+        --accent: #22d3ee;
+        --ok: #10b981;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 50%);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 20px 72px;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(1.6rem, 3vw, 2.4rem);
+      }
+      .sub {
+        color: var(--muted);
+        line-height: 1.55;
+        margin-bottom: 24px;
+      }
+      .card {
+        background: linear-gradient(180deg, #0b1220, var(--card));
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 16px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(34, 211, 238, 0.45);
+        color: var(--accent);
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      h2 { margin: 12px 0; font-size: 1.2rem; }
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #d1d5db;
+        line-height: 1.6;
+      }
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      label {
+        display: block;
+        font-size: 0.92rem;
+        color: #d1d5db;
+        margin-bottom: 6px;
+      }
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid #475569;
+        border-radius: 10px;
+        padding: 11px 12px;
+        background: #0b1220;
+        color: #f8fafc;
+      }
+      textarea { min-height: 120px; resize: vertical; }
+      .btn {
+        appearance: none;
+        border: 0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-weight: 700;
+        background: var(--ok);
+        color: #052e16;
+        cursor: pointer;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+      .small {
+        font-size: 0.82rem;
+        color: #94a3b8;
+      }
+      a { color: #67e8f9; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>Trail Assistant</h1>
+      <p class="sub">
+        Practical Appalachian Trail support for pre-trail planning and on-trail logistics.
+        Ask a question, get a real action plan, and keep moving.
+      </p>
+
+      <section class="card">
+        <span class="pill">How this works</span>
+        <h2>Fast help for real trail decisions</h2>
+        <ul>
+          <li><strong>Pre-trail:</strong> gear shakedown, pacing, resupply strategy, start-date planning.</li>
+          <li><strong>On-trail:</strong> town logistics, weather pivots, schedule adjustments, contingency planning.</li>
+          <li><strong>Output:</strong> concise, actionable plan (not generic fluff).</li>
+        </ul>
+      </section>
+
+      <section class="card" id="intake">
+        <span class="pill">Request support</span>
+        <h2>Send your trail request</h2>
+        <p class="muted">
+          Fill this out and we’ll route your request into the Trail Assistant queue.
+        </p>
+
+        <form name="trail-assistant-intake" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/trail-assistant-thanks">
+          <input type="hidden" name="form-name" value="trail-assistant-intake" />
+          <input type="hidden" name="service" value="trail-assistant" />
+          <p style="display:none;">
+            <label>Don’t fill this out: <input name="bot-field" /></label>
+          </p>
+
+          <div class="grid">
+            <div>
+              <label for="name">Name</label>
+              <input id="name" name="name" required />
+            </div>
+            <div>
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" required />
+            </div>
+            <div>
+              <label for="trail_stage">Trail stage</label>
+              <select id="trail_stage" name="trail_stage" required>
+                <option value="">Select one</option>
+                <option value="pre-trail">Pre-trail planning</option>
+                <option value="on-trail">Currently on trail</option>
+                <option value="post-trail">Post-trail review</option>
+              </select>
+            </div>
+            <div>
+              <label for="urgency">Urgency</label>
+              <select id="urgency" name="urgency" required>
+                <option value="">Select one</option>
+                <option value="normal">Normal (24–48h)</option>
+                <option value="soon">Soon (same day)</option>
+                <option value="urgent">Urgent (today)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label for="request">What do you need help with?</label>
+            <textarea id="request" name="request" placeholder="Example: Starting NOBO April 2. Need 10-day food strategy, first two resupplies, and backup plan for cold rain week in the Smokies." required></textarea>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label for="context">Optional context</label>
+            <textarea id="context" name="context" placeholder="Current fitness, injuries, budget constraints, gear you already own, planned start date, etc."></textarea>
+          </div>
+
+          <div style="margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button class="btn" type="submit">Send Trail Request</button>
+            <span class="small">By submitting, you agree to receive a response by email.</span>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <span class="pill">Security note</span>
+        <p class="muted">
+          We never ask for account passwords, payment credentials, or remote machine access.
+          If anyone asks you for those in the name of Trail Assistant, do not share them.
+        </p>
+      </section>
+
+      <p class="small" style="margin-top: 18px;">
+        Need this in plain email? Send details to
+        <a href="mailto:christopheraaronhogg@gmail.com?subject=Trail%20Assistant%20Request">christopheraaronhogg@gmail.com</a>
+        with subject: <strong>Trail Assistant Request</strong>.
+      </p>
+    </main>
+  </body>
+</html>
