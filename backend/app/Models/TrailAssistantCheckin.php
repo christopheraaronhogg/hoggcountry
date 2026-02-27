@@ -6,33 +6,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TrailAssistantIntake extends Model
+class TrailAssistantCheckin extends Model
 {
     use HasFactory;
 
-    protected $table = 'trail_assistant_intakes';
+    protected $table = 'trail_assistant_checkins';
 
     protected $fillable = [
-        'intake_id',
-        'idempotency_key',
-        'dedupe_fingerprint',
+        'checkin_id',
         'user_id',
-        'route_label',
+        'lat',
+        'lon',
+        'mile_marker',
+        'battery_percent',
+        'status_note',
         'source',
-        'name',
-        'email',
-        'subject',
-        'message',
-        'metadata',
-        'status',
-        'received_at',
+        'observed_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'metadata' => 'array',
-            'received_at' => 'datetime',
+            'lat' => 'float',
+            'lon' => 'float',
+            'mile_marker' => 'float',
+            'battery_percent' => 'integer',
+            'observed_at' => 'datetime',
         ];
     }
 
