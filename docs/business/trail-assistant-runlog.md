@@ -20,3 +20,59 @@
   - `trail-assistant-response-templates.md`
   - `trail-assistant-marketing-engine.md`
 - Next: wire cron loops for weekly planning + intake triage + security audit.
+
+- **2026-02-27 17:24 CST**
+  - **Task worked:** Mobile-first product pivot (phone app as primary surface).
+  - **What changed:**
+    - Added mobile roadmap doc (`docs/business/trail-assistant-mobile-roadmap.md`) focused on chat + location + progress + subscription-ready architecture.
+    - Updated autonomy plan to explicitly prioritize mobile primitives.
+    - Reworked backlog priorities to center mobile-core API tasks.
+    - Added authenticated location check-in API scaffolding:
+      - model: `backend/app/Models/TrailAssistantCheckin.php`
+      - migration: `backend/database/migrations/2026_02_27_231500_create_trail_assistant_checkins_table.php`
+      - controller: `backend/app/Http/Controllers/Api/V1/TrailAssistantCheckinController.php`
+      - routes: `POST/GET /api/v1/trail-assistant/checkins`, `GET /api/v1/trail-assistant/progress`
+      - tests: `backend/tests/Feature/Api/V1/TrailAssistantCheckinApiTest.php`
+  - **Next step:** implement authenticated chat-message API lane and mobile API contract doc.
+  - **Blocker status:** no owner blocker; full Laravel test execution remains environment-dependent on backend vendor install in canonical clone.
+- Added mobile API contract draft: `docs/business/trail-assistant-mobile-api-contract.md`.
+- **2026-02-27 17:31 CST**
+  - **Task worked:** Mobile app core API expansion (chat + check-ins + progress).
+  - **What changed:**
+    - Added authenticated chat ingestion endpoints:
+      - `POST /api/v1/trail-assistant/chat/messages`
+      - `GET /api/v1/trail-assistant/chat/messages`
+    - Added `user_id` linkage on `trail_assistant_intakes` for authenticated app-origin traffic.
+    - Added authenticated check-in and progress endpoints:
+      - `POST /api/v1/trail-assistant/checkins`
+      - `GET /api/v1/trail-assistant/checkins`
+      - `GET /api/v1/trail-assistant/progress`
+    - Added tests for chat/checkin APIs and updated mobile API contract doc.
+  - **Next step:** add deployment verification runbook and intake idempotency guard.
+  - **Blocker status:** no owner blocker.
+- Added deploy verification runbook: `docs/business/trail-assistant-deploy-verification.md`.
+
+- **2026-02-27 17:30 CST**
+  - **Task worked:** Mobile-first core hardening + owner priority pivot execution.
+  - **What changed:**
+    - Wired public Trail Assistant form to call backend intake API first, with Netlify form fallback when API fails (`src/pages/trail-assistant.astro`).
+    - Added backend intake duplicate protection:
+      - `Idempotency-Key` replay support
+      - payload fingerprint duplicate window guard
+      - schema + model updates for `idempotency_key` and `dedupe_fingerprint`
+    - Added authenticated triage visibility endpoints:
+      - `GET /api/v1/trail-assistant/intakes`
+      - `GET /api/v1/trail-assistant/intakes/export.csv`
+    - Added subscription-ready (Stripe deferred) public plan catalog endpoint:
+      - `GET /api/v1/trail-assistant/plans`
+    - Added mobile chat and check-in backend lanes for app integration:
+      - `POST/GET /api/v1/trail-assistant/chat/messages`
+      - `POST/GET /api/v1/trail-assistant/checkins`
+      - `GET /api/v1/trail-assistant/progress`
+    - Added/updated feature tests for intake idempotency, triage endpoints, plans, chat, and check-ins.
+    - Updated mobile roadmap/backlog/docs and added deployment verification + API contract references.
+  - **Next step:** Run pilot simulation set (5 realistic hiker requests) and score quality/SLA readiness.
+  - **Validation:**
+    - `php artisan test tests/Feature/Api/V1/TrailAssistantIntakeApiTest.php tests/Feature/Api/V1/TrailAssistantChatApiTest.php tests/Feature/Api/V1/TrailAssistantCheckinApiTest.php tests/Feature/Api/V1/TrailAssistantOpsApiTest.php` ✅ (15 tests, 108 assertions)
+    - `npx astro check` ✅ (0 errors)
+  - **Blocker status:** No owner decision blocker in this run.

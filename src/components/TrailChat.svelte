@@ -14,6 +14,8 @@
 
   const STORAGE_KEY = 'at-trail-ai-conversations';
   const SHOW_RECENT_COUNT = 5;
+  const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
+  const AUTH_KEY = 'hcApiAuth.v1';
 
   let question = $state('');
   let messages = $state<Message[]>([]);
@@ -90,6 +92,67 @@
     if (currentConvoId === id) newChat();
   }
 
+  function readAuthToken(): string | null {
+    try {
+      const raw = localStorage.getItem(AUTH_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return typeof parsed?.token === 'string' && parsed.token ? parsed.token : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function inferRouteLabel(text: string): 'pre-trail' | 'on-trail' | 'post-finish' {
+    const lower = text.toLowerCase();
+    if (/finished|post[ -]?trail|after trail|completed/.test(lower)) return 'post-finish';
+    if (/currently|today|tomorrow|in town|resupply|on trail|on-trail|mile/.test(lower)) return 'on-trail';
+    return 'pre-trail';
+  }
+
+  function messageHistorySnapshot(history: Message[]): Array<{ role: string; content: string }> {
+    return history
+      .slice(-8)
+      .map((entry) => ({
+        role: entry.role,
+        content: String(entry.content || '').slice(0, 240),
+      }));
+  }
+
+  async function queueSupportFallback(userQuestion: string, history: Message[]): Promise<string | null> {
+    const routeLabel = inferRouteLabel(userQuestion);
+    const token = readAuthToken();
+    const idempotencyKey = `chat-fallback-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+
+    const response = await fetch(`${API_BASE}/trail-assistant/intake`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'Idempotency-Key': idempotencyKey,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        route_label: routeLabel,
+        source: 'chat',
+        subject: `Chat fallback • ${userQuestion.slice(0, 100)}`,
+        message: userQuestion,
+        metadata: {
+          fallback_reason: 'netlify_ask_unavailable',
+          history_tail: messageHistorySnapshot(history),
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = await response.json().catch(() => null);
+    const intakeId = payload?.data?.intake_id;
+    return typeof intakeId === 'string' && intakeId ? intakeId : null;
+  }
+
   async function askQuestion() {
     if (!question.trim() || isLoading) return;
     const q = question.trim();
@@ -111,7 +174,21 @@
       saveCurrentConvo();
       scrollToBottom();
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Something went wrong. Please try again.';
+      const queuedIntakeId = await queueSupportFallback(q, messages);
+      if (queuedIntakeId) {
+        messages = [
+          ...messages,
+          {
+            role: 'assistant',
+            content: `Trail signal was weak, so I queued your request for manual support as **${queuedIntakeId}**. Keep hiking — you can retry here or check your support inbox soon.`,
+          },
+        ];
+        saveCurrentConvo();
+        await scrollToBottom();
+        error = '';
+      } else {
+        error = e instanceof Error ? e.message : 'Something went wrong. Please try again.';
+      }
     } finally {
       isLoading = false;
       inputRef?.focus();

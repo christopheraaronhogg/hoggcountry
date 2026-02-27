@@ -1,6 +1,7 @@
 ---
 const title = 'Trail Assistant — Appalachian Trail Planning & On‑Trail Support';
 const description = 'Get practical help planning your Appalachian Trail hike and handling on-trail logistics.';
+const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
 ---
 <!doctype html>
 <html lang="en">
@@ -131,7 +132,7 @@ const description = 'Get practical help planning your Appalachian Trail hike and
           Fill this out and we’ll route your request into the Trail Assistant queue.
         </p>
 
-        <form name="trail-assistant-intake" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/trail-assistant-thanks">
+        <form id="trail-assistant-intake-form" name="trail-assistant-intake" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/trail-assistant-thanks">
           <input type="hidden" name="form-name" value="trail-assistant-intake" />
           <input type="hidden" name="service" value="trail-assistant" />
           <p style="display:none;">
@@ -153,7 +154,7 @@ const description = 'Get practical help planning your Appalachian Trail hike and
                 <option value="">Select one</option>
                 <option value="pre-trail">Pre-trail planning</option>
                 <option value="on-trail">Currently on trail</option>
-                <option value="post-trail">Post-trail review</option>
+                <option value="post-finish">Post-finish review</option>
               </select>
             </div>
             <div>
@@ -178,9 +179,10 @@ const description = 'Get practical help planning your Appalachian Trail hike and
           </div>
 
           <div style="margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <button class="btn" type="submit">Send Trail Request</button>
+            <button id="intake-submit-button" class="btn" type="submit">Send Trail Request</button>
             <span class="small">By submitting, you agree to receive a response by email.</span>
           </div>
+          <p id="intake-status" class="small" aria-live="polite" style="margin: 10px 0 0;"></p>
         </form>
       </section>
 
@@ -198,5 +200,141 @@ const description = 'Get practical help planning your Appalachian Trail hike and
         with subject: <strong>Trail Assistant Request</strong>.
       </p>
     </main>
+
+    <script is:inline define:vars={{ apiBase }}>
+      (() => {
+        const form = document.getElementById('trail-assistant-intake-form');
+        const statusEl = document.getElementById('intake-status');
+        const submitButton = document.getElementById('intake-submit-button');
+
+        if (!(form instanceof HTMLFormElement)) return;
+        if (!(statusEl instanceof HTMLElement)) return;
+        if (!(submitButton instanceof HTMLButtonElement)) return;
+
+        const API_BASE = apiBase;
+
+        function setStatus(message, tone = 'muted') {
+          statusEl.textContent = message;
+          statusEl.style.color = tone === 'error' ? '#fca5a5' : tone === 'success' ? '#86efac' : '#94a3b8';
+        }
+
+        function formDataToUrlEncoded(formData) {
+          const params = new URLSearchParams();
+          formData.forEach((value, key) => {
+            if (typeof value === 'string') {
+              params.append(key, value);
+            }
+          });
+          return params.toString();
+        }
+
+        function normalizeText(value, max = 12000) {
+          return String(value || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().slice(0, max);
+        }
+
+        async function submitToApi(formData) {
+          const routeLabel = normalizeText(formData.get('trail_stage') || '', 24);
+          const urgency = normalizeText(formData.get('urgency') || 'normal', 20);
+          const requestText = normalizeText(formData.get('request') || '', 12000);
+          const contextText = normalizeText(formData.get('context') || '', 12000);
+          const name = normalizeText(formData.get('name') || '', 120);
+          const email = normalizeText(formData.get('email') || '', 190);
+
+          if (!routeLabel || !requestText) {
+            throw new Error('Missing required fields for API intake.');
+          }
+
+          const subject = `${routeLabel} | ${urgency} | ${requestText.slice(0, 80)}`.slice(0, 160);
+          const message = [
+            requestText,
+            contextText ? `\n\nContext:\n${contextText}` : '',
+            `\n\nUrgency: ${urgency}`,
+          ].join('');
+
+          const idempotencyKey = `ta-web-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+
+          const response = await fetch(`${API_BASE}/trail-assistant/intake`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              'Idempotency-Key': idempotencyKey,
+            },
+            body: JSON.stringify({
+              route_label: routeLabel,
+              source: 'web_form',
+              name,
+              email,
+              subject,
+              message,
+              metadata: {
+                urgency,
+                context: contextText || null,
+                route_label_raw: formData.get('trail_stage') || null,
+                user_agent: navigator.userAgent || null,
+              },
+            }),
+          });
+
+          if (!response.ok) {
+            const payload = await response.json().catch(() => null);
+            const hint = payload?.error?.message || `API intake failed (${response.status}).`;
+            throw new Error(hint);
+          }
+        }
+
+        async function submitToNetlify(formData) {
+          const response = await fetch('/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formDataToUrlEncoded(formData),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Netlify fallback failed (${response.status}).`);
+          }
+        }
+
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+
+          if (!form.reportValidity()) {
+            return;
+          }
+
+          const formData = new FormData(form);
+          const botField = normalizeText(formData.get('bot-field') || '', 120);
+          if (botField) {
+            setStatus('Submission blocked.', 'error');
+            return;
+          }
+
+          submitButton.disabled = true;
+          setStatus('Submitting request…');
+
+          try {
+            await submitToApi(formData);
+            setStatus('Request sent. Redirecting…', 'success');
+            window.location.assign('/trail-assistant-thanks');
+            return;
+          } catch (apiError) {
+            try {
+              await submitToNetlify(formData);
+              setStatus('Request queued via fallback. Redirecting…', 'success');
+              window.location.assign('/trail-assistant-thanks');
+              return;
+            } catch (fallbackError) {
+              const apiMessage = apiError instanceof Error ? apiError.message : 'API intake failed.';
+              const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : 'Fallback submission failed.';
+              setStatus(`${apiMessage} ${fallbackMessage} Please email support directly.`, 'error');
+            }
+          } finally {
+            submitButton.disabled = false;
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -37,6 +37,16 @@ Stripe/payment onboarding is intentionally deferred; we still build all non-paym
 - Reporting: daily runlog + weekly summary
 - Later swap: payment step from manual/offline -> Stripe checkout
 
+## 3.5) Mobile-first direction (updated)
+- Primary user surface should be phone-native behavior (quick access while moving/on trail).
+- Build backend/API and workflow logic so a phone app can plug in directly.
+- Core mobile MVP primitives:
+  - user auth + profile,
+  - chat support requests,
+  - location check-ins,
+  - progress tracking endpoints,
+  - subscription-ready entitlement hooks (actual Stripe wiring deferred).
+
 ## 4) Security model (non-negotiable)
 - Treat all inbound user text/files as untrusted.
 - Never run user-provided commands/scripts.

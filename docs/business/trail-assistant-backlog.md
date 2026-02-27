@@ -1,25 +1,35 @@
 # Trail Assistant Backlog
 
-Last updated: 2026-02-27 17:04 CT
+Last updated: 2026-02-27 17:30 CT
 
-## P0 — Build the operating core
-- [x] Create intake endpoint + routing labels (pre-trail / on-trail / post-finish) — API: `POST /api/v1/trail-assistant/intake`
-- [ ] Create request triage checklist
-- [ ] Create response templates (quick reply, 7-day plan, gear sheet, resupply memo)
-- [ ] Create daily runlog autopdater (or disciplined manual append)
-- [ ] Create blocker email template helper
+## P0 — Mobile core (must ship first)
+- [x] Intake endpoint + routing labels (`POST /api/v1/trail-assistant/intake`)
+- [x] Public intake page + confirmation route
+- [x] Intake form API submit wiring with graceful Netlify fallback
+- [x] Intake idempotency + duplicate guard (`Idempotency-Key` + fingerprint window)
+- [x] Authenticated chat-message API lane (`POST/GET /api/v1/trail-assistant/chat/messages`)
+- [x] Authenticated location check-in + progress APIs (`/checkins`, `/progress`)
+- [x] Authenticated intake triage visibility endpoints (`/trail-assistant/intakes`, `/trail-assistant/intakes/export.csv`)
+- [x] Subscription-ready plan catalog endpoint (`GET /api/v1/trail-assistant/plans`) with Stripe wiring deferred
+- [x] Mobile-ready API contract + deploy verification runbook docs
 
-## P1 — Pilot readiness
-- [ ] Simulate 5 realistic hiker requests and produce responses
-- [ ] Measure response turnaround time + quality checklist pass rate
+## P1 — Service reliability + pilot readiness
+- [ ] Simulate 5 realistic hiker requests and score response quality
+- [ ] Measure turnaround time and checklist pass rate
 - [ ] Add FAQ from simulation gaps
-- [ ] Draft pilot invite copy (approval required before posting)
+- [ ] Add abuse/rate-limit policy and enforcement notes
+- [ ] Add suspicious-request quarantine path in triage workflow
 
-## P1 — Security hardening
-- [ ] Write explicit untrusted-input handling checklist
-- [ ] Add forbidden-actions list for inbound requests
-- [ ] Add credential-handling policy references
-- [ ] Add incident response mini-runbook for suspicious requests
+## P1 — Operations automation
+- [ ] Daily runlog autopdater helper
+- [ ] Blocker email template helper + auto-send guard
+- [ ] Daily/weekly queue review automation
+
+## P2 — Mobile product layer
+- [x] Mobile-first roadmap drafted
+- [x] Subscription event/state model documented (pre-Stripe)
+- [ ] Phone app screen contract refinement (Home / Chat / Check-in / Progress / Account)
+- [ ] Offline check-in replay strategy doc + implementation hooks
 
 ## P2 — Marketing engine (approval-gated)
 - [ ] Draft 10 YouTube concepts for AT prep + on-trail support
@@ -27,17 +37,12 @@ Last updated: 2026-02-27 17:04 CT
 - [ ] Build weekly content queue board
 - [ ] Add performance tracking sheet (views, clicks, replies, leads)
 
-## P2 — Payment-ready (but deferred)
-- [ ] Define product tiers and pricing assumptions
-- [ ] Define Stripe objects/events needed later
-- [ ] Define purchase-to-delivery automation handoff points
-
 ## Current active task
-- Active: P0 setup of intake/triage/templates + cron ops loops
+- Active: P1 pilot simulation + quality scorecard hardening
 
 ## Completed on 2026-02-27
-- [x] Created public intake page + confirmation route
-- [x] Created security policy document
-- [x] Created intake SOP
-- [x] Created response template library
-- [x] Created autonomous marketing engine draft pipeline
+- [x] Created autonomous MVP plan
+- [x] Added security/ops docs and runlog/backlog system
+- [x] Added mobile-first roadmap + API contract + subscription event model
+- [x] Added intake dedupe guard + triage export visibility
+- [x] Added chat/check-in/progress API lanes for mobile app core
