@@ -85,6 +85,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(TrailAssistantCheckin::class);
     }
 
+    public function trailAssistantMapReports(): HasMany
+    {
+        return $this->hasMany(TrailAssistantMapReport::class);
+    }
+
     public function videohoggRuns(): HasMany
     {
         return $this->hasMany(VideoHoggRun::class);

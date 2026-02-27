@@ -10,6 +10,7 @@ Last updated: 2026-02-27 17:30 CT
 - [x] Authenticated chat-message API lane (`POST/GET /api/v1/trail-assistant/chat/messages`)
 - [x] Authenticated location check-in + progress APIs (`/checkins`, `/progress`)
 - [x] Authenticated intake triage visibility endpoints (`/trail-assistant/intakes`, `/trail-assistant/intakes/export.csv`)
+- [x] Safety map-report APIs (public feed + auth write/read/resolve)
 - [x] Subscription-ready plan catalog endpoint (`GET /api/v1/trail-assistant/plans`) with Stripe wiring deferred
 - [x] Mobile-ready API contract + deploy verification runbook docs
 
@@ -19,6 +20,8 @@ Last updated: 2026-02-27 17:30 CT
 - [ ] Add FAQ from simulation gaps
 - [ ] Add abuse/rate-limit policy and enforcement notes
 - [ ] Add suspicious-request quarantine path in triage workflow
+- [ ] Add map-report moderator verification workflow (promote unverified -> trusted/verified)
+- [ ] Add emergency/SOS escalation path and response protocol
 
 ## P1 — Operations automation
 - [ ] Daily runlog autopdater helper
@@ -38,7 +41,7 @@ Last updated: 2026-02-27 17:30 CT
 - [ ] Add performance tracking sheet (views, clicks, replies, leads)
 
 ## Current active task
-- Active: P1 pilot simulation + quality scorecard hardening
+- Active: P1 safety hardening (map-report verification + emergency escalation protocol)
 
 ## Completed on 2026-02-27
 - [x] Created autonomous MVP plan

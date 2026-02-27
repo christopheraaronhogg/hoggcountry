@@ -45,4 +45,26 @@ return [
             ],
         ],
     ],
+
+    'map_reports' => [
+        'kinds' => [
+            'tree_down',
+            'water_issue',
+            'bridge_out',
+            'trail_closed',
+            'injury_assist',
+            'wildlife',
+            'weather_hazard',
+            'other',
+        ],
+        'severity' => ['info', 'caution', 'danger', 'emergency'],
+        'duplicate_window_minutes' => 120,
+        'default_expiry_hours' => 48,
+        'public_visible_verifications' => ['trusted', 'moderator_verified'],
+        'trusted_user_ids' => [],
+        'admin_resolver_emails' => [
+            'christopheraaronhogg@gmail.com',
+            'chris@stitchscreen.com',
+        ],
+    ],
 ];

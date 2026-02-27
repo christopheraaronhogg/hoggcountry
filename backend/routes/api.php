@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\TrailAssistantCheckinController;
 use App\Http\Controllers\Api\V1\TrailAssistantIntakeController;
 use App\Http\Controllers\Api\V1\TrailAssistantPlanController;
 use App\Http\Controllers\Api\V1\TrailAssistantTriageController;
+use App\Http\Controllers\Api\V1\TrailAssistantMapReportController;
 use App\Http\Controllers\Api\V1\VideoFeedController;
 use App\Http\Controllers\Api\V1\VideoHoggController;
 use App\Http\Controllers\Api\V1\VideoHoggQueueController;
@@ -54,6 +55,7 @@ Route::prefix('v1')->group(function (): void {
     Route::prefix('trail-assistant')->group(function (): void {
         Route::get('/plans', [TrailAssistantPlanController::class, 'index']);
         Route::post('/intake', [TrailAssistantIntakeController::class, 'store']);
+        Route::get('/map-reports/public', [TrailAssistantMapReportController::class, 'publicFeed']);
     });
 
     Route::middleware('auth:sanctum')->group(function (): void {
@@ -91,10 +93,14 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/chat/messages', [TrailAssistantChatController::class, 'index']);
 
             Route::post('/checkins', [TrailAssistantCheckinController::class, 'store']);
-            Route::get('/checkins', [TrailAssistantCheckinController::class, 'index']);
+            Route::get('/checkins', [TrailAssistantCheckinController::class, 'history']);
             Route::get('/checkins/latest', [TrailAssistantCheckinController::class, 'latest']);
             Route::get('/checkins/history', [TrailAssistantCheckinController::class, 'history']);
             Route::get('/progress', [TrailAssistantCheckinController::class, 'progress']);
+
+            Route::post('/map-reports', [TrailAssistantMapReportController::class, 'store'])->middleware('throttle:20,1');
+            Route::get('/map-reports', [TrailAssistantMapReportController::class, 'index']);
+            Route::post('/map-reports/{reportId}/resolve', [TrailAssistantMapReportController::class, 'resolve']);
         });
 
         Route::prefix('videohogg')->group(function (): void {

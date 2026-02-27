@@ -107,8 +107,42 @@ Use for support queue review/export with status/route/search filters.
 
 ---
 
+## 6) Realtime map safety reports
+### Public feed (safe visibility)
+`GET /trail-assistant/map-reports/public`
+
+Returns only active reports that pass visibility trust rules (`trusted` / `moderator_verified`).
+
+### Authenticated write/read
+`POST /trail-assistant/map-reports` (auth)
+`GET /trail-assistant/map-reports` (auth)
+`POST /trail-assistant/map-reports/{reportId}/resolve` (auth)
+
+POST body:
+```json
+{
+  "lat": 35.611,
+  "lon": -83.489,
+  "mile_marker": 243.4,
+  "kind": "tree_down|water_issue|bridge_out|trail_closed|injury_assist|wildlife|weather_hazard|other",
+  "severity": "info|caution|danger|emergency",
+  "message": "Optional short field report",
+  "observed_at": "2026-02-27T18:00:00Z",
+  "expires_in_hours": 48
+}
+```
+
+Safety controls:
+- idempotency replay support
+- per-user duplicate-window guard
+- expiration windows on hazard markers
+- public feed excludes unverified reports
+
+---
+
 ## Mobile client behavior notes
 - Queue check-ins locally when offline; replay on connectivity restore.
+- Queue map hazard reports when offline; send on reconnect with `Idempotency-Key`.
 - Surface last successful check-in timestamp in UI.
 - For urgent support, submit intake/chat with `route_label=on-trail` + urgency metadata.
 - Include `Idempotency-Key` on retriable POST requests.

@@ -12,6 +12,11 @@ Core offer (MVP):
 - Ongoing support cadence while on-trail (daily/weekly check-ins as requested)
 - Structured queue workflow so every request is tracked and closed
 
+Safety priority (highest):
+- Any realtime/interactive feature must default toward hiker safety and abuse resistance.
+- Public hazard visibility should prefer trusted/verified reports; unverified reports remain caution-labeled.
+- Emergency/SOS flows outrank convenience features.
+
 Stripe/payment onboarding is intentionally deferred; we still build all non-payment plumbing now.
 
 ## 2) MVP service lanes

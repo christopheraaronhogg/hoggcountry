@@ -76,3 +76,23 @@
     - `php artisan test tests/Feature/Api/V1/TrailAssistantIntakeApiTest.php tests/Feature/Api/V1/TrailAssistantChatApiTest.php tests/Feature/Api/V1/TrailAssistantCheckinApiTest.php tests/Feature/Api/V1/TrailAssistantOpsApiTest.php` ✅ (15 tests, 108 assertions)
     - `npx astro check` ✅ (0 errors)
   - **Blocker status:** No owner decision blocker in this run.
+
+- **2026-02-27 17:44 CST**
+  - **Task worked:** Realtime map safety layer + stack decision hardening.
+  - **What changed:**
+    - Added realtime safety map-report domain:
+      - model: `backend/app/Models/TrailAssistantMapReport.php`
+      - migration: `backend/database/migrations/2026_02_28_010000_create_trail_assistant_map_reports_table.php`
+      - controller: `backend/app/Http/Controllers/Api/V1/TrailAssistantMapReportController.php`
+      - routes:
+        - public feed: `GET /api/v1/trail-assistant/map-reports/public`
+        - auth: `POST /api/v1/trail-assistant/map-reports`, `GET /api/v1/trail-assistant/map-reports`, `POST /api/v1/trail-assistant/map-reports/{reportId}/resolve`
+    - Added safety controls:
+      - idempotency key replay support
+      - per-user duplicate window guard
+      - expiration windows and visibility trust gating for public feed
+    - Added map-report API tests (`backend/tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php`).
+    - Updated mobile API contract with realtime map-report endpoints.
+    - Added realtime stack decision doc (`docs/business/trail-assistant-realtime-stack-decision.md`) defining hybrid Laravel + SpacetimeDB architecture.
+  - **Next step:** implement moderator verification endpoint + emergency/SOS escalation workflow.
+  - **Blocker status:** none.
