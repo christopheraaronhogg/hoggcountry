@@ -53,6 +53,11 @@ Escalation path:
 - Coarse location mode is supported to reduce precision in shared feeds.
 - Authenticated feed supports `trusted` scope while public feed remains `public` only.
 
+### Governance policy controls (non-secret)
+- Moderator policy controls are managed through authenticated governance endpoints.
+- Only non-secret values are allowed (IDs/emails/visibility policies).
+- Secrets (tokens/credentials/keys) must remain outside governance API payloads.
+
 ## Incident format
 Subject: [Trail Assistant Security] <short issue>
 Body:

@@ -1,6 +1,6 @@
 # Trail Assistant Backlog
 
-Last updated: 2026-02-28 00:20 CT
+Last updated: 2026-02-28 18:55 CT
 
 ## P0 — Mobile core (must ship first)
 - [x] Intake endpoint + routing labels (`POST /api/v1/trail-assistant/intake`)
@@ -23,6 +23,8 @@ Last updated: 2026-02-28 00:20 CT
 - [x] Add map-report moderator verification workflow (promote unverified -> trusted/moderator_verified)
 - [x] Add emergency/SOS escalation path and response protocol
 - [x] Add privacy controls for shared map visibility (scope + coarse mode + delayed visibility)
+- [x] Add moderator governance configuration endpoint + process docs (non-secret policy controls)
+- [x] Improve SOS responder queue operational visibility payload (queue metrics + SLA signals)
 
 ## P1 — Operations automation
 - [ ] Daily runlog autopdater helper
@@ -32,8 +34,8 @@ Last updated: 2026-02-28 00:20 CT
 ## P2 — Mobile product layer
 - [x] Mobile-first roadmap drafted
 - [x] Subscription event/state model documented (pre-Stripe)
-- [ ] Phone app screen contract refinement (Home / Chat / Check-in / Progress / Account)
-- [ ] Offline check-in replay strategy doc + implementation hooks
+- [x] Phone app screen contract refinement (Home / Chat / Check-in / Progress / Account)
+- [x] Offline check-in replay strategy doc + implementation hooks
 
 ## P2 — Marketing engine (approval-gated)
 - [ ] Draft 10 YouTube concepts for AT prep + on-trail support

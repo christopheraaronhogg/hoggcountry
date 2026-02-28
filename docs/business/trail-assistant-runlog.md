@@ -97,6 +97,18 @@
   - **Next step:** implement moderator verification endpoint + emergency/SOS escalation workflow.
   - **Blocker status:** none.
 
+- **2026-02-27 18:15 CST — Evening brief sweep**
+  - Wins: Mobile-core API backlog (P0) is fully closed, intake/chat/check-in/progress lanes validated, and realtime safety map-report layer shipped.
+  - Queue: P0 open 0, P1 open 7.
+  - Tomorrow focus: run 5-request pilot simulation, add suspicious-request quarantine path, and stand up runlog/blocker-email automation helpers.
+  - Blockers: no unresolved owner-decision blocker older than 24h; blocker escalation email not required.
+
+- **2026-02-27 18:20 CST**
+  - **Task worked:** Daily owner brief compilation.
+  - **Email target:** from `chris.stitchscreen@gmail.com` to `christopheraaronhogg@gmail.com`.
+  - **Subject:** `Trail Assistant Daily Brief - 2026-02-27`.
+  - **Status:** Brief prepared from today's runlog entries; external-recipient delivery deferred per cron handoff rule.
+
 - **2026-02-28 00:20 CST**
   - **Task worked:** Trail Assistant safety hardening phase (moderation + SOS + map-sharing privacy controls).
   - **What changed:**
@@ -123,4 +135,29 @@
   - **Validation:**
     - `php artisan test tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php tests/Feature/Api/V1/TrailAssistantSosApiTest.php tests/Feature/Api/V1/TrailAssistantMapVisibilityApiTest.php tests/Feature/Api/V1/TrailAssistantCheckinApiTest.php` ✅ (16 tests, 105 assertions)
   - **Next step:** pilot simulation run + suspicious-request quarantine queue policy.
+  - **Blocker status:** none.
+
+- **2026-02-28 18:55 CST**
+  - **Task worked:** Governance controls + SOS queue visibility + phone screen/offline replay hardening pass.
+  - **What changed:**
+    - Added moderator governance configuration surface (non-secret controls):
+      - routes: `GET/PUT /api/v1/trail-assistant/governance/moderation`
+      - persistence: `trail_assistant_governance_settings`
+      - policy support class: `TrailAssistantGovernanceConfig`
+      - moderator gate + map-report trust/public visibility now read governance snapshot.
+    - Improved SOS queue operational visibility:
+      - `GET /api/v1/trail-assistant/sos/escalations?scope=queue` now includes `operations` snapshot (open counts, SLA thresholds/breaches, oldest age, contact-method breakdown, flagged-open count).
+      - queue payload rows now include `queue_age_minutes`, `is_ack_sla_breached`, `is_resolution_sla_breached`.
+    - Added phone app offline replay hooks:
+      - check-in API accepts and de-dupes on `Idempotency-Key` + `client_event_id` (user-scoped) with replay metadata.
+      - chat API supports replay hooks (`Idempotency-Key`, `client_event_id`, `replayed_from_offline`) and duplicate replay responses.
+      - new check-in sync fields persisted in DB (`idempotency_key`, `client_event_id`, `replayed_from_offline`, `sync_metadata`).
+    - Added process/contract docs:
+      - `docs/business/trail-assistant-moderator-governance.md`
+      - `docs/business/trail-assistant-phone-screen-contract.md`
+      - updated mobile API contract + roadmap + backlog.
+    - Added feature tests for governance, SOS ops snapshot, and replay hooks.
+  - **Validation:**
+    - `php artisan test tests/Feature/Api/V1/TrailAssistantGovernanceApiTest.php tests/Feature/Api/V1/TrailAssistantSosApiTest.php tests/Feature/Api/V1/TrailAssistantChatApiTest.php tests/Feature/Api/V1/TrailAssistantCheckinApiTest.php tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php tests/Feature/Api/V1/TrailAssistantMapVisibilityApiTest.php tests/Feature/Api/V1/TrailAssistantOpsApiTest.php` ✅ (29 tests, 189 assertions)
+  - **Next step:** pilot simulation + suspicious-request quarantine path.
   - **Blocker status:** none.

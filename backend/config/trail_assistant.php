@@ -83,6 +83,10 @@ return [
             'christopheraaronhogg@gmail.com',
             'chris@stitchscreen.com',
         ],
+        'ops' => [
+            'ack_sla_minutes' => 15,
+            'resolution_sla_minutes' => 180,
+        ],
     ],
 
     'map_sharing' => [

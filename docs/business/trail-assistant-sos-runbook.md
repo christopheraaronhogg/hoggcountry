@@ -29,6 +29,15 @@ Define safe handling for `POST /api/v1/trail-assistant/sos/escalate` so emergenc
    - set status to `resolved`
    - include closure note in moderation metadata
 
+### Queue visibility signals (response `data.operations`)
+- `open_total`, `pending_review`, `acknowledged`
+- `oldest_open_age_minutes`, `oldest_pending_age_minutes`
+- `pending_over_ack_sla`, `acknowledged_over_resolution_sla`
+- `flagged_open`
+- `contact_method_breakdown`
+
+Use these counters to prioritize stale or high-risk backlog before taking less urgent items.
+
 ## Safety notes
 - API creates **manual-review** tickets only; it does not auto-dispatch emergency services.
 - Always instruct user to call local emergency services if immediate danger is present.

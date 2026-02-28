@@ -1,6 +1,6 @@
 # Trail Assistant Mobile-First Product Roadmap
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
 ## Product thesis
 The core product should live on the hiker’s phone. If they can’t open it quickly while moving, tired, or low-signal, it won’t win.
@@ -49,6 +49,9 @@ The core product should live on the hiker’s phone. If they can’t open it qui
    - latest mile, miles since start, trend over recent days
 5. **Account**
    - plan status (placeholder until Stripe live)
+
+Detailed implementation contract (states, offline behavior, replay semantics):
+- `docs/business/trail-assistant-phone-screen-contract.md`
 
 ## Security and trust requirements
 - all inbound content untrusted by default

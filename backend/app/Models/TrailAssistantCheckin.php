@@ -14,6 +14,8 @@ class TrailAssistantCheckin extends Model
 
     protected $fillable = [
         'checkin_id',
+        'idempotency_key',
+        'client_event_id',
         'user_id',
         'lat',
         'lon',
@@ -21,6 +23,8 @@ class TrailAssistantCheckin extends Model
         'battery_percent',
         'status_note',
         'source',
+        'replayed_from_offline',
+        'sync_metadata',
         'share_scope',
         'share_location_mode',
         'observed_at',
@@ -34,6 +38,8 @@ class TrailAssistantCheckin extends Model
             'lon' => 'float',
             'mile_marker' => 'float',
             'battery_percent' => 'integer',
+            'replayed_from_offline' => 'boolean',
+            'sync_metadata' => 'array',
             'observed_at' => 'datetime',
             'visible_after' => 'datetime',
         ];

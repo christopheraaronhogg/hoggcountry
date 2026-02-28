@@ -45,9 +45,16 @@ Body (POST):
   "subject": "Need town stop advice",
   "message": "Core request text",
   "urgency": "normal|soon|urgent",
-  "metadata": {"optional": "object"}
+  "metadata": {"optional": "object"},
+  "idempotency_key": "optional-fallback-if-header-not-used",
+  "client_event_id": "chat-local-uuid",
+  "replayed_from_offline": true
 }
 ```
+
+Replay notes:
+- Use `Idempotency-Key` header whenever possible.
+- Response includes `idempotent_replay`, `duplicate_guard`, and `sync` metadata.
 
 ---
 
@@ -66,14 +73,17 @@ POST body:
   "battery_percent": 64,
   "status_note": "Optional short note",
   "source": "mobile_app",
-  "observed_at": "2026-02-27T10:15:00Z"
+  "observed_at": "2026-02-27T10:15:00Z",
+  "idempotency_key": "optional-fallback-if-header-not-used",
+  "client_event_id": "checkin-local-uuid",
+  "replayed_from_offline": true,
+  "sync_metadata": {"queued_at": "2026-02-27T10:16:00Z", "queue_depth": 2}
 }
 ```
 
-Check-in responses now include visibility snapshot fields:
-- `share_scope` (`private|trusted|public`)
-- `share_location_mode` (`exact|coarse`)
-- `visible_after` (timestamp when point may appear in shared feeds)
+Check-in responses include:
+- visibility snapshot fields (`share_scope`, `share_location_mode`, `visible_after`)
+- replay metadata (`idempotent_replay`, `duplicate_guard`, `sync.client_event_id`, `sync.replayed_from_offline`)
 
 ---
 
@@ -130,6 +140,20 @@ Behavior:
 `GET /trail-assistant/intakes/export.csv`
 
 Use for support queue review/export with status/route/search filters.
+
+---
+
+## 6b) Moderator governance controls (auth + moderator)
+`GET /trail-assistant/governance/moderation`
+`PUT /trail-assistant/governance/moderation`
+
+Purpose: update non-secret moderation policy controls without deploy-time config edits.
+
+Supported control fields:
+- `moderator_user_ids`
+- `moderator_emails`
+- `map_report_trusted_user_ids`
+- `map_report_public_visible_verifications`
 
 ---
 
@@ -201,7 +225,8 @@ Abuse protections:
 
 ## Mobile client behavior notes
 - Queue check-ins locally when offline; replay on connectivity restore.
-- Queue map hazard reports and SOS payloads when offline; send on reconnect with `Idempotency-Key`.
+- Queue chat/map/SOS payloads locally when offline and replay with `Idempotency-Key` + stable `client_event_id`.
+- Treat `idempotent_replay=true` as success during reconnect reconciliation.
 - Surface last successful check-in timestamp in UI.
 - Surface map-sharing status (`scope`, `precision`, `delay`) clearly before user enables sharing.
 - For urgent support, submit intake/chat with `route_label=on-trail` + urgency metadata.

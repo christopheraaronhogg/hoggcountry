@@ -72,6 +72,41 @@ class TrailAssistantChatApiTest extends TestCase
             ->assertJsonPath('data.messages.0.urgency', 'urgent');
     }
 
+    public function test_chat_store_supports_client_event_replay_hook(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('trail-chat-sync')->plainTextToken;
+
+        $payload = [
+            'route_label' => 'on-trail',
+            'message' => 'Uploading cached trail note after regaining signal.',
+            'client_event_id' => 'chat-sync-evt-1',
+            'replayed_from_offline' => true,
+        ];
+
+        $first = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/trail-assistant/chat/messages', $payload);
+
+        $first
+            ->assertCreated()
+            ->assertJsonPath('data.idempotent_replay', false)
+            ->assertJsonPath('data.sync.client_event_id', 'chat-sync-evt-1')
+            ->assertJsonPath('data.sync.replayed_from_offline', true);
+
+        $second = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/trail-assistant/chat/messages', $payload);
+
+        $second
+            ->assertOk()
+            ->assertJsonPath('data.idempotent_replay', true)
+            ->assertJsonPath('data.duplicate_guard', 'client_event_id');
+
+        $this->assertSame(
+            $first->json('data.message_id'),
+            $second->json('data.message_id')
+        );
+    }
+
     public function test_chat_endpoints_require_authentication(): void
     {
         $this->postJson('/api/v1/trail-assistant/chat/messages', [

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\TrailAssistantMapReport;
 use App\Models\TrailAssistantMapReportAudit;
+use App\Support\TrailAssistantGovernanceConfig;
 use App\Support\TrailAssistantModeratorGate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -204,10 +205,7 @@ class TrailAssistantMapReportController extends ApiController
         ]);
 
         $limit = (int) ($validated['limit'] ?? 200);
-        $visibleVerifications = config('trail_assistant.map_reports.public_visible_verifications', ['trusted', 'moderator_verified']);
-        if (! is_array($visibleVerifications) || $visibleVerifications === []) {
-            $visibleVerifications = ['trusted', 'moderator_verified'];
-        }
+        $visibleVerifications = TrailAssistantGovernanceConfig::mapReportPublicVisibleVerifications();
 
         $query = TrailAssistantMapReport::query()
             ->where('status', 'active')
@@ -390,9 +388,7 @@ class TrailAssistantMapReportController extends ApiController
 
     private function resolveVerification(Request $request): string
     {
-        $trustedUserIds = config('trail_assistant.map_reports.trusted_user_ids', []);
-
-        if (is_array($trustedUserIds) && in_array((int) $request->user()->id, array_map('intval', $trustedUserIds), true)) {
+        if (in_array((int) $request->user()->id, TrailAssistantGovernanceConfig::mapReportTrustedUserIds(), true)) {
             return 'trusted';
         }
 
@@ -433,7 +429,7 @@ class TrailAssistantMapReportController extends ApiController
     }
 
     /**
-     * @param array<string, mixed> $metadata
+     * @param  array<string, mixed>  $metadata
      */
     private function recordAudit(
         TrailAssistantMapReport $report,

@@ -7,12 +7,13 @@ use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TrackerLiveController;
 use App\Http\Controllers\Api\V1\TrailAssistantChatController;
 use App\Http\Controllers\Api\V1\TrailAssistantCheckinController;
+use App\Http\Controllers\Api\V1\TrailAssistantGovernanceController;
 use App\Http\Controllers\Api\V1\TrailAssistantIntakeController;
-use App\Http\Controllers\Api\V1\TrailAssistantPlanController;
-use App\Http\Controllers\Api\V1\TrailAssistantTriageController;
 use App\Http\Controllers\Api\V1\TrailAssistantMapReportController;
 use App\Http\Controllers\Api\V1\TrailAssistantMapVisibilityController;
+use App\Http\Controllers\Api\V1\TrailAssistantPlanController;
 use App\Http\Controllers\Api\V1\TrailAssistantSosController;
+use App\Http\Controllers\Api\V1\TrailAssistantTriageController;
 use App\Http\Controllers\Api\V1\VideoFeedController;
 use App\Http\Controllers\Api\V1\VideoHoggController;
 use App\Http\Controllers\Api\V1\VideoHoggQueueController;
@@ -91,6 +92,9 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('trail-assistant')->group(function (): void {
             Route::get('/intakes', [TrailAssistantTriageController::class, 'index']);
             Route::get('/intakes/export.csv', [TrailAssistantTriageController::class, 'exportCsv']);
+
+            Route::get('/governance/moderation', [TrailAssistantGovernanceController::class, 'showModeration']);
+            Route::put('/governance/moderation', [TrailAssistantGovernanceController::class, 'updateModeration']);
 
             Route::post('/chat/messages', [TrailAssistantChatController::class, 'store']);
             Route::get('/chat/messages', [TrailAssistantChatController::class, 'index']);

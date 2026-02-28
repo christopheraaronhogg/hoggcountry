@@ -2,14 +2,22 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\TrailAssistantSosEscalation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class TrailAssistantSosApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
 
     public function test_sos_escalation_requires_authentication(): void
     {
@@ -78,6 +86,81 @@ class TrailAssistantSosApiTest extends TestCase
         ])
             ->assertStatus(429)
             ->assertJsonPath('error.code', 'sos_cooldown_active');
+    }
+
+    public function test_moderator_queue_scope_includes_operational_visibility_snapshot(): void
+    {
+        Carbon::setTestNow('2026-02-28 01:00:00');
+
+        $moderator = User::factory()->create(['email' => 'christopheraaronhogg@gmail.com']);
+        $hiker = User::factory()->create();
+
+        TrailAssistantSosEscalation::query()->create([
+            'escalation_id' => 'sos_pendingops1',
+            'user_id' => $hiker->id,
+            'lat' => 35.701,
+            'lon' => -83.301,
+            'message' => 'Need urgent assistance near exposed ridge.',
+            'contact_method' => 'sms',
+            'status' => 'pending_review',
+            'severity' => 'emergency',
+            'requires_manual_dispatch' => true,
+            'triggered_at' => now()->subMinutes(40),
+            'abuse_flags' => ['possible_test_keyword'],
+        ]);
+
+        TrailAssistantSosEscalation::query()->create([
+            'escalation_id' => 'sos_ackops0001',
+            'user_id' => $hiker->id,
+            'lat' => 35.801,
+            'lon' => -83.401,
+            'message' => 'Responder acknowledged but transport still needed.',
+            'contact_method' => 'satellite',
+            'status' => 'acknowledged',
+            'severity' => 'emergency',
+            'requires_manual_dispatch' => true,
+            'triggered_at' => now()->subMinutes(20),
+            'acknowledged_at' => now()->subMinutes(18),
+        ]);
+
+        TrailAssistantSosEscalation::query()->create([
+            'escalation_id' => 'sos_resolved01',
+            'user_id' => $hiker->id,
+            'lat' => 35.901,
+            'lon' => -83.501,
+            'message' => 'Incident resolved earlier today.',
+            'contact_method' => 'in_app',
+            'status' => 'resolved',
+            'severity' => 'emergency',
+            'requires_manual_dispatch' => true,
+            'triggered_at' => now()->subHours(4),
+            'resolved_at' => now()->subHours(3),
+            'acknowledged_at' => now()->subHours(4),
+        ]);
+
+        Sanctum::actingAs($moderator);
+
+        $response = $this->getJson('/api/v1/trail-assistant/sos/escalations?scope=queue');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.operations.open_total', 2)
+            ->assertJsonPath('data.operations.pending_review', 1)
+            ->assertJsonPath('data.operations.acknowledged', 1)
+            ->assertJsonPath('data.operations.resolved_last_24h', 1)
+            ->assertJsonPath('data.operations.flagged_open', 1)
+            ->assertJsonPath('data.operations.oldest_open_age_minutes', 40)
+            ->assertJsonPath('data.operations.pending_over_ack_sla', 1)
+            ->assertJsonPath('data.operations.contact_method_breakdown.sms', 1)
+            ->assertJsonPath('data.operations.contact_method_breakdown.satellite', 1);
+
+        $rows = collect($response->json('data.escalations'));
+        $pending = $rows->firstWhere('escalation_id', 'sos_pendingops1');
+
+        $this->assertIsArray($pending);
+        $this->assertSame(40, $pending['queue_age_minutes']);
+        $this->assertTrue($pending['is_ack_sla_breached']);
+        $this->assertFalse($pending['is_resolution_sla_breached']);
     }
 
     public function test_sos_queue_scope_and_status_updates_require_moderator_guard(): void

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\TrailAssistantCheckin;
 use App\Models\TrailAssistantMapVisibilitySetting;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -25,36 +27,120 @@ class TrailAssistantCheckinController extends ApiController
             'status_note' => ['nullable', 'string', 'max:280'],
             'source' => ['nullable', 'string', Rule::in(self::SOURCES)],
             'observed_at' => ['nullable', 'date'],
+            'idempotency_key' => ['nullable', 'string', 'max:120'],
+            'client_event_id' => ['nullable', 'string', 'max:80'],
+            'replayed_from_offline' => ['nullable', 'boolean'],
+            'sync_metadata' => ['nullable', 'array'],
         ]);
+
+        $userId = (int) $request->user()->id;
+
+        $idempotencyKey = $this->resolveIdempotencyKey($request, $validated['idempotency_key'] ?? null);
+        if ($idempotencyKey) {
+            $existingByKey = TrailAssistantCheckin::query()
+                ->where('user_id', $userId)
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($existingByKey) {
+                return $this->respondWithCheckin(
+                    $existingByKey,
+                    status: 200,
+                    idempotentReplay: true,
+                    duplicateGuard: 'idempotency_key'
+                );
+            }
+        }
+
+        $clientEventId = $this->normalizeClientEventId(
+            (string) (
+                $validated['client_event_id']
+                ?? $request->header('X-Client-Event-Id')
+                ?? ''
+            )
+        );
+
+        if ($clientEventId !== null) {
+            $existingByClientEvent = TrailAssistantCheckin::query()
+                ->where('user_id', $userId)
+                ->where('client_event_id', $clientEventId)
+                ->first();
+
+            if ($existingByClientEvent) {
+                return $this->respondWithCheckin(
+                    $existingByClientEvent,
+                    status: 200,
+                    idempotentReplay: true,
+                    duplicateGuard: 'client_event_id'
+                );
+            }
+        }
 
         $observedAt = isset($validated['observed_at'])
             ? Carbon::parse((string) $validated['observed_at'])->utc()
             : now();
 
         [$shareScope, $shareLocationMode, $visibleAfter] = $this->resolveVisibilityForUser(
-            userId: (int) $request->user()->id,
+            userId: $userId,
             observedAt: $observedAt
         );
 
-        $checkin = TrailAssistantCheckin::query()->create([
-            'checkin_id' => 'tac_'.Str::lower(Str::random(12)),
-            'user_id' => $request->user()->id,
-            'lat' => (float) $validated['lat'],
-            'lon' => (float) $validated['lon'],
-            'mile_marker' => isset($validated['mile_marker']) ? (float) $validated['mile_marker'] : null,
-            'battery_percent' => isset($validated['battery_percent']) ? (int) $validated['battery_percent'] : null,
-            'status_note' => $this->nullableText((string) ($validated['status_note'] ?? ''), 280),
-            'source' => (string) ($validated['source'] ?? 'mobile_app'),
-            'share_scope' => $shareScope,
-            'share_location_mode' => $shareLocationMode,
-            'observed_at' => $observedAt,
-            'visible_after' => $visibleAfter,
-        ]);
+        try {
+            $checkin = TrailAssistantCheckin::query()->create([
+                'checkin_id' => 'tac_'.Str::lower(Str::random(12)),
+                'idempotency_key' => $idempotencyKey,
+                'client_event_id' => $clientEventId,
+                'user_id' => $userId,
+                'lat' => (float) $validated['lat'],
+                'lon' => (float) $validated['lon'],
+                'mile_marker' => isset($validated['mile_marker']) ? (float) $validated['mile_marker'] : null,
+                'battery_percent' => isset($validated['battery_percent']) ? (int) $validated['battery_percent'] : null,
+                'status_note' => $this->nullableText((string) ($validated['status_note'] ?? ''), 280),
+                'source' => (string) ($validated['source'] ?? 'mobile_app'),
+                'replayed_from_offline' => (bool) ($validated['replayed_from_offline'] ?? false),
+                'sync_metadata' => $this->normalizeSyncMetadata($validated['sync_metadata'] ?? []),
+                'share_scope' => $shareScope,
+                'share_location_mode' => $shareLocationMode,
+                'observed_at' => $observedAt,
+                'visible_after' => $visibleAfter,
+            ]);
+        } catch (QueryException $exception) {
+            if ($idempotencyKey && $this->isSyncConstraintViolation($exception, 'trail_checkins_user_idempotency_unique')) {
+                $existingByKey = TrailAssistantCheckin::query()
+                    ->where('user_id', $userId)
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->first();
 
-        return $this->ok([
-            'checkin' => $this->checkinPayload($checkin),
-            'progress' => $this->progressSnapshotForUser((int) $request->user()->id),
-        ], 201);
+                if ($existingByKey) {
+                    return $this->respondWithCheckin(
+                        $existingByKey,
+                        status: 200,
+                        idempotentReplay: true,
+                        duplicateGuard: 'idempotency_key'
+                    );
+                }
+            }
+
+            if ($clientEventId !== null && $this->isSyncConstraintViolation($exception, 'trail_checkins_user_client_event_unique')) {
+                $existingByClientEvent = TrailAssistantCheckin::query()
+                    ->where('user_id', $userId)
+                    ->where('client_event_id', $clientEventId)
+                    ->first();
+
+                if ($existingByClientEvent) {
+                    return $this->respondWithCheckin(
+                        $existingByClientEvent,
+                        status: 200,
+                        idempotentReplay: true,
+                        duplicateGuard: 'client_event_id'
+                    );
+                }
+            }
+
+            throw $exception;
+        }
+
+        return $this->respondWithCheckin($checkin, status: 201);
     }
 
     public function index(Request $request)
@@ -123,6 +209,24 @@ class TrailAssistantCheckinController extends ApiController
         ]);
     }
 
+    private function respondWithCheckin(
+        TrailAssistantCheckin $checkin,
+        int $status = 200,
+        bool $idempotentReplay = false,
+        ?string $duplicateGuard = null,
+    ): JsonResponse {
+        return $this->ok([
+            'checkin' => $this->checkinPayload($checkin),
+            'progress' => $this->progressSnapshotForUser((int) $checkin->user_id),
+            'idempotent_replay' => $idempotentReplay,
+            'duplicate_guard' => $duplicateGuard,
+            'sync' => [
+                'client_event_id' => $checkin->client_event_id,
+                'replayed_from_offline' => (bool) $checkin->replayed_from_offline,
+            ],
+        ], $status);
+    }
+
     private function checkinPayload(TrailAssistantCheckin $checkin): array
     {
         return [
@@ -133,6 +237,10 @@ class TrailAssistantCheckinController extends ApiController
             'battery_percent' => $checkin->battery_percent,
             'status_note' => $checkin->status_note,
             'source' => $checkin->source,
+            'idempotency_key' => $checkin->idempotency_key,
+            'client_event_id' => $checkin->client_event_id,
+            'replayed_from_offline' => (bool) $checkin->replayed_from_offline,
+            'sync_metadata' => $checkin->sync_metadata,
             'share_scope' => $checkin->share_scope,
             'share_location_mode' => $checkin->share_location_mode,
             'visible_after' => $checkin->visible_after?->toISOString(),
@@ -197,6 +305,97 @@ class TrailAssistantCheckinController extends ApiController
                 ->where('user_id', $userId)
                 ->count(),
         ];
+    }
+
+    private function resolveIdempotencyKey(Request $request, ?string $fallback): ?string
+    {
+        $raw = $request->header('Idempotency-Key')
+            ?? $request->header('X-Idempotency-Key')
+            ?? $fallback;
+
+        if (! is_string($raw)) {
+            return null;
+        }
+
+        $normalized = Str::of($raw)
+            ->ascii()
+            ->replaceMatches('/[^A-Za-z0-9:_\-.]+/', '-')
+            ->trim('-')
+            ->limit(120, '')
+            ->toString();
+
+        return $normalized === '' ? null : $normalized;
+    }
+
+    private function normalizeClientEventId(string $value): ?string
+    {
+        $normalized = Str::of($value)
+            ->ascii()
+            ->replaceMatches('/[^A-Za-z0-9:_\-.]+/', '-')
+            ->trim('-')
+            ->limit(80, '')
+            ->toString();
+
+        return $normalized === '' ? null : $normalized;
+    }
+
+    private function normalizeSyncMetadata(mixed $value, int $depth = 0): mixed
+    {
+        if ($depth >= 4) {
+            return [];
+        }
+
+        if (! is_array($value)) {
+            if (is_bool($value) || is_int($value) || is_float($value) || is_null($value)) {
+                return $value;
+            }
+
+            return $this->nullableText((string) $value, 300);
+        }
+
+        if (array_is_list($value)) {
+            $normalized = [];
+            foreach ($value as $entry) {
+                $normalized[] = $this->normalizeSyncMetadata($entry, $depth + 1);
+                if (count($normalized) >= 20) {
+                    break;
+                }
+            }
+
+            return $normalized;
+        }
+
+        $normalized = [];
+        foreach ($value as $key => $entry) {
+            $normalizedKey = Str::of((string) $key)
+                ->ascii()
+                ->replaceMatches('/[^A-Za-z0-9_\-.]+/', '_')
+                ->trim('_')
+                ->limit(60, '')
+                ->toString();
+
+            if ($normalizedKey === '') {
+                continue;
+            }
+
+            $normalized[$normalizedKey] = $this->normalizeSyncMetadata($entry, $depth + 1);
+
+            if (count($normalized) >= 40) {
+                break;
+            }
+        }
+
+        ksort($normalized);
+
+        return $normalized;
+    }
+
+    private function isSyncConstraintViolation(QueryException $exception, string $constraintName): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? '');
+        $message = Str::lower($exception->getMessage());
+
+        return $sqlState === '23000' && str_contains($message, Str::lower($constraintName));
     }
 
     /**

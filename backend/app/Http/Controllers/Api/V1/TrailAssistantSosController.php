@@ -154,6 +154,8 @@ class TrailAssistantSosController extends ApiController
         $validated = $request->validate([
             'scope' => ['nullable', 'string', Rule::in(['mine', 'queue'])],
             'status' => ['nullable', 'string', Rule::in(['pending_review', 'acknowledged', 'resolved'])],
+            'contact_method' => ['nullable', 'string', Rule::in($this->allowedContactMethods())],
+            'since' => ['nullable', 'date'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
@@ -170,20 +172,35 @@ class TrailAssistantSosController extends ApiController
                 return $this->fail('forbidden', 'Only moderators can access SOS queue scope.', 403);
             }
 
-            $query->whereIn('status', ['pending_review', 'acknowledged']);
+            if (! isset($validated['status'])) {
+                $query->whereIn('status', ['pending_review', 'acknowledged']);
+            }
         }
 
         $query
             ->when(isset($validated['status']), fn ($q) => $q->where('status', $validated['status']))
+            ->when(isset($validated['contact_method']), fn ($q) => $q->where('contact_method', $validated['contact_method']))
+            ->when(isset($validated['since']), fn ($q) => $q->where('triggered_at', '>=', CarbonImmutable::parse((string) $validated['since'])->utc()))
             ->orderByDesc('triggered_at')
             ->orderByDesc('id')
             ->limit($limit);
 
-        $rows = $query->get()->map(fn (TrailAssistantSosEscalation $escalation): array => $this->payload($escalation, includeReporter: $scope === 'queue'))->all();
+        $queueOps = null;
+
+        if ($scope === 'queue') {
+            $queueOps = $this->queueOperationsSnapshot($validated);
+        }
+
+        $rows = $query->get()->map(fn (TrailAssistantSosEscalation $escalation): array => $this->payload(
+            $escalation,
+            includeReporter: $scope === 'queue',
+            includeOps: $scope === 'queue'
+        ))->all();
 
         return $this->ok([
             'scope' => $scope,
             'escalations' => $rows,
+            'operations' => $queueOps,
         ]);
     }
 
@@ -298,8 +315,10 @@ class TrailAssistantSosController extends ApiController
             ->toString();
     }
 
-    private function payload(TrailAssistantSosEscalation $escalation, bool $includeReporter = false): array
+    private function payload(TrailAssistantSosEscalation $escalation, bool $includeReporter = false, bool $includeOps = false): array
     {
+        $queueAgeMinutes = $this->queueAgeMinutes($escalation);
+
         $payload = [
             'escalation_id' => $escalation->escalation_id,
             'lat' => $escalation->lat,
@@ -330,7 +349,112 @@ class TrailAssistantSosController extends ApiController
             ];
         }
 
+        if ($includeOps) {
+            $payload['queue_age_minutes'] = $queueAgeMinutes;
+            $payload['is_ack_sla_breached'] = $escalation->status === 'pending_review'
+                ? $queueAgeMinutes >= $this->ackSlaMinutes()
+                : false;
+            $payload['is_resolution_sla_breached'] = $escalation->status === 'acknowledged'
+                ? $queueAgeMinutes >= $this->resolutionSlaMinutes()
+                : false;
+        }
+
         return $payload;
+    }
+
+    /**
+     * @param  array{status?:string,contact_method?:string,since?:string}  $filters
+     */
+    private function queueOperationsSnapshot(array $filters): array
+    {
+        $query = TrailAssistantSosEscalation::query();
+
+        if (isset($filters['contact_method'])) {
+            $query->where('contact_method', (string) $filters['contact_method']);
+        }
+
+        if (isset($filters['since'])) {
+            $query->where('triggered_at', '>=', CarbonImmutable::parse((string) $filters['since'])->utc());
+        }
+
+        $openEscalations = (clone $query)
+            ->whereIn('status', ['pending_review', 'acknowledged'])
+            ->orderBy('triggered_at')
+            ->orderBy('id')
+            ->get();
+
+        $pendingCount = $openEscalations->where('status', 'pending_review')->count();
+        $acknowledgedCount = $openEscalations->where('status', 'acknowledged')->count();
+
+        $queueAges = $openEscalations
+            ->map(fn (TrailAssistantSosEscalation $escalation): int => $this->queueAgeMinutes($escalation))
+            ->values();
+
+        $pendingAges = $openEscalations
+            ->where('status', 'pending_review')
+            ->map(fn (TrailAssistantSosEscalation $escalation): int => $this->queueAgeMinutes($escalation))
+            ->values();
+
+        $contactBreakdown = $openEscalations
+            ->groupBy(fn (TrailAssistantSosEscalation $escalation): string => (string) $escalation->contact_method)
+            ->map(fn ($group): int => $group->count())
+            ->sortKeys()
+            ->all();
+
+        $ackSlaMinutes = $this->ackSlaMinutes();
+        $resolutionSlaMinutes = $this->resolutionSlaMinutes();
+
+        $resolvedLast24h = (clone $query)
+            ->where('status', 'resolved')
+            ->where('resolved_at', '>=', now()->subDay())
+            ->count();
+
+        $flaggedOpen = $openEscalations
+            ->filter(fn (TrailAssistantSosEscalation $escalation): bool => is_array($escalation->abuse_flags) && count($escalation->abuse_flags) > 0)
+            ->count();
+
+        return [
+            'open_total' => $openEscalations->count(),
+            'pending_review' => $pendingCount,
+            'acknowledged' => $acknowledgedCount,
+            'resolved_last_24h' => $resolvedLast24h,
+            'flagged_open' => $flaggedOpen,
+            'oldest_open_age_minutes' => $queueAges->max(),
+            'oldest_pending_age_minutes' => $pendingAges->max(),
+            'pending_over_ack_sla' => $pendingAges->filter(fn (int $age): bool => $age >= $ackSlaMinutes)->count(),
+            'acknowledged_over_resolution_sla' => $openEscalations
+                ->where('status', 'acknowledged')
+                ->map(fn (TrailAssistantSosEscalation $escalation): int => $this->queueAgeMinutes($escalation))
+                ->filter(fn (int $age): bool => $age >= $resolutionSlaMinutes)
+                ->count(),
+            'sla' => [
+                'ack_minutes' => $ackSlaMinutes,
+                'resolution_minutes' => $resolutionSlaMinutes,
+            ],
+            'contact_method_breakdown' => $contactBreakdown,
+            'generated_at' => now()->toISOString(),
+        ];
+    }
+
+    private function ackSlaMinutes(): int
+    {
+        return max(1, (int) config('trail_assistant.sos.ops.ack_sla_minutes', 15));
+    }
+
+    private function resolutionSlaMinutes(): int
+    {
+        return max($this->ackSlaMinutes(), (int) config('trail_assistant.sos.ops.resolution_sla_minutes', 180));
+    }
+
+    private function queueAgeMinutes(TrailAssistantSosEscalation $escalation): int
+    {
+        $start = $escalation->triggered_at ?? $escalation->created_at;
+
+        if ($start === null) {
+            return 0;
+        }
+
+        return (int) max(0, $start->diffInMinutes(now()));
     }
 
     private function normalizeMetadata(mixed $value, int $depth = 0): mixed
