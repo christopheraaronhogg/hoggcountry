@@ -21,7 +21,10 @@ class TrailAssistantCheckin extends Model
         'battery_percent',
         'status_note',
         'source',
+        'share_scope',
+        'share_location_mode',
         'observed_at',
+        'visible_after',
     ];
 
     protected function casts(): array
@@ -32,6 +35,7 @@ class TrailAssistantCheckin extends Model
             'mile_marker' => 'float',
             'battery_percent' => 'integer',
             'observed_at' => 'datetime',
+            'visible_after' => 'datetime',
         ];
     }
 

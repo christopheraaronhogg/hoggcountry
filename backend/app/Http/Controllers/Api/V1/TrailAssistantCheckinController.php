@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\TrailAssistantCheckin;
+use App\Models\TrailAssistantMapVisibilitySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -30,6 +31,11 @@ class TrailAssistantCheckinController extends ApiController
             ? Carbon::parse((string) $validated['observed_at'])->utc()
             : now();
 
+        [$shareScope, $shareLocationMode, $visibleAfter] = $this->resolveVisibilityForUser(
+            userId: (int) $request->user()->id,
+            observedAt: $observedAt
+        );
+
         $checkin = TrailAssistantCheckin::query()->create([
             'checkin_id' => 'tac_'.Str::lower(Str::random(12)),
             'user_id' => $request->user()->id,
@@ -39,7 +45,10 @@ class TrailAssistantCheckinController extends ApiController
             'battery_percent' => isset($validated['battery_percent']) ? (int) $validated['battery_percent'] : null,
             'status_note' => $this->nullableText((string) ($validated['status_note'] ?? ''), 280),
             'source' => (string) ($validated['source'] ?? 'mobile_app'),
+            'share_scope' => $shareScope,
+            'share_location_mode' => $shareLocationMode,
             'observed_at' => $observedAt,
+            'visible_after' => $visibleAfter,
         ]);
 
         return $this->ok([
@@ -124,6 +133,9 @@ class TrailAssistantCheckinController extends ApiController
             'battery_percent' => $checkin->battery_percent,
             'status_note' => $checkin->status_note,
             'source' => $checkin->source,
+            'share_scope' => $checkin->share_scope,
+            'share_location_mode' => $checkin->share_location_mode,
+            'visible_after' => $checkin->visible_after?->toISOString(),
             'observed_at' => $checkin->observed_at?->toISOString(),
             'created_at' => $checkin->created_at?->toISOString(),
         ];
@@ -184,6 +196,54 @@ class TrailAssistantCheckinController extends ApiController
             'checkin_count' => TrailAssistantCheckin::query()
                 ->where('user_id', $userId)
                 ->count(),
+        ];
+    }
+
+    /**
+     * @return array{0:string,1:string,2:?Carbon}
+     */
+    private function resolveVisibilityForUser(int $userId, Carbon $observedAt): array
+    {
+        $settings = TrailAssistantMapVisibilitySetting::query()->firstOrCreate(
+            ['user_id' => $userId],
+            [
+                'share_scope' => (string) config('trail_assistant.map_sharing.default_scope', 'private'),
+                'location_mode' => (string) config('trail_assistant.map_sharing.default_location_mode', 'coarse'),
+                'visibility_delay_minutes' => (int) config('trail_assistant.map_sharing.default_visibility_delay_minutes', 90),
+            ]
+        );
+
+        $allowedScopes = config('trail_assistant.map_sharing.scopes', ['private', 'trusted', 'public']);
+        $allowedModes = config('trail_assistant.map_sharing.location_modes', ['exact', 'coarse']);
+
+        if (! is_array($allowedScopes) || ! in_array((string) $settings->share_scope, $allowedScopes, true)) {
+            $settings->share_scope = 'private';
+        }
+
+        if (! is_array($allowedModes) || ! in_array((string) $settings->location_mode, $allowedModes, true)) {
+            $settings->location_mode = 'coarse';
+        }
+
+        $delayMinutes = max(0, min(
+            (int) config('trail_assistant.map_sharing.max_visibility_delay_minutes', 1440),
+            (int) $settings->visibility_delay_minutes
+        ));
+
+        if ((string) $settings->share_scope === 'public') {
+            $delayMinutes = max(
+                (int) config('trail_assistant.map_sharing.min_public_delay_minutes', 30),
+                $delayMinutes
+            );
+        }
+
+        if ((string) $settings->share_scope === 'private') {
+            return ['private', (string) $settings->location_mode, null];
+        }
+
+        return [
+            (string) $settings->share_scope,
+            (string) $settings->location_mode,
+            $observedAt->copy()->addMinutes($delayMinutes),
         ];
     }
 

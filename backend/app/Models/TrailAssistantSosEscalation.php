@@ -5,31 +5,32 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class TrailAssistantMapReport extends Model
+class TrailAssistantSosEscalation extends Model
 {
     use HasFactory;
 
-    protected $table = 'trail_assistant_map_reports';
+    protected $table = 'trail_assistant_sos_escalations';
 
     protected $fillable = [
-        'report_id',
+        'escalation_id',
         'user_id',
         'idempotency_key',
         'dedupe_fingerprint',
         'lat',
         'lon',
         'mile_marker',
-        'kind',
-        'severity',
         'message',
-        'source',
-        'verification',
+        'contact_method',
         'status',
-        'occurred_at',
-        'expires_at',
+        'severity',
+        'requires_manual_dispatch',
+        'triggered_at',
+        'cooldown_until',
+        'acknowledged_at',
         'resolved_at',
+        'abuse_flags',
+        'metadata',
     ];
 
     protected function casts(): array
@@ -38,19 +39,18 @@ class TrailAssistantMapReport extends Model
             'lat' => 'float',
             'lon' => 'float',
             'mile_marker' => 'float',
-            'occurred_at' => 'datetime',
-            'expires_at' => 'datetime',
+            'requires_manual_dispatch' => 'boolean',
+            'triggered_at' => 'datetime',
+            'cooldown_until' => 'datetime',
+            'acknowledged_at' => 'datetime',
             'resolved_at' => 'datetime',
+            'abuse_flags' => 'array',
+            'metadata' => 'array',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function audits(): HasMany
-    {
-        return $this->hasMany(TrailAssistantMapReportAudit::class, 'map_report_id');
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\V1;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class TrailAssistantMapReportApiTest extends TestCase
@@ -106,5 +107,82 @@ class TrailAssistantMapReportApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.report.report_id', $firstId)
             ->assertJsonPath('data.idempotent_replay', true);
+    }
+
+    public function test_moderator_can_promote_unverified_report_with_audit_trail(): void
+    {
+        $reporter = User::factory()->create();
+
+        $moderator = User::factory()->create([
+            'email' => 'christopheraaronhogg@gmail.com',
+        ]);
+
+        Sanctum::actingAs($reporter);
+
+        $create = $this->postJson('/api/v1/trail-assistant/map-reports', [
+            'lat' => 35.455,
+            'lon' => -83.501,
+            'kind' => 'trail_closed',
+            'severity' => 'danger',
+            'message' => 'Flooding near crossing, reroute needed.',
+        ]);
+
+        $create->assertCreated()->assertJsonPath('data.report.verification', 'unverified');
+        $reportId = (string) $create->json('data.report.report_id');
+
+        Sanctum::actingAs($moderator);
+
+        $verify = $this->postJson("/api/v1/trail-assistant/map-reports/{$reportId}/verify", [
+            'target_verification' => 'moderator_verified',
+            'note' => 'Cross-checked with second report and local ranger update.',
+        ]);
+
+        $verify
+            ->assertOk()
+            ->assertJsonPath('data.report.verification', 'moderator_verified')
+            ->assertJsonPath('data.audit_event.action', 'verification_promoted');
+
+        $this->assertDatabaseHas('trail_assistant_map_report_audits', [
+            'report_id' => $reportId,
+            'action' => 'verification_promoted',
+            'from_verification' => 'unverified',
+            'to_verification' => 'moderator_verified',
+            'actor_user_id' => $moderator->id,
+        ]);
+
+        $this->getJson('/api/v1/trail-assistant/map-reports/public')
+            ->assertOk()
+            ->assertJsonCount(1, 'data.reports')
+            ->assertJsonPath('data.reports.0.report_id', $reportId);
+    }
+
+    public function test_non_moderator_cannot_promote_report_verification(): void
+    {
+        $reporter = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        Sanctum::actingAs($reporter);
+
+        $create = $this->postJson('/api/v1/trail-assistant/map-reports', [
+            'lat' => 35.515,
+            'lon' => -83.411,
+            'kind' => 'tree_down',
+            'message' => 'Another blockage near switchback.',
+        ]);
+
+        $create->assertCreated();
+        $reportId = (string) $create->json('data.report.report_id');
+
+        Sanctum::actingAs($otherUser);
+
+        $this->postJson("/api/v1/trail-assistant/map-reports/{$reportId}/verify", [
+            'target_verification' => 'trusted',
+            'note' => 'I should not be allowed to promote this report.',
+        ])->assertStatus(403);
+
+        $this->assertDatabaseMissing('trail_assistant_map_report_audits', [
+            'report_id' => $reportId,
+            'action' => 'verification_promoted',
+        ]);
     }
 }

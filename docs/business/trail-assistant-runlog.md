@@ -96,3 +96,31 @@
     - Added realtime stack decision doc (`docs/business/trail-assistant-realtime-stack-decision.md`) defining hybrid Laravel + SpacetimeDB architecture.
   - **Next step:** implement moderator verification endpoint + emergency/SOS escalation workflow.
   - **Blocker status:** none.
+
+- **2026-02-28 00:20 CST**
+  - **Task worked:** Trail Assistant safety hardening phase (moderation + SOS + map-sharing privacy controls).
+  - **What changed:**
+    - Added moderator verification workflow for map reports:
+      - routes: `POST /api/v1/trail-assistant/map-reports/{reportId}/verify`, `GET /api/v1/trail-assistant/map-reports/{reportId}/audit`
+      - audit model/table: `trail_assistant_map_report_audits`
+      - moderator guard: `App\Support\TrailAssistantModeratorGate`
+      - map-report queue scopes: `mine`, `moderation_queue`, `all`
+    - Added SOS escalation API with abuse protections:
+      - routes: `POST /api/v1/trail-assistant/sos/escalate`, `GET /api/v1/trail-assistant/sos/escalations`, `POST /api/v1/trail-assistant/sos/escalations/{escalationId}/status`
+      - model/table: `trail_assistant_sos_escalations`
+      - protections: idempotency key replay, duplicate fingerprint window, active cooldown lockout, 24h cap, per-route throttle, abuse-flag capture
+    - Added map-sharing privacy controls:
+      - settings routes: `GET/PUT /api/v1/trail-assistant/map-sharing/settings`
+      - feeds: `GET /api/v1/trail-assistant/map-sharing/public`, `GET /api/v1/trail-assistant/map-sharing/feed`
+      - settings table: `trail_assistant_map_visibility_settings`
+      - check-in visibility snapshot fields: `share_scope`, `share_location_mode`, `visible_after`
+      - controls: opt-in scope (`private|trusted|public`), coarse mode, delayed visibility
+    - Updated configuration defaults (`config/trail_assistant.php`) and user/check-in/map-report models.
+    - Added feature tests:
+      - `TrailAssistantMapReportApiTest` (moderation promotion + guard)
+      - `TrailAssistantSosApiTest` (escalation + abuse guard + moderator queue)
+      - `TrailAssistantMapVisibilityApiTest` (coarse mode + delayed visibility + trusted scope)
+  - **Validation:**
+    - `php artisan test tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php tests/Feature/Api/V1/TrailAssistantSosApiTest.php tests/Feature/Api/V1/TrailAssistantMapVisibilityApiTest.php tests/Feature/Api/V1/TrailAssistantCheckinApiTest.php` ✅ (16 tests, 105 assertions)
+  - **Next step:** pilot simulation run + suspicious-request quarantine queue policy.
+  - **Blocker status:** none.

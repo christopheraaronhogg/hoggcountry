@@ -1,6 +1,6 @@
 # Trail Assistant Mobile API Contract (Draft)
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
 Base path: `/api/v1`
 Auth: Bearer token (`auth:sanctum`) for protected endpoints.
@@ -70,9 +70,10 @@ POST body:
 }
 ```
 
-Responses include:
-- `checkin` payload
-- `progress` snapshot (`latest_mile_marker`, `percent_of_at_complete`, etc.)
+Check-in responses now include visibility snapshot fields:
+- `share_scope` (`private|trusted|public`)
+- `share_location_mode` (`exact|coarse`)
+- `visible_after` (timestamp when point may appear in shared feeds)
 
 ---
 
@@ -99,7 +100,32 @@ Response:
 
 ---
 
-## 5) Triage/admin visibility (auth)
+## 5) Map-sharing privacy controls
+### Settings (auth)
+`GET /trail-assistant/map-sharing/settings`
+`PUT /trail-assistant/map-sharing/settings`
+
+PUT body:
+```json
+{
+  "share_scope": "private|trusted|public",
+  "location_mode": "exact|coarse",
+  "visibility_delay_minutes": 90
+}
+```
+
+### Shared feeds
+- Public delayed feed: `GET /trail-assistant/map-sharing/public`
+- Authenticated trusted+public feed: `GET /trail-assistant/map-sharing/feed`
+
+Behavior:
+- `private` scope: not visible to shared feeds.
+- `trusted` scope: visible on authenticated feed once `visible_after` passes.
+- `public` scope: visible on public feed once `visible_after` passes; minimum public delay is enforced.
+
+---
+
+## 6) Triage/admin visibility (auth)
 `GET /trail-assistant/intakes`
 `GET /trail-assistant/intakes/export.csv`
 
@@ -107,16 +133,18 @@ Use for support queue review/export with status/route/search filters.
 
 ---
 
-## 6) Realtime map safety reports
+## 7) Realtime map safety reports
 ### Public feed (safe visibility)
 `GET /trail-assistant/map-reports/public`
 
 Returns only active reports that pass visibility trust rules (`trusted` / `moderator_verified`).
 
-### Authenticated write/read
+### Authenticated write/read/moderation
 `POST /trail-assistant/map-reports` (auth)
 `GET /trail-assistant/map-reports` (auth)
-`POST /trail-assistant/map-reports/{reportId}/resolve` (auth)
+`POST /trail-assistant/map-reports/{reportId}/verify` (moderator)
+`GET /trail-assistant/map-reports/{reportId}/audit` (owner/moderator)
+`POST /trail-assistant/map-reports/{reportId}/resolve` (owner/moderator)
 
 POST body:
 ```json
@@ -137,12 +165,44 @@ Safety controls:
 - per-user duplicate-window guard
 - expiration windows on hazard markers
 - public feed excludes unverified reports
+- moderator verification promotions write immutable audit events
+
+---
+
+## 8) SOS escalation (auth)
+`POST /trail-assistant/sos/escalate`
+`GET /trail-assistant/sos/escalations?scope=mine|queue`
+`POST /trail-assistant/sos/escalations/{escalationId}/status` (moderator)
+
+POST body:
+```json
+{
+  "lat": 35.611,
+  "lon": -83.489,
+  "mile_marker": 243.4,
+  "message": "Emergency details",
+  "contact_method": "in_app|sms|satellite",
+  "observed_at": "2026-02-28T00:10:00Z",
+  "confirm_emergency": true,
+  "metadata": {"optional": "object"}
+}
+```
+
+Abuse protections:
+- explicit emergency confirmation required
+- idempotency replay support
+- duplicate fingerprint window guard
+- cooldown lockout for active escalations
+- 24h per-user cap
+- route-level throttle
+- all escalations require manual responder review (`pending_review`)
 
 ---
 
 ## Mobile client behavior notes
 - Queue check-ins locally when offline; replay on connectivity restore.
-- Queue map hazard reports when offline; send on reconnect with `Idempotency-Key`.
+- Queue map hazard reports and SOS payloads when offline; send on reconnect with `Idempotency-Key`.
 - Surface last successful check-in timestamp in UI.
+- Surface map-sharing status (`scope`, `precision`, `delay`) clearly before user enables sharing.
 - For urgent support, submit intake/chat with `route_label=on-trail` + urgency metadata.
 - Include `Idempotency-Key` on retriable POST requests.

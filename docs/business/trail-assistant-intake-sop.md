@@ -33,6 +33,12 @@ For each request, capture:
 - Resupply/Town Decision Memo
 - Contingency Branch Plan (weather/injury)
 
+## Emergency/SOS handling
+- Use dedicated API path: `POST /api/v1/trail-assistant/sos/escalate`.
+- Never route true emergencies through normal intake triage first.
+- Moderator queue endpoint for active SOS review: `GET /api/v1/trail-assistant/sos/escalations?scope=queue`.
+- Follow `trail-assistant-sos-runbook.md` for acknowledgment and closure workflow.
+
 ## Completion rule
 A request is complete only when:
 - response delivered,

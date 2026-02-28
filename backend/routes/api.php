@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\TrailAssistantIntakeController;
 use App\Http\Controllers\Api\V1\TrailAssistantPlanController;
 use App\Http\Controllers\Api\V1\TrailAssistantTriageController;
 use App\Http\Controllers\Api\V1\TrailAssistantMapReportController;
+use App\Http\Controllers\Api\V1\TrailAssistantMapVisibilityController;
+use App\Http\Controllers\Api\V1\TrailAssistantSosController;
 use App\Http\Controllers\Api\V1\VideoFeedController;
 use App\Http\Controllers\Api\V1\VideoHoggController;
 use App\Http\Controllers\Api\V1\VideoHoggQueueController;
@@ -56,6 +58,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/plans', [TrailAssistantPlanController::class, 'index']);
         Route::post('/intake', [TrailAssistantIntakeController::class, 'store']);
         Route::get('/map-reports/public', [TrailAssistantMapReportController::class, 'publicFeed']);
+        Route::get('/map-sharing/public', [TrailAssistantMapVisibilityController::class, 'publicFeed']);
     });
 
     Route::middleware('auth:sanctum')->group(function (): void {
@@ -98,9 +101,19 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/checkins/history', [TrailAssistantCheckinController::class, 'history']);
             Route::get('/progress', [TrailAssistantCheckinController::class, 'progress']);
 
+            Route::get('/map-sharing/settings', [TrailAssistantMapVisibilityController::class, 'settings']);
+            Route::put('/map-sharing/settings', [TrailAssistantMapVisibilityController::class, 'updateSettings']);
+            Route::get('/map-sharing/feed', [TrailAssistantMapVisibilityController::class, 'authenticatedFeed']);
+
             Route::post('/map-reports', [TrailAssistantMapReportController::class, 'store'])->middleware('throttle:20,1');
             Route::get('/map-reports', [TrailAssistantMapReportController::class, 'index']);
+            Route::post('/map-reports/{reportId}/verify', [TrailAssistantMapReportController::class, 'verify']);
+            Route::get('/map-reports/{reportId}/audit', [TrailAssistantMapReportController::class, 'audit']);
             Route::post('/map-reports/{reportId}/resolve', [TrailAssistantMapReportController::class, 'resolve']);
+
+            Route::post('/sos/escalate', [TrailAssistantSosController::class, 'store'])->middleware('throttle:4,10');
+            Route::get('/sos/escalations', [TrailAssistantSosController::class, 'index']);
+            Route::post('/sos/escalations/{escalationId}/status', [TrailAssistantSosController::class, 'updateStatus']);
         });
 
         Route::prefix('videohogg')->group(function (): void {

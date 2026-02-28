@@ -32,6 +32,27 @@ Escalation path:
 - Send blocker/security email to christopheraaronhogg@gmail.com
 - Do not proceed until reviewed
 
+## Safety controls currently enforced in API
+
+### Map-report moderation safety
+- Public map feed excludes `unverified` reports.
+- Promotion to `trusted` / `moderator_verified` requires authenticated moderator guard.
+- Every moderation transition and resolve action writes an immutable audit event (actor, transition, note, request metadata).
+
+### SOS abuse controls
+- `confirm_emergency=true` is required for escalation acceptance.
+- Idempotency replay guard prevents accidental duplicate submissions.
+- Fingerprint duplicate-window guard prevents burst re-submits of equivalent payloads.
+- Cooldown window blocks repeated active escalations from same user.
+- 24-hour cap limits repeated SOS traffic from one account.
+- All accepted escalations are `pending_review` and require manual responder action (no blind auto-dispatch).
+
+### Shared-map privacy defaults
+- Default map-sharing scope is `private`.
+- Public sharing enforces delayed visibility; no real-time public exposure.
+- Coarse location mode is supported to reduce precision in shared feeds.
+- Authenticated feed supports `trusted` scope while public feed remains `public` only.
+
 ## Incident format
 Subject: [Trail Assistant Security] <short issue>
 Body:

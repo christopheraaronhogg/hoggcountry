@@ -1,6 +1,6 @@
 # Trail Assistant Backlog
 
-Last updated: 2026-02-27 17:30 CT
+Last updated: 2026-02-28 00:20 CT
 
 ## P0 — Mobile core (must ship first)
 - [x] Intake endpoint + routing labels (`POST /api/v1/trail-assistant/intake`)
@@ -18,10 +18,11 @@ Last updated: 2026-02-27 17:30 CT
 - [ ] Simulate 5 realistic hiker requests and score response quality
 - [ ] Measure turnaround time and checklist pass rate
 - [ ] Add FAQ from simulation gaps
-- [ ] Add abuse/rate-limit policy and enforcement notes
+- [x] Add abuse/rate-limit policy and enforcement notes
 - [ ] Add suspicious-request quarantine path in triage workflow
-- [ ] Add map-report moderator verification workflow (promote unverified -> trusted/verified)
-- [ ] Add emergency/SOS escalation path and response protocol
+- [x] Add map-report moderator verification workflow (promote unverified -> trusted/moderator_verified)
+- [x] Add emergency/SOS escalation path and response protocol
+- [x] Add privacy controls for shared map visibility (scope + coarse mode + delayed visibility)
 
 ## P1 — Operations automation
 - [ ] Daily runlog autopdater helper
@@ -41,7 +42,7 @@ Last updated: 2026-02-27 17:30 CT
 - [ ] Add performance tracking sheet (views, clicks, replies, leads)
 
 ## Current active task
-- Active: P1 safety hardening (map-report verification + emergency escalation protocol)
+- Active: P1 pilot simulation + suspicious-request quarantine workflow
 
 ## Completed on 2026-02-27
 - [x] Created autonomous MVP plan
@@ -49,3 +50,9 @@ Last updated: 2026-02-27 17:30 CT
 - [x] Added mobile-first roadmap + API contract + subscription event model
 - [x] Added intake dedupe guard + triage export visibility
 - [x] Added chat/check-in/progress API lanes for mobile app core
+
+## Completed on 2026-02-28
+- [x] Added moderator verification workflow for map reports with auth guard + audit trail
+- [x] Added emergency/SOS escalation API path with idempotency, cooldown, duplicate-window, and daily-cap abuse protections
+- [x] Added map-sharing privacy controls (private/trusted/public scope, coarse mode, delayed visibility)
+- [x] Added feature tests for map verification, SOS flow, and map privacy controls

@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\TrailAssistantMapReport;
+use App\Models\TrailAssistantMapReportAudit;
+use App\Support\TrailAssistantModeratorGate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -37,6 +38,14 @@ class TrailAssistantMapReportController extends ApiController
         }
 
         return array_values(array_filter($levels, fn (mixed $v): bool => is_string($v) && trim($v) !== ''));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function allowedVerificationTargets(): array
+    {
+        return ['trusted', 'moderator_verified'];
     }
 
     public function store(Request $request)
@@ -118,6 +127,16 @@ class TrailAssistantMapReportController extends ApiController
             'expires_at' => $occurredAt->addHours($expiryHours),
         ]);
 
+        $this->recordAudit(
+            report: $report,
+            request: $request,
+            action: 'created',
+            fromVerification: null,
+            toVerification: $report->verification,
+            note: null,
+            metadata: ['source' => $report->source]
+        );
+
         return $this->ok([
             'report' => $this->payload($report),
             'idempotent_replay' => false,
@@ -131,16 +150,34 @@ class TrailAssistantMapReportController extends ApiController
         $validated = $request->validate([
             'kind' => ['nullable', 'string', Rule::in($this->allowedKinds())],
             'status' => ['nullable', 'string', Rule::in(['active', 'resolved', 'hidden'])],
+            'verification' => ['nullable', 'string', Rule::in(['unverified', 'trusted', 'moderator_verified'])],
+            'scope' => ['nullable', 'string', Rule::in(['mine', 'moderation_queue', 'all'])],
             'since' => ['nullable', 'date'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:500'],
         ]);
 
         $limit = (int) ($validated['limit'] ?? 200);
+        $scope = (string) ($validated['scope'] ?? 'mine');
 
-        $query = TrailAssistantMapReport::query()
-            ->where('user_id', $request->user()->id)
+        $query = TrailAssistantMapReport::query();
+
+        if ($scope === 'mine') {
+            $query->where('user_id', $request->user()->id);
+        } else {
+            if (! $this->isModerator($request)) {
+                return $this->fail('forbidden', 'Only moderators can access report queues.', 403);
+            }
+
+            if ($scope === 'moderation_queue') {
+                $query->where('status', 'active')
+                    ->where('verification', 'unverified');
+            }
+        }
+
+        $query
             ->when(isset($validated['kind']), fn ($q) => $q->where('kind', $validated['kind']))
             ->when(isset($validated['status']), fn ($q) => $q->where('status', $validated['status']))
+            ->when(isset($validated['verification']), fn ($q) => $q->where('verification', $validated['verification']))
             ->when(isset($validated['since']), fn ($q) => $q->where('occurred_at', '>=', CarbonImmutable::parse((string) $validated['since'])->utc()))
             ->orderByDesc('occurred_at')
             ->orderByDesc('id')
@@ -149,6 +186,7 @@ class TrailAssistantMapReportController extends ApiController
         $rows = $query->get()->map(fn (TrailAssistantMapReport $report): array => $this->payload($report))->all();
 
         return $this->ok([
+            'scope' => $scope,
             'reports' => $rows,
         ]);
     }
@@ -183,7 +221,7 @@ class TrailAssistantMapReportController extends ApiController
             ->when(isset($validated['max_lat']), fn ($q) => $q->where('lat', '<=', (float) $validated['max_lat']))
             ->when(isset($validated['min_lon']), fn ($q) => $q->where('lon', '>=', (float) $validated['min_lon']))
             ->when(isset($validated['max_lon']), fn ($q) => $q->where('lon', '<=', (float) $validated['max_lon']))
-            ->orderByDesc('severity')
+            ->orderByRaw("case severity when 'emergency' then 4 when 'danger' then 3 when 'caution' then 2 else 1 end desc")
             ->orderByDesc('occurred_at')
             ->limit($limit);
 
@@ -195,21 +233,114 @@ class TrailAssistantMapReportController extends ApiController
         ]);
     }
 
+    public function verify(Request $request, string $reportId)
+    {
+        if (! $this->isModerator($request)) {
+            return $this->fail('forbidden', 'Only moderators can verify reports.', 403);
+        }
+
+        $validated = $request->validate([
+            'target_verification' => ['required', 'string', Rule::in($this->allowedVerificationTargets())],
+            'note' => ['required', 'string', 'min:10', 'max:280'],
+        ]);
+
+        $report = TrailAssistantMapReport::query()->where('report_id', $reportId)->firstOrFail();
+
+        $fromVerification = (string) $report->verification;
+        $targetVerification = (string) $validated['target_verification'];
+
+        if ($fromVerification === $targetVerification) {
+            return $this->ok([
+                'report' => $this->payload($report),
+                'already_in_state' => true,
+            ]);
+        }
+
+        if (! $this->canPromoteVerification($fromVerification, $targetVerification)) {
+            return $this->fail(
+                'invalid_transition',
+                sprintf('Cannot promote verification from "%s" to "%s".', $fromVerification, $targetVerification),
+                422
+            );
+        }
+
+        $report->verification = $targetVerification;
+        $report->save();
+
+        $audit = $this->recordAudit(
+            report: $report,
+            request: $request,
+            action: 'verification_promoted',
+            fromVerification: $fromVerification,
+            toVerification: $targetVerification,
+            note: $this->normalizeText((string) $validated['note'], 280)
+        );
+
+        return $this->ok([
+            'report' => $this->payload($report),
+            'audit_event' => $this->auditPayload($audit),
+            'already_in_state' => false,
+        ]);
+    }
+
+    public function audit(Request $request, string $reportId)
+    {
+        $report = TrailAssistantMapReport::query()->where('report_id', $reportId)->firstOrFail();
+
+        if (! $this->canViewAudit($request, $report)) {
+            return $this->fail('forbidden', 'You are not allowed to view this audit trail.', 403);
+        }
+
+        $validated = $request->validate([
+            'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
+        ]);
+
+        $limit = (int) ($validated['limit'] ?? 50);
+
+        $events = TrailAssistantMapReportAudit::query()
+            ->where('map_report_id', $report->id)
+            ->with('actor:id,name,email')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (TrailAssistantMapReportAudit $audit): array => $this->auditPayload($audit))
+            ->all();
+
+        return $this->ok([
+            'report' => $this->payload($report),
+            'events' => $events,
+        ]);
+    }
+
     public function resolve(Request $request, string $reportId)
     {
         $report = TrailAssistantMapReport::query()->where('report_id', $reportId)->firstOrFail();
 
-        $adminEmails = config('trail_assistant.map_reports.admin_resolver_emails', []);
-        $isAdminResolver = is_array($adminEmails) && in_array(Str::lower((string) $request->user()->email), array_map('strtolower', $adminEmails), true);
         $isOwner = (int) $report->user_id === (int) $request->user()->id;
+        $isModerator = $this->isModerator($request);
 
-        if (! $isOwner && ! $isAdminResolver) {
+        if (! $isOwner && ! $isModerator) {
             return $this->fail('forbidden', 'You are not allowed to resolve this report.', 403);
         }
 
-        $report->status = 'resolved';
-        $report->resolved_at = now();
-        $report->save();
+        $validated = $request->validate([
+            'note' => ['nullable', 'string', 'max:280'],
+        ]);
+
+        if ($report->status !== 'resolved') {
+            $report->status = 'resolved';
+            $report->resolved_at = now();
+            $report->save();
+
+            $this->recordAudit(
+                report: $report,
+                request: $request,
+                action: 'resolved',
+                fromVerification: $report->verification,
+                toVerification: $report->verification,
+                note: isset($validated['note']) ? $this->normalizeText((string) $validated['note'], 280) : null
+            );
+        }
 
         return $this->ok([
             'report' => $this->payload($report),
@@ -268,6 +399,29 @@ class TrailAssistantMapReportController extends ApiController
         return 'unverified';
     }
 
+    private function isModerator(Request $request): bool
+    {
+        return TrailAssistantModeratorGate::canModerate($request->user());
+    }
+
+    private function canViewAudit(Request $request, TrailAssistantMapReport $report): bool
+    {
+        if ($this->isModerator($request)) {
+            return true;
+        }
+
+        return (int) $report->user_id === (int) $request->user()->id;
+    }
+
+    private function canPromoteVerification(string $from, string $to): bool
+    {
+        return match ($from) {
+            'unverified' => in_array($to, ['trusted', 'moderator_verified'], true),
+            'trusted' => $to === 'moderator_verified',
+            default => false,
+        };
+    }
+
     private function normalizeText(string $value, int $max): string
     {
         return Str::of($value)
@@ -276,6 +430,36 @@ class TrailAssistantMapReportController extends ApiController
             ->trim()
             ->limit($max, '')
             ->toString();
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    private function recordAudit(
+        TrailAssistantMapReport $report,
+        Request $request,
+        string $action,
+        ?string $fromVerification,
+        ?string $toVerification,
+        ?string $note = null,
+        array $metadata = [],
+    ): TrailAssistantMapReportAudit {
+        $baseMetadata = [
+            'request_id' => request()->header('x-request-id'),
+            'ip' => $request->ip(),
+            'user_agent' => Str::limit((string) ($request->userAgent() ?? ''), 180, ''),
+        ];
+
+        return TrailAssistantMapReportAudit::query()->create([
+            'map_report_id' => $report->id,
+            'report_id' => $report->report_id,
+            'actor_user_id' => $request->user()->id,
+            'action' => $action,
+            'from_verification' => $fromVerification,
+            'to_verification' => $toVerification,
+            'note' => $note,
+            'metadata' => array_filter(array_merge($baseMetadata, $metadata), static fn (mixed $value): bool => $value !== null && $value !== ''),
+        ]);
     }
 
     private function payload(TrailAssistantMapReport $report, bool $includeOwner = true): array
@@ -302,5 +486,22 @@ class TrailAssistantMapReportController extends ApiController
         }
 
         return $payload;
+    }
+
+    private function auditPayload(TrailAssistantMapReportAudit $audit): array
+    {
+        return [
+            'action' => $audit->action,
+            'from_verification' => $audit->from_verification,
+            'to_verification' => $audit->to_verification,
+            'note' => $audit->note,
+            'created_at' => $audit->created_at?->toISOString(),
+            'actor' => $audit->actor ? [
+                'id' => (string) $audit->actor->id,
+                'name' => $audit->actor->name,
+                'email' => $audit->actor->email,
+            ] : null,
+            'metadata' => $audit->metadata,
+        ];
     }
 }

@@ -62,9 +62,37 @@ return [
         'default_expiry_hours' => 48,
         'public_visible_verifications' => ['trusted', 'moderator_verified'],
         'trusted_user_ids' => [],
+        'moderator_user_ids' => [],
+        'moderator_emails' => [
+            'christopheraaronhogg@gmail.com',
+            'chris@stitchscreen.com',
+        ],
         'admin_resolver_emails' => [
             'christopheraaronhogg@gmail.com',
             'chris@stitchscreen.com',
         ],
+    ],
+
+    'sos' => [
+        'cooldown_minutes' => 15,
+        'duplicate_window_minutes' => 180,
+        'max_requests_per_24h' => 4,
+        'contact_methods' => ['in_app', 'sms', 'satellite'],
+        'moderator_user_ids' => [],
+        'moderator_emails' => [
+            'christopheraaronhogg@gmail.com',
+            'chris@stitchscreen.com',
+        ],
+    ],
+
+    'map_sharing' => [
+        'scopes' => ['private', 'trusted', 'public'],
+        'location_modes' => ['exact', 'coarse'],
+        'default_scope' => 'private',
+        'default_location_mode' => 'coarse',
+        'default_visibility_delay_minutes' => 90,
+        'min_public_delay_minutes' => 30,
+        'max_visibility_delay_minutes' => 1440,
+        'coarse_rounding_decimals' => 2,
     ],
 ];

@@ -90,6 +90,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(TrailAssistantMapReport::class);
     }
 
+    public function trailAssistantSosEscalations(): HasMany
+    {
+        return $this->hasMany(TrailAssistantSosEscalation::class);
+    }
+
+    public function trailAssistantMapVisibilitySetting(): HasOne
+    {
+        return $this->hasOne(TrailAssistantMapVisibilitySetting::class);
+    }
+
     public function videohoggRuns(): HasMany
     {
         return $this->hasMany(VideoHoggRun::class);
