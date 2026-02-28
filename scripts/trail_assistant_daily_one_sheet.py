@@ -46,6 +46,14 @@ class RunlogEntry:
     blocker: str = ""
 
 
+@dataclass
+class ScreenshotSource:
+    file_name: str
+    label: str
+    url: str
+    status: str
+
+
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
@@ -238,6 +246,31 @@ def list_screenshots(asset_dir: Path) -> list[Path]:
     return sorted(shots)
 
 
+def parse_screenshot_sources(asset_dir: Path) -> dict[str, ScreenshotSource]:
+    source_file = asset_dir / "_sources.tsv"
+    if not source_file.exists():
+        return {}
+
+    sources: dict[str, ScreenshotSource] = {}
+    for raw in source_file.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("file\t"):
+            continue
+        parts = line.split("\t")
+        if len(parts) < 4:
+            continue
+
+        file_name, label, url, status = parts[0], parts[1], parts[2], parts[3]
+        sources[file_name] = ScreenshotSource(
+            file_name=file_name,
+            label=label,
+            url=url,
+            status=status,
+        )
+
+    return sources
+
+
 def pct(done: int, total: int) -> str:
     return "0%" if total <= 0 else f"{round((done / total) * 100)}%"
 
@@ -264,6 +297,7 @@ def build_html(
     tests: list[tuple[int, int]],
     commits: list[tuple[str, str, str]],
     screenshots: list[Path],
+    screenshot_sources: dict[str, ScreenshotSource],
     output_path: Path,
 ) -> str:
     day_dt = datetime.fromisoformat(day)
@@ -321,12 +355,22 @@ def build_html(
     rel_asset_base = Path("assets") / day
     for shot in screenshots:
         rel = rel_asset_base / shot.name
-        caption = shot.stem.replace("-", " ")
+        meta = screenshot_sources.get(shot.name)
+        caption = meta.label if meta else shot.stem.replace("-", " ")
+
+        source_line = ""
+        if meta and meta.url:
+            source_line = (
+                "<br /><span class='muted'>Source:</span> "
+                f"<a href=\"{esc(meta.url)}\" target=\"_blank\" rel=\"noopener noreferrer\">{esc(meta.url)}</a> "
+                f"<span class='muted'>(HTTP {esc(meta.status or 'n/a')})</span>"
+            )
+
         shot_cards.append(
             f"""
             <figure class="shot">
               <img src="{esc(str(rel))}" alt="{esc(caption)}" loading="lazy" />
-              <figcaption>{esc(caption)}</figcaption>
+              <figcaption>{esc(caption)}{source_line}</figcaption>
             </figure>
             """
         )
@@ -389,6 +433,7 @@ def build_html(
     .shot {{ margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:rgba(15,23,42,.35); }}
     .shot img {{ width:100%; height:240px; object-fit:cover; display:block; background:#020617; }}
     .shot figcaption {{ padding:8px 10px; font-size:.84rem; color:var(--muted); }}
+    .shot figcaption a {{ color: var(--accent); word-break: break-all; }}
     .empty-box {{ height:240px; display:flex; align-items:center; justify-content:center; color:var(--muted); padding:12px; text-align:center; }}
     code {{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em; }}
     @media (max-width:960px) {{
@@ -482,6 +527,7 @@ def main() -> None:
     general, entries, tests = parse_runlog_entries(runlog_text, report_date)
     commits = git_commits_for_day(repo_root, report_date)
     screenshots = list_screenshots(asset_dir)
+    screenshot_sources = parse_screenshot_sources(asset_dir)
 
     html_text = build_html(
         day=report_date,
@@ -494,6 +540,7 @@ def main() -> None:
         tests=tests,
         commits=commits,
         screenshots=screenshots,
+        screenshot_sources=screenshot_sources,
         output_path=output_path,
     )
 
