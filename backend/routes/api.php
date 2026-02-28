@@ -92,6 +92,7 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('trail-assistant')->group(function (): void {
             Route::get('/intakes', [TrailAssistantTriageController::class, 'index']);
             Route::get('/intakes/export.csv', [TrailAssistantTriageController::class, 'exportCsv']);
+            Route::post('/intakes/{intakeId}/quarantine', [TrailAssistantTriageController::class, 'quarantine']);
 
             Route::get('/governance/moderation', [TrailAssistantGovernanceController::class, 'showModeration']);
             Route::put('/governance/moderation', [TrailAssistantGovernanceController::class, 'updateModeration']);

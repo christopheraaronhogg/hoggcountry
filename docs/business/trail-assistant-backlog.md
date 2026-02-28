@@ -1,6 +1,6 @@
 # Trail Assistant Backlog
 
-Last updated: 2026-02-28 18:55 CT
+Last updated: 2026-02-28 05:20 CT
 
 ## P0 — Mobile core (must ship first)
 - [x] Intake endpoint + routing labels (`POST /api/v1/trail-assistant/intake`)
@@ -19,7 +19,7 @@ Last updated: 2026-02-28 18:55 CT
 - [ ] Measure turnaround time and checklist pass rate
 - [ ] Add FAQ from simulation gaps
 - [x] Add abuse/rate-limit policy and enforcement notes
-- [ ] Add suspicious-request quarantine path in triage workflow
+- [x] Add suspicious-request quarantine path in triage workflow
 - [x] Add map-report moderator verification workflow (promote unverified -> trusted/moderator_verified)
 - [x] Add emergency/SOS escalation path and response protocol
 - [x] Add privacy controls for shared map visibility (scope + coarse mode + delayed visibility)
@@ -44,7 +44,7 @@ Last updated: 2026-02-28 18:55 CT
 - [ ] Add performance tracking sheet (views, clicks, replies, leads)
 
 ## Current active task
-- Active: P1 pilot simulation + suspicious-request quarantine workflow
+- Active: P1 pilot simulation (5 realistic hiker requests + quality/SLA scoring)
 
 ## Completed on 2026-02-27
 - [x] Created autonomous MVP plan
@@ -58,3 +58,4 @@ Last updated: 2026-02-28 18:55 CT
 - [x] Added emergency/SOS escalation API path with idempotency, cooldown, duplicate-window, and daily-cap abuse protections
 - [x] Added map-sharing privacy controls (private/trusted/public scope, coarse mode, delayed visibility)
 - [x] Added feature tests for map verification, SOS flow, and map privacy controls
+- [x] Added suspicious-request quarantine workflow for intake triage (moderator-only quarantine/release + privacy-first queue scoping)

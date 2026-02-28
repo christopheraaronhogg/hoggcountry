@@ -53,6 +53,12 @@ Escalation path:
 - Coarse location mode is supported to reduce precision in shared feeds.
 - Authenticated feed supports `trusted` scope while public feed remains `public` only.
 
+### Intake quarantine + triage privacy controls
+- Triage list/export defaults to `scope=mine` so authenticated hikers only see their own intake records.
+- Full queue (`scope=queue`) is moderator-only.
+- Suspicious intake moderation endpoint (`POST /api/v1/trail-assistant/intakes/{intakeId}/quarantine`) is moderator-only.
+- Quarantine action requires a reason code, marks request `quarantined`, and records incident history metadata for audit/forensics.
+
 ### Governance policy controls (non-secret)
 - Moderator policy controls are managed through authenticated governance endpoints.
 - Only non-secret values are allowed (IDs/emails/visibility policies).

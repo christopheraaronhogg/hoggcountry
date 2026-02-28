@@ -161,3 +161,34 @@
     - `php artisan test tests/Feature/Api/V1/TrailAssistantGovernanceApiTest.php tests/Feature/Api/V1/TrailAssistantSosApiTest.php tests/Feature/Api/V1/TrailAssistantChatApiTest.php tests/Feature/Api/V1/TrailAssistantCheckinApiTest.php tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php tests/Feature/Api/V1/TrailAssistantMapVisibilityApiTest.php tests/Feature/Api/V1/TrailAssistantOpsApiTest.php` ✅ (29 tests, 189 assertions)
   - **Next step:** pilot simulation + suspicious-request quarantine path.
   - **Blocker status:** none.
+
+- **2026-02-27 19:11 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found; no action required.
+
+- **2026-02-28 05:14 CST**
+  - **Task worked:** P1 safety hardening — suspicious-request quarantine path in intake triage workflow.
+  - **What changed:**
+    - Added moderator-only suspicious intake quarantine endpoint:
+      - `POST /api/v1/trail-assistant/intakes/{intakeId}/quarantine`
+      - actions: `quarantine` (requires reason code) and `release`
+      - reason codes: command execution, credential/token request, cross-user data request, payment/identity bypass, unknown binary/link, other
+    - Added intake triage privacy-preserving scope behavior:
+      - `GET /api/v1/trail-assistant/intakes` and export now default to `scope=mine`
+      - full `scope=queue` access requires moderator privileges
+    - Extended intake CSV export with security/quarantine columns (`security_is_quarantined`, incident status, reason metadata).
+    - Updated docs:
+      - mobile API contract for triage scope + quarantine endpoint
+      - security policy with intake quarantine + triage privacy controls
+      - backlog status and active-task focus
+    - Added/updated feature tests for queue scope authorization and quarantine/release moderation flow.
+  - **Validation:**
+    - `php artisan test tests/Feature/Api/V1/TrailAssistantIntakeApiTest.php tests/Feature/Api/V1/TrailAssistantOpsApiTest.php tests/Feature/Api/V1/TrailAssistantGovernanceApiTest.php tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php tests/Feature/Api/V1/TrailAssistantSosApiTest.php tests/Feature/Api/V1/TrailAssistantMapVisibilityApiTest.php tests/Feature/Api/V1/TrailAssistantChatApiTest.php tests/Feature/Api/V1/TrailAssistantCheckinApiTest.php` ✅ (37 tests, 252 assertions)
+    - `./vendor/bin/pint --test app/Http/Controllers/Api/V1/TrailAssistantTriageController.php tests/Feature/Api/V1/TrailAssistantOpsApiTest.php routes/api.php` ✅
+  - **Next step:** Execute P1 pilot simulation run (5 realistic hiker requests), score quality + SLA checklist, then close the remaining simulation/FAQ tasks.
+  - **Blocker status:** none.

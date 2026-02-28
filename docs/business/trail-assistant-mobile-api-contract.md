@@ -136,10 +136,31 @@ Behavior:
 ---
 
 ## 6) Triage/admin visibility (auth)
-`GET /trail-assistant/intakes`
-`GET /trail-assistant/intakes/export.csv`
+`GET /trail-assistant/intakes?scope=mine|queue`
+`GET /trail-assistant/intakes/export.csv?scope=mine|queue`
+`POST /trail-assistant/intakes/{intakeId}/quarantine` (moderator)
 
 Use for support queue review/export with status/route/search filters.
+
+Privacy + moderation behavior:
+- default scope is `mine` (requester-only view) for privacy-preserving access.
+- `scope=queue` requires moderator privileges.
+- CSV export enforces the same scope rules.
+
+Quarantine body:
+```json
+{
+  "action": "quarantine|release",
+  "reason_code": "command_execution_request|credential_or_token_request|cross_user_data_request|payment_or_identity_bypass|unknown_binary_or_link|other",
+  "note": "Optional moderation note"
+}
+```
+
+Quarantine safety controls:
+- moderator-only state transitions
+- `quarantine` requires `reason_code`, marks intake as `quarantined`, and sets incident review status to pending
+- `release` clears quarantine and restores prior intake status
+- immutable moderation history entries are appended in `metadata.security.history`
 
 ---
 
