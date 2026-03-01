@@ -46,6 +46,7 @@
     .shot { margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:rgba(15,23,42,.35); }
     .shot img { width:100%; height:240px; object-fit:cover; display:block; background:#020617; }
     .shot figcaption { padding:8px 10px; font-size:.84rem; color:var(--muted); }
+    .shot figcaption a { color: var(--accent); word-break: break-all; }
     .empty-box { height:240px; display:flex; align-items:center; justify-content:center; color:var(--muted); padding:12px; text-align:center; }
     code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em; }
     @media (max-width:960px) {
@@ -66,7 +67,7 @@
 
       <div class="grid">
         <article class="card"><h3>Backlog Completion</h3><p>35/43 (81%)</p></article>
-        <article class="card"><h3>Today's Commits</h3><p>2</p></article>
+        <article class="card"><h3>Today's Commits</h3><p>5</p></article>
         <article class="card"><h3>Latest Validation</h3><p>37 tests / 252 assertions</p></article>
         <article class="card"><h3>Active Focus</h3><p>P1 add FAQ from simulation gaps (privacy sharing + map verification expectations)</p></article>
       </div>
@@ -295,7 +296,10 @@
 
     <section class="section">
       <h2>Commit Evidence</h2>
-      <ul><li><code>0f80e47</code> — feat(trail-assistant): add daily one-sheet html report pipeline <span class='muted'>(2026-02-28)</span></li>
+      <ul><li><code>d4d626c</code> — fix(trail-assistant): avoid dead screenshot pages in one-sheet <span class='muted'>(2026-02-28)</span></li>
+<li><code>1b94451</code> — chore(trail-assistant): add publish mode to one-sheet script <span class='muted'>(2026-02-28)</span></li>
+<li><code>26ea541</code> — chore(trail-assistant): publish daily one-sheet 2026-02-28 <span class='muted'>(2026-02-28)</span></li>
+<li><code>0f80e47</code> — feat(trail-assistant): add daily one-sheet html report pipeline <span class='muted'>(2026-02-28)</span></li>
 <li><code>9055022</code> — feat(trail-assistant): add suspicious intake quarantine triage workflow <span class='muted'>(2026-02-28)</span></li></ul>
     </section>
 
@@ -304,13 +308,18 @@
       <div class="shots">
         
             <figure class="shot">
-              <img src="assets/2026-02-28/01-live-root-status.png" alt="01 live root status" loading="lazy" />
-              <figcaption>01 live root status</figcaption>
+              <img src="assets/2026-02-28/01-live-homepage.png" alt="Live homepage" loading="lazy" />
+              <figcaption>Live homepage<br /><span class='muted'>Source:</span> <a href="https://hoggcountry.com/" target="_blank" rel="noopener noreferrer">https://hoggcountry.com/</a> <span class='muted'>(HTTP 200)</span></figcaption>
             </figure>
             
             <figure class="shot">
-              <img src="assets/2026-02-28/02-live-trail-assistant-route.png" alt="02 live trail assistant route" loading="lazy" />
-              <figcaption>02 live trail assistant route</figcaption>
+              <img src="assets/2026-02-28/02-trail-assistant-surface.png" alt="Trail Assistant surface" loading="lazy" />
+              <figcaption>Trail Assistant surface<br /><span class='muted'>Source:</span> <a href="https://cdn.jsdelivr.net/gh/christopheraaronhogg/hoggcountry@main/docs/business/daily-updates/latest.html" target="_blank" rel="noopener noreferrer">https://cdn.jsdelivr.net/gh/christopheraaronhogg/hoggcountry@main/docs/business/daily-updates/latest.html</a> <span class='muted'>(HTTP 200)</span></figcaption>
+            </figure>
+            
+            <figure class="shot">
+              <img src="assets/2026-02-28/03-backend-api-health.png" alt="Backend API health" loading="lazy" />
+              <figcaption>Backend API health<br /><span class='muted'>Source:</span> <a href="https://hoggcountry.on-forge.com/api/v1/health" target="_blank" rel="noopener noreferrer">https://hoggcountry.on-forge.com/api/v1/health</a> <span class='muted'>(HTTP 200)</span></figcaption>
             </figure>
             
       </div>
@@ -318,7 +327,7 @@
 
     <section class="section">
       <h2>Report Metadata</h2>
-      <p class="muted">Generated: 2026-02-28 15:22:24 CST</p>
+      <p class="muted">Generated: 2026-02-28 18:00:09 CST</p>
       <p class="muted">Source files: <code>docs/business/trail-assistant-runlog.md</code> + <code>docs/business/trail-assistant-backlog.md</code></p>
       <p class="muted">Output path: <code>docs/business/daily-updates/2026-02-28.html</code></p>
     </section>
