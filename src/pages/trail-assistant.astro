@@ -87,13 +87,23 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
       textarea { min-height: 120px; resize: vertical; }
       .btn {
         appearance: none;
-        border: 0;
+        border: 1px solid transparent;
         border-radius: 10px;
         padding: 12px 16px;
         font-weight: 700;
         background: var(--ok);
         color: #052e16;
         cursor: pointer;
+      }
+      .btn-secondary {
+        background: #1e293b;
+        color: #dbeafe;
+        border-color: #334155;
+      }
+      .btn-ghost {
+        background: transparent;
+        border-color: #334155;
+        color: #cbd5e1;
       }
       .muted {
         color: var(--muted);
@@ -103,6 +113,27 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
       .small {
         font-size: 0.82rem;
         color: #94a3b8;
+      }
+      .actions-row {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .profile-preview {
+        margin-top: 12px;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(15, 23, 42, 0.7);
+      }
+      .profile-preview ul {
+        margin: 0;
+        padding-left: 1rem;
+      }
+      .profile-preview li {
+        margin: 0 0 0.35rem;
       }
       a { color: #67e8f9; }
     </style>
@@ -125,6 +156,73 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
         </ul>
       </section>
 
+      <section class="card" id="profile-state">
+        <span class="pill">Profile state</span>
+        <h2>Save your hiker profile</h2>
+        <p class="muted">
+          Keep a simple profile snapshot for repeat requests. For this demo path, profile data is saved only in your browser
+          and attached to intake metadata when available.
+        </p>
+
+        <div class="grid">
+          <div>
+            <label for="profile_name">Full name</label>
+            <input id="profile_name" name="profile_name" autocomplete="name" />
+          </div>
+          <div>
+            <label for="profile_email">Contact email</label>
+            <input id="profile_email" name="profile_email" type="email" autocomplete="email" />
+          </div>
+          <div>
+            <label for="profile_trail_name">Trail name (optional)</label>
+            <input id="profile_trail_name" name="profile_trail_name" />
+          </div>
+          <div>
+            <label for="profile_home_base">Home base</label>
+            <input id="profile_home_base" name="profile_home_base" placeholder="City, State" />
+          </div>
+          <div>
+            <label for="profile_start_date">Start date</label>
+            <input id="profile_start_date" name="profile_start_date" type="date" />
+          </div>
+          <div>
+            <label for="profile_direction">Direction</label>
+            <select id="profile_direction" name="profile_direction">
+              <option value="">Select one</option>
+              <option value="NOBO">NOBO</option>
+              <option value="SOBO">SOBO</option>
+              <option value="Flip-flop">Flip-flop</option>
+              <option value="Section hike">Section hike</option>
+            </select>
+          </div>
+          <div>
+            <label for="profile_target_mpd">Target miles/day</label>
+            <input id="profile_target_mpd" name="profile_target_mpd" type="number" min="0" max="40" step="0.5" />
+          </div>
+          <div>
+            <label for="profile_emergency_contact">Emergency contact</label>
+            <input id="profile_emergency_contact" name="profile_emergency_contact" placeholder="Name + phone" />
+          </div>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <label for="profile_medical_notes">Medical considerations (optional)</label>
+          <textarea id="profile_medical_notes" name="profile_medical_notes" placeholder="Allergies, medication reminders, relevant injuries, etc."></textarea>
+        </div>
+
+        <div class="actions-row">
+          <button id="profile-save-button" class="btn btn-secondary" type="button">Save profile locally</button>
+          <button id="profile-clear-button" class="btn btn-ghost" type="button">Clear saved profile</button>
+        </div>
+
+        <p id="profile-status" class="small" aria-live="polite" style="margin: 10px 0 0;"></p>
+        <div id="profile-preview" class="profile-preview small">No saved profile yet.</div>
+
+        <p class="small" style="margin-top: 12px;">
+          Need the dedicated profile path? <a href="/trail-assistant-profile">Open Trail Assistant Profile →</a>
+        </p>
+      </section>
+
       <section class="card" id="intake">
         <span class="pill">Request support</span>
         <h2>Send your trail request</h2>
@@ -142,11 +240,11 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           <div class="grid">
             <div>
               <label for="name">Name</label>
-              <input id="name" name="name" required />
+              <input id="name" name="name" autocomplete="name" required />
             </div>
             <div>
               <label for="email">Email</label>
-              <input id="email" name="email" type="email" required />
+              <input id="email" name="email" type="email" autocomplete="email" required />
             </div>
             <div>
               <label for="trail_stage">Trail stage</label>
@@ -203,9 +301,29 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
 
     <script is:inline define:vars={{ apiBase }}>
       (() => {
+        const PROFILE_STORAGE_KEY = 'hoggcountry:trail-assistant-profile:v1';
+        const PROFILE_FIELDS = {
+          profile_name: document.getElementById('profile_name'),
+          profile_email: document.getElementById('profile_email'),
+          profile_trail_name: document.getElementById('profile_trail_name'),
+          profile_home_base: document.getElementById('profile_home_base'),
+          profile_start_date: document.getElementById('profile_start_date'),
+          profile_direction: document.getElementById('profile_direction'),
+          profile_target_mpd: document.getElementById('profile_target_mpd'),
+          profile_emergency_contact: document.getElementById('profile_emergency_contact'),
+          profile_medical_notes: document.getElementById('profile_medical_notes'),
+        };
+
+        const profileStatusEl = document.getElementById('profile-status');
+        const profilePreviewEl = document.getElementById('profile-preview');
+        const profileSaveButton = document.getElementById('profile-save-button');
+        const profileClearButton = document.getElementById('profile-clear-button');
+
         const form = document.getElementById('trail-assistant-intake-form');
         const statusEl = document.getElementById('intake-status');
         const submitButton = document.getElementById('intake-submit-button');
+        const intakeNameInput = document.getElementById('name');
+        const intakeEmailInput = document.getElementById('email');
 
         if (!(form instanceof HTMLFormElement)) return;
         if (!(statusEl instanceof HTMLElement)) return;
@@ -216,6 +334,12 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
         function setStatus(message, tone = 'muted') {
           statusEl.textContent = message;
           statusEl.style.color = tone === 'error' ? '#fca5a5' : tone === 'success' ? '#86efac' : '#94a3b8';
+        }
+
+        function setProfileStatus(message, tone = 'muted') {
+          if (!(profileStatusEl instanceof HTMLElement)) return;
+          profileStatusEl.textContent = message;
+          profileStatusEl.style.color = tone === 'error' ? '#fca5a5' : tone === 'success' ? '#86efac' : '#94a3b8';
         }
 
         function formDataToUrlEncoded(formData) {
@@ -232,6 +356,152 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           return String(value || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().slice(0, max);
         }
 
+        function normalizeNumber(value, min = 0, max = 100) {
+          const parsed = Number.parseFloat(String(value || '').trim());
+          if (!Number.isFinite(parsed)) return null;
+          const clamped = Math.max(min, Math.min(max, parsed));
+          return Number(clamped.toFixed(1));
+        }
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        function sanitizeProfile(payload) {
+          const raw = payload && typeof payload === 'object' ? payload : {};
+          const targetMpd = normalizeNumber(raw.profile_target_mpd, 0, 40);
+
+          const normalized = {
+            profile_name: normalizeText(raw.profile_name, 120),
+            profile_email: normalizeText(raw.profile_email, 190).toLowerCase(),
+            profile_trail_name: normalizeText(raw.profile_trail_name, 80),
+            profile_home_base: normalizeText(raw.profile_home_base, 120),
+            profile_start_date: normalizeText(raw.profile_start_date, 20),
+            profile_direction: normalizeText(raw.profile_direction, 30),
+            profile_target_mpd: targetMpd === null ? '' : String(targetMpd),
+            profile_emergency_contact: normalizeText(raw.profile_emergency_contact, 190),
+            profile_medical_notes: normalizeText(raw.profile_medical_notes, 300),
+            updated_at: normalizeText(raw.updated_at, 80),
+          };
+
+          return normalized;
+        }
+
+        function readProfile() {
+          try {
+            const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            const profile = sanitizeProfile(parsed);
+            if (!profile.profile_name && !profile.profile_email && !profile.profile_trail_name) {
+              return null;
+            }
+            return profile;
+          } catch (error) {
+            return null;
+          }
+        }
+
+        function collectProfileFromFields() {
+          const payload = {
+            profile_name: PROFILE_FIELDS.profile_name?.value || '',
+            profile_email: PROFILE_FIELDS.profile_email?.value || '',
+            profile_trail_name: PROFILE_FIELDS.profile_trail_name?.value || '',
+            profile_home_base: PROFILE_FIELDS.profile_home_base?.value || '',
+            profile_start_date: PROFILE_FIELDS.profile_start_date?.value || '',
+            profile_direction: PROFILE_FIELDS.profile_direction?.value || '',
+            profile_target_mpd: PROFILE_FIELDS.profile_target_mpd?.value || '',
+            profile_emergency_contact: PROFILE_FIELDS.profile_emergency_contact?.value || '',
+            profile_medical_notes: PROFILE_FIELDS.profile_medical_notes?.value || '',
+            updated_at: new Date().toISOString(),
+          };
+
+          return sanitizeProfile(payload);
+        }
+
+        function applyProfileToFields(profile) {
+          const clean = sanitizeProfile(profile || {});
+
+          Object.entries(PROFILE_FIELDS).forEach(([key, field]) => {
+            if (!(field instanceof HTMLInputElement) && !(field instanceof HTMLTextAreaElement) && !(field instanceof HTMLSelectElement)) {
+              return;
+            }
+            field.value = clean[key] || '';
+          });
+
+          if (intakeNameInput instanceof HTMLInputElement && clean.profile_name && !intakeNameInput.value.trim()) {
+            intakeNameInput.value = clean.profile_name;
+          }
+          if (intakeEmailInput instanceof HTMLInputElement && clean.profile_email && !intakeEmailInput.value.trim()) {
+            intakeEmailInput.value = clean.profile_email;
+          }
+        }
+
+        function saveProfile(profile) {
+          window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+        }
+
+        function clearProfile() {
+          window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+        }
+
+        function renderProfilePreview(profile) {
+          if (!(profilePreviewEl instanceof HTMLElement)) return;
+
+          const hasProfile = profile && (profile.profile_name || profile.profile_email || profile.profile_trail_name);
+          if (!hasProfile) {
+            profilePreviewEl.textContent = 'No saved profile yet.';
+            return;
+          }
+
+          const lines = [
+            ['Name', profile.profile_name],
+            ['Email', profile.profile_email],
+            ['Trail name', profile.profile_trail_name],
+            ['Home base', profile.profile_home_base],
+            ['Start date', profile.profile_start_date],
+            ['Direction', profile.profile_direction],
+            ['Target miles/day', profile.profile_target_mpd],
+            ['Emergency contact', profile.profile_emergency_contact],
+            ['Medical notes', profile.profile_medical_notes],
+            ['Saved', profile.updated_at],
+          ].filter(([, value]) => Boolean(value));
+
+          if (!lines.length) {
+            profilePreviewEl.textContent = 'No saved profile yet.';
+            return;
+          }
+
+          profilePreviewEl.innerHTML = `<ul>${lines.map(([label, value]) => `<li><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value || '')}</li>`).join('')}</ul>`;
+        }
+
+        function profileToMetadata(profile) {
+          if (!profile) return null;
+
+          const payload = {
+            name: profile.profile_name || null,
+            email: profile.profile_email || null,
+            trail_name: profile.profile_trail_name || null,
+            home_base: profile.profile_home_base || null,
+            start_date: profile.profile_start_date || null,
+            direction: profile.profile_direction || null,
+            target_miles_per_day: profile.profile_target_mpd ? Number(profile.profile_target_mpd) : null,
+            emergency_contact: profile.profile_emergency_contact || null,
+            medical_notes: profile.profile_medical_notes || null,
+          };
+
+          if (Object.values(payload).every((value) => value === null || value === '')) {
+            return null;
+          }
+
+          return payload;
+        }
+
         async function submitToApi(formData) {
           const routeLabel = normalizeText(formData.get('trail_stage') || '', 24);
           const urgency = normalizeText(formData.get('urgency') || 'normal', 20);
@@ -239,6 +509,7 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           const contextText = normalizeText(formData.get('context') || '', 12000);
           const name = normalizeText(formData.get('name') || '', 120);
           const email = normalizeText(formData.get('email') || '', 190);
+          const profile = readProfile();
 
           if (!routeLabel || !requestText) {
             throw new Error('Missing required fields for API intake.');
@@ -272,6 +543,8 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
                 context: contextText || null,
                 route_label_raw: formData.get('trail_stage') || null,
                 user_agent: navigator.userAgent || null,
+                profile_snapshot: profileToMetadata(profile),
+                profile_saved_at: profile?.updated_at || null,
               },
             }),
           });
@@ -295,6 +568,35 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           if (!response.ok) {
             throw new Error(`Netlify fallback failed (${response.status}).`);
           }
+        }
+
+        profileSaveButton?.addEventListener('click', () => {
+          const profile = collectProfileFromFields();
+          if (!profile.profile_name || !profile.profile_email) {
+            setProfileStatus('Name and email are required to save profile state.', 'error');
+            return;
+          }
+
+          saveProfile(profile);
+          applyProfileToFields(profile);
+          renderProfilePreview(profile);
+          setProfileStatus('Profile state saved for this browser.', 'success');
+        });
+
+        profileClearButton?.addEventListener('click', () => {
+          clearProfile();
+          applyProfileToFields({});
+          renderProfilePreview(null);
+          setProfileStatus('Saved profile cleared.', 'muted');
+        });
+
+        const initialProfile = readProfile();
+        if (initialProfile) {
+          applyProfileToFields(initialProfile);
+          renderProfilePreview(initialProfile);
+          setProfileStatus('Loaded saved profile state.', 'muted');
+        } else {
+          renderProfilePreview(null);
         }
 
         form.addEventListener('submit', async (event) => {

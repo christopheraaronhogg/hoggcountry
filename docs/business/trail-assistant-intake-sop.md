@@ -32,6 +32,7 @@ For each request, capture:
 - Gear Shakedown Corrections
 - Resupply/Town Decision Memo
 - Contingency Branch Plan (weather/injury)
+- FAQ-safe response snippets for privacy + map verification questions (`trail-assistant-faq.md`)
 
 ## Emergency/SOS handling
 - Use dedicated API path: `POST /api/v1/trail-assistant/sos/escalate`.

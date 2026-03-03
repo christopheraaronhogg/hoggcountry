@@ -192,3 +192,241 @@
     - `./vendor/bin/pint --test app/Http/Controllers/Api/V1/TrailAssistantTriageController.php tests/Feature/Api/V1/TrailAssistantOpsApiTest.php routes/api.php` ✅
   - **Next step:** Execute P1 pilot simulation run (5 realistic hiker requests), score quality + SLA checklist, then close the remaining simulation/FAQ tasks.
   - **Blocker status:** none.
+
+- **2026-02-28 05:18 CST**
+  - **Task worked:** P1 pilot simulation — 5 realistic hiker requests with quality scoring.
+  - **What changed:**
+    - Added simulation report: `docs/business/trail-assistant-pilot-simulation-2026-02-28.md`.
+    - Completed a 5-scenario dry run covering pre-trail planning, on-trail decision support, map-sharing privacy controls, map-report verification flow, and SOS escalation handling.
+    - Scored each scenario against a 5-dimension rubric (understanding, actionability, safety compliance, privacy/moderation correctness, escalation correctness).
+    - Aggregate result: `117/125` (avg `23.4/25`, pass).
+    - Updated backlog to mark simulation task complete and advanced active task to turnaround/checklist measurement.
+  - **Safety impact:**
+    - Confirmed abuse-resistance controls in map-report/SOS flows (verification gate, idempotency/duplicate controls, cooldown/cap behavior).
+    - Confirmed privacy-preserving defaults (private map scope baseline, coarse location option, delayed visibility).
+    - Confirmed incident-response path for emergency handling remains manual-review first.
+  - **Next step:** Measure turnaround time and checklist pass rate with explicit timestamp capture across the same 5-scenario set.
+  - **Blocker status:** none. No owner-decision blocker older than 24h; blocker email not sent.
+
+- **2026-02-28 07:05 CST**
+  - **Task worked:** P1 service reliability — turnaround-time + checklist pass-rate measurement baseline.
+  - **What changed:**
+    - Added timestamped measurement report: `docs/business/trail-assistant-turnaround-checklist-baseline-2026-02-28.md`.
+    - Replayed the same 5 pilot scenarios with explicit capture of `intake_received_at`, `first_actionable_response_at`, and `triage_checklist_closed_at`.
+    - Computed turnaround + checklist metrics:
+      - turnaround median: `8 min`
+      - turnaround mean: `8.4 min`
+      - SLA pass rate: `5/5` (`100%`)
+      - checklist pass rate: `49/50` (`98%`)
+    - Updated backlog status to mark measurement task complete and moved active focus to FAQ gap closure.
+  - **Safety impact:**
+    - Verified safety controls remained intact during timed replay (abuse resistance checks, privacy-default behavior, and manual-review incident path).
+  - **Next step:** Add FAQ entries for privacy-sharing controls and map-report verification/public-visibility expectations.
+  - **Blocker status:** none. No owner-decision blocker older than 24h; blocker email not sent.
+
+- **2026-02-28 11:11 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-02-28 15:10 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-02-28 18:15 CST — Evening brief sweep**
+  - Wins: Closed suspicious-request quarantine controls, completed pilot simulation + SLA/checklist baseline, and shipped governance/SOS queue visibility + phone offline replay hardening.
+  - Queue: P0 open `0`, P1 open `4`.
+  - Tomorrow focus: finish FAQ gap closure, build daily runlog autopdater helper, and implement blocker email template helper + auto-send guard.
+  - Blockers: No unresolved owner-decision blocker older than 24h; blocker escalation email not required.
+
+- **2026-02-28 18:20 CST**
+  - **Task worked:** Daily owner brief compilation.
+  - **Email target:** from `chris.stitchscreen@gmail.com` to `christopheraaronhogg@gmail.com`.
+  - **Subject:** `Trail Assistant Daily Brief - 2026-02-28`.
+  - **Status:** Brief prepared from today's runlog entries; external-recipient delivery deferred per cron handoff rule.
+
+- **2026-02-28 19:10 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Handled message IDs:** none
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-03-01 07:00 CST**
+  - **Task worked:** Weekly Trail Assistant security + safety hardening review.
+  - **Security-policy conformance check:**
+    - Verified Trail Assistant API routes still enforce auth boundaries (`public` only for plan catalog + public map feeds; write/moderation routes remain under `auth:sanctum`).
+    - Verified moderator-only controls remain gated (`map-reports/verify`, `map-reports` queue scopes, triage `scope=queue`, intake quarantine endpoint, SOS queue/status controls, governance controls).
+    - Verified governance API still only accepts non-secret policy fields (moderator IDs/emails + map-report trust/visibility controls), matching policy prohibition on secret material.
+    - Verified existing automation helper (`scripts/trail_assistant_daily_one_sheet.sh`) keeps external publication behind explicit `--publish` opt-in and does not auto-send outbound email.
+  - **Map-report safety audit results:**
+    - Verification gating: ✅ public feed still excludes `unverified`; promotion to `trusted`/`moderator_verified` remains moderator-only.
+    - Duplicate/abuse protections: ✅ route throttle + per-user fingerprint duplicate window; idempotency replay support confirmed.
+    - Expiry behavior: ✅ public feed still excludes expired records (`expires_at < now()`) and non-active status rows.
+    - Resolve/moderation path: ✅ resolve allowed only for owner/moderator; verify + resolve actions continue writing audit events.
+  - **Hardening improvement implemented:**
+    - Closed cross-user idempotency replay exposure in high-sensitivity write flows.
+    - Change: map-report and SOS idempotency replay now scope lookup by `user_id`; key collisions from other users now return `409 idempotency_key_conflict` instead of replaying another user’s payload.
+    - Files updated:
+      - `backend/app/Http/Controllers/Api/V1/TrailAssistantMapReportController.php`
+      - `backend/app/Http/Controllers/Api/V1/TrailAssistantSosController.php`
+      - `backend/tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php`
+      - `backend/tests/Feature/Api/V1/TrailAssistantSosApiTest.php`
+  - **Validation:**
+    - `php artisan test tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php tests/Feature/Api/V1/TrailAssistantSosApiTest.php tests/Feature/Api/V1/TrailAssistantMapVisibilityApiTest.php` ✅ (16 tests, 97 assertions)
+    - `./vendor/bin/pint --test app/Http/Controllers/Api/V1/TrailAssistantMapReportController.php app/Http/Controllers/Api/V1/TrailAssistantSosController.php tests/Feature/Api/V1/TrailAssistantMapReportApiTest.php tests/Feature/Api/V1/TrailAssistantSosApiTest.php` ✅
+  - **Risk level:** **Low** (improved from **Medium** pre-fix due to cross-user idempotency replay possibility in map/SOS flows).
+  - **Mitigations now in place:** user-scoped replay checks, explicit conflict response on key collision, and existing moderation + expiry + audit controls preserved.
+  - **Critical blocker/email status:** No critical unresolved risk after hardening; blocker email to `christopheraaronhogg@gmail.com` not triggered.
+
+- **2026-03-01 11:11 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Handled message IDs:** none
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-03-01 15:11 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Handled message IDs:** none
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-03-01 18:15 CST — Evening brief sweep**
+  - Wins: Closed cross-user idempotency replay risk in map-report/SOS flows, completed weekly security+safety hardening audit with passing tests/lint, and kept intake triage sweeps current with zero unattended requests.
+  - Queue: P0 open `0`, P1 open `4`.
+  - Tomorrow focus: finish FAQ from simulation gaps, build daily runlog autopdater helper, and implement blocker email template helper + auto-send guard.
+  - Blockers: No unresolved owner-decision blocker older than 24h; blocker escalation email not required.
+
+- **2026-03-01 18:20 CST**
+  - **Task worked:** Daily owner brief compilation.
+  - **Email target:** from `chris.stitchscreen@gmail.com` to `christopheraaronhogg@gmail.com`.
+  - **Subject:** `Trail Assistant Daily Brief - 2026-03-01`.
+  - **Status:** Brief prepared from today's runlog entries; external-recipient delivery deferred per cron handoff rule.
+
+- **2026-03-01 19:10 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Handled message IDs:** none
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-03-02 06:40 CST**
+  - **Task worked:** Weekly planning reset (impact/dependency re-rank + weekly execution target selection).
+  - **What changed:**
+    - Re-ranked open backlog into P0/P1/P2 by impact and dependency.
+    - Added `This Week (2026-03-02 → 2026-03-08)` section to `trail-assistant-backlog.md`.
+    - Updated active task to P0 FAQ closure from pilot simulation gaps.
+  - **This week's top 5 execution targets:**
+    1. P0.1 Add FAQ from simulation gaps (privacy sharing + map verification expectations)
+    2. P0.2 Ship blocker email template helper + auto-send guard
+    3. P0.3 Ship daily runlog autopdater helper
+    4. P0.4 Ship daily/weekly queue review automation
+    5. P1.1 Build weekly content queue board (internal only; no public posting without approval)
+  - **Dependency review:** No current dependency requires human intervention to proceed on this week's top 5.
+  - **Blocker email status:** Not triggered for this reset. If a human decision blocker emerges (>24h), escalation recipient is `christopheraaronhogg@gmail.com` with Option A/B + default-path format.
+  - **Next step:** Execute P0.1 FAQ draft and mark complete in backlog/runlog.
+
+- **2026-03-02 07:05 CST**
+  - **Task worked:** P0.1 — Add FAQ from simulation gaps (privacy sharing + map verification expectations).
+  - **What changed:**
+    - Added `docs/business/trail-assistant-faq.md` with user-facing FAQ entries for privacy-sharing defaults, sharing controls (`private|trusted|public`, coarse mode, delay), and map verification expectations.
+    - Documented safety-first expectations in FAQ for abuse resistance (throttles, idempotency, duplicate guards, quarantine path), moderation/audit controls, and SOS/incident response path.
+    - Updated `docs/business/trail-assistant-intake-sop.md` output templates to reference FAQ-safe snippets for recurring privacy/map-trust questions.
+    - Updated `docs/business/trail-assistant-backlog.md` to mark P0.1 complete and move active focus to P0.2.
+  - **Safety impact:** Closed the known pilot communication gap by explicitly documenting privacy-preserving defaults, verification-before-public-visibility controls, abuse-resistance safeguards, and the manual-review incident path for emergency/suspicious activity.
+  - **Next step:** Execute P0.2 blocker email template helper + auto-send guard.
+  - **Blocker status:** none; no owner-decision blocker older than 24h, so blocker escalation email was not triggered.
+
+- **2026-03-02 11:13 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Handled message IDs:** none
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-03-02 15:10 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Handled message IDs:** none
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-03-02 18:15 CST — Evening brief sweep**
+  - Wins: Closed P0.1 FAQ gap from pilot simulation, completed weekly planning reset with impact/dependency re-rank, and kept intake triage sweeps current with zero pending requests.
+  - Queue: P0 open `3`, P1 open `1`.
+  - Tomorrow focus: ship P0.2 blocker-email template helper + auto-send guard, ship P0.3 daily runlog autopdater helper, and ship P0.4 daily/weekly queue-review automation.
+  - Blockers: No unresolved owner-decision blocker older than 24h; blocker escalation email not required.
+
+- **2026-03-02 18:20 CST**
+  - **Task worked:** Daily owner brief compilation.
+  - **Email target:** from `chris.stitchscreen@gmail.com` to `christopheraaronhogg@gmail.com`.
+  - **Subject:** `Trail Assistant Daily Brief - 2026-03-02`.
+  - **Status:** Brief prepared from today's runlog entries; external-recipient delivery deferred per cron handoff rule.
+
+- **2026-03-02 18:35 CST → 2026-03-03 00:55 CST**
+  - **Task worked:** Overnight sprint — Trail Assistant demo-readiness + BYOS architecture decision.
+  - **What changed (demo path):**
+    - Upgraded `/trail-assistant` with a visible local profile-state section (save/clear state + preview) and metadata bridge into intake submission payload.
+    - Added dedicated profile route: `/trail-assistant-profile` for explicit demo proof of user profile state.
+    - Updated `/trail-assistant-thanks` with profile-route continuity link.
+    - Captured full evidence pack under `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/`.
+  - **What changed (BYOS):**
+    - Added architecture decision doc: `docs/business/trail-assistant-byos-architecture-decision-2026-03-03.md`.
+    - Added BYOS provider + entitlement scaffolding:
+      - `TrailAssistantByosProviderRegistry`
+      - `TrailAssistantByosEntitlementService`
+      - `TrailAssistantByosEntitlement`
+    - Added public capability endpoint: `GET /api/v1/trail-assistant/byos/providers`.
+    - Added tests:
+      - `tests/Feature/Api/V1/TrailAssistantByosApiTest.php`
+      - `tests/Unit/TrailAssistantByosEntitlementServiceTest.php`
+  - **Deploy/path drift findings:**
+    - Re-verified external mismatch persists:
+      - `https://hoggcountry.com/trail-assistant` → 404
+      - `https://hoggcountry.com/trail-assistant-thanks` → 404
+      - `https://hoggcountry.on-forge.com/` → 500
+      - `https://hoggcountry.on-forge.com/api/v1/health` → 200
+      - `https://hoggcountry.on-forge.com/api/v1/trail-assistant/plans` → 404
+    - Local repo confirms these routes exist and work with local backend/frontend startup.
+    - Root cause direction: production deploy drift (frontend publish mismatch + Forge backend missing latest Trail Assistant route set), not missing implementation in this repo.
+  - **Validation / evidence:**
+    - `php artisan test tests/Feature/Api/V1/TrailAssistantByosApiTest.php tests/Unit/TrailAssistantByosEntitlementServiceTest.php` ✅ (5 tests, 43 assertions)
+    - `npm run build` ✅ (includes `/trail-assistant-profile` route)
+    - Local API smoke:
+      - `POST /api/v1/trail-assistant/intake` ✅ 201
+      - profile snapshot persisted in metadata (sqlite evidence in artifact)
+    - HTTP and curl matrix captured in:
+      - `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/verification-before-deploy.txt`
+      - `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/verification-http-statuses.txt`
+  - **Blocker status:**
+    - Public deploy repair remains blocked on deployment-surface access/alignment (Netlify + Forge).
+    - Reliable local demo path is now available and evidenced for morning review.

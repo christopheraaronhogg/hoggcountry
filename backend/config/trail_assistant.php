@@ -99,4 +99,34 @@ return [
         'max_visibility_delay_minutes' => 1440,
         'coarse_rounding_decimals' => 2,
     ],
+
+    'byos' => [
+        'default_provider' => env('TRAIL_ASSISTANT_BYOS_DEFAULT_PROVIDER', 'openai_api_key'),
+        'providers' => [
+            'openai_api_key' => [
+                'label' => 'OpenAI API key (user-provided)',
+                'enabled' => true,
+                'auth_mode' => 'api_key',
+                'funding_model' => 'user_api_payg',
+                'available_models' => ['gpt-4.1-mini', 'gpt-4.1'],
+                'notes' => 'Supported now. User provides their own API key through secure settings.',
+            ],
+            'chatgpt_subscription_passthrough' => [
+                'label' => 'ChatGPT subscription passthrough',
+                'enabled' => false,
+                'auth_mode' => 'chatgpt_subscription_passthrough',
+                'funding_model' => 'not_available',
+                'available_models' => [],
+                'notes' => 'Not currently supported for third-party API billing passthrough.',
+            ],
+            'openai_oauth_future' => [
+                'label' => 'OpenAI OAuth (future placeholder)',
+                'enabled' => false,
+                'auth_mode' => 'oauth',
+                'funding_model' => 'unknown',
+                'available_models' => [],
+                'notes' => 'Reserved for future provider-managed OAuth capabilities if OpenAI ships them.',
+            ],
+        ],
+    ],
 ];

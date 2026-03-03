@@ -1,0 +1,333 @@
+---
+const title = 'Trail Assistant Profile — Demo State';
+const description = 'Local profile state used by the Trail Assistant intake demo flow.';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --line: #334155;
+        --accent: #22d3ee;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 52%);
+        color: var(--text);
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 20px 72px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: linear-gradient(180deg, #0b1220, var(--card));
+        padding: 20px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(34, 211, 238, 0.45);
+        color: var(--accent);
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 10px 0;
+        font-size: clamp(1.4rem, 2.5vw, 2rem);
+      }
+      .muted {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        color: #d1d5db;
+        font-size: 0.92rem;
+      }
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid #475569;
+        border-radius: 10px;
+        padding: 11px 12px;
+        background: #0b1220;
+        color: #f8fafc;
+      }
+      textarea { min-height: 120px; resize: vertical; }
+      .actions {
+        margin-top: 14px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      button {
+        appearance: none;
+        border-radius: 10px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #dbeafe;
+        padding: 12px 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #10b981;
+        border-color: transparent;
+        color: #052e16;
+      }
+      .preview {
+        margin-top: 12px;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(15, 23, 42, 0.72);
+      }
+      .small {
+        font-size: 0.84rem;
+        color: #94a3b8;
+      }
+      a { color: #67e8f9; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="card">
+        <span class="pill">Trail Assistant</span>
+        <h1>Profile state (demo)</h1>
+        <p class="muted">
+          This route gives a visible profile-state path for demo review. Data is stored in browser localStorage
+          and reused by <a href="/trail-assistant">/trail-assistant</a> when submitting intake requests.
+        </p>
+
+        <div class="grid" style="margin-top: 10px;">
+          <div>
+            <label for="profile_name">Full name</label>
+            <input id="profile_name" autocomplete="name" />
+          </div>
+          <div>
+            <label for="profile_email">Contact email</label>
+            <input id="profile_email" type="email" autocomplete="email" />
+          </div>
+          <div>
+            <label for="profile_trail_name">Trail name</label>
+            <input id="profile_trail_name" />
+          </div>
+          <div>
+            <label for="profile_home_base">Home base</label>
+            <input id="profile_home_base" placeholder="City, State" />
+          </div>
+          <div>
+            <label for="profile_start_date">Start date</label>
+            <input id="profile_start_date" type="date" />
+          </div>
+          <div>
+            <label for="profile_direction">Direction</label>
+            <select id="profile_direction">
+              <option value="">Select one</option>
+              <option value="NOBO">NOBO</option>
+              <option value="SOBO">SOBO</option>
+              <option value="Flip-flop">Flip-flop</option>
+              <option value="Section hike">Section hike</option>
+            </select>
+          </div>
+          <div>
+            <label for="profile_target_mpd">Target miles/day</label>
+            <input id="profile_target_mpd" type="number" min="0" max="40" step="0.5" />
+          </div>
+          <div>
+            <label for="profile_emergency_contact">Emergency contact</label>
+            <input id="profile_emergency_contact" placeholder="Name + phone" />
+          </div>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <label for="profile_medical_notes">Medical considerations</label>
+          <textarea id="profile_medical_notes" placeholder="Allergies, medication reminders, relevant injuries, etc."></textarea>
+        </div>
+
+        <div class="actions">
+          <button id="save" class="primary" type="button">Save profile state</button>
+          <button id="clear" type="button">Clear profile state</button>
+          <a href="/trail-assistant" style="display:inline-flex;align-items:center;padding:12px 16px;border:1px solid #334155;border-radius:10px;text-decoration:none;color:#dbeafe;">Back to intake</a>
+        </div>
+
+        <p id="status" class="small" aria-live="polite" style="margin-top: 10px;"></p>
+        <div id="preview" class="preview small">No saved profile yet.</div>
+      </section>
+    </main>
+
+    <script is:inline>
+      (() => {
+        const STORAGE_KEY = 'hoggcountry:trail-assistant-profile:v1';
+        const fields = {
+          profile_name: document.getElementById('profile_name'),
+          profile_email: document.getElementById('profile_email'),
+          profile_trail_name: document.getElementById('profile_trail_name'),
+          profile_home_base: document.getElementById('profile_home_base'),
+          profile_start_date: document.getElementById('profile_start_date'),
+          profile_direction: document.getElementById('profile_direction'),
+          profile_target_mpd: document.getElementById('profile_target_mpd'),
+          profile_emergency_contact: document.getElementById('profile_emergency_contact'),
+          profile_medical_notes: document.getElementById('profile_medical_notes'),
+        };
+
+        const statusEl = document.getElementById('status');
+        const previewEl = document.getElementById('preview');
+
+        function normalizeText(value, max = 200) {
+          return String(value || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().slice(0, max);
+        }
+
+        function normalizeNumber(value, min = 0, max = 100) {
+          const parsed = Number.parseFloat(String(value || '').trim());
+          if (!Number.isFinite(parsed)) return null;
+          const clamped = Math.max(min, Math.min(max, parsed));
+          return Number(clamped.toFixed(1));
+        }
+
+        function sanitize(payload) {
+          const raw = payload && typeof payload === 'object' ? payload : {};
+          const targetMpd = normalizeNumber(raw.profile_target_mpd, 0, 40);
+
+          return {
+            profile_name: normalizeText(raw.profile_name, 120),
+            profile_email: normalizeText(raw.profile_email, 190).toLowerCase(),
+            profile_trail_name: normalizeText(raw.profile_trail_name, 80),
+            profile_home_base: normalizeText(raw.profile_home_base, 120),
+            profile_start_date: normalizeText(raw.profile_start_date, 20),
+            profile_direction: normalizeText(raw.profile_direction, 30),
+            profile_target_mpd: targetMpd === null ? '' : String(targetMpd),
+            profile_emergency_contact: normalizeText(raw.profile_emergency_contact, 190),
+            profile_medical_notes: normalizeText(raw.profile_medical_notes, 300),
+            updated_at: normalizeText(raw.updated_at, 80),
+          };
+        }
+
+        function read() {
+          try {
+            const raw = window.localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            const profile = sanitize(parsed);
+            if (!profile.profile_name && !profile.profile_email && !profile.profile_trail_name) {
+              return null;
+            }
+            return profile;
+          } catch {
+            return null;
+          }
+        }
+
+        function apply(profile) {
+          const clean = sanitize(profile || {});
+          Object.entries(fields).forEach(([key, input]) => {
+            if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement || input instanceof HTMLSelectElement) {
+              input.value = clean[key] || '';
+            }
+          });
+        }
+
+        function collect() {
+          return sanitize({
+            profile_name: fields.profile_name?.value || '',
+            profile_email: fields.profile_email?.value || '',
+            profile_trail_name: fields.profile_trail_name?.value || '',
+            profile_home_base: fields.profile_home_base?.value || '',
+            profile_start_date: fields.profile_start_date?.value || '',
+            profile_direction: fields.profile_direction?.value || '',
+            profile_target_mpd: fields.profile_target_mpd?.value || '',
+            profile_emergency_contact: fields.profile_emergency_contact?.value || '',
+            profile_medical_notes: fields.profile_medical_notes?.value || '',
+            updated_at: new Date().toISOString(),
+          });
+        }
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        function render(profile) {
+          if (!(previewEl instanceof HTMLElement)) return;
+
+          const active = profile && (profile.profile_name || profile.profile_email || profile.profile_trail_name);
+          if (!active) {
+            previewEl.textContent = 'No saved profile yet.';
+            return;
+          }
+
+          const rows = [
+            ['Name', profile.profile_name],
+            ['Email', profile.profile_email],
+            ['Trail name', profile.profile_trail_name],
+            ['Home base', profile.profile_home_base],
+            ['Start date', profile.profile_start_date],
+            ['Direction', profile.profile_direction],
+            ['Target miles/day', profile.profile_target_mpd],
+            ['Emergency contact', profile.profile_emergency_contact],
+            ['Medical notes', profile.profile_medical_notes],
+            ['Saved', profile.updated_at],
+          ].filter(([, value]) => Boolean(value));
+
+          previewEl.innerHTML = `<ul>${rows.map(([label, value]) => `<li><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value || '')}</li>`).join('')}</ul>`;
+        }
+
+        function setStatus(message, tone = 'muted') {
+          if (!(statusEl instanceof HTMLElement)) return;
+          statusEl.textContent = message;
+          statusEl.style.color = tone === 'error' ? '#fca5a5' : tone === 'success' ? '#86efac' : '#94a3b8';
+        }
+
+        document.getElementById('save')?.addEventListener('click', () => {
+          const profile = collect();
+          if (!profile.profile_name || !profile.profile_email) {
+            setStatus('Name and email are required to save profile state.', 'error');
+            return;
+          }
+
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+          render(profile);
+          setStatus('Profile state saved for this browser.', 'success');
+        });
+
+        document.getElementById('clear')?.addEventListener('click', () => {
+          window.localStorage.removeItem(STORAGE_KEY);
+          apply({});
+          render(null);
+          setStatus('Profile state cleared.', 'muted');
+        });
+
+        const initial = read();
+        apply(initial || {});
+        render(initial);
+        if (initial) {
+          setStatus('Loaded saved profile state.', 'muted');
+        }
+      })();
+    </script>
+  </body>
+</html>

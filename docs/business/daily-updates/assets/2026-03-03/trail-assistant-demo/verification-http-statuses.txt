@@ -1,0 +1,199 @@
+# Trail Assistant verification
+Generated: 2026-03-02 18:49:45 CST
+
+## External (public) checks
+### curl -i https://hoggcountry.com/trail-assistant
+HTTP/2 404 
+age: 1363
+cache-control: public,max-age=0,must-revalidate
+cache-status: "Netlify Edge"; hit
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.tile.topo-map.de https://*.tile.top-o-map.de; media-src 'self' blob:; frame-src https://www.youtube-nocookie.com; connect-src 'self' https://www.youtube.com https://api.open-meteo.com https://hoggcountry.on-forge.com https://app.hoggcountry.com wss:; worker-src 'self' blob:
+content-type: text/html; charset=utf-8
+date: Tue, 03 Mar 2026 00:49:45 GMT
+etag: 1756966999-ssl
+permissions-policy: geolocation=(self), microphone=(), camera=()
+referrer-policy: strict-origin-when-cross-origin
+server: Netlify
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+
+### curl -i https://hoggcountry.com/trail-assistant-thanks
+HTTP/2 404 
+age: 1364
+cache-control: public,max-age=0,must-revalidate
+cache-status: "Netlify Edge"; hit
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.tile.topo-map.de https://*.tile.top-o-map.de; media-src 'self' blob:; frame-src https://www.youtube-nocookie.com; connect-src 'self' https://www.youtube.com https://api.open-meteo.com https://hoggcountry.on-forge.com https://app.hoggcountry.com wss:; worker-src 'self' blob:
+content-type: text/html; charset=utf-8
+date: Tue, 03 Mar 2026 00:49:46 GMT
+etag: 1756966999-ssl
+permissions-policy: geolocation=(self), microphone=(), camera=()
+referrer-policy: strict-origin-when-cross-origin
+server: Netlify
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+
+### curl -i https://hoggcountry.on-forge.com/
+HTTP/2 500 
+date: Tue, 03 Mar 2026 00:49:46 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+cache-control: no-cache, private
+cf-cache-status: DYNAMIC
+set-cookie: __cf_bm=oEN010UxOz5oBFAZjVDlLZmG1TOD0bqwdo_7xdbwPPc-1772498986.3247383-1.0.1.1-NOKbEmwbi22oN6EsURjCFIvD0oUjyC9Kd6paZ.__iDI7LTLyGmL4q3pr6SLoGviby85N_yqxgMfraoBagTx9o2bJk6aku2QKU.7jHhMT.BoAmI2EYPJrTwglLbeSIWJh; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:19:46 GMT
+cf-ray: 9d64a4a88b254df9-MCI
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+### curl -i https://hoggcountry.on-forge.com/api/v1/health
+HTTP/2 200 
+date: Tue, 03 Mar 2026 00:49:46 GMT
+content-type: application/json
+server: cloudflare
+vary: Accept-Encoding
+cache-control: no-cache, private
+access-control-allow-origin: *
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+set-cookie: __cf_bm=SdlrkJH2Ve668TlHwQ.3YVRuAJG79AB6cnoxT_Oi6.c-1772498986.582646-1.0.1.1-L1iEyunhzf5Dfo.UnnGeCdkTByHPObAPyVk2YxsmmlZbABi1I.mcNmpI1uJFgPom02AiDZgpqzTinCTUcV0eHawusLM8Rq27C5qwCr3mCrGJLCXjx9EiEhPBaYN0FPdU; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:19:46 GMT
+cf-cache-status: DYNAMIC
+cf-ray: 9d64a4aa2e674df0-MCI
+
+
+### curl -i https://hoggcountry.on-forge.com/api/v1/trail-assistant/plans
+HTTP/2 404 
+date: Tue, 03 Mar 2026 00:49:46 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+vary: Accept-Encoding
+cache-control: no-cache, private
+access-control-allow-origin: *
+set-cookie: __cf_bm=DB6X1LQGXozhNzjj0J8jCOdwJd1FNDypWJTI9nleg4I-1772498986.7424974-1.0.1.1-LcS6w6PkCXQxjUUhxpuLsDvJqTaoIJg2POqwluMFtC2KawuMOP2O4DKddLrS1nxcLHcA.gUuX7_h9NFXHT1sEgBF4rnWlziolIQxnTLi8DARI1K.sRbtMWizh5L_qXLF; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:19:46 GMT
+cf-cache-status: DYNAMIC
+cf-ray: 9d64a4ab2c9957b6-MCI
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+### curl -i https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/providers
+HTTP/2 404 
+date: Tue, 03 Mar 2026 00:49:46 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+vary: Accept-Encoding
+cache-control: no-cache, private
+access-control-allow-origin: *
+set-cookie: __cf_bm=zit2ozWDOCAqRcsQOSa9OWTMlqzBzvm.sb9LHqGdybY-1772498986.9008694-1.0.1.1-Cg4BODyB8jhcAV_G4tzfMjj8Ovi1D4a00ti1oyTIWU3pu3DGTjFY_t1ceknVptihmq.HCn6FhhKRydwOcv30LWHGh2idZZ3f9Rhh2MdM3g.MQhzk8Uhv8diiVHtoZBYd; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:19:46 GMT
+cf-cache-status: DYNAMIC
+cf-ray: 9d64a4ac2fd6fc63-MCI
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+## Local demo checks
+### curl -i http://127.0.0.1:4321/trail-assistant
+HTTP/1.1 200 OK
+Vary: Origin
+content-type: text/html
+Date: Tue, 03 Mar 2026 00:49:46 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+<!DOCTYPE html><html lang="en" data-astro-cid-nb5g2kyd> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Trail Assistant — Appalachian Trail Planning &amp; On‑Trail Support</title><meta name="description" content="Get practical help planning your Appalachian Trail hike and handling on-trail logistics."><style data-vite-dev-id="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant.astro?astro&#38;type=style&#38;index=0&#38;lang.css">:root{--bg: #0f172a;--card: #111827;--text: #e5e7eb;--muted: #9ca3af;--line: #334155;--accent: #22d3ee;--ok: #10b981}[data-astro-cid-nb5g2kyd]{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:radial-gradient(circle at top,#1e293b 0%,var(--bg) 50%);color:var(--text)}.wrap[data-astro-cid-nb5g2kyd]{max-width:880px;margin:0 auto;padding:32px 20px 72px}h1[data-astro-cid-nb5g2kyd]{margin:0 0 10px;font-size:clamp(1.6rem,3vw,2.4rem)}.sub[data-astro-cid-nb5g2kyd]{color:var(--muted);line-height:1.55;margin-bottom:24px}.card[data-astro-cid-nb5g2kyd]{background:linear-gradient(180deg,#0b1220,var(--card));border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:16px}.pill[data-astro-cid-nb5g2kyd]{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid rgba(34,211,238,0.45);color:var(--accent);font-size:0.78rem;letter-spacing:0.04em;text-transform:uppercase}h2[data-astro-cid-nb5g2kyd]{margin:12px 0;font-size:1.2rem}ul[data-astro-cid-nb5g2kyd]{margin:0;padding-left:18px;color:#d1d5db;line-height:1.6}.grid[data-astro-cid-nb5g2kyd]{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}label[data-astro-cid-nb5g2kyd]{display:block;font-size:0.92rem;color:#d1d5db;margin-bottom:6px}input[data-astro-cid-nb5g2kyd],select[data-astro-cid-nb5g2kyd],textarea[data-astro-cid-nb5g2kyd]{width:100%;border:1px solid #475569;border-radius:10px;padding:11px 12px;background:#0b1220;color:#f8fafc}textarea[data-astro-cid-nb5g2kyd]{min-height:120px;resize:vertical}.btn[data-astro-cid-nb5g2kyd]{appearance:none;border:1px solid transparent;border-radius:10px;padding:12px 16px;font-weight:700;background:var(--ok);color:#052e16;cursor:pointer}.btn-secondary[data-astro-cid-nb5g2kyd]{background:#1e293b;color:#dbeafe;border-color:#334155}.btn-ghost[data-astro-cid-nb5g2kyd]{background:transparent;border-color:#334155;color:#cbd5e1}.muted[data-astro-cid-nb5g2kyd]{color:var(--muted);font-size:0.9rem;line-height:1.5}.small[data-astro-cid-nb5g2kyd]{font-size:0.82rem;color:#94a3b8}.actions-row[data-astro-cid-nb5g2kyd]{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}.profile-preview[data-astro-cid-nb5g2kyd]{margin-top:12px;border:1px solid #334155;border-radius:12px;padding:12px;background:rgba(15,23,42,0.7)}.profile-preview[data-astro-cid-nb5g2kyd] ul[data-astro-cid-nb5g2kyd]{margin:0;padding-left:1rem}.profile-preview[data-astro-cid-nb5g2kyd] li[data-astro-cid-nb5g2kyd]{margin:0 0 0.35rem}a[data-astro-cid-nb5g2kyd]{color:#67e8f9}</style><script type="module" src="/@vite/client"></script>
+<script type="module" src="/@fs/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/node_modules/astro/dist/runtime/client/dev-toolbar/entrypoint.js?v=f21dd05e"></script>
+<script>window.__astro_dev_toolbar__ = {"root":"/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/","version":"5.16.11","debugInfo":"Astro                    v5.16.11\nNode                     v25.5.0\nSystem                   macOS (arm64)\nPackage Manager          npm\nOutput                   static\nAdapter                  none\nIntegrations             @astrojs/mdx\n                         @astrojs/sitemap\n                         @astrojs/svelte"}</script>
+<script type="module" src="/src/pages/trail-assistant.astro?astro&type=style&index=0&lang.css"></script></head> <body data-astro-cid-nb5g2kyd data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant.astro" data-astro-source-loc="141:9"> <main class="wrap" data-astro-cid-nb5g2kyd data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant.astro" data-astro-source-loc="142:24"> <h1 data-astro-cid-nb5g2kyd data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant.astro" data-astro-source-loc="143:11">Trail Assistant</h1> <p class="sub" data-astro-cid-nb5g2kyd data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant.astro" data-astro-source-loc="144:22">
+Practical Appalachian Trail support for pre-trail planning and on-trail logistics.
+        Ask a question, get a real action plan, and keep moving.
+
+### curl -i http://127.0.0.1:4321/trail-assistant-profile
+HTTP/1.1 200 OK
+Vary: Origin
+content-type: text/html
+Date: Tue, 03 Mar 2026 00:49:47 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+<!DOCTYPE html><html lang="en" data-astro-cid-5xq5bi6u> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Trail Assistant Profile — Demo State</title><meta name="description" content="Local profile state used by the Trail Assistant intake demo flow."><style data-vite-dev-id="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-profile.astro?astro&#38;type=style&#38;index=0&#38;lang.css">:root{--bg: #0f172a;--card: #111827;--text: #e5e7eb;--muted: #9ca3af;--line: #334155;--accent: #22d3ee}[data-astro-cid-5xq5bi6u]{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:radial-gradient(circle at top,#1e293b 0%,var(--bg) 52%);color:var(--text)}main[data-astro-cid-5xq5bi6u]{max-width:880px;margin:0 auto;padding:32px 20px 72px}.card[data-astro-cid-5xq5bi6u]{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#0b1220,var(--card));padding:20px}.pill[data-astro-cid-5xq5bi6u]{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid rgba(34,211,238,0.45);color:var(--accent);font-size:0.78rem;letter-spacing:0.04em;text-transform:uppercase}h1[data-astro-cid-5xq5bi6u]{margin:10px 0;font-size:clamp(1.4rem,2.5vw,2rem)}.muted[data-astro-cid-5xq5bi6u]{color:var(--muted);line-height:1.5}.grid[data-astro-cid-5xq5bi6u]{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}label[data-astro-cid-5xq5bi6u]{display:block;margin-bottom:6px;color:#d1d5db;font-size:0.92rem}input[data-astro-cid-5xq5bi6u],select[data-astro-cid-5xq5bi6u],textarea[data-astro-cid-5xq5bi6u]{width:100%;border:1px solid #475569;border-radius:10px;padding:11px 12px;background:#0b1220;color:#f8fafc}textarea[data-astro-cid-5xq5bi6u]{min-height:120px;resize:vertical}.actions[data-astro-cid-5xq5bi6u]{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}button[data-astro-cid-5xq5bi6u]{appearance:none;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#dbeafe;padding:12px 16px;font-weight:700;cursor:pointer}button[data-astro-cid-5xq5bi6u].primary{background:#10b981;border-color:transparent;color:#052e16}.preview[data-astro-cid-5xq5bi6u]{margin-top:12px;border:1px solid #334155;border-radius:12px;padding:12px;background:rgba(15,23,42,0.72)}.small[data-astro-cid-5xq5bi6u]{font-size:0.84rem;color:#94a3b8}a[data-astro-cid-5xq5bi6u]{color:#67e8f9}</style><script type="module" src="/@vite/client"></script>
+<script type="module" src="/@fs/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/node_modules/astro/dist/runtime/client/dev-toolbar/entrypoint.js?v=f21dd05e"></script>
+<script>window.__astro_dev_toolbar__ = {"root":"/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/","version":"5.16.11","debugInfo":"Astro                    v5.16.11\nNode                     v25.5.0\nSystem                   macOS (arm64)\nPackage Manager          npm\nOutput                   static\nAdapter                  none\nIntegrations             @astrojs/mdx\n                         @astrojs/sitemap\n                         @astrojs/svelte"}</script>
+<script type="module" src="/src/pages/trail-assistant-profile.astro?astro&type=style&index=0&lang.css"></script></head> <body data-astro-cid-5xq5bi6u data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-profile.astro" data-astro-source-loc="112:9"> <main data-astro-cid-5xq5bi6u data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-profile.astro" data-astro-source-loc="113:11"> <section class="card" data-astro-cid-5xq5bi6u data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-profile.astro" data-astro-source-loc="114:29"> <span class="pill" data-astro-cid-5xq5bi6u data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-profile.astro" data-astro-source-loc="115:28">Trail Assistant</span> <h1 data-astro-cid-5xq5bi6u data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-profile.astro" data-astro-source-loc="116:13">Profile state (demo)</h1> <p class="muted" data-astro-cid-5xq5bi6u data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-profile.astro" data-astro-source-loc="117:26">
+This route gives a visible profile-state path for demo review. Data is stored in browser localStorage
+          and reused by <a href="/trail-assistant" data-astro-cid-5xq5bi6u data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-profile.astro" data-astro-source-loc="119:52">/trail-assistant</a> when submitting intake requests.
+
+### curl -i http://127.0.0.1:4321/trail-assistant-thanks
+HTTP/1.1 200 OK
+Vary: Origin
+content-type: text/html
+Date: Tue, 03 Mar 2026 00:49:47 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+<!DOCTYPE html><html lang="en" data-astro-cid-qgllgubr> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Trail Assistant — Request received</title><style data-vite-dev-id="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-thanks.astro?astro&#38;type=style&#38;index=0&#38;lang.css">body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2e8f0}main[data-astro-cid-qgllgubr]{max-width:720px;margin:6rem auto;padding:1.25rem}.card[data-astro-cid-qgllgubr]{border:1px solid #334155;border-radius:16px;background:#111827;padding:1.5rem}a[data-astro-cid-qgllgubr]{color:#67e8f9}</style><script type="module" src="/@vite/client"></script>
+<script type="module" src="/@fs/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/node_modules/astro/dist/runtime/client/dev-toolbar/entrypoint.js?v=f21dd05e"></script>
+<script>window.__astro_dev_toolbar__ = {"root":"/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/","version":"5.16.11","debugInfo":"Astro                    v5.16.11\nNode                     v25.5.0\nSystem                   macOS (arm64)\nPackage Manager          npm\nOutput                   static\nAdapter                  none\nIntegrations             @astrojs/mdx\n                         @astrojs/sitemap\n                         @astrojs/svelte"}</script>
+<script type="module" src="/src/pages/trail-assistant-thanks.astro?astro&type=style&index=0&lang.css"></script></head> <body data-astro-cid-qgllgubr data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-thanks.astro" data-astro-source-loc="28:9"> <main data-astro-cid-qgllgubr data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-thanks.astro" data-astro-source-loc="29:11"> <div class="card" data-astro-cid-qgllgubr data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-thanks.astro" data-astro-source-loc="30:25"> <h1 data-astro-cid-qgllgubr data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-thanks.astro" data-astro-source-loc="31:13">Request received</h1> <p data-astro-cid-qgllgubr data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-thanks.astro" data-astro-source-loc="32:12">Thanks — your trail request is now in queue.</p> <p data-astro-cid-qgllgubr data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-thanks.astro" data-astro-source-loc="33:12">
+If your request is time-sensitive, email
+<a href="mailto:christopheraaronhogg@gmail.com?subject=Trail%20Assistant%20Urgent" data-astro-cid-qgllgubr data-astro-source-file="/Users/chrishogg/.openclaw/workspace/repos/hoggcountry/src/pages/trail-assistant-thanks.astro" data-astro-source-loc="35:94">christopheraaronhogg@gmail.com</a>
+
+### curl -i http://127.0.0.1:18000/api/v1/health
+HTTP/1.1 200 OK
+Host: 127.0.0.1:18000
+Connection: close
+X-Powered-By: PHP/8.5.2
+Cache-Control: no-cache, private
+Date: Tue, 03 Mar 2026 00:49:47 GMT
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+
+{"data":{"status":"ok","service":"hoggcountry-api"},"error":null,"meta":{"request_id":"440f7537-0e86-4d5d-b81b-d375d6d1813c"}}
+### curl -i http://127.0.0.1:18000/api/v1/trail-assistant/plans
+HTTP/1.1 200 OK
+Host: 127.0.0.1:18000
+Connection: close
+X-Powered-By: PHP/8.5.2
+Cache-Control: no-cache, private
+Date: Tue, 03 Mar 2026 00:49:47 GMT
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+
+{"data":{"stripe_wiring":"deferred","currency":"usd","plans":[{"id":"trail-free","name":"Trail Free","interval":"month","amount_cents":0,"stripe_price_id":null,"features":["local_first_profile","manual_gps_checkins","community_map_view"]},{"id":"trail-assistant-core","name":"Trail Assistant Core","interval":"month","amount_cents":1900,"stripe_price_id":null,"features":["all_free_features","priority_chat_support","weekly_plan_refresh","private_progress_history"]},{"id":"trail-assistant-guide","name":"Trail Assistant Guide+","interval":"month","amount_cents":3900,"stripe_price_id":null,"features":["all_core_features","daily_decision_support","resupply_memos","crisis_response_sla"]}]},"error":null,"meta":{"request_id":"d080d4c4-9e81-4d9a-8153-9604cfe4648a"}}
+### curl -i http://127.0.0.1:18000/api/v1/trail-assistant/byos/providers
+HTTP/1.1 200 OK
+Host: 127.0.0.1:18000
+Connection: close
+X-Powered-By: PHP/8.5.2
+Cache-Control: no-cache, private
+Date: Tue, 03 Mar 2026 00:49:47 GMT
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+
+{"data":{"default_provider":"openai_api_key","providers":[{"id":"openai_api_key","label":"OpenAI API key (user-provided)","enabled":true,"auth_mode":"api_key","funding_model":"user_api_payg","notes":"Supported now. User provides their own API key through secure settings.","available_models":["gpt-4.1-mini","gpt-4.1"]},{"id":"chatgpt_subscription_passthrough","label":"ChatGPT subscription passthrough","enabled":false,"auth_mode":"chatgpt_subscription_passthrough","funding_model":"not_available","notes":"Not currently supported for third-party API billing passthrough.","available_models":[]},{"id":"openai_oauth_future","label":"OpenAI OAuth (future placeholder)","enabled":false,"auth_mode":"oauth","funding_model":"unknown","notes":"Reserved for future provider-managed OAuth capabilities if OpenAI ships them.","available_models":[]}]},"error":null,"meta":{"request_id":"ee5bd385-74c9-406c-b7c9-f8237a7e96ec"}}
+## Local intake submission smoke
+### curl -i -X POST http://127.0.0.1:18000/api/v1/trail-assistant/intake
+HTTP/1.1 201 Created
+Host: 127.0.0.1:18000
+Connection: close
+X-Powered-By: PHP/8.5.2
+Cache-Control: no-cache, private
+Date: Tue, 03 Mar 2026 00:49:47 GMT
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+
+{"data":{"intake_id":"ta_y3wqxiwegi33","route_label":"pre-trail","source":"web_form","status":"new","received_at":"2026-03-03T00:49:47.000000Z","routing_labels":["pre-trail","on-trail","post-finish"],"idempotent_replay":false,"duplicate_guard":null},"error":null,"meta":{"request_id":"bc87b41d-8410-49e9-a919-156a49cfd5fb"}}
+## Local database evidence (latest intake records)
+### sqlite3 backend/database/database.sqlite "SELECT intake_id, route_label, name, email, subject, substr(message,1,90), json_extract(metadata, '$.profile_snapshot.trail_name'), json_extract(metadata, '$.profile_snapshot.direction'), received_at FROM trail_assistant_intakes ORDER BY id DESC LIMIT 3;"
+ta_y3wqxiwegi33|pre-trail|Chris Hogg|chris+hoggcountry@example.com|pre-trail | normal | demo smoke|Need a 7-day NOBO starter strategy with weather pivots.|||2026-03-03 00:49:47
+ta_ff1lqqtcspdg|pre-trail|Chris Hogg|chris+hoggcountry@example.com|pre-trail | normal | Heading NOBO in early April. Need a 7-day food + weather pivot plan for approach|Heading NOBO in early April. Need a 7-day food + weather pivot plan for approach through t|MiniHogg|NOBO|2026-03-03 00:48:57
+ta_6hrcgvcgz6xs|pre-trail|Demo User|demo@example.com|pre-trail | normal | local demo|Need help with first resupply and weather prep.|||2026-03-03 00:39:04

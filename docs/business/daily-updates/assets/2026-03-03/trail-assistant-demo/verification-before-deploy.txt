@@ -1,0 +1,72 @@
+# BEFORE deploy attempt
+Captured: 2026-03-02 18:49:54 CST
+
+## https://hoggcountry.com/trail-assistant
+HTTP/2 404 
+age: 1373
+cache-control: public,max-age=0,must-revalidate
+cache-status: "Netlify Edge"; hit
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.tile.topo-map.de https://*.tile.top-o-map.de; media-src 'self' blob:; frame-src https://www.youtube-nocookie.com; connect-src 'self' https://www.youtube.com https://api.open-meteo.com https://hoggcountry.on-forge.com https://app.hoggcountry.com wss:; worker-src 'self' blob:
+content-type: text/html; charset=utf-8
+date: Tue, 03 Mar 2026 00:49:55 GMT
+etag: 1756966999-ssl
+permissions-policy: geolocation=(self), microphone=(), camera=()
+referrer-policy: strict-origin-when-cross-origin
+server: Netlify
+strict-transport-security: max-age=31536000
+
+## https://hoggcountry.com/trail-assistant-thanks
+HTTP/2 404 
+age: 1373
+cache-control: public,max-age=0,must-revalidate
+cache-status: "Netlify Edge"; hit
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.tile.topo-map.de https://*.tile.top-o-map.de; media-src 'self' blob:; frame-src https://www.youtube-nocookie.com; connect-src 'self' https://www.youtube.com https://api.open-meteo.com https://hoggcountry.on-forge.com https://app.hoggcountry.com wss:; worker-src 'self' blob:
+content-type: text/html; charset=utf-8
+date: Tue, 03 Mar 2026 00:49:55 GMT
+etag: 1756966999-ssl
+permissions-policy: geolocation=(self), microphone=(), camera=()
+referrer-policy: strict-origin-when-cross-origin
+server: Netlify
+strict-transport-security: max-age=31536000
+
+## https://hoggcountry.on-forge.com/
+HTTP/2 500 
+date: Tue, 03 Mar 2026 00:49:55 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+cache-control: no-cache, private
+cf-cache-status: DYNAMIC
+set-cookie: __cf_bm=jmSCnl6CEfWSvQxIdNHIVrtKvINZLXU0_V4OjuCmcRg-1772498995.3837545-1.0.1.1-cLUikLhJUe12O7PkxG6njojQjCXRdcdqRSgDwOh44Z6yQwm5JMay2uJHuQAHocGxAO2l.szX7He0KWDuUILeOvTcWqh1mgqRpSbY4rDqv8byzsqayArNXJ9vRrDFrCXH; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:19:55 GMT
+cf-ray: 9d64a4e12ad8d19a-MCI
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+## https://hoggcountry.on-forge.com/api/v1/health
+HTTP/2 200 
+date: Tue, 03 Mar 2026 00:49:55 GMT
+content-type: application/json
+server: cloudflare
+vary: Accept-Encoding
+cache-control: no-cache, private
+access-control-allow-origin: *
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+set-cookie: __cf_bm=PGKkosh3f4UaNVYBJsHEOC769WNp2jnrvuGuHFPmB04-1772498995.6649024-1.0.1.1-1aa2UOQ_S0x4B6Q_dFX_rvaGBixArB8TqpEzyey4Drq7zdjiExc4i_tn.V9SvloUhgzyzHAVxqoY4oRiXeS9TjMLkgOsgtwOHfQVhdDOBOae5gmrINL_bKkp7lbcJ3AN; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:19:55 GMT
+cf-cache-status: DYNAMIC
+
+## https://hoggcountry.on-forge.com/api/v1/trail-assistant/plans
+HTTP/2 404 
+date: Tue, 03 Mar 2026 00:49:55 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+vary: Accept-Encoding
+cache-control: no-cache, private
+access-control-allow-origin: *
+set-cookie: __cf_bm=S_auF9JV7qOGWXDHOTos5ZFCj2YXnMOfuQekJg8x8HE-1772498995.8354695-1.0.1.1-oYmzN_GI_hoT4bW1lA1rcEDkno_3WlHVwWFL1iUX9T4ONV5PEPTFW1W4xWX0ZSGaXy9YxMZVQl2snrpEPKkhQ6vy0j.FcySYHpPj0qrksS3JSv21evvoseafl7c_oHBI; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:19:55 GMT
+cf-cache-status: DYNAMIC
+cf-ray: 9d64a4e3ffab299f-MCI
+
+<!DOCTYPE html>

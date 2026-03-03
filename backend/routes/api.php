@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CommunityTrackerController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TrackerLiveController;
+use App\Http\Controllers\Api\V1\TrailAssistantByosController;
 use App\Http\Controllers\Api\V1\TrailAssistantChatController;
 use App\Http\Controllers\Api\V1\TrailAssistantCheckinController;
 use App\Http\Controllers\Api\V1\TrailAssistantGovernanceController;
@@ -57,6 +58,7 @@ Route::prefix('v1')->group(function (): void {
 
     Route::prefix('trail-assistant')->group(function (): void {
         Route::get('/plans', [TrailAssistantPlanController::class, 'index']);
+        Route::get('/byos/providers', [TrailAssistantByosController::class, 'providers']);
         Route::post('/intake', [TrailAssistantIntakeController::class, 'store']);
         Route::get('/map-reports/public', [TrailAssistantMapReportController::class, 'publicFeed']);
         Route::get('/map-sharing/public', [TrailAssistantMapVisibilityController::class, 'publicFeed']);
