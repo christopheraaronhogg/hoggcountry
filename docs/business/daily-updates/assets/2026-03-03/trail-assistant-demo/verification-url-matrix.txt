@@ -1,0 +1,23 @@
+# Trail Assistant URL Matrix Verification
+generated_at=2026-03-03T07:56:26.389Z
+timeout_ms=12000
+total=18 pass=11 fail=7
+
+[public] GET https://hoggcountry.com/trail-assistant -> 404 (expect 200) FAIL :: <!DOCTYPE html> <html lang="en"> <head> <meta charset="utf-8" /> <meta name="viewport" content="width=device-width, init
+[public] GET https://hoggcountry.com/trail-assistant-profile -> 404 (expect 200) FAIL :: <!DOCTYPE html> <html lang="en"> <head> <meta charset="utf-8" /> <meta name="viewport" content="width=device-width, init
+[public] GET https://hoggcountry.com/trail-assistant-byos -> 404 (expect 200) FAIL :: <!DOCTYPE html> <html lang="en"> <head> <meta charset="utf-8" /> <meta name="viewport" content="width=device-width, init
+[public] GET https://hoggcountry.com/trail-assistant-thanks -> 404 (expect 200) FAIL :: <!DOCTYPE html> <html lang="en"> <head> <meta charset="utf-8" /> <meta name="viewport" content="width=device-width, init
+[public] GET https://hoggcountry.on-forge.com/api/v1/health -> 200 (expect 200) PASS :: health=ok
+[public] GET https://hoggcountry.on-forge.com/api/v1/trail-assistant/plans -> 404 (expect 200) FAIL
+[public] GET https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/providers -> 404 (expect 200) FAIL
+[public] GET https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/decision -> 404 (expect 200) FAIL
+[local] GET http://127.0.0.1:4321/trail-assistant -> 200 (expect 200) PASS :: <!DOCTYPE html><html lang="en" data-astro-cid-nb5g2kyd> <head><meta charset="UTF-8"><meta name="viewport" content="width
+[local] GET http://127.0.0.1:4321/trail-assistant-profile -> 200 (expect 200) PASS :: <!DOCTYPE html><html lang="en" data-astro-cid-5xq5bi6u> <head><meta charset="UTF-8"><meta name="viewport" content="width
+[local] GET http://127.0.0.1:4321/trail-assistant-byos -> 200 (expect 200) PASS :: <!DOCTYPE html><html lang="en" data-astro-cid-pft7tek7> <head><meta charset="UTF-8"><meta name="viewport" content="width
+[local] GET http://127.0.0.1:4321/trail-assistant-thanks -> 200 (expect 200) PASS :: <!DOCTYPE html><html lang="en" data-astro-cid-qgllgubr> <head><meta charset="UTF-8"><meta name="viewport" content="width
+[local] GET http://127.0.0.1:18000/api/v1/health -> 200 (expect 200) PASS :: health=ok
+[local] GET http://127.0.0.1:18000/api/v1/trail-assistant/plans -> 200 (expect 200) PASS :: plans=3
+[local] GET http://127.0.0.1:18000/api/v1/trail-assistant/byos/providers -> 200 (expect 200) PASS :: providers=3;default=openai_api_key
+[local] GET http://127.0.0.1:18000/api/v1/trail-assistant/byos/decision -> 200 (expect 200) PASS :: decision=accepted;supported=3;unsupported=2
+[local] POST http://127.0.0.1:18000/api/v1/trail-assistant/byos/entitlement-preview -> 200 (expect 200) PASS :: entitlement=active;reason=api_key_present
+[local] POST http://127.0.0.1:18000/api/v1/trail-assistant/byos/entitlement-preview -> 200 (expect 200) PASS :: entitlement=needs_credentials;reason=api_key_format_invalid

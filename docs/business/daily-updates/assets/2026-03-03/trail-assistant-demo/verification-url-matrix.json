@@ -1,0 +1,288 @@
+{
+  "generated_at": "2026-03-03T07:56:26.389Z",
+  "timeout_ms": 12000,
+  "results": [
+    {
+      "id": "public_web_trail_assistant",
+      "lane": "public",
+      "method": "GET",
+      "url": "https://hoggcountry.com/trail-assistant",
+      "expect": [
+        200
+      ],
+      "status": 404,
+      "ok": false,
+      "error": null,
+      "duration_ms": 471,
+      "final_url": "https://hoggcountry.com/trail-assistant",
+      "detail": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, init"
+    },
+    {
+      "id": "public_web_trail_assistant_profile",
+      "lane": "public",
+      "method": "GET",
+      "url": "https://hoggcountry.com/trail-assistant-profile",
+      "expect": [
+        200
+      ],
+      "status": 404,
+      "ok": false,
+      "error": null,
+      "duration_ms": 173,
+      "final_url": "https://hoggcountry.com/trail-assistant-profile",
+      "detail": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, init"
+    },
+    {
+      "id": "public_web_trail_assistant_byos",
+      "lane": "public",
+      "method": "GET",
+      "url": "https://hoggcountry.com/trail-assistant-byos",
+      "expect": [
+        200
+      ],
+      "status": 404,
+      "ok": false,
+      "error": null,
+      "duration_ms": 112,
+      "final_url": "https://hoggcountry.com/trail-assistant-byos",
+      "detail": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, init"
+    },
+    {
+      "id": "public_web_trail_assistant_thanks",
+      "lane": "public",
+      "method": "GET",
+      "url": "https://hoggcountry.com/trail-assistant-thanks",
+      "expect": [
+        200
+      ],
+      "status": 404,
+      "ok": false,
+      "error": null,
+      "duration_ms": 61,
+      "final_url": "https://hoggcountry.com/trail-assistant-thanks",
+      "detail": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, init"
+    },
+    {
+      "id": "public_api_health",
+      "lane": "public",
+      "method": "GET",
+      "url": "https://hoggcountry.on-forge.com/api/v1/health",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 276,
+      "final_url": "https://hoggcountry.on-forge.com/api/v1/health",
+      "detail": "health=ok"
+    },
+    {
+      "id": "public_api_plans",
+      "lane": "public",
+      "method": "GET",
+      "url": "https://hoggcountry.on-forge.com/api/v1/trail-assistant/plans",
+      "expect": [
+        200
+      ],
+      "status": 404,
+      "ok": false,
+      "error": null,
+      "duration_ms": 84,
+      "final_url": "https://hoggcountry.on-forge.com/api/v1/trail-assistant/plans",
+      "detail": null
+    },
+    {
+      "id": "public_api_byos_providers",
+      "lane": "public",
+      "method": "GET",
+      "url": "https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/providers",
+      "expect": [
+        200
+      ],
+      "status": 404,
+      "ok": false,
+      "error": null,
+      "duration_ms": 99,
+      "final_url": "https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/providers",
+      "detail": null
+    },
+    {
+      "id": "public_api_byos_decision",
+      "lane": "public",
+      "method": "GET",
+      "url": "https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/decision",
+      "expect": [
+        200
+      ],
+      "status": 404,
+      "ok": false,
+      "error": null,
+      "duration_ms": 83,
+      "final_url": "https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/decision",
+      "detail": null
+    },
+    {
+      "id": "local_web_trail_assistant",
+      "lane": "local",
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/trail-assistant",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 19,
+      "final_url": "http://127.0.0.1:4321/trail-assistant",
+      "detail": "<!DOCTYPE html><html lang=\"en\" data-astro-cid-nb5g2kyd> <head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width"
+    },
+    {
+      "id": "local_web_trail_assistant_profile",
+      "lane": "local",
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/trail-assistant-profile",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 3,
+      "final_url": "http://127.0.0.1:4321/trail-assistant-profile",
+      "detail": "<!DOCTYPE html><html lang=\"en\" data-astro-cid-5xq5bi6u> <head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width"
+    },
+    {
+      "id": "local_web_trail_assistant_byos",
+      "lane": "local",
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/trail-assistant-byos",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 2,
+      "final_url": "http://127.0.0.1:4321/trail-assistant-byos",
+      "detail": "<!DOCTYPE html><html lang=\"en\" data-astro-cid-pft7tek7> <head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width"
+    },
+    {
+      "id": "local_web_trail_assistant_thanks",
+      "lane": "local",
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/trail-assistant-thanks",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 1,
+      "final_url": "http://127.0.0.1:4321/trail-assistant-thanks",
+      "detail": "<!DOCTYPE html><html lang=\"en\" data-astro-cid-qgllgubr> <head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width"
+    },
+    {
+      "id": "local_api_health",
+      "lane": "local",
+      "method": "GET",
+      "url": "http://127.0.0.1:18000/api/v1/health",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 261,
+      "final_url": "http://127.0.0.1:18000/api/v1/health",
+      "detail": "health=ok"
+    },
+    {
+      "id": "local_api_plans",
+      "lane": "local",
+      "method": "GET",
+      "url": "http://127.0.0.1:18000/api/v1/trail-assistant/plans",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 5,
+      "final_url": "http://127.0.0.1:18000/api/v1/trail-assistant/plans",
+      "detail": "plans=3"
+    },
+    {
+      "id": "local_api_byos_providers",
+      "lane": "local",
+      "method": "GET",
+      "url": "http://127.0.0.1:18000/api/v1/trail-assistant/byos/providers",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 4,
+      "final_url": "http://127.0.0.1:18000/api/v1/trail-assistant/byos/providers",
+      "detail": "providers=3;default=openai_api_key"
+    },
+    {
+      "id": "local_api_byos_decision",
+      "lane": "local",
+      "method": "GET",
+      "url": "http://127.0.0.1:18000/api/v1/trail-assistant/byos/decision",
+      "expect": [
+        200
+      ],
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 3,
+      "final_url": "http://127.0.0.1:18000/api/v1/trail-assistant/byos/decision",
+      "detail": "decision=accepted;supported=3;unsupported=2"
+    },
+    {
+      "id": "local_api_byos_entitlement_preview_valid",
+      "lane": "local",
+      "method": "POST",
+      "url": "http://127.0.0.1:18000/api/v1/trail-assistant/byos/entitlement-preview",
+      "expect": [
+        200
+      ],
+      "body": {
+        "provider": "openai_api_key",
+        "credentials": {
+          "api_key": "sk-demo-wave2-proof-12345678901234567890"
+        }
+      },
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 18,
+      "final_url": "http://127.0.0.1:18000/api/v1/trail-assistant/byos/entitlement-preview",
+      "detail": "entitlement=active;reason=api_key_present"
+    },
+    {
+      "id": "local_api_byos_entitlement_preview_invalid",
+      "lane": "local",
+      "method": "POST",
+      "url": "http://127.0.0.1:18000/api/v1/trail-assistant/byos/entitlement-preview",
+      "expect": [
+        200
+      ],
+      "body": {
+        "provider": "openai_api_key",
+        "credentials": {
+          "api_key": "invalid-prefix-wave2-proof-12345678901234567890"
+        }
+      },
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "duration_ms": 4,
+      "final_url": "http://127.0.0.1:18000/api/v1/trail-assistant/byos/entitlement-preview",
+      "detail": "entitlement=needs_credentials;reason=api_key_format_invalid"
+    }
+  ]
+}

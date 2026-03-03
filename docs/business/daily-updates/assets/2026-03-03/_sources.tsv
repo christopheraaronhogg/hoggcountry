@@ -1,0 +1,4 @@
+file	label	url	http_status
+01-live-homepage.png	Live homepage	https://hoggcountry.com/	200
+02-trail-assistant-surface.png	Trail Assistant surface	https://cdn.jsdelivr.net/gh/christopheraaronhogg/hoggcountry@main/docs/business/daily-updates/latest.html	200
+03-backend-api-health.png	Backend API health	https://hoggcountry.on-forge.com/api/v1/health	200
