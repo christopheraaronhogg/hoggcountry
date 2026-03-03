@@ -108,6 +108,7 @@ HTTP verification companions:
 
 ## Production-readiness gaps remaining
 1. **Deploy drift fix:** Netlify + Forge are not serving latest Trail Assistant route/API set.
-2. **Public verification rerun:** Need successful public 200 checks for intake + thanks + plans endpoints.
-3. **BYOS hardening:** secure persistent storage/rotation UX for user API keys (scaffold exists; full key lifecycle not yet shipped).
-4. **Auth-backed profile persistence:** current demo profile uses localStorage; production should use authenticated server-side profile state.
+2. **Deploy access visibility:** direct Forge SSH/TCP22 access timed out from this environment, so manual deploy commands could not be run.
+3. **Public verification rerun:** Need successful public 200 checks for intake + thanks + plans endpoints.
+4. **BYOS hardening:** secure persistent storage/rotation UX for user API keys (scaffold exists; full key lifecycle not yet shipped).
+5. **Auth-backed profile persistence:** current demo profile uses localStorage; production should use authenticated server-side profile state.

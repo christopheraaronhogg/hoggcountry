@@ -430,6 +430,7 @@
   - **Deploy attempt:**
     - Pushed `main` commit `2c51960` to `origin`.
     - Monitored 10 propagation checks over ~7 minutes; public Trail Assistant URLs remained unchanged (404/404/404).
+    - Attempted direct Forge host access (`ssh forge@hoggcountry.on-forge.com` and TCP 22 probe) timed out, so manual server-side deploy command execution was unavailable from this environment.
     - Post-push verification saved to `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/verification-after-push.txt`.
   - **Blocker status:**
     - Public deploy repair remains blocked on deployment-surface access/alignment (Netlify + Forge) despite successful GitHub push.

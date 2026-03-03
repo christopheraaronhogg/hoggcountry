@@ -74,6 +74,7 @@ Repo already contained Trail Assistant implementation, but production surfaces w
 - **BYOS decision made**: user-provided OpenAI API key is the viable current model; ChatGPT subscription passthrough is not currently supportable from public OpenAI docs.
 - **Production URLs remain misaligned** (deploy drift persists), so local demo path is the reliable morning fallback.
 - GitHub push to `main` completed (`2c51960`), but repeated post-push checks still returned 404/500 mismatch externally.
+- Attempted direct Forge SSH/TCP22 access timed out, so manual server deploy commands could not be executed from this environment.
 
 ## Follow-ups
 1. Resolve Netlify/Forge deploy alignment and re-run same curl matrix publicly.
