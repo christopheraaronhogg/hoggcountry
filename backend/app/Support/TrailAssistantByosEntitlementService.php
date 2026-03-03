@@ -88,6 +88,19 @@ final class TrailAssistantByosEntitlementService
             );
         }
 
+        $requiredPrefix = is_string($provider['api_key_prefix'] ?? null)
+            ? trim((string) $provider['api_key_prefix'])
+            : '';
+
+        if ($requiredPrefix !== '' && ! str_starts_with($apiKey, $requiredPrefix)) {
+            return new TrailAssistantByosEntitlement(
+                provider: $provider['id'],
+                status: 'needs_credentials',
+                reason: 'api_key_format_invalid',
+                details: $provider,
+            );
+        }
+
         return new TrailAssistantByosEntitlement(
             provider: $provider['id'],
             status: 'active',

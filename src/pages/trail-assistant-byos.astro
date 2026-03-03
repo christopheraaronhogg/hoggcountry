@@ -1,0 +1,371 @@
+---
+const title = 'Trail Assistant BYOS Readiness Check';
+const description = 'Preview BYOS provider eligibility without persisting credentials.';
+const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --line: #334155;
+        --accent: #22d3ee;
+        --ok: #10b981;
+        --warn: #f59e0b;
+        --bad: #ef4444;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 54%);
+        color: var(--text);
+      }
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 32px 20px 72px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: linear-gradient(180deg, #0b1220, var(--card));
+        padding: 20px;
+        margin-top: 16px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(34, 211, 238, 0.45);
+        color: var(--accent);
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 10px 0;
+        font-size: clamp(1.4rem, 2.8vw, 2.1rem);
+      }
+      h2 {
+        margin: 12px 0;
+        font-size: 1.15rem;
+      }
+      .muted {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        color: #d1d5db;
+        font-size: 0.92rem;
+      }
+      input, select {
+        width: 100%;
+        border: 1px solid #475569;
+        border-radius: 10px;
+        padding: 11px 12px;
+        background: #0b1220;
+        color: #f8fafc;
+      }
+      button {
+        appearance: none;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        background: var(--ok);
+        color: #052e16;
+        padding: 12px 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.72;
+      }
+      .status {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+      .result {
+        margin-top: 12px;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(15, 23, 42, 0.74);
+      }
+      .result pre {
+        margin: 10px 0 0;
+        overflow-x: auto;
+        background: rgba(2, 6, 23, 0.85);
+        border: 1px solid #1e293b;
+        border-radius: 10px;
+        padding: 10px;
+        color: #cbd5e1;
+        font-size: 0.82rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        border: 1px solid #334155;
+        padding: 4px 10px;
+        font-size: 0.82rem;
+      }
+      .badge.ok {
+        border-color: rgba(16, 185, 129, 0.45);
+        color: #86efac;
+      }
+      .badge.warn {
+        border-color: rgba(245, 158, 11, 0.5);
+        color: #fcd34d;
+      }
+      .badge.bad {
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #fca5a5;
+      }
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        line-height: 1.6;
+        color: #d1d5db;
+      }
+      a { color: #67e8f9; }
+      .small {
+        font-size: 0.84rem;
+        color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="card">
+        <span class="pill">Trail Assistant</span>
+        <h1>BYOS readiness check (demo)</h1>
+        <p class="muted">
+          Verify provider eligibility and API-key shape without storing secrets.
+          This is a preview-only check for demo and architecture proof.
+        </p>
+      </section>
+
+      <section class="card">
+        <span class="pill">Preview check</span>
+        <h2>Run entitlement preview</h2>
+        <p class="muted">
+          This call validates provider + credential shape only. Keys are not persisted by this endpoint.
+        </p>
+
+        <form id="byos-form">
+          <div class="grid">
+            <div>
+              <label for="provider">Provider</label>
+              <select id="provider" name="provider"></select>
+            </div>
+            <div>
+              <label for="api_key">API key (demo value allowed)</label>
+              <input id="api_key" name="api_key" type="password" autocomplete="off" placeholder="sk-..." />
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <button id="submit" type="submit">Run BYOS entitlement check</button>
+            <a href="/trail-assistant" class="small">Back to intake demo →</a>
+          </div>
+        </form>
+
+        <p id="status" class="status" aria-live="polite"></p>
+
+        <div id="result" class="result" hidden>
+          <span id="result-badge" class="badge">No check yet</span>
+          <p id="result-summary" class="small" style="margin:8px 0 0;"></p>
+          <pre id="result-json"></pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <span class="pill">Guardrails</span>
+        <ul>
+          <li>Never share real production keys in screenshots or public chats.</li>
+          <li>For production, store BYOS keys encrypted server-side with rotation + revocation controls.</li>
+          <li>ChatGPT subscription passthrough remains unsupported; API-key BYOS is the feasible path today.</li>
+        </ul>
+      </section>
+    </main>
+
+    <script is:inline define:vars={{ apiBase }}>
+      (() => {
+        const API_BASE = apiBase;
+        const providerSelect = document.getElementById('provider');
+        const apiKeyInput = document.getElementById('api_key');
+        const form = document.getElementById('byos-form');
+        const submitButton = document.getElementById('submit');
+        const statusEl = document.getElementById('status');
+        const resultEl = document.getElementById('result');
+        const badgeEl = document.getElementById('result-badge');
+        const summaryEl = document.getElementById('result-summary');
+        const jsonEl = document.getElementById('result-json');
+
+        if (!(form instanceof HTMLFormElement)) return;
+        if (!(providerSelect instanceof HTMLSelectElement)) return;
+        if (!(apiKeyInput instanceof HTMLInputElement)) return;
+        if (!(submitButton instanceof HTMLButtonElement)) return;
+        if (!(statusEl instanceof HTMLElement)) return;
+        if (!(resultEl instanceof HTMLElement)) return;
+        if (!(badgeEl instanceof HTMLElement)) return;
+        if (!(summaryEl instanceof HTMLElement)) return;
+        if (!(jsonEl instanceof HTMLElement)) return;
+
+        const url = new URL(window.location.href);
+        const prefillProvider = (url.searchParams.get('provider') || '').trim();
+        const prefillApiKey = (url.searchParams.get('api_key') || '').trim();
+        const autoCheck = url.searchParams.get('autocheck') === '1';
+
+        function setStatus(message, tone = 'muted') {
+          statusEl.textContent = message;
+          statusEl.style.color = tone === 'error' ? '#fca5a5' : tone === 'success' ? '#86efac' : '#94a3b8';
+        }
+
+        function toneForEntitlement(status) {
+          if (status === 'active') return 'ok';
+          if (status === 'needs_credentials' || status === 'pending_provider_integration') return 'warn';
+          return 'bad';
+        }
+
+        function summaryForEntitlement(entitlement) {
+          const provider = entitlement?.provider || 'unknown';
+          const status = entitlement?.status || 'unknown';
+          const reason = entitlement?.reason || 'unknown_reason';
+          return `Provider: ${provider} · Status: ${status} · Reason: ${reason}`;
+        }
+
+        function safeJson(payload) {
+          return JSON.stringify(payload, null, 2);
+        }
+
+        function renderResult(payload) {
+          const entitlement = payload?.data?.entitlement || {};
+          const status = String(entitlement.status || 'unknown');
+          const tone = toneForEntitlement(status);
+
+          badgeEl.className = `badge ${tone}`;
+          badgeEl.textContent = status;
+          summaryEl.textContent = summaryForEntitlement(entitlement);
+          jsonEl.textContent = safeJson(payload?.data || payload || {});
+          resultEl.hidden = false;
+        }
+
+        async function loadProviders() {
+          const response = await fetch(`${API_BASE}/trail-assistant/byos/providers`, {
+            headers: { Accept: 'application/json' },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Provider list failed (${response.status}).`);
+          }
+
+          const payload = await response.json();
+          const providers = Array.isArray(payload?.data?.providers) ? payload.data.providers : [];
+          const defaultProvider = String(payload?.data?.default_provider || '');
+
+          providerSelect.innerHTML = '';
+          providers.forEach((provider) => {
+            if (!provider || typeof provider !== 'object') return;
+            const id = String(provider.id || '').trim();
+            if (!id) return;
+
+            const option = document.createElement('option');
+            option.value = id;
+            const enabled = provider.enabled ? 'enabled' : 'disabled';
+            option.textContent = `${provider.label || id} (${enabled})`;
+            providerSelect.appendChild(option);
+          });
+
+          if (prefillProvider) {
+            providerSelect.value = prefillProvider;
+          } else if (defaultProvider) {
+            providerSelect.value = defaultProvider;
+          }
+
+          if (prefillApiKey) {
+            apiKeyInput.value = prefillApiKey;
+          }
+
+          return providers;
+        }
+
+        async function runPreview() {
+          const provider = (providerSelect.value || '').trim();
+          const apiKey = (apiKeyInput.value || '').trim();
+
+          submitButton.disabled = true;
+          setStatus('Running entitlement preview…');
+
+          try {
+            const response = await fetch(`${API_BASE}/trail-assistant/byos/entitlement-preview`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+              },
+              body: JSON.stringify({
+                provider,
+                credentials: {
+                  api_key: apiKey || null,
+                },
+              }),
+            });
+
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+              const message = payload?.error?.message || `Preview failed (${response.status}).`;
+              throw new Error(message);
+            }
+
+            renderResult(payload);
+            setStatus('Preview complete. Keys were not persisted by this endpoint.', 'success');
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Preview request failed.';
+            setStatus(message, 'error');
+          } finally {
+            submitButton.disabled = false;
+          }
+        }
+
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          await runPreview();
+        });
+
+        (async () => {
+          try {
+            await loadProviders();
+            setStatus('Providers loaded.');
+
+            if (autoCheck && apiKeyInput.value.trim()) {
+              await runPreview();
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unable to load providers.';
+            setStatus(message, 'error');
+          }
+        })();
+      })();
+    </script>
+  </body>
+</html>

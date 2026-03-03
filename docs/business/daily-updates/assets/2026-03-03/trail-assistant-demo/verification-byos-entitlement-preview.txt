@@ -1,0 +1,38 @@
+# BYOS entitlement preview verification
+Generated: 2026-03-02 22:50:30 CST
+
+## GET /api/v1/trail-assistant/byos/providers
+HTTP/1.1 200 OK
+Host: 127.0.0.1:8000
+Connection: close
+X-Powered-By: PHP/8.5.2
+Cache-Control: no-cache, private
+Date: Tue, 03 Mar 2026 04:50:31 GMT
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+
+{"data":{"default_provider":"openai_api_key","providers":[{"id":"openai_api_key","label":"OpenAI API key (user-provided)","enabled":true,"auth_mode":"api_key","funding_model":"user_api_payg","api_key_prefix":"sk-","notes":"Supported now. User provides their own API key through secure settings.","available_models":["gpt-4.1-mini","gpt-4.1"]},{"id":"chatgpt_subscription_passthrough","label":"ChatGPT subscription passthrough","enabled":false,"auth_mode":"chatgpt_subscription_passthrough","funding_model":"not_available","api_key_prefix":"","notes":"Not currently supported for third-party API billing passthrough.","available_models":[]},{"id":"openai_oauth_future","label":"OpenAI OAuth (future placeholder)","enabled":false,"auth_mode":"oauth","funding_model":"unknown","api_key_prefix":"","notes":"Reserved for future provider-managed OAuth capabilities if OpenAI ships them.","available_models":[]}]},"error":null,"meta":{"request_id":"50c01674-931b-4d61-bd43-27b75a06f28b"}}
+
+## POST /api/v1/trail-assistant/byos/entitlement-preview (valid demo key shape)
+HTTP/1.1 200 OK
+Host: 127.0.0.1:8000
+Connection: close
+X-Powered-By: PHP/8.5.2
+Cache-Control: no-cache, private
+Date: Tue, 03 Mar 2026 04:50:31 GMT
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+
+{"data":{"default_provider":"openai_api_key","entitlement":{"provider":"openai_api_key","status":"active","reason":"api_key_present","details":{"id":"openai_api_key","label":"OpenAI API key (user-provided)","enabled":true,"auth_mode":"api_key","funding_model":"user_api_payg","api_key_prefix":"sk-","notes":"Supported now. User provides their own API key through secure settings.","available_models":["gpt-4.1-mini","gpt-4.1"]}},"credentials_summary":{"api_key_present":true,"api_key_length":34,"api_key_hint":"sk-d\u20267890"},"preview_mode":{"stored":false,"note":"Credentials are evaluated only for this request and are not persisted."}},"error":null,"meta":{"request_id":"8b4f77eb-aa21-4613-9882-6bff06b4ca0d"}}
+
+## POST /api/v1/trail-assistant/byos/entitlement-preview (invalid key shape)
+HTTP/1.1 200 OK
+Host: 127.0.0.1:8000
+Connection: close
+X-Powered-By: PHP/8.5.2
+Cache-Control: no-cache, private
+Date: Tue, 03 Mar 2026 04:50:31 GMT
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+
+{"data":{"default_provider":"openai_api_key","entitlement":{"provider":"openai_api_key","status":"needs_credentials","reason":"api_key_format_invalid","details":{"id":"openai_api_key","label":"OpenAI API key (user-provided)","enabled":true,"auth_mode":"api_key","funding_model":"user_api_payg","api_key_prefix":"sk-","notes":"Supported now. User provides their own API key through secure settings.","available_models":["gpt-4.1-mini","gpt-4.1"]}},"credentials_summary":{"api_key_present":true,"api_key_length":39,"api_key_hint":"demo\u20262345"},"preview_mode":{"stored":false,"note":"Credentials are evaluated only for this request and are not persisted."}},"error":null,"meta":{"request_id":"1078979c-3f6e-4230-86f9-fb877afd295d"}}

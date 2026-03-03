@@ -1,11 +1,12 @@
 # Trail Assistant Backlog
 
-Last updated: 2026-03-03 00:55 CT
+Last updated: 2026-03-02 22:55 CT
 
 ## This Week (2026-03-02 → 2026-03-08)
 - [x] **P0.1** Add FAQ from simulation gaps (privacy sharing + map verification expectations)
 - [x] **P0.5** Restore a demo-ready Trail Assistant path (local fallback) with intake submit + profile-state route + evidence screenshots
 - [x] **P0.6** Produce BYOS architecture decision for OpenAI/ChatGPT feasibility + scaffold provider/entitlement abstraction
+- [x] **P0.8** Add BYOS entitlement preview endpoint + demo UI route for morning proof checks
 - [ ] **P0.7** Resolve production deploy drift (Netlify/Forge route mismatch) and verify public Trail Assistant URLs post-deploy
 - [ ] **P0.2** Ship blocker email template helper + auto-send guard
 - [ ] **P0.3** Ship daily runlog autopdater helper
@@ -108,3 +109,4 @@ Last updated: 2026-03-03 00:55 CT
 - [x] Added demo-visible profile state path (`/trail-assistant-profile`) and linked it to intake metadata flow (`/trail-assistant`) with local proof artifacts.
 - [x] Captured local + public evidence pack under `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/`.
 - [x] Published BYOS architecture decision for OpenAI/ChatGPT feasibility and scaffolded provider abstraction + entitlement checks (`trail-assistant-byos-architecture-decision-2026-03-03.md`).
+- [x] Added BYOS entitlement preview lane (`POST /api/v1/trail-assistant/byos/entitlement-preview`) plus demo route (`/trail-assistant-byos`) with masked credential proof artifacts.

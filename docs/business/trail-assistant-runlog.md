@@ -435,3 +435,33 @@
   - **Blocker status:**
     - Public deploy repair remains blocked on deployment-surface access/alignment (Netlify + Forge) despite successful GitHub push.
     - Reliable local demo path is now available and evidenced for morning review.
+
+- **2026-03-02 19:10 CST**
+  - **Task worked:** Trail Assistant intake inbox triage (explicit marker sweep).
+  - **Account:** `chris.stitchscreen@gmail.com`
+  - **Query scope:** `in:inbox newer_than:3d subject:"Trail Assistant Request"` and `in:inbox newer_than:3d subject:"Trail Assistant Urgent"`
+  - **Handled requests:** 0
+  - **Handled message IDs:** none
+  - **Sent replies:** 0
+  - **Escalations:** 0
+  - **Outcome:** No matching explicit Trail Assistant intake requests found in the last 3 days; no action required.
+
+- **2026-03-02 22:51 CST → 22:55 CST**
+  - **Task worked:** Overnight demo wave — BYOS entitlement preview flow (architecture proof increment).
+  - **What changed:**
+    - Added public BYOS entitlement preview endpoint: `POST /api/v1/trail-assistant/byos/entitlement-preview`.
+    - Extended BYOS controller to return masked credential summary + explicit non-persistence guardrail (`preview_mode.stored=false`).
+    - Added provider-level API key prefix support (`api_key_prefix`) and OpenAI key-shape validation (`sk-` prefix) in entitlement service.
+    - Added demo UI route: `/trail-assistant-byos` with provider load + entitlement preview runner (no localStorage persistence).
+    - Linked `/trail-assistant` profile section to the new BYOS readiness route.
+    - Captured new evidence artifacts:
+      - `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/07-local-byos-entitlement-preview.png`
+      - `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/verification-byos-entitlement-preview.txt`
+  - **Validation / evidence:**
+    - `php artisan test tests/Feature/Api/V1/TrailAssistantByosApiTest.php tests/Unit/TrailAssistantByosEntitlementServiceTest.php` ✅ (9 tests, 63 assertions)
+    - `npm run build` ✅ (includes `/trail-assistant-byos` static route)
+    - Local curl proofs captured in `verification-byos-entitlement-preview.txt`:
+      - valid key shape → `status=active`
+      - invalid key shape → `reason=api_key_format_invalid`
+      - response includes masked key hint only (no raw key echo)
+  - **Next step:** Keep pushing P0.7 deploy-drift repair so this new BYOS demo surface is reachable on public URLs without local fallback.

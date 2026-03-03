@@ -82,6 +82,11 @@ Do **not** implement “Sign in with ChatGPT/OpenAI subscription passthrough” 
   - `backend/app/Support/TrailAssistantByosEntitlement.php`
 - Public provider-capability endpoint:
   - `GET /api/v1/trail-assistant/byos/providers`
+- Public entitlement-preview endpoint (non-persistent proof lane):
+  - `POST /api/v1/trail-assistant/byos/entitlement-preview`
+  - returns entitlement status + masked credential summary (`api_key_hint`), with `preview_mode.stored=false`
+- Demo UI route for proof runs:
+  - `/trail-assistant-byos`
 - Config surface:
   - `backend/config/trail_assistant.php` → `byos` section
 

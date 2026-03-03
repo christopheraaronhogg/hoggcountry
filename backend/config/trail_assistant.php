@@ -108,6 +108,7 @@ return [
                 'enabled' => true,
                 'auth_mode' => 'api_key',
                 'funding_model' => 'user_api_payg',
+                'api_key_prefix' => 'sk-',
                 'available_models' => ['gpt-4.1-mini', 'gpt-4.1'],
                 'notes' => 'Supported now. User provides their own API key through secure settings.',
             ],

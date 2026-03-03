@@ -28,6 +28,18 @@ class TrailAssistantByosEntitlementServiceTest extends TestCase
         $this->assertSame('missing_api_key', $entitlement->reason);
     }
 
+    public function test_openai_api_key_provider_rejects_invalid_prefix(): void
+    {
+        $service = new TrailAssistantByosEntitlementService($this->registry());
+
+        $entitlement = $service->evaluate('openai_api_key', [
+            'api_key' => 'demo-super-long-key-value-for-tests',
+        ]);
+
+        $this->assertSame('needs_credentials', $entitlement->status);
+        $this->assertSame('api_key_format_invalid', $entitlement->reason);
+    }
+
     public function test_openai_api_key_provider_is_active_when_key_is_present(): void
     {
         $service = new TrailAssistantByosEntitlementService($this->registry());
@@ -58,6 +70,7 @@ class TrailAssistantByosEntitlementServiceTest extends TestCase
                 'enabled' => true,
                 'auth_mode' => 'api_key',
                 'funding_model' => 'user_api_payg',
+                'api_key_prefix' => 'sk-',
                 'available_models' => ['gpt-4.1-mini'],
             ],
             'chatgpt_subscription_passthrough' => [

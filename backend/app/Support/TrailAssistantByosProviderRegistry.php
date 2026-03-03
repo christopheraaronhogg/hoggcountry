@@ -38,6 +38,7 @@ final class TrailAssistantByosProviderRegistry
                 'enabled' => (bool) Arr::get($providerConfig, 'enabled', false),
                 'auth_mode' => (string) Arr::get($providerConfig, 'auth_mode', 'unsupported'),
                 'funding_model' => (string) Arr::get($providerConfig, 'funding_model', 'unknown'),
+                'api_key_prefix' => (string) Arr::get($providerConfig, 'api_key_prefix', ''),
                 'notes' => (string) Arr::get($providerConfig, 'notes', ''),
                 'available_models' => array_values(array_filter(
                     (array) Arr::get($providerConfig, 'available_models', []),
