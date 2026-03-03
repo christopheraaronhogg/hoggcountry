@@ -36,6 +36,7 @@ Production public URLs remain misaligned (404/500/404 pattern), so morning demo 
 
 ## Commits
 - `2c51960` — feat(trail-assistant): ship demo fallback path and BYOS architecture scaffold
+- `35043d1` — docs(trail-assistant): record post-push verification and deploy drift status
 - Push status: `origin/main` updated successfully; public deploy surfaces did not pick up changes during post-push monitoring.
 
 ---
