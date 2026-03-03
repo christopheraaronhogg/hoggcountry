@@ -27,6 +27,7 @@ Last updated: 2026-03-03 00:55 CT
 - [ ] Resolve production deploy drift (Netlify/Forge route mismatch)
   - Impact: restores public user-facing URLs and API parity.
   - Dependency: deploy access to Netlify + Forge env/branch alignment.
+  - Latest status: GitHub push (`2c51960`) completed, but public endpoints remained unchanged after propagation monitoring.
 - [ ] Blocker email template helper + auto-send guard
   - Impact: enforces the >24h owner-escalation safety rule from the autonomy plan.
   - Dependency: none (can ship immediately).

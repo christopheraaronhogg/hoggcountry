@@ -35,7 +35,8 @@ Production public URLs remain misaligned (404/500/404 pattern), so morning demo 
 ---
 
 ## Commits
-- _Pending in this report draft; fill with commit hashes after final commit/push._
+- `2c51960` — feat(trail-assistant): ship demo fallback path and BYOS architecture scaffold
+- Push status: `origin/main` updated successfully; public deploy surfaces did not pick up changes during post-push monitoring.
 
 ---
 
@@ -80,6 +81,11 @@ PUBLIC_API_BASE_URL=http://127.0.0.1:18000/api/v1 npm run dev -- --host 127.0.0.
 
 All under:
 `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/`
+
+HTTP verification companions:
+- `verification-before-deploy.txt`
+- `verification-after-push.txt`
+- `verification-http-statuses.txt`
 
 ---
 

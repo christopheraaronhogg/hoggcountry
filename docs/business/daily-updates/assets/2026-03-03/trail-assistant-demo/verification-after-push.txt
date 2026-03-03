@@ -1,0 +1,87 @@
+# AFTER push/deploy attempt
+Commit pushed: 2c51960
+Captured: 2026-03-02 19:02:30 CST
+
+## https://hoggcountry.com/trail-assistant
+HTTP/2 404 
+age: 2128
+cache-control: public,max-age=0,must-revalidate
+cache-status: "Netlify Edge"; hit
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.tile.topo-map.de https://*.tile.top-o-map.de; media-src 'self' blob:; frame-src https://www.youtube-nocookie.com; connect-src 'self' https://www.youtube.com https://api.open-meteo.com https://hoggcountry.on-forge.com https://app.hoggcountry.com wss:; worker-src 'self' blob:
+content-type: text/html; charset=utf-8
+date: Tue, 03 Mar 2026 01:02:30 GMT
+etag: 1756966999-ssl
+permissions-policy: geolocation=(self), microphone=(), camera=()
+referrer-policy: strict-origin-when-cross-origin
+server: Netlify
+strict-transport-security: max-age=31536000
+
+## https://hoggcountry.com/trail-assistant-thanks
+HTTP/2 404 
+age: 2129
+cache-control: public,max-age=0,must-revalidate
+cache-status: "Netlify Edge"; hit
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.tile.topo-map.de https://*.tile.top-o-map.de; media-src 'self' blob:; frame-src https://www.youtube-nocookie.com; connect-src 'self' https://www.youtube.com https://api.open-meteo.com https://hoggcountry.on-forge.com https://app.hoggcountry.com wss:; worker-src 'self' blob:
+content-type: text/html; charset=utf-8
+date: Tue, 03 Mar 2026 01:02:31 GMT
+etag: 1756966999-ssl
+permissions-policy: geolocation=(self), microphone=(), camera=()
+referrer-policy: strict-origin-when-cross-origin
+server: Netlify
+strict-transport-security: max-age=31536000
+
+## https://hoggcountry.on-forge.com/
+HTTP/2 500 
+date: Tue, 03 Mar 2026 01:02:31 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+cache-control: no-cache, private
+cf-cache-status: DYNAMIC
+set-cookie: __cf_bm=3PGfh4JiFPgHloiGWTIaJbBeC8pSyK8aLucm_6zcfLI-1772499751.290989-1.0.1.1-qRc0sgqsPzolM8JnQxxXfC06jVyDBeFBJ5Bq.Sn7gTc0p130hQtpJMoNCMqXkovlImUEUlz3vh4LqtOzd0abvCT1hceqFc.Vd55rQEnRelRuGbZgW2hsB48YklDv77H5; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:32:31 GMT
+cf-ray: 9d64b7558da6d1a7-MCI
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+## https://hoggcountry.on-forge.com/api/v1/health
+HTTP/2 200 
+date: Tue, 03 Mar 2026 01:02:31 GMT
+content-type: application/json
+server: cloudflare
+vary: Accept-Encoding
+cache-control: no-cache, private
+access-control-allow-origin: *
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+set-cookie: __cf_bm=W4aAs91LMscckNZ6vuJN8Crr7I2Y2OrzyZY_xa_ZFSY-1772499751.5555322-1.0.1.1-LtHtOdAHjjOIzi5rOEZY6Wteq3p7DwDFOO6oH7cIFZPZQsLqvO9YHDpBCfmUQL7dmoGTAjFf7rcMAzrL8plAikLn8FKkoDUwoyHCv44REA6kdjS0yZUt9jMPg2F33b2Z; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:32:31 GMT
+cf-cache-status: DYNAMIC
+
+## https://hoggcountry.on-forge.com/api/v1/trail-assistant/plans
+HTTP/2 404 
+date: Tue, 03 Mar 2026 01:02:31 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+vary: Accept-Encoding
+cache-control: no-cache, private
+access-control-allow-origin: *
+set-cookie: __cf_bm=_R8bjaDq0ImG4wJ9oWHGjrec9i9acNvHmS15rMpPzR0-1772499751.8203962-1.0.1.1-WZE0Tm28IBKT5SX.p2u3ei18RPHTLtiBUKrXVnK291hjw2JFm87sexCs1Iab7uxkMttgqegr35HWnptoRU1SNLh3XcfPAzYY3P_DodgHd2IwMHn5VsxOtoRh1j2Ixoza; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:32:31 GMT
+cf-cache-status: DYNAMIC
+cf-ray: 9d64b758d8d4299f-MCI
+
+<!DOCTYPE html>
+
+## https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/providers
+HTTP/2 404 
+date: Tue, 03 Mar 2026 01:02:32 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+vary: Accept-Encoding
+cache-control: no-cache, private
+access-control-allow-origin: *
+set-cookie: __cf_bm=HWoWySu5n0pBguNWRwwIHdFbOBsGh1hh.qcMssFMu7g-1772499752.0556736-1.0.1.1-fBHHKoug3g1MN_oX_WLYxLNldAjjJAB1yEnZu.YDSPiol2ZnAZ0Dw32PYxn27H2akQ9V_MRIICJwZ_5AePl32NeKWNA4.rRWonRGyQYGoZIEhIoW.BP1YwuZ8xq_S1op; HttpOnly; Secure; Path=/; Domain=on-forge.com; Expires=Tue, 03 Mar 2026 01:32:32 GMT
+cf-cache-status: DYNAMIC
+cf-ray: 9d64b75a59e14e01-MCI
+
+<!DOCTYPE html>

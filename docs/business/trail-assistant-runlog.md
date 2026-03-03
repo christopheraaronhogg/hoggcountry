@@ -427,6 +427,10 @@
     - HTTP and curl matrix captured in:
       - `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/verification-before-deploy.txt`
       - `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/verification-http-statuses.txt`
+  - **Deploy attempt:**
+    - Pushed `main` commit `2c51960` to `origin`.
+    - Monitored 10 propagation checks over ~7 minutes; public Trail Assistant URLs remained unchanged (404/404/404).
+    - Post-push verification saved to `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/verification-after-push.txt`.
   - **Blocker status:**
-    - Public deploy repair remains blocked on deployment-surface access/alignment (Netlify + Forge).
+    - Public deploy repair remains blocked on deployment-surface access/alignment (Netlify + Forge) despite successful GitHub push.
     - Reliable local demo path is now available and evidenced for morning review.
