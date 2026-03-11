@@ -11,7 +11,6 @@ const isVideos = pathname.startsWith('/videos');
 const isAtMap = pathname.startsWith('/at-map');
 const isAtWeather = pathname.startsWith('/at-weather');
 const isVideoHogg = pathname.startsWith('/videohogg');
-const isAppLanding = pathname.startsWith('/app');
 
 // Show tracking link only if enabled AND we're past the start date
 const now = new Date();
@@ -27,10 +26,6 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
     <div class="nav-controls">
       <div class="nav-ctas" aria-label="Quick links">
-        <a href="/app" class={`app-link ${isAppLanding ? 'is-active' : ''}`}>
-          <span>Get App</span>
-        </a>
-
         <a href="/guide" class={`guide-link ${isGuide ? 'is-active' : ''}`}>
           <span class="guide-link__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -99,7 +94,6 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
       )}
 
       <a href="/at-map" class={`mobile-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
-      <a href="/app" class={`mobile-link ${isAppLanding ? 'is-active' : ''}`}>Get the App</a>
       <a href="/trail" class={`mobile-link ${isTrailHub ? 'is-active' : ''}`}>Trail Hub</a>
       <a href="/videos" class={`mobile-link ${isVideos ? 'is-active' : ''}`}>Videos</a>
       <a href="/tools" class={`mobile-link ${isTools && !isCharacterTool ? 'is-active' : ''}`}>Trail Tools</a>

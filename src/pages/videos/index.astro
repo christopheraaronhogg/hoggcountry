@@ -7,35 +7,138 @@ import { YT_CHANNEL_FEED_URL } from '../../lib/config';
 import { fetchYouTubeRSS } from '../../lib/youtube';
 
 const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
+const channelUrl = 'https://www.youtube.com/@hoggcountry7483';
 
 // Build-time fallback only. Runtime script below refreshes from Laravel API.
 const videos = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 12);
+const featuredVideo = videos[0] ?? null;
+const libraryVideos = featuredVideo ? videos.slice(1) : videos;
+
+function formatDate(value: string) {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function clipText(value: string, max = 160) {
+  const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return '';
+  if (cleaned.length <= max) return cleaned;
+  return `${cleaned.slice(0, max).trimEnd()}…`;
+}
+
+function thumbnailFor(video: { id: string; thumbnail?: string }) {
+  return video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+}
 ---
 <html lang="en">
   <head>
-    <BaseHead title="Videos • Hogg Country" description="Recent uploads from our YouTube channel" />
+    <BaseHead title="Videos • Hogg Country" description="Trail dispatches, daily Appalachian Trail updates, and latest uploads from Hogg Country." />
   </head>
   <body>
     <Header />
-    <main>
-      <section class="hero" style="padding: 2rem 1rem 1rem;">
-        <div class="container">
-          <h1 class="font-display">Videos</h1>
-          <p>Recent uploads from @hoggcountry7483</p>
-          <p id="videos-status" class="videos-status" aria-live="polite">Loading latest videos...</p>
+
+    <main class="videos-page">
+      <section class="videos-hero">
+        <div class="container videos-hero__shell">
+          <div class="videos-hero__copy">
+            <p class="videos-eyebrow">Trail dispatches</p>
+            <h1 class="videos-title">Video updates that feel like campfire notes, not a dusty archive.</h1>
+            <p class="videos-lede">
+              Fresh drops from the trail, town stops, weather pivots, gear realities, and the real day-by-day story.
+              This page should feel alive, easy to scan, and worth checking often.
+            </p>
+            <div class="videos-hero__actions">
+              {featuredVideo && (
+                <a href={`#video-${featuredVideo.id}`} class="hero-button hero-button--primary">Watch latest drop</a>
+              )}
+              <a href={channelUrl} target="_blank" rel="noopener noreferrer" class="hero-button hero-button--secondary">Open YouTube channel</a>
+            </div>
+          </div>
+
+          <aside class="videos-hero__aside">
+            <div class="hero-note hero-note--live">
+              <span class="hero-note__label">Feed</span>
+              <p id="videos-status" class="hero-note__value" aria-live="polite">Loading latest videos…</p>
+            </div>
+            <div class="hero-note">
+              <span class="hero-note__label">What you’ll find</span>
+              <p class="hero-note__value">Daily Appalachian Trail updates, milestone days, town resets, and field-tested gear notes.</p>
+            </div>
+            <div class="hero-note">
+              <span class="hero-note__label">Best use</span>
+              <p class="hero-note__value">Watch the latest dispatch first, then browse the recent stack when you want the bigger picture.</p>
+            </div>
+          </aside>
         </div>
       </section>
-      <section>
-        <div class="container">
-          <div id="videos-grid" class="videos-grid">
-            {videos.map((v) => (
-              <article class="card">
-                <div class="video-frame">
-                  <YouTubeEmbed id={v.id} title={v.title} />
+
+      {featuredVideo ? (
+        <section class="featured-section">
+          <div class="container">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">Latest drop</p>
+                <h2>Front-and-center instead of buried in a pile.</h2>
+              </div>
+              <p class="section-copy">One clean featured video up top. Everything else falls into an easier trail log below.</p>
+            </div>
+
+            <article id={`video-${featuredVideo.id}`} class="featured-card" data-first-id={featuredVideo.id}>
+              <div class="featured-card__frame" id="featured-video-slot">
+                <YouTubeEmbed id={featuredVideo.id} title={featuredVideo.title} />
+              </div>
+              <div class="featured-card__copy" id="featured-copy-slot">
+                <p class="featured-meta">Newest upload {formatDate(featuredVideo.published) ? `• ${formatDate(featuredVideo.published)}` : ''}</p>
+                <h3>{featuredVideo.title}</h3>
+                {clipText(featuredVideo.description, 280) && (
+                  <p class="featured-description">{clipText(featuredVideo.description, 280)}</p>
+                )}
+                <div class="featured-actions">
+                  <a class="featured-link" href={featuredVideo.link} target="_blank" rel="noopener noreferrer">Watch on YouTube</a>
+                  <a class="featured-link featured-link--ghost" href="#recent-videos">Jump to recent videos</a>
                 </div>
-                <div class="video-copy">
-                  <h2 class="video-title clamp-2">{v.title}</h2>
-                  <a class="video-link" href={v.link} target="_blank" rel="noopener">Watch on YouTube</a>
+              </div>
+            </article>
+          </div>
+        </section>
+      ) : null}
+
+      <section class="library-section" id="recent-videos">
+        <div class="container">
+          <div class="section-heading section-heading--library">
+            <div>
+              <p class="section-kicker">Recent archive</p>
+              <h2>Recent videos, cleaned up into something worth browsing.</h2>
+            </div>
+            <p class="section-copy">Fast thumbnails, readable titles, clear dates, and a direct path back to YouTube when you want the full watch experience.</p>
+          </div>
+
+          <div id="videos-grid" class="videos-grid">
+            {libraryVideos.map((video, index) => (
+              <article class="video-card">
+                <a
+                  class="video-card__media"
+                  href={video.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Watch ${video.title} on YouTube`}
+                >
+                  <img src={thumbnailFor(video)} alt={video.title} loading="lazy" />
+                  <span class="video-card__play">▶ Watch</span>
+                  <span class="video-card__index">{String(index + 1).padStart(2, '0')}</span>
+                </a>
+
+                <div class="video-card__copy">
+                  <p class="video-card__meta">{formatDate(video.published) || 'Recent upload'}</p>
+                  <h3>{video.title}</h3>
+                  {clipText(video.description, 140) && <p class="video-card__desc">{clipText(video.description, 140)}</p>}
+                  <a class="video-card__link" href={video.link} target="_blank" rel="noopener noreferrer">Open on YouTube</a>
                 </div>
               </article>
             ))}
@@ -43,12 +146,16 @@ const videos = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 12);
         </div>
       </section>
     </main>
+
     <Footer />
 
-    <script is:inline define:vars={{ apiBase }}>
+    <script is:inline define:vars={{ apiBase, initialFirstId: featuredVideo?.id || '' }}>
       (() => {
         const grid = document.getElementById('videos-grid');
         const status = document.getElementById('videos-status');
+        const featuredCard = document.querySelector('.featured-card');
+        const featuredFrame = document.getElementById('featured-video-slot');
+        const featuredCopy = document.getElementById('featured-copy-slot');
         const endpoint = `${apiBase}/videos/latest?limit=12&source=channel`;
 
         if (!(grid instanceof HTMLElement) || !(status instanceof HTMLElement)) {
@@ -56,7 +163,7 @@ const videos = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 12);
         }
 
         let pollHandle = null;
-        let latestFirstId = '';
+        let latestFirstId = initialFirstId || '';
 
         function escapeHtml(value) {
           return String(value || '')
@@ -74,31 +181,85 @@ const videos = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 12);
           return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
-        function renderVideos(items) {
-          const cards = items.map((video) => {
+        function clipText(value, max = 160) {
+          const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+          if (!cleaned) return '';
+          if (cleaned.length <= max) return cleaned;
+          return `${cleaned.slice(0, max).trimEnd()}…`;
+        }
+
+        function thumbnailFor(video) {
+          return escapeHtml(video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`);
+        }
+
+        function renderFeatured(video) {
+          if (!(featuredFrame instanceof HTMLElement) || !(featuredCopy instanceof HTMLElement)) {
+            return;
+          }
+
+          const id = escapeHtml(video.id);
+          const title = escapeHtml(video.title || 'Untitled');
+          const link = escapeHtml(video.link || `https://www.youtube.com/watch?v=${id}`);
+          const date = formatDate(video.published);
+          const description = clipText(video.description, 280);
+          const dateLine = date ? `Newest upload • ${escapeHtml(date)}` : 'Newest upload';
+
+          featuredFrame.innerHTML = `
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/${id}"
+              title="${title}"
+              loading="lazy"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"
+            ></iframe>
+          `;
+
+          featuredCopy.innerHTML = `
+            <p class="featured-meta">${dateLine}</p>
+            <h3>${title}</h3>
+            ${description ? `<p class="featured-description">${escapeHtml(description)}</p>` : ''}
+            <div class="featured-actions">
+              <a class="featured-link" href="${link}" target="_blank" rel="noopener noreferrer">Watch on YouTube</a>
+              <a class="featured-link featured-link--ghost" href="#recent-videos">Jump to recent videos</a>
+            </div>
+          `;
+
+          if (featuredCard instanceof HTMLElement) {
+            featuredCard.dataset.firstId = id;
+            featuredCard.id = `video-${id}`;
+          }
+        }
+
+        function renderGrid(items) {
+          if (!Array.isArray(items) || items.length === 0) {
+            grid.innerHTML = '';
+            return;
+          }
+
+          const cards = items.map((video, index) => {
             const id = escapeHtml(video.id);
             const title = escapeHtml(video.title || 'Untitled');
             const link = escapeHtml(video.link || `https://www.youtube.com/watch?v=${id}`);
             const published = formatDate(video.published);
-            const dateLine = published ? `<p class="video-meta">${escapeHtml(published)}</p>` : '';
+            const dateLine = published ? escapeHtml(published) : 'Recent upload';
+            const description = clipText(video.description, 140);
+            const thumb = thumbnailFor(video);
+            const order = String(index + 1).padStart(2, '0');
 
             return `
-              <article class="card">
-                <div class="video-frame">
-                  <iframe
-                    src="https://www.youtube-nocookie.com/embed/${id}"
-                    title="${title}"
-                    loading="lazy"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowfullscreen
-                    referrerpolicy="strict-origin-when-cross-origin"
-                  ></iframe>
-                </div>
-                <div class="video-copy">
-                  <h2 class="video-title clamp-2">${title}</h2>
-                  ${dateLine}
-                  <a class="video-link" href="${link}" target="_blank" rel="noopener">Watch on YouTube</a>
+              <article class="video-card">
+                <a class="video-card__media" href="${link}" target="_blank" rel="noopener noreferrer" aria-label="Watch ${title} on YouTube">
+                  <img src="${thumb}" alt="${title}" loading="lazy" />
+                  <span class="video-card__play">▶ Watch</span>
+                  <span class="video-card__index">${order}</span>
+                </a>
+                <div class="video-card__copy">
+                  <p class="video-card__meta">${dateLine}</p>
+                  <h3>${title}</h3>
+                  ${description ? `<p class="video-card__desc">${escapeHtml(description)}</p>` : ''}
+                  <a class="video-card__link" href="${link}" target="_blank" rel="noopener noreferrer">Open on YouTube</a>
                 </div>
               </article>
             `;
@@ -123,21 +284,28 @@ const videos = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 12);
             const items = Array.isArray(payload?.data?.items) ? payload.data.items : [];
 
             if (items.length === 0) {
-              status.textContent = 'No videos returned yet. Showing fallback list.';
+              status.textContent = 'No videos returned yet. Showing the fallback lineup for now.';
               return;
             }
 
-            const firstId = String(items?.[0]?.id || '');
-            if (firstId !== '' && firstId !== latestFirstId) {
-              renderVideos(items);
+            const [first, ...rest] = items;
+            const firstId = String(first?.id || '');
+
+            if (firstId && firstId !== latestFirstId) {
+              renderFeatured(first);
+              renderGrid(rest);
               latestFirstId = firstId;
             }
 
             status.textContent = `Live feed active • last checked ${new Date().toLocaleTimeString()}`;
           } catch (error) {
-            status.textContent = 'Live refresh unavailable right now. Showing fallback list.';
+            status.textContent = 'Live refresh is unavailable right now. Showing the latest saved lineup.';
           }
         }
+
+        status.textContent = initialFirstId
+          ? 'Live feed warming up…'
+          : 'Fallback lineup loaded while the live feed checks in…';
 
         refresh();
         pollHandle = window.setInterval(refresh, 20000);
@@ -153,42 +321,428 @@ const videos = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 12);
 </html>
 
 <style>
+  :root {
+    --videos-ink: #1f2937;
+    --videos-moss: #55624d;
+    --videos-pine: #324338;
+    --videos-bark: #7b4d31;
+    --videos-gold: #cf9b2d;
+    --videos-paper: #f7f1e4;
+    --videos-paper-deep: #efe3c9;
+  }
+
+  .videos-page {
+    background:
+      radial-gradient(circle at top left, rgba(207, 155, 45, 0.15), transparent 34%),
+      radial-gradient(circle at top right, rgba(50, 67, 56, 0.14), transparent 28%),
+      linear-gradient(180deg, #f6f0e3 0%, #f1e6d1 46%, #f8f4ea 100%);
+  }
+
+  .videos-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 3.5rem 0 2rem;
+  }
+
+  .videos-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(130deg, rgba(255, 255, 255, 0.38), transparent 45%),
+      repeating-linear-gradient(
+        -18deg,
+        rgba(50, 67, 56, 0.04) 0,
+        rgba(50, 67, 56, 0.04) 9px,
+        transparent 9px,
+        transparent 24px
+      );
+    pointer-events: none;
+  }
+
+  .videos-hero__shell {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+
+  .videos-hero__copy,
+  .videos-hero__aside {
+    position: relative;
+    border: 1px solid rgba(50, 67, 56, 0.16);
+    border-radius: 28px;
+    box-shadow: 0 24px 60px rgba(74, 46, 29, 0.12);
+  }
+
+  .videos-hero__copy {
+    padding: 2rem;
+    background: linear-gradient(160deg, rgba(255, 251, 243, 0.9), rgba(243, 232, 208, 0.94));
+  }
+
+  .videos-hero__aside {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    background: linear-gradient(160deg, rgba(50, 67, 56, 0.94), rgba(34, 46, 38, 0.98));
+    color: rgba(255, 248, 237, 0.96);
+  }
+
+  .videos-eyebrow,
+  .section-kicker {
+    margin: 0 0 0.8rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: rgba(50, 67, 56, 0.8);
+  }
+
+  .videos-title {
+    margin: 0;
+    font-size: clamp(2.4rem, 4vw, 4.4rem);
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    color: var(--videos-ink);
+    max-width: 11ch;
+  }
+
+  .videos-lede {
+    max-width: 60ch;
+    margin: 1rem 0 0;
+    font-size: 1.04rem;
+    line-height: 1.75;
+    color: rgba(31, 41, 55, 0.82);
+  }
+
+  .videos-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+  }
+
+  .hero-button,
+  .featured-link,
+  .video-card__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: fit-content;
+    text-decoration: none;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  }
+
+  .hero-button {
+    min-height: 48px;
+    padding: 0.8rem 1.15rem;
+    border-radius: 999px;
+    border: 1px solid rgba(50, 67, 56, 0.16);
+    box-shadow: 0 10px 24px rgba(74, 46, 29, 0.1);
+  }
+
+  .hero-button:hover,
+  .featured-link:hover,
+  .video-card__link:hover,
+  .video-card__media:hover {
+    transform: translateY(-2px);
+  }
+
+  .hero-button--primary {
+    background: linear-gradient(160deg, #304136, #455647);
+    color: #fff9ef;
+  }
+
+  .hero-button--secondary {
+    background: rgba(255, 250, 241, 0.82);
+    color: var(--videos-pine);
+  }
+
+  .hero-note {
+    border: 1px solid rgba(255, 248, 237, 0.14);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.95rem 1rem;
+  }
+
+  .hero-note--live {
+    background: linear-gradient(160deg, rgba(207, 155, 45, 0.16), rgba(255, 255, 255, 0.06));
+    border-color: rgba(207, 155, 45, 0.4);
+  }
+
+  .hero-note__label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: rgba(255, 245, 226, 0.62);
+    margin-bottom: 0.35rem;
+  }
+
+  .hero-note__value {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.6;
+    color: rgba(255, 248, 237, 0.95);
+  }
+
+  .featured-section,
+  .library-section {
+    padding: 1rem 0 4rem;
+  }
+
+  .section-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 1.25rem;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    font-size: clamp(1.65rem, 2.7vw, 2.6rem);
+    line-height: 1.02;
+    color: var(--videos-ink);
+    max-width: 16ch;
+  }
+
+  .section-copy {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.65;
+    color: rgba(31, 41, 55, 0.72);
+  }
+
+  .featured-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+    gap: 1.1rem;
+    padding: 1rem;
+    border-radius: 30px;
+    border: 1px solid rgba(50, 67, 56, 0.14);
+    background:
+      linear-gradient(145deg, rgba(255, 251, 244, 0.88), rgba(242, 232, 211, 0.95)),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+    box-shadow: 0 28px 70px rgba(74, 46, 29, 0.1);
+  }
+
+  .featured-card__frame,
+  .featured-card__frame :global(iframe) {
+    width: 100%;
+    min-height: 100%;
+  }
+
+  .featured-card__frame {
+    overflow: hidden;
+    border-radius: 22px;
+    background: #101614;
+    min-height: 320px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .featured-card__copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.95rem;
+    padding: 0.45rem 0.35rem 0.35rem;
+  }
+
+  .featured-meta,
+  .video-card__meta {
+    margin: 0;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 800;
+    color: rgba(50, 67, 56, 0.68);
+  }
+
+  .featured-card__copy h3,
+  .video-card__copy h3 {
+    margin: 0;
+    color: var(--videos-ink);
+    line-height: 1.12;
+  }
+
+  .featured-card__copy h3 {
+    font-size: clamp(1.6rem, 2.2vw, 2.5rem);
+    max-width: 13ch;
+  }
+
+  .featured-description,
+  .video-card__desc {
+    margin: 0;
+    color: rgba(31, 41, 55, 0.78);
+    line-height: 1.68;
+  }
+
+  .featured-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-top: 0.35rem;
+  }
+
+  .featured-link {
+    min-height: 46px;
+    padding: 0.72rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(50, 67, 56, 0.16);
+    background: linear-gradient(165deg, rgba(50, 67, 56, 0.95), rgba(85, 98, 77, 0.95));
+    color: #fff8ec;
+    box-shadow: 0 14px 30px rgba(50, 67, 56, 0.14);
+  }
+
+  .featured-link--ghost {
+    background: rgba(255, 250, 241, 0.74);
+    color: var(--videos-pine);
+  }
+
   .videos-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 1rem;
   }
 
-  .video-frame iframe {
+  .video-card {
+    display: grid;
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid rgba(50, 67, 56, 0.12);
+    background: linear-gradient(180deg, rgba(255, 251, 244, 0.94), rgba(249, 243, 230, 0.98));
+    box-shadow: 0 20px 48px rgba(74, 46, 29, 0.09);
+  }
+
+  .video-card__media {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #17201a;
+  }
+
+  .video-card__media img {
     width: 100%;
     height: 100%;
-    min-height: 220px;
-    border: 0;
+    object-fit: cover;
     display: block;
+    transition: transform 0.25s ease, filter 0.25s ease;
   }
 
-  .video-copy {
-    padding: 0.75rem 1rem;
+  .video-card__media:hover img {
+    transform: scale(1.03);
+    filter: saturate(1.04) contrast(1.03);
+  }
+
+  .video-card__play,
+  .video-card__index {
+    position: absolute;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 800;
+  }
+
+  .video-card__play {
+    left: 0.85rem;
+    bottom: 0.85rem;
+    padding: 0.55rem 0.8rem;
+    background: rgba(22, 31, 26, 0.84);
+    color: #fff8ee;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(8px);
+  }
+
+  .video-card__index {
+    top: 0.85rem;
+    right: 0.85rem;
+    padding: 0.45rem 0.65rem;
+    background: rgba(247, 241, 228, 0.86);
+    color: var(--videos-bark);
+    border: 1px solid rgba(123, 77, 49, 0.16);
+  }
+
+  .video-card__copy {
     display: grid;
-    gap: 0.35rem;
+    gap: 0.72rem;
+    padding: 1rem 1rem 1.1rem;
   }
 
-  .video-meta {
-    margin: 0;
-    color: var(--muted-accessible, #4a5448);
-    font-size: 0.78rem;
+  .video-card__copy h3 {
+    font-size: 1.15rem;
   }
 
-  .video-link {
-    display: inline-flex;
-    width: fit-content;
-    font-size: 0.86rem;
-    font-weight: 700;
+  .video-card__desc {
+    font-size: 0.95rem;
   }
 
-  .videos-status {
-    margin: 0.35rem 0 0;
-    color: var(--muted-accessible, #4a5448);
-    font-size: 0.8rem;
+  .video-card__link {
+    min-height: 42px;
+    padding: 0.7rem 0.95rem;
+    border-radius: 14px;
+    background: rgba(50, 67, 56, 0.08);
+    color: var(--videos-pine);
+    border: 1px solid rgba(50, 67, 56, 0.12);
+  }
+
+  @media (max-width: 960px) {
+    .videos-hero__shell,
+    .section-heading,
+    .featured-card {
+      grid-template-columns: 1fr;
+    }
+
+    .videos-title,
+    .section-heading h2,
+    .featured-card__copy h3 {
+      max-width: none;
+    }
+
+    .videos-hero {
+      padding-top: 2.2rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .videos-hero__copy,
+    .videos-hero__aside,
+    .featured-card {
+      border-radius: 24px;
+    }
+
+    .videos-hero__copy {
+      padding: 1.3rem;
+    }
+
+    .hero-button,
+    .featured-link,
+    .video-card__link {
+      width: 100%;
+    }
+
+    .featured-actions,
+    .videos-hero__actions {
+      flex-direction: column;
+    }
+
+    .featured-card {
+      padding: 0.75rem;
+    }
+
+    .featured-card__frame {
+      min-height: 220px;
+    }
+
+    .videos-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
