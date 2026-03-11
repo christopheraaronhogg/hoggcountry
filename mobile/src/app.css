@@ -1,0 +1,78 @@
+:root {
+	--color-bg: #fdfcf9;
+	--color-card: #ffffff;
+	--color-text: #2d2a26;
+	--color-text-muted: #6b6359;
+	--color-primary: #e67e22; /* Burnt orange */
+	--color-primary-soft: #fbeedb;
+	--color-secondary: #27ae60; /* Forest green */
+	--color-secondary-soft: #e9f7ef;
+	--color-danger: #e74c3c;
+	--color-border: #eee7dc;
+	--color-accent: #3498db; /* Sky blue */
+	
+	--font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+	--font-serif: 'Georgia', serif;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	background-color: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	line-height: 1.5;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+h1, h2, h3 {
+	margin: 0;
+	font-weight: 700;
+	color: var(--color-text);
+}
+
+button {
+	cursor: pointer;
+	border: none;
+	background: none;
+	font-family: inherit;
+}
+
+.card {
+	background: var(--color-card);
+	border: 1px solid var(--color-border);
+	border-radius: 16px;
+	padding: 16px;
+	box-shadow: 0 2px 8px rgba(107, 99, 89, 0.05);
+}
+
+.gradient-bg {
+	background: linear-gradient(135deg, #fdfcf9 0%, #f7f1e6 100%);
+}
+
+.badge {
+	padding: 4px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.badge-green {
+	background: var(--color-secondary-soft);
+	color: var(--color-secondary);
+}
+
+.badge-orange {
+	background: var(--color-primary-soft);
+	color: var(--color-primary);
+}
+
+.safe-area-bottom {
+	padding-bottom: env(safe-area-inset-bottom);
+}
