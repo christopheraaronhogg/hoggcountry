@@ -6,6 +6,7 @@
   let activeChapter = $state('');
   let showMobileNav = $state(false);
   let headerHidden = $state(false);
+  let headerHeight = $state(62);
 
   // Use svelte:window binding for scroll position (most reliable in Svelte 5)
   let scrollY = $state(0);
@@ -34,14 +35,26 @@
     // Get initial scroll height
     scrollHeight = document.documentElement.scrollHeight;
 
-    // Watch for header wrapper visibility changes
+    // Watch for header wrapper visibility changes + keep a real header height offset
     let mutationObserver = null;
+    let resizeObserver = null;
     const headerWrapper = document.querySelector('.guide-header-wrapper');
+
+    const syncHeaderMetrics = () => {
+      if (!headerWrapper) return;
+      headerHidden = headerWrapper.classList.contains('is-hidden');
+      const measuredHeight = headerWrapper.getBoundingClientRect().height;
+      if (measuredHeight > 0) {
+        headerHeight = measuredHeight;
+      }
+    };
+
     if (headerWrapper) {
-      mutationObserver = new MutationObserver(() => {
-        headerHidden = headerWrapper.classList.contains('is-hidden');
-      });
+      syncHeaderMetrics();
+      mutationObserver = new MutationObserver(syncHeaderMetrics);
       mutationObserver.observe(headerWrapper, { attributes: true, attributeFilter: ['class'] });
+      resizeObserver = new ResizeObserver(syncHeaderMetrics);
+      resizeObserver.observe(headerWrapper);
     }
 
     const sections = document.querySelectorAll('.chapter-section');
@@ -64,6 +77,7 @@
     // Update scrollHeight on resize (in case content changes)
     const updateScrollHeight = () => {
       scrollHeight = document.documentElement.scrollHeight;
+      syncHeaderMetrics();
     };
 
     window.addEventListener('resize', updateScrollHeight, { passive: true });
@@ -71,6 +85,7 @@
     return () => {
       intersectionObserver.disconnect();
       mutationObserver?.disconnect();
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', updateScrollHeight);
     };
   });
@@ -107,7 +122,7 @@
 </script>
 
 <!-- Progress Bar -->
-<div class="progress-container" style="top: {headerHidden ? '0' : '52px'}">
+<div class="progress-container" style={`top: ${headerHidden ? 0 : headerHeight}px`}>
   <div class="progress-track">
     <div class="progress-fill" style="width: {progress}%"></div>
     <div class="progress-marker" style="left: {progress}%">
@@ -122,7 +137,7 @@
 </div>
 
 <!-- Desktop Sidebar -->
-<nav class="sidebar" style="top: {headerHidden ? '48px' : '100px'}" aria-label="Table of Contents">
+<nav class="sidebar" style={`top: ${headerHidden ? 48 : Math.ceil(headerHeight + 48)}px`} aria-label="Table of Contents">
   <div class="sidebar-header">
     <span class="sidebar-icon">📖</span>
     <span class="sidebar-title">Contents</span>
@@ -258,7 +273,7 @@
     position: fixed;
     left: 0;
     right: 0;
-    z-index: 1002; /* Above header (1001) so progress marker dot is visible */
+    z-index: 1002; /* Above page content, below the fixed guide header wrapper */
     background: linear-gradient(to bottom, rgba(245, 242, 232, 0.98), rgba(245, 242, 232, 0.95));
     backdrop-filter: blur(8px);
     padding: 0.65rem 1rem 0.4rem;
