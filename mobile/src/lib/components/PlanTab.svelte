@@ -1,140 +1,131 @@
 <script lang="ts">
-	const days = [
-		{ day: 'Wed', date: 'Mar 11', miles: 15.5, gain: '+2,100', destination: 'Chestnut Knob' },
-		{ day: 'Thu', date: 'Mar 12', miles: 14.2, gain: '+1,450', destination: 'Walker Gap' },
-		{ day: 'Fri', date: 'Mar 13', miles: 12.8, gain: '+3,200', destination: 'Burkes Garden' },
-		{ day: 'Sat', date: 'Mar 14', miles: 8.5, gain: '+400', destination: 'Bland (Town)' },
-		{ day: 'Sun', date: 'Mar 15', miles: 0, gain: '0', destination: 'Zero Day' },
-		{ day: 'Mon', date: 'Mar 16', miles: 16.0, gain: '+1,800', destination: 'Jenny Knob' },
-		{ day: 'Tue', date: 'Mar 17', miles: 14.5, gain: '+2,400', destination: 'Helveys Mill' }
-	];
+	import { itinerary } from '$lib/mockTrailData';
 </script>
 
-<div class="tab-content">
-	<header class="section-header">
-		<h2>7-Day Itinerary</h2>
-		<p>Adjusting for your current pace of 2.1 mph.</p>
-	</header>
+<div class="section-stack">
+	<section class="card intro-card">
+		<div class="section-heading">
+			<p class="eyebrow">Plan</p>
+			<h2>Rolling 7-day itinerary</h2>
+			<p>The plan is designed to protect recovery now so you can spend the next push window instead of borrowing against it.</p>
+		</div>
+	</section>
 
-	<div class="itinerary-list">
-		{#each days as day}
-			<div class="day-card card {day.miles === 0 ? 'zero' : ''}">
-				<div class="day-info">
-					<span class="day-name">{day.day}</span>
-					<span class="day-date">{day.date}</span>
+	<section class="stack-tight">
+		{#each itinerary as day}
+			<article class={`card day-card ${day.status}`}>
+				<div class="day-meta">
+					<div>
+						<p class="day-label">{day.dayLabel}</p>
+						<span>{day.dateLabel}</span>
+					</div>
+
+					<span class={`pill ${day.status === 'today' ? 'pill-forest' : day.status === 'town' ? 'pill-clay' : 'badge-soft'}`}>
+						{day.status}
+					</span>
 				</div>
+
 				<div class="day-main">
-					<span class="dest">{day.destination}</span>
-					<div class="day-stats">
-						<span class="stat">{day.miles} mi</span>
-						{#if day.miles > 0}
-							<span class="divider">·</span>
-							<span class="stat gain">{day.gain} ft</span>
-						{/if}
+					<h3>{day.destination}</h3>
+					<div class="numbers">
+						<strong>{day.mileage.toFixed(1)} mi</strong>
+						<span>{day.elevationGain.toLocaleString()} ft</span>
+						<span>{day.weather}</span>
 					</div>
 				</div>
-				{#if day.miles > 15}
-					<span class="warning-tag">Big Day</span>
-				{/if}
-			</div>
+
+				<p>{day.note}</p>
+			</article>
 		{/each}
-	</div>
+	</section>
+
+	<section class="card caution-card">
+		<p class="eyebrow">Planning note</p>
+		<h3>Do not spend tomorrow's town calories tonight</h3>
+		<p>
+			The plan only works if today stays disciplined. The mistake would be turning a hold day into a late push, then arriving in Bland cooked and needing two recovery days instead of one.
+		</p>
+	</section>
 </div>
 
 <style>
-	.tab-content {
-		padding: 20px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		padding-bottom: 100px;
-	}
-
-	.section-header h2 {
-		font-size: 20px;
-		margin-bottom: 4px;
-	}
-
-	.section-header p {
-		font-size: 13px;
-		color: var(--color-text-muted);
-		margin: 0;
-	}
-
-	.itinerary-list {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
+	.intro-card,
+	.caution-card,
+	.day-card {
+		padding: 18px;
 	}
 
 	.day-card {
+		display: grid;
+		gap: 12px;
+	}
+
+	.day-card.today {
+		border-color: rgba(47, 75, 53, 0.3);
+		background: linear-gradient(180deg, rgba(239, 247, 240, 0.86), rgba(255, 253, 248, 1));
+	}
+
+	.day-card.town {
+		border-color: rgba(170, 104, 67, 0.28);
+		background: linear-gradient(180deg, rgba(248, 236, 226, 0.7), rgba(255, 253, 248, 1));
+	}
+
+	.day-card.recovery {
+		background: linear-gradient(180deg, rgba(246, 244, 237, 0.92), rgba(255, 253, 248, 1));
+	}
+
+	.day-meta {
 		display: flex;
-		align-items: center;
-		gap: 16px;
-		padding: 14px;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 12px;
 	}
 
-	.day-card.zero {
-		background: var(--color-secondary-soft);
-		border-color: var(--color-secondary);
-	}
-
-	.day-info {
-		display: flex;
-		flex-direction: column;
-		min-width: 40px;
-	}
-
-	.day-name {
-		font-size: 14px;
+	.day-label {
+		font-size: 0.9rem;
 		font-weight: 800;
-		color: var(--color-text);
 	}
 
-	.day-date {
-		font-size: 10px;
-		font-weight: 600;
-		color: var(--color-text-muted);
+	.day-meta span:not(.pill) {
+		font-size: 0.8rem;
+		color: var(--muted);
 	}
 
 	.day-main {
+		display: grid;
+		gap: 8px;
+	}
+
+	.day-main h3 {
+		font-family: var(--font-display);
+		font-size: 1.2rem;
+	}
+
+	.numbers {
 		display: flex;
-		flex-direction: column;
-		flex: 1;
+		flex-wrap: wrap;
+		gap: 10px;
+		font-size: 0.82rem;
+		color: var(--muted);
 	}
 
-	.dest {
-		font-size: 15px;
-		font-weight: 700;
+	.numbers strong {
+		color: var(--forest);
+		font-size: 0.92rem;
 	}
 
-	.day-stats {
-		display: flex;
-		align-items: center;
-		gap: 4px;
+	.day-card p,
+	.caution-card p:last-child {
+		font-size: 0.9rem;
+		color: var(--muted);
 	}
 
-	.stat {
-		font-size: 12px;
-		font-weight: 600;
-		color: var(--color-text-muted);
+	.caution-card {
+		background: linear-gradient(180deg, rgba(247, 230, 224, 0.6), rgba(255, 251, 246, 1));
 	}
 
-	.gain {
-		color: var(--color-primary);
-	}
-
-	.divider {
-		color: var(--color-border);
-	}
-
-	.warning-tag {
-		font-size: 9px;
-		font-weight: 800;
-		background: #fff4e5;
-		color: #d35400;
-		padding: 2px 6px;
-		border-radius: 4px;
-		text-transform: uppercase;
+	.caution-card h3 {
+		margin: 6px 0;
+		font-size: 1rem;
 	}
 </style>

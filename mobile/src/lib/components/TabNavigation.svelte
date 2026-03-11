@@ -1,69 +1,71 @@
 <script lang="ts">
-	import { trailAssistant } from '$lib/trailState.svelte';
 	import type { Tab } from '$lib/types';
+	import { trailAssistant } from '$lib/trailState.svelte';
 
-	const tabs: { name: Tab; icon: string }[] = [
-		{ name: 'Today', icon: '📍' },
-		{ name: 'Plan', icon: '🗺️' },
-		{ name: 'Coach', icon: '💬' },
-		{ name: 'Town', icon: '🏠' },
-		{ name: 'Safety', icon: '🛡️' },
-		{ name: 'Account', icon: '👤' }
+	const tabs: Array<{ key: Tab; icon: string }> = [
+		{ key: 'Today', icon: 'Sun' },
+		{ key: 'Plan', icon: 'Map' },
+		{ key: 'Coach', icon: 'Coach' },
+		{ key: 'Town', icon: 'Town' },
+		{ key: 'Safety', icon: 'Safe' },
+		{ key: 'Account', icon: 'Me' }
 	];
 </script>
 
-<nav class="nav safe-area-bottom">
+<nav class="nav">
 	{#each tabs as tab}
-		<button 
-			class="tab {trailAssistant.activeTab === tab.name ? 'active' : ''}"
-			onclick={() => trailAssistant.activeTab = tab.name}
+		<button
+			class:active={trailAssistant.activeTab === tab.key}
+			class="nav-item"
+			onclick={() => (trailAssistant.activeTab = tab.key)}
+			aria-current={trailAssistant.activeTab === tab.key ? 'page' : undefined}
 		>
-			<span class="icon">{tab.icon}</span>
-			<span class="label">{tab.name}</span>
+			<span class="nav-icon">{tab.icon}</span>
+			<span class="nav-label">{tab.key}</span>
 		</button>
 	{/each}
 </nav>
 
 <style>
 	.nav {
-		display: flex;
-		justify-content: space-around;
-		background: var(--color-bg);
-		border-top: 1px solid var(--color-border);
 		position: fixed;
+		left: 0;
+		right: 0;
 		bottom: 0;
-		width: 100%;
-		padding-top: 8px;
-		z-index: 100;
+		max-width: var(--app-width);
+		margin: 0 auto;
+		height: var(--nav-height);
+		padding: 8px 10px calc(env(safe-area-inset-bottom) + 10px);
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: 6px;
+		background: rgba(252, 248, 240, 0.96);
+		backdrop-filter: blur(12px);
+		border-top: 1px solid rgba(95, 101, 88, 0.12);
 	}
 
-	.tab {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 4px 0 12px;
-		flex: 1;
-		gap: 4px;
-		color: var(--color-text-muted);
-		transition: color 0.2s;
+	.nav-item {
+		display: grid;
+		place-items: center;
+		align-content: center;
+		gap: 3px;
+		border-radius: 14px;
+		color: var(--muted);
 	}
 
-	.tab.active {
-		color: var(--color-primary);
+	.nav-item.active {
+		background: rgba(47, 75, 53, 0.1);
+		color: var(--forest);
 	}
 
-	.icon {
-		font-size: 20px;
+	.nav-icon {
+		font-size: 0.73rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
 	}
 
-	.label {
-		font-size: 10px;
+	.nav-label {
+		font-size: 0.66rem;
 		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.active .label {
-		color: var(--color-primary);
 	}
 </style>

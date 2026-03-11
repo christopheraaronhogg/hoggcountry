@@ -1,201 +1,185 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
-	
-	function doCheckIn(status: 'safe' | 'tired' | 'emergency') {
-		trailAssistant.checkIn('Chestnut Knob Area', 582.4, status);
-	}
 
-	const lastCheckInTime = $derived(trailAssistant.lastCheckIn?.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'No check-in today');
+	function send(status: 'safe' | 'delayed' | 'need-help') {
+		const notes = {
+			safe: 'Safe and still inside the current plan.',
+			delayed: 'Delaying pace and protecting recovery.',
+			'need-help': 'Please flag for human review.'
+		};
+
+		trailAssistant.performCheckIn(status, notes[status]);
+	}
 </script>
 
-<div class="tab-content">
-	<header class="section-header">
-		<h2>Safety & Check-in</h2>
-		<p>Keep your loved ones informed, even when offline.</p>
-	</header>
-
-	<section class="checkin-card card gradient-bg">
-		<div class="last-checkin">
-			<span class="label">Last Status Update</span>
-			<span class="value">{lastCheckInTime}</span>
+<div class="section-stack">
+	<section class="card safety-hero">
+		<div class="section-heading">
+			<p class="eyebrow">Safety</p>
+			<h2>Check-ins and visibility</h2>
+			<p>Last check-in {new Date(trailAssistant.lastCheckIn.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</p>
 		</div>
-		
+
+		<div class="risk-strip {trailAssistant.missedCheckInRisk}">
+			<strong>Missed check-in risk</strong>
+			<span class={`risk-${trailAssistant.missedCheckInRisk}`}>
+				{trailAssistant.missedCheckInRisk === 'high'
+					? 'High'
+					: trailAssistant.missedCheckInRisk === 'medium'
+						? 'Medium'
+						: 'Low'}
+			</span>
+		</div>
+
 		<div class="checkin-actions">
-			<button class="checkin-btn safe" onclick={() => doCheckIn('safe')}>
-				<span class="icon">✅</span>
-				<span>I'm Safe</span>
-			</button>
-			<button class="checkin-btn tired" onclick={() => doCheckIn('tired')}>
-				<span class="icon">⛺</span>
-				<span>Camping Early</span>
-			</button>
-			<button class="checkin-btn danger" onclick={() => doCheckIn('emergency')}>
-				<span class="icon">⚠️</span>
-				<span>Need Assist</span>
-			</button>
+			<button class="secondary-button" onclick={() => send('safe')}>I am safe</button>
+			<button class="outline-button" onclick={() => send('delayed')}>Running late</button>
+			<button class="danger-button" onclick={() => send('need-help')}>Need help</button>
 		</div>
 	</section>
 
-	<section class="privacy card">
-		<h3>Privacy & Visibility</h3>
+	<section class="card">
+		<div class="section-heading">
+			<p class="eyebrow">Privacy</p>
+			<h2>Sharing controls</h2>
+			<p>Keep your support circle informed without exposing more than necessary.</p>
+		</div>
+
 		<div class="toggle-row">
-			<div class="toggle-info">
-				<span class="name">Stealth Mode</span>
-				<span class="desc">Hide your exact mile from public logs.</span>
+			<div class="toggle-copy">
+				<strong>Stealth mode</strong>
+				<span>Hide exact movement from public views.</span>
 			</div>
-			<button 
-				class="toggle {trailAssistant.privacySettings.stealthMode ? 'on' : 'off'}"
-				aria-label="Toggle Stealth Mode"
+			<button
+				class:off={!trailAssistant.privacySettings.stealthMode}
+				class:on={trailAssistant.privacySettings.stealthMode}
+				class="toggle"
+				aria-label="Toggle stealth mode"
 				onclick={() => trailAssistant.updatePrivacy({ stealthMode: !trailAssistant.privacySettings.stealthMode })}
 			></button>
 		</div>
+
 		<div class="toggle-row">
-			<div class="toggle-info">
-				<span class="name">Share with Coach</span>
-				<span class="desc">Allow AI to analyze location for safety.</span>
+			<div class="toggle-copy">
+				<strong>Precise location</strong>
+				<span>Share exact position with approved contacts only.</span>
 			</div>
-			<button 
-				class="toggle {trailAssistant.privacySettings.allowCoachInsights ? 'on' : 'off'}"
-				aria-label="Toggle Share with Coach"
-				onclick={() => trailAssistant.updatePrivacy({ allowCoachInsights: !trailAssistant.privacySettings.allowCoachInsights })}
+			<button
+				class:off={!trailAssistant.privacySettings.sharePreciseLocation}
+				class:on={trailAssistant.privacySettings.sharePreciseLocation}
+				class="toggle"
+				aria-label="Toggle precise location sharing"
+				onclick={() =>
+					trailAssistant.updatePrivacy({
+						sharePreciseLocation: !trailAssistant.privacySettings.sharePreciseLocation
+					})}
+			></button>
+		</div>
+
+		<div class="toggle-row">
+			<div class="toggle-copy">
+				<strong>Coach insights</strong>
+				<span>Let coach factor route position into recommendations.</span>
+			</div>
+			<button
+				class:off={!trailAssistant.privacySettings.allowCoachInsights}
+				class:on={trailAssistant.privacySettings.allowCoachInsights}
+				class="toggle"
+				aria-label="Toggle coach insights"
+				onclick={() =>
+					trailAssistant.updatePrivacy({
+						allowCoachInsights: !trailAssistant.privacySettings.allowCoachInsights
+					})}
 			></button>
 		</div>
 	</section>
 
-	<div class="risk-card card danger-border">
-		<span class="icon">🕒</span>
-		<div class="risk-info">
-			<span class="name">Missed Check-in Risk</span>
-			<span class="desc">Your "Safe" window closes in 4 hours. Automated alert will fire at 8:00 PM.</span>
+	<section class="card">
+		<div class="section-heading">
+			<p class="eyebrow">Support circle</p>
+			<h2>Who gets the signal</h2>
+			<p>This is the first group contacted if a check-in window is missed.</p>
 		</div>
-	</div>
+
+		<div class="stack-tight">
+			{#each trailAssistant.supportCircle as contact}
+				<div class="support-row">
+					<div>
+						<strong>{contact.name}</strong>
+						<span>{contact.role}</span>
+					</div>
+					<span>{contact.method}</span>
+				</div>
+			{/each}
+		</div>
+	</section>
 </div>
 
 <style>
-	.tab-content {
-		padding: 20px;
+	.safety-hero {
+		padding: 18px;
+		display: grid;
+		gap: 14px;
+		background:
+			radial-gradient(circle at top right, rgba(154, 59, 47, 0.08), transparent 38%),
+			linear-gradient(180deg, rgba(255, 251, 248, 0.98), rgba(247, 239, 235, 0.96));
+	}
+
+	.risk-strip {
 		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		padding-bottom: 100px;
-	}
-
-	.section-header h2 {
-		font-size: 20px;
-		margin-bottom: 4px;
-	}
-
-	.section-header p {
-		font-size: 13px;
-		color: var(--color-text-muted);
-		margin: 0;
-	}
-
-	.checkin-card {
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
 		align-items: center;
-		gap: 20px;
+		justify-content: space-between;
+		padding: 12px 14px;
+		border-radius: 14px;
+		background: rgba(47, 75, 53, 0.08);
 	}
 
-	.last-checkin {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 4px;
+	.risk-strip.medium {
+		background: rgba(200, 167, 122, 0.22);
 	}
 
-	.last-checkin .label {
-		font-size: 10px;
-		font-weight: 700;
-		color: var(--color-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-	}
-
-	.last-checkin .value {
-		font-size: 20px;
-		font-weight: 800;
-		color: var(--color-text);
+	.risk-strip.high {
+		background: var(--danger-soft);
 	}
 
 	.checkin-actions {
 		display: grid;
-		grid-template-columns: 1fr;
-		width: 100%;
 		gap: 10px;
 	}
 
-	.checkin-btn {
-		display: flex;
+	.danger-button {
+		display: inline-flex;
 		align-items: center;
-		gap: 12px;
-		padding: 14px;
-		border-radius: 12px;
+		justify-content: center;
+		width: 100%;
+		min-height: 46px;
+		padding: 12px 16px;
+		border-radius: 14px;
 		font-weight: 700;
-		font-size: 15px;
-		background: white;
-		border: 1px solid var(--color-border);
-		transition: transform 0.1s;
+		background: linear-gradient(135deg, var(--danger), #b14a3d);
+		color: #fff7f3;
 	}
 
-	.checkin-btn:active { transform: scale(0.98); }
-
-	.checkin-btn.safe { color: var(--color-secondary); border-color: var(--color-secondary-soft); }
-	.checkin-btn.tired { color: var(--color-accent); border-color: #ebf5fb; }
-	.checkin-btn.danger { color: var(--color-danger); border-color: #fdedec; }
-
-	.toggle-row {
+	.support-row {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
 		padding: 12px 0;
 	}
 
-	.toggle-row:not(:last-child) { border-bottom: 1px solid var(--color-border); }
-
-	.toggle-info { display: flex; flex-direction: column; gap: 2px; flex: 1; padding-right: 16px; }
-
-	.toggle-info .name { font-size: 14px; font-weight: 700; }
-	.toggle-info .desc { font-size: 11px; color: var(--color-text-muted); }
-
-	.toggle {
-		width: 44px;
-		height: 24px;
-		border-radius: 12px;
-		background: var(--color-border);
-		position: relative;
-		transition: background 0.3s;
+	.support-row + .support-row {
+		border-top: 1px solid rgba(95, 101, 88, 0.12);
 	}
 
-	.toggle::after {
-		content: '';
-		position: absolute;
-		width: 20px;
-		height: 20px;
-		background: white;
-		border-radius: 50%;
-		top: 2px;
-		left: 2px;
-		transition: left 0.3s;
-		box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+	.support-row div {
+		display: grid;
+		gap: 4px;
 	}
 
-	.toggle.on { background: var(--color-secondary); }
-	.toggle.on::after { left: 22px; }
-
-	.risk-card {
-		display: flex;
-		gap: 12px;
-		padding: 12px;
-		align-items: flex-start;
-		border: 1px solid var(--color-danger);
-		background: #fff8f7;
+	.support-row div span,
+	.support-row > span {
+		font-size: 0.82rem;
+		color: var(--muted);
 	}
-
-	.risk-card .icon { font-size: 20px; }
-	.risk-info { display: flex; flex-direction: column; gap: 2px; }
-	.risk-info .name { font-size: 13px; font-weight: 800; color: var(--color-danger); }
-	.risk-info .desc { font-size: 11px; color: var(--color-text-muted); }
 </style>

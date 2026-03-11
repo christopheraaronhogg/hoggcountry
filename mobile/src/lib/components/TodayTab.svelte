@@ -1,238 +1,236 @@
 <script lang="ts">
+	import { upcomingStops, waterSources, weatherSnapshot } from '$lib/mockTrailData';
 	import { trailAssistant } from '$lib/trailState.svelte';
-	
-	const progress = $derived((trailAssistant.completedMiles / trailAssistant.dailyGoal) * 100);
-	const remaining = $derived(Math.max(0, trailAssistant.dailyGoal - trailAssistant.completedMiles).toFixed(1));
-	const waterDist = $derived((trailAssistant.nextWaterMile - trailAssistant.completedMiles).toFixed(1));
+
+	function recommendationLabel() {
+		const labels = {
+			push: 'Push window',
+			steady: 'Steady day',
+			hold: 'Hold discipline',
+			nero: 'Nero recommended',
+			zero: 'Zero recommended'
+		};
+
+		return labels[trailAssistant.readiness.recommendation];
+	}
+
+	const remaining = $derived(trailAssistant.milesRemainingToday.toFixed(1));
+	const progress = $derived(`${trailAssistant.progressPercent.toFixed(0)}%`);
 </script>
 
-<div class="tab-content">
-	<section class="hero-card card gradient-bg">
-		<div class="mileage-header">
-			<span class="badge badge-orange">Day 42</span>
-			<span class="date">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-		</div>
-		<div class="progress-circle">
-			<div class="stats">
-				<span class="completed">{trailAssistant.completedMiles.toFixed(1)}</span>
-				<span class="target">/ {trailAssistant.dailyGoal.toFixed(1)} mi</span>
+<div class="section-stack">
+	<section class="hero card">
+		<div class="hero-top">
+			<div>
+				<p class="eyebrow">Today</p>
+				<h2>{recommendationLabel()}</h2>
 			</div>
-			<div class="label">Progress to Target</div>
+
+			<span class="pill pill-forest">{trailAssistant.readiness.score} readiness</span>
 		</div>
-		<div class="progress-bar">
-			<div class="fill" style="width: {progress}%"></div>
+
+		<div class="hero-number">
+			<strong>{trailAssistant.currentDayMiles.toFixed(1)}</strong>
+			<span>/ {trailAssistant.readiness.targetMiles.toFixed(1)} mi</span>
 		</div>
-		<p class="summary">{remaining} miles to go before your planned camp at Chestnut Knob.</p>
+
+		<div class="progress-bar" aria-hidden="true">
+			<div class="progress-fill" style={`width:${trailAssistant.progressPercent}%`}></div>
+		</div>
+
+		<p class="hero-copy">
+			{remaining} miles left if you keep this day controlled. The target is not ambitious on purpose.
+		</p>
+
+		<div class="hero-actions">
+			<button class="cta-button" onclick={() => (trailAssistant.activeTab = 'Coach')}>
+				Ask coach about today
+			</button>
+			<button class="secondary-button" onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}>
+				Send quick check-in
+			</button>
+		</div>
 	</section>
 
-	<div class="quick-stats">
-		<div class="stat-card card">
-			<span class="stat-icon">💧</span>
-			<div class="stat-info">
-				<span class="stat-label">Next Water</span>
-				<span class="stat-value">{waterDist} mi</span>
-			</div>
+	<section class="metric-grid">
+		<div class="metric-card card">
+			<span class="metric-label">Next water</span>
+			<strong class="metric-value">{waterSources[0].distanceMiles.toFixed(1)} mi</strong>
+			<span class="metric-note">{waterSources[0].name}</span>
 		</div>
-		<div class="stat-card card">
-			<span class="stat-icon">⛰️</span>
-			<div class="stat-info">
-				<span class="stat-label">Elevation</span>
-				<span class="stat-value">+1,240 ft</span>
-			</div>
-		</div>
-	</div>
 
-	<section class="itinerary card">
-		<h3>Coming Up</h3>
-		<div class="timeline">
-			<div class="item">
-				<span class="time">1.2 mi</span>
-				<div class="details">
-					<span class="name">High Ledge Lookout</span>
-					<span class="desc">Panoramic views, 360°</span>
+		<div class="metric-card card">
+			<span class="metric-label">Check-in due</span>
+			<strong class="metric-value">
+				{new Date(trailAssistant.nextCheckInDueAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+			</strong>
+			<span class="metric-note">{trailAssistant.onlineStatus ? 'Signal looks usable' : 'Will queue offline'}</span>
+		</div>
+
+		<div class="metric-card card">
+			<span class="metric-label">Target vert</span>
+			<strong class="metric-value">{trailAssistant.readiness.targetVert.toLocaleString()} ft</strong>
+			<span class="metric-note">Cap the day, do not make it up late</span>
+		</div>
+
+		<div class="metric-card card">
+			<span class="metric-label">Sync health</span>
+			<strong class="metric-value">{trailAssistant.syncLabel}</strong>
+			<span class="metric-note">{progress} of the day logged</span>
+		</div>
+	</section>
+
+	<section class="card section-card">
+		<div class="section-heading">
+			<p class="eyebrow">Why</p>
+			<h2>Readiness drivers</h2>
+			<p>{weatherSnapshot.summary}</p>
+		</div>
+
+		<ul class="reason-list">
+			{#each trailAssistant.readiness.reasons as reason}
+				<li>{reason}</li>
+			{/each}
+		</ul>
+	</section>
+
+	<section class="card section-card">
+		<div class="section-heading">
+			<p class="eyebrow">Up next</p>
+			<h2>Route cues</h2>
+			<p>{weatherSnapshot.riskNote}</p>
+		</div>
+
+		<div class="stack-tight">
+			{#each upcomingStops as stop}
+				<div class="stop-row">
+					<div class={`stop-marker ${stop.kind}`}></div>
+					<div class="stop-copy">
+						<strong>{stop.title}</strong>
+						<span>{stop.distanceMiles.toFixed(1)} mi · {stop.detail}</span>
+					</div>
 				</div>
-			</div>
-			<div class="item water">
-				<span class="time">4.2 mi</span>
-				<div class="details">
-					<span class="name">Lick Creek</span>
-					<span class="desc">Last reliable water for 8 miles</span>
-				</div>
-			</div>
-			<div class="item camp">
-				<span class="time">7.3 mi</span>
-				<div class="details">
-					<span class="name">Chestnut Knob Shelter</span>
-					<span class="desc">Plan: Overnight</span>
-				</div>
-			</div>
+			{/each}
 		</div>
 	</section>
 </div>
 
 <style>
-	.tab-content {
-		padding: 20px;
-		display: flex;
-		flex-direction: column;
-		gap: 20px;
-		padding-bottom: 100px;
+	.hero,
+	.section-card {
+		padding: 18px;
 	}
 
-	.hero-card {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
+	.hero {
+		display: grid;
 		gap: 16px;
+		background:
+			radial-gradient(circle at top right, rgba(95, 128, 144, 0.12), transparent 36%),
+			linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(247, 240, 228, 0.96));
 	}
 
-	.mileage-header {
-		width: 100%;
+	.hero-top {
 		display: flex;
+		align-items: flex-start;
 		justify-content: space-between;
-		align-items: center;
+		gap: 12px;
 	}
 
-	.date {
-		font-size: 12px;
-		font-weight: 700;
-		color: var(--color-text-muted);
+	.hero-top h2 {
+		font-family: var(--font-display);
+		font-size: 1.6rem;
+		line-height: 1.02;
 	}
 
-	.progress-circle {
-		margin: 8px 0;
+	.hero-number {
+		display: flex;
+		align-items: baseline;
+		gap: 8px;
 	}
 
-	.completed {
-		font-size: 42px;
-		font-weight: 900;
-		color: var(--color-text);
-		font-family: var(--font-serif);
+	.hero-number strong {
+		font-size: 3rem;
+		line-height: 1;
+		font-family: var(--font-display);
+		color: var(--forest);
 	}
 
-	.target {
-		font-size: 16px;
-		color: var(--color-text-muted);
-		font-weight: 600;
-	}
-
-	.label {
-		font-size: 11px;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		font-weight: 700;
-		color: var(--color-text-muted);
-		margin-top: -4px;
+	.hero-number span,
+	.hero-copy {
+		color: var(--muted);
 	}
 
 	.progress-bar {
-		width: 100%;
-		height: 8px;
-		background: var(--color-border);
-		border-radius: 4px;
+		height: 10px;
+		border-radius: 999px;
+		background: rgba(47, 75, 53, 0.12);
 		overflow: hidden;
 	}
 
-	.fill {
+	.progress-fill {
 		height: 100%;
-		background: var(--color-primary);
-		transition: width 0.5s ease-out;
+		border-radius: inherit;
+		background: linear-gradient(90deg, var(--forest), var(--moss));
 	}
 
-	.summary {
-		font-size: 14px;
-		color: var(--color-text-muted);
-		margin: 0;
-	}
-
-	.quick-stats {
+	.hero-actions {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+
+	.reason-list {
+		margin: 0;
+		padding-left: 18px;
+		display: grid;
+		gap: 10px;
+		color: var(--ink);
+	}
+
+	.reason-list li {
+		color: var(--muted);
+	}
+
+	.stop-row {
+		display: grid;
+		grid-template-columns: 14px 1fr;
 		gap: 12px;
+		align-items: start;
 	}
 
-	.stat-card {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		padding: 12px;
+	.stop-marker {
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		margin-top: 3px;
 	}
 
-	.stat-icon {
-		font-size: 24px;
+	.stop-marker.view {
+		background: var(--sky);
 	}
 
-	.stat-info {
-		display: flex;
-		flex-direction: column;
+	.stop-marker.water {
+		background: var(--moss);
 	}
 
-	.stat-label {
-		font-size: 10px;
-		font-weight: 700;
-		color: var(--color-text-muted);
-		text-transform: uppercase;
+	.stop-marker.shelter {
+		background: var(--clay);
 	}
 
-	.stat-value {
-		font-size: 16px;
-		font-weight: 800;
-		color: var(--color-text);
+	.stop-marker.town {
+		background: var(--forest);
 	}
 
-	.itinerary h3 {
-		font-size: 14px;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		margin-bottom: 16px;
-		color: var(--color-text-muted);
+	.stop-copy {
+		display: grid;
+		gap: 3px;
 	}
 
-	.timeline {
-		display: flex;
-		flex-direction: column;
-		gap: 20px;
+	.stop-copy strong {
+		font-size: 0.96rem;
 	}
 
-	.item {
-		display: flex;
-		gap: 16px;
-		position: relative;
+	.stop-copy span {
+		font-size: 0.84rem;
+		color: var(--muted);
 	}
-
-	.item:not(:last-child)::after {
-		content: '';
-		position: absolute;
-		left: 14px;
-		top: 24px;
-		bottom: -24px;
-		width: 2px;
-		background: var(--color-border);
-	}
-
-	.time {
-		font-size: 11px;
-		font-weight: 800;
-		color: var(--color-primary);
-		min-width: 45px;
-	}
-
-	.details {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.name {
-		font-size: 14px;
-		font-weight: 700;
-	}
-
-	.desc {
-		font-size: 12px;
-		color: var(--color-text-muted);
-	}
-
-	.item.water .time { color: var(--color-accent); }
-	.item.camp .time { color: var(--color-secondary); }
 </style>

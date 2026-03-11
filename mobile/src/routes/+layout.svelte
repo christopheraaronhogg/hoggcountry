@@ -1,24 +1,17 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
 	import '../app.css';
+	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Trail Assistant | Hogg Country</title>
+	<title>Trail Assistant</title>
+	<meta
+		name="description"
+		content="Phone-first prototype for the Hogg Country Trail Assistant."
+	/>
 </svelte:head>
 
-<main>
-	{@render children()}
-</main>
-
-<style>
-	main {
-		max-width: 500px;
-		margin: 0 auto;
-		min-height: 100vh;
-		position: relative;
-	}
-</style>
+{@render children()}

@@ -1,130 +1,179 @@
 <script lang="ts">
+	import { quickPrompts } from '$lib/mockTrailData';
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import { onMount } from 'svelte';
 
-	let inputMessage = $state('');
-	let chatContainer = $state<HTMLElement | null>(null);
+	let draft = $state('');
+	let logRef = $state<HTMLDivElement | null>(null);
 
-	function sendMessage() {
-		if (!inputMessage.trim()) return;
-		trailAssistant.addMessage('user', inputMessage);
-		inputMessage = '';
+	function scrollToBottom() {
+		queueMicrotask(() => {
+			logRef?.scrollTo({ top: logRef.scrollHeight, behavior: 'smooth' });
+		});
+	}
+
+	function submit() {
+		if (!draft.trim()) return;
+		trailAssistant.sendCoachMessage(draft);
+		draft = '';
+		scrollToBottom();
+	}
+
+	function usePrompt(prompt: string) {
+		trailAssistant.runQuickPrompt(prompt);
+		scrollToBottom();
 	}
 
 	$effect(() => {
-		if (trailAssistant.messages && chatContainer) {
-			chatContainer.scrollTop = chatContainer.scrollHeight;
-		}
+		trailAssistant.coachMessages.length;
+		scrollToBottom();
 	});
 </script>
 
-<div class="chat-wrapper">
-	<div class="chat-container" bind:this={chatContainer}>
-		{#each trailAssistant.messages as message}
-			<div class="message-row {message.role}">
-				<div class="message {message.role}">
-					{message.content}
-					<span class="time">{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-				</div>
-			</div>
-		{/each}
-	</div>
+<div class="section-stack coach-shell">
+	<section class="card coach-intro">
+		<div class="section-heading">
+			<p class="eyebrow">Coach</p>
+			<h2>Context-aware trail ops</h2>
+			<p>
+				{trailAssistant.onlineStatus
+					? 'You are online, so this prototype behaves like live trail coaching.'
+					: 'You are offline, so replies are coming from on-device trail logic.'}
+			</p>
+		</div>
 
-	<div class="input-area card">
-		<input 
-			type="text" 
-			placeholder="Ask about water, miles, or town..." 
-			bind:value={inputMessage}
-			onkeydown={(e) => e.key === 'Enter' && sendMessage()}
-		/>
-		<button class="send-btn" onclick={sendMessage}>
-			<span>↑</span>
-		</button>
-	</div>
+		<div class="prompt-row">
+			{#each quickPrompts as prompt}
+				<button class="prompt-pill" onclick={() => usePrompt(prompt)}>{prompt}</button>
+			{/each}
+		</div>
+	</section>
+
+	<section class="card chat-card">
+		<div class="chat-log" bind:this={logRef}>
+			{#each trailAssistant.coachMessages as message}
+				<div class:assistant={message.role === 'assistant'} class:user={message.role === 'user'} class="message">
+					<p>{message.content}</p>
+					<span>{new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+				</div>
+			{/each}
+		</div>
+
+		<div class="composer">
+			<textarea
+				bind:value={draft}
+				rows="2"
+				placeholder="Ask about mileage, water, town timing, safety, or recovery..."
+				onkeydown={(event) => {
+					if (event.key === 'Enter' && !event.shiftKey) {
+						event.preventDefault();
+						submit();
+					}
+				}}
+			></textarea>
+
+			<div class="composer-actions">
+				<span>{trailAssistant.onlineStatus ? 'Live mode' : 'Offline mode'}</span>
+				<button class="cta-button send" onclick={submit}>Send</button>
+			</div>
+		</div>
+	</section>
 </div>
 
 <style>
-	.chat-wrapper {
-		display: flex;
-		flex-direction: column;
-		height: calc(100vh - 120px);
-		padding: 20px;
-		gap: 12px;
+	.coach-shell {
+		min-height: calc(100vh - 210px);
 	}
 
-	.chat-container {
-		flex: 1;
-		overflow-y: auto;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		padding-bottom: 20px;
+	.coach-intro,
+	.chat-card {
+		padding: 18px;
 	}
 
-	.message-row {
+	.prompt-row {
 		display: flex;
-		width: 100%;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-top: 12px;
 	}
 
-	.message-row.user { justify-content: flex-end; }
+	.prompt-pill {
+		padding: 10px 12px;
+		border-radius: 999px;
+		background: rgba(47, 75, 53, 0.08);
+		color: var(--forest);
+		font-size: 0.78rem;
+		font-weight: 700;
+	}
+
+	.chat-card {
+		display: grid;
+		gap: 14px;
+	}
+
+	.chat-log {
+		display: grid;
+		gap: 10px;
+		max-height: 50vh;
+		overflow: auto;
+		padding-right: 4px;
+	}
 
 	.message {
-		max-width: 80%;
-		padding: 12px 16px;
+		max-width: 86%;
+		padding: 12px 14px;
 		border-radius: 18px;
-		font-size: 14px;
-		line-height: 1.4;
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
+		display: grid;
+		gap: 6px;
+		box-shadow: var(--shadow-soft);
 	}
 
-	.message.coach {
-		background: var(--color-card);
-		border: 1px solid var(--color-border);
-		color: var(--color-text);
-		border-bottom-left-radius: 4px;
+	.message.assistant {
+		background: var(--surface);
+		border: 1px solid var(--line);
 	}
 
 	.message.user {
-		background: var(--color-primary);
-		color: white;
-		border-bottom-right-radius: 4px;
+		background: rgba(47, 75, 53, 0.12);
+		margin-left: auto;
 	}
 
-	.time {
-		font-size: 9px;
-		opacity: 0.7;
-		align-self: flex-end;
+	.message p {
+		font-size: 0.92rem;
 	}
 
-	.input-area {
-		display: flex;
+	.message span {
+		font-size: 0.72rem;
+		color: var(--muted);
+		justify-self: end;
+	}
+
+	.composer {
+		display: grid;
 		gap: 10px;
-		padding: 8px 12px;
-		align-items: center;
-		margin-bottom: 80px;
 	}
 
-	input {
-		flex: 1;
-		border: none;
-		outline: none;
-		font-family: inherit;
-		font-size: 14px;
-		background: transparent;
+	textarea {
+		width: 100%;
+		resize: none;
+		border-radius: 16px;
+		border: 1px solid var(--line);
+		padding: 14px;
+		min-height: 92px;
+		background: #fffdf8;
+		color: var(--ink);
 	}
 
-	.send-btn {
-		width: 32px;
-		height: 32px;
-		background: var(--color-primary);
-		color: white;
-		border-radius: 50%;
+	.composer-actions {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		font-weight: 900;
+		justify-content: space-between;
+		gap: 12px;
+		font-size: 0.78rem;
+		color: var(--muted);
+	}
+
+	.send {
+		width: auto;
+		min-width: 92px;
 	}
 </style>

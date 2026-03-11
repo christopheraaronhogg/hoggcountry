@@ -1,19 +1,19 @@
 <script lang="ts">
+	import AccountTab from '$lib/components/AccountTab.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
+	import CoachTab from '$lib/components/CoachTab.svelte';
+	import PlanTab from '$lib/components/PlanTab.svelte';
+	import SafetyTab from '$lib/components/SafetyTab.svelte';
 	import TabNavigation from '$lib/components/TabNavigation.svelte';
 	import TodayTab from '$lib/components/TodayTab.svelte';
-	import PlanTab from '$lib/components/PlanTab.svelte';
-	import CoachTab from '$lib/components/CoachTab.svelte';
 	import TownTab from '$lib/components/TownTab.svelte';
-	import SafetyTab from '$lib/components/SafetyTab.svelte';
-	import AccountTab from '$lib/components/AccountTab.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
 </script>
 
-<div class="app-shell">
+<div class="phone-frame">
 	<AppHeader />
 
-	<main class="content">
+	<main class="screen-scroll">
 		{#if trailAssistant.activeTab === 'Today'}
 			<TodayTab />
 		{:else if trailAssistant.activeTab === 'Plan'}
@@ -24,29 +24,10 @@
 			<TownTab />
 		{:else if trailAssistant.activeTab === 'Safety'}
 			<SafetyTab />
-		{:else if trailAssistant.activeTab === 'Account'}
+		{:else}
 			<AccountTab />
 		{/if}
 	</main>
 
 	<TabNavigation />
 </div>
-
-<style>
-	.app-shell {
-		display: flex;
-		flex-direction: column;
-		height: 100vh;
-		background: var(--color-bg);
-	}
-
-	.content {
-		flex: 1;
-		overflow-y: auto;
-		scrollbar-width: none;
-	}
-
-	.content::-webkit-scrollbar {
-		display: none;
-	}
-</style>

@@ -1,112 +1,91 @@
 <script lang="ts">
-	const services = [
-		{ name: 'Bland Post Office', type: 'Resupply', dist: '0.2 mi off trail', status: 'Closes 4:30 PM' },
-		{ name: 'Big Walker Motel', type: 'Lodging', dist: '0.5 mi off trail', status: 'Laundry available' },
-		{ name: 'NAPA Auto Parts', type: 'Gear/Fuel', dist: '0.8 mi off trail', status: 'Isobutane in stock' },
-		{ name: 'Library', type: 'WiFi/Power', dist: '0.3 mi off trail', status: 'Free coffee' }
-	];
+	import { townSnapshot } from '$lib/mockTrailData';
 </script>
 
-<div class="tab-content">
-	<header class="section-header">
-		<h2>Upcoming: Bland, VA</h2>
-		<p>Estimated Arrival: Saturday, Mar 14 (Mile 590)</p>
-	</header>
+<div class="section-stack">
+	<section class="card town-hero">
+		<div class="section-heading">
+			<p class="eyebrow">Town ops</p>
+			<h2>{townSnapshot.name}</h2>
+			<p>Mile {townSnapshot.mile.toFixed(1)} · {townSnapshot.eta}</p>
+		</div>
 
-	<div class="service-list">
-		{#each services as service}
-			<div class="service-card card">
+		<div class="town-note">
+			<strong>Best approach</strong>
+			<span>{townSnapshot.hitchNote}</span>
+		</div>
+	</section>
+
+	<section class="card concierge-card">
+		<p class="eyebrow">Concierge lane</p>
+		<h3>Need the messy stuff handled?</h3>
+		<p>Use support when you need beds, shuttle timing, or box logistics confirmed instead of guessing your way into town.</p>
+		<button class="cta-button">Queue town help</button>
+	</section>
+
+	<section class="stack-tight">
+		{#each townSnapshot.services as service}
+			<article class="card service-card">
 				<div class="service-top">
-					<span class="badge {service.type === 'Resupply' ? 'badge-orange' : 'badge-green'}">{service.type}</span>
-					<span class="dist">{service.dist}</span>
+					<span class="pill pill-clay">{service.category}</span>
+					<span class="service-status">{service.status}</span>
 				</div>
-				<span class="name">{service.name}</span>
-				<span class="status">{service.status}</span>
-			</div>
+				<h3>{service.name}</h3>
+				<p>{service.detail}</p>
+			</article>
 		{/each}
-	</div>
-
-	<section class="hitch card gradient-bg">
-		<h3>Hitch Options</h3>
-		<p>US-52 crossing. Moderate traffic on weekends. Best hitch point is the parking lot near the bridge.</p>
-		<button class="call-shuttle">View Local Shuttles</button>
 	</section>
 </div>
 
 <style>
-	.tab-content {
-		padding: 20px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		padding-bottom: 100px;
-	}
-
-	.section-header h2 {
-		font-size: 20px;
-		margin-bottom: 4px;
-	}
-
-	.section-header p {
-		font-size: 13px;
-		color: var(--color-text-muted);
-		margin: 0;
-	}
-
-	.service-list {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-	}
-
+	.town-hero,
+	.concierge-card,
 	.service-card {
-		padding: 14px;
-		display: flex;
-		flex-direction: column;
+		padding: 18px;
+	}
+
+	.town-hero {
+		background:
+			radial-gradient(circle at top right, rgba(170, 104, 67, 0.12), transparent 34%),
+			linear-gradient(180deg, rgba(255, 251, 246, 0.98), rgba(247, 238, 228, 0.98));
+	}
+
+	.town-note {
+		margin-top: 10px;
+		display: grid;
 		gap: 6px;
+		padding: 14px;
+		border-radius: 14px;
+		background: rgba(47, 75, 53, 0.06);
+	}
+
+	.town-note strong {
+		font-size: 0.85rem;
+	}
+
+	.town-note span,
+	.concierge-card p,
+	.service-card p {
+		font-size: 0.88rem;
+		color: var(--muted);
+	}
+
+	.concierge-card h3,
+	.service-card h3 {
+		margin: 6px 0 8px;
+		font-size: 1rem;
 	}
 
 	.service-top {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
 	}
 
-	.dist {
-		font-size: 11px;
-		color: var(--color-text-muted);
+	.service-status {
+		font-size: 0.76rem;
 		font-weight: 700;
-	}
-
-	.name {
-		font-size: 16px;
-		font-weight: 700;
-	}
-
-	.status {
-		font-size: 12px;
-		color: var(--color-secondary);
-		font-weight: 600;
-	}
-
-	.hitch h3 {
-		font-size: 14px;
-		margin-bottom: 8px;
-	}
-
-	.hitch p {
-		font-size: 13px;
-		color: var(--color-text-muted);
-		margin-bottom: 12px;
-	}
-
-	.call-shuttle {
-		width: 100%;
-		padding: 10px;
-		background: var(--color-text);
-		color: white;
-		border-radius: 8px;
-		font-weight: 700;
-		font-size: 13px;
+		color: var(--forest);
 	}
 </style>
