@@ -14,6 +14,34 @@ Hogg Country is more than a blog — it's a trail-ready command center that work
 - **Single source of truth** — One master guide document drives all chapter content
 - **Performance obsession** — Code-split bundles, lazy loading, sub-second interactions
 
+## Trail Assistant
+
+Trail Assistant is the product track that turns Hogg Country from a planning site into a personal trail-ops platform. The target experience is closer to WHOOP than a generic hiking app: a hiker opens one screen each day, sees what their body and trail conditions can support, gets a concrete plan, and can escalate to a real human when trail reality stops matching the plan.
+
+**Product thesis:**
+- **Trail readiness over generic wellness** — Translate sleep, soreness, recent load, weather, and segment difficulty into a daily hiking recommendation.
+- **Adaptive itinerary instead of static spreadsheets** — Keep a rolling 7-day plan for mileage, camps, hostels, resupply, shuttles, and weather pivots.
+- **AI first, concierge second** — Let software handle routine trail decisions and let humans handle messy logistics, safety, and time-sensitive exceptions.
+- **Partner network as moat** — Hostels, shuttle drivers, outfitters, and regional experts make the product materially better than an isolated app.
+
+**Recommended stack shape for this product:**
+- **Public site and marketing:** Astro 5 + Svelte islands
+- **Core backend:** Laravel 12 APIs, auth, moderation, billing, and ops
+- **Mobile app for iOS/Android:** dedicated SvelteKit + Capacitor client consuming the Laravel APIs
+- **Current mobile proof surface:** Laravel Inertia + Svelte route at `/native` should be treated as a prototype, not the final app architecture
+
+**Current Trail Assistant surfaces:**
+- `/trail-assistant` — public intake + profile-state demo
+- `/trail-assistant-profile` — browser-stored hiker profile proof path
+- `/trail-assistant-byos` — provider and entitlement preview for BYOS model usage
+- `/ask` — legacy AT Trail AI chat surface
+
+**Core docs:**
+- `docs/business/trail-assistant-prd.md` — product requirements and business model
+- `docs/business/trail-assistant-implementation-plan.md` — phased delivery plan
+- `docs/business/trail-assistant-mobile-api-contract.md` — current API contract
+- `docs/business/trail-assistant-phone-screen-contract.md` — current mobile screen contract
+
 ## Features
 
 ### Timeline (`/`)
@@ -21,6 +49,22 @@ A chronological scrapbook merging trip logs, YouTube videos, and blog posts into
 
 ### App Landing (`/app`)
 Mobile-first launch page that routes hikers to iOS App Store / Google Play listings and early-access signup while native builds are in flight.
+
+### Trail Assistant (`/trail-assistant`, `/trail-assistant-profile`, `/trail-assistant-byos`, `/ask`)
+An operational support layer for Appalachian Trail hikers that combines intake, chat, profile state, BYOS model-provider previews, and backend safety workflows.
+
+**What it is becoming:**
+- Daily trail readiness and mileage guidance
+- 7-day adaptive itinerary planning
+- Town-day logistics for hostels, shuttles, mail drops, and resupply
+- Safety check-ins, map-sharing controls, and SOS escalation
+- Human concierge handoff for urgent or ambiguous trail situations
+
+**What already exists in the repo:**
+- Public Trail Assistant intake flow with Netlify fallback
+- Authenticated support/chat, check-in, progress, map-report, and SOS APIs
+- Moderator governance, quarantine, and privacy controls
+- BYOS provider registry and entitlement preview scaffolding
 
 ### AT Field Guide (`/guide`)
 A complete 21-chapter thru-hiking manual covering gear, clothing, water, shelter, weather, food, resupply, town strategy, permits, mail drops, power, medical, safety, trail sections, content creation, and financial planning. Plus 5 quick-reference cards for on-trail decisions.
@@ -85,7 +129,8 @@ Full offline capability via service worker:
 | Build | Vite with code-splitting |
 | Types | TypeScript throughout |
 | API/Auth | Laravel 12 + Sanctum + Socialite |
-| Native App Shell | Laravel Inertia + Svelte 5 (`backend` route `/native`) |
+| Current Native Prototype | Laravel Inertia + Svelte 5 (`backend` route `/native`) |
+| Recommended Mobile App Path | Dedicated SvelteKit + Capacitor client for iOS/Android |
 
 ## Architecture
 
@@ -372,6 +417,10 @@ Currently deployed to Netlify. On push to `main`:
 | `content-model.md` | Content schema examples |
 | `cursor.md` | Cursor AI guidelines |
 | `TOOL_EVALUATION.md` | Tool consolidation analysis |
+| `docs/business/trail-assistant-prd.md` | Trail Assistant product requirements doc |
+| `docs/business/trail-assistant-implementation-plan.md` | Trail Assistant phased implementation plan |
+| `docs/business/trail-assistant-mobile-api-contract.md` | Trail Assistant API contract |
+| `docs/business/trail-assistant-phone-screen-contract.md` | Trail Assistant screen-by-screen app contract |
 
 ## Roadmap & Task List
 
