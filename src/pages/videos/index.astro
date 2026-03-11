@@ -45,48 +45,32 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
 
     <main class="videos-page">
       <section class="videos-hero">
-        <div class="container videos-hero__shell">
-          <div class="videos-hero__copy">
-            <p class="videos-eyebrow">Trail dispatches</p>
-            <h1 class="videos-title">Video updates that feel like campfire notes, not a dusty archive.</h1>
-            <p class="videos-lede">
-              Fresh drops from the trail, town stops, weather pivots, gear realities, and the real day-by-day story.
-              This page should feel alive, easy to scan, and worth checking often.
-            </p>
+        <div class="container">
+          <div class="videos-hero__copy videos-hero__copy--compact">
+            <div class="videos-hero__topline">
+              <p class="videos-eyebrow">Videos</p>
+              <p id="videos-status" class="videos-status" aria-live="polite">Loading latest videos…</p>
+            </div>
+            <h1 class="videos-title">Hogg Country on the Appalachian Trail.</h1>
+            <p class="videos-lede">Latest trail videos, newest first.</p>
             <div class="videos-hero__actions">
               {featuredVideo && (
-                <a href={`#video-${featuredVideo.id}`} class="hero-button hero-button--primary">Watch latest drop</a>
+                <a href={`#video-${featuredVideo.id}`} class="hero-button hero-button--primary">Latest video</a>
               )}
-              <a href={channelUrl} target="_blank" rel="noopener noreferrer" class="hero-button hero-button--secondary">Open YouTube channel</a>
+              <a href={channelUrl} target="_blank" rel="noopener noreferrer" class="hero-button hero-button--secondary">YouTube channel</a>
             </div>
           </div>
-
-          <aside class="videos-hero__aside">
-            <div class="hero-note hero-note--live">
-              <span class="hero-note__label">Feed</span>
-              <p id="videos-status" class="hero-note__value" aria-live="polite">Loading latest videos…</p>
-            </div>
-            <div class="hero-note">
-              <span class="hero-note__label">What you’ll find</span>
-              <p class="hero-note__value">Daily Appalachian Trail updates, milestone days, town resets, and field-tested gear notes.</p>
-            </div>
-            <div class="hero-note">
-              <span class="hero-note__label">Best use</span>
-              <p class="hero-note__value">Watch the latest dispatch first, then browse the recent stack when you want the bigger picture.</p>
-            </div>
-          </aside>
         </div>
       </section>
 
       {featuredVideo ? (
         <section class="featured-section">
           <div class="container">
-            <div class="section-heading">
+            <div class="section-heading section-heading--simple">
               <div>
-                <p class="section-kicker">Latest drop</p>
-                <h2>Front-and-center instead of buried in a pile.</h2>
+                <p class="section-kicker">Latest video</p>
+                <h2>Most recent upload.</h2>
               </div>
-              <p class="section-copy">One clean featured video up top. Everything else falls into an easier trail log below.</p>
             </div>
 
             <article id={`video-${featuredVideo.id}`} class="featured-card" data-first-id={featuredVideo.id}>
@@ -111,12 +95,11 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
 
       <section class="library-section" id="recent-videos">
         <div class="container">
-          <div class="section-heading section-heading--library">
+          <div class="section-heading section-heading--simple section-heading--library">
             <div>
-              <p class="section-kicker">Recent archive</p>
-              <h2>Recent videos, cleaned up into something worth browsing.</h2>
+              <p class="section-kicker">Archive</p>
+              <h2>Recent videos.</h2>
             </div>
-            <p class="section-copy">Fast thumbnails, readable titles, clear dates, and a direct path back to YouTube when you want the full watch experience.</p>
           </div>
 
           <div id="videos-grid" class="videos-grid">
@@ -284,7 +267,7 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
             const items = Array.isArray(payload?.data?.items) ? payload.data.items : [];
 
             if (items.length === 0) {
-              status.textContent = 'No videos returned yet. Showing the fallback lineup for now.';
+              status.textContent = 'Latest lineup unavailable right now.';
               return;
             }
 
@@ -297,15 +280,15 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
               latestFirstId = firstId;
             }
 
-            status.textContent = `Live feed active • last checked ${new Date().toLocaleTimeString()}`;
+            status.textContent = `Updated ${new Date().toLocaleTimeString()}`;
           } catch (error) {
-            status.textContent = 'Live refresh is unavailable right now. Showing the latest saved lineup.';
+            status.textContent = 'Showing latest saved lineup.';
           }
         }
 
         status.textContent = initialFirstId
-          ? 'Live feed warming up…'
-          : 'Fallback lineup loaded while the live feed checks in…';
+          ? 'Latest lineup loading…'
+          : 'Showing saved lineup…';
 
         refresh();
         pollHandle = window.setInterval(refresh, 20000);
@@ -360,38 +343,33 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
     pointer-events: none;
   }
 
-  .videos-hero__shell {
+  .videos-hero__copy {
     position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
-    gap: 1.5rem;
-    align-items: stretch;
-  }
-
-  .videos-hero__copy,
-  .videos-hero__aside {
-    position: relative;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.5rem 1.7rem;
     border: 1px solid rgba(50, 67, 56, 0.16);
     border-radius: 28px;
+    background: linear-gradient(160deg, rgba(255, 251, 243, 0.9), rgba(243, 232, 208, 0.94));
     box-shadow: 0 24px 60px rgba(74, 46, 29, 0.12);
   }
 
-  .videos-hero__copy {
-    padding: 2rem;
-    background: linear-gradient(160deg, rgba(255, 251, 243, 0.9), rgba(243, 232, 208, 0.94));
+  .videos-hero__copy--compact {
+    display: grid;
+    gap: 0.9rem;
   }
 
-  .videos-hero__aside {
-    display: grid;
-    gap: 0.85rem;
-    padding: 1rem;
-    background: linear-gradient(160deg, rgba(50, 67, 56, 0.94), rgba(34, 46, 38, 0.98));
-    color: rgba(255, 248, 237, 0.96);
+  .videos-hero__topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
   }
 
   .videos-eyebrow,
   .section-kicker {
-    margin: 0 0 0.8rem;
+    margin: 0;
     font-size: 0.78rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
@@ -399,28 +377,37 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
     color: rgba(50, 67, 56, 0.8);
   }
 
+  .videos-status {
+    margin: 0;
+    font-size: 0.84rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(50, 67, 56, 0.66);
+  }
+
   .videos-title {
     margin: 0;
-    font-size: clamp(2.4rem, 4vw, 4.4rem);
-    line-height: 0.92;
+    font-size: clamp(2.2rem, 4vw, 4rem);
+    line-height: 0.94;
     letter-spacing: -0.04em;
     color: var(--videos-ink);
     max-width: 11ch;
   }
 
   .videos-lede {
-    max-width: 60ch;
-    margin: 1rem 0 0;
-    font-size: 1.04rem;
-    line-height: 1.75;
-    color: rgba(31, 41, 55, 0.82);
+    max-width: 42ch;
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(31, 41, 55, 0.74);
   }
 
   .videos-hero__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.8rem;
-    margin-top: 1.5rem;
+    margin-top: 0.2rem;
   }
 
   .hero-button,
@@ -438,8 +425,8 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
   }
 
   .hero-button {
-    min-height: 48px;
-    padding: 0.8rem 1.15rem;
+    min-height: 46px;
+    padding: 0.78rem 1.05rem;
     border-radius: 999px;
     border: 1px solid rgba(50, 67, 56, 0.16);
     box-shadow: 0 10px 24px rgba(74, 46, 29, 0.1);
@@ -460,35 +447,6 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
   .hero-button--secondary {
     background: rgba(255, 250, 241, 0.82);
     color: var(--videos-pine);
-  }
-
-  .hero-note {
-    border: 1px solid rgba(255, 248, 237, 0.14);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 0.95rem 1rem;
-  }
-
-  .hero-note--live {
-    background: linear-gradient(160deg, rgba(207, 155, 45, 0.16), rgba(255, 255, 255, 0.06));
-    border-color: rgba(207, 155, 45, 0.4);
-  }
-
-  .hero-note__label {
-    display: block;
-    font-size: 0.72rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    font-weight: 800;
-    color: rgba(255, 245, 226, 0.62);
-    margin-bottom: 0.35rem;
-  }
-
-  .hero-note__value {
-    margin: 0;
-    font-size: 0.98rem;
-    line-height: 1.6;
-    color: rgba(255, 248, 237, 0.95);
   }
 
   .featured-section,
@@ -517,6 +475,11 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
     font-size: 0.98rem;
     line-height: 1.65;
     color: rgba(31, 41, 55, 0.72);
+  }
+
+  .section-heading--simple {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .featured-card {
@@ -694,7 +657,6 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
   }
 
   @media (max-width: 960px) {
-    .videos-hero__shell,
     .section-heading,
     .featured-card {
       grid-template-columns: 1fr;
@@ -713,13 +675,16 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
 
   @media (max-width: 640px) {
     .videos-hero__copy,
-    .videos-hero__aside,
     .featured-card {
       border-radius: 24px;
     }
 
     .videos-hero__copy {
-      padding: 1.3rem;
+      padding: 1.2rem;
+    }
+
+    .videos-status {
+      font-size: 0.78rem;
     }
 
     .hero-button,
