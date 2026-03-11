@@ -1,0 +1,33 @@
+To: christopheraaronhogg@gmail.com
+Subject: [Trail Assistant Blocker] P0.7 Resolve production deploy drift (Netlify/Forge route mismatch)
+
+Hi Chris,
+
+Trail Assistant autonomy escalation triggered: blocker unresolved for >24h and owner decision required.
+
+Task: P0.7 Resolve production deploy drift (Netlify/Forge route mismatch)
+Blocked since: 2026-03-02 18:35 CST (60.6h)
+Decision needed: Choose deploy authority path for Netlify + Forge alignment
+
+Option A:
+- Grant deploy-surface access so automation can run parity verification and route remediation
+
+Option B:
+- Owner runs prepared Netlify/Forge deploy commands manually and returns logs for verification
+
+Default path if no decision by deadline:
+- Maintain local demo fallback and defer public rollout until deploy parity is verified
+- Deadline: 2026-03-05 18:00 CST
+
+Context:
+- Public Trail Assistant web routes still show mismatch while local demo path is healthy
+- Queue review automation now flags this owner blocker as >24h
+
+Safety posture preserved while blocked:
+- No command execution from untrusted inputs.
+- No external/public posting was performed.
+- Privacy-preserving defaults and moderation controls remain in place.
+
+Generated at: 2026-03-05 07:08 CST
+
+— Trail Assistant autonomous build loop

@@ -109,6 +109,42 @@ class TrailAssistantMapReportApiTest extends TestCase
             ->assertJsonPath('data.idempotent_replay', true);
     }
 
+    public function test_idempotency_key_collision_from_another_user_returns_conflict_without_replay_payload(): void
+    {
+        $reporter = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        Sanctum::actingAs($reporter);
+
+        $this->withHeader('Idempotency-Key', 'shared-map-key')
+            ->postJson('/api/v1/trail-assistant/map-reports', [
+                'lat' => 35.811,
+                'lon' => -83.689,
+                'kind' => 'weather_hazard',
+                'severity' => 'danger',
+                'message' => 'Lightning nearby on exposed ridge.',
+            ])
+            ->assertCreated();
+
+        Sanctum::actingAs($otherUser);
+
+        $conflict = $this->withHeader('Idempotency-Key', 'shared-map-key')
+            ->postJson('/api/v1/trail-assistant/map-reports', [
+                'lat' => 35.899,
+                'lon' => -83.744,
+                'kind' => 'tree_down',
+                'severity' => 'caution',
+                'message' => 'Blowdown near switchback.',
+            ]);
+
+        $conflict
+            ->assertStatus(409)
+            ->assertJsonPath('error.code', 'idempotency_key_conflict')
+            ->assertJsonMissingPath('data.report.report_id');
+
+        $this->assertDatabaseCount('trail_assistant_map_reports', 1);
+    }
+
     public function test_moderator_can_promote_unverified_report_with_audit_trail(): void
     {
         $reporter = User::factory()->create();

@@ -102,6 +102,70 @@ return [
 
     'byos' => [
         'default_provider' => env('TRAIL_ASSISTANT_BYOS_DEFAULT_PROVIDER', 'openai_api_key'),
+        'decision' => [
+            'status' => 'accepted',
+            'last_reviewed_on' => '2026-03-03',
+            'summary' => 'BYO OpenAI API key is the feasible current path. ChatGPT subscription passthrough remains unsupported.',
+            'supported_now' => [
+                [
+                    'id' => 'openai_api_key',
+                    'label' => 'BYO OpenAI API key',
+                    'notes' => 'User supplies their own API key; model usage is billed to their API account.',
+                ],
+                [
+                    'id' => 'app_managed_billing',
+                    'label' => 'Trail Assistant managed billing',
+                    'notes' => 'Trail Assistant funds API usage and charges users through app-managed subscription tiers.',
+                ],
+                [
+                    'id' => 'hybrid_mode',
+                    'label' => 'Hybrid mode',
+                    'notes' => 'Users can choose either BYO key or app-managed billing based on preference.',
+                ],
+            ],
+            'unsupported_now' => [
+                [
+                    'id' => 'chatgpt_subscription_passthrough',
+                    'label' => 'ChatGPT subscription passthrough',
+                    'reason' => 'ChatGPT subscriptions and API billing remain separate with no third-party passthrough billing path documented.',
+                ],
+                [
+                    'id' => 'openai_signin_billing_passthrough',
+                    'label' => 'Sign in with OpenAI billing delegation',
+                    'reason' => 'Current OpenAI OAuth/App SDK docs do not provide third-party API billing delegation from ChatGPT subscriptions.',
+                ],
+            ],
+            'sources' => [
+                [
+                    'label' => 'What is ChatGPT Plus?',
+                    'url' => 'https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus',
+                ],
+                [
+                    'label' => 'How can I move my ChatGPT subscription to the API?',
+                    'url' => 'https://help.openai.com/en/articles/8156019-how-can-i-move-my-chatgpt-subscription-to-the-api',
+                ],
+                [
+                    'label' => 'Billing settings in ChatGPT vs Platform',
+                    'url' => 'https://help.openai.com/en/articles/9039756-billing-settings-in-chatgpt-vs-platform',
+                ],
+                [
+                    'label' => 'OpenAI API authentication intro',
+                    'url' => 'https://platform.openai.com/docs/api-reference/introduction',
+                ],
+                [
+                    'label' => 'OpenAI Actions authentication',
+                    'url' => 'https://platform.openai.com/docs/actions/authentication',
+                ],
+                [
+                    'label' => 'OpenAI Apps SDK auth',
+                    'url' => 'https://developers.openai.com/apps-sdk/build/auth/',
+                ],
+                [
+                    'label' => 'OpenAI Terms of Use',
+                    'url' => 'https://openai.com/policies/terms-of-use/',
+                ],
+            ],
+        ],
         'providers' => [
             'openai_api_key' => [
                 'label' => 'OpenAI API key (user-provided)',

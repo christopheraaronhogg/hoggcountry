@@ -59,6 +59,7 @@ Route::prefix('v1')->group(function (): void {
     Route::prefix('trail-assistant')->group(function (): void {
         Route::get('/plans', [TrailAssistantPlanController::class, 'index']);
         Route::get('/byos/providers', [TrailAssistantByosController::class, 'providers']);
+        Route::get('/byos/decision', [TrailAssistantByosController::class, 'decision']);
         Route::post('/byos/entitlement-preview', [TrailAssistantByosController::class, 'entitlementPreview']);
         Route::post('/intake', [TrailAssistantIntakeController::class, 'store']);
         Route::get('/map-reports/public', [TrailAssistantMapReportController::class, 'publicFeed']);

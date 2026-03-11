@@ -145,6 +145,20 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
         line-height: 1.6;
         color: #d1d5db;
       }
+      h3 {
+        margin: 8px 0;
+        font-size: 0.98rem;
+        color: #e2e8f0;
+      }
+      .decision-list li {
+        margin-bottom: 6px;
+      }
+      .decision-list strong {
+        color: #e2e8f0;
+      }
+      .sources-list a {
+        word-break: break-word;
+      }
       a { color: #67e8f9; }
       .small {
         font-size: 0.84rem;
@@ -197,6 +211,39 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
         </div>
       </section>
 
+      <section class="card" id="byos-decision">
+        <span class="pill">Architecture clarity</span>
+        <h2>Current BYOS decision snapshot</h2>
+        <p id="decision-summary" class="muted">
+          Loading architecture decision snapshot…
+        </p>
+        <p class="small" style="margin-top: 8px;">
+          Decision status: <strong id="decision-status-value">unknown</strong> · Last reviewed: <span id="decision-reviewed-on">n/a</span>
+        </p>
+
+        <div class="grid" style="margin-top: 12px;">
+          <div>
+            <h3>Supported now</h3>
+            <ul id="decision-supported" class="decision-list">
+              <li>Loading supported lanes…</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Unsupported now</h3>
+            <ul id="decision-unsupported" class="decision-list">
+              <li>Loading unsupported lanes…</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Evidence links</h3>
+        <ul id="decision-sources" class="sources-list decision-list">
+          <li>Loading source links…</li>
+        </ul>
+
+        <p id="decision-status" class="status" aria-live="polite"></p>
+      </section>
+
       <section class="card">
         <span class="pill">Guardrails</span>
         <ul>
@@ -219,6 +266,13 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
         const badgeEl = document.getElementById('result-badge');
         const summaryEl = document.getElementById('result-summary');
         const jsonEl = document.getElementById('result-json');
+        const decisionSummaryEl = document.getElementById('decision-summary');
+        const decisionStatusValueEl = document.getElementById('decision-status-value');
+        const decisionReviewedOnEl = document.getElementById('decision-reviewed-on');
+        const decisionSupportedEl = document.getElementById('decision-supported');
+        const decisionUnsupportedEl = document.getElementById('decision-unsupported');
+        const decisionSourcesEl = document.getElementById('decision-sources');
+        const decisionStatusEl = document.getElementById('decision-status');
 
         if (!(form instanceof HTMLFormElement)) return;
         if (!(providerSelect instanceof HTMLSelectElement)) return;
@@ -229,6 +283,13 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
         if (!(badgeEl instanceof HTMLElement)) return;
         if (!(summaryEl instanceof HTMLElement)) return;
         if (!(jsonEl instanceof HTMLElement)) return;
+        if (!(decisionSummaryEl instanceof HTMLElement)) return;
+        if (!(decisionStatusValueEl instanceof HTMLElement)) return;
+        if (!(decisionReviewedOnEl instanceof HTMLElement)) return;
+        if (!(decisionSupportedEl instanceof HTMLElement)) return;
+        if (!(decisionUnsupportedEl instanceof HTMLElement)) return;
+        if (!(decisionSourcesEl instanceof HTMLElement)) return;
+        if (!(decisionStatusEl instanceof HTMLElement)) return;
 
         const url = new URL(window.location.href);
         const prefillProvider = (url.searchParams.get('provider') || '').trim();
@@ -238,6 +299,59 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
         function setStatus(message, tone = 'muted') {
           statusEl.textContent = message;
           statusEl.style.color = tone === 'error' ? '#fca5a5' : tone === 'success' ? '#86efac' : '#94a3b8';
+        }
+
+        function setDecisionStatus(message, tone = 'muted') {
+          decisionStatusEl.textContent = message;
+          decisionStatusEl.style.color = tone === 'error' ? '#fca5a5' : tone === 'success' ? '#86efac' : '#94a3b8';
+        }
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        function renderDecisionItems(targetEl, items, mode) {
+          const rows = Array.isArray(items) ? items : [];
+
+          if (!rows.length) {
+            targetEl.innerHTML = '<li>No data available.</li>';
+            return;
+          }
+
+          targetEl.innerHTML = rows
+            .map((item) => {
+              const label = escapeHtml(item?.label || item?.id || 'Unknown lane');
+              const notes = escapeHtml(item?.notes || item?.reason || '');
+              const descriptor = mode === 'supported' ? 'Notes' : 'Reason';
+              return `<li><strong>${label}</strong>${notes ? `<br /><span class="small">${descriptor}: ${notes}</span>` : ''}</li>`;
+            })
+            .join('');
+        }
+
+        function renderDecisionSources(sources) {
+          const rows = Array.isArray(sources) ? sources : [];
+
+          if (!rows.length) {
+            decisionSourcesEl.innerHTML = '<li>No source links configured.</li>';
+            return;
+          }
+
+          decisionSourcesEl.innerHTML = rows
+            .map((source) => {
+              const label = escapeHtml(source?.label || source?.url || 'Source');
+              const url = String(source?.url || '').trim();
+              if (!url) {
+                return `<li>${label}</li>`;
+              }
+              const safeUrl = escapeHtml(url);
+              return `<li><a href="${safeUrl}" target="_blank" rel="noreferrer">${label}</a></li>`;
+            })
+            .join('');
         }
 
         function toneForEntitlement(status) {
@@ -308,6 +422,33 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           return providers;
         }
 
+        async function loadDecision() {
+          setDecisionStatus('Loading BYOS decision snapshot…');
+
+          const response = await fetch(`${API_BASE}/trail-assistant/byos/decision`, {
+            headers: { Accept: 'application/json' },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Decision snapshot failed (${response.status}).`);
+          }
+
+          const payload = await response.json();
+          const data = payload?.data || {};
+
+          decisionSummaryEl.textContent = String(data.summary || 'No summary available.');
+          decisionStatusValueEl.textContent = String(data.status || 'unknown');
+          decisionReviewedOnEl.textContent = String(data.last_reviewed_on || 'n/a');
+
+          renderDecisionItems(decisionSupportedEl, data.supported_now, 'supported');
+          renderDecisionItems(decisionUnsupportedEl, data.unsupported_now, 'unsupported');
+          renderDecisionSources(data.sources);
+
+          setDecisionStatus('Decision snapshot loaded.', 'success');
+
+          return data;
+        }
+
         async function runPreview() {
           const provider = (providerSelect.value || '').trim();
           const apiKey = (apiKeyInput.value || '').trim();
@@ -363,6 +504,14 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           } catch (error) {
             const message = error instanceof Error ? error.message : 'Unable to load providers.';
             setStatus(message, 'error');
+          }
+
+          try {
+            await loadDecision();
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unable to load decision snapshot.';
+            setDecisionStatus(message, 'error');
+            decisionSummaryEl.textContent = 'Unable to load architecture decision from API.';
           }
         })();
       })();

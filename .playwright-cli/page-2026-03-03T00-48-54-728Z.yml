@@ -1,0 +1,160 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - heading "Trail Assistant" [level=1] [ref=e3]
+    - paragraph [ref=e4]: Practical Appalachian Trail support for pre-trail planning and on-trail logistics. Ask a question, get a real action plan, and keep moving.
+    - generic [ref=e5]:
+      - generic [ref=e6]: How this works
+      - heading "Fast help for real trail decisions" [level=2] [ref=e7]
+      - list [ref=e8]:
+        - listitem [ref=e9]:
+          - strong [ref=e10]: "Pre-trail:"
+          - text: gear shakedown, pacing, resupply strategy, start-date planning.
+        - listitem [ref=e11]:
+          - strong [ref=e12]: "On-trail:"
+          - text: town logistics, weather pivots, schedule adjustments, contingency planning.
+        - listitem [ref=e13]:
+          - strong [ref=e14]: "Output:"
+          - text: concise, actionable plan (not generic fluff).
+    - generic [ref=e15]:
+      - generic [ref=e16]: Profile state
+      - heading "Save your hiker profile" [level=2] [ref=e17]
+      - paragraph [ref=e18]: Keep a simple profile snapshot for repeat requests. For this demo path, profile data is saved only in your browser and attached to intake metadata when available.
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e21]: Full name
+          - textbox "Full name" [ref=e22]: Chris Hogg
+        - generic [ref=e23]:
+          - generic [ref=e24]: Contact email
+          - textbox "Contact email" [ref=e25]: chris+hoggcountry@example.com
+        - generic [ref=e26]:
+          - generic [ref=e27]: Trail name (optional)
+          - textbox "Trail name (optional)" [ref=e28]: MiniHogg
+        - generic [ref=e29]:
+          - generic [ref=e30]: Home base
+          - textbox "Home base" [ref=e31]:
+            - /placeholder: City, State
+            - text: Bentonville, AR
+        - generic [ref=e32]:
+          - generic [ref=e33]: Start date
+          - textbox "Start date" [ref=e34]: 2026-04-02
+        - generic [ref=e35]:
+          - generic [ref=e36]: Direction
+          - combobox "Direction" [ref=e37]:
+            - option "Select one"
+            - option "NOBO" [selected]
+            - option "SOBO"
+            - option "Flip-flop"
+            - option "Section hike"
+        - generic [ref=e38]:
+          - generic [ref=e39]: Target miles/day
+          - spinbutton "Target miles/day" [ref=e40]: "14.5"
+        - generic [ref=e41]:
+          - generic [ref=e42]: Emergency contact
+          - textbox "Emergency contact" [ref=e43]:
+            - /placeholder: Name + phone
+            - text: Dad +1-555-0100
+      - generic [ref=e44]:
+        - generic [ref=e45]: Medical considerations (optional)
+        - textbox "Medical considerations (optional)" [ref=e46]:
+          - /placeholder: Allergies, medication reminders, relevant injuries, etc.
+          - text: Mild knee pain in cold rain; avoid zero-food margin days.
+      - generic [ref=e47]:
+        - button "Save profile locally" [ref=e48] [cursor=pointer]
+        - button "Clear saved profile" [ref=e49] [cursor=pointer]
+      - paragraph [ref=e109]: Profile state saved for this browser.
+      - list [ref=e110]:
+        - listitem [ref=e111]:
+          - strong [ref=e112]: "Name:"
+          - text: Chris Hogg
+        - listitem [ref=e113]:
+          - strong [ref=e114]: "Email:"
+          - text: chris+hoggcountry@example.com
+        - listitem [ref=e115]:
+          - strong [ref=e116]: "Trail name:"
+          - text: MiniHogg
+        - listitem [ref=e117]:
+          - strong [ref=e118]: "Home base:"
+          - text: Bentonville, AR
+        - listitem [ref=e119]:
+          - strong [ref=e120]: "Start date:"
+          - text: 2026-04-02
+        - listitem [ref=e121]:
+          - strong [ref=e122]: "Direction:"
+          - text: NOBO
+        - listitem [ref=e123]:
+          - strong [ref=e124]: "Target miles/day:"
+          - text: "14.5"
+        - listitem [ref=e125]:
+          - strong [ref=e126]: "Emergency contact:"
+          - text: Dad +1-555-0100
+        - listitem [ref=e127]:
+          - strong [ref=e128]: "Medical notes:"
+          - text: Mild knee pain in cold rain; avoid zero-food margin days.
+        - listitem [ref=e129]:
+          - strong [ref=e130]: "Saved:"
+          - text: 2026-03-03T00:48:35.594Z
+      - paragraph [ref=e51]:
+        - text: Need the dedicated profile path?
+        - link "Open Trail Assistant Profile →" [ref=e52] [cursor=pointer]:
+          - /url: /trail-assistant-profile
+    - generic [ref=e53]:
+      - generic [ref=e54]: Request support
+      - heading "Send your trail request" [level=2] [ref=e55]
+      - paragraph [ref=e56]: Fill this out and we’ll route your request into the Trail Assistant queue.
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - generic [ref=e60]: Name
+            - textbox "Name" [ref=e61]: Chris Hogg
+          - generic [ref=e62]:
+            - generic [ref=e63]: Email
+            - textbox "Email" [active] [ref=e64]: chris+hoggcountry@example.com
+          - generic [ref=e65]:
+            - generic [ref=e66]: Trail stage
+            - combobox "Trail stage" [ref=e67]:
+              - option "Select one"
+              - option "Pre-trail planning" [selected]
+              - option "Currently on trail"
+              - option "Post-finish review"
+          - generic [ref=e68]:
+            - generic [ref=e69]: Urgency
+            - combobox "Urgency" [ref=e70]:
+              - option "Select one"
+              - option "Normal (24–48h)" [selected]
+              - option "Soon (same day)"
+              - option "Urgent (today)"
+        - generic [ref=e71]:
+          - generic [ref=e72]: What do you need help with?
+          - textbox "What do you need help with?" [ref=e73]:
+            - /placeholder: "Example: Starting NOBO April 2. Need 10-day food strategy, first two resupplies, and backup plan for cold rain week in the Smokies."
+        - generic [ref=e74]:
+          - generic [ref=e75]: Optional context
+          - textbox "Optional context" [ref=e76]:
+            - /placeholder: Current fitness, injuries, budget constraints, gear you already own, planned start date, etc.
+        - generic [ref=e77]:
+          - button "Send Trail Request" [ref=e78] [cursor=pointer]
+          - generic [ref=e79]: By submitting, you agree to receive a response by email.
+        - paragraph
+    - generic [ref=e80]:
+      - generic [ref=e81]: Security note
+      - paragraph [ref=e82]: We never ask for account passwords, payment credentials, or remote machine access. If anyone asks you for those in the name of Trail Assistant, do not share them.
+    - paragraph [ref=e83]:
+      - text: Need this in plain email? Send details to
+      - link "christopheraaronhogg@gmail.com" [ref=e84] [cursor=pointer]:
+        - /url: mailto:christopheraaronhogg@gmail.com?subject=Trail%20Assistant%20Request
+      - text: "with subject:"
+      - strong [ref=e85]: Trail Assistant Request
+      - text: .
+  - generic [ref=e88]:
+    - button "Menu" [ref=e89]:
+      - img [ref=e91]
+      - generic: Menu
+    - button "Inspect" [ref=e95]:
+      - img [ref=e97]
+      - generic: Inspect
+    - button "Audit" [ref=e99]:
+      - img [ref=e101]
+      - generic: Audit
+    - button "Settings" [ref=e104]:
+      - img [ref=e106]
+      - generic: Settings

@@ -1,0 +1,58 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "Logo icon raw.githack.com" [level=1] [ref=e3]:
+      - img "Logo icon" [ref=e4]
+      - link "raw.githack.com" [ref=e5] [cursor=pointer]:
+        - /url: /
+    - navigation [ref=e6]:
+      - list [ref=e7]:
+        - listitem [ref=e8]:
+          - link "Serving HTMLnew" [ref=e9] [cursor=pointer]:
+            - /url: /faq#html-notice
+            - text: Serving HTML
+            - superscript [ref=e10]: new
+        - listitem [ref=e11]:
+          - link "FAQ" [ref=e12] [cursor=pointer]:
+            - /url: /faq
+        - listitem [ref=e13]:
+          - link "❤️" [ref=e14] [cursor=pointer]:
+            - /url: /faq#sponsorship
+  - generic [ref=e16]:
+    - paragraph [ref=e17]:
+      - strong [ref=e18]: One more step
+      - generic [ref=e19]:
+        - text: You are about to view an HTML page from a third-party Git repository, served as-is by
+        - strong [ref=e20]: raw.githack.com
+        - text: .
+        - text: raw.githack.com does not review third-party content. If you received this link from someone you trust, go ahead.
+    - generic [ref=e21]:
+      - text: "You're going to open:"
+      - textbox "You're going to open:" [ref=e22]: https://raw.githack.com/christopheraaronhogg/hoggcountry/main/docs/business/daily-updates/latest.html
+      - generic [ref=e23]:
+        - button "Open the page" [ref=e25] [cursor=pointer]
+        - link "Go to homepage" [ref=e26] [cursor=pointer]:
+          - /url: /
+      - paragraph [ref=e27]: Not sure about the source? Avoid entering passwords, personal details, or payment information on the page.
+  - contentinfo [ref=e28]:
+    - paragraph [ref=e29]:
+      - text: ©
+      - strong [ref=e30]: 2013 — 2026
+      - text: Pavel Puchkin
+      - link "Sushi icon" [ref=e31] [cursor=pointer]:
+        - /url: http://thenounproject.com/noun/sushi/#icon-No14497
+      - text: designed by
+      - link "Linda Yuki Nakanishi" [ref=e32] [cursor=pointer]:
+        - /url: http://thenounproject.com/lnakanishi
+      - text: from The Noun Project.
+      - link "FAQ" [ref=e33] [cursor=pointer]:
+        - /url: /faq
+      - link "Hacks" [ref=e34] [cursor=pointer]:
+        - /url: /hacks
+      - link "Purge cache" [ref=e35] [cursor=pointer]:
+        - /url: /purge-cache
+      - link "Report abuse" [ref=e36] [cursor=pointer]:
+        - /url: /faq#feedback
+      - link "Status page" [ref=e37] [cursor=pointer]:
+        - /url: https://status.githack.com/?r=neoascetic/raw.githack.com-monitor
+      - link "Source code" [ref=e38] [cursor=pointer]:
+        - /url: https://github.com/neoascetic/rawgithack

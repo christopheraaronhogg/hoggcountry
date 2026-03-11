@@ -7,6 +7,7 @@ use App\Models\TrailAssistantMapReportAudit;
 use App\Support\TrailAssistantGovernanceConfig;
 use App\Support\TrailAssistantModeratorGate;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -66,7 +67,11 @@ class TrailAssistantMapReportController extends ApiController
 
         $idempotencyKey = $this->resolveIdempotencyKey($request, $validated['idempotency_key'] ?? null);
         if ($idempotencyKey) {
-            $existing = TrailAssistantMapReport::query()->where('idempotency_key', $idempotencyKey)->first();
+            $existing = TrailAssistantMapReport::query()
+                ->where('user_id', $request->user()->id)
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
             if ($existing) {
                 return $this->ok([
                     'report' => $this->payload($existing),
@@ -110,23 +115,48 @@ class TrailAssistantMapReportController extends ApiController
 
         $verification = $this->resolveVerification($request);
 
-        $report = TrailAssistantMapReport::query()->create([
-            'report_id' => 'tmr_'.Str::lower(Str::random(12)),
-            'user_id' => $request->user()->id,
-            'idempotency_key' => $idempotencyKey,
-            'dedupe_fingerprint' => $dedupeFingerprint,
-            'lat' => (float) $validated['lat'],
-            'lon' => (float) $validated['lon'],
-            'mile_marker' => isset($validated['mile_marker']) ? (float) $validated['mile_marker'] : null,
-            'kind' => (string) $validated['kind'],
-            'severity' => (string) ($validated['severity'] ?? 'info'),
-            'message' => $normalizedMessage !== '' ? $normalizedMessage : null,
-            'source' => $this->normalizeText((string) ($validated['source'] ?? 'mobile_app'), 24),
-            'verification' => $verification,
-            'status' => 'active',
-            'occurred_at' => $occurredAt,
-            'expires_at' => $occurredAt->addHours($expiryHours),
-        ]);
+        try {
+            $report = TrailAssistantMapReport::query()->create([
+                'report_id' => 'tmr_'.Str::lower(Str::random(12)),
+                'user_id' => $request->user()->id,
+                'idempotency_key' => $idempotencyKey,
+                'dedupe_fingerprint' => $dedupeFingerprint,
+                'lat' => (float) $validated['lat'],
+                'lon' => (float) $validated['lon'],
+                'mile_marker' => isset($validated['mile_marker']) ? (float) $validated['mile_marker'] : null,
+                'kind' => (string) $validated['kind'],
+                'severity' => (string) ($validated['severity'] ?? 'info'),
+                'message' => $normalizedMessage !== '' ? $normalizedMessage : null,
+                'source' => $this->normalizeText((string) ($validated['source'] ?? 'mobile_app'), 24),
+                'verification' => $verification,
+                'status' => 'active',
+                'occurred_at' => $occurredAt,
+                'expires_at' => $occurredAt->addHours($expiryHours),
+            ]);
+        } catch (QueryException $exception) {
+            if ($idempotencyKey && $this->isIdempotencyConstraintViolation($exception)) {
+                $existingByKey = TrailAssistantMapReport::query()
+                    ->where('user_id', $request->user()->id)
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->first();
+
+                if ($existingByKey) {
+                    return $this->ok([
+                        'report' => $this->payload($existingByKey),
+                        'idempotent_replay' => true,
+                        'duplicate_guard' => 'idempotency_key',
+                    ]);
+                }
+
+                return $this->fail(
+                    'idempotency_key_conflict',
+                    'Idempotency key already used for a different map report. Retry with a new key.',
+                    409
+                );
+            }
+
+            throw $exception;
+        }
 
         $this->recordAudit(
             report: $report,
@@ -363,6 +393,14 @@ class TrailAssistantMapReportController extends ApiController
             ->toString();
 
         return $normalized === '' ? null : $normalized;
+    }
+
+    private function isIdempotencyConstraintViolation(QueryException $exception): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? '');
+        $message = Str::lower($exception->getMessage());
+
+        return $sqlState === '23000' && str_contains($message, 'idempotency_key');
     }
 
     private function buildDedupeFingerprint(float $lat, float $lon, string $kind, string $severity, string $message): string

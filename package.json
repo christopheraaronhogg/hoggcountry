@@ -33,6 +33,10 @@
     "backend:test": "cd backend && php artisan test",
     "monorepo:dev": "npx concurrently -k -n web,api \"npm run dev\" \"npm run backend:dev\"",
     "monorepo:check": "npm run build && npm run backend:frontend:build && npm run backend:test",
+    "trail-assistant:verify-urls": "node scripts/trail-assistant-url-matrix.mjs",
+    "trail-assistant:blocker-email": "python3 scripts/trail_assistant_blocker_email_helper.py",
+    "trail-assistant:runlog-autoupdate": "python3 scripts/trail_assistant_runlog_autoupdater.py",
+    "trail-assistant:queue-review": "python3 scripts/trail_assistant_queue_review_helper.py",
     "preview": "astro preview",
     "astro": "astro"
   },

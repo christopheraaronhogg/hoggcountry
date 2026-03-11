@@ -1,0 +1,390 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - navigation [ref=e4]:
+      - link "Hogg Country" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "Hogg Country" [ref=e6]
+      - generic [ref=e7]:
+        - generic "Quick links" [ref=e8]:
+          - link "Guide" [ref=e9] [cursor=pointer]:
+            - /url: /guide
+            - img [ref=e11]
+            - generic [ref=e15]: Guide
+          - link "Track Me" [ref=e16] [cursor=pointer]:
+            - /url: https://share.garmin.com/hoggcountry
+            - generic [ref=e18]: Track Me
+        - button "Open tools menu" [ref=e19] [cursor=pointer]:
+          - generic [ref=e24]: Tools
+    - complementary [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]: Tools
+        - button [ref=e28] [cursor=pointer]: ×
+      - generic [ref=e29]:
+        - link [ref=e30] [cursor=pointer]:
+          - /url: https://share.garmin.com/hoggcountry
+          - generic [ref=e32]: Track Me
+        - link [ref=e33] [cursor=pointer]:
+          - /url: /videos
+          - text: Videos
+        - link [ref=e34] [cursor=pointer]:
+          - /url: /at-map
+          - text: AT Map
+        - link [ref=e35] [cursor=pointer]:
+          - /url: /trail
+          - text: Trail Hub
+        - link [ref=e36] [cursor=pointer]:
+          - /url: /tools
+          - text: Trail Tools
+        - link [ref=e37] [cursor=pointer]:
+          - /url: /tools/character
+          - text: My Profile
+        - link [ref=e38] [cursor=pointer]:
+          - /url: /login
+          - text: Account
+        - link [ref=e39] [cursor=pointer]:
+          - /url: /videohogg
+          - text: VideoHogg
+        - link [ref=e40] [cursor=pointer]:
+          - /url: /at-weather
+          - text: AT Weather
+        - link [ref=e41] [cursor=pointer]:
+          - /url: /guide
+          - text: Field Guide
+  - main [ref=e42]:
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - generic:
+          - img
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - generic [ref=e48]: OFFICIAL EXPEDITION
+            - generic [ref=e49]: FEBRUARY 2026
+          - heading "THE APPALACHIAN TRAIL EXPEDITION HANDBOOK" [level=1] [ref=e50]:
+            - generic [ref=e51]: THE
+            - generic [ref=e52]: APPALACHIAN TRAIL
+            - generic [ref=e53]: EXPEDITION HANDBOOK
+          - paragraph [ref=e54]: An Official Trail Guide to 2,194 Miles of America's Footpath
+          - generic [ref=e55]:
+            - generic [ref=e56]:
+              - img [ref=e57]
+              - text: Springer Mtn, GA
+            - img [ref=e61]
+            - generic [ref=e63]:
+              - text: Mt. Katahdin, ME
+              - img [ref=e64]
+          - generic [ref=e67]:
+            - link "Read the Field Guide" [ref=e68] [cursor=pointer]:
+              - /url: /guide
+              - img [ref=e70]
+              - text: Read the Field Guide
+            - link "Explore Trail Tools" [ref=e73] [cursor=pointer]:
+              - /url: /tools
+              - img [ref=e75]
+              - text: Explore Trail Tools
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - img [ref=e86]
+          - generic [ref=e89]: YOUTUBE
+          - heading "LATEST VIDEOS" [level=2] [ref=e90]
+          - paragraph [ref=e91]: Recent uploads from the trail
+        - generic [ref=e93]:
+          - img [ref=e96]
+          - generic [ref=e98]:
+            - heading "Videos Coming Soon" [level=3] [ref=e99]
+            - paragraph [ref=e100]: New uploads will appear here once the expedition is underway.
+        - link "View All Videos" [ref=e102] [cursor=pointer]:
+          - /url: /videos
+          - generic [ref=e103]: View All Videos
+          - img [ref=e104]
+      - generic [ref=e107]:
+        - generic [ref=e112]:
+          - img [ref=e114]
+          - generic [ref=e116]: HOGGCOUNTRY
+          - generic [ref=e117]: CERTIFIED THRU-HIKER
+          - generic [ref=e119]: JIMMY HOGG
+          - generic [ref=e120]: NOBO EXPEDITION
+          - generic [ref=e121]:
+            - generic [ref=e122]: FEB 2026
+            - generic [ref=e124]: GA TO ME
+        - generic [ref=e125]:
+          - generic [ref=e126]: OFFICIAL TRAIL GUIDE
+          - heading "The Expedition Ahead" [level=2] [ref=e127]
+          - paragraph [ref=e128]: In February 2026, Jimmy "HoggCountry" Hogg heads north from Springer Mountain. After 840+ miles on Arkansas trails and the rare Sassafras Award, he's ready for the AT's 2,194 miles to Katahdin. This guide captures what he's learned along the way—and what he wishes he'd known sooner.
+          - generic [ref=e129]:
+            - generic [ref=e130]: OFFICIAL CERTIFICATIONS
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - img [ref=e134]
+                - generic [ref=e136]:
+                  - generic [ref=e137]: 840+ Trail Miles Certified
+                  - generic [ref=e138]: Verified Distance Record
+              - generic [ref=e139]:
+                - img [ref=e141]
+                - generic [ref=e143]:
+                  - generic [ref=e144]: Sassafras Award Recipient
+                  - generic [ref=e145]: 6th in History to Receive
+              - generic [ref=e146]:
+                - img [ref=e148]
+                - generic [ref=e150]:
+                  - generic [ref=e151]: Triple "O" Crowner
+                  - generic [ref=e152]: Ouachita - Ozark Highlands - Ozark
+              - generic [ref=e153]:
+                - img [ref=e155]
+                - generic [ref=e158]:
+                  - generic [ref=e159]: "AT Experience: 49 Miles Logged"
+                  - generic [ref=e160]: Section Hike Experience
+              - generic [ref=e161]:
+                - img [ref=e163]
+                - generic [ref=e166]:
+                  - generic [ref=e167]: "Summit Verified: Pikes Peak"
+                  - generic [ref=e168]: Elevation 14,115 ft
+      - generic [ref=e170]:
+        - generic [ref=e171]:
+          - img [ref=e173]
+          - heading "EXPEDITION DISPATCH" [level=2] [ref=e177]
+          - paragraph [ref=e178]: Official Mission Parameters
+        - generic [ref=e179]:
+          - generic [ref=e180]:
+            - generic [ref=e181]: DEPARTURE
+            - generic [ref=e182]: February 2026
+            - generic [ref=e183]: Commencement Date
+          - generic [ref=e184]:
+            - generic [ref=e185]: DISTANCE
+            - generic [ref=e186]: 2,194
+            - generic [ref=e187]: Total Trail Miles
+          - generic [ref=e188]:
+            - generic [ref=e189]: DIRECTION
+            - generic [ref=e190]: NOBO
+            - generic [ref=e191]: Northbound Traverse
+          - generic [ref=e192]:
+            - generic [ref=e193]: TERMINUS
+            - generic [ref=e194]: Springer to Katahdin
+            - generic [ref=e195]: Georgia to Maine
+        - generic [ref=e196]:
+          - paragraph [ref=e197]: Trail-tested. Ready to share.
+          - paragraph [ref=e198]: Prepared by C. Hogg for J. "HoggCountry" Hogg
+      - generic [ref=e200]:
+        - generic [ref=e201]:
+          - img [ref=e203]
+          - generic [ref=e208]: INTERACTIVE PLANNING
+          - heading "TRAIL INSTRUMENTS" [level=2] [ref=e209]
+          - paragraph [ref=e210]: 14 precision calculators to prepare your expedition
+        - generic [ref=e211]:
+          - link "Milestone Calculator Track daily progress" [ref=e212] [cursor=pointer]:
+            - /url: /tools#milestone
+            - img [ref=e214]
+            - generic [ref=e217]: Milestone Calculator
+            - generic [ref=e218]: Track daily progress
+          - link "Gear Builder Build by budget" [ref=e219] [cursor=pointer]:
+            - /url: /tools#gearbudget
+            - img [ref=e221]
+            - generic [ref=e224]: Gear Builder
+            - generic [ref=e225]: Build by budget
+          - link "Weather Assessor Evaluate conditions" [ref=e226] [cursor=pointer]:
+            - /url: /tools#weather
+            - img [ref=e228]
+            - generic [ref=e231]: Weather Assessor
+            - generic [ref=e232]: Evaluate conditions
+          - link "Budget Calculator Estimate total cost" [ref=e233] [cursor=pointer]:
+            - /url: /tools#budget
+            - img [ref=e235]
+            - generic [ref=e237]: Budget Calculator
+            - generic [ref=e238]: Estimate total cost
+          - link "Pack Builder Optimize base weight" [ref=e239] [cursor=pointer]:
+            - /url: /tools#pack
+            - img [ref=e241]
+            - generic [ref=e244]: Pack Builder
+            - generic [ref=e245]: Optimize base weight
+          - link "Water Tracker Source management" [ref=e246] [cursor=pointer]:
+            - /url: /tools#water
+            - img [ref=e248]
+            - generic [ref=e250]: Water Tracker
+            - generic [ref=e251]: Source management
+          - link "Layering Advisor Dial in clothing" [ref=e252] [cursor=pointer]:
+            - /url: /tools#layers
+            - img [ref=e254]
+            - generic [ref=e258]: Layering Advisor
+            - generic [ref=e259]: Dial in clothing
+          - link "Shelter Decider Tent vs hammock" [ref=e260] [cursor=pointer]:
+            - /url: /tools#shelter
+            - img [ref=e262]
+            - generic [ref=e264]: Shelter Decider
+            - generic [ref=e265]: Tent vs hammock
+          - link "Power Manager Electronics strategy" [ref=e266] [cursor=pointer]:
+            - /url: /tools#power
+            - img [ref=e268]
+            - generic [ref=e270]: Power Manager
+            - generic [ref=e271]: Electronics strategy
+          - link "Mail Drop Planner Ship-ahead logistics" [ref=e272] [cursor=pointer]:
+            - /url: /tools#mail
+            - img [ref=e274]
+            - generic [ref=e277]: Mail Drop Planner
+            - generic [ref=e278]: Ship-ahead logistics
+          - link "Training Planner Build fitness" [ref=e279] [cursor=pointer]:
+            - /url: /tools#training
+            - img [ref=e281]
+            - generic [ref=e283]: Training Planner
+            - generic [ref=e284]: Build fitness
+          - link "Emergency Card Bailout info" [ref=e285] [cursor=pointer]:
+            - /url: /tools#emergency
+            - img [ref=e287]
+            - generic [ref=e289]: Emergency Card
+            - generic [ref=e290]: Bailout info
+        - link "Open All Instruments" [ref=e292] [cursor=pointer]:
+          - /url: /tools
+          - generic [ref=e293]: Open All Instruments
+          - img [ref=e294]
+      - generic [ref=e296]:
+        - generic [ref=e297]:
+          - img [ref=e299]
+          - heading "RANGER RESOURCES" [level=2] [ref=e301]
+          - img [ref=e303]
+        - generic [ref=e305]:
+          - link "I THE FIELD GUIDE 18 chapters of trail-tested wisdom covering gear, resupply, weather patterns, and the mindset that gets hikers to Katahdin. 18 Chapters 5 Quick Cards Commence Reading" [ref=e306] [cursor=pointer]:
+            - /url: /guide
+            - generic [ref=e307]:
+              - generic [ref=e308]: I
+              - img [ref=e310]
+              - heading "THE FIELD GUIDE" [level=3] [ref=e314]
+              - paragraph [ref=e315]: 18 chapters of trail-tested wisdom covering gear, resupply, weather patterns, and the mindset that gets hikers to Katahdin.
+              - generic [ref=e316]:
+                - generic [ref=e317]:
+                  - img [ref=e318]
+                  - text: 18 Chapters
+                - generic [ref=e321]:
+                  - img [ref=e322]
+                  - text: 5 Quick Cards
+              - generic [ref=e324]: Commence Reading
+          - link "II TRAIL INSTRUMENTS 14 interactive calculators and planners for milestones, resupply strategy, weather decisions, and expedition budget tracking. 14 Instruments Real-time Data Open Toolkit" [ref=e326] [cursor=pointer]:
+            - /url: /tools
+            - generic [ref=e327]:
+              - generic [ref=e328]: II
+              - img [ref=e330]
+              - heading "TRAIL INSTRUMENTS" [level=3] [ref=e334]
+              - paragraph [ref=e335]: 14 interactive calculators and planners for milestones, resupply strategy, weather decisions, and expedition budget tracking.
+              - generic [ref=e336]:
+                - generic [ref=e337]:
+                  - img [ref=e338]
+                  - text: 14 Instruments
+                - generic [ref=e341]:
+                  - img [ref=e342]
+                  - text: Real-time Data
+              - generic [ref=e344]: Open Toolkit
+          - link "III THE JOURNEY Training expeditions, field reports, and moving picture logs documenting the path from Arkansas trails to the AT's white blazes. Videos Field Reports Follow Along" [ref=e346] [cursor=pointer]:
+            - /url: /trips
+            - generic [ref=e347]:
+              - generic [ref=e348]: III
+              - img [ref=e350]
+              - heading "THE JOURNEY" [level=3] [ref=e353]
+              - paragraph [ref=e354]: Training expeditions, field reports, and moving picture logs documenting the path from Arkansas trails to the AT's white blazes.
+              - generic [ref=e355]:
+                - generic [ref=e356]:
+                  - img [ref=e357]
+                  - text: Videos
+                - generic [ref=e360]:
+                  - img [ref=e361]
+                  - text: Field Reports
+              - generic [ref=e364]: Follow Along
+      - generic [ref=e367]:
+        - generic [ref=e368]:
+          - heading "BY THE NUMBERS" [level=2] [ref=e369]
+          - paragraph [ref=e370]: The Appalachian Trail at a Glance
+        - generic [ref=e371]:
+          - generic [ref=e373]:
+            - img [ref=e375]
+            - generic [ref=e377]: 2,194
+            - generic [ref=e378]: TRAIL MILES
+            - generic [ref=e379]: Springer to Katahdin
+          - generic [ref=e381]:
+            - img [ref=e383]:
+              - generic [ref=e386]: ft
+            - generic [ref=e387]: 464K
+            - generic [ref=e388]: ELEVATION GAIN
+            - generic [ref=e389]: Total feet climbed
+          - generic [ref=e391]:
+            - img [ref=e393]
+            - generic [ref=e397]: "14"
+            - generic [ref=e398]: STATES
+            - generic [ref=e399]: Georgia to Maine
+          - generic [ref=e401]:
+            - img [ref=e403]
+            - generic [ref=e406]: 5-7
+            - generic [ref=e407]: MONTHS
+            - generic [ref=e408]: Average thru-hike
+          - generic [ref=e410]:
+            - img [ref=e412]
+            - generic [ref=e415]: 260+
+            - generic [ref=e416]: SHELTERS
+            - generic [ref=e417]: Along the trail
+          - generic [ref=e419]:
+            - img [ref=e421]
+            - generic [ref=e423]: "1937"
+            - generic [ref=e424]: ESTABLISHED
+            - generic [ref=e425]: First completed
+      - generic [ref=e427]:
+        - generic [ref=e428]:
+          - img [ref=e430]
+          - heading "RANGER'S RECOMMENDATION" [level=2] [ref=e432]
+          - paragraph [ref=e433]: Essential reading before you commence your expedition
+        - generic [ref=e434]:
+          - generic [ref=e437]:
+            - generic [ref=e438]: COMMENCE HERE
+            - 'heading "Part I: Hiker Profile & Experience" [level=3] [ref=e439]'
+            - paragraph [ref=e440]: Trail credentials, completed thru-hikes, and the 840+ miles of experience that prepare a hiker for 2,194 miles of the Appalachian Trail.
+            - link "Read Chapter" [ref=e441] [cursor=pointer]:
+              - /url: /guide#01-hiker-profile-and-experience
+              - text: Read Chapter
+              - img [ref=e442]
+          - generic [ref=e444]:
+            - link "Gear System Part VI" [ref=e445] [cursor=pointer]:
+              - /url: /guide#06-gear-system
+              - img [ref=e448]
+              - generic [ref=e451]: Gear System
+              - generic [ref=e452]: Part VI
+            - link "Resupply Logistics Part XV" [ref=e453] [cursor=pointer]:
+              - /url: /guide#15-resupply-logistics
+              - img [ref=e456]
+              - generic [ref=e458]: Resupply Logistics
+              - generic [ref=e459]: Part XV
+            - link "Weather Strategy Part XII" [ref=e460] [cursor=pointer]:
+              - /url: /guide#12-weather-strategy
+              - img [ref=e463]
+              - generic [ref=e466]: Weather Strategy
+              - generic [ref=e467]: Part XII
+      - generic [ref=e472]:
+        - img [ref=e474]
+        - generic [ref=e476]:
+          - generic [ref=e477]:
+            - generic [ref=e478]:
+              - img [ref=e480]
+              - generic [ref=e482]: HOGG COUNTRY
+            - text: Est. 2024
+          - generic [ref=e483]:
+            - link "Field Guide" [ref=e484] [cursor=pointer]:
+              - /url: /guide
+            - link "Trail Tools" [ref=e486] [cursor=pointer]:
+              - /url: /tools
+            - link "Trip Reports" [ref=e488] [cursor=pointer]:
+              - /url: /trips
+            - link "Videos" [ref=e490] [cursor=pointer]:
+              - /url: /videos
+          - generic [ref=e491]:
+            - paragraph [ref=e492]: See you on Katahdin.
+            - paragraph [ref=e493]: Prepared with care for the trail ahead.
+        - generic [ref=e497]:
+          - paragraph [ref=e498]: Est. 2024 - Prepared with care for the trail ahead
+          - paragraph [ref=e499]: Compiled by C. Hogg for J. "HoggCountry" Hogg
+  - contentinfo [ref=e500]:
+    - text: © 2026 Hogg Country. All rights reserved.
+    - generic [ref=e501]:
+      - link "Hogg Country on YouTube" [ref=e502] [cursor=pointer]:
+        - /url: https://www.youtube.com/@hoggcountry7483
+        - generic [ref=e503]: Hogg Country on YouTube
+        - img [ref=e504]
+      - link "Jimmy Hogg on Facebook" [ref=e506] [cursor=pointer]:
+        - /url: https://www.facebook.com/Hogg.Jimmy
+        - generic [ref=e507]: Jimmy Hogg on Facebook
+        - img [ref=e508]
+  - generic: alpha 0.7

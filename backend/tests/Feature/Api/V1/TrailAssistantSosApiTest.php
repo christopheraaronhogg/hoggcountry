@@ -66,6 +66,41 @@ class TrailAssistantSosApiTest extends TestCase
         $this->assertDatabaseCount('trail_assistant_sos_escalations', 1);
     }
 
+    public function test_sos_idempotency_key_collision_from_another_user_returns_conflict(): void
+    {
+        $firstUser = User::factory()->create();
+        $secondUser = User::factory()->create();
+
+        Sanctum::actingAs($firstUser);
+
+        $this->postJson('/api/v1/trail-assistant/sos/escalate', [
+            'lat' => 35.611,
+            'lon' => -83.489,
+            'message' => 'Potential hypothermia symptoms and unable to continue safely.',
+            'confirm_emergency' => true,
+        ], [
+            'Idempotency-Key' => 'shared-sos-key',
+        ])->assertCreated();
+
+        Sanctum::actingAs($secondUser);
+
+        $conflict = $this->postJson('/api/v1/trail-assistant/sos/escalate', [
+            'lat' => 35.801,
+            'lon' => -83.388,
+            'message' => 'Injury near stream crossing with mobility impairment.',
+            'confirm_emergency' => true,
+        ], [
+            'Idempotency-Key' => 'shared-sos-key',
+        ]);
+
+        $conflict
+            ->assertStatus(409)
+            ->assertJsonPath('error.code', 'idempotency_key_conflict')
+            ->assertJsonMissingPath('data.escalation.escalation_id');
+
+        $this->assertDatabaseCount('trail_assistant_sos_escalations', 1);
+    }
+
     public function test_sos_escalation_enforces_cooldown_between_distinct_requests(): void
     {
         $user = User::factory()->create();

@@ -1,0 +1,31 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Request received" [level=1] [ref=e4]
+      - paragraph [ref=e5]: Thanks — your trail request is now in queue.
+      - paragraph [ref=e6]:
+        - text: If your request is time-sensitive, email
+        - link "christopheraaronhogg@gmail.com" [ref=e7] [cursor=pointer]:
+          - /url: mailto:christopheraaronhogg@gmail.com?subject=Trail%20Assistant%20Urgent
+        - text: with subject line
+        - strong [ref=e8]: Trail Assistant Urgent
+        - text: .
+      - paragraph [ref=e9]:
+        - link "← Back to Trail Assistant" [ref=e10] [cursor=pointer]:
+          - /url: /trail-assistant
+      - paragraph [ref=e11]:
+        - link "View your saved profile state →" [ref=e12] [cursor=pointer]:
+          - /url: /trail-assistant-profile
+  - generic [ref=e15]:
+    - button "Menu" [ref=e16]:
+      - img [ref=e18]
+      - generic: Menu
+    - button "Inspect" [ref=e22]:
+      - img [ref=e24]
+      - generic: Inspect
+    - button "Audit" [ref=e26]:
+      - img [ref=e28]
+      - generic: Audit
+    - button "Settings" [ref=e31]:
+      - img [ref=e33]
+      - generic: Settings

@@ -45,6 +45,53 @@ class TrailAssistantByosApiTest extends TestCase
         $this->assertFalse((bool) ($providers['chatgpt_subscription_passthrough']['enabled'] ?? true));
     }
 
+    public function test_byos_decision_endpoint_returns_supported_and_unsupported_lanes_with_sources(): void
+    {
+        $response = $this->getJson('/api/v1/trail-assistant/byos/decision');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.status', 'accepted')
+            ->assertJsonPath('data.default_provider', 'openai_api_key')
+            ->assertJsonPath('data.supported_now.0.id', 'openai_api_key')
+            ->assertJsonPath('data.unsupported_now.0.id', 'chatgpt_subscription_passthrough')
+            ->assertJsonPath('data.sources.0.url', 'https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus')
+            ->assertJsonStructure([
+                'data' => [
+                    'status',
+                    'last_reviewed_on',
+                    'summary',
+                    'supported_now' => [
+                        '*' => ['id', 'label', 'notes'],
+                    ],
+                    'unsupported_now' => [
+                        '*' => ['id', 'label', 'reason'],
+                    ],
+                    'sources' => [
+                        '*' => ['label', 'url'],
+                    ],
+                    'provider_states' => [
+                        '*' => [
+                            'id',
+                            'label',
+                            'enabled',
+                            'auth_mode',
+                            'funding_model',
+                            'available_models',
+                            'notes',
+                        ],
+                    ],
+                ],
+                'error',
+                'meta' => ['request_id'],
+            ]);
+
+        $providers = collect($response->json('data.provider_states', []))->keyBy('id');
+
+        $this->assertTrue((bool) ($providers['openai_api_key']['enabled'] ?? false));
+        $this->assertFalse((bool) ($providers['chatgpt_subscription_passthrough']['enabled'] ?? true));
+    }
+
     public function test_entitlement_preview_returns_needs_credentials_without_echoing_raw_api_key(): void
     {
         $response = $this->postJson('/api/v1/trail-assistant/byos/entitlement-preview', [

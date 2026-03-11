@@ -1,6 +1,6 @@
 # Trail Assistant Backlog
 
-Last updated: 2026-03-02 22:55 CT
+Last updated: 2026-03-05 07:05 CT
 
 ## This Week (2026-03-02 → 2026-03-08)
 - [x] **P0.1** Add FAQ from simulation gaps (privacy sharing + map verification expectations)
@@ -8,9 +8,9 @@ Last updated: 2026-03-02 22:55 CT
 - [x] **P0.6** Produce BYOS architecture decision for OpenAI/ChatGPT feasibility + scaffold provider/entitlement abstraction
 - [x] **P0.8** Add BYOS entitlement preview endpoint + demo UI route for morning proof checks
 - [ ] **P0.7** Resolve production deploy drift (Netlify/Forge route mismatch) and verify public Trail Assistant URLs post-deploy
-- [ ] **P0.2** Ship blocker email template helper + auto-send guard
-- [ ] **P0.3** Ship daily runlog autopdater helper
-- [ ] **P0.4** Ship daily/weekly queue review automation
+- [x] **P0.2** Ship blocker email template helper + auto-send guard
+- [x] **P0.3** Ship daily runlog autopdater helper
+- [x] **P0.4** Ship daily/weekly queue review automation
 - [ ] **P1.1** Build weekly content queue board (internal draft only; no public posting without approval)
 
 ## Re-ranked open backlog (impact + dependency)
@@ -29,15 +29,18 @@ Last updated: 2026-03-02 22:55 CT
   - Impact: restores public user-facing URLs and API parity.
   - Dependency: deploy access to Netlify + Forge env/branch alignment.
   - Latest status: GitHub push (`2c51960`) completed, but public endpoints remained unchanged after propagation monitoring.
-- [ ] Blocker email template helper + auto-send guard
+- [x] Blocker email template helper + auto-send guard
   - Impact: enforces the >24h owner-escalation safety rule from the autonomy plan.
-  - Dependency: none (can ship immediately).
-- [ ] Daily runlog autopdater helper
+  - Dependency: none (shipped 2026-03-03).
+  - Output: `scripts/trail_assistant_blocker_email_helper.py` + `docs/business/trail-assistant-blocker-email-helper.md` (draft-first mode with explicit auto-send guard token).
+- [x] Daily runlog autopdater helper
   - Impact: keeps daily execution evidence current with less manual overhead.
-  - Dependency: none (can ship immediately).
-- [ ] Daily/weekly queue review automation
+  - Dependency: none (shipped 2026-03-04).
+  - Output: `scripts/trail_assistant_runlog_autoupdater.py` + `docs/business/trail-assistant-runlog-autopdater-helper.md` + npm alias `trail-assistant:runlog-autoupdate`.
+- [x] Daily/weekly queue review automation
   - Impact: preserves planning cadence and prevents silent backlog aging.
-  - Dependency: best after/alongside runlog autopdater output normalization.
+  - Dependency: none (shipped 2026-03-05).
+  - Output: `scripts/trail_assistant_queue_review_helper.py` + `docs/business/trail-assistant-queue-review-helper.md` + npm alias `trail-assistant:queue-review`.
 
 ## P1 — Near-term growth setup
 - [ ] Build weekly content queue board
@@ -50,7 +53,7 @@ Last updated: 2026-03-02 22:55 CT
 - [ ] Add performance tracking sheet (views, clicks, replies, leads)
 
 ## Current active task
-- Active: P0 resolve production deploy drift (Netlify/Forge route mismatch)
+- Active: P1.1 weekly content queue board (P0.7 deploy drift remains owner-decision blocked)
 
 ## Historical completion ledger
 
@@ -110,3 +113,10 @@ Last updated: 2026-03-02 22:55 CT
 - [x] Captured local + public evidence pack under `docs/business/daily-updates/assets/2026-03-03/trail-assistant-demo/`.
 - [x] Published BYOS architecture decision for OpenAI/ChatGPT feasibility and scaffolded provider abstraction + entitlement checks (`trail-assistant-byos-architecture-decision-2026-03-03.md`).
 - [x] Added BYOS entitlement preview lane (`POST /api/v1/trail-assistant/byos/entitlement-preview`) plus demo route (`/trail-assistant-byos`) with masked credential proof artifacts.
+- [x] Shipped blocker escalation helper + guard (`trail-assistant:blocker-email`) with draft-first behavior and explicit auto-send confirmation token.
+
+## Completed on 2026-03-04
+- [x] Shipped daily runlog autopdater helper (`trail-assistant:runlog-autoupdate`) with date-section auto-create, structured entry formatting, and operator guide (`trail-assistant-runlog-autopdater-helper.md`).
+
+## Completed on 2026-03-05
+- [x] Shipped daily/weekly queue review automation helper (`trail-assistant:queue-review`) with stale-task detection, blocker escalation signal checks, and operator guide (`trail-assistant-queue-review-helper.md`).

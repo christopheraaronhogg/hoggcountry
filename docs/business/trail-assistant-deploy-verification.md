@@ -12,6 +12,15 @@ Verify Trail Assistant safety-critical mobile endpoints are healthy after each d
   - moderator user
 - Base URL known (example: `https://<host>/api/v1`).
 
+## 0) Quick URL matrix (route/deploy drift gate)
+- Run:
+  - `npm run trail-assistant:verify-urls -- --output docs/business/daily-updates/assets/<date>/trail-assistant-demo/verification-url-matrix.txt --json docs/business/daily-updates/assets/<date>/trail-assistant-demo/verification-url-matrix.json`
+- Matrix includes:
+  - public/local Trail Assistant web routes (`/trail-assistant`, `/trail-assistant-profile`, `/trail-assistant-byos`, `/trail-assistant-thanks`)
+  - public/local BYOS APIs (`/byos/providers`, `/byos/decision`, `/byos/entitlement-preview`)
+  - public/local health + plans endpoints
+- Use this as a first-pass deploy drift signal before deeper auth/safety tests.
+
 ## 1) Health check
 - `GET /api/v1/health`
 - Expect HTTP 200 and `data.status=ok`.
@@ -83,4 +92,4 @@ Without auth, verify protected endpoints return 401:
 ## Fail protocol
 - Log failure details in `docs/business/trail-assistant-runlog.md`.
 - Roll back deploy if safety-critical API is broken.
-- If owner decision is required and unresolved for >24h, send blocker email to `christopheraaronhogg@gmail.com` with Option A / Option B + default path.
+- If owner decision is required and unresolved for >24h, use `npm run trail-assistant:blocker-email -- ...` to draft/send blocker email to `christopheraaronhogg@gmail.com` with Option A / Option B + default path.

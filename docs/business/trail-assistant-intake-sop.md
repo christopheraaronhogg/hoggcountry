@@ -44,9 +44,16 @@ For each request, capture:
 A request is complete only when:
 - response delivered,
 - summary logged to runlog,
+  - preferred helper: `npm run trail-assistant:runlog-autoupdate -- ...` (see `trail-assistant-runlog-autopdater-helper.md`)
 - follow-up date set if needed.
+
+## Queue review cadence (daily/weekly)
+- run `npm run trail-assistant:queue-review -- --date YYYY-MM-DD --print-report`
+- review generated report at `docs/business/daily-updates/assets/YYYY-MM-DD/queue-review.md`
+- action stale/blocked items before picking the next execution target
 
 ## Blocker rule
 If blocked >24h and owner decision is required:
-- send blocker email to `christopheraaronhogg@gmail.com`
+- generate/send blocker email to `christopheraaronhogg@gmail.com`
 - include option A / option B + default path deadline
+- use helper: `npm run trail-assistant:blocker-email -- ...` (see `trail-assistant-blocker-email-helper.md`)

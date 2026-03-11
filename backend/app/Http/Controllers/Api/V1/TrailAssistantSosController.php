@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\TrailAssistantSosEscalation;
 use App\Support\TrailAssistantModeratorGate;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -28,6 +29,7 @@ class TrailAssistantSosController extends ApiController
         $idempotencyKey = $this->resolveIdempotencyKey($request, $validated['idempotency_key'] ?? null);
         if ($idempotencyKey) {
             $existingByKey = TrailAssistantSosEscalation::query()
+                ->where('user_id', $request->user()->id)
                 ->where('idempotency_key', $idempotencyKey)
                 ->first();
 
@@ -119,24 +121,49 @@ class TrailAssistantSosController extends ApiController
             $abuseFlags[] = 'near_daily_limit';
         }
 
-        $escalation = TrailAssistantSosEscalation::query()->create([
-            'escalation_id' => 'sos_'.Str::lower(Str::random(12)),
-            'user_id' => $request->user()->id,
-            'idempotency_key' => $idempotencyKey,
-            'dedupe_fingerprint' => $dedupeFingerprint,
-            'lat' => (float) $validated['lat'],
-            'lon' => (float) $validated['lon'],
-            'mile_marker' => isset($validated['mile_marker']) ? (float) $validated['mile_marker'] : null,
-            'message' => $normalizedMessage,
-            'contact_method' => (string) ($validated['contact_method'] ?? 'in_app'),
-            'status' => 'pending_review',
-            'severity' => 'emergency',
-            'requires_manual_dispatch' => true,
-            'triggered_at' => $triggeredAt,
-            'cooldown_until' => CarbonImmutable::now('UTC')->addMinutes($cooldownMinutes),
-            'abuse_flags' => $abuseFlags,
-            'metadata' => $this->normalizeMetadata($validated['metadata'] ?? []),
-        ]);
+        try {
+            $escalation = TrailAssistantSosEscalation::query()->create([
+                'escalation_id' => 'sos_'.Str::lower(Str::random(12)),
+                'user_id' => $request->user()->id,
+                'idempotency_key' => $idempotencyKey,
+                'dedupe_fingerprint' => $dedupeFingerprint,
+                'lat' => (float) $validated['lat'],
+                'lon' => (float) $validated['lon'],
+                'mile_marker' => isset($validated['mile_marker']) ? (float) $validated['mile_marker'] : null,
+                'message' => $normalizedMessage,
+                'contact_method' => (string) ($validated['contact_method'] ?? 'in_app'),
+                'status' => 'pending_review',
+                'severity' => 'emergency',
+                'requires_manual_dispatch' => true,
+                'triggered_at' => $triggeredAt,
+                'cooldown_until' => CarbonImmutable::now('UTC')->addMinutes($cooldownMinutes),
+                'abuse_flags' => $abuseFlags,
+                'metadata' => $this->normalizeMetadata($validated['metadata'] ?? []),
+            ]);
+        } catch (QueryException $exception) {
+            if ($idempotencyKey && $this->isIdempotencyConstraintViolation($exception)) {
+                $existingByKey = TrailAssistantSosEscalation::query()
+                    ->where('user_id', $request->user()->id)
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->first();
+
+                if ($existingByKey) {
+                    return $this->ok([
+                        'escalation' => $this->payload($existingByKey),
+                        'idempotent_replay' => true,
+                        'duplicate_guard' => 'idempotency_key',
+                    ]);
+                }
+
+                return $this->fail(
+                    'idempotency_key_conflict',
+                    'Idempotency key already used for a different SOS escalation. Retry with a new key.',
+                    409
+                );
+            }
+
+            throw $exception;
+        }
 
         return $this->ok([
             'escalation' => $this->payload($escalation),
@@ -287,6 +314,14 @@ class TrailAssistantSosController extends ApiController
             ->toString();
 
         return $normalized === '' ? null : $normalized;
+    }
+
+    private function isIdempotencyConstraintViolation(QueryException $exception): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? '');
+        $message = Str::lower($exception->getMessage());
+
+        return $sqlState === '23000' && str_contains($message, 'idempotency_key');
     }
 
     private function buildDedupeFingerprint(float $lat, float $lon, string $message): string

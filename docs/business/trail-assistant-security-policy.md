@@ -29,7 +29,7 @@ If request contains any of the following, stop and escalate:
 
 Escalation path:
 - Log incident in runlog
-- Send blocker/security email to christopheraaronhogg@gmail.com
+- Draft/send blocker/security email to christopheraaronhogg@gmail.com (helper: `npm run trail-assistant:blocker-email -- ...`)
 - Do not proceed until reviewed
 
 ## Safety controls currently enforced in API

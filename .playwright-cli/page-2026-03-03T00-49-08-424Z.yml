@@ -1,0 +1,99 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: Trail Assistant
+      - heading "Profile state (demo)" [level=1] [ref=e5]
+      - paragraph [ref=e6]:
+        - text: This route gives a visible profile-state path for demo review. Data is stored in browser localStorage and reused by
+        - link "/trail-assistant" [ref=e7] [cursor=pointer]:
+          - /url: /trail-assistant
+        - text: when submitting intake requests.
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - generic [ref=e10]: Full name
+          - textbox "Full name" [ref=e11]: Chris Hogg
+        - generic [ref=e12]:
+          - generic [ref=e13]: Contact email
+          - textbox "Contact email" [ref=e14]: chris+hoggcountry@example.com
+        - generic [ref=e15]:
+          - generic [ref=e16]: Trail name
+          - textbox "Trail name" [ref=e17]: MiniHogg
+        - generic [ref=e18]:
+          - generic [ref=e19]: Home base
+          - textbox "Home base" [ref=e20]:
+            - /placeholder: City, State
+            - text: Bentonville, AR
+        - generic [ref=e21]:
+          - generic [ref=e22]: Start date
+          - textbox "Start date" [ref=e23]: 2026-04-02
+        - generic [ref=e24]:
+          - generic [ref=e25]: Direction
+          - combobox "Direction" [ref=e26]:
+            - option "Select one"
+            - option "NOBO" [selected]
+            - option "SOBO"
+            - option "Flip-flop"
+            - option "Section hike"
+        - generic [ref=e27]:
+          - generic [ref=e28]: Target miles/day
+          - spinbutton "Target miles/day" [ref=e29]: "14.5"
+        - generic [ref=e30]:
+          - generic [ref=e31]: Emergency contact
+          - textbox "Emergency contact" [ref=e32]:
+            - /placeholder: Name + phone
+            - text: Dad +1-555-0100
+      - generic [ref=e33]:
+        - generic [ref=e34]: Medical considerations
+        - textbox "Medical considerations" [ref=e35]:
+          - /placeholder: Allergies, medication reminders, relevant injuries, etc.
+          - text: Mild knee pain in cold rain; avoid zero-food margin days.
+      - generic [ref=e36]:
+        - button "Save profile state" [ref=e37] [cursor=pointer]
+        - button "Clear profile state" [ref=e38] [cursor=pointer]
+        - link "Back to intake" [ref=e39] [cursor=pointer]:
+          - /url: /trail-assistant
+      - paragraph [ref=e40]: Loaded saved profile state.
+      - list [ref=e42]:
+        - listitem [ref=e43]:
+          - strong [ref=e44]: "Name:"
+          - text: Chris Hogg
+        - listitem [ref=e45]:
+          - strong [ref=e46]: "Email:"
+          - text: chris+hoggcountry@example.com
+        - listitem [ref=e47]:
+          - strong [ref=e48]: "Trail name:"
+          - text: MiniHogg
+        - listitem [ref=e49]:
+          - strong [ref=e50]: "Home base:"
+          - text: Bentonville, AR
+        - listitem [ref=e51]:
+          - strong [ref=e52]: "Start date:"
+          - text: 2026-04-02
+        - listitem [ref=e53]:
+          - strong [ref=e54]: "Direction:"
+          - text: NOBO
+        - listitem [ref=e55]:
+          - strong [ref=e56]: "Target miles/day:"
+          - text: "14.5"
+        - listitem [ref=e57]:
+          - strong [ref=e58]: "Emergency contact:"
+          - text: Dad +1-555-0100
+        - listitem [ref=e59]:
+          - strong [ref=e60]: "Medical notes:"
+          - text: Mild knee pain in cold rain; avoid zero-food margin days.
+        - listitem [ref=e61]:
+          - strong [ref=e62]: "Saved:"
+          - text: 2026-03-03T00:48:35.594Z
+  - generic [ref=e65]:
+    - button "Menu" [ref=e66]:
+      - img [ref=e68]
+      - generic: Menu
+    - button "Inspect" [ref=e72]:
+      - img [ref=e74]
+      - generic: Inspect
+    - button "Audit" [ref=e76]:
+      - img [ref=e78]
+      - generic: Audit
+    - button "Settings" [ref=e81]:
+      - img [ref=e83]
+      - generic: Settings
