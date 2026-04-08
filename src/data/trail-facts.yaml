@@ -144,7 +144,7 @@ states:
 
   - id: VA
     name: Virginia
-    entry_mile: 464.4
+    entry_mile: 471.0
     exit_mile: 1009.0
     miles: 544.6
     note: "Longest state on the AT"
@@ -342,7 +342,7 @@ landmarks:
   # === VIRGINIA ===
   damascus:
     name: Damascus
-    mile: 464.4
+    mile: 471.0
     elevation: 1928
     state: VA
     type: town
@@ -643,7 +643,7 @@ towns:
 
   damascus_town:
     name: Damascus
-    mile: 464.4
+    mile: 471.0
     state: VA
     distance_from_trail: 0
     services:

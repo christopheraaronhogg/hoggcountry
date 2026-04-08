@@ -31,7 +31,7 @@ quickRef: true
 | Location | Mile | Notes |
 |----------|------|-------|
 | Hot Springs, NC | ~274.6 | Most reliable on AT |
-| Damascus, VA | ~470.7 | AT hub, generous hold |
+| Damascus, VA | ~471 | AT hub, generous hold |
 | Daleville, VA | ~685.3 | Easy access |
 | Harpers Ferry, WV | ~860.6 | Halfway, very reliable |
 | Duncannon, PA | ~1090.5 | Great PO + hostel |

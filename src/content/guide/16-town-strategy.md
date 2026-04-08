@@ -93,7 +93,7 @@ icon: "building"
 - **Services:** 🏨 🚿 🧺 🍔 🔌 📦
 - **Notes:** Some hikers walk, most hitch
 
-**Damascus, VA (Mile ~469)**
+**Damascus, VA (Mile ~471)**
 - **Distance from Trail:** ON TRAIL (AT goes through town center)
 - **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
 - **Lodging:** Multiple hostels, motels, The Place (donation hostel)
@@ -102,7 +102,7 @@ icon: "building"
 
 ---
 
-### VIRGINIA (Mile 470-1,020)
+### VIRGINIA (Mile 471-1,020)
 
 **Marion, VA (Mile ~500 from Atkins)**
 - **Distance from Trail:** ~5-6 miles (hitch typically required)
@@ -394,7 +394,7 @@ icon: "building"
 These towns have ALL services (lodging, shower, laundry, food, charging, resupply) within reasonable walking distance (≤2 mi):
 
 1. **Hot Springs, NC** (Mile ~274) - ON TRAIL
-2. **Damascus, VA** (Mile ~469) - ON TRAIL
+2. **Damascus, VA** (Mile ~471) - ON TRAIL
 3. **Pearisburg, VA** (Mile ~635) - 0.8 mi
 4. **Daleville, VA** (Mile ~729) - 0.5-1 mi
 5. **Waynesboro, VA** (Mile ~880) - 1-2 mi
@@ -439,7 +439,7 @@ These towns have ALL services (lodging, shower, laundry, food, charging, resuppl
 
 ### VIRGINIA
 
-**Damascus / Abingdon, VA** — Mile ~469
+**Damascus / Abingdon, VA** — Mile ~471
 - Damascus walkable; Abingdon ~15 miles
 - Urgent Care: Multiple clinics
 - Dental: Emergency and general

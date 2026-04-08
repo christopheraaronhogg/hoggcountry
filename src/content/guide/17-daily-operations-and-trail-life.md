@@ -400,7 +400,7 @@ These towns have EVERYTHING: lodging, laundry, grocery, restaurants, gear shop, 
 
 **NORTH CAROLINA / TENNESSEE:**
 - **Hot Springs, NC** (Mile ~274) - Walkable, laundry, hostel, grocery
-- **Damascus, VA** (Mile ~469) - *"Trail Town USA"* - MAJOR zero town, full services, gear shop
+- **Damascus, VA** (Mile ~471) - *"Trail Town USA"* - MAJOR zero town, full services, gear shop
 
 **VIRGINIA:**
 - **Waynesboro, VA** (Mile ~945) - Full services, good restaurants, near Shenandoah
@@ -442,7 +442,7 @@ Good for zeros but may lack one service (no gear shop, longer hitch, limited lod
 
 **These zeros are REQUIRED for logistics, not optional:**
 
-1. **Damascus, VA (Mile ~469)** - Gear transition (pack swap, sleep system swap). Plan 1-2 days here.
+1. **Damascus, VA (Mile ~471)** - Gear transition (pack swap, sleep system swap). Plan 1-2 days here.
 2. **Monson, ME (Mile ~2,093)** - Final resupply before 100-Mile Wilderness. Buy 8-9 days of food. Plan 1 full day.
 3. **Harpers Ferry, WV (Mile ~1,024)** - Register at ATC HQ, psychological halfway point. Even if just a nero.
 
@@ -455,7 +455,7 @@ Good for zeros but may lack one service (no gear shop, longer hitch, limited lod
 | Days 1-7 | 0-70 | Hiawassee, GA | ~70 |
 | Days 8-14 | 70-140 | Franklin, NC (optional) | ~114 |
 | Days 15-28 | 140-274 | **Hot Springs, NC** | ~274 |
-| Days 29-42 | 274-469 | **Damascus, VA** (2 days) | ~469 |
+| Days 29-42 | 274-471 | **Damascus, VA** (2 days) | ~471 |
 | Days 43-54 | 469-635 | Pearisburg, VA | ~635 |
 | Days 55-68 | 635-825 | Daleville, VA | ~730 |
 | Days 69-81 | 825-1,024 | **Harpers Ferry, WV** | ~1,024 |

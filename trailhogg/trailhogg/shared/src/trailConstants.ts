@@ -60,7 +60,7 @@ export const STATE_BOUNDARIES = {
   GA_NC: 78.5,
   NC_TN_SMOKIES: 165.7,  // Entering Smokies
   SMOKIES_END: 241,      // Exiting Smokies
-  TN_VA: 469.1,          // Damascus
+  TN_VA: 471.0,          // Damascus
   VA_WV: 1008.5,
   WV_MD: 1024.4,         // Harpers Ferry
   MD_PA: 1067.3,

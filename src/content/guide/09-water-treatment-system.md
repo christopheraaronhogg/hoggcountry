@@ -183,7 +183,7 @@ If that happens:
 - Wise Shelter spring (~451)
 - Old Orchard Shelter spring (~460)
 - Trimpi Shelter spring (~467)
-- Damascus town water (~469)
+- Damascus town water (~471)
 
 ### VIRGINIA (Damascus to Shenandoah National Park)
 

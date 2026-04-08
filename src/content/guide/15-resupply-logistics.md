@@ -48,7 +48,7 @@ ETA: MM/DD/YYYY
 | Location | Mile | Notes |
 |----------|------|-------|
 | Hot Springs, NC | ~274 | One of the most reliable mail drops on the AT |
-| Damascus, VA | ~469 | AT hub, dependable, generous hold times |
+| Damascus, VA | ~471 | AT hub, dependable, generous hold times |
 | Daleville, VA | ~727-729 | Easy access, grocery nearby |
 | Harpers Ferry, WV | ~1,023-1,026 | Psychological halfway point, very reliable |
 | Duncannon, PA | ~1,140-1,150 | Excellent PO + hostel logistics |

@@ -37,7 +37,7 @@
     { mile: 166, name: 'Fontana Dam' },
     { mile: 206, name: 'Newfound Gap' },
     { mile: 274, name: 'Hot Springs' },
-    { mile: 386, name: 'Damascus' },
+    { mile: 471, name: 'Damascus' },
     { mile: 550, name: 'Pearisburg' },
     { mile: 702, name: 'Waynesboro' },
     { mile: 1025, name: 'Harpers Ferry' },

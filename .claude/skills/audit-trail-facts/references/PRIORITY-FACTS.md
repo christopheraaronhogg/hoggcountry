@@ -120,7 +120,7 @@ note: Often cited as "over 500 miles"
 | Fontana Dam | 163.8 | AWOL, TVA |
 | Gatlinburg | 206.4 | AWOL, NPS |
 | Hot Springs | 273.4 | AWOL, town website |
-| Damascus | 464.4 | AWOL, Trail Days |
+| Damascus | 471.0 | AWOL, Trail Days |
 
 ---
 

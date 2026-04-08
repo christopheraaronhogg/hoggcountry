@@ -45,7 +45,7 @@
   const coordinates = [
     { name: 'Springer Mountain', state: 'GA', lat: '34.6269', lon: '84.1939', mile: 0, type: 'start' },
     { name: 'Fontana Dam', state: 'NC', lat: '35.4449', lon: '83.8129', mile: 165.7, type: 'waypoint' },
-    { name: 'Damascus', state: 'VA', lat: '36.6337', lon: '81.7837', mile: 469.1, type: 'waypoint' },
+    { name: 'Damascus', state: 'VA', lat: '36.6337', lon: '81.7837', mile: 471.0, type: 'waypoint' },
     { name: 'Harpers Ferry', state: 'WV', lat: '39.3251', lon: '77.7286', mile: 1025.4, type: 'midpoint' },
     { name: 'Delaware Water Gap', state: 'PA', lat: '40.9673', lon: '75.1261', mile: 1294.5, type: 'waypoint' },
     { name: 'Katahdin', state: 'ME', lat: '45.9044', lon: '68.9213', mile: 2194, type: 'end' }

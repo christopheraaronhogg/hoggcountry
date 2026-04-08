@@ -263,7 +263,7 @@ Message a trusted person at home. They:
 | ~60.6 | Indian Grave Gap Rd |
 | ~69.4 | Dick's Creek Gap (GA-76) |
 
-### NORTH CAROLINA / TENNESSEE (Mile ~78 – ~470)
+### NORTH CAROLINA / TENNESSEE (Mile ~78 – ~471)
 
 | Mile | Exit Point |
 |------|------------|
@@ -277,11 +277,11 @@ Message a trusted person at home. They:
 | ~299.1 | Allen Gap (NC-212) |
 | ~321.3 | Sam's Gap (US-19W) |
 
-### VIRGINIA (Mile ~470 – ~1,020)
+### VIRGINIA (Mile ~471 – ~1,020)
 
 | Mile | Exit Point |
 |------|------------|
-| ~469.1 | Damascus (US-58) |
+| ~471 | Damascus (US-58) |
 | ~500.5 | Elk Garden (VA-600) |
 | ~534.6 | Kimberling Creek Rd |
 | ~635.3 | Pearisburg (VA-460) |

@@ -1394,7 +1394,7 @@ If that happens:
 - Wise Shelter spring (~451)
 - Old Orchard Shelter spring (~460)
 - Trimpi Shelter spring (~467)
-- Damascus town water (~469)
+- Damascus town water (~471)
 
 ### VIRGINIA (Damascus to Shenandoah National Park)
 
@@ -2547,7 +2547,7 @@ ETA: MM/DD/YYYY
 | Location | Mile | Notes |
 |----------|------|-------|
 | Hot Springs, NC | ~274 | One of the most reliable mail drops on the AT |
-| Damascus, VA | ~469 | AT hub, dependable, generous hold times |
+| Damascus, VA | ~471 | AT hub, dependable, generous hold times |
 | Daleville, VA | ~727-729 | Easy access, grocery nearby |
 | Harpers Ferry, WV | ~1,023-1,026 | Psychological halfway point, very reliable |
 | Duncannon, PA | ~1,140-1,150 | Excellent PO + hostel logistics |
@@ -2666,7 +2666,7 @@ ETA: MM/DD/YYYY
 - **Services:** 🏨 🚿 🧺 🍔 🔌 📦
 - **Notes:** Some hikers walk, most hitch
 
-**Damascus, VA (Mile ~469)**
+**Damascus, VA (Mile ~471)**
 - **Distance from Trail:** ON TRAIL (AT goes through town center)
 - **Services:** 🏨 🚿 🧺 🍔 🔌 📦 ✉️
 - **Lodging:** Multiple hostels, motels, The Place (donation hostel)
@@ -2675,7 +2675,7 @@ ETA: MM/DD/YYYY
 
 ---
 
-### VIRGINIA (Mile 470-1,020)
+### VIRGINIA (Mile 471-1,020)
 
 **Marion, VA (Mile ~500 from Atkins)**
 - **Distance from Trail:** ~5-6 miles (hitch typically required)
@@ -2967,7 +2967,7 @@ ETA: MM/DD/YYYY
 These towns have ALL services (lodging, shower, laundry, food, charging, resupply) within reasonable walking distance (≤2 mi):
 
 1. **Hot Springs, NC** (Mile ~274) - ON TRAIL
-2. **Damascus, VA** (Mile ~469) - ON TRAIL
+2. **Damascus, VA** (Mile ~471) - ON TRAIL
 3. **Pearisburg, VA** (Mile ~635) - 0.8 mi
 4. **Daleville, VA** (Mile ~729) - 0.5-1 mi
 5. **Waynesboro, VA** (Mile ~880) - 1-2 mi
@@ -3012,7 +3012,7 @@ These towns have ALL services (lodging, shower, laundry, food, charging, resuppl
 
 ### VIRGINIA
 
-**Damascus / Abingdon, VA** — Mile ~469
+**Damascus / Abingdon, VA** — Mile ~471
 - Damascus walkable; Abingdon ~15 miles
 - Urgent Care: Multiple clinics
 - Dental: Emergency and general
@@ -3552,7 +3552,7 @@ These towns have EVERYTHING: lodging, laundry, grocery, restaurants, gear shop, 
 
 **NORTH CAROLINA / TENNESSEE:**
 - **Hot Springs, NC** (Mile ~274) - Walkable, laundry, hostel, grocery
-- **Damascus, VA** (Mile ~469) - *"Trail Town USA"* - MAJOR zero town, full services, gear shop
+- **Damascus, VA** (Mile ~471) - *"Trail Town USA"* - MAJOR zero town, full services, gear shop
 
 **VIRGINIA:**
 - **Waynesboro, VA** (Mile ~945) - Full services, good restaurants, near Shenandoah
@@ -3594,7 +3594,7 @@ Good for zeros but may lack one service (no gear shop, longer hitch, limited lod
 
 **These zeros are REQUIRED for logistics, not optional:**
 
-1. **Damascus, VA (Mile ~469)** - Gear transition (pack swap, sleep system swap). Plan 1-2 days here.
+1. **Damascus, VA (Mile ~471)** - Gear transition (pack swap, sleep system swap). Plan 1-2 days here.
 2. **Monson, ME (Mile ~2,093)** - Final resupply before 100-Mile Wilderness. Buy 8-9 days of food. Plan 1 full day.
 3. **Harpers Ferry, WV (Mile ~1,024)** - Register at ATC HQ, psychological halfway point. Even if just a nero.
 
@@ -3607,7 +3607,7 @@ Good for zeros but may lack one service (no gear shop, longer hitch, limited lod
 | Days 1-7 | 0-70 | Hiawassee, GA | ~70 |
 | Days 8-14 | 70-140 | Franklin, NC (optional) | ~114 |
 | Days 15-28 | 140-274 | **Hot Springs, NC** | ~274 |
-| Days 29-42 | 274-469 | **Damascus, VA** (2 days) | ~469 |
+| Days 29-42 | 274-471 | **Damascus, VA** (2 days) | ~471 |
 | Days 43-54 | 469-635 | Pearisburg, VA | ~635 |
 | Days 55-68 | 635-825 | Daleville, VA | ~730 |
 | Days 69-81 | 825-1,024 | **Harpers Ferry, WV** | ~1,024 |
@@ -4626,7 +4626,7 @@ Message a trusted person at home. They:
 | ~60.6 | Indian Grave Gap Rd |
 | ~69.4 | Dick's Creek Gap (GA-76) |
 
-### NORTH CAROLINA / TENNESSEE (Mile ~78 – ~470)
+### NORTH CAROLINA / TENNESSEE (Mile ~78 – ~471)
 
 | Mile | Exit Point |
 |------|------------|
@@ -4640,11 +4640,11 @@ Message a trusted person at home. They:
 | ~299.1 | Allen Gap (NC-212) |
 | ~321.3 | Sam's Gap (US-19W) |
 
-### VIRGINIA (Mile ~470 – ~1,020)
+### VIRGINIA (Mile ~471 – ~1,020)
 
 | Mile | Exit Point |
 |------|------------|
-| ~469.1 | Damascus (US-58) |
+| ~471 | Damascus (US-58) |
 | ~500.5 | Elk Garden (VA-600) |
 | ~534.6 | Kimberling Creek Rd |
 | ~635.3 | Pearisburg (VA-460) |
