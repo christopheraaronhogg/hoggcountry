@@ -6,8 +6,12 @@ import FullGuideNav from '../../components/FullGuideNav.svelte';
 import GuideInlineSearch from '../../components/GuideInlineSearch.svelte';
 import DownloadGuideButton from '../../components/DownloadGuideButton.svelte';
 import GuideHighlighter from '../../components/GuideHighlighter.svelte';
-import fs from 'node:fs';
-import path from 'node:path';
+import FieldManualBoot from '../../components/field-manual/FieldManualBoot.svelte';
+import MyManualView from '../../components/field-manual/MyManualView.svelte';
+import ScriptureSearch from '../../components/field-manual/ScriptureSearch.svelte';
+import SaveButton from '../../components/field-manual/SaveButton.svelte';
+import { buildGuideManualEntry } from '../../lib/field-manual';
+import { isEnabled } from '../../lib/features';
 
 const allGuides = await getCollection('guide');
 
@@ -21,6 +25,8 @@ const quickRefs = allGuides
   .sort((a, b) => a.data.order - b.data.order);
 
 const sortedGuides = [...mainChapters, ...quickRefs];
+const scriptureSearchEnabled = isEnabled('SCRIPTURE_SEARCH');
+const manualBuilderPath = '/guide/manual-builder/';
 
 // Render all chapters
 const renderedChapters = await Promise.all(
@@ -42,8 +48,21 @@ const navChapters = sortedGuides.map(ch => ({
   }
 }));
 
+const manualEntrySeeds = sortedGuides.map((chapter) => buildGuideManualEntry({
+  slug: chapter.id,
+  title: chapter.data.title,
+  description: chapter.data.description,
+  body: chapter.body ?? '',
+  order: chapter.data.order,
+  quickRef: chapter.data.quickRef,
+  href: `${manualBuilderPath}#${chapter.id}`,
+}));
+
+const manualEntriesBySlug = Object.fromEntries(
+  manualEntrySeeds.map((entry) => [entry.source.sourceId ?? entry.id, entry]),
+);
+
 // Generate markdown content for download
-const guideDir = path.join(process.cwd(), 'src/content/guide');
 let markdownContent = `# Appalachian Trail NOBO Field Guide 2026
 ## Northbound: Springer Mountain, GA -> Mount Katahdin, ME
 ### February Start Edition
@@ -52,29 +71,19 @@ let markdownContent = `# Appalachian Trail NOBO Field Guide 2026
 
 `;
 
-// Read all markdown files and concatenate
 for (const chapter of sortedGuides) {
-  try {
-    const filePath = chapter.data.quickRef
-      ? path.join(guideDir, 'quick', `${chapter.id.replace('quick/', '')}.md`)
-      : path.join(guideDir, `${chapter.id}.md`);
-    const content = fs.readFileSync(filePath, 'utf-8');
-    // Remove frontmatter
-    const withoutFrontmatter = content.replace(/^---[\s\S]*?---\n/, '');
-    markdownContent += withoutFrontmatter + '\n\n---\n\n';
-  } catch (e) {
-    // Skip if file not found
-  }
+  markdownContent += (chapter.body ?? '') + '\n\n---\n\n';
 }
 
-const title = 'AT NOBO Field Guide - Hogg Country';
-const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guide. Georgia to Maine, 2,197.4 miles of trail-tested knowledge for a February 2026 start.";
+const title = 'AT Field Manual Builder Preview - Hogg Country';
+const description = 'Unlisted preview of the personal Field Manual builder layered on top of the AT guide.';
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-guide-view-state="library" data-guide-corpus-state="trail">
   <head>
     <BaseHead title={title} description={description} />
+    <meta name="robots" content="noindex, nofollow" />
     <!-- PWA manifest for offline-capable field guide -->
     <link rel="manifest" href="/guide-manifest.json" />
     <meta name="theme-color" content="#4d594a" />
@@ -122,6 +131,108 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
         max-width: 750px;
         margin: 0 auto;
         padding: 2rem 1.5rem 6rem;
+      }
+
+      .guide-surface-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .guide-surface-tab {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.75rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.75);
+        color: var(--pine);
+        text-decoration: none;
+        font-weight: 700;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+      }
+
+      .guide-surface-tab:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
+        border-color: var(--alpine);
+      }
+
+      .guide-surface-tab.is-active,
+      html[data-guide-view-state='library'] .guide-surface-tab[data-guide-view='library'],
+      html[data-guide-view-state='mine'] .guide-surface-tab[data-guide-view='mine'] {
+        background: rgba(166, 181, 137, 0.22);
+        border-color: rgba(77, 89, 74, 0.25);
+        color: var(--ink);
+      }
+
+      .manual-surface-copy {
+        display: none;
+        margin: 0 auto 2rem;
+        max-width: 56ch;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      html[data-guide-view-state='mine'] .manual-surface-copy {
+        display: block;
+      }
+
+      .guide-corpus-tabs {
+        display: none;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+      }
+
+      html[data-guide-view-state='library'] .guide-corpus-tabs {
+        display: flex;
+      }
+
+      .guide-corpus-tab {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0.65rem 0.95rem;
+        border-radius: 999px;
+        border: 1px solid rgba(77, 89, 74, 0.18);
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--pine);
+        text-decoration: none;
+        font-weight: 700;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+      }
+
+      .guide-corpus-tab:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
+        border-color: rgba(77, 89, 74, 0.28);
+      }
+
+      .guide-corpus-tab.is-active,
+      html[data-guide-view-state='library'][data-guide-corpus-state='trail'] .guide-corpus-tab[data-guide-corpus='trail'],
+      html[data-guide-view-state='library'][data-guide-corpus-state='scripture'] .guide-corpus-tab[data-guide-corpus='scripture'] {
+        background: rgba(166, 181, 137, 0.18);
+        border-color: rgba(77, 89, 74, 0.25);
+        color: var(--ink);
+      }
+
+      .guide-pane {
+        display: none;
+      }
+
+      html[data-guide-view-state='library'][data-guide-corpus-state='trail'] [data-guide-pane='trail-nav'],
+      html[data-guide-view-state='library'][data-guide-corpus-state='trail'] [data-guide-pane='trail'],
+      html[data-guide-view-state='library'][data-guide-corpus-state='trail'] [data-guide-pane='trail-tools'],
+      html[data-guide-view-state='library'][data-guide-corpus-state='scripture'] [data-guide-pane='scripture'],
+      html[data-guide-view-state='mine'] [data-guide-pane='mine'] {
+        display: block;
       }
 
       /* ===== Guide Header / Masthead ===== */
@@ -538,6 +649,13 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
       .chapter-header {
         margin-bottom: 2rem;
         position: relative;
+      }
+
+      .chapter-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
       }
 
       .chapter-label {
@@ -1097,6 +1215,22 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
           padding: 1.5rem 1rem 5rem;
         }
 
+        .guide-surface-tabs {
+          flex-direction: column;
+        }
+
+        .guide-surface-tab {
+          width: 100%;
+        }
+
+        .guide-corpus-tabs {
+          flex-direction: column;
+        }
+
+        .guide-corpus-tab {
+          width: 100%;
+        }
+
         .guide-masthead {
           padding: 2rem 0 1.5rem;
         }
@@ -1138,6 +1272,11 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
           padding: 2rem 0;
         }
 
+        .chapter-header-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
         .chapter-number-bg {
           font-size: 5rem;
           top: 1.5rem;
@@ -1170,12 +1309,28 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
         }
       }
     </style>
+    <script is:inline>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get('view') === 'mine' ? 'mine' : 'library';
+        const corpus = view === 'library' && params.get('tab') === 'scripture'
+          ? 'scripture'
+          : 'trail';
+
+        const root = document.documentElement;
+        root.dataset.guideViewState = view;
+        root.dataset.guideCorpusState = corpus;
+      })();
+    </script>
   </head>
   <body class="guide-page">
     <div class="guide-header-wrapper">
       <Header />
     </div>
-    <FullGuideNav client:load chapters={navChapters} markdownContent={markdownContent} />
+    <div class="guide-pane" data-guide-pane="trail-nav">
+      <FullGuideNav client:load chapters={navChapters} markdownContent={markdownContent} />
+    </div>
+    <FieldManualBoot client:load />
 
     <div class="guide-wrapper">
       <div class="guide-content-area">
@@ -1196,6 +1351,47 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
           <div class="masthead-divider"></div>
         </header>
 
+        <nav class="guide-surface-tabs" aria-label="Field Manual view">
+          <a
+            href={manualBuilderPath}
+            data-guide-view="library"
+            class="guide-surface-tab"
+          >
+            Hogg Country&apos;s Field Manual
+          </a>
+          <a
+            href={`${manualBuilderPath}?view=mine`}
+            data-guide-view="mine"
+            class="guide-surface-tab"
+          >
+            My Field Manual
+          </a>
+        </nav>
+
+        <p class="manual-surface-copy">
+          Your saved pages live here. Reorder them, add your own trail notes, and export one portable HTML file.
+        </p>
+
+        {scriptureSearchEnabled && (
+          <nav class="guide-corpus-tabs" aria-label="Field Manual corpus">
+            <a
+              href={manualBuilderPath}
+              data-guide-corpus="trail"
+              class="guide-corpus-tab"
+            >
+              Trail wisdom
+            </a>
+            <a
+              href={`${manualBuilderPath}?tab=scripture`}
+              data-guide-corpus="scripture"
+              class="guide-corpus-tab"
+            >
+              Scripture
+            </a>
+          </nav>
+        )}
+
+        <div class="guide-pane" data-guide-pane="trail">
         <!-- Book-Style Table of Contents -->
         <nav id="table-of-contents" class="book-toc">
           <div class="book-toc-header">
@@ -1205,7 +1401,7 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
 
           <!-- Search -->
           <div class="toc-search">
-            <GuideInlineSearch client:load chapters={navChapters} />
+            <GuideInlineSearch client:load chapters={navChapters} manualEntries={manualEntriesBySlug} />
           </div>
 
           <div class="book-toc-divider"></div>
@@ -1275,9 +1471,12 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
             )}
 
             <div class="chapter-header">
-              <div class={`chapter-label ${chapter.data.quickRef ? 'quick-ref-label' : ''}`}>
-                <span class="chapter-label-line"></span>
-                <span>{chapter.data.quickRef ? 'Quick Reference' : `Chapter ${String(mainChapters.findIndex(c => c.id === chapter.id)).padStart(2, '0')}`}</span>
+              <div class="chapter-header-row">
+                <div class={`chapter-label ${chapter.data.quickRef ? 'quick-ref-label' : ''}`}>
+                  <span class="chapter-label-line"></span>
+                  <span>{chapter.data.quickRef ? 'Quick Reference' : `Chapter ${String(mainChapters.findIndex(c => c.id === chapter.id)).padStart(2, '0')}`}</span>
+                </div>
+                <SaveButton entry={manualEntriesBySlug[chapter.id]} compact={true} />
               </div>
             </div>
 
@@ -1302,14 +1501,26 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
             <span class="link-text">hoggcountry.com</span>
           </a>
         </footer>
+        </div>
+
+        {scriptureSearchEnabled && (
+          <div class="guide-pane" data-guide-pane="scripture">
+            <ScriptureSearch client:load sourceBasePath={manualBuilderPath} />
+          </div>
+        )}
+
+        <div class="guide-pane" data-guide-pane="mine">
+          <MyManualView client:load />
+        </div>
       </div>
     </div>
 
     <!-- Hidden download button for header trigger -->
-    <DownloadGuideButton client:load variant="header" markdownContent={markdownContent} />
+    <div class="guide-pane" data-guide-pane="trail-tools">
+      <DownloadGuideButton client:load variant="header" markdownContent={markdownContent} />
 
-    <!-- Highlights & Notes System -->
-    <GuideHighlighter client:load />
+      <GuideHighlighter client:load />
+    </div>
 
     <script>
       // Header download button triggers modal via custom event

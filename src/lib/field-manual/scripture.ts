@@ -1,4 +1,4 @@
-import { escapeHtml, summarizeText, type FieldManualEntryInput } from './types';
+﻿import { escapeHtml, summarizeText, type FieldManualEntryInput } from './types';
 
 export interface ScriptureVerse {
   reference: string;
@@ -17,6 +17,11 @@ export interface ScriptureSearchResult {
   topic: ScriptureTopic;
   verse: ScriptureVerse;
   score: number;
+}
+
+export interface ScriptureManualEntryOptions {
+  basePath?: string;
+  savedFrom?: 'entry' | 'search';
 }
 
 const SCRIPTURE_TOPICS: readonly ScriptureTopic[] = [
@@ -168,14 +173,22 @@ export function listScriptureTopics(): readonly ScriptureTopic[] {
   return SCRIPTURE_TOPICS;
 }
 
+function normalizeScriptureBasePath(basePath: string): string {
+  return basePath.endsWith('/') ? basePath : `${basePath}/`;
+}
+
+function buildScriptureSourceHref(topic: ScriptureTopic, basePath = '/guide/'): string {
+  const query = encodeURIComponent(topic.title.toLowerCase());
+  return `${normalizeScriptureBasePath(basePath)}?tab=scripture&q=${query}#scripture-topic-${topic.id}`;
+}
+
 export function buildScriptureManualEntry(
   topic: ScriptureTopic,
   verse: ScriptureVerse,
-  savedFrom: 'entry' | 'search' = 'search',
+  options: ScriptureManualEntryOptions = {},
 ): FieldManualEntryInput {
-  const title = `${topic.title} · ${verse.reference}`;
-  const query = encodeURIComponent(topic.title.toLowerCase());
-
+  const savedFrom = options.savedFrom ?? 'search';
+  const title = `${topic.title} - ${verse.reference}`;
   return {
     id: scriptureEntryId(topic.id, verse.reference),
     kind: 'scripture',
@@ -188,8 +201,8 @@ export function buildScriptureManualEntry(
       surface: 'guide',
       corpus: 'scripture',
       sourceId: verse.reference,
-      href: `/guide/?tab=scripture&q=${query}#scripture-topic-${topic.id}`,
-      citation: `KJV · ${verse.reference}`,
+      href: buildScriptureSourceHref(topic, options.basePath),
+      citation: `KJV - ${verse.reference}`,
     },
     meta: {
       chapterTitle: topic.title,
@@ -233,3 +246,4 @@ export function searchScripture(query: string, limit = 12): ScriptureSearchResul
     })
     .slice(0, limit);
 }
+

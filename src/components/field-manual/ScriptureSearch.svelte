@@ -8,7 +8,13 @@
     type ScriptureSearchResult,
   } from '../../lib/field-manual/scripture';
 
-  let { initialQuery = '' }: { initialQuery?: string } = $props();
+  let {
+    initialQuery = '',
+    sourceBasePath = '/guide/',
+  }: {
+    initialQuery?: string;
+    sourceBasePath?: string;
+  } = $props();
 
   const topics = listScriptureTopics();
   const exampleTopics = topics.slice(0, 6);
@@ -123,7 +129,10 @@
               <p class="scripture-topic-summary">{result.topic.summary}</p>
             </div>
             <SaveButton
-              entry={buildScriptureManualEntry(result.topic, result.verse)}
+              entry={buildScriptureManualEntry(result.topic, result.verse, {
+                basePath: sourceBasePath,
+                savedFrom: 'search',
+              })}
               compact={true}
               variant="subtle"
               label="Save verse"

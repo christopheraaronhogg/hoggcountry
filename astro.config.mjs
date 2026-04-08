@@ -14,7 +14,7 @@ export default defineConfig({
   integrations: [
     mdx(),
     sitemap({
-      filter: (page) => !page.includes('/guide/personalize'),
+      filter: (page) => !page.includes('/guide/personalize') && !page.includes('/guide/manual-builder'),
     }),
     svelte(),
   ],

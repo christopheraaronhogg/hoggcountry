@@ -7,6 +7,7 @@ import puppeteer from 'puppeteer';
 
 const PORT = 4173;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
+const MANUAL_BUILDER_PATH = '/guide/manual-builder/';
 const DIST_DIR = path.resolve('dist');
 const STEP_TIMEOUT = 20000;
 const DOWNLOAD_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'hoggcountry-manual-download-'));
@@ -162,8 +163,8 @@ async function main() {
 
     await setDownloadBehavior(page, DOWNLOAD_DIR);
 
-    logStep('Open /guide/');
-    await page.goto(`${BASE_URL}/guide/`, { waitUntil: 'networkidle2' });
+    logStep('Open hidden Field Manual builder preview');
+    await page.goto(`${BASE_URL}${MANUAL_BUILDER_PATH}`, { waitUntil: 'networkidle2' });
     logStep('Register and activate service worker');
     await page.waitForFunction(() => 'serviceWorker' in navigator);
     await page.evaluate(async () => {
@@ -225,7 +226,7 @@ async function main() {
 
     logStep('Reload My Field Manual offline');
     await page.setOfflineMode(true);
-    await page.goto(`${BASE_URL}/guide/?view=mine`, { waitUntil: 'networkidle2' });
+    await page.goto(`${BASE_URL}${MANUAL_BUILDER_PATH}?view=mine`, { waitUntil: 'networkidle2' });
     await page.waitForSelector('[data-manual-entry]', { visible: true });
 
     logStep('Export Field Manual HTML');

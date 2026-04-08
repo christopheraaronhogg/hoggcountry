@@ -1,4 +1,4 @@
-import { marked } from 'marked';
+﻿import { marked } from 'marked';
 import { summarizeText, type FieldManualEntryInput } from './types';
 
 export interface GuideManualSeedInput {
@@ -47,8 +47,8 @@ export function buildGuideManualEntry(input: GuideManualSeedInput): FieldManualE
       sourceId: input.slug,
       href,
       citation: input.quickRef
-        ? `Hogg Country Quick Reference · ${input.title}`
-        : `Hogg Country Field Manual · ${input.title}`,
+        ? `Hogg Country Quick Reference - ${input.title}`
+        : `Hogg Country Field Manual - ${input.title}`,
     },
     meta: {
       quickRef: input.quickRef ?? false,
@@ -59,3 +59,4 @@ export function buildGuideManualEntry(input: GuideManualSeedInput): FieldManualE
     },
   };
 }
+
