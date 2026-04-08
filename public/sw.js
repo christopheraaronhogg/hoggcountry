@@ -10,7 +10,7 @@
  * static assets, background revalidation for cached assets.
  */
 
-const CACHE_NAME = 'hogg-country-v18';
+const CACHE_NAME = 'hogg-country-v19';
 
 // Core pages to precache on install — scoped to the v1 IA.
 // Today and Plan will be added here as they come online.
@@ -214,7 +214,7 @@ async function networkFirst(request) {
     return response;
   } catch (err) {
     // Network failed - try cache
-    const cached = await caches.match(request);
+    const cached = await matchPageFromCache(request);
     if (cached) {
       console.log('[SW] Serving from cache (offline):', request.url);
       return cached;
@@ -231,6 +231,22 @@ async function networkFirst(request) {
       headers: { 'Content-Type': 'text/html' }
     });
   }
+}
+
+async function matchPageFromCache(request) {
+  const exact = await caches.match(request);
+  if (exact) {
+    return exact;
+  }
+
+  const url = new URL(request.url);
+  if (!url.search) {
+    return null;
+  }
+
+  // `/guide/?view=mine` and similar mode-switch URLs should reuse the
+  // cached page shell from the canonical pathname when offline.
+  return caches.match(url.pathname);
 }
 
 // Background cache update

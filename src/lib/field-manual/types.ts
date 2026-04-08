@@ -123,6 +123,7 @@ export function normalizeManualEntry(
   const contentHtml = sanitizeManualHtml(
     input.contentHtml?.trim() || existing?.contentHtml || textToParagraphHtml(contentText || input.summary || ''),
   );
+  const tags = input.meta.tags ?? existing?.meta.tags ?? [];
 
   return {
     id: input.id,
@@ -143,7 +144,7 @@ export function normalizeManualEntry(
     meta: {
       ...existing?.meta,
       ...input.meta,
-      tags: input.meta.tags ?? existing?.meta.tags ?? [],
+      tags: [...tags],
     },
     createdAt: input.createdAt ?? existing?.createdAt ?? now,
     updatedAt: input.updatedAt ?? now,

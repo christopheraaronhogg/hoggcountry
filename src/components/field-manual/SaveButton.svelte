@@ -66,6 +66,8 @@
   class:is-saved={isSaved}
   disabled={isSaving}
   aria-pressed={isSaved}
+  data-manual-entry-id={entry.id}
+  data-manual-entry-kind={entry.kind}
   onclick={handleClick}
 >
   {#if isSaving}

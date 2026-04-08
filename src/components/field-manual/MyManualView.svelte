@@ -153,8 +153,8 @@
       </p>
     </div>
     <div class="manual-actions">
-      <button type="button" class="btn" onclick={handleAddNotePage}>Add note page</button>
-      <button type="button" class="btn btn-primary" onclick={handleExport} disabled={isExporting}>
+      <button type="button" class="btn" data-manual-action="add-note" onclick={handleAddNotePage}>Add note page</button>
+      <button type="button" class="btn btn-primary" data-manual-action="export" onclick={handleExport} disabled={isExporting}>
         {isExporting ? 'Exporting…' : 'Export HTML'}
       </button>
     </div>
@@ -185,7 +185,7 @@
   {:else}
     <div class="manual-list">
       {#each entries as entry, index}
-        <article class="manual-entry card">
+        <article class="manual-entry card" data-manual-entry={entry.id}>
           <div class="manual-entry-top">
             <div class="manual-index">{String(index + 1).padStart(2, '0')}</div>
             <div class="manual-heading">
@@ -204,9 +204,9 @@
               </div>
             </div>
             <div class="manual-controls">
-              <button type="button" class="control-btn" onclick={() => moveEntry(entry.id, -1)} disabled={index === 0}>Move up</button>
-              <button type="button" class="control-btn" onclick={() => moveEntry(entry.id, 1)} disabled={index === entries.length - 1}>Move down</button>
-              <button type="button" class="control-btn is-danger" onclick={() => handleRemove(entry.id)}>Remove</button>
+              <button type="button" class="control-btn" data-manual-action="move-up" data-manual-target={entry.id} onclick={() => moveEntry(entry.id, -1)} disabled={index === 0}>Move up</button>
+              <button type="button" class="control-btn" data-manual-action="move-down" data-manual-target={entry.id} onclick={() => moveEntry(entry.id, 1)} disabled={index === entries.length - 1}>Move down</button>
+              <button type="button" class="control-btn is-danger" data-manual-action="remove" data-manual-target={entry.id} onclick={() => handleRemove(entry.id)}>Remove</button>
             </div>
           </div>
 
@@ -225,6 +225,7 @@
           <textarea
             id={`manual-note-${entry.id}`}
             class="manual-note"
+            data-manual-note={entry.id}
             rows={entry.kind === 'note' ? 7 : 4}
             value={entry.note}
             placeholder={entry.kind === 'note' ? 'Write your own page here…' : 'Add your own trail note…'}

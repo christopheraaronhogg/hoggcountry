@@ -8,8 +8,10 @@ import DownloadGuideButton from '../../components/DownloadGuideButton.svelte';
 import GuideHighlighter from '../../components/GuideHighlighter.svelte';
 import FieldManualBoot from '../../components/field-manual/FieldManualBoot.svelte';
 import MyManualView from '../../components/field-manual/MyManualView.svelte';
+import ScriptureSearch from '../../components/field-manual/ScriptureSearch.svelte';
 import SaveButton from '../../components/field-manual/SaveButton.svelte';
 import { buildGuideManualEntry } from '../../lib/field-manual';
+import { isEnabled } from '../../lib/features';
 
 const allGuides = await getCollection('guide');
 
@@ -23,7 +25,7 @@ const quickRefs = allGuides
   .sort((a, b) => a.data.order - b.data.order);
 
 const sortedGuides = [...mainChapters, ...quickRefs];
-const activeView = Astro.url.searchParams.get('view') === 'mine' ? 'mine' : 'library';
+const scriptureSearchEnabled = isEnabled('SCRIPTURE_SEARCH');
 
 // Render all chapters
 const renderedChapters = await Promise.all(
@@ -76,7 +78,7 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-guide-view-state="library" data-guide-corpus-state="trail">
   <head>
     <BaseHead title={title} description={description} />
     <!-- PWA manifest for offline-capable field guide -->
@@ -157,17 +159,77 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
         border-color: var(--alpine);
       }
 
-      .guide-surface-tab.is-active {
+      .guide-surface-tab.is-active,
+      html[data-guide-view-state='library'] .guide-surface-tab[data-guide-view='library'],
+      html[data-guide-view-state='mine'] .guide-surface-tab[data-guide-view='mine'] {
         background: rgba(166, 181, 137, 0.22);
         border-color: rgba(77, 89, 74, 0.25);
         color: var(--ink);
       }
 
       .manual-surface-copy {
+        display: none;
         margin: 0 auto 2rem;
         max-width: 56ch;
         text-align: center;
         color: var(--muted);
+      }
+
+      html[data-guide-view-state='mine'] .manual-surface-copy {
+        display: block;
+      }
+
+      .guide-corpus-tabs {
+        display: none;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+      }
+
+      html[data-guide-view-state='library'] .guide-corpus-tabs {
+        display: flex;
+      }
+
+      .guide-corpus-tab {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0.65rem 0.95rem;
+        border-radius: 999px;
+        border: 1px solid rgba(77, 89, 74, 0.18);
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--pine);
+        text-decoration: none;
+        font-weight: 700;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+      }
+
+      .guide-corpus-tab:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
+        border-color: rgba(77, 89, 74, 0.28);
+      }
+
+      .guide-corpus-tab.is-active,
+      html[data-guide-view-state='library'][data-guide-corpus-state='trail'] .guide-corpus-tab[data-guide-corpus='trail'],
+      html[data-guide-view-state='library'][data-guide-corpus-state='scripture'] .guide-corpus-tab[data-guide-corpus='scripture'] {
+        background: rgba(166, 181, 137, 0.18);
+        border-color: rgba(77, 89, 74, 0.25);
+        color: var(--ink);
+      }
+
+      .guide-pane {
+        display: none;
+      }
+
+      html[data-guide-view-state='library'][data-guide-corpus-state='trail'] [data-guide-pane='trail-nav'],
+      html[data-guide-view-state='library'][data-guide-corpus-state='trail'] [data-guide-pane='trail'],
+      html[data-guide-view-state='library'][data-guide-corpus-state='trail'] [data-guide-pane='trail-tools'],
+      html[data-guide-view-state='library'][data-guide-corpus-state='scripture'] [data-guide-pane='scripture'],
+      html[data-guide-view-state='mine'] [data-guide-pane='mine'] {
+        display: block;
       }
 
       /* ===== Guide Header / Masthead ===== */
@@ -1158,6 +1220,14 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
           width: 100%;
         }
 
+        .guide-corpus-tabs {
+          flex-direction: column;
+        }
+
+        .guide-corpus-tab {
+          width: 100%;
+        }
+
         .guide-masthead {
           padding: 2rem 0 1.5rem;
         }
@@ -1236,14 +1306,27 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
         }
       }
     </style>
+    <script is:inline>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get('view') === 'mine' ? 'mine' : 'library';
+        const corpus = view === 'library' && params.get('tab') === 'scripture'
+          ? 'scripture'
+          : 'trail';
+
+        const root = document.documentElement;
+        root.dataset.guideViewState = view;
+        root.dataset.guideCorpusState = corpus;
+      })();
+    </script>
   </head>
   <body class="guide-page">
     <div class="guide-header-wrapper">
       <Header />
     </div>
-    {activeView === 'library' && (
+    <div class="guide-pane" data-guide-pane="trail-nav">
       <FullGuideNav client:load chapters={navChapters} markdownContent={markdownContent} />
-    )}
+    </div>
     <FieldManualBoot client:load />
 
     <div class="guide-wrapper">
@@ -1268,28 +1351,44 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
         <nav class="guide-surface-tabs" aria-label="Field Manual view">
           <a
             href="/guide/"
-            class={`guide-surface-tab ${activeView === 'library' ? 'is-active' : ''}`}
-            aria-current={activeView === 'library' ? 'page' : undefined}
+            data-guide-view="library"
+            class="guide-surface-tab"
           >
             Hogg Country&apos;s Field Manual
           </a>
           <a
             href="/guide/?view=mine"
-            class={`guide-surface-tab ${activeView === 'mine' ? 'is-active' : ''}`}
-            aria-current={activeView === 'mine' ? 'page' : undefined}
+            data-guide-view="mine"
+            class="guide-surface-tab"
           >
             My Field Manual
           </a>
         </nav>
 
-        {activeView === 'mine' && (
-          <p class="manual-surface-copy">
-            Your saved pages live here. Reorder them, add your own trail notes, and export one portable HTML file.
-          </p>
+        <p class="manual-surface-copy">
+          Your saved pages live here. Reorder them, add your own trail notes, and export one portable HTML file.
+        </p>
+
+        {scriptureSearchEnabled && (
+          <nav class="guide-corpus-tabs" aria-label="Field Manual corpus">
+            <a
+              href="/guide/"
+              data-guide-corpus="trail"
+              class="guide-corpus-tab"
+            >
+              Trail wisdom
+            </a>
+            <a
+              href="/guide/?tab=scripture"
+              data-guide-corpus="scripture"
+              class="guide-corpus-tab"
+            >
+              Scripture
+            </a>
+          </nav>
         )}
 
-        {activeView === 'library' ? (
-        <>
+        <div class="guide-pane" data-guide-pane="trail">
         <!-- Book-Style Table of Contents -->
         <nav id="table-of-contents" class="book-toc">
           <div class="book-toc-header">
@@ -1399,22 +1498,26 @@ const description = "The Complete Appalachian Trail Northbound (NOBO) Field Guid
             <span class="link-text">hoggcountry.com</span>
           </a>
         </footer>
-        </>
-        ) : (
-          <MyManualView client:load />
+        </div>
+
+        {scriptureSearchEnabled && (
+          <div class="guide-pane" data-guide-pane="scripture">
+            <ScriptureSearch client:load />
+          </div>
         )}
+
+        <div class="guide-pane" data-guide-pane="mine">
+          <MyManualView client:load />
+        </div>
       </div>
     </div>
 
     <!-- Hidden download button for header trigger -->
-    {activeView === 'library' && (
+    <div class="guide-pane" data-guide-pane="trail-tools">
       <DownloadGuideButton client:load variant="header" markdownContent={markdownContent} />
-    )}
 
-    <!-- Highlights & Notes System -->
-    {activeView === 'library' && (
       <GuideHighlighter client:load />
-    )}
+    </div>
 
     <script>
       // Header download button triggers modal via custom event
