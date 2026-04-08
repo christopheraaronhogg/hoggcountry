@@ -1,56 +1,24 @@
 /**
- * Hogg Country Service Worker
- * Full site offline support - caches all pages and assets
+ * Hogg Country Service Worker — v1 AT Operating Manual
+ *
+ * Offline-first PWA shell for the Hogg Country judgment-layer pivot.
+ * Precaches the v1 IA surfaces (Field Manual today; Today and Plan
+ * when they ship), all guide chapters, and the scripture corpus so
+ * Field Manual search works airplane-mode after first load.
+ *
+ * Strategy: network-first for HTML (always fresh), cache-first for
+ * static assets, background revalidation for cached assets.
  */
 
-const CACHE_NAME = 'hogg-country-v16';
+const CACHE_NAME = 'hogg-country-v17';
 
-// Core pages to precache on install
+// Core pages to precache on install — scoped to the v1 IA.
+// Today and Plan will be added here as they come online.
 const CORE_PAGES = [
   '/',
   '/about/',
-  '/tools/',
-  // Individual tool pages
-  '/tools/character/',
-  '/tools/milestone/',
-  '/tools/weather/',
-  '/tools/pack/',
-  '/tools/gear/',
-  '/tools/resupply/',
-  '/tools/water/',
-  '/tools/budget/',
-  '/tools/mail/',
-  '/tools/power/',
-  '/tools/food/',
-  '/tools/geartrans/',
-  '/tools/training/',
-  '/tools/shelter/',
-  '/tools/layers/',
-  '/tools/emergency/',
   '/guide/',
-  '/trips/',
-  '/videos/',
-  '/tags/',
-];
-
-// Tool sub-pages (new /tools/ routed layout)
-const TOOL_PAGES = [
-  '/tools/character/',
-  '/tools/milestone/',
-  '/tools/weather/',
-  '/tools/pack/',
-  '/tools/gear/',
-  '/tools/resupply/',
-  '/tools/water/',
-  '/tools/budget/',
-  '/tools/mail/',
-  '/tools/power/',
-  '/tools/food/',
-  '/tools/geartrans/',
-  '/tools/training/',
-  '/tools/shelter/',
-  '/tools/layers/',
-  '/tools/emergency/',
+  '/lab/',
 ];
 
 // Guide chapters (high priority - the main offline use case)
@@ -83,9 +51,13 @@ const GUIDE_CHAPTERS = [
   '/guide/quick/weather-signs/',
 ];
 
-// Static assets to cache
+// Static assets to cache — includes the scripture corpus so Field Manual
+// search works offline across both corpora (trail wisdom + KJV).
 const STATIC_ASSETS = [
   '/guide-search-index.json',
+  '/guide-context.txt',
+  '/kjv-context.txt',
+  '/proverbs.json',
   '/at-mileposts.json',
   '/AT-Field-Guide-2026.pdf',
   '/manifest.json',
@@ -126,8 +98,8 @@ self.addEventListener('install', (event) => {
         console.warn('[SW] Could not load asset manifest:', err.message);
       }
 
-      // Cache core pages (+ tools) + guide chapters
-      const pagePromises = [...CORE_PAGES, ...TOOL_PAGES, ...GUIDE_CHAPTERS].map(async (url) => {
+      // Cache core pages + guide chapters
+      const pagePromises = [...CORE_PAGES, ...GUIDE_CHAPTERS].map(async (url) => {
         try {
           await cache.add(url);
         } catch (err) {
@@ -306,7 +278,7 @@ function offlineHTML() {
   <div class="container">
     <div class="icon">📵</div>
     <h1>You're Offline</h1>
-    <p>This page hasn't been cached yet. Visit the <a href="/guide/">Field Guide</a> or <a href="/tools/">Tools</a> while online to cache them for offline use.</p>
+    <p>This page hasn't been cached yet. Visit the <a href="/guide/">Field Manual</a> while online to cache it for offline use.</p>
   </div>
 </body>
 </html>`;

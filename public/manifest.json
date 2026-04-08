@@ -1,7 +1,7 @@
 {
-  "name": "Hogg Country - Trail Planning",
+  "name": "Hogg Country — AT Operating Manual",
   "short_name": "Hogg Country",
-  "description": "Appalachian Trail planning tools, field guide, and trip logs - works offline",
+  "description": "The free offline-first Appalachian Trail operating manual — judgment layer for first-time thru-hikers.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -25,15 +25,9 @@
   "categories": ["travel", "reference", "lifestyle", "utilities"],
   "shortcuts": [
     {
-      "name": "Trail Tools",
-      "short_name": "Tools",
-      "description": "Gear calculator, milestone planner, and more",
-      "url": "/tools/"
-    },
-    {
-      "name": "Field Guide",
-      "short_name": "Guide",
-      "description": "AT NOBO Field Guide",
+      "name": "Field Manual",
+      "short_name": "Manual",
+      "description": "Search trail wisdom and scripture",
       "url": "/guide/"
     }
   ]
