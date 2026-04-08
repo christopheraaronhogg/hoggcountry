@@ -18,7 +18,7 @@ First-time NOBO thru-hiker, from the "I'm thinking about it" stage through the V
 
 - **Today** — What to wear, water to carry, shelter vs. tent, storm/stream caution, next-town priority. The flagship.
 - **Plan** — Journey (pace/timeline), Town Stop (resupply/food/mail/budget), Transitions (gear swaps/training/replacement).
-- **Field Manual** — Search-first atomic guidance. A hiker searches "frozen filter" and gets a 3-line answer first, chapter context second.
+- **Field Manual** — Search-first atomic guidance across two corpora: trail wisdom (atomized from the master guide) and KJV scripture. A hiker searches "frozen filter" and gets a 3-line tactical answer; a hiker searches "fear" or "endurance" and gets relevant verses. Default tab is Trail; Scripture is one tap away — present for those who want it, invisible to those who don't.
 
 Plus `/lab` — a developer-facing index of flagged-off work. Not part of the public product.
 
@@ -41,7 +41,6 @@ If a feature does not help a hiker (a) decide what to do now, (b) plan what to d
 - **Not a blog/journal/social platform.**
 - **Not SOBO- or section-hiker-optimized.** Future consideration.
 - **Not a permit transaction layer.** Links out to ATC/NPS only.
-- **Not a faith-specific product.** v1 is a neutral utility. Faith-specific content may return post-v1 as a distinct opt-in surface if deliberately chosen.
 - **Not TrailHogg.** The game stays flagged off and excluded from the main build.
 
 ## Locked Decisions
@@ -49,7 +48,8 @@ If a feature does not help a hiker (a) decide what to do now, (b) plan what to d
 - **Stack:** Astro 5 + Svelte islands + Tailwind + TypeScript. No changes.
 - **Brand:** Hogg Country. No rename in v1.
 - **Substrate:** `src/data/trail-facts.yaml` and the `audit-trail-facts` skill are the source of truth. Recommendations surface the audit trail visibly.
-- **Demoted (flagged off):** trips, videos, blog, the current multi-tool dashboard, TrailHogg, `/ask`, `/kjv`, `/cat`, `/compare`, `/generate`, `/prototypes`, and every utility not clearly part of Today, Plan, or Field Manual.
+- **Scripture:** KJV search is a first-class capability of Field Manual, not a separate surface. The standalone `/kjv` page is superseded by Field Manual's Scripture tab. Scripture represents what the project stands for without dominating the front door — operational by default, wisdom one tap away.
+- **Demoted (flagged off):** trips, videos, blog, the current multi-tool dashboard, TrailHogg, `/ask`, `/cat`, `/compare`, `/generate`, `/prototypes`, and every utility not clearly part of Today, Plan, or Field Manual.
 
 ## Seed Content Priorities
 
@@ -61,6 +61,8 @@ Drawn from ATC's 2025 long-distance hiker survey, which identified the skills hi
 4. Food protection.
 
 These are the first topics atomized in the Field Manual and the first scenarios built into Today. Everything else is post-v1.
+
+In parallel, Field Manual's scripture corpus gets a curated topical index so searches like "fear," "endurance," "discouragement," and "gratitude" return meaningful verses rather than keyword-literal matches. The topical index is the single highest-leverage piece of scripture work; a good one makes the search feel like wisdom on demand, a bad one makes it feel like a concordance toy.
 
 ## Post-v1 Roadmap (tight)
 
