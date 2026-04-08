@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node scripts/parse-master-guide.js && node scripts/generate-search-index.js && node scripts/build-guide-context.js && node scripts/build-proverbs-json.js && npm run build:game",
+    "prebuild": "node scripts/parse-master-guide.js && node scripts/generate-search-index.js && node scripts/build-guide-context.js && node scripts/build-proverbs-json.js",
     "build": "astro build",
     "build:game": "cd trailhogg/trailhogg && npm install && cd shared && npm install && npm run build && cd ../client && npm install && npm run build",
     "postbuild": "node scripts/generate-asset-manifest.js",
