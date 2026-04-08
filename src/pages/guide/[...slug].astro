@@ -1,6 +1,9 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FieldManualBoot from '../../components/field-manual/FieldManualBoot.svelte';
+import SaveButton from '../../components/field-manual/SaveButton.svelte';
+import { buildGuideManualEntry } from '../../lib/field-manual';
 
 export async function getStaticPaths() {
   const guides = await getCollection('guide');
@@ -31,13 +34,26 @@ const nextChapter = currentIndex < currentList.length - 1 ? currentList[currentI
 
 const title = `${entry.data.title} — AT Field Guide`;
 const description = entry.data.description || `AT Field Guide: ${entry.data.title}`;
+const manualEntry = buildGuideManualEntry({
+  slug: entry.id,
+  title: entry.data.title,
+  description: entry.data.description,
+  body: entry.body ?? '',
+  order: entry.data.order,
+  quickRef: entry.data.quickRef,
+  href: `/guide/${entry.id}`,
+});
 ---
 
 <BaseLayout title={title} description={description}>
+  <FieldManualBoot client:load />
   <article class="guide-article">
     <header class="guide-header container">
       <a href="/guide" class="back-link">&larr; Field Guide</a>
       {isQuickRef && <span class="quick-badge">Quick Reference</span>}
+      <div class="guide-save">
+        <SaveButton entry={manualEntry} compact={true} />
+      </div>
     </header>
 
     <div class="guide-content container">
@@ -75,9 +91,14 @@ const description = entry.data.description || `AT Field Guide: ${entry.data.titl
   .guide-header {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 1rem;
     padding-top: 1.5rem;
     padding-bottom: 1rem;
+  }
+
+  .guide-save {
+    margin-left: auto;
   }
 
   .back-link {
@@ -334,6 +355,11 @@ const description = entry.data.description || `AT Field Guide: ${entry.data.titl
 
   /* Mobile */
   @media (max-width: 600px) {
+    .guide-save {
+      margin-left: 0;
+      width: 100%;
+    }
+
     .prose :global(h1) {
       font-size: 1.5rem;
     }

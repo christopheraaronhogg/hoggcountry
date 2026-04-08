@@ -1,22 +1,58 @@
-<script>
-  import { onMount, tick } from 'svelte';
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import SaveButton from './field-manual/SaveButton.svelte';
+  import type { FieldManualEntryInput } from '../lib/field-manual';
 
-  let { chapters = [] } = $props();
+  interface ChapterRecord {
+    id: string;
+    data: {
+      title: string;
+      description?: string;
+      quickRef?: boolean;
+    };
+  }
+
+  interface SearchResult {
+    id: string;
+    title: string;
+    description?: string;
+    quickRef: boolean;
+    score: number;
+    matchedTerms: string[];
+    snippet: string;
+  }
+
+  let {
+    chapters = [],
+    manualEntries = {},
+  }: {
+    chapters?: ChapterRecord[];
+    manualEntries?: Record<string, FieldManualEntryInput>;
+  } = $props();
 
   let query = $state('');
   let isOpen = $state(false);
-  let results = $state([]);
+  let results = $state<SearchResult[]>([]);
   let selectedIndex = $state(0);
-  let inputEl = $state(null);
+  let inputEl = $state<HTMLInputElement | null>(null);
   let indexLoaded = $state(false);
   let offlineReady = $state(false);
 
   // Search index loaded from pre-built JSON (works offline)
   // Using plain variable (not $state) to avoid reactivity overhead on large data
-  let contentIndex = [];
+  let contentIndex: Array<{
+    id: string;
+    title: string;
+    titleLower: string;
+    description: string;
+    descriptionLower: string;
+    quickRef: boolean;
+    content: string;
+    headers: string;
+  }> = [];
 
   // Debounce timer
-  let searchTimeout = null;
+  let searchTimeout: ReturnType<typeof setTimeout> | null = null;
   const DEBOUNCE_MS = 150;
 
   onMount(async () => {
@@ -69,7 +105,7 @@
   });
 
   // Debounced search - prevents blocking on every keystroke
-  function scheduleSearch(q) {
+  function scheduleSearch(q: string) {
     if (searchTimeout) clearTimeout(searchTimeout);
 
     // Immediate clear if query too short
@@ -95,7 +131,7 @@
 
     const terms = q.toLowerCase().split(/\s+/).filter(t => t.length > 0);
 
-    const searchResults = [];
+    const searchResults: SearchResult[] = [];
 
     // Use for loop instead of map/filter for better performance
     for (let i = 0; i < contentIndex.length; i++) {
@@ -163,7 +199,7 @@
   // React to query changes with debouncing
   $effect(() => { scheduleSearch(query); });
 
-  function scrollToResult(result) {
+  function scrollToResult(result: SearchResult) {
     const element = document.getElementById(result.id);
     if (element) {
       const offset = 80;
@@ -180,7 +216,7 @@
     }
   }
 
-  function handleKeydown(e) {
+  function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       query = '';
       isOpen = false;
@@ -196,25 +232,26 @@
     }
   }
 
-  function handleClickOutside(e) {
-    if (!e.target.closest('.guide-search-container')) {
+  function handleClickOutside(e: MouseEvent) {
+    const target = e.target as HTMLElement | null;
+    if (!target?.closest('.guide-search-container')) {
       isOpen = false;
     }
   }
 
   // Escape HTML entities to prevent XSS
-  function escapeHtml(text) {
+  function escapeHtml(text: string) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
   // Escape regex special characters
-  function escapeRegex(str) {
+  function escapeRegex(str: string) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  function highlightMatch(text, terms) {
+  function highlightMatch(text: string, terms: string[]) {
     if (!terms.length) return escapeHtml(text);
     // Escape the text first to prevent XSS, then apply highlighting
     const escaped = escapeHtml(text);
@@ -252,25 +289,37 @@
     <div class="search-results">
       {#if results.length > 0}
         {#each results as result, i}
-          <button
+          <div
             class="result-item"
             class:selected={i === selectedIndex}
-            onclick={() => scrollToResult(result)}
             onmouseenter={() => selectedIndex = i}
           >
-            <div class="result-header">
-              <span class="result-title">{@html highlightMatch(result.title, result.matchedTerms)}</span>
-              {#if result.quickRef}
-                <span class="quick-badge">Quick Ref</span>
+            <button class="result-open" type="button" onclick={() => scrollToResult(result)}>
+              <div class="result-header">
+                <span class="result-title">{@html highlightMatch(result.title, result.matchedTerms)}</span>
+                {#if result.quickRef}
+                  <span class="quick-badge">Quick Ref</span>
+                {/if}
+              </div>
+              {#if result.description}
+                <div class="result-desc">{@html highlightMatch(result.description, result.matchedTerms)}</div>
               {/if}
-            </div>
-            {#if result.description}
-              <div class="result-desc">{@html highlightMatch(result.description, result.matchedTerms)}</div>
+              {#if result.snippet}
+                <div class="result-snippet">{@html highlightMatch(result.snippet, result.matchedTerms)}</div>
+              {/if}
+            </button>
+            {#if manualEntries[result.id]}
+              <div class="result-save">
+                <SaveButton
+                  entry={{ ...manualEntries[result.id], meta: { ...manualEntries[result.id].meta, savedFrom: 'search' } }}
+                  compact={true}
+                  variant="subtle"
+                  label="Save"
+                  savedLabel="Saved"
+                />
+              </div>
             {/if}
-            {#if result.snippet}
-              <div class="result-snippet">{@html highlightMatch(result.snippet, result.matchedTerms)}</div>
-            {/if}
-          </button>
+          </div>
         {/each}
       {:else}
         <div class="no-results">
@@ -360,15 +409,11 @@
   }
 
   .result-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    align-items: start;
     padding: 1rem 1.25rem;
-    border: none;
-    background: transparent;
-    text-align: left;
-    cursor: pointer;
     border-bottom: 1px solid var(--border, #e6e1d4);
     transition: background-color 0.1s ease;
   }
@@ -380,6 +425,18 @@
   .result-item:hover,
   .result-item.selected {
     background: rgba(166, 181, 137, 0.1);
+  }
+
+  .result-open {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
   }
 
   .result-header {
@@ -445,6 +502,10 @@
     font-weight: 500;
   }
 
+  .result-save {
+    align-self: center;
+  }
+
   .no-results {
     padding: 1.5rem;
     text-align: center;
@@ -475,6 +536,16 @@
   @media print {
     .guide-search-container {
       display: none !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .result-item {
+      grid-template-columns: 1fr;
+    }
+
+    .result-save {
+      justify-self: start;
     }
   }
 </style>
