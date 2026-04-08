@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { FEATURES } from '../lib/features';
+  import { isEnabled } from '../lib/features';
 
   // State
   let mounted = $state(false);
@@ -140,7 +140,7 @@
     </section>
 
     <!-- GEAR LAB: The Research Engine -->
-    {#if FEATURES.GEAR_LAB}
+    {#if isEnabled('GEAR_LAB')}
       <section class="gear-lab-preview">
         <div class="lab-card">
           <div class="lab-header">
