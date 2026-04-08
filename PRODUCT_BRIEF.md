@@ -38,7 +38,7 @@ If a feature does not help a hiker (a) decide what to do now, (b) plan what to d
 ## Non-Goals (v1)
 
 - **Not another FarOut.** No GPS navigation, no waypoint database.
-- **Not a blog/journal/social platform.**
+- **Not a personal trail blog.** Hogg Country is a resource for *other* hikers doing *their* journey, not a chronicle of one family's hike. Personal trip content from the current site is demoted.
 - **Not SOBO- or section-hiker-optimized.** Future consideration.
 - **Not a permit transaction layer.** Links out to ATC/NPS only.
 - **Not TrailHogg.** The game stays flagged off and excluded from the main build.
