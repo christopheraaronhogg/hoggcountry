@@ -8,7 +8,14 @@
     "astro.config.mjs",
     "svelte.config.js"
   ],
-  "exclude": ["dist", "trailhogg", "audit-reports", "private", "node_modules"],
+  "exclude": [
+    "dist",
+    "trailhogg",
+    "audit-reports",
+    "private",
+    "node_modules",
+    "opensrc"
+  ],
   "compilerOptions": {
     "strictNullChecks": true
   }
