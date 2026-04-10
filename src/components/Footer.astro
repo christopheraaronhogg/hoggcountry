@@ -41,6 +41,43 @@ const today = new Date();
   <div class="footer-meta">&copy; {today.getFullYear()} Hogg Country</div>
 </footer>
 
+<script>
+  type ThumbWindow = Window & { __hoggThumbFallbackInit?: boolean };
+
+  const thumbWindow = window as ThumbWindow;
+
+  if (!thumbWindow.__hoggThumbFallbackInit) {
+    thumbWindow.__hoggThumbFallbackInit = true;
+
+    document.addEventListener(
+      'error',
+      (event) => {
+        const img = event.target;
+        if (!(img instanceof HTMLImageElement)) return;
+
+        const rawFallbacks = img.dataset.thumbFallbacks || '';
+        if (!rawFallbacks) return;
+
+        const remaining = rawFallbacks
+          .split('|')
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .filter((value) => value !== img.currentSrc && value !== img.src);
+
+        if (!remaining.length) {
+          delete img.dataset.thumbFallbacks;
+          return;
+        }
+
+        const [nextSrc, ...rest] = remaining;
+        img.dataset.thumbFallbacks = rest.join('|');
+        img.src = nextSrc;
+      },
+      true,
+    );
+  }
+</script>
+
 <style>
   .site-footer {
     padding: 2.5rem 0 5rem;

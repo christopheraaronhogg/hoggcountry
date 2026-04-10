@@ -3,6 +3,7 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
+import YouTubeThumbnail from '../../components/YouTubeThumbnail.astro';
 import { YT_CHANNEL_FEED_URL } from '../../lib/config';
 import { fetchYouTubeRSS } from '../../lib/youtube';
 
@@ -32,9 +33,6 @@ function clipText(value: string, max = 160) {
   return `${cleaned.slice(0, max).trimEnd()}…`;
 }
 
-function thumbnailFor(video: { id: string; thumbnail?: string }) {
-  return video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
-}
 ---
 <html lang="en">
   <head>
@@ -112,7 +110,7 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
                   rel="noopener noreferrer"
                   aria-label={`Watch ${video.title} on YouTube`}
                 >
-                  <img src={thumbnailFor(video)} alt={video.title} loading="lazy" />
+                  <YouTubeThumbnail id={video.id} alt={video.title} loading="lazy" provided={video.thumbnail} />
                   <span class="video-card__play">▶ Watch</span>
                   <span class="video-card__index">{String(index + 1).padStart(2, '0')}</span>
                 </a>
@@ -172,7 +170,25 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
         }
 
         function thumbnailFor(video) {
-          return escapeHtml(video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`);
+          const id = escapeHtml(video.id || '');
+          const candidates = [
+            `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
+            `https://i.ytimg.com/vi/${id}/sddefault.jpg`,
+            `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
+            `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+            `https://i.ytimg.com/vi/${id}/default.jpg`,
+          ];
+
+          if (typeof video.thumbnail === 'string' && video.thumbnail.trim()) {
+            candidates.push(escapeHtml(video.thumbnail.trim()));
+          }
+
+          return Array.from(new Set(candidates.filter(Boolean)));
+        }
+
+        function renderThumbnail(video, title) {
+          const [primary, ...fallbacks] = thumbnailFor(video);
+          return `<img src="${primary}" alt="${title}" loading="lazy" decoding="async" data-thumb-fallbacks="${escapeHtml(fallbacks.join('|'))}" />`;
         }
 
         function renderFeatured(video) {
@@ -228,13 +244,13 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
             const published = formatDate(video.published);
             const dateLine = published ? escapeHtml(published) : 'Recent upload';
             const description = clipText(video.description, 140);
-            const thumb = thumbnailFor(video);
+            const thumb = renderThumbnail(video, title);
             const order = String(index + 1).padStart(2, '0');
 
             return `
               <article class="video-card">
                 <a class="video-card__media" href="${link}" target="_blank" rel="noopener noreferrer" aria-label="Watch ${title} on YouTube">
-                  <img src="${thumb}" alt="${title}" loading="lazy" />
+                  ${thumb}
                   <span class="video-card__play">▶ Watch</span>
                   <span class="video-card__index">${order}</span>
                 </a>

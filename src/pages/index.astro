@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import YouTubeThumbnail from '../components/YouTubeThumbnail.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { facts, getMeta } from '../data/trailFacts';
 import { WORKSPACE_URL, YT_CHANNEL_FEED_URL } from '../lib/config';
@@ -28,9 +29,6 @@ function clipText(value: string, max = 130) {
   return `${cleaned.slice(0, max).trimEnd()}...`;
 }
 
-function thumbnailFor(video: { id: string; thumbnail?: string }) {
-  return video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
-}
 ---
 
 <BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
@@ -129,7 +127,7 @@ function thumbnailFor(video: { id: string; thumbnail?: string }) {
         {videos.map((video) => (
           <article class="card video-card">
             <a href={video.link} class="video-media" target="_blank" rel="noopener noreferrer">
-              <img src={thumbnailFor(video)} alt={video.title} loading="lazy" />
+              <YouTubeThumbnail id={video.id} alt={video.title} loading="lazy" provided={video.thumbnail} />
             </a>
             <div class="video-copy">
               <p class="video-meta">{formatDate(video.published) || 'Recent upload'}</p>

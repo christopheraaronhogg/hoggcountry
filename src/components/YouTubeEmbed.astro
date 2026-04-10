@@ -1,6 +1,7 @@
 ---
 // Privacy-friendly, lazy YouTube embed supporting Shorts & full videos.
 // Props: id?: string; url?: string; title: string; start?: number; autoplay?: boolean; captions?: boolean; aspect?: '16-9' | '9-16';
+import YouTubeThumbnail from './YouTubeThumbnail.astro';
 const { id, url, title, start = 0, autoplay = false, captions = false, aspect } = Astro.props as any;
 
 function parseId(u?: string, fallback?: string): { id?: string; isShorts: boolean } {
@@ -35,13 +36,12 @@ const params = new URLSearchParams({
   ...(autoplay ? { autoplay: '1', mute: '1' } : {}),
 });
 const src = `${base}?${params.toString()}`;
-const thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 ---
 
 {videoId ? (
   <div class={`yt-outer ${isShorts ? 'shorts' : ''}`}>
     <button class="yt-thumb" aria-label={`Play video: ${title}`} data-video-id={videoId} data-title={title}>
-      <img src={thumb} alt={title} loading="lazy" />
+      <YouTubeThumbnail id={videoId} alt={title} loading="lazy" />
       <div class="yt-play" aria-hidden="true">▶</div>
     </button>
   </div>

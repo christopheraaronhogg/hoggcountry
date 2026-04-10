@@ -11,6 +11,13 @@ export type YtVideo = {
 
 const cacheByFeedUrl = new Map<string, { items: YtVideo[]; ts: number }>();
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
+const YOUTUBE_THUMBNAIL_VARIANTS = [
+  'maxresdefault',
+  'sddefault',
+  'mqdefault',
+  'hqdefault',
+  'default',
+] as const;
 
 function pickText(value: unknown): string {
   if (typeof value === 'string') return value.trim();
@@ -20,6 +27,25 @@ function pickText(value: unknown): string {
     if (typeof record['__cdata'] === 'string') return record['__cdata'].trim();
   }
   return '';
+}
+
+function buildYouTubeThumbnailUrl(
+  videoId: string,
+  variant: (typeof YOUTUBE_THUMBNAIL_VARIANTS)[number],
+): string {
+  return `https://i.ytimg.com/vi/${videoId}/${variant}.jpg`;
+}
+
+export function getYouTubeThumbnailSources(videoId: string, provided?: string): string[] {
+  if (!videoId) return provided ? [provided] : [];
+
+  const sources = YOUTUBE_THUMBNAIL_VARIANTS.map((variant) => buildYouTubeThumbnailUrl(videoId, variant));
+
+  if (provided) {
+    sources.push(provided);
+  }
+
+  return [...new Set(sources.filter(Boolean))];
 }
 
 export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {

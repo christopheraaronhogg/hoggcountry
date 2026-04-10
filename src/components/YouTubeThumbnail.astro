@@ -1,0 +1,33 @@
+---
+import { getYouTubeThumbnailSources } from '../lib/youtube';
+
+type Props = {
+  id: string;
+  alt: string;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+  sizes?: string;
+  provided?: string;
+};
+
+const {
+  id,
+  alt,
+  class: className,
+  loading = 'lazy',
+  sizes,
+  provided,
+} = Astro.props as Props;
+
+const [primarySrc = '', ...fallbacks] = getYouTubeThumbnailSources(id, provided);
+---
+
+<img
+  class={className}
+  src={primarySrc}
+  alt={alt}
+  loading={loading}
+  decoding="async"
+  data-thumb-fallbacks={fallbacks.join('|')}
+  sizes={sizes}
+/>
