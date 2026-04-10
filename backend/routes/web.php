@@ -39,7 +39,14 @@ Route::get('/', function () use ($buildMeta) {
             'build' => $buildMeta(),
         ],
     ]);
-});
+})->withoutMiddleware([
+    \Illuminate\Cookie\Middleware\EncryptCookies::class,
+    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+    \Illuminate\Session\Middleware\StartSession::class,
+    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+    \App\Http\Middleware\HandleInertiaRequests::class,
+]);
 
 Route::get('/native', function () {
     return Inertia::render('NativeLanding', [
