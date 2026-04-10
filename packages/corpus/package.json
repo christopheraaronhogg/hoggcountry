@@ -1,0 +1,11 @@
+{
+  "name": "@hoggcountry/corpus",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@hoggcountry/manual-core": "file:../manual-core"
+  }
+}

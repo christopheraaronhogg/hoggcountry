@@ -1,15 +1,25 @@
 {
   "name": "hogg-country",
+  "private": true,
   "type": "module",
   "version": "0.0.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "astro dev",
-    "prebuild": "node scripts/parse-master-guide.js && node scripts/generate-search-index.js && node scripts/build-guide-context.js && node scripts/build-proverbs-json.js",
-    "build": "astro build",
+    "dev": "npm run dev:public",
+    "dev:public": "npm run dev -w @hoggcountry/public",
+    "dev:workspace": "npm run dev -w @hoggcountry/workspace",
+    "dev:all": "npx concurrently -k -n public,workspace \"npm run dev:public\" \"npm run dev:workspace\"",
+    "prebuild": "node scripts/parse-master-guide.js && node scripts/generate-search-index.js && node scripts/build-public-corpus.js && node scripts/build-guide-context.js && node scripts/build-proverbs-json.js",
+    "build": "npm run build:public && npm run build:workspace",
+    "build:public": "npm run build -w @hoggcountry/public",
+    "build:workspace": "npm run build -w @hoggcountry/workspace",
     "build:game": "cd trailhogg/trailhogg && npm install && cd shared && npm install && npm run build && cd ../client && npm install && npm run build",
     "postbuild": "node scripts/generate-asset-manifest.js",
     "build:pdf": "node scripts/generate-pdf.js",
-    "build:all": "astro build && node scripts/generate-pdf.js",
+    "build:all": "npm run build && node scripts/generate-pdf.js",
     "update-guide": "node scripts/parse-master-guide.js",
     "test": "node --test scripts/parse-master-guide.test.js",
     "test:guide": "node --test scripts/parse-master-guide.test.js",
@@ -38,7 +48,9 @@
     "trail-assistant:blocker-email": "python3 scripts/trail_assistant_blocker_email_helper.py",
     "trail-assistant:runlog-autoupdate": "python3 scripts/trail_assistant_runlog_autoupdater.py",
     "trail-assistant:queue-review": "python3 scripts/trail_assistant_queue_review_helper.py",
-    "preview": "astro preview",
+    "preview": "npm run preview:public",
+    "preview:public": "npm run preview -w @hoggcountry/public",
+    "preview:workspace": "npm run preview -w @hoggcountry/workspace",
     "astro": "astro"
   },
   "dependencies": {
@@ -60,12 +72,14 @@
     "react-dom": "^19.2.4",
     "remotion": "^4.0.420",
     "sharp": "^0.34.2",
-    "svelte": "^5.37.3",
+    "svelte": "^5.55.2",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@netlify/functions": "^5.1.2",
+    "@sveltejs/adapter-netlify": "^6.0.4",
+    "@sveltejs/kit": "^2.57.0",
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",

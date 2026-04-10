@@ -1,28 +1,16 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ToolsDashboard from '../../components/tools/ToolsDashboard.svelte';
-
-const title = "Trail Tools — Hogg Country";
-const description = "Interactive tools for AT thru-hiking: milestone planner, gear calculator, daylight calculator, and more.";
+import ShelvedFeature from '../../components/ShelvedFeature.astro';
+import { WORKSPACE_URL } from '../../lib/config';
 ---
 
-<BaseLayout title={title} description={description}>
-  <section class="hero">
-    <span class="chapter font-chapter">AT 2026</span>
-    <h1 class="font-display">Trail Tools</h1>
-    <p>Interactive planning tools for the Appalachian Trail</p>
-  </section>
-
-  <div class="container tools-container">
-    <ToolsDashboard client:load />
-  </div>
+<BaseLayout title="Trail Tools Moved | Hogg Country" description="The old multi-tool dashboard has been folded into the personal field manual workspace.">
+  <ShelvedFeature
+    feature="ROUTE_MULTITOOL_DASHBOARD"
+    kicker="Merged"
+    heading="Trail tools now live inside the workspace."
+    body="The old dashboard is no longer a standalone public surface. The important parts are being folded into Today and Plan so hikers get fewer, calmer screens."
+    primary={{ href: `${WORKSPACE_URL}/today`, label: 'Open Today' }}
+    secondary={{ href: `${WORKSPACE_URL}/plan`, label: 'Open Plan' }}
+  />
 </BaseLayout>
-
-<style>
-  .tools-container {
-    padding-bottom: 4rem;
-    max-width: 100%;
-    box-sizing: border-box;
-    overflow-x: clip;
-  }
-</style>

@@ -1,0 +1,21 @@
+{
+  "name": "@hoggcountry/workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "svelte-kit dev --host",
+    "build": "svelte-kit sync && vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "@hoggcountry/corpus": "file:../../packages/corpus",
+    "@hoggcountry/manual-core": "file:../../packages/manual-core",
+    "@hoggcountry/trail-data": "file:../../packages/trail-data"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-netlify": "^6.0.4",
+    "@sveltejs/kit": "^2.57.0",
+    "svelte": "^5.37.3",
+    "typescript": "^5.9.3"
+  }
+}

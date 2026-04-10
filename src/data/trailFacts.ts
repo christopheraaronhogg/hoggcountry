@@ -120,24 +120,37 @@ export interface TrailFacts {
 
 let _facts: TrailFacts | null = null;
 
+function resolveYamlPath(): string {
+  const candidates: string[] = [];
+
+  if (typeof __dirname !== 'undefined') {
+    candidates.push(path.join(__dirname, 'trail-facts.yaml'));
+  } else {
+    const currentFile = fileURLToPath(import.meta.url);
+    const currentDir = path.dirname(currentFile);
+    candidates.push(path.join(currentDir, 'trail-facts.yaml'));
+  }
+
+  const cwd = process.cwd();
+  candidates.push(path.join(cwd, 'src', 'data', 'trail-facts.yaml'));
+  candidates.push(path.join(cwd, '..', '..', 'src', 'data', 'trail-facts.yaml'));
+  candidates.push(path.join(cwd, '..', 'src', 'data', 'trail-facts.yaml'));
+
+  const resolved = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!resolved) {
+    throw new Error(`Could not locate trail-facts.yaml. Checked: ${candidates.join(', ')}`);
+  }
+
+  return resolved;
+}
+
 /**
  * Load and parse the trail facts YAML file
  */
 export function loadFacts(): TrailFacts {
   if (_facts) return _facts;
 
-  // Handle both ESM and CJS contexts
-  let yamlPath: string;
-
-  if (typeof __dirname !== 'undefined') {
-    // CommonJS context
-    yamlPath = path.join(__dirname, 'trail-facts.yaml');
-  } else {
-    // ESM context
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    yamlPath = path.join(__dirname, 'trail-facts.yaml');
-  }
+  const yamlPath = resolveYamlPath();
 
   const yamlContent = fs.readFileSync(yamlPath, 'utf-8');
   _facts = yaml.load(yamlContent) as TrailFacts;

@@ -1,9 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import TrailChat from '../components/TrailChat.svelte';
+import ShelvedFeature from '../components/ShelvedFeature.astro';
+import { WORKSPACE_URL } from '../lib/config';
 ---
-<BaseLayout title="Ask the Trail AI" description="Get instant answers about the Appalachian Trail">
-  <main class="container" style="padding: 2rem 1rem 4rem; min-height: 70vh;">
-    <TrailChat client:load />
-  </main>
+
+<BaseLayout title="Trail AI Shelved | Hogg Country" description="The old Trail AI route has been shelved while Hogg Country focuses on the field guide and personal workspace.">
+  <ShelvedFeature
+    feature="ROUTE_ASK"
+    heading="Trail AI is shelved."
+    body="The generic chat route is no longer part of the front door. Hogg Country is now centered on dad's field guide, the video dispatches, and the personal field manual workspace."
+    primary={{ href: '/guide/', label: "Open dad's field guide" }}
+    secondary={{ href: WORKSPACE_URL, label: 'Open workspace' }}
+  />
 </BaseLayout>

@@ -1,0 +1,10 @@
+{
+  "name": "@hoggcountry/public",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --root ../..",
+    "build": "astro build --root ../..",
+    "preview": "astro preview --root ../.."
+  }
+}

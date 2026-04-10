@@ -1,9 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import BibleChat from '../components/BibleChat.svelte';
+import ShelvedFeature from '../components/ShelvedFeature.astro';
 ---
-<BaseLayout title="Proverbs - KJV" description="Wisdom from Solomon - King James Version">
-  <main class="container" style="padding: 2rem 1rem 4rem; min-height: 70vh;">
-    <BibleChat client:load />
-  </main>
+
+<BaseLayout title="KJV Search Moved | Hogg Country" description="Scripture search now lives with the Field Manual instead of a standalone public route.">
+  <ShelvedFeature
+    feature="ROUTE_KJV_STANDALONE"
+    kicker="Moved"
+    heading="Scripture now lives inside the Field Manual."
+    body="The standalone KJV route is retired. Scripture remains part of Hogg Country, but it now belongs beside trail wisdom instead of living on its own."
+    primary={{ href: '/guide/manual-builder/?tab=scripture', label: 'Open scripture in Field Manual' }}
+    secondary={{ href: '/guide/', label: "Open dad's field guide" }}
+  />
 </BaseLayout>

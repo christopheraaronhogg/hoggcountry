@@ -25,3 +25,8 @@ export const YT_PLAYLIST_FEED_URL = YT_PLAYLIST_ID
 // If you set YT_PLAYLIST_ID, make sure new uploads get added to that playlist,
 // otherwise "latest uploads" will appear stale even though the channel has newer videos.
 export const YT_FEED_URL = YT_PLAYLIST_FEED_URL ?? YT_CHANNEL_FEED_URL;
+
+const workspaceBase = import.meta.env.PUBLIC_WORKSPACE_URL
+  || (import.meta.env.DEV ? 'http://localhost:5173' : 'https://app.hoggcountry.com');
+
+export const WORKSPACE_URL = workspaceBase.replace(/\/+$/, '');

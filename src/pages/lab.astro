@@ -7,7 +7,6 @@ import {
   type FeatureKey,
 } from '../lib/features';
 
-// Group flags by status, in the order /lab should present them.
 const STATUS_ORDER: FlagStatus[] = [
   'live',
   'experimental',
@@ -48,14 +47,14 @@ for (const [key, flag] of allFlags()) {
 const totalCount = allFlags().length;
 ---
 
-<BaseLayout title="Lab · Hogg Country" description="Developer-facing index of flagged-off work in the Hogg Country repo.">
+<BaseLayout title="Lab | Hogg Country" description="Developer-facing index of flagged-off work in the Hogg Country repo.">
   <article class="lab">
     <header class="lab-header">
       <p class="lab-kicker">Dev-only</p>
       <h1>Lab</h1>
       <p class="lab-sub">
         Every feature in the repo, grouped by status. Not linked from public nav.
-        This is the shelf where work lives when it is not yet ready — or no longer
+        This is the shelf where work lives when it is not yet ready - or no longer
         the product. See <code>PRODUCT_BRIEF.md</code> for the v1 scope.
       </p>
       <p class="lab-meta">{totalCount} flags tracked</p>
@@ -177,11 +176,11 @@ const totalCount = allFlags().length;
     border: 1px solid currentColor;
   }
 
-  .badge-live         { color: #2d5a3d; background: #e4f0e6; }
+  .badge-live { color: #2d5a3d; background: #e4f0e6; }
   .badge-experimental { color: #6b4e1a; background: #f5ecd4; }
-  .badge-merged       { color: #3a4a6b; background: #e2e8f3; }
-  .badge-deferred     { color: #4a4a4a; background: #ededed; }
-  .badge-archived     { color: #6b3a3a; background: #f1e0e0; }
+  .badge-merged { color: #3a4a6b; background: #e2e8f3; }
+  .badge-deferred { color: #4a4a4a; background: #ededed; }
+  .badge-archived { color: #6b3a3a; background: #f1e0e0; }
 
   .flag-list {
     list-style: none;

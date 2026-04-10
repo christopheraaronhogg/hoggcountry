@@ -1,25 +1,15 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import GuideGenerator from '../../components/GuideGenerator.svelte';
-
-const title = "Generate Your Guide — Hogg Country";
-const description = "Create a personalized AT thru-hiking guide tailored to your experience, gear, budget, and goals.";
+import ShelvedFeature from '../../components/ShelvedFeature.astro';
+import { WORKSPACE_URL } from '../../lib/config';
 ---
 
-<BaseLayout title={title} description={description}>
-  <section class="hero">
-    <span class="chapter font-chapter">AT 2026</span>
-    <h1 class="font-display">Generate Your Guide</h1>
-    <p>Answer a few questions and get a personalized thru-hiking guide prompt</p>
-  </section>
-
-  <div class="container generator-container">
-    <GuideGenerator client:load />
-  </div>
+<BaseLayout title="Guide Generator Shelved | Hogg Country" description="The old guide generator has been replaced by the personal field manual workspace.">
+  <ShelvedFeature
+    feature="ROUTE_GENERATE"
+    heading="The old generator is shelved."
+    body="Guide generation now belongs in the personal field manual workspace. That is where setup, search, notes, and saved documents now live together."
+    primary={{ href: WORKSPACE_URL, label: 'Open workspace' }}
+    secondary={{ href: '/guide/manual-builder/', label: 'Open field manual preview' }}
+  />
 </BaseLayout>
-
-<style>
-  .generator-container {
-    padding-bottom: 4rem;
-  }
-</style>

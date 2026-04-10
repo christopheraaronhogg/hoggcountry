@@ -60,7 +60,7 @@ If a feature does not help a hiker (a) decide what to do now, (b) plan what to d
 
 ## Locked Decisions
 
-- **Stack:** Astro 5 + Svelte islands + Tailwind + TypeScript. No changes.
+- **Stack:** Astro 5 public site + SvelteKit workspace + Tailwind + TypeScript. Public discovery stays Astro; the local-first manual app lives on `app.hoggcountry.com`.
 - **Brand:** Hogg Country. No rename in v1.
 - **Substrate:** `src/data/trail-facts.yaml` and the `audit-trail-facts` skill are the source of truth. Recommendations surface the audit trail visibly.
 - **Scripture:** KJV search is a first-class capability of Field Manual, not a separate surface. The standalone `/kjv` page is superseded by Field Manual's Scripture tab. Scripture represents what the project stands for without dominating the front door — operational by default, wisdom one tap away.
@@ -68,7 +68,7 @@ If a feature does not help a hiker (a) decide what to do now, (b) plan what to d
 - **Field Manual storage:** IndexedDB, local-first. No account, no server, no sync. The hiker's device is the source of truth for their Field Manual.
 - **Field Manual format:** exports as a single self-contained HTML file — styled like a book, openable in any browser, with a hidden JSON blob embedded for re-import. No proprietary format, no external dependencies, no server required to read it.
 - **Field Manual sharing:** free peer-to-peer trading is encouraged and deliberately unmediated. Hogg Country provides the file; hikers decide where it goes.
-- **Demoted (flagged off):** trips, videos, blog, the current multi-tool dashboard, TrailHogg, `/ask`, `/cat`, `/compare`, `/generate`, `/prototypes`, and every utility not clearly part of Today, Plan, or Field Manual.
+- **Demoted (flagged off):** trips, blog, the current multi-tool dashboard, TrailHogg, `/ask`, `/cat`, `/compare`, `/generate`, `/prototypes`, and every utility not clearly part of Today, Plan, or Field Manual. Dad’s video feed stays live, but as a secondary public surface rather than the front door.
 
 ## Seed Content Priorities
 
@@ -99,7 +99,7 @@ Nothing else without explicit reopening of this brief.
 
 Four things must exist before any surface is built, and cannot be cut:
 
-1. **Feature flag system** (`src/config/features.ts`) — the kill switch for every surface.
+1. **Feature flag system** (`src/lib/features.ts`) — the kill switch for every surface.
 2. **Single trail context model** — one shared TypeScript type (mile, start date, pace, season, weather, water capacity, shelter preference, gear setup, budget tier) that every recommendation reads from. The thing that keeps the judgment layer coherent instead of devolving into another toolbox.
 3. **PWA shell + offline architecture** — decided before components are written, not retrofitted after.
 4. **Personal Field Manual data layer** — IndexedDB schema, a single `manual` store typed end-to-end, and a `pinToManual(entry)` API every surface calls. Export-to-HTML and re-import live here. Threaded through the other surfaces from day one — every Today card, every Plan output, every Library entry has "Save to my Field Manual" as a first-class action, not a retrofit.

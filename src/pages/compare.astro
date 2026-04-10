@@ -1,9 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import TrailCompare from '../components/TrailCompare.svelte';
+import ShelvedFeature from '../components/ShelvedFeature.astro';
+import { WORKSPACE_URL } from '../lib/config';
 ---
-<BaseLayout title="RAG vs Full Context" description="Compare AI response methods">
-  <main class="container" style="padding: 2rem 1rem;">
-    <TrailCompare client:load />
-  </main>
+
+<BaseLayout title="Comparison Prototype Shelved | Hogg Country" description="The comparison prototype is preserved in the repo but not part of the current Hogg Country product surface.">
+  <ShelvedFeature
+    feature="ROUTE_COMPARE"
+    heading="This comparison prototype is shelved."
+    body="The current product focus is the field guide plus the personal manual workspace. Experimental AI comparison work is still in the repo, but it is not part of the live experience."
+    primary={{ href: '/lab/', label: 'View lab index' }}
+    secondary={{ href: WORKSPACE_URL, label: 'Open workspace' }}
+  />
 </BaseLayout>

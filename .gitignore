@@ -1,5 +1,9 @@
 # build output
 dist/
+apps/public/.astro/
+apps/workspace/.svelte-kit/
+apps/workspace/.netlify/
+apps/workspace/build/
 # generated types
 .astro/
 

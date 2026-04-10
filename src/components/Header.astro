@@ -1,594 +1,169 @@
 ---
-import { LIVE_TRACKING_ENABLED, LIVE_TRACKING_URL, LIVE_TRACKING_START_DATE } from '../lib/config';
+import { LIVE_TRACKING_ENABLED, LIVE_TRACKING_START_DATE, LIVE_TRACKING_URL, WORKSPACE_URL } from '../lib/config';
+import { isEnabled } from '../lib/features';
 
 const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
-const isTools = pathname.startsWith('/tools');
-const isCharacterTool = pathname.startsWith('/tools/character');
-const isTrailHub = pathname.startsWith('/trail');
-const isLogin = pathname.startsWith('/login');
 const isVideos = pathname.startsWith('/videos');
-const isAtMap = pathname.startsWith('/at-map');
-const isAtWeather = pathname.startsWith('/at-weather');
-const isVideoHogg = pathname.startsWith('/videohogg');
+const isHome = pathname === '/';
+const showVideos = isEnabled('YOUTUBE_RSS');
 
-// Show tracking link only if enabled AND we're past the start date
 const now = new Date();
 const startDate = new Date(LIVE_TRACKING_START_DATE);
 const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 ---
 
-<header class="header" id="site-header">
+<header class="site-header">
   <nav class="container nav">
-    <a href="/" class="brand" aria-label="Hogg Country">
+    <a href="/" class="brand" aria-label="Hogg Country home">
       <img src="/logo.png" alt="Hogg Country" class="logo" />
     </a>
 
-    <div class="nav-controls">
-      <div class="nav-ctas" aria-label="Quick links">
-        <a href="/guide" class={`guide-link ${isGuide ? 'is-active' : ''}`}>
-          <span class="guide-link__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 5.5A2.5 2.5 0 015.5 3H10a3 3 0 013 3v15a2 2 0 00-2-2H5.5A2.5 2.5 0 013 16.5z" />
-              <path d="M13 6a3 3 0 013-3h4.5A2.5 2.5 0 0123 5.5v11a2.5 2.5 0 01-2.5 2.5H15a2 2 0 00-2 2z" />
-              <path d="M7 7h3M7 10h3" />
-            </svg>
-          </span>
-          <span>Guide</span>
-        </a>
-
-        {showTracking && (
-          <a
-            href={LIVE_TRACKING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="live-link live-link--header"
-            title="Track Me on Garmin"
-          >
-            <span class="live-dot"></span>
-            <span class="live-text">Track Me</span>
-          </a>
-        )}
-      </div>
-
-      <button
-        class="nav-toggle"
-        id="nav-toggle"
-        type="button"
-        aria-label="Open tools menu"
-        aria-expanded="false"
-        aria-controls="mobile-drawer"
-      >
-        <span class="nav-toggle__bars" aria-hidden="true">
-          <span class="bar"></span>
-          <span class="bar"></span>
-          <span class="bar"></span>
-        </span>
-        <span class="nav-toggle__label">Tools</span>
-      </button>
-
-      <span id="offline-status" class="offline-badge" title="Offline status" style="display: none;"></span>
+    <div class="desktop-links">
+      <a href="/guide/" class:list={['nav-link', isGuide && 'is-active']}>Dad&apos;s Field Guide</a>
+      {showVideos && <a href="/videos/" class:list={['nav-link', isVideos && 'is-active']}>Video Dispatches</a>}
+      {showTracking && (
+        <a href={LIVE_TRACKING_URL} class="nav-link nav-link--track" target="_blank" rel="noopener noreferrer">Track Me</a>
+      )}
+      <a href={WORKSPACE_URL} class="workspace-link">Open Workspace</a>
     </div>
+
+    <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="mobile-menu">
+      Menu
+    </button>
   </nav>
 
-  <!-- Tools Drawer (all screen sizes) -->
-  <div class="mobile-overlay" id="mobile-overlay" aria-hidden="true"></div>
-  <aside class="mobile-drawer" id="mobile-drawer" aria-label="Tools menu" aria-hidden="true" tabindex="-1">
-    <div class="mobile-top">
-      <span class="mobile-title">Tools</span>
-      <button class="mobile-close" id="nav-close" type="button" aria-label="Close menu">×</button>
-    </div>
-
-    <div class="mobile-links">
-      {showTracking && (
-        <a
-          href={LIVE_TRACKING_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="live-link mobile-live"
-          title="Track Me on Garmin"
-        >
-          <span class="live-dot"></span>
-          <span class="live-text">Track Me</span>
-        </a>
-      )}
-
-      <a href="/at-map" class={`mobile-link ${isAtMap ? 'is-active' : ''}`}>AT Map</a>
-      <a href="/trail" class={`mobile-link ${isTrailHub ? 'is-active' : ''}`}>Trail Hub</a>
-      <a href="/videos" class={`mobile-link ${isVideos ? 'is-active' : ''}`}>Videos</a>
-      <a href="/tools" class={`mobile-link ${isTools && !isCharacterTool ? 'is-active' : ''}`}>Trail Tools</a>
-      <a href="/tools/character" class={`mobile-link ${isCharacterTool ? 'is-active' : ''}`}>My Profile</a>
-      <a href="/login" class={`mobile-link ${isLogin ? 'is-active' : ''}`}>Account</a>
-      <a href="/videohogg" class={`mobile-link ${isVideoHogg ? 'is-active' : ''}`}>VideoHogg</a>
-      <a href="/at-weather" class={`mobile-link ${isAtWeather ? 'is-active' : ''}`}>AT Weather</a>
-      <a href="/guide" class={`mobile-link ${isGuide ? 'is-active' : ''}`}>Field Guide</a>
-    </div>
-  </aside>
+  <div class="mobile-menu" id="mobile-menu" hidden>
+    <a href="/" class:list={['mobile-link', isHome && 'is-active']}>Home</a>
+    <a href="/guide/" class:list={['mobile-link', isGuide && 'is-active']}>Dad&apos;s Field Guide</a>
+    {showVideos && <a href="/videos/" class:list={['mobile-link', isVideos && 'is-active']}>Video Dispatches</a>}
+    {showTracking && (
+      <a href={LIVE_TRACKING_URL} class="mobile-link" target="_blank" rel="noopener noreferrer">Track Me</a>
+    )}
+    <a href={WORKSPACE_URL} class="mobile-link mobile-link--workspace">Open Workspace</a>
+  </div>
 </header>
 
 <style>
-  .header {
-    min-height: 52px;
-    display: flex;
-    align-items: center;
-    background: var(--bg, #f5f2e8);
-    border-bottom: 1px solid var(--border, #e6e1d4);
-    transition: transform 0.3s ease, opacity 0.3s ease;
-  }
-
-  /* Scroll-hide state (toggled via JS on guide page) */
-  .header.is-hidden {
-    transform: translateY(-100%);
-    opacity: 0;
-    pointer-events: none;
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(247, 242, 232, 0.94);
+    border-bottom: 1px solid rgba(48, 65, 54, 0.12);
+    backdrop-filter: blur(12px);
   }
 
   .nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 1rem;
+    min-height: 76px;
   }
 
   .brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
   }
 
   .logo {
-    height: 40px;
+    height: 44px;
     width: auto;
   }
 
-  @media (max-width: 600px) {
-    .logo {
-      height: 32px;
-    }
-  }
-
-  .nav-controls {
-    display: flex;
+  .desktop-links {
+    display: none;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
-  .nav-ctas {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-  }
-
-  :global(body.nav-locked) {
-    overflow: hidden;
-  }
-
-  .nav-toggle {
-    display: inline-flex;
-    gap: 0.5rem;
-    height: 42px;
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.10);
-    background: rgba(255,255,255,0.7);
-    backdrop-filter: blur(8px);
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    padding: 0 12px;
-  }
-
-  .nav-toggle:active { transform: translateY(1px); }
-
-  .nav-toggle__bars {
-    display: inline-flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .nav-toggle__bars .bar {
-    width: 18px;
-    height: 2px;
-    border-radius: 999px;
-    background: rgba(31, 41, 55, 0.85);
-  }
-
-  .nav-toggle__label {
-    font-family: Oswald, system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 0.72rem;
-    color: rgba(31, 41, 55, 0.86);
-  }
-
-  .mobile-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.42);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 180ms ease;
-    z-index: 2200;
-  }
-
-  .mobile-overlay.is-open {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .mobile-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    height: 100vh;
-    width: min(360px, 88vw);
-    background: var(--bg, #f5f2e8);
-    border-left: 1px solid var(--border, #e6e1d4);
-    box-shadow: -18px 0 40px rgba(0,0,0,0.18);
-    transform: translateX(110%);
-    transition: transform 220ms ease;
-    z-index: 2201;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .mobile-drawer.is-open {
-    transform: translateX(0);
-  }
-
-  .mobile-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-  }
-
-  .mobile-title {
-    font-family: Oswald, system-ui, sans-serif;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-weight: 900;
-    color: rgba(31, 41, 55, 0.86);
-  }
-
-  .mobile-close {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.10);
-    background: rgba(255,255,255,0.75);
-    cursor: pointer;
-    font-size: 22px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(31, 41, 55, 0.85);
-  }
-
-  .mobile-links {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
+  .nav-link,
+  .workspace-link,
   .mobile-link {
-    display: flex;
-    align-items: center;
-    padding: 12px 12px;
-    border-radius: 12px;
-    text-decoration: none;
-    color: var(--pine);
-    border: 1px solid rgba(0,0,0,0.06);
-    background: rgba(255,255,255,0.55);
-    font-weight: 600;
-  }
-
-  .mobile-link:hover { background: rgba(255,255,255,0.72); }
-
-  .mobile-link.is-active {
-    background: rgba(166, 181, 137, 0.22);
-    border-color: rgba(166, 181, 137, 0.35);
-  }
-
-  .mobile-live { justify-content: center; }
-
-  /* Quick header guide link */
-  .guide-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    height: 42px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: rgba(31, 41, 55, 0.86);
-    text-decoration: none;
-    padding: 0 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.10);
-    background: rgba(255,255,255,0.55);
-    white-space: nowrap;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-
-  .app-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
-    height: 42px;
-    font-size: 0.84rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    color: #1f2937;
-    text-transform: uppercase;
+    min-height: 42px;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(48, 65, 54, 0.12);
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--pine);
+    font-weight: 700;
     text-decoration: none;
-    padding: 0 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(217, 119, 6, 0.45);
-    background: linear-gradient(170deg, rgba(240, 224, 0, 0.82), rgba(255, 253, 230, 0.95));
-    white-space: nowrap;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
   }
 
-  .app-link:hover {
+  .nav-link:hover,
+  .workspace-link:hover,
+  .mobile-link:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(120, 53, 15, 0.2);
-    border-color: rgba(217, 119, 6, 0.6);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    border-color: rgba(48, 65, 54, 0.24);
   }
 
-  .app-link.is-active {
-    border-color: rgba(217, 119, 6, 0.72);
-    box-shadow: inset 0 0 0 1px rgba(217, 119, 6, 0.33);
+  .nav-link.is-active,
+  .mobile-link.is-active {
+    background: rgba(166, 181, 137, 0.24);
+    color: var(--ink);
   }
 
-  .guide-link:hover {
-    background: rgba(255,255,255,0.75);
-    border-color: rgba(0,0,0,0.14);
+  .nav-link--track {
+    border-color: rgba(185, 28, 28, 0.18);
+    color: #9f1239;
   }
 
-  .guide-link.is-active {
-    background: rgba(166, 181, 137, 0.22);
-    border-color: rgba(166, 181, 137, 0.35);
+  .workspace-link,
+  .mobile-link--workspace {
+    background: linear-gradient(160deg, rgba(240, 224, 0, 0.88), rgba(249, 243, 188, 0.96));
+    color: #1f2937;
+    border-color: rgba(217, 119, 6, 0.28);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
-  .guide-link__icon {
-    width: 16px;
-    height: 16px;
-    display: inline-flex;
-    opacity: 0.9;
-  }
-
-  .guide-link__icon svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  /* Live tracking link */
-  .live-link {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.85rem;
+  .menu-toggle {
+    min-height: 42px;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(48, 65, 54, 0.12);
+    background: rgba(255, 255, 255, 0.72);
     color: var(--pine);
-    text-decoration: none;
-    padding: 0.25rem 0.6rem 0.25rem 0.5rem;
-    border-radius: 6px;
-    background: rgba(220, 38, 38, 0.08);
-    border: 1px solid rgba(220, 38, 38, 0.2);
-    white-space: nowrap;
-    transition: all 0.15s ease;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
   }
 
-  .live-link--header {
-    height: 42px;
-    border-radius: 10px;
-    padding: 0 12px;
+  .mobile-menu {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0 1rem 1rem;
   }
 
-  .live-link:hover {
-    background: rgba(220, 38, 38, 0.15);
-    border-color: rgba(220, 38, 38, 0.35);
-  }
-
-  .live-dot {
-    width: 8px;
-    height: 8px;
-    background: #dc2626;
-    border-radius: 50%;
-    box-shadow: 0 0 6px rgba(220, 38, 38, 0.5);
-    animation: pulse-dot 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(0.85); }
-  }
-
-  .live-text {
-    font-weight: 600;
-    letter-spacing: 0.02em;
-  }
-
-  /* Mobile */
-  @media (max-width: 760px) {
-    .logo {
-      height: 32px;
+  @media (min-width: 860px) {
+    .desktop-links {
+      display: flex;
     }
 
-    .live-link {
-      font-size: 0.82rem;
-    }
-
-    .guide-link {
-      font-size: 0.82rem;
-    }
-  }
-
-  @media (max-width: 420px) {
-    .nav-toggle__label {
+    .menu-toggle,
+    .mobile-menu {
       display: none;
-    }
-  }
-
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    .live-dot {
-      animation: none;
-    }
-  }
-
-  /* Offline status badge */
-  .offline-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 10px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .offline-badge.caching {
-    background: rgba(240, 224, 0, 0.3);
-    color: #8a7800;
-  }
-
-  .offline-badge.ready {
-    background: rgba(166, 181, 137, 0.3);
-    color: var(--pine);
-  }
-
-  .offline-badge.offline {
-    background: rgba(217, 119, 6, 0.2);
-    color: #b45309;
-  }
-
-  /* Print: hide header */
-  @media print {
-    .header {
-      display: none !important;
     }
   }
 </style>
 
 <script is:inline>
-  // Offline status indicator
-  (function() {
-    const badge = document.getElementById('offline-status');
-    if (!badge || !('serviceWorker' in navigator)) return;
-
-    function showReady() {
-      badge.textContent = '✓ Saved';
-      badge.className = 'offline-badge ready';
-      badge.style.display = 'inline-block';
-      badge.title = 'Site saved for offline use';
-      // Hide after 5 seconds if online
-      setTimeout(() => {
-        if (navigator.onLine) badge.style.display = 'none';
-      }, 5000);
-    }
-
-    function showOffline() {
-      badge.textContent = '📴 Offline';
-      badge.className = 'offline-badge offline';
-      badge.style.display = 'inline-block';
-      badge.title = 'You are offline - cached content available';
-    }
-
-    function showCaching() {
-      badge.textContent = '↓ Saving...';
-      badge.className = 'offline-badge caching';
-      badge.style.display = 'inline-block';
-      badge.title = 'Saving site for offline use...';
-    }
-
-    function updateStatus() {
-      if (!navigator.onLine) {
-        showOffline();
-      } else if (navigator.serviceWorker.controller) {
-        showReady();
-      }
-    }
-
-    // Listen for SW messages
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'CACHE_COMPLETE') {
-        console.log('[Offline] Cache complete, site ready for offline use');
-        showReady();
-      }
-    });
-
-    // Check on load
-    if (navigator.serviceWorker.controller) {
-      updateStatus();
-    } else {
-      // Wait for SW to activate
-      navigator.serviceWorker.ready.then(() => {
-        showCaching();
-      });
-    }
-
-    // Listen for online/offline
-    window.addEventListener('online', updateStatus);
-    window.addEventListener('offline', updateStatus);
-  })();
-
-  // Tools drawer nav (all screen sizes)
-  (function() {
-    const toggle = document.getElementById('nav-toggle');
-    const close = document.getElementById('nav-close');
-    const drawer = document.getElementById('mobile-drawer');
-    const overlay = document.getElementById('mobile-overlay');
-
-    if (!toggle || !close || !drawer || !overlay) return;
-
-    function setOpen(open) {
-      const isOpen = Boolean(open);
-
-      drawer.classList.toggle('is-open', isOpen);
-      overlay.classList.toggle('is-open', isOpen);
-
-      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      toggle.setAttribute('aria-label', isOpen ? 'Close tools menu' : 'Open tools menu');
-
-      overlay.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-      drawer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-
-      document.body.classList.toggle('nav-locked', isOpen);
-
-      if (isOpen) {
-        const first = drawer.querySelector('a, button');
-        if (first && 'focus' in first) {
-          requestAnimationFrame(() => first.focus());
-        }
-      } else {
-        toggle.focus();
-      }
-    }
-
-    function closeMenu() {
-      setOpen(false);
-    }
+  (() => {
+    const toggle = document.getElementById('menu-toggle');
+    const menu = document.getElementById('mobile-menu');
+    if (!(toggle instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) return;
 
     toggle.addEventListener('click', () => {
-      const isOpen = drawer.classList.contains('is-open');
-      setOpen(!isOpen);
-    });
-
-    close.addEventListener('click', closeMenu);
-    overlay.addEventListener('click', closeMenu);
-
-    // Close when clicking a link inside the drawer
-    drawer.addEventListener('click', (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (target.closest('a')) closeMenu();
-    });
-
-    // Close on Esc
-    window.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeMenu();
+      const open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+      menu.hidden = open;
     });
   })();
 </script>

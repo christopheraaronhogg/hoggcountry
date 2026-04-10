@@ -9,11 +9,11 @@
  * reads this map directly to render the index of flagged-off work.
  *
  * Status vocabulary:
- *   live         — shipping in v1
- *   merged       — logic absorbed into a live surface; UI retired
- *   archived     — off; no current plan to return
- *   experimental — unfinished; may return when it supports a live surface
- *   deferred     — intentionally off for v1, on the post-v1 roadmap
+ *   live         - shipping in v1
+ *   merged       - logic absorbed into a live surface; UI retired
+ *   archived     - off; no current plan to return
+ *   experimental - unfinished; may return when it supports a live surface
+ *   deferred     - intentionally off for v1, on the post-v1 roadmap
  */
 
 export type FlagStatus =
@@ -30,7 +30,7 @@ export interface Flag {
 }
 
 export const FEATURES = {
-  // ───── Public surfaces (v1 IA) ─────
+  // Public surfaces (v1 IA)
   SURFACE_TODAY: {
     enabled: false,
     status: 'experimental',
@@ -52,7 +52,7 @@ export const FEATURES = {
     reason: 'Dev-only index of flagged-off work. Not linked from public nav.',
   },
 
-  // ───── Field Manual capabilities ─────
+  // Field Manual capabilities
   FIELD_GUIDE_SEARCH: {
     enabled: true,
     status: 'live',
@@ -64,11 +64,11 @@ export const FEATURES = {
     reason: 'KJV as a second search corpus inside Field Manual. Trail tab default; Scripture one tap away. Curated topical index is the key work.',
   },
 
-  // ───── Front-door content (demoted in v1) ─────
+  // Front-door content (demoted in v1)
   YOUTUBE_RSS: {
-    enabled: false,
-    status: 'archived',
-    reason: 'Personal video feed dilutes the AT operating manual positioning.',
+    enabled: true,
+    status: 'live',
+    reason: "Dad's video dispatches stay public as a secondary surface alongside the guide.",
   },
   TRIP_REPORTS: {
     enabled: false,
@@ -81,7 +81,7 @@ export const FEATURES = {
     reason: 'May return post-v1 as a secondary Journal surface.',
   },
 
-  // ───── Legacy / experimental routes ─────
+  // Legacy / experimental routes
   ROUTE_KJV_STANDALONE: {
     enabled: false,
     status: 'merged',
@@ -123,7 +123,7 @@ export const FEATURES = {
     reason: 'Logic folded into Plan (Journey / Town Stop / Transitions). UI retired.',
   },
 
-  // ───── Post-v1 roadmap ─────
+  // Post-v1 roadmap
   GEAR_LAB: {
     enabled: false,
     status: 'deferred',
@@ -153,7 +153,7 @@ export function getFlag(key: FeatureKey): Flag {
   return FEATURES[key];
 }
 
-/** All flags as [key, flag] tuples — used by /lab to render the index. */
+/** All flags as [key, flag] tuples - used by /lab to render the index. */
 export function allFlags(): ReadonlyArray<readonly [FeatureKey, Flag]> {
   return Object.entries(FEATURES) as Array<[FeatureKey, Flag]>;
 }
