@@ -1,0 +1,29 @@
+{
+  "name": "@hoggcountry/openclaw-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "svelte-kit dev --host",
+    "build": "svelte-kit sync && vite build",
+    "preview": "vite preview --host",
+    "check": "svelte-kit sync",
+    "spacetime:generate": "spacetime generate --lang typescript --out-dir src/lib/module_bindings --module-path spacetimedb"
+  },
+  "dependencies": {
+    "@hoggcountry/brand": "file:../../packages/brand",
+    "@hoggcountry/corpus": "file:../../packages/corpus",
+    "@hoggcountry/manual-core": "file:../../packages/manual-core",
+    "@hoggcountry/trail-data": "file:../../packages/trail-data",
+    "leaflet": "^1.9.4",
+    "marked": "^17.0.1",
+    "spacetimedb": "^2.1.0"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-netlify": "^6.0.4",
+    "@sveltejs/kit": "^2.57.0",
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "svelte": "^5.55.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.7"
+  }
+}

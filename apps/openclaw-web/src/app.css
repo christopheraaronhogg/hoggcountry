@@ -1,0 +1,68 @@
+@import '../../../packages/brand/src/theme.css';
+
+.page-intro {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.page-intro h1,
+.page-intro h2 {
+  margin: 0;
+}
+
+.subtle-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stats-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.stats-grid .card {
+  padding: 1rem;
+}
+
+.stats-grid strong {
+  display: block;
+  font-family: Oswald, sans-serif;
+  font-size: 2rem;
+  color: var(--pine);
+}
+
+.split-copy {
+  display: grid;
+  gap: 1rem;
+}
+
+.list-clean {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: var(--fg);
+}
+
+.list-clean li + li {
+  margin-top: 0.45rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.empty-state {
+  padding: 1.4rem;
+  text-align: center;
+}
+
+@media (min-width: 860px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .split-copy {
+    grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+  }
+}

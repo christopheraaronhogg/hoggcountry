@@ -2,14 +2,16 @@
 
 ### System overview
 
-Hogg Country has two architecture tracks sharing one repository:
+Hogg Country has three architecture tracks sharing one repository:
 
 1. **Content platform**
    - Astro static site for timeline, guide, tools, and marketing surfaces
-2. **Trail Assistant product**
+2. **OpenClaw web frontend**
+   - SvelteKit + SpacetimeDB patterns for Dad updates, Dad's guide, and the gated hiker workspace
+3. **Trail Assistant product**
    - Laravel-backed operational system for hiker support, safety, and future mobile experiences
 
-The long-term shape is a content-rich public site plus an authenticated trail-ops product.
+The current shape is a content-rich public site, a new product-grade SvelteKit frontend, and a Laravel ops layer.
 
 ### High-level layers
 
@@ -19,6 +21,11 @@ The long-term shape is a content-rich public site plus an authenticated trail-op
 - **Interactive client layer**
   - Svelte islands for targeted interactivity
   - future phone-first shell for Today / Plan / Coach / Town / Safety / Account
+- **OpenClaw web app layer**
+  - SvelteKit layouts and routes in `apps/openclaw-web`
+  - public Dad, guide, and marketing surfaces
+  - gated `/app/*` workspace for setup, Today, manual, docs, and Claw
+  - SpacetimeDB client/provider patterns and generated bindings
 - **Laravel API layer**
   - authenticated and public APIs under `backend/routes/api.php`
   - Trail Assistant domains for intake, chat, check-ins, progress, map sharing, map reports, SOS, governance, and BYOS
@@ -31,6 +38,10 @@ The long-term shape is a content-rich public site plus an authenticated trail-op
   - Astro 5
   - Svelte 5 islands where needed
   - Tailwind CSS 4 + CSS variables
+- **New product web frontend**
+  - SvelteKit
+  - SpacetimeDB client/module patterns
+  - shared brand CSS from `packages/brand`
 - **Backend and operations**
   - Laravel 12
   - Sanctum for auth
@@ -70,6 +81,34 @@ The existing `/native` Laravel Inertia route is useful as a proving surface, but
 - videos come from YouTube RSS
 - guide chapters are generated from the master guide document
 - static pages are built by Astro and enhanced with Svelte only where needed
+
+### OpenClaw web app architecture
+
+#### Primary app routes
+- `/`
+  - Dad updates + OpenClaw pitch
+- `/dad`
+  - Dad overview and update cards
+- `/dad/map`
+  - public map tracking surface
+- `/dad/videos`
+  - public YouTube dispatch feed
+- `/guide`
+  - Dad's field guide inside the SvelteKit app
+- `/guide/[slug]`
+  - chapter routes
+- `/openclaw`
+  - product pitch for the hiker workspace
+- `/signup`
+  - lightweight beta gate
+- `/app/*`
+  - gated manual-first workspace
+
+#### State and data flow
+- public Dad/video/guide data is loaded through SvelteKit server utilities
+- product state is structured around SpacetimeDB tables/reducers and generated TypeScript bindings
+- local device persistence still exists where offline manual/doc access matters
+- Dad's field guide remains authored from `MASTER_NOBO_FIELD_GUIDE.md` and is reused by Astro and SvelteKit
 
 ### Trail Assistant application architecture
 

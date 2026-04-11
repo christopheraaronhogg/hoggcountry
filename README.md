@@ -4,6 +4,37 @@
 
 Built for a February 2026 Appalachian Trail NOBO thru-hike, this site serves as both a personal trail logbook and a comprehensive planning/execution toolkit.
 
+## Current app surfaces
+
+This monorepo now carries four distinct app layers:
+
+- `apps/public` - the Astro public site and current `hoggcountry.com` experience
+- `apps/openclaw-web` - the new SvelteKit frontend for Dad updates, Dad's guide, and the gated OpenClaw-for-hikers product
+- `apps/workspace` - the earlier workspace prototype, kept while the new frontend takes over
+- `backend/` - the Laravel operational backend and legacy Trail Assistant APIs
+
+## OpenClaw web frontend
+
+The new frontend preserves the Hogg Country visual language while shifting the product around three clearer surfaces:
+
+1. **Dad updates**
+   - public Dad overview
+   - public map tracking
+   - public YouTube dispatch feed
+2. **OpenClaw for hikers**
+   - public product pitch and onboarding path
+   - Dad's field guide as the canonical example manual
+3. **Gated app**
+   - lightweight beta signup
+   - `/app`
+   - `/app/setup`
+   - `/app/today`
+   - `/app/manual`
+   - `/app/docs`
+   - `/app/claw`
+
+The new app lives in `apps/openclaw-web/` and is intended for `app.hoggcountry.com`.
+
 ## Vision
 
 Hogg Country is more than a blog — it's a trail-ready command center that works offline, provides real-time decision support on-trail, and documents the journey from planning through summit.
