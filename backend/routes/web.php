@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\PrLadderController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -58,6 +57,3 @@ Route::get('/native', function () {
         ],
     ]);
 });
-
-Route::get('/pr-ladder', [PrLadderController::class, 'index'])->name('pr-ladder.index');
-Route::post('/pr-ladder', [PrLadderController::class, 'store'])->name('pr-ladder.store');
