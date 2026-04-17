@@ -57,7 +57,7 @@
         <div class="muted">Dad's trail dispatches, field guide, and the next manual-first hiker workspace.</div>
       </div>
       <div class="muted">
-        {#if $page.url.pathname.startsWith('/app') && data.betaProfile}
+        {#if page.url.pathname.startsWith('/app') && data.betaProfile}
           Signed in for {data.betaProfile.trailName || data.betaProfile.name}
         {:else}
           Beta build on SvelteKit + SpacetimeDB patterns
