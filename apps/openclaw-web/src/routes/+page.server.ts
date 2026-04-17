@@ -1,23 +1,23 @@
 import type { PageServerLoad } from './$types';
-import { buildDadStatusCards, loadDadTrack, loadDadVideos } from '$lib/server/dad';
-import { loadGuideIndex } from '$lib/server/guide';
+import { loadDadVideos } from '$lib/server/dad';
+import { facts, getMeta } from '../../../../src/data/trailFacts';
+import { isEnabled } from '../../../../src/lib/features';
+import { WORKSPACE_URL } from '../../../../src/lib/config';
 
 export const load: PageServerLoad = async () => {
-  const [videos, track, guide] = await Promise.all([
-    loadDadVideos(3),
-    loadDadTrack(),
-    loadGuideIndex()
-  ]);
-
-  const latestPoint = track.properties?.latestPoint as { coords?: [number, number] } | undefined;
-  const latestPointLabel = latestPoint?.coords
-    ? `${latestPoint.coords[0].toFixed(3)}, ${latestPoint.coords[1].toFixed(3)}`
-    : 'Preview fix';
+  const showVideos = isEnabled('YOUTUBE_RSS');
+  const videos = showVideos ? await loadDadVideos(3) : [];
+  const meta = getMeta();
 
   return {
+    showVideos,
     videos,
-    track,
-    guidePreview: guide.slice(0, 4),
-    dadCards: buildDadStatusCards(videos.length, latestPointLabel)
+    workspaceUrl: WORKSPACE_URL,
+    manualBuilderUrl: `${WORKSPACE_URL}/app/manual`,
+    trailStats: {
+      totalMiles: facts.trail.total_miles.value,
+      shelterCount: facts.trail.shelter_count.value,
+      lastVerified: meta.last_verified
+    }
   };
 };
