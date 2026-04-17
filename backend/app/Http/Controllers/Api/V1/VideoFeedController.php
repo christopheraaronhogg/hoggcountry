@@ -61,6 +61,32 @@ class VideoFeedController extends ApiController
             }
         }
 
+        if ($requestedSource !== 'playlist') {
+            try {
+                $pageUrl = $this->resolveChannelVideosPageUrl();
+                if ($pageUrl) {
+                    $items = $this->parseChannelPageItems(
+                        $this->downloadChannelVideosPage($pageUrl),
+                        $limit,
+                    );
+
+                    if ($items !== []) {
+                        return $this->withLiveHeaders($this->ok([
+                            'items' => $items,
+                            'source' => 'channel_page',
+                            'requested_source' => $requestedSource,
+                            'feed_url' => $pageUrl,
+                            'fetched_at' => now()->toIso8601String(),
+                        ]));
+                    }
+
+                    $lastError = 'Channel page returned no videos.';
+                }
+            } catch (Throwable $e) {
+                $lastError = $e->getMessage();
+            }
+        }
+
         return $this->fail(
             'video_feed_unavailable',
             'Unable to fetch latest YouTube videos right now.',
@@ -154,6 +180,40 @@ class VideoFeedController extends ApiController
         return $body;
     }
 
+    private function resolveChannelVideosPageUrl(): ?string
+    {
+        $channelId = trim((string) env('YOUTUBE_CHANNEL_ID', 'UCtlUsN3UpR-Vmb-XbgAuNHg'));
+
+        if ($channelId === '') {
+            return null;
+        }
+
+        return sprintf('https://www.youtube.com/channel/%s/videos', rawurlencode($channelId));
+    }
+
+    private function downloadChannelVideosPage(string $pageUrl): string
+    {
+        $response = Http::accept('text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
+            ->withHeaders([
+                'Accept-Language' => 'en-US,en;q=0.9',
+            ])
+            ->withUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36')
+            ->timeout(10)
+            ->retry(1, 200)
+            ->get($pageUrl);
+
+        if (! $response->ok()) {
+            throw new \RuntimeException(sprintf('Channel page request failed with status %d.', $response->status()));
+        }
+
+        $body = trim((string) $response->body());
+        if ($body === '') {
+            throw new \RuntimeException('Channel page response body was empty.');
+        }
+
+        return $body;
+    }
+
     /**
      * @return array<int,array<string,mixed>>
      */
@@ -224,6 +284,191 @@ class VideoFeedController extends ApiController
         }
 
         return $items;
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private function parseChannelPageItems(string $html, int $limit): array
+    {
+        $payload = $this->extractInitialDataPayload($html);
+        $renderers = $this->extractChannelVideoRenderers($payload);
+        $items = [];
+
+        foreach ($renderers as $renderer) {
+            $videoId = trim((string) ($renderer['videoId'] ?? ''));
+            if (preg_match('/^[A-Za-z0-9_-]{11}$/', $videoId) !== 1) {
+                continue;
+            }
+
+            if (isset($items[$videoId])) {
+                continue;
+            }
+
+            $title = $this->extractRendererText($renderer['title'] ?? null);
+            $description = $this->extractRendererText($renderer['descriptionSnippet'] ?? null);
+            if ($description === '') {
+                $description = $this->extractRendererText(data_get($renderer, 'detailedMetadataSnippets.0.snippetText'));
+            }
+
+            $thumbnail = trim((string) data_get($renderer, 'thumbnail.thumbnails.0.url', ''));
+            if ($thumbnail === '') {
+                $thumbnail = sprintf('https://i.ytimg.com/vi/%s/hqdefault.jpg', $videoId);
+            }
+
+            $items[$videoId] = [
+                'id' => $videoId,
+                'title' => $title !== '' ? $title : 'Untitled',
+                'description' => $description,
+                'published' => '',
+                'link' => sprintf('https://www.youtube.com/watch?v=%s', $videoId),
+                'thumbnail' => $thumbnail,
+            ];
+
+            if (count($items) >= $limit) {
+                break;
+            }
+        }
+
+        return array_values($items);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function extractInitialDataPayload(string $html): array
+    {
+        $marker = 'var ytInitialData = ';
+        $start = strpos($html, $marker);
+        if ($start === false) {
+            throw new \RuntimeException('Unable to locate ytInitialData in channel page HTML.');
+        }
+
+        $start += strlen($marker);
+        $end = strpos($html, ';</script>', $start);
+        if ($end === false) {
+            throw new \RuntimeException('Unable to locate the end of ytInitialData payload.');
+        }
+
+        $json = trim(substr($html, $start, $end - $start));
+        if ($json === '') {
+            throw new \RuntimeException('ytInitialData payload was empty.');
+        }
+
+        $decoded = json_decode($json, true);
+        if (! is_array($decoded)) {
+            throw new \RuntimeException('Unable to decode ytInitialData payload.');
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * @param  array<string,mixed>  $payload
+     * @return array<int,array<string,mixed>>
+     */
+    private function extractChannelVideoRenderers(array $payload): array
+    {
+        $tabs = data_get($payload, 'contents.twoColumnBrowseResultsRenderer.tabs', []);
+        $renderers = [];
+
+        if (is_array($tabs)) {
+            foreach ($tabs as $tab) {
+                $tabRenderer = is_array($tab) ? ($tab['tabRenderer'] ?? null) : null;
+                if (! is_array($tabRenderer)) {
+                    continue;
+                }
+
+                $isVideosTab = ($tabRenderer['selected'] ?? false) === true
+                    || trim((string) ($tabRenderer['title'] ?? '')) === 'Videos';
+
+                if (! $isVideosTab) {
+                    continue;
+                }
+
+                $contents = data_get($tabRenderer, 'content.richGridRenderer.contents', []);
+                if (! is_array($contents)) {
+                    continue;
+                }
+
+                foreach ($contents as $entry) {
+                    $videoRenderer = data_get($entry, 'richItemRenderer.content.videoRenderer');
+                    if (is_array($videoRenderer)) {
+                        $renderers[] = $videoRenderer;
+                    }
+                }
+
+                if ($renderers !== []) {
+                    return $renderers;
+                }
+            }
+        }
+
+        $this->collectVideoRenderers($payload, $renderers);
+
+        return $renderers;
+    }
+
+    /**
+     * @param  mixed  $node
+     * @param  array<int,array<string,mixed>>  $renderers
+     */
+    private function collectVideoRenderers(mixed $node, array &$renderers): void
+    {
+        if (! is_array($node)) {
+            return;
+        }
+
+        if (isset($node['videoRenderer']) && is_array($node['videoRenderer'])) {
+            $renderers[] = $node['videoRenderer'];
+        }
+
+        foreach ($node as $value) {
+            $this->collectVideoRenderers($value, $renderers);
+        }
+    }
+
+    private function extractRendererText(mixed $node): string
+    {
+        if (is_string($node)) {
+            return $this->cleanText($node);
+        }
+
+        if (! is_array($node)) {
+            return '';
+        }
+
+        $simpleText = $node['simpleText'] ?? null;
+        if (is_string($simpleText)) {
+            return $this->cleanText($simpleText);
+        }
+
+        $runs = $node['runs'] ?? null;
+        if (! is_array($runs)) {
+            return '';
+        }
+
+        $parts = [];
+
+        foreach ($runs as $run) {
+            if (! is_array($run)) {
+                continue;
+            }
+
+            $text = $run['text'] ?? null;
+            if (is_string($text) && $text !== '') {
+                $parts[] = $text;
+            }
+        }
+
+        return $this->cleanText(implode('', $parts));
+    }
+
+    private function cleanText(string $value): string
+    {
+        $cleaned = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $value) ?? $value;
+
+        return trim(preg_replace('/\s+/u', ' ', $cleaned) ?? $cleaned);
     }
 
     private function extractEntryLink(SimpleXMLElement $entry): string
