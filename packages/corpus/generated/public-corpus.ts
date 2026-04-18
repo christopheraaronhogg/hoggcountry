@@ -11,51 +11,6 @@ export const publicCorpus: readonly PublicCorpusEntry[] = [
     "sourceLabel": "Public Reference · Dad’s Field Guide"
   },
   {
-    "id": "quick/emergency",
-    "title": "quick/emergency",
-    "description": "",
-    "content": "title: \"Emergency Protocol\" part: 99 order: 3 description: \"Emergency contacts and location script\" icon: \"alert\" quickRef: true Emergency Protocol Call Priority 1. Call 911 FIRST — Always primary for life, limb, or weather danger 2. NPS Dispatch: 1-866-677-6677 — Non-emergency follow-up within NPS lands 3. No service: 3 short whistle blasts, repeat 911 dispatchers coordinate with local SAR. NPS number is supplementary. Location Script Use this verbatim: \"I am on the Appalachian Trail.\" \"State: \" \"Nearest named point: \" \"I am hiking northbound.\" \"Approximate mile marker: \" \"GPS coordinates: \" \"Can I walk: Yes / No / Limited\" \"Nature of problem: \" InReach Bail-Out Message your logistics contact: \"Bad weather. Need off-trail help. I'm near AT mile (landmark).\" They call hostels/shuttles and message back. Press SOS When: - Injury prevents movement - Hypothermia risk is real - Flooding traps you - Lost and disoriented - Self-rescue is no longer possible",
-    "headers": "Call Priority | Location Script | InReach Bail-Out | Press SOS When:",
-    "href": "/guide/#quick/emergency",
-    "sourceLabel": "Public Reference · Dad’s Field Guide"
-  },
-  {
-    "id": "quick/layering",
-    "title": "quick/layering",
-    "description": "",
-    "content": "title: \"Layering Chart\" part: 99 order: 2 description: \"Temperature-based layering decisions\" icon: \"layers\" quickRef: true Layering Chart While Moving Temp Layers ------ -------- 45-60°F Hiking shirt only, pants if windy 35-45°F Hiking hoodie, Alpha Freak, hiking pants, Buff optional 25-35°F All mid layers, Buff, shell for wind only 20-30°F Full layering including shell, Buff, gloves Static / Camp - Down puffy ON immediately - Shell over puffy if windy - Never rely on Alpha for static warmth Sleep (Every Night) - Smartwool 250 sleep top and pants - Dry socks - Puffy inside quilt if temps drop Core Rules - Wet hiking clothes = acceptable - Wet + cold + static = dangerous - Sleep layers are sacred — never hike in them - Calories are heat - Down puffy: Never hike in it. Put it on IMMEDIATELY when stopped.",
-    "headers": "While Moving | Static / Camp | Sleep (Every Night) | Core Rules",
-    "href": "/guide/#quick/layering",
-    "sourceLabel": "Public Reference · Dad’s Field Guide"
-  },
-  {
-    "id": "quick/resupply",
-    "title": "quick/resupply",
-    "description": "",
-    "content": "title: \"Resupply Locations\" part: 99 order: 4 description: \"Walkable Dollar General and mail drop locations\" icon: \"store\" quickRef: true Resupply Locations Walkable Dollar General Town Mile Distance ------ ------ ---------- Hot Springs, NC ~274.5 0.3 mi Erwin, TN ~343.8 0.6 mi Hampton, TN ~421.9 0.8 mi Pearisburg, VA ~635.7 0.9 mi Daleville, VA ~727.3 0.7 mi Waynesboro, VA ~861.7 1.1 mi Front Royal, VA ~971.1 1.0 mi Palmerton, PA ~1266.6 0.9 mi Great Barrington, MA ~1518.8 1.4 mi Gorham, NH ~1890.7 1.2 mi Recommended Mail Drops Location Mile Notes ---------- ------ ------- Hot Springs, NC ~274.6 Most reliable on AT Damascus, VA ~471 AT hub, generous hold Daleville, VA ~685.3 Easy access Harpers Ferry, WV ~860.6 Halfway, very reliable Duncannon, PA ~1090.5 Great PO + hostel Hanover, NH ~1460.4 Before the Whites Monson, ME ~1893.1 100-Mile gateway (14-day max) Shaw's Hiker Hostel, ME ~1893 Full resupply + gear ship Box Format",
-    "headers": "Walkable Dollar General | Recommended Mail Drops | Box Format",
-    "href": "/guide/#quick/resupply",
-    "sourceLabel": "Public Reference · Dad’s Field Guide"
-  },
-  {
-    "id": "quick/shelter-triggers",
-    "title": "quick/shelter-triggers",
-    "description": "",
-    "content": "title: \"Shelter Triggers\" part: 99 order: 1 description: \"When to use a shelter instead of tent\" icon: \"home\" quickRef: true Shelter Triggers Go to a shelter if ANY ONE is true: 1. Wind + Cold - Temps below ~25°F - Sustained wind 15+ mph or gusts 20+ mph - Exposed ridge or saddle - You feel cold before stopping 2. Freezing Rain or Heavy Wet Snow Automatic shelter night. No debate. 3. Ground Conditions - Solid ice - Snow too deep to anchor - No flat or drained tent sites 4. Wet and Can't Dry Before Dark - Damp clothing + temps dropping - No sun left - Hands losing dexterity 5. Mental/Physical Exhaustion - Foggy thinking - Irritation during setup - Skipping food or water steps Winter Decision Scoring Score 3+ → Shelter. Score 2 → Consider. Score 0-1 → Tent OK. Condition Points ----------- -------- Temp below 25°F +1 Sustained wind 15+ mph +1 Wet clothes at day's end +1 Freezing rain / ice forecast +2 Ground unfit for tent +1 Mental / physical exhaustion +1 NOT a shelter trigger: - Cold but dry and calm - Tired but functional - Others are staying there - Convenience",
-    "headers": "1. Wind + Cold | 2. Freezing Rain or Heavy Wet Snow | 3. Ground Conditions | 4. Wet and Can't Dry Before Dark | 5. Mental/Physical Exhaustion | Winter Decision Scoring",
-    "href": "/guide/#quick/shelter-triggers",
-    "sourceLabel": "Public Reference · Dad’s Field Guide"
-  },
-  {
-    "id": "quick/weather-signs",
-    "title": "quick/weather-signs",
-    "description": "",
-    "content": "title: \"Weather Warning Signs\" part: 99 order: 5 description: \"Rapid weather change recognition\" icon: \"cloud\" quickRef: true Weather Warning Signs Visual Warnings - Dark clouds moving quickly (especially low/rolling) - Clouds dropping into ridges or saddles - White haze on ridgelines - Sudden visibility loss - Fast temperature drop Wind Warnings - Sudden direction change - Rapid speed increase - Funneling through gaps/saddles Sound & Sensory - Any thunder (even distant) - Metallic or sharp smell - Tingling, buzzing, hair standing up → Lightning protocol immediately. Get off ridges and summits. 2-Out-of-5 Rule If ANY TWO occur, act conservatively: 1. Pressure dropping (watch elevation drift) 2. Wind increasing or shifting 3. Clouds thickening or lowering 4. Garmin forecast worsens 5. Sudden temperature drop Pressure Reading (Stationary Only) Elevation Drift Meaning ----------------- --------- ±3-5 ft, settles Stable Drops 10-20 ft over 3-6 hrs Weather in 12-24 hrs Drops 20-30+ ft in 1-3 hrs Weather imminent",
-    "headers": "Visual Warnings | Wind Warnings | Sound & Sensory | 2-Out-of-5 Rule | Pressure Reading (Stationary Only)",
-    "href": "/guide/#quick/weather-signs",
-    "sourceLabel": "Public Reference · Dad’s Field Guide"
-  },
-  {
     "id": "01-hiker-profile-and-experience",
     "title": "Hiker Profile & Experience",
     "description": "This section documents verified long-distance completions, prior AT experience, and the skills that directly translat...",
@@ -225,5 +180,50 @@ export const publicCorpus: readonly PublicCorpusEntry[] = [
     "headers": "Daily Video Structure | Section 1: Quick Context (30-45 sec) | Section 2: On-Trail Movement (1-2 min) | Section 3: Significant Sites (1-2 min) | Section 4: Practical Trail Intel (2-3 min) | Section 5: Gear in Real Use (1-2 min) | Section 6: End-of-Day Wrap (1-2 min) | Scripture Integration System | The Six Trail Categories | Scripture Presentation | Final Trail Truths | One-Line Trail Rule",
     "href": "/guide/#19-content-creation",
     "sourceLabel": "Public Reference · Dad’s Field Guide"
+  },
+  {
+    "id": "quick/shelter-triggers",
+    "title": "Shelter Triggers",
+    "description": "When to use a shelter instead of tent",
+    "content": "Shelter Triggers Go to a shelter if ANY ONE is true: 1. Wind + Cold - Temps below ~25°F - Sustained wind 15+ mph or gusts 20+ mph - Exposed ridge or saddle - You feel cold before stopping 2. Freezing Rain or Heavy Wet Snow Automatic shelter night. No debate. 3. Ground Conditions - Solid ice - Snow too deep to anchor - No flat or drained tent sites 4. Wet and Can't Dry Before Dark - Damp clothing + temps dropping - No sun left - Hands losing dexterity 5. Mental/Physical Exhaustion - Foggy thinking - Irritation during setup - Skipping food or water steps Winter Decision Scoring Score 3+ → Shelter. Score 2 → Consider. Score 0-1 → Tent OK. Condition Points ----------- -------- Temp below 25°F +1 Sustained wind 15+ mph +1 Wet clothes at day's end +1 Freezing rain / ice forecast +2 Ground unfit for tent +1 Mental / physical exhaustion +1 NOT a shelter trigger: - Cold but dry and calm - Tired but functional - Others are staying there - Convenience",
+    "headers": "1. Wind + Cold | 2. Freezing Rain or Heavy Wet Snow | 3. Ground Conditions | 4. Wet and Can't Dry Before Dark | 5. Mental/Physical Exhaustion | Winter Decision Scoring",
+    "href": "/guide/#quick/shelter-triggers",
+    "sourceLabel": "Public Reference · Quick Ref"
+  },
+  {
+    "id": "quick/layering",
+    "title": "Layering Chart",
+    "description": "Temperature-based layering decisions",
+    "content": "Layering Chart While Moving Temp Layers ------ -------- 45-60°F Hiking shirt only, pants if windy 35-45°F Hiking hoodie, Alpha Freak, hiking pants, Buff optional 25-35°F All mid layers, Buff, shell for wind only 20-30°F Full layering including shell, Buff, gloves Static / Camp - Down puffy ON immediately - Shell over puffy if windy - Never rely on Alpha for static warmth Sleep (Every Night) - Smartwool 250 sleep top and pants - Dry socks - Puffy inside quilt if temps drop Core Rules - Wet hiking clothes = acceptable - Wet + cold + static = dangerous - Sleep layers are sacred — never hike in them - Calories are heat - Down puffy: Never hike in it. Put it on IMMEDIATELY when stopped.",
+    "headers": "While Moving | Static / Camp | Sleep (Every Night) | Core Rules",
+    "href": "/guide/#quick/layering",
+    "sourceLabel": "Public Reference · Quick Ref"
+  },
+  {
+    "id": "quick/emergency",
+    "title": "Emergency Protocol",
+    "description": "Emergency contacts and location script",
+    "content": "Emergency Protocol Call Priority 1. Call 911 FIRST — Always primary for life, limb, or weather danger 2. NPS Dispatch: 1-866-677-6677 — Non-emergency follow-up within NPS lands 3. No service: 3 short whistle blasts, repeat 911 dispatchers coordinate with local SAR. NPS number is supplementary. Location Script Use this verbatim: \"I am on the Appalachian Trail.\" \"State: \" \"Nearest named point: \" \"I am hiking northbound.\" \"Approximate mile marker: \" \"GPS coordinates: \" \"Can I walk: Yes / No / Limited\" \"Nature of problem: \" InReach Bail-Out Message your logistics contact: \"Bad weather. Need off-trail help. I'm near AT mile (landmark).\" They call hostels/shuttles and message back. Press SOS When: - Injury prevents movement - Hypothermia risk is real - Flooding traps you - Lost and disoriented - Self-rescue is no longer possible",
+    "headers": "Call Priority | Location Script | InReach Bail-Out | Press SOS When:",
+    "href": "/guide/#quick/emergency",
+    "sourceLabel": "Public Reference · Quick Ref"
+  },
+  {
+    "id": "quick/resupply",
+    "title": "Resupply Locations",
+    "description": "Walkable Dollar General and mail drop locations",
+    "content": "Resupply Locations Walkable Dollar General Town Mile Distance ------ ------ ---------- Hot Springs, NC ~274.5 0.3 mi Erwin, TN ~343.8 0.6 mi Hampton, TN ~421.9 0.8 mi Pearisburg, VA ~635.7 0.9 mi Daleville, VA ~727.3 0.7 mi Waynesboro, VA ~861.7 1.1 mi Front Royal, VA ~971.1 1.0 mi Palmerton, PA ~1266.6 0.9 mi Great Barrington, MA ~1518.8 1.4 mi Gorham, NH ~1890.7 1.2 mi Recommended Mail Drops Location Mile Notes ---------- ------ ------- Hot Springs, NC ~274.6 Most reliable on AT Damascus, VA ~471 AT hub, generous hold Daleville, VA ~685.3 Easy access Harpers Ferry, WV ~860.6 Halfway, very reliable Duncannon, PA ~1090.5 Great PO + hostel Hanover, NH ~1460.4 Before the Whites Monson, ME ~1893.1 100-Mile gateway (14-day max) Shaw's Hiker Hostel, ME ~1893 Full resupply + gear ship Box Format",
+    "headers": "Walkable Dollar General | Recommended Mail Drops | Box Format",
+    "href": "/guide/#quick/resupply",
+    "sourceLabel": "Public Reference · Quick Ref"
+  },
+  {
+    "id": "quick/weather-signs",
+    "title": "Weather Warning Signs",
+    "description": "Rapid weather change recognition",
+    "content": "Weather Warning Signs Visual Warnings - Dark clouds moving quickly (especially low/rolling) - Clouds dropping into ridges or saddles - White haze on ridgelines - Sudden visibility loss - Fast temperature drop Wind Warnings - Sudden direction change - Rapid speed increase - Funneling through gaps/saddles Sound & Sensory - Any thunder (even distant) - Metallic or sharp smell - Tingling, buzzing, hair standing up → Lightning protocol immediately. Get off ridges and summits. 2-Out-of-5 Rule If ANY TWO occur, act conservatively: 1. Pressure dropping (watch elevation drift) 2. Wind increasing or shifting 3. Clouds thickening or lowering 4. Garmin forecast worsens 5. Sudden temperature drop Pressure Reading (Stationary Only) Elevation Drift Meaning ----------------- --------- ±3-5 ft, settles Stable Drops 10-20 ft over 3-6 hrs Weather in 12-24 hrs Drops 20-30+ ft in 1-3 hrs Weather imminent",
+    "headers": "Visual Warnings | Wind Warnings | Sound & Sensory | 2-Out-of-5 Rule | Pressure Reading (Stationary Only)",
+    "href": "/guide/#quick/weather-signs",
+    "sourceLabel": "Public Reference · Quick Ref"
   }
 ];

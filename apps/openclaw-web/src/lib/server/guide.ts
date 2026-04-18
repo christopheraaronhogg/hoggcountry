@@ -1,5 +1,7 @@
+import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { marked } from 'marked';
 
 export interface GuideEntry {
@@ -9,11 +11,48 @@ export interface GuideEntry {
   readonly part: number;
   readonly order: number;
   readonly html: string;
+  readonly markdown: string;
   readonly excerpt: string;
   readonly quickRef: boolean;
 }
 
-const GUIDE_DIR = new URL('../../../../../src/content/guide/', import.meta.url);
+const GUIDE_DIR = resolveGuideDir();
+
+function resolveGuideDir(): string {
+  const candidates = [
+    path.resolve(process.cwd(), 'src/content/guide'),
+    path.resolve(process.cwd(), '../src/content/guide'),
+    path.resolve(process.cwd(), '../../src/content/guide'),
+    fileURLToPath(new URL('../../../../../../src/content/guide/', import.meta.url))
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return candidates[0];
+}
+
+async function listGuideFiles(dir: string, prefix = ''): Promise<string[]> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const nested = await Promise.all(
+    entries.map(async (entry) => {
+      if (entry.isDirectory()) {
+        return listGuideFiles(path.join(dir, entry.name), path.posix.join(prefix, entry.name));
+      }
+
+      if (entry.isFile() && entry.name.endsWith('.md')) {
+        return [path.posix.join(prefix, entry.name)];
+      }
+
+      return [] as string[];
+    })
+  );
+
+  return nested.flat();
+}
 
 function parseFrontmatter(content: string): { frontmatter: Record<string, string | number | boolean>; body: string } {
   const match = /^---\n([\s\S]*?)\n---\n?/u.exec(content);
@@ -44,10 +83,11 @@ function excerpt(text: string): string {
 }
 
 async function loadGuideFile(fileName: string): Promise<GuideEntry> {
-  const fullPath = path.join(GUIDE_DIR.pathname, fileName);
+  const normalizedFileName = fileName.replace(/\\/gu, '/');
+  const fullPath = path.join(GUIDE_DIR, normalizedFileName);
   const content = await readFile(fullPath, 'utf-8');
   const { frontmatter, body } = parseFrontmatter(content);
-  const slug = fileName.replace(/\.md$/u, '');
+  const slug = normalizedFileName.replace(/\.md$/u, '');
   const title = String(frontmatter.title ?? slug);
   const description = String(frontmatter.description ?? excerpt(body));
   const html = await marked.parse(body);
@@ -59,17 +99,14 @@ async function loadGuideFile(fileName: string): Promise<GuideEntry> {
     part: Number(frontmatter.part ?? 0),
     order: Number(frontmatter.order ?? 0),
     html,
+    markdown: body,
     excerpt: excerpt(body),
     quickRef: Boolean(frontmatter.quickRef ?? false)
   };
 }
 
 export async function loadGuideIndex(): Promise<GuideEntry[]> {
-  const entries = await readdir(GUIDE_DIR, { withFileTypes: true });
-  const files = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
-    .map((entry) => entry.name);
-
+  const files = await listGuideFiles(GUIDE_DIR);
   const guide = await Promise.all(files.map((file) => loadGuideFile(file)));
   return guide.sort((left, right) => {
     if (left.part !== right.part) return left.part - right.part;
@@ -78,7 +115,21 @@ export async function loadGuideIndex(): Promise<GuideEntry[]> {
 }
 
 export async function loadGuideBySlug(slug: string): Promise<GuideEntry | null> {
-  const safeSlug = slug.replace(/[^a-z0-9-]/giu, '');
+  const normalizedSlug = slug.replace(/\\/gu, '/').replace(/^\/+|\/+$/gu, '');
+  const segments = normalizedSlug.split('/').filter(Boolean);
+
+  if (segments.length === 0 || segments.some((segment) => !/^[a-z0-9-]+$/iu.test(segment))) {
+    return null;
+  }
+
+  const safeSlug = segments.join('/');
+  const candidatePath = path.resolve(GUIDE_DIR, `${safeSlug}.md`);
+  const relative = path.relative(GUIDE_DIR, candidatePath);
+
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    return null;
+  }
+
   try {
     return await loadGuideFile(`${safeSlug}.md`);
   } catch {
