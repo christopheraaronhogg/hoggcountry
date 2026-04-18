@@ -23,7 +23,7 @@ Route::get('/native', function () {
     ]);
 });
 
-Route::match(['GET', 'HEAD'], '/{path}', [OpenClawWebProxyController::class, 'show'])
+Route::match(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/{path}', [OpenClawWebProxyController::class, 'show'])
     ->where('path', '^(?!api(?:/|$)|up(?:/|$)|native(?:/|$)).+')
     ->withoutMiddleware([
         \Illuminate\Cookie\Middleware\EncryptCookies::class,

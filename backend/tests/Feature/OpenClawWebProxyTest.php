@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -58,6 +59,61 @@ class OpenClawWebProxyTest extends TestCase
 
         $response->assertStatus(307);
         $response->assertHeader('Location', '/dad/map');
+    }
+
+    public function test_post_requests_are_proxied_to_openclaw_web_when_enabled(): void
+    {
+        config()->set('services.openclaw_web.enabled', true);
+        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+
+        Http::fake([
+            'http://127.0.0.1:3000/app-api/workspace/initialize' => Http::response('{"ok":true}', 200, [
+                'Content-Type' => 'application/json',
+            ]),
+        ]);
+
+        $response = $this->withHeader('Origin', 'http://localhost')
+            ->postJson('/app-api/workspace/initialize', [
+                'trailName' => 'Smoke Test',
+            ]);
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'ok' => true,
+        ]);
+
+        Http::assertSent(function ($request) {
+            return $request->method() === 'POST'
+                && $request->url() === 'http://127.0.0.1:3000/app-api/workspace/initialize'
+                && $request->hasHeader('content-type', 'application/json')
+                && $request->hasHeader('origin', 'http://localhost')
+                && str_contains($request->body(), 'Smoke Test');
+        });
+    }
+
+    public function test_multipart_requests_are_proxied_to_openclaw_web_when_enabled(): void
+    {
+        config()->set('services.openclaw_web.enabled', true);
+        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+
+        Http::fake([
+            'http://127.0.0.1:3000/app-api/workspace/documents' => Http::response('{"ok":true}', 200, [
+                'Content-Type' => 'application/json',
+            ]),
+        ]);
+
+        $response = $this->withHeader('Origin', 'http://localhost')
+            ->post('/app-api/workspace/documents', [
+                'note' => 'Trail shuttle',
+                'files' => UploadedFile::fake()->createWithContent('notes.txt', 'Shuttle number: 555-0100'),
+            ]);
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'ok' => true,
+        ]);
+
+        Http::assertSentCount(1);
     }
 
     public function test_api_routes_stay_on_laravel_when_proxy_is_enabled(): void
