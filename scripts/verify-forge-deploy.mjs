@@ -34,8 +34,32 @@ const checks = [
     path: "/",
     expectStatus: 200,
     validate(result) {
-      if (!result.json || result.json?.data?.service !== "hoggcountry-api") {
-        return "expected root JSON response from hoggcountry-api";
+      const contentType = result.headers["content-type"] || "";
+
+      if (!contentType.includes("text/html")) {
+        return "expected root HTML response from the public frontend";
+      }
+
+      if (!/Hogg Country|APPALACHIAN TRAIL|ranger-hero/i.test(result.text)) {
+        return "expected root HTML to contain public site markers";
+      }
+
+      return null;
+    },
+  },
+  {
+    label: "guide",
+    path: "/guide",
+    expectStatus: 200,
+    validate(result) {
+      const contentType = result.headers["content-type"] || "";
+
+      if (!contentType.includes("text/html")) {
+        return "expected guide HTML response";
+      }
+
+      if (!/AT NOBO Field Guide|guide-search-container|chapter-section/i.test(result.text)) {
+        return "expected guide HTML markers";
       }
 
       return null;
@@ -158,8 +182,20 @@ if (options.expectedSha && build?.sha && build.sha !== options.expectedSha) {
 }
 
 if (health?.status === 200) {
+  const root = results.find((result) => result.label === "root");
+  const guide = results.find((result) => result.label === "guide");
   const plans = results.find((result) => result.label === "plans");
   const providers = results.find((result) => result.label === "byos-providers");
+
+  if (root?.headers["content-type"]?.includes("application/json")) {
+    problems.push("deployment drift detected: root is still serving the legacy API JSON instead of the public frontend");
+    hasFailures = true;
+  }
+
+  if (guide && guide.status === 404) {
+    problems.push("deployment drift detected: guide route is missing on Forge");
+    hasFailures = true;
+  }
 
   if ((plans && plans.status === 404) || (providers && providers.status === 404)) {
     problems.push(
@@ -179,6 +215,7 @@ const summary = {
     status: result.status,
     ok: result.ok,
     service: result.json?.data?.service ?? null,
+    contentType: result.headers["content-type"] ?? null,
     build: result.json?.meta?.build ?? null,
   })),
   problems,

@@ -18,6 +18,7 @@
     "build:public": "npm run build -w @hoggcountry/public",
     "build:workspace": "npm run build -w @hoggcountry/workspace",
     "build:openclaw": "npm run build -w @hoggcountry/openclaw-web",
+    "build:openclaw:forge": "npm run prebuild && OPENCLAW_WEB_ADAPTER=node npm run build -w @hoggcountry/openclaw-web",
     "build:game": "cd trailhogg/trailhogg && npm install && cd shared && npm install && npm run build && cd ../client && npm install && npm run build",
     "postbuild": "node scripts/generate-asset-manifest.js",
     "build:pdf": "node scripts/generate-pdf.js",
@@ -55,6 +56,9 @@
     "preview:public": "npm run preview -w @hoggcountry/public",
     "preview:workspace": "npm run preview -w @hoggcountry/workspace",
     "preview:openclaw": "npm run preview -w @hoggcountry/openclaw-web",
+    "start:openclaw:forge": "cd apps/openclaw-web && HOST=${HOST:-127.0.0.1} PORT=${PORT:-3000} node build",
+    "forge:openclaw:pm2": "pm2 startOrReload apps/openclaw-web/ecosystem.config.cjs --update-env",
+    "forge:openclaw:pm2:status": "pm2 show hoggcountry-openclaw",
     "astro": "astro"
   },
   "dependencies": {

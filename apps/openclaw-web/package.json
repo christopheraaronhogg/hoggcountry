@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "svelte-kit dev --host",
     "build": "svelte-kit sync && vite build",
+    "build:node": "OPENCLAW_WEB_ADAPTER=node svelte-kit sync && vite build",
     "preview": "vite preview --host",
     "check": "svelte-kit sync",
+    "start:node": "HOST=${HOST:-127.0.0.1} PORT=${PORT:-3000} node build",
     "spacetime:generate": "spacetime generate --lang typescript --out-dir src/lib/module_bindings --module-path spacetimedb"
   },
   "dependencies": {
@@ -19,6 +21,7 @@
     "spacetimedb": "^2.1.0"
   },
   "devDependencies": {
+    "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/adapter-netlify": "^6.0.4",
     "@sveltejs/kit": "^2.57.0",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",

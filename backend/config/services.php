@@ -41,4 +41,9 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'openclaw_web' => [
+        'enabled' => filter_var(env('OPENCLAW_WEB_PROXY_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'origin' => rtrim((string) env('OPENCLAW_WEB_PROXY_ORIGIN', 'http://127.0.0.1:3000'), '/'),
+    ],
+
 ];
