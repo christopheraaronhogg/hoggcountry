@@ -104,9 +104,14 @@ return [
         'default_provider' => env('TRAIL_ASSISTANT_BYOS_DEFAULT_PROVIDER', 'openai_api_key'),
         'decision' => [
             'status' => 'accepted',
-            'last_reviewed_on' => '2026-03-03',
-            'summary' => 'BYO OpenAI API key is the feasible current path. ChatGPT subscription passthrough remains unsupported.',
+            'last_reviewed_on' => '2026-04-18',
+            'summary' => 'A user-authenticated ChatGPT/Codex companion is feasible now for foreground responses. Pure hosted billing passthrough and unattended background execution on a ChatGPT subscription are still not a safe supported lane.',
             'supported_now' => [
+                [
+                    'id' => 'openai_codex_local_bridge',
+                    'label' => 'ChatGPT/Codex local companion',
+                    'notes' => 'User signs into ChatGPT/Codex locally through OpenClaw, then Hogg Country talks to a loopback bridge for live responses.',
+                ],
                 [
                     'id' => 'openai_api_key',
                     'label' => 'BYO OpenAI API key',
@@ -120,19 +125,24 @@ return [
                 [
                     'id' => 'hybrid_mode',
                     'label' => 'Hybrid mode',
-                    'notes' => 'Users can choose either BYO key or app-managed billing based on preference.',
+                    'notes' => 'Users can choose either a ChatGPT companion, a BYO key, or app-managed billing based on context.',
                 ],
             ],
             'unsupported_now' => [
                 [
                     'id' => 'chatgpt_subscription_passthrough',
-                    'label' => 'ChatGPT subscription passthrough',
-                    'reason' => 'ChatGPT subscriptions and API billing remain separate with no third-party passthrough billing path documented.',
+                    'label' => 'Hosted ChatGPT subscription passthrough',
+                    'reason' => 'ChatGPT subscriptions and API billing remain separate for server-side third-party billing passthrough.',
                 ],
                 [
                     'id' => 'openai_signin_billing_passthrough',
                     'label' => 'Sign in with OpenAI billing delegation',
-                    'reason' => 'Current OpenAI OAuth/App SDK docs do not provide third-party API billing delegation from ChatGPT subscriptions.',
+                    'reason' => 'Current OpenAI OAuth/App SDK docs do not provide a hosted third-party billing delegation path from ChatGPT subscriptions.',
+                ],
+                [
+                    'id' => 'chatgpt_background_delegate',
+                    'label' => 'Unattended background delegate on ChatGPT subscription',
+                    'reason' => 'A user-linked local ChatGPT companion works for attended foreground requests, but a cloud worker spending the user subscription in the background is still unresolved.',
                 ],
             ],
             'sources' => [
@@ -167,6 +177,14 @@ return [
             ],
         ],
         'providers' => [
+            'openai_codex_local_bridge' => [
+                'label' => 'ChatGPT/Codex local companion',
+                'enabled' => true,
+                'auth_mode' => 'openclaw_local_bridge',
+                'funding_model' => 'user_subscription_local_companion',
+                'available_models' => ['openai-codex/gpt-5.4'],
+                'notes' => 'Supported as the first practical connector lane. Requires a local OpenClaw companion logged into ChatGPT/Codex and a loopback bridge process.',
+            ],
             'openai_api_key' => [
                 'label' => 'OpenAI API key (user-provided)',
                 'enabled' => true,

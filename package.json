@@ -49,6 +49,8 @@
     "monorepo:check": "npm run build && npm run backend:frontend:build && npm run backend:test",
     "verify:forge": "node scripts/verify-forge-deploy.mjs",
     "trail-assistant:verify-urls": "node scripts/trail-assistant-url-matrix.mjs",
+    "trail-assistant:chatgpt-proof": "node scripts/openclaw-codex-proof.mjs",
+    "trail-assistant:chatgpt-bridge": "node scripts/openclaw-codex-local-bridge.mjs",
     "trail-assistant:blocker-email": "python3 scripts/trail_assistant_blocker_email_helper.py",
     "trail-assistant:runlog-autoupdate": "python3 scripts/trail_assistant_runlog_autoupdater.py",
     "trail-assistant:queue-review": "python3 scripts/trail_assistant_queue_review_helper.py",

@@ -52,6 +52,28 @@ class TrailAssistantByosEntitlementServiceTest extends TestCase
         $this->assertSame('api_key_present', $entitlement->reason);
     }
 
+    public function test_chatgpt_local_bridge_requires_loopback_connector_url(): void
+    {
+        $service = new TrailAssistantByosEntitlementService($this->registry());
+
+        $entitlement = $service->evaluate('openai_codex_local_bridge');
+
+        $this->assertSame('needs_connector', $entitlement->status);
+        $this->assertSame('missing_local_bridge_url', $entitlement->reason);
+    }
+
+    public function test_chatgpt_local_bridge_is_active_when_loopback_connector_is_present(): void
+    {
+        $service = new TrailAssistantByosEntitlementService($this->registry());
+
+        $entitlement = $service->evaluate('openai_codex_local_bridge', [
+            'bridge_url' => 'http://127.0.0.1:4318/reply',
+        ]);
+
+        $this->assertSame('active', $entitlement->status);
+        $this->assertSame('local_bridge_configured', $entitlement->reason);
+    }
+
     public function test_chatgpt_subscription_passthrough_returns_unsupported(): void
     {
         $service = new TrailAssistantByosEntitlementService($this->registry());
@@ -65,6 +87,13 @@ class TrailAssistantByosEntitlementServiceTest extends TestCase
     private function registry(): TrailAssistantByosProviderRegistry
     {
         return new TrailAssistantByosProviderRegistry([
+            'openai_codex_local_bridge' => [
+                'label' => 'ChatGPT/Codex local companion',
+                'enabled' => true,
+                'auth_mode' => 'openclaw_local_bridge',
+                'funding_model' => 'user_subscription_local_companion',
+                'available_models' => ['openai-codex/gpt-5.4'],
+            ],
             'openai_api_key' => [
                 'label' => 'OpenAI API key',
                 'enabled' => true,

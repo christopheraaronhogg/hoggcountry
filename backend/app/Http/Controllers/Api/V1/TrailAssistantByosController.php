@@ -49,6 +49,7 @@ class TrailAssistantByosController extends ApiController
             'provider' => ['nullable', 'string', 'max:80'],
             'credentials' => ['nullable', 'array'],
             'credentials.api_key' => ['nullable', 'string', 'max:512'],
+            'credentials.bridge_url' => ['nullable', 'string', 'max:512'],
         ]);
 
         $provider = is_string($validated['provider'] ?? null)
@@ -160,10 +161,16 @@ class TrailAssistantByosController extends ApiController
             ? trim((string) $credentials['api_key'])
             : '';
 
+        $bridgeUrl = is_string($credentials['bridge_url'] ?? null)
+            ? trim((string) $credentials['bridge_url'])
+            : '';
+
         return [
             'api_key_present' => $apiKey !== '',
             'api_key_length' => $apiKey === '' ? 0 : strlen($apiKey),
             'api_key_hint' => $this->maskApiKey($apiKey),
+            'bridge_url_present' => $bridgeUrl !== '',
+            'bridge_url_host' => $bridgeUrl === '' ? null : (parse_url($bridgeUrl, PHP_URL_HOST) ?: null),
         ];
     }
 

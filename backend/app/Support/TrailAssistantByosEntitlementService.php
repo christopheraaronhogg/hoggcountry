@@ -39,6 +39,7 @@ final class TrailAssistantByosEntitlementService
 
         return match ($authMode) {
             'api_key' => $this->evaluateApiKeyProvider($provider, $credentials),
+            'openclaw_local_bridge' => $this->evaluateOpenClawLocalBridgeProvider($provider, $credentials),
             'oauth' => new TrailAssistantByosEntitlement(
                 provider: $provider['id'],
                 status: 'pending_provider_integration',
@@ -105,6 +106,54 @@ final class TrailAssistantByosEntitlementService
             provider: $provider['id'],
             status: 'active',
             reason: 'api_key_present',
+            details: $provider,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $provider
+     * @param array<string, mixed> $credentials
+     */
+    private function evaluateOpenClawLocalBridgeProvider(array $provider, array $credentials): TrailAssistantByosEntitlement
+    {
+        $bridgeUrl = is_string($credentials['bridge_url'] ?? null)
+            ? trim((string) $credentials['bridge_url'])
+            : '';
+
+        if ($bridgeUrl === '') {
+            return new TrailAssistantByosEntitlement(
+                provider: $provider['id'],
+                status: 'needs_connector',
+                reason: 'missing_local_bridge_url',
+                details: $provider,
+            );
+        }
+
+        if (! filter_var($bridgeUrl, FILTER_VALIDATE_URL)) {
+            return new TrailAssistantByosEntitlement(
+                provider: $provider['id'],
+                status: 'needs_connector',
+                reason: 'local_bridge_url_invalid',
+                details: $provider,
+            );
+        }
+
+        $host = strtolower((string) (parse_url($bridgeUrl, PHP_URL_HOST) ?? ''));
+        $loopbackHosts = ['127.0.0.1', 'localhost', '::1'];
+
+        if (! in_array($host, $loopbackHosts, true)) {
+            return new TrailAssistantByosEntitlement(
+                provider: $provider['id'],
+                status: 'needs_connector',
+                reason: 'local_bridge_must_be_loopback',
+                details: $provider,
+            );
+        }
+
+        return new TrailAssistantByosEntitlement(
+            provider: $provider['id'],
+            status: 'active',
+            reason: 'local_bridge_configured',
             details: $provider,
         );
     }
