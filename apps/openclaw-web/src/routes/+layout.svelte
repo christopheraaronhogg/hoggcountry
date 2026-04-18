@@ -13,15 +13,9 @@
   let guideHeaderHidden = $state(false);
 
   const publicToolsLinks = [
+    { href: '/guide', label: 'Field Guide', external: false },
     { href: '/videos', label: 'Videos', external: false },
-    { href: '/at-map', label: 'AT Map', external: false },
-    { href: 'https://hoggcountry.com/trail', label: 'Trail Hub', external: true },
-    { href: 'https://hoggcountry.com/tools', label: 'Trail Tools', external: true },
-    { href: 'https://hoggcountry.com/tools/character', label: 'My Profile', external: true },
-    { href: 'https://hoggcountry.com/login', label: 'Account', external: true },
-    { href: 'https://hoggcountry.com/videohogg', label: 'VideoHogg', external: true },
-    { href: 'https://hoggcountry.com/at-weather', label: 'AT Weather', external: true },
-    { href: '/guide', label: 'Field Guide', external: false }
+    { href: '/at-map', label: 'AT Map', external: false }
   ];
 
   function closeTools() {
