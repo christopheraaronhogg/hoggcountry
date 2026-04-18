@@ -7,7 +7,7 @@
 
   const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "https://hoggcountry.on-forge.com/api/v1").replace(/\/+$/, "");
 
-  let { videos: initialVideos = [] } = $props();
+  let { videos: initialVideos = [], cutoverSafe = false } = $props();
   let videos = $state(initialVideos);
   let _liveLoadError = $state("");
 
@@ -187,15 +187,17 @@
           </span>
           Read the Field Guide
         </a>
-        <a href="/tools" class="cta-secondary">
-          <span class="cta-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </span>
-          Explore Trail Tools
-        </a>
+        {#if !cutoverSafe}
+          <a href="/tools" class="cta-secondary">
+            <span class="cta-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </span>
+            Explore Trail Tools
+          </a>
+        {/if}
       </div>
     </div>
 
@@ -475,6 +477,7 @@
   <!-- ========================================== -->
   <!-- TRAIL TOOLS - Vintage Instrument Panel    -->
   <!-- ========================================== -->
+  {#if !cutoverSafe}
   <section class="ranger-tools">
     <div class="tools-container">
       <div class="tools-header">
@@ -637,6 +640,7 @@
       </div>
     </div>
   </section>
+  {/if}
 
   <!-- ========================================== -->
   <!-- TRAIL DISPATCHES - Latest Videos          -->
@@ -699,44 +703,45 @@
         <div class="panel-wood-edge"></div>
       </a>
 
-      <!-- Panel 2: The Tools -->
-      <a href="/tools" class="panel panel-tools">
-        <div class="panel-frame">
-          <div class="panel-number">II</div>
-          <div class="panel-icon">
-            <svg viewBox="0 0 64 64" fill="currentColor">
-              <circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="3" />
-              <circle cx="32" cy="32" r="8" fill="none" stroke="currentColor" stroke-width="2" />
-              <path d="M32 8v8M32 48v8M8 32h8M48 32h8M14 14l6 6M44 44l6 6M14 50l6-6M44 14l6 6" stroke="currentColor" stroke-width="2" />
-            </svg>
-          </div>
-          <h3 class="panel-title">TRAIL INSTRUMENTS</h3>
-          <p class="panel-desc">
-            14 interactive calculators and planners for milestones, resupply strategy,
-            weather decisions, and expedition budget tracking.
-          </p>
-          <div class="panel-meta">
-            <span class="meta-item">
-              <svg viewBox="0 0 24 24" fill="currentColor" class="meta-icon">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24" />
+      {#if !cutoverSafe}
+        <!-- Panel 2: The Tools -->
+        <a href="/tools" class="panel panel-tools">
+          <div class="panel-frame">
+            <div class="panel-number">II</div>
+            <div class="panel-icon">
+              <svg viewBox="0 0 64 64" fill="currentColor">
+                <circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="3" />
+                <circle cx="32" cy="32" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+                <path d="M32 8v8M32 48v8M8 32h8M48 32h8M14 14l6 6M44 44l6 6M14 50l6-6M44 14l6 6" stroke="currentColor" stroke-width="2" />
               </svg>
-              14 Instruments
-            </span>
-            <span class="meta-item">
-              <svg viewBox="0 0 24 24" fill="currentColor" class="meta-icon">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-              Real-time Data
-            </span>
+            </div>
+            <h3 class="panel-title">TRAIL INSTRUMENTS</h3>
+            <p class="panel-desc">
+              14 interactive calculators and planners for milestones, resupply strategy,
+              weather decisions, and expedition budget tracking.
+            </p>
+            <div class="panel-meta">
+              <span class="meta-item">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="meta-icon">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24" />
+                </svg>
+                14 Instruments
+              </span>
+              <span class="meta-item">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="meta-icon">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                Real-time Data
+              </span>
+            </div>
+            <span class="panel-cta">Open Toolkit</span>
           </div>
-          <span class="panel-cta">Open Toolkit</span>
-        </div>
-        <div class="panel-wood-edge"></div>
-      </a>
+          <div class="panel-wood-edge"></div>
+        </a>
 
-      <!-- Panel 3: The Journey -->
-      <a href="/trips" class="panel panel-journey">
+        <!-- Panel 3: The Journey -->
+        <a href="/trips" class="panel panel-journey">
         <div class="panel-frame">
           <div class="panel-number">III</div>
           <div class="panel-icon">
@@ -771,6 +776,7 @@
         </div>
         <div class="panel-wood-edge"></div>
       </a>
+      {/if}
     </div>
   </section>
 
@@ -983,10 +989,12 @@
 
       <div class="footer-nav">
         <a href="/guide">Field Guide</a>
-        <span class="footer-dot"></span>
-        <a href="/tools">Trail Tools</a>
-        <span class="footer-dot"></span>
-        <a href="/trips">Trip Reports</a>
+        {#if !cutoverSafe}
+          <span class="footer-dot"></span>
+          <a href="/tools">Trail Tools</a>
+          <span class="footer-dot"></span>
+          <a href="/trips">Trip Reports</a>
+        {/if}
         <span class="footer-dot"></span>
         <a href="/videos">Videos</a>
       </div>
