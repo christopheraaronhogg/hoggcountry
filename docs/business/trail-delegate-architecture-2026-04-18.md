@@ -28,7 +28,7 @@ The user is buying a private trail operating system that can:
 - a shared group bot
 - a magic black box with hidden memory only
 - a workflow that depends on exposing raw model credentials in the client
-- a fake “use your ChatGPT subscription here” passthrough
+- a fake generic “your ChatGPT plan just pays our server bill” passthrough
 
 ---
 
@@ -330,34 +330,43 @@ Rule:
 ## BYOS model funding design
 
 ## Current decision
-Use a **hybrid funding model**:
+Use a **hybrid provider model**:
 - platform-funded usage for bundled plans
 - BYOS API key for users who want direct control over model spend
+- a separate user-connected account lane for providers that support external-tool OAuth, starting with OpenAI Codex / ChatGPT OAuth research
 
 ### What users can plug in today
-Supported production-feasible lane:
+Supported or technically viable lanes:
 - **their own provider API key**, starting with OpenAI API keys
+- **a connected OpenAI Codex / ChatGPT OAuth account** as a cloud-side upstream model lane for that user's delegate, once Hogg Country wires the server-side connector
 
 ### What users cannot plug in today
 Not supported:
-- ChatGPT Plus or Pro subscription passthrough
-- handing us their ChatGPT login
-- using consumer chat subscriptions as third-party API billing
+- generic ChatGPT Plus or Pro billing passthrough
+- exposing raw model credentials in the client
+- treating consumer chat subscriptions as interchangeable with normal server-side API billing
 
-That matches the current BYOS ADR already in the repo.
+### What is still unresolved
+Needs separate validation:
+- unattended background delegate execution against a connected ChatGPT subscription
+- long-running autonomous cloud jobs that spend the user's connected chat account without an active foreground request
 
-### BYOS request flow
+The older BYOS ADR is still useful for billing-separation caution, but it is too narrow to describe the newer connected-account lane.
+
+### Provider connection flow
 1. user signs into Hogg Country
 2. user opens provider settings
 3. user chooses:
    - `Hogg Country included AI`
    - `Bring my own API key`
-4. if BYOS, user submits provider key over TLS
-5. backend encrypts and stores the secret
-6. backend runs a low-cost validation probe
-7. entitlement service marks provider lane active
-8. future delegate requests resolve funding mode server-side
-9. usage ledger records whether the request was platform-funded or BYOS-funded
+   - `Connect ChatGPT`
+4. if API-key BYOS, user submits provider key over TLS
+5. if ChatGPT connect, user completes provider OAuth and Hogg Country stores the resulting server-side credential set
+6. backend encrypts and stores the credential material
+7. backend runs a validation probe or status check
+8. entitlement service marks the chosen lane active
+9. future delegate requests resolve provider mode server-side
+10. usage ledger records whether the request was platform-funded, API-key-funded, or connected-account-backed
 
 ### Provider abstraction contract
 Each provider integration should expose:
@@ -372,9 +381,10 @@ Each provider integration should expose:
 
 ### Account UX copy
 The UI should say this plainly:
-- your ChatGPT subscription does not fund API calls here
-- if you want to use your own AI billing, add an API key
-- your key is encrypted and only used server-side for your requests
+- connecting ChatGPT is not the same thing as handing us a raw API key
+- your connected provider account is used server-side only for your Hogg Country requests
+- a ChatGPT connection is not generic API billing passthrough
+- if you want direct API billing control, add an API key instead
 
 ---
 
@@ -474,5 +484,6 @@ Hogg Country should be powered like this:
 
 And for AI subscriptions:
 - users can plug in an **API subscription** through a provider key
-- they cannot plug in a normal ChatGPT subscription as a billing passthrough
-- the safest commercial model is **hybrid: platform-funded by default, BYOS for power users**
+- users may also be able to plug in a **connected ChatGPT/Codex account** as the upstream brain for their cloud-hosted delegate
+- they cannot plug in a normal ChatGPT subscription as a generic billing passthrough
+- the safest commercial model is still **hybrid: platform-funded by default, user-connected lanes where technically supported, and BYOS for power users**
