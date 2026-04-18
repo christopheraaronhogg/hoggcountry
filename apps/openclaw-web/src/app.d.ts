@@ -6,6 +6,7 @@ declare global {
         email: string;
         trailName: string;
       } | null;
+      workspaceId: string | null;
     }
 
     interface PageData {

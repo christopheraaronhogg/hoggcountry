@@ -84,7 +84,7 @@
 
 <div class="stack" style="margin-top:1rem;">
   {#each sections as section}
-    <article class="card panel-copy">
+    <article class="card panel-copy" id={section.id}>
       <p class="eyebrow">{section.kind}</p>
       <h2>{section.title}</h2>
       <p class="muted">{section.summary}</p>

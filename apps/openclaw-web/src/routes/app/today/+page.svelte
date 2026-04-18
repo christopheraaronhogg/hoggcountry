@@ -2,12 +2,13 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { buildTodayCards, getTrailPhase } from '@hoggcountry/trail-data';
-  import { getProfile, setCurrentMile } from '$lib/manual-db';
-  import type { ManualProfile } from '@hoggcountry/manual-core';
+  import { getProfile, getTools, setCurrentMile } from '$lib/manual-db';
+  import type { ManualProfile, WorkspaceTool } from '@hoggcountry/manual-core';
 
   let profile = $state<ManualProfile | null>(null);
   let mileDraft = $state(0);
   let cards = $state<ReturnType<typeof buildTodayCards>>([]);
+  let tools = $state<WorkspaceTool[]>([]);
   let phaseLabel = $state('');
   let error = $state('');
 
@@ -21,6 +22,7 @@
     profile = nextProfile;
     mileDraft = nextProfile.currentMile;
     cards = buildTodayCards(nextProfile);
+    tools = await getTools();
     phaseLabel = getTrailPhase(nextProfile.currentMile).label;
   }
 
@@ -79,6 +81,28 @@
       </article>
     {/each}
   </section>
+
+  {#if tools.length > 0}
+    <section class="stack" style="margin-top:1rem;">
+      <div class="page-intro">
+        <p class="eyebrow">Trail tools</p>
+        <h2>Reusable routines for the day in front of you.</h2>
+      </div>
+
+      {#each tools.slice(0, 2) as tool}
+        <article class="card panel-copy" id={tool.id}>
+          <p class="eyebrow">{tool.author === 'user' ? 'Your checklist' : 'Starter checklist'}</p>
+          <h3>{tool.title}</h3>
+          <p class="muted">{tool.summary}</p>
+          <ol class="list-clean">
+            {#each tool.items as item}
+              <li>{item.label}</li>
+            {/each}
+          </ol>
+        </article>
+      {/each}
+    </section>
+  {/if}
 {:else if error}
   <p style="color:#8a2f2f; font-weight:700;">{error}</p>
 {/if}

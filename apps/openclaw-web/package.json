@@ -3,12 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "svelte-kit dev --host",
+    "dev": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") svelte-kit dev --host",
     "build": "svelte-kit sync && vite build",
     "build:node": "OPENCLAW_WEB_ADAPTER=node svelte-kit sync && vite build",
-    "preview": "vite preview --host",
+    "preview": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") vite preview --host",
     "check": "svelte-kit sync",
-    "start:node": "HOST=${HOST:-127.0.0.1} PORT=${PORT:-3000} node build",
+    "start:node": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") HOST=${HOST:-127.0.0.1} PORT=${PORT:-3000} node build",
     "spacetime:generate": "spacetime generate --lang typescript --out-dir src/lib/module_bindings --module-path spacetimedb"
   },
   "dependencies": {

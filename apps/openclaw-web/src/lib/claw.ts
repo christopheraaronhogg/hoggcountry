@@ -1,4 +1,4 @@
-import type { ImportedDocument, ManualProfile, ManualSection } from '@hoggcountry/manual-core';
+import type { ImportedDocument, ManualProfile, ManualSection, WorkspaceTool } from '@hoggcountry/manual-core';
 
 export interface ClawLane {
   readonly title: string;
@@ -14,9 +14,11 @@ function hasSectionNote(sections: ManualSection[], sectionId: string): boolean {
 export function buildClawLanes(
   profile: ManualProfile,
   sections: ManualSection[],
-  docs: ImportedDocument[]
+  docs: ImportedDocument[],
+  tools: WorkspaceTool[]
 ): ClawLane[] {
   const docCount = docs.length;
+  const toolCount = tools.length;
   const hasEmergencyNote = hasSectionNote(sections, 'emergency-sheet');
   const hasTownNote = hasSectionNote(sections, 'town-stop');
 
@@ -42,6 +44,16 @@ export function buildClawLanes(
         : 'Emergency is still template-only. The manual needs your actual contacts, meds, and bail logic.',
       action: hasEmergencyNote ? 'Tighten any emergency note that still sounds vague.' : 'Add one emergency note with real contact or medical detail.',
       source: 'Manual gap analysis'
+    },
+    {
+      title: 'Build the next trail tool',
+      prompt: toolCount > 0
+        ? `You already have ${toolCount} trail tool${toolCount === 1 ? '' : 's'}. Add the next checklist for a repeated decision instead of burying it in prose.`
+        : 'No trail tools exist yet. Capture the next repeated decision as a checklist instead of another generic note.',
+      action: toolCount > 0
+        ? 'Open Tools and create one checklist you expect to reuse in the next week.'
+        : 'Open Tools and build your first checklist from a real trail routine.',
+      source: 'Safe tool builder'
     },
     {
       title: 'Keep town from hijacking the hike',

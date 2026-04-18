@@ -19,6 +19,7 @@ The active production shape is:
 - app root: `/home/forge/hoggcountry.on-forge.com/current/apps/openclaw-web`
 - PM2 app name: `hoggcountry-openclaw`
 - Node bind: `127.0.0.1:3000`
+- private workspace data root: `/home/forge/hoggcountry.on-forge.com/storage/app/openclaw-workspaces`
 
 ## Required Laravel env
 
@@ -41,6 +42,8 @@ php artisan route:clear
 ## PM2 runtime contract
 
 The repo-owned PM2 config is:
+
+- it also pins `OPENCLAW_WORKSPACE_DATA_DIR` to the shared Forge storage path so private manuals, tools, and imported docs survive release swaps
 
 - `apps/openclaw-web/ecosystem.config.cjs`
 

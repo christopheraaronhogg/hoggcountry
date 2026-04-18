@@ -15,6 +15,8 @@ module.exports = {
         HOST: process.env.HOST || '127.0.0.1',
         PORT: process.env.PORT || '3000',
         NODE_ENV: process.env.NODE_ENV || 'production',
+        OPENCLAW_WORKSPACE_DATA_DIR:
+          process.env.OPENCLAW_WORKSPACE_DATA_DIR || '/home/forge/hoggcountry.on-forge.com/storage/app/openclaw-workspaces',
       },
     },
   ],

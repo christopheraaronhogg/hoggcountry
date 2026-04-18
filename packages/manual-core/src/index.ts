@@ -78,7 +78,28 @@ export interface ImportedDocument {
   sizeBytes: number;
 }
 
-export type SearchSourceType = 'manual' | 'corpus' | 'doc';
+export type WorkspaceToolKind = 'checklist';
+export type WorkspaceToolAuthor = 'template' | 'assistant' | 'user';
+
+export interface WorkspaceToolItem {
+  id: string;
+  label: string;
+  detail?: string;
+}
+
+export interface WorkspaceTool {
+  id: string;
+  title: string;
+  kind: WorkspaceToolKind;
+  author: WorkspaceToolAuthor;
+  summary: string;
+  instructions: string;
+  items: WorkspaceToolItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SearchSourceType = 'manual' | 'corpus' | 'doc' | 'tool';
 
 export interface SearchHit {
   id: string;
@@ -310,6 +331,93 @@ export function updateProfileTimestamp(profile: ManualProfile): ManualProfile {
   };
 }
 
+export function createChecklistTool(args: {
+  title: string;
+  summary: string;
+  instructions: string;
+  items: Array<string | { label: string; detail?: string }>;
+  author?: WorkspaceToolAuthor;
+}): WorkspaceTool {
+  const timestamp = nowIso();
+
+  return {
+    id: createId('tool'),
+    title: args.title.trim(),
+    kind: 'checklist',
+    author: args.author ?? 'user',
+    summary: args.summary.trim(),
+    instructions: args.instructions.trim(),
+    items: args.items
+      .map((item) => {
+        if (typeof item === 'string') {
+          return {
+            id: createId('tool-item'),
+            label: item.trim(),
+          } satisfies WorkspaceToolItem;
+        }
+
+        return {
+          id: createId('tool-item'),
+          label: item.label.trim(),
+          detail: item.detail?.trim() || undefined,
+        } satisfies WorkspaceToolItem;
+      })
+      .filter((item) => item.label.length > 0),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
+export function buildStarterTools(profile: ManualProfile): WorkspaceTool[] {
+  const waterLabel = profile.waterCapacityLiters >= 2
+    ? `Leave reliable water with ${profile.waterCapacityLiters.toFixed(1)}L when the next dry stretch or heat load is uncertain.`
+    : `Your ${profile.waterCapacityLiters.toFixed(1)}L capacity is tight. Top off sooner and treat every dry report as a real constraint.`;
+
+  const townResetThirdItem = profile.townStyle === 'quick-hit'
+    ? 'Leave town as soon as food, charging, cleanup, and resupply are solved.'
+    : profile.townStyle === 'lingering'
+      ? 'Name the reason for staying longer before you spend extra time or money.'
+      : 'Set the top three town jobs before you let the vortex pick for you.';
+
+  return [
+    createChecklistTool({
+      title: 'Morning trail reset',
+      summary: 'A short opening routine that keeps the day from drifting before the first climb.',
+      instructions: 'Run this in order before you chase miles.',
+      author: 'template',
+      items: [
+        'Check weather, water, and bailout constraints before leaving camp or town.',
+        `Anchor the day to your ${profile.targetPace} mi/day default, then lower it early if recovery or terrain disagree.`,
+        'Name the one trail decision that would make you slow down, shelter, or stop early.'
+      ]
+    }),
+    createChecklistTool({
+      title: 'Water and heat guardrail',
+      summary: 'A simple carry rule for exposed, humid, or uncertain stretches.',
+      instructions: 'Use this whenever the next segment looks dry, hot, or vague.',
+      author: 'template',
+      items: [
+        waterLabel,
+        'Treat uncertain source intel as a planning problem, not a gamble.',
+        'If heat, climb, or injury stacks up, shorten the segment before you run the tank dry.'
+      ]
+    }),
+    createChecklistTool({
+      title: 'Town reset tool',
+      summary: 'Protect recovery and momentum when you hit town.',
+      instructions: 'Finish these before you start making optional town decisions.',
+      author: 'template',
+      items: [
+        'Solve calories, charging, cleanup, and resupply first.',
+        profile.budgetTier === 'dirtbag'
+          ? 'Guard the budget. Pay for solutions, not for drift.'
+          : 'Spend where it protects momentum, safety, or recovery.',
+        townResetThirdItem
+      ]
+    })
+  ];
+}
+
 export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -455,5 +563,30 @@ export function searchImportedDocuments(docs: ImportedDocument[], query: string)
       excerpt: buildExcerpt(doc.textContent, normalized),
       score: scoreMatch(`${doc.title} ${doc.textContent}`, normalized),
     }))
+    .sort((left, right) => right.score - left.score);
+}
+
+export function searchWorkspaceTools(tools: WorkspaceTool[], query: string): SearchHit[] {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+
+  return tools
+    .map((tool) => {
+      const haystack = [tool.title, tool.summary, tool.instructions, ...tool.items.map((item) => `${item.label} ${item.detail ?? ''}`)]
+        .join(' ')
+        .trim();
+      const score = scoreMatch(haystack, normalized);
+      if (score <= 0) return null;
+
+      return {
+        id: tool.id,
+        sourceType: 'tool' as const,
+        sourceLabel: 'Trail Tool',
+        title: tool.title,
+        excerpt: buildExcerpt(`${tool.summary} ${tool.instructions}`, normalized),
+        score: score + 1,
+      } satisfies SearchHit;
+    })
+    .filter((tool): tool is SearchHit => tool !== null)
     .sort((left, right) => right.score - left.score);
 }

@@ -40,10 +40,10 @@
 <section class="card hero-panel">
   <div>
     <p class="eyebrow">Setup</p>
-    <h1>Seed your manual from Dad's example.</h1>
+    <h1>Seed your private trail workspace from Dad's example.</h1>
     <p class="lede">
-      This is the actual gated setup. It turns Dad's guide into the pattern for your own operating manual and gives
-      OpenClaw a concrete artifact to keep improving.
+      This is the real gated setup. It turns Dad's guide into your own operating manual, seeds starter trail tools,
+      and gives OpenClaw concrete artifacts to keep improving instead of just another chat thread.
     </p>
   </div>
   <a class="btn btn-ghost" href="/guide">Read Dad's guide again</a>
@@ -155,7 +155,7 @@
 
   <div class="subtle-actions">
     <button class="btn btn-secondary" type="submit" disabled={saving}>
-      {saving ? 'Building manual...' : 'Create my manual'}
+      {saving ? 'Building workspace...' : 'Create my workspace'}
     </button>
   </div>
 </form>

@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { buildClawLanes } from '$lib/claw';
-  import { getProfile, getSections, listImportedDocuments } from '$lib/manual-db';
+  import { getProfile, getSections, getTools, listImportedDocuments } from '$lib/manual-db';
   import { spacetimeStatus } from '$lib/spacetime';
   import SpacetimePreview from '$components/SpacetimePreview.svelte';
   import type { ClawLane } from '$lib/claw';
@@ -18,8 +18,8 @@
         return;
       }
 
-      const [sections, docs] = await Promise.all([getSections(), listImportedDocuments()]);
-      lanes = buildClawLanes(profile, sections, docs);
+      const [sections, docs, tools] = await Promise.all([getSections(), listImportedDocuments(), getTools()]);
+      lanes = buildClawLanes(profile, sections, docs, tools);
     } catch (caught) {
       console.error(caught);
       error = 'Could not load the Claw console.';
@@ -33,7 +33,7 @@
     <h1>The operator surface is here to strengthen the manual.</h1>
     <p class="lede">
       This is the OpenClaw-style layer for hikers: not general chat, but a bounded console whose job is to point at the
-      next weak spot in the manual and tell you what source or note should tighten it.
+      next weak spot in the manual, source locker, or tool set and tell you what should be tightened next.
     </p>
   </div>
 

@@ -26,10 +26,13 @@ The new frontend preserves the Hogg Country visual language while shifting the p
    - Dad's field guide as the canonical example manual
 3. **Gated app**
    - lightweight beta signup
+   - private trail workspace keyed to the beta profile
+   - manual, tool locker, and searchable source docs
    - `/app`
    - `/app/setup`
    - `/app/today`
    - `/app/manual`
+   - `/app/tools`
    - `/app/docs`
    - `/app/claw`
 
