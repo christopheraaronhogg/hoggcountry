@@ -231,12 +231,14 @@
     flex-direction: column;
     align-items: center;
     gap: 0.15rem;
+    line-height: 1.75;
   }
 
   .hiker-label {
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
+    line-height: 1.75;
     color: var(--muted);
   }
 
@@ -591,13 +593,14 @@
   }
 
   .chapter-prose :global(h2) {
-    font-family: Oswald, sans-serif;
-    font-size: 1.4rem;
+    color: var(--ink);
+    font-family: Oswald, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
     font-weight: 600;
-    color: var(--pine);
-    margin: 2.5rem 0 1rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
+    line-height: 1.15;
+    margin: 0.83em 0;
+    padding-top: 0;
+    border-top: none;
   }
 
   .chapter-prose :global(h2:first-of-type) {
@@ -606,38 +609,48 @@
   }
 
   .chapter-prose :global(h3) {
-    font-family: Oswald, sans-serif;
-    font-size: 1.15rem;
-    font-weight: 600;
     color: var(--pine);
-    margin: 2rem 0 0.75rem;
+    font-family: Oswald, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 1em 0;
+  }
+
+  .chapter-prose :global(h4) {
+    color: var(--fg);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1em 0;
   }
 
   .chapter-prose :global(p) {
-    margin: 1.25rem 0;
+    margin: 1em 0;
+    line-height: 1.75;
   }
 
   .chapter-prose :global(ul),
   .chapter-prose :global(ol) {
-    margin: 1.25rem 0;
-    padding-left: 1.5rem;
+    margin: 1em 0;
+    padding-left: 40px;
   }
 
   .chapter-prose :global(li) {
-    margin: 0.5rem 0;
+    margin: 0;
+    line-height: 1.75;
   }
 
   .chapter-prose :global(blockquote) {
-    margin: 1.5rem 0;
-    padding: 1rem 1.25rem;
-    background: var(--card);
-    border-left: 4px solid var(--alpine);
-    font-style: italic;
-    color: var(--pine);
+    margin: 1em 40px;
+    padding: 0;
+    background: none;
+    border: 0;
+    font-style: normal;
+    color: inherit;
   }
 
   .chapter-prose :global(blockquote p) {
-    margin: 0;
+    margin: 1em 0;
   }
 
   .chapter-prose :global(table) {

@@ -6,7 +6,7 @@
   let activeChapter = $state('');
   let showMobileNav = $state(false);
   let headerHidden = $state(false);
-  let headerHeight = $state(62);
+  let headerHeight = $state(52);
 
   // Use svelte:window binding for scroll position (most reliable in Svelte 5)
   let scrollY = $state(0);
@@ -37,24 +37,17 @@
 
     // Watch for header wrapper visibility changes + keep a real header height offset
     let mutationObserver = null;
-    let resizeObserver = null;
     const headerWrapper = document.querySelector('.guide-header-wrapper');
 
     const syncHeaderMetrics = () => {
       if (!headerWrapper) return;
       headerHidden = headerWrapper.classList.contains('is-hidden');
-      const measuredHeight = headerWrapper.getBoundingClientRect().height;
-      if (measuredHeight > 0) {
-        headerHeight = measuredHeight;
-      }
     };
 
     if (headerWrapper) {
       syncHeaderMetrics();
       mutationObserver = new MutationObserver(syncHeaderMetrics);
       mutationObserver.observe(headerWrapper, { attributes: true, attributeFilter: ['class'] });
-      resizeObserver = new ResizeObserver(syncHeaderMetrics);
-      resizeObserver.observe(headerWrapper);
     }
 
     const sections = document.querySelectorAll('.chapter-section');
@@ -85,7 +78,6 @@
     return () => {
       intersectionObserver.disconnect();
       mutationObserver?.disconnect();
-      resizeObserver?.disconnect();
       window.removeEventListener('resize', updateScrollHeight);
     };
   });

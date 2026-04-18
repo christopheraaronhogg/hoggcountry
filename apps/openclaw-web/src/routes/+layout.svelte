@@ -24,7 +24,7 @@
 
   function updateGuideHeaderState() {
     if (!browser) return;
-    guideHeaderHidden = page.url.pathname.startsWith('/guide') && window.scrollY >= 50;
+    guideHeaderHidden = page.url.pathname === '/guide' && window.scrollY >= 50;
   }
 
   if (browser) {
@@ -87,8 +87,8 @@
 {:else}
   <a href="#main-content" class="skip-to-content">Skip to main content</a>
 
-  <div class="site-shell public-shell" class:guide-shell={page.url.pathname.startsWith('/guide')}>
-    <div class:guide-header-wrapper={page.url.pathname.startsWith('/guide')} class:is-hidden={page.url.pathname.startsWith('/guide') && guideHeaderHidden}>
+  <div class="site-shell public-shell" class:guide-shell={page.url.pathname === '/guide'}>
+    <div class:guide-header-wrapper={page.url.pathname === '/guide'} class:is-hidden={page.url.pathname === '/guide' && guideHeaderHidden}>
       <header class="header" id="site-header">
         <nav class="container nav">
         <a href="/" class="brand" aria-label="Hogg Country">
@@ -187,7 +187,7 @@
     </div>
 
     <main id="main-content" class="site-main public-site-main" tabindex="-1">
-      {#if page.url.pathname === '/' || page.url.pathname.startsWith('/guide')}
+      {#if page.url.pathname === '/' || page.url.pathname === '/guide'}
         {@render children()}
       {:else}
         <div class="container public-page-wrap">
@@ -281,9 +281,9 @@
   }
 
   .guide-shell .guide-header-wrapper .header {
-    background: linear-gradient(to bottom, rgba(245, 242, 232, 0.98), rgba(245, 242, 232, 0.95));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(245, 242, 232, 0.98);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   .header {
@@ -307,6 +307,10 @@
     align-items: center;
   }
 
+  .guide-shell .brand {
+    padding-block: 0.66rem;
+  }
+
   .logo {
     height: 40px;
     width: auto;
@@ -328,6 +332,7 @@
     display: inline-flex;
     gap: 0.5rem;
     height: 42px;
+    font-size: 0.833333rem;
     border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.1);
     background: rgba(255, 255, 255, 0.7);
