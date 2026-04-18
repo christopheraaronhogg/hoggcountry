@@ -44,7 +44,9 @@ The repo-owned PM2 config is:
 
 - `apps/openclaw-web/ecosystem.config.cjs`
 
-It intentionally points at the stable `current` symlink instead of a numbered release path, so reloads pick up the newly activated release.
+It intentionally points at the stable `current` symlink instead of a numbered release path.
+
+Important: if the PM2 app was originally created from a numbered release path, `pm2 startOrReload` can leave the running process pinned to that old release. After deploys, verify PM2 is actually running from `current`.
 
 Start or reload it from the repo root on the server:
 
@@ -58,7 +60,17 @@ Check status:
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
 npm run forge:openclaw:pm2:status
+pm2 show hoggcountry-openclaw | grep 'exec cwd'
 pm2 logs hoggcountry-openclaw --lines 50
+```
+
+If `exec cwd` still points at a numbered `releases/...` path, rebind PM2 once:
+
+```bash
+cd /home/forge/hoggcountry.on-forge.com/current
+pm2 delete hoggcountry-openclaw || true
+npm run forge:openclaw:pm2
+pm2 save
 ```
 
 ## Manual deploy flow
@@ -82,6 +94,16 @@ npm run build:openclaw:forge
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
 npm run forge:openclaw:pm2
+pm2 show hoggcountry-openclaw | grep 'exec cwd'
+```
+
+If that still shows a numbered `releases/...` path, delete and recreate the app once so PM2 rebinds to `current`:
+
+```bash
+cd /home/forge/hoggcountry.on-forge.com/current
+pm2 delete hoggcountry-openclaw || true
+npm run forge:openclaw:pm2
+pm2 save
 ```
 
 5. Clear Laravel caches
@@ -151,7 +173,17 @@ Check:
 cd /home/forge/hoggcountry.on-forge.com/current
 npm run build:openclaw:forge
 npm run forge:openclaw:pm2
+pm2 show hoggcountry-openclaw | grep 'exec cwd'
 npm run verify:forge
+```
+
+If `exec cwd` is still a numbered release path, rebind PM2:
+
+```bash
+cd /home/forge/hoggcountry.on-forge.com/current
+pm2 delete hoggcountry-openclaw || true
+npm run forge:openclaw:pm2
+pm2 save
 ```
 
 ## Important note
