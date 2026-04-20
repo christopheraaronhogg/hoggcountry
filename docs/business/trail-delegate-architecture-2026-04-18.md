@@ -50,8 +50,14 @@ Responsibilities:
 - public product pages
 - gated `/app/*` workspace
 - signup/onboarding
-- Today, Manual, Tools, Docs, Claw surfaces
+- Today, Manual, Tools, Docs, Scout surfaces
 - future account, billing, provider settings, support-circle screens
+
+Naming transition note:
+- user-facing assistant name should now be `Scout`
+- preferred plain-English descriptor is `your personal trail assistant`
+- the currently working route and some internal code still use temporary `claw` names such as `/app/claw`, `clawMessages`, and nearby server files
+- keep visible product copy on `Scout`, and treat the remaining `claw` names as migration debt until the second rename pass lands
 
 Rules:
 - first paint must work without live realtime dependency
@@ -92,6 +98,10 @@ Current shipped slice already covers the first layer of this idea:
 - manual sections
 - imported docs
 - safe checklist tools
+- a cloud `/app/claw` console with per-workspace connected-account state, even though the user-facing product name is now Scout during the transition
+- pending `FactCandidate` extraction from Scout turns so reusable trail intel can enter a review queue instead of staying trapped in chat
+- a first artifactization pass where strong Scout replies can be saved into Docs as searchable markdown plan artifacts and later revised in place from Scout
+- a Dad field-pilot surface on Scout that pastes the latest public Garmin fix and dispatch context into one-click planning prompts, so the product can be tested against real trail conditions first
 
 ### 4. Agent runtime lane
 Near term, this can run as a server-side delegate worker behind Laravel-owned permissions and entitlements.
@@ -121,6 +131,21 @@ Not the right place for:
 - entitlement truth
 - raw secret storage
 - canonical audit history
+
+### 6. Collective trail intelligence layer
+Hogg Country should learn from many hikers over time without breaking private workspace boundaries.
+
+Responsibilities:
+- collect candidate facts, town notes, hostel patterns, shuttle intel, closure reports, and route corrections from foreground and background delegate work
+- normalize those reports into a review queue instead of silently promoting them into trusted docs
+- run fact-checkers, duplicate detection, freshness scoring, and human review where needed
+- promote approved facts into shared documentation, town cards, planning hints, and future model grounding corpora
+- keep provenance so every shared fact can be traced back to source reports and review decisions
+
+Design rule:
+- user workspaces stay private by default
+- only extracted fact candidates with clear provenance can move into the shared intelligence layer
+- shared docs must prefer reviewed facts over raw chat anecdotes
 
 ---
 
@@ -185,6 +210,21 @@ For every user:
 - `text_content`
 - `rights`
 - `searchable`
+
+#### FactCandidate
+- `id`
+- `workspace_id`
+- `artifact_id` or `message_id`
+- `kind` (`hostel|resupply|water|closure|shuttle|weather_pattern|gear|medical|other`)
+- `claim_text`
+- `region_slug`
+- `mile_range_start`
+- `mile_range_end`
+- `source_type` (`user_report|delegate_extraction|human_ops`)
+- `confidence`
+- `status` (`pending|needs_review|approved|rejected|stale`)
+- `review_notes`
+- `fresh_until`
 
 #### ToolDefinition
 - `id`
@@ -259,6 +299,22 @@ Jobs:
 - propose town or resupply updates
 - create safe draft tools for repeated decisions
 - surface the next 1 to 3 meaningful actions
+- extract candidate shared facts from user-approved reports when they could improve the wider trail corpus
+
+### Shared intelligence loop
+Trigger:
+- a foreground or background turn produces a candidate fact worth broader reuse
+- a user submits a hostel, shuttle, water, or closure correction
+- human ops records a verified update
+
+Flow:
+1. extract structured claim candidates from private artifacts or chat
+2. redact or drop personal details that do not belong in shared knowledge
+3. dedupe against existing shared facts and nearby pending claims
+4. run fact-checkers and freshness checks
+5. send ambiguous or high-impact claims to human review
+6. promote approved facts into shared docs, town cards, and model-grounding corpora
+7. keep source provenance and expiry metadata so old trail intel can age out cleanly
 
 ### Guardrails
 The builder loop must not:

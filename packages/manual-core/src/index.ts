@@ -70,7 +70,7 @@ export interface ImportedDocument {
   title: string;
   fileName: string;
   kind: ImportedDocumentKind;
-  rights: 'user-imported';
+  rights: 'user-imported' | 'assistant-generated';
   searchable: boolean;
   textContent: string;
   note: string;
@@ -558,7 +558,7 @@ export function searchImportedDocuments(docs: ImportedDocument[], query: string)
     .map((doc) => ({
       id: doc.id,
       sourceType: 'doc' as const,
-      sourceLabel: 'Imported Doc',
+      sourceLabel: doc.rights === 'assistant-generated' ? 'Saved Plan' : 'Imported Doc',
       title: doc.title,
       excerpt: buildExcerpt(doc.textContent, normalized),
       score: scoreMatch(`${doc.title} ${doc.textContent}`, normalized),

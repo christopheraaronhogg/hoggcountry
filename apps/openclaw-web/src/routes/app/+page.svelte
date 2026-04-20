@@ -29,7 +29,7 @@
     <h1>Manual-first hiking, now under a real gate.</h1>
     <p class="lede">
       {#if manualReady}
-        Your private trail workspace is live. Use Today, Manual, Tools, Docs, and Claw to keep it tightening into something you can actually hike from.
+        Your private trail workspace is live. Use Today, Manual, Tools, Docs, and Scout to keep it tightening into something you can actually hike from.
       {:else}
         The beta profile is in. Next step is to seed your own manual, starter tools, and first private workspace from Dad's guide and your trail preferences.
       {/if}
@@ -38,7 +38,7 @@
       <a class="btn btn-primary" href={manualReady ? '/app/today' : '/app/setup'}>
         {manualReady ? 'Open Today' : 'Run setup'}
       </a>
-      <a class="btn btn-ghost" href="/app/claw">Open Claw</a>
+      <a class="btn btn-ghost" href="/app/claw">Open Scout</a>
     </div>
   </div>
 
@@ -98,8 +98,8 @@
   </article>
 
   <article class="card panel-copy">
-    <p class="eyebrow">Claw</p>
-    <h3>Manual steward</h3>
-    <p class="muted">The operator surface keeps telling you which brittle parts of the manual still need attention.</p>
+    <p class="eyebrow">Scout</p>
+    <h3>Personal trail assistant</h3>
+    <p class="muted">The operator surface keeps telling you which brittle parts of the manual and plan still need attention.</p>
   </article>
 </div>

@@ -24,7 +24,7 @@ The current shape is a content-rich public site, a new product-grade SvelteKit f
 - **OpenClaw web app layer**
   - SvelteKit layouts and routes in `apps/openclaw-web`
   - public Dad, guide, and marketing surfaces
-  - gated `/app/*` workspace for setup, Today, manual, docs, and Claw
+  - gated `/app/*` workspace for setup, Today, manual, docs, and Scout
   - SpacetimeDB client/provider patterns and generated bindings
 - **Laravel API layer**
   - authenticated and public APIs under `backend/routes/api.php`
@@ -107,6 +107,10 @@ The existing `/native` Laravel Inertia route is useful as a proving surface, but
 #### State and data flow
 - public Dad/video/guide data is loaded through SvelteKit server utilities
 - product state is structured around SpacetimeDB tables/reducers and generated TypeScript bindings
+- user-facing assistant name is now `Scout`, but the working route and some internal code still remain on temporary `claw` names like `/app/claw` during the transition
+- `/app/claw` now persists cloud conversation state and pending fact candidates per workspace so strong turns can feed a reviewable trail-intelligence queue
+- Scout can now save strong assistant replies into the workspace Docs locker as searchable markdown plan artifacts, and can revise those saved plans in place from the Scout screen, giving the product its first real chat-to-artifact-to-revision loop
+- `/app/claw` now also exposes a Dad field-pilot block that pulls the latest public Garmin fix and dispatch title into one-click Scout prompts, so plan quality can be pressure-tested against live trail context instead of only synthetic prompts
 - local device persistence still exists where offline manual/doc access matters
 - Dad's field guide remains authored from `MASTER_NOBO_FIELD_GUIDE.md` and is reused by Astro and SvelteKit
 
@@ -174,6 +178,17 @@ Structured data for hostels, shuttles, outfitters, and local constraints:
 - availability notes
 - freshness timestamps
 - region-specific caveats
+
+#### 5. Field intelligence loop
+Over time, Hogg Country should turn repeated hiker conversations and field reports into a stronger shared corpus.
+
+Rules:
+- private workspace data stays private by default
+- only extracted fact candidates move toward shared docs
+- candidate facts should be deduped, fact-checked, freshness-scored, and reviewable before promotion
+- approved facts can strengthen town intel, itinerary hints, safety notes, and future model grounding
+
+This is one of the clearest long-term moats for the product: a better trail knowledge base built from real usage, not just scraped static content.
 
 ### Request and decision flow
 

@@ -21,6 +21,7 @@ export function buildClawLanes(
   const toolCount = tools.length;
   const hasEmergencyNote = hasSectionNote(sections, 'emergency-sheet');
   const hasTownNote = hasSectionNote(sections, 'town-stop');
+  const paceText = profile.averageMilesPerDay > 0 ? `${profile.averageMilesPerDay.toFixed(0)} mpd` : 'your real pace';
 
   return [
     {
@@ -28,6 +29,18 @@ export function buildClawLanes(
       prompt: `Current mile is ${profile.currentMile.toFixed(1)}. Make sure the manual reflects the next obvious weather, water, and sleep decision.`,
       action: 'Review the Today defaults section and add one note for what would make you bail, shelter, or slow down right now.',
       source: 'Profile + starter manual'
+    },
+    {
+      title: 'Plan the next carry',
+      prompt: `From mile ${profile.currentMile.toFixed(1)}, sketch the next food carry with a practical town or hostel cadence instead of vague optimism.`,
+      action: 'Ask Scout for a 4-day carry or next-resupply plan, then save the assumptions that matter.',
+      source: 'Trail ops planning'
+    },
+    {
+      title: 'Run the next week',
+      prompt: `Draft a 7-day itinerary from mile ${profile.currentMile.toFixed(1)} using ${paceText}, with likely sleep targets, bailout logic, and town timing.`,
+      action: 'Use the cloud thread to turn the next week into a concrete plan you could actually follow tired.',
+      source: 'Trail ops planning'
     },
     {
       title: 'Strengthen the source locker',

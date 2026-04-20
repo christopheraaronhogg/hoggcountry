@@ -8,6 +8,15 @@ export interface DadStatusCard {
   readonly value: string;
 }
 
+export interface DadPilotSummary {
+  readonly latestFixLabel: string;
+  readonly latestFixAt: string | null;
+  readonly latestFixIsPreview: boolean;
+  readonly dispatchCount: number;
+  readonly latestDispatchTitle: string | null;
+  readonly latestDispatchPublished: string | null;
+}
+
 export const DEFAULT_TRACK_POINT = {
   latitude: 34.6275,
   longitude: -84.193,
@@ -68,4 +77,20 @@ export function buildDadStatusCards(videoCount: number, latestPointLabel: string
       detail: 'Map status is ready for live Garmin points, with a graceful preview fallback when a fresh fix is not available.'
     }
   ];
+}
+
+export async function loadDadPilotSummary(): Promise<DadPilotSummary> {
+  const [videos, track] = await Promise.all([loadDadVideos(6), loadDadTrack()]);
+  const latestPoint = track.properties?.latestPoint as { coords?: [number, number]; when?: string } | undefined;
+
+  return {
+    latestFixLabel: latestPoint?.coords
+      ? `${latestPoint.coords[0].toFixed(3)}, ${latestPoint.coords[1].toFixed(3)}`
+      : 'Preview fix',
+    latestFixAt: typeof latestPoint?.when === 'string' ? latestPoint.when : null,
+    latestFixIsPreview: !latestPoint?.coords,
+    dispatchCount: videos.length,
+    latestDispatchTitle: videos[0]?.title ?? null,
+    latestDispatchPublished: videos[0]?.published ?? null
+  };
 }

@@ -19,7 +19,7 @@
       <a href="/app/manual">Manual</a>
       <a href="/app/tools">Tools</a>
       <a href="/app/docs">Docs</a>
-      <a href="/app/claw">Claw</a>
+      <a href="/app/claw">Scout</a>
     </nav>
   </div>
 </section>

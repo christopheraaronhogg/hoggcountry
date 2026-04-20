@@ -16,6 +16,8 @@
     "@hoggcountry/corpus": "file:../../packages/corpus",
     "@hoggcountry/manual-core": "file:../../packages/manual-core",
     "@hoggcountry/trail-data": "file:../../packages/trail-data",
+    "@mariozechner/pi-agent-core": "^0.67.68",
+    "@mariozechner/pi-ai": "^0.67.68",
     "leaflet": "^1.9.4",
     "marked": "^17.0.1",
     "spacetimedb": "^2.1.0"

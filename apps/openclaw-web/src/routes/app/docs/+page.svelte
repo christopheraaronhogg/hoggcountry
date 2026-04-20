@@ -78,7 +78,7 @@
     <p class="eyebrow">Docs</p>
     <h1>Keep the documents and signals you own close by.</h1>
     <p class="lede">
-      Import text, markdown, HTML, or PDFs you legally own. Then search your manual, public corpus, imported docs,
+      Import text, markdown, HTML, or PDFs you legally own. Scout can also save strong replies here as draft plans. Then search your manual, public corpus, saved plans, imported docs,
       and trail tools from one locker. Text files index immediately. PDFs store now and can get deeper extraction later.
     </p>
   </div>
@@ -104,7 +104,7 @@
   </label>
 
   <p class="muted" style="margin-bottom:0;">
-    Examples: Dad's notes, exported permits, town screenshots, or legally owned guide files you want in your private
+    Examples: Dad's notes, exported permits, town screenshots, legally owned guide files, or saved Scout plans you want in your private
     locker.
   </p>
 </section>
@@ -140,18 +140,18 @@
 <section class="stack" style="margin-top:1rem;">
   {#if docs.length === 0}
     <article class="card empty-state">
-      <h2>No imported docs yet.</h2>
-      <p class="muted">The public guide still works. This locker is for the private docs you want beside it.</p>
+      <h2>No docs yet.</h2>
+      <p class="muted">The public guide still works. This locker is for the private docs and saved Scout plans you want beside it.</p>
     </article>
   {:else}
     {#each docs as doc}
       <article class="card panel-copy" id={`doc-${doc.id}`}>
         <div class="grid-two" style="align-items:start;">
           <div>
-            <p class="eyebrow">{doc.kind}</p>
+            <p class="eyebrow">{doc.rights === 'assistant-generated' ? 'saved plan' : doc.kind}</p>
             <h2>{doc.title}</h2>
             <p class="muted">{doc.note || (doc.searchable ? 'Indexed locally for search.' : 'Stored locally only.')}</p>
-            <p class="meta-line">{doc.fileName} | {(doc.sizeBytes / 1024).toFixed(1)} KB | imported {new Date(doc.importedAt).toLocaleString()}</p>
+            <p class="meta-line">{doc.fileName} | {(doc.sizeBytes / 1024).toFixed(1)} KB | {doc.rights === 'assistant-generated' ? 'saved' : 'imported'} {new Date(doc.importedAt).toLocaleString()}</p>
           </div>
           <div class="subtle-actions" style="justify-content:flex-end;">
             <button class="btn" type="button" onclick={() => handleDelete(doc.id)}>Delete</button>

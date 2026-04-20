@@ -36,8 +36,8 @@
   </article>
 
   <article class="card panel-copy">
-    <p class="eyebrow">3. Claw console</p>
-    <h2>Manual steward</h2>
+    <p class="eyebrow">3. Scout console</p>
+    <h2>Personal trail assistant</h2>
     <p class="muted">The app keeps nudging the hiker to tighten the manual, fill gaps, and turn source docs into durable field decisions.</p>
   </article>
 </section>

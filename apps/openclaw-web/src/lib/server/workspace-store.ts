@@ -17,6 +17,72 @@ import {
   type WorkspaceTool
 } from '@hoggcountry/manual-core';
 import type { BetaProfileCookie } from '$lib/beta';
+import { OPENAI_CODEX_LOCAL_REDIRECT_URI } from '$lib/server/claw-openai-codex';
+
+export interface WorkspaceProviderConnection {
+  readonly providerId: 'openai-codex';
+  readonly label: string;
+  readonly status: 'connected';
+  readonly accountId: string | null;
+  readonly expiresAt: string | null;
+  readonly connectedAt: string;
+  readonly updatedAt: string;
+}
+
+export interface WorkspaceClawMessage {
+  readonly id: string;
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
+  readonly createdAt: string;
+  readonly providerId: 'openai-codex' | 'system' | null;
+  readonly model: string | null;
+  readonly error: boolean;
+}
+
+export interface WorkspaceFactCandidate {
+  readonly id: string;
+  readonly kind: 'hostel' | 'resupply' | 'shuttle' | 'water' | 'closure' | 'weather_pattern' | 'gear' | 'medical' | 'other';
+  readonly claimText: string;
+  readonly regionSlug: string | null;
+  readonly mileRangeStart: number | null;
+  readonly mileRangeEnd: number | null;
+  readonly sourceMessageId: string | null;
+  readonly sourceRole: 'user' | 'assistant' | null;
+  readonly sourceType: 'user_report' | 'delegate_extraction' | 'human_ops';
+  readonly confidence: number;
+  readonly status: 'pending' | 'needs_review' | 'approved' | 'rejected' | 'stale';
+  readonly createdAt: string;
+}
+
+export interface WorkspaceFactCandidateInput {
+  readonly kind: WorkspaceFactCandidate['kind'];
+  readonly claimText: string;
+  readonly regionSlug?: string | null;
+  readonly mileRangeStart?: number | null;
+  readonly mileRangeEnd?: number | null;
+  readonly sourceMessageId?: string | null;
+  readonly sourceRole?: WorkspaceFactCandidate['sourceRole'];
+  readonly sourceType?: WorkspaceFactCandidate['sourceType'];
+  readonly confidence?: number;
+  readonly status?: WorkspaceFactCandidate['status'];
+  readonly createdAt?: string;
+}
+
+export interface WorkspaceEncryptedSecret {
+  readonly version: 1;
+  readonly algorithm: 'aes-256-gcm';
+  readonly iv: string;
+  readonly tag: string;
+  readonly ciphertext: string;
+}
+
+export interface WorkspacePendingOpenAICodexAuth {
+  readonly state: string;
+  readonly verifier: string;
+  readonly authorizeUrl: string;
+  readonly redirectUri: string;
+  readonly createdAt: string;
+}
 
 export interface WorkspaceSnapshot {
   readonly workspaceId: string;
@@ -25,12 +91,17 @@ export interface WorkspaceSnapshot {
   readonly sections: ManualSection[];
   readonly documents: ImportedDocument[];
   readonly tools: WorkspaceTool[];
+  readonly providerConnections: WorkspaceProviderConnection[];
+  readonly clawMessages: WorkspaceClawMessage[];
+  readonly factCandidates: WorkspaceFactCandidate[];
   readonly createdAt: string;
   readonly updatedAt: string;
 }
 
-interface WorkspaceRecord extends WorkspaceSnapshot {
-  readonly version: 1;
+export interface WorkspaceRecord extends WorkspaceSnapshot {
+  readonly version: 3;
+  readonly openAICodexCredentials: WorkspaceEncryptedSecret | null;
+  readonly pendingOpenAICodexAuth: WorkspacePendingOpenAICodexAuth | null;
 }
 
 function workspaceRoot(): string {
@@ -68,10 +139,244 @@ async function ensureWorkspaceDir(): Promise<void> {
   await mkdir(workspaceRoot(), { recursive: true });
 }
 
-async function readRecord(workspaceId: string): Promise<WorkspaceRecord | null> {
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeProviderConnections(input: unknown, createdAt: string): WorkspaceProviderConnection[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .filter(isObject)
+    .map((connection) => {
+      const providerId = connection.providerId === 'openai-codex' ? 'openai-codex' : null;
+      if (!providerId) return null;
+
+      const connectedAt = typeof connection.connectedAt === 'string' && connection.connectedAt ? connection.connectedAt : createdAt;
+      const updatedAt = typeof connection.updatedAt === 'string' && connection.updatedAt ? connection.updatedAt : connectedAt;
+
+      return {
+        providerId,
+        label:
+          typeof connection.label === 'string' && connection.label.trim().length > 0
+            ? connection.label.trim()
+            : 'ChatGPT connected account',
+        status: 'connected' as const,
+        accountId: typeof connection.accountId === 'string' && connection.accountId.trim().length > 0 ? connection.accountId.trim() : null,
+        expiresAt: typeof connection.expiresAt === 'string' && connection.expiresAt ? connection.expiresAt : null,
+        connectedAt,
+        updatedAt
+      };
+    })
+    .filter((connection): connection is WorkspaceProviderConnection => connection !== null);
+}
+
+function normalizeClawMessages(input: unknown): WorkspaceClawMessage[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .filter(isObject)
+    .map((message) => {
+      const role = message.role === 'user' || message.role === 'assistant' ? message.role : null;
+      if (!role) return null;
+
+      const text = typeof message.text === 'string' ? message.text.trim() : '';
+      if (!text) return null;
+
+      const providerId = message.providerId === 'openai-codex' || message.providerId === 'system' ? message.providerId : null;
+      const model = typeof message.model === 'string' && message.model.trim().length > 0 ? message.model.trim() : null;
+
+      return {
+        id: typeof message.id === 'string' && message.id ? message.id : createId(`claw-${role}`),
+        role,
+        text,
+        createdAt:
+          typeof message.createdAt === 'string' && message.createdAt.length > 0 ? message.createdAt : nowIso(),
+        providerId,
+        model,
+        error: Boolean(message.error)
+      };
+    })
+    .filter((message): message is WorkspaceClawMessage => message !== null)
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+}
+
+function normalizeFactCandidates(input: unknown): WorkspaceFactCandidate[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .filter(isObject)
+    .map((candidate) => {
+      const kind =
+        candidate.kind === 'hostel' ||
+        candidate.kind === 'resupply' ||
+        candidate.kind === 'shuttle' ||
+        candidate.kind === 'water' ||
+        candidate.kind === 'closure' ||
+        candidate.kind === 'weather_pattern' ||
+        candidate.kind === 'gear' ||
+        candidate.kind === 'medical' ||
+        candidate.kind === 'other'
+          ? candidate.kind
+          : null;
+      const claimText = typeof candidate.claimText === 'string' ? candidate.claimText.trim() : '';
+      if (!kind || !claimText) return null;
+
+      const sourceType =
+        candidate.sourceType === 'user_report' ||
+        candidate.sourceType === 'delegate_extraction' ||
+        candidate.sourceType === 'human_ops'
+          ? candidate.sourceType
+          : 'delegate_extraction';
+      const sourceRole = candidate.sourceRole === 'user' || candidate.sourceRole === 'assistant' ? candidate.sourceRole : null;
+      const status =
+        candidate.status === 'pending' ||
+        candidate.status === 'needs_review' ||
+        candidate.status === 'approved' ||
+        candidate.status === 'rejected' ||
+        candidate.status === 'stale'
+          ? candidate.status
+          : 'pending';
+      const confidence = typeof candidate.confidence === 'number'
+        ? Math.min(1, Math.max(0, candidate.confidence))
+        : 0.5;
+
+      return {
+        id: typeof candidate.id === 'string' && candidate.id ? candidate.id : createId('fact'),
+        kind,
+        claimText,
+        regionSlug: typeof candidate.regionSlug === 'string' && candidate.regionSlug.trim().length > 0 ? candidate.regionSlug.trim() : null,
+        mileRangeStart: typeof candidate.mileRangeStart === 'number' && Number.isFinite(candidate.mileRangeStart) ? candidate.mileRangeStart : null,
+        mileRangeEnd: typeof candidate.mileRangeEnd === 'number' && Number.isFinite(candidate.mileRangeEnd) ? candidate.mileRangeEnd : null,
+        sourceMessageId: typeof candidate.sourceMessageId === 'string' && candidate.sourceMessageId.trim().length > 0 ? candidate.sourceMessageId.trim() : null,
+        sourceRole,
+        sourceType,
+        confidence,
+        status,
+        createdAt: typeof candidate.createdAt === 'string' && candidate.createdAt.length > 0 ? candidate.createdAt : nowIso()
+      };
+    })
+    .filter((candidate): candidate is WorkspaceFactCandidate => candidate !== null)
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+}
+
+function normalizeEncryptedSecret(input: unknown): WorkspaceEncryptedSecret | null {
+  if (!isObject(input)) return null;
+  if (
+    input.version !== 1 ||
+    input.algorithm !== 'aes-256-gcm' ||
+    typeof input.iv !== 'string' ||
+    typeof input.tag !== 'string' ||
+    typeof input.ciphertext !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    version: 1,
+    algorithm: 'aes-256-gcm',
+    iv: input.iv,
+    tag: input.tag,
+    ciphertext: input.ciphertext
+  };
+}
+
+function normalizePendingOpenAICodexAuth(input: unknown): WorkspacePendingOpenAICodexAuth | null {
+  if (!isObject(input)) return null;
+  if (
+    typeof input.state !== 'string' ||
+    typeof input.verifier !== 'string' ||
+    typeof input.authorizeUrl !== 'string' ||
+    typeof input.createdAt !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    state: input.state,
+    verifier: input.verifier,
+    authorizeUrl: input.authorizeUrl,
+    redirectUri:
+      typeof input.redirectUri === 'string' && input.redirectUri.trim().length > 0
+        ? input.redirectUri.trim()
+        : OPENAI_CODEX_LOCAL_REDIRECT_URI,
+    createdAt: input.createdAt
+  };
+}
+
+function sanitizeRecord(record: WorkspaceRecord): WorkspaceSnapshot {
+  return {
+    workspaceId: record.workspaceId,
+    betaProfile: record.betaProfile,
+    profile: record.profile,
+    sections: record.sections,
+    documents: record.documents,
+    tools: record.tools,
+    providerConnections: record.providerConnections,
+    clawMessages: record.clawMessages,
+    factCandidates: record.factCandidates,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt
+  };
+}
+
+function baseRecord(workspaceId: string, betaProfile: BetaProfileCookie): WorkspaceRecord {
+  const timestamp = nowIso();
+
+  return {
+    version: 3,
+    workspaceId,
+    betaProfile,
+    profile: null,
+    sections: [],
+    documents: [],
+    tools: [],
+    providerConnections: [],
+    clawMessages: [],
+    factCandidates: [],
+    openAICodexCredentials: null,
+    pendingOpenAICodexAuth: null,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  };
+}
+
+function normalizeRecord(raw: unknown, workspaceId: string, betaProfile: BetaProfileCookie): WorkspaceRecord {
+  const fallback = baseRecord(workspaceId, betaProfile);
+  if (!isObject(raw)) return fallback;
+
+  const createdAt = typeof raw.createdAt === 'string' && raw.createdAt ? raw.createdAt : fallback.createdAt;
+  const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : createdAt;
+
+  return {
+    version: 3,
+    workspaceId,
+    betaProfile: isObject(raw.betaProfile)
+      ? {
+          email: typeof raw.betaProfile.email === 'string' ? raw.betaProfile.email : betaProfile.email,
+          name: typeof raw.betaProfile.name === 'string' ? raw.betaProfile.name : betaProfile.name,
+          trailName: typeof raw.betaProfile.trailName === 'string' ? raw.betaProfile.trailName : betaProfile.trailName,
+          estimatedStart: typeof raw.betaProfile.estimatedStart === 'string' ? raw.betaProfile.estimatedStart : betaProfile.estimatedStart
+        }
+      : betaProfile,
+    profile: isObject(raw.profile) ? (raw.profile as ManualProfile) : null,
+    sections: Array.isArray(raw.sections) ? (raw.sections as ManualSection[]) : [],
+    documents: Array.isArray(raw.documents) ? (raw.documents as ImportedDocument[]) : [],
+    tools: Array.isArray(raw.tools) ? (raw.tools as WorkspaceTool[]) : [],
+    providerConnections: normalizeProviderConnections(raw.providerConnections, createdAt),
+    clawMessages: normalizeClawMessages(raw.clawMessages),
+    factCandidates: normalizeFactCandidates(raw.factCandidates),
+    openAICodexCredentials: normalizeEncryptedSecret(raw.openAICodexCredentials),
+    pendingOpenAICodexAuth: normalizePendingOpenAICodexAuth(raw.pendingOpenAICodexAuth),
+    createdAt,
+    updatedAt
+  };
+}
+
+async function readRecord(workspaceId: string, betaProfile: BetaProfileCookie): Promise<WorkspaceRecord | null> {
   try {
     const raw = await readFile(workspacePath(workspaceId), 'utf8');
-    return JSON.parse(raw) as WorkspaceRecord;
+    return normalizeRecord(JSON.parse(raw), workspaceId, betaProfile);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return null;
@@ -91,24 +396,11 @@ async function writeRecord(record: WorkspaceRecord): Promise<void> {
   await rename(temp, target);
 }
 
-function baseRecord(workspaceId: string, betaProfile: BetaProfileCookie): WorkspaceRecord {
-  const timestamp = nowIso();
-
-  return {
-    version: 1,
-    workspaceId,
-    betaProfile,
-    profile: null,
-    sections: [],
-    documents: [],
-    tools: [],
-    createdAt: timestamp,
-    updatedAt: timestamp
-  };
-}
-
-export async function getWorkspace(workspaceId: string, betaProfile: BetaProfileCookie): Promise<WorkspaceRecord> {
-  const existing = await readRecord(workspaceId);
+export async function getWorkspaceRecord(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): Promise<WorkspaceRecord> {
+  const existing = await readRecord(workspaceId, betaProfile);
   if (!existing) {
     const record = baseRecord(workspaceId, betaProfile);
     await writeRecord(record);
@@ -118,7 +410,8 @@ export async function getWorkspace(workspaceId: string, betaProfile: BetaProfile
   if (
     existing.betaProfile.email !== betaProfile.email ||
     existing.betaProfile.name !== betaProfile.name ||
-    existing.betaProfile.trailName !== betaProfile.trailName
+    existing.betaProfile.trailName !== betaProfile.trailName ||
+    existing.betaProfile.estimatedStart !== betaProfile.estimatedStart
   ) {
     const updated: WorkspaceRecord = {
       ...existing,
@@ -132,6 +425,13 @@ export async function getWorkspace(workspaceId: string, betaProfile: BetaProfile
   return existing;
 }
 
+export async function getWorkspace(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): Promise<WorkspaceSnapshot> {
+  return sanitizeRecord(await getWorkspaceRecord(workspaceId, betaProfile));
+}
+
 async function persist(record: WorkspaceRecord): Promise<WorkspaceRecord> {
   const updated: WorkspaceRecord = {
     ...record,
@@ -141,12 +441,19 @@ async function persist(record: WorkspaceRecord): Promise<WorkspaceRecord> {
   return updated;
 }
 
+function upsertProviderConnection(
+  connections: WorkspaceProviderConnection[],
+  connection: WorkspaceProviderConnection
+): WorkspaceProviderConnection[] {
+  return [connection, ...connections.filter((item) => item.providerId !== connection.providerId)];
+}
+
 export async function initializeWorkspace(
   workspaceId: string,
   betaProfile: BetaProfileCookie,
   profile: ManualProfile
-): Promise<WorkspaceRecord> {
-  const record = await getWorkspace(workspaceId, betaProfile);
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
   const normalizedProfile = updateProfileTimestamp({
     ...profile,
     id: profile.id || createId('profile'),
@@ -154,33 +461,37 @@ export async function initializeWorkspace(
     trailName: profile.trailName || betaProfile.trailName
   });
 
-  return persist({
-    ...record,
-    betaProfile,
-    profile: normalizedProfile,
-    sections: buildStarterManual(normalizedProfile),
-    documents: record.documents,
-    tools: record.tools.length > 0 ? record.tools : buildStarterTools(normalizedProfile)
-  });
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      betaProfile,
+      profile: normalizedProfile,
+      sections: buildStarterManual(normalizedProfile),
+      documents: record.documents,
+      tools: record.tools.length > 0 ? record.tools : buildStarterTools(normalizedProfile)
+    })
+  );
 }
 
 export async function setWorkspaceCurrentMile(
   workspaceId: string,
   betaProfile: BetaProfileCookie,
   currentMile: number
-): Promise<WorkspaceRecord> {
-  const record = await getWorkspace(workspaceId, betaProfile);
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
   if (!record.profile) {
-    return record;
+    return sanitizeRecord(record);
   }
 
-  return persist({
-    ...record,
-    profile: updateProfileTimestamp({
-      ...record.profile,
-      currentMile: Number.isFinite(currentMile) ? Math.max(0, currentMile) : record.profile.currentMile
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      profile: updateProfileTimestamp({
+        ...record.profile,
+        currentMile: Number.isFinite(currentMile) ? Math.max(0, currentMile) : record.profile.currentMile
+      })
     })
-  });
+  );
 }
 
 export async function addWorkspaceManualNote(
@@ -189,13 +500,15 @@ export async function addWorkspaceManualNote(
   sectionId: string,
   title: string,
   content: string
-): Promise<WorkspaceRecord> {
-  const record = await getWorkspace(workspaceId, betaProfile);
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
 
-  return persist({
-    ...record,
-    sections: addUserBlock(record.sections, sectionId, title, content)
-  });
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      sections: addUserBlock(record.sections, sectionId, title, content)
+    })
+  );
 }
 
 function detectDocumentKind(file: File): ImportedDocumentKind {
@@ -216,12 +529,66 @@ async function fileText(file: File, kind: ImportedDocumentKind): Promise<string>
   return kind === 'html' ? htmlToText(raw) : raw.replace(/\s+/g, ' ').trim();
 }
 
+function slugifyDocumentTitle(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/giu, '-')
+    .replace(/^-+|-+$/gu, '') || 'scout-plan';
+}
+
+function previousUserPrompt(messages: WorkspaceClawMessage[], startIndex: number): string {
+  for (let index = startIndex - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === 'user') {
+      return message.text.trim();
+    }
+  }
+
+  return '';
+}
+
+function inferScoutDocumentTitle(prompt: string, explicitTitle?: string | null): string {
+  const trimmedTitle = explicitTitle?.trim();
+  if (trimmedTitle) return trimmedTitle;
+
+  if (/7\s*-?\s*day|next\s+week/iu.test(prompt)) return '7-day trail plan';
+  if (/carry|resupply|food/iu.test(prompt)) return 'Next food carry plan';
+  if (/hostel|town/iu.test(prompt)) return 'Town and hostel plan';
+  if (/weakest\s+link|tighten/iu.test(prompt)) return 'Scout trail note';
+  return 'Saved Scout plan';
+}
+
+function buildScoutDocumentMarkdown(
+  title: string,
+  prompt: string,
+  reply: string,
+  meta: {
+    readonly trailName: string;
+    readonly currentMile: number | null;
+    readonly savedAt: string;
+  }
+): string {
+  const parts = [
+    `# ${title}`,
+    '',
+    `Saved from Scout on ${new Date(meta.savedAt).toLocaleString()}.`,
+    `Trail name: ${meta.trailName || 'Unknown'}`,
+    meta.currentMile !== null ? `Current mile: ${meta.currentMile.toFixed(1)}` : null,
+    prompt ? `## Source prompt\n\n${prompt}` : null,
+    '## Saved reply',
+    '',
+    reply.trim()
+  ].filter((value): value is string => Boolean(value && value.trim().length > 0));
+
+  return parts.join('\n\n').trim();
+}
+
 export async function importWorkspaceDocuments(
   workspaceId: string,
   betaProfile: BetaProfileCookie,
   files: File[]
-): Promise<WorkspaceRecord> {
-  const record = await getWorkspace(workspaceId, betaProfile);
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
   const imported: ImportedDocument[] = [];
 
   for (const file of files) {
@@ -244,23 +611,134 @@ export async function importWorkspaceDocuments(
     });
   }
 
-  return persist({
-    ...record,
-    documents: [...imported, ...record.documents].sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      documents: [...imported, ...record.documents].sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+    })
+  );
+}
+
+export async function saveWorkspaceScoutDocumentFromReply(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    messageId: string;
+    title?: string | null;
+  }
+): Promise<{
+  readonly workspace: WorkspaceSnapshot;
+  readonly document: ImportedDocument;
+}> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const messageIndex = record.clawMessages.findIndex(
+    (message) => message.id === input.messageId && message.role === 'assistant'
+  );
+
+  if (messageIndex < 0) {
+    throw new Error('Scout reply not found.');
+  }
+
+  const reply = record.clawMessages[messageIndex];
+  if (reply.error) {
+    throw new Error('Cannot save a failed Scout reply.');
+  }
+
+  const prompt = previousUserPrompt(record.clawMessages, messageIndex);
+  const title = inferScoutDocumentTitle(prompt, input.title);
+  const savedAt = nowIso();
+  const markdown = buildScoutDocumentMarkdown(title, prompt, reply.text, {
+    trailName: betaProfile.trailName || betaProfile.name || 'Unknown',
+    currentMile: record.profile && Number.isFinite(record.profile.currentMile) ? record.profile.currentMile : null,
+    savedAt
   });
+  const document: ImportedDocument = {
+    id: createId('doc'),
+    title,
+    fileName: `${slugifyDocumentTitle(title)}-${savedAt.slice(0, 10)}.md`,
+    kind: 'markdown',
+    rights: 'assistant-generated',
+    searchable: true,
+    textContent: markdown,
+    note: 'Saved from Scout. Open Docs to keep refining or searching this plan later.',
+    importedAt: savedAt,
+    sizeBytes: Buffer.byteLength(markdown, 'utf8')
+  };
+
+  const workspace = sanitizeRecord(
+    await persist({
+      ...record,
+      documents: [document, ...record.documents].sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+    })
+  );
+
+  return {
+    workspace,
+    document
+  };
+}
+
+export async function reviseWorkspaceScoutDocument(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    documentId: string;
+    prompt: string;
+    replyText: string;
+  }
+): Promise<{
+  readonly workspace: WorkspaceSnapshot;
+  readonly document: ImportedDocument;
+}> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const existing = record.documents.find((document) => document.id === input.documentId);
+
+  if (!existing || existing.rights !== 'assistant-generated') {
+    throw new Error('Saved Scout plan not found.');
+  }
+
+  const savedAt = nowIso();
+  const markdown = buildScoutDocumentMarkdown(existing.title, input.prompt, input.replyText, {
+    trailName: betaProfile.trailName || betaProfile.name || 'Unknown',
+    currentMile: record.profile && Number.isFinite(record.profile.currentMile) ? record.profile.currentMile : null,
+    savedAt
+  });
+  const document: ImportedDocument = {
+    ...existing,
+    textContent: markdown,
+    note: 'Updated by Scout. Open Docs to keep refining or searching this plan later.',
+    importedAt: savedAt,
+    sizeBytes: Buffer.byteLength(markdown, 'utf8')
+  };
+
+  const workspace = sanitizeRecord(
+    await persist({
+      ...record,
+      documents: record.documents
+        .map((item) => (item.id === input.documentId ? document : item))
+        .sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+    })
+  );
+
+  return {
+    workspace,
+    document
+  };
 }
 
 export async function deleteWorkspaceDocument(
   workspaceId: string,
   betaProfile: BetaProfileCookie,
   documentId: string
-): Promise<WorkspaceRecord> {
-  const record = await getWorkspace(workspaceId, betaProfile);
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
 
-  return persist({
-    ...record,
-    documents: record.documents.filter((document) => document.id !== documentId)
-  });
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      documents: record.documents.filter((document) => document.id !== documentId)
+    })
+  );
 }
 
 export async function addWorkspaceChecklistTool(
@@ -272,8 +750,8 @@ export async function addWorkspaceChecklistTool(
     instructions: string;
     itemsText: string;
   }
-): Promise<WorkspaceRecord> {
-  const record = await getWorkspace(workspaceId, betaProfile);
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
   const tool = createChecklistTool({
     title: input.title,
     summary: input.summary,
@@ -285,21 +763,185 @@ export async function addWorkspaceChecklistTool(
     author: 'user'
   });
 
-  return persist({
-    ...record,
-    tools: [tool, ...record.tools]
-  });
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      tools: [tool, ...record.tools]
+    })
+  );
 }
 
 export async function deleteWorkspaceTool(
   workspaceId: string,
   betaProfile: BetaProfileCookie,
   toolId: string
-): Promise<WorkspaceRecord> {
-  const record = await getWorkspace(workspaceId, betaProfile);
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
 
-  return persist({
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      tools: record.tools.filter((tool) => tool.id !== toolId)
+    })
+  );
+}
+
+export async function setWorkspacePendingOpenAICodexAuth(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  pendingAuth: WorkspacePendingOpenAICodexAuth
+): Promise<void> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  await persist({
     ...record,
-    tools: record.tools.filter((tool) => tool.id !== toolId)
+    pendingOpenAICodexAuth: pendingAuth
   });
+}
+
+export async function getWorkspacePendingOpenAICodexAuth(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): Promise<WorkspacePendingOpenAICodexAuth | null> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  return record.pendingOpenAICodexAuth;
+}
+
+export async function clearWorkspacePendingOpenAICodexAuth(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): Promise<void> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  if (!record.pendingOpenAICodexAuth) return;
+  await persist({
+    ...record,
+    pendingOpenAICodexAuth: null
+  });
+}
+
+export async function saveWorkspaceOpenAICodexConnection(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    encryptedCredentials: WorkspaceEncryptedSecret;
+    accountId: string | null;
+    expiresAt: string | null;
+    label?: string | null;
+  }
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const existing = record.providerConnections.find((connection) => connection.providerId === 'openai-codex');
+  const connectedAt = existing?.connectedAt ?? nowIso();
+  const updatedAt = nowIso();
+  const connection: WorkspaceProviderConnection = {
+    providerId: 'openai-codex',
+    label: input.label?.trim() || existing?.label || 'ChatGPT connected account',
+    status: 'connected',
+    accountId: input.accountId,
+    expiresAt: input.expiresAt,
+    connectedAt,
+    updatedAt
+  };
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      providerConnections: upsertProviderConnection(record.providerConnections, connection),
+      openAICodexCredentials: input.encryptedCredentials,
+      pendingOpenAICodexAuth: null
+    })
+  );
+}
+
+export async function getWorkspaceOpenAICodexCredentials(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): Promise<WorkspaceEncryptedSecret | null> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  return record.openAICodexCredentials;
+}
+
+export async function clearWorkspaceOpenAICodexConnection(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      providerConnections: record.providerConnections.filter((connection) => connection.providerId !== 'openai-codex'),
+      openAICodexCredentials: null,
+      pendingOpenAICodexAuth: null
+    })
+  );
+}
+
+export async function replaceWorkspaceClawMessages(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  messages: WorkspaceClawMessage[]
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      clawMessages: normalizeClawMessages(messages).slice(-40)
+    })
+  );
+}
+
+function factCandidateKey(candidate: Pick<WorkspaceFactCandidate, 'kind' | 'claimText' | 'regionSlug' | 'mileRangeStart' | 'mileRangeEnd'>): string {
+  return [
+    candidate.kind,
+    candidate.claimText.trim().toLowerCase(),
+    candidate.regionSlug?.trim().toLowerCase() || '',
+    candidate.mileRangeStart ?? '',
+    candidate.mileRangeEnd ?? ''
+  ].join('|');
+}
+
+export async function appendWorkspaceFactCandidates(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  candidates: WorkspaceFactCandidateInput[]
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const normalized = normalizeFactCandidates(
+    candidates.map((candidate) => ({
+      id: createId('fact'),
+      kind: candidate.kind,
+      claimText: candidate.claimText,
+      regionSlug: candidate.regionSlug ?? null,
+      mileRangeStart: candidate.mileRangeStart ?? null,
+      mileRangeEnd: candidate.mileRangeEnd ?? null,
+      sourceMessageId: candidate.sourceMessageId ?? null,
+      sourceRole: candidate.sourceRole ?? null,
+      sourceType: candidate.sourceType ?? 'delegate_extraction',
+      confidence: candidate.confidence ?? 0.5,
+      status: candidate.status ?? 'pending',
+      createdAt: candidate.createdAt ?? nowIso()
+    }))
+  );
+
+  if (normalized.length === 0) {
+    return sanitizeRecord(record);
+  }
+
+  const seen = new Set(record.factCandidates.map((candidate) => factCandidateKey(candidate)));
+  const merged = [...record.factCandidates];
+
+  for (const candidate of normalized) {
+    const key = factCandidateKey(candidate);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.unshift(candidate);
+  }
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      factCandidates: merged.slice(0, 200)
+    })
+  );
 }
