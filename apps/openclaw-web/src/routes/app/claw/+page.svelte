@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { buildClawLanes } from '$lib/claw';
   import type { ImportedDocument, ManualProfile, ManualSection, WorkspaceTool } from '@hoggcountry/manual-core';
   import type { ClawLane } from '$lib/claw';
@@ -80,6 +80,9 @@
   let connectInput = $state('');
   let connectError = $state('');
   let connectNotice = $state('');
+  let pendingPrompt = $state('');
+  let threadCard: HTMLElement | null = null;
+  let threadMessages: HTMLDivElement | null = null;
 
   async function jsonOrThrow(response: Response) {
     if (!response.ok) {
@@ -181,6 +184,18 @@
 
     if (selectedDocumentId && !plans.some((document) => document.id === selectedDocumentId)) {
       selectedDocumentId = '';
+    }
+  }
+
+  async function focusCloudThread() {
+    await tick();
+    threadCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function scrollCloudThreadToLatest() {
+    await tick();
+    if (threadMessages) {
+      threadMessages.scrollTop = threadMessages.scrollHeight;
     }
   }
 
@@ -305,10 +320,25 @@
     const message = replyInput.trim();
     if (!message) return;
 
+    const previousMessages = messages;
+    const pendingUserMessage: ClawMessage = {
+      id: `pending-user-${Date.now()}`,
+      role: 'user',
+      text: message,
+      createdAt: new Date().toISOString(),
+      model: null,
+      error: false
+    };
+
     sendBusy = true;
+    pendingPrompt = message;
     error = '';
     saveNotice = '';
     saveError = '';
+    replyInput = '';
+    messages = [...messages, pendingUserMessage];
+    await focusCloudThread();
+    await scrollCloudThreadToLatest();
 
     try {
       const payload = await jsonOrThrow(
@@ -334,9 +364,14 @@
         savedDocumentHref = `/app/docs#doc-${revisedDocument.id}`;
         saveNotice = `Updated "${revisedDocument.title}" in Docs.`;
       }
-      replyInput = '';
+      pendingPrompt = '';
+      await focusCloudThread();
+      await scrollCloudThreadToLatest();
     } catch (caught) {
       console.error(caught);
+      messages = previousMessages;
+      replyInput = message;
+      pendingPrompt = '';
       error = caught instanceof Error ? caught.message : 'Could not send the cloud prompt.';
     } finally {
       sendBusy = false;
@@ -539,12 +574,22 @@
       {/if}
     </article>
 
-    <article class="card panel-copy">
+    <article class="card panel-copy" bind:this={threadCard}>
       <p class="eyebrow">Cloud thread</p>
       <h2>Ask the delegate what needs tightening next.</h2>
       <p class="muted">
         This thread lives with the workspace. Use it to turn rough trail questions into concrete next steps, itinerary drafts, and manual updates, then save the strong replies into Docs.
       </p>
+
+      {#if sendBusy}
+        <article class="card card-soft panel-copy" style="margin-top:1rem; border-color:rgba(94,108,84,0.18);">
+          <p class="eyebrow">Scout is working</p>
+          <p class="muted">Your prompt is in flight now. The reply will appear in the thread just below.</p>
+          {#if pendingPrompt}
+            <p class="meta-line" style="margin-top:0.6rem;">Current ask: “{pendingPrompt}”</p>
+          {/if}
+        </article>
+      {/if}
 
       <div class="stack" style="margin-top:1rem;">
         <p class="eyebrow">Starter asks</p>
@@ -562,7 +607,7 @@
         </div>
       </div>
 
-      <div class="stack" style="margin-top:1rem; max-height:28rem; overflow:auto;">
+      <div class="stack" bind:this={threadMessages} style="margin-top:1rem; max-height:28rem; overflow:auto; scroll-behavior:smooth;">
         {#if messages.length === 0}
           <article class="card card-soft panel-copy">
             <p class="muted">No cloud thread yet. Connect ChatGPT, then send the first real prompt.</p>
@@ -601,6 +646,13 @@
               {/if}
             </article>
           {/each}
+
+          {#if sendBusy}
+            <article class="card card-soft panel-copy">
+              <p class="eyebrow">Delegate</p>
+              <p class="muted">Scout is drafting the reply now…</p>
+            </article>
+          {/if}
         {/if}
       </div>
 
@@ -641,6 +693,9 @@
           Send to cloud delegate
         {/if}
       </button>
+      {#if sendBusy}
+        <p class="meta-line" style="margin-top:0.85rem;">Scout is working. Stay on this Cloud thread card — the reply will land above.</p>
+      {/if}
     </article>
   </section>
 
