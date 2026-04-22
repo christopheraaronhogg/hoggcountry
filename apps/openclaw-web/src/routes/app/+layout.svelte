@@ -20,6 +20,7 @@
       <a href="/app/tools">Tools</a>
       <a href="/app/docs">Docs</a>
       <a href="/app/claw">Scout</a>
+      <a href="/app/scout-lab">Scout Lab</a>
     </nav>
   </div>
 </section>
