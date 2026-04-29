@@ -69,6 +69,7 @@
     "@astrojs/rss": "^4.0.12",
     "@astrojs/sitemap": "^3.4.2",
     "@astrojs/svelte": "^7.1.0",
+    "@netlify/blobs": "^10.7.4",
     "@remotion/player": "^4.0.420",
     "@tailwindcss/vite": "^4.1.11",
     "astro": "^5.12.8",

@@ -6,25 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Admin • Hogg Country</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 2rem; }
-      .card { max-width: 720px; padding: 1rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 12px; background:#fff; }
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #f7f2e8; color: #253126; }
+      main { width: min(720px, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0; }
+      .card { padding: 1rem 1.25rem; border: 1px solid rgba(48,65,54,.14); border-radius: 20px; background:#fff; box-shadow: 0 18px 40px rgba(60,44,25,.08); }
       h1 { margin-top: 0; }
-      code { background:#f8fafc; border:1px solid #e5e7eb; padding:.1rem .3rem; border-radius:6px; }
-      ul { line-height: 1.7; }
+      a { color: #4d594a; font-weight: 800; }
+      ul { line-height: 1.8; }
     </style>
   </head>
   <body>
-    <div class="card">
-      <h1>Admin</h1>
-      <p>This route will be protected using Netlify’s Auth0 Authentication integration.</p>
-      <h2>Next steps</h2>
-      <ul>
-        <li>In Netlify, install the <strong>Auth0 Authentication</strong> integration.</li>
-        <li>Protect the path <code>/admin/*</code> (and later <code>/.netlify/functions/*</code>).</li>
-        <li>Configure Auth0 Application (Domain/Client ID/Secret) in the integration.</li>
-      </ul>
-      <p>Once protection is enabled, only logged-in users can access this page.</p>
-    </div>
+    <main>
+      <div class="card">
+        <h1>Admin</h1>
+        <p>Hogg Country admin tools.</p>
+        <ul>
+          <li><a href="/admin/updates/">Trail Updates Admin</a></li>
+        </ul>
+      </div>
+    </main>
   </body>
 </html>
-

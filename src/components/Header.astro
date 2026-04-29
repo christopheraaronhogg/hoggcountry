@@ -5,6 +5,7 @@ import { isEnabled } from '../lib/features';
 const pathname = Astro.url.pathname;
 const isGuide = pathname.startsWith('/guide');
 const isVideos = pathname.startsWith('/videos');
+const isUpdates = pathname.startsWith('/updates');
 const isHome = pathname === '/';
 const showVideos = isEnabled('YOUTUBE_RSS');
 
@@ -21,6 +22,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
 
     <div class="desktop-links">
       <a href="/guide/" class:list={['nav-link', isGuide && 'is-active']}>Dad&apos;s Field Guide</a>
+      <a href="/updates/" class:list={['nav-link', isUpdates && 'is-active']}>Trail Updates</a>
       {showVideos && <a href="/videos/" class:list={['nav-link', isVideos && 'is-active']}>Video Dispatches</a>}
       {showTracking && (
         <a href={LIVE_TRACKING_URL} class="nav-link nav-link--track" target="_blank" rel="noopener noreferrer">Track Me</a>
@@ -36,6 +38,7 @@ const showTracking = LIVE_TRACKING_ENABLED && now >= startDate;
   <div class="mobile-menu" id="mobile-menu" hidden>
     <a href="/" class:list={['mobile-link', isHome && 'is-active']}>Home</a>
     <a href="/guide/" class:list={['mobile-link', isGuide && 'is-active']}>Dad&apos;s Field Guide</a>
+    <a href="/updates/" class:list={['mobile-link', isUpdates && 'is-active']}>Trail Updates</a>
     {showVideos && <a href="/videos/" class:list={['mobile-link', isVideos && 'is-active']}>Video Dispatches</a>}
     {showTracking && (
       <a href={LIVE_TRACKING_URL} class="mobile-link" target="_blank" rel="noopener noreferrer">Track Me</a>

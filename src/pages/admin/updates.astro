@@ -1,0 +1,362 @@
+---
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trail Updates Admin • Hogg Country</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #253126;
+        --pine: #4d594a;
+        --terra: #9b5a2e;
+        --muted: #657163;
+        --paper: #f7f2e8;
+        --line: rgba(48, 65, 54, 0.14);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Atkinson Hyperlegible, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(166, 181, 137, 0.2), transparent 32%),
+          linear-gradient(180deg, var(--paper), #efe5d4);
+        color: var(--ink);
+      }
+
+      main {
+        width: min(920px, calc(100% - 1.5rem));
+        margin: 0 auto;
+        padding: 1rem 0 3rem;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 0;
+      }
+
+      a { color: var(--pine); font-weight: 800; }
+      h1, h2, h3 { margin: 0; line-height: 1.05; }
+      h1 { font-size: clamp(2.2rem, 10vw, 4.4rem); max-width: 8ch; }
+      p { color: var(--muted); line-height: 1.6; }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: 0 22px 50px rgba(60, 44, 25, 0.08);
+      }
+
+      .hero, .panel { padding: 1.1rem; }
+      .hero { margin-bottom: 1rem; }
+      .eyebrow {
+        margin: 0 0 0.45rem;
+        color: var(--terra);
+        font-size: 0.76rem;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .hidden { display: none !important; }
+      .stack { display: grid; gap: 1rem; }
+      .grid { display: grid; gap: 0.85rem; }
+
+      label { display: grid; gap: 0.35rem; color: var(--pine); font-weight: 850; }
+      input, textarea, select, button {
+        width: 100%;
+        min-height: 48px;
+        border-radius: 16px;
+        border: 1px solid rgba(48, 65, 54, 0.16);
+        padding: 0.8rem 0.9rem;
+        font: inherit;
+      }
+      textarea { min-height: 132px; resize: vertical; }
+      input, textarea, select { background: rgba(255, 255, 255, 0.9); color: var(--ink); }
+      input[type="file"] { padding: 0.7rem; }
+
+      button {
+        cursor: pointer;
+        border-color: rgba(77, 89, 74, 0.18);
+        background: var(--pine);
+        color: white;
+        font-weight: 900;
+      }
+      button.secondary { background: white; color: var(--pine); }
+      button.danger { background: #9f1239; }
+      button:disabled { opacity: 0.6; cursor: wait; }
+
+      .actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+      .actions > * { flex: 1 1 150px; }
+      .status { min-height: 1.5rem; color: var(--terra); font-weight: 800; }
+
+      .updates-list { display: grid; gap: 0.8rem; }
+      .update-row {
+        display: grid;
+        gap: 0.75rem;
+        padding: 0.9rem;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.78);
+      }
+      .update-row img, .update-row video {
+        width: 100%;
+        max-height: 260px;
+        object-fit: cover;
+        border-radius: 18px;
+        background: #111827;
+      }
+      .row-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        color: var(--terra);
+        font-size: 0.75rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .row-body { white-space: pre-wrap; margin: 0.45rem 0 0; }
+
+      @media (min-width: 720px) {
+        main { padding-top: 1.5rem; }
+        .hero, .panel { padding: 1.4rem; }
+        .grid.two { grid-template-columns: 1fr 1fr; }
+        .update-row { grid-template-columns: 180px 1fr; align-items: start; }
+        .update-row .no-media { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="topbar">
+        <a href="/">← Site</a>
+        <a href="/updates/">View updates</a>
+      </div>
+
+      <section class="hero card">
+        <p class="eyebrow">Admin</p>
+        <h1>Trail updates.</h1>
+        <p>Post quick photos, videos, and text notes from mobile. Passcode unlock is intentionally simple for this v1.</p>
+      </section>
+
+      <section id="login-panel" class="panel card stack">
+        <div>
+          <h2>Enter passcode</h2>
+          <p>Use the shared Hogg Country admin passcode.</p>
+        </div>
+        <form id="login-form" class="stack">
+          <label>
+            Passcode
+            <input name="passcode" type="password" inputmode="numeric" autocomplete="current-password" required />
+          </label>
+          <button type="submit">Unlock admin</button>
+          <div class="status" id="login-status" role="status"></div>
+        </form>
+      </section>
+
+      <section id="admin-panel" class="stack hidden">
+        <form id="update-form" class="panel card stack">
+          <div>
+            <p class="eyebrow">New post</p>
+            <h2>Drop in today’s update.</h2>
+          </div>
+
+          <label>
+            Photo or video
+            <input name="media" type="file" accept="image/*,video/mp4,video/quicktime,video/webm" />
+          </label>
+
+          <label>
+            Text blip
+            <textarea name="body" placeholder="What happened today?"></textarea>
+          </label>
+
+          <div class="grid two">
+            <label>
+              Title
+              <input name="title" placeholder="Day 42 — Big climb" maxlength="120" />
+            </label>
+            <label>
+              Location
+              <input name="location" placeholder="Damascus, VA" maxlength="120" />
+            </label>
+          </div>
+
+          <div class="grid two">
+            <label>
+              Trail mile
+              <input name="trailMile" placeholder="470.2" maxlength="40" />
+            </label>
+            <label>
+              Publish status
+              <select name="status">
+                <option value="published">Publish now</option>
+                <option value="draft">Save draft</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit">Post update</button>
+            <button type="button" class="secondary" id="refresh-button">Refresh list</button>
+            <button type="button" class="secondary" id="logout-button">Log out</button>
+          </div>
+          <div class="status" id="form-status" role="status"></div>
+        </form>
+
+        <section class="panel card stack">
+          <div>
+            <p class="eyebrow">Recent</p>
+            <h2>Posted updates</h2>
+          </div>
+          <div id="updates-list" class="updates-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const loginPanel = document.getElementById('login-panel');
+      const adminPanel = document.getElementById('admin-panel');
+      const loginForm = document.getElementById('login-form');
+      const updateForm = document.getElementById('update-form');
+      const loginStatus = document.getElementById('login-status');
+      const formStatus = document.getElementById('form-status');
+      const updatesList = document.getElementById('updates-list');
+      const refreshButton = document.getElementById('refresh-button');
+      const logoutButton = document.getElementById('logout-button');
+
+      const escapeHtml = (value) => String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+
+      const formatDate = (value) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'Unposted';
+        return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      };
+
+      const setAuthed = (authed) => {
+        loginPanel.classList.toggle('hidden', authed);
+        adminPanel.classList.toggle('hidden', !authed);
+        if (authed) loadUpdates();
+      };
+
+      const mediaHtml = (update) => {
+        if (!update.mediaUrl) return '<div class="no-media"></div>';
+        if (String(update.mediaType || '').startsWith('video/')) {
+          return `<video src="${escapeHtml(update.mediaUrl)}" controls playsinline preload="metadata"></video>`;
+        }
+        return `<img src="${escapeHtml(update.mediaUrl)}" alt="${escapeHtml(update.title || update.body || 'Trail update')}" />`;
+      };
+
+      const rowHtml = (update) => {
+        const bits = [update.status, formatDate(update.publishedAt || update.createdAt)];
+        if (update.location) bits.push(update.location);
+        if (update.trailMile) bits.push(`Mile ${update.trailMile}`);
+        return `
+          <article class="update-row">
+            ${mediaHtml(update)}
+            <div>
+              <div class="row-meta">${bits.map((bit) => `<span>${escapeHtml(bit)}</span>`).join('<span>•</span>')}</div>
+              <h3>${escapeHtml(update.title || 'Trail update')}</h3>
+              ${update.body ? `<p class="row-body">${escapeHtml(update.body)}</p>` : ''}
+              <div class="actions" style="margin-top:.75rem">
+                <button type="button" class="secondary" data-copy="${escapeHtml(update.id)}">Copy link</button>
+                <button type="button" class="danger" data-delete="${escapeHtml(update.id)}">Delete</button>
+              </div>
+            </div>
+          </article>
+        `;
+      };
+
+      async function loadUpdates() {
+        updatesList.textContent = 'Loading…';
+        const res = await fetch('/.netlify/functions/trail-updates?admin=1&limit=50');
+        if (!res.ok) {
+          updatesList.textContent = 'Could not load updates.';
+          return;
+        }
+        const data = await res.json();
+        const updates = Array.isArray(data.updates) ? data.updates : [];
+        updatesList.innerHTML = updates.length ? updates.map(rowHtml).join('') : '<p>No updates yet.</p>';
+      }
+
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        loginStatus.textContent = 'Checking…';
+        const passcode = new FormData(loginForm).get('passcode');
+        const res = await fetch('/.netlify/functions/trail-updates-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passcode }),
+        });
+        if (!res.ok) {
+          loginStatus.textContent = 'Wrong passcode.';
+          return;
+        }
+        loginForm.reset();
+        loginStatus.textContent = '';
+        setAuthed(true);
+      });
+
+      updateForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        formStatus.textContent = 'Posting…';
+        const button = updateForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+          const res = await fetch('/.netlify/functions/trail-updates', {
+            method: 'POST',
+            body: new FormData(updateForm),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Could not post update.');
+          updateForm.reset();
+          formStatus.textContent = 'Posted. It should show on the public updates page now.';
+          await loadUpdates();
+        } catch (error) {
+          formStatus.textContent = error.message || 'Could not post update.';
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      updatesList.addEventListener('click', async (event) => {
+        const copy = event.target.closest('[data-copy]');
+        const del = event.target.closest('[data-delete]');
+        if (copy) {
+          await navigator.clipboard.writeText(`${location.origin}/updates/`);
+          formStatus.textContent = 'Public updates link copied.';
+        }
+        if (del) {
+          if (!confirm('Delete this trail update?')) return;
+          const id = del.getAttribute('data-delete');
+          const res = await fetch(`/.netlify/functions/trail-updates?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+          formStatus.textContent = res.ok ? 'Deleted.' : 'Could not delete update.';
+          await loadUpdates();
+        }
+      });
+
+      refreshButton.addEventListener('click', loadUpdates);
+      logoutButton.addEventListener('click', async () => {
+        await fetch('/.netlify/functions/trail-updates-auth', { method: 'DELETE' });
+        setAuthed(false);
+      });
+
+      fetch('/.netlify/functions/trail-updates-auth')
+        .then((res) => res.ok ? res.json() : { authenticated: false })
+        .then((data) => setAuthed(Boolean(data.authenticated)))
+        .catch(() => setAuthed(false));
+    </script>
+  </body>
+</html>

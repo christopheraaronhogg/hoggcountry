@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import TrailUpdatesFeed from '../components/TrailUpdatesFeed.astro';
 import YouTubeThumbnail from '../components/YouTubeThumbnail.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { facts, getMeta } from '../data/trailFacts';
@@ -73,6 +74,10 @@ function clipText(value: string, max = 130) {
         </ul>
       </aside>
     </div>
+  </section>
+
+  <section class="container">
+    <TrailUpdatesFeed limit={3} compact />
   </section>
 
   <section class="container pillars">

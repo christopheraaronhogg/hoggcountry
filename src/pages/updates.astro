@@ -1,0 +1,61 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TrailUpdatesFeed from '../components/TrailUpdatesFeed.astro';
+---
+
+<BaseLayout title="Trail Updates • Hogg Country" description="Fresh Hogg Country trail photos, videos, and short field notes for followers outside Facebook.">
+  <section class="updates-hero">
+    <div class="container hero-card">
+      <p class="eyebrow">Hogg Country Trail Updates</p>
+      <h1>Fresh field notes from the trail.</h1>
+      <p>
+        Quick photos, videos, and short updates for family, friends, and followers who want to keep up without chasing posts on Facebook.
+      </p>
+    </div>
+  </section>
+
+  <div class="container">
+    <TrailUpdatesFeed limit={30} showHeader={false} />
+  </div>
+</BaseLayout>
+
+<style>
+  .updates-hero {
+    padding: 2rem 0 1rem;
+    background:
+      radial-gradient(circle at top left, rgba(166, 181, 137, 0.18), transparent 28%),
+      linear-gradient(180deg, #f6f1e7 0%, #f5efe2 100%);
+  }
+
+  .hero-card {
+    padding: 1.35rem;
+    border: 1px solid rgba(48, 65, 54, 0.12);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 22px 50px rgba(60, 44, 25, 0.08);
+  }
+
+  .eyebrow {
+    margin: 0 0 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--terra);
+  }
+
+  h1 {
+    margin: 0;
+    max-width: 10ch;
+    color: var(--ink);
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    line-height: 0.98;
+  }
+
+  p {
+    max-width: 62ch;
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+</style>

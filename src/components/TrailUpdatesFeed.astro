@@ -1,0 +1,218 @@
+---
+export interface Props {
+  limit?: number;
+  compact?: boolean;
+  showHeader?: boolean;
+}
+
+const { limit = 12, compact = false, showHeader = true } = Astro.props;
+const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
+---
+
+<section class:list={['trail-updates-widget', compact && 'is-compact']} data-trail-updates={uid} data-limit={limit}>
+  {showHeader && (
+    <div class="updates-head">
+      <div>
+        <p class="eyebrow">Latest From The Trail</p>
+        <h2>Trail updates for folks not on Facebook.</h2>
+      </div>
+      <a href="/updates/" class="updates-link">View all updates</a>
+    </div>
+  )}
+
+  <div class="updates-state" data-state>Loading trail updates…</div>
+  <div class="updates-grid" data-list hidden></div>
+</section>
+
+<style>
+  .trail-updates-widget {
+    margin-block: 2rem;
+  }
+
+  .updates-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .eyebrow {
+    margin: 0 0 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--terra);
+  }
+
+  h2 {
+    margin: 0;
+    color: var(--ink);
+    line-height: 1.05;
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    max-width: 12ch;
+  }
+
+  .updates-link,
+  .update-card a {
+    color: var(--pine);
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .updates-link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(48, 65, 54, 0.14);
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .updates-state {
+    padding: 1rem;
+    border: 1px dashed rgba(48, 65, 54, 0.24);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.58);
+    color: var(--muted);
+  }
+
+  .updates-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .update-card {
+    overflow: hidden;
+    border: 1px solid rgba(48, 65, 54, 0.12);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 22px 50px rgba(60, 44, 25, 0.08);
+  }
+
+  .update-media {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: linear-gradient(135deg, rgba(166, 181, 137, 0.22), rgba(240, 224, 0, 0.12));
+  }
+
+  video.update-media {
+    background: #111827;
+  }
+
+  .update-copy {
+    padding: 1rem;
+  }
+
+  .update-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.65rem;
+    color: var(--terra);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .update-card h3 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.35rem;
+    line-height: 1.1;
+  }
+
+  .update-card p {
+    color: var(--muted);
+    line-height: 1.65;
+    white-space: pre-wrap;
+  }
+
+  .is-compact .updates-grid {
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 760px) {
+    .updates-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .is-compact .updates-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>
+
+<script define:vars={{ uid }}>
+  (() => {
+    const root = document.querySelector(`[data-trail-updates="${uid}"]`);
+    if (!root) return;
+
+    const list = root.querySelector('[data-list]');
+    const state = root.querySelector('[data-state]');
+    const limit = Number(root.getAttribute('data-limit') || '12');
+
+    const escapeHtml = (value) => String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+
+    const formatDate = (value) => {
+      if (!value) return 'Trail update';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Trail update';
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const mediaHtml = (update) => {
+      if (!update.mediaUrl) return '';
+      const alt = escapeHtml(update.title || update.body || 'Hogg Country trail update');
+      if (String(update.mediaType || '').startsWith('video/')) {
+        return `<video class="update-media" src="${escapeHtml(update.mediaUrl)}" controls playsinline preload="metadata"></video>`;
+      }
+      return `<img class="update-media" src="${escapeHtml(update.mediaUrl)}" alt="${alt}" loading="lazy" />`;
+    };
+
+    const cardHtml = (update) => {
+      const title = escapeHtml(update.title || 'Trail update');
+      const body = escapeHtml(update.body || '');
+      const bits = [formatDate(update.publishedAt || update.createdAt)];
+      if (update.location) bits.push(escapeHtml(update.location));
+      if (update.trailMile) bits.push(`Mile ${escapeHtml(update.trailMile)}`);
+      return `
+        <article class="update-card">
+          ${mediaHtml(update)}
+          <div class="update-copy">
+            <div class="update-meta">${bits.map((bit) => `<span>${bit}</span>`).join('<span>•</span>')}</div>
+            <h3>${title}</h3>
+            ${body ? `<p>${body}</p>` : ''}
+          </div>
+        </article>
+      `;
+    };
+
+    fetch(`/.netlify/functions/trail-updates?limit=${limit}`)
+      .then((res) => res.ok ? res.json() : Promise.reject(new Error('Could not load updates')))
+      .then((data) => {
+        const updates = Array.isArray(data.updates) ? data.updates : [];
+        if (!updates.length) {
+          state.textContent = 'No trail updates posted yet. Check back soon.';
+          return;
+        }
+        list.innerHTML = updates.map(cardHtml).join('');
+        list.hidden = false;
+        state.hidden = true;
+      })
+      .catch(() => {
+        state.textContent = 'Trail updates are temporarily unavailable.';
+      });
+  })();
+</script>
