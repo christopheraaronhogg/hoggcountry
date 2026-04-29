@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import { getStore } from '@netlify/blobs';
+import { connectLambda, getStore } from '@netlify/blobs';
 import {
   isAdminAuthed,
   jsonHeaders,
@@ -41,6 +41,8 @@ function parseJsonBody(body: string | null): Record<string, unknown> | null {
 }
 
 const handler: Handler = async (event) => {
+  connectLambda(event);
+
   if (event.httpMethod === 'GET') {
     const includeDrafts = event.queryStringParameters?.admin === '1' && isAdminAuthed(event);
     const limit = Math.max(1, Math.min(50, Number(event.queryStringParameters?.limit || 50)));
