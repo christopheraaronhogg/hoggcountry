@@ -97,7 +97,7 @@ function resolveModelOrThrow(providerId: ClawProviderId, modelId: string): Model
         cacheWrite: 0
       },
       contextWindow: 128000,
-      maxTokens: 8192
+      maxTokens: 2048
     };
   }
 
@@ -488,13 +488,15 @@ export async function replyInWorkspaceClaw(
     revisedDocument = revised.document;
   }
 
-  try {
-    const extractedFacts = await extractFactCandidatesFromTurn(runtime, record, trimmedPrompt, reply);
-    if (extractedFacts.length > 0) {
-      workspace = await appendWorkspaceFactCandidates(workspaceId, betaProfile, extractedFacts);
+  if (runtime.providerId !== OPENCODE_GO_PROVIDER_ID) {
+    try {
+      const extractedFacts = await extractFactCandidatesFromTurn(runtime, record, trimmedPrompt, reply);
+      if (extractedFacts.length > 0) {
+        workspace = await appendWorkspaceFactCandidates(workspaceId, betaProfile, extractedFacts);
+      }
+    } catch (error) {
+      console.error('Failed to extract workspace fact candidates', error);
     }
-  } catch (error) {
-    console.error('Failed to extract workspace fact candidates', error);
   }
 
   return {

@@ -69,7 +69,7 @@ class OpenClawWebProxyController extends Controller
                     'allow_redirects' => false,
                     'http_errors' => false,
                 ])
-                ->timeout(20);
+                ->timeout($this->proxyTimeout($path));
 
             if ($multipart) {
                 $pending = $this->attachMultipartPayload($pending->asMultipart(), $request);
@@ -101,6 +101,15 @@ class OpenClawWebProxyController extends Controller
         }
 
         return $response;
+    }
+
+    private function proxyTimeout(string $path): int
+    {
+        if (Str::startsWith($path, 'app-api/claw/reply')) {
+            return 120;
+        }
+
+        return 20;
     }
 
     private function shouldProxyAsMultipart(Request $request): bool
