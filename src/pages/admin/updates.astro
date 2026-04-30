@@ -172,7 +172,7 @@
           <label>
             Photo or video
             <input name="media" type="file" accept="image/*,video/*" />
-            <small class="hint">Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.</small>
+            <small id="media-limit-hint" class="hint">Temporary max: 100 MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.</small>
           </label>
 
           <label>
@@ -233,6 +233,7 @@
       const updatesList = document.getElementById('updates-list');
       const refreshButton = document.getElementById('refresh-button');
       const logoutButton = document.getElementById('logout-button');
+      const mediaLimitHint = document.getElementById('media-limit-hint');
 
       const API_ORIGIN = ['localhost', '127.0.0.1'].includes(location.hostname)
         ? 'http://127.0.0.1:8000'
@@ -240,7 +241,7 @@
       const API_BASE = `${API_ORIGIN}/api/v1/trail-updates`;
       const SESSION_KEY = 'hcTrailUpdatesAdminSession';
       let adminSession = loadSession();
-      let maxMediaMb = 250;
+      let maxMediaMb = 100;
 
       const escapeHtml = (value) => String(value || '')
         .replaceAll('&', '&amp;')
@@ -266,6 +267,10 @@
         }
         return `${value >= 10 || unit === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unit]}`;
       };
+
+      function updateMediaLimitHint() {
+        mediaLimitHint.textContent = `Temporary max: ${maxMediaMb} MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.`;
+      }
 
       function loadSession() {
         try {
@@ -340,6 +345,7 @@
         try {
           const data = await apiRequest('?admin=1&limit=50');
           if (data.max_media_mb) maxMediaMb = Number(data.max_media_mb) || maxMediaMb;
+          updateMediaLimitHint();
           const updates = Array.isArray(data.updates) ? data.updates : [];
           updatesList.innerHTML = updates.length ? updates.map(rowHtml).join('') : '<p>No updates yet.</p>';
         } catch (error) {
@@ -367,6 +373,8 @@
         }
         throw lastError || new Error('Could not upload media chunk.');
       }
+
+      updateMediaLimitHint();
 
       async function uploadMedia(file) {
         if (!file || file.size <= 0) return null;
