@@ -95,6 +95,7 @@
       .actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
       .actions > * { flex: 1 1 150px; }
       .status { min-height: 1.5rem; color: var(--terra); font-weight: 800; }
+      .hint { color: var(--muted); font-weight: 700; line-height: 1.4; }
 
       .updates-list { display: grid; gap: 0.8rem; }
       .update-row {
@@ -143,7 +144,7 @@
       <section class="hero card">
         <p class="eyebrow">Admin</p>
         <h1>Trail updates.</h1>
-        <p>Post quick photos, videos, and text notes from mobile. Passcode unlock is intentionally simple for this v1.</p>
+        <p>Post quick photos, videos, and text notes from mobile. Large media uploads in safe chunks so bad trail signal has a better chance.</p>
       </section>
 
       <section id="login-panel" class="panel card stack">
@@ -170,7 +171,8 @@
 
           <label>
             Photo or video
-            <input name="media" type="file" accept="image/*,video/mp4,video/quicktime,video/webm" />
+            <input name="media" type="file" accept="image/*,video/*" />
+            <small class="hint">Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.</small>
           </label>
 
           <label>
@@ -232,6 +234,14 @@
       const refreshButton = document.getElementById('refresh-button');
       const logoutButton = document.getElementById('logout-button');
 
+      const API_ORIGIN = ['localhost', '127.0.0.1'].includes(location.hostname)
+        ? 'http://127.0.0.1:8000'
+        : 'https://hoggcountry.on-forge.com';
+      const API_BASE = `${API_ORIGIN}/api/v1/trail-updates`;
+      const SESSION_KEY = 'hcTrailUpdatesAdminSession';
+      let adminSession = loadSession();
+      let maxMediaMb = 250;
+
       const escapeHtml = (value) => String(value || '')
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
@@ -245,11 +255,56 @@
         return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
       };
 
+      const formatBytes = (bytes) => {
+        if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let value = bytes;
+        let unit = 0;
+        while (value >= 1024 && unit < units.length - 1) {
+          value /= 1024;
+          unit += 1;
+        }
+        return `${value >= 10 || unit === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unit]}`;
+      };
+
+      function loadSession() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+          if (!parsed?.token || !parsed?.expiresAt || new Date(parsed.expiresAt).getTime() <= Date.now()) return null;
+          return parsed;
+        } catch {
+          return null;
+        }
+      }
+
+      function saveSession(session) {
+        adminSession = session;
+        if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        else localStorage.removeItem(SESSION_KEY);
+      }
+
       const setAuthed = (authed) => {
         loginPanel.classList.toggle('hidden', authed);
         adminPanel.classList.toggle('hidden', !authed);
         if (authed) loadUpdates();
       };
+
+      async function apiRequest(path = '', options = {}) {
+        const { auth = true, headers: providedHeaders, ...fetchOptions } = options;
+        const headers = new Headers(providedHeaders || {});
+        if (auth && adminSession?.token) headers.set('Authorization', `Bearer ${adminSession.token}`);
+
+        const res = await fetch(`${API_BASE}${path}`, {
+          ...fetchOptions,
+          headers,
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const message = payload?.error?.message || payload?.message || `Request failed (${res.status}).`;
+          throw new Error(message);
+        }
+        return payload?.data ?? payload;
+      }
 
       const mediaHtml = (update) => {
         if (!update.mediaUrl) return '<div class="no-media"></div>';
@@ -263,6 +318,7 @@
         const bits = [update.status, formatDate(update.publishedAt || update.createdAt)];
         if (update.location) bits.push(update.location);
         if (update.trailMile) bits.push(`Mile ${update.trailMile}`);
+        if (update.mediaSize) bits.push(formatBytes(Number(update.mediaSize)));
         return `
           <article class="update-row">
             ${mediaHtml(update)}
@@ -281,48 +337,116 @@
 
       async function loadUpdates() {
         updatesList.textContent = 'Loading…';
-        const res = await fetch('/.netlify/functions/trail-updates?admin=1&limit=50');
-        if (!res.ok) {
-          updatesList.textContent = 'Could not load updates.';
-          return;
+        try {
+          const data = await apiRequest('?admin=1&limit=50');
+          if (data.max_media_mb) maxMediaMb = Number(data.max_media_mb) || maxMediaMb;
+          const updates = Array.isArray(data.updates) ? data.updates : [];
+          updatesList.innerHTML = updates.length ? updates.map(rowHtml).join('') : '<p>No updates yet.</p>';
+        } catch (error) {
+          updatesList.textContent = error.message || 'Could not load updates.';
+          if (String(error.message || '').toLowerCase().includes('admin')) {
+            saveSession(null);
+            setAuthed(false);
+          }
         }
-        const data = await res.json();
-        const updates = Array.isArray(data.updates) ? data.updates : [];
-        updatesList.innerHTML = updates.length ? updates.map(rowHtml).join('') : '<p>No updates yet.</p>';
+      }
+
+      async function uploadChunk(uploadId, chunkIndex, chunk) {
+        let lastError;
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          try {
+            return await apiRequest(`/media-uploads/${encodeURIComponent(uploadId)}/chunks/${chunkIndex}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/octet-stream' },
+              body: chunk,
+            });
+          } catch (error) {
+            lastError = error;
+            await new Promise((resolve) => setTimeout(resolve, attempt * 700));
+          }
+        }
+        throw lastError || new Error('Could not upload media chunk.');
+      }
+
+      async function uploadMedia(file) {
+        if (!file || file.size <= 0) return null;
+        if (file.size > maxMediaMb * 1024 * 1024) {
+          throw new Error(`That file is ${formatBytes(file.size)}. Current temporary limit is ${maxMediaMb} MB until R2 is wired.`);
+        }
+
+        formStatus.textContent = `Starting ${formatBytes(file.size)} upload… keep this tab open.`;
+        const started = await apiRequest('/media-uploads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name || 'trail-upload',
+            contentType: file.type || 'application/octet-stream',
+            size: file.size,
+          }),
+        });
+
+        const upload = started.upload;
+        const chunkSize = Number(upload.chunkSize || 786432);
+        const chunkCount = Number(upload.chunkCount || Math.ceil(file.size / chunkSize));
+
+        for (let index = 0; index < chunkCount; index += 1) {
+          const start = index * chunkSize;
+          const end = Math.min(file.size, start + chunkSize);
+          await uploadChunk(upload.uploadId, index, file.slice(start, end));
+          const pct = Math.max(1, Math.round((end / file.size) * 100));
+          formStatus.textContent = `Uploading ${pct}% (${formatBytes(end)} of ${formatBytes(file.size)}). Keep this tab open.`;
+        }
+
+        formStatus.textContent = 'Finalizing media…';
+        const completed = await apiRequest(`/media-uploads/${encodeURIComponent(upload.uploadId)}/complete`, {
+          method: 'POST',
+        });
+
+        return completed.media;
       }
 
       loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         loginStatus.textContent = 'Checking…';
-        const passcode = new FormData(loginForm).get('passcode');
-        const res = await fetch('/.netlify/functions/trail-updates-auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ passcode }),
-        });
-        if (!res.ok) {
+        try {
+          const passcode = new FormData(loginForm).get('passcode');
+          const data = await apiRequest('/admin/session', {
+            auth: false,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ passcode }),
+          });
+          saveSession({ token: data.token, expiresAt: data.expires_at });
+          loginForm.reset();
+          loginStatus.textContent = '';
+          setAuthed(true);
+        } catch {
           loginStatus.textContent = 'Wrong passcode.';
-          return;
         }
-        loginForm.reset();
-        loginStatus.textContent = '';
-        setAuthed(true);
       });
 
       updateForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        formStatus.textContent = 'Posting…';
+        formStatus.textContent = 'Preparing update…';
         const button = updateForm.querySelector('button[type="submit"]');
         button.disabled = true;
         try {
-          const res = await fetch('/.netlify/functions/trail-updates', {
+          const formData = new FormData(updateForm);
+          const file = formData.get('media');
+          formData.delete('media');
+
+          if (file instanceof File && file.size > 0) {
+            const media = await uploadMedia(file);
+            if (media?.uploadId) formData.set('mediaUploadId', media.uploadId);
+          }
+
+          formStatus.textContent = 'Posting update…';
+          await apiRequest('', {
             method: 'POST',
-            body: new FormData(updateForm),
+            body: formData,
           });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data.error || 'Could not post update.');
           updateForm.reset();
-          formStatus.textContent = 'Posted. It should show on the public updates page now.';
+          formStatus.textContent = 'Posted. It should show on the public updates page shortly.';
           await loadUpdates();
         } catch (error) {
           formStatus.textContent = error.message || 'Could not post update.';
@@ -332,8 +456,9 @@
       });
 
       updatesList.addEventListener('click', async (event) => {
-        const copy = event.target.closest('[data-copy]');
-        const del = event.target.closest('[data-delete]');
+        const target = event.target;
+        const copy = target?.closest?.('[data-copy]');
+        const del = target?.closest?.('[data-delete]');
         if (copy) {
           await navigator.clipboard.writeText(`${location.origin}/updates/`);
           formStatus.textContent = 'Public updates link copied.';
@@ -341,22 +466,32 @@
         if (del) {
           if (!confirm('Delete this trail update?')) return;
           const id = del.getAttribute('data-delete');
-          const res = await fetch(`/.netlify/functions/trail-updates?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-          formStatus.textContent = res.ok ? 'Deleted.' : 'Could not delete update.';
+          try {
+            await apiRequest(`/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            formStatus.textContent = 'Deleted.';
+          } catch (error) {
+            formStatus.textContent = error.message || 'Could not delete update.';
+          }
           await loadUpdates();
         }
       });
 
       refreshButton.addEventListener('click', loadUpdates);
-      logoutButton.addEventListener('click', async () => {
-        await fetch('/.netlify/functions/trail-updates-auth', { method: 'DELETE' });
+      logoutButton.addEventListener('click', () => {
+        saveSession(null);
         setAuthed(false);
       });
 
-      fetch('/.netlify/functions/trail-updates-auth')
-        .then((res) => res.ok ? res.json() : { authenticated: false })
-        .then((data) => setAuthed(Boolean(data.authenticated)))
-        .catch(() => setAuthed(false));
+      if (adminSession) {
+        apiRequest('/admin/session')
+          .then((data) => setAuthed(Boolean(data.authenticated)))
+          .catch(() => {
+            saveSession(null);
+            setAuthed(false);
+          });
+      } else {
+        setAuthed(false);
+      }
     </script>
   </body>
 </html>

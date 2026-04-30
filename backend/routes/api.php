@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\TrailAssistantMapVisibilityController;
 use App\Http\Controllers\Api\V1\TrailAssistantPlanController;
 use App\Http\Controllers\Api\V1\TrailAssistantSosController;
 use App\Http\Controllers\Api\V1\TrailAssistantTriageController;
+use App\Http\Controllers\Api\V1\TrailUpdateController;
 use App\Http\Controllers\Api\V1\VideoFeedController;
 use App\Http\Controllers\Api\V1\VideoHoggController;
 use App\Http\Controllers\Api\V1\VideoHoggQueueController;
@@ -77,6 +78,19 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
 
     Route::prefix('videos')->group(function (): void {
         Route::get('/latest', [VideoFeedController::class, 'latest']);
+    });
+
+    Route::prefix('trail-updates')->group(function (): void {
+        Route::options('/{any?}', [TrailUpdateController::class, 'options'])->where('any', '.*');
+        Route::get('/', [TrailUpdateController::class, 'index']);
+        Route::post('/', [TrailUpdateController::class, 'store'])->middleware('throttle:30,1');
+        Route::patch('/{id}', [TrailUpdateController::class, 'update'])->middleware('throttle:60,1');
+        Route::delete('/{id}', [TrailUpdateController::class, 'destroy'])->middleware('throttle:60,1');
+        Route::get('/{id}/media', [TrailUpdateController::class, 'media']);
+        Route::match(['GET', 'POST'], '/admin/session', [TrailUpdateController::class, 'session'])->middleware('throttle:20,1');
+        Route::post('/media-uploads', [TrailUpdateController::class, 'startMediaUpload'])->middleware('throttle:30,1');
+        Route::put('/media-uploads/{uploadId}/chunks/{chunkIndex}', [TrailUpdateController::class, 'storeMediaChunk'])->whereNumber('chunkIndex')->middleware('throttle:300,1');
+        Route::post('/media-uploads/{uploadId}/complete', [TrailUpdateController::class, 'completeMediaUpload'])->middleware('throttle:30,1');
     });
 
     Route::prefix('trail-assistant')->group(function (): void {
