@@ -97,6 +97,51 @@
       .status { min-height: 1.5rem; color: var(--terra); font-weight: 800; }
       .hint { color: var(--muted); font-weight: 700; line-height: 1.4; }
 
+      .upload-field { gap: 0.55rem; }
+      .upload-dropzone {
+        display: grid;
+        gap: 0.35rem;
+        padding: 1rem;
+        border: 2px dashed rgba(77, 89, 74, 0.26);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.64);
+      }
+      .upload-dropzone strong { color: var(--ink); }
+      .upload-dropzone input { margin-top: 0.35rem; background: white; }
+      .file-summary {
+        display: grid;
+        grid-template-columns: 76px 1fr;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.75rem;
+        border: 1px solid rgba(77, 89, 74, 0.16);
+        border-radius: 20px;
+        background: rgba(77, 89, 74, 0.07);
+      }
+      .file-summary.error { border-color: rgba(159, 18, 57, 0.35); background: rgba(159, 18, 57, 0.08); }
+      .file-summary-body { display: grid; gap: 0.3rem; min-width: 0; }
+      .file-summary strong { overflow-wrap: anywhere; color: var(--ink); }
+      .file-summary small { color: var(--muted); font-weight: 800; }
+      .media-preview {
+        width: 76px;
+        height: 76px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #111827;
+      }
+      .media-preview img, .media-preview video { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .file-summary-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+      .file-summary-actions button { min-height: 40px; padding: 0.55rem 0.75rem; }
+      .upload-progress {
+        display: grid;
+        gap: 0.35rem;
+        padding: 0.8rem;
+        border-radius: 18px;
+        background: rgba(155, 90, 46, 0.08);
+      }
+      .progress-meta { display: flex; justify-content: space-between; gap: 0.75rem; color: var(--terra); font-size: 0.84rem; font-weight: 900; }
+      progress { width: 100%; height: 14px; accent-color: var(--terra); }
+
       .updates-list { display: grid; gap: 0.8rem; }
       .update-row {
         display: grid;
@@ -169,11 +214,33 @@
             <h2>Drop in today’s update.</h2>
           </div>
 
-          <label>
+          <label class="upload-field">
             Photo or video
-            <input name="media" type="file" accept="image/*,video/*" />
-            <small id="media-limit-hint" class="hint">Temporary max: 100 MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.</small>
+            <span class="upload-dropzone" id="upload-dropzone">
+              <strong id="upload-picker-title">Tap to choose a photo or video</strong>
+              <small id="media-limit-hint" class="hint">Temporary max: 100 MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.</small>
+              <input id="media-input" name="media" type="file" accept="image/*,video/*" />
+            </span>
           </label>
+
+          <div id="file-summary" class="file-summary hidden" aria-live="polite">
+            <div id="file-preview" class="media-preview" aria-hidden="true"></div>
+            <div class="file-summary-body">
+              <strong id="file-name">No file selected</strong>
+              <small id="file-meta"></small>
+              <div class="file-summary-actions">
+                <button type="button" class="secondary" id="clear-media-button">Remove file</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="upload-progress-wrap" class="upload-progress hidden" aria-live="polite" aria-hidden="true">
+            <div class="progress-meta">
+              <span id="upload-phase">Upload ready</span>
+              <span id="upload-percent">0%</span>
+            </div>
+            <progress id="upload-progress" max="100" value="0"></progress>
+          </div>
 
           <label>
             Text blip
@@ -206,7 +273,7 @@
           </div>
 
           <div class="actions">
-            <button type="submit">Post update</button>
+            <button type="submit" id="post-button">Post update</button>
             <button type="button" class="secondary" id="refresh-button">Refresh list</button>
             <button type="button" class="secondary" id="logout-button">Log out</button>
           </div>
@@ -234,6 +301,18 @@
       const refreshButton = document.getElementById('refresh-button');
       const logoutButton = document.getElementById('logout-button');
       const mediaLimitHint = document.getElementById('media-limit-hint');
+      const mediaInput = document.getElementById('media-input');
+      const uploadDropzone = document.getElementById('upload-dropzone');
+      const fileSummary = document.getElementById('file-summary');
+      const filePreview = document.getElementById('file-preview');
+      const fileName = document.getElementById('file-name');
+      const fileMeta = document.getElementById('file-meta');
+      const clearMediaButton = document.getElementById('clear-media-button');
+      const uploadProgressWrap = document.getElementById('upload-progress-wrap');
+      const uploadProgress = document.getElementById('upload-progress');
+      const uploadPhase = document.getElementById('upload-phase');
+      const uploadPercent = document.getElementById('upload-percent');
+      const postButton = document.getElementById('post-button');
 
       const API_ORIGIN = ['localhost', '127.0.0.1'].includes(location.hostname)
         ? 'http://127.0.0.1:8000'
@@ -242,6 +321,8 @@
       const SESSION_KEY = 'hcTrailUpdatesAdminSession';
       let adminSession = loadSession();
       let maxMediaMb = 100;
+      let uploadInFlight = false;
+      let previewUrl = null;
 
       const escapeHtml = (value) => String(value || '')
         .replaceAll('&', '&amp;')
@@ -270,6 +351,96 @@
 
       function updateMediaLimitHint() {
         mediaLimitHint.textContent = `Temporary max: ${maxMediaMb} MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.`;
+      }
+
+      function fileLimitBytes() {
+        return maxMediaMb * 1024 * 1024;
+      }
+
+      function describeFileType(file) {
+        if (!file?.type) return 'media file';
+        if (file.type.startsWith('image/')) return 'photo';
+        if (file.type.startsWith('video/')) return 'video';
+        return file.type;
+      }
+
+      function setUploadProgress(percent = 0, label = 'Upload ready', visible = true) {
+        const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+        uploadProgressWrap.classList.toggle('hidden', !visible);
+        uploadProgressWrap.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        uploadProgress.value = safePercent;
+        uploadPhase.textContent = label;
+        uploadPercent.textContent = `${safePercent}%`;
+      }
+
+      function resetUploadProgress() {
+        setUploadProgress(0, 'Upload ready', false);
+      }
+
+      function clearPreviewUrl() {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = null;
+      }
+
+      function renderFilePreview(file) {
+        clearPreviewUrl();
+        filePreview.innerHTML = '';
+        if (!file) return;
+
+        previewUrl = URL.createObjectURL(file);
+        if (file.type.startsWith('image/')) {
+          const img = document.createElement('img');
+          img.src = previewUrl;
+          img.alt = '';
+          filePreview.append(img);
+          return;
+        }
+
+        if (file.type.startsWith('video/')) {
+          const video = document.createElement('video');
+          video.src = previewUrl;
+          video.muted = true;
+          video.playsInline = true;
+          video.preload = 'metadata';
+          filePreview.append(video);
+          return;
+        }
+
+        filePreview.textContent = 'File';
+      }
+
+      function updateFileSummary() {
+        const file = mediaInput.files?.[0];
+        resetUploadProgress();
+        if (!file) {
+          fileSummary.classList.add('hidden');
+          fileSummary.classList.remove('error');
+          fileName.textContent = 'No file selected';
+          fileMeta.textContent = '';
+          clearPreviewUrl();
+          filePreview.innerHTML = '';
+          return;
+        }
+
+        const overLimit = file.size > fileLimitBytes();
+        fileSummary.classList.remove('hidden');
+        fileSummary.classList.toggle('error', overLimit);
+        fileName.textContent = file.name || 'Selected media';
+        fileMeta.textContent = `${describeFileType(file)} • ${formatBytes(file.size)} • max ${maxMediaMb} MB`;
+        renderFilePreview(file);
+
+        if (overLimit) {
+          const overBy = file.size - fileLimitBytes();
+          formStatus.textContent = `That file is too large by ${formatBytes(overBy)}. Max is ${maxMediaMb} MB for now.`;
+        } else {
+          formStatus.textContent = `Ready to upload ${formatBytes(file.size)}. Keep this tab open after tapping Post update.`;
+        }
+      }
+
+      function clearMediaSelection() {
+        mediaInput.value = '';
+        updateFileSummary();
+        formStatus.textContent = '';
       }
 
       function loadSession() {
@@ -357,10 +528,13 @@
         }
       }
 
-      async function uploadChunk(uploadId, chunkIndex, chunk) {
+      async function uploadChunk(uploadId, chunkIndex, chunk, chunkCount, uploadedBytes, totalBytes) {
         let lastError;
         for (let attempt = 1; attempt <= 3; attempt += 1) {
           try {
+            if (attempt > 1) {
+              setUploadProgress((uploadedBytes / totalBytes) * 100, `Signal hiccup — retrying chunk ${chunkIndex + 1} of ${chunkCount}`);
+            }
             return await apiRequest(`/media-uploads/${encodeURIComponent(uploadId)}/chunks/${chunkIndex}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/octet-stream' },
@@ -368,21 +542,23 @@
             });
           } catch (error) {
             lastError = error;
-            await new Promise((resolve) => setTimeout(resolve, attempt * 700));
+            await new Promise((resolve) => setTimeout(resolve, attempt * 900));
           }
         }
         throw lastError || new Error('Could not upload media chunk.');
       }
 
       updateMediaLimitHint();
+      updateFileSummary();
 
       async function uploadMedia(file) {
         if (!file || file.size <= 0) return null;
-        if (file.size > maxMediaMb * 1024 * 1024) {
+        if (file.size > fileLimitBytes()) {
           throw new Error(`That file is ${formatBytes(file.size)}. Current temporary limit is ${maxMediaMb} MB until R2 is wired.`);
         }
 
-        formStatus.textContent = `Starting ${formatBytes(file.size)} upload… keep this tab open.`;
+        uploadInFlight = true;
+        setUploadProgress(1, `Starting ${formatBytes(file.size)} upload…`);
         const started = await apiRequest('/media-uploads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -400,16 +576,19 @@
         for (let index = 0; index < chunkCount; index += 1) {
           const start = index * chunkSize;
           const end = Math.min(file.size, start + chunkSize);
-          await uploadChunk(upload.uploadId, index, file.slice(start, end));
+          const pctBefore = (start / file.size) * 100;
+          setUploadProgress(pctBefore, `Uploading chunk ${index + 1} of ${chunkCount}`);
+          await uploadChunk(upload.uploadId, index, file.slice(start, end), chunkCount, start, file.size);
           const pct = Math.max(1, Math.round((end / file.size) * 100));
-          formStatus.textContent = `Uploading ${pct}% (${formatBytes(end)} of ${formatBytes(file.size)}). Keep this tab open.`;
+          setUploadProgress(pct, `Uploading ${formatBytes(end)} of ${formatBytes(file.size)}`);
         }
 
-        formStatus.textContent = 'Finalizing media…';
+        setUploadProgress(100, 'Finalizing media…');
         const completed = await apiRequest(`/media-uploads/${encodeURIComponent(upload.uploadId)}/complete`, {
           method: 'POST',
         });
 
+        setUploadProgress(100, 'Media ready — posting update…');
         return completed.media;
       }
 
@@ -436,8 +615,8 @@
       updateForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         formStatus.textContent = 'Preparing update…';
-        const button = updateForm.querySelector('button[type="submit"]');
-        button.disabled = true;
+        postButton.disabled = true;
+        postButton.textContent = 'Uploading…';
         try {
           const formData = new FormData(updateForm);
           const file = formData.get('media');
@@ -446,6 +625,8 @@
           if (file instanceof File && file.size > 0) {
             const media = await uploadMedia(file);
             if (media?.uploadId) formData.set('mediaUploadId', media.uploadId);
+          } else {
+            resetUploadProgress();
           }
 
           formStatus.textContent = 'Posting update…';
@@ -454,12 +635,17 @@
             body: formData,
           });
           updateForm.reset();
+          clearMediaSelection();
+          setUploadProgress(100, 'Posted');
           formStatus.textContent = 'Posted. It should show on the public updates page shortly.';
           await loadUpdates();
+          setTimeout(resetUploadProgress, 1800);
         } catch (error) {
           formStatus.textContent = error.message || 'Could not post update.';
         } finally {
-          button.disabled = false;
+          uploadInFlight = false;
+          postButton.disabled = false;
+          postButton.textContent = 'Post update';
         }
       });
 
@@ -482,6 +668,31 @@
           }
           await loadUpdates();
         }
+      });
+
+      mediaInput.addEventListener('change', updateFileSummary);
+      clearMediaButton.addEventListener('click', clearMediaSelection);
+      uploadDropzone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        uploadDropzone.style.borderColor = 'rgba(155, 90, 46, 0.55)';
+      });
+      uploadDropzone.addEventListener('dragleave', () => {
+        uploadDropzone.style.borderColor = '';
+      });
+      uploadDropzone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        uploadDropzone.style.borderColor = '';
+        const file = event.dataTransfer?.files?.[0];
+        if (!file) return;
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        mediaInput.files = transfer.files;
+        updateFileSummary();
+      });
+      window.addEventListener('beforeunload', (event) => {
+        if (!uploadInFlight) return;
+        event.preventDefault();
+        event.returnValue = '';
       });
 
       refreshButton.addEventListener('click', loadUpdates);
