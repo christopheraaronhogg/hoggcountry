@@ -34,7 +34,7 @@ export interface WorkspaceClawMessage {
   readonly role: 'user' | 'assistant';
   readonly text: string;
   readonly createdAt: string;
-  readonly providerId: 'openai-codex' | 'system' | null;
+  readonly providerId: 'openai-codex' | 'opencode-go' | 'system' | null;
   readonly model: string | null;
   readonly error: boolean;
 }
@@ -183,7 +183,10 @@ function normalizeClawMessages(input: unknown): WorkspaceClawMessage[] {
       const text = typeof message.text === 'string' ? message.text.trim() : '';
       if (!text) return null;
 
-      const providerId = message.providerId === 'openai-codex' || message.providerId === 'system' ? message.providerId : null;
+      const providerId =
+        message.providerId === 'openai-codex' || message.providerId === 'opencode-go' || message.providerId === 'system'
+          ? message.providerId
+          : null;
       const model = typeof message.model === 'string' && message.model.trim().length > 0 ? message.model.trim() : null;
 
       return {

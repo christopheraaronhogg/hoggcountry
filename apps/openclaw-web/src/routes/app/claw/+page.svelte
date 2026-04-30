@@ -12,11 +12,12 @@
   }
 
   interface ProviderConnection {
-    readonly providerId: 'openai-codex';
+    readonly providerId: 'openai-codex' | 'opencode-go';
     readonly label: string;
     readonly status: 'connected';
     readonly accountId: string | null;
     readonly expiresAt: string | null;
+    readonly model?: string;
   }
 
   interface ClawMessage {
@@ -467,13 +468,13 @@
     <p class="eyebrow">Brain</p>
     {#if connection}
       <span class="status-pill live">{connection.label}</span>
-      <p class="meta-line">Model lane: openai-codex / gpt-5.4</p>
+      <p class="meta-line">Model lane: {connection.providerId} / {connection.model ?? 'gpt-5.4'}</p>
       {#if connection.expiresAt}
         <p class="meta-line">Refresh window tracked server-side until {new Date(connection.expiresAt).toLocaleString()}</p>
       {/if}
     {:else}
       <span class="status-pill warn">Not connected</span>
-      <p class="meta-line">Connect ChatGPT once, then all prompts run from the cloud workspace.</p>
+      <p class="meta-line">Connect a model lane once, then all prompts run from the cloud workspace.</p>
     {/if}
   </article>
 </section>
@@ -491,15 +492,19 @@
     <article class="card panel-copy">
       <p class="eyebrow">Connected brain</p>
       {#if connection}
-        <h2>ChatGPT is wired to this workspace.</h2>
+        <h2>{connection.label} is wired to this workspace.</h2>
         <p class="muted">
           Prompts go through the server-side Pi runtime and the reply is written back into this workspace thread.
         </p>
-        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.85rem;">
-          <button class="primary-button" type="button" onclick={disconnect} disabled={disconnectBusy}>
-            {disconnectBusy ? 'Disconnecting…' : 'Disconnect ChatGPT'}
-          </button>
-        </div>
+        {#if connection.providerId === 'openai-codex'}
+          <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.85rem;">
+            <button class="primary-button" type="button" onclick={disconnect} disabled={disconnectBusy}>
+              {disconnectBusy ? 'Disconnecting…' : 'Disconnect ChatGPT'}
+            </button>
+          </div>
+        {:else}
+          <p class="meta-line" style="margin-top:0.85rem;">House-funded lane. No hiker connection needed.</p>
+        {/if}
       {:else}
         <h2>Connect ChatGPT to unlock the cloud delegate.</h2>
         <p class="muted">
@@ -654,7 +659,7 @@
       <div class="stack" bind:this={threadMessages} style="margin-top:1rem; max-height:28rem; overflow:auto; scroll-behavior:smooth;">
         {#if messages.length === 0}
           <article class="card card-soft panel-copy">
-            <p class="muted">No cloud thread yet. Connect ChatGPT, then send the first real prompt.</p>
+            <p class="muted">No cloud thread yet. Connect Scout, then send the first real prompt.</p>
           </article>
         {:else}
           {#each messages as message}
@@ -719,7 +724,7 @@
           bind:value={replyInput}
           rows="5"
           disabled={!connection || sendBusy}
-          placeholder={connection ? 'Plan the next 7 days from my current mile with max 4-day food carries and realistic hostel or town options.' : 'Connect ChatGPT first.'}
+          placeholder={connection ? 'Plan the next 7 days from my current mile with max 4-day food carries and realistic hostel or town options.' : 'Connect Scout first.'}
           style="width:100%; border-radius:16px; border:1px solid rgba(94,108,84,0.28); padding:0.9rem; font:inherit; background:#fff;"
         ></textarea>
       </label>

@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { replyInWorkspaceClaw } from '$lib/server/claw-agent';
+import { getConfiguredClawConnection, replyInWorkspaceClaw } from '$lib/server/claw-agent';
 import { requireWorkspace, ok } from '$lib/server/workspace-endpoint';
 
 export const POST: RequestHandler = async (event) => {
@@ -19,7 +19,7 @@ export const POST: RequestHandler = async (event) => {
   const result = await replyInWorkspaceClaw(workspaceId, betaProfile, message, {
     documentId: documentId || null
   });
-  const connection = result.workspace.providerConnections.find((item) => item.providerId === 'openai-codex') ?? null;
+  const connection = getConfiguredClawConnection(result.workspace);
 
   return ok({
     reply: result.reply,

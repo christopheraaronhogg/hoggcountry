@@ -12,11 +12,12 @@
   }
 
   interface ProviderConnection {
-    readonly providerId: 'openai-codex';
+    readonly providerId: 'openai-codex' | 'opencode-go';
     readonly label: string;
     readonly status: 'connected';
     readonly accountId: string | null;
     readonly expiresAt: string | null;
+    readonly model?: string;
   }
 
   interface ClawMessage {
@@ -493,10 +494,10 @@
       <p class="eyebrow">Workspace pulse</p>
       {#if connection}
         <span class="status-pill live">{connection.label}</span>
-        <p class="meta-line">openai-codex / gpt-5.4</p>
+        <p class="meta-line">{connection.providerId} / {connection.model ?? 'gpt-5.4'}</p>
       {:else}
         <span class="status-pill warn">Not connected</span>
-        <p class="meta-line">Connect ChatGPT to activate Scout on this panel.</p>
+        <p class="meta-line">Connect a model lane to activate Scout on this panel.</p>
       {/if}
 
       <div class="stats-grid compact-stats" style="margin-top:1rem;">
@@ -527,10 +528,14 @@
       <p class="eyebrow">Connected brain</p>
       {#if connection}
         <h2>Scout is ready.</h2>
-        <p class="muted">This workspace now has a real connected ChatGPT account behind it.</p>
-        <button class="primary-button" type="button" onclick={disconnect} disabled={disconnectBusy}>
-          {disconnectBusy ? 'Disconnecting…' : 'Disconnect ChatGPT'}
-        </button>
+        <p class="muted">This workspace now has {connection.label} behind it.</p>
+        {#if connection.providerId === 'openai-codex'}
+          <button class="primary-button" type="button" onclick={disconnect} disabled={disconnectBusy}>
+            {disconnectBusy ? 'Disconnecting…' : 'Disconnect ChatGPT'}
+          </button>
+        {:else}
+          <p class="meta-line" style="margin-top:0.85rem;">House-funded lane. No hiker connection needed.</p>
+        {/if}
       {:else}
         <h2>Connect ChatGPT</h2>
         <p class="muted">Connect once, then every lab page uses the same Scout thread and saved plans.</p>
@@ -700,7 +705,7 @@
           bind:value={replyInput}
           rows="5"
           disabled={!connection || sendBusy}
-          placeholder={connection ? variant.promptPlaceholder : 'Connect ChatGPT first.'}
+          placeholder={connection ? variant.promptPlaceholder : 'Connect Scout first.'}
           style="width:100%; border-radius:16px; border:1px solid rgba(94,108,84,0.28); padding:0.9rem; font:inherit; background:#fff;"
         ></textarea>
       </label>

@@ -1,11 +1,12 @@
 import type { RequestHandler } from './$types';
+import { getConfiguredClawConnection } from '$lib/server/claw-agent';
 import { requireWorkspace, ok } from '$lib/server/workspace-endpoint';
 import { getWorkspaceRecord } from '$lib/server/workspace-store';
 
 export const GET: RequestHandler = async (event) => {
   const { workspaceId, betaProfile } = requireWorkspace(event);
   const record = await getWorkspaceRecord(workspaceId, betaProfile);
-  const connection = record.providerConnections.find((item) => item.providerId === 'openai-codex') ?? null;
+  const connection = getConfiguredClawConnection(record);
 
   return ok({
     workspaceId,

@@ -1,6 +1,6 @@
 import { Agent } from '@mariozechner/pi-agent-core';
 import type { ImportedDocument } from '@hoggcountry/manual-core';
-import { getModel, type AssistantMessage, type Message, type ToolResultMessage, type UserMessage } from '@mariozechner/pi-ai';
+import { getModel, type AssistantMessage, type Message, type Model, type ToolResultMessage, type UserMessage } from '@mariozechner/pi-ai';
 import type { BetaProfileCookie } from '$lib/beta';
 import { resolveOpenAICodexApiKey, type OpenAICodexCredentials } from '$lib/server/claw-openai-codex';
 import { decryptProviderJson, encryptProviderJson } from '$lib/server/provider-crypto';
@@ -16,7 +16,31 @@ import {
   type WorkspaceSnapshot
 } from '$lib/server/workspace-store';
 
-const CLAW_MODEL = 'gpt-5.4';
+const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
+const OPENCODE_GO_PROVIDER_ID = 'opencode-go';
+const OPENAI_CODEX_MODEL = 'gpt-5.4';
+const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-pro';
+
+type ClawProviderId = typeof OPENAI_CODEX_PROVIDER_ID | typeof OPENCODE_GO_PROVIDER_ID;
+
+export interface WorkspaceClawConnectionPayload {
+  readonly providerId: ClawProviderId;
+  readonly label: string;
+  readonly status: 'connected';
+  readonly accountId: string | null;
+  readonly expiresAt: string | null;
+  readonly model: string;
+}
+
+interface ClawRuntime {
+  readonly providerId: ClawProviderId;
+  readonly modelId: string;
+  readonly model: Model<any>;
+  readonly apiKey: string;
+  readonly credentials: OpenAICodexCredentials | null;
+}
+
+const CLAW_MODEL = OPENAI_CODEX_MODEL;
 const ZERO_USAGE = {
   input: 0,
   output: 0,
@@ -36,6 +60,109 @@ function excerpt(value: string, maxLength: number): string {
   const normalized = value.replace(/\s+/gu, ' ').trim();
   if (normalized.length <= maxLength) return normalized;
   return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function configuredHouseProviderId(): ClawProviderId | null {
+  const provider = (process.env.OPENCLAW_CLAW_PROVIDER || process.env.OPENCLAW_SCOUT_PROVIDER || '').trim();
+  if (provider === OPENCODE_GO_PROVIDER_ID) return OPENCODE_GO_PROVIDER_ID;
+  if (provider === OPENAI_CODEX_PROVIDER_ID) return null;
+  return process.env.OPENCODE_API_KEY ? OPENCODE_GO_PROVIDER_ID : null;
+}
+
+function configuredHouseModelId(providerId: ClawProviderId): string {
+  if (providerId === OPENCODE_GO_PROVIDER_ID) {
+    return (process.env.OPENCLAW_CLAW_MODEL || process.env.OPENCLAW_SCOUT_MODEL || DEFAULT_OPENCODE_GO_MODEL).trim();
+  }
+
+  return OPENAI_CODEX_MODEL;
+}
+
+function resolveModelOrThrow(providerId: ClawProviderId, modelId: string): Model<any> {
+  const model = getModel(providerId as never, modelId as never);
+  if (model) return model;
+
+  if (providerId === OPENCODE_GO_PROVIDER_ID) {
+    return {
+      id: modelId,
+      name: modelId,
+      api: 'openai-completions',
+      provider: OPENCODE_GO_PROVIDER_ID,
+      baseUrl: 'https://opencode.ai/zen/go/v1',
+      reasoning: false,
+      input: ['text'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0
+      },
+      contextWindow: 128000,
+      maxTokens: 8192
+    };
+  }
+
+  throw new Error(`Scout model is not registered: ${providerId} / ${modelId}`);
+}
+
+function getOpenCodeGoApiKey(): string {
+  const apiKey = process.env.OPENCODE_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error('OPENCODE_API_KEY is required for the opencode-go Scout lane.');
+  }
+  return apiKey;
+}
+
+export function getConfiguredClawConnection(record: Pick<WorkspaceSnapshot, 'providerConnections'>): WorkspaceClawConnectionPayload | null {
+  const houseProviderId = configuredHouseProviderId();
+
+  if (houseProviderId === OPENCODE_GO_PROVIDER_ID && process.env.OPENCODE_API_KEY?.trim()) {
+    const modelId = configuredHouseModelId(houseProviderId);
+    return {
+      providerId: OPENCODE_GO_PROVIDER_ID,
+      label: 'OpenCode Go house lane',
+      status: 'connected',
+      accountId: null,
+      expiresAt: null,
+      model: modelId
+    };
+  }
+
+  const connection = record.providerConnections.find((item) => item.providerId === OPENAI_CODEX_PROVIDER_ID) ?? null;
+  return connection
+    ? {
+        providerId: OPENAI_CODEX_PROVIDER_ID,
+        label: connection.label,
+        status: connection.status,
+        accountId: connection.accountId,
+        expiresAt: connection.expiresAt,
+        model: OPENAI_CODEX_MODEL
+      }
+    : null;
+}
+
+async function resolveClawRuntime(record: WorkspaceRecord): Promise<ClawRuntime> {
+  const houseProviderId = configuredHouseProviderId();
+
+  if (houseProviderId === OPENCODE_GO_PROVIDER_ID) {
+    const modelId = configuredHouseModelId(houseProviderId);
+    return {
+      providerId: OPENCODE_GO_PROVIDER_ID,
+      modelId,
+      model: resolveModelOrThrow(houseProviderId, modelId),
+      apiKey: getOpenCodeGoApiKey(),
+      credentials: null
+    };
+  }
+
+  const credentials = await loadConnectedCredentials(record);
+  const resolved = await resolveOpenAICodexApiKey(credentials);
+  return {
+    providerId: OPENAI_CODEX_PROVIDER_ID,
+    modelId: OPENAI_CODEX_MODEL,
+    model: resolveModelOrThrow(OPENAI_CODEX_PROVIDER_ID, OPENAI_CODEX_MODEL),
+    apiKey: resolved.apiKey,
+    credentials: resolved.credentials
+  };
 }
 
 function userBlocksSummary(record: WorkspaceRecord): string[] {
@@ -100,12 +227,13 @@ function toPiMessage(message: WorkspaceClawMessage): Message {
     return userMessage;
   }
 
+  const providerId = message.providerId === OPENCODE_GO_PROVIDER_ID ? OPENCODE_GO_PROVIDER_ID : OPENAI_CODEX_PROVIDER_ID;
   const assistantMessage: AssistantMessage = {
     role: 'assistant',
     content: [{ type: 'text', text: message.text }],
-    api: 'openai-codex-responses',
-    provider: 'openai-codex',
-    model: message.model || CLAW_MODEL,
+    api: providerId === OPENCODE_GO_PROVIDER_ID ? 'openai-completions' : 'openai-codex-responses',
+    provider: providerId,
+    model: message.model || (providerId === OPENCODE_GO_PROVIDER_ID ? DEFAULT_OPENCODE_GO_MODEL : CLAW_MODEL),
     usage: ZERO_USAGE,
     stopReason: message.error ? 'error' : 'stop',
     errorMessage: message.error ? message.text : undefined,
@@ -145,34 +273,35 @@ function simplifyMessages(messages: Message[]): WorkspaceClawMessage[] {
 
         if (!text) return [];
 
-        return [
-          {
-            id: `claw-user-${message.timestamp}`,
-            role: 'user' as const,
-            text,
-            createdAt: new Date(message.timestamp).toISOString(),
-            providerId: null,
-            model: null,
-            error: false
-          }
-        ];
+        const workspaceMessage: WorkspaceClawMessage = {
+          id: `claw-user-${message.timestamp}`,
+          role: 'user',
+          text,
+          createdAt: new Date(message.timestamp).toISOString(),
+          providerId: null,
+          model: null,
+          error: false
+        };
+
+        return [workspaceMessage];
       }
 
       if (message.role === 'assistant') {
         const text = assistantText(message);
         if (!text) return [];
 
-        return [
-          {
-            id: `claw-assistant-${message.timestamp}`,
-            role: 'assistant' as const,
-            text,
-            createdAt: new Date(message.timestamp).toISOString(),
-            providerId: message.provider === 'openai-codex' ? 'openai-codex' : 'system',
-            model: message.model || CLAW_MODEL,
-            error: message.stopReason === 'error' || message.stopReason === 'aborted'
-          }
-        ];
+        const providerId = message.provider === OPENAI_CODEX_PROVIDER_ID || message.provider === OPENCODE_GO_PROVIDER_ID ? message.provider : 'system';
+        const workspaceMessage: WorkspaceClawMessage = {
+          id: `claw-assistant-${message.timestamp}`,
+          role: 'assistant',
+          text,
+          createdAt: new Date(message.timestamp).toISOString(),
+          providerId,
+          model: message.model || CLAW_MODEL,
+          error: message.stopReason === 'error' || message.stopReason === 'aborted'
+        };
+
+        return [workspaceMessage];
       }
 
       return [];
@@ -231,7 +360,7 @@ function parseExtractedFactCandidates(text: string, sourceMessageId: string): Wo
 }
 
 async function extractFactCandidatesFromTurn(
-  apiKey: string,
+  runtime: ClawRuntime,
   record: WorkspaceRecord,
   userPrompt: string,
   reply: WorkspaceClawMessage
@@ -246,13 +375,13 @@ async function extractFactCandidatesFromTurn(
         'Do not include personal preferences, hype, or private goals.',
         'If no reusable shared-intel facts are present, return [].'
       ].join('\n'),
-      model: getModel('openai-codex', CLAW_MODEL),
+      model: runtime.model,
       thinkingLevel: 'low',
       messages: []
     },
     sessionId: `workspace:${record.workspaceId}:claw-fact-extract:${reply.id}`,
     transport: 'sse',
-    getApiKey: async () => apiKey
+    getApiKey: async () => runtime.apiKey
   });
 
   await extractor.prompt([
@@ -314,19 +443,18 @@ export async function replyInWorkspaceClaw(
     throw new Error('Saved Scout plan not found.');
   }
 
-  const credentials = await loadConnectedCredentials(record);
-  const resolved = await resolveOpenAICodexApiKey(credentials);
+  const runtime = await resolveClawRuntime(record);
 
   const agent = new Agent({
     initialState: {
       systemPrompt: buildSystemPrompt(record, activeDocument),
-      model: getModel('openai-codex', CLAW_MODEL),
+      model: runtime.model,
       thinkingLevel: 'low',
       messages: record.clawMessages.map(toPiMessage)
     },
     sessionId: `workspace:${workspaceId}:claw`,
     transport: 'sse',
-    getApiKey: async () => resolved.apiKey
+    getApiKey: async () => runtime.apiKey
   });
 
   await agent.prompt(trimmedPrompt);
@@ -338,12 +466,14 @@ export async function replyInWorkspaceClaw(
     throw new Error('Pi agent did not return an assistant reply.');
   }
 
-  await saveWorkspaceOpenAICodexConnection(workspaceId, betaProfile, {
-    encryptedCredentials: encryptProviderJson(resolved.credentials),
-    accountId: resolved.credentials.accountId ?? null,
-    expiresAt: new Date(resolved.credentials.expires).toISOString(),
-    label: resolved.credentials.label ?? null
-  });
+  if (runtime.credentials) {
+    await saveWorkspaceOpenAICodexConnection(workspaceId, betaProfile, {
+      encryptedCredentials: encryptProviderJson(runtime.credentials),
+      accountId: runtime.credentials.accountId ?? null,
+      expiresAt: new Date(runtime.credentials.expires).toISOString(),
+      label: runtime.credentials.label ?? null
+    });
+  }
 
   let workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
   let revisedDocument: ImportedDocument | null = null;
@@ -359,7 +489,7 @@ export async function replyInWorkspaceClaw(
   }
 
   try {
-    const extractedFacts = await extractFactCandidatesFromTurn(resolved.apiKey, record, trimmedPrompt, reply);
+    const extractedFacts = await extractFactCandidatesFromTurn(runtime, record, trimmedPrompt, reply);
     if (extractedFacts.length > 0) {
       workspace = await appendWorkspaceFactCandidates(workspaceId, betaProfile, extractedFacts);
     }
