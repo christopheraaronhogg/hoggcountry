@@ -69,8 +69,10 @@ function buildSystemPrompt(record: WorkspaceRecord, activeDocument?: ImportedDoc
     notes.length > 0 ? `Manual notes: ${notes.join(' | ')}` : 'Manual notes: none yet.',
     docs.length > 0 ? `Source docs: ${docs.join(', ')}` : 'Source docs: none yet.',
     tools.length > 0 ? `Available tools/checklists: ${tools.join(', ')}` : 'Available tools/checklists: none yet.',
-    'Be especially good at itinerary planning, food-carry limits, resupply timing, hostel or town sequencing, and turning rough trail constraints into usable plans.',
-    'When asked for a plan, prefer a compact artifact with assumptions, day-by-day breakdown, likely resupply or hostel options, and the missing intel that would tighten the answer.',
+    'Be especially good at itinerary planning, loadout choices, food-carry limits, resupply timing, budget tradeoffs, health/body tracking, hostel or town sequencing, and turning rough trail constraints into usable plans.',
+    'Treat saved assistant-generated documents as living Scout documents, not one-off files. The user wants Scout to keep them current through conversation.',
+    'When asked for a plan, prefer a compact artifact with current snapshot, assumptions, day-by-day or category breakdown, concrete next actions, and missing intel that would tighten the answer.',
+    'When revising a saved document, preserve useful existing structure, update stale facts, add a brief change-history note, and return the full revised document body.',
     activeDocument
       ? [
           `Active saved plan title: ${activeDocument.title}`,

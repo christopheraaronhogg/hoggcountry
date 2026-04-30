@@ -552,10 +552,152 @@ function inferScoutDocumentTitle(prompt: string, explicitTitle?: string | null):
   if (trimmedTitle) return trimmedTitle;
 
   if (/7\s*-?\s*day|next\s+week/iu.test(prompt)) return '7-day trail plan';
+  if (/loadout|pack|gear|base\s*weight/iu.test(prompt)) return 'Loadout plan';
   if (/carry|resupply|food/iu.test(prompt)) return 'Next food carry plan';
+  if (/budget|finance|money|cost/iu.test(prompt)) return 'Budget and finances';
+  if (/health|weight|injur|knee|feet|pain|body/iu.test(prompt)) return 'Health and body notes';
+  if (/training|train|workout|conditioning/iu.test(prompt)) return 'Training plan';
+  if (/safety|emergency|risk|bail|evac/iu.test(prompt)) return 'Safety and emergency plan';
   if (/hostel|town/iu.test(prompt)) return 'Town and hostel plan';
   if (/weakest\s+link|tighten/iu.test(prompt)) return 'Scout trail note';
   return 'Saved Scout plan';
+}
+
+const SCOUT_STARTER_DOCUMENTS = [
+  {
+    title: '7-day trail plan',
+    purpose: 'Keep the hiker oriented on the next practical week: terrain, mileage, weather risk, sleep targets, town timing, and unresolved assumptions.',
+    starterQuestions: [
+      'Where am I starting from today?',
+      'What pace is realistic for this week?',
+      'What terrain, weather, or town constraints could change the plan?'
+    ]
+  },
+  {
+    title: 'Loadout plan',
+    purpose: 'Track what the hiker is carrying, what is working, what hurts, what should be sent home, and what should be added before the next section.',
+    starterQuestions: ['What is the current pack setup?', 'What feels unnecessary?', 'What failed, broke, or caused discomfort?']
+  },
+  {
+    title: 'Food and resupply plan',
+    purpose: 'Track food carries, meal preferences, calorie gaps, town/resupply timing, and max carry constraints.',
+    starterQuestions: ['How many days of food can I carry comfortably?', 'What food am I actually eating?', 'Where is the next realistic resupply?']
+  },
+  {
+    title: 'Budget and finances',
+    purpose: 'Track spend rate, upcoming expensive towns, lodging/shuttle choices, gear replacement risk, and whether the hike is staying financially sustainable.',
+    starterQuestions: ['What is the current remaining budget?', 'What was spent recently?', 'What expenses are coming up next?']
+  },
+  {
+    title: 'Health and body notes',
+    purpose: 'Track weight, pain, injuries, energy, sleep, foot care, recovery needs, and health changes over the hike.',
+    starterQuestions: ['What hurts right now?', 'What is changing with weight, appetite, or energy?', 'What needs rest or medical attention?']
+  },
+  {
+    title: 'Training plan',
+    purpose: 'Help the hiker prepare before the trail and adjust conditioning expectations during early trail miles.',
+    starterQuestions: ['What is the start date?', 'What fitness baseline exists now?', 'What should be trained before the first big climb?']
+  },
+  {
+    title: 'Town strategy',
+    purpose: 'Track town stops, hostel options, chores, zero/nero logic, shuttles, mail drops, and social/logistics decisions.',
+    starterQuestions: ['What town is coming next?', 'What chores need to happen there?', 'Is this a quick resupply, nero, or full zero?']
+  },
+  {
+    title: 'Safety and emergency plan',
+    purpose: 'Track contacts, bailout options, weather hazards, medical constraints, check-in rhythm, and emergency decision rules.',
+    starterQuestions: ['Who should be contacted if plans change?', 'What hazards are ahead?', 'Where are the nearest bailout or help options?']
+  }
+] as const;
+
+function buildScoutStarterMarkdown(
+  title: string,
+  purpose: string,
+  starterQuestions: readonly string[],
+  meta: {
+    readonly trailName: string;
+    readonly currentMile: number | null;
+    readonly savedAt: string;
+  }
+): string {
+  return [
+    `# ${title}`,
+    '',
+    'Living Scout document. Scout should revise this in place as conversations reveal better information.',
+    '',
+    `Created: ${new Date(meta.savedAt).toLocaleString()}`,
+    `Trail name: ${meta.trailName || 'Unknown'}`,
+    meta.currentMile !== null ? `Current mile: ${meta.currentMile.toFixed(1)}` : null,
+    '',
+    '## Purpose',
+    '',
+    purpose,
+    '',
+    '## Current snapshot',
+    '',
+    '- Not filled in yet.',
+    '',
+    '## Known facts',
+    '',
+    '- Not filled in yet.',
+    '',
+    '## Open questions for Scout',
+    '',
+    ...starterQuestions.map((question) => `- ${question}`),
+    '',
+    '## Next update triggers',
+    '',
+    '- New trail update, current mile change, town stop, gear change, health/body change, weather risk, or budget change.',
+    '',
+    '## Change history',
+    '',
+    `- ${new Date(meta.savedAt).toLocaleDateString()}: Starter document created.`
+  ].filter((value): value is string => value !== null).join('\n').trim();
+}
+
+export async function seedWorkspaceScoutDocuments(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const existingTitles = new Set(record.documents.map((document) => document.title.toLowerCase()));
+  const savedAt = nowIso();
+  const currentMile = record.profile && Number.isFinite(record.profile.currentMile) ? record.profile.currentMile : null;
+  const trailName = betaProfile.trailName || betaProfile.name || 'Unknown';
+
+  const starterDocuments: ImportedDocument[] = SCOUT_STARTER_DOCUMENTS
+    .filter((starter) => !existingTitles.has(starter.title.toLowerCase()))
+    .map((starter) => {
+      const markdown = buildScoutStarterMarkdown(starter.title, starter.purpose, starter.starterQuestions, {
+        trailName,
+        currentMile,
+        savedAt
+      });
+
+      return {
+        id: createId('doc'),
+        title: starter.title,
+        fileName: `${slugifyDocumentTitle(starter.title)}.md`,
+        kind: 'markdown',
+        rights: 'assistant-generated',
+        searchable: true,
+        textContent: markdown,
+        note: 'Living Scout starter document. Talk to Scout to fill and revise this plan in place.',
+        importedAt: savedAt,
+        sizeBytes: Buffer.byteLength(markdown, 'utf8')
+      };
+    });
+
+  if (starterDocuments.length === 0) {
+    return sanitizeRecord(record);
+  }
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      documents: [...starterDocuments, ...record.documents].sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+    })
+  );
 }
 
 function buildScoutDocumentMarkdown(

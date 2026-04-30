@@ -67,6 +67,7 @@
   let sendBusy = $state(false);
   let connectBusy = $state(false);
   let disconnectBusy = $state(false);
+  let seedBusy = $state(false);
   let savingMessageId = $state<string | null>(null);
   let savedMessageIds = $state<string[]>([]);
   let saveNotice = $state('');
@@ -172,7 +173,19 @@
   }
 
   function savedPlans(currentDocs: ImportedDocument[]): ImportedDocument[] {
-    return currentDocs.filter((document) => document.rights === 'assistant-generated');
+    return [...currentDocs]
+      .filter((document) => document.rights === 'assistant-generated')
+      .sort((a, b) => Date.parse(b.importedAt) - Date.parse(a.importedAt));
+  }
+
+  function buildDocumentUpdatePrompt(document: ImportedDocument): string {
+    return `Update my ${document.title}. Ask me only for the missing facts you need first, then keep this document current as we talk. If you already have enough context, rewrite it into a practical current version with a current snapshot, known facts, open questions, next actions, and change history.`;
+  }
+
+  function focusDocument(document: ImportedDocument) {
+    selectedDocumentId = document.id;
+    replyInput = buildDocumentUpdatePrompt(document);
+    focusCloudThread();
   }
 
   function ensureSelectedDocument(currentDocs: ImportedDocument[]) {
@@ -378,6 +391,29 @@
     }
   }
 
+  async function seedScoutDocuments() {
+    seedBusy = true;
+    saveNotice = '';
+    saveError = '';
+
+    try {
+      const workspace = await jsonOrThrow(
+        await fetch('/app-api/workspace/scout-docs/seed', {
+          method: 'POST'
+        })
+      ) as WorkspaceSnapshot;
+
+      documents = Array.isArray(workspace.documents) ? workspace.documents : documents;
+      ensureSelectedDocument(documents);
+      saveNotice = 'Starter Scout documents are ready. Pick one and talk to Scout to fill it in.';
+    } catch (caught) {
+      console.error(caught);
+      saveError = caught instanceof Error ? caught.message : 'Could not create starter Scout documents.';
+    } finally {
+      seedBusy = false;
+    }
+  }
+
   async function saveReplyAsDocument(messageId: string) {
     savingMessageId = messageId;
     saveNotice = '';
@@ -422,8 +458,8 @@
     <p class="eyebrow">Scout</p>
     <h1>Scout is your personal trail assistant.</h1>
     <p class="lede">
-      This is the real app shape, a cloud-hosted Hogg Country assistant with a server-side ChatGPT connection, not a
-      local bridge.
+      Talk to Scout before and during the hike. Scout turns the conversation into living trail plans: loadout,
+      food, budget, health, training, town strategy, safety, and the next 7 days.
     </p>
   </div>
 
@@ -512,22 +548,30 @@
     </article>
 
     <article class="card panel-copy">
-      <p class="eyebrow">Saved plans</p>
+      <p class="eyebrow">Living Scout documents</p>
       {#if savedPlans(documents).length === 0}
-        <h2>No saved Scout plans yet.</h2>
-        <p class="muted">Save a strong Scout reply to Docs first, then you can revise that same plan in place from here.</p>
+        <h2>Create the starter trail brain.</h2>
+        <p class="muted">Scout works best when it has living documents to maintain instead of one-off replies.</p>
+        <button class="primary-button" type="button" onclick={seedScoutDocuments} disabled={seedBusy}>
+          {seedBusy ? 'Creating…' : 'Create starter Scout docs'}
+        </button>
       {:else}
-        <h2>Pick the plan Scout should revise next.</h2>
-        <p class="muted">The next prompt can update one saved plan in place instead of creating another loose reply.</p>
+        <h2>Pick what Scout should keep current.</h2>
+        <p class="muted">Each send can revise one living document in place, so the hiker talks naturally while Scout keeps the plans organized.</p>
         <div class="stack" style="margin-top:1rem;">
-          {#each savedPlans(documents).slice(0, 6) as document}
-            <button
-              type="button"
-              class={selectedDocumentId === document.id ? 'primary-button' : 'secondary-button'}
-              onclick={() => selectedDocumentId = document.id}
-            >
-              {document.title}
-            </button>
+          {#each savedPlans(documents).slice(0, 8) as document}
+            <div class="doc-target-row">
+              <button
+                type="button"
+                class={selectedDocumentId === document.id ? 'primary-button' : 'secondary-button'}
+                onclick={() => selectedDocumentId = document.id}
+              >
+                {document.title}
+              </button>
+              <button type="button" class="secondary-button" onclick={() => focusDocument(document)} disabled={sendBusy}>
+                Focus Scout
+              </button>
+            </div>
           {/each}
           <button type="button" class="secondary-button" onclick={() => selectedDocumentId = ''}>
             No revision target
@@ -754,3 +798,24 @@
     {/if}
   </section>
 </div>
+
+
+<style>
+  .doc-target-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.6rem;
+    align-items: stretch;
+  }
+
+  .doc-target-row button:first-child {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  @media (max-width: 680px) {
+    .doc-target-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
