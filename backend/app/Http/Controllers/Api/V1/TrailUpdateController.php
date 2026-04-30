@@ -30,7 +30,7 @@ class TrailUpdateController extends ApiController
 
     private const CHUNK_BYTES = 768 * 1024;
 
-    private const MAX_DERIVATIVE_SOURCE_PIXELS = 30000000;
+    private const MAX_DERIVATIVE_SOURCE_PIXELS = 60000000;
 
     /** @var array<string,array{maxWidth:int,quality:int}> */
     private const IMAGE_DERIVATIVES = [
