@@ -14,6 +14,15 @@ export type TrailUpdate = {
   mediaName: string | null;
   mediaType: string | null;
   mediaUrl: string | null;
+  thumbnailUrl?: string | null;
+  previewUrl?: string | null;
+  mediaVariants?: Record<string, {
+    url: string;
+    type: string;
+    width: number;
+    height: number;
+    size: number;
+  }>;
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;

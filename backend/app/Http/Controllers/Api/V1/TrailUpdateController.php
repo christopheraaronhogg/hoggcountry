@@ -20,6 +20,8 @@ class TrailUpdateController extends ApiController
 
     private const MEDIA_DIR = 'trail-updates/media';
 
+    private const MEDIA_DERIVATIVES_DIR = 'trail-updates/media/derivatives';
+
     private const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 
     private const UPLOAD_TTL_SECONDS = 60 * 60 * 24;
@@ -27,6 +29,14 @@ class TrailUpdateController extends ApiController
     private const DEFAULT_MAX_MEDIA_MB = 100;
 
     private const CHUNK_BYTES = 768 * 1024;
+
+    private const MAX_DERIVATIVE_SOURCE_PIXELS = 30000000;
+
+    /** @var array<string,array{maxWidth:int,quality:int}> */
+    private const IMAGE_DERIVATIVES = [
+        'thumbnail' => ['maxWidth' => 640, 'quality' => 78],
+        'preview' => ['maxWidth' => 1400, 'quality' => 82],
+    ];
 
     /** @var array<int,string> */
     private const ALLOWED_MEDIA_TYPES = [
@@ -249,6 +259,7 @@ class TrailUpdateController extends ApiController
             'mediaName' => (string) ($upload['filename'] ?? 'upload'),
             'mediaType' => (string) ($upload['contentType'] ?? 'application/octet-stream'),
             'mediaSize' => $actualSize,
+            'mediaDerivatives' => $this->makeImageDerivatives($mediaPath, (string) ($upload['contentType'] ?? ''), $mediaKey),
             'completedAt' => now()->toISOString(),
         ];
         Storage::disk('local')->put($this->completedPath($uploadId), json_encode($completed, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -306,6 +317,7 @@ class TrailUpdateController extends ApiController
             'mediaName' => $media['mediaName'] ?? null,
             'mediaType' => $media['mediaType'] ?? null,
             'mediaSize' => $media['mediaSize'] ?? null,
+            'mediaDerivatives' => $media['mediaDerivatives'] ?? [],
             'createdAt' => $now,
             'updatedAt' => $now,
             'publishedAt' => $status === 'published' ? $now : null,
@@ -383,6 +395,9 @@ class TrailUpdateController extends ApiController
 
         if (is_array($target) && isset($target['mediaPath'])) {
             Storage::disk('public')->delete((string) $target['mediaPath']);
+            foreach ($this->mediaDerivativePaths($target) as $path) {
+                Storage::disk('public')->delete($path);
+            }
         }
 
         return $this->withCors($this->ok(['ok' => true]), $request);
@@ -390,19 +405,41 @@ class TrailUpdateController extends ApiController
 
     public function media(Request $request, string $id): JsonResponse|BinaryFileResponse
     {
-        $update = collect($this->readUpdates())->first(fn (array $item): bool => ($item['id'] ?? '') === $id);
+        $update = $this->findUpdate($id);
         if (! $update || empty($update['mediaPath'])) {
             return $this->withCors($this->fail('trail_updates_media_missing', 'Media not found.', 404), $request);
         }
 
-        $path = (string) $update['mediaPath'];
+        return $this->servePublicMedia($request, (string) $update['mediaPath'], (string) ($update['mediaType'] ?? 'application/octet-stream'));
+    }
+
+    public function mediaVariant(Request $request, string $id, string $variant): JsonResponse|BinaryFileResponse
+    {
+        $variant = Str::lower($variant);
+        if (! array_key_exists($variant, self::IMAGE_DERIVATIVES)) {
+            return $this->withCors($this->fail('trail_updates_media_variant_missing', 'Media variant not found.', 404), $request);
+        }
+
+        $update = $this->findUpdate($id);
+        $derivatives = is_array($update['mediaDerivatives'] ?? null) ? $update['mediaDerivatives'] : [];
+        $derivative = is_array($derivatives[$variant] ?? null) ? $derivatives[$variant] : null;
+        $path = (string) ($derivative['path'] ?? '');
+        if ($path === '') {
+            return $this->withCors($this->fail('trail_updates_media_variant_missing', 'Media variant not found.', 404), $request);
+        }
+
+        return $this->servePublicMedia($request, $path, (string) ($derivative['type'] ?? 'image/webp'));
+    }
+
+    private function servePublicMedia(Request $request, string $path, string $contentType): JsonResponse|BinaryFileResponse
+    {
         if (! Storage::disk('public')->exists($path)) {
             return $this->withCors($this->fail('trail_updates_media_missing', 'Media not found.', 404), $request);
         }
 
         $response = response()->file(Storage::disk('public')->path($path), [
-            'Content-Type' => (string) ($update['mediaType'] ?? 'application/octet-stream'),
-            'Cache-Control' => 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400',
+            'Content-Type' => $contentType,
+            'Cache-Control' => 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
             'Accept-Ranges' => 'bytes',
         ]);
 
@@ -444,6 +481,8 @@ class TrailUpdateController extends ApiController
      */
     private function publicUpdate(array $update, Request $request): array
     {
+        $mediaVariants = $this->publicMediaVariants($update, $request);
+
         return [
             'id' => (string) ($update['id'] ?? ''),
             'title' => (string) ($update['title'] ?? ''),
@@ -457,6 +496,9 @@ class TrailUpdateController extends ApiController
             'mediaType' => $update['mediaType'] ?? null,
             'mediaSize' => $update['mediaSize'] ?? null,
             'mediaUrl' => ! empty($update['mediaPath']) ? $this->absoluteUrl($request, '/api/v1/trail-updates/'.rawurlencode((string) $update['id']).'/media') : null,
+            'thumbnailUrl' => $mediaVariants['thumbnail']['url'] ?? null,
+            'previewUrl' => $mediaVariants['preview']['url'] ?? null,
+            'mediaVariants' => $mediaVariants,
             'createdAt' => (string) ($update['createdAt'] ?? ''),
             'updatedAt' => (string) ($update['updatedAt'] ?? ''),
             'publishedAt' => $update['publishedAt'] ?? null,
@@ -483,7 +525,166 @@ class TrailUpdateController extends ApiController
             'mediaName' => $this->sanitizeFilename($file->getClientOriginalName()),
             'mediaType' => $contentType,
             'mediaSize' => $file->getSize(),
+            'mediaDerivatives' => $this->makeImageDerivatives($mediaPath, $contentType, $mediaKey),
         ];
+    }
+
+    private function findUpdate(string $id): ?array
+    {
+        return collect($this->readUpdates())->first(fn (array $item): bool => ($item['id'] ?? '') === $id);
+    }
+
+    /**
+     * @param array<string,mixed> $update
+     * @return array<string,array<string,mixed>>
+     */
+    private function publicMediaVariants(array $update, Request $request): array
+    {
+        $derivatives = is_array($update['mediaDerivatives'] ?? null) ? $update['mediaDerivatives'] : [];
+        $variants = [];
+
+        foreach (array_keys(self::IMAGE_DERIVATIVES) as $variant) {
+            $info = is_array($derivatives[$variant] ?? null) ? $derivatives[$variant] : null;
+            if (! $info || empty($info['path'])) {
+                continue;
+            }
+
+            $variants[$variant] = [
+                'url' => $this->absoluteUrl($request, '/api/v1/trail-updates/'.rawurlencode((string) ($update['id'] ?? '')).'/media/'.$variant),
+                'type' => (string) ($info['type'] ?? 'image/webp'),
+                'width' => (int) ($info['width'] ?? 0),
+                'height' => (int) ($info['height'] ?? 0),
+                'size' => (int) ($info['size'] ?? 0),
+            ];
+        }
+
+        return $variants;
+    }
+
+    /**
+     * @param array<string,mixed> $update
+     * @return array<int,string>
+     */
+    private function mediaDerivativePaths(array $update): array
+    {
+        $derivatives = is_array($update['mediaDerivatives'] ?? null) ? $update['mediaDerivatives'] : [];
+
+        return collect($derivatives)
+            ->filter(fn (mixed $item): bool => is_array($item) && is_string($item['path'] ?? null))
+            ->map(fn (array $item): string => (string) $item['path'])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string,array<string,mixed>>
+     */
+    private function makeImageDerivatives(string $mediaPath, string $contentType, string $mediaKey): array
+    {
+        if (! $this->supportsImageDerivatives($contentType)) {
+            return [];
+        }
+
+        $sourcePath = Storage::disk('public')->path($mediaPath);
+        $imageSize = @getimagesize($sourcePath);
+        $sourceWidth = (int) ($imageSize[0] ?? 0);
+        $sourceHeight = (int) ($imageSize[1] ?? 0);
+        if ($sourceWidth < 1 || $sourceHeight < 1 || ($sourceWidth * $sourceHeight) > self::MAX_DERIVATIVE_SOURCE_PIXELS) {
+            return [];
+        }
+
+        $source = $this->loadGdImage($sourcePath, $contentType);
+        if (! $source) {
+            return [];
+        }
+
+        $source = $this->applyJpegOrientation($source, $sourcePath, $contentType);
+        $width = imagesx($source);
+        $height = imagesy($source);
+        $base = pathinfo($mediaKey, PATHINFO_FILENAME) ?: $this->sanitizeId($mediaKey);
+        $derivatives = [];
+
+        foreach (self::IMAGE_DERIVATIVES as $variant => $config) {
+            $scale = min(1, $config['maxWidth'] / max(1, $width));
+            $targetWidth = max(1, (int) round($width * $scale));
+            $targetHeight = max(1, (int) round($height * $scale));
+            $target = imagecreatetruecolor($targetWidth, $targetHeight);
+            if (! $target) {
+                continue;
+            }
+
+            imagealphablending($target, false);
+            imagesavealpha($target, true);
+            imagefill($target, 0, 0, imagecolorallocatealpha($target, 0, 0, 0, 127));
+            imagecopyresampled($target, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+
+            $variantPath = self::MEDIA_DERIVATIVES_DIR.'/'.$base.'-'.$variant.'.webp';
+            $absoluteVariantPath = Storage::disk('public')->path($variantPath);
+            $directory = dirname($absoluteVariantPath);
+            if (! is_dir($directory)) {
+                mkdir($directory, 0775, true);
+            }
+
+            if (imagewebp($target, $absoluteVariantPath, $config['quality'])) {
+                $derivatives[$variant] = [
+                    'path' => $variantPath,
+                    'type' => 'image/webp',
+                    'width' => $targetWidth,
+                    'height' => $targetHeight,
+                    'size' => filesize($absoluteVariantPath) ?: 0,
+                ];
+            }
+
+            imagedestroy($target);
+        }
+
+        imagedestroy($source);
+
+        return $derivatives;
+    }
+
+    private function supportsImageDerivatives(string $contentType): bool
+    {
+        return extension_loaded('gd')
+            && function_exists('imagewebp')
+            && in_array($contentType, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true);
+    }
+
+    private function loadGdImage(string $sourcePath, string $contentType): ?\GdImage
+    {
+        $image = match ($contentType) {
+            'image/jpeg' => function_exists('imagecreatefromjpeg') ? @imagecreatefromjpeg($sourcePath) : false,
+            'image/png' => function_exists('imagecreatefrompng') ? @imagecreatefrompng($sourcePath) : false,
+            'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($sourcePath) : false,
+            'image/gif' => function_exists('imagecreatefromgif') ? @imagecreatefromgif($sourcePath) : false,
+            default => false,
+        };
+
+        return $image instanceof \GdImage ? $image : null;
+    }
+
+    private function applyJpegOrientation(\GdImage $image, string $sourcePath, string $contentType): \GdImage
+    {
+        if ($contentType !== 'image/jpeg' || ! function_exists('exif_read_data')) {
+            return $image;
+        }
+
+        $exif = @exif_read_data($sourcePath);
+        $orientation = is_array($exif) ? (int) ($exif['Orientation'] ?? 1) : 1;
+        $rotated = match ($orientation) {
+            3 => imagerotate($image, 180, 0),
+            6 => imagerotate($image, -90, 0),
+            8 => imagerotate($image, 90, 0),
+            default => $image,
+        };
+
+        if ($rotated instanceof \GdImage && $rotated !== $image) {
+            imagedestroy($image);
+
+            return $rotated;
+        }
+
+        return $image;
     }
 
     private function consumeCompletedMedia(string $uploadId): ?array

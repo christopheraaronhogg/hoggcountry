@@ -87,6 +87,7 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
         Route::patch('/{id}', [TrailUpdateController::class, 'update'])->middleware('throttle:60,1');
         Route::delete('/{id}', [TrailUpdateController::class, 'destroy'])->middleware('throttle:60,1');
         Route::get('/{id}/media', [TrailUpdateController::class, 'media']);
+        Route::get('/{id}/media/{variant}', [TrailUpdateController::class, 'mediaVariant'])->where('variant', 'thumbnail|preview');
         Route::match(['GET', 'POST'], '/admin/session', [TrailUpdateController::class, 'session'])->middleware('throttle:20,1');
         Route::post('/media-uploads', [TrailUpdateController::class, 'startMediaUpload'])->middleware('throttle:30,1');
         Route::put('/media-uploads/{uploadId}/chunks/{chunkIndex}', [TrailUpdateController::class, 'storeMediaChunk'])->whereNumber('chunkIndex')->middleware('throttle:300,1');

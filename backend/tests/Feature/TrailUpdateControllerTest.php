@@ -89,12 +89,22 @@ class TrailUpdateControllerTest extends TestCase
 
         $response->assertCreated();
         $path = $response->json('data.update.mediaUrl');
+        $thumbnailPath = $response->json('data.update.thumbnailUrl');
+        $previewPath = $response->json('data.update.previewUrl');
         $this->assertStringContainsString('/api/v1/trail-updates/', $path);
+        $this->assertStringContainsString('/media/thumbnail', $thumbnailPath);
+        $this->assertStringContainsString('/media/preview', $previewPath);
+        $response->assertJsonPath('data.update.mediaVariants.thumbnail.type', 'image/webp');
+        $response->assertJsonPath('data.update.mediaVariants.preview.type', 'image/webp');
         Storage::disk('public')->assertExists('trail-updates/media/'.$response->json('data.update.mediaKey'));
 
         $media = $this->get($path);
         $media->assertOk();
         $media->assertHeader('Content-Type', 'image/jpeg');
+
+        $thumbnail = $this->get($thumbnailPath);
+        $thumbnail->assertOk();
+        $thumbnail->assertHeader('Content-Type', 'image/webp');
     }
 
     public function test_chunked_media_upload_can_be_completed_and_attached_to_update(): void

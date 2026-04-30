@@ -172,13 +172,21 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const originalMediaUrl = (update) => update.mediaUrl || update.previewUrl || update.thumbnailUrl || '';
+    const thumbnailMediaUrl = (update) => update.thumbnailUrl || update.previewUrl || originalMediaUrl(update);
+
     const mediaHtml = (update) => {
-      if (!update.mediaUrl) return '';
+      const originalUrl = originalMediaUrl(update);
+      if (!originalUrl) return '';
+      const thumbnailUrl = thumbnailMediaUrl(update);
       const alt = escapeHtml(update.title || update.body || 'Hogg Country trail update');
       if (String(update.mediaType || '').startsWith('video/')) {
-        return `<video class="update-media" src="${escapeHtml(update.mediaUrl)}" controls playsinline preload="metadata"></video>`;
+        if (thumbnailUrl && thumbnailUrl !== originalUrl) {
+          return `<img class="update-media" src="${escapeHtml(thumbnailUrl)}" alt="${alt}" loading="lazy" />`;
+        }
+        return `<video class="update-media" src="${escapeHtml(originalUrl)}" controls playsinline preload="metadata"></video>`;
       }
-      return `<img class="update-media" src="${escapeHtml(update.mediaUrl)}" alt="${alt}" loading="lazy" />`;
+      return `<img class="update-media" src="${escapeHtml(thumbnailUrl)}" alt="${alt}" loading="lazy" />`;
     };
 
     const cardHtml = (update) => {

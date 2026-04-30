@@ -482,12 +482,20 @@
         return payload?.data ?? payload;
       }
 
+      const originalMediaUrl = (update) => update.mediaUrl || update.previewUrl || update.thumbnailUrl || '';
+      const thumbnailMediaUrl = (update) => update.thumbnailUrl || update.previewUrl || originalMediaUrl(update);
+
       const mediaHtml = (update) => {
-        if (!update.mediaUrl) return '<div class="no-media"></div>';
+        const originalUrl = originalMediaUrl(update);
+        if (!originalUrl) return '<div class="no-media"></div>';
+        const thumbnailUrl = thumbnailMediaUrl(update);
         if (String(update.mediaType || '').startsWith('video/')) {
-          return `<video src="${escapeHtml(update.mediaUrl)}" controls playsinline preload="metadata"></video>`;
+          if (thumbnailUrl && thumbnailUrl !== originalUrl) {
+            return `<img src="${escapeHtml(thumbnailUrl)}" alt="${escapeHtml(update.title || update.body || 'Trail update video')}" />`;
+          }
+          return `<video src="${escapeHtml(originalUrl)}" controls playsinline preload="metadata"></video>`;
         }
-        return `<img src="${escapeHtml(update.mediaUrl)}" alt="${escapeHtml(update.title || update.body || 'Trail update')}" />`;
+        return `<img src="${escapeHtml(thumbnailUrl)}" alt="${escapeHtml(update.title || update.body || 'Trail update')}" />`;
       };
 
       const rowHtml = (update) => {
