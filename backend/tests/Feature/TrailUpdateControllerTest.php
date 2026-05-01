@@ -146,6 +146,29 @@ class TrailUpdateControllerTest extends TestCase
         Storage::disk('public')->assertExists('trail-updates/media/'.$create->json('data.update.mediaKey'));
     }
 
+    public function test_ios_photo_upload_types_are_accepted(): void
+    {
+        $token = $this->adminToken();
+
+        $cases = [
+            ['IMG_1001.HEIC', 'image/heic', 'image/heic'],
+            ['IMG_1002.HEIC', 'image/x-heic', 'image/heic'],
+            ['IMG_1003.HEIC', 'application/octet-stream', 'image/heic'],
+            ['IMG_1004.HEIF', 'image/heif-sequence', 'image/heif'],
+        ];
+
+        foreach ($cases as [$filename, $contentType, $expected]) {
+            $this->withToken($token)
+                ->postJson('/api/v1/trail-updates/media-uploads', [
+                    'filename' => $filename,
+                    'contentType' => $contentType,
+                    'size' => 12345,
+                ])
+                ->assertCreated()
+                ->assertJsonPath('data.upload.contentType', $expected);
+        }
+    }
+
     public function test_cors_preflight_allows_admin_headers(): void
     {
         $response = $this->withHeaders([

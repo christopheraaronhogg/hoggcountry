@@ -357,11 +357,39 @@
         return maxMediaMb * 1024 * 1024;
       }
 
+      function inferredContentType(file) {
+        const explicit = String(file?.type || '').toLowerCase();
+        if (explicit && explicit !== 'application/octet-stream') {
+          if (explicit === 'image/jpg') return 'image/jpeg';
+          if (explicit === 'image/x-heic' || explicit === 'image/heic-sequence') return 'image/heic';
+          if (explicit === 'image/x-heif' || explicit === 'image/heif-sequence') return 'image/heif';
+          if (explicit === 'video/mov' || explicit === 'video/x-m4v') return 'video/quicktime';
+          return explicit;
+        }
+
+        const extension = String(file?.name || '').split('.').pop()?.toLowerCase() || '';
+        const byExtension = {
+          jpg: 'image/jpeg',
+          jpeg: 'image/jpeg',
+          png: 'image/png',
+          webp: 'image/webp',
+          gif: 'image/gif',
+          heic: 'image/heic',
+          heif: 'image/heif',
+          mp4: 'video/mp4',
+          mov: 'video/quicktime',
+          qt: 'video/quicktime',
+          webm: 'video/webm',
+        };
+
+        return byExtension[extension] || explicit || 'application/octet-stream';
+      }
+
       function describeFileType(file) {
-        if (!file?.type) return 'media file';
-        if (file.type.startsWith('image/')) return 'photo';
-        if (file.type.startsWith('video/')) return 'video';
-        return file.type;
+        const type = inferredContentType(file);
+        if (type.startsWith('image/')) return type.includes('hei') ? 'iPhone photo' : 'photo';
+        if (type.startsWith('video/')) return 'video';
+        return type || 'media file';
       }
 
       function setUploadProgress(percent = 0, label = 'Upload ready', visible = true) {
@@ -388,7 +416,8 @@
         if (!file) return;
 
         previewUrl = URL.createObjectURL(file);
-        if (file.type.startsWith('image/')) {
+        const type = inferredContentType(file);
+        if (type.startsWith('image/')) {
           const img = document.createElement('img');
           img.src = previewUrl;
           img.alt = '';
@@ -396,7 +425,7 @@
           return;
         }
 
-        if (file.type.startsWith('video/')) {
+        if (type.startsWith('video/')) {
           const video = document.createElement('video');
           video.src = previewUrl;
           video.muted = true;
@@ -572,7 +601,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filename: file.name || 'trail-upload',
-            contentType: file.type || 'application/octet-stream',
+            contentType: inferredContentType(file),
             size: file.size,
           }),
         });

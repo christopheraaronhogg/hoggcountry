@@ -117,7 +117,7 @@ class TrailUpdateController extends ApiController
             return $this->withCors($this->fail('trail_updates_invalid_upload', 'Media upload details are invalid.', 422, $validator->errors()->toArray()), $request);
         }
 
-        $contentType = $this->normalizeContentType((string) $request->input('contentType'));
+        $contentType = $this->contentTypeForUpload((string) $request->input('contentType'), (string) $request->input('filename'));
         if (! in_array($contentType, self::ALLOWED_MEDIA_TYPES, true)) {
             return $this->withCors($this->fail('trail_updates_media_type', 'Use a JPG, PNG, WebP, GIF, HEIC, MP4, MOV, or WebM file.', 415), $request);
         }
@@ -511,7 +511,7 @@ class TrailUpdateController extends ApiController
             return null;
         }
 
-        $contentType = $this->normalizeContentType($file->getMimeType() ?: $file->getClientMimeType() ?: 'application/octet-stream');
+        $contentType = $this->contentTypeForUpload($file->getMimeType() ?: $file->getClientMimeType() ?: '', $file->getClientOriginalName());
         if (! in_array($contentType, self::ALLOWED_MEDIA_TYPES, true)) {
             throw new \InvalidArgumentException('Unsupported media type.');
         }
@@ -804,15 +804,38 @@ class TrailUpdateController extends ApiController
         return now()->format('YmdHis').'-'.Str::lower(Str::random(6));
     }
 
+    private function contentTypeForUpload(string $contentType, string $filename): string
+    {
+        $normalized = $this->normalizeContentType($contentType);
+        if (in_array($normalized, self::ALLOWED_MEDIA_TYPES, true)) {
+            return $normalized;
+        }
+
+        $extension = Str::lower(pathinfo($this->sanitizeFilename($filename), PATHINFO_EXTENSION) ?: '');
+
+        return match ($extension) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            'heic' => 'image/heic',
+            'heif' => 'image/heif',
+            'mp4' => 'video/mp4',
+            'mov', 'qt' => 'video/quicktime',
+            'webm' => 'video/webm',
+            default => $normalized,
+        };
+    }
+
     private function normalizeContentType(string $value): string
     {
         $contentType = Str::lower(trim(explode(';', $value)[0] ?? ''));
 
         return match ($contentType) {
             'image/jpg' => 'image/jpeg',
-            'image/heic-sequence' => 'image/heic',
-            'image/heif-sequence' => 'image/heif',
-            'video/mov' => 'video/quicktime',
+            'image/x-heic', 'image/heic-sequence' => 'image/heic',
+            'image/x-heif', 'image/heif-sequence' => 'image/heif',
+            'video/mov', 'video/x-m4v' => 'video/quicktime',
             default => $contentType,
         };
     }
