@@ -134,16 +134,26 @@ class TrailUpdateControllerTest extends TestCase
             ->assertJsonPath('data.media.mediaType', 'video/mp4')
             ->assertJsonPath('data.media.mediaSize', 11);
 
+        $coverDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mP8z8AARQABywH+qj8J7wAAAABJRU5ErkJggg==';
+
         $create = $this->withToken($token)
             ->post('/api/v1/trail-updates', [
                 'status' => 'published',
                 'body' => 'Short clip.',
                 'mediaUploadId' => $uploadId,
+                'videoCoverDataUrl' => $coverDataUrl,
             ]);
 
         $create->assertCreated();
         $create->assertJsonPath('data.update.mediaType', 'video/mp4');
+        $create->assertJsonPath('data.update.mediaVariants.thumbnail.type', 'image/png');
+        $thumbnailPath = $create->json('data.update.thumbnailUrl');
+        $this->assertStringContainsString('/media/thumbnail', $thumbnailPath);
         Storage::disk('public')->assertExists('trail-updates/media/'.$create->json('data.update.mediaKey'));
+
+        $thumbnail = $this->get($thumbnailPath);
+        $thumbnail->assertOk();
+        $thumbnail->assertHeader('Content-Type', 'image/png');
     }
 
     public function test_ios_photo_upload_types_are_accepted(): void

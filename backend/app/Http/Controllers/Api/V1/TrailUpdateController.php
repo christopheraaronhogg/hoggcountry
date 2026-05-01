@@ -32,6 +32,8 @@ class TrailUpdateController extends ApiController
 
     private const MAX_DERIVATIVE_SOURCE_PIXELS = 60000000;
 
+    private const MAX_VIDEO_COVER_BYTES = 2 * 1024 * 1024;
+
     /** @var array<string,array{maxWidth:int,quality:int}> */
     private const IMAGE_DERIVATIVES = [
         'thumbnail' => ['maxWidth' => 640, 'quality' => 78],
@@ -284,6 +286,7 @@ class TrailUpdateController extends ApiController
             'status' => ['nullable', 'string', 'in:draft,published'],
             'featured' => ['nullable'],
             'mediaUploadId' => ['nullable', 'string', 'max:80'],
+            'videoCoverDataUrl' => ['nullable', 'string', 'max:2500000'],
             'media' => ['nullable', 'file', 'max:'.($this->maxMediaMb() * 1024)],
         ]);
 
@@ -301,6 +304,20 @@ class TrailUpdateController extends ApiController
                 $media = $this->storeDirectMedia($request->file('media'), $id);
             } catch (\InvalidArgumentException) {
                 return $this->withCors($this->fail('trail_updates_media_type', 'Use a JPG, PNG, WebP, GIF, HEIC, MP4, MOV, or WebM file.', 415), $request);
+            }
+        }
+
+        if ($media && Str::startsWith((string) ($media['mediaType'] ?? ''), 'video/')) {
+            $coverDerivatives = $this->storeVideoCover(
+                (string) $request->input('videoCoverDataUrl', ''),
+                (string) ($media['mediaKey'] ?? $id),
+            );
+
+            if ($coverDerivatives !== []) {
+                $media['mediaDerivatives'] = array_replace(
+                    is_array($media['mediaDerivatives'] ?? null) ? $media['mediaDerivatives'] : [],
+                    $coverDerivatives,
+                );
             }
         }
 
@@ -641,6 +658,66 @@ class TrailUpdateController extends ApiController
         imagedestroy($source);
 
         return $derivatives;
+    }
+
+    /**
+     * @return array<string,array<string,mixed>>
+     */
+    private function storeVideoCover(string $dataUrl, string $mediaKey): array
+    {
+        $dataUrl = trim($dataUrl);
+        if ($dataUrl === '' || ! preg_match('/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+\/=\r\n]+)$/', $dataUrl, $matches)) {
+            return [];
+        }
+
+        $binary = base64_decode(preg_replace('/\s+/', '', $matches[2]), true);
+        if (! is_string($binary) || $binary === '' || strlen($binary) > self::MAX_VIDEO_COVER_BYTES) {
+            return [];
+        }
+
+        $imageSize = @getimagesizefromstring($binary);
+        if (! is_array($imageSize)) {
+            return [];
+        }
+
+        $contentType = (string) ($imageSize['mime'] ?? $matches[1]);
+        if (! in_array($contentType, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+            return [];
+        }
+
+        $width = (int) ($imageSize[0] ?? 0);
+        $height = (int) ($imageSize[1] ?? 0);
+        if ($width < 1 || $height < 1) {
+            return [];
+        }
+
+        $extension = match ($contentType) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+        $base = pathinfo($mediaKey, PATHINFO_FILENAME) ?: $this->sanitizeId($mediaKey);
+        $coverPath = self::MEDIA_DERIVATIVES_DIR.'/'.$base.'-cover.'.$extension;
+        $absoluteCoverPath = Storage::disk('public')->path($coverPath);
+        $directory = dirname($absoluteCoverPath);
+        if (! is_dir($directory)) {
+            mkdir($directory, 0775, true);
+        }
+
+        Storage::disk('public')->put($coverPath, $binary);
+
+        $cover = [
+            'path' => $coverPath,
+            'type' => $contentType,
+            'width' => $width,
+            'height' => $height,
+            'size' => strlen($binary),
+        ];
+
+        return [
+            'thumbnail' => $cover,
+            'preview' => $cover,
+        ];
     }
 
     private function supportsImageDerivatives(string $contentType): bool
