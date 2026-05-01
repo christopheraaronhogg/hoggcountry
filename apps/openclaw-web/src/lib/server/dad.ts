@@ -8,6 +8,16 @@ export interface DadStatusCard {
   readonly value: string;
 }
 
+export interface DadTrailUpdateSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly body: string;
+  readonly publishedAt: string | null;
+  readonly location: string | null;
+  readonly trailMile: number | null;
+  readonly mediaType: string | null;
+}
+
 export interface DadPilotSummary {
   readonly latestFixLabel: string;
   readonly latestFixAt: string | null;
@@ -15,6 +25,25 @@ export interface DadPilotSummary {
   readonly dispatchCount: number;
   readonly latestDispatchTitle: string | null;
   readonly latestDispatchPublished: string | null;
+  readonly trailUpdateCount: number;
+  readonly latestTrailUpdate: DadTrailUpdateSummary | null;
+}
+
+interface TrailUpdatesApiItem {
+  readonly id?: unknown;
+  readonly title?: unknown;
+  readonly body?: unknown;
+  readonly publishedAt?: unknown;
+  readonly createdAt?: unknown;
+  readonly location?: unknown;
+  readonly trailMile?: unknown;
+  readonly mediaType?: unknown;
+}
+
+interface TrailUpdatesApiResponse {
+  readonly data?: {
+    readonly updates?: TrailUpdatesApiItem[];
+  };
 }
 
 export const DEFAULT_TRACK_POINT = {
@@ -23,39 +52,125 @@ export const DEFAULT_TRACK_POINT = {
   detail: 'Previewing from the Springer corridor until a fresh Garmin fix comes in.'
 } as const;
 
+const TRAIL_UPDATES_CACHE_MS = 60 * 1000;
+const TRACK_CACHE_MS = 60 * 1000;
+let cachedTrailUpdates: { readonly items: DadTrailUpdateSummary[]; readonly ts: number } | null = null;
+let cachedTrack: { readonly track: GarminFeatureCollection; readonly ts: number } | null = null;
+
 export async function loadDadVideos(limit = 8): Promise<YtVideo[]> {
   const items = await fetchYouTubeRSS(YT_FEED_URL);
   return items.slice(0, limit);
 }
 
+function previewTrack(): GarminFeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    properties: {
+      source: 'preview',
+      fetchedAt: new Date().toISOString(),
+      latestPoint: {
+        coords: [DEFAULT_TRACK_POINT.latitude, DEFAULT_TRACK_POINT.longitude]
+      }
+    },
+    features: [
+      {
+        type: 'Feature',
+        properties: {
+          kind: 'point',
+          name: 'Preview checkpoint'
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [DEFAULT_TRACK_POINT.longitude, DEFAULT_TRACK_POINT.latitude]
+        }
+      }
+    ]
+  };
+}
+
 export async function loadDadTrack(): Promise<GarminFeatureCollection> {
+  if (cachedTrack && Date.now() - cachedTrack.ts < TRACK_CACHE_MS) {
+    return cachedTrack.track;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4000);
+
   try {
     const shareId = LIVE_TRACKING_URL.split('/').filter(Boolean).at(-1) ?? 'hoggcountry';
-    return await fetchGarminTrack(shareId);
+    const track = await fetchGarminTrack(shareId, { signal: controller.signal });
+    cachedTrack = { track, ts: Date.now() };
+    return track;
   } catch {
-    return {
-      type: 'FeatureCollection',
-      properties: {
-        source: 'preview',
-        fetchedAt: new Date().toISOString(),
-        latestPoint: {
-          coords: [DEFAULT_TRACK_POINT.latitude, DEFAULT_TRACK_POINT.longitude]
-        }
-      },
-      features: [
-        {
-          type: 'Feature',
-          properties: {
-            kind: 'point',
-            name: 'Preview checkpoint'
-          },
-          geometry: {
-            type: 'Point',
-            coordinates: [DEFAULT_TRACK_POINT.longitude, DEFAULT_TRACK_POINT.latitude]
-          }
-        }
-      ]
-    };
+    return cachedTrack?.track ?? previewTrack();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function trailUpdatesApiBase(): string {
+  const configured = process.env.TRAIL_UPDATES_API_BASE || process.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1';
+  return configured.replace(/\/+$/, '');
+}
+
+function normalizeText(value: unknown): string {
+  return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+}
+
+function normalizeNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function normalizeTrailUpdate(update: TrailUpdatesApiItem): DadTrailUpdateSummary | null {
+  const id = normalizeText(update.id);
+  if (!id) return null;
+
+  return {
+    id,
+    title: normalizeText(update.title) || 'Trail update',
+    body: normalizeText(update.body),
+    publishedAt: normalizeText(update.publishedAt) || normalizeText(update.createdAt) || null,
+    location: normalizeText(update.location) || null,
+    trailMile: normalizeNumber(update.trailMile),
+    mediaType: normalizeText(update.mediaType) || null
+  };
+}
+
+export async function loadDadTrailUpdates(limit = 3): Promise<DadTrailUpdateSummary[]> {
+  if (cachedTrailUpdates && Date.now() - cachedTrailUpdates.ts < TRAIL_UPDATES_CACHE_MS) {
+    return cachedTrailUpdates.items.slice(0, limit);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+  try {
+    const response = await fetch(`${trailUpdatesApiBase()}/trail-updates?limit=${limit}`, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; HoggCountryOpenClaw/1.0)'
+      }
+    });
+
+    if (!response.ok) {
+      return cachedTrailUpdates?.items.slice(0, limit) ?? [];
+    }
+
+    const payload = (await response.json()) as TrailUpdatesApiResponse;
+    const updates = Array.isArray(payload.data?.updates) ? payload.data.updates : [];
+    const items = updates.map(normalizeTrailUpdate).filter((entry): entry is DadTrailUpdateSummary => entry !== null);
+    cachedTrailUpdates = { items, ts: Date.now() };
+    return items.slice(0, limit);
+  } catch {
+    return cachedTrailUpdates?.items.slice(0, limit) ?? [];
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -80,7 +195,7 @@ export function buildDadStatusCards(videoCount: number, latestPointLabel: string
 }
 
 export async function loadDadPilotSummary(): Promise<DadPilotSummary> {
-  const [videos, track] = await Promise.all([loadDadVideos(6), loadDadTrack()]);
+  const [videos, track, trailUpdates] = await Promise.all([loadDadVideos(6), loadDadTrack(), loadDadTrailUpdates(3)]);
   const latestPoint = track.properties?.latestPoint as { coords?: [number, number]; when?: string } | undefined;
 
   return {
@@ -91,6 +206,8 @@ export async function loadDadPilotSummary(): Promise<DadPilotSummary> {
     latestFixIsPreview: !latestPoint?.coords,
     dispatchCount: videos.length,
     latestDispatchTitle: videos[0]?.title ?? null,
-    latestDispatchPublished: videos[0]?.published ?? null
+    latestDispatchPublished: videos[0]?.published ?? null,
+    trailUpdateCount: trailUpdates.length,
+    latestTrailUpdate: trailUpdates[0] ?? null
   };
 }

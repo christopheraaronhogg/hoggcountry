@@ -4,6 +4,7 @@ import { getModel, type AssistantMessage, type Message, type Model, type ToolRes
 import type { BetaProfileCookie } from '$lib/beta';
 import { resolveOpenAICodexApiKey, type OpenAICodexCredentials } from '$lib/server/claw-openai-codex';
 import { decryptProviderJson, encryptProviderJson } from '$lib/server/provider-crypto';
+import { loadDadPilotSummary, type DadPilotSummary, type DadTrailUpdateSummary } from '$lib/server/dad';
 import {
   appendWorkspaceFactCandidates,
   getWorkspaceRecord,
@@ -175,11 +176,49 @@ function userBlocksSummary(record: WorkspaceRecord): string[] {
     .slice(0, 6);
 }
 
-function buildSystemPrompt(record: WorkspaceRecord, activeDocument?: ImportedDocument | null): string {
+function formatPilotDate(value: string | null): string | null {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return value;
+  return new Date(parsed).toISOString();
+}
+
+function formatDadTrailUpdate(update: DadTrailUpdateSummary | null): string {
+  if (!update) return 'Trail Update: none available yet.';
+
+  const details = [
+    `Trail Update: ${update.title}`,
+    update.publishedAt ? `posted ${formatPilotDate(update.publishedAt)}` : null,
+    update.location ? `location ${update.location}` : null,
+    update.trailMile !== null ? `trail mile ${update.trailMile.toFixed(1)}` : null,
+    update.mediaType ? `media ${update.mediaType}` : null,
+    update.body ? `note ${excerpt(update.body, 280)}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  return details.join('; ') + '.';
+}
+
+function buildDadPilotSystemContext(summary: DadPilotSummary | null): string | null {
+  if (!summary) return null;
+
+  return [
+    'Current public Dad pilot signals:',
+    `Garmin fix: ${summary.latestFixLabel}${summary.latestFixAt ? ` at ${formatPilotDate(summary.latestFixAt)}` : ''}${summary.latestFixIsPreview ? ' (preview/fallback)' : ''}.`,
+    formatDadTrailUpdate(summary.latestTrailUpdate),
+    summary.latestDispatchTitle
+      ? `YouTube dispatch: ${summary.latestDispatchTitle}${summary.latestDispatchPublished ? ` published ${formatPilotDate(summary.latestDispatchPublished)}` : ''}.`
+      : `YouTube dispatches loaded: ${summary.dispatchCount}.`,
+    'Use Trail Updates as the freshest hiker signal. Use Garmin as location signal. Use YouTube as broader narrative/context signal.',
+    'This is public pilot context only; do not imply private certainty. If AT mile or location is unclear, say so and estimate conservatively.'
+  ].join('\n');
+}
+
+function buildSystemPrompt(record: WorkspaceRecord, activeDocument?: ImportedDocument | null, dadPilotSummary?: DadPilotSummary | null): string {
   const profile = record.profile;
   const notes = userBlocksSummary(record);
   const docs = record.documents.slice(0, 6).map((document) => document.title);
   const tools = record.tools.slice(0, 6).map((tool) => tool.title);
+  const dadPilotContext = buildDadPilotSystemContext(dadPilotSummary ?? null);
 
   return [
     'You are Scout, Hogg Country\'s private trail delegate for a single hiker.',
@@ -194,6 +233,7 @@ function buildSystemPrompt(record: WorkspaceRecord, activeDocument?: ImportedDoc
       ? `Profile: start ${profile.startDate || 'unknown'}, current mile ${Number.isFinite(profile.currentMile) ? profile.currentMile.toFixed(1) : 'unknown'}, direction ${profile.direction || 'unknown'}, pace ${profile.averageMilesPerDay || 0} mpd.`
       : 'Profile: not initialized yet.',
     notes.length > 0 ? `Manual notes: ${notes.join(' | ')}` : 'Manual notes: none yet.',
+    dadPilotContext,
     docs.length > 0 ? `Source docs: ${docs.join(', ')}` : 'Source docs: none yet.',
     tools.length > 0 ? `Available tools/checklists: ${tools.join(', ')}` : 'Available tools/checklists: none yet.',
     'Be especially good at itinerary planning, loadout choices, food-carry limits, resupply timing, budget tradeoffs, health/body tracking, hostel or town sequencing, and turning rough trail constraints into usable plans.',
@@ -444,10 +484,11 @@ export async function replyInWorkspaceClaw(
   }
 
   const runtime = await resolveClawRuntime(record);
+  const dadPilotSummary = await loadDadPilotSummary().catch(() => null);
 
   const agent = new Agent({
     initialState: {
-      systemPrompt: buildSystemPrompt(record, activeDocument),
+      systemPrompt: buildSystemPrompt(record, activeDocument, dadPilotSummary),
       model: runtime.model,
       thinkingLevel: 'low',
       messages: record.clawMessages.map(toPiMessage)

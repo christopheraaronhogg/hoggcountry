@@ -119,9 +119,10 @@ export function normalizeGarminFeed(kml: string, sourceUrl: string): GarminFeatu
   };
 }
 
-export async function fetchGarminTrack(shareId: string): Promise<GarminFeatureCollection> {
+export async function fetchGarminTrack(shareId: string, options?: { readonly signal?: AbortSignal }): Promise<GarminFeatureCollection> {
   const sourceUrl = `https://explore.garmin.com/Feed/Share/${encodeURIComponent(shareId)}`;
   const response = await fetch(sourceUrl, {
+    signal: options?.signal,
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; HoggCountryOpenClaw/1.0)',
       Accept: 'application/vnd.google-earth.kml+xml, application/xml, text/xml;q=0.9, */*;q=0.8'

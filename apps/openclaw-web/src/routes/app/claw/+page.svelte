@@ -46,6 +46,16 @@
     readonly text: string;
   }
 
+  interface DadTrailUpdateSummary {
+    readonly id: string;
+    readonly title: string;
+    readonly body: string;
+    readonly publishedAt: string | null;
+    readonly location: string | null;
+    readonly trailMile: number | null;
+    readonly mediaType: string | null;
+  }
+
   interface DadPilotSummary {
     readonly latestFixLabel: string;
     readonly latestFixAt: string | null;
@@ -53,6 +63,8 @@
     readonly dispatchCount: number;
     readonly latestDispatchTitle: string | null;
     readonly latestDispatchPublished: string | null;
+    readonly trailUpdateCount: number;
+    readonly latestTrailUpdate: DadTrailUpdateSummary | null;
   }
 
   let profile = $state<ManualProfile | null>(null);
@@ -148,14 +160,36 @@
     replyInput = example.text;
   }
 
+  function shortText(value: string, limit = 220): string {
+    const normalized = value.replace(/\s+/g, ' ').trim();
+    if (normalized.length <= limit) return normalized;
+    return `${normalized.slice(0, limit).trimEnd()}...`;
+  }
+
+  function buildTrailUpdateLine(update: DadTrailUpdateSummary | null): string {
+    if (!update) return 'No public Trail Update is available yet.';
+
+    const parts = [
+      `Latest public Trail Update: ${update.title}`,
+      update.publishedAt ? `posted ${new Date(update.publishedAt).toLocaleDateString()}` : '',
+      update.location ? `near ${update.location}` : '',
+      update.trailMile !== null ? `mile ${update.trailMile.toFixed(1)}` : '',
+      update.mediaType ? `media ${update.mediaType}` : '',
+      update.body ? `note: ${shortText(update.body)}` : ''
+    ].filter(Boolean);
+
+    return `${parts.join('; ')}.`;
+  }
+
   function buildDadPilotPrompts(summary: DadPilotSummary | null): ExamplePrompt[] {
     if (!summary) return [];
 
     const fixLine = `Latest public Garmin fix: ${summary.latestFixLabel}${summary.latestFixAt ? ` at ${new Date(summary.latestFixAt).toLocaleString()}` : ''}.`;
     const dispatchLine = summary.latestDispatchTitle
-      ? `Latest public dispatch: ${summary.latestDispatchTitle}${summary.latestDispatchPublished ? ` (${new Date(summary.latestDispatchPublished).toLocaleDateString()})` : ''}.`
-      : `Recent dispatch count: ${summary.dispatchCount}.`;
-    const context = `${fixLine} ${dispatchLine} Treat this as public pilot context only. If the exact AT mile is unclear, say so and estimate conservatively.`;
+      ? `Latest public YouTube dispatch: ${summary.latestDispatchTitle}${summary.latestDispatchPublished ? ` (${new Date(summary.latestDispatchPublished).toLocaleDateString()})` : ''}.`
+      : `Recent YouTube dispatch count: ${summary.dispatchCount}.`;
+    const trailUpdateLine = buildTrailUpdateLine(summary.latestTrailUpdate);
+    const context = `${fixLine} ${trailUpdateLine} ${dispatchLine} Treat this as public pilot context only. Weight Trail Updates as the freshest hiker signal. If the exact AT mile is unclear, say so and estimate conservatively.`;
 
     return [
       {
@@ -165,6 +199,10 @@
       {
         title: 'Dad next food carry',
         text: `${context} Plan Dad's next food carry. Keep it practical, show likely sleep targets, and name the next realistic town, hostel, or shuttle options instead of vague optimism.`
+      },
+      {
+        title: 'Latest update check',
+        text: `${context} Use the latest Trail Update as the freshest signal. Tell me what changed, what Chris should ask Dad next, and what part of the plan should be revised first.`
       },
       {
         title: 'Dad weakest link',
@@ -597,10 +635,15 @@
           {#if dadPilot.latestFixAt}
             at {new Date(dadPilot.latestFixAt).toLocaleString()}
           {/if}.
-          {#if dadPilot.latestDispatchTitle}
-            Latest dispatch: {dadPilot.latestDispatchTitle}.
+          {#if dadPilot.latestTrailUpdate}
+            Latest Trail Update: {dadPilot.latestTrailUpdate.title}{dadPilot.latestTrailUpdate.location ? ` near ${dadPilot.latestTrailUpdate.location}` : ''}{dadPilot.latestTrailUpdate.trailMile !== null ? ` at mile ${dadPilot.latestTrailUpdate.trailMile.toFixed(1)}` : ''}.
           {:else}
-            Recent dispatches loaded: {dadPilot.dispatchCount}.
+            Trail Updates loaded: {dadPilot.trailUpdateCount}.
+          {/if}
+          {#if dadPilot.latestDispatchTitle}
+            Latest YouTube dispatch: {dadPilot.latestDispatchTitle}.
+          {:else}
+            Recent YouTube dispatches loaded: {dadPilot.dispatchCount}.
           {/if}
         </p>
         <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.85rem;">
