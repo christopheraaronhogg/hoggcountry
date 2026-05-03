@@ -1,6 +1,8 @@
 # build output
 dist/
+.openclaw-artifacts/
 apps/public/.astro/
+apps/public/.netlify/
 apps/workspace/.svelte-kit/
 apps/workspace/.netlify/
 apps/workspace/build/
