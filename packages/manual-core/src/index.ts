@@ -64,18 +64,160 @@ export interface ManualSection {
 }
 
 export type ImportedDocumentKind = 'pdf' | 'markdown' | 'text' | 'html';
+export type ImportedDocumentStatus = 'draft' | 'needs-review' | 'active' | 'archived';
+export type ImportedDocumentVisibility = 'private' | 'trusted-link' | 'public';
+export type StandardDocumentSlotKey =
+  | 'hiker-profile'
+  | 'current-plan'
+  | 'seven-day-plan'
+  | 'resupply-plan'
+  | 'gear-body-notes'
+  | 'safety-risk-brief';
+
+export interface StandardDocumentSlot {
+  key: StandardDocumentSlotKey;
+  title: string;
+  shortTitle: string;
+  purpose: string;
+  emptyCta: string;
+  starterPrompt: string;
+  starterQuestions: string[];
+}
+
+export const STANDARD_DOCUMENT_SLOTS: StandardDocumentSlot[] = [
+  {
+    key: 'hiker-profile',
+    title: 'Hiker Profile',
+    shortTitle: 'Profile',
+    purpose: 'Stable hiker constraints: trail name, direction, current mile, pace, carry limits, body notes, comfort rules, and contact assumptions.',
+    emptyCta: 'Build profile',
+    starterPrompt: 'Draft my Hiker Profile as a standard Scout document. Use my setup/profile data first. Organize it into stable facts, preferences, body/health constraints, food-carry limits, communication notes, open questions, and change history. If something is missing, mark it as an open question instead of inventing it.',
+    starterQuestions: [
+      'What stable profile facts should Scout remember?',
+      'What constraints change every plan?',
+      'What should Scout ask before treating the profile as complete?'
+    ]
+  },
+  {
+    key: 'current-plan',
+    title: 'Current Plan',
+    shortTitle: 'Today',
+    purpose: 'The next 24 hours: target miles, stop options, food/water assumptions, weather, risks, bailout, and go/no-go checks.',
+    emptyCta: "Draft today's plan",
+    starterPrompt: "Draft my Current Plan as a standard Scout document. Focus on the next 24 hours: starting mile/location, target miles, likely stop, water/food assumptions, body risk, weather, bailout/town option, source-backed facts, assumptions, and what to check before I depend on it.",
+    starterQuestions: [
+      'Where is the hiker starting now?',
+      'What is the conservative target for the next 24 hours?',
+      'What could change the plan before dark?'
+    ]
+  },
+  {
+    key: 'seven-day-plan',
+    title: '7-Day Plan',
+    shortTitle: '7 days',
+    purpose: 'A rolling medium-range plan: likely mileage, town/resupply timing, zero/nero options, weather/risk watchlist, and missing source checks.',
+    emptyCta: 'Draft 7-day plan',
+    starterPrompt: 'Draft my 7-Day Plan as a standard Scout document. Keep it rolling and practical: day-by-day targets, town/resupply assumptions, zero/nero options, food-carry pressure, weather/risk watchlist, source-backed facts, assumptions, and missing checks.',
+    starterQuestions: [
+      'What is the current mile and realistic pace?',
+      'What town or resupply decisions are inside the next week?',
+      'What risks should stay on the watchlist?'
+    ]
+  },
+  {
+    key: 'resupply-plan',
+    title: 'Resupply Plan',
+    shortTitle: 'Resupply',
+    purpose: 'Food carry, next town, services, timing, constraints, and backup options.',
+    emptyCta: 'Plan next resupply',
+    starterPrompt: 'Draft my Resupply Plan as a standard Scout document. Include next town/options, food carry length, likely services, constraints, backup plans, source-backed facts, assumptions, and what guide/FarOut details should be checked before leaving town.',
+    starterQuestions: [
+      'How many days of food can the hiker comfortably carry?',
+      'What is the next realistic resupply option?',
+      'What service details need confirmation?'
+    ]
+  },
+  {
+    key: 'gear-body-notes',
+    title: 'Gear + Body Notes',
+    shortTitle: 'Gear/body',
+    purpose: 'Gear issues, clothing/layering, foot/knee/body constraints, repair needs, cold/sleep notes, and recovery triggers.',
+    emptyCta: 'Start gear/body notes',
+    starterPrompt: 'Draft my Gear + Body Notes as a standard Scout document. Track what hurts, what gear is working or failing, layering/cold issues, repair needs, mileage caps, stop triggers, and open questions Scout needs answered before recommending harder days.',
+    starterQuestions: [
+      'What hurts or feels risky right now?',
+      'What gear is failing, uncomfortable, or unnecessary?',
+      'What should cap mileage until it improves?'
+    ]
+  },
+  {
+    key: 'safety-risk-brief',
+    title: 'Safety + Risk Brief',
+    shortTitle: 'Risk',
+    purpose: 'Current safety facts: weather risk, closures, bears, burn bans, emergency assumptions, and missing source checks.',
+    emptyCta: 'Build risk brief',
+    starterPrompt: 'Draft my Safety + Risk Brief as a standard Scout document. Separate official alerts, private hiker notes, weather risk, body risk, assumptions, emergency/bailout considerations, and the source checks still needed before treating this as final.',
+    starterQuestions: [
+      'What official alerts actually apply to this location?',
+      'What private or body risk changes the plan?',
+      'What source checks are still missing?'
+    ]
+  }
+];
+
+const STANDARD_DOCUMENT_SLOT_KEYS = new Set(STANDARD_DOCUMENT_SLOTS.map((slot) => slot.key));
+
+export function isStandardDocumentSlotKey(value: unknown): value is StandardDocumentSlotKey {
+  return typeof value === 'string' && STANDARD_DOCUMENT_SLOT_KEYS.has(value as StandardDocumentSlotKey);
+}
+
+export function standardDocumentSlotForKey(key: StandardDocumentSlotKey | string | null | undefined): StandardDocumentSlot | null {
+  return STANDARD_DOCUMENT_SLOTS.find((slot) => slot.key === key) ?? null;
+}
+
+export function inferStandardDocumentSlotKey(value: string): StandardDocumentSlotKey | null {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9]+/giu, ' ').trim();
+  if (!normalized) return null;
+  if (/\b(hiker|trail) profile\b/u.test(normalized)) return 'hiker-profile';
+  if (/\b(current|today|daily|24 hour|24h)\b/u.test(normalized) && /\b(plan|brief)\b/u.test(normalized)) return 'current-plan';
+  if (/\b(7 day|seven day|next week|week)\b/u.test(normalized) && /\b(plan|trail)\b/u.test(normalized)) return 'seven-day-plan';
+  if (/\b(resupply|food carry|food and resupply|next food)\b/u.test(normalized)) return 'resupply-plan';
+  if (/\b(gear|loadout|body|health|knee|foot|feet)\b/u.test(normalized)) return 'gear-body-notes';
+  if (/\b(safety|risk|emergency|bear|closure|weather alert)\b/u.test(normalized)) return 'safety-risk-brief';
+  return null;
+}
+
+export interface ImportedDocumentVersion {
+  id: string;
+  documentId: string;
+  versionNumber: number;
+  title: string;
+  textContent: string;
+  note: string;
+  author: 'user' | 'scout' | 'system';
+  sourceMessageId?: string | null;
+  revisionPrompt?: string | null;
+  createdAt: string;
+  sizeBytes: number;
+}
 
 export interface ImportedDocument {
   id: string;
   title: string;
   fileName: string;
   kind: ImportedDocumentKind;
+  slotKey?: StandardDocumentSlotKey | null;
   rights: 'user-imported' | 'assistant-generated';
+  status?: ImportedDocumentStatus;
+  visibility?: ImportedDocumentVisibility;
   searchable: boolean;
   textContent: string;
   note: string;
   importedAt: string;
+  updatedAt?: string;
   sizeBytes: number;
+  currentVersionId?: string;
+  versions?: ImportedDocumentVersion[];
 }
 
 export type WorkspaceToolKind = 'checklist';
@@ -490,22 +632,61 @@ export function buildManualExportHtml(profile: ManualProfile, sections: ManualSe
 </html>`;
 }
 
+const SEARCH_STOPWORDS = new Set([
+  'about', 'after', 'again', 'ahead', 'could', 'current', 'doing', 'from', 'have', 'help', 'into', 'like', 'make', 'need', 'next',
+  'note', 'plan', 'please', 'scout', 'should', 'that', 'their', 'there', 'this', 'trail', 'what', 'when', 'where', 'with', 'would', 'your'
+]);
+
+function searchTerms(query: string): string[] {
+  return [...new Set(query
+    .toLowerCase()
+    .replace(/[^a-z0-9.\s-]/g, ' ')
+    .split(/\s+/g)
+    .map((term) => term.trim())
+    .filter((term) => term.length >= 3 && !SEARCH_STOPWORDS.has(term)))];
+}
+
 function scoreMatch(haystack: string, query: string): number {
   const loweredHaystack = haystack.toLowerCase();
   const loweredQuery = query.toLowerCase();
-  if (!loweredHaystack.includes(loweredQuery)) return 0;
-  if (loweredHaystack.startsWith(loweredQuery)) return 5;
-  return 3;
+  const terms = searchTerms(query);
+  let score = 0;
+
+  if (loweredHaystack.includes(loweredQuery)) {
+    score += loweredHaystack.startsWith(loweredQuery) ? 8 : 5;
+  }
+
+  if (terms.length === 0) return score;
+
+  const matchedTerms = terms.filter((term) => loweredHaystack.includes(term));
+  if (matchedTerms.length === 0) return score;
+
+  score += matchedTerms.length;
+  if (matchedTerms.length === terms.length) score += 3;
+  if (matchedTerms.some((term) => loweredHaystack.startsWith(term))) score += 1;
+  return score;
 }
 
 function buildExcerpt(text: string, query: string): string {
   const lowered = text.toLowerCase();
   const loweredQuery = query.toLowerCase();
-  const index = lowered.indexOf(loweredQuery);
+  let index = lowered.indexOf(loweredQuery);
+  let matchLength = loweredQuery.length;
+
+  if (index < 0) {
+    for (const term of searchTerms(query)) {
+      index = lowered.indexOf(term);
+      if (index >= 0) {
+        matchLength = term.length;
+        break;
+      }
+    }
+  }
+
   if (index < 0) return summarize(text, 160);
 
   const start = Math.max(0, index - 40);
-  const end = Math.min(text.length, index + loweredQuery.length + 80);
+  const end = Math.min(text.length, index + matchLength + 80);
   return summarize(text.slice(start, end), 160);
 }
 
@@ -554,15 +735,21 @@ export function searchImportedDocuments(docs: ImportedDocument[], query: string)
   if (!normalized) return [];
 
   return docs
-    .filter((doc) => doc.searchable && doc.textContent.toLowerCase().includes(normalized))
-    .map((doc) => ({
-      id: doc.id,
-      sourceType: 'doc' as const,
-      sourceLabel: doc.rights === 'assistant-generated' ? 'Saved Plan' : 'Imported Doc',
-      title: doc.title,
-      excerpt: buildExcerpt(doc.textContent, normalized),
-      score: scoreMatch(`${doc.title} ${doc.textContent}`, normalized),
-    }))
+    .map<SearchHit | null>((doc) => {
+      if (!doc.searchable) return null;
+      const score = scoreMatch(`${doc.title} ${doc.textContent}`, normalized);
+      if (score <= 0) return null;
+
+      return {
+        id: doc.id,
+        sourceType: 'doc' as const,
+        sourceLabel: doc.rights === 'assistant-generated' ? 'Saved Plan' : 'Imported Doc',
+        title: doc.title,
+        excerpt: buildExcerpt(doc.textContent, normalized),
+        score,
+      } satisfies SearchHit;
+    })
+    .filter((doc): doc is SearchHit => doc !== null)
     .sort((left, right) => right.score - left.score);
 }
 
@@ -571,7 +758,7 @@ export function searchWorkspaceTools(tools: WorkspaceTool[], query: string): Sea
   if (!normalized) return [];
 
   return tools
-    .map((tool) => {
+    .map<SearchHit | null>((tool) => {
       const haystack = [tool.title, tool.summary, tool.instructions, ...tool.items.map((item) => `${item.label} ${item.detail ?? ''}`)]
         .join(' ')
         .trim();

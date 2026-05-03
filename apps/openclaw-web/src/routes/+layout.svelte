@@ -41,24 +41,13 @@
   <div class="site-shell">
     <header class="site-header">
       <div class="container site-header-inner">
-        <a class="brand-lockup" href="/">
+        <a class="brand-lockup" href="/app/claw">
           <span class="brand-badge">HC</span>
           <span class="brand-copy">
             <span class="brand-title">Hogg Country</span>
-            <span class="brand-tag">Dad updates + manual-first hiking</span>
+            <span class="brand-tag">Private Scout workspace</span>
           </span>
         </a>
-
-        <nav class="site-nav" aria-label="Primary">
-          <a href="/dad">Dad</a>
-          <a href="/guide">Guide</a>
-          <a href="/openclaw">OpenClaw</a>
-          {#if data.betaProfile}
-            <a class="btn btn-secondary" href="/app">Open app</a>
-          {:else}
-            <a class="btn btn-primary" href="/signup">Join beta</a>
-          {/if}
-        </nav>
       </div>
     </header>
 
@@ -68,21 +57,6 @@
       </div>
     </main>
 
-    <footer class="site-footer">
-      <div class="container site-footer-inner">
-        <div>
-          <strong>Hogg Country</strong>
-          <div class="muted">Dad's trail dispatches, field guide, and the next manual-first hiker workspace.</div>
-        </div>
-        <div class="muted">
-          {#if page.url.pathname.startsWith('/app') && data.betaProfile}
-            Signed in for {data.betaProfile.trailName || data.betaProfile.name}
-          {:else}
-            Beta build on SvelteKit + SpacetimeDB patterns
-          {/if}
-        </div>
-      </div>
-    </footer>
   </div>
 {:else}
   <a href="#main-content" class="skip-to-content">Skip to main content</a>

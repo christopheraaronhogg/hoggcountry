@@ -1,3 +1,8 @@
+<svelte:head>
+  <title>Scout private beta | Hogg Country</title>
+  <meta name="robots" content="noindex,nofollow" />
+</svelte:head>
+
 <section class="card hero-panel">
   <div>
     <p class="eyebrow">OpenClaw for hikers</p>
@@ -6,10 +11,9 @@
       The pitch is simple: Dad’s guide shows what a strong field manual looks like. The gated app helps each hiker
       build their own from source documents, trail judgment, and personal notes that still work when the signal is bad.
     </p>
-    <div class="subtle-actions">
-      <a class="btn btn-primary" href="/signup">Join beta</a>
-      <a class="btn btn-ghost" href="/app">See the gated shell</a>
-    </div>
+    <p class="meta-line" style="margin-top:1rem;">
+      Private beta access is direct-link only while Scout is being hardened.
+    </p>
   </div>
 
   <article class="card card-soft panel-copy">

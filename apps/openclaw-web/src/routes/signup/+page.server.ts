@@ -13,13 +13,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
   default: async ({ cookies, request }) => {
     const formData = await request.formData();
-    const name = String(formData.get('name') ?? '').trim();
+    const rawName = String(formData.get('name') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
-    const trailName = String(formData.get('trailName') ?? '').trim();
+    const rawTrailName = String(formData.get('trailName') ?? '').trim();
+    const fallbackName = email.split('@')[0]?.replace(/[._-]+/g, ' ').trim() || 'Hiker';
+    const name = rawName || fallbackName;
+    const trailName = rawTrailName || name;
 
-    if (!name || !email || !trailName) {
+    if (!email) {
       return fail(400, {
-        message: 'Name, email, and trail name are all required.'
+        message: 'Email is required for the private beta gate. Everything else can be filled in later.'
       });
     }
 
@@ -39,6 +42,6 @@ export const actions: Actions = {
       }
     );
 
-    throw redirect(303, '/app/setup');
+    throw redirect(303, '/app/claw');
   }
 };

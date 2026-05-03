@@ -39,17 +39,21 @@
 
 <section class="card hero-panel">
   <div>
-    <p class="eyebrow">Setup</p>
-    <h1>Seed your private trail workspace from Dad's example.</h1>
+    <p class="eyebrow">Optional setup</p>
+    <h1>Tell Scout what you know. Skip what you don’t.</h1>
     <p class="lede">
-      This is the real gated setup. It turns Dad's guide into your own operating manual, seeds starter trail tools,
-      and gives OpenClaw concrete artifacts to keep improving instead of just another chat thread.
+      This is not a prerequisite. Scout can start with almost nothing, ask for details when they matter,
+      and learn pace, gear, health, budget, and route preferences over time.
     </p>
   </div>
-  <a class="btn btn-ghost" href="/guide">Read Dad's guide again</a>
+  <div class="subtle-actions">
+    <a class="btn btn-primary" href="/app/claw">Skip and ask Scout</a>
+    <a class="btn btn-ghost" href="/guide">Read Dad's guide</a>
+  </div>
 </section>
 
 <form class="card panel-copy" style="margin-top:1rem; display:grid; gap:1rem;" onsubmit={handleSubmit}>
+  <p class="muted" style="margin:0;">Everything below is optional. Defaults are safe enough to start; better details just help Scout personalize faster.</p>
   <div class="grid-two">
     <label>
       <span class="eyebrow">Trail name</span>
@@ -155,7 +159,8 @@
 
   <div class="subtle-actions">
     <button class="btn btn-secondary" type="submit" disabled={saving}>
-      {saving ? 'Building workspace...' : 'Create my workspace'}
+      {saving ? 'Saving…' : 'Save what I know'}
     </button>
+    <a class="btn btn-ghost" href="/app/claw">Skip for now</a>
   </div>
 </form>

@@ -4,30 +4,35 @@
   const { form } = $props<{ form: ActionData }>();
 </script>
 
+<svelte:head>
+  <title>Scout beta access | Hogg Country</title>
+  <meta name="robots" content="noindex,nofollow" />
+</svelte:head>
+
 <section class="card hero-panel">
   <div>
-    <p class="eyebrow">Join beta</p>
-    <h1>Get past the public porch and into the manual workspace.</h1>
+    <p class="eyebrow">Scout beta</p>
+    <h1>Start with Scout. Fill in details later.</h1>
     <p class="lede">
-      This is a light beta gate, not a full account system. The goal is to make sure the product feels like a real
-      hiker workspace before harder auth and sync work.
+      No prep packet required. Use an email to open a private beta workspace; Scout can ask for pace, gear, health,
+      budget, and route details only when they matter.
     </p>
   </div>
 
   <article class="card card-soft panel-copy">
     <p class="eyebrow">What opens up</p>
     <ul class="list-clean">
-      <li>The setup flow that seeds your manual from Dad’s guide.</li>
-      <li>Docs upload for private source material.</li>
-      <li>The OpenClaw console that keeps telling you what the manual still needs.</li>
+      <li>One ask box for trail decisions, prep, gear, food, and logistics.</li>
+      <li>Optional profile and docs when you have them.</li>
+      <li>Private workspace memory that can improve over time.</li>
     </ul>
   </article>
 </section>
 
 <form method="POST" class="card panel-copy" style="margin-top:1rem; display:grid; gap:0.9rem;">
   <label>
-    <span class="eyebrow">Name</span>
-    <input name="name" placeholder="Christopher Hogg" />
+    <span class="eyebrow">Name <small>(optional)</small></span>
+    <input name="name" placeholder="Name, or leave blank" />
   </label>
 
   <label>
@@ -36,8 +41,8 @@
   </label>
 
   <label>
-    <span class="eyebrow">Trail name</span>
-    <input name="trailName" placeholder="HoggCountry" />
+    <span class="eyebrow">Trail name <small>(optional)</small></span>
+    <input name="trailName" placeholder="Trail name, or leave blank" />
   </label>
 
   {#if form?.message}
@@ -45,6 +50,6 @@
   {/if}
 
   <div class="subtle-actions">
-    <button class="btn btn-secondary" type="submit">Enter the beta</button>
+    <button class="btn btn-secondary" type="submit">Start asking Scout</button>
   </div>
 </form>

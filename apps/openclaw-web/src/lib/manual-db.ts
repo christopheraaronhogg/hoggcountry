@@ -6,6 +6,9 @@ import {
   searchManualSections,
   searchWorkspaceTools,
   type ImportedDocument,
+  type ImportedDocumentStatus,
+  type ImportedDocumentVisibility,
+  type StandardDocumentSlotKey,
   type ManualProfile,
   type ManualSection,
   type SearchHit,
@@ -132,6 +135,42 @@ export async function importDocumentFiles(files: FileList | File[]): Promise<Imp
   });
 
   return snapshot.documents;
+}
+
+export async function createWorkspaceDocument(input: {
+  title: string;
+  textContent?: string;
+  note?: string;
+  slotKey?: StandardDocumentSlotKey | null;
+}): Promise<ImportedDocument> {
+  const payload = await requestJson<{ document: ImportedDocument; workspace: WorkspaceSnapshot }>(WORKSPACE_ENDPOINT + '/documents', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  });
+
+  return payload.document;
+}
+
+export async function getImportedDocument(documentId: string): Promise<ImportedDocument> {
+  const payload = await requestJson<{ document: ImportedDocument }>(WORKSPACE_ENDPOINT + `/documents/${documentId}`);
+  return payload.document;
+}
+
+export async function updateImportedDocumentState(
+  documentId: string,
+  input: {
+    status?: ImportedDocumentStatus;
+    visibility?: ImportedDocumentVisibility;
+    searchable?: boolean;
+    currentVersionId?: string;
+  }
+): Promise<ImportedDocument> {
+  const payload = await requestJson<{ document: ImportedDocument }>(WORKSPACE_ENDPOINT + `/documents/${documentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input)
+  });
+
+  return payload.document;
 }
 
 export async function deleteImportedDocument(documentId: string): Promise<void> {

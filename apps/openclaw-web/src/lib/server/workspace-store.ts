@@ -8,10 +8,18 @@ import {
   buildStarterTools,
   createChecklistTool,
   createId,
+  inferStandardDocumentSlotKey,
+  isStandardDocumentSlotKey,
   nowIso,
+  STANDARD_DOCUMENT_SLOTS,
+  standardDocumentSlotForKey,
   updateProfileTimestamp,
   type ImportedDocument,
   type ImportedDocumentKind,
+  type ImportedDocumentStatus,
+  type ImportedDocumentVersion,
+  type ImportedDocumentVisibility,
+  type StandardDocumentSlotKey,
   type ManualProfile,
   type ManualSection,
   type WorkspaceTool
@@ -263,6 +271,195 @@ function normalizeFactCandidates(input: unknown): WorkspaceFactCandidate[] {
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 }
 
+const DOCUMENT_STATUSES = ['draft', 'needs-review', 'active', 'archived'] as const satisfies readonly ImportedDocumentStatus[];
+const DOCUMENT_VISIBILITIES = ['private', 'trusted-link', 'public'] as const satisfies readonly ImportedDocumentVisibility[];
+
+function normalizeDocumentStatus(value: unknown, fallback: ImportedDocumentStatus): ImportedDocumentStatus {
+  return typeof value === 'string' && (DOCUMENT_STATUSES as readonly string[]).includes(value) ? value as ImportedDocumentStatus : fallback;
+}
+
+function normalizeDocumentVisibility(value: unknown): ImportedDocumentVisibility {
+  return typeof value === 'string' && (DOCUMENT_VISIBILITIES as readonly string[]).includes(value) ? value as ImportedDocumentVisibility : 'private';
+}
+
+function normalizeStandardDocumentSlotKey(raw: Record<string, unknown>, title: string): StandardDocumentSlotKey | null {
+  if (isStandardDocumentSlotKey(raw.slotKey)) return raw.slotKey;
+  return inferStandardDocumentSlotKey(title);
+}
+
+function documentMatchesSlot(document: ImportedDocument, slotKey: StandardDocumentSlotKey): boolean {
+  return document.slotKey === slotKey || inferStandardDocumentSlotKey(document.title) === slotKey;
+}
+
+function normalizeDocumentVersion(input: unknown, document: ImportedDocument, fallbackNumber: number): ImportedDocumentVersion | null {
+  if (!isObject(input)) return null;
+
+  const textContent = typeof input.textContent === 'string' ? input.textContent : '';
+  const createdAt = typeof input.createdAt === 'string' && input.createdAt ? input.createdAt : document.importedAt;
+
+  return {
+    id: typeof input.id === 'string' && input.id ? input.id : createId('doc-version'),
+    documentId: document.id,
+    versionNumber: typeof input.versionNumber === 'number' && Number.isFinite(input.versionNumber) && input.versionNumber > 0
+      ? Math.floor(input.versionNumber)
+      : fallbackNumber,
+    title: typeof input.title === 'string' && input.title.trim() ? input.title.trim() : document.title,
+    textContent: textContent || document.textContent,
+    note: typeof input.note === 'string' ? input.note.trim() : document.note,
+    author: input.author === 'user' || input.author === 'scout' || input.author === 'system' ? input.author : document.rights === 'assistant-generated' ? 'scout' : 'user',
+    sourceMessageId: typeof input.sourceMessageId === 'string' && input.sourceMessageId.trim() ? input.sourceMessageId.trim() : null,
+    revisionPrompt: typeof input.revisionPrompt === 'string' && input.revisionPrompt.trim() ? input.revisionPrompt.trim() : null,
+    createdAt,
+    sizeBytes: typeof input.sizeBytes === 'number' && Number.isFinite(input.sizeBytes)
+      ? Math.max(0, Math.floor(input.sizeBytes))
+      : Buffer.byteLength(textContent || document.textContent, 'utf8')
+  };
+}
+
+function initialDocumentVersion(document: ImportedDocument, author: ImportedDocumentVersion['author']): ImportedDocumentVersion {
+  return {
+    id: document.currentVersionId || `${document.id}:version:1`,
+    documentId: document.id,
+    versionNumber: 1,
+    title: document.title,
+    textContent: document.textContent,
+    note: document.note,
+    author,
+    sourceMessageId: null,
+    revisionPrompt: null,
+    createdAt: document.importedAt,
+    sizeBytes: document.sizeBytes
+  };
+}
+
+function normalizeImportedDocuments(input: unknown): ImportedDocument[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .filter(isObject)
+    .map((raw) => {
+      const id = typeof raw.id === 'string' && raw.id ? raw.id : createId('doc');
+      const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : 'Untitled document';
+      const fileName = typeof raw.fileName === 'string' && raw.fileName.trim() ? raw.fileName.trim() : `${slugifyDocumentTitle(title)}.md`;
+      const kind = raw.kind === 'pdf' || raw.kind === 'markdown' || raw.kind === 'text' || raw.kind === 'html' ? raw.kind : 'text';
+      const slotKey = normalizeStandardDocumentSlotKey(raw, title);
+      const rights = raw.rights === 'assistant-generated' ? 'assistant-generated' : 'user-imported';
+      const importedAt = typeof raw.importedAt === 'string' && raw.importedAt ? raw.importedAt : nowIso();
+      const textContent = typeof raw.textContent === 'string' ? raw.textContent : '';
+      const note = typeof raw.note === 'string' ? raw.note.trim() : '';
+      const baseDocument: ImportedDocument = {
+        id,
+        title,
+        fileName,
+        kind,
+        slotKey,
+        rights,
+        status: normalizeDocumentStatus(raw.status, 'active'),
+        visibility: normalizeDocumentVisibility(raw.visibility),
+        searchable: raw.searchable !== false,
+        textContent,
+        note,
+        importedAt,
+        updatedAt: typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : importedAt,
+        sizeBytes: typeof raw.sizeBytes === 'number' && Number.isFinite(raw.sizeBytes) ? Math.max(0, Math.floor(raw.sizeBytes)) : Buffer.byteLength(textContent, 'utf8')
+      };
+      const normalizedVersions = Array.isArray(raw.versions)
+        ? raw.versions
+            .map((version, index) => normalizeDocumentVersion(version, baseDocument, index + 1))
+            .filter((version): version is ImportedDocumentVersion => version !== null)
+        : [];
+      const versions = (normalizedVersions.length > 0 ? normalizedVersions : [initialDocumentVersion(baseDocument, rights === 'assistant-generated' ? 'scout' : 'user')])
+        .sort((left, right) => left.versionNumber - right.versionNumber)
+        .map((version, index) => ({ ...version, versionNumber: index + 1 }));
+      const currentVersionId = typeof raw.currentVersionId === 'string' && versions.some((version) => version.id === raw.currentVersionId)
+        ? raw.currentVersionId
+        : versions.at(-1)?.id;
+      const currentVersion = versions.find((version) => version.id === currentVersionId) ?? versions.at(-1);
+
+      return {
+        ...baseDocument,
+        title: currentVersion?.title ?? baseDocument.title,
+        textContent: currentVersion?.textContent ?? baseDocument.textContent,
+        note: currentVersion?.note ?? baseDocument.note,
+        sizeBytes: currentVersion?.sizeBytes ?? baseDocument.sizeBytes,
+        currentVersionId,
+        versions
+      };
+    })
+    .sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt));
+}
+
+function createNextDocumentVersion(
+  document: ImportedDocument,
+  input: {
+    title?: string;
+    textContent: string;
+    note?: string;
+    author: ImportedDocumentVersion['author'];
+    sourceMessageId?: string | null;
+    revisionPrompt?: string | null;
+    createdAt: string;
+  }
+): ImportedDocumentVersion {
+  const versions = document.versions && document.versions.length > 0 ? document.versions : [initialDocumentVersion(document, document.rights === 'assistant-generated' ? 'scout' : 'user')];
+
+  return {
+    id: createId('doc-version'),
+    documentId: document.id,
+    versionNumber: versions.length + 1,
+    title: input.title?.trim() || document.title,
+    textContent: input.textContent,
+    note: input.note?.trim() ?? document.note,
+    author: input.author,
+    sourceMessageId: input.sourceMessageId?.trim() || null,
+    revisionPrompt: input.revisionPrompt?.trim() || null,
+    createdAt: input.createdAt,
+    sizeBytes: Buffer.byteLength(input.textContent, 'utf8')
+  };
+}
+
+function withInitialDocumentVersion(
+  document: ImportedDocument,
+  author: ImportedDocumentVersion['author'],
+  status: ImportedDocumentStatus = 'active'
+): ImportedDocument {
+  const version = initialDocumentVersion(document, author);
+  return {
+    ...document,
+    status,
+    visibility: document.visibility ?? 'private',
+    updatedAt: document.updatedAt ?? document.importedAt,
+    currentVersionId: version.id,
+    versions: [version]
+  };
+}
+
+function applyDocumentVersion(
+  document: ImportedDocument,
+  version: ImportedDocumentVersion,
+  status: ImportedDocumentStatus,
+  updatedAt = version.createdAt
+): ImportedDocument {
+  const existingVersions = document.versions && document.versions.length > 0 ? document.versions : [initialDocumentVersion(document, document.rights === 'assistant-generated' ? 'scout' : 'user')];
+  const versions = [...existingVersions.filter((item) => item.id !== version.id), version]
+    .sort((left, right) => left.versionNumber - right.versionNumber)
+    .map((item, index) => ({ ...item, versionNumber: index + 1 }));
+  const applied = versions.find((item) => item.id === version.id) ?? version;
+
+  return {
+    ...document,
+    title: applied.title,
+    textContent: applied.textContent,
+    note: applied.note,
+    status,
+    visibility: document.visibility ?? 'private',
+    updatedAt,
+    sizeBytes: applied.sizeBytes,
+    currentVersionId: applied.id,
+    versions
+  };
+}
+
 function normalizeEncryptedSecret(input: unknown): WorkspaceEncryptedSecret | null {
   if (!isObject(input)) return null;
   if (
@@ -358,13 +555,12 @@ function normalizeRecord(raw: unknown, workspaceId: string, betaProfile: BetaPro
       ? {
           email: typeof raw.betaProfile.email === 'string' ? raw.betaProfile.email : betaProfile.email,
           name: typeof raw.betaProfile.name === 'string' ? raw.betaProfile.name : betaProfile.name,
-          trailName: typeof raw.betaProfile.trailName === 'string' ? raw.betaProfile.trailName : betaProfile.trailName,
-          estimatedStart: typeof raw.betaProfile.estimatedStart === 'string' ? raw.betaProfile.estimatedStart : betaProfile.estimatedStart
+          trailName: typeof raw.betaProfile.trailName === 'string' ? raw.betaProfile.trailName : betaProfile.trailName
         }
       : betaProfile,
-    profile: isObject(raw.profile) ? (raw.profile as ManualProfile) : null,
+    profile: isObject(raw.profile) ? (raw.profile as unknown as ManualProfile) : null,
     sections: Array.isArray(raw.sections) ? (raw.sections as ManualSection[]) : [],
-    documents: Array.isArray(raw.documents) ? (raw.documents as ImportedDocument[]) : [],
+    documents: normalizeImportedDocuments(raw.documents),
     tools: Array.isArray(raw.tools) ? (raw.tools as WorkspaceTool[]) : [],
     providerConnections: normalizeProviderConnections(raw.providerConnections, createdAt),
     clawMessages: normalizeClawMessages(raw.clawMessages),
@@ -413,8 +609,7 @@ export async function getWorkspaceRecord(
   if (
     existing.betaProfile.email !== betaProfile.email ||
     existing.betaProfile.name !== betaProfile.name ||
-    existing.betaProfile.trailName !== betaProfile.trailName ||
-    existing.betaProfile.estimatedStart !== betaProfile.estimatedStart
+    existing.betaProfile.trailName !== betaProfile.trailName
   ) {
     const updated: WorkspaceRecord = {
       ...existing,
@@ -444,6 +639,57 @@ async function persist(record: WorkspaceRecord): Promise<WorkspaceRecord> {
   return updated;
 }
 
+const VALID_DIRECTIONS = ['NOBO', 'SOBO'] as const satisfies readonly ManualProfile['direction'][];
+const VALID_BUDGET_TIERS = ['dirtbag', 'balanced', 'comfortable'] as const satisfies readonly ManualProfile['budgetTier'][];
+const VALID_EXPERIENCE_LEVELS = ['first-thru', 'some-backpacking', 'section-hiker', 'trail-veteran'] as const satisfies readonly ManualProfile['experienceLevel'][];
+const VALID_GEAR_PHILOSOPHIES = ['ultralight', 'balanced', 'comfort-first'] as const satisfies readonly ManualProfile['gearPhilosophy'][];
+const VALID_TOWN_STYLES = ['quick-hit', 'balanced', 'lingering'] as const satisfies readonly ManualProfile['townStyle'][];
+const VALID_REFLECTION_STYLES = ['faith-informed', 'practical-only'] as const satisfies readonly ManualProfile['reflectionStyle'][];
+const VALID_SHELTER_PREFERENCES = ['tent-first', 'shelter-first', 'mixed'] as const satisfies readonly ManualProfile['shelterPreference'][];
+
+function stringOr(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.trim() ? value.trim() : fallback;
+}
+
+function finiteNumberOr(value: unknown, fallback: number, options: { min?: number; max?: number } = {}): number {
+  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+  if (!Number.isFinite(numeric)) return fallback;
+  const min = options.min ?? Number.NEGATIVE_INFINITY;
+  const max = options.max ?? Number.POSITIVE_INFINITY;
+  return Math.min(max, Math.max(min, numeric));
+}
+
+function oneOf<const T extends readonly string[]>(value: unknown, allowed: T, fallback: T[number]): T[number] {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? value : fallback;
+}
+
+function normalizeManualProfileInput(profile: Partial<ManualProfile> | null | undefined, betaProfile: BetaProfileCookie): ManualProfile {
+  const input = profile && typeof profile === 'object' ? profile : {};
+  const timestamp = nowIso();
+  const createdAt = stringOr(input.createdAt, timestamp);
+  const trailName = stringOr(input.trailName, betaProfile.trailName || betaProfile.name || 'Hiker');
+
+  return {
+    id: stringOr(input.id, createId('profile')),
+    trailName,
+    startDate: stringOr(input.startDate, new Date().toISOString().slice(0, 10)),
+    direction: oneOf(input.direction, VALID_DIRECTIONS, 'NOBO'),
+    currentMile: finiteNumberOr(input.currentMile, 0, { min: 0 }),
+    targetPace: finiteNumberOr(input.targetPace, 10, { min: 1, max: 35 }),
+    zeroDaysPerMonth: finiteNumberOr(input.zeroDaysPerMonth, 2, { min: 0, max: 31 }),
+    budgetTier: oneOf(input.budgetTier, VALID_BUDGET_TIERS, 'balanced'),
+    experienceLevel: oneOf(input.experienceLevel, VALID_EXPERIENCE_LEVELS, 'first-thru'),
+    gearPhilosophy: oneOf(input.gearPhilosophy, VALID_GEAR_PHILOSOPHIES, 'balanced'),
+    townStyle: oneOf(input.townStyle, VALID_TOWN_STYLES, 'balanced'),
+    reflectionStyle: oneOf(input.reflectionStyle, VALID_REFLECTION_STYLES, 'faith-informed'),
+    shelterPreference: oneOf(input.shelterPreference, VALID_SHELTER_PREFERENCES, 'mixed'),
+    waterCapacityLiters: finiteNumberOr(input.waterCapacityLiters, 2, { min: 0, max: 12 }),
+    healthNotes: typeof input.healthNotes === 'string' ? input.healthNotes.trim() : '',
+    createdAt,
+    updatedAt: stringOr(input.updatedAt, timestamp)
+  };
+}
+
 function upsertProviderConnection(
   connections: WorkspaceProviderConnection[],
   connection: WorkspaceProviderConnection
@@ -454,15 +700,10 @@ function upsertProviderConnection(
 export async function initializeWorkspace(
   workspaceId: string,
   betaProfile: BetaProfileCookie,
-  profile: ManualProfile
+  profile: Partial<ManualProfile> | null | undefined
 ): Promise<WorkspaceSnapshot> {
   const record = await getWorkspaceRecord(workspaceId, betaProfile);
-  const normalizedProfile = updateProfileTimestamp({
-    ...profile,
-    id: profile.id || createId('profile'),
-    createdAt: profile.createdAt || nowIso(),
-    trailName: profile.trailName || betaProfile.trailName
-  });
+  const normalizedProfile = updateProfileTimestamp(normalizeManualProfileInput(profile, betaProfile));
 
   return sanitizeRecord(
     await persist({
@@ -566,52 +807,7 @@ function inferScoutDocumentTitle(prompt: string, explicitTitle?: string | null):
   return 'Saved Scout plan';
 }
 
-const SCOUT_STARTER_DOCUMENTS = [
-  {
-    title: '7-day trail plan',
-    purpose: 'Keep the hiker oriented on the next practical week: terrain, mileage, weather risk, sleep targets, town timing, and unresolved assumptions.',
-    starterQuestions: [
-      'Where am I starting from today?',
-      'What pace is realistic for this week?',
-      'What terrain, weather, or town constraints could change the plan?'
-    ]
-  },
-  {
-    title: 'Loadout plan',
-    purpose: 'Track what the hiker is carrying, what is working, what hurts, what should be sent home, and what should be added before the next section.',
-    starterQuestions: ['What is the current pack setup?', 'What feels unnecessary?', 'What failed, broke, or caused discomfort?']
-  },
-  {
-    title: 'Food and resupply plan',
-    purpose: 'Track food carries, meal preferences, calorie gaps, town/resupply timing, and max carry constraints.',
-    starterQuestions: ['How many days of food can I carry comfortably?', 'What food am I actually eating?', 'Where is the next realistic resupply?']
-  },
-  {
-    title: 'Budget and finances',
-    purpose: 'Track spend rate, upcoming expensive towns, lodging/shuttle choices, gear replacement risk, and whether the hike is staying financially sustainable.',
-    starterQuestions: ['What is the current remaining budget?', 'What was spent recently?', 'What expenses are coming up next?']
-  },
-  {
-    title: 'Health and body notes',
-    purpose: 'Track weight, pain, injuries, energy, sleep, foot care, recovery needs, and health changes over the hike.',
-    starterQuestions: ['What hurts right now?', 'What is changing with weight, appetite, or energy?', 'What needs rest or medical attention?']
-  },
-  {
-    title: 'Training plan',
-    purpose: 'Help the hiker prepare before the trail and adjust conditioning expectations during early trail miles.',
-    starterQuestions: ['What is the start date?', 'What fitness baseline exists now?', 'What should be trained before the first big climb?']
-  },
-  {
-    title: 'Town strategy',
-    purpose: 'Track town stops, hostel options, chores, zero/nero logic, shuttles, mail drops, and social/logistics decisions.',
-    starterQuestions: ['What town is coming next?', 'What chores need to happen there?', 'Is this a quick resupply, nero, or full zero?']
-  },
-  {
-    title: 'Safety and emergency plan',
-    purpose: 'Track contacts, bailout options, weather hazards, medical constraints, check-in rhythm, and emergency decision rules.',
-    starterQuestions: ['Who should be contacted if plans change?', 'What hazards are ahead?', 'Where are the nearest bailout or help options?']
-  }
-] as const;
+const SCOUT_STARTER_DOCUMENTS = STANDARD_DOCUMENT_SLOTS;
 
 function buildScoutStarterMarkdown(
   title: string,
@@ -664,12 +860,13 @@ export async function seedWorkspaceScoutDocuments(
 ): Promise<WorkspaceSnapshot> {
   const record = await getWorkspaceRecord(workspaceId, betaProfile);
   const existingTitles = new Set(record.documents.map((document) => document.title.toLowerCase()));
+  const existingSlots = new Set(record.documents.map((document) => document.slotKey ?? inferStandardDocumentSlotKey(document.title)).filter(Boolean));
   const savedAt = nowIso();
   const currentMile = record.profile && Number.isFinite(record.profile.currentMile) ? record.profile.currentMile : null;
   const trailName = betaProfile.trailName || betaProfile.name || 'Unknown';
 
   const starterDocuments: ImportedDocument[] = SCOUT_STARTER_DOCUMENTS
-    .filter((starter) => !existingTitles.has(starter.title.toLowerCase()))
+    .filter((starter) => !existingTitles.has(starter.title.toLowerCase()) && !existingSlots.has(starter.key))
     .map((starter) => {
       const markdown = buildScoutStarterMarkdown(starter.title, starter.purpose, starter.starterQuestions, {
         trailName,
@@ -677,18 +874,26 @@ export async function seedWorkspaceScoutDocuments(
         savedAt
       });
 
-      return {
-        id: createId('doc'),
-        title: starter.title,
-        fileName: `${slugifyDocumentTitle(starter.title)}.md`,
-        kind: 'markdown',
-        rights: 'assistant-generated',
-        searchable: true,
-        textContent: markdown,
-        note: 'Living Scout starter document. Talk to Scout to fill and revise this plan in place.',
-        importedAt: savedAt,
-        sizeBytes: Buffer.byteLength(markdown, 'utf8')
-      };
+      return withInitialDocumentVersion(
+        {
+          id: createId('doc'),
+          title: starter.title,
+          fileName: `${slugifyDocumentTitle(starter.title)}.md`,
+          kind: 'markdown',
+          slotKey: starter.key,
+          rights: 'assistant-generated',
+          status: 'draft',
+          visibility: 'private',
+          searchable: true,
+          textContent: markdown,
+          note: 'Living Scout starter document. Talk to Scout to fill and revise this plan in place.',
+          importedAt: savedAt,
+          updatedAt: savedAt,
+          sizeBytes: Buffer.byteLength(markdown, 'utf8')
+        },
+        'scout',
+        'draft'
+      );
     });
 
   if (starterDocuments.length === 0) {
@@ -698,7 +903,7 @@ export async function seedWorkspaceScoutDocuments(
   return sanitizeRecord(
     await persist({
       ...record,
-      documents: [...starterDocuments, ...record.documents].sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+      documents: [...starterDocuments, ...record.documents].sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt))
     })
   );
 }
@@ -740,28 +945,105 @@ export async function importWorkspaceDocuments(
     const kind = detectDocumentKind(file);
     const searchable = kind !== 'pdf';
 
-    imported.push({
-      id: createId('doc'),
-      title: file.name.replace(/\.[^.]+$/u, ''),
-      fileName: file.name,
-      kind,
-      rights: 'user-imported',
-      searchable,
-      textContent: await fileText(file, kind),
-      note: searchable
-        ? ''
-        : 'Stored in your private workspace. PDF upload works now; text extraction can deepen later without changing the locker UI.',
-      importedAt: nowIso(),
-      sizeBytes: file.size
-    });
+    const importedAt = nowIso();
+    const textContent = await fileText(file, kind);
+
+    imported.push(
+      withInitialDocumentVersion(
+        {
+          id: createId('doc'),
+          title: file.name.replace(/\.[^.]+$/u, ''),
+          fileName: file.name,
+          kind,
+          rights: 'user-imported',
+          status: 'active',
+          visibility: 'private',
+          searchable,
+          textContent,
+          note: searchable
+            ? ''
+            : 'Stored in your private workspace. PDF upload works now; text extraction can deepen later without changing the locker UI.',
+          importedAt,
+          updatedAt: importedAt,
+          sizeBytes: file.size
+        },
+        'user',
+        'active'
+      )
+    );
   }
 
   return sanitizeRecord(
     await persist({
       ...record,
-      documents: [...imported, ...record.documents].sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+      documents: [...imported, ...record.documents].sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt))
     })
   );
+}
+
+export async function createWorkspaceDocument(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    title: string;
+    textContent?: string | null;
+    note?: string | null;
+    slotKey?: StandardDocumentSlotKey | null;
+  }
+): Promise<{
+  readonly workspace: WorkspaceSnapshot;
+  readonly document: ImportedDocument;
+}> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const savedAt = nowIso();
+  const slot = input.slotKey ? standardDocumentSlotForKey(input.slotKey) : null;
+  const title = (slot?.title ?? input.title.trim()) || 'Untitled Scout doc';
+  const textContent = input.textContent?.trim() || [
+    `# ${title}`,
+    '',
+    slot ? slot.purpose : 'Private Scout workspace document.',
+    '',
+    '## Current notes',
+    '',
+    '- Draft started.',
+    '',
+    '## Open questions',
+    '',
+    ...(slot?.starterQuestions ?? ['What should Scout help fill in next?']).map((question) => `- ${question}`),
+    '',
+    '## Change history',
+    '',
+    `- ${new Date(savedAt).toLocaleDateString()}: Draft created.`
+  ].join('\n').trim();
+  const document = withInitialDocumentVersion(
+    {
+      id: createId('doc'),
+      title,
+      fileName: `${slugifyDocumentTitle(title)}.md`,
+      kind: 'markdown',
+      slotKey: slot?.key ?? null,
+      rights: slot ? 'assistant-generated' : 'user-imported',
+      status: 'draft',
+      visibility: 'private',
+      searchable: true,
+      textContent,
+      note: input.note?.trim() || (slot ? 'Standard Scout document draft.' : 'Extra private Scout document.'),
+      importedAt: savedAt,
+      updatedAt: savedAt,
+      sizeBytes: Buffer.byteLength(textContent, 'utf8')
+    },
+    slot ? 'scout' : 'user',
+    'draft'
+  );
+
+  const workspace = sanitizeRecord(
+    await persist({
+      ...record,
+      documents: [document, ...record.documents].sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt))
+    })
+  );
+
+  return { workspace, document };
 }
 
 export async function saveWorkspaceScoutDocumentFromReply(
@@ -770,6 +1052,7 @@ export async function saveWorkspaceScoutDocumentFromReply(
   input: {
     messageId: string;
     title?: string | null;
+    slotKey?: StandardDocumentSlotKey | null;
   }
 ): Promise<{
   readonly workspace: WorkspaceSnapshot;
@@ -790,30 +1073,76 @@ export async function saveWorkspaceScoutDocumentFromReply(
   }
 
   const prompt = previousUserPrompt(record.clawMessages, messageIndex);
-  const title = inferScoutDocumentTitle(prompt, input.title);
+  const slot = input.slotKey ? standardDocumentSlotForKey(input.slotKey) : null;
+  const title = slot?.title ?? inferScoutDocumentTitle(prompt, input.title);
   const savedAt = nowIso();
   const markdown = buildScoutDocumentMarkdown(title, prompt, reply.text, {
     trailName: betaProfile.trailName || betaProfile.name || 'Unknown',
     currentMile: record.profile && Number.isFinite(record.profile.currentMile) ? record.profile.currentMile : null,
     savedAt
   });
-  const document: ImportedDocument = {
-    id: createId('doc'),
-    title,
-    fileName: `${slugifyDocumentTitle(title)}-${savedAt.slice(0, 10)}.md`,
-    kind: 'markdown',
-    rights: 'assistant-generated',
-    searchable: true,
-    textContent: markdown,
-    note: 'Saved from Scout. Open Docs to keep refining or searching this plan later.',
-    importedAt: savedAt,
-    sizeBytes: Buffer.byteLength(markdown, 'utf8')
-  };
+
+  let existing: ImportedDocument | null = null;
+  let document: ImportedDocument;
+
+  if (slot) {
+    existing = record.documents.find((item) => documentMatchesSlot(item, slot.key)) ?? null;
+  }
+
+  if (slot && existing) {
+    document = applyDocumentVersion(
+      {
+        ...existing,
+        slotKey: slot.key,
+        rights: 'assistant-generated',
+        visibility: existing.visibility ?? 'private',
+        searchable: existing.searchable !== false
+      },
+      createNextDocumentVersion(existing, {
+        title,
+        textContent: markdown,
+        note: `Proposed Scout update for ${slot.title}. Review this version before treating it as active.`,
+        author: 'scout',
+        sourceMessageId: reply.id,
+        revisionPrompt: prompt,
+        createdAt: savedAt
+      }),
+      'needs-review',
+      savedAt
+    );
+  } else {
+    document = withInitialDocumentVersion(
+      {
+        id: createId('doc'),
+        title,
+        fileName: `${slugifyDocumentTitle(title)}-${savedAt.slice(0, 10)}.md`,
+        kind: 'markdown',
+        slotKey: slot?.key ?? null,
+        rights: 'assistant-generated',
+        status: slot ? 'needs-review' : 'active',
+        visibility: 'private',
+        searchable: true,
+        textContent: markdown,
+        note: slot
+          ? `Drafted by Scout for the ${slot.title} standard document slot. Review before marking active.`
+          : 'Saved from Scout. Open Docs to keep refining or searching this plan later.',
+        importedAt: savedAt,
+        updatedAt: savedAt,
+        sizeBytes: Buffer.byteLength(markdown, 'utf8')
+      },
+      'scout',
+      slot ? 'needs-review' : 'active'
+    );
+  }
+
+  const documents = existing
+    ? record.documents.map((item) => (item.id === existing.id ? document : item))
+    : [document, ...record.documents];
 
   const workspace = sanitizeRecord(
     await persist({
       ...record,
-      documents: [document, ...record.documents].sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+      documents: documents.sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt))
     })
   );
 
@@ -848,20 +1177,95 @@ export async function reviseWorkspaceScoutDocument(
     currentMile: record.profile && Number.isFinite(record.profile.currentMile) ? record.profile.currentMile : null,
     savedAt
   });
-  const document: ImportedDocument = {
-    ...existing,
+  const version = createNextDocumentVersion(existing, {
+    title: existing.title,
     textContent: markdown,
-    note: 'Updated by Scout. Open Docs to keep refining or searching this plan later.',
-    importedAt: savedAt,
-    sizeBytes: Buffer.byteLength(markdown, 'utf8')
-  };
+    note: 'Proposed Scout revision. Review this version before treating it as active.',
+    author: 'scout',
+    revisionPrompt: input.prompt,
+    createdAt: savedAt
+  });
+  const document = applyDocumentVersion(existing, version, 'needs-review', savedAt);
 
   const workspace = sanitizeRecord(
     await persist({
       ...record,
       documents: record.documents
         .map((item) => (item.id === input.documentId ? document : item))
-        .sort((left, right) => right.importedAt.localeCompare(left.importedAt))
+        .sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt))
+    })
+  );
+
+  return {
+    workspace,
+    document
+  };
+}
+
+export async function getWorkspaceDocument(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  documentId: string
+): Promise<ImportedDocument | null> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  return record.documents.find((document) => document.id === documentId) ?? null;
+}
+
+export async function updateWorkspaceDocumentState(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    documentId: string;
+    status?: ImportedDocumentStatus | null;
+    visibility?: ImportedDocumentVisibility | null;
+    searchable?: boolean | null;
+    currentVersionId?: string | null;
+  }
+): Promise<{
+  readonly workspace: WorkspaceSnapshot;
+  readonly document: ImportedDocument;
+}> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const existing = record.documents.find((document) => document.id === input.documentId);
+
+  if (!existing) {
+    throw new Error('Document not found.');
+  }
+
+  const versionToApply = input.currentVersionId
+    ? existing.versions?.find((version) => version.id === input.currentVersionId) ?? null
+    : null;
+
+  if (input.currentVersionId && !versionToApply) {
+    throw new Error('Document version not found.');
+  }
+
+  const updatedAt = nowIso();
+  const document: ImportedDocument = versionToApply
+    ? applyDocumentVersion(
+        {
+          ...existing,
+          searchable: typeof input.searchable === 'boolean' ? input.searchable : existing.searchable,
+          visibility: input.visibility ?? existing.visibility ?? 'private'
+        },
+        versionToApply,
+        input.status ?? existing.status ?? 'active',
+        updatedAt
+      )
+    : {
+        ...existing,
+        status: input.status ?? existing.status ?? 'active',
+        visibility: input.visibility ?? existing.visibility ?? 'private',
+        searchable: typeof input.searchable === 'boolean' ? input.searchable : existing.searchable,
+        updatedAt
+      };
+
+  const workspace = sanitizeRecord(
+    await persist({
+      ...record,
+      documents: record.documents
+        .map((item) => (item.id === input.documentId ? document : item))
+        .sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt))
     })
   );
 

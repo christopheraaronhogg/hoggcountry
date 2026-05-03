@@ -1,6 +1,6 @@
-import { error } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getConfiguredClawConnection, replyInWorkspaceClaw } from '$lib/server/claw-agent';
+import { getConfiguredClawConnection, replyInWorkspaceClaw, ScoutAgentTimeoutError } from '$lib/server/claw-agent';
 import { requireWorkspace, ok } from '$lib/server/workspace-endpoint';
 
 export const POST: RequestHandler = async (event) => {
@@ -16,17 +16,41 @@ export const POST: RequestHandler = async (event) => {
     throw error(400, 'Message is required.');
   }
 
-  const result = await replyInWorkspaceClaw(workspaceId, betaProfile, message, {
-    documentId: documentId || null
-  });
-  const connection = getConfiguredClawConnection(result.workspace);
+  try {
+    const result = await replyInWorkspaceClaw(workspaceId, betaProfile, message, {
+      documentId: documentId || null
+    });
+    const connection = getConfiguredClawConnection(result.workspace);
 
-  return ok({
-    reply: result.reply,
-    revisedDocument: result.revisedDocument,
-    messages: result.workspace.clawMessages,
-    documents: result.workspace.documents,
-    factCandidates: result.workspace.factCandidates,
-    connection
-  });
+    return ok({
+      reply: result.reply,
+      revisedDocument: result.revisedDocument,
+      messages: result.workspace.clawMessages,
+      documents: result.workspace.documents,
+      factCandidates: result.workspace.factCandidates,
+      connection
+    });
+  } catch (caught) {
+    if (caught instanceof ScoutAgentTimeoutError) {
+      return json(
+        { message: caught.message },
+        {
+          status: 504,
+          headers: { 'cache-control': 'no-store' }
+        }
+      );
+    }
+
+    if (caught instanceof Error && caught.message.includes('Pi agent did not return an assistant reply')) {
+      return json(
+        { message: 'Scout did not return a usable reply. Try again with a narrower trail question, or use today’s brief first.' },
+        {
+          status: 502,
+          headers: { 'cache-control': 'no-store' }
+        }
+      );
+    }
+
+    throw caught;
+  }
 };

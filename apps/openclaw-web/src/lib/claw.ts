@@ -21,7 +21,7 @@ export function buildClawLanes(
   const toolCount = tools.length;
   const hasEmergencyNote = hasSectionNote(sections, 'emergency-sheet');
   const hasTownNote = hasSectionNote(sections, 'town-stop');
-  const paceText = profile.averageMilesPerDay > 0 ? `${profile.averageMilesPerDay.toFixed(0)} mpd` : 'your real pace';
+  const paceText = profile.targetPace > 0 ? `${profile.targetPace.toFixed(0)} mpd` : 'your real pace';
 
   return [
     {

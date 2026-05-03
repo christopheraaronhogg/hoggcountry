@@ -26,19 +26,19 @@
 <section class="card hero-panel">
   <div>
     <p class="eyebrow">Overview</p>
-    <h1>Manual-first hiking, now under a real gate.</h1>
+    <h1>Your private Scout workspace.</h1>
     <p class="lede">
       {#if manualReady}
-        Your private trail workspace is live. Use Today, Manual, Tools, Docs, and Scout to keep it tightening into something you can actually hike from.
+        Your private trail workspace is live. Use Scout, Today, Docs, and Setup to keep the next decision practical.
       {:else}
-        The beta profile is in. Next step is to seed your own manual, starter tools, and first private workspace from Dad's guide and your trail preferences.
+        You do not need a finished profile to start. Ask Scout now; it can ask for pace, gear, health, route, or budget details only when they matter.
       {/if}
     </p>
     <div class="subtle-actions">
-      <a class="btn btn-primary" href={manualReady ? '/app/today' : '/app/setup'}>
-        {manualReady ? 'Open Today' : 'Run setup'}
+      <a class="btn btn-primary" href="/app/claw">Ask Scout</a>
+      <a class="btn btn-ghost" href={manualReady ? '/app/today' : '/app/setup'}>
+        {manualReady ? 'Open Today' : 'Optional setup'}
       </a>
-      <a class="btn btn-ghost" href="/app/claw">Open Scout</a>
     </div>
   </div>
 
@@ -82,7 +82,7 @@
   <article class="card panel-copy">
     <p class="eyebrow">Today</p>
     <h3>Current operating screen</h3>
-    <p class="muted">Focus on the next clear weather, water, sleep, and town decision.</p>
+    <p class="muted">Focus on the next clear weather, water, sleep, body, and town decision when you have enough context.</p>
   </article>
 
   <article class="card panel-copy">
@@ -100,6 +100,6 @@
   <article class="card panel-copy">
     <p class="eyebrow">Scout</p>
     <h3>Personal trail assistant</h3>
-    <p class="muted">The operator surface keeps telling you which brittle parts of the manual and plan still need attention.</p>
+    <p class="muted">Start with a plain question. Scout can build the profile and docs over time instead of front-loading forms.</p>
   </article>
 </div>

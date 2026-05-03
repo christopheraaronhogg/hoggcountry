@@ -490,12 +490,13 @@ Owns:
 - private workspace concept
 - manual-first product posture
 
-### Phase 1, now shipped locally
+### Phase 1, shipped on Forge
 - private workspace records
 - manual sections
-- imported docs
+- imported docs and multipart upload through the Laravel bridge
 - safe checklist tools
 - workspace search
+- gated `/app` routes verified on the Forge domain after the bridge began proxying non-GET workspace requests
 
 ### Phase 2
 - move workspace persistence from file-backed prototype storage to Laravel-owned user storage
@@ -521,11 +522,11 @@ Owns:
 
 ## Immediate implementation recommendation
 
-1. Deploy the newly shipped private workspace slice to Forge
-2. Keep validating the artifact-first gated app shape
-3. Add real auth + account settings next
-4. Implement BYOS credential storage and provider validation in Laravel
-5. Put Coach behind that entitlement layer instead of bolting model calls directly into the client
+1. Keep validating the artifact-first gated app shape with real trail use
+2. Add real auth + account settings next
+3. Implement BYOS credential storage and provider validation in Laravel
+4. Put Scout behind that entitlement layer instead of bolting model calls directly into the client
+5. Move the file-backed workspace prototype into Laravel-owned user storage once account identity is real
 
 ---
 
