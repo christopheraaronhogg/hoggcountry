@@ -245,7 +245,7 @@
             </div>
             <div class="dispatch-content">
               <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
-              <h3 class="dispatch-title">{displayVideos[0].title}</h3>
+              <h3 class="dispatch-title" title={displayVideos[0].title}>{displayVideos[0].title}</h3>
               <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], 420)}</p>
               <span class="dispatch-cta">Watch Video</span>
             </div>
@@ -270,7 +270,7 @@
               </div>
               <div class="dispatch-content">
                 <time class="dispatch-date">{formatDate(video.published)}</time>
-                <h3 class="dispatch-title">{video.title}</h3>
+                <h3 class="dispatch-title" title={video.title}>{video.title}</h3>
                 <p class="dispatch-desc">{getVideoExcerpt(video, 110)}</p>
                 <span class="dispatch-cta">Watch Video</span>
               </div>
@@ -2122,6 +2122,10 @@
     color: var(--pine-dark);
     margin: 0 0 0.5rem;
     line-height: 1.3;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .dispatch-featured .dispatch-title {
