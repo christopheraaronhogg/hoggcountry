@@ -6,7 +6,7 @@ Give Scout more capability by making it source-aware before it gets more chat UI
 
 Scout should prefer this order:
 
-1. **Private hiker workspace** — profile, manual notes, saved Scout plans, imported docs, tools/checklists.
+1. **Private hiker workspace** — profile, manual notes, saved Scout plans, maintained documents, resources, tools/checklists.
 2. **Reviewed Hogg Country corpus** — current field guide and approved/shared trail knowledge.
 3. **Public hiker signals** — Trail Updates, location fixes, dispatches, journals, and shared guides the hiker has explicitly made available.
 4. **User-owned guide data** — A.T. Guide/AWOL/FarOut screenshots or exports only when the hiker legally supplies them.
@@ -21,6 +21,7 @@ Privacy rule: using a source to help the hiker is not the same as sharing it. Ev
 | Lane | Access now | Trust | Best use | Caveat |
 |---|---:|---|---|---|
 | Private workspace | Yes | Hiker-private | Personal constraints, gear, health, plans, budget, current mile, living docs | Ask when stale/missing |
+| User resources | Yes/next | Hiker-private | Uploaded files, saved URLs, pasted notes, bank statements, guide excerpts, official-source pointers | Resources are source material; create derived documents/reports instead of rewriting originals |
 | Hogg Country corpus | Yes | Reviewed/internal | General AT ops, routines, gear, shelter/tent, resupply norms | Not live conditions |
 | Dad public pilot | Yes | Public pilot | Real-world Scout testing from Trail Updates/Garmin/dispatches | Garmin can lag; public only |
 | A.T. Guide / AWOL | Import | Reviewed/user-owned | Mileage, elevation, shelters, campsites, towns, crossings | Do not scrape/bundle copyrighted data |
@@ -37,7 +38,7 @@ Privacy rule: using a source to help the hiker is not the same as sharing it. Ev
 
 `apps/openclaw-web/src/lib/server/claw-agent.ts` now gives Scout three source-aware behaviors:
 
-1. It builds a source context for each reply turn by searching currently available workspace/manual/docs/tools/corpus/Dad-pilot context.
+1. It builds a source context for each reply turn by searching currently available workspace/manual/docs/resources/tools/corpus/Dad-pilot context.
 2. It registers a `search_scout_sources` tool Scout can call when the user’s question needs a narrower source search during the turn.
 3. It registers a `check_official_trail_sources` tool backed by `apps/openclaw-web/src/lib/server/scout-official-sources.ts`, which can fetch ATC Trail Updates and NWS point forecasts/alerts when coordinates are available.
 
@@ -51,6 +52,6 @@ This is intentionally not a broad web scraper. It gives Scout better grounding w
 
 1. Expand the Daily Trail Brief into a scheduled/proactive brief once messaging rules are clear.
 2. Add per-artifact sharing flags before turning journal/location/profile into family-facing surfaces.
-3. Add import helpers for hiker-owned FarOut screenshots/notes and A.T. Guide excerpts.
+3. Add Resources support for uploads, URLs, pasted notes, hiker-owned FarOut screenshots/notes, and A.T. Guide excerpts.
 4. Add richer source receipts in the Scout thread after tool calls, not just on the Daily Brief card.
 5. Promote only reviewed, opt-in fact candidates into the shared trail intelligence corpus.

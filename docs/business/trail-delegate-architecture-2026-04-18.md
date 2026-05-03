@@ -10,7 +10,7 @@ Each paying user gets:
 - one bounded agent loop that keeps improving that workspace over time
 - optional BYOS model funding through a user-provided API key
 
-The app should stay manual-first and artifact-first. Chat helps, but the product value lives in durable plans, checklists, notes, and operating documents the hiker can inspect and export.
+The app should stay manual-first and artifact-first. Chat helps, but the product value lives in durable plans, checklists, notes, operating documents, and resource-backed reports the hiker can inspect and export.
 
 ---
 
@@ -91,16 +91,17 @@ Primary artifacts:
 - `training-plan.md`
 - `risk-triggers.json`
 - `checklists/*.json`
-- imported supporting docs and notes
+- resources: uploaded files, saved links, pasted notes, official-source snapshots, and extracted text
 
 Current shipped slice already covers the first layer of this idea:
 - private profile
 - manual sections
-- imported docs
+- imported docs/resources
 - safe checklist tools
 - a cloud `/app/claw` console with per-workspace connected-account state, even though the user-facing product name is now Scout during the transition
 - pending `FactCandidate` extraction from Scout turns so reusable trail intel can enter a review queue instead of staying trapped in chat
 - a first artifactization pass where strong Scout replies can be saved into Docs as searchable markdown plan artifacts and later revised in place from Scout
+- a product split between maintained Documents and immutable/private Resources, so uploads, URLs, and pasted source notes can ground Scout without becoming clutter or silently rewritten docs
 - a Dad field-pilot surface on Scout that pastes the latest public Garmin fix and dispatch context into one-click planning prompts, so the product can be tested against real trail conditions first
 
 ### 4. Agent runtime lane
@@ -202,14 +203,26 @@ For every user:
 - `version`
 - `updated_by` (`user|assistant|system`)
 
-#### SourceDocument
+#### Resource
 - `id`
 - `workspace_id`
-- `kind`
+- `kind` (`file|url|note|official-source`)
 - `title`
-- `text_content`
+- `source_uri`
+- `original_file_name`
+- `mime_type`
+- `status` (`processing|ready|failed|archived`)
+- `sensitivity` (`normal|private|sensitive|financial|medical`)
+- `text_content` or extracted text pointer
+- `summary`
 - `rights`
 - `searchable`
+
+Rules:
+- Resources are source material, not maintained documents.
+- Scout can search, cite, summarize, and transform resources into documents or exports.
+- Scout should not silently mutate an original resource.
+- Sensitive resources stay private and need explicit user review before any export or share.
 
 #### FactCandidate
 - `id`

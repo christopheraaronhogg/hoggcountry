@@ -9,10 +9,11 @@
 
 Chris's direction: Scout should not feel like a loose file dump. It should have a compact set of standard trail documents that make the workspace understandable, while still allowing the hiker or Scout to create extra documents when the situation calls for it.
 
-The right shape is a **small standard document shelf** plus an **extra docs locker**.
+The right shape is a **small standard document shelf** plus an **extra docs locker**, with **Resources** kept as a separate source-material locker.
 
 - Standard docs are the predictable trail artifacts Scout should always know about.
 - Extra docs are flexible, user-created or Scout-drafted artifacts.
+- Resources are uploaded files, saved links, pasted notes, or official-source pointers that Scout can use but should not silently rewrite.
 - Every document, standard or extra, has preserved version history.
 - Scout can draft a missing standard document, revise an existing document, or propose an extra document from a conversation.
 - The hiker stays in control of what becomes the current trusted version.
@@ -48,15 +49,16 @@ Examples:
 - Family communication note
 - Medical incident note
 - Gear shakedown
-- Imported file/note
+- Resource-derived report, summary, or checklist
 
 Extra docs can be created in three ways:
 
 1. **User drafts manually** from Docs with `New doc`.
 2. **User asks Scout**: “Draft a Glasgow town plan as a doc.”
 3. **Scout proposes one** after a conversation: “This should become a Resupply Plan / extra doc.”
+4. **Resource transformation**: user selects one or more Resources and asks Scout to create a maintained report, plan, checklist, or PDF-ready brief.
 
-Scout should ask for confirmation before creating clutter unless the user explicitly says to draft/save it.
+Scout should ask for confirmation before creating clutter unless the user explicitly says to draft/save it. Uploaded resources should stay as resources; Scout-created outputs from them become documents.
 
 ## 4. Document model rules
 
@@ -93,7 +95,7 @@ Rules:
 - No AI rewrite silently overwrites the current document.
 - A Scout draft creates a version with `needs-review` unless the user explicitly accepts it as active.
 - Restoring an old version creates a new current version or moves `currentVersionId` with an audit record; either way, history remains intact.
-- Imported docs are usually not rewritten in place. Scout can summarize or create a derived extra doc from them.
+- Resources are not rewritten in place. Scout can summarize or create a derived extra doc from them.
 - Standard docs can be archived only by hiding/resetting the slot, not by deleting the concept.
 
 ## 5. UX plan
@@ -105,7 +107,8 @@ Top structure:
 1. Search
 2. **Standard docs** compact shelf
 3. **Extra docs** list
-4. Import / New doc actions
+4. `New doc` action
+5. Link/CTA into **Resources** for uploads, URLs, and source notes
 
 Standard shelf card states:
 
@@ -118,7 +121,7 @@ Standard shelf card states:
 Extra docs list:
 
 - Compact cards with kind, status, updated date, version count
-- Filters: `All`, `Needs review`, `Active`, `Imports`, `Archived`
+- Filters: `All`, `Needs review`, `Active`, `Resource-derived`, `Archived`
 - Primary actions: `Open`, `Ask Scout`, `Archive`
 
 ### `/app/docs/[documentId]`
@@ -153,6 +156,9 @@ Scout conversation should understand documents as artifacts:
   - `Save as extra doc`
   - `Update Current Plan`
   - `Update 7-Day Plan`
+- If resources are attached, show:
+  - `Create document from resources`
+  - `Export reviewed report as PDF`
 - If revising an existing doc, show a visible mode: `Updating: 7-Day Plan`.
 - After Scout drafts a version, show `Review version` rather than pretending it is final.
 
@@ -185,15 +191,24 @@ Build the smallest version that proves the product model.
 - Add `Save as extra doc` action on Scout replies.
 - Extra docs appear below standard docs and share the same history model.
 
+### Slice E — resources separation
+
+- Move uploads, URLs, and pasted source notes toward a Resources locker instead of treating them as maintained docs.
+- Let Scout attach Resources to a turn.
+- Add `Create document from resources` for summaries, reports, plans, and checklists.
+- Add reviewed PDF export from a generated document/report.
+
 ## 7. Acceptance criteria
 
 - `/app/docs` shows exactly six standard document slots, even if no document exists yet.
 - User can create/draft an extra document without attaching it to a standard slot.
+- User can add source material as a Resource without cluttering the document list.
 - Scout can create a draft for a standard slot from a conversation.
 - Scout can save a reply as an extra document.
 - Every document detail page shows current version and version history.
 - Revising a document creates a new version; old versions remain viewable.
-- Standard docs and extra docs are private by default.
+- Standard docs, extra docs, and resources are private by default.
+- Resource-derived docs retain source receipts back to the resources used.
 - Mobile layout is clean: standard shelf first, extra docs second, actions in compact drawers/buttons.
 
 ## 8. Recommendation
@@ -206,5 +221,6 @@ Recommended order:
 2. Wire slot-targeted Scout prompts from empty standard docs.
 3. Ensure Scout save/revise can target either a standard slot or a new extra doc.
 4. Polish version-history UX on detail pages.
+5. Add the Resources locker as the next slice so uploads/URLs/source notes stop competing with maintained docs.
 
-This gives Chris the clean mental model: **Scout keeps a small set of standard trail documents current, and anything else can still become a private versioned document when needed.**
+This gives Chris the clean mental model: **Scout keeps a small set of standard trail documents current, extra docs cover flexible maintained artifacts, and resources are private source material Scout can transform into documents when needed.**
