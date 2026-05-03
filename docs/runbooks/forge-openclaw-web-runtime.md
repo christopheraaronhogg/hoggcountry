@@ -1,6 +1,6 @@
 # Forge OpenClaw Web Runtime Runbook
 
-Last verified: 2026-04-17
+Last verified: 2026-05-02
 
 ## Purpose
 
@@ -10,7 +10,7 @@ The active production shape is:
 
 - Nginx and PHP-FPM stay in front
 - Laravel keeps `/api/*`, `/up`, and `/native`
-- Laravel proxies public GET and HEAD requests to the SvelteKit Node app on localhost
+- Laravel proxies the SvelteKit web surface to the Node app on localhost, including non-GET app/API requests needed by the gated `/app` beta workspace
 - PM2 keeps the Node app alive
 
 ## Current live paths
@@ -20,6 +20,9 @@ The active production shape is:
 - PM2 app name: `hoggcountry-openclaw`
 - Node bind: `127.0.0.1:3000`
 - private workspace data root: `/home/forge/hoggcountry.on-forge.com/storage/app/openclaw-workspaces`
+- public Trail Updates data/media root: `/home/forge/hoggcountry.on-forge.com/storage/app/{private,public}/trail-updates`
+- shared Node dependency cache: `/home/forge/hoggcountry.on-forge.com/shared/node_modules`
+- current release pruning policy: keep active release plus one known-good rollback release; as of 2026-05-02 the active release is `1777743519`, with `1777740505` retained as the known-good rollback. Older retained releases `1777668594` and `1777667921` can be pruned after the new standard-documents release has baked.
 
 ## Required Laravel env
 
@@ -78,17 +81,71 @@ pm2 save
 
 ## Manual deploy flow
 
-1. Upload a new numbered release under `releases/`
+1. Upload a new numbered release under `releases/`. If cloning from the current release first, resolve the real path before copying; do **not** copy the `current` symlink itself.
+
+```bash
+APP=/home/forge/hoggcountry.on-forge.com
+RELEASE=<release>
+BASE=$(readlink -f "$APP/current")
+mkdir -p "$APP/releases"
+cp -al "$BASE" "$APP/releases/$RELEASE"
+```
+
 2. Inside that release:
 
 ```bash
-cd /home/forge/hoggcountry.on-forge.com/releases/<release>
-ln -nfs /home/forge/hoggcountry.on-forge.com/.env backend/.env
-ln -nfs /home/forge/hoggcountry.on-forge.com/storage backend/storage
+APP=/home/forge/hoggcountry.on-forge.com
+REL="$APP/releases/<release>"
+cd "$REL"
+ln -nfs "$APP/.env" backend/.env
+rm -rf backend/storage
+ln -nfs "$APP/storage" backend/storage
 mkdir -p backend/bootstrap/cache
 cd backend && composer install --no-interaction --prefer-dist --optimize-autoloader && cd ..
-npm install --package-lock=false
+
+# Do not symlink node_modules to another numbered release; those are pruned.
+# Do not leave root node_modules as a symlink to shared/node_modules either: npm
+# workspace links under @hoggcountry are relative, so a shared realpath makes them
+# resolve toward nonexistent shared package paths.
+#
+# Current safe pattern: hardlink/copy the stable third-party cache into the release,
+# then rebuild @hoggcountry workspace symlinks so they point at this release's apps/*
+# and packages/* directories.
+rm -rf node_modules
+if [ -d "$APP/shared/node_modules" ]; then
+  cp -al "$APP/shared/node_modules" node_modules
+else
+  npm install --package-lock=false
+fi
+rm -rf node_modules/@hoggcountry
+mkdir -p node_modules/@hoggcountry
+node <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+for (const base of ['apps', 'packages']) {
+  for (const entry of fs.readdirSync(base, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const manifestPath = path.join(base, entry.name, 'package.json');
+    if (!fs.existsSync(manifestPath)) continue;
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    if (!manifest.name?.startsWith('@hoggcountry/')) continue;
+    const linkPath = path.join('node_modules', ...manifest.name.split('/'));
+    fs.mkdirSync(path.dirname(linkPath), { recursive: true });
+    fs.rmSync(linkPath, { recursive: true, force: true });
+    fs.symlinkSync(path.join('..', '..', base, entry.name), linkPath);
+  }
+}
+NODE
+
 npm run build:openclaw:forge
+
+# Optional after a dependency-changing successful build: refresh the stable cache,
+# but leave the active release using its release-local hardlinked node_modules tree.
+rm -rf "$APP/shared/node_modules.next"
+cp -al node_modules "$APP/shared/node_modules.next"
+rm -rf "$APP/shared/node_modules.next/@hoggcountry"
+rm -rf "$APP/shared/node_modules"
+mv "$APP/shared/node_modules.next" "$APP/shared/node_modules"
 ```
 
 3. Flip `current` to the new release
@@ -141,6 +198,21 @@ Alias redirects should also behave:
 - `/track` -> `/dad/map`
 - `/videos` -> `/dad/videos`
 - `/at-map` -> `/dad/map`
+
+Gated app workspace checks should also work through the Laravel bridge, not only against localhost:
+
+- `/signup`
+- `/app`
+- `/app/setup`
+- `/app/today`
+- `/app/manual`
+- `/app/tools`
+- `/app/docs`
+- `/app/claw`
+- `POST /app-api/workspace/initialize`
+- `POST /app-api/workspace/profile/current-mile`
+- `POST /app-api/workspace/tools/checklist`
+- `POST /app-api/workspace/documents` multipart upload
 
 ## Failure modes
 
