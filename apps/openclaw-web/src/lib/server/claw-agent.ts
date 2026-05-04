@@ -35,7 +35,7 @@ import {
 const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
 const OPENCODE_GO_PROVIDER_ID = 'opencode-go';
 const OPENAI_CODEX_MODEL = 'gpt-5.4';
-const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-flash';
+const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-pro';
 const OPENCODE_GO_REPLY_MAX_TOKENS = 900;
 const SCOUT_AGENT_TURN_TIMEOUT_MS = 55_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
