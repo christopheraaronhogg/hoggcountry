@@ -643,6 +643,28 @@ function getOpenCodeGoApiKey(): string {
   return apiKey;
 }
 
+function applyOpenCodeGoPayloadCompat(payload: unknown): unknown {
+  if (!payload || typeof payload !== 'object') return payload;
+
+  const params = payload as {
+    thinking?: { type: 'disabled' };
+    max_tokens?: number;
+    max_completion_tokens?: number;
+  };
+
+  // OpenCode Go's DeepSeek V4 Pro defaults to a thinking-only mode unless this is explicit.
+  params.thinking = { type: 'disabled' };
+
+  // The OpenAI-compatible DeepSeek lane honors max_tokens; keeping the completion-only
+  // field can let the model spend the whole budget on reasoning before producing text.
+  if (typeof params.max_completion_tokens === 'number' && typeof params.max_tokens !== 'number') {
+    params.max_tokens = params.max_completion_tokens;
+    delete params.max_completion_tokens;
+  }
+
+  return params;
+}
+
 export function getConfiguredClawConnection(record: Pick<WorkspaceSnapshot, 'providerConnections'>): WorkspaceClawConnectionPayload | null {
   const houseProviderId = configuredHouseProviderId();
 
@@ -1372,7 +1394,8 @@ export async function replyInWorkspaceClaw(
       },
       sessionId: `workspace:${workspaceId}:claw`,
       transport: 'sse',
-      getApiKey: async () => runtime.apiKey
+      getApiKey: async () => runtime.apiKey,
+      onPayload: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? applyOpenCodeGoPayloadCompat : undefined
     });
 
     await withScoutAgentTimeout(agent.prompt(trimmedPrompt), turnDeadline - Date.now());
