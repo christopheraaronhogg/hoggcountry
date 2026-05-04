@@ -2,9 +2,11 @@ import { Agent, type AgentTool } from '@mariozechner/pi-agent-core';
 import {
   searchImportedDocuments,
   searchManualSections,
+  searchWorkspaceResources,
   searchWorkspaceTools,
   type ImportedDocument,
-  type SearchHit
+  type SearchHit,
+  type WorkspaceResource
 } from '@hoggcountry/manual-core';
 import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
 import { getModel, Type, type AssistantMessage, type Message, type Model, type ToolResultMessage, type UserMessage } from '@mariozechner/pi-ai';
@@ -422,6 +424,7 @@ function searchScoutSources(record: WorkspaceRecord, dadPilotSummary: DadPilotSu
     const hits = [
       ...searchManualSections(record.sections, query),
       ...searchImportedDocuments(record.documents, query),
+      ...searchWorkspaceResources(record.resources, query),
       ...searchWorkspaceTools(record.tools, query),
       ...searchPublicCorpus(publicCorpus, query)
     ];
@@ -740,16 +743,39 @@ function buildDadPilotSystemContext(summary: DadPilotSummary | null): string | n
   ].join('\n');
 }
 
+function buildActiveResourceContext(activeResource: WorkspaceResource | null | undefined): string | null {
+  if (!activeResource) return null;
+
+  const source = [
+    activeResource.extractedText,
+    activeResource.summary,
+    activeResource.sourceUri
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0).join('\n');
+
+  return [
+    `Active private resource title: ${activeResource.title}`,
+    `Resource type: ${activeResource.kind}. Sensitivity: ${activeResource.sensitivity}. Status: ${activeResource.status}.`,
+    activeResource.sourceUri ? `Source URL: ${activeResource.sourceUri}` : null,
+    activeResource.originalFileName ? `Original file: ${activeResource.originalFileName}` : null,
+    'The user is asking with this private resource attached as source context.',
+    'Use it as evidence, separate source-backed details from assumptions, and do not treat it as public/shared trail intel.',
+    'If the user wants a maintained artifact, draft a saved-document-ready answer that they can review and save into Docs.',
+    source ? `Private resource content:\n${excerpt(source, 4000)}` : 'Private resource content: no extracted text yet; use title/source metadata only and say extraction is thin.'
+  ].filter((line): line is string => Boolean(line)).join('\n');
+}
+
 function buildSystemPrompt(
   record: WorkspaceRecord,
   activeDocument?: ImportedDocument | null,
   dadPilotSummary?: DadPilotSummary | null,
   scoutSourceContext?: string | null,
-  liveToolsAvailable = true
+  liveToolsAvailable = true,
+  activeResource?: WorkspaceResource | null
 ): string {
   const profile = record.profile;
   const notes = userBlocksSummary(record);
   const docs = record.documents.slice(0, 6).map((document) => document.title);
+  const resources = record.resources.slice(0, 6).map((resource) => resource.title);
   const tools = record.tools.slice(0, 6).map((tool) => tool.title);
   const dadPilotContext = buildDadPilotSystemContext(dadPilotSummary ?? null);
 
@@ -768,7 +794,8 @@ function buildSystemPrompt(
       : 'Profile: not initialized yet.',
     notes.length > 0 ? `Manual notes: ${notes.join(' | ')}` : 'Manual notes: none yet.',
     dadPilotContext,
-    docs.length > 0 ? `Source docs: ${docs.join(', ')}` : 'Source docs: none yet.',
+    docs.length > 0 ? `Saved docs: ${docs.join(', ')}` : 'Saved docs: none yet.',
+    resources.length > 0 ? `Private resources: ${resources.join(', ')}` : 'Private resources: none yet.',
     tools.length > 0 ? `Available tools/checklists: ${tools.join(', ')}` : 'Available tools/checklists: none yet.',
     'Be especially good at itinerary planning, loadout choices, food-carry limits, resupply timing, budget tradeoffs, health/body tracking, hostel or town sequencing, and turning rough trail constraints into usable plans.',
     'Before answering research-like questions, use the provided Scout source search context. Separate what is searchable-now from what still needs an official/direct live check or user import.',
@@ -783,6 +810,7 @@ function buildSystemPrompt(
     'Treat saved assistant-generated documents as living Scout documents, not one-off files. The user wants Scout to keep them current through conversation.',
     'When asked for a plan, prefer a compact artifact with current snapshot, assumptions, day-by-day or category breakdown, concrete next actions, and missing intel that would tighten the answer.',
     'When revising a saved document, preserve useful existing structure, update stale facts, add a brief change-history note, and return the full revised document body.',
+    buildActiveResourceContext(activeResource),
     activeDocument
       ? activeDocument.rights === 'assistant-generated'
         ? [
@@ -1261,6 +1289,7 @@ export async function replyInWorkspaceClaw(
   prompt: string,
   options?: {
     readonly documentId?: string | null;
+    readonly resourceId?: string | null;
   }
 ): Promise<{
   readonly workspace: WorkspaceSnapshot;
@@ -1276,14 +1305,21 @@ export async function replyInWorkspaceClaw(
   const activeDocument = options?.documentId
     ? record.documents.find((document) => document.id === options.documentId) ?? null
     : null;
+  const activeResource = options?.resourceId
+    ? record.resources.find((resource) => resource.id === options.resourceId) ?? null
+    : null;
 
   if (options?.documentId && !activeDocument) {
     throw new Error('Document not found.');
   }
 
+  if (options?.resourceId && !activeResource) {
+    throw new Error('Resource not found.');
+  }
+
   const runtime = await resolveClawRuntime(record);
 
-  if (!activeDocument) {
+  if (!activeDocument && !activeResource) {
     const privateImportReply = buildPrivateImportSearchReply(record, trimmedPrompt);
     if (privateImportReply) {
       const { nextMessages, reply } = deterministicClawTurn(record, runtime, trimmedPrompt, privateImportReply);
@@ -1326,7 +1362,8 @@ export async function replyInWorkspaceClaw(
           activeDocument,
           dadPilotSummary,
           sourceContext,
-          runtime.providerId !== OPENCODE_GO_PROVIDER_ID
+          runtime.providerId !== OPENCODE_GO_PROVIDER_ID,
+          activeResource
         ),
         model: runtime.model,
         thinkingLevel: 'low',

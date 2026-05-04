@@ -1,4 +1,4 @@
-import type { ImportedDocument, ManualProfile, ManualSection, WorkspaceTool } from '@hoggcountry/manual-core';
+import type { ImportedDocument, ManualProfile, ManualSection, WorkspaceResource, WorkspaceTool } from '@hoggcountry/manual-core';
 
 export interface ClawLane {
   readonly title: string;
@@ -15,9 +15,11 @@ export function buildClawLanes(
   profile: ManualProfile,
   sections: ManualSection[],
   docs: ImportedDocument[],
-  tools: WorkspaceTool[]
+  tools: WorkspaceTool[],
+  resources: WorkspaceResource[] = []
 ): ClawLane[] {
-  const docCount = docs.length;
+  const resourceCount = resources.length;
+  const livingDocCount = docs.filter((document) => document.rights === 'assistant-generated').length;
   const toolCount = tools.length;
   const hasEmergencyNote = hasSectionNote(sections, 'emergency-sheet');
   const hasTownNote = hasSectionNote(sections, 'town-stop');
@@ -44,11 +46,11 @@ export function buildClawLanes(
     },
     {
       title: 'Strengthen the source locker',
-      prompt: docCount > 0
-        ? `You already have ${docCount} imported document${docCount === 1 ? '' : 's'}. Convert the most important one into a manual note.`
-        : 'No private source docs are imported yet. Bring in a permit PDF, gear list, or saved town intel file next.',
-      action: docCount > 0 ? 'Open Docs and lift one concrete fact into the manual.' : 'Import a PDF or text file you want the manual to reference.',
-      source: 'Imported docs locker'
+      prompt: resourceCount > 0
+        ? `You have ${resourceCount} private resource${resourceCount === 1 ? '' : 's'} and ${livingDocCount} living Scout doc${livingDocCount === 1 ? '' : 's'}. Pick one resource and ask Scout what it changes.`
+        : 'No private resources are attached yet. Add a readable file, URL, or pasted trail note for Scout to use as source context.',
+      action: resourceCount > 0 ? 'Open Resources, choose Ask Scout or Draft Doc, then save the useful reply into Docs.' : 'Open Resources and add one source you want Scout to reference.',
+      source: 'Resources → Scout → Docs'
     },
     {
       title: 'Patch the brittle sections',

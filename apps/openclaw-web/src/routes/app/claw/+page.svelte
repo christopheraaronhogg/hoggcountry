@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import { buildClawLanes } from '$lib/claw';
-  import { inferStandardDocumentSlotKey, isStandardDocumentSlotKey, STANDARD_DOCUMENT_SLOTS, standardDocumentSlotForKey, type ImportedDocument, type ManualProfile, type ManualSection, type StandardDocumentSlotKey, type WorkspaceTool } from '@hoggcountry/manual-core';
+  import { inferStandardDocumentSlotKey, isStandardDocumentSlotKey, STANDARD_DOCUMENT_SLOTS, standardDocumentSlotForKey, type ImportedDocument, type ManualProfile, type ManualSection, type StandardDocumentSlotKey, type WorkspaceResource, type WorkspaceTool } from '@hoggcountry/manual-core';
   import type { ClawLane } from '$lib/claw';
 
   interface WorkspaceSnapshot {
     readonly profile: ManualProfile | null;
     readonly sections: ManualSection[];
     readonly documents: ImportedDocument[];
+    readonly resources: WorkspaceResource[];
     readonly tools: WorkspaceTool[];
   }
 
@@ -112,7 +113,9 @@
   let dailyBriefLoading = $state(false);
   let dailyBriefError = $state('');
   let documents = $state<ImportedDocument[]>([]);
+  let resources = $state<WorkspaceResource[]>([]);
   let selectedDocumentId = $state<string>('');
+  let selectedResourceId = $state<string>('');
   let targetStandardSlotKey = $state<StandardDocumentSlotKey | ''>('');
   let messages = $state<ClawMessage[]>([]);
   let factCandidates = $state<FactCandidate[]>([]);
@@ -357,14 +360,6 @@
     return messages.filter((message) => message.role === 'user').length;
   }
 
-  function importedDocumentCount(): number {
-    return documents.filter((document) => document.rights !== 'assistant-generated').length;
-  }
-
-  function livingDocumentCount(): number {
-    return savedPlans(documents).length;
-  }
-
   function isMessageExpanded(message: ClawMessage): boolean {
     return expandedMessageIds.includes(message.id);
   }
@@ -578,7 +573,40 @@
     return selectedDocumentId ? findDocument(selectedDocumentId) : null;
   }
 
+  function findResource(resourceId: string): WorkspaceResource | null {
+    return resources.find((resource) => resource.id === resourceId) ?? null;
+  }
+
   const currentDocument = $derived(selectedDocumentId ? findDocument(selectedDocumentId) : null);
+  const currentResource = $derived(selectedResourceId ? findResource(selectedResourceId) : null);
+
+  function resourcePreview(resource: WorkspaceResource): string {
+    const source = resource.extractedText || resource.summary || resource.sourceUri || resource.title;
+    const normalized = source.replace(/\s+/g, ' ').trim();
+    return normalized.length > 1200 ? `${normalized.slice(0, 1200).trimEnd()}…` : normalized;
+  }
+
+  function buildResourcePrompt(resource: WorkspaceResource, action: 'ask' | 'document' = 'ask'): string {
+    const sourceContext = `Resource type: ${resource.kind}. Sensitivity: ${resource.sensitivity}. Source: ${resource.sourceUri || resource.originalFileName || 'pasted note'}. Relevant extracted context: ${resourcePreview(resource)}.`;
+
+    if (action === 'document') {
+      return `Use my private resource "${resource.title}" as source context and draft a reviewable Scout Doc from it. ${sourceContext} Structure the Doc with a title, source-backed facts, assumptions, trail impact, next actions, and missing checks. Keep it ready for me to save into Docs; do not overwrite the source resource.`;
+    }
+
+    return `Use my private resource "${resource.title}" as source context. ${sourceContext} Tell me what this changes about my trail plan, what is source-backed vs assumption, and whether this should become a maintained Doc.`;
+  }
+
+  function focusResource(resource: WorkspaceResource, action: 'ask' | 'document' = 'ask') {
+    selectedResourceId = resource.id;
+    selectedDocumentId = '';
+    targetStandardSlotKey = '';
+    replyInput = buildResourcePrompt(resource, action);
+    saveNotice = action === 'document'
+      ? `Drafting a Doc from "${resource.title}". Save Scout's reply when it looks right.`
+      : `Using "${resource.title}" as private resource context.`;
+    savedDocumentHref = `/app/resources#resource-${encodeURIComponent(resource.id)}`;
+    void focusPromptComposer();
+  }
 
   function buildDocumentUpdatePrompt(document: ImportedDocument): string {
     if (document.rights === 'assistant-generated') {
@@ -590,6 +618,7 @@
 
   function focusDocument(document: ImportedDocument) {
     selectedDocumentId = document.id;
+    selectedResourceId = '';
     targetStandardSlotKey = '';
     replyInput = buildDocumentUpdatePrompt(document);
     void focusPromptComposer();
@@ -606,6 +635,7 @@
     }
 
     selectedDocumentId = '';
+    selectedResourceId = '';
     targetStandardSlotKey = slotKey;
     replyInput = slot.starterPrompt;
     saveNotice = `Drafting ${slot.title}. Save Scout's reply back to this standard doc when it looks right.`;
@@ -616,6 +646,12 @@
   function ensureSelectedDocument(currentDocs: ImportedDocument[]) {
     if (selectedDocumentId && !currentDocs.some((document) => document.id === selectedDocumentId)) {
       selectedDocumentId = '';
+    }
+  }
+
+  function ensureSelectedResource(currentResources: WorkspaceResource[]) {
+    if (selectedResourceId && !currentResources.some((resource) => resource.id === selectedResourceId)) {
+      selectedResourceId = '';
     }
   }
 
@@ -652,6 +688,25 @@
 
     url.searchParams.delete('documentId');
     url.searchParams.delete('documentAction');
+    window.history.replaceState({}, '', url);
+  }
+
+  async function consumeResourceQueryState() {
+    const url = new URL(window.location.href);
+    const resourceId = url.searchParams.get('resourceId');
+    const resourceAction = url.searchParams.get('resourceAction') === 'document' ? 'document' : 'ask';
+    if (!resourceId) return;
+
+    const resource = resources.find((item) => item.id === resourceId) ?? null;
+    if (!resource) {
+      saveError = 'That resource was not found in this workspace.';
+    } else {
+      focusResource(resource, resourceAction);
+      await focusPromptComposer();
+    }
+
+    url.searchParams.delete('resourceId');
+    url.searchParams.delete('resourceAction');
     window.history.replaceState({}, '', url);
   }
 
@@ -698,8 +753,10 @@
       const workspace = workspacePayload as WorkspaceSnapshot;
       profile = workspace.profile;
       documents = Array.isArray(workspace.documents) ? workspace.documents : [];
+      resources = Array.isArray(workspace.resources) ? workspace.resources : [];
       ensureSelectedDocument(documents);
-      lanes = workspace.profile ? buildClawLanes(workspace.profile, workspace.sections, workspace.documents, workspace.tools) : [];
+      ensureSelectedResource(resources);
+      lanes = workspace.profile ? buildClawLanes(workspace.profile, workspace.sections, workspace.documents, workspace.tools, workspace.resources) : [];
       connection = (clawPayload.connection ?? null) as ProviderConnection | null;
       dadPilot = dadPayload ? (dadPayload as DadPilotSummary) : null;
       messages = Array.isArray(clawPayload.messages) ? (clawPayload.messages as ClawMessage[]) : [];
@@ -833,7 +890,8 @@
           },
           body: JSON.stringify({
             message,
-            documentId: selectedDocumentId || null
+            documentId: selectedDocumentId || null,
+            resourceId: selectedResourceId || null
           })
         })
       );
@@ -908,6 +966,7 @@
       if (document) {
         savedMessageIds = savedMessageIds.includes(messageId) ? savedMessageIds : [...savedMessageIds, messageId];
         selectedDocumentId = document.id;
+        selectedResourceId = '';
         targetStandardSlotKey = '';
         savedDocumentHref = `/app/docs/${encodeURIComponent(document.id)}`;
         saveNotice = slotKey ? `Saved a review version for "${document.title}".` : `Saved "${document.title}" to Docs.`;
@@ -931,6 +990,7 @@
       .then(async () => {
         await consumeStandardDocumentQueryState();
         await consumeDocumentQueryState();
+        await consumeResourceQueryState();
         await loadDailyBrief();
       })
       .catch(() => undefined);
@@ -1035,6 +1095,7 @@
 
       <nav class="drawer-nav compact-nav" aria-label="Workspace shortcuts">
         <a class="drawer-nav-item" href="/app/docs"><span aria-hidden="true">▤</span> Documents</a>
+        <a class="drawer-nav-item" href="/app/resources"><span aria-hidden="true">◎</span> Resources</a>
         <a class="drawer-nav-item" href="/app/setup"><span aria-hidden="true">⚙</span> Hiker profile</a>
       </nav>
 
@@ -1141,6 +1202,13 @@
             <a href={`/app/docs/${encodeURIComponent(currentDocument.id)}`}>Open doc</a>
             <button type="button" onclick={() => (selectedDocumentId = '')}>Clear</button>
           </div>
+        {:else if currentResource}
+          <div class="document-context-pill">
+            <span>Using private resource</span>
+            <strong>{currentResource.title}</strong>
+            <a href={`/app/resources#resource-${encodeURIComponent(currentResource.id)}`}>Open resource</a>
+            <button type="button" onclick={() => (selectedResourceId = '')}>Clear</button>
+          </div>
         {:else if targetStandardSlot()}
           <div class="document-context-pill">
             <span>Drafting standard doc</span>
@@ -1198,7 +1266,7 @@
 
       <section class="thread-summary-card doc-summary-card" aria-label="Document library summary">
         <strong>{startedStandardDocumentCount()}/{STANDARD_DOCUMENT_SLOTS.length} standard docs</strong>
-        <span>{extraDocumentCount()} extra · {importedDocumentCount()} imported</span>
+        <span>{extraDocumentCount()} extra · {resources.length} resources</span>
         <a class="secondary-button" href="/app/docs">Open library</a>
       </section>
 
@@ -1216,7 +1284,7 @@
       <nav class="drawer-nav docs-nav compact-nav" aria-label="Document sections">
         <button class="drawer-nav-item active" type="button" onclick={loadDailyBrief}><span aria-hidden="true">▣</span> Trail Brief</button>
         <a class="drawer-nav-item" href="/app/docs"><span aria-hidden="true">▤</span> Library</a>
-        <a class="drawer-nav-item" href="/app/docs"><span aria-hidden="true">⇧</span> Import</a>
+        <a class="drawer-nav-item" href="/app/resources"><span aria-hidden="true">◎</span> Resources</a>
       </nav>
 
       <section class="panel-card">
@@ -1284,9 +1352,28 @@
       </section>
 
       <section class="panel-card">
-        <div class="mini-head"><strong>Private imports</strong></div>
+        <div class="mini-head">
+          <strong>Resources</strong>
+          <a href="/app/resources">Add source</a>
+        </div>
+        {#if resources.length === 0}
+          <p class="small-note">No resources yet. Add files, URLs, or pasted notes in Resources.</p>
+        {:else}
+          <div class="doc-list">
+            {#each resources.slice(0, 6) as resource}
+              <button class:active={selectedResourceId === resource.id} type="button" onclick={() => focusResource(resource)} title={resource.title}>
+                <span>{resource.title}</span>
+                <small>{resource.kind} · {resource.sensitivity}</small>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </section>
+
+      <section class="panel-card">
+        <div class="mini-head"><strong>Legacy private docs</strong></div>
         {#if documents.filter((document) => document.rights !== 'assistant-generated').length === 0}
-          <p class="small-note">No imported docs yet. Add guide excerpts, notes, permits, screenshots, or planning files in Docs.</p>
+          <p class="small-note">No legacy imported docs. New source material belongs in Resources.</p>
         {:else}
           <div class="doc-list">
             {#each documents.filter((document) => document.rights !== 'assistant-generated').slice(0, 6) as document}

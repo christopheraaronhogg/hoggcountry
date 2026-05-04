@@ -4,6 +4,7 @@ import {
   nowIso,
   searchImportedDocuments,
   searchManualSections,
+  searchWorkspaceResources,
   searchWorkspaceTools,
   type ImportedDocument,
   type ImportedDocumentStatus,
@@ -12,6 +13,8 @@ import {
   type ManualProfile,
   type ManualSection,
   type SearchHit,
+  type WorkspaceResource,
+  type WorkspaceResourceSensitivity,
   type WorkspaceTool
 } from '@hoggcountry/manual-core';
 import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
@@ -21,6 +24,7 @@ interface WorkspaceSnapshot {
   readonly profile: ManualProfile | null;
   readonly sections: ManualSection[];
   readonly documents: ImportedDocument[];
+  readonly resources: WorkspaceResource[];
   readonly tools: WorkspaceTool[];
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -120,6 +124,49 @@ export async function listImportedDocuments(): Promise<ImportedDocument[]> {
   return (await getSnapshot()).documents;
 }
 
+export async function listWorkspaceResources(): Promise<WorkspaceResource[]> {
+  return (await getSnapshot()).resources;
+}
+
+export async function importResourceFiles(files: FileList | File[]): Promise<WorkspaceResource[]> {
+  const queue = Array.from(files);
+  if (queue.length === 0) return [];
+
+  const formData = new FormData();
+  for (const file of queue) {
+    formData.append('files', file);
+  }
+
+  const snapshot = await requestJson<WorkspaceSnapshot>(WORKSPACE_ENDPOINT + '/resources', {
+    method: 'POST',
+    body: formData
+  });
+
+  return snapshot.resources;
+}
+
+export async function createWorkspaceResource(input: {
+  kind: 'url' | 'note' | 'official-source';
+  title?: string;
+  sourceUri?: string;
+  text?: string;
+  sensitivity?: WorkspaceResourceSensitivity;
+  searchable?: boolean;
+}): Promise<WorkspaceResource> {
+  const payload = await requestJson<{ resource: WorkspaceResource; workspace: WorkspaceSnapshot }>(WORKSPACE_ENDPOINT + '/resources', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  });
+
+  return payload.resource;
+}
+
+export async function deleteWorkspaceResource(resourceId: string): Promise<void> {
+  await requestJson(WORKSPACE_ENDPOINT + `/resources/${resourceId}`, {
+    method: 'DELETE'
+  });
+}
+
 export async function importDocumentFiles(files: FileList | File[]): Promise<ImportedDocument[]> {
   const queue = Array.from(files);
   if (queue.length === 0) return [];
@@ -208,6 +255,7 @@ export async function searchWorkspace(query: string): Promise<SearchHit[]> {
     ...searchManualSections(snapshot.sections, query),
     ...searchPublicCorpus(publicCorpus, query),
     ...searchImportedDocuments(snapshot.documents, query),
+    ...searchWorkspaceResources(snapshot.resources, query),
     ...searchWorkspaceTools(snapshot.tools, query)
   ]
     .sort((left, right) => right.score - left.score)

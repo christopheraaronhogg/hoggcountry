@@ -18,6 +18,7 @@
     <a href="/app/claw">Scout</a>
     <a href="/app/today">Today</a>
     <a href="/app/docs">Docs</a>
+    <a href="/app/resources">Resources</a>
     <a href="/app/setup">Setup</a>
   </nav>
 </section>

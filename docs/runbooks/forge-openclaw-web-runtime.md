@@ -208,10 +208,14 @@ Gated app workspace checks should also work through the Laravel bridge, not only
 - `/app/manual`
 - `/app/tools`
 - `/app/docs`
+- `/app/resources`
 - `/app/claw`
+- `/app/claw?resourceId=<resource-id>`
+- `/app/claw?resourceId=<resource-id>&resourceAction=document`
 - `POST /app-api/workspace/initialize`
 - `POST /app-api/workspace/profile/current-mile`
 - `POST /app-api/workspace/tools/checklist`
+- `POST /app-api/workspace/resources` JSON note/URL and multipart text upload
 - `POST /app-api/workspace/documents` multipart upload
 
 ## Failure modes

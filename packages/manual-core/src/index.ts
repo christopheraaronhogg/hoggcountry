@@ -220,6 +220,29 @@ export interface ImportedDocument {
   versions?: ImportedDocumentVersion[];
 }
 
+export type WorkspaceResourceKind = 'file' | 'url' | 'note' | 'official-source';
+export type WorkspaceResourceStatus = 'processing' | 'ready' | 'failed' | 'archived';
+export type WorkspaceResourceSensitivity = 'normal' | 'private' | 'sensitive' | 'financial' | 'medical';
+
+export interface WorkspaceResource {
+  id: string;
+  workspaceId: string;
+  kind: WorkspaceResourceKind;
+  title: string;
+  sourceUri?: string | null;
+  originalFileName?: string | null;
+  mimeType?: string | null;
+  status: WorkspaceResourceStatus;
+  sensitivity: WorkspaceResourceSensitivity;
+  searchable: boolean;
+  extractedText?: string | null;
+  summary?: string | null;
+  addedBy: 'user' | 'scout' | 'system';
+  createdAt: string;
+  updatedAt: string;
+  sizeBytes?: number;
+}
+
 export type WorkspaceToolKind = 'checklist';
 export type WorkspaceToolAuthor = 'template' | 'assistant' | 'user';
 
@@ -241,7 +264,7 @@ export interface WorkspaceTool {
   updatedAt: string;
 }
 
-export type SearchSourceType = 'manual' | 'corpus' | 'doc' | 'tool';
+export type SearchSourceType = 'manual' | 'corpus' | 'doc' | 'resource' | 'tool';
 
 export interface SearchHit {
   id: string;
@@ -750,6 +773,33 @@ export function searchImportedDocuments(docs: ImportedDocument[], query: string)
       } satisfies SearchHit;
     })
     .filter((doc): doc is SearchHit => doc !== null)
+    .sort((left, right) => right.score - left.score);
+}
+
+export function searchWorkspaceResources(resources: WorkspaceResource[], query: string): SearchHit[] {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+
+  return resources
+    .map<SearchHit | null>((resource) => {
+      if (!resource.searchable || resource.status === 'archived') return null;
+      const text = [resource.title, resource.summary, resource.extractedText, resource.sourceUri]
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .join(' ');
+      const score = scoreMatch(text, normalized);
+      if (score <= 0) return null;
+
+      return {
+        id: resource.id,
+        sourceType: 'resource' as const,
+        sourceLabel: 'Resource',
+        title: resource.title,
+        excerpt: buildExcerpt(resource.extractedText || resource.summary || resource.sourceUri || resource.title, normalized),
+        href: `/app/resources#resource-${resource.id}`,
+        score: score + 1,
+      } satisfies SearchHit;
+    })
+    .filter((resource): resource is SearchHit => resource !== null)
     .sort((left, right) => right.score - left.score);
 }
 

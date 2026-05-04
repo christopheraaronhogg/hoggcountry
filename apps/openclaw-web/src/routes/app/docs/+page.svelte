@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { createWorkspaceDocument, deleteImportedDocument, importDocumentFiles, listImportedDocuments, searchWorkspace } from '$lib/manual-db';
+  import { createWorkspaceDocument, deleteImportedDocument, listImportedDocuments, searchWorkspace } from '$lib/manual-db';
   import { inferStandardDocumentSlotKey, STANDARD_DOCUMENT_SLOTS, standardDocumentSlotForKey, type StandardDocumentSlot, type StandardDocumentSlotKey, type ImportedDocument, type SearchHit } from '@hoggcountry/manual-core';
 
   type CollectionKey = 'extra' | 'review' | 'living' | 'imports';
@@ -10,34 +10,11 @@
   let query = $state('');
   let error = $state('');
   let notice = $state('');
-  let importing = $state(false);
   let searching = $state(false);
   let activeCollection = $state<CollectionKey>('extra');
 
   async function refresh() {
     docs = await listImportedDocuments();
-  }
-
-  async function handleImport(event: Event) {
-    const input = event.currentTarget as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    error = '';
-    notice = '';
-    importing = true;
-
-    try {
-      await importDocumentFiles(input.files);
-      await refresh();
-      notice = input.files.length === 1 ? 'Document imported.' : `${input.files.length} documents imported.`;
-      activeCollection = 'imports';
-      input.value = '';
-    } catch (caught) {
-      console.error(caught);
-      error = 'Could not import those documents.';
-    } finally {
-      importing = false;
-    }
   }
 
   async function handleDelete(document: ImportedDocument) {
@@ -148,7 +125,7 @@
   function collectionLabel(): string {
     if (activeCollection === 'review') return 'Review queue';
     if (activeCollection === 'living') return 'Living docs';
-    if (activeCollection === 'imports') return 'Private imports';
+    if (activeCollection === 'imports') return 'Legacy imports';
     return 'Extra docs';
   }
 
@@ -198,19 +175,11 @@
     <p class="eyebrow">Scout Docs</p>
     <h1>Docs are Scout’s durable workspace.</h1>
     <p class="lede">
-      Save strong Scout plans, import private notes and guide excerpts you own, review proposed revisions, and decide what Scout can search. Docs are where the conversation turns into artifacts.
+      Save strong Scout plans, review proposed revisions, and decide what becomes the current trusted artifact. Source files, URLs, and pasted notes now belong in Resources.
     </p>
     <div class="hero-actions">
-      <label class="btn btn-secondary import-button">
-        <span>{importing ? 'Importing…' : 'Import source'}</span>
-        <input
-          type="file"
-          multiple
-          accept=".md,.markdown,.txt,.html,.htm,.pdf,text/plain,text/html,application/pdf"
-          onchange={handleImport}
-        />
-      </label>
-      <button class="btn btn-ghost" type="button" onclick={handleNewExtraDocument}>New doc</button>
+      <button class="btn btn-secondary" type="button" onclick={handleNewExtraDocument}>New doc</button>
+      <a class="btn btn-ghost" href="/app/resources">Add resource</a>
       <a class="btn btn-ghost" href="/app/claw">Ask Scout</a>
     </div>
   </div>
@@ -240,9 +209,9 @@
   </div>
   <label class="search-input">
     <span class="sr-only">Search workspace</span>
-    <input bind:value={query} placeholder="Search plans, private imports, manual sections, towns, gear, permits…" oninput={runSearch} />
+    <input bind:value={query} placeholder="Search plans, resources, manual sections, towns, gear, permits…" oninput={runSearch} />
   </label>
-  <p class="muted">This searches the material Scout can use now. User-owned imports and living docs stay private unless you explicitly change that later.</p>
+  <p class="muted">This searches the material Scout can use now. Resources and living docs stay private unless you explicitly change that later.</p>
 </section>
 
 {#if query.trim()}
@@ -258,7 +227,7 @@
     {#if !searching && results.length === 0}
       <article class="card empty-state">
         <h2>No results yet.</h2>
-        <p class="muted">Try a town, body issue, gear item, permit, food carry, or exact phrase from an import.</p>
+        <p class="muted">Try a town, body issue, gear item, permit, food carry, or exact phrase from a resource.</p>
       </article>
     {:else}
       <div class="result-grid">
@@ -336,7 +305,7 @@
   </button>
   <button class:active={activeCollection === 'imports'} type="button" onclick={() => (activeCollection = 'imports')}>
     <span>{importedDocs().length}</span>
-    <strong>Imports</strong>
+    <strong>Legacy</strong>
   </button>
 </section>
 
@@ -354,25 +323,17 @@
       <div>
         <p class="eyebrow">Start here</p>
         <h2>No extra docs yet.</h2>
-        <p class="muted">Standard docs live above. Extra docs are for town notes, weather calls, social drafts, imported files, or one-off plans Scout should preserve.</p>
+        <p class="muted">Standard docs live above. Extra docs are for town notes, weather calls, social drafts, reports, or one-off plans Scout should preserve.</p>
       </div>
       <div class="hero-actions">
         <button class="btn btn-secondary" type="button" onclick={handleNewExtraDocument}>New extra doc</button>
-        <label class="btn btn-ghost import-button">
-          <span>{importing ? 'Importing…' : 'Import source'}</span>
-          <input
-            type="file"
-            multiple
-            accept=".md,.markdown,.txt,.html,.htm,.pdf,text/plain,text/html,application/pdf"
-            onchange={handleImport}
-          />
-        </label>
+        <a class="btn btn-ghost" href="/app/resources">Add source resource</a>
       </div>
     </article>
   {:else if visibleDocs().length === 0}
     <article class="card empty-state">
       <h2>Nothing in this lane yet.</h2>
-      <p class="muted">Switch lanes or import a source. Scout living docs appear after you save or seed plans.</p>
+      <p class="muted">Switch lanes or add source material in Resources. Scout living docs appear after you save or seed plans.</p>
     </article>
   {:else}
     <div class="artifact-grid">
@@ -412,7 +373,7 @@
   </div>
   <ul>
     <li><strong>Living docs:</strong> Scout plans that can be revised, versioned, restored, and reviewed.</li>
-    <li><strong>Private imports:</strong> user-owned context Scout can use without rewriting or publishing it.</li>
+    <li><strong>Resources:</strong> user-owned source context lives separately so Scout can use it without rewriting or publishing it.</li>
     <li><strong>Review queue:</strong> proposed AI revisions stay inspectable before they become trusted current versions.</li>
   </ul>
 </section>
@@ -460,18 +421,6 @@
   .section-title-row {
     justify-content: space-between;
     margin: 1rem 0;
-  }
-
-  .import-button {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .import-button input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
   }
 
   .docs-command-card {

@@ -22,6 +22,9 @@ import {
   type StandardDocumentSlotKey,
   type ManualProfile,
   type ManualSection,
+  type WorkspaceResource,
+  type WorkspaceResourceKind,
+  type WorkspaceResourceSensitivity,
   type WorkspaceTool
 } from '@hoggcountry/manual-core';
 import type { BetaProfileCookie } from '$lib/beta';
@@ -98,6 +101,7 @@ export interface WorkspaceSnapshot {
   readonly profile: ManualProfile | null;
   readonly sections: ManualSection[];
   readonly documents: ImportedDocument[];
+  readonly resources: WorkspaceResource[];
   readonly tools: WorkspaceTool[];
   readonly providerConnections: WorkspaceProviderConnection[];
   readonly clawMessages: WorkspaceClawMessage[];
@@ -107,7 +111,7 @@ export interface WorkspaceSnapshot {
 }
 
 export interface WorkspaceRecord extends WorkspaceSnapshot {
-  readonly version: 3;
+  readonly version: 4;
   readonly openAICodexCredentials: WorkspaceEncryptedSecret | null;
   readonly pendingOpenAICodexAuth: WorkspacePendingOpenAICodexAuth | null;
 }
@@ -280,6 +284,50 @@ function normalizeDocumentStatus(value: unknown, fallback: ImportedDocumentStatu
 
 function normalizeDocumentVisibility(value: unknown): ImportedDocumentVisibility {
   return typeof value === 'string' && (DOCUMENT_VISIBILITIES as readonly string[]).includes(value) ? value as ImportedDocumentVisibility : 'private';
+}
+
+const RESOURCE_KINDS = ['file', 'url', 'note', 'official-source'] as const satisfies readonly WorkspaceResourceKind[];
+const RESOURCE_SENSITIVITIES = ['normal', 'private', 'sensitive', 'financial', 'medical'] as const satisfies readonly WorkspaceResourceSensitivity[];
+
+function normalizeResourceKind(value: unknown): WorkspaceResourceKind {
+  return typeof value === 'string' && (RESOURCE_KINDS as readonly string[]).includes(value) ? value as WorkspaceResourceKind : 'note';
+}
+
+function normalizeResourceSensitivity(value: unknown): WorkspaceResourceSensitivity {
+  return typeof value === 'string' && (RESOURCE_SENSITIVITIES as readonly string[]).includes(value) ? value as WorkspaceResourceSensitivity : 'private';
+}
+
+function normalizeWorkspaceResources(input: unknown, workspaceId: string): WorkspaceResource[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .filter(isObject)
+    .map((raw) => {
+      const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : 'Untitled resource';
+      const createdAt = typeof raw.createdAt === 'string' && raw.createdAt ? raw.createdAt : nowIso();
+      const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : createdAt;
+      const status = raw.status === 'processing' || raw.status === 'ready' || raw.status === 'failed' || raw.status === 'archived' ? raw.status : 'ready';
+
+      return {
+        id: typeof raw.id === 'string' && raw.id ? raw.id : createId('resource'),
+        workspaceId: typeof raw.workspaceId === 'string' && raw.workspaceId ? raw.workspaceId : workspaceId,
+        kind: normalizeResourceKind(raw.kind),
+        title,
+        sourceUri: typeof raw.sourceUri === 'string' && raw.sourceUri.trim() ? raw.sourceUri.trim() : null,
+        originalFileName: typeof raw.originalFileName === 'string' && raw.originalFileName.trim() ? raw.originalFileName.trim() : null,
+        mimeType: typeof raw.mimeType === 'string' && raw.mimeType.trim() ? raw.mimeType.trim() : null,
+        status,
+        sensitivity: normalizeResourceSensitivity(raw.sensitivity),
+        searchable: raw.searchable !== false,
+        extractedText: typeof raw.extractedText === 'string' ? raw.extractedText : null,
+        summary: typeof raw.summary === 'string' ? raw.summary.trim() : null,
+        addedBy: raw.addedBy === 'scout' || raw.addedBy === 'system' ? raw.addedBy : 'user',
+        createdAt,
+        updatedAt,
+        sizeBytes: typeof raw.sizeBytes === 'number' && Number.isFinite(raw.sizeBytes) ? Math.max(0, Math.floor(raw.sizeBytes)) : undefined
+      };
+    })
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
 }
 
 function normalizeStandardDocumentSlotKey(raw: Record<string, unknown>, title: string): StandardDocumentSlotKey | null {
@@ -511,6 +559,7 @@ function sanitizeRecord(record: WorkspaceRecord): WorkspaceSnapshot {
     profile: record.profile,
     sections: record.sections,
     documents: record.documents,
+    resources: record.resources,
     tools: record.tools,
     providerConnections: record.providerConnections,
     clawMessages: record.clawMessages,
@@ -524,12 +573,13 @@ function baseRecord(workspaceId: string, betaProfile: BetaProfileCookie): Worksp
   const timestamp = nowIso();
 
   return {
-    version: 3,
+    version: 4,
     workspaceId,
     betaProfile,
     profile: null,
     sections: [],
     documents: [],
+    resources: [],
     tools: [],
     providerConnections: [],
     clawMessages: [],
@@ -549,7 +599,7 @@ function normalizeRecord(raw: unknown, workspaceId: string, betaProfile: BetaPro
   const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : createdAt;
 
   return {
-    version: 3,
+    version: 4,
     workspaceId,
     betaProfile: isObject(raw.betaProfile)
       ? {
@@ -561,6 +611,7 @@ function normalizeRecord(raw: unknown, workspaceId: string, betaProfile: BetaPro
     profile: isObject(raw.profile) ? (raw.profile as unknown as ManualProfile) : null,
     sections: Array.isArray(raw.sections) ? (raw.sections as ManualSection[]) : [],
     documents: normalizeImportedDocuments(raw.documents),
+    resources: normalizeWorkspaceResources(raw.resources, workspaceId),
     tools: Array.isArray(raw.tools) ? (raw.tools as WorkspaceTool[]) : [],
     providerConnections: normalizeProviderConnections(raw.providerConnections, createdAt),
     clawMessages: normalizeClawMessages(raw.clawMessages),
@@ -962,7 +1013,7 @@ export async function importWorkspaceDocuments(
           textContent,
           note: searchable
             ? ''
-            : 'Stored in your private workspace. PDF upload works now; text extraction can deepen later without changing the locker UI.',
+            : 'Tracked in your private workspace. PDF text extraction can deepen later; paste/export text for Scout to read it today.',
           importedAt,
           updatedAt: importedAt,
           sizeBytes: file.size
@@ -977,6 +1028,138 @@ export async function importWorkspaceDocuments(
     await persist({
       ...record,
       documents: [...imported, ...record.documents].sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt))
+    })
+  );
+}
+
+const MAX_STORED_RESOURCE_TEXT_CHARS = 80_000;
+
+function storedResourceText(text: string): string {
+  const normalized = text.trim();
+  return normalized.length > MAX_STORED_RESOURCE_TEXT_CHARS
+    ? `${normalized.slice(0, MAX_STORED_RESOURCE_TEXT_CHARS).trimEnd()}\n\n[Resource text truncated for beta storage.]`
+    : normalized;
+}
+
+function resourceSummary(text: string): string {
+  const normalized = text.replace(/\s+/gu, ' ').trim();
+  return normalized.length > 240 ? `${normalized.slice(0, 240).trimEnd()}…` : normalized;
+}
+
+export async function importWorkspaceResources(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  files: File[]
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const imported: WorkspaceResource[] = [];
+
+  for (const file of files) {
+    const kind = detectDocumentKind(file);
+    const createdAt = nowIso();
+    const extractedText = storedResourceText(await fileText(file, kind));
+    const searchable = extractedText.trim().length > 0;
+
+    imported.push({
+      id: createId('resource'),
+      workspaceId,
+      kind: 'file',
+      title: file.name.replace(/\.[^.]+$/u, '') || file.name,
+      sourceUri: null,
+      originalFileName: file.name,
+      mimeType: file.type || null,
+      status: 'ready',
+      sensitivity: 'private',
+      searchable,
+      extractedText: extractedText || null,
+      summary: searchable
+        ? resourceSummary(extractedText)
+        : 'Tracked in your private Resources locker. PDF text extraction can deepen later; paste/export text for Scout to read it today.',
+      addedBy: 'user',
+      createdAt,
+      updatedAt: createdAt,
+      sizeBytes: file.size
+    });
+  }
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      resources: [...imported, ...record.resources].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+    })
+  );
+}
+
+export async function createWorkspaceResource(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    kind: 'url' | 'note' | 'official-source';
+    title?: string | null;
+    sourceUri?: string | null;
+    text?: string | null;
+    sensitivity?: WorkspaceResourceSensitivity | null;
+    searchable?: boolean | null;
+  }
+): Promise<{
+  readonly workspace: WorkspaceSnapshot;
+  readonly resource: WorkspaceResource;
+}> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const createdAt = nowIso();
+  const kind = input.kind === 'official-source' || input.kind === 'url' ? input.kind : 'note';
+  const sourceUri = input.sourceUri?.trim() || null;
+  const text = storedResourceText(input.text?.trim() || '');
+  const title = input.title?.trim() || (sourceUri ? sourceUri.replace(/^https?:\/\//iu, '').replace(/\/$/u, '') : 'Trail note resource');
+
+  if (kind !== 'note' && !sourceUri) {
+    throw new Error('Resource URL is required.');
+  }
+
+  if (kind === 'note' && !text && !input.title?.trim()) {
+    throw new Error('Resource note text is required.');
+  }
+
+  const extractedText = kind === 'note' ? text : text || sourceUri || '';
+  const resource: WorkspaceResource = {
+    id: createId('resource'),
+    workspaceId,
+    kind,
+    title,
+    sourceUri,
+    originalFileName: null,
+    mimeType: kind === 'note' ? 'text/plain' : null,
+    status: 'ready',
+    sensitivity: input.sensitivity ?? 'private',
+    searchable: input.searchable !== false,
+    extractedText: extractedText || null,
+    summary: resourceSummary(extractedText || title),
+    addedBy: 'user',
+    createdAt,
+    updatedAt: createdAt
+  };
+
+  const workspace = sanitizeRecord(
+    await persist({
+      ...record,
+      resources: [resource, ...record.resources].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+    })
+  );
+
+  return { workspace, resource };
+}
+
+export async function deleteWorkspaceResource(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  resourceId: string
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      resources: record.resources.filter((resource) => resource.id !== resourceId)
     })
   );
 }

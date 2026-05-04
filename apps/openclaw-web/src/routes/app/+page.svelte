@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getSections, getTools, hasManual, listImportedDocuments } from '$lib/manual-db';
+  import { getSections, getTools, hasManual, listImportedDocuments, listWorkspaceResources } from '$lib/manual-db';
   import { spacetimeStatus } from '$lib/spacetime';
   import type { PageData } from './$types';
 
@@ -9,15 +9,17 @@
   let manualReady = $state(false);
   let sectionCount = $state(0);
   let docCount = $state(0);
+  let resourceCount = $state(0);
   let toolCount = $state(0);
 
   onMount(async () => {
     manualReady = await hasManual();
 
     if (manualReady) {
-      const [sections, docs, tools] = await Promise.all([getSections(), listImportedDocuments(), getTools()]);
+      const [sections, docs, resources, tools] = await Promise.all([getSections(), listImportedDocuments(), listWorkspaceResources(), getTools()]);
       sectionCount = sections.length;
       docCount = docs.length;
+      resourceCount = resources.length;
       toolCount = tools.length;
     }
   });
@@ -29,7 +31,7 @@
     <h1>Your private Scout workspace.</h1>
     <p class="lede">
       {#if manualReady}
-        Your private trail workspace is live. Use Scout, Today, Docs, and Setup to keep the next decision practical.
+        Your private trail workspace is live. Use Scout, Today, Docs, Resources, and Setup to keep the next decision practical.
       {:else}
         You do not need a finished profile to start. Ask Scout now; it can ask for pace, gear, health, route, or budget details only when they matter.
       {/if}
@@ -71,9 +73,15 @@
     </article>
 
     <article class="card panel-copy">
-      <p class="eyebrow">Imported docs</p>
+      <p class="eyebrow">Documents</p>
       <strong>{docCount}</strong>
-      <p class="muted" style="margin-bottom:0;">Private source files the workspace can search beside the manual.</p>
+      <p class="muted" style="margin-bottom:0;">Living plans, reports, and notes Scout can revise with history.</p>
+    </article>
+
+    <article class="card panel-copy">
+      <p class="eyebrow">Resources</p>
+      <strong>{resourceCount}</strong>
+      <p class="muted" style="margin-bottom:0;">Private source material Scout can read without turning it into a document.</p>
     </article>
   </section>
 {/if}
@@ -93,8 +101,14 @@
 
   <article class="card panel-copy">
     <p class="eyebrow">Docs</p>
+    <h3>Living artifacts</h3>
+    <p class="muted">Keep standard plans, extra reports, and Scout revisions reviewable instead of buried in chat.</p>
+  </article>
+
+  <article class="card panel-copy">
+    <p class="eyebrow">Resources</p>
     <h3>Private source locker</h3>
-    <p class="muted">Import the PDFs and text you legally own, then search them beside the manual and your tool set.</p>
+    <p class="muted">Upload files, save links, or paste notes Scout can use as context without rewriting the original source.</p>
   </article>
 
   <article class="card panel-copy">
