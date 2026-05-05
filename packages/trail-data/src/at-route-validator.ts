@@ -49,6 +49,7 @@ export interface AtRouteGrounding {
   readonly direction: AtRouteDirection;
   readonly state: string | null;
   readonly start: AtRoutePoint;
+  readonly destination: AtRoutePoint | null;
   readonly targetDays: number | null;
   readonly targetDailyMileage: number | null;
   readonly targetTotalMiles: number | null;
@@ -70,7 +71,7 @@ export interface BuildAtRouteGroundingInput {
   readonly maxCorridorMiles?: number | null;
 }
 
-export type AtRouteClaimIssueKind = 'blocked-endpoint' | 'misordered-sequence' | 'bad-mileage' | 'unsafe-camping-rule';
+export type AtRouteClaimIssueKind = 'blocked-endpoint' | 'misordered-sequence' | 'bad-mileage' | 'unsafe-camping-rule' | 'stale-permit-rule' | 'unsafe-water-plan';
 
 export interface AtRouteClaimIssue {
   readonly kind: AtRouteClaimIssueKind;
@@ -92,6 +93,14 @@ export const GSMNP_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
   id: 'hoggcountry-gsmnp-at-corridor-qa-2026-05-05',
   label: 'Hogg Country GSMNP AT corridor and permit-rule QA fixture',
   citation: 'Internal dogfood guardrail created from 2026-05-05 Smokies QA plus official NPS/Recreation.gov camping rules; verify exact mileages, shelter availability, water, and closures before leaving.',
+  authority: 'internal-qa',
+  exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, NPS map, Recreation.gov itinerary, or recent water/shelter report.'
+} as const;
+
+export const SHENANDOAH_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
+  id: 'hoggcountry-shenandoah-at-corridor-qa-2026-05-05',
+  label: 'Hogg Country Shenandoah AT south/central corridor and regulation QA fixture',
+  citation: 'Internal dogfood guardrail created from 2026-05-05 Shenandoah QA plus official NPS/Recreation.gov permit, campsite setback, food-storage, fire, water, and weather rule checks; verify exact mileages, campsite legality, water, closures, and permit flow before leaving.',
   authority: 'internal-qa',
   exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, NPS map, Recreation.gov itinerary, or recent water/shelter report.'
 } as const;
@@ -183,6 +192,64 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
     notes: 'High-elevation road crossing/pickup point; verify US 441 status, parking, pickup, and weather before committing.'
   },
   {
+    id: 'rockfish-gap-va',
+    name: 'Rockfish Gap',
+    kind: 'road-crossing',
+    state: 'VA',
+    mile: 863.7,
+    latitude: 38.0312,
+    longitude: -78.8586,
+    aliases: ['rockfish gap', 'rockfish gap va', 'rockfish gap virginia', 'i 64 rockfish gap', 'us 250 rockfish gap', 'shenandoah south entrance'],
+    notes: 'Southern Shenandoah National Park AT gateway near Waynesboro; verify entrance, overnight parking, and shuttle logistics before committing.'
+  },
+  {
+    id: 'calf-mountain-shelter-va',
+    name: 'Calf Mountain Shelter',
+    kind: 'shelter',
+    state: 'VA',
+    mile: 872.3,
+    aliases: ['calf mountain', 'calf mountain shelter', 'calf mountain hut'],
+    notes: 'Shenandoah-area shelter/hut candidate; legal overnight use, campsite setbacks, and water require current NPS/Recreation.gov and guide/current-comment checks.'
+  },
+  {
+    id: 'blackrock-hut-va',
+    name: 'Blackrock Hut',
+    kind: 'shelter',
+    state: 'VA',
+    mile: 885.3,
+    aliases: ['blackrock hut', 'blackrock shelter', 'blackrock', 'black rock hut', 'black rock shelter'],
+    notes: 'Shenandoah hut candidate; do not assume tenting/overflow legality or water reliability without current checks.'
+  },
+  {
+    id: 'pinefield-hut-va',
+    name: 'Pinefield Hut',
+    kind: 'shelter',
+    state: 'VA',
+    mile: 898.5,
+    aliases: ['pinefield hut', 'pinefield shelter', 'pine field hut', 'pine field shelter'],
+    notes: 'Shenandoah hut candidate; verify legal campsite use, water, closures, and permit itinerary before relying on it.'
+  },
+  {
+    id: 'hightop-hut-va',
+    name: 'Hightop Hut',
+    kind: 'shelter',
+    state: 'VA',
+    mile: 906.7,
+    aliases: ['hightop hut', 'hightop shelter', 'high top hut', 'high top shelter', 'hightop'],
+    notes: 'Last major hut candidate before Swift Run Gap in this south/central guardrail; verify current water and legal overnight details.'
+  },
+  {
+    id: 'swift-run-gap-va',
+    name: 'Swift Run Gap',
+    kind: 'road-crossing',
+    state: 'VA',
+    mile: 909.6,
+    latitude: 38.3665,
+    longitude: -78.5503,
+    aliases: ['swift run gap', 'swift run gap va', 'swift run', 'us 33 swift run gap', 'skyline drive swift run gap'],
+    notes: 'US 33 / Skyline Drive road crossing and logical south/central Shenandoah pickup point; verify parking, shuttle, and road status.'
+  },
+  {
     id: 'pine-grove-furnace-state-park-pa',
     name: 'Pine Grove Furnace State Park',
     kind: 'park',
@@ -240,6 +307,15 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
 ] as const;
 
 const KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS = ['Tagg Run Shelter'] as const;
+const KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS = ['Big Meadows', "Byrd's Nest #3", 'Byrds Nest 3'] as const;
+const SHENANDOAH_AT_POINT_IDS = [
+  'rockfish-gap-va',
+  'calf-mountain-shelter-va',
+  'blackrock-hut-va',
+  'pinefield-hut-va',
+  'hightop-hut-va',
+  'swift-run-gap-va'
+] as const;
 
 const ROUTE_PROMPT_TERMS = [
   'appalachian trail',
@@ -260,7 +336,9 @@ const ROUTE_PROMPT_TERMS = [
 ] as const;
 
 const NAMED_PLACE_PATTERNS: readonly { readonly label: string; readonly pattern: RegExp }[] = [
-  { label: 'Tagg Run Shelter', pattern: /\btagg\s+run(?:\s+shelter)?\b/iu }
+  { label: 'Tagg Run Shelter', pattern: /\btagg\s+run(?:\s+shelter)?\b/iu },
+  { label: 'Big Meadows', pattern: /\bbig\s+meadows(?:\s+wayside)?\b/iu },
+  { label: "Byrd's Nest #3", pattern: /\bbyrd'?s?\s+nest\s*(?:#\s*)?3\b/iu }
 ];
 
 function normalizeRouteText(value: string): string {
@@ -532,6 +610,54 @@ function buildGsmnpPlanOptions(direction: AtRouteDirection): readonly AtRoutePla
   ];
 }
 
+
+function buildShenandoahPlanOptions(direction: AtRouteDirection): readonly AtRoutePlanOption[] {
+  const saferDays = direction === 'NOBO' ? [
+    buildDay(1, 'rockfish-gap-va', 'calf-mountain-shelter-va', 'Short opening; keeps July heat and permit/campsite uncertainty from forcing a late finish.'),
+    buildDay(2, 'calf-mountain-shelter-va', 'blackrock-hut-va', 'Moderate shelter-to-hut day; verify legal overnight use and water before committing.'),
+    buildDay(3, 'blackrock-hut-va', 'pinefield-hut-va', 'Moderate full day; treat the hut as a candidate, not a confirmed legal endpoint.'),
+    buildDay(4, 'pinefield-hut-va', 'swift-run-gap-va', 'Short finish to US 33 / Swift Run Gap; confirms the route does not continue to Big Meadows for this itinerary.')
+  ] as const : [
+    buildDay(1, 'swift-run-gap-va', 'pinefield-hut-va', 'Short opening from US 33; verify parking, shuttle, legal overnight use, and water.'),
+    buildDay(2, 'pinefield-hut-va', 'blackrock-hut-va', 'Moderate full day; treat the hut as a candidate, not a confirmed legal endpoint.'),
+    buildDay(3, 'blackrock-hut-va', 'calf-mountain-shelter-va', 'Moderate hut-to-shelter day; verify legal overnight use and water before committing.'),
+    buildDay(4, 'calf-mountain-shelter-va', 'rockfish-gap-va', 'Short finish to Rockfish Gap / US 250 / I-64; confirm pickup before leaving camp.')
+  ] as const;
+
+  const strongerThreeDay = direction === 'NOBO' ? [
+    buildDay(1, 'rockfish-gap-va', 'blackrock-hut-va', 'Very long late-July first day; not the default with a 2L carry unless heat, water, daylight, body, and permit/campsite legality all line up.'),
+    buildDay(2, 'blackrock-hut-va', 'pinefield-hut-va', 'Moderate day; verify current water and legal overnight status.'),
+    buildDay(3, 'pinefield-hut-va', 'swift-run-gap-va', 'Shorter finish to US 33; confirm shuttle/pickup and road access first.')
+  ] as const : [
+    buildDay(1, 'swift-run-gap-va', 'pinefield-hut-va', 'Short opening from US 33; verify parking, shuttle, legal overnight use, and water.'),
+    buildDay(2, 'pinefield-hut-va', 'blackrock-hut-va', 'Moderate day; verify current water and legal overnight status.'),
+    buildDay(3, 'blackrock-hut-va', 'rockfish-gap-va', 'Very long late-July finish; not the default with a 2L carry unless heat, water, daylight, body, and pickup all line up.')
+  ] as const;
+
+  return [
+    {
+      id: direction === 'NOBO' ? 'shenandoah-safer-four-day-rockfish-swift' : 'shenandoah-sobo-safer-four-day-swift-rockfish',
+      label: direction === 'NOBO' ? 'Safer 4-day Shenandoah shape: Rockfish Gap to Swift Run Gap' : 'Safer 4-day Shenandoah SOBO shape: Swift Run Gap to Rockfish Gap',
+      totalMiles: roundMileage(saferDays.reduce((sum, day) => sum + day.miles, 0)),
+      days: saferDays,
+      caveats: [
+        'This is the safer default for late July heat and a small water carry; it does not force the requested 3-day pace.',
+        'Huts/shelters are route-order candidates only. Current Recreation.gov/NPS permit rules, campsite setbacks, water, and closures control the final overnight plan.'
+      ]
+    },
+    {
+      id: direction === 'NOBO' ? 'shenandoah-stronger-three-day-blackrock-pinefield' : 'shenandoah-sobo-stronger-three-day-pinefield-blackrock',
+      label: direction === 'NOBO' ? 'Stronger 3-day Shenandoah shape via Blackrock and Pinefield' : 'Stronger 3-day Shenandoah SOBO shape via Pinefield and Blackrock',
+      totalMiles: roundMileage(strongerThreeDay.reduce((sum, day) => sum + day.miles, 0)),
+      days: strongerThreeDay,
+      caveats: [
+        'This matches the 3-day / 2-night request but is not the conservative recommendation in late July with only 2L water capacity.',
+        'Use only with a current legal permit/campsite plan, confirmed water every day, early starts, thunderstorm escape timing, and a confirmed shuttle.'
+      ]
+    }
+  ];
+}
+
 function findPointAliasesInOrder(text: string, points: readonly AtRoutePoint[]): readonly AtRoutePoint[] {
   const matches: { readonly point: AtRoutePoint; readonly index: number }[] = [];
   for (const point of points) {
@@ -578,6 +704,45 @@ function mileageClaimIssues(answer: string, grounding: AtRouteGrounding): AtRout
 }
 
 
+function routeTotalMileageClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
+  if (!grounding.destination) return [];
+
+  const expected = roundMileage(Math.abs(grounding.destination.mile - grounding.start.mile));
+  const startAliases = grounding.start.aliases.map(aliasPattern);
+  const destinationAliases = grounding.destination.aliases.map(aliasPattern);
+  const totalMileagePattern = /(?:~|about|approx(?:imately)?|around)?\s*(\d{1,3}(?:\.\d)?)\s*(?:AT\s*)?(?:miles|mi\.?)/giu;
+  const issues: AtRouteClaimIssue[] = [];
+
+  for (const rawLine of answer.split(/\n+/u)) {
+    const line = rawLine.trim();
+    if (!line || !startAliases.some((pattern) => pattern.test(line)) || !destinationAliases.some((pattern) => pattern.test(line))) continue;
+    totalMileagePattern.lastIndex = 0;
+    const claimed = [...line.matchAll(totalMileagePattern)]
+      .map((match) => ({ value: Number.parseFloat(match[1] ?? 'NaN'), index: match.index ?? 0 }))
+      .filter((claim) => Number.isFinite(claim.value) && claim.value < 300);
+    const badClaims = claimed.filter((claim) => {
+      if (Math.abs(claim.value - expected) <= 1.5) return false;
+      const beforeClaim = line.slice(Math.max(0, claim.index - 32), claim.index);
+      return !/\b(?:not|isn'?t|is\s+not|wasn'?t|was\s+not)\b[^.]{0,24}$/iu.test(beforeClaim);
+    });
+    if (badClaims.length === 0) continue;
+    issues.push({
+      kind: 'bad-mileage',
+      severity: 'block',
+      sourceSystemId: grounding.source.id,
+      evidence: line,
+      message: `${grounding.start.name} → ${grounding.destination.name} was described as ${badClaims.map((claim) => formatAtRouteMileage(claim.value)).join(', ')} mi, but the validator has about ${formatAtRouteMileage(expected)} mi.`
+    });
+  }
+
+  return issues;
+}
+
+function lineMarksOutdatedGuidance(line: string): boolean {
+  return /\b(old|outdated|stale|obsolete|no\s+longer|not\s+current|do\s+not\s+use|don't\s+use|replaced|instead\s+of|not\s+the\s+current)\b/iu.test(line);
+}
+
+
 function lineNegatesUnsafeCamping(line: string): boolean {
   return /\b(no|not|never|avoid|prohibit(?:ed)?|illegal|do\s+not|don't|must\s+not|cannot|can't|unless\s+official|unless\s+the\s+official|verify\s+before)\b/iu.test(line);
 }
@@ -610,6 +775,74 @@ function gsmnpRegulationClaimIssues(answer: string, grounding: AtRouteGrounding)
       evidence: line,
       message: 'GSMNP camping/shelter wording was too permissive. Section-hiker plans must fail closed: use the site/date-specific permit and do not plan tenting outside/inside shelters unless the current official permit/source explicitly allows it.'
     });
+  }
+
+  return issues;
+}
+
+
+function shenandoahRegulationClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
+  if (grounding.source.id !== SHENANDOAH_AT_CORRIDOR_QA_SOURCE.id) return [];
+
+  const issues: AtRouteClaimIssue[] = [];
+  for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const marksOutdated = lineMarksOutdatedGuidance(line);
+    const claimsOldPermitFlow = /\b(?:free\s+backcountry\s+permit|free\s+permit|self[-\s]?registration|paper\s+permit|no\s+advance\s+reservation\s+needed|entrance\s+stations?\s+or\s+visitor\s+centers?|visitor\s+centers?\s+or\s+entrance\s+stations?)\b/iu.test(line)
+      && !marksOutdated;
+    const claimsNoPermitFee = /\b(?:no\s+fee|free)\b/iu.test(line)
+      && /\b(?:permit|backcountry)\b/iu.test(line)
+      && !marksOutdated
+      && !/\b(?:not|isn'?t|is\s+not|not\s+free|separate\s+from)\b/iu.test(line);
+
+    if (claimsOldPermitFlow || claimsNoPermitFee) {
+      issues.push({
+        kind: 'stale-permit-rule',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Shenandoah permit wording appears stale. Current guardrail requires the hiker to use the NPS/Recreation.gov permit flow and not rely on old free/self-registration paper-permit guidance.'
+      });
+    }
+
+    const suggestsFacilityCamping = /\b(?:camp|camping|tent|pitch|sleep|set\s+up)\b[^.]{0,120}\b(?:wayside|visitor\s+center|parking\s+lot|skyline\s+drive|paved\s+road|facility|building|roadside)\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line);
+    const suggestsUnqualifiedHutTenting = /\b(?:tent|tenting|tent\s+pads?|camp|camping|campsites?)\b[^.]{0,100}\b(?:at|near|adjacent\s+to|beside|outside)\b[^.]{0,60}\b(?:hut|shelter)\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line)
+      && !/\b(?:designated|current\s+permit|official|setback|verify|if\s+allowed)\b/iu.test(line);
+    const suggestsNoSetbackCamping = /\b(?:camp|camping|tent|pitch|set\s+up|sleep)\b[^.]{0,100}\b(?:anywhere|wherever|near\s+the\s+trail|along\s+the\s+trail|roadside|near\s+water)\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line);
+    const suggestsBackcountryFire = /\b(?:campfire|fire|fires)\b[^.]{0,100}\b(?:anywhere|at\s+camp|at\s+your\s+campsite|fine|allowed|okay|ok)\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line)
+      && !/\b(?:pre-constructed|fireplace|hut|shelter|where\s+officially)\b/iu.test(line);
+
+    if (suggestsFacilityCamping || suggestsUnqualifiedHutTenting || suggestsNoSetbackCamping || suggestsBackcountryFire) {
+      issues.push({
+        kind: 'unsafe-camping-rule',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Shenandoah camping/fire wording was too permissive. Plans must fail closed on Recreation.gov/NPS campsite setbacks, facility/road/wayside restrictions, hut/tent assumptions, and backcountry fire limits.'
+      });
+    }
+
+    const saysTwoLitersEnough = /\b(?:2\s*l|2\s+liters|two\s+liters)\b[^.]{0,120}\b(?:enough|adequate|fine|plenty|sufficient)\b/iu.test(line)
+      && /\b(?:july|summer|heat|hot|shenandoah|snp|water)\b/iu.test(line)
+      && !/\b(?:not\s+enough|not\s+adequate|too\s+thin|thin|only\s+if|unless|verify|confirmed)\b/iu.test(line);
+    const saysNaturalWaterUntreated = /\b(?:natural|spring|stream|creek|source)\b[^.]{0,80}\b(?:no\s+treatment|untreated|without\s+(?:filter|treat|purif))\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line);
+
+    if (saysTwoLitersEnough || saysNaturalWaterUntreated) {
+      issues.push({
+        kind: 'unsafe-water-plan',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Shenandoah water wording was too permissive. Late-July 2L plans must be treated as thin until current sources are confirmed, and natural water must be treated.'
+      });
+    }
   }
 
   return issues;
@@ -654,7 +887,9 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
   }
 
   issues.push(...mileageClaimIssues(answer, grounding));
+  issues.push(...routeTotalMileageClaimIssues(answer, grounding));
   issues.push(...gsmnpRegulationClaimIssues(answer, grounding));
+  issues.push(...shenandoahRegulationClaimIssues(answer, grounding));
   return issues;
 }
 
@@ -676,23 +911,41 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
     ? roundMileage(input.targetDailyMileage)
     : null;
   const targetTotalMiles = targetDays && targetDailyMileage ? roundMileage(targetDays * targetDailyMileage) : null;
+  const destination = [...mentionedInOrder].reverse().find((point) => point.id !== start.id) ?? null;
+  const mentionedCorridorMiles = mentionedPoints.length > 0
+    ? Math.max(...mentionedPoints.map((point) => Math.abs(point.mile - start.mile)))
+    : 0;
   const maxCorridorMiles = Math.max(
     25,
     input.maxCorridorMiles ?? 0,
-    targetTotalMiles ? targetTotalMiles + 10 : 45
+    targetTotalMiles ? targetTotalMiles + 10 : 45,
+    mentionedCorridorMiles ? mentionedCorridorMiles + 2 : 0
   );
   const corridor = corridorFrom(start, direction, maxCorridorMiles);
   const legs = legsFor(corridor, direction);
   const unrecognizedNames = extractUnrecognizedAtRouteNames(prompt);
   const isPineGrove = start.id === 'pine-grove-furnace-state-park-pa';
   const isGsmnp = start.id === 'fontana-dam-nc' || corridor.some((point) => point.id === 'newfound-gap-tn-nc');
-  const source = isGsmnp ? GSMNP_AT_CORRIDOR_QA_SOURCE : AT_ROUTE_QA_SOURCE;
-  const blockedEndpointNames = isPineGrove ? [...KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS] : [];
+  const isShenandoah = corridor.some((point) => SHENANDOAH_AT_POINT_IDS.includes(point.id as typeof SHENANDOAH_AT_POINT_IDS[number]));
+  const hasShenandoahHeatWaterConstraint = /\b(?:2\s*l|2\s+liters|two\s+liters|late\s+july|july|summer|heat|hot)\b/iu.test(prompt);
+  const isSwiftRunRequest = destination?.id === 'swift-run-gap-va' || start.id === 'swift-run-gap-va' || includesNormalized(prompt, 'swift run gap');
+  const source = isGsmnp
+    ? GSMNP_AT_CORRIDOR_QA_SOURCE
+    : isShenandoah
+      ? SHENANDOAH_AT_CORRIDOR_QA_SOURCE
+      : AT_ROUTE_QA_SOURCE;
+  const blockedEndpointNames = isPineGrove
+    ? [...KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS]
+    : isShenandoah && isSwiftRunRequest
+      ? [...KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS]
+      : [];
   const planOptions = isPineGrove
     ? buildPineGrovePlanOptions(direction)
     : isGsmnp
       ? buildGsmnpPlanOptions(direction)
-      : [];
+      : isShenandoah
+        ? buildShenandoahPlanOptions(direction)
+        : [];
   const warnings = [
     source.exactMileageCaveat,
     direction === 'NOBO' && isPineGrove
@@ -700,6 +953,15 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
       : null,
     direction === 'NOBO' && isGsmnp
       ? 'GSMNP regulation guardrail: a section hiker should assume site/date-specific backcountry permits, designated shelters/campsites only, and no tenting outside a shelter unless the official permit/source explicitly allows it.'
+      : null,
+    isShenandoah
+      ? 'Shenandoah regulation guardrail: use current NPS/Recreation.gov permit rules, campsite setbacks, food-storage/fire rules, and current water/closure checks; do not rely on old free/self-registration permit guidance.'
+      : null,
+    isShenandoah && isSwiftRunRequest
+      ? "Swift Run route-order guardrail: Big Meadows and Byrd's Nest #3 are north of Swift Run Gap and must not be used as endpoints for a Rockfish Gap ↔ Swift Run Gap plan."
+      : null,
+    isShenandoah && hasShenandoahHeatWaterConstraint
+      ? 'Late-July/2L water guardrail: treat 2L as thin until current water sources are confirmed; all natural water must be treated.'
       : null,
     blockedEndpointNames.length > 0
       ? `${blockedEndpointNames.join(', ')} is not in this validator corridor and must not be used as a firm endpoint without another source.`
@@ -714,6 +976,7 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
     direction,
     state: isGsmnp ? 'NC/TN' : start.state || null,
     start,
+    destination,
     targetDays,
     targetDailyMileage,
     targetTotalMiles,

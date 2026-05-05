@@ -74,6 +74,36 @@ assert.ok(smokiesSobo.planOptions.some((option) => option.id === 'gsmnp-sobo-bal
 const safeSmokiesDraft = `No dispersed camping. Do not tent outside a GSMNP shelter unless the current official permit/source explicitly allows it. Day 1: Fontana Dam to Mollies Ridge Shelter. Day 4: Mount Collins Shelter to Newfound Gap.`;
 assert.deepEqual(validateAtRouteAnswerClaims(safeSmokiesDraft, smokies), [], 'Validator should allow fail-closed GSMNP camping language and correct route order');
 
+const shenandoahPrompt = `Assume I am a section hiker, not an A.T. thru-hiker. It is late July. I want to hike the Appalachian Trail northbound through Shenandoah National Park from Rockfish Gap to Swift Run Gap in 3 hiking days / 2 nights. I only carry 2 liters of water. Build me a practical but honest plan: route options and daily mileage targets, legal camping/hut/wayside assumptions, water source strategy, heat/thunderstorm/bear safety, permit and entrance fee steps, shuttle/parking logistics, bailout points, and a final checklist.`;
+const shenandoah = buildAtRouteGrounding({ prompt: shenandoahPrompt });
+assert.ok(shenandoah, 'Shenandoah prompt should trigger strict AT route grounding');
+assert.equal(shenandoah.source.id, 'hoggcountry-shenandoah-at-corridor-qa-2026-05-05');
+assert.equal(shenandoah.start.id, 'rockfish-gap-va', 'Rockfish Gap should be selected as the start');
+assert.equal(shenandoah.destination?.id, 'swift-run-gap-va', 'Swift Run Gap should be selected as the destination');
+assert.equal(shenandoah.direction, 'NOBO');
+assert.equal(shenandoah.targetDays, 3, 'Shenandoah prompt should detect 3 hiking days');
+const shenandoahOrder = shenandoah.corridor.map((point) => point.id);
+assert.ok(shenandoahOrder.indexOf('rockfish-gap-va') < shenandoahOrder.indexOf('swift-run-gap-va'), 'Rockfish must come before Swift Run Gap NOBO');
+assert.ok(shenandoah.planOptions.some((option) => option.id === 'shenandoah-safer-four-day-rockfish-swift'), 'Shenandoah safer 4-day option should be available');
+assert.ok(shenandoah.planOptions.some((option) => option.id === 'shenandoah-stronger-three-day-blackrock-pinefield'), 'Shenandoah stronger 3-day option should be available');
+assert.ok(shenandoah.blockedEndpointNames.includes('Big Meadows'), 'Big Meadows should be blocked for Rockfish to Swift Run plans');
+
+const badShenandoahDraft = `Rockfish Gap to Swift Run Gap is about 34 miles. Day 1: Rockfish Gap to Blackrock Hut. Day 2: Blackrock Hut to Big Meadows / Byrd's Nest #3 area. Shenandoah has a free backcountry permit with self-registration at entrance stations and no fee. Two liters is enough in July. You can camp near the wayside if needed.`;
+const shenandoahIssues = validateAtRouteAnswerClaims(badShenandoahDraft, shenandoah);
+assert.ok(shenandoahIssues.some((issue) => issue.kind === 'bad-mileage'), 'Validator should block the understated Rockfish to Swift Run total mileage');
+assert.ok(shenandoahIssues.some((issue) => issue.kind === 'blocked-endpoint'), 'Validator should block Big Meadows / Byrds Nest for the Swift Run itinerary');
+assert.ok(shenandoahIssues.some((issue) => issue.kind === 'stale-permit-rule'), 'Validator should block stale Shenandoah self-registration/free permit guidance');
+assert.ok(shenandoahIssues.some((issue) => issue.kind === 'unsafe-water-plan'), 'Validator should block permissive 2L late-July water wording');
+assert.ok(shenandoahIssues.some((issue) => issue.kind === 'unsafe-camping-rule'), 'Validator should block permissive wayside/facility camping wording');
+
+const safeShenandoahDraft = `Current Shenandoah guardrail: use the current NPS/Recreation.gov permit flow, not old self-registration guidance. Do not camp near waysides, paved roads, facilities, or huts unless the current official permit/source explicitly allows that site and all setbacks are met. Treat 2L as thin in late July until current water is confirmed; treat all natural water. Day 1: Rockfish Gap to Blackrock Hut. Day 2: Blackrock Hut to Pinefield Hut. Day 3: Pinefield Hut to Swift Run Gap.`;
+assert.deepEqual(validateAtRouteAnswerClaims(safeShenandoahDraft, shenandoah), [], 'Validator should allow fail-closed Shenandoah wording and correct route order');
+
+const shenandoahSobo = buildAtRouteGrounding({ prompt: 'Plan a southbound Appalachian Trail itinerary through Shenandoah from Swift Run Gap to Rockfish Gap in 4 days with permits, water, shelters, and camping rules.' });
+assert.ok(shenandoahSobo, 'Shenandoah SOBO prompt should trigger strict route grounding');
+assert.equal(shenandoahSobo.start.id, 'swift-run-gap-va', 'SOBO prompt should start at Swift Run Gap');
+assert.equal(shenandoahSobo.direction, 'SOBO');
+assert.ok(shenandoahSobo.planOptions.some((option) => option.id === 'shenandoah-sobo-safer-four-day-swift-rockfish'), 'Shenandoah SOBO safer option should be available');
 
 const clawAgentSource = readFileSync(new URL('../apps/openclaw-web/src/lib/server/claw-agent.ts', import.meta.url), 'utf8');
 const replyFunctionStart = clawAgentSource.indexOf('export async function replyInWorkspaceClaw');
@@ -83,5 +113,7 @@ assert.ok(replyFunctionStart >= 0 && strictReplyIndex >= 0 && runtimeResolveInde
 assert.ok(strictReplyIndex < runtimeResolveIndex, 'Strict deterministic route replies must run before provider runtime resolution so missing API credentials do not block validator-only answers');
 assert.ok(clawAgentSource.includes('deterministicClawTurn(record, null, trimmedPrompt, strictRouteReply)'), 'Strict route replies should be recorded as system/strict-route-validator turns, not as cloud model turns');
 assert.ok(clawAgentSource.includes('No shelter-overflow assumption'), 'Strict GSMNP replies should explicitly reject shelter-full overflow tenting assumptions');
+assert.ok(clawAgentSource.includes('strict Shenandoah route/regulation mode'), 'Strict Shenandoah replies should use a deterministic compact reply path');
+assert.ok(clawAgentSource.includes('old free/self-registration paper-permit guidance'), 'Strict Shenandoah replies should explicitly reject stale self-registration permit guidance');
 
-console.log('Scout grounding eval passed: Pine Grove and GSMNP route order, blocked endpoints, bad mileage, providerless strict replies, shelter-overflow refusal, and camping-rule guardrails are active.');
+console.log('Scout grounding eval passed: Pine Grove, GSMNP, and Shenandoah route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water guardrails, and shelter-overflow refusal are active.');

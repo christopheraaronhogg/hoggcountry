@@ -1365,6 +1365,10 @@ function isGsmnpRouteGrounding(grounding: AtRouteGrounding): boolean {
   return grounding.source.id === 'hoggcountry-gsmnp-at-corridor-qa-2026-05-05';
 }
 
+function isShenandoahRouteGrounding(grounding: AtRouteGrounding): boolean {
+  return grounding.source.id === 'hoggcountry-shenandoah-at-corridor-qa-2026-05-05';
+}
+
 function buildStrictGsmnpAtRouteItineraryReply(
   record: WorkspaceRecord,
   grounding: AtRouteGrounding,
@@ -1465,6 +1469,119 @@ function buildStrictGsmnpAtRouteItineraryReply(
   return lines.join('\n');
 }
 
+
+function buildStrictShenandoahAtRouteItineraryReply(
+  record: WorkspaceRecord,
+  grounding: AtRouteGrounding,
+  official: OfficialTrailSourceCheckDetails
+): string {
+  const profileBits = [
+    record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
+    record.profile?.direction,
+    typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
+    typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
+  ].filter(Boolean).join(' · ');
+  const routeReceipt = buildScoutSourceReceipt(grounding.source.id);
+  const permitReceipt = buildScoutSourceReceipt('shenandoah-backcountry-permits');
+  const atcReceipt = buildScoutSourceReceipt('atc-trail-updates', { fetchedAt: official.fetchedAt });
+  const nwsReceipt = official.weather ? buildScoutSourceReceipt('nws-weather', { fetchedAt: official.fetchedAt }) : null;
+  const guideReceipt = buildScoutSourceReceipt('at-guide-user-owned');
+  const faroutReceipt = buildScoutSourceReceipt('farout-current-comments');
+  const routeTotal = grounding.destination ? formatAtRouteMileage(Math.abs(grounding.destination.mile - grounding.start.mile)) : null;
+  const requestedThreeDays = grounding.targetDays === 3;
+  const waterCapacity = typeof record.profile?.waterCapacityLiters === 'number' ? record.profile.waterCapacityLiters : null;
+  const twoLiterPrompt = /(?:2\s*l|2\s+liters|two\s+liters)/iu.test(grounding.warnings.join(' ')) || waterCapacity !== null && waterCapacity <= 2.1;
+
+  const lines: string[] = [
+    '### Scout strict-route plan',
+    '',
+    'I’m using strict Shenandoah route/regulation mode because this asks for a real Shenandoah AT itinerary. The route order, permit/camping, water, and stale-rule guardrails below come from host validation, not model memory.',
+    profileBits ? `Workspace context: ${profileBits}.` : null,
+    '',
+    '**Route-order guardrail**',
+    `- Direction: ${grounding.direction}.`,
+    grounding.targetDays ? `- Requested trip length detected: ${grounding.targetDays} day${grounding.targetDays === 1 ? '' : 's'}.` : null,
+    grounding.destination ? `- Corridor: ${grounding.start.name} ${grounding.direction} to ${grounding.destination.name}${routeTotal ? ` (~${routeTotal} mi by this guardrail)` : ''}.` : `- Corridor starts at ${grounding.start.name}; verify the final endpoint in your current guide/source.`,
+    `- Source: ${grounding.source.label}. ${grounding.source.exactMileageCaveat}`,
+    '',
+    '| Point | Approx route mile | From start | Type |',
+    '|---|---:|---:|---|',
+    ...grounding.corridor.map((point) => formatStrictRoutePoint(point, grounding.start)),
+    '',
+    '**Important corrections / guardrails**',
+    ...grounding.warnings.map((warning) => `- ${warning}`),
+    grounding.destination?.id === 'swift-run-gap-va' && routeTotal ? `- Rockfish Gap → Swift Run Gap is about ${routeTotal} mi in this guardrail, not a ~34 mi route.` : null,
+    requestedThreeDays ? '- The requested 3-day / 2-night shape is a stronger plan, not the conservative late-July default.' : null,
+    '- Current Shenandoah permit guardrail: use the current NPS/Recreation.gov backcountry permit flow. Do not rely on old free/self-registration paper-permit guidance.',
+    '- A Shenandoah backcountry permit is separate from the park entrance fee/pass and does not prove a specific campsite is legal until the itinerary satisfies current rules.',
+    '- Campsite setback guardrail: at least 10 yd from water, 20 yd from trail/unpaved road, 50 yd from another party/no-camping sign/buildings/ruins, 100 yd from hut/cabin/day-use shelter, and 0.25 mi from paved road/park boundary/facility unless current official rules say otherwise.',
+    '- Do not plan camping at/near waysides, visitor centers, paved roads, Skyline Drive, parking lots, buildings, or facilities.',
+    '',
+    '**Route options**'
+  ].filter((line): line is string => line !== null);
+
+  for (const option of grounding.planOptions) {
+    lines.push('', ...renderStrictRouteOption(option));
+  }
+
+  lines.push(
+    '',
+    '**Recommendation**',
+    requestedThreeDays || twoLiterPrompt
+      ? '- With late-July heat and a 2L carry, default to the safer 4-day shape unless current water, permit/campsite legality, daylight, body, and shuttle timing all line up.'
+      : '- Choose the lower-mile option when heat, thunderstorms, water uncertainty, or permit/campsite legality is not cleanly verified.',
+    '- If you force the 3-day shape, treat it as a strong-hiker itinerary and add a hard noon bailout/shorten decision each day.',
+    '',
+    '**Permit / legal camping assumptions**',
+    '- Book/check Shenandoah backcountry permits through the current NPS/Recreation.gov flow before treating any overnight as legal.',
+    '- Huts/shelters in the table are route-order anchors and candidate areas, not guaranteed legal campsites, reservations, water, or capacity.',
+    '- If a legal site cannot satisfy current NPS/Recreation.gov setbacks and closures, change the day shape instead of inventing a stealth/nearby campsite.',
+    '- Campfires are not a default backcountry assumption; use only where current official rules explicitly allow them, such as a pre-constructed fireplace where applicable.',
+    '',
+    '**Water / heat / thunderstorms**',
+    waterCapacity !== null
+      ? `- Your workspace water capacity is ${waterCapacity}L; in late July Shenandoah, treat that as thin until every source for the day is confirmed.`
+      : twoLiterPrompt
+        ? '- A 2L carry in late July is thin until every source for the day is confirmed.'
+        : '- Shenandoah summer water plans need current source checks; carry extra when sources are seasonal, slow, or unverified.',
+    '- NPS water guidance says hot-day consumption can be about 1 qt/hour. Fill early, do not skip known water, and carry extra when the next source is seasonal or unverified.',
+    '- Treat all natural water. Developed/potable water is only reliable when the current facility/source is open and confirmed.',
+    '- Check current water reports before leaving each morning; springs and streams can slow or dry.',
+    '- Build thunderstorm margin: start early, avoid ridge/road-exposed commitments when storms build, and use Skyline Drive/US 33/US 250 bailouts deliberately.',
+    '',
+    '**Bear / food / fire safety**',
+    '- Store food, trash, cook gear, toothpaste, and scented items in an approved bear-proof container or a proper hang at least 12 ft high and 6 ft from trunks/branches unless current park rules are stricter.',
+    '- Cook/eat away from sleep, keep a clean camp, and carry out all trash.',
+    '- Do not use fire memory from old blogs or forum posts. Current park fire restrictions control.',
+    '',
+    '**Shuttle / parking / bailouts**',
+    '- Rockfish Gap uses the I-64 / US 250 / Waynesboro side of the park; confirm overnight parking, entrance logistics, and pickup before leaving.',
+    '- Swift Run Gap uses US 33 / Skyline Drive / Elkton-Harrisonburg logistics; confirm road status and shuttle pickup before leaving.',
+    '- Skyline Drive crossings can be bailouts, but do not assume cell service, legal overnight parking, or same-day ride availability.',
+    '',
+    '**Safety / live conditions**',
+    ...renderStrictRouteOfficialSummary(official, grounding.state),
+    '',
+    '**Final checklist before leaving**',
+    '- Verify exact AT mileages and hut/campsite sequence in your current user-owned guide or official NPS map.',
+    '- Confirm the current NPS/Recreation.gov backcountry permit flow, fees, entrance pass, itinerary dates, group size/night limits, and closure areas.',
+    '- Pick legal campsites that satisfy current setback rules; do not camp near waysides, roads, facilities, or huts unless the current official rule/source explicitly allows that site.',
+    '- Check current water reliability for Calf Mountain, Blackrock, Pinefield, Hightop, and any source you plan to rely on.',
+    '- Pull NWS point forecasts/alerts for Rockfish/Waynesboro, the ridge/Skyline Drive corridor, and Swift Run/US 33 24–48 hours before departure.',
+    '- Confirm bear food-storage method, fire restrictions, parking, shuttle/pickup, bailouts, offline maps, and emergency contact plan.',
+    '',
+    '**Source receipts**',
+    routeReceipt ? `- ${routeReceipt.title} [${routeReceipt.trust}/${routeReceipt.accessMode}]: ${routeReceipt.citation}` : `- Route validator: ${grounding.source.citation}`,
+    permitReceipt ? `- ${permitReceipt.title} [${permitReceipt.trust}/${permitReceipt.accessMode}]: ${permitReceipt.citation}` : '- Shenandoah permit source manifest: available, but no receipt was produced in this turn.',
+    atcReceipt ? `- ${atcReceipt.title} [${atcReceipt.trust}/${atcReceipt.accessMode}]: ${atcReceipt.citation}` : '- ATC Trail Updates source manifest: available, but no ATC receipt was produced in this turn.',
+    nwsReceipt ? `- ${nwsReceipt.title} [${nwsReceipt.trust}/${nwsReceipt.accessMode}]: ${nwsReceipt.citation}` : '- NWS source manifest: available, but no weather receipt was produced in this turn.',
+    guideReceipt ? `- Needed but not bundled: ${guideReceipt.title} [${guideReceipt.trust}/${guideReceipt.accessMode}]. ${guideReceipt.caveats[0]}` : '- Needed but not bundled: user-owned guide data.',
+    faroutReceipt ? `- Needed but not bundled: ${faroutReceipt.title} [${faroutReceipt.trust}/${faroutReceipt.accessMode}]. ${faroutReceipt.caveats[0]}` : '- Needed but not bundled: current user-supplied water/shelter comments.'
+  );
+
+  return lines.join('\n');
+}
+
 async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt: string): Promise<string | null> {
   const grounding = buildStrictAtRouteGrounding(record, prompt);
   if (!grounding) return null;
@@ -1488,6 +1605,10 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
 
   if (isGsmnpRouteGrounding(grounding)) {
     return buildStrictGsmnpAtRouteItineraryReply(record, grounding, official);
+  }
+
+  if (isShenandoahRouteGrounding(grounding)) {
+    return buildStrictShenandoahAtRouteItineraryReply(record, grounding, official);
   }
 
   const profileBits = [

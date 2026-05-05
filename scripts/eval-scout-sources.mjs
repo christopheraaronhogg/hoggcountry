@@ -19,6 +19,8 @@ const requiredIds = [
   'hoggcountry-pine-grove-route-qa-2026-05-04',
   'hoggcountry-gsmnp-at-corridor-qa-2026-05-05',
   'gsmnp-backcountry-permits',
+  'hoggcountry-shenandoah-at-corridor-qa-2026-05-05',
+  'shenandoah-backcountry-permits',
   'atc-trail-updates',
   'nws-weather'
 ];
@@ -47,6 +49,17 @@ assert.ok(gsmnpSources.includes('hoggcountry-gsmnp-at-corridor-qa-2026-05-05'), 
 assert.ok(gsmnpSources.includes('gsmnp-backcountry-permits'), 'Smokies camping prompts should select official GSMNP permit rules');
 assert.ok(gsmnpSources.includes('at-guide-user-owned'), 'Smokies exact shelter/mileage itinerary should require user-owned guide data');
 
+const shenandoahSources = selectScoutSourceManifests({
+  query: 'Rockfish Gap to Swift Run Gap Shenandoah NOBO 3 day section hiker itinerary with daily mileage targets legal camping hut wayside assumptions Recreation.gov permits camping setbacks water heat thunderstorms bears and shuttle',
+  state: 'VA',
+  mileRange: [863.7, 909.6],
+  limit: 10
+}).map((source) => source.id);
+assert.ok(shenandoahSources.includes('hoggcountry-shenandoah-at-corridor-qa-2026-05-05'), 'Shenandoah itinerary should select the Shenandoah route/regulation validator');
+assert.ok(shenandoahSources.includes('shenandoah-backcountry-permits'), 'Shenandoah camping prompts should select official Shenandoah permit rules');
+assert.ok(shenandoahSources.includes('at-guide-user-owned'), 'Shenandoah exact hut/mileage itinerary should require user-owned guide data');
+assert.ok(shenandoahSources.includes('nws-weather'), 'Shenandoah heat/thunderstorm itinerary should select NWS');
+
 const waterSources = selectScoutSourceManifests({
   query: 'Are the next shelter water sources dry and are recent FarOut comments enough to trust it?',
   topics: ['water', 'shelter'],
@@ -59,6 +72,10 @@ const routeReceipt = buildScoutSourceReceipt('hoggcountry-pine-grove-route-qa-20
 assert.ok(routeReceipt?.citation.includes('Pine Grove route-order QA fixture'), 'Route receipt should expose the validator citation');
 const gsmnpReceipt = buildScoutSourceReceipt('hoggcountry-gsmnp-at-corridor-qa-2026-05-05');
 assert.ok(gsmnpReceipt?.citation.includes('GSMNP AT corridor'), 'GSMNP receipt should expose the validator citation');
+const shenandoahReceipt = buildScoutSourceReceipt('hoggcountry-shenandoah-at-corridor-qa-2026-05-05');
+assert.ok(shenandoahReceipt?.citation.includes('Shenandoah AT south/central corridor'), 'Shenandoah receipt should expose the validator citation');
+const shenandoahPermitReceipt = buildScoutSourceReceipt('shenandoah-backcountry-permits');
+assert.ok(shenandoahPermitReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched Shenandoah official receipt should not imply a live fetch');
 const nwsReceipt = buildScoutSourceReceipt('nws-weather', { fetchedAt: '2026-05-04T00:00:00.000Z', url: 'https://api.weather.gov/gridpoints/example' });
 assert.ok(nwsReceipt?.citation.includes('2026-05-04T00:00:00.000Z'), 'Live receipts should render fetched timestamp');
 

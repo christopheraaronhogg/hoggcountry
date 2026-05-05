@@ -278,6 +278,46 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     keywords: ['gsmnp', 'smokies', 'great smoky mountains', 'fontana', 'fontana dam', 'newfound gap', 'mollies ridge', 'derrick knob', 'silers bald', 'mount collins', 'permit', 'reservation', 'shelter', 'camping', 'nobo', 'itinerary']
   },
   {
+    id: 'hoggcountry-shenandoah-at-corridor-qa-2026-05-05',
+    title: 'Hogg Country Shenandoah AT south/central corridor and regulation QA validator',
+    displayCategory: 'deterministic route/regulation validator',
+    lane: 'hogg-owned',
+    trust: 'reviewed',
+    accessMode: 'route-validator',
+    privacy: 'Shared internal QA fixture; no private user data.',
+    useWhen: 'Rockfish Gap to Swift Run Gap / Shenandoah National Park AT south/central section planning, route order checks, Recreation.gov permit/camping rule guardrails, water caution, and stale self-registration guidance prevention.',
+    license: HOGG_OWNED_LICENSE,
+    freshness: { generatedAt: '2026-05-05', updateCadence: 'manual' },
+    coverage: {
+      trail: 'AT',
+      states: ['VA'],
+      mileStart: 863.7,
+      mileEnd: 909.6,
+      topics: ['route validator', 'shenandoah', 'snp', 'rockfish gap', 'swift run gap', 'permits', 'recreation.gov', 'camping', 'setbacks', 'water', 'mileage']
+    },
+    citationTemplate: 'Hogg Country Shenandoah AT south/central corridor and regulation QA fixture, generated 2026-05-05 from dogfood QA and official NPS/Recreation.gov rule checks.',
+    allowedActions: ['catalog', 'route-validate'],
+    caveats: ['Use as a guardrail for route order and official-rule wording; exact campsite legality, hut use, water, closures, permit availability, and current mileages still require current NPS/Recreation.gov/user-owned guide verification.'],
+    keywords: ['shenandoah', 'snp', 'rockfish gap', 'swift run gap', 'calf mountain', 'blackrock hut', 'pinefield hut', 'hightop hut', 'big meadows', 'byrds nest', 'permit', 'recreation.gov', 'camping', 'setbacks', 'water', 'nobo', 'itinerary']
+  },
+  {
+    id: 'shenandoah-backcountry-permits',
+    title: 'Shenandoah National Park backcountry permits, camping regulations, food storage, water, and weather',
+    displayCategory: 'official park permits and camping rules',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public official source.',
+    useWhen: 'Shenandoah overnight backcountry camping, Recreation.gov permits, campsite setback rules, food storage, backcountry fires, water treatment/reliability, weather, and park-specific closures.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', states: ['VA'], topics: ['shenandoah', 'snp', 'permit', 'recreation.gov', 'nps', 'backcountry', 'camping', 'setbacks', 'food storage', 'fire', 'water', 'weather'] },
+    citationTemplate: 'NPS Shenandoah backcountry camping/permits, Recreation.gov Shenandoah Backcountry Permits, NPS food storage, drinking water, and weather pages; live availability/rules must be checked before leaving. Scout fetched timestamp: {fetchedAt}. https://www.nps.gov/shen/planyourvisit/backcountry-camping.htm and https://www.recreation.gov/permits/4675336',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Rules, closures, water status, and permit availability can change; Scout should fail closed and tell the hiker to verify the exact Recreation.gov/NPS permit itinerary before leaving.'],
+    keywords: ['shenandoah', 'snp', 'permit', 'permits', 'recreation.gov', 'nps', 'backcountry', 'camping', 'setback', 'setbacks', 'food storage', 'bear', 'fire', 'water', 'weather', 'rockfish gap', 'swift run gap']
+  },
+  {
     id: 'gsmnp-backcountry-permits',
     title: 'Great Smoky Mountains National Park backcountry permits and camping rules',
     displayCategory: 'official park permits and camping rules',
@@ -474,8 +514,9 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (!manifestCoversMileRange(manifest, query.mileRange)) score -= 4;
   if (manifest.accessMode === 'disabled-pending-review' && !query.includeUnavailable) score -= 8;
   if (manifest.trust === 'official' && /\b(weather|closure|detour|fire|alert|official)\b/iu.test(query.query)) score += 3;
-  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
-  if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|water|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 3;
+  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
+  if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 3;
+  if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
 
   return score;
 }
