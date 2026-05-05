@@ -209,6 +209,14 @@
     return 'Info';
   }
 
+  function routePillLabel(currentProfile: ManualProfile | null): string {
+    if (currentProfile && currentProfile.currentMile > 0) {
+      return `AT - ${currentProfile.direction} • MILE ${currentProfile.currentMile.toFixed(0)}`;
+    }
+
+    return 'AT - TRAIL PLAN • MILE --';
+  }
+
   function dailyBriefTime(value: string): string {
     const parsed = Date.parse(value);
     if (!Number.isFinite(parsed)) return value;
@@ -485,6 +493,11 @@
   function messageTime(value: string): string {
     const parsed = Date.parse(value);
     if (!Number.isFinite(parsed)) return '';
+
+    if (Date.now() - parsed < 60_000) {
+      return 'Just now';
+    }
+
     return new Date(parsed).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
 
@@ -708,6 +721,17 @@
     url.searchParams.delete('resourceId');
     url.searchParams.delete('resourceAction');
     window.history.replaceState({}, '', url);
+  }
+
+  async function consumePromptQueryState() {
+    const url = new URL(window.location.href);
+    const prompt = url.searchParams.get('prompt')?.trim();
+    if (!prompt) return;
+
+    replyInput = prompt.slice(0, 4000);
+    url.searchParams.delete('prompt');
+    window.history.replaceState({}, '', url);
+    await focusPromptComposer();
   }
 
   async function focusCloudThread() {
@@ -991,6 +1015,7 @@
         await consumeStandardDocumentQueryState();
         await consumeDocumentQueryState();
         await consumeResourceQueryState();
+        await consumePromptQueryState();
         await loadDailyBrief();
       })
       .catch(() => undefined);
@@ -1009,7 +1034,7 @@
       onclick={toggleHistoryPanel}
     >
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 5v5h5M5.2 10A7.5 7.5 0 1 0 7 6.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
       </svg>
     </button>
 
@@ -1122,18 +1147,19 @@
       <div class="conversation-topline">
         <button class="rail-toggle" type="button" onclick={toggleHistoryPanel} aria-expanded={historyOpen} aria-controls="history-panel">☰ Conversations</button>
         <div>
-          <strong>Scout thread</strong>
+          <strong>Plan thread</strong>
           <span>{messages.length} turn{messages.length === 1 ? '' : 's'}</span>
         </div>
         <button class="rail-toggle" type="button" onclick={toggleDocsPanel} aria-expanded={docsOpen} aria-controls="docs-panel">Docs ▸</button>
       </div>
 
       <section class="message-viewport" bind:this={threadCard}>
+        <div class="route-pill">{routePillLabel(profile)}</div>
         <div class="message-list" bind:this={threadMessages}>
           {#if messages.length === 0 && !sendBusy}
             <article class="empty-thread">
-              <strong>Start with the next trail decision.</strong>
-              <span>Ask for today, next 7 days, next resupply, body risk, gear, logistics, or use one of the compact starters below.</span>
+              <strong>What do you need to decide next?</strong>
+              <span>Ask about today’s miles, water, weather, resupply, body risk, or a gear/logistics call.</span>
             </article>
           {:else}
             {#each messages as message}
@@ -1185,9 +1211,10 @@
               </article>
             {/each}
             {#if sendBusy}
-              <article class="message message--assistant message--pending">
-                <div class="message-label"><strong>Scout</strong></div>
-                <p>Working on it…</p>
+              <article class="checking-card" aria-live="polite">
+                <span class="checking-icon" aria-hidden="true">◎</span>
+                <em>Scout is checking trail notes…</em>
+                <span class="checking-dots" aria-hidden="true">•••</span>
               </article>
             {/if}
           {/if}
@@ -1233,11 +1260,18 @@
             bind:this={promptTextarea}
             bind:value={replyInput}
             rows="1"
-            disabled={!connection || sendBusy}
-            placeholder={connection ? 'Transmit to Scout…' : 'Connect Scout first.'}
+            disabled={sendBusy}
+            placeholder="Ask Scout about the trail…"
             oninput={(event) => syncPromptHeight(event.currentTarget as HTMLTextAreaElement)}
           ></textarea>
-          <button class="send-button prompt-send" type="button" onclick={sendMessage} disabled={!connection || sendBusy || !replyInput.trim()} aria-label="Send to Scout" title="Send to Scout">
+          <button
+            class="send-button prompt-send"
+            type="button"
+            onclick={sendMessage}
+            disabled={sendBusy || !replyInput.trim()}
+            aria-label="Send to Scout"
+            title="Send to Scout"
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M3.7 20.3 21 12 3.7 3.7l-.2 6.4 10.1 1.9-10.1 1.9.2 6.4Z" fill="currentColor" />
             </svg>
@@ -1408,8 +1442,8 @@
     overflow: hidden !important;
     background-color: #f5f2e8 !important;
     background-image:
-      linear-gradient(180deg, rgba(246, 241, 230, 0.7), rgba(242, 234, 220, 0.9)),
-      url('/default-background.svg') !important;
+      linear-gradient(180deg, rgba(255, 253, 248, 0.88), rgba(245, 242, 232, 0.9)),
+      url('/topo.svg') !important;
     background-position: center top !important;
     background-repeat: no-repeat !important;
     background-size: cover !important;
@@ -1422,8 +1456,8 @@
     overflow: hidden;
     background:
       radial-gradient(circle at top left, rgba(166, 181, 137, 0.18), transparent 30rem),
-      linear-gradient(180deg, rgba(251, 247, 239, 0.72) 0%, rgba(242, 234, 220, 0.9) 100%),
-      url('/default-background.svg') center top / cover no-repeat fixed,
+      linear-gradient(180deg, rgba(255, 253, 248, 0.86) 0%, rgba(245, 242, 232, 0.92) 100%),
+      url('/topo.svg') center top / cover no-repeat fixed,
       #f5f2e8;
   }
 
@@ -1584,8 +1618,8 @@
     border: 1px solid rgba(230, 225, 212, 0.72);
     border-radius: 26px;
     background:
-      linear-gradient(180deg, rgba(255, 253, 248, 0.68), rgba(245, 242, 232, 0.9)),
-      url('/default-background.svg') center top / cover no-repeat,
+      linear-gradient(180deg, rgba(255, 253, 248, 0.7), rgba(255, 253, 248, 0.8)),
+      url('/topo.svg') center top / cover no-repeat,
       var(--bg, #f5f2e8);
     box-shadow: var(--shadow-soft, 0 10px 22px rgba(0, 0, 0, 0.06));
   }
@@ -1622,6 +1656,24 @@
     scroll-behavior: smooth;
   }
 
+  .route-pill {
+    width: fit-content;
+    max-width: min(100%, 24rem);
+    margin: 0 auto 1.7rem;
+    border: 1px solid rgba(39, 51, 43, 0.22);
+    border-radius: 6px;
+    background: rgba(255, 253, 248, 0.86);
+    color: #27332b;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    padding: 0.62rem 1.05rem;
+    text-align: center;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(31, 41, 55, 0.04);
+  }
+
   .message-list {
     display: grid;
     gap: 1.35rem;
@@ -1641,15 +1693,59 @@
 
   .message--user {
     justify-self: end;
-    border-color: rgba(166, 181, 137, 0.38);
-    border-radius: 20px 20px 8px 20px;
-    background: rgba(237, 243, 229, 0.94);
-    color: var(--ink, #1f2937);
+    border-color: rgba(39, 51, 43, 0.28);
+    border-radius: 20px 20px 6px 20px;
+    background: #24362c;
+    color: #fffdf8;
+    box-shadow: 0 12px 26px rgba(36, 54, 44, 0.16);
   }
 
-  .message--assistant,
-  .message--pending {
+  .message--user .message-label,
+  .message--user .message-footer {
+    color: rgba(255, 253, 248, 0.72);
+  }
+
+  .message--assistant {
     justify-self: start;
+  }
+
+  .checking-card {
+    justify-self: start;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    width: min(26rem, 92%);
+    border: 1px solid rgba(39, 51, 43, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.74);
+    color: rgba(51, 51, 51, 0.62);
+    box-shadow: 0 10px 22px rgba(31, 41, 55, 0.05);
+    padding: 0.95rem 1rem;
+  }
+
+  .checking-card em {
+    font-size: 1.05rem;
+    font-style: italic;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .checking-icon {
+    display: grid;
+    place-items: center;
+    width: 2.15rem;
+    height: 2.15rem;
+    border-radius: 999px;
+    background: rgba(77, 89, 74, 0.72);
+    color: #fffdf8;
+    font-weight: 900;
+  }
+
+  .checking-dots {
+    color: rgba(77, 89, 74, 0.38);
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
   }
 
   .message-body {
@@ -1731,15 +1827,20 @@
 
   .empty-thread {
     display: grid;
-    gap: 0.3rem;
-    max-width: 34rem;
-    margin: 2rem auto;
-    border: 1px dashed rgba(77, 89, 74, 0.22);
-    border-radius: 20px;
-    background: rgba(248, 243, 233, 0.84);
-    color: #52604d;
-    padding: 1rem;
-    text-align: center;
+    gap: 0.32rem;
+    width: min(100%, 30rem);
+    margin: 0;
+    border: 1px solid rgba(39, 51, 43, 0.14);
+    border-radius: 18px;
+    background: rgba(245, 244, 240, 0.82);
+    color: #667064;
+    box-shadow: 0 10px 22px rgba(31, 41, 55, 0.04);
+    padding: 1.05rem 1.14rem;
+    text-align: left;
+  }
+
+  .empty-thread strong {
+    color: #394638;
   }
 
   .composer-shell {
@@ -1839,6 +1940,21 @@
     display: block;
   }
 
+  .prompt-box::before {
+    content: '⌕';
+    position: absolute;
+    left: 0.82rem;
+    bottom: 0.66rem;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    color: #394638;
+    font-size: 1.45rem;
+    pointer-events: none;
+  }
+
   .prompt-box textarea {
     display: block;
     width: 100%;
@@ -1853,7 +1969,7 @@
     font-size: 0.98rem;
     line-height: 1.38;
     overflow-y: auto;
-    padding: 0.72rem 3.3rem 0.72rem 0.82rem;
+    padding: 0.72rem 3.3rem 0.72rem 3rem;
     resize: none;
   }
 
@@ -2268,65 +2384,209 @@
   @media (max-width: 680px) {
     .scout-workspace {
       gap: 0;
-      padding: 0;
+      padding: 0 0 calc(3.75rem + env(safe-area-inset-bottom));
     }
 
     .workspace-commandbar {
-      min-height: 3.05rem;
+      grid-template-columns: 3.7rem minmax(0, 1fr) 3.7rem;
+      min-height: 2.7rem;
+      border-radius: 0;
+      border-width: 0 0 1px;
+      border-color: rgba(39, 51, 43, 0.18);
+      background: #fffdf8;
+      box-shadow: none;
       padding-inline: 0.45rem;
     }
 
+    .scout-title {
+      color: #24362c;
+      font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 1.78rem;
+      font-weight: 900;
+      letter-spacing: -0.055em;
+      line-height: 1;
+      text-transform: none;
+    }
+
+    .scout-title span {
+      display: none;
+    }
+
     .command-icon {
-      width: 2.35rem;
-      height: 2.35rem;
+      justify-self: center;
+      width: 2.45rem;
+      height: 2.45rem;
+      color: #24362c;
+    }
+
+    .command-icon svg {
+      width: 1.45rem;
+      height: 1.45rem;
     }
 
     .conversation-shell {
       min-height: 0;
       height: 100%;
       max-height: none;
+      border: 0;
+      border-radius: 0;
+      background:
+        url('/topo.svg') center -2rem / 38rem auto repeat,
+        url('/topo.svg') center -2rem / 38rem auto repeat,
+        url('/topo.svg') center -2rem / 38rem auto repeat,
+        url('/topo.svg') center -2rem / 38rem auto repeat,
+        url('/topo.svg') center -2rem / 38rem auto repeat,
+        url('/topo.svg') center -2rem / 38rem auto repeat,
+        radial-gradient(circle, rgba(36, 54, 44, 0.055) 0 1px, transparent 1.35px) 0.55rem 0.7rem / 2.25rem 2.25rem,
+        radial-gradient(circle, rgba(36, 54, 44, 0.03) 0 0.85px, transparent 1.2px) 1.7rem 1.85rem / 2.65rem 2.65rem,
+        linear-gradient(180deg, #fffdf8, #fbfaf5);
+      box-shadow: none;
     }
 
     .message-viewport {
-      padding: 1.35rem 1rem 0.8rem;
+      padding: 1.72rem 1.25rem 0.85rem;
+    }
+
+    .route-pill {
+      margin-bottom: 1.95rem;
+      border-color: rgba(51, 51, 51, 0.28);
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.76);
+      color: #303531;
+      font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.095em;
+      padding: 0.42rem 1.02rem;
     }
 
     .message-list {
-      gap: 1.15rem;
+      gap: 1.88rem;
+      max-width: none;
     }
 
     .message {
       max-width: 92%;
-      padding: 0.92rem;
+      padding: 1.05rem 1.1rem;
     }
 
     .message--user {
-      max-width: 82%;
+      position: relative;
+      max-width: 76%;
+      border-radius: 18px 18px 5px 18px;
+      background: #213729;
+      font-size: 0.94rem;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+      padding: 0.78rem 0.98rem;
+    }
+
+    .message--user .message-body {
+      margin-top: 0;
+    }
+
+    .message--user .message-label {
+      position: absolute;
+      right: 0.16rem;
+      bottom: -1.18rem;
+      display: block;
+      color: #303531;
+      font-family: Lato, system-ui, sans-serif;
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: none;
+    }
+
+    .message--user .message-label strong {
+      display: none;
+    }
+
+    .message--user .message-footer {
+      display: none;
+    }
+
+    .checking-card {
+      width: min(78%, 17rem);
+      gap: 0.66rem;
+      border-color: rgba(51, 51, 51, 0.14);
+      border-radius: 17px;
+      background: rgba(243, 243, 243, 0.92);
+      color: #737970;
+      padding: 0.76rem 0.8rem;
+    }
+
+    .checking-card em {
+      font-size: 0.92rem;
+      line-height: 1.36;
+    }
+
+    .checking-icon {
+      width: 1.85rem;
+      height: 1.85rem;
+      background: #8c9a90;
+    }
+
+    .connect-strip {
+      display: none;
     }
 
     .composer-shell {
-      gap: 0.38rem;
-      padding: 0.44rem 0.45rem max(0.45rem, env(safe-area-inset-bottom));
+      gap: 0;
+      border-top-color: rgba(39, 51, 43, 0.18);
+      background: #fffdf8;
+      box-shadow: none;
+      padding: 0.56rem 1.25rem max(0.56rem, env(safe-area-inset-bottom));
     }
 
-    .composer-starters button {
-      min-height: 1.95rem;
-      padding-inline: 0.56rem;
-      font-size: 0.72rem;
+    .composer-starters {
+      display: none;
+    }
+
+    .prompt-box::before {
+      content: '⊕';
+      left: 0.92rem;
+      bottom: 0.76rem;
+      width: 1.75rem;
+      height: 1.75rem;
+      color: #394638;
+      font-size: 1.35rem;
     }
 
     .prompt-box textarea {
-      min-height: 2.35rem;
-      font-size: 0.94rem;
-      padding: 0.56rem 3rem 0.56rem 0.65rem;
+      min-height: 3.45rem;
+      border: 1.5px solid rgba(51, 51, 51, 0.28);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #27332b;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      padding: 0.96rem 3.1rem 0.78rem 3rem;
+    }
+
+    .prompt-box textarea::placeholder {
+      color: #3f4740;
     }
 
     .prompt-send {
-      right: 0.32rem;
-      bottom: 0.32rem;
-      width: 1.9rem;
-      min-width: 1.9rem;
-      height: 1.9rem;
+      right: 0.45rem;
+      bottom: 0.42rem;
+      width: 2.35rem;
+      min-width: 2.35rem;
+      height: 2.62rem;
+      border-radius: 8px;
+      background: #f4f4f2;
+      color: #24362c;
+      box-shadow: none;
+    }
+
+    .prompt-send svg {
+      width: 1.08rem;
+      height: 1.08rem;
+    }
+
+    .prompt-send:disabled {
+      background: #f4f4f2;
+      color: rgba(36, 54, 44, 0.4);
     }
 
     .workspace-panel {
