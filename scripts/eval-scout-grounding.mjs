@@ -82,5 +82,6 @@ const runtimeResolveIndex = clawAgentSource.indexOf('const runtime = await resol
 assert.ok(replyFunctionStart >= 0 && strictReplyIndex >= 0 && runtimeResolveIndex >= 0, 'Strict reply/provider runtime wiring should remain findable');
 assert.ok(strictReplyIndex < runtimeResolveIndex, 'Strict deterministic route replies must run before provider runtime resolution so missing API credentials do not block validator-only answers');
 assert.ok(clawAgentSource.includes('deterministicClawTurn(record, null, trimmedPrompt, strictRouteReply)'), 'Strict route replies should be recorded as system/strict-route-validator turns, not as cloud model turns');
+assert.ok(clawAgentSource.includes('No shelter-overflow assumption'), 'Strict GSMNP replies should explicitly reject shelter-full overflow tenting assumptions');
 
-console.log('Scout grounding eval passed: Pine Grove and GSMNP route order, blocked endpoints, bad mileage, providerless strict replies, and camping-rule guardrails are active.');
+console.log('Scout grounding eval passed: Pine Grove and GSMNP route order, blocked endpoints, bad mileage, providerless strict replies, shelter-overflow refusal, and camping-rule guardrails are active.');
