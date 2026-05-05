@@ -1440,13 +1440,15 @@
 
   :global(body) {
     overflow: hidden !important;
-    background-color: #f5f2e8 !important;
+    background-color: var(--bg, #f5f2e8) !important;
     background-image:
-      linear-gradient(180deg, rgba(255, 253, 248, 0.88), rgba(245, 242, 232, 0.9)),
-      url('/default-background.svg') !important;
-    background-position: center top !important;
+      url('/topo.svg'),
+      radial-gradient(1200px 800px at 15% -5%, rgba(0, 0, 0, 0.03), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0, 0, 0, 0.025), transparent 60%),
+      radial-gradient(800px 500px at 50% 90%, rgba(0, 0, 0, 0.02), transparent 50%) !important;
+    background-position: center 20%, center, center, center !important;
     background-repeat: no-repeat !important;
-    background-size: cover !important;
+    background-size: 2400px 1600px, auto, auto, auto !important;
     background-attachment: fixed !important;
   }
 
@@ -1455,10 +1457,11 @@
     min-height: 100dvh;
     overflow: hidden;
     background:
-      radial-gradient(circle at top left, rgba(166, 181, 137, 0.18), transparent 30rem),
-      linear-gradient(180deg, rgba(255, 253, 248, 0.86) 0%, rgba(245, 242, 232, 0.92) 100%),
-      url('/default-background.svg') center top / cover no-repeat fixed,
-      #f5f2e8;
+      url('/topo.svg') center 20% / 2400px 1600px no-repeat fixed,
+      radial-gradient(1200px 800px at 15% -5%, rgba(0, 0, 0, 0.03), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0, 0, 0, 0.025), transparent 60%),
+      radial-gradient(800px 500px at 50% 90%, rgba(0, 0, 0, 0.02), transparent 50%),
+      var(--bg, #f5f2e8);
   }
 
   :global(.site-header) {
@@ -1618,8 +1621,10 @@
     border: 1px solid rgba(230, 225, 212, 0.72);
     border-radius: 26px;
     background:
-      linear-gradient(180deg, rgba(255, 253, 248, 0.7), rgba(255, 253, 248, 0.8)),
-      url('/default-background.svg') center top / cover no-repeat,
+      url('/topo.svg') center 20% / 2400px 1600px no-repeat,
+      radial-gradient(1200px 800px at 15% -5%, rgba(0, 0, 0, 0.03), transparent 65%),
+      radial-gradient(1000px 600px at 85% 15%, rgba(0, 0, 0, 0.025), transparent 60%),
+      radial-gradient(800px 500px at 50% 90%, rgba(0, 0, 0, 0.02), transparent 50%),
       var(--bg, #f5f2e8);
     box-shadow: var(--shadow-soft, 0 10px 22px rgba(0, 0, 0, 0.06));
   }
@@ -2431,9 +2436,11 @@
       border: 0;
       border-radius: 0;
       background:
-        linear-gradient(180deg, rgba(255, 253, 248, 0.66), rgba(251, 250, 245, 0.78)),
-        url('/default-background.svg') center top / cover no-repeat,
-        #fffdf8;
+        url('/topo.svg') center 20% / 2400px 1600px no-repeat,
+        radial-gradient(1200px 800px at 15% -5%, rgba(0, 0, 0, 0.03), transparent 65%),
+        radial-gradient(1000px 600px at 85% 15%, rgba(0, 0, 0, 0.025), transparent 60%),
+        radial-gradient(800px 500px at 50% 90%, rgba(0, 0, 0, 0.02), transparent 50%),
+        var(--bg, #f5f2e8);
       box-shadow: none;
     }
 
