@@ -1,5 +1,7 @@
 import type { ManualProfile, ReflectionStyle, ShelterPreference } from '@hoggcountry/manual-core';
 
+export * from './at-route-validator.ts';
+
 export interface TrailPhase {
   readonly id: string;
   readonly label: string;

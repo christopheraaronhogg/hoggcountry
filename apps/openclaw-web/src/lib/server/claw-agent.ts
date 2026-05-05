@@ -9,6 +9,15 @@ import {
   type WorkspaceResource
 } from '@hoggcountry/manual-core';
 import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
+import {
+  buildAtRouteGrounding,
+  formatAtRouteMileage,
+  validateAtRouteAnswerClaims,
+  type AtRouteClaimIssue,
+  type AtRouteGrounding,
+  type AtRoutePlanOption,
+  type AtRoutePoint
+} from '@hoggcountry/trail-data';
 import { getModel, Type, type AssistantMessage, type Message, type Model, type ToolResultMessage, type UserMessage } from '@mariozechner/pi-ai';
 import type { BetaProfileCookie } from '$lib/beta';
 import { resolveOpenAICodexApiKey, type OpenAICodexCredentials } from '$lib/server/claw-openai-codex';
@@ -1305,6 +1314,186 @@ async function buildTrailOpsPlanReply(record: WorkspaceRecord, prompt: string): 
   return lines.join('\n');
 }
 
+function formatStrictRoutePoint(point: AtRoutePoint, start: AtRoutePoint): string {
+  const delta = point.mile - start.mile;
+  const relative = delta === 0 ? 'start' : `${delta > 0 ? '+' : '-'}${formatAtRouteMileage(Math.abs(delta))}`;
+  return `| ${point.name} | ${formatAtRouteMileage(point.mile)} | ${relative} | ${point.kind} |`;
+}
+
+function renderStrictRouteOption(option: AtRoutePlanOption): string[] {
+  const lines = [`**${option.label}** — ${formatAtRouteMileage(option.totalMiles)} mi total`];
+  lines.push('| Day | Leg | Miles | Guardrail note |');
+  lines.push('|---|---|---:|---|');
+  for (const day of option.days) {
+    lines.push(`| ${day.day} | ${day.from.name} → ${day.to.name} | ${formatAtRouteMileage(day.miles)} | ${day.note} |`);
+  }
+  for (const caveat of option.caveats) {
+    lines.push(`- ${caveat}`);
+  }
+  return lines;
+}
+
+function renderStrictRouteOfficialSummary(details: OfficialTrailSourceCheckDetails | null, state: string | null): string[] {
+  if (!details) {
+    return ['- Official/live check: not run for this route guardrail. Re-check ATC Trail Updates and NWS before leaving.'];
+  }
+
+  const lines: string[] = [`- Official/live check fetched: ${details.fetchedAt}.`];
+  const stateRelevantUpdates = details.atcUpdates.filter((update) => atcUpdateMatchesApproxState(update, state)).slice(0, 2);
+  if (stateRelevantUpdates.length > 0) {
+    lines.push(`- ATC Trail Updates (${state ?? 'state'}-matched): ${stateRelevantUpdates.map((update) => `${update.title}${update.href ? ` (${update.href})` : ''}`).join('; ')}.`);
+  } else if (details.atcUpdates.length > 0) {
+    lines.push(`- ATC Trail Updates: returned items, but none were clearly tagged ${state ?? 'for this state'}; do not treat them as this route’s closure/fire condition without checking the page.`);
+  } else {
+    lines.push('- ATC Trail Updates: no matching item returned by the quick current-list check. Still re-check before leaving.');
+  }
+
+  if (details.weather) {
+    if (details.weather.alerts.length > 0) {
+      lines.push(`- NWS active alerts near ${details.weather.label}: ${details.weather.alerts.map((alert) => alert.event).join('; ')}.`);
+    } else {
+      lines.push(`- NWS active alerts near ${details.weather.label}: none returned for this point.`);
+    }
+
+    const periods = details.weather.periods.slice(0, 2).map((period) => `${period.name}: ${period.temperature}, ${period.wind}, ${period.shortForecast}`);
+    if (periods.length > 0) lines.push(`- NWS near-term forecast: ${periods.join(' | ')}.`);
+  } else {
+    lines.push('- NWS: no forecast/alert receipt available in this turn. Pull the point forecast 24–48 hours before stepping off.');
+  }
+
+  if (details.skipped.length > 0) lines.push(`- Official skipped: ${details.skipped.join(' ')}`);
+  if (details.errors.length > 0) lines.push(`- Official check limitation: ${details.errors.join(' ')}`);
+  return lines;
+}
+
+function buildStrictAtRouteGrounding(record: WorkspaceRecord, prompt: string): AtRouteGrounding | null {
+  return buildAtRouteGrounding({
+    prompt,
+    targetDailyMileage: record.profile?.targetPace ?? null
+  });
+}
+
+async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt: string): Promise<string | null> {
+  const grounding = buildStrictAtRouteGrounding(record, prompt);
+  if (!grounding) return null;
+
+  const official = await checkOfficialTrailSources({
+    query: prompt,
+    source: 'auto',
+    state: grounding.state,
+    latitude: grounding.start.latitude ?? null,
+    longitude: grounding.start.longitude ?? null,
+    useDadLocation: false
+  }, null).catch((error) => ({
+    query: prompt,
+    source: 'auto' as const,
+    fetchedAt: new Date().toISOString(),
+    atcUpdates: [],
+    weather: null,
+    skipped: [],
+    errors: [`Official source check failed: ${error instanceof Error ? error.message : 'unknown error'}`]
+  } satisfies OfficialTrailSourceCheckDetails));
+
+  const profileBits = [
+    record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
+    record.profile?.direction,
+    typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
+    typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
+  ].filter(Boolean).join(' · ');
+
+  const lines: string[] = [
+    '### Scout strict-route plan',
+    '',
+    'I’m using strict route mode because this asks for a real AT itinerary. The route order below comes from the validator, not model memory.',
+    profileBits ? `Workspace context: ${profileBits}.` : null,
+    '',
+    '**Route-order guardrail**',
+    `- Direction: ${grounding.direction}.`,
+    grounding.targetDays ? `- Requested trip length detected: ${grounding.targetDays} day${grounding.targetDays === 1 ? '' : 's'}.` : null,
+    grounding.targetDailyMileage ? `- Planning pace context: ${formatAtRouteMileage(grounding.targetDailyMileage)} mpd${grounding.targetTotalMiles ? ` (~${formatAtRouteMileage(grounding.targetTotalMiles)} mi target)` : ''}.` : null,
+    `- Source: ${grounding.source.label}. ${grounding.source.exactMileageCaveat}`,
+    '',
+    '| Point | Route mile | From start | Type |',
+    '|---|---:|---:|---|',
+    ...grounding.corridor.map((point) => formatStrictRoutePoint(point, grounding.start)),
+    '',
+    '**Important corrections / guardrails**',
+    ...grounding.warnings.map((warning) => `- ${warning}`),
+    '',
+    '**Route options**'
+  ].filter((line): line is string => line !== null);
+
+  if (grounding.planOptions.length > 0) {
+    for (const option of grounding.planOptions) {
+      lines.push('', ...renderStrictRouteOption(option));
+    }
+  } else {
+    lines.push('- I found a validated corridor, but no automatic day-by-day option is built for this start yet. Use the ordered points above and verify legal overnight endpoints from your guide.');
+  }
+
+  lines.push(
+    '',
+    '**Camping / shelter assumptions**',
+    '- Shelter names in the route table are candidate endpoints only after current guide/FarOut-style condition checks confirm legality, capacity, and water.',
+    '- Boiling Springs is a town/service stop in this guardrail, not an assumed legal campsite. Confirm lodging/camping before making it an overnight endpoint.',
+    '- Do not use Tagg Run as a Pine Grove NOBO endpoint from Scout unless you import or fetch a source that proves it belongs in this segment.',
+    '',
+    '**Food and water**',
+    '- Carry the full 3-day food plan from the start unless your current guide confirms a real resupply/pickup plan at Boiling Springs or Duncannon.',
+    typeof record.profile?.waterCapacityLiters === 'number'
+      ? `- Your workspace water capacity is ${record.profile.waterCapacityLiters}L; treat that as too tight for any uncertain dry stretch until current water comments confirm otherwise.`
+      : '- Confirm water before committing to any shelter or dry ridge; Scout does not have current water reliability here.',
+    '- Filter all natural sources. For each morning, verify the next reliable water before leaving camp/town.',
+    '',
+    '**Gear / supply focus**',
+    '- Rain shell, dry sleep layers, treated socks/pants, tick remover, headlamp, offline maps/guide, water filter, and enough battery to check weather before committing to the next leg.',
+    '- If fire risk is elevated, verify stove restrictions and do not assume campfires are allowed.',
+    '',
+    '**Safety / live conditions**',
+    ...renderStrictRouteOfficialSummary(official, grounding.state),
+    '- Ticks are a high-priority PA risk in May: permethrin, nightly checks, and fast removal plan.',
+    '',
+    '**Final checklist before leaving**',
+    '- Verify exact route mileages and legal overnight endpoints in your current user-owned guide.',
+    '- Re-check ATC Trail Updates for PA closures, detours, fire restrictions, and bear/camping notices.',
+    '- Pull the NWS point forecast/alerts for Pine Grove Furnace and each overnight area 24–48 hours before departure.',
+    '- Check water reliability and shelter comments for James Fry, Alec Kennedy, Darlington, and any town/road stop you plan to use.',
+    '- Confirm parking, shuttle/pickup, town hours, lodging/camping, and bailout options before committing to the stronger plan.',
+    '',
+    '**Source receipts**',
+    `- Route validator: ${grounding.source.citation}`,
+    official ? `- Official/live sources: ATC Trail Updates and NWS checked at ${official.fetchedAt}.` : '- Official/live sources: not checked in this turn.',
+    '- Missing source class: current user-owned guide / FarOut-style comments for exact shelter condition, water reliability, services, and legal camping.'
+  );
+
+  return lines.join('\n');
+}
+
+function buildRouteClaimFallbackReply(grounding: AtRouteGrounding, issues: readonly AtRouteClaimIssue[]): string {
+  const blockingIssues = issues.filter((issue) => issue.severity === 'block');
+  const lines: string[] = [
+    '### Scout route validator blocked the draft',
+    '',
+    'The model draft contained route claims that did not pass the deterministic AT validator, so I’m not going to show it as a usable itinerary.',
+    '',
+    '**Blocked claims**',
+    ...blockingIssues.slice(0, 5).map((issue) => `- ${issue.message} Evidence: “${issue.evidence}”`),
+    '',
+    '**Validated route order instead**',
+    `- Direction: ${grounding.direction}.`,
+    `- Source system: ${grounding.source.label}.`,
+    '| Point | Route mile | From start | Type |',
+    '|---|---:|---:|---|',
+    ...grounding.corridor.map((point) => formatStrictRoutePoint(point, grounding.start)),
+    '',
+    '**Safe next step**',
+    '- Use the validated order above as the skeleton, then verify exact mileages, legal camping, water, services, and closures in a current user-owned guide plus ATC/NWS before leaving.',
+    grounding.blockedEndpointNames.length > 0 ? `- Do not use ${grounding.blockedEndpointNames.join(', ')} as a firm endpoint unless another source proves it belongs in this segment.` : null,
+    '- If you want, ask again with an imported/current guide page attached and Scout will use that as the source layer instead of guessing.'
+  ].filter((line): line is string => line !== null);
+  return lines.join('\n');
+}
+
 export async function replyInWorkspaceClaw(
   workspaceId: string,
   betaProfile: BetaProfileCookie,
@@ -1342,6 +1531,13 @@ export async function replyInWorkspaceClaw(
   const runtime = await resolveClawRuntime(record);
 
   if (!activeDocument && !activeResource) {
+    const strictRouteReply = await buildStrictAtRouteItineraryReply(record, trimmedPrompt);
+    if (strictRouteReply) {
+      const { nextMessages, reply } = deterministicClawTurn(record, runtime, trimmedPrompt, strictRouteReply);
+      const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
+      return { workspace, reply, revisedDocument: null };
+    }
+
     const privateImportReply = buildPrivateImportSearchReply(record, trimmedPrompt);
     if (privateImportReply) {
       const { nextMessages, reply } = deterministicClawTurn(record, runtime, trimmedPrompt, privateImportReply);
@@ -1419,6 +1615,22 @@ export async function replyInWorkspaceClaw(
 
   if (!reply || reply.role !== 'assistant') {
     throw new Error('Pi agent did not return an assistant reply.');
+  }
+
+  const strictRouteGrounding = buildStrictAtRouteGrounding(record, trimmedPrompt);
+  if (strictRouteGrounding) {
+    const routeClaimIssues = validateAtRouteAnswerClaims(reply.text, strictRouteGrounding);
+    if (routeClaimIssues.some((issue) => issue.severity === 'block')) {
+      const safeReply: WorkspaceClawMessage = {
+        ...reply,
+        providerId: 'system',
+        model: 'strict-route-validator',
+        error: false,
+        text: buildRouteClaimFallbackReply(strictRouteGrounding, routeClaimIssues)
+      };
+      nextMessages = [...nextMessages.slice(0, -1), safeReply];
+      reply = safeReply;
+    }
   }
 
   if (runtime.credentials) {
