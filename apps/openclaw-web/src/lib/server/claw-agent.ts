@@ -10,6 +10,13 @@ import {
 } from '@hoggcountry/manual-core';
 import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
 import {
+  SCOUT_SOURCE_CATALOG,
+  buildScoutSourceReceipt,
+  type ScoutSourceAccess,
+  type ScoutSourceCatalogEntry,
+  type ScoutSourceTrust
+} from '@hoggcountry/scout-sources';
+import {
   buildAtRouteGrounding,
   formatAtRouteMileage,
   validateAtRouteAnswerClaims,
@@ -111,21 +118,6 @@ const ZERO_USAGE = {
   }
 } as const;
 
-type ScoutSourceTrust = 'private' | 'reviewed' | 'official' | 'crowd' | 'direct' | 'pilot';
-type ScoutSourceAccess = 'searchable-now' | 'user-import' | 'external-check' | 'future-integration';
-
-interface ScoutSourceCatalogEntry {
-  readonly id: string;
-  readonly label: string;
-  readonly category: string;
-  readonly trust: ScoutSourceTrust;
-  readonly access: ScoutSourceAccess;
-  readonly privacy: string;
-  readonly useWhen: string;
-  readonly caveat: string;
-  readonly keywords: readonly string[];
-}
-
 interface ScoutContextHit extends SearchHit {
   readonly trust: ScoutSourceTrust;
   readonly access: ScoutSourceAccess;
@@ -163,119 +155,6 @@ const OFFICIAL_TRAIL_SOURCE_PARAMETERS = Type.Object({
     description: 'Use the latest public Dad Garmin fix for NWS when the question is about Dad/current pilot context.'
   }))
 });
-
-const SCOUT_SOURCE_CATALOG: readonly ScoutSourceCatalogEntry[] = [
-  {
-    id: 'private-workspace',
-    label: 'Private workspace: profile, manual notes, saved Scout docs, imported docs, tools',
-    category: 'private workspace',
-    trust: 'private',
-    access: 'searchable-now',
-    privacy: 'Private to the hiker by default.',
-    useWhen: 'Personal constraints, current plan, gear/loadout, health notes, budget, pace, town style, living plans, and anything the hiker has imported or saved.',
-    caveat: 'Treat as authoritative for the hiker, but still ask when details are stale or missing.',
-    keywords: ['profile', 'manual', 'notes', 'gear', 'loadout', 'health', 'budget', 'pace', 'plan', 'docs', 'checklist', 'private']
-  },
-  {
-    id: 'hogg-country-corpus',
-    label: 'Hogg Country field guide and reviewed public corpus',
-    category: 'reviewed guide corpus',
-    trust: 'reviewed',
-    access: 'searchable-now',
-    privacy: 'Shared public/reviewed Hogg Country material.',
-    useWhen: 'General AT operating guidance: gear, shelter-vs-tent, routines, resupply norms, zero days, trail culture, and known guide addenda.',
-    caveat: 'Good baseline guidance, not a replacement for live closures, weather, or user-owned guidebook details.',
-    keywords: ['guide', 'field guide', 'gear', 'shelter', 'tent', 'routine', 'resupply', 'zero', 'water', 'detour', 'helene']
-  },
-  {
-    id: 'dad-public-pilot',
-    label: 'Dad public pilot signals: Trail Updates, Garmin fix, YouTube dispatches',
-    category: 'public hiker signals',
-    trust: 'pilot',
-    access: 'searchable-now',
-    privacy: 'Only public Dad pilot context; do not infer private certainty.',
-    useWhen: 'Testing Scout on a real hike, current public location/update context, and trail-story-to-planning loops.',
-    caveat: 'Garmin can lag or be preview/fallback. Trail Updates are usually the freshest narrative signal.',
-    keywords: ['dad', 'garmin', 'public pilot', 'trail update', 'youtube', 'dispatch', 'story']
-  },
-  {
-    id: 'at-guide-user-owned',
-    label: 'A.T. Guide / AWOL data imported by the hiker',
-    category: 'licensed/user-owned guide data',
-    trust: 'reviewed',
-    access: 'user-import',
-    privacy: 'Private if the hiker imports their legally owned copy.',
-    useWhen: 'Mile-by-mile planning, elevation, shelters, campsites, trail towns, road crossings, and resupply structure.',
-    caveat: 'Do not scrape or bundle copyrighted guide content; ask the hiker to import/search what they own.',
-    keywords: ['awol', 'a.t. guide', 'guidebook', 'mileage', 'elevation', 'shelter', 'campsite', 'town', 'road crossing']
-  },
-  {
-    id: 'farout-current-comments',
-    label: 'FarOut recent comments/screenshots supplied by the hiker',
-    category: 'current crowd intel',
-    trust: 'crowd',
-    access: 'user-import',
-    privacy: 'Private if entered/imported by the hiker.',
-    useWhen: 'Recent water reliability, shelter conditions, blowdowns, reroutes, campsite crowding, and trail-surface reports.',
-    caveat: 'Crowd reports can be stale or wrong; prefer recent dated comments and cross-check risky claims.',
-    keywords: ['farout', 'comment', 'water', 'source', 'dry', 'closure', 'reroute', 'blowdown', 'shelter', 'condition']
-  },
-  {
-    id: 'atc-trail-updates',
-    label: 'Appalachian Trail Conservancy official trail updates',
-    category: 'official closures and detours',
-    trust: 'official',
-    access: 'external-check',
-    privacy: 'Public official source.',
-    useWhen: 'Closures, official detours, ferry/bridge status, fire restrictions, and land-manager notices.',
-    caveat: 'Scout cannot claim a live check unless this source is fetched or imported for the turn.',
-    keywords: ['atc', 'closure', 'detour', 'bridge', 'ferry', 'restriction', 'reroute', 'official', 'helene']
-  },
-  {
-    id: 'nws-weather',
-    label: 'National Weather Service point forecast, alerts, and forecast discussions',
-    category: 'official weather',
-    trust: 'official',
-    access: 'external-check',
-    privacy: 'Public official source.',
-    useWhen: 'Weather decisions: thunderstorms, cold exposure, heat risk, wind, flood risk, snow/ice, and exposed-ridge timing.',
-    caveat: 'Use exact location/elevation when possible; do not substitute broad town weather for ridge conditions without saying so.',
-    keywords: ['weather', 'storm', 'rain', 'snow', 'ice', 'wind', 'heat', 'cold', 'flood', 'forecast', 'alert', 'nws', 'noaa']
-  },
-  {
-    id: 'land-manager-pages',
-    label: 'Official land-manager pages: NPS, USFS, state parks, AMC where applicable',
-    category: 'official land management',
-    trust: 'official',
-    access: 'external-check',
-    privacy: 'Public official source.',
-    useWhen: 'Park-specific closures, permits, camping rules, fire restrictions, shelter/campsite rules, and road/trailhead access.',
-    caveat: 'Jurisdiction changes along the AT; identify the responsible manager before treating a rule as universal.',
-    keywords: ['permit', 'camping', 'park', 'forest', 'nps', 'usfs', 'state park', 'fire', 'road', 'trailhead', 'closure']
-  },
-  {
-    id: 'hostel-shuttle-direct',
-    label: 'Direct hostel, outfitter, shuttle, and town-service pages or phone-confirmed notes',
-    category: 'direct town services',
-    trust: 'direct',
-    access: 'external-check',
-    privacy: 'Public or hiker-entered private notes depending on source.',
-    useWhen: 'Availability, hours, laundry/showers, shuttle logistics, resupply timing, mail drops, and reservation-sensitive plans.',
-    caveat: 'Availability changes fast. For same-day or next-day logistics, recommend direct confirmation.',
-    keywords: ['hostel', 'shuttle', 'outfitter', 'laundry', 'resupply', 'reservation', 'mail drop', 'town', 'hours']
-  },
-  {
-    id: 'hiker-owned-social-profile',
-    label: 'Hiker-owned profile, journal, trail updates, location history, gear/loadout, and shared guides',
-    category: 'private-first hiker hub',
-    trust: 'private',
-    access: 'future-integration',
-    privacy: 'Default private; the hiker chooses per artifact whether family/friends/link/public sharing is allowed.',
-    useWhen: 'Longitudinal Scout memory, family-facing updates, personal journal grounding, gear evolution, location-aware planning, and opt-in shared learning.',
-    caveat: 'Keep “use this to help me” separate from “share this publicly” and “promote into shared trail intel.”',
-    keywords: ['profile', 'journal', 'family', 'friends', 'location', 'gear', 'loadout', 'share', 'social', 'updates']
-  }
-];
 
 const QUERY_STOPWORDS = new Set([
   'about', 'after', 'again', 'ahead', 'could', 'current', 'doing', 'from', 'have', 'help', 'into', 'like', 'make', 'need', 'next',
@@ -1400,6 +1279,11 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
     typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
     typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
   ].filter(Boolean).join(' · ');
+  const routeReceipt = buildScoutSourceReceipt(grounding.source.id);
+  const atcReceipt = buildScoutSourceReceipt('atc-trail-updates', { fetchedAt: official.fetchedAt });
+  const nwsReceipt = official.weather ? buildScoutSourceReceipt('nws-weather', { fetchedAt: official.fetchedAt }) : null;
+  const guideReceipt = buildScoutSourceReceipt('at-guide-user-owned');
+  const faroutReceipt = buildScoutSourceReceipt('farout-current-comments');
 
   const lines: string[] = [
     '### Scout strict-route plan',
@@ -1461,9 +1345,12 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
     '- Confirm parking, shuttle/pickup, town hours, lodging/camping, and bailout options before committing to the stronger plan.',
     '',
     '**Source receipts**',
-    `- Route validator: ${grounding.source.citation}`,
-    official ? `- Official/live sources: ATC Trail Updates and NWS checked at ${official.fetchedAt}.` : '- Official/live sources: not checked in this turn.',
-    '- Missing source class: current user-owned guide / FarOut-style comments for exact shelter condition, water reliability, services, and legal camping.'
+    routeReceipt ? `- ${routeReceipt.title} [${routeReceipt.trust}/${routeReceipt.accessMode}]: ${routeReceipt.citation}` : `- Route validator: ${grounding.source.citation}`,
+    atcReceipt ? `- ${atcReceipt.title} [${atcReceipt.trust}/${atcReceipt.accessMode}]: ${atcReceipt.citation}` : '- ATC Trail Updates source manifest: available, but no ATC receipt was produced in this turn.',
+    nwsReceipt ? `- ${nwsReceipt.title} [${nwsReceipt.trust}/${nwsReceipt.accessMode}]: ${nwsReceipt.citation}` : '- NWS source manifest: available, but no weather receipt was produced in this turn.',
+    guideReceipt ? `- Needed but not bundled: ${guideReceipt.title} [${guideReceipt.trust}/${guideReceipt.accessMode}]. ${guideReceipt.caveats[0]}` : '- Needed but not bundled: user-owned guide data.',
+    faroutReceipt ? `- Needed but not bundled: ${faroutReceipt.title} [${faroutReceipt.trust}/${faroutReceipt.accessMode}]. ${faroutReceipt.caveats[0]}` : '- Needed but not bundled: current user-supplied water/shelter comments.',
+    '- Missing source class remains current user-owned guide/current comments for exact shelter condition, water reliability, services, and legal camping.'
   );
 
   return lines.join('\n');

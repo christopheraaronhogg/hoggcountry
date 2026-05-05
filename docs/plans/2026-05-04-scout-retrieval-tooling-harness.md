@@ -1,7 +1,7 @@
 # Scout retrieval and tooling harness plan
 
 Date: 2026-05-04
-Status: proposed next build slice after Pine Grove Furnace itinerary failure
+Status: in implementation; strict Pine Grove route validator and source catalog scaffolding started after Pine Grove Furnace itinerary failure
 
 Research companion: `docs/plans/2026-05-04-scout-research-backed-rag-implementation.md` summarizes the RAG/tool-use papers behind the chosen architecture. Its main conclusion is that Scout needs host-orchestrated corrective RAG with deterministic route validators, not an agent-only native-tool loop.
 
@@ -32,12 +32,12 @@ Already shipped pieces:
 
 Main gaps:
 
-- The DeepSeek/OpenCode Go runtime currently gets preloaded source context but no true model tool calls.
-- Existing official checks cover closures/weather, not route order/mileage.
-- Search is lightweight lexical search over whole artifacts, not a real source catalog with chunk receipts.
+- The DeepSeek/OpenCode Go runtime currently gets preloaded source context and native source tools, but the safety boundary still needs host-side receipts/orchestration for broad route planning.
+- Existing official checks cover closures/weather, not general route order/mileage outside the curated Pine Grove guardrail.
+- Search is lightweight lexical search over whole artifacts; `packages/scout-sources` now provides manifest/receipt scaffolding, but chunked source indexes and UI receipts are still pending.
 - PDFs are metadata-only unless the user pastes/exported text.
-- No deterministic AT route validator exists, so named shelters/towns/mileages can still be hallucinated.
-- No eval harness blocks regressions like the Pine Grove Furnace failure.
+- A deterministic Pine Grove AT route validator exists now, but the wider AT gazetteer and generalized shelter/town resolver are still pending.
+- The Pine Grove eval exists now, but broader provider scorecards and UI-level regression checks are still pending.
 
 ## Design principles
 
@@ -396,10 +396,10 @@ Add machine-checkable assertions:
 
 ### Phase 1 — source catalog package
 
-- Add `packages/scout-sources` with source manifests and chunk types.
-- Move the hardcoded `SCOUT_SOURCE_CATALOG` out of `claw-agent.ts` or mirror it from the package.
-- Generate a small searchable index from Hogg Country corpus, manual sections, and source manifests.
-- Add unit tests for catalog selection.
+- [x] Add `packages/scout-sources` with source manifests and chunk types.
+- [x] Move the hardcoded `SCOUT_SOURCE_CATALOG` out of `claw-agent.ts` or mirror it from the package.
+- [ ] Generate a small searchable index from Hogg Country corpus, manual sections, and source manifests.
+- [x] Add eval coverage for catalog selection and source receipts via `npm run eval:scout-sources`.
 
 ### Phase 2 — route gazetteer and validator
 

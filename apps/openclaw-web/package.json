@@ -15,6 +15,7 @@
     "@hoggcountry/brand": "file:../../packages/brand",
     "@hoggcountry/corpus": "file:../../packages/corpus",
     "@hoggcountry/manual-core": "file:../../packages/manual-core",
+    "@hoggcountry/scout-sources": "file:../../packages/scout-sources",
     "@hoggcountry/trail-data": "file:../../packages/trail-data",
     "@mariozechner/pi-agent-core": "^0.67.68",
     "@mariozechner/pi-ai": "^0.67.68",

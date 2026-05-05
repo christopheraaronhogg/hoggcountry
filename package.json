@@ -28,6 +28,7 @@
     "test:guide": "node --test scripts/parse-master-guide.test.js",
     "dogfood:manual": "node scripts/dogfood-field-manual.mjs",
     "eval:scout-grounding": "node --experimental-strip-types --experimental-transform-types scripts/eval-scout-grounding.mjs",
+    "eval:scout-sources": "node --experimental-strip-types --experimental-transform-types scripts/eval-scout-sources.mjs",
     "check:mileage": "node scripts/check-mileage-consistency.js",
     "check:water": "node scripts/validate-water-sources.js",
     "check:hydro": "node scripts/validate-hydro-crossings.js",
