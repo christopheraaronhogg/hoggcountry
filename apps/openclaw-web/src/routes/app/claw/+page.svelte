@@ -1443,7 +1443,7 @@
     background-color: #f5f2e8 !important;
     background-image:
       linear-gradient(180deg, rgba(255, 253, 248, 0.88), rgba(245, 242, 232, 0.9)),
-      url('/topo.svg') !important;
+      url('/default-background.svg') !important;
     background-position: center top !important;
     background-repeat: no-repeat !important;
     background-size: cover !important;
@@ -1457,7 +1457,7 @@
     background:
       radial-gradient(circle at top left, rgba(166, 181, 137, 0.18), transparent 30rem),
       linear-gradient(180deg, rgba(255, 253, 248, 0.86) 0%, rgba(245, 242, 232, 0.92) 100%),
-      url('/topo.svg') center top / cover no-repeat fixed,
+      url('/default-background.svg') center top / cover no-repeat fixed,
       #f5f2e8;
   }
 
@@ -1619,7 +1619,7 @@
     border-radius: 26px;
     background:
       linear-gradient(180deg, rgba(255, 253, 248, 0.7), rgba(255, 253, 248, 0.8)),
-      url('/topo.svg') center top / cover no-repeat,
+      url('/default-background.svg') center top / cover no-repeat,
       var(--bg, #f5f2e8);
     box-shadow: var(--shadow-soft, 0 10px 22px rgba(0, 0, 0, 0.06));
   }
@@ -2431,15 +2431,9 @@
       border: 0;
       border-radius: 0;
       background:
-        url('/topo.svg') center -2rem / 38rem auto repeat,
-        url('/topo.svg') center -2rem / 38rem auto repeat,
-        url('/topo.svg') center -2rem / 38rem auto repeat,
-        url('/topo.svg') center -2rem / 38rem auto repeat,
-        url('/topo.svg') center -2rem / 38rem auto repeat,
-        url('/topo.svg') center -2rem / 38rem auto repeat,
-        radial-gradient(circle, rgba(36, 54, 44, 0.055) 0 1px, transparent 1.35px) 0.55rem 0.7rem / 2.25rem 2.25rem,
-        radial-gradient(circle, rgba(36, 54, 44, 0.03) 0 0.85px, transparent 1.2px) 1.7rem 1.85rem / 2.65rem 2.65rem,
-        linear-gradient(180deg, #fffdf8, #fbfaf5);
+        linear-gradient(180deg, rgba(255, 253, 248, 0.66), rgba(251, 250, 245, 0.78)),
+        url('/default-background.svg') center top / cover no-repeat,
+        #fffdf8;
       box-shadow: none;
     }
 
