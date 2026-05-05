@@ -3,6 +3,8 @@
 Date: 2026-05-04
 Status: proposed next build slice after Pine Grove Furnace itinerary failure
 
+Research companion: `docs/plans/2026-05-04-scout-research-backed-rag-implementation.md` summarizes the RAG/tool-use papers behind the chosen architecture. Its main conclusion is that Scout needs host-orchestrated corrective RAG with deterministic route validators, not an agent-only native-tool loop.
+
 ## Why this exists
 
 The Pine Grove Furnace 3-day NOBO dogfood run proved the model swap is not enough. `deepseek-v4-pro` is cheaper and usable for general language, but it still confidently invented or misordered Appalachian Trail route facts when asked for a real itinerary.
