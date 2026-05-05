@@ -105,6 +105,24 @@
     readonly scoutPrompt: string;
   }
 
+  interface ScoutLocationPayload {
+    readonly latitude: number;
+    readonly longitude: number;
+    readonly accuracyMeters: number | null;
+    readonly nearestMile: number;
+    readonly scaledTrailMiles: number | null;
+    readonly distanceToTrailMiles: number;
+    readonly trailLatitude: number;
+    readonly trailLongitude: number;
+  }
+
+  interface ScoutLocationUpdatePayload {
+    readonly location: ScoutLocationPayload;
+    readonly profileUpdated: boolean;
+    readonly profileUpdateReason: string | null;
+    readonly workspace: WorkspaceSnapshot;
+  }
+
   let profile = $state<ManualProfile | null>(null);
   let lanes = $state<ClawLane[]>([]);
   let connection = $state<ProviderConnection | null>(null);
@@ -112,6 +130,9 @@
   let dailyBrief = $state<ScoutDailyBrief | null>(null);
   let dailyBriefLoading = $state(false);
   let dailyBriefError = $state('');
+  let locationBusy = $state(false);
+  let locationNotice = $state('');
+  let locationError = $state('');
   let documents = $state<ImportedDocument[]>([]);
   let resources = $state<WorkspaceResource[]>([]);
   let selectedDocumentId = $state<string>('');
@@ -668,6 +689,116 @@
     }
   }
 
+  function applyWorkspaceSnapshot(workspace: WorkspaceSnapshot) {
+    profile = workspace.profile;
+    documents = Array.isArray(workspace.documents) ? workspace.documents : [];
+    resources = Array.isArray(workspace.resources) ? workspace.resources : [];
+    ensureSelectedDocument(documents);
+    ensureSelectedResource(resources);
+    lanes = workspace.profile ? buildClawLanes(workspace.profile, workspace.sections, workspace.documents, workspace.tools, workspace.resources) : [];
+  }
+
+  function formatLocationDistance(miles: number): string {
+    if (!Number.isFinite(miles)) return 'unknown distance';
+    if (miles < 0.1) return 'on the AT corridor';
+    if (miles < 1) return `${(miles * 5280).toFixed(0)} ft from the AT`;
+    return `${miles.toFixed(1)} mi from the AT`;
+  }
+
+  function formatAccuracy(meters: number | null): string {
+    if (meters === null || !Number.isFinite(meters)) return '';
+    if (meters < 1609.344) return `, ±${meters.toFixed(0)}m`;
+    return `, ±${(meters / 1609.344).toFixed(1)}mi`;
+  }
+
+  function locationPromptLine(payload: ScoutLocationUpdatePayload): string {
+    const location = payload.location;
+    const coordinates = `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`;
+    const trailDistance = formatLocationDistance(location.distanceToTrailMiles);
+    const profileLine = payload.profileUpdated
+      ? `Profile current mile updated to ${location.nearestMile.toFixed(1)}.`
+      : `Profile current mile not changed: ${payload.profileUpdateReason ?? 'GPS fix was not close enough to the AT corridor.'}`;
+
+    return `Scout GPS context: browser fix ${coordinates}${formatAccuracy(location.accuracyMeters)}; nearest AT mile ${location.nearestMile.toFixed(1)} (${trailDistance}). ${profileLine} Use this as my current-position context unless I correct it.`;
+  }
+
+  function mergeLocationIntoPrompt(prompt: string, line: string): string {
+    const withoutPreviousLocation = prompt
+      .split('\n')
+      .filter((part) => !part.trim().startsWith('Scout GPS context:'))
+      .join('\n')
+      .trim();
+
+    if (!withoutPreviousLocation) {
+      return `Use my current location for the next trail decision.\n\n${line}`;
+    }
+
+    return `${withoutPreviousLocation}\n\n${line}`;
+  }
+
+  function geolocationErrorMessage(caught: unknown): string {
+    const maybePositionError = caught as { code?: unknown } | null;
+    if (maybePositionError && typeof maybePositionError.code === 'number') {
+      if (maybePositionError.code === 1) return 'GPS permission was denied. Enable location for this site, then try again.';
+      if (maybePositionError.code === 2) return 'GPS is unavailable right now. Try again with clearer signal.';
+      if (maybePositionError.code === 3) return 'GPS timed out before the browser returned a fix. Try again.';
+    }
+
+    return caught instanceof Error ? caught.message : 'Could not add your current GPS location.';
+  }
+
+  function currentPosition(): Promise<GeolocationPosition> {
+    return new Promise((resolvePosition, rejectPosition) => {
+      if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+        rejectPosition(new Error('GPS is not available in this browser.'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(resolvePosition, rejectPosition, {
+        enableHighAccuracy: true,
+        maximumAge: 60_000,
+        timeout: 15_000
+      });
+    });
+  }
+
+  async function attachCurrentLocation() {
+    locationBusy = true;
+    locationNotice = '';
+    locationError = '';
+    saveNotice = '';
+    saveError = '';
+
+    try {
+      const position = await currentPosition();
+      const payload = await jsonOrThrow(
+        await fetch('/app-api/workspace/profile/current-location', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracyMeters: position.coords.accuracy
+          })
+        })
+      ) as ScoutLocationUpdatePayload;
+
+      applyWorkspaceSnapshot(payload.workspace);
+      replyInput = mergeLocationIntoPrompt(replyInput, locationPromptLine(payload));
+      locationNotice = payload.profileUpdated
+        ? `GPS added · profile is now mile ${payload.location.nearestMile.toFixed(1)}.`
+        : `GPS added · nearest AT mile ${payload.location.nearestMile.toFixed(1)} (${formatLocationDistance(payload.location.distanceToTrailMiles)}). Profile unchanged.`;
+      await focusPromptComposer();
+    } catch (caught) {
+      console.error(caught);
+      locationError = geolocationErrorMessage(caught);
+    } finally {
+      locationBusy = false;
+    }
+  }
+
   async function consumeStandardDocumentQueryState() {
     const url = new URL(window.location.href);
     const slotKey = url.searchParams.get('standardDocSlot');
@@ -774,13 +905,7 @@
           .catch(() => null)
       ]);
 
-      const workspace = workspacePayload as WorkspaceSnapshot;
-      profile = workspace.profile;
-      documents = Array.isArray(workspace.documents) ? workspace.documents : [];
-      resources = Array.isArray(workspace.resources) ? workspace.resources : [];
-      ensureSelectedDocument(documents);
-      ensureSelectedResource(resources);
-      lanes = workspace.profile ? buildClawLanes(workspace.profile, workspace.sections, workspace.documents, workspace.tools, workspace.resources) : [];
+      applyWorkspaceSnapshot(workspacePayload as WorkspaceSnapshot);
       connection = (clawPayload.connection ?? null) as ProviderConnection | null;
       dadPilot = dadPayload ? (dadPayload as DadPilotSummary) : null;
       messages = Array.isArray(clawPayload.messages) ? (clawPayload.messages as ClawMessage[]) : [];
@@ -1255,6 +1380,24 @@
 
         <div class="prompt-box">
           <label class="sr-only" for="scout-prompt">Ask Scout</label>
+          <button
+            class="location-button"
+            type="button"
+            onclick={attachCurrentLocation}
+            disabled={sendBusy || locationBusy}
+            aria-label="Add current GPS location"
+            title="Add current GPS location"
+          >
+            {#if locationBusy}
+              <span aria-hidden="true">◎</span>
+            {:else}
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 3v3M12 18v3M3 12h3M18 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2" />
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+              </svg>
+            {/if}
+          </button>
           <textarea
             id="scout-prompt"
             bind:this={promptTextarea}
@@ -1277,6 +1420,13 @@
             </svg>
           </button>
         </div>
+
+        {#if locationNotice}
+          <p class="location-note">{locationNotice}</p>
+        {/if}
+        {#if locationError}
+          <p class="workspace-alert">{locationError}</p>
+        {/if}
 
         {#if saveNotice}
           <p class="success-note">
@@ -1494,6 +1644,7 @@
     position: relative;
     width: 100%;
     height: 100%;
+    min-width: 0;
     min-height: 0;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
@@ -1604,6 +1755,7 @@
 
   .workspace-grid {
     display: grid;
+    min-width: 0;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'conversation';
     gap: 0;
@@ -1616,6 +1768,7 @@
     grid-area: conversation;
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
+    min-width: 0;
     min-height: 0;
     height: 100%;
     max-height: none;
@@ -1947,19 +2100,41 @@
     display: block;
   }
 
-  .prompt-box::before {
-    content: '⌕';
+  .location-button {
     position: absolute;
-    left: 0.82rem;
-    bottom: 0.66rem;
-    z-index: 1;
+    left: 0.42rem;
+    bottom: 0.42rem;
+    z-index: 2;
     display: grid;
     place-items: center;
-    width: 1.8rem;
-    height: 1.8rem;
+    width: 2.05rem;
+    height: 2.05rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(237, 243, 229, 0.88);
     color: #394638;
-    font-size: 1.45rem;
-    pointer-events: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .location-button:hover {
+    background: rgba(166, 181, 137, 0.28);
+    color: #24362c;
+  }
+
+  .location-button svg {
+    width: 1.08rem;
+    height: 1.08rem;
+  }
+
+  .location-button span {
+    font-size: 1.12rem;
+    font-weight: 900;
+  }
+
+  .location-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
   }
 
   .prompt-box textarea {
@@ -2044,9 +2219,13 @@
     top: 0;
     bottom: 0;
     width: min(26rem, calc(100vw - 4.2rem));
+    max-width: 100%;
+    min-width: 0;
     display: grid;
     grid-auto-rows: max-content;
     gap: 1.05rem;
+    box-sizing: border-box;
+    overflow-x: hidden;
     overflow-y: auto;
     border-width: 0 1px 0 0;
     border-radius: 0 24px 24px 0;
@@ -2073,6 +2252,35 @@
 
   .workspace-panel.panel-open {
     transform: translateX(0);
+  }
+
+  .workspace-panel > *,
+  .workspace-panel details,
+  .workspace-panel summary,
+  .panel-card,
+  .thread-summary-card,
+  .drawer-nav-item,
+  .history-item,
+  .doc-list button,
+  .mini-head,
+  .panel-head {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .workspace-panel p,
+  .workspace-panel a,
+  .workspace-panel strong,
+  .workspace-panel span,
+  .workspace-panel small,
+  .workspace-panel em,
+  .workspace-panel li,
+  .workspace-panel summary,
+  .drawer-nav-item,
+  .history-item,
+  .doc-list button {
+    overflow-wrap: anywhere;
   }
 
   .workspace-scrim {
@@ -2288,6 +2496,7 @@
   .brief-summary,
   .small-note,
   .success-note,
+  .location-note,
   .panel-card p {
     margin: 0;
     color: #52604d;
@@ -2297,6 +2506,12 @@
   .success-note {
     color: #166534;
     font-weight: 850;
+  }
+
+  .location-note {
+    color: #394638;
+    font-size: 0.82rem;
+    font-weight: 800;
   }
 
   .compact-list {
@@ -2571,14 +2786,19 @@
       display: none;
     }
 
-    .prompt-box::before {
-      content: '⊕';
-      left: 0.92rem;
-      bottom: 0.76rem;
-      width: 1.75rem;
-      height: 1.75rem;
-      color: #394638;
-      font-size: 1.35rem;
+    .location-button {
+      left: 0.45rem;
+      bottom: 0.42rem;
+      width: 2.35rem;
+      height: 2.62rem;
+      border-radius: 8px;
+      background: #f4f4f2;
+      color: #24362c;
+    }
+
+    .location-button svg {
+      width: 1.08rem;
+      height: 1.08rem;
     }
 
     .prompt-box textarea {
