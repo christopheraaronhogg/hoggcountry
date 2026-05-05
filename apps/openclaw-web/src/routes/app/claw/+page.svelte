@@ -1605,6 +1605,7 @@
   .workspace-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'conversation';
     gap: 0;
     align-items: stretch;
     min-height: 0;
@@ -1612,6 +1613,7 @@
   }
 
   .conversation-shell {
+    grid-area: conversation;
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     min-height: 0;
@@ -2055,11 +2057,13 @@
   }
 
   .history-panel {
+    grid-area: history;
     left: 0;
     transform: translateX(calc(-100% - 1rem));
   }
 
   .docs-panel {
+    grid-area: docs;
     right: 0;
     border-width: 0 0 0 1px;
     border-radius: 24px 0 0 24px;
@@ -2354,8 +2358,24 @@
   }
 
   @media (min-width: 900px) {
-    .workspace-grid {
+    .scout-workspace.history-open.docs-open .workspace-grid {
       grid-template-columns: minmax(220px, 0.28fr) minmax(0, 1fr) minmax(270px, 0.34fr);
+      grid-template-areas: 'history conversation docs';
+    }
+
+    .scout-workspace.history-open:not(.docs-open) .workspace-grid {
+      grid-template-columns: minmax(220px, 0.28fr) minmax(0, 1fr);
+      grid-template-areas: 'history conversation';
+    }
+
+    .scout-workspace:not(.history-open).docs-open .workspace-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(270px, 0.34fr);
+      grid-template-areas: 'conversation docs';
+    }
+
+    .scout-workspace:not(.history-open):not(.docs-open) .workspace-grid {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'conversation';
     }
 
     .workspace-panel {
@@ -2381,8 +2401,16 @@
   }
 
   @media (min-width: 1240px) {
-    .workspace-grid {
+    .scout-workspace.history-open.docs-open .workspace-grid {
       grid-template-columns: minmax(250px, 0.25fr) minmax(0, 1fr) minmax(320px, 0.32fr);
+    }
+
+    .scout-workspace.history-open:not(.docs-open) .workspace-grid {
+      grid-template-columns: minmax(250px, 0.25fr) minmax(0, 1fr);
+    }
+
+    .scout-workspace:not(.history-open).docs-open .workspace-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.32fr);
     }
   }
 
