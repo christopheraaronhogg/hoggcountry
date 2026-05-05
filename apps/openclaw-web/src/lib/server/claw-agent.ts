@@ -1384,12 +1384,12 @@ export async function replyInWorkspaceClaw(
           activeDocument,
           dadPilotSummary,
           sourceContext,
-          runtime.providerId !== OPENCODE_GO_PROVIDER_ID,
+          true,
           activeResource
         ),
         model: runtime.model,
         thinkingLevel: 'low',
-        tools: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? [] : [buildScoutSourceSearchTool(record, dadPilotSummary), buildOfficialTrailSourceTool(dadPilotSummary)],
+        tools: [buildScoutSourceSearchTool(record, dadPilotSummary), buildOfficialTrailSourceTool(dadPilotSummary)],
         messages: history.map(toPiMessage)
       },
       sessionId: `workspace:${workspaceId}:claw`,
