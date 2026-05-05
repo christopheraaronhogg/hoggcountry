@@ -400,6 +400,7 @@ Add machine-checkable assertions:
 - [x] Move the hardcoded `SCOUT_SOURCE_CATALOG` out of `claw-agent.ts` or mirror it from the package.
 - [ ] Generate a small searchable index from Hogg Country corpus, manual sections, and source manifests.
 - [x] Add eval coverage for catalog selection and source receipts via `npm run eval:scout-sources`.
+- [x] Expose `catalog_scout_sources` as a pi-agent/OpenCode Go tool so Scout can explicitly list available/missing source lanes before searching or answering.
 
 ### Phase 2 — route gazetteer and validator
 

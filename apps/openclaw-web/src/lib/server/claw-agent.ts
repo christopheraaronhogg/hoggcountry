@@ -12,8 +12,10 @@ import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
 import {
   SCOUT_SOURCE_CATALOG,
   buildScoutSourceReceipt,
+  selectScoutSourceManifests,
   type ScoutSourceAccess,
   type ScoutSourceCatalogEntry,
+  type ScoutSourceManifest,
   type ScoutSourceTrust
 } from '@hoggcountry/scout-sources';
 import {
@@ -128,6 +130,30 @@ interface ScoutSourceSearchDetails {
   readonly hits: ScoutContextHit[];
   readonly recommendations: ScoutSourceCatalogEntry[];
 }
+
+interface ScoutSourceCatalogDetails {
+  readonly query: string;
+  readonly state: string | null;
+  readonly mileRange: readonly [number, number] | null;
+  readonly sources: readonly ScoutSourceManifest[];
+}
+
+const SCOUT_SOURCE_CATALOG_PARAMETERS = Type.Object({
+  query: Type.String({
+    minLength: 2,
+    description: 'The hiker question, route, location, or source topic to classify against Scout source manifests.'
+  }),
+  state: Type.Optional(Type.String({
+    maxLength: 32,
+    description: 'Optional Appalachian Trail state abbreviation such as PA, VA, TN, NC, or GA.'
+  })),
+  mileStart: Type.Optional(Type.Number({ description: 'Optional start mile for source coverage filtering.' })),
+  mileEnd: Type.Optional(Type.Number({ description: 'Optional end mile for source coverage filtering.' })),
+  includeUnavailable: Type.Optional(Type.Boolean({
+    description: 'Include disabled/future source lanes when explaining what Scout does not have yet.'
+  })),
+  limit: Type.Optional(Type.Number({ minimum: 1, maximum: 12, description: 'Maximum source manifests to return.' }))
+});
 
 const SCOUT_SOURCE_SEARCH_PARAMETERS = Type.Object({
   query: Type.String({
@@ -367,6 +393,85 @@ function buildScoutSourceSearchDetails(
     queries: deriveScoutSourceQueries(prompt),
     hits: searchScoutSources(record, dadPilotSummary, prompt, limit),
     recommendations: recommendedScoutSources(prompt)
+  };
+}
+
+function buildScoutSourceCatalogDetails(input: {
+  readonly query: string;
+  readonly state?: string | null;
+  readonly mileStart?: number | null;
+  readonly mileEnd?: number | null;
+  readonly includeUnavailable?: boolean | null;
+  readonly limit?: number | null;
+}): ScoutSourceCatalogDetails {
+  const mileRange = typeof input.mileStart === 'number' && typeof input.mileEnd === 'number'
+    ? [input.mileStart, input.mileEnd] as const
+    : null;
+  return {
+    query: input.query,
+    state: input.state?.trim() || null,
+    mileRange,
+    sources: selectScoutSourceManifests({
+      query: input.query,
+      state: input.state?.trim() || null,
+      mileRange,
+      includeUnavailable: input.includeUnavailable ?? false,
+      limit: input.limit ?? 8
+    })
+  };
+}
+
+function renderScoutSourceCatalogResult(details: ScoutSourceCatalogDetails): string {
+  const lines: string[] = [
+    'Scout source catalog recommendations:',
+    `Query: ${details.query}`,
+    details.state ? `State filter: ${details.state}` : null,
+    details.mileRange ? `Mile filter: ${details.mileRange[0]}–${details.mileRange[1]}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  if (details.sources.length === 0) {
+    lines.push('- No source manifest scored above threshold. Use private workspace context if present, then name the missing source needed to answer safely.');
+    return lines.join('\n');
+  }
+
+  for (const source of details.sources) {
+    lines.push(
+      `- ${source.title} [${source.trust}/${source.accessMode}]`,
+      `  - Use when: ${source.useWhen}`,
+      `  - Actions: ${source.allowedActions.join(', ')}`,
+      `  - Privacy/license: ${source.privacy} ${source.license.label}.`,
+      `  - Caveat: ${source.caveats.join(' ')}`
+    );
+  }
+
+  return lines.join('\n');
+}
+
+function buildScoutSourceCatalogTool(): AgentTool<typeof SCOUT_SOURCE_CATALOG_PARAMETERS, ScoutSourceCatalogDetails> {
+  return {
+    name: 'catalog_scout_sources',
+    label: 'Catalog Scout sources',
+    description: 'Lists which source lanes Scout has for a question, including searchable private/workspace sources, route validators, live official checks, and user-import-only guide data. Use before answering when deciding what evidence is available versus missing.',
+    parameters: SCOUT_SOURCE_CATALOG_PARAMETERS,
+    executionMode: 'parallel',
+    async execute(_toolCallId, params) {
+      const rawLimit = params.limit ?? 8;
+      const limit = Number.isFinite(rawLimit) ? Math.min(12, Math.max(1, Math.round(rawLimit))) : 8;
+      const details = buildScoutSourceCatalogDetails({
+        query: params.query.trim(),
+        state: params.state ?? null,
+        mileStart: params.mileStart ?? null,
+        mileEnd: params.mileEnd ?? null,
+        includeUnavailable: params.includeUnavailable ?? false,
+        limit
+      });
+      const text = renderScoutSourceCatalogResult(details);
+
+      return {
+        content: [{ type: 'text', text: text.length > 6000 ? `${text.slice(0, 5999).trimEnd()}…` : text }],
+        details
+      };
+    }
   };
 }
 
@@ -709,6 +814,9 @@ function buildSystemPrompt(
     tools.length > 0 ? `Available tools/checklists: ${tools.join(', ')}` : 'Available tools/checklists: none yet.',
     'Be especially good at itinerary planning, loadout choices, food-carry limits, resupply timing, budget tradeoffs, health/body tracking, hostel or town sequencing, and turning rough trail constraints into usable plans.',
     'Before answering research-like questions, use the provided Scout source search context. Separate what is searchable-now from what still needs an official/direct live check or user import.',
+    liveToolsAvailable
+      ? 'You also have a catalog_scout_sources tool. Use it first when you need to decide which source lane applies, what Scout can use now, and what source must be imported or live-checked before a factual answer.'
+      : 'This runtime may provide preloaded source-catalog context instead of live tool calls; use the context you have and clearly name missing source lanes.',
     liveToolsAvailable
       ? 'You also have a search_scout_sources tool. Use it when the user asks a research/planning question and the provided context is too thin, too broad, or needs a narrower location/topic search.'
       : 'This runtime may provide preloaded source-search context instead of live tool calls; use the context you have and clearly name missing searches.',
@@ -1472,7 +1580,7 @@ export async function replyInWorkspaceClaw(
         ),
         model: runtime.model,
         thinkingLevel: 'low',
-        tools: [buildScoutSourceSearchTool(record, dadPilotSummary), buildOfficialTrailSourceTool(dadPilotSummary)],
+        tools: [buildScoutSourceCatalogTool(), buildScoutSourceSearchTool(record, dadPilotSummary), buildOfficialTrailSourceTool(dadPilotSummary)],
         messages: history.map(toPiMessage)
       },
       sessionId: `workspace:${workspaceId}:claw`,
