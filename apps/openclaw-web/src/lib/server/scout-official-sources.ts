@@ -365,8 +365,15 @@ async function getAtcTrailUpdatesList(): Promise<ParsedAtcTrailUpdate[]> {
   return items;
 }
 
+function stateTokens(value: string | null | undefined): string[] {
+  return value?.toUpperCase().split(/[^A-Z]+/u).filter((item) => item.length === 2) ?? [];
+}
+
 function atcUpdateMatchesState(update: ParsedAtcTrailUpdate, state: string | null): boolean {
-  return Boolean(state && update.meta.toUpperCase().split(/[^A-Z]+/u).includes(state.toUpperCase()));
+  const queryStates = stateTokens(state);
+  if (queryStates.length === 0) return false;
+  const updateStates = new Set(stateTokens(update.meta));
+  return queryStates.some((item) => updateStates.has(item));
 }
 
 function scoreAtcUpdate(update: ParsedAtcTrailUpdate, query: string, state: string | null): number {

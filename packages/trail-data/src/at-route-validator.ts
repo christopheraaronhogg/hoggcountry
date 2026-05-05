@@ -70,7 +70,7 @@ export interface BuildAtRouteGroundingInput {
   readonly maxCorridorMiles?: number | null;
 }
 
-export type AtRouteClaimIssueKind = 'blocked-endpoint' | 'misordered-sequence' | 'bad-mileage';
+export type AtRouteClaimIssueKind = 'blocked-endpoint' | 'misordered-sequence' | 'bad-mileage' | 'unsafe-camping-rule';
 
 export interface AtRouteClaimIssue {
   readonly kind: AtRouteClaimIssueKind;
@@ -88,7 +88,100 @@ export const AT_ROUTE_QA_SOURCE: AtRouteReferenceSource = {
   exactMileageCaveat: 'Use these values as a guardrail to prevent wrong order and impossible legs. Treat exact mileages, legal camping, water, and services as verify-before-leaving facts.'
 } as const;
 
+export const GSMNP_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
+  id: 'hoggcountry-gsmnp-at-corridor-qa-2026-05-05',
+  label: 'Hogg Country GSMNP AT corridor and permit-rule QA fixture',
+  citation: 'Internal dogfood guardrail created from 2026-05-05 Smokies QA plus official NPS/Recreation.gov camping rules; verify exact mileages, shelter availability, water, and closures before leaving.',
+  authority: 'internal-qa',
+  exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, NPS map, Recreation.gov itinerary, or recent water/shelter report.'
+} as const;
+
 export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
+  {
+    id: 'fontana-dam-nc',
+    name: 'Fontana Dam',
+    kind: 'landmark',
+    state: 'NC',
+    mile: 166.1,
+    latitude: 35.4526,
+    longitude: -83.8032,
+    aliases: ['fontana dam', 'fontana', 'fontana dam nc', 'fontana dam north carolina'],
+    notes: 'Southern AT gateway into Great Smoky Mountains National Park; parking tag and shuttle logistics require current confirmation.'
+  },
+  {
+    id: 'mollies-ridge-shelter-nc-tn',
+    name: 'Mollies Ridge Shelter',
+    kind: 'shelter',
+    state: 'NC',
+    mile: 177.3,
+    aliases: ['mollies ridge', 'mollies ridge shelter', 'mollie ridge', 'mollie ridge shelter'],
+    notes: 'GSMNP shelter; permit/reservation and current water condition must be verified before relying on it.'
+  },
+  {
+    id: 'russell-field-shelter-tn',
+    name: 'Russell Field Shelter',
+    kind: 'shelter',
+    state: 'TN',
+    mile: 180.4,
+    aliases: ['russell field', 'russell field shelter'],
+    notes: 'GSMNP shelter; permit/reservation and current water condition must be verified before relying on it.'
+  },
+  {
+    id: 'spence-field-shelter-tn',
+    name: 'Spence Field Shelter',
+    kind: 'shelter',
+    state: 'TN',
+    mile: 183.2,
+    aliases: ['spence field', 'spence field shelter'],
+    notes: 'GSMNP shelter; permit/reservation and current water condition must be verified before relying on it.'
+  },
+  {
+    id: 'derrick-knob-shelter-tn',
+    name: 'Derrick Knob Shelter',
+    kind: 'shelter',
+    state: 'TN',
+    mile: 189.3,
+    aliases: ['derrick knob', 'derrick knob shelter'],
+    notes: 'GSMNP shelter; permit/reservation and current water condition must be verified before relying on it.'
+  },
+  {
+    id: 'silers-bald-shelter-tn',
+    name: 'Silers Bald Shelter',
+    kind: 'shelter',
+    state: 'TN',
+    mile: 195.8,
+    aliases: ['silers bald', 'silers bald shelter', 'siler bald', 'siler bald shelter'],
+    notes: 'GSMNP shelter; permit/reservation and current water condition must be verified before relying on it.'
+  },
+  {
+    id: 'double-spring-gap-shelter-tn',
+    name: 'Double Spring Gap Shelter',
+    kind: 'shelter',
+    state: 'TN',
+    mile: 197.5,
+    aliases: ['double spring gap', 'double spring gap shelter', 'double springs gap', 'double springs gap shelter'],
+    notes: 'GSMNP shelter; permit/reservation and current water condition must be verified before relying on it.'
+  },
+  {
+    id: 'mount-collins-shelter-tn',
+    name: 'Mount Collins Shelter',
+    kind: 'shelter',
+    state: 'TN',
+    mile: 203.1,
+    aliases: ['mount collins', 'mount collins shelter', 'mt collins', 'mt collins shelter'],
+    notes: 'GSMNP shelter near the Newfound Gap/Clingmans Dome corridor; permit/reservation and water must be verified.'
+  },
+  {
+    id: 'newfound-gap-tn-nc',
+    name: 'Newfound Gap',
+    kind: 'road-crossing',
+    state: 'TN',
+    mile: 208.1,
+    latitude: 35.6118,
+    longitude: -83.4249,
+    aliases: ['newfound gap', 'new found gap', 'us 441 newfound gap', 'newfound gap tn', 'newfound gap nc'],
+    notes: 'High-elevation road crossing/pickup point; verify US 441 status, parking, pickup, and weather before committing.'
+  },
   {
     id: 'pine-grove-furnace-state-park-pa',
     name: 'Pine Grove Furnace State Park',
@@ -215,16 +308,29 @@ export function inferAtRouteDirection(prompt: string): AtRouteDirection {
 }
 
 export function extractAtRouteDayCount(prompt: string): number | null {
-  const digitMatch = prompt.match(/\b(\d{1,2})\s*(?:-\s*)?(?:day|days)\b/iu);
+  const digitMatch = prompt.match(/\b(\d{1,2})\s*(?:-\s*)?(?:(?:hiking|walking|trail)\s+)?(?:day|days)\b/iu);
   if (digitMatch?.[1]) {
     const days = Number.parseInt(digitMatch[1], 10);
     return Number.isFinite(days) && days > 0 && days <= 30 ? days : null;
   }
 
-  const wordMatch = prompt.match(/\b(one|two|three|four|five|six|seven)\s*(?:-\s*)?(?:day|days)\b/iu);
-  if (!wordMatch?.[1]) return null;
+  const wordMatch = prompt.match(/\b(one|two|three|four|five|six|seven)\s*(?:-\s*)?(?:(?:hiking|walking|trail)\s+)?(?:day|days)\b/iu);
   const wordDays: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7 };
-  return wordDays[wordMatch[1].toLowerCase()] ?? null;
+  if (wordMatch?.[1]) return wordDays[wordMatch[1].toLowerCase()] ?? null;
+
+  const nightMatch = prompt.match(/\b(\d{1,2})\s*(?:-\s*)?(?:night|nights)\b/iu);
+  if (nightMatch?.[1]) {
+    const nights = Number.parseInt(nightMatch[1], 10);
+    return Number.isFinite(nights) && nights >= 0 && nights < 30 ? nights + 1 : null;
+  }
+
+  const wordNightMatch = prompt.match(/\b(one|two|three|four|five|six|seven)\s*(?:-\s*)?(?:night|nights)\b/iu);
+  if (wordNightMatch?.[1]) {
+    const nights = wordDays[wordNightMatch[1].toLowerCase()];
+    return typeof nights === 'number' ? nights + 1 : null;
+  }
+
+  return null;
 }
 
 export function shouldUseStrictAtRouteGrounding(prompt: string): boolean {
@@ -339,6 +445,93 @@ function buildPineGrovePlanOptions(direction: AtRouteDirection): readonly AtRout
   ];
 }
 
+
+function buildGsmnpPlanOptions(direction: AtRouteDirection): readonly AtRoutePlanOption[] {
+  const conservativeDays = direction === 'NOBO' ? [
+    buildDay(1, 'fontana-dam-nc', 'mollies-ridge-shelter-nc-tn', 'Big climb into GSMNP; start early and verify the exact shelter reservation before leaving Fontana.'),
+    buildDay(2, 'mollies-ridge-shelter-nc-tn', 'derrick-knob-shelter-tn', 'Steady ridge day; verify water at both shelters before committing.'),
+    buildDay(3, 'derrick-knob-shelter-tn', 'silers-bald-shelter-tn', 'Short conservative day that creates margin for late-October weather, fatigue, and reservation reality.'),
+    buildDay(4, 'silers-bald-shelter-tn', 'newfound-gap-tn-nc', 'Longer finish over high-elevation terrain; confirm US 441/Newfound Gap pickup and weather first.')
+  ] as const : [
+    buildDay(1, 'newfound-gap-tn-nc', 'silers-bald-shelter-tn', 'Longer exposed opening from the road crossing; confirm weather and US 441 access before stepping off.'),
+    buildDay(2, 'silers-bald-shelter-tn', 'derrick-knob-shelter-tn', 'Short conservative day that keeps margin for late-October weather and permit reality.'),
+    buildDay(3, 'derrick-knob-shelter-tn', 'mollies-ridge-shelter-nc-tn', 'Steady ridge day; verify water at both shelters before committing.'),
+    buildDay(4, 'mollies-ridge-shelter-nc-tn', 'fontana-dam-nc', 'Long descent out of GSMNP; confirm Fontana pickup/parking before leaving Newfound Gap.')
+  ] as const;
+
+  const balancedDays = direction === 'NOBO' ? [
+    buildDay(1, 'fontana-dam-nc', 'mollies-ridge-shelter-nc-tn', 'Big climb into GSMNP; reasonable first shelter if the permit is available.'),
+    buildDay(2, 'mollies-ridge-shelter-nc-tn', 'derrick-knob-shelter-tn', 'Solid full day; keep weather and daylight conservative.'),
+    buildDay(3, 'derrick-knob-shelter-tn', 'mount-collins-shelter-tn', 'Longer high-elevation day; use only if water, forecast, body, and reservation all line up.'),
+    buildDay(4, 'mount-collins-shelter-tn', 'newfound-gap-tn-nc', 'Short finish that protects shuttle/pickup timing.')
+  ] as const : [
+    buildDay(1, 'newfound-gap-tn-nc', 'mount-collins-shelter-tn', 'Short opening that protects travel-day timing, but still requires a valid shelter permit.'),
+    buildDay(2, 'mount-collins-shelter-tn', 'derrick-knob-shelter-tn', 'Longer high-elevation day; use only if water, forecast, body, and reservation all line up.'),
+    buildDay(3, 'derrick-knob-shelter-tn', 'mollies-ridge-shelter-nc-tn', 'Solid full day; keep weather and daylight conservative.'),
+    buildDay(4, 'mollies-ridge-shelter-nc-tn', 'fontana-dam-nc', 'Long descent out to Fontana; confirm pickup/parking before committing.')
+  ] as const;
+
+  const strongerDays = direction === 'NOBO' ? [
+    buildDay(1, 'fontana-dam-nc', 'russell-field-shelter-tn', 'Stronger first day; only use if the climb, daylight, and permit availability are comfortable.'),
+    buildDay(2, 'russell-field-shelter-tn', 'derrick-knob-shelter-tn', 'Shorter recovery day after the stronger start.'),
+    buildDay(3, 'derrick-knob-shelter-tn', 'mount-collins-shelter-tn', 'Longer high-elevation day; weather is the controlling risk.'),
+    buildDay(4, 'mount-collins-shelter-tn', 'newfound-gap-tn-nc', 'Short finish to the pickup/road crossing.')
+  ] as const : [
+    buildDay(1, 'newfound-gap-tn-nc', 'mount-collins-shelter-tn', 'Short opening to a permit-controlled shelter; useful if arrival logistics are tight.'),
+    buildDay(2, 'mount-collins-shelter-tn', 'derrick-knob-shelter-tn', 'Longer high-elevation day; weather is the controlling risk.'),
+    buildDay(3, 'derrick-knob-shelter-tn', 'russell-field-shelter-tn', 'Shorter recovery day before the stronger finish.'),
+    buildDay(4, 'russell-field-shelter-tn', 'fontana-dam-nc', 'Stronger final day; only use if the descent, daylight, and pickup logistics are comfortable.')
+  ] as const;
+
+  return [
+    {
+      id: direction === 'NOBO' ? 'gsmnp-conservative-silers-finish' : 'gsmnp-sobo-conservative-silers-start',
+      label: direction === 'NOBO' ? 'Conservative 4-day Smokies shape via Silers Bald' : 'Conservative 4-day Smokies SOBO shape via Silers Bald',
+      totalMiles: roundMileage(conservativeDays.reduce((sum, day) => sum + day.miles, 0)),
+      days: conservativeDays,
+      caveats: direction === 'NOBO'
+        ? [
+            'Day 3 is intentionally short to preserve safety margin in late-October Smokies conditions.',
+            'Day 4 is the longest day; do not use this option without a confirmed weather/pickup plan.'
+          ]
+        : [
+            'Day 2 is intentionally short to preserve safety margin in late-October Smokies conditions.',
+            'Day 1 is exposed and logistics-sensitive; do not use this option without confirmed weather and US 441 access.'
+          ]
+    },
+    {
+      id: direction === 'NOBO' ? 'gsmnp-balanced-mount-collins-finish' : 'gsmnp-sobo-balanced-mount-collins-start',
+      label: direction === 'NOBO' ? 'Balanced-if-conditions 4-day Smokies shape via Mount Collins' : 'Balanced-if-conditions 4-day Smokies SOBO shape via Mount Collins',
+      totalMiles: roundMileage(balancedDays.reduce((sum, day) => sum + day.miles, 0)),
+      days: balancedDays,
+      caveats: direction === 'NOBO'
+        ? [
+            'This reduces the final-day pressure but makes Day 3 a real work day.',
+            'Use only if the Mount Collins reservation, water, forecast, daylight, and body all line up.'
+          ]
+        : [
+            'This protects the opening travel-day timing but makes Day 2 a real work day.',
+            'Use only if the Mount Collins reservation, water, forecast, daylight, and body all line up.'
+          ]
+    },
+    {
+      id: direction === 'NOBO' ? 'gsmnp-stronger-russell-mount-collins' : 'gsmnp-sobo-stronger-russell-mount-collins',
+      label: direction === 'NOBO' ? 'Stronger-permit-fit Smokies shape via Russell Field and Mount Collins' : 'Stronger-permit-fit Smokies SOBO shape via Russell Field and Mount Collins',
+      totalMiles: roundMileage(strongerDays.reduce((sum, day) => sum + day.miles, 0)),
+      days: strongerDays,
+      caveats: direction === 'NOBO'
+        ? [
+            'This is the stronger hiker option, not the default late-October recommendation.',
+            'The first climb and Day 3 exposure are the stress points.'
+          ]
+        : [
+            'This is the stronger hiker option, not the default late-October recommendation.',
+            'Day 2 exposure and the final-day descent distance are the stress points.'
+          ]
+    }
+  ];
+}
+
 function findPointAliasesInOrder(text: string, points: readonly AtRoutePoint[]): readonly AtRoutePoint[] {
   const matches: { readonly point: AtRoutePoint; readonly index: number }[] = [];
   for (const point of points) {
@@ -384,6 +577,44 @@ function mileageClaimIssues(answer: string, grounding: AtRouteGrounding): AtRout
   return issues;
 }
 
+
+function lineNegatesUnsafeCamping(line: string): boolean {
+  return /\b(no|not|never|avoid|prohibit(?:ed)?|illegal|do\s+not|don't|must\s+not|cannot|can't|unless\s+official|unless\s+the\s+official|verify\s+before)\b/iu.test(line);
+}
+
+function gsmnpRegulationClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
+  if (grounding.source.id !== GSMNP_AT_CORRIDOR_QA_SOURCE.id) return [];
+
+  const issues: AtRouteClaimIssue[] = [];
+  for (const rawLine of answer.split(/\n+/u)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const recommendsDispersed = /\b(?:stealth|dispersed)\s+camp(?:ing)?\b/iu.test(line) && !lineNegatesUnsafeCamping(line);
+    const suggestsShelterOverflowTenting = /\b(?:shelter\s+is\s+full|shelter\s+full|full\s+shelter)\b/iu.test(line)
+      && /\b(?:tent|tenting|pitch)\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line);
+    const suggestsTentNearShelter = /\b(?:tent|tenting|pitch)\b[^.]{0,80}\b(?:nearby|outside|by\s+the\s+shelter|at\s+the\s+shelter)\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line);
+    const suggestsUndesignatedCamping = /\b(?:camp|camping|tent|pitch|set\s+up|sleep)\b[^.]{0,100}\b(?:anywhere|wherever|unofficial|undesignated|near\s+the\s+trail|along\s+the\s+trail|roadside)\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line);
+    const suggestsSleepingOutsideShelter = /\b(?:sleep|camp|set\s+up|pitch)\b[^.]{0,100}\boutside\s+(?:the\s+)?shelter\b/iu.test(line)
+      && !lineNegatesUnsafeCamping(line);
+
+    if (!recommendsDispersed && !suggestsShelterOverflowTenting && !suggestsTentNearShelter && !suggestsUndesignatedCamping && !suggestsSleepingOutsideShelter) continue;
+
+    issues.push({
+      kind: 'unsafe-camping-rule',
+      severity: 'block',
+      sourceSystemId: grounding.source.id,
+      evidence: line,
+      message: 'GSMNP camping/shelter wording was too permissive. Section-hiker plans must fail closed: use the site/date-specific permit and do not plan tenting outside/inside shelters unless the current official permit/source explicitly allows it.'
+    });
+  }
+
+  return issues;
+}
+
 export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGrounding): readonly AtRouteClaimIssue[] {
   const issues: AtRouteClaimIssue[] = [];
   for (const blockedName of grounding.blockedEndpointNames) {
@@ -423,6 +654,7 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
   }
 
   issues.push(...mileageClaimIssues(answer, grounding));
+  issues.push(...gsmnpRegulationClaimIssues(answer, grounding));
   return issues;
 }
 
@@ -431,8 +663,9 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
   if (!shouldUseStrictAtRouteGrounding(prompt)) return null;
 
   const mentionedPoints = extractMentionedAtRoutePoints(prompt);
+  const mentionedInOrder = findPointAliasesInOrder(prompt, mentionedPoints);
   const start = findAtRoutePoint(input.startQuery)
-    ?? mentionedPoints.find((point) => point.kind === 'park' || point.kind === 'town' || point.kind === 'road-crossing')
+    ?? mentionedInOrder[0]
     ?? mentionedPoints[0]
     ?? null;
   if (!start) return null;
@@ -451,12 +684,22 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
   const corridor = corridorFrom(start, direction, maxCorridorMiles);
   const legs = legsFor(corridor, direction);
   const unrecognizedNames = extractUnrecognizedAtRouteNames(prompt);
-  const blockedEndpointNames = start.id === 'pine-grove-furnace-state-park-pa' ? [...KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS] : [];
-  const planOptions = start.id === 'pine-grove-furnace-state-park-pa' ? buildPineGrovePlanOptions(direction) : [];
+  const isPineGrove = start.id === 'pine-grove-furnace-state-park-pa';
+  const isGsmnp = start.id === 'fontana-dam-nc' || corridor.some((point) => point.id === 'newfound-gap-tn-nc');
+  const source = isGsmnp ? GSMNP_AT_CORRIDOR_QA_SOURCE : AT_ROUTE_QA_SOURCE;
+  const blockedEndpointNames = isPineGrove ? [...KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS] : [];
+  const planOptions = isPineGrove
+    ? buildPineGrovePlanOptions(direction)
+    : isGsmnp
+      ? buildGsmnpPlanOptions(direction)
+      : [];
   const warnings = [
-    AT_ROUTE_QA_SOURCE.exactMileageCaveat,
-    direction === 'NOBO' && start.id === 'pine-grove-furnace-state-park-pa'
+    source.exactMileageCaveat,
+    direction === 'NOBO' && isPineGrove
       ? 'NOBO order guardrail: Boiling Springs comes before Darlington from Pine Grove Furnace.'
+      : null,
+    direction === 'NOBO' && isGsmnp
+      ? 'GSMNP regulation guardrail: a section hiker should assume site/date-specific backcountry permits, designated shelters/campsites only, and no tenting outside a shelter unless the official permit/source explicitly allows it.'
       : null,
     blockedEndpointNames.length > 0
       ? `${blockedEndpointNames.join(', ')} is not in this validator corridor and must not be used as a firm endpoint without another source.`
@@ -467,9 +710,9 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
   ].filter((warning): warning is string => Boolean(warning));
 
   return {
-    source: AT_ROUTE_QA_SOURCE,
+    source,
     direction,
-    state: start.state || null,
+    state: isGsmnp ? 'NC/TN' : start.state || null,
     start,
     targetDays,
     targetDailyMileage,

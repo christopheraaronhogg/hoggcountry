@@ -255,6 +255,46 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     keywords: ['pine grove furnace', 'halfway', 'nobo', 'northbound', 'boiling springs', 'darlington', 'duncannon', 'james fry', 'alec kennedy', 'mileage', 'itinerary']
   },
   {
+    id: 'hoggcountry-gsmnp-at-corridor-qa-2026-05-05',
+    title: 'Hogg Country GSMNP AT corridor and permit-rule QA validator',
+    displayCategory: 'deterministic route/regulation validator',
+    lane: 'hogg-owned',
+    trust: 'reviewed',
+    accessMode: 'route-validator',
+    privacy: 'Shared internal QA fixture; no private user data.',
+    useWhen: 'Fontana Dam to Newfound Gap / Great Smoky Mountains National Park AT section planning, route order checks, permit/camping rule guardrails, and unsafe shelter/tenting wording prevention.',
+    license: HOGG_OWNED_LICENSE,
+    freshness: { generatedAt: '2026-05-05', updateCadence: 'manual' },
+    coverage: {
+      trail: 'AT',
+      states: ['NC', 'TN'],
+      mileStart: 166.1,
+      mileEnd: 208.1,
+      topics: ['route validator', 'gsmnp', 'smokies', 'fontana dam', 'newfound gap', 'permits', 'shelters', 'camping', 'mileage']
+    },
+    citationTemplate: 'Hogg Country GSMNP AT corridor and permit-rule QA fixture, generated 2026-05-05 from dogfood QA and official NPS/Recreation.gov rule checks.',
+    allowedActions: ['catalog', 'route-validate'],
+    caveats: ['Use as a guardrail for route order and official-rule wording; exact shelter availability, water, closures, and current mileages still require current NPS/Recreation.gov/user-owned guide verification.'],
+    keywords: ['gsmnp', 'smokies', 'great smoky mountains', 'fontana', 'fontana dam', 'newfound gap', 'mollies ridge', 'derrick knob', 'silers bald', 'mount collins', 'permit', 'reservation', 'shelter', 'camping', 'nobo', 'itinerary']
+  },
+  {
+    id: 'gsmnp-backcountry-permits',
+    title: 'Great Smoky Mountains National Park backcountry permits and camping rules',
+    displayCategory: 'official park permits and camping rules',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public official source.',
+    useWhen: 'GSMNP overnight camping, shelter reservations, site/date-specific permits, shelter/tenting rules, parking tags, backcountry office contact, and Recreation.gov permit checks.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', states: ['NC', 'TN'], topics: ['gsmnp', 'permit', 'reservation', 'shelter', 'camping', 'parking', 'recreation.gov', 'nps'] },
+    citationTemplate: 'NPS GSMNP backcountry camping and Recreation.gov GSMNP permits; live availability/rules must be checked before leaving. Scout fetched timestamp: {fetchedAt}. https://www.nps.gov/grsm/planyourvisit/backcountry-camping.htm and https://www.recreation.gov/permits/4675347',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Rules and availability can change; Scout should fail closed and tell the hiker to verify the exact Recreation.gov/NPS permit itinerary before leaving.'],
+    keywords: ['gsmnp', 'smokies', 'great smoky mountains', 'permit', 'permits', 'reservation', 'recreation.gov', 'nps', 'backcountry', 'shelter', 'camping', 'parking tag', 'fontana', 'newfound gap']
+  },
+  {
     id: 'atc-trail-updates',
     title: 'Appalachian Trail Conservancy official trail updates',
     displayCategory: 'official closures and detours',
@@ -394,10 +434,16 @@ function queryTerms(query: string, topics: readonly string[] = []): string[] {
   return [...new Set(terms)];
 }
 
+function stateTokens(value: string | null | undefined): string[] {
+  return value?.toUpperCase().split(/[^A-Z]+/u).filter((item) => item.length === 2) ?? [];
+}
+
 function manifestCoversState(manifest: ScoutSourceManifest, state: string | null | undefined): boolean {
-  if (!state) return true;
+  const queryStates = stateTokens(state);
+  if (queryStates.length === 0) return true;
   const states = manifest.coverage.states;
-  return !states || states.includes(state.toUpperCase());
+  if (!states) return true;
+  return queryStates.some((item) => states.includes(item));
 }
 
 function manifestCoversMileRange(manifest: ScoutSourceManifest, mileRange: readonly [number, number] | null | undefined): boolean {
@@ -428,7 +474,7 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (!manifestCoversMileRange(manifest, query.mileRange)) score -= 4;
   if (manifest.accessMode === 'disabled-pending-review' && !query.includeUnavailable) score -= 8;
   if (manifest.trust === 'official' && /\b(weather|closure|detour|fire|alert|official)\b/iu.test(query.query)) score += 3;
-  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|shelter|camp)\b/iu.test(query.query)) score += 5;
+  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
   if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|water|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 3;
 
   return score;

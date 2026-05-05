@@ -1056,7 +1056,7 @@ async function loadConnectedCredentials(record: WorkspaceRecord): Promise<OpenAI
 
 function deterministicClawTurn(
   record: WorkspaceRecord,
-  runtime: ClawRuntime,
+  runtime: Pick<ClawRuntime, 'providerId' | 'modelId'> | null,
   prompt: string,
   replyText: string
 ): { readonly nextMessages: WorkspaceClawMessage[]; readonly reply: WorkspaceClawMessage } {
@@ -1075,8 +1075,8 @@ function deterministicClawTurn(
     role: 'assistant',
     text: replyText,
     createdAt: new Date(timestamp + 1).toISOString(),
-    providerId: runtime.providerId,
-    model: runtime.modelId,
+    providerId: runtime?.providerId ?? 'system',
+    model: runtime?.modelId ?? 'strict-route-validator',
     error: false
   };
 
@@ -1182,7 +1182,8 @@ function promptAsksForOfficialRelevanceReview(prompt: string): boolean {
 function atcUpdateMatchesApproxState(update: { readonly meta: string; readonly title: string }, state: string | null): boolean {
   if (!state) return false;
   const haystack = `${update.meta} ${update.title}`.toUpperCase();
-  return new RegExp(String.raw`(?:^|[^A-Z])${state}(?:[^A-Z]|$)`, 'u').test(haystack);
+  const states = state.toUpperCase().split(/[^A-Z]+/u).filter((item) => item.length === 2);
+  return states.some((item) => new RegExp(String.raw`(?:^|[^A-Z])${item}(?:[^A-Z]|$)`, 'u').test(haystack));
 }
 
 async function buildOfficialRelevanceReply(record: WorkspaceRecord, prompt: string): Promise<string | null> {
@@ -1360,6 +1361,108 @@ function buildStrictAtRouteGrounding(record: WorkspaceRecord, prompt: string): A
   });
 }
 
+function isGsmnpRouteGrounding(grounding: AtRouteGrounding): boolean {
+  return grounding.source.id === 'hoggcountry-gsmnp-at-corridor-qa-2026-05-05';
+}
+
+function buildStrictGsmnpAtRouteItineraryReply(
+  record: WorkspaceRecord,
+  grounding: AtRouteGrounding,
+  official: OfficialTrailSourceCheckDetails
+): string {
+  const profileBits = [
+    record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
+    record.profile?.direction,
+    typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
+    typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
+  ].filter(Boolean).join(' · ');
+  const routeReceipt = buildScoutSourceReceipt(grounding.source.id);
+  const permitReceipt = buildScoutSourceReceipt('gsmnp-backcountry-permits');
+  const atcReceipt = buildScoutSourceReceipt('atc-trail-updates', { fetchedAt: official.fetchedAt });
+  const nwsReceipt = official.weather ? buildScoutSourceReceipt('nws-weather', { fetchedAt: official.fetchedAt }) : null;
+  const guideReceipt = buildScoutSourceReceipt('at-guide-user-owned');
+  const faroutReceipt = buildScoutSourceReceipt('farout-current-comments');
+
+  const lines: string[] = [
+    '### Scout strict-route plan',
+    '',
+    'I’m using strict Smokies route/regulation mode because this asks for a real GSMNP AT itinerary. The route order and camping-rule guardrails below come from host validation, not model memory.',
+    profileBits ? `Workspace context: ${profileBits}.` : null,
+    '',
+    '**Route-order guardrail**',
+    `- Direction: ${grounding.direction}.`,
+    grounding.targetDays ? `- Requested trip length detected: ${grounding.targetDays} day${grounding.targetDays === 1 ? '' : 's'}.` : null,
+    `- Corridor: ${grounding.start.name} ${grounding.direction} through the Fontana Dam ↔ Newfound Gap GSMNP AT corridor.`,
+    `- Source: ${grounding.source.label}. ${grounding.source.exactMileageCaveat}`,
+    '',
+    `| Point | Approx route mile | From ${grounding.start.name} | Type |`,
+    '|---|---:|---:|---|',
+    ...grounding.corridor.map((point) => formatStrictRoutePoint(point, grounding.start)),
+    '',
+    '**Important corrections / guardrails**',
+    ...grounding.warnings.map((warning) => `- ${warning}`),
+    '- Section-hiker default: book the exact site/date-specific GSMNP backcountry permit or shelter reservation before treating any shelter as a legal endpoint.',
+    '- Fail closed on tenting: do not plan to tent outside or inside shelters unless the current official permit/source explicitly says your itinerary allows it.',
+    '- No dispersed/stealth camping in the park. Stay where the permit says.',
+    '- A backcountry permit does not replace the GSMNP parking-tag requirement and does not guarantee a parking spot.',
+    '',
+    '**Route options**'
+  ].filter((line): line is string => line !== null);
+
+  for (const option of grounding.planOptions) {
+    lines.push('', ...renderStrictRouteOption(option));
+  }
+
+  lines.push(
+    '',
+    '**Shelter / reservation / camping assumptions**',
+    '- Treat every shelter in the table as a permit candidate, not a confirmed campsite. Reservation availability can force the final itinerary shape.',
+    '- Reserve through the current GSMNP/NPS/Recreation.gov permit flow. Use the Backcountry Office for rule or availability questions before relying on Scout.',
+    '- Shelter permit holders should assume they must sleep inside the assigned shelter and may not set up tents outside/inside the shelter unless the current official permit/source explicitly allows it.',
+    '- Do not use forum memory or an old blog post to override the current permit page.',
+    '',
+    '**Food and water**',
+    grounding.targetDays ? `- Carry the full ${grounding.targetDays}-day food plan from ${grounding.start.name} unless you have a confirmed off-route support plan. Do not count on a resupply inside this corridor.` : `- Carry the full food plan from ${grounding.start.name} unless you have a confirmed off-route support plan. Do not count on a resupply inside this corridor.`,
+    typeof record.profile?.waterCapacityLiters === 'number'
+      ? `- Your workspace water capacity is ${record.profile.waterCapacityLiters}L; that is too thin for uncertain Smokies water until current shelter-source reports confirm every leg.`
+      : '- Carry enough water margin for dry or slow shelter sources until current shelter-source reports confirm each leg.',
+    '- Treat all water. Verify shelter water reliability in a current guide/FarOut-style report before leaving each morning.',
+    '- Use the required food/scented-item storage system every night. Keep food, trash, toothpaste, and scented items out of the sleeping area.',
+    '',
+    '**Weather / cold / bear safety**',
+    '- Late October Smokies can turn into cold rain, wind, fog, hypothermia conditions, or early snow/ice at elevation. Pack for a wet-cold night, not just a mild valley forecast.',
+    '- Pull NWS point forecasts/alerts for Fontana/start and the high-elevation Newfound Gap/Clingmans/Mount Collins area 24–48 hours before leaving.',
+    '- Start early. Short daylight and ridge weather make late finishes risky.',
+    '- Bear risk is operational, not theoretical: cook/eat away from sleeping, store all scented items correctly, and keep a clean camp.',
+    '',
+    '**Shuttle / parking logistics**',
+    '- Confirm Fontana parking, GSMNP parking tag, and whether your planned lot is open/allowed for overnight use.',
+    '- Confirm Newfound Gap pickup/shuttle before leaving. US 441/weather closures can break a pickup plan.',
+    '- Keep one bailout/contact plan that does not depend on cell service at the exact moment you need it.',
+    '',
+    '**Safety / live conditions**',
+    ...renderStrictRouteOfficialSummary(official, grounding.state),
+    '',
+    '**Final checklist before leaving**',
+    '- Verify exact route mileages and shelter sequence in your current user-owned guide or official NPS map.',
+    '- Confirm Recreation.gov/NPS permit availability for each shelter/site and date.',
+    '- Re-check GSMNP temporary road/trail/campsite closures and ATC Trail Updates.',
+    '- Pull NWS point forecasts/alerts for both low and high-elevation points.',
+    '- Check current water reliability and shelter comments for the selected shelters.',
+    '- Confirm food carry, required food storage behavior, parking tag, overnight parking, shuttle/pickup, and US 441/Newfound Gap access.',
+    '',
+    '**Source receipts**',
+    routeReceipt ? `- ${routeReceipt.title} [${routeReceipt.trust}/${routeReceipt.accessMode}]: ${routeReceipt.citation}` : `- Route validator: ${grounding.source.citation}`,
+    permitReceipt ? `- ${permitReceipt.title} [${permitReceipt.trust}/${permitReceipt.accessMode}]: ${permitReceipt.citation}` : '- GSMNP permit source manifest: available, but no receipt was produced in this turn.',
+    atcReceipt ? `- ${atcReceipt.title} [${atcReceipt.trust}/${atcReceipt.accessMode}]: ${atcReceipt.citation}` : '- ATC Trail Updates source manifest: available, but no ATC receipt was produced in this turn.',
+    nwsReceipt ? `- ${nwsReceipt.title} [${nwsReceipt.trust}/${nwsReceipt.accessMode}]: ${nwsReceipt.citation}` : '- NWS source manifest: available, but no weather receipt was produced in this turn.',
+    guideReceipt ? `- Needed but not bundled: ${guideReceipt.title} [${guideReceipt.trust}/${guideReceipt.accessMode}]. ${guideReceipt.caveats[0]}` : '- Needed but not bundled: user-owned guide data.',
+    faroutReceipt ? `- Needed but not bundled: ${faroutReceipt.title} [${faroutReceipt.trust}/${faroutReceipt.accessMode}]. ${faroutReceipt.caveats[0]}` : '- Needed but not bundled: current user-supplied water/shelter comments.'
+  );
+
+  return lines.join('\n');
+}
+
 async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt: string): Promise<string | null> {
   const grounding = buildStrictAtRouteGrounding(record, prompt);
   if (!grounding) return null;
@@ -1380,6 +1483,10 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
     skipped: [],
     errors: [`Official source check failed: ${error instanceof Error ? error.message : 'unknown error'}`]
   } satisfies OfficialTrailSourceCheckDetails));
+
+  if (isGsmnpRouteGrounding(grounding)) {
+    return buildStrictGsmnpAtRouteItineraryReply(record, grounding, official);
+  }
 
   const profileBits = [
     record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
@@ -1523,38 +1630,37 @@ export async function replyInWorkspaceClaw(
     throw new Error('Resource not found.');
   }
 
-  const runtime = await resolveClawRuntime(record);
-
   if (!activeDocument && !activeResource) {
     const strictRouteReply = await buildStrictAtRouteItineraryReply(record, trimmedPrompt);
     if (strictRouteReply) {
-      const { nextMessages, reply } = deterministicClawTurn(record, runtime, trimmedPrompt, strictRouteReply);
+      const { nextMessages, reply } = deterministicClawTurn(record, null, trimmedPrompt, strictRouteReply);
       const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
       return { workspace, reply, revisedDocument: null };
     }
 
     const privateImportReply = buildPrivateImportSearchReply(record, trimmedPrompt);
     if (privateImportReply) {
-      const { nextMessages, reply } = deterministicClawTurn(record, runtime, trimmedPrompt, privateImportReply);
+      const { nextMessages, reply } = deterministicClawTurn(record, null, trimmedPrompt, privateImportReply);
       const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
       return { workspace, reply, revisedDocument: null };
     }
 
     const officialRelevanceReply = await buildOfficialRelevanceReply(record, trimmedPrompt);
     if (officialRelevanceReply) {
-      const { nextMessages, reply } = deterministicClawTurn(record, runtime, trimmedPrompt, officialRelevanceReply);
+      const { nextMessages, reply } = deterministicClawTurn(record, null, trimmedPrompt, officialRelevanceReply);
       const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
       return { workspace, reply, revisedDocument: null };
     }
 
     const trailOpsPlanReply = await buildTrailOpsPlanReply(record, trimmedPrompt);
     if (trailOpsPlanReply) {
-      const { nextMessages, reply } = deterministicClawTurn(record, runtime, trimmedPrompt, trailOpsPlanReply);
+      const { nextMessages, reply } = deterministicClawTurn(record, null, trimmedPrompt, trailOpsPlanReply);
       const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
       return { workspace, reply, revisedDocument: null };
     }
   }
 
+  const runtime = await resolveClawRuntime(record);
   const dadPilotSummary = shouldIncludeDadPilotContext(record, trimmedPrompt) ? await loadDadPilotSummary().catch(() => null) : null;
   const sourceContexts = [
     buildScoutSourceContext(record, dadPilotSummary, trimmedPrompt),
