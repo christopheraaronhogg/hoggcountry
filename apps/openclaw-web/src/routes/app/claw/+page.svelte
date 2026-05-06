@@ -1592,7 +1592,7 @@
     overflow: hidden !important;
     background-color: var(--bg, #f5f2e8) !important;
     background-image:
-      url('/topo.svg'),
+      url('/default-background.svg'),
       radial-gradient(1200px 800px at 15% -5%, rgba(0, 0, 0, 0.03), transparent 65%),
       radial-gradient(1000px 600px at 85% 15%, rgba(0, 0, 0, 0.025), transparent 60%),
       radial-gradient(800px 500px at 50% 90%, rgba(0, 0, 0, 0.02), transparent 50%) !important;
@@ -1607,7 +1607,7 @@
     min-height: 100dvh;
     overflow: hidden;
     background:
-      url('/topo.svg') center 20% / 2400px 1600px no-repeat fixed,
+      url('/default-background.svg') center 20% / 2400px 1600px no-repeat fixed,
       radial-gradient(1200px 800px at 15% -5%, rgba(0, 0, 0, 0.03), transparent 65%),
       radial-gradient(1000px 600px at 85% 15%, rgba(0, 0, 0, 0.025), transparent 60%),
       radial-gradient(800px 500px at 50% 90%, rgba(0, 0, 0, 0.02), transparent 50%),
@@ -1776,7 +1776,7 @@
     border: 1px solid rgba(230, 225, 212, 0.72);
     border-radius: 26px;
     background:
-      url('/topo.svg') center 20% / 2400px 1600px no-repeat,
+      url('/default-background.svg') center 20% / 2400px 1600px no-repeat,
       radial-gradient(1200px 800px at 15% -5%, rgba(0, 0, 0, 0.03), transparent 65%),
       radial-gradient(1000px 600px at 85% 15%, rgba(0, 0, 0, 0.025), transparent 60%),
       radial-gradient(800px 500px at 50% 90%, rgba(0, 0, 0, 0.02), transparent 50%),
@@ -2679,7 +2679,7 @@
       border: 0;
       border-radius: 0;
       background:
-        url('/topo.svg') center 20% / 2400px 1600px no-repeat,
+        url('/default-background.svg') center 20% / 2400px 1600px no-repeat,
         radial-gradient(1200px 800px at 15% -5%, rgba(0, 0, 0, 0.03), transparent 65%),
         radial-gradient(1000px 600px at 85% 15%, rgba(0, 0, 0, 0.025), transparent 60%),
         radial-gradient(800px 500px at 50% 90%, rgba(0, 0, 0, 0.02), transparent 50%),
