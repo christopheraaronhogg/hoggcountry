@@ -1373,6 +1373,10 @@ function isBaxterKatahdinRouteGrounding(grounding: AtRouteGrounding): boolean {
   return grounding.source.id === 'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05';
 }
 
+function isWhitesFranconiaCrawfordRouteGrounding(grounding: AtRouteGrounding): boolean {
+  return grounding.source.id === 'hoggcountry-whites-franconia-crawford-qa-2026-05-06';
+}
+
 function buildStrictGsmnpAtRouteItineraryReply(
   record: WorkspaceRecord,
   grounding: AtRouteGrounding,
@@ -1593,6 +1597,110 @@ function buildStrictShenandoahAtRouteItineraryReply(
   return lines.join('\n');
 }
 
+function buildStrictWhitesFranconiaCrawfordAtRouteItineraryReply(
+  record: WorkspaceRecord,
+  grounding: AtRouteGrounding,
+  official: OfficialTrailSourceCheckDetails
+): string {
+  const profileBits = [
+    record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
+    record.profile?.direction,
+    typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
+    typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
+  ].filter(Boolean).join(' · ');
+  const routeReceipt = buildScoutSourceReceipt(grounding.source.id);
+  const whitesReceipt = buildScoutSourceReceipt('white-mountain-national-forest-amc-rules');
+  const atcReceipt = buildScoutSourceReceipt('atc-trail-updates', { fetchedAt: official.fetchedAt });
+  const nwsReceipt = official.weather ? buildScoutSourceReceipt('nws-weather', { fetchedAt: official.fetchedAt }) : null;
+  const guideReceipt = buildScoutSourceReceipt('at-guide-user-owned');
+  const faroutReceipt = buildScoutSourceReceipt('farout-current-comments');
+  const routeTotal = grounding.destination ? formatAtRouteMileage(Math.abs(grounding.destination.mile - grounding.start.mile)) : null;
+  const waterCapacity = typeof record.profile?.waterCapacityLiters === 'number' ? record.profile.waterCapacityLiters : null;
+  const firstTime = /\bfirst\s+time\b/iu.test(grounding.warnings.join(' '));
+
+  const lines: string[] = [
+    '### Scout strict-route plan',
+    '',
+    'I’m using strict White Mountains Franconia Notch ↔ Crawford Notch route/regulation mode because this asks for a real exposed-ridge Whites itinerary. The route order, camping/hut, water, weather, and shuttle guardrails below come from host validation, not model memory.',
+    profileBits ? `Workspace context: ${profileBits}.` : null,
+    '',
+    '**Route-order guardrail**',
+    `- Direction: ${grounding.direction}.`,
+    grounding.targetDays ? `- Requested trip length detected: ${grounding.targetDays} day${grounding.targetDays === 1 ? '' : 's'}.` : null,
+    grounding.destination ? `- Corridor: ${grounding.start.name} ${grounding.direction} to ${grounding.destination.name}${routeTotal ? ` (~${routeTotal} mi by this guardrail)` : ''}.` : `- Corridor starts at ${grounding.start.name}; verify the final endpoint in your current guide/source.`,
+    `- Source: ${grounding.source.label}. ${grounding.source.exactMileageCaveat}`,
+    '',
+    '| Point | Approx route mile | From start | Type |',
+    '|---|---:|---:|---|',
+    ...grounding.corridor.map((point) => formatStrictRoutePoint(point, grounding.start)),
+    '',
+    '**Important corrections / guardrails**',
+    ...grounding.warnings.map((warning) => `- ${warning}`),
+    grounding.destination?.id === 'crawford-notch-us-302-nh' && routeTotal ? `- Franconia Notch → Crawford Notch is about ${routeTotal} mi in this guardrail, not a ~21 mi casual estimate.` : null,
+    grounding.targetDays === 3 ? '- The requested 3-day / 2-night shape is aggressive for a first-time Whites hiker; default safer is 4 days unless every live check lines up.' : null,
+    '- Do not plan alpine/above-treeline camping. Do not camp near huts, trailheads, roads, parking lots, or inside Franconia/Crawford Notch state parks unless a current official source identifies a designated legal site/campground.',
+    '- Do not depend on hut walk-up bunks or work-for-stay. For a section hiker, a hut night needs current AMC reservation/availability or a backup legal campsite plan.',
+    '',
+    '**Route options**'
+  ].filter((line): line is string => line !== null);
+
+  for (const option of grounding.planOptions) {
+    lines.push('', ...renderStrictRouteOption(option));
+  }
+
+  lines.push(
+    '',
+    '**Recommendation**',
+    grounding.targetDays === 3 || firstTime
+      ? '- Recommend the safer 4-day shape first. Use the 3-day shape only as a strong-hiker/weather-window option after AMC/WMNF/NH State Parks legality, water, and shuttle are confirmed.'
+      : '- Choose the lower-mile option when weather, water, hut/tentsite availability, daylight, or shuttle timing is not cleanly verified.',
+    '- Set a hard morning go/no-go for Franconia Ridge and a hard midday shorten/bailout decision on each long day.',
+    '',
+    '**Camping / hut / tentsite assumptions**',
+    '- Treat AMC tentsites/shelters/huts in the table as candidate anchors, not confirmed legal overnights. Current AMC availability, caretaker season, fees, capacity, water, and rules control the final plan.',
+    '- WMNF Forest Protection Areas and alpine zones can make otherwise-normal dispersed camping illegal. If the legal site is not confirmed, change the itinerary instead of inventing stealth camping.',
+    '- Franconia Notch and Crawford Notch are state-park road/trailhead corridors; use designated campgrounds/sites only where current NH State Parks/land-manager rules allow overnight use.',
+    '- Fires are not a default assumption. Use stoves and follow current WMNF/AMC/NH State Parks fire restrictions.',
+    '',
+    '**Water / weather / lightning**',
+    waterCapacity !== null
+      ? `- Your workspace water capacity is ${waterCapacity}L; in the Whites, treat that as potentially thin on exposed ridges or long dry climbs until current water reports confirm each leg.`
+      : '- A 2-2.5L carry can be thin on exposed ridges or long dry climbs until current water reports confirm each leg.',
+    '- Treat all natural water. Verify Liberty Spring, Garfield Ridge, Galehead/Zealand/Ethan-area water before relying on any endpoint.',
+    '- Pull NWS point forecasts for both valley trailheads and high-elevation exposed points like Lafayette/Garfield/South Twin. Valley weather is not enough for the ridge.',
+    '- Lightning, high wind, cold rain, fog, or low visibility are route-stopping risks above treeline. If storms are building, do not commit to Franconia Ridge/Twinway exposure.',
+    '- Start early enough to be below exposed ridges before afternoon storm risk, and carry real wind/rain insulation even in early September.',
+    '',
+    '**Shuttle / parking / bailouts**',
+    '- Confirm I-93/Franconia Notch parking rules and whether overnight parking is allowed at the exact lot you choose.',
+    '- Confirm US 302/Crawford Notch pickup, road access, and cell-service assumptions before leaving.',
+    '- Bailouts exist on maps, but they can be steep, slow, and logistically awkward. Preselect bailout trails/roads with an offline map and a ride plan; do not treat “down to a road” as easy.',
+    '- Do not depend on same-day cell service for shuttle recovery.',
+    '',
+    '**Safety / live conditions**',
+    ...renderStrictRouteOfficialSummary(official, grounding.state),
+    '',
+    '**Final checklist before leaving**',
+    '- Verify exact AT mileages and route sequence in your current A.T. Guide/FarOut/AMC map or White Mountain Guide.',
+    '- Confirm AMC hut/tentsite/shelter availability, reservations/fees, caretaker season, capacity, and water.',
+    '- Confirm WMNF Forest Protection Area/alpine-zone camping rules and NH State Parks Franconia/Crawford Notch camping/parking rules.',
+    '- Check current water reports for each planned night and every long exposed/dry leg.',
+    '- Pull NWS point forecasts/alerts for trailheads and exposed ridge/elevation points 24-48 hours before departure.',
+    '- Lock shuttle/parking at I-93 and US 302, bailouts, offline maps, headlamp, rain/wind shell, warm layer, food storage, and emergency contact plan.',
+    '',
+    '**Source receipts**',
+    routeReceipt ? `- ${routeReceipt.title} [${routeReceipt.trust}/${routeReceipt.accessMode}]: ${routeReceipt.citation}` : `- Route validator: ${grounding.source.citation}`,
+    whitesReceipt ? `- ${whitesReceipt.title} [${whitesReceipt.trust}/${whitesReceipt.accessMode}]: ${whitesReceipt.citation}` : '- White Mountains official/regional source manifest: available, but no receipt was produced in this turn.',
+    atcReceipt ? `- ${atcReceipt.title} [${atcReceipt.trust}/${atcReceipt.accessMode}]: ${atcReceipt.citation}` : '- ATC Trail Updates source manifest: available, but no ATC receipt was produced in this turn.',
+    nwsReceipt ? `- ${nwsReceipt.title} [${nwsReceipt.trust}/${nwsReceipt.accessMode}]: ${nwsReceipt.citation}` : '- NWS source manifest: available, but no weather receipt was produced in this turn.',
+    guideReceipt ? `- Needed but not bundled: ${guideReceipt.title} [${guideReceipt.trust}/${guideReceipt.accessMode}]. ${guideReceipt.caveats[0]}` : '- Needed but not bundled: user-owned guide data.',
+    faroutReceipt ? `- Needed but not bundled: ${faroutReceipt.title} [${faroutReceipt.trust}/${faroutReceipt.accessMode}]. ${faroutReceipt.caveats[0]}` : '- Needed but not bundled: current user-supplied water/shelter comments.'
+  );
+
+  return lines.join('\n');
+}
+
+
 function buildStrictBaxterKatahdinAtRouteItineraryReply(
   record: WorkspaceRecord,
   grounding: AtRouteGrounding,
@@ -1710,6 +1818,10 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
 
   if (isShenandoahRouteGrounding(grounding)) {
     return buildStrictShenandoahAtRouteItineraryReply(record, grounding, official);
+  }
+
+  if (isWhitesFranconiaCrawfordRouteGrounding(grounding)) {
+    return buildStrictWhitesFranconiaCrawfordAtRouteItineraryReply(record, grounding, official);
   }
 
   if (isBaxterKatahdinRouteGrounding(grounding)) {

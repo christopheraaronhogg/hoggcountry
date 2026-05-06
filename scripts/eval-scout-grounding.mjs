@@ -105,6 +105,41 @@ assert.equal(shenandoahSobo.start.id, 'swift-run-gap-va', 'SOBO prompt should st
 assert.equal(shenandoahSobo.direction, 'SOBO');
 assert.ok(shenandoahSobo.planOptions.some((option) => option.id === 'shenandoah-sobo-safer-four-day-swift-rockfish'), 'Shenandoah SOBO safer option should be available');
 
+const whitesPrompt = `Assume I am a section hiker, not an A.T. thru-hiker. It is early September and this is my first time hiking in the White Mountains. I want to hike the Appalachian Trail northbound from Franconia Notch / I-93 to Crawford Notch / US 302 in 3 hiking days / 2 nights. I have no hut reservations yet and I carry 2.5 liters of water. Build me a practical but honest plan: route options and daily mileage targets, legal camping/hut/tentsite assumptions, above-treeline weather and lightning safety, water strategy, shuttle/parking logistics, bailout points, and a final checklist.`;
+const whites = buildAtRouteGrounding({ prompt: whitesPrompt });
+assert.ok(whites, 'Whites prompt should trigger strict AT route grounding');
+assert.equal(whites.source.id, 'hoggcountry-whites-franconia-crawford-qa-2026-05-06');
+assert.equal(whites.start.id, 'franconia-notch-i-93-nh', 'Franconia Notch should be selected as the start');
+assert.equal(whites.destination?.id, 'crawford-notch-us-302-nh', 'Crawford Notch should be selected as the destination');
+assert.equal(whites.direction, 'NOBO');
+assert.equal(whites.targetDays, 3, 'Whites prompt should detect 3 hiking days');
+assert.equal(whites.state, 'NH');
+const whitesOrder = whites.corridor.map((point) => point.id);
+assert.ok(whitesOrder.indexOf('franconia-notch-i-93-nh') < whitesOrder.indexOf('garfield-ridge-shelter-nh'), 'Franconia must come before Garfield Ridge NOBO');
+assert.ok(whitesOrder.indexOf('garfield-ridge-shelter-nh') < whitesOrder.indexOf('galehead-hut-nh'), 'Garfield Ridge must come before Galehead NOBO');
+assert.ok(whitesOrder.indexOf('ethan-pond-shelter-nh') < whitesOrder.indexOf('crawford-notch-us-302-nh'), 'Ethan Pond must come before Crawford Notch NOBO');
+assert.ok(whites.planOptions.some((option) => option.id === 'whites-safer-four-day-franconia-crawford'), 'Whites safer 4-day option should be available');
+assert.ok(whites.planOptions.some((option) => option.id === 'whites-aggressive-three-day-garfield-ethan'), 'Whites aggressive 3-day option should be available');
+assert.ok(whites.blockedEndpointNames.includes('Mizpah Spring Hut'), 'Mizpah should be blocked for Franconia to Crawford plans');
+
+const badWhitesDraft = `Franconia Notch / I-93 to Crawford Notch / US 302 is about 21 miles. Day 1: Franconia Notch to Garfield Ridge. Day 2: Garfield Ridge to Mizpah Spring Hut. You can pitch a tent near Galehead Hut if bunks are full, work-for-stay is a safe backup, and 2.5 liters is plenty for the Whites in September. If weather looks okay, Franconia Ridge lightning is not a problem.`;
+const whitesIssues = validateAtRouteAnswerClaims(badWhitesDraft, whites);
+assert.ok(whitesIssues.some((issue) => issue.kind === 'bad-mileage'), 'Validator should block understated Franconia to Crawford mileage');
+assert.ok(whitesIssues.some((issue) => issue.kind === 'blocked-endpoint'), 'Validator should block Mizpah for the Crawford itinerary');
+assert.ok(whitesIssues.some((issue) => issue.kind === 'unsafe-camping-rule'), 'Validator should block permissive Whites hut/alpine camping or work-for-stay assumptions');
+assert.ok(whitesIssues.some((issue) => issue.kind === 'unsafe-water-plan'), 'Validator should block permissive 2.5L Whites water wording');
+assert.ok(whitesIssues.some((issue) => issue.kind === 'unsafe-summit-plan'), 'Validator should block permissive above-treeline weather wording');
+
+const safeWhitesDraft = `Franconia Notch / I-93 to Crawford Notch / US 302 is about 38.8 miles by this guardrail. Do not camp above treeline, near huts, trailheads, roads, or state-park corridors unless a current official source identifies a designated legal site. Do not depend on hut walk-up bunks or work-for-stay; use current AMC reservation/availability or legal tentsites. Treat 2.5L as potentially thin until current water is confirmed, treat all natural water, and avoid Franconia Ridge/Twinway exposure when lightning, wind, cold rain, or low visibility are in play. Day 1: Franconia Notch to Garfield Ridge Shelter / Campsite. Day 2: Garfield Ridge Shelter / Campsite to Ethan Pond Shelter / Tentsite. Day 3: Ethan Pond Shelter / Tentsite to Crawford Notch / US 302.`;
+assert.deepEqual(validateAtRouteAnswerClaims(safeWhitesDraft, whites), [], 'Validator should allow fail-closed Whites camping/water/weather wording and correct route order');
+
+const whitesSobo = buildAtRouteGrounding({ prompt: 'Plan a southbound Appalachian Trail White Mountains itinerary from Crawford Notch / US 302 to Franconia Notch / I-93 in 4 days with AMC huts, tentsites, water, parking, shuttle, and weather guardrails.' });
+assert.ok(whitesSobo, 'Whites SOBO prompt should trigger strict route grounding');
+assert.equal(whitesSobo.start.id, 'crawford-notch-us-302-nh', 'SOBO prompt should start at Crawford Notch');
+assert.equal(whitesSobo.direction, 'SOBO');
+assert.ok(whitesSobo.planOptions.some((option) => option.id === 'whites-sobo-safer-four-day-crawford-franconia'), 'Whites SOBO safer option should be available');
+
+
 const baxterPrompt = `Assume I am a NOBO AT section hiker finishing Maine. I am at Abol Bridge and want to reach Katahdin Stream Campground, stay at The Birches if possible, then summit Baxter Peak / Katahdin on the Hunt Trail in 2 or 3 days. Build a practical plan with route options, daily mileage targets, Long-Distance Hiker Permit steps, The Birches and campground assumptions, day-use/KTP access, water, weather/closure risks, shuttle logistics, and a final checklist.`;
 const baxter = buildAtRouteGrounding({ prompt: baxterPrompt });
 assert.ok(baxter, 'Baxter/Katahdin prompt should trigger strict AT route grounding');
@@ -148,8 +183,11 @@ assert.ok(clawAgentSource.includes('deterministicClawTurn(record, null, trimmedP
 assert.ok(clawAgentSource.includes('No shelter-overflow assumption'), 'Strict GSMNP replies should explicitly reject shelter-full overflow tenting assumptions');
 assert.ok(clawAgentSource.includes('strict Shenandoah route/regulation mode'), 'Strict Shenandoah replies should use a deterministic compact reply path');
 assert.ok(clawAgentSource.includes('old free/self-registration paper-permit guidance'), 'Strict Shenandoah replies should explicitly reject stale self-registration permit guidance');
+assert.ok(clawAgentSource.includes('strict White Mountains Franconia Notch'), 'Strict Whites replies should use a deterministic compact reply path');
+assert.ok(clawAgentSource.includes('Franconia Notch → Crawford Notch is about'), 'Strict Whites replies should correct the bad casual mileage estimate');
+assert.ok(clawAgentSource.includes('Do not depend on hut walk-up bunks or work-for-stay'), 'Strict Whites replies should reject hut/work-for-stay assumptions');
 assert.ok(clawAgentSource.includes('strict Baxter/Katahdin route/regulation mode'), 'Strict Baxter replies should use a deterministic compact reply path');
 assert.ok(clawAgentSource.includes('Long-Distance Hiker Permit in person at Katahdin Stream'), 'Strict Baxter replies should require the in-person LD permit flow');
 assert.ok(clawAgentSource.includes('there is no work-for-stay in Baxter State Park'), 'Strict Baxter replies should reject Birches/Baxter work-for-stay assumptions');
 
-console.log('Scout grounding eval passed: Pine Grove, GSMNP, Shenandoah, and Baxter/Katahdin route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water/summit guardrails, and shelter-overflow/work-for-stay refusal are active.');
+console.log('Scout grounding eval passed: Pine Grove, GSMNP, Shenandoah, White Mountains, and Baxter/Katahdin route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water/summit guardrails, and shelter-overflow/work-for-stay refusal are active.');

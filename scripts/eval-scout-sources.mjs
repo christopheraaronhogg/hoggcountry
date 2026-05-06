@@ -23,6 +23,8 @@ const requiredIds = [
   'shenandoah-backcountry-permits',
   'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05',
   'baxter-state-park-at-permits',
+  'hoggcountry-whites-franconia-crawford-qa-2026-05-06',
+  'white-mountain-national-forest-amc-rules',
   'atc-trail-updates',
   'nws-weather'
 ];
@@ -62,6 +64,18 @@ assert.ok(shenandoahSources.includes('shenandoah-backcountry-permits'), 'Shenand
 assert.ok(shenandoahSources.includes('at-guide-user-owned'), 'Shenandoah exact hut/mileage itinerary should require user-owned guide data');
 assert.ok(shenandoahSources.includes('nws-weather'), 'Shenandoah heat/thunderstorm itinerary should select NWS');
 
+const whitesSources = selectScoutSourceManifests({
+  query: 'Franconia Notch I-93 to Crawford Notch US 302 White Mountains NOBO 3 day section hiker itinerary with AMC huts tentsites legal camping above treeline lightning water parking shuttle bailouts',
+  state: 'NH',
+  mileRange: [1825.1, 1863.9],
+  limit: 10
+}).map((source) => source.id);
+assert.ok(whitesSources.includes('hoggcountry-whites-franconia-crawford-qa-2026-05-06'), 'Whites itinerary should select the White Mountains route/regulation validator');
+assert.ok(whitesSources.includes('white-mountain-national-forest-amc-rules'), 'Whites itinerary should select official/regional WMNF/AMC/NH State Parks rules');
+assert.ok(whitesSources.includes('at-guide-user-owned'), 'Whites exact mileage/hut/tentsite itinerary should require user-owned guide data');
+assert.ok(whitesSources.includes('nws-weather'), 'Whites ridge weather/lightning itinerary should select NWS');
+
+
 const baxterSources = selectScoutSourceManifests({
   query: 'Abol Bridge to Katahdin Stream Campground and Baxter Peak Katahdin NOBO finish itinerary with The Birches Long-Distance Hiker Permit KTP parking campground reservations water weather closures and shuttle',
   state: 'ME',
@@ -89,6 +103,12 @@ const shenandoahReceipt = buildScoutSourceReceipt('hoggcountry-shenandoah-at-cor
 assert.ok(shenandoahReceipt?.citation.includes('Shenandoah AT south/central corridor'), 'Shenandoah receipt should expose the validator citation');
 const shenandoahPermitReceipt = buildScoutSourceReceipt('shenandoah-backcountry-permits');
 assert.ok(shenandoahPermitReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched Shenandoah official receipt should not imply a live fetch');
+const whitesReceipt = buildScoutSourceReceipt('hoggcountry-whites-franconia-crawford-qa-2026-05-06');
+assert.ok(whitesReceipt?.citation.includes('White Mountains Franconia Notch'), 'Whites receipt should expose the validator citation');
+assert.equal(whitesReceipt?.accessMode, 'route-validator', 'Whites route receipt should identify deterministic validator access');
+const whitesOfficialReceipt = buildScoutSourceReceipt('white-mountain-national-forest-amc-rules');
+assert.ok(whitesOfficialReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched Whites official/regional receipt should not imply a live fetch');
+assert.equal(whitesOfficialReceipt?.trust, 'official', 'Whites official/regional receipt should be distinguished from local QA fixtures');
 const baxterReceipt = buildScoutSourceReceipt('hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05');
 assert.ok(baxterReceipt?.citation.includes('Baxter/Katahdin AT finish corridor'), 'Baxter receipt should expose the validator citation');
 assert.equal(baxterReceipt?.trust, 'reviewed', 'Baxter route receipt should remain a reviewed local QA fixture');

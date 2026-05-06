@@ -324,6 +324,46 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     keywords: ['baxter', 'katahdin', 'baxter peak', 'mount katahdin', 'mt katahdin', 'abol bridge', 'katahdin stream', 'hurd brook', 'rainbow spring', 'the birches', 'birches', 'monson', '100 mile wilderness', 'hundred mile wilderness', 'long distance hiker permit', 'ld permit', 'ktp', 'katahdin trailhead pass', 'parking', 'camping', 'closure', 'weather', 'water', 'nobo', 'sobo', 'itinerary']
   },
   {
+    id: 'hoggcountry-whites-franconia-crawford-qa-2026-05-06',
+    title: 'Hogg Country White Mountains Franconia Notch to Crawford Notch corridor and regulation QA validator',
+    displayCategory: 'deterministic route/regulation validator',
+    lane: 'hogg-owned',
+    trust: 'reviewed',
+    accessMode: 'route-validator',
+    privacy: 'Shared internal QA fixture; no private user data.',
+    useWhen: 'Franconia Notch / I-93 to Crawford Notch / US 302 White Mountains AT section planning, route order checks, AMC hut/tentsite assumptions, WMNF/NH State Parks camping guardrails, exposed-ridge weather/lightning, water, bailouts, and shuttle logistics.',
+    license: HOGG_OWNED_LICENSE,
+    freshness: { generatedAt: '2026-05-06', updateCadence: 'manual' },
+    coverage: {
+      trail: 'AT',
+      states: ['NH'],
+      mileStart: 1825.1,
+      mileEnd: 1863.9,
+      topics: ['route validator', 'white mountains', 'whites', 'franconia notch', 'crawford notch', 'amc', 'wmnf', 'huts', 'tentsites', 'camping', 'weather', 'water', 'mileage']
+    },
+    citationTemplate: 'Hogg Country White Mountains Franconia Notch ↔ Crawford Notch route/regulation QA fixture, generated 2026-05-06 from dogfood QA and official WMNF/AMC/ATC/NH State Parks rule checks.',
+    allowedActions: ['catalog', 'route-validate'],
+    caveats: ['Use as a guardrail for route order and official-rule wording; exact mileages, hut/tentsite availability, fees, water, weather, road access, parking, and shuttle logistics still require current AMC/WMNF/NH State Parks/user-owned guide verification.'],
+    keywords: ['white mountains', 'whites', 'franconia', 'franconia notch', 'crawford', 'crawford notch', 'i-93', 'us 302', 'liberty spring', 'garfield ridge', 'galehead', 'zealand', 'ethan pond', 'amc', 'wmnf', 'hut', 'huts', 'tentsite', 'camping', 'above treeline', 'alpine', 'weather', 'lightning', 'water', 'nobo', 'sobo', 'itinerary']
+  },
+  {
+    id: 'white-mountain-national-forest-amc-rules',
+    title: 'White Mountain National Forest, AMC, ATC, and NH State Parks camping/hut/weather rules',
+    displayCategory: 'official/regional land-manager and hut rules',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public official/regional source.',
+    useWhen: 'White Mountains / WMNF / AMC hut and tentsite planning, alpine-zone and Forest Protection Area camping restrictions, Franconia/Crawford Notch state-park camping, hut reservations, work-for-stay uncertainty, water, weather, fires, parking, and road/trailhead access.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', states: ['NH'], topics: ['white mountains', 'wmnf', 'amc', 'nh state parks', 'camping', 'huts', 'tentsites', 'alpine', 'weather', 'water', 'parking'] },
+    citationTemplate: 'WMNF/AMC/ATC/NH State Parks White Mountains camping, huts, and weather/access pages; live conditions/rules must be checked before leaving. Scout fetched timestamp: {fetchedAt}. https://www.fs.usda.gov/r09/whitemountain https://www.outdoors.org/ https://appalachiantrail.org/ https://www.nhstateparks.org/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Rules, hut/tentsite availability, caretaker season, fees, water, weather, road access, and parking change; Scout should fail closed and tell the hiker to verify exact AMC/WMNF/NH State Parks conditions before leaving.'],
+    keywords: ['white mountains', 'whites', 'wmnf', 'white mountain national forest', 'amc', 'appalachian mountain club', 'nh state parks', 'franconia notch', 'crawford notch', 'hut', 'huts', 'tentsite', 'camping', 'above treeline', 'alpine zone', 'forest protection area', 'work for stay', 'water', 'weather', 'parking', 'shuttle']
+  },
+  {
     id: 'baxter-state-park-at-permits',
     title: 'Baxter State Park AT Long-Distance Hiker Permit, The Birches, camping, trailhead access, water, and Katahdin conditions',
     displayCategory: 'official park permits, camping rules, and summit safety',
@@ -406,7 +446,7 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     citationTemplate: 'National Weather Service point forecast/alerts, fetched {fetchedAt}: {url}',
     allowedActions: ['catalog', 'live-fetch'],
     caveats: ['Use exact location/elevation when possible; do not substitute broad town weather for ridge conditions without saying so.'],
-    keywords: ['weather', 'storm', 'rain', 'snow', 'ice', 'wind', 'heat', 'cold', 'flood', 'forecast', 'alert', 'nws', 'noaa']
+    keywords: ['weather', 'storm', 'thunderstorm', 'thunder', 'lightning', 'rain', 'snow', 'ice', 'wind', 'heat', 'cold', 'flood', 'forecast', 'alert', 'nws', 'noaa']
   },
   {
     id: 'land-manager-pages',
@@ -550,11 +590,11 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
     if (haystack.includes(term)) score += manifest.keywords.includes(term) ? 4 : 2;
   }
 
-  if (!manifestCoversState(manifest, query.state)) score -= manifest.coverage.states ? 12 : 4;
+  if (!manifestCoversState(manifest, query.state)) score -= manifest.coverage.states ? 24 : 4;
   if (!manifestCoversMileRange(manifest, query.mileRange)) score -= manifest.coverage.mileStart !== undefined && manifest.coverage.mileEnd !== undefined ? 12 : 4;
   if (manifest.accessMode === 'disabled-pending-review' && !query.includeUnavailable) score -= 8;
-  if (manifest.trust === 'official' && /\b(weather|closure|detour|fire|alert|official)\b/iu.test(query.query)) score += 3;
-  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
+  if (manifest.trust === 'official' && /\b(weather|closure|detour|fire|alert|official|lightning|thunder|thunderstorm|wind|above[-\s]?treeline)\b/iu.test(query.query)) score += 3;
+  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
   if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 3;
   if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
 

@@ -113,6 +113,14 @@ export const BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
   exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, Baxter State Park conditions/ranger guidance, current camping reservation, or recent water/weather report.'
 } as const;
 
+export const WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
+  id: 'hoggcountry-whites-franconia-crawford-qa-2026-05-06',
+  label: 'Hogg Country White Mountains Franconia Notch ↔ Crawford Notch corridor and regulation QA fixture',
+  citation: 'Internal dogfood guardrail created from 2026-05-06 White Mountains QA plus official WMNF, AMC, ATC, and NH State Parks camping/weather rule checks; verify exact mileages, hut/tentsite availability, water, weather, road access, and shuttle logistics before leaving.',
+  authority: 'internal-qa',
+  exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, AMC White Mountain Guide/map, hut/tentsite reservation status, WMNF order, NH State Parks rule, or recent water/weather report.'
+} as const;
+
 export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
   {
     id: 'fontana-dam-nc',
@@ -258,6 +266,73 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
     notes: 'US 33 / Skyline Drive road crossing and logical south/central Shenandoah pickup point; verify parking, shuttle, and road status.'
   },
   {
+    id: 'franconia-notch-i-93-nh',
+    name: 'Franconia Notch / I-93',
+    kind: 'road-crossing',
+    state: 'NH',
+    mile: 1825.1,
+    latitude: 44.1437,
+    longitude: -71.6817,
+    aliases: ['franconia notch', 'franconia notch i-93', 'franconia notch i 93', 'i-93', 'i 93', 'liberty spring trailhead', 'liberty springs trailhead', 'lafayette place'],
+    notes: 'White Mountains AT road crossing/trailhead area; parking, state-park rules, and shuttle logistics require current confirmation.'
+  },
+  {
+    id: 'liberty-spring-tentsite-nh',
+    name: 'Liberty Spring Tentsite',
+    kind: 'shelter',
+    state: 'NH',
+    mile: 1828.0,
+    aliases: ['liberty spring', 'liberty spring tentsite', 'liberty springs', 'liberty springs tentsite', 'liberty spring campsite', 'liberty springs campsite'],
+    notes: 'AMC-managed tentsite candidate near Franconia Ridge; fee, caretaker/season, water, and capacity require current confirmation.'
+  },
+  {
+    id: 'garfield-ridge-shelter-nh',
+    name: 'Garfield Ridge Shelter / Campsite',
+    kind: 'shelter',
+    state: 'NH',
+    mile: 1835.4,
+    aliases: ['garfield ridge', 'garfield ridge shelter', 'garfield ridge campsite', 'garfield ridge tentsite'],
+    notes: 'AMC-managed shelter/campsite candidate; fee, caretaker/season, water, and capacity require current confirmation.'
+  },
+  {
+    id: 'galehead-hut-nh',
+    name: 'Galehead Hut',
+    kind: 'landmark',
+    state: 'NH',
+    mile: 1838.1,
+    aliases: ['galehead hut', 'galehead', 'gale head hut'],
+    notes: 'AMC hut on/near the AT corridor; do not assume a bunk, work-for-stay, tenting nearby, snacks, or water without current AMC confirmation.'
+  },
+  {
+    id: 'zealand-falls-hut-nh',
+    name: 'Zealand Falls Hut',
+    kind: 'landmark',
+    state: 'NH',
+    mile: 1845.1,
+    aliases: ['zealand falls', 'zealand falls hut', 'zealand hut'],
+    notes: 'AMC hut on/near the AT corridor; do not assume a bunk, work-for-stay, tenting nearby, snacks, or water without current AMC confirmation.'
+  },
+  {
+    id: 'ethan-pond-shelter-nh',
+    name: 'Ethan Pond Shelter / Tentsite',
+    kind: 'shelter',
+    state: 'NH',
+    mile: 1849.9,
+    aliases: ['ethan pond', 'ethan pond shelter', 'ethan pond campsite', 'ethan pond tentsite'],
+    notes: 'AMC/WMNF shelter/tentsite candidate before Crawford Notch; fee, water, capacity, and legal use require current confirmation.'
+  },
+  {
+    id: 'crawford-notch-us-302-nh',
+    name: 'Crawford Notch / US 302',
+    kind: 'road-crossing',
+    state: 'NH',
+    mile: 1863.9,
+    latitude: 44.2199,
+    longitude: -71.4112,
+    aliases: ['crawford notch', 'crawford notch us 302', 'crawford notch us302', 'us 302', 'us302', 'route 302', 'rt 302'],
+    notes: 'White Mountains road crossing / pickup corridor; state-park camping rules, parking, road access, and shuttle logistics require current confirmation.'
+  },
+  {
     id: 'pine-grove-furnace-state-park-pa',
     name: 'Pine Grove Furnace State Park',
     kind: 'park',
@@ -377,6 +452,7 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
 const KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS = ['Tagg Run Shelter'] as const;
 const KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS = ['Big Meadows', "Byrd's Nest #3", 'Byrds Nest 3'] as const;
 const KNOWN_BLOCKED_BAXTER_FINISH_ENDPOINTS = ['Knife Edge', 'Chimney Pond', 'Roaring Brook'] as const;
+const KNOWN_BLOCKED_WHITES_FRANCONIA_CRAWFORD_ENDPOINTS = ['Mizpah Spring Hut', 'Nauman Tentsite', 'Presidential Range', 'Pinkham Notch'] as const;
 const SHENANDOAH_AT_POINT_IDS = [
   'rockfish-gap-va',
   'calf-mountain-shelter-va',
@@ -392,6 +468,15 @@ const BAXTER_KATAHDIN_AT_POINT_IDS = [
   'hurd-brook-lean-to-me',
   'katahdin-stream-campground-me',
   'baxter-peak-katahdin-me'
+] as const;
+const WHITES_FRANCONIA_CRAWFORD_AT_POINT_IDS = [
+  'franconia-notch-i-93-nh',
+  'liberty-spring-tentsite-nh',
+  'garfield-ridge-shelter-nh',
+  'galehead-hut-nh',
+  'zealand-falls-hut-nh',
+  'ethan-pond-shelter-nh',
+  'crawford-notch-us-302-nh'
 ] as const;
 
 const ROUTE_PROMPT_TERMS = [
@@ -418,7 +503,11 @@ const NAMED_PLACE_PATTERNS: readonly { readonly label: string; readonly pattern:
   { label: "Byrd's Nest #3", pattern: /\bbyrd'?s?\s+nest\s*(?:#\s*)?3\b/iu },
   { label: 'Knife Edge', pattern: /\bknife\s+edge\b/iu },
   { label: 'Chimney Pond', pattern: /\bchimney\s+pond\b/iu },
-  { label: 'Roaring Brook', pattern: /\broaring\s+brook\b/iu }
+  { label: 'Roaring Brook', pattern: /\broaring\s+brook\b/iu },
+  { label: 'Mizpah Spring Hut', pattern: /\bmizpah(?:\s+spring)?(?:\s+hut)?\b/iu },
+  { label: 'Nauman Tentsite', pattern: /\bnauman(?:\s+tentsite|\s+campsite)?\b/iu },
+  { label: 'Presidential Range', pattern: /\bpresidential\s+range\b/iu },
+  { label: 'Pinkham Notch', pattern: /\bpinkham\s+notch\b/iu }
 ];
 
 function normalizeRouteText(value: string): string {
@@ -741,6 +830,54 @@ function buildShenandoahPlanOptions(direction: AtRouteDirection): readonly AtRou
   ];
 }
 
+function buildWhitesFranconiaCrawfordPlanOptions(direction: AtRouteDirection): readonly AtRoutePlanOption[] {
+  const saferFourDay = direction === 'NOBO' ? [
+    buildDay(1, 'franconia-notch-i-93-nh', 'liberty-spring-tentsite-nh', 'Short opening keeps first-time Whites exposure conservative; use only if the AMC tentsite is legal/available and weather supports Franconia Ridge timing.'),
+    buildDay(2, 'liberty-spring-tentsite-nh', 'garfield-ridge-shelter-nh', 'Hard exposed Franconia Ridge / Garfield day; start early and verify Garfield Ridge capacity/water before committing.'),
+    buildDay(3, 'garfield-ridge-shelter-nh', 'zealand-falls-hut-nh', 'Longer rugged Twinway day; hut use requires current AMC confirmation/reservation and nearby tenting must not be assumed.'),
+    buildDay(4, 'zealand-falls-hut-nh', 'crawford-notch-us-302-nh', 'Long finish through Ethan Pond/Crawford Notch logistics; confirm US 302 pickup and daylight margin.')
+  ] as const : [
+    buildDay(1, 'crawford-notch-us-302-nh', 'ethan-pond-shelter-nh', 'Short opening from US 302; verify parking, shuttle, legal overnight use, and water.'),
+    buildDay(2, 'ethan-pond-shelter-nh', 'galehead-hut-nh', 'Rugged Zealand/Twinway day; hut use requires reservation/current AMC confirmation and tenting nearby must not be assumed.'),
+    buildDay(3, 'galehead-hut-nh', 'garfield-ridge-shelter-nh', 'Shorter day that protects weather margin before Franconia Ridge.'),
+    buildDay(4, 'garfield-ridge-shelter-nh', 'franconia-notch-i-93-nh', 'Hard exposed Franconia Ridge finish; confirm weather and I-93 pickup/parking before leaving camp.')
+  ] as const;
+
+  const aggressiveThreeDay = direction === 'NOBO' ? [
+    buildDay(1, 'franconia-notch-i-93-nh', 'garfield-ridge-shelter-nh', 'Very hard first-time Whites day over Franconia Ridge; not safe unless weather, daylight, body, water, and campsite legality all line up.'),
+    buildDay(2, 'garfield-ridge-shelter-nh', 'ethan-pond-shelter-nh', 'Long rugged day over Galehead/South Twin/Zealand; requires current water, hut/tentsite rules, and early start.'),
+    buildDay(3, 'ethan-pond-shelter-nh', 'crawford-notch-us-302-nh', 'Long descent/logistics day to US 302; confirm pickup before committing.')
+  ] as const : [
+    buildDay(1, 'crawford-notch-us-302-nh', 'ethan-pond-shelter-nh', 'Opening logistics day; verify parking, legal overnight use, and water.'),
+    buildDay(2, 'ethan-pond-shelter-nh', 'garfield-ridge-shelter-nh', 'Long rugged day over Zealand/Twinway/Galehead; requires current water, hut/tentsite rules, and early start.'),
+    buildDay(3, 'garfield-ridge-shelter-nh', 'franconia-notch-i-93-nh', 'Very hard exposed Franconia Ridge finish; not safe unless weather, daylight, body, water, and pickup all line up.')
+  ] as const;
+
+  return [
+    {
+      id: direction === 'NOBO' ? 'whites-safer-four-day-franconia-crawford' : 'whites-sobo-safer-four-day-crawford-franconia',
+      label: direction === 'NOBO' ? 'Safer 4-day Whites shape: Franconia Notch to Crawford Notch' : 'Safer 4-day Whites SOBO shape: Crawford Notch to Franconia Notch',
+      totalMiles: roundMileage(saferFourDay.reduce((sum, day) => sum + day.miles, 0)),
+      days: saferFourDay,
+      caveats: [
+        'This is the safer default for a first-time White Mountains hiker; it does not force the requested 3-day pace.',
+        'Huts/tentsites are candidates only. Current AMC/WMNF/NH State Parks rules, availability, fees, caretaker status, water, and weather control the final plan.'
+      ]
+    },
+    {
+      id: direction === 'NOBO' ? 'whites-aggressive-three-day-garfield-ethan' : 'whites-sobo-aggressive-three-day-ethan-garfield',
+      label: direction === 'NOBO' ? 'Aggressive 3-day Whites shape via Garfield Ridge and Ethan Pond' : 'Aggressive 3-day Whites SOBO shape via Ethan Pond and Garfield Ridge',
+      totalMiles: roundMileage(aggressiveThreeDay.reduce((sum, day) => sum + day.miles, 0)),
+      days: aggressiveThreeDay,
+      caveats: [
+        'This matches the 3-day / 2-night request but is not the default recommendation for a first-time Whites hiker.',
+        'Use only with current hut/tentsite legality, confirmed water, stable ridge weather, early starts, bailout plan, and a locked shuttle.'
+      ]
+    }
+  ];
+}
+
+
 function buildBaxterKatahdinPlanOptions(direction: AtRouteDirection): readonly AtRoutePlanOption[] {
   const saferFinishDays = [
     buildDay(1, 'abol-bridge-me', 'hurd-brook-lean-to-me', 'Shorter Baxter approach day; verify legal overnight use, water, and whether this fits your actual 100-Mile Wilderness carry.'),
@@ -985,6 +1122,94 @@ function shenandoahRegulationClaimIssues(answer: string, grounding: AtRouteGroun
   return issues;
 }
 
+function whitesRegulationClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
+  if (grounding.source.id !== WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE.id) return [];
+
+  const issues: AtRouteClaimIssue[] = [];
+  for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const negatesUnsafe = lineNegatesUnsafeCamping(line);
+    const marksOutdated = lineMarksOutdatedGuidance(line);
+
+    const suggestsAlpineCamping = /\b(?:camp|camping|tent|pitch|sleep|bivy)\b[^.]{0,120}\b(?:above\s*treeline|alpine\s+zone|franconia\s+ridge|lafayette|ridge(?:line)?)\b/iu.test(line)
+      && !negatesUnsafe;
+    const suggestsHutTenting = /\b(?:camp|camping|tent|pitch|sleep|bivy|set\s+up)\b[^.]{0,120}\b(?:near|outside|behind|beside|around|at)\b[^.]{0,80}\b(?:hut|galehead|zealand|greenleaf)\b/iu.test(line)
+      && !negatesUnsafe
+      && !/\b(?:designated|legal|official|current\s+amc|verify|if\s+allowed)\b/iu.test(line);
+    const suggestsRoadStateParkCamping = /\b(?:camp|camping|tent|pitch|sleep|bivy|set\s+up)\b[^.]{0,120}\b(?:franconia\s+notch|crawford\s+notch|i-?93|us\s*302|parking\s+lot|trailhead|roadside|state\s+park)\b/iu.test(line)
+      && !negatesUnsafe
+      && !/\b(?:designated|lafayette\s+place|dry\s+river|official|campground|verify|if\s+allowed)\b/iu.test(line);
+    const suggestsUniversalDispersed = /\b(?:stealth|dispersed)\s+camp(?:ing)?\b/iu.test(line)
+      && /\b(?:anywhere|fine|allowed|okay|ok|easy|along\s+the\s+trail|near\s+the\s+trail|near\s+water)\b/iu.test(line)
+      && !negatesUnsafe;
+    const suggestsBadFire = /\b(?:campfire|fire|fires)\b[^.]{0,100}\b(?:anywhere|fine|allowed|okay|ok|at\s+camp|at\s+your\s+campsite)\b/iu.test(line)
+      && !negatesUnsafe
+      && !/\b(?:designated|fire\s+ring|official|current\s+rule)\b/iu.test(line);
+
+    if (suggestsAlpineCamping || suggestsHutTenting || suggestsRoadStateParkCamping || suggestsUniversalDispersed || suggestsBadFire) {
+      issues.push({
+        kind: 'unsafe-camping-rule',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'White Mountains camping wording was too permissive. Plans must fail closed on alpine/above-treeline camping, hut/tentsite assumptions, road/trailhead/state-park camping, WMNF Forest Protection Area restrictions, and fire limits.'
+      });
+    }
+
+    const claimsWorkForStay = /\bwork[-\s]?for[-\s]?stay\b/iu.test(line)
+      && /\b(?:guaranteed|count\s+on|plan\s+on|available|will\s+work|should\s+work|safe\s+plan)\b/iu.test(line)
+      && !negatesUnsafe
+      && !marksOutdated;
+    const claimsHutWalkupSafe = /\b(?:hut|galehead|zealand|greenleaf)\b[^.]{0,100}\b(?:walk[-\s]?up|no\s+reservation|without\s+a\s+reservation)\b[^.]{0,80}\b(?:fine|okay|ok|safe|count\s+on|plan)\b/iu.test(line)
+      && !negatesUnsafe;
+
+    if (claimsWorkForStay || claimsHutWalkupSafe) {
+      issues.push({
+        kind: 'unsafe-camping-rule',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'White Mountains hut wording was too permissive. Section-hiker plans must not depend on hut walk-up bunks or work-for-stay; use current AMC reservations/availability or a legal tentsite/campground plan.'
+      });
+    }
+
+    const saysSmallWaterEnough = /\b(?:2\.5\s*l|2\.5\s+liters|two\s+and\s+a\s+half\s+liters|2\s*l|2\s+liters|two\s+liters)\b[^.]{0,140}\b(?:enough|adequate|fine|plenty|sufficient)\b/iu.test(line)
+      && /\b(?:white\s+mountains|whites|franconia|crawford|ridge|above\s*treeline|water)\b/iu.test(line)
+      && !/\b(?:not\s+enough|not\s+adequate|too\s+thin|thin|only\s+if|unless|verify|confirmed|can\s+be\s+too\s+tight)\b/iu.test(line);
+    const saysNaturalWaterUntreated = /\b(?:natural|spring|stream|brook|source|water)\b[^.]{0,80}\b(?:no\s+treatment|untreated|without\s+(?:filter|treat|purif))\b/iu.test(line)
+      && /\b(?:white\s+mountains|whites|franconia|crawford|amc|wmnf)\b/iu.test(line)
+      && !negatesUnsafe;
+
+    if (saysSmallWaterEnough || saysNaturalWaterUntreated) {
+      issues.push({
+        kind: 'unsafe-water-plan',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'White Mountains water wording was too permissive. 2-2.5L can be thin on exposed ridges or dry climbs until current AMC/FarOut/user guide water is confirmed, and natural water must be treated.'
+      });
+    }
+
+    const dismissesRidgeWeather = /\b(?:franconia\s+ridge|lafayette|above\s*treeline|ridge(?:line)?)\b[^.]{0,120}\b(?:fine|okay|ok|safe|no\s+issue|not\s+a\s+problem)\b/iu.test(line)
+      && /\b(?:storm|thunder|lightning|wind|weather|forecast|early\s+september|september)\b/iu.test(line)
+      && !/\b(?:avoid|do\s+not|don'?t|turnaround|verify|unless|current|bad\s+weather|unsafe)\b/iu.test(line);
+
+    if (dismissesRidgeWeather) {
+      issues.push({
+        kind: 'unsafe-summit-plan',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'White Mountains ridge-weather wording was too permissive. Franconia Ridge/Twinway plans need current point forecasts, lightning/wind/cold exposure guardrails, early starts, and turnaround/bailout decisions.'
+      });
+    }
+  }
+
+  return issues;
+}
+
+
 function baxterRegulationClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
   if (grounding.source.id !== BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE.id) return [];
 
@@ -1137,6 +1362,7 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
   issues.push(...routeTotalMileageClaimIssues(answer, grounding));
   issues.push(...gsmnpRegulationClaimIssues(answer, grounding));
   issues.push(...shenandoahRegulationClaimIssues(answer, grounding));
+  issues.push(...whitesRegulationClaimIssues(answer, grounding));
   issues.push(...baxterRegulationClaimIssues(answer, grounding));
   return issues;
 }
@@ -1176,31 +1402,40 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
   const isGsmnp = start.id === 'fontana-dam-nc' || corridor.some((point) => point.id === 'newfound-gap-tn-nc');
   const isShenandoah = corridor.some((point) => SHENANDOAH_AT_POINT_IDS.includes(point.id as typeof SHENANDOAH_AT_POINT_IDS[number]));
   const isBaxterKatahdin = corridor.some((point) => BAXTER_KATAHDIN_AT_POINT_IDS.includes(point.id as typeof BAXTER_KATAHDIN_AT_POINT_IDS[number]));
+  const isWhitesFranconiaCrawford = corridor.some((point) => WHITES_FRANCONIA_CRAWFORD_AT_POINT_IDS.includes(point.id as typeof WHITES_FRANCONIA_CRAWFORD_AT_POINT_IDS[number]));
   const hasShenandoahHeatWaterConstraint = /\b(?:2\s*l|2\s+liters|two\s+liters|late\s+july|july|summer|heat|hot)\b/iu.test(prompt);
   const isSwiftRunRequest = destination?.id === 'swift-run-gap-va' || start.id === 'swift-run-gap-va' || includesNormalized(prompt, 'swift run gap');
+  const isCrawfordRequest = destination?.id === 'crawford-notch-us-302-nh' || start.id === 'crawford-notch-us-302-nh' || includesNormalized(prompt, 'crawford notch') || includesNormalized(prompt, 'us 302');
+  const hasWhitesWaterWeatherConstraint = /\b(?:2(?:\.5)?\s*l|2(?:\.5)?\s+liters|two\s+(?:and\s+a\s+half\s+)?liters|first\s+time|early\s+september|september|lightning|thunder|above[-\s]?treeline|ridge|weather|water)\b/iu.test(prompt);
   const source = isGsmnp
     ? GSMNP_AT_CORRIDOR_QA_SOURCE
     : isShenandoah
       ? SHENANDOAH_AT_CORRIDOR_QA_SOURCE
-      : isBaxterKatahdin
-        ? BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE
-        : AT_ROUTE_QA_SOURCE;
+      : isWhitesFranconiaCrawford
+        ? WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE
+        : isBaxterKatahdin
+          ? BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE
+          : AT_ROUTE_QA_SOURCE;
   const blockedEndpointNames = isPineGrove
     ? [...KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS]
     : isShenandoah && isSwiftRunRequest
       ? [...KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS]
-      : isBaxterKatahdin
-        ? [...KNOWN_BLOCKED_BAXTER_FINISH_ENDPOINTS]
-        : [];
+      : isWhitesFranconiaCrawford && isCrawfordRequest
+        ? [...KNOWN_BLOCKED_WHITES_FRANCONIA_CRAWFORD_ENDPOINTS]
+        : isBaxterKatahdin
+          ? [...KNOWN_BLOCKED_BAXTER_FINISH_ENDPOINTS]
+          : [];
   const planOptions = isPineGrove
     ? buildPineGrovePlanOptions(direction)
     : isGsmnp
       ? buildGsmnpPlanOptions(direction)
       : isShenandoah
         ? buildShenandoahPlanOptions(direction)
-        : isBaxterKatahdin && (start.id === 'abol-bridge-me' || start.id === 'katahdin-stream-campground-me')
-          ? buildBaxterKatahdinPlanOptions(direction)
-          : [];
+        : isWhitesFranconiaCrawford && (start.id === 'franconia-notch-i-93-nh' || start.id === 'crawford-notch-us-302-nh')
+          ? buildWhitesFranconiaCrawfordPlanOptions(direction)
+          : isBaxterKatahdin && (start.id === 'abol-bridge-me' || start.id === 'katahdin-stream-campground-me')
+            ? buildBaxterKatahdinPlanOptions(direction)
+            : [];
   const warnings = [
     source.exactMileageCaveat,
     direction === 'NOBO' && isPineGrove
@@ -1217,6 +1452,15 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
       : null,
     isShenandoah && hasShenandoahHeatWaterConstraint
       ? 'Late-July/2L water guardrail: treat 2L as thin until current water sources are confirmed; all natural water must be treated.'
+      : null,
+    isWhitesFranconiaCrawford
+      ? 'White Mountains regulation guardrail: first-time Franconia Notch ↔ Crawford Notch plans should default to a safer 4-day shape unless current AMC/WMNF/NH State Parks legality, hut/tentsite availability, water, weather, daylight, and shuttle all line up.'
+      : null,
+    isWhitesFranconiaCrawford
+      ? 'White Mountains camping guardrail: no alpine/above-treeline camping, no camping near huts/trailheads/roads/state parks unless at a designated legal site, and no hut-bed or work-for-stay assumption without current AMC confirmation.'
+      : null,
+    isWhitesFranconiaCrawford && hasWhitesWaterWeatherConstraint
+      ? 'White Mountains water/weather guardrail: 2-2.5L can be thin on exposed ridges or long dry climbs; use current water reports and ridge/elevation forecasts, with lightning/wind/cold turnaround decisions before committing above treeline.'
       : null,
     isBaxterKatahdin
       ? 'Baxter/Katahdin permit guardrail: all AT hikers must secure the current Long-Distance Hiker Permit in person at Katahdin Stream before summiting; pre-registration cards, ATC registration, and online campground reservations are not substitutes.'
