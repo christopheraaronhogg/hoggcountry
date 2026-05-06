@@ -238,7 +238,7 @@ hoggcountry/
 │   └── lib/                  # Utilities (youtube.ts, config.ts)
 ├── public/
 │   ├── sw.js                 # Service worker
-│   ├── topo.svg              # Background texture
+│   ├── default-background.svg # Standard topo map background
 │   └── fonts/
 ├── scripts/
 │   ├── parse-master-guide.js # Master → chapters
