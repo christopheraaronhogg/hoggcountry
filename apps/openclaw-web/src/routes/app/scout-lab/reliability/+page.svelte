@@ -7,6 +7,7 @@
   type RunArtifact = PageData['runs'][number];
   type Scenario = PageData['scenarios'][number];
   type ScenarioResult = RunArtifact['results'][number];
+  type ArenaGroup = PageData['groups'][number];
 
   let difficulty = $state('all');
   let region = $state('all');
@@ -18,16 +19,41 @@
   let severity = $state('all');
   let search = $state('');
   let selectedScenarioId = $state('');
+  let selectedGroupKey = $state('');
   let selectedRunId = $state('');
   let compareLeftId = $state('');
   let compareRightId = $state('');
 
   const regions = $derived([...new Set(data.scenarios.map((scenario) => scenario.regionState))].sort());
   const difficulties = $derived([...new Set(data.scenarios.map((scenario) => scenario.difficulty))].sort((left, right) => left - right));
-  const models = $derived([...new Set(data.runs.map((run) => modelLabel(run)))].sort());
-  const environments = $derived([...new Set(data.runs.map((run) => run.metadata.environment))].sort());
-  const revisions = $derived([...new Set(data.runs.map((run) => shortSha(run)).filter(Boolean))].sort());
+  const models = $derived([...new Set(data.groups.map((group) => group.modelDisplayName))].sort());
+  const environments = $derived([...new Set(data.groups.map((group) => group.environment))].sort());
+  const revisions = $derived([...new Set(data.groups.map((group) => shortRepo(group)).filter(Boolean))].sort());
   const executionModes = $derived([...new Set(data.scenarios.map((scenario) => scenario.expectedExecutionMode ?? scenario.deterministicStrictRouteSupport))].sort());
+  const hardCategories = [
+    'mixed multi-part prompts',
+    'ambiguous landmarks',
+    'mental halfway vs true halfway',
+    'impossible mileage',
+    'permit-heavy areas',
+    'legal camping restrictions',
+    'national park rules',
+    'unreliable water',
+    'long food carries',
+    'sparse bailout/resupply',
+    'high-consequence weather',
+    'closures/detours',
+    'family/dad hike plus separate solo overnight'
+  ];
+
+  const filteredGroups = $derived.by(() => {
+    return data.groups.filter((group) => {
+      if (model !== 'all' && group.modelDisplayName !== model) return false;
+      if (environment !== 'all' && group.environment !== environment) return false;
+      if (revision !== 'all' && shortRepo(group) !== revision) return false;
+      return true;
+    });
+  });
 
   const filteredRuns = $derived.by(() => {
     return data.runs.filter((run) => {
@@ -38,8 +64,12 @@
     });
   });
 
-  const selectedRun = $derived(data.runs.find((run) => run.metadata.runId === selectedRunId) ?? filteredRuns[0] ?? data.runs[0] ?? null);
-  const matrixRuns = $derived(filteredRuns.slice(0, 8));
+  const selectedGroup = $derived(data.groups.find((group) => group.groupKey === selectedGroupKey) ?? filteredGroups[0] ?? data.groups[0] ?? null);
+  const selectedGroupRuns = $derived(selectedGroup ? runsForGroup(selectedGroup) : filteredRuns);
+  const selectedRun = $derived(
+    selectedGroupRuns.find((run) => run.metadata.runId === selectedRunId) ?? selectedGroupRuns[0] ?? filteredRuns[0] ?? data.runs[0] ?? null
+  );
+  const matrixRuns = $derived(selectedGroupRuns.slice(0, 8));
   const activeScenarioId = $derived(selectedScenarioId || selectedRun?.results[0]?.scenarioId || data.scenarios[0]?.id || '');
   const selectedScenario = $derived(data.scenarios.find((scenario) => scenario.id === activeScenarioId) ?? data.scenarios[0] ?? null);
   const selectedResult = $derived(selectedRun?.results.find((result) => result.scenarioId === selectedScenario?.id) ?? null);
@@ -48,17 +78,7 @@
   const leftResult = $derived(leftRun?.results.find((result) => result.scenarioId === selectedScenario?.id) ?? null);
   const rightResult = $derived(rightRun?.results.find((result) => result.scenarioId === selectedScenario?.id) ?? null);
 
-  const leaderboard = $derived.by(() => {
-    return [...data.runs]
-      .map((run) => ({ run, summary: runSummary(run) }))
-      .sort((left, right) =>
-        right.summary.coverageScore - left.summary.coverageScore ||
-        right.summary.averageScore - left.summary.averageScore ||
-        left.summary.blockerCount - right.summary.blockerCount ||
-        new Date(right.run.metadata.timestamp).getTime() - new Date(left.run.metadata.timestamp).getTime()
-      )
-      .slice(0, 12);
-  });
+  const leaderboard = $derived(filteredGroups.slice(0, 16));
 
   const selectedResultByScenario = $derived.by(() => {
     const map: Record<string, ScenarioResult> = {};
@@ -121,6 +141,19 @@
     return (run.metadata.siteGitSha || run.metadata.gitCommitSha || '').slice(0, 12);
   }
 
+  function shortRepo(group: ArenaGroup): string {
+    return group.repoSha.slice(0, 12);
+  }
+
+  function runsForGroup(group: ArenaGroup): RunArtifact[] {
+    const ids = new Set(group.runIds);
+    return data.runs.filter((run) => ids.has(run.metadata.runId));
+  }
+
+  function latestRunForGroup(group: ArenaGroup): RunArtifact | null {
+    return data.runs.find((run) => run.metadata.runId === group.latestRunId) ?? null;
+  }
+
   function resultScore(result: ScenarioResult | null | undefined): number {
     if (!result) return 0;
     if (typeof result.score?.total === 'number') return result.score.total;
@@ -163,6 +196,37 @@
   function flagsLabel(result: ScenarioResult | null | undefined): string {
     return result?.score?.severityFlags?.join(', ') || 'none';
   }
+
+  function formatDate(value: string): string {
+    return new Date(value).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  function averageValues(values: number[]): number {
+    return values.length > 0 ? Math.round(values.reduce((total, item) => total + item, 0) / values.length) : 0;
+  }
+
+  function bandSummary(group: ArenaGroup | null, min: number, max: number) {
+    const scenarioIds = data.scenarios
+      .filter((scenario) => scenario.difficulty >= min && scenario.difficulty <= max)
+      .map((scenario) => scenario.id);
+    const rows = group?.scenarioConsistency.filter((row) => scenarioIds.includes(row.scenarioId)) ?? [];
+    return {
+      label: `D${min}-${max}`,
+      total: scenarioIds.length,
+      covered: rows.length,
+      averageScore: averageValues(rows.map((row) => row.averageScore)),
+      passRate: averageValues(rows.map((row) => row.passRate)),
+      riskCount: rows.filter((row) => row.severityFlags.some((flag) => flag === 'safety risk' || flag === 'wrong corridor' || flag === 'blocker')).length
+    };
+  }
+
+  function hardCategoryCount(category: string): number {
+    const terms = category.toLowerCase().split(/[^a-z0-9]+/u).filter((term) => term.length > 3);
+    return data.scenarios.filter((scenario) => {
+      const text = `${scenario.id} ${scenario.prompt} ${scenario.difficultyRationale} ${scenario.requiredCaveats.join(' ')} ${scenario.disallowedMistakes.join(' ')}`.toLowerCase();
+      return terms.some((term) => text.includes(term));
+    }).length;
+  }
 </script>
 
 <svelte:head>
@@ -183,40 +247,53 @@
     <div class="section-heading">
       <div>
         <p class="eyebrow">Leaderboard</p>
-        <h2>Model and revision scorecards</h2>
+        <h2>Grouped model / repo scorecards</h2>
       </div>
-      <span>{data.runs.length} runs · {data.scenarios.length} scenarios</span>
+      <span>{data.groups.length} groups · {data.runs.length} runs · {data.scenarios.length} scenarios</span>
     </div>
-    <div class="leaderboard-table" role="table" aria-label="Run leaderboard">
+    <div class="leaderboard-table" role="table" aria-label="Grouped model and revision leaderboard">
       <div class="leaderboard-row header" role="row">
         <span>Rank</span>
-        <span>Model / revision</span>
-        <span>Score</span>
+        <span>Model / repo / env</span>
+        <span>Runs</span>
+        <span>Avg</span>
+        <span>Best</span>
         <span>Pass</span>
-        <span>Risk</span>
+        <span>Critical failures</span>
         <span>Coverage</span>
+        <span>Latest</span>
       </div>
-      {#each leaderboard as item, index (item.run.metadata.runId)}
+      {#each leaderboard as group (group.groupKey)}
+        {@const latestRun = latestRunForGroup(group)}
         <button
-          class:active={selectedRun?.metadata.runId === item.run.metadata.runId}
+          class:active={selectedGroup?.groupKey === group.groupKey}
           class="leaderboard-row"
           type="button"
           role="row"
           onclick={() => {
-            selectedRunId = item.run.metadata.runId;
+            selectedGroupKey = group.groupKey;
+            selectedRunId = group.latestRunId;
+            compareRightId = group.latestRunId;
           }}
         >
-          <span>#{index + 1}</span>
+          <span>#{group.rank}</span>
           <span>
-            <strong>{modelLabel(item.run)}</strong>
-            <small>{shortSha(item.run)} · {item.run.metadata.environment} · {new Date(item.run.metadata.timestamp).toLocaleString()}</small>
+            <strong>{group.modelDisplayName}</strong>
+            <small>{shortRepo(group)} · {group.environment} · {group.modelProvider}</small>
+            <em>{group.patchNotesSummary}</em>
           </span>
-          <span class={`score-badge ${scoreClass(item.summary.coverageScore)}`}>{item.summary.coverageScore}</span>
-          <span>{item.summary.passRate}%</span>
-          <span>{item.summary.blockerCount} blockers · {item.summary.safetyRiskCount} safety</span>
-          <span>D{difficultyCoverage(item.run)} · {item.run.metadata.scenarioCount}</span>
+          <span>{group.runCount}</span>
+          <span class={`score-badge ${scoreClass(group.averageScore)}`}>{group.averageScore}</span>
+          <span>{group.bestScore}</span>
+          <span>{group.averagePassRate}%</span>
+          <span>{group.blockerCount} blockers · {group.safetyRiskCount} safety · {group.wrongCorridorCount} corridor</span>
+          <span>D{group.difficultyCoverage} · ~{group.scenarioCountAverage} scenarios · {group.scenarioLevelConsistency}% consistent</span>
+          <span>{formatDate(group.latestRunTimestamp)}<small>{latestRun?.metadata.gitCommitMessage ?? 'No commit message'}</small></span>
         </button>
       {/each}
+      {#if leaderboard.length === 0}
+        <p class="empty-state">No grouped results match the current filters.</p>
+      {/if}
     </div>
   </section>
 
@@ -300,8 +377,32 @@
     </label>
   </section>
 
-  <section class="run-strip" aria-label="Reliability run list">
-    {#each filteredRuns as run (run.metadata.runId)}
+  <section class="group-summary" aria-label="Selected grouped result summary">
+    {#if selectedGroup}
+      <div>
+        <span class="label">Selected scorecard</span>
+        <strong>{selectedGroup.modelDisplayName}</strong>
+        <p>{shortRepo(selectedGroup)} · {selectedGroup.environment} · {selectedGroup.runCount} run{selectedGroup.runCount === 1 ? '' : 's'}</p>
+      </div>
+      <div>
+        <span class="label">Score range</span>
+        <strong>{selectedGroup.worstScore}–{selectedGroup.bestScore}</strong>
+        <p>Average {selectedGroup.averageScore}; pass {selectedGroup.averagePassRate}%</p>
+      </div>
+      <div>
+        <span class="label">Risk frequency</span>
+        <strong>{selectedGroup.blockerFrequency} blockers/run</strong>
+        <p>{selectedGroup.safetyRiskFrequency} safety/run · {selectedGroup.wrongCorridorFrequency} corridor/run</p>
+      </div>
+      <div>
+        <span class="label">Changed areas</span>
+        <p>{selectedGroup.changedAreas.join(', ') || 'None recorded'}</p>
+      </div>
+    {/if}
+  </section>
+
+  <section class="run-strip" aria-label="Runs inside selected grouped result">
+    {#each selectedGroupRuns as run (run.metadata.runId)}
       {@const summary = runSummary(run)}
       <button
         class:selected={selectedRun?.metadata.runId === run.metadata.runId}
@@ -313,12 +414,36 @@
       >
         <span>{run.metadata.environment}</span>
         <strong>{summary.coverageScore}</strong>
-        <small>{modelLabel(run)} · {run.metadata.passFailCounts.passed}/{run.metadata.scenarioCount} · {shortSha(run)}</small>
+        <small>{modelLabel(run)} · {run.metadata.passFailCounts.passed}/{run.metadata.scenarioCount} · {shortSha(run)} · {formatDate(run.metadata.timestamp)}</small>
       </button>
     {/each}
-    {#if filteredRuns.length === 0}
-      <p class="empty-state">No runs match the current filters.</p>
+    {#if selectedGroupRuns.length === 0}
+      <p class="empty-state">No runs match the selected scorecard.</p>
     {/if}
+  </section>
+
+  <section class="progress-panel" aria-label="Difficulty and hard-category progress">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Progress</p>
+        <h2>Difficulty ladder and hard cases</h2>
+      </div>
+      <span>{selectedGroup?.difficultyCoverage ?? 'none'} difficulty coverage</span>
+    </div>
+    <div class="band-grid">
+      {#each [bandSummary(selectedGroup, 1, 3), bandSummary(selectedGroup, 4, 6), bandSummary(selectedGroup, 7, 8), bandSummary(selectedGroup, 9, 10)] as band (band.label)}
+        <div class={`band-card ${scoreClass(band.averageScore)}`}>
+          <strong>{band.label}</strong>
+          <span>{band.averageScore} avg · {band.passRate}% pass</span>
+          <small>{band.covered}/{band.total} scenarios covered · {band.riskCount} risk rows</small>
+        </div>
+      {/each}
+    </div>
+    <div class="hard-category-strip" aria-label="Hard scenario categories">
+      {#each hardCategories as category (category)}
+        <span>{category}<small>{hardCategoryCount(category)}</small></span>
+      {/each}
+    </div>
   </section>
 
   <section class="matrix-panel" aria-label="Scenario matrix">
@@ -637,6 +762,8 @@
 
   .leaderboard,
   .filters-panel,
+  .group-summary,
+  .progress-panel,
   .matrix-panel,
   .detail-panel,
   .comparison-panel {
@@ -654,7 +781,7 @@
 
   .leaderboard-row {
     display: grid;
-    grid-template-columns: 52px minmax(220px, 1.8fr) 90px 70px minmax(160px, 1fr) 110px;
+    grid-template-columns: 52px minmax(260px, 2fr) 64px 78px 70px 76px minmax(190px, 1.25fr) minmax(170px, 1fr) minmax(150px, 1fr);
     gap: 0.75rem;
     align-items: center;
     border: 1px solid var(--color-border, #d8d0c2);
@@ -687,6 +814,15 @@
   small {
     color: var(--color-muted, #776b5c);
     display: block;
+  }
+
+  .leaderboard-row em {
+    color: var(--color-muted, #776b5c);
+    display: block;
+    font-size: 0.78rem;
+    font-style: normal;
+    margin-top: 0.15rem;
+    max-width: 58ch;
   }
 
   .score-badge,
@@ -768,6 +904,90 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 0.75rem;
+  }
+
+  .group-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.8rem;
+  }
+
+  .group-summary div {
+    min-width: 0;
+  }
+
+  .group-summary strong {
+    display: block;
+    font-size: 1.15rem;
+  }
+
+  .group-summary p {
+    color: var(--color-muted, #776b5c);
+    margin: 0.2rem 0 0;
+  }
+
+  .band-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.65rem;
+    margin-top: 0.85rem;
+  }
+
+  .band-card {
+    border-radius: 6px;
+    color: white;
+    display: grid;
+    gap: 0.12rem;
+    padding: 0.75rem;
+  }
+
+  .band-card.excellent {
+    background: #1f7a4d;
+  }
+
+  .band-card.good {
+    background: #52733b;
+  }
+
+  .band-card.warn {
+    background: #b9782f;
+  }
+
+  .band-card.bad {
+    background: #b93a32;
+  }
+
+  .band-card small {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .hard-category-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.85rem;
+  }
+
+  .hard-category-strip span {
+    align-items: center;
+    border: 1px solid var(--color-border, #d8d0c2);
+    border-radius: 999px;
+    background: white;
+    display: inline-flex;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 0.28rem 0.58rem;
+  }
+
+  .hard-category-strip small {
+    border-radius: 999px;
+    background: #efe3c8;
+    color: #4e3f2f;
+    display: inline-flex;
+    min-width: 1.4rem;
+    justify-content: center;
+    padding: 0.04rem 0.35rem;
   }
 
   .run-tile,

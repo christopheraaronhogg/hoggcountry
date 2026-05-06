@@ -11,6 +11,16 @@ const scenarioPath = new URL('../data/scout-reliability/scenarios.json', import.
 const runsDir = new URL('../data/scout-reliability/runs', import.meta.url);
 const EVALUATOR_VERSION = 'scout-reliability-v2';
 const PROMPT_VERSION = 'scout-planning-safety-skeleton-v2';
+const HUMAN_REVIEW_LABELS = [
+  'not-reviewed',
+  'good',
+  'acceptable with caveats',
+  'unsafe',
+  'wrong corridor',
+  'needs source check',
+  'too thin',
+  'excellent'
+];
 const SCORE_CATEGORIES = [
   'corridorCorrectness',
   'routeOrder',
@@ -657,6 +667,7 @@ function summarize(results) {
     failedCount: failed.length,
     skippedCount: skipped.length,
     difficultyRange: difficulties.length > 0 ? [Math.min(...difficulties), Math.max(...difficulties)] : null,
+    totalScore: results.reduce((total, result) => total + (result.score?.total ?? 0), 0),
     averageScore: tested.length > 0 ? Math.round(tested.reduce((total, result) => total + (result.score?.total ?? 0), 0) / tested.length) : 0,
     coverageScore: results.length > 0 ? Math.round(results.reduce((total, result) => total + (result.score?.total ?? 0), 0) / results.length) : 0,
     blockerCount: results.reduce((total, result) => total + (result.score?.blockerCount ?? 0), 0),
@@ -665,6 +676,11 @@ function summarize(results) {
       for (const flag of result.score?.severityFlags ?? []) {
         counts[flag] = (counts[flag] ?? 0) + 1;
       }
+      return counts;
+    }, {}),
+    humanReviewStatusCounts: results.reduce((counts, result) => {
+      const status = HUMAN_REVIEW_LABELS.includes(result.manualReview?.status) ? result.manualReview.status : 'not-reviewed';
+      counts[status] = (counts[status] ?? 0) + 1;
       return counts;
     }, {})
   };
@@ -709,13 +725,17 @@ async function main() {
     },
     difficultyRangeTested: summary.difficultyRange,
     scoreSummary: {
+      totalScore: summary.totalScore,
       averageScore: summary.averageScore,
       coverageScore: summary.coverageScore,
       passRate: summary.testedCount > 0 ? Math.round((summary.passedCount / summary.testedCount) * 100) : 0,
       blockerCount: summary.blockerCount,
       safetyRiskCount: summary.safetyRiskCount,
+      wrongCorridorCount: summary.severityCounts['wrong corridor'] ?? 0,
       severityCounts: summary.severityCounts
     },
+    humanReviewLabels: HUMAN_REVIEW_LABELS,
+    humanReviewStatusCounts: summary.humanReviewStatusCounts,
     filters: {
       difficultyMin: options.difficultyMin,
       difficultyMax: options.difficultyMax,

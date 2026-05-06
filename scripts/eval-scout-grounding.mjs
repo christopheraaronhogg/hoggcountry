@@ -239,10 +239,11 @@ assert.ok(baxterSobo.planOptions.some((option) => option.id === 'baxter-sobo-per
 
 const clawAgentSource = readFileSync(new URL('../apps/openclaw-web/src/lib/server/claw-agent.ts', import.meta.url), 'utf8');
 const replyFunctionStart = clawAgentSource.indexOf('export async function replyInWorkspaceClaw');
-const strictReplyIndex = clawAgentSource.indexOf('const strictRouteReply = await buildStrictAtRouteItineraryReply', replyFunctionStart);
+const strictReplyIndex = clawAgentSource.indexOf('await buildStrictAtRouteItineraryReply', replyFunctionStart);
 const runtimeResolveIndex = clawAgentSource.indexOf('const runtime = await resolveClawRuntime(record);', replyFunctionStart);
 assert.ok(replyFunctionStart >= 0 && strictReplyIndex >= 0 && runtimeResolveIndex >= 0, 'Strict reply/provider runtime wiring should remain findable');
 assert.ok(strictReplyIndex < runtimeResolveIndex, 'Strict deterministic route replies must run before provider runtime resolution so missing API credentials do not block validator-only answers');
+assert.ok(clawAgentSource.includes("skillEnabled(record, 'at-mile-marker-reference')"), 'AT mile-marker skill should gate strict route replies without moving them behind provider runtime resolution');
 assert.ok(clawAgentSource.includes('deterministicClawTurn(record, null, trimmedPrompt, strictRouteReply)'), 'Strict route replies should be recorded as system/strict-route-validator turns, not as cloud model turns');
 assert.ok(clawAgentSource.includes('strict Harpers Ferry mental-halfway mode'), 'Strict Harpers Ferry replies should use a deterministic compact reply path');
 assert.ok(clawAgentSource.includes('Pine Grove Furnace is the true/mathematical halfway area'), 'Strict Harpers Ferry replies should explain mental halfway versus true halfway');
