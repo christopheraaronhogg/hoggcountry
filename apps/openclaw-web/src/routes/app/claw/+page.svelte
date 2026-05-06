@@ -1164,7 +1164,7 @@
       class="command-icon"
       class:active={docsOpen}
       type="button"
-      aria-label="Open documents"
+      aria-label="Open resources"
       aria-expanded={docsOpen}
       aria-controls="docs-panel"
       onclick={toggleDocsPanel}
@@ -1172,7 +1172,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
-      <span class="command-label">Docs</span>
+      <span class="command-label">Sources</span>
     </button>
   </header>
 
@@ -1262,7 +1262,7 @@
           <strong>Plan thread</strong>
           <span>{messages.length} turn{messages.length === 1 ? '' : 's'}</span>
         </div>
-        <button class="rail-toggle" type="button" onclick={toggleDocsPanel} aria-expanded={docsOpen} aria-controls="docs-panel">Docs ▸</button>
+        <button class="rail-toggle" type="button" onclick={toggleDocsPanel} aria-expanded={docsOpen} aria-controls="docs-panel">Sources ▸</button>
       </div>
 
       <section class="message-viewport" class:message-viewport--empty={messages.length === 0 && !sendBusy} bind:this={threadCard}>
@@ -1451,16 +1451,31 @@
       {/if}
     </main>
 
-    <aside id="docs-panel" class="workspace-panel docs-panel" class:panel-open={docsOpen} aria-label="Documents and trail brief">
+    <aside id="docs-panel" class="workspace-panel docs-panel" class:panel-open={docsOpen} aria-label="Resources and trail context">
       <div class="panel-head">
-        <h2>Docs</h2>
-        <button class="icon-button" type="button" aria-label="Close docs panel" onclick={() => (docsOpen = false)}>×</button>
+        <h2>Resources</h2>
+        <button class="icon-button" type="button" aria-label="Close resources panel" onclick={() => (docsOpen = false)}>×</button>
       </div>
 
-      <section class="thread-summary-card doc-summary-card" aria-label="Document library summary">
-        <strong>What Scout can use</strong>
-        <span>Trail brief · docs · uploaded sources</span>
+      <section class="thread-summary-card doc-summary-card" aria-label="Resource navigation summary">
+        <strong>Scout context</strong>
+        <span>Brief · docs · uploaded sources</span>
       </section>
+
+      <nav class="resource-nav" aria-label="Resource navigation">
+        <button class="resource-nav-item" type="button" onclick={loadDailyBrief} disabled={dailyBriefLoading}>
+          <strong>{dailyBriefLoading ? 'Refreshing brief…' : 'Trail brief'}</strong>
+          <small>Today’s route, weather, and trail signals</small>
+        </button>
+        <a class="resource-nav-item" href="/app/docs">
+          <strong>Docs</strong>
+          <small>Saved plans and Scout notes</small>
+        </a>
+        <a class="resource-nav-item" href="/app/resources">
+          <strong>Sources</strong>
+          <small>Files, URLs, and pasted notes</small>
+        </a>
+      </nav>
 
       {#if currentDocument}
         <section class="panel-card selected-doc-card" aria-label="Attached document">
@@ -1469,127 +1484,69 @@
             <button class="tiny-button" type="button" onclick={() => (selectedDocumentId = '')}>Clear</button>
           </div>
           <p>{currentDocument.title}</p>
-          <a href={`/app/docs/${encodeURIComponent(currentDocument.id)}`}>Review document</a>
+          <a href={`/app/docs/${encodeURIComponent(currentDocument.id)}`}>Open doc</a>
+        </section>
+      {:else if currentResource}
+        <section class="panel-card selected-doc-card" aria-label="Attached source">
+          <div class="mini-head">
+            <strong>Attached now</strong>
+            <button class="tiny-button" type="button" onclick={() => (selectedResourceId = '')}>Clear</button>
+          </div>
+          <p>{currentResource.title}</p>
+          <a href={`/app/resources#resource-${encodeURIComponent(currentResource.id)}`}>Open source</a>
         </section>
       {/if}
 
-      <div class="context-actions" aria-label="Context actions">
-        <a class="secondary-button" href="/app/docs">Open docs</a>
-        <a class="secondary-button" href="/app/resources">Add source</a>
-      </div>
-
-      <section class="panel-card">
-        <div class="mini-head">
-          <strong>Trail brief</strong>
-          <button class="tiny-button" type="button" onclick={loadDailyBrief} disabled={dailyBriefLoading}>{dailyBriefLoading ? 'Checking…' : 'Refresh'}</button>
-        </div>
-        {#if dailyBriefLoading && !dailyBrief}
-          <p class="small-note">Checking profile, docs, ATC updates, and weather where available…</p>
-        {:else if dailyBrief}
+      {#if dailyBrief}
+        <section class="panel-card brief-card">
+          <div class="mini-head">
+            <strong>Trail brief</strong>
+            <button class="tiny-button" type="button" onclick={useDailyBriefPrompt} disabled={!connection || sendBusy}>Use</button>
+          </div>
           <p class="brief-summary">{dailyBrief.summary}</p>
-          <ul class="compact-list">
-            {#each dailyBrief.actions.slice(0, 3) as action}
-              <li>{action}</li>
-            {/each}
-          </ul>
-          <button class="secondary-button" type="button" onclick={useDailyBriefPrompt} disabled={!connection || sendBusy}>Use brief</button>
-          <details>
-            <summary>Source receipts</summary>
-            {#each dailyBrief.sourceReceipts as receipt}
-              <p><strong>{receipt.label}:</strong> {receipt.status}</p>
-            {/each}
-          </details>
-        {:else}
-          <p class="small-note">Brief not loaded yet.</p>
-        {/if}
-        {#if dailyBriefError}<p class="workspace-alert">{dailyBriefError}</p>{/if}
-      </section>
+        </section>
+      {:else if dailyBriefError}
+        <p class="workspace-alert">{dailyBriefError}</p>
+      {/if}
 
       <details class="panel-card context-details">
-        <summary>Manage docs and sources</summary>
+        <summary>Choose active resource</summary>
         <div class="context-stack">
           <section class="panel-card panel-card--nested">
-        <div class="mini-head">
-          <strong>Standard docs</strong>
-          <a href="/app/docs">Open shelf</a>
-        </div>
-        <div class="doc-list standard-slot-list">
-          {#each STANDARD_DOCUMENT_SLOTS as slot}
-            {@const doc = standardSlotDocument(slot.key)}
-            <button class:active={targetStandardSlotKey === slot.key || selectedDocumentId === doc?.id} type="button" onclick={() => focusStandardSlot(slot.key)} title={doc ? doc.title : slot.purpose}>
-              <span>{slot.title}</span>
-              <small>{doc ? `${doc.status ?? 'active'} · ${doc.versions?.length ?? 1}v` : 'empty · draftable'}</small>
-            </button>
-          {/each}
-        </div>
+            <div class="mini-head">
+              <strong>Standard docs</strong>
+              <a href="/app/docs">Open all</a>
+            </div>
+            <div class="doc-list standard-slot-list">
+              {#each STANDARD_DOCUMENT_SLOTS as slot}
+                {@const doc = standardSlotDocument(slot.key)}
+                <button class:active={targetStandardSlotKey === slot.key || selectedDocumentId === doc?.id} type="button" onclick={() => focusStandardSlot(slot.key)} title={doc ? doc.title : slot.purpose}>
+                  <span>{slot.title}</span>
+                  <small>{doc ? `${doc.status ?? 'active'} · ${doc.versions?.length ?? 1}v` : 'empty · draftable'}</small>
+                </button>
+              {/each}
+            </div>
           </section>
 
           <section class="panel-card panel-card--nested">
-        <div class="mini-head">
-          <strong>Living docs</strong>
-          <a href="/app/docs">Open all</a>
-        </div>
-        {#if savedPlans(documents).length === 0}
-          <p class="small-note">Create starter docs so Scout can maintain plans over time.</p>
-          <button class="secondary-button" type="button" onclick={seedScoutDocuments} disabled={seedBusy}>{seedBusy ? 'Creating…' : 'Create starter docs'}</button>
-        {:else}
-          <div class="doc-list">
-            <button class:active={!selectedDocumentId} type="button" onclick={() => (selectedDocumentId = '')}>Just answer</button>
-            {#each savedPlans(documents).slice(0, 8) as document}
-              <button class:active={selectedDocumentId === document.id} type="button" onclick={() => focusDocument(document)} title={document.title}>
-                <span>{document.title}</span>
-                <small>{document.status ?? 'active'} · {document.versions?.length ?? 1}v</small>
-              </button>
-            {/each}
-          </div>
-        {/if}
+            <div class="mini-head">
+              <strong>Sources</strong>
+              <a href="/app/resources">Add</a>
+            </div>
+            {#if resources.length === 0}
+              <p class="small-note">No sources yet. Add files, URLs, or pasted notes.</p>
+            {:else}
+              <div class="doc-list">
+                {#each resources.slice(0, 6) as resource}
+                  <button class:active={selectedResourceId === resource.id} type="button" onclick={() => focusResource(resource)} title={resource.title}>
+                    <span>{resource.title}</span>
+                    <small>{resource.kind} · {resource.sensitivity}</small>
+                  </button>
+                {/each}
+              </div>
+            {/if}
           </section>
-
-          <section class="panel-card panel-card--nested">
-        <div class="mini-head">
-          <strong>Resources</strong>
-          <a href="/app/resources">Add source</a>
         </div>
-        {#if resources.length === 0}
-          <p class="small-note">No resources yet. Add files, URLs, or pasted notes in Resources.</p>
-        {:else}
-          <div class="doc-list">
-            {#each resources.slice(0, 6) as resource}
-              <button class:active={selectedResourceId === resource.id} type="button" onclick={() => focusResource(resource)} title={resource.title}>
-                <span>{resource.title}</span>
-                <small>{resource.kind} · {resource.sensitivity}</small>
-              </button>
-            {/each}
-          </div>
-        {/if}
-          </section>
-
-          <section class="panel-card panel-card--nested">
-        <div class="mini-head"><strong>Legacy private docs</strong></div>
-        {#if documents.filter((document) => document.rights !== 'assistant-generated').length === 0}
-          <p class="small-note">No legacy imported docs. New source material belongs in Resources.</p>
-        {:else}
-          <div class="doc-list">
-            {#each documents.filter((document) => document.rights !== 'assistant-generated').slice(0, 6) as document}
-              <button class:active={selectedDocumentId === document.id} type="button" onclick={() => focusDocument(document)} title={document.title}>
-                <span>{document.title}</span>
-                <small>{document.kind} · {document.searchable ? 'searchable' : 'not searchable'}</small>
-              </button>
-            {/each}
-          </div>
-        {/if}
-          </section>
-
-        </div>
-      </details>
-
-      <details class="panel-card advanced-card">
-        <summary>Connection settings</summary>
-        <p><strong>Model lane:</strong> {connection ? `${connection.label}${connection.model ? ` · ${connection.model}` : ''}` : 'not connected'}</p>
-        {#if connection?.providerId === 'openai-codex'}
-          <button class="secondary-button" type="button" onclick={disconnect} disabled={disconnectBusy}>{disconnectBusy ? 'Disconnecting…' : 'Disconnect ChatGPT'}</button>
-        {/if}
-        <p>Private workspace data remains separate from public/shared trail intel.</p>
       </details>
     </aside>
   </div>
@@ -2371,7 +2328,7 @@
   .workspace-panel summary,
   .panel-card,
   .thread-summary-card,
-  .drawer-nav-item,
+  .resource-nav-item,
   .history-item,
   .doc-list button,
   .mini-head,
@@ -2387,9 +2344,8 @@
   .workspace-panel span,
   .workspace-panel small,
   .workspace-panel em,
-  .workspace-panel li,
   .workspace-panel summary,
-  .drawer-nav-item,
+  .resource-nav-item,
   .history-item,
   .doc-list button {
     overflow-wrap: anywhere;
@@ -2447,27 +2403,55 @@
     line-height: 1;
   }
 
-  .context-actions {
+
+  .resource-nav {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.48rem;
+    gap: 0.5rem;
   }
 
-  .context-actions .secondary-button {
-    min-height: 2.55rem;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.66);
-  }
-
-  .drawer-nav {
+  .resource-nav-item {
     display: grid;
-    gap: 0.45rem;
-    padding: 0.35rem 0 0.75rem;
+    gap: 0.16rem;
+    width: 100%;
+    min-height: 3.2rem;
+    border: 1px solid rgba(77, 89, 74, 0.13);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.72);
+    box-sizing: border-box;
+    color: #394638;
+    cursor: pointer;
+    font: inherit;
+    padding: 0.68rem 0.75rem;
+    text-align: left;
+    text-decoration: none;
   }
 
-  .compact-nav {
-    gap: 0.18rem;
-    padding-bottom: 0.35rem;
+  .resource-nav-item:hover,
+  .resource-nav-item:focus-visible {
+    border-color: rgba(77, 89, 74, 0.24);
+    background: rgba(237, 243, 229, 0.78);
+    outline: none;
+  }
+
+  .resource-nav-item strong {
+    color: #27332b;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.98rem;
+    font-weight: 900;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+  }
+
+  .resource-nav-item small {
+    color: #52604d;
+    font-size: 0.82rem;
+    font-weight: 760;
+    line-height: 1.25;
+  }
+
+  .resource-nav-item:disabled {
+    cursor: wait;
+    opacity: 0.7;
   }
 
   .thread-summary-card {
@@ -2503,39 +2487,6 @@
 
   .doc-summary-card {
     background: rgba(255, 255, 255, 0.74);
-  }
-
-  .drawer-nav-item {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    min-height: 2.8rem;
-    border: 1px solid rgba(77, 89, 74, 0.11);
-    border-radius: 13px;
-    background: rgba(255, 255, 255, 0.46);
-    color: var(--pine, #4d594a);
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.9rem;
-    font-weight: 850;
-    letter-spacing: 0.04em;
-    padding: 0 0.8rem;
-    text-align: left;
-    text-decoration: none;
-  }
-
-  .drawer-nav-item span {
-    width: 1.25rem;
-    color: currentColor;
-    text-align: center;
-  }
-
-  .drawer-nav-item.active,
-  .drawer-nav-item:hover {
-    border-color: rgba(77, 89, 74, 0.2);
-    background: rgba(237, 243, 229, 0.86);
-    color: #27332b;
   }
 
   .drawer-section-label {
@@ -2609,17 +2560,11 @@
     padding: 0.68rem;
   }
 
-  .panel-card details {
-    border-top: 1px solid rgba(77, 89, 74, 0.1);
-    padding-top: 0.5rem;
-  }
-
   .context-details {
     background: rgba(255, 255, 255, 0.52);
   }
 
-  .context-details > summary,
-  .advanced-card > summary {
+  .context-details > summary {
     cursor: pointer;
     color: #27332b;
     font-family: Oswald, Impact, sans-serif;
@@ -2672,17 +2617,6 @@
     color: #394638;
     font-size: 0.82rem;
     font-weight: 800;
-  }
-
-  .compact-list {
-    margin: 0;
-    padding-left: 1.05rem;
-    color: #4d594a;
-    line-height: 1.4;
-  }
-
-  .compact-list li + li {
-    margin-top: 0.35rem;
   }
 
   .doc-list small {
