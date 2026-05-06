@@ -21,6 +21,8 @@ const requiredIds = [
   'gsmnp-backcountry-permits',
   'hoggcountry-shenandoah-at-corridor-qa-2026-05-05',
   'shenandoah-backcountry-permits',
+  'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05',
+  'baxter-state-park-at-permits',
   'atc-trail-updates',
   'nws-weather'
 ];
@@ -60,6 +62,17 @@ assert.ok(shenandoahSources.includes('shenandoah-backcountry-permits'), 'Shenand
 assert.ok(shenandoahSources.includes('at-guide-user-owned'), 'Shenandoah exact hut/mileage itinerary should require user-owned guide data');
 assert.ok(shenandoahSources.includes('nws-weather'), 'Shenandoah heat/thunderstorm itinerary should select NWS');
 
+const baxterSources = selectScoutSourceManifests({
+  query: 'Abol Bridge to Katahdin Stream Campground and Baxter Peak Katahdin NOBO finish itinerary with The Birches Long-Distance Hiker Permit KTP parking campground reservations water weather closures and shuttle',
+  state: 'ME',
+  mileRange: [2177.7, 2197.7],
+  limit: 10
+}).map((source) => source.id);
+assert.ok(baxterSources.includes('hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05'), 'Baxter/Katahdin itinerary should select the Baxter route/regulation validator');
+assert.ok(baxterSources.includes('baxter-state-park-at-permits'), 'Baxter/Katahdin itinerary should select official Baxter permit/camping/rule sources');
+assert.ok(baxterSources.includes('at-guide-user-owned'), 'Baxter exact mileage/campsite itinerary should require user-owned guide data');
+assert.ok(baxterSources.includes('nws-weather'), 'Baxter weather/closure itinerary should select NWS');
+
 const waterSources = selectScoutSourceManifests({
   query: 'Are the next shelter water sources dry and are recent FarOut comments enough to trust it?',
   topics: ['water', 'shelter'],
@@ -76,6 +89,14 @@ const shenandoahReceipt = buildScoutSourceReceipt('hoggcountry-shenandoah-at-cor
 assert.ok(shenandoahReceipt?.citation.includes('Shenandoah AT south/central corridor'), 'Shenandoah receipt should expose the validator citation');
 const shenandoahPermitReceipt = buildScoutSourceReceipt('shenandoah-backcountry-permits');
 assert.ok(shenandoahPermitReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched Shenandoah official receipt should not imply a live fetch');
+const baxterReceipt = buildScoutSourceReceipt('hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05');
+assert.ok(baxterReceipt?.citation.includes('Baxter/Katahdin AT finish corridor'), 'Baxter receipt should expose the validator citation');
+assert.equal(baxterReceipt?.trust, 'reviewed', 'Baxter route receipt should remain a reviewed local QA fixture');
+assert.equal(baxterReceipt?.accessMode, 'route-validator', 'Baxter route receipt should identify deterministic validator access');
+const baxterOfficialReceipt = buildScoutSourceReceipt('baxter-state-park-at-permits');
+assert.ok(baxterOfficialReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched Baxter official receipt should not imply a live fetch');
+assert.equal(baxterOfficialReceipt?.trust, 'official', 'Baxter official receipt should be distinguished from local QA fixtures');
+assert.equal(baxterOfficialReceipt?.accessMode, 'live-fetch', 'Baxter official receipt should identify live-fetch official access');
 const nwsReceipt = buildScoutSourceReceipt('nws-weather', { fetchedAt: '2026-05-04T00:00:00.000Z', url: 'https://api.weather.gov/gridpoints/example' });
 assert.ok(nwsReceipt?.citation.includes('2026-05-04T00:00:00.000Z'), 'Live receipts should render fetched timestamp');
 

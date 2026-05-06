@@ -301,6 +301,46 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     keywords: ['shenandoah', 'snp', 'rockfish gap', 'swift run gap', 'calf mountain', 'blackrock hut', 'pinefield hut', 'hightop hut', 'big meadows', 'byrds nest', 'permit', 'recreation.gov', 'camping', 'setbacks', 'water', 'nobo', 'itinerary']
   },
   {
+    id: 'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05',
+    title: 'Hogg Country Baxter/Katahdin AT finish corridor and regulation QA validator',
+    displayCategory: 'deterministic route/regulation validator',
+    lane: 'hogg-owned',
+    trust: 'reviewed',
+    accessMode: 'route-validator',
+    privacy: 'Shared internal QA fixture; no private user data.',
+    useWhen: 'Abol Bridge, Katahdin Stream Campground, The Birches, Baxter Peak/Katahdin, 100-Mile Wilderness finish, SOBO Katahdin start, route order checks, Long-Distance Hiker Permit guardrails, The Birches eligibility, day-use/KTP access, summit timing, water, and weather/closure fail-closed wording.',
+    license: HOGG_OWNED_LICENSE,
+    freshness: { generatedAt: '2026-05-05', updateCadence: 'manual' },
+    coverage: {
+      trail: 'AT',
+      states: ['ME'],
+      mileStart: 2177.7,
+      mileEnd: 2197.7,
+      topics: ['route validator', 'baxter', 'katahdin', 'abol bridge', 'katahdin stream', 'the birches', 'permits', 'camping', 'closures', 'weather', 'water', 'mileage']
+    },
+    citationTemplate: 'Hogg Country Baxter/Katahdin AT finish corridor and regulation QA fixture, generated 2026-05-05 from Hogg Country guide data plus official Baxter State Park AT/hiking/camping pages and ATC permit checks.',
+    allowedActions: ['catalog', 'route-validate'],
+    caveats: ['Use as a guardrail for route order and official-rule wording; exact mileages, The Birches/campsite availability, Long-Distance Hiker Permit status, trail closures, water, weather, and road/parking access still require current Baxter State Park/user-owned guide verification.'],
+    keywords: ['baxter', 'katahdin', 'baxter peak', 'mount katahdin', 'mt katahdin', 'abol bridge', 'katahdin stream', 'hurd brook', 'rainbow spring', 'the birches', 'birches', 'monson', '100 mile wilderness', 'hundred mile wilderness', 'long distance hiker permit', 'ld permit', 'ktp', 'katahdin trailhead pass', 'parking', 'camping', 'closure', 'weather', 'water', 'nobo', 'sobo', 'itinerary']
+  },
+  {
+    id: 'baxter-state-park-at-permits',
+    title: 'Baxter State Park AT Long-Distance Hiker Permit, The Birches, camping, trailhead access, water, and Katahdin conditions',
+    displayCategory: 'official park permits, camping rules, and summit safety',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public official source.',
+    useWhen: 'Baxter/Katahdin AT finish or SOBO start planning, Long-Distance Hiker Permit, The Birches eligibility/capacity/fee/no-work-for-stay, campground reservations, Katahdin Trailhead Pass/day-use parking, trail/weather/shoulder-season closures, headlamp/water rules, safe-return timing, and park-specific prohibited items.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', states: ['ME'], topics: ['baxter', 'katahdin', 'permit', 'long-distance hiker permit', 'the birches', 'camping', 'trailhead pass', 'parking', 'closure', 'weather', 'water', 'rules'] },
+    citationTemplate: 'Baxter State Park AT, hiking, camping, and ATC permits pages; live conditions/rules must be checked before leaving. Scout fetched timestamp: {fetchedAt}. https://baxterstatepark.org/general-info/the-at/ https://baxterstatepark.org/general-info/ https://baxterstatepark.org/camp-summer/ https://appalachiantrail.org/explore/hike-the-a-t/thru-hiking/permits-regulations/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Rules, trail closures, campground availability, KTP/day-use access, weather, and permit status can change; Scout should fail closed and tell the hiker to verify the exact Baxter State Park conditions/reservation/permit plan before leaving.'],
+    keywords: ['baxter', 'katahdin', 'baxter state park', 'baxter peak', 'mount katahdin', 'mt katahdin', 'long distance hiker permit', 'ld permit', 'the birches', 'birches', 'katahdin stream', 'abol bridge', 'ktp', 'katahdin trailhead pass', 'day use', 'parking', 'camping', 'closure', 'shoulder season', 'headlamp', 'water', 'weather', 'atc permit']
+  },
+  {
     id: 'shenandoah-backcountry-permits',
     title: 'Shenandoah National Park backcountry permits, camping regulations, food storage, water, and weather',
     displayCategory: 'official park permits and camping rules',
@@ -510,11 +550,11 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
     if (haystack.includes(term)) score += manifest.keywords.includes(term) ? 4 : 2;
   }
 
-  if (!manifestCoversState(manifest, query.state)) score -= 4;
-  if (!manifestCoversMileRange(manifest, query.mileRange)) score -= 4;
+  if (!manifestCoversState(manifest, query.state)) score -= manifest.coverage.states ? 12 : 4;
+  if (!manifestCoversMileRange(manifest, query.mileRange)) score -= manifest.coverage.mileStart !== undefined && manifest.coverage.mileEnd !== undefined ? 12 : 4;
   if (manifest.accessMode === 'disabled-pending-review' && !query.includeUnavailable) score -= 8;
   if (manifest.trust === 'official' && /\b(weather|closure|detour|fire|alert|official)\b/iu.test(query.query)) score += 3;
-  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
+  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
   if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 3;
   if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
 

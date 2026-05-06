@@ -71,7 +71,7 @@ export interface BuildAtRouteGroundingInput {
   readonly maxCorridorMiles?: number | null;
 }
 
-export type AtRouteClaimIssueKind = 'blocked-endpoint' | 'misordered-sequence' | 'bad-mileage' | 'unsafe-camping-rule' | 'stale-permit-rule' | 'unsafe-water-plan';
+export type AtRouteClaimIssueKind = 'blocked-endpoint' | 'misordered-sequence' | 'bad-mileage' | 'unsafe-camping-rule' | 'stale-permit-rule' | 'unsafe-water-plan' | 'unsafe-summit-plan';
 
 export interface AtRouteClaimIssue {
   readonly kind: AtRouteClaimIssueKind;
@@ -103,6 +103,14 @@ export const SHENANDOAH_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
   citation: 'Internal dogfood guardrail created from 2026-05-05 Shenandoah QA plus official NPS/Recreation.gov permit, campsite setback, food-storage, fire, water, and weather rule checks; verify exact mileages, campsite legality, water, closures, and permit flow before leaving.',
   authority: 'internal-qa',
   exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, NPS map, Recreation.gov itinerary, or recent water/shelter report.'
+} as const;
+
+export const BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
+  id: 'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05',
+  label: 'Hogg Country Baxter/Katahdin AT finish corridor and regulation QA fixture',
+  citation: 'Internal dogfood guardrail created from Hogg Country Baxter/Katahdin guide data plus official Baxter State Park AT, hiking, camping, and ATC permit pages checked 2026-05-05: https://baxterstatepark.org/general-info/the-at/ https://baxterstatepark.org/general-info/ https://baxterstatepark.org/camp-summer/ https://appalachiantrail.org/explore/hike-the-a-t/thru-hiking/permits-regulations/',
+  authority: 'internal-qa',
+  exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, Baxter State Park conditions/ranger guidance, current camping reservation, or recent water/weather report.'
 } as const;
 
 export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
@@ -303,11 +311,72 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
     mile: 1150.8,
     aliases: ['duncannon', 'duncannon pa', 'duncannon pennsylvania'],
     notes: 'Town/service stop; exact service hours and lodging require a fresh check.'
+  },
+  {
+    id: 'monson-me',
+    name: 'Monson',
+    kind: 'town',
+    state: 'ME',
+    mile: 2090.0,
+    aliases: ['monson', 'monson me', 'monson maine', '100 mile wilderness gateway', 'hundred mile wilderness gateway'],
+    notes: 'Last major resupply before the 100-Mile Wilderness in local Hogg Country data; exact AT mileage and services require current guide/town confirmation.'
+  },
+  {
+    id: 'abol-bridge-me',
+    name: 'Abol Bridge',
+    kind: 'road-crossing',
+    state: 'ME',
+    mile: 2177.7,
+    latitude: 45.8379,
+    longitude: -68.9913,
+    aliases: ['abol bridge', 'abol bridge me', 'abol bridge maine', 'west branch penobscot', 'baxter southern boundary'],
+    notes: 'Southern approach to Baxter State Park / Katahdin finish logistics; confirm park access, shuttle, and weather before committing.'
+  },
+  {
+    id: 'rainbow-spring-campsite-me',
+    name: 'Rainbow Spring Campsite',
+    kind: 'landmark',
+    state: 'ME',
+    mile: 2178.5,
+    aliases: ['rainbow spring', 'rainbow spring campsite', 'rainbow springs', 'rainbow springs campsite'],
+    notes: 'Local water/campsite waypoint from bundled Hogg Country water data; verify current legal use and water before relying on it.'
+  },
+  {
+    id: 'hurd-brook-lean-to-me',
+    name: 'Hurd Brook Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2186.0,
+    aliases: ['hurd brook', 'hurd brook lean-to', 'hurd brook leanto', 'hurd brook lean to'],
+    notes: 'Final lean-to before Katahdin Stream in local Hogg Country water data; verify current status and water before relying on it.'
+  },
+  {
+    id: 'katahdin-stream-campground-me',
+    name: 'Katahdin Stream Campground',
+    kind: 'landmark',
+    state: 'ME',
+    mile: 2192.5,
+    latitude: 45.8864,
+    longitude: -68.9991,
+    aliases: ['katahdin stream campground', 'katahdin stream', 'ksc', 'katahdin stream ranger station', 'the birches', 'birches campsite', 'the birches campsite'],
+    notes: 'Baxter State Park campground/ranger station and Hunt Trail AT summit base; camping, The Birches, and permits are controlled by current Baxter policies and availability.'
+  },
+  {
+    id: 'baxter-peak-katahdin-me',
+    name: 'Baxter Peak / Katahdin',
+    kind: 'landmark',
+    state: 'ME',
+    mile: 2197.7,
+    latitude: 45.9044,
+    longitude: -68.9213,
+    aliases: ['baxter peak', 'katahdin', 'mount katahdin', 'mt katahdin', 'katahdin summit', 'northern terminus', 'appalachian trail northern terminus'],
+    notes: 'Northern terminus summit. Baxter can close Katahdin trails for weather/conditions; summit plans need current ranger/conditions checks and a safe return route.'
   }
 ] as const;
 
 const KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS = ['Tagg Run Shelter'] as const;
 const KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS = ['Big Meadows', "Byrd's Nest #3", 'Byrds Nest 3'] as const;
+const KNOWN_BLOCKED_BAXTER_FINISH_ENDPOINTS = ['Knife Edge', 'Chimney Pond', 'Roaring Brook'] as const;
 const SHENANDOAH_AT_POINT_IDS = [
   'rockfish-gap-va',
   'calf-mountain-shelter-va',
@@ -315,6 +384,14 @@ const SHENANDOAH_AT_POINT_IDS = [
   'pinefield-hut-va',
   'hightop-hut-va',
   'swift-run-gap-va'
+] as const;
+const BAXTER_KATAHDIN_AT_POINT_IDS = [
+  'monson-me',
+  'abol-bridge-me',
+  'rainbow-spring-campsite-me',
+  'hurd-brook-lean-to-me',
+  'katahdin-stream-campground-me',
+  'baxter-peak-katahdin-me'
 ] as const;
 
 const ROUTE_PROMPT_TERMS = [
@@ -338,7 +415,10 @@ const ROUTE_PROMPT_TERMS = [
 const NAMED_PLACE_PATTERNS: readonly { readonly label: string; readonly pattern: RegExp }[] = [
   { label: 'Tagg Run Shelter', pattern: /\btagg\s+run(?:\s+shelter)?\b/iu },
   { label: 'Big Meadows', pattern: /\bbig\s+meadows(?:\s+wayside)?\b/iu },
-  { label: "Byrd's Nest #3", pattern: /\bbyrd'?s?\s+nest\s*(?:#\s*)?3\b/iu }
+  { label: "Byrd's Nest #3", pattern: /\bbyrd'?s?\s+nest\s*(?:#\s*)?3\b/iu },
+  { label: 'Knife Edge', pattern: /\bknife\s+edge\b/iu },
+  { label: 'Chimney Pond', pattern: /\bchimney\s+pond\b/iu },
+  { label: 'Roaring Brook', pattern: /\broaring\s+brook\b/iu }
 ];
 
 function normalizeRouteText(value: string): string {
@@ -358,6 +438,9 @@ function includesNormalized(haystack: string, needle: string): boolean {
 
 function aliasPattern(alias: string): RegExp {
   const parts = normalizeRouteText(alias).split(' ').filter(Boolean);
+  if (parts.length === 1 && parts[0] === 'katahdin') {
+    return /\bkatahdin\b(?!\W+(?:stream|trail|trails|trailhead|campground|lake|woods))/iu;
+  }
   return new RegExp(`\\b${parts.map((part) => part.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')).join('\\W+')}\\b`, 'iu');
 }
 
@@ -658,6 +741,60 @@ function buildShenandoahPlanOptions(direction: AtRouteDirection): readonly AtRou
   ];
 }
 
+function buildBaxterKatahdinPlanOptions(direction: AtRouteDirection): readonly AtRoutePlanOption[] {
+  const saferFinishDays = [
+    buildDay(1, 'abol-bridge-me', 'hurd-brook-lean-to-me', 'Shorter Baxter approach day; verify legal overnight use, water, and whether this fits your actual 100-Mile Wilderness carry.'),
+    buildDay(2, 'hurd-brook-lean-to-me', 'katahdin-stream-campground-me', 'Reach Katahdin Stream with margin to secure the in-person LD hiker permit and confirm camping/return logistics.'),
+    buildDay(3, 'katahdin-stream-campground-me', 'baxter-peak-katahdin-me', 'One-way AT summit leg only; plan the full descent/exit, turnaround time, weather, ranger guidance, and headlamp before starting.')
+  ] as const;
+
+  const compressedFinishDays = [
+    buildDay(1, 'abol-bridge-me', 'katahdin-stream-campground-me', 'Longer final approach; use only with confirmed legal camping/Birches eligibility or a reserved site at Katahdin Stream.'),
+    buildDay(2, 'katahdin-stream-campground-me', 'baxter-peak-katahdin-me', 'One-way AT summit leg only; start early and treat the day as an 8-12 hour strenuous round trip/exit problem.')
+  ] as const;
+
+  const soboStartDays = [
+    buildDay(1, 'katahdin-stream-campground-me', 'baxter-peak-katahdin-me', 'SOBO start requires the same in-person LD permit plus a campground reservation or day-use/KTP access plan before attempting Katahdin.'),
+    buildDay(2, 'katahdin-stream-campground-me', 'hurd-brook-lean-to-me', 'After descending/returning safely, leave Baxter only on a legal route with confirmed camping and food carry.')
+  ] as const;
+
+  return direction === 'SOBO'
+    ? [
+        {
+          id: 'baxter-sobo-permit-and-hurd-brook-start',
+          label: 'SOBO Katahdin start with legal access gate',
+          totalMiles: roundMileage(soboStartDays.reduce((sum, day) => sum + day.miles, 0)),
+          days: soboStartDays,
+          caveats: [
+            'The summit day mileage shown is one-way AT mileage; the real day includes descent/exit and can take 8-12 hours.',
+            'SOBO hikers do not get to bypass Baxter access, camping, parking, or LD permit rules.'
+          ]
+        }
+      ]
+    : [
+        {
+          id: 'baxter-safer-three-day-abol-ksc-summit',
+          label: 'Safer 3-day Baxter finish: Abol Bridge to Katahdin Stream, then summit',
+          totalMiles: roundMileage(saferFinishDays.reduce((sum, day) => sum + day.miles, 0)),
+          days: saferFinishDays,
+          caveats: [
+            'This creates margin for permit, campsite/Birches availability, weather, and a safe summit start.',
+            'The summit day total shown is one-way AT mileage; descent/exit is additional and must be planned.'
+          ]
+        },
+        {
+          id: 'baxter-compressed-two-day-abol-ksc-summit',
+          label: 'Compressed 2-day Baxter finish only if logistics are already locked',
+          totalMiles: roundMileage(compressedFinishDays.reduce((sum, day) => sum + day.miles, 0)),
+          days: compressedFinishDays,
+          caveats: [
+            'This is not the default if you still need a permit, The Birches space, campground reservation, shuttle, weather check, or recovery margin.',
+            'Do not turn this into an afternoon summit push.'
+          ]
+        }
+      ];
+}
+
 function findPointAliasesInOrder(text: string, points: readonly AtRoutePoint[]): readonly AtRoutePoint[] {
   const matches: { readonly point: AtRoutePoint; readonly index: number }[] = [];
   for (const point of points) {
@@ -713,7 +850,7 @@ function routeTotalMileageClaimIssues(answer: string, grounding: AtRouteGroundin
   const totalMileagePattern = /(?:~|about|approx(?:imately)?|around)?\s*(\d{1,3}(?:\.\d)?)\s*(?:AT\s*)?(?:miles|mi\.?)/giu;
   const issues: AtRouteClaimIssue[] = [];
 
-  for (const rawLine of answer.split(/\n+/u)) {
+  for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
     const line = rawLine.trim();
     if (!line || !startAliases.some((pattern) => pattern.test(line)) || !destinationAliases.some((pattern) => pattern.test(line))) continue;
     totalMileagePattern.lastIndex = 0;
@@ -751,7 +888,7 @@ function gsmnpRegulationClaimIssues(answer: string, grounding: AtRouteGrounding)
   if (grounding.source.id !== GSMNP_AT_CORRIDOR_QA_SOURCE.id) return [];
 
   const issues: AtRouteClaimIssue[] = [];
-  for (const rawLine of answer.split(/\n+/u)) {
+  for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
     const line = rawLine.trim();
     if (!line) continue;
 
@@ -848,21 +985,131 @@ function shenandoahRegulationClaimIssues(answer: string, grounding: AtRouteGroun
   return issues;
 }
 
+function baxterRegulationClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
+  if (grounding.source.id !== BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE.id) return [];
+
+  const issues: AtRouteClaimIssue[] = [];
+  for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const marksOutdated = lineMarksOutdatedGuidance(line);
+    const negatesUnsafe = lineNegatesUnsafeCamping(line);
+    const mentionsBaxterPermit = /\b(?:baxter|katahdin|long[-\s]?distance|ld|a\.?t\.?|at)\b[^.]{0,120}\bpermit\b/iu.test(line)
+      || /\bpermit\b[^.]{0,120}\b(?:baxter|katahdin|long[-\s]?distance|ld|a\.?t\.?|at)\b/iu.test(line);
+    const claimsNoPermitNeeded = /\b(?:no|not|don'?t|do\s+not|without|skip)\b[^.]{0,60}\bpermit\b/iu.test(line)
+      && mentionsBaxterPermit
+      && !marksOutdated
+      && !/\b(?:not\s+optional|required|must|before)\b/iu.test(line);
+    const claimsOnlineOrWrongPermit = (/\b(?:online|recreation\.gov|atcamp|atc\s+hang\s+tag|hang\s+tag|visitor\s+center|millinocket|abol\s+bridge|headquarters|hq)\b[^.]{0,100}\bpermit\b/iu.test(line)
+      || /\bpermit\b[^.]{0,100}\b(?:online|recreation\.gov|atcamp|atc\s+hang\s+tag|hang\s+tag|visitor\s+center|millinocket|abol\s+bridge|headquarters|hq)\b/iu.test(line))
+      && mentionsBaxterPermit
+      && !marksOutdated
+      && !/\b(?:pre[-\s]?registration|not\s+the\s+permit|not\s+enough|not\s+valid|still\s+must|must\s+still|in\s+person|katahdin\s+stream)\b/iu.test(line);
+    const claimsPermitAlwaysAvailable = /\bpermit\b[^.]{0,100}\b(?:guaranteed|unlimited|always\s+available|never\s+runs?\s+out)\b/iu.test(line)
+      && mentionsBaxterPermit
+      && !marksOutdated;
+    const claimsBadKtp = /\b(?:ktp|katahdin\s+trailhead\s+pass|day[-\s]?use|parking\s+(?:pass|reservation)|trailhead\s+pass)\b[^.]{0,100}\b(?:not\s+needed|unnecessary|skip|no\s+need)\b/iu.test(line)
+      && !/\b(?:camping|camped|reserved\s+camp|night\s+prior|if\s+you\s+camp)\b/iu.test(line)
+      && !marksOutdated;
+
+    if (claimsNoPermitNeeded || claimsOnlineOrWrongPermit || claimsPermitAlwaysAvailable || claimsBadKtp) {
+      issues.push({
+        kind: 'stale-permit-rule',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Baxter/Katahdin permit or access wording was unsafe. AT hikers must fail closed on the current in-person Long-Distance Hiker Permit at Katahdin Stream and current Baxter access/camping/parking rules.'
+      });
+    }
+
+    const unsafeBirches = /\b(?:birches|the\s+birches)\b/iu.test(line)
+      && /\b(?:guaranteed|anyone|everybody|reservation|reserve|multiple\s+nights?|two\s+nights?|work[-\s]?for[-\s]?stay|work\s+stay|free|no\s+fee|unlimited|more\s+than\s+12|over\s+12|always)\b/iu.test(line)
+      && !negatesUnsafe
+      && !/\b(?:eligible|space\s+available|if\s+space|12\s+persons|cash|no\s+work)\b/iu.test(line);
+    const unsafeBaxterCamping = /\b(?:camp|camping|tent|pitch|sleep|bivy|stealth)\b[^.]{0,120}\b(?:anywhere|wherever|summit|baxter\s+peak|tableland|trailhead|parking\s+lot|roadside|near\s+katahdin\s+stream|near\s+the\s+ranger|outside\s+the\s+campground|without\s+(?:a\s+)?reservation)\b/iu.test(line)
+      && !negatesUnsafe;
+    const saysWorkForStay = /\bwork[-\s]?for[-\s]?stay\b/iu.test(line)
+      && /\b(?:baxter|katahdin|birches)\b/iu.test(line)
+      && !negatesUnsafe;
+
+    if (unsafeBirches || unsafeBaxterCamping || saysWorkForStay) {
+      issues.push({
+        kind: 'unsafe-camping-rule',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Baxter camping wording was too permissive. Plans must fail closed on The Birches eligibility/12-person capacity/cash fee/no work-for-stay and on reserved legal campsites only.'
+      });
+    }
+
+    const unsafeLateStart = /\b(?:start|leave|begin|summit\s+push)\b[^.]{0,80}\b(?:after\s+lunch|noon|midday|afternoon|2\s*p\.?m\.?|3\s*p\.?m\.?)\b/iu.test(line)
+      && /\b(?:katahdin|baxter|hunt\s+trail|summit)\b/iu.test(line)
+      && !/\b(?:avoid|do\s+not|don'?t|too\s+late|turnaround|not\s+safe)\b/iu.test(line);
+    const unsafeKnifeEdge = /\bknife\s+edge\b/iu.test(line)
+      && /\b(?:after|then|descend|return|loop|add|finish|continue|take)\b/iu.test(line)
+      && !negatesUnsafe
+      && !/\b(?:official|ranger|weather|closure|separate\s+plan)\b/iu.test(line);
+    const unsafeShoulderSeason = /\b(?:late\s+october|after\s+oct(?:ober)?\s*15|after\s+oct(?:ober)?\s*22|november|shoulder\s+season)\b/iu.test(line)
+      && /\b(?:fine|okay|ok|open|guaranteed|normal|no\s+issue|safe)\b/iu.test(line)
+      && !marksOutdated
+      && !/\b(?:not|do\s+not|don'?t|closure|closed|verify|ranger|weather|condition|before\s+oct(?:ober)?\s*15)\b/iu.test(line);
+    const dismissesClosures = /\b(?:katahdin|hunt\s+trail|baxter)\b[^.]{0,100}\b(?:will\s+be\s+open|always\s+open|cannot\s+close|won'?t\s+close)\b/iu.test(line)
+      && !/\b(?:not|do\s+not|don'?t|verify|may|can|could|temporary|weather|condition)\b/iu.test(line);
+    const noHeadlamp = /\b(?:no|don'?t\s+need|skip|without)\b[^.]{0,60}\b(?:headlamp|flashlight|lamp)\b/iu.test(line)
+      && /\b(?:katahdin|baxter|hunt\s+trail|summit)\b/iu.test(line)
+      && !marksOutdated;
+
+    if (unsafeLateStart || unsafeKnifeEdge || unsafeShoulderSeason || dismissesClosures || noHeadlamp) {
+      issues.push({
+        kind: 'unsafe-summit-plan',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Baxter/Katahdin summit wording was too permissive. Plans must fail closed on early starts, turnaround time, current trail/weather closures, headlamp rule, and avoiding non-AT exposed add-ons unless separately verified.'
+      });
+    }
+
+    const saysOneLiterEnough = /\b(?:1\s*l|1\s+liter|one\s+liter)\b[^.]{0,120}\b(?:enough|adequate|fine|plenty|sufficient)\b/iu.test(line)
+      && /\b(?:katahdin|baxter|hunt\s+trail|summit|water)\b/iu.test(line)
+      && !/\b(?:not\s+enough|not\s+adequate|too\s+thin|thin|only\s+if|unless|verify|confirmed)\b/iu.test(line);
+    const saysNaturalWaterUntreated = /\b(?:natural|spring|stream|brook|source|water)\b[^.]{0,80}\b(?:no\s+treatment|untreated|without\s+(?:filter|treat|purif))\b/iu.test(line)
+      && /\b(?:baxter|katahdin|park)\b/iu.test(line)
+      && !negatesUnsafe;
+
+    if (saysOneLiterEnough || saysNaturalWaterUntreated) {
+      issues.push({
+        kind: 'unsafe-water-plan',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Baxter/Katahdin water wording was too permissive. Katahdin plans must carry at least the official minimum margin, more in heat, and treat natural water.'
+      });
+    }
+  }
+
+  return issues;
+}
+
 export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGrounding): readonly AtRouteClaimIssue[] {
   const issues: AtRouteClaimIssue[] = [];
   for (const blockedName of grounding.blockedEndpointNames) {
-    if (!includesNormalized(answer, blockedName)) continue;
+    const evidenceLine = answer
+      .split(/\n+|(?<=[.!?])\s+/u)
+      .map((line) => line.trim())
+      .find((line) => includesNormalized(line, blockedName) && !lineNegatesUnsafeCamping(line));
+    if (!evidenceLine) continue;
     issues.push({
       kind: 'blocked-endpoint',
       severity: 'block',
       sourceSystemId: grounding.source.id,
-      evidence: blockedName,
+      evidence: evidenceLine,
       message: `${blockedName} appears in the answer but is not validated for this route corridor.`
     });
   }
 
   const pointOrder = new Map(grounding.corridor.map((point, index) => [point.id, index]));
-  for (const rawLine of answer.split(/\n+/u)) {
+  for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
     const line = rawLine.trim();
     if (!line || !lineHasRouteSequenceSyntax(line)) continue;
     const mentioned = findPointAliasesInOrder(line, grounding.corridor);
@@ -890,6 +1137,7 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
   issues.push(...routeTotalMileageClaimIssues(answer, grounding));
   issues.push(...gsmnpRegulationClaimIssues(answer, grounding));
   issues.push(...shenandoahRegulationClaimIssues(answer, grounding));
+  issues.push(...baxterRegulationClaimIssues(answer, grounding));
   return issues;
 }
 
@@ -927,25 +1175,32 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
   const isPineGrove = start.id === 'pine-grove-furnace-state-park-pa';
   const isGsmnp = start.id === 'fontana-dam-nc' || corridor.some((point) => point.id === 'newfound-gap-tn-nc');
   const isShenandoah = corridor.some((point) => SHENANDOAH_AT_POINT_IDS.includes(point.id as typeof SHENANDOAH_AT_POINT_IDS[number]));
+  const isBaxterKatahdin = corridor.some((point) => BAXTER_KATAHDIN_AT_POINT_IDS.includes(point.id as typeof BAXTER_KATAHDIN_AT_POINT_IDS[number]));
   const hasShenandoahHeatWaterConstraint = /\b(?:2\s*l|2\s+liters|two\s+liters|late\s+july|july|summer|heat|hot)\b/iu.test(prompt);
   const isSwiftRunRequest = destination?.id === 'swift-run-gap-va' || start.id === 'swift-run-gap-va' || includesNormalized(prompt, 'swift run gap');
   const source = isGsmnp
     ? GSMNP_AT_CORRIDOR_QA_SOURCE
     : isShenandoah
       ? SHENANDOAH_AT_CORRIDOR_QA_SOURCE
-      : AT_ROUTE_QA_SOURCE;
+      : isBaxterKatahdin
+        ? BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE
+        : AT_ROUTE_QA_SOURCE;
   const blockedEndpointNames = isPineGrove
     ? [...KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS]
     : isShenandoah && isSwiftRunRequest
       ? [...KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS]
-      : [];
+      : isBaxterKatahdin
+        ? [...KNOWN_BLOCKED_BAXTER_FINISH_ENDPOINTS]
+        : [];
   const planOptions = isPineGrove
     ? buildPineGrovePlanOptions(direction)
     : isGsmnp
       ? buildGsmnpPlanOptions(direction)
       : isShenandoah
         ? buildShenandoahPlanOptions(direction)
-        : [];
+        : isBaxterKatahdin && (start.id === 'abol-bridge-me' || start.id === 'katahdin-stream-campground-me')
+          ? buildBaxterKatahdinPlanOptions(direction)
+          : [];
   const warnings = [
     source.exactMileageCaveat,
     direction === 'NOBO' && isPineGrove
@@ -962,6 +1217,18 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
       : null,
     isShenandoah && hasShenandoahHeatWaterConstraint
       ? 'Late-July/2L water guardrail: treat 2L as thin until current water sources are confirmed; all natural water must be treated.'
+      : null,
+    isBaxterKatahdin
+      ? 'Baxter/Katahdin permit guardrail: all AT hikers must secure the current Long-Distance Hiker Permit in person at Katahdin Stream before summiting; pre-registration cards, ATC registration, and online campground reservations are not substitutes.'
+      : null,
+    isBaxterKatahdin
+      ? 'Baxter camping guardrail: The Birches is only for eligible NOBO hikers if space is available, is capped at 12 persons/night, requires the current cash fee, and has no work-for-stay.'
+      : null,
+    isBaxterKatahdin
+      ? 'Baxter access/season guardrail: Katahdin trails can close for weather/conditions, shoulder-season closures apply, summer camping is not available after the posted October cutoff, and Baxter recommends AT hikers summit before October 15.'
+      : null,
+    isBaxterKatahdin
+      ? 'Katahdin summit guardrail: treat the Hunt Trail summit as a very strenuous 8-12 hour round-trip/exit day with an early start, turnaround time, headlamp, at least 2 quarts water per person, treated natural water, and current ranger/forecast checks.'
       : null,
     blockedEndpointNames.length > 0
       ? `${blockedEndpointNames.join(', ')} is not in this validator corridor and must not be used as a firm endpoint without another source.`

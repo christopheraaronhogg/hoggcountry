@@ -105,6 +105,39 @@ assert.equal(shenandoahSobo.start.id, 'swift-run-gap-va', 'SOBO prompt should st
 assert.equal(shenandoahSobo.direction, 'SOBO');
 assert.ok(shenandoahSobo.planOptions.some((option) => option.id === 'shenandoah-sobo-safer-four-day-swift-rockfish'), 'Shenandoah SOBO safer option should be available');
 
+const baxterPrompt = `Assume I am a NOBO AT section hiker finishing Maine. I am at Abol Bridge and want to reach Katahdin Stream Campground, stay at The Birches if possible, then summit Baxter Peak / Katahdin on the Hunt Trail in 2 or 3 days. Build a practical plan with route options, daily mileage targets, Long-Distance Hiker Permit steps, The Birches and campground assumptions, day-use/KTP access, water, weather/closure risks, shuttle logistics, and a final checklist.`;
+const baxter = buildAtRouteGrounding({ prompt: baxterPrompt });
+assert.ok(baxter, 'Baxter/Katahdin prompt should trigger strict AT route grounding');
+assert.equal(baxter.source.id, 'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05');
+assert.equal(baxter.start.id, 'abol-bridge-me', 'Abol Bridge should be selected as the start');
+assert.equal(baxter.destination?.id, 'baxter-peak-katahdin-me', 'Baxter Peak / Katahdin should be selected as the destination');
+assert.equal(baxter.direction, 'NOBO');
+assert.equal(baxter.state, 'ME');
+const baxterOrder = baxter.corridor.map((point) => point.id);
+assert.ok(baxterOrder.indexOf('abol-bridge-me') < baxterOrder.indexOf('katahdin-stream-campground-me'), 'Abol Bridge must come before Katahdin Stream NOBO');
+assert.ok(baxterOrder.indexOf('katahdin-stream-campground-me') < baxterOrder.indexOf('baxter-peak-katahdin-me'), 'Katahdin Stream must come before Baxter Peak NOBO');
+assert.ok(baxter.blockedEndpointNames.includes('Knife Edge'), 'Knife Edge should be blocked for the AT finish corridor');
+assert.ok(baxter.planOptions.some((option) => option.id === 'baxter-safer-three-day-abol-ksc-summit'), 'Baxter safer 3-day option should be available');
+assert.ok(baxter.planOptions.some((option) => option.id === 'baxter-compressed-two-day-abol-ksc-summit'), 'Baxter compressed 2-day option should be available');
+
+const badBaxterDraft = `Abol Bridge to Baxter Peak is about 12 miles total. Get your Baxter AT permit online before you arrive. The Birches is guaranteed for any hiker and has work-for-stay if it is full. Start the Hunt Trail after lunch; one liter is enough. After Baxter Peak, descend Knife Edge. If delayed, camp near the summit.`;
+const baxterIssues = validateAtRouteAnswerClaims(badBaxterDraft, baxter);
+assert.ok(baxterIssues.some((issue) => issue.kind === 'bad-mileage'), 'Validator should block understated Abol Bridge to Baxter Peak mileage');
+assert.ok(baxterIssues.some((issue) => issue.kind === 'stale-permit-rule'), 'Validator should block online/wrong Baxter LD permit guidance');
+assert.ok(baxterIssues.some((issue) => issue.kind === 'unsafe-camping-rule'), 'Validator should block unsafe The Birches/work-for-stay/summit camping assumptions');
+assert.ok(baxterIssues.some((issue) => issue.kind === 'unsafe-water-plan'), 'Validator should block permissive one-liter Katahdin water wording');
+assert.ok(baxterIssues.some((issue) => issue.kind === 'unsafe-summit-plan'), 'Validator should block afternoon/Knife Edge unsafe summit wording');
+assert.ok(baxterIssues.some((issue) => issue.kind === 'blocked-endpoint'), 'Validator should block Knife Edge as an unsupported AT finish endpoint');
+
+const safeBaxterDraft = `Use the current Baxter State Park Long-Distance Hiker Permit in person at Katahdin Stream before summiting. The Birches is only if the eligible NOBO hiker has space available under the current cap and fee; there is no work-for-stay. If camping is not legal and confirmed, change dates or reserve another legal site. Start early, set a turnaround time, carry a headlamp, carry at least the current official water minimum with heat margin, treat natural water, and verify current Katahdin trail/weather closures before leaving Katahdin Stream. Day 1: Abol Bridge to Hurd Brook Lean-to. Day 2: Hurd Brook Lean-to to Katahdin Stream Campground. Day 3: Katahdin Stream Campground to Baxter Peak / Katahdin, with descent and exit planned separately.`;
+assert.deepEqual(validateAtRouteAnswerClaims(safeBaxterDraft, baxter), [], 'Validator should allow fail-closed Baxter permit/camping/summit/water wording and correct route order');
+
+const baxterSobo = buildAtRouteGrounding({ prompt: 'Plan a southbound Appalachian Trail start from Katahdin Stream Campground to Baxter Peak and then toward Hurd Brook with Baxter permits, camping, KTP access, water, weather, and closures.' });
+assert.ok(baxterSobo, 'Baxter SOBO prompt should trigger strict route grounding');
+assert.equal(baxterSobo.start.id, 'katahdin-stream-campground-me', 'SOBO prompt should start at Katahdin Stream');
+assert.equal(baxterSobo.direction, 'SOBO');
+assert.ok(baxterSobo.planOptions.some((option) => option.id === 'baxter-sobo-permit-and-hurd-brook-start'), 'Baxter SOBO legal-access option should be available');
+
 const clawAgentSource = readFileSync(new URL('../apps/openclaw-web/src/lib/server/claw-agent.ts', import.meta.url), 'utf8');
 const replyFunctionStart = clawAgentSource.indexOf('export async function replyInWorkspaceClaw');
 const strictReplyIndex = clawAgentSource.indexOf('const strictRouteReply = await buildStrictAtRouteItineraryReply', replyFunctionStart);
@@ -115,5 +148,8 @@ assert.ok(clawAgentSource.includes('deterministicClawTurn(record, null, trimmedP
 assert.ok(clawAgentSource.includes('No shelter-overflow assumption'), 'Strict GSMNP replies should explicitly reject shelter-full overflow tenting assumptions');
 assert.ok(clawAgentSource.includes('strict Shenandoah route/regulation mode'), 'Strict Shenandoah replies should use a deterministic compact reply path');
 assert.ok(clawAgentSource.includes('old free/self-registration paper-permit guidance'), 'Strict Shenandoah replies should explicitly reject stale self-registration permit guidance');
+assert.ok(clawAgentSource.includes('strict Baxter/Katahdin route/regulation mode'), 'Strict Baxter replies should use a deterministic compact reply path');
+assert.ok(clawAgentSource.includes('Long-Distance Hiker Permit in person at Katahdin Stream'), 'Strict Baxter replies should require the in-person LD permit flow');
+assert.ok(clawAgentSource.includes('there is no work-for-stay in Baxter State Park'), 'Strict Baxter replies should reject Birches/Baxter work-for-stay assumptions');
 
-console.log('Scout grounding eval passed: Pine Grove, GSMNP, and Shenandoah route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water guardrails, and shelter-overflow refusal are active.');
+console.log('Scout grounding eval passed: Pine Grove, GSMNP, Shenandoah, and Baxter/Katahdin route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water/summit guardrails, and shelter-overflow/work-for-stay refusal are active.');

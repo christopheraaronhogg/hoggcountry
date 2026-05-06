@@ -1369,6 +1369,10 @@ function isShenandoahRouteGrounding(grounding: AtRouteGrounding): boolean {
   return grounding.source.id === 'hoggcountry-shenandoah-at-corridor-qa-2026-05-05';
 }
 
+function isBaxterKatahdinRouteGrounding(grounding: AtRouteGrounding): boolean {
+  return grounding.source.id === 'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05';
+}
+
 function buildStrictGsmnpAtRouteItineraryReply(
   record: WorkspaceRecord,
   grounding: AtRouteGrounding,
@@ -1414,8 +1418,15 @@ function buildStrictGsmnpAtRouteItineraryReply(
     '**Route options**'
   ].filter((line): line is string => line !== null);
 
-  for (const option of grounding.planOptions) {
-    lines.push('', ...renderStrictRouteOption(option));
+  if (grounding.planOptions.length > 0) {
+    for (const option of grounding.planOptions) {
+      lines.push('', ...renderStrictRouteOption(option));
+    }
+  } else {
+    lines.push(
+      '',
+      '- I can validate the route order and Baxter/Katahdin regulations for the points above, but I do not have a deterministic day-by-day 100-Mile Wilderness itinerary for this exact start. Use the ordered guardrail, then verify daily camps, food carry, water, and legal sites in a current user-owned guide/current comments before treating it as a plan.'
+    );
   }
 
   lines.push(
@@ -1582,6 +1593,96 @@ function buildStrictShenandoahAtRouteItineraryReply(
   return lines.join('\n');
 }
 
+function buildStrictBaxterKatahdinAtRouteItineraryReply(
+  record: WorkspaceRecord,
+  grounding: AtRouteGrounding,
+  official: OfficialTrailSourceCheckDetails
+): string {
+  const profileBits = [
+    record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
+    record.profile?.direction,
+    typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
+    typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
+  ].filter(Boolean).join(' · ');
+  const routeReceipt = buildScoutSourceReceipt(grounding.source.id);
+  const permitReceipt = buildScoutSourceReceipt('baxter-state-park-at-permits');
+  const atcReceipt = buildScoutSourceReceipt('atc-trail-updates', { fetchedAt: official.fetchedAt });
+  const nwsReceipt = official.weather ? buildScoutSourceReceipt('nws-weather', { fetchedAt: official.fetchedAt }) : null;
+  const guideReceipt = buildScoutSourceReceipt('at-guide-user-owned');
+  const faroutReceipt = buildScoutSourceReceipt('farout-current-comments');
+  const routeTotal = grounding.destination ? formatAtRouteMileage(Math.abs(grounding.destination.mile - grounding.start.mile)) : null;
+  const waterCapacity = typeof record.profile?.waterCapacityLiters === 'number' ? record.profile.waterCapacityLiters : null;
+
+  const lines: string[] = [
+    '### Scout strict-route plan',
+    '',
+    'I’m using strict Baxter/Katahdin route/regulation mode because this asks for a real AT finish/start plan. The route order, permit/camping, summit timing, water, and closure guardrails below come from host validation, not model memory.',
+    profileBits ? `Workspace context: ${profileBits}.` : null,
+    '',
+    '**Route-order guardrail**',
+    `- Direction: ${grounding.direction}.`,
+    grounding.targetDays ? `- Requested trip length detected: ${grounding.targetDays} day${grounding.targetDays === 1 ? '' : 's'}.` : null,
+    grounding.destination ? `- Corridor: ${grounding.start.name} ${grounding.direction} to ${grounding.destination.name}${routeTotal ? ` (~${routeTotal} mi by this guardrail, one-way summit mileage only)` : ''}.` : `- Corridor starts at ${grounding.start.name}; verify the final endpoint in your current guide/source.`,
+    `- Source: ${grounding.source.label}. ${grounding.source.exactMileageCaveat}`,
+    '',
+    '| Point | Approx route mile | From start | Type |',
+    '|---|---:|---:|---|',
+    ...grounding.corridor.map((point) => formatStrictRoutePoint(point, grounding.start)),
+    '',
+    '**Important corrections / guardrails**',
+    ...grounding.warnings.map((warning) => `- ${warning}`),
+    '- The summit day is not just the one-way AT miles to Baxter Peak. Plan the descent/exit, daylight, weather, ranger guidance, and transport before starting.',
+    '- Do not add Knife Edge, Chimney Pond, Roaring Brook, or any non-AT exposed side route to a finish plan unless current Baxter conditions/rangers, route logistics, and transportation explicitly support that separate objective.',
+    '',
+    '**Route options**'
+  ].filter((line): line is string => line !== null);
+
+  for (const option of grounding.planOptions) {
+    lines.push('', ...renderStrictRouteOption(option));
+  }
+
+  lines.push(
+    '',
+    '**Permit / access / camping assumptions**',
+    '- Secure the current Baxter State Park Long-Distance Hiker Permit in person at Katahdin Stream Campground before attempting Katahdin. Online reservations, ATCamp, ATC hang tags, and pre-registration cards are not substitutes.',
+    '- The Birches is not guaranteed: eligible NOBO hikers must have hiked continuously from Monson through the 100-Mile Wilderness, space must be available, the 12-person/night cap applies, the current cash fee applies, and there is no work-for-stay in Baxter State Park.',
+    '- If The Birches is unavailable or you are not eligible, use a reserved legal campground/site or change the timing. Do not invent overflow, stealth, parking-lot, summit, or roadside camping.',
+    '- If entering by vehicle for a day hike or SOBO start without camping in the park the night before, verify the current Katahdin Trailhead Pass/day-use parking requirement and gate timing.',
+    '',
+    '**Summit safety**',
+    '- Treat Katahdin/Hunt Trail as a very strenuous all-day objective. Baxter describes Katahdin hikes as about 8-12 hours round trip and the Hunt Trail as 5.2 mi one-way with long above-treeline exposure.',
+    '- Start early, set a turnaround time, carry a headlamp/flashlight, and remember that the safe goal is returning to the trailhead, not just tagging the summit.',
+    '- Katahdin trails can close at any time for weather or trail conditions. Shoulder-season closures apply; Baxter recommends AT hikers complete the summit hike before October 15.',
+    waterCapacity !== null
+      ? `- Your workspace water capacity is ${waterCapacity}L; for Katahdin, do not treat that as enough unless it meets or exceeds the current official minimum plus heat/pace margin.`
+      : '- Carry at least the current official minimum water for Katahdin and more in heat; do not rely on exposed upper-mountain water.',
+    '- Treat all natural water in Baxter. Confirm Katahdin Stream/Hurd Brook/Rainbow Spring status from current sources before relying on them.',
+    '',
+    '**Food / logistics**',
+    '- There are no in-park stores to rescue a bad food/sleeping/cooking plan. Carry the needed food and overnight kit before entering Baxter.',
+    '- Confirm Abol Bridge/Millinocket shuttle, park road/gate timing, campsite check-in, and post-summit pickup before leaving the last reliable service point.',
+    '',
+    '**Safety / live conditions**',
+    ...renderStrictRouteOfficialSummary(official, grounding.state),
+    '',
+    '**Final checklist before leaving**',
+    '- Verify exact AT mileages and final campsite sequence in your current user-owned guide.',
+    '- Check Baxter State Park current conditions, Katahdin trail status, LD permit process, The Birches/campsite availability, campground reservation, KTP/day-use access, gate timing, and fees.',
+    '- Pull NWS point forecasts/alerts for Katahdin/Baxter Peak and the Katahdin Stream/Abol Bridge approach 24-48 hours before the attempt.',
+    '- Confirm water, food carry, headlamp, insulation/rain layers, emergency shelter, offline map, shuttle/pickup, and a hard turnaround time.',
+    '',
+    '**Source receipts**',
+    routeReceipt ? `- ${routeReceipt.title} [${routeReceipt.trust}/${routeReceipt.accessMode}]: ${routeReceipt.citation}` : `- Route validator: ${grounding.source.citation}`,
+    permitReceipt ? `- ${permitReceipt.title} [${permitReceipt.trust}/${permitReceipt.accessMode}]: ${permitReceipt.citation}` : '- Baxter official source manifest: available, but no receipt was produced in this turn.',
+    atcReceipt ? `- ${atcReceipt.title} [${atcReceipt.trust}/${atcReceipt.accessMode}]: ${atcReceipt.citation}` : '- ATC Trail Updates source manifest: available, but no ATC receipt was produced in this turn.',
+    nwsReceipt ? `- ${nwsReceipt.title} [${nwsReceipt.trust}/${nwsReceipt.accessMode}]: ${nwsReceipt.citation}` : '- NWS source manifest: available, but no weather receipt was produced in this turn.',
+    guideReceipt ? `- Needed but not bundled: ${guideReceipt.title} [${guideReceipt.trust}/${guideReceipt.accessMode}]. ${guideReceipt.caveats[0]}` : '- Needed but not bundled: user-owned guide data.',
+    faroutReceipt ? `- Needed but not bundled: ${faroutReceipt.title} [${faroutReceipt.trust}/${faroutReceipt.accessMode}]. ${faroutReceipt.caveats[0]}` : '- Needed but not bundled: current user-supplied water/campsite comments.'
+  );
+
+  return lines.join('\n');
+}
+
 async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt: string): Promise<string | null> {
   const grounding = buildStrictAtRouteGrounding(record, prompt);
   if (!grounding) return null;
@@ -1609,6 +1710,10 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
 
   if (isShenandoahRouteGrounding(grounding)) {
     return buildStrictShenandoahAtRouteItineraryReply(record, grounding, official);
+  }
+
+  if (isBaxterKatahdinRouteGrounding(grounding)) {
+    return buildStrictBaxterKatahdinAtRouteItineraryReply(record, grounding, official);
   }
 
   const profileBits = [
