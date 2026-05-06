@@ -1,0 +1,289 @@
+{
+  "metadata": {
+    "runId": "scout-rel-2026-05-06T19-14-06-221Z",
+    "timestamp": "2026-05-06T19:14:06.222Z",
+    "gitCommitSha": "9f5a710e6a56a6d3d415989e479974f129600c4f",
+    "gitCommitMessage": "test: record forge scout reliability smoke",
+    "changedFiles": [],
+    "deployedRevision": null,
+    "forgeReleaseId": null,
+    "environment": "Forge",
+    "model": "deepseek-v4-pro",
+    "mode": "api",
+    "scenarioCount": 1,
+    "passFailCounts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "difficultyRangeTested": [
+      5,
+      5
+    ],
+    "filters": {
+      "difficultyMin": null,
+      "difficultyMax": null,
+      "region": null,
+      "id": "at-wv-md-002-harpers-failed-mixed-plan"
+    },
+    "patchNotes": "Forge live smoke after manual release 1778094747 deployed 9f5a710.",
+    "deploymentNotes": "Manual SSH release 1778094747 on hoggcountry personal Forge; PM2 exec cwd verified at current/apps/openclaw-web.",
+    "knownRemainingFailures": ""
+  },
+  "scenarios": [
+    {
+      "id": "at-wv-md-002-harpers-failed-mixed-plan",
+      "prompt": "Plan for a 1 day, and a 2 day hike. Planning on hiking with dad for the last day into Harper's ferry (mental halfway point) on Tuesday, then hiking Friday Saturday as well. (Plan on overnight) You plan for me, then let the system plan for me. I want to compare results myself so give me the full results",
+      "regionState": "West Virginia / Maryland / Virginia",
+      "approximateAtMileRange": [
+        1018.1,
+        1061
+      ],
+      "expectedCorridor": "Harpers Ferry / ATC HQ family finish plus nearby Maryland overnight",
+      "expectedStart": "Keys Gap or another Harpers Ferry finish approach for Dad; Harpers Ferry or Weverton/Gathland context for overnight",
+      "expectedEnd": "Harpers Ferry / ATC HQ for Dad day, then Ed Garvey/Dahlgren/Gathland corridor for overnight",
+      "expectedDirection": "NOBO unless user changes it",
+      "expectedPlanType": "mixed 1-day family finish plus 2-day / 1-night backpack",
+      "requiredOutputSections": [
+        "recommendation",
+        "route options or day plan",
+        "mileage targets",
+        "logistics / parking / shuttle",
+        "water",
+        "weather",
+        "legal overnight/camping",
+        "bailout",
+        "final checklist",
+        "source receipts or missing-source caveats"
+      ],
+      "requiredCaveats": [
+        "Harpers Ferry is mental halfway",
+        "Pine Grove is true halfway and not the destination",
+        "verify legal overnight/water/shuttle/current data"
+      ],
+      "disallowedMistakes": [
+        "route to Pine Grove Furnace",
+        "treat mental halfway as true halfway",
+        "collapse Dad day and overnight into one plan",
+        "invent legal camping",
+        "invent water certainty"
+      ],
+      "difficulty": 5,
+      "difficultyRationale": "Combines explicit place, ambiguous halfway language, Dad/family finish, and a separate overnight request.",
+      "deterministicStrictRouteSupport": "now",
+      "expectedSourceId": "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+      "expectedStartPointId": "keys-gap-va-wv",
+      "expectedDestinationPointId": "harpers-ferry-atc-hq-wv",
+      "expectedAnchors": [
+        "Harpers Ferry",
+        "ATC HQ",
+        "Keys Gap",
+        "Weverton",
+        "Ed Garvey",
+        "Dahlgren",
+        "Pine Grove"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "at-wv-md-002-harpers-failed-mixed-plan",
+      "difficulty": 5,
+      "regionState": "West Virginia / Maryland / Virginia",
+      "status": "passed",
+      "pass": true,
+      "failureReason": "",
+      "assertions": [
+        {
+          "id": "grounding:present",
+          "label": "Strict route grounding is available",
+          "passed": true
+        },
+        {
+          "id": "grounding:source",
+          "label": "Expected source hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+          "passed": true,
+          "actual": "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06"
+        },
+        {
+          "id": "grounding:start",
+          "label": "Expected start keys-gap-va-wv",
+          "passed": true,
+          "actual": "keys-gap-va-wv"
+        },
+        {
+          "id": "grounding:destination",
+          "label": "Expected destination harpers-ferry-atc-hq-wv",
+          "passed": true,
+          "actual": "harpers-ferry-atc-hq-wv"
+        },
+        {
+          "id": "anchor:Harpers Ferry",
+          "label": "Expected anchor mentioned: Harpers Ferry",
+          "passed": true
+        },
+        {
+          "id": "anchor:ATC HQ",
+          "label": "Expected anchor mentioned: ATC HQ",
+          "passed": true
+        },
+        {
+          "id": "anchor:Keys Gap",
+          "label": "Expected anchor mentioned: Keys Gap",
+          "passed": true
+        },
+        {
+          "id": "anchor:Weverton",
+          "label": "Expected anchor mentioned: Weverton",
+          "passed": true
+        },
+        {
+          "id": "anchor:Ed Garvey",
+          "label": "Expected anchor mentioned: Ed Garvey",
+          "passed": true
+        },
+        {
+          "id": "anchor:Dahlgren",
+          "label": "Expected anchor mentioned: Dahlgren",
+          "passed": true
+        },
+        {
+          "id": "anchor:Pine Grove",
+          "label": "Expected anchor mentioned: Pine Grove",
+          "passed": true
+        },
+        {
+          "id": "section:recommendation",
+          "label": "Required section present: recommendation",
+          "passed": true
+        },
+        {
+          "id": "section:route options or day plan",
+          "label": "Required section present: route options or day plan",
+          "passed": true
+        },
+        {
+          "id": "section:mileage targets",
+          "label": "Required section present: mileage targets",
+          "passed": true
+        },
+        {
+          "id": "section:logistics / parking / shuttle",
+          "label": "Required section present: logistics / parking / shuttle",
+          "passed": true
+        },
+        {
+          "id": "section:water",
+          "label": "Required section present: water",
+          "passed": true
+        },
+        {
+          "id": "section:weather",
+          "label": "Required section present: weather",
+          "passed": true
+        },
+        {
+          "id": "section:legal overnight/camping",
+          "label": "Required section present: legal overnight/camping",
+          "passed": true
+        },
+        {
+          "id": "section:bailout",
+          "label": "Required section present: bailout",
+          "passed": true
+        },
+        {
+          "id": "section:final checklist",
+          "label": "Required section present: final checklist",
+          "passed": true
+        },
+        {
+          "id": "section:source receipts or missing-source caveats",
+          "label": "Required section present: source receipts or missing-source caveats",
+          "passed": true
+        },
+        {
+          "id": "caveat:Harpers Ferry is mental halfway",
+          "label": "Required caveat represented: Harpers Ferry is mental halfway",
+          "passed": true
+        },
+        {
+          "id": "caveat:Pine Grove is true halfway and not the destination",
+          "label": "Required caveat represented: Pine Grove is true halfway and not the destination",
+          "passed": true
+        },
+        {
+          "id": "caveat:verify legal overnight/water/shuttle/current data",
+          "label": "Required caveat represented: verify legal overnight/water/shuttle/current data",
+          "passed": true
+        },
+        {
+          "id": "disallowed:route to Pine Grove Furnace",
+          "label": "Disallowed mistake absent: route to Pine Grove Furnace",
+          "passed": true
+        },
+        {
+          "id": "disallowed:treat mental halfway as true halfway",
+          "label": "Disallowed mistake absent: treat mental halfway as true halfway",
+          "passed": true
+        },
+        {
+          "id": "disallowed:collapse Dad day and overnight into one plan",
+          "label": "Disallowed mistake absent: collapse Dad day and overnight into one plan",
+          "passed": true
+        },
+        {
+          "id": "disallowed:invent legal camping",
+          "label": "Disallowed mistake absent: invent legal camping",
+          "passed": true
+        },
+        {
+          "id": "disallowed:invent water certainty",
+          "label": "Disallowed mistake absent: invent water certainty",
+          "passed": true
+        },
+        {
+          "id": "route-claim-validator",
+          "label": "Route claim validator found no blocking issues",
+          "passed": true,
+          "issues": []
+        }
+      ],
+      "rawResponse": "### Scout strict-route plan\n\nI’m using strict Harpers Ferry mental-halfway mode because this prompt names Harpers Ferry / ATC HQ and also contains ambiguous halfway language. The explicit place wins: this plan must not route to Pine Grove Furnace unless Pine Grove is separately named.\nWorkspace context: Scout QA.\n\n**Recommendation**\n- Treat Tuesday as a Dad/family finish hike into Harpers Ferry / ATC HQ.\n- Treat Friday/Saturday as a separate 2-day / 1-night backpack near Harpers Ferry, likely north into Maryland if shuttle, legal overnight, water, weather, and parking all check out.\n- Harpers Ferry is the psychological/mental halfway landmark. Pine Grove Furnace is the true/mathematical halfway area; that phrase must not override the named Harpers Ferry destination.\n\n**Route-order guardrail**\n- Direction context: NOBO.\n- Requested trip length detected: 1 day, but this prompt contains both a 1-day plan and a 2-day overnight plan.\n- Validated family-finish corridor: Keys Gap / VA-WV 9 NOBO to Harpers Ferry / ATC HQ (~6.3 mi by this guardrail).\n- Source: Hogg Country Harpers Ferry mental-halfway corridor and mixed-plan QA fixture. Use these values as a route-order and ambiguity guardrail. Harpers Ferry / ATC HQ is the psychological or mental halfway point; Pine Grove Furnace is the true/mathematical halfway area and must not override an explicit Harpers Ferry destination.\n\n| Point | Approx route mile | From start | Type |\n|---|---:|---:|---|\n| Keys Gap / VA-WV 9 | 1018.1 | start | road-crossing |\n| Harpers Ferry / ATC HQ | 1024.4 | +6.3 | town |\n\n**Important corrections / guardrails**\n- Use these values as a route-order and ambiguity guardrail. Harpers Ferry / ATC HQ is the psychological or mental halfway point; Pine Grove Furnace is the true/mathematical halfway area and must not override an explicit Harpers Ferry destination.\n- Harpers Ferry ambiguity guardrail: explicit Harpers Ferry / ATC HQ / mental-halfway language wins over generic true-halfway language; do not route this request to Pine Grove Furnace unless Pine Grove is explicitly named.\n- Harpers Ferry planning guardrail: separate the Dad finish hike into Harpers Ferry from the Friday/Saturday overnight plan near Harpers Ferry; do not collapse the two requests into one route.\n- Maryland/WV/VA legal overnight guardrail: treat Ed Garvey Memorial Shelter and Dahlgren Backpack Campground as candidate legal anchors only after current Maryland DNR/local/user-owned guide verification; do not invent stealth or roadside camping.\n- Pine Grove Furnace State Park, True Halfway Point, Half Gallon Challenge is not in this validator corridor and must not be used as a firm endpoint without another source.\n- Do not use Pine Grove Furnace, the Half Gallon Challenge, or the true-halfway corridor as the route target for this Harpers Ferry prompt.\n- Dad-friendly does not automatically mean only a 6-mile day. Present easier/moderate and longer options with shuttle and heat tradeoffs.\n\n**Tuesday Dad finish options**\n\n**Dad-friendly Tuesday finish into Harpers Ferry from Keys Gap** — 6.3 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Keys Gap / VA-WV 9 → Harpers Ferry / ATC HQ | 6.3 | Moderate finish into Harpers Ferry / ATC HQ. Verify Keys Gap parking/shuttle legality, Dad pace, heat, and exact pickup timing. |\n- This is the easier/moderate finish option, not the only Dad option.\n- Exact parking, shuttle legality, heat, and ATC HQ timing need current confirmation.\n\n**Longer Dad finish option using Weverton / river-cliffs context** — 16.2 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Weverton / Weverton Cliffs → Harpers Ferry / ATC HQ | 16.2 | Longer southbound-style finish into Harpers Ferry with Weverton/river context. Verify shuttle direction, parking, and whether Dad wants cliffs/elevation. |\n- This is a bigger family-day option with more shuttle complexity.\n- Use only if Dad wants the added distance/elevation and the pickup/parking plan is confirmed.\n\n**Friday/Saturday 2-day / 1-night nearby overnight**\n\n**Friday/Saturday Maryland overnight near Harpers Ferry** — 30.6 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Harpers Ferry / ATC HQ → Ed Garvey Memorial Shelter | 18.9 | Friday northbound overnight shape from Harpers Ferry through Weverton context to Ed Garvey. Verify legal shelter use and water before leaving. |\n| 2 | Ed Garvey Memorial Shelter → Dahlgren Backpack Campground | 11.7 | Saturday finish toward Dahlgren/Gathland corridor. Verify campground rules, water, pickup, and whether continuing to Gathland is the better endpoint. |\n- This is a nearby overnight planning shape, separate from the Tuesday Dad finish.\n- Legal camping, water, facilities, and shuttle details must be verified with current Maryland DNR/local/user-owned guide or FarOut-style source material.\n\n**Legal overnight / camping assumptions**\n- Treat Ed Garvey Memorial Shelter and Dahlgren Backpack Campground as candidate legal overnight anchors, not guaranteed reservations, capacity, water, or current legal status.\n- Verify the current Maryland DNR/South Mountain, ATC, local land-manager, and user-owned guide rules before committing to the exact overnight.\n- Do not invent stealth, roadside, parking-lot, riverbank, overlook, or “near the shelter” camping if the official/current source does not make it legal.\n- If the legal overnight is not confirmed, change the endpoint, use a legal campground/lodging option, or turn the Friday/Saturday plan into day hikes.\n\n**Water**\n- Confirm water before committing to either Dad day or the overnight; Scout does not have current water reliability here.\n- Treat all natural water. Use current guide/FarOut-style comments or official/current local reports for Ed Garvey, Dahlgren, and any springs/streams.\n- If water is uncertain or heat is high, shorten the day, carry extra, or pick a plan with confirmed services.\n\n**Weather**\n- Pull NWS point forecasts and alerts for Harpers Ferry/river level and the Maryland ridge 24-48 hours before leaving.\n- Heat, thunderstorms, cold rain, high water, or poor visibility should push the plan toward the easier finish option or a day-hike-only fallback.\n\n**Parking / shuttle / bailout**\n- Confirm legal parking and pickup timing for Keys Gap, Harpers Ferry/ATC HQ, Weverton, Gathland, Dahlgren, and any selected endpoint before leaving a car.\n- Harpers Ferry weekend parking and shuttle logistics can be the limiting factor; do not assume same-day parking or cell-service recovery.\n- Set Dad bailout points before the hike starts. For the overnight, preselect road-crossing exits and a ride plan rather than relying on “we can just get off trail.”\n\n**Safety / live conditions**\n- Official/live check fetched: 2026-05-06T19:14:06.111Z.\n- ATC Trail Updates (VA/WV-matched): VA-MA: Elevated Fire Risk (https://appalachiantrail.org/trail-updates/ga-pa-elevated-fire-risk/); Hurricane Helene Storm Damage (https://appalachiantrail.org/trail-updates/helene-storm-damage/).\n- NWS: no forecast/alert receipt available in this turn. Pull the point forecast 24–48 hours before stepping off.\n\n**Final checklist before leaving**\n- Verify exact AT mileages, route sequence, road crossings, and elevation in your current user-owned A.T. Guide/AWOL or equivalent.\n- Confirm Harpers Ferry/ATC HQ timing, Keys Gap/Weverton/Gathland/Dahlgren parking, shuttle/pickup, and whether overnight parking is allowed.\n- Confirm the legal overnight anchor, water status, facility status, closures/detours, fire rules, and food storage expectations.\n- Pull NWS forecast/alerts for town/river and ridge points.\n- Carry offline maps, headlamp, rain layer, water treatment, extra water margin, emergency contact plan, and a written pickup/bailout plan.\n\n**Source receipts**\n- Hogg Country Harpers Ferry mental-halfway route and family/overnight QA validator [reviewed/route-validator]: Hogg Country Harpers Ferry mental-halfway route/logistics QA fixture, generated 2026-05-06 from dogfood QA and deterministic AT corridor anchors.\n- Needed current check: Harpers Ferry, Maryland DNR South Mountain, NPS, ATC, and local logistics checks [official/live-fetch]: NPS Harpers Ferry, Maryland DNR/South Mountain, ATC Trail Updates, and local logistics pages; live conditions/rules must be checked before leaving. Scout fetched timestamp: not fetched. https://www.nps.gov/hafe/ https://dnr.maryland.gov/publiclands/Pages/western/southmountain.aspx https://appalachiantrail.org/\n- Appalachian Trail Conservancy official trail updates [official/live-fetch]: ATC Trail Updates, fetched 2026-05-06T19:14:06.111Z: source URL not recorded\n- NWS source manifest: available, but no weather receipt was produced in this turn.\n- Needed but not bundled: A.T. Guide / AWOL data imported by the hiker [reviewed/user-import-required]. Do not scrape or bundle copyrighted guide content; ask the hiker to import/search what they own.\n- Needed but not bundled: FarOut recent comments/screenshots supplied by the hiker [open-crowd/user-import-required]. Crowd reports can be stale or wrong; prefer recent dated comments and cross-check risky claims.",
+      "grounding": {
+        "sourceId": "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+        "direction": "NOBO",
+        "start": "Keys Gap / VA-WV 9",
+        "destination": "Harpers Ferry / ATC HQ",
+        "planOptions": [
+          "harpers-dad-keys-gap-finish",
+          "harpers-dad-weverton-longer-finish",
+          "harpers-overnight-maryland-ed-garvey-dahlgren"
+        ],
+        "warnings": [
+          "Use these values as a route-order and ambiguity guardrail. Harpers Ferry / ATC HQ is the psychological or mental halfway point; Pine Grove Furnace is the true/mathematical halfway area and must not override an explicit Harpers Ferry destination.",
+          "Harpers Ferry ambiguity guardrail: explicit Harpers Ferry / ATC HQ / mental-halfway language wins over generic true-halfway language; do not route this request to Pine Grove Furnace unless Pine Grove is explicitly named.",
+          "Harpers Ferry planning guardrail: separate the Dad finish hike into Harpers Ferry from the Friday/Saturday overnight plan near Harpers Ferry; do not collapse the two requests into one route.",
+          "Maryland/WV/VA legal overnight guardrail: treat Ed Garvey Memorial Shelter and Dahlgren Backpack Campground as candidate legal anchors only after current Maryland DNR/local/user-owned guide verification; do not invent stealth or roadside camping.",
+          "Pine Grove Furnace State Park, True Halfway Point, Half Gallon Challenge is not in this validator corridor and must not be used as a firm endpoint without another source."
+        ]
+      },
+      "sourceReceipts": [
+        "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+        "at-guide-user-owned",
+        "farout-current-comments",
+        "atc-trail-updates",
+        "nws-weather"
+      ],
+      "missingSourceClasses": [
+        "current user-owned guide mileage",
+        "current water comments",
+        "live legal overnight verification"
+      ],
+      "manualReview": {
+        "status": "not-reviewed",
+        "notes": ""
+      }
+    }
+  ]
+}

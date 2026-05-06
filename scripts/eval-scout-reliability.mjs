@@ -21,7 +21,9 @@ function parseArgs(argv) {
     model: process.env.SCOUT_RELIABILITY_MODEL ?? 'deepseek-v4-pro',
     patchNotes: process.env.SCOUT_RELIABILITY_PATCH_NOTES ?? '',
     deploymentNotes: process.env.SCOUT_RELIABILITY_DEPLOYMENT_NOTES ?? '',
-    knownRemainingFailures: process.env.SCOUT_RELIABILITY_KNOWN_FAILURES ?? ''
+    knownRemainingFailures: process.env.SCOUT_RELIABILITY_KNOWN_FAILURES ?? '',
+    apiRunSeed: `eval-${Date.now()}-${process.pid}`,
+    sharedCookie: process.env.SCOUT_RELIABILITY_SHARED_COOKIE === '1'
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -94,6 +96,52 @@ function textMatchesAny(text, patterns) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
+function encodeBetaProfileCookie(profile) {
+  return `hogg_beta_profile=${Buffer.from(JSON.stringify(profile)).toString('base64url')}`;
+}
+
+function readBaseBetaProfile() {
+  const cookie = process.env.SCOUT_RELIABILITY_COOKIE ?? '';
+  const match = /(?:^|;\s*)hogg_beta_profile=([^;]+)/u.exec(cookie);
+  if (!match) {
+    return {
+      name: 'Scout QA',
+      email: 'scout-qa@example.com',
+      trailName: 'Scout QA'
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(Buffer.from(match[1], 'base64url').toString('utf8'));
+    return {
+      name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : 'Scout QA',
+      email: typeof parsed.email === 'string' && parsed.email.includes('@') ? parsed.email : 'scout-qa@example.com',
+      trailName: typeof parsed.trailName === 'string' && parsed.trailName.trim() ? parsed.trailName.trim() : 'Scout QA'
+    };
+  } catch {
+    return {
+      name: 'Scout QA',
+      email: 'scout-qa@example.com',
+      trailName: 'Scout QA'
+    };
+  }
+}
+
+function scenarioCookie(scenario, options) {
+  if (options.sharedCookie && process.env.SCOUT_RELIABILITY_COOKIE) return process.env.SCOUT_RELIABILITY_COOKIE;
+
+  const base = readBaseBetaProfile();
+  const [localPart, domain = 'example.com'] = base.email.split('@');
+  const safeScenario = String(scenario.id).toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '').slice(0, 48);
+  const safeSeed = String(options.apiRunSeed).toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '').slice(-32);
+  const safeLocal = (localPart || 'scout-qa').replace(/[^a-z0-9._+-]+/giu, '').slice(0, 32) || 'scout-qa';
+  return encodeBetaProfileCookie({
+    name: base.name,
+    email: `${safeLocal}+${safeSeed}-${safeScenario}@${domain}`,
+    trailName: `${base.trailName} ${scenario.difficulty}.${safeScenario}`.slice(0, 80)
+  });
+}
+
 function buildGroundingResponse(scenario, grounding) {
   const lines = [
     '### Scout Reliability Grounding Response',
@@ -150,7 +198,7 @@ async function fetchScoutReply(scenario, options) {
   const headers = {
     'content-type': 'application/json'
   };
-  if (process.env.SCOUT_RELIABILITY_COOKIE) headers.cookie = process.env.SCOUT_RELIABILITY_COOKIE;
+  headers.cookie = scenarioCookie(scenario, options);
   if (process.env.SCOUT_RELIABILITY_AUTHORIZATION) headers.authorization = process.env.SCOUT_RELIABILITY_AUTHORIZATION;
   const response = await fetch(new URL('/app-api/claw/reply', options.baseUrl), {
     method: 'POST',
@@ -314,11 +362,47 @@ async function evaluateScenario(scenario, options) {
   }
 
   const grounding = buildAtRouteGrounding({ prompt: scenario.prompt });
-  const rawResponse = options.mode === 'api'
-    ? await fetchScoutReply(scenario, options)
-    : grounding
-      ? buildGroundingResponse(scenario, grounding)
-      : '';
+  let rawResponse = '';
+  let apiError = null;
+  if (options.mode === 'api') {
+    try {
+      rawResponse = await fetchScoutReply(scenario, options);
+    } catch (error) {
+      apiError = error instanceof Error ? error.message : String(error);
+    }
+  } else {
+    rawResponse = grounding ? buildGroundingResponse(scenario, grounding) : '';
+  }
+
+  if (apiError) {
+    return {
+      scenarioId: scenario.id,
+      difficulty: scenario.difficulty,
+      regionState: scenario.regionState,
+      status: 'failed',
+      pass: false,
+      failureReason: `Scout API request failed: ${apiError}`,
+      assertions: [{
+        id: 'api:reply',
+        label: 'Scout API returned a usable reply',
+        passed: false,
+        error: apiError
+      }],
+      rawResponse,
+      grounding: grounding ? {
+        sourceId: grounding.source.id,
+        direction: grounding.direction,
+        start: grounding.start.name,
+        destination: grounding.destination?.name ?? null,
+        planOptions: grounding.planOptions.map((option) => option.id),
+        warnings: grounding.warnings
+      } : null,
+      sourceReceipts: grounding ? [grounding.source.id, 'at-guide-user-owned', 'farout-current-comments', 'atc-trail-updates', 'nws-weather'] : [],
+      missingSourceClasses: ['current user-owned guide mileage', 'current water comments', 'live legal overnight verification'],
+      manualReview: { status: 'not-reviewed', notes: '' }
+    };
+  }
+
   const assertions = runDeterministicAssertions(scenario, rawResponse, grounding, options);
   const failed = assertions.filter((item) => !item.passed);
 

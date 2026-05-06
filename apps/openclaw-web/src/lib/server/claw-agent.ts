@@ -54,7 +54,7 @@ const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
 const OPENCODE_GO_PROVIDER_ID = 'opencode-go';
 const OPENAI_CODEX_MODEL = 'gpt-5.4';
 const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-pro';
-const OPENCODE_GO_REPLY_MAX_TOKENS = 900;
+const OPENCODE_GO_REPLY_MAX_TOKENS = 1400;
 const SCOUT_AGENT_TURN_TIMEOUT_MS = 55_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
@@ -827,6 +827,7 @@ function buildSystemPrompt(
     scoutSourceContext,
     'Treat saved assistant-generated documents as living Scout documents, not one-off files. The user wants Scout to keep them current through conversation.',
     'When asked for a plan, prefer a compact artifact with current snapshot, assumptions, day-by-day or category breakdown, concrete next actions, and missing intel that would tighten the answer.',
+    'For real-world AT planning, keep the tone natural but include a dependable safety skeleton: Recommendation, route options or day plan, mileage targets, logistics/parking/shuttle, water, weather, legal overnight/camping when relevant, bailout, final checklist, and source receipts or missing-source caveats.',
     'When revising a saved document, preserve useful existing structure, update stale facts, add a brief change-history note, and return the full revised document body.',
     buildActiveResourceContext(activeResource),
     activeDocument
