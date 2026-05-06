@@ -140,6 +140,38 @@ assert.equal(whitesSobo.direction, 'SOBO');
 assert.ok(whitesSobo.planOptions.some((option) => option.id === 'whites-sobo-safer-four-day-crawford-franconia'), 'Whites SOBO safer option should be available');
 
 
+
+const hundredMilePrompt = `I am a NOBO AT section hiker leaving Monson for the 100-Mile Wilderness to Abol Bridge. Build an honest 7 or 8 day itinerary with daily mileage targets, lean-to/campsite options, full food carry vs food drops, water and ford strategy, logging-road bailout assumptions, weather delays, Abol Bridge pickup, and Baxter handoff checklist.`;
+const hundredMile = buildAtRouteGrounding({ prompt: hundredMilePrompt });
+assert.ok(hundredMile, '100-Mile Wilderness prompt should trigger strict AT route grounding');
+assert.equal(hundredMile.source.id, 'hoggcountry-100-mile-wilderness-qa-2026-05-06');
+assert.equal(hundredMile.start.id, 'monson-me', 'Monson should be selected as the start');
+assert.equal(hundredMile.destination?.id, 'abol-bridge-me', 'Abol Bridge should be selected as the destination');
+assert.equal(hundredMile.direction, 'NOBO');
+assert.equal(hundredMile.state, 'ME');
+const hundredMileOrder = hundredMile.corridor.map((point) => point.id);
+assert.ok(hundredMileOrder.indexOf('monson-me') < hundredMileOrder.indexOf('long-pond-stream-lean-to-me'), 'Monson must come before Long Pond Stream NOBO');
+assert.ok(hundredMileOrder.indexOf('logan-brook-lean-to-me') < hundredMileOrder.indexOf('cooper-brook-falls-lean-to-me'), 'Logan Brook/White Cap must come before Cooper Brook Falls NOBO');
+assert.ok(hundredMileOrder.indexOf('rainbow-stream-lean-to-me') < hundredMileOrder.indexOf('abol-bridge-me'), 'Rainbow Stream must come before Abol Bridge NOBO');
+assert.ok(hundredMile.planOptions.some((option) => option.id === 'hundred-mile-safer-eight-day-monson-abol'), '100-Mile Wilderness safer 8-day option should be available');
+assert.ok(hundredMile.planOptions.some((option) => option.id === 'hundred-mile-stronger-seven-day-monson-abol'), '100-Mile Wilderness stronger 7-day option should be available');
+
+const badHundredMileDraft = `Monson to Abol Bridge is about 70 miles. You can carry five days of food and count on easy mid-wilderness resupply or food drops at road crossings. Bailouts are easy from logging roads and cell service is reliable enough to call a shuttle. Fords are always passable and stream water is fine untreated. The Kennebec River ferry is part of the 100-Mile Wilderness plan.`;
+const hundredMileIssues = validateAtRouteAnswerClaims(badHundredMileDraft, hundredMile);
+assert.ok(hundredMileIssues.some((issue) => issue.kind === 'bad-mileage'), 'Validator should block understated Monson to Abol Bridge mileage');
+assert.ok(hundredMileIssues.some((issue) => issue.kind === 'unsafe-water-plan'), 'Validator should block permissive 100-Mile water/ford or short-food wording');
+assert.ok(hundredMileIssues.some((issue) => issue.kind === 'unsafe-summit-plan'), 'Validator should block easy bailout/logging-road/cell-service wording');
+assert.ok(hundredMileIssues.some((issue) => issue.kind === 'misordered-sequence'), 'Validator should block putting Kennebec inside the 100-Mile Wilderness corridor');
+
+const safeHundredMileDraft = `Monson to Abol Bridge is about 99.6 miles by this guardrail. Carry or legally prearrange the full wilderness food plan before leaving Monson; do not count on road crossings, cell service, or same-day shuttles as bailouts. Treat all natural water, verify each water source and ford with current reports, and wait or change plans after heavy rain. The Kennebec ferry is south/outside this corridor and should not be used as a 100-Mile Wilderness crossing. Day 1: Monson to Long Pond Stream Lean-to. Day 2: Long Pond Stream Lean-to to Carl A. Newhall Lean-to. Day 3: Carl A. Newhall Lean-to to Logan Brook Lean-to. Day 4: Logan Brook Lean-to to East Branch Lean-to. Day 5: East Branch Lean-to to Cooper Brook Falls Lean-to. Day 6: Cooper Brook Falls Lean-to to Antlers Campsite. Day 7: Antlers Campsite to Rainbow Stream Lean-to. Day 8: Rainbow Stream Lean-to to Abol Bridge.`;
+assert.deepEqual(validateAtRouteAnswerClaims(safeHundredMileDraft, hundredMile), [], 'Validator should allow fail-closed 100-Mile Wilderness logistics/water/ford wording and correct route order');
+
+const hundredMileSobo = buildAtRouteGrounding({ prompt: 'Plan a southbound Appalachian Trail 100-Mile Wilderness itinerary from Abol Bridge to Monson in 8 days with food carry, water, fords, logging road bailouts, campsites, and shuttle guardrails.' });
+assert.ok(hundredMileSobo, '100-Mile Wilderness SOBO prompt should trigger strict route grounding');
+assert.equal(hundredMileSobo.start.id, 'abol-bridge-me', 'SOBO prompt should start at Abol Bridge');
+assert.equal(hundredMileSobo.direction, 'SOBO');
+assert.ok(hundredMileSobo.planOptions.some((option) => option.id === 'hundred-mile-sobo-safer-eight-day-abol-monson'), '100-Mile Wilderness SOBO safer option should be available');
+
 const baxterPrompt = `Assume I am a NOBO AT section hiker finishing Maine. I am at Abol Bridge and want to reach Katahdin Stream Campground, stay at The Birches if possible, then summit Baxter Peak / Katahdin on the Hunt Trail in 2 or 3 days. Build a practical plan with route options, daily mileage targets, Long-Distance Hiker Permit steps, The Birches and campground assumptions, day-use/KTP access, water, weather/closure risks, shuttle logistics, and a final checklist.`;
 const baxter = buildAtRouteGrounding({ prompt: baxterPrompt });
 assert.ok(baxter, 'Baxter/Katahdin prompt should trigger strict AT route grounding');
@@ -183,6 +215,8 @@ assert.ok(clawAgentSource.includes('deterministicClawTurn(record, null, trimmedP
 assert.ok(clawAgentSource.includes('No shelter-overflow assumption'), 'Strict GSMNP replies should explicitly reject shelter-full overflow tenting assumptions');
 assert.ok(clawAgentSource.includes('strict Shenandoah route/regulation mode'), 'Strict Shenandoah replies should use a deterministic compact reply path');
 assert.ok(clawAgentSource.includes('old free/self-registration paper-permit guidance'), 'Strict Shenandoah replies should explicitly reject stale self-registration permit guidance');
+assert.ok(clawAgentSource.includes('strict 100-Mile Wilderness route/logistics mode'), 'Strict 100-Mile Wilderness replies should use a deterministic compact reply path');
+assert.ok(clawAgentSource.includes('Default food assumption: leave Monson/Abol with the full wilderness food plan'), 'Strict 100-Mile Wilderness replies should fail closed on food carry and food drops');
 assert.ok(clawAgentSource.includes('strict White Mountains Franconia Notch'), 'Strict Whites replies should use a deterministic compact reply path');
 assert.ok(clawAgentSource.includes('Franconia Notch → Crawford Notch is about'), 'Strict Whites replies should correct the bad casual mileage estimate');
 assert.ok(clawAgentSource.includes('Do not depend on hut walk-up bunks or work-for-stay'), 'Strict Whites replies should reject hut/work-for-stay assumptions');
@@ -190,4 +224,4 @@ assert.ok(clawAgentSource.includes('strict Baxter/Katahdin route/regulation mode
 assert.ok(clawAgentSource.includes('Long-Distance Hiker Permit in person at Katahdin Stream'), 'Strict Baxter replies should require the in-person LD permit flow');
 assert.ok(clawAgentSource.includes('there is no work-for-stay in Baxter State Park'), 'Strict Baxter replies should reject Birches/Baxter work-for-stay assumptions');
 
-console.log('Scout grounding eval passed: Pine Grove, GSMNP, Shenandoah, White Mountains, and Baxter/Katahdin route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water/summit guardrails, and shelter-overflow/work-for-stay refusal are active.');
+console.log('Scout grounding eval passed: Pine Grove, GSMNP, Shenandoah, White Mountains, 100-Mile Wilderness, and Baxter/Katahdin route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water/food/summit guardrails, and shelter-overflow/work-for-stay refusal are active.');

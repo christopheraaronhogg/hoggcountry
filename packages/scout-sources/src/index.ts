@@ -301,6 +301,29 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     keywords: ['shenandoah', 'snp', 'rockfish gap', 'swift run gap', 'calf mountain', 'blackrock hut', 'pinefield hut', 'hightop hut', 'big meadows', 'byrds nest', 'permit', 'recreation.gov', 'camping', 'setbacks', 'water', 'nobo', 'itinerary']
   },
   {
+    id: 'hoggcountry-100-mile-wilderness-qa-2026-05-06',
+    title: 'Hogg Country 100-Mile Wilderness Monson to Abol Bridge corridor and logistics QA validator',
+    displayCategory: 'deterministic route/logistics validator',
+    lane: 'hogg-owned',
+    trust: 'reviewed',
+    accessMode: 'route-validator',
+    privacy: 'Shared internal QA fixture; no private user data.',
+    useWhen: 'Monson to Abol Bridge / 100-Mile Wilderness AT section planning, route order checks, food carry and food-drop assumptions, logging-road bailout/shuttle assumptions, water treatment, ford/rain delay guardrails, campsite/lean-to verification, and Baxter handoff warnings.',
+    license: HOGG_OWNED_LICENSE,
+    freshness: { generatedAt: '2026-05-06', updateCadence: 'manual' },
+    coverage: {
+      trail: 'AT',
+      states: ['ME'],
+      mileStart: 2078.1,
+      mileEnd: 2177.7,
+      topics: ['route validator', '100-mile wilderness', 'hundred mile wilderness', 'monson', 'abol bridge', 'food carry', 'food drops', 'bailouts', 'fords', 'water', 'campsites', 'shelters', 'mileage']
+    },
+    citationTemplate: 'Hogg Country 100-Mile Wilderness Monson ↔ Abol Bridge route/logistics QA fixture, generated 2026-05-06 from dogfood QA plus MATC/ATC/AMC/local logistics source checks.',
+    allowedActions: ['catalog', 'route-validate'],
+    caveats: ['Use as a guardrail for route order and fail-closed logistics wording; exact mileages, legal lean-tos/campsites, water, ford safety, food drops, logging-road access, closures, and shuttles still require current MATC/AMC/A.T. Guide/FarOut/local-provider verification.'],
+    keywords: ['100 mile wilderness', '100-mile wilderness', 'hundred mile wilderness', 'monson', 'abol bridge', 'wilson valley', 'long pond stream', 'chairback', 'chairback gap', 'carl newhall', 'logan brook', 'white cap', 'east branch', 'cooper brook falls', 'antlers', 'jo-mary', 'jo mary', 'wadleigh', 'rainbow stream', 'food carry', 'food drop', 'resupply', 'bailout', 'logging road', 'ford', 'fords', 'water', 'nobo', 'sobo', 'itinerary']
+  },
+  {
     id: 'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05',
     title: 'Hogg Country Baxter/Katahdin AT finish corridor and regulation QA validator',
     displayCategory: 'deterministic route/regulation validator',
@@ -362,6 +385,23 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     allowedActions: ['catalog', 'live-fetch'],
     caveats: ['Rules, hut/tentsite availability, caretaker season, fees, water, weather, road access, and parking change; Scout should fail closed and tell the hiker to verify exact AMC/WMNF/NH State Parks conditions before leaving.'],
     keywords: ['white mountains', 'whites', 'wmnf', 'white mountain national forest', 'amc', 'appalachian mountain club', 'nh state parks', 'franconia notch', 'crawford notch', 'hut', 'huts', 'tentsite', 'camping', 'above treeline', 'alpine zone', 'forest protection area', 'work for stay', 'water', 'weather', 'parking', 'shuttle']
+  },
+  {
+    id: 'hundred-mile-wilderness-matc-atc-logistics',
+    title: '100-Mile Wilderness MATC/ATC/AMC and local logistics checks',
+    displayCategory: 'official/regional corridor logistics and conditions',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public official/regional source.',
+    useWhen: '100-Mile Wilderness conditions, Monson/Abol Bridge logistics, food carry/drop verification, legal campsite/lean-to checks, ford/water risk, trail closures, land-manager notices, MATC/ATC updates, and shuttle/support provider confirmation.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', states: ['ME'], mileStart: 2078.1, mileEnd: 2177.7, topics: ['100-mile wilderness', 'matc', 'atc', 'amc', 'monson', 'abol bridge', 'food drops', 'fords', 'water', 'closures', 'shuttle'] },
+    citationTemplate: 'MATC/ATC/AMC and local 100-Mile Wilderness logistics/conditions pages; live conditions and services must be checked before leaving. Scout fetched timestamp: {fetchedAt}. https://www.matc.org/ https://appalachiantrail.org/ https://www.outdoors.org/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Food drops, road access, shuttles, campsite status, water, fords, closures, fees, and store/lodging hours change; Scout should fail closed and require current local/land-manager confirmation before entry.'],
+    keywords: ['100 mile wilderness', '100-mile wilderness', 'hundred mile wilderness', 'matc', 'maine appalachian trail club', 'appalachian trail conservancy', 'amc', 'monson', 'abol bridge', 'food drop', 'food carry', 'resupply', 'bailout', 'logging road', 'shuttle', 'ford', 'fording', 'water', 'closure', 'conditions']
   },
   {
     id: 'baxter-state-park-at-permits',
@@ -595,7 +635,7 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (manifest.accessMode === 'disabled-pending-review' && !query.includeUnavailable) score -= 8;
   if (manifest.trust === 'official' && /\b(weather|closure|detour|fire|alert|official|lightning|thunder|thunderstorm|wind|above[-\s]?treeline)\b/iu.test(query.query)) score += 3;
   if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
-  if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 3;
+  if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 6;
   if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
 
   return score;

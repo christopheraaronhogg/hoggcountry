@@ -21,6 +21,8 @@ const requiredIds = [
   'gsmnp-backcountry-permits',
   'hoggcountry-shenandoah-at-corridor-qa-2026-05-05',
   'shenandoah-backcountry-permits',
+  'hoggcountry-100-mile-wilderness-qa-2026-05-06',
+  'hundred-mile-wilderness-matc-atc-logistics',
   'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05',
   'baxter-state-park-at-permits',
   'hoggcountry-whites-franconia-crawford-qa-2026-05-06',
@@ -76,6 +78,19 @@ assert.ok(whitesSources.includes('at-guide-user-owned'), 'Whites exact mileage/h
 assert.ok(whitesSources.includes('nws-weather'), 'Whites ridge weather/lightning itinerary should select NWS');
 
 
+const hundredMileSources = selectScoutSourceManifests({
+  query: 'Monson to Abol Bridge 100-Mile Wilderness NOBO 7 or 8 day itinerary with food carry food drops water fords logging road bailouts campsites lean-tos shuttle weather and Baxter handoff',
+  state: 'ME',
+  mileRange: [2078.1, 2177.7],
+  limit: 10
+}).map((source) => source.id);
+assert.ok(hundredMileSources.includes('hoggcountry-100-mile-wilderness-qa-2026-05-06'), '100-Mile Wilderness itinerary should select the 100-Mile route/logistics validator');
+assert.ok(hundredMileSources.includes('hundred-mile-wilderness-matc-atc-logistics'), '100-Mile Wilderness itinerary should select official/regional logistics sources');
+assert.ok(hundredMileSources.includes('at-guide-user-owned'), '100-Mile exact mileage/campsite itinerary should require user-owned guide data');
+assert.ok(hundredMileSources.includes('farout-current-comments'), '100-Mile water/ford/campsite itinerary should require current comments');
+assert.ok(hundredMileSources.includes('nws-weather'), '100-Mile weather itinerary should select NWS');
+
+
 const baxterSources = selectScoutSourceManifests({
   query: 'Abol Bridge to Katahdin Stream Campground and Baxter Peak Katahdin NOBO finish itinerary with The Birches Long-Distance Hiker Permit KTP parking campground reservations water weather closures and shuttle',
   state: 'ME',
@@ -109,6 +124,12 @@ assert.equal(whitesReceipt?.accessMode, 'route-validator', 'Whites route receipt
 const whitesOfficialReceipt = buildScoutSourceReceipt('white-mountain-national-forest-amc-rules');
 assert.ok(whitesOfficialReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched Whites official/regional receipt should not imply a live fetch');
 assert.equal(whitesOfficialReceipt?.trust, 'official', 'Whites official/regional receipt should be distinguished from local QA fixtures');
+const hundredMileReceipt = buildScoutSourceReceipt('hoggcountry-100-mile-wilderness-qa-2026-05-06');
+assert.ok(hundredMileReceipt?.citation.includes('100-Mile Wilderness Monson'), '100-Mile Wilderness receipt should expose the validator citation');
+assert.equal(hundredMileReceipt?.accessMode, 'route-validator', '100-Mile Wilderness route receipt should identify deterministic validator access');
+const hundredMileOfficialReceipt = buildScoutSourceReceipt('hundred-mile-wilderness-matc-atc-logistics');
+assert.ok(hundredMileOfficialReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched 100-Mile official/regional receipt should not imply a live fetch');
+assert.equal(hundredMileOfficialReceipt?.trust, 'official', '100-Mile official/regional receipt should be distinguished from local QA fixtures');
 const baxterReceipt = buildScoutSourceReceipt('hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05');
 assert.ok(baxterReceipt?.citation.includes('Baxter/Katahdin AT finish corridor'), 'Baxter receipt should expose the validator citation');
 assert.equal(baxterReceipt?.trust, 'reviewed', 'Baxter route receipt should remain a reviewed local QA fixture');

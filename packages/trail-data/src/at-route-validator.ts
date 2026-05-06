@@ -113,6 +113,14 @@ export const BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
   exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, Baxter State Park conditions/ranger guidance, current camping reservation, or recent water/weather report.'
 } as const;
 
+export const HUNDRED_MILE_WILDERNESS_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
+  id: 'hoggcountry-100-mile-wilderness-qa-2026-05-06',
+  label: 'Hogg Country 100-Mile Wilderness Monson ↔ Abol Bridge corridor and logistics QA fixture',
+  citation: 'Internal dogfood guardrail created from 2026-05-06 100-Mile Wilderness QA plus MATC/ATC/AMC/local logistics source checks; verify exact mileages, legal sites, water, fords, logging-road access, food drops, closures, and shuttle conditions before leaving.',
+  authority: 'internal-qa',
+  exactMileageCaveat: 'Use these values as a route-order and logistics guardrail, not as a replacement for a current A.T. Guide, MATC/AMC map, local hostel/shuttle confirmation, land-manager notice, or recent water/ford/report.'
+} as const;
+
 export const WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
   id: 'hoggcountry-whites-franconia-crawford-qa-2026-05-06',
   label: 'Hogg Country White Mountains Franconia Notch ↔ Crawford Notch corridor and regulation QA fixture',
@@ -392,9 +400,99 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
     name: 'Monson',
     kind: 'town',
     state: 'ME',
-    mile: 2090.0,
+    mile: 2078.1,
     aliases: ['monson', 'monson me', 'monson maine', '100 mile wilderness gateway', 'hundred mile wilderness gateway'],
-    notes: 'Last major resupply before the 100-Mile Wilderness in local Hogg Country data; exact AT mileage and services require current guide/town confirmation.'
+    notes: 'Last major resupply before the 100-Mile Wilderness in local Hogg Country data; exact AT mileage, road crossing, lodging, shuttle, and services require current guide/town confirmation.'
+  },
+  {
+    id: 'wilson-valley-lean-to-me',
+    name: 'Wilson Valley Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2088.5,
+    aliases: ['wilson valley', 'wilson valley lean-to', 'wilson valley leanto', 'wilson valley lean to'],
+    notes: 'Early 100-Mile Wilderness shelter candidate; verify current water, condition, and legal use before relying on it.'
+  },
+  {
+    id: 'long-pond-stream-lean-to-me',
+    name: 'Long Pond Stream Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2094.5,
+    aliases: ['long pond stream', 'long pond stream lean-to', 'long pond stream leanto', 'long pond stream lean to'],
+    notes: 'Early 100-Mile Wilderness shelter candidate; verify current water, ford/stream conditions, and legal use.'
+  },
+  {
+    id: 'chairback-gap-lean-to-me',
+    name: 'Chairback Gap Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2100.2,
+    aliases: ['chairback gap', 'chairback gap lean-to', 'chairback gap leanto', 'chairback mountain', 'chairback'],
+    notes: 'Barren-Chairback range shelter candidate; terrain is slow and water/condition must be verified.'
+  },
+  {
+    id: 'carl-newhall-lean-to-me',
+    name: 'Carl A. Newhall Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2108.4,
+    aliases: ['carl newhall', 'carl a newhall', 'carl a. newhall', 'carl newhall lean-to', 'carl a newhall lean-to'],
+    notes: 'Shelter candidate after the Chairbacks; verify current water, condition, and legal use.'
+  },
+  {
+    id: 'logan-brook-lean-to-me',
+    name: 'Logan Brook Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2114.9,
+    aliases: ['logan brook', 'logan brook lean-to', 'logan brook leanto', 'white cap', 'whitecap', 'white cap mountain'],
+    notes: 'White Cap/Logan Brook shelter candidate; weather and water require current confirmation.'
+  },
+  {
+    id: 'east-branch-lean-to-me',
+    name: 'East Branch Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2124.0,
+    aliases: ['east branch', 'east branch lean-to', 'east branch leanto', 'east branch lean to'],
+    notes: 'Mid-wilderness shelter candidate; verify current water/fords and site status.'
+  },
+  {
+    id: 'cooper-brook-falls-lean-to-me',
+    name: 'Cooper Brook Falls Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2135.1,
+    aliases: ['cooper brook', 'cooper brook falls', 'cooper brook falls lean-to', 'cooper brook falls leanto'],
+    notes: 'Mid-to-north wilderness shelter candidate; verify current water, condition, and legal use.'
+  },
+  {
+    id: 'antlers-campsite-me',
+    name: 'Antlers Campsite',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2150.7,
+    aliases: ['antlers', 'antlers campsite', 'lower jo-mary', 'jo-mary lake', 'jo mary lake'],
+    notes: 'Known lake campsite candidate; verify current legal use, crowding, water, and camping rules.'
+  },
+  {
+    id: 'wadleigh-stream-lean-to-me',
+    name: 'Wadleigh Stream Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2157.5,
+    aliases: ['wadleigh stream', 'wadleigh stream lean-to', 'wadleigh stream leanto', 'wadleigh'],
+    notes: 'North wilderness shelter candidate; verify current water and condition.'
+  },
+  {
+    id: 'rainbow-stream-lean-to-me',
+    name: 'Rainbow Stream Lean-to',
+    kind: 'shelter',
+    state: 'ME',
+    mile: 2167.0,
+    aliases: ['rainbow stream', 'rainbow stream lean-to', 'rainbow stream leanto', 'rainbow stream lean to'],
+    notes: 'Final wilderness shelter candidate before Abol Bridge; verify current water and condition.'
   },
   {
     id: 'abol-bridge-me',
@@ -460,6 +558,20 @@ const SHENANDOAH_AT_POINT_IDS = [
   'pinefield-hut-va',
   'hightop-hut-va',
   'swift-run-gap-va'
+] as const;
+const HUNDRED_MILE_WILDERNESS_AT_POINT_IDS = [
+  'monson-me',
+  'wilson-valley-lean-to-me',
+  'long-pond-stream-lean-to-me',
+  'chairback-gap-lean-to-me',
+  'carl-newhall-lean-to-me',
+  'logan-brook-lean-to-me',
+  'east-branch-lean-to-me',
+  'cooper-brook-falls-lean-to-me',
+  'antlers-campsite-me',
+  'wadleigh-stream-lean-to-me',
+  'rainbow-stream-lean-to-me',
+  'abol-bridge-me'
 ] as const;
 const BAXTER_KATAHDIN_AT_POINT_IDS = [
   'monson-me',
@@ -830,6 +942,73 @@ function buildShenandoahPlanOptions(direction: AtRouteDirection): readonly AtRou
   ];
 }
 
+function buildHundredMileWildernessPlanOptions(direction: AtRouteDirection): readonly AtRoutePlanOption[] {
+  if (direction === 'SOBO') {
+    const soboDays = [
+      buildDay(1, 'abol-bridge-me', 'rainbow-stream-lean-to-me', 'Short opening from Abol Bridge; confirm food carry and that you are not depending on Abol as a full resupply.'),
+      buildDay(2, 'rainbow-stream-lean-to-me', 'wadleigh-stream-lean-to-me', 'Moderate lake/stream day; verify current water and campsite/lean-to conditions.'),
+      buildDay(3, 'wadleigh-stream-lean-to-me', 'cooper-brook-falls-lean-to-me', 'Longer wilderness day; keep weather and river/stream crossings conservative.'),
+      buildDay(4, 'cooper-brook-falls-lean-to-me', 'east-branch-lean-to-me', 'Mid-wilderness leg; bailouts/logging roads require prearranged local shuttle knowledge.'),
+      buildDay(5, 'east-branch-lean-to-me', 'logan-brook-lean-to-me', 'White Cap area day; verify weather and water before committing.'),
+      buildDay(6, 'logan-brook-lean-to-me', 'carl-newhall-lean-to-me', 'Shorter terrain-management day around rugged southern Maine terrain.'),
+      buildDay(7, 'carl-newhall-lean-to-me', 'long-pond-stream-lean-to-me', 'Chairback/stream conditions control this day; verify fords after rain.'),
+      buildDay(8, 'long-pond-stream-lean-to-me', 'monson-me', 'Finish to Monson/ME 15; confirm pickup, lodging, and road access before leaving camp.')
+    ] as const;
+    return [{
+      id: 'hundred-mile-sobo-safer-eight-day-abol-monson',
+      label: 'Safer 8-day 100-Mile Wilderness SOBO shape: Abol Bridge to Monson',
+      totalMiles: roundMileage(soboDays.reduce((sum, day) => sum + day.miles, 0)),
+      days: soboDays,
+      caveats: ['This is a logistics guardrail, not a verified campsite reservation list.', 'Carry/arrange food for the whole wilderness unless a legal prearranged food drop is confirmed.']
+    }];
+  }
+
+  const saferEightDay = [
+    buildDay(1, 'monson-me', 'long-pond-stream-lean-to-me', 'Conservative opening from Monson/ME 15; confirm exact trailhead dropoff and water/ford status.'),
+    buildDay(2, 'long-pond-stream-lean-to-me', 'carl-newhall-lean-to-me', 'Chairback terrain day; do not treat the early wilderness as easy mileage.'),
+    buildDay(3, 'carl-newhall-lean-to-me', 'logan-brook-lean-to-me', 'White Cap approach; verify exposed/higher terrain weather and water.'),
+    buildDay(4, 'logan-brook-lean-to-me', 'east-branch-lean-to-me', 'Moderate terrain-management day; preserve food/weather margin.'),
+    buildDay(5, 'east-branch-lean-to-me', 'cooper-brook-falls-lean-to-me', 'Mid-wilderness day; bailouts require prearranged road/shuttle knowledge.'),
+    buildDay(6, 'cooper-brook-falls-lean-to-me', 'antlers-campsite-me', 'Long lake/campsite leg; verify legal use and water/crowding.'),
+    buildDay(7, 'antlers-campsite-me', 'rainbow-stream-lean-to-me', 'North wilderness leg; keep ford/water checks current.'),
+    buildDay(8, 'rainbow-stream-lean-to-me', 'abol-bridge-me', 'Finish to Abol Bridge; confirm store/service hours, pickup, and whether you continue into Baxter separately.')
+  ] as const;
+
+  const strongerSevenDay = [
+    buildDay(1, 'monson-me', 'long-pond-stream-lean-to-me', 'Opening day is already real work with a heavy food carry; verify water/ford status.'),
+    buildDay(2, 'long-pond-stream-lean-to-me', 'logan-brook-lean-to-me', 'Long rugged Chairback/White Cap day; only use if body, weather, water, and daylight line up.'),
+    buildDay(3, 'logan-brook-lean-to-me', 'east-branch-lean-to-me', 'Moderate recovery day after the bigger mountain push.'),
+    buildDay(4, 'east-branch-lean-to-me', 'cooper-brook-falls-lean-to-me', 'Mid-wilderness day; keep food/drop assumptions conservative.'),
+    buildDay(5, 'cooper-brook-falls-lean-to-me', 'antlers-campsite-me', 'Long lake/campsite leg; verify legal site use and water.'),
+    buildDay(6, 'antlers-campsite-me', 'rainbow-stream-lean-to-me', 'North wilderness day; verify ford/water reports.'),
+    buildDay(7, 'rainbow-stream-lean-to-me', 'abol-bridge-me', 'Finish to Abol Bridge; confirm pickup/service hours and Baxter handoff separately.')
+  ] as const;
+
+  return [
+    {
+      id: 'hundred-mile-safer-eight-day-monson-abol',
+      label: 'Safer 8-day 100-Mile Wilderness shape: Monson to Abol Bridge',
+      totalMiles: roundMileage(saferEightDay.reduce((sum, day) => sum + day.miles, 0)),
+      days: saferEightDay,
+      caveats: [
+        'This is the safer default for a heavy food carry, stream/ford uncertainty, and remote logistics.',
+        'Lean-tos/campsites are route-order candidates only. Verify legal use, water, crowding, and current conditions.'
+      ]
+    },
+    {
+      id: 'hundred-mile-stronger-seven-day-monson-abol',
+      label: 'Stronger 7-day 100-Mile Wilderness shape: Monson to Abol Bridge',
+      totalMiles: roundMileage(strongerSevenDay.reduce((sum, day) => sum + day.miles, 0)),
+      days: strongerSevenDay,
+      caveats: [
+        'This is for a stronger hiker with a confirmed food plan and clean weather/water/ford reports.',
+        'Do not compress this because Abol/Katahdin excitement is pulling the schedule north.'
+      ]
+    }
+  ];
+}
+
+
 function buildWhitesFranconiaCrawfordPlanOptions(direction: AtRouteDirection): readonly AtRoutePlanOption[] {
   const saferFourDay = direction === 'NOBO' ? [
     buildDay(1, 'franconia-notch-i-93-nh', 'liberty-spring-tentsite-nh', 'Short opening keeps first-time Whites exposure conservative; use only if the AMC tentsite is legal/available and weather supports Franconia Ridge timing.'),
@@ -1122,6 +1301,71 @@ function shenandoahRegulationClaimIssues(answer: string, grounding: AtRouteGroun
   return issues;
 }
 
+function hundredMileWildernessClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
+  if (grounding.source.id !== HUNDRED_MILE_WILDERNESS_AT_CORRIDOR_QA_SOURCE.id) return [];
+
+  const issues: AtRouteClaimIssue[] = [];
+  for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const negatesUnsafe = lineNegatesUnsafeCamping(line) || /\b(?:do\s+not|don'?t|cannot|can'?t|should\s+not|must\s+not|not\s+safe|not\s+rely|unless|verify|prearranged|pre-arranged)\b/iu.test(line);
+
+    const claimsNoFoodCarry = /\b(?:resupply|food\s+drop|cache|store|restaurant|road\s+crossing)\b[^.]{0,140}\b(?:available|easy|simple|count\s+on|plan\s+on|every|midway|halfway|daily|without\s+arranging)\b/iu.test(line)
+      && !negatesUnsafe;
+    const claimsShortFoodEnough = /\b(?:3|4|5|three|four|five)\s*(?:days?|nights?)\b[^.]{0,120}\b(?:food|carry|resupply)\b[^.]{0,80}\b(?:enough|fine|plenty|sufficient)\b/iu.test(line)
+      && !negatesUnsafe;
+    if (claimsNoFoodCarry || claimsShortFoodEnough) {
+      issues.push({
+        kind: 'unsafe-water-plan',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: '100-Mile Wilderness food/logistics wording was too permissive. Plans must assume a full wilderness food carry unless a legal prearranged food drop/shuttle is confirmed.'
+      });
+    }
+
+    const claimsEasyBailout = /\b(?:bailout|exit|logging\s+road|road\s+crossing|cell\s+service|signal|uber|rideshare)\b[^.]{0,140}\b(?:easy|simple|reliable|plenty|frequent|count\s+on|call\s+from\s+trail|available)\b/iu.test(line)
+      && !negatesUnsafe;
+    if (claimsEasyBailout) {
+      issues.push({
+        kind: 'unsafe-summit-plan',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: '100-Mile Wilderness bailout wording was too permissive. Logging-road exits, shuttles, and cell service must be prearranged/verified, not treated as easy recovery.'
+      });
+    }
+
+    const claimsFordsSafe = /\b(?:ford|fording|stream\s+crossing|river\s+crossing|pleasant\s+river|wilson\s+stream)\b[^.]{0,140}\b(?:safe|easy|fine|no\s+problem|always\s+passable|just\s+cross)\b/iu.test(line)
+      && !negatesUnsafe;
+    const claimsUntreatedWater = /\b(?:pond|stream|brook|spring|lake|water)\b[^.]{0,100}\b(?:no\s+treatment|untreated|without\s+(?:filter|treat|purif))\b/iu.test(line)
+      && !negatesUnsafe;
+    if (claimsFordsSafe || claimsUntreatedWater) {
+      issues.push({
+        kind: 'unsafe-water-plan',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: '100-Mile Wilderness water/ford wording was too permissive. Ford depth and water reliability must be current-checked, and all natural water must be treated.'
+      });
+    }
+
+    const putsKennebecInside = /\bkennebec\b/iu.test(line) && /\b(?:100[-\s]?mile|hundred[-\s]?mile|monson|abol|wilderness)\b/iu.test(line) && !/\b(?:not|before|south\s+of|outside|isn'?t|not\s+inside)\b/iu.test(line);
+    if (putsKennebecInside) {
+      issues.push({
+        kind: 'misordered-sequence',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Kennebec Ferry/River is not inside the Monson → Abol Bridge 100-Mile Wilderness corridor and should not be planned as a wilderness crossing.'
+      });
+    }
+  }
+
+  return issues;
+}
+
+
 function whitesRegulationClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
   if (grounding.source.id !== WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE.id) return [];
 
@@ -1362,6 +1606,7 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
   issues.push(...routeTotalMileageClaimIssues(answer, grounding));
   issues.push(...gsmnpRegulationClaimIssues(answer, grounding));
   issues.push(...shenandoahRegulationClaimIssues(answer, grounding));
+  issues.push(...hundredMileWildernessClaimIssues(answer, grounding));
   issues.push(...whitesRegulationClaimIssues(answer, grounding));
   issues.push(...baxterRegulationClaimIssues(answer, grounding));
   return issues;
@@ -1395,13 +1640,28 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
     targetTotalMiles ? targetTotalMiles + 10 : 45,
     mentionedCorridorMiles ? mentionedCorridorMiles + 2 : 0
   );
-  const corridor = corridorFrom(start, direction, maxCorridorMiles);
+  let corridor = corridorFrom(start, direction, maxCorridorMiles);
+  if (destination) {
+    const minMile = Math.min(start.mile, destination.mile);
+    const maxMile = Math.max(start.mile, destination.mile);
+    corridor = corridor.filter((point) => point.mile >= minMile - 0.05 && point.mile <= maxMile + 0.05);
+  }
   const legs = legsFor(corridor, direction);
   const unrecognizedNames = extractUnrecognizedAtRouteNames(prompt);
   const isPineGrove = start.id === 'pine-grove-furnace-state-park-pa';
   const isGsmnp = start.id === 'fontana-dam-nc' || corridor.some((point) => point.id === 'newfound-gap-tn-nc');
   const isShenandoah = corridor.some((point) => SHENANDOAH_AT_POINT_IDS.includes(point.id as typeof SHENANDOAH_AT_POINT_IDS[number]));
-  const isBaxterKatahdin = corridor.some((point) => BAXTER_KATAHDIN_AT_POINT_IDS.includes(point.id as typeof BAXTER_KATAHDIN_AT_POINT_IDS[number]));
+  const promptNamesHundredMileWilderness = includesNormalized(prompt, '100 mile wilderness') || includesNormalized(prompt, '100-mile wilderness') || includesNormalized(prompt, 'hundred mile wilderness');
+  const isHundredMileWilderness = corridor.some((point) => HUNDRED_MILE_WILDERNESS_AT_POINT_IDS.includes(point.id as typeof HUNDRED_MILE_WILDERNESS_AT_POINT_IDS[number]))
+    && (
+      start.id === 'monson-me'
+      || destination?.id === 'monson-me'
+      || destination?.id === 'abol-bridge-me'
+      || promptNamesHundredMileWilderness
+    )
+    && destination?.id !== 'baxter-peak-katahdin-me'
+    && destination?.id !== 'katahdin-stream-campground-me';
+  const isBaxterKatahdin = !isHundredMileWilderness && corridor.some((point) => BAXTER_KATAHDIN_AT_POINT_IDS.includes(point.id as typeof BAXTER_KATAHDIN_AT_POINT_IDS[number]));
   const isWhitesFranconiaCrawford = corridor.some((point) => WHITES_FRANCONIA_CRAWFORD_AT_POINT_IDS.includes(point.id as typeof WHITES_FRANCONIA_CRAWFORD_AT_POINT_IDS[number]));
   const hasShenandoahHeatWaterConstraint = /\b(?:2\s*l|2\s+liters|two\s+liters|late\s+july|july|summer|heat|hot)\b/iu.test(prompt);
   const isSwiftRunRequest = destination?.id === 'swift-run-gap-va' || start.id === 'swift-run-gap-va' || includesNormalized(prompt, 'swift run gap');
@@ -1411,8 +1671,10 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
     ? GSMNP_AT_CORRIDOR_QA_SOURCE
     : isShenandoah
       ? SHENANDOAH_AT_CORRIDOR_QA_SOURCE
-      : isWhitesFranconiaCrawford
-        ? WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE
+      : isHundredMileWilderness
+        ? HUNDRED_MILE_WILDERNESS_AT_CORRIDOR_QA_SOURCE
+        : isWhitesFranconiaCrawford
+          ? WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE
         : isBaxterKatahdin
           ? BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE
           : AT_ROUTE_QA_SOURCE;
@@ -1431,8 +1693,10 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
       ? buildGsmnpPlanOptions(direction)
       : isShenandoah
         ? buildShenandoahPlanOptions(direction)
-        : isWhitesFranconiaCrawford && (start.id === 'franconia-notch-i-93-nh' || start.id === 'crawford-notch-us-302-nh')
-          ? buildWhitesFranconiaCrawfordPlanOptions(direction)
+        : isHundredMileWilderness && (start.id === 'monson-me' || start.id === 'abol-bridge-me')
+          ? buildHundredMileWildernessPlanOptions(direction)
+          : isWhitesFranconiaCrawford && (start.id === 'franconia-notch-i-93-nh' || start.id === 'crawford-notch-us-302-nh')
+            ? buildWhitesFranconiaCrawfordPlanOptions(direction)
           : isBaxterKatahdin && (start.id === 'abol-bridge-me' || start.id === 'katahdin-stream-campground-me')
             ? buildBaxterKatahdinPlanOptions(direction)
             : [];
@@ -1452,6 +1716,12 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
       : null,
     isShenandoah && hasShenandoahHeatWaterConstraint
       ? 'Late-July/2L water guardrail: treat 2L as thin until current water sources are confirmed; all natural water must be treated.'
+      : null,
+    isHundredMileWilderness
+      ? '100-Mile Wilderness logistics guardrail: treat Monson/ME 15 to Abol Bridge as a remote food-carry corridor; no ordinary resupply, food drop, bailout, road access, or cell-service recovery should be assumed without current local/land-manager confirmation.'
+      : null,
+    isHundredMileWilderness
+      ? '100-Mile Wilderness water/ford guardrail: water is abundant but must be treated, and fords/stream crossings can become dangerous after rain; build delay food and bailout margin before entering.'
       : null,
     isWhitesFranconiaCrawford
       ? 'White Mountains regulation guardrail: first-time Franconia Notch ↔ Crawford Notch plans should default to a safer 4-day shape unless current AMC/WMNF/NH State Parks legality, hut/tentsite availability, water, weather, daylight, and shuttle all line up.'

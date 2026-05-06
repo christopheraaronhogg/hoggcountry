@@ -1373,6 +1373,10 @@ function isBaxterKatahdinRouteGrounding(grounding: AtRouteGrounding): boolean {
   return grounding.source.id === 'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05';
 }
 
+function isHundredMileWildernessRouteGrounding(grounding: AtRouteGrounding): boolean {
+  return grounding.source.id === 'hoggcountry-100-mile-wilderness-qa-2026-05-06';
+}
+
 function isWhitesFranconiaCrawfordRouteGrounding(grounding: AtRouteGrounding): boolean {
   return grounding.source.id === 'hoggcountry-whites-franconia-crawford-qa-2026-05-06';
 }
@@ -1597,6 +1601,107 @@ function buildStrictShenandoahAtRouteItineraryReply(
   return lines.join('\n');
 }
 
+function buildStrictHundredMileWildernessAtRouteItineraryReply(
+  record: WorkspaceRecord,
+  grounding: AtRouteGrounding,
+  official: OfficialTrailSourceCheckDetails
+): string {
+  const profileBits = [
+    record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
+    record.profile?.direction,
+    typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
+    typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
+  ].filter(Boolean).join(' · ');
+  const routeReceipt = buildScoutSourceReceipt(grounding.source.id);
+  const officialReceipt = buildScoutSourceReceipt('hundred-mile-wilderness-matc-atc-logistics');
+  const atcReceipt = buildScoutSourceReceipt('atc-trail-updates', { fetchedAt: official.fetchedAt });
+  const nwsReceipt = official.weather ? buildScoutSourceReceipt('nws-weather', { fetchedAt: official.fetchedAt }) : null;
+  const guideReceipt = buildScoutSourceReceipt('at-guide-user-owned');
+  const faroutReceipt = buildScoutSourceReceipt('farout-current-comments');
+  const routeTotal = grounding.destination ? formatAtRouteMileage(Math.abs(grounding.destination.mile - grounding.start.mile)) : null;
+  const waterCapacity = typeof record.profile?.waterCapacityLiters === 'number' ? record.profile.waterCapacityLiters : null;
+
+  const lines: string[] = [
+    '### Scout strict-route plan',
+    '',
+    'I’m using strict 100-Mile Wilderness route/logistics mode because this asks for a real Monson ↔ Abol Bridge itinerary. The route order, food-carry, bailout, water/ford, and Baxter handoff guardrails below come from host validation, not model memory.',
+    profileBits ? `Workspace context: ${profileBits}.` : null,
+    '',
+    '**Route-order guardrail**',
+    `- Direction: ${grounding.direction}.`,
+    grounding.targetDays ? `- Requested trip length detected: ${grounding.targetDays} day${grounding.targetDays === 1 ? '' : 's'}.` : null,
+    grounding.destination ? `- Corridor: ${grounding.start.name} ${grounding.direction} to ${grounding.destination.name}${routeTotal ? ` (~${routeTotal} mi by this guardrail)` : ''}.` : `- Corridor starts at ${grounding.start.name}; verify the final endpoint in your current guide/source.`,
+    `- Source: ${grounding.source.label}. ${grounding.source.exactMileageCaveat}`,
+    '',
+    '| Point | Approx route mile | From start | Type |',
+    '|---|---:|---:|---|',
+    ...grounding.corridor.map((point) => formatStrictRoutePoint(point, grounding.start)),
+    '',
+    '**Important corrections / guardrails**',
+    ...grounding.warnings.map((warning) => `- ${warning}`),
+    grounding.destination?.id === 'abol-bridge-me' && routeTotal ? `- Monson → Abol Bridge is about ${routeTotal} mi in this guardrail, not a short Baxter approach.` : null,
+    '- Default food assumption: leave Monson/Abol with the full wilderness food plan unless a legal food drop/shuttle is prearranged and confirmed before entry.',
+    '- Do not treat logging roads, lodges, road crossings, cell service, or same-day shuttles as reliable bailouts. Prearrange and verify any support plan locally.',
+    '- The Kennebec ferry/river is not inside this Monson ↔ Abol Bridge corridor; do not use it as a 100-Mile Wilderness crossing or bailout.',
+    '',
+    '**Route options**'
+  ].filter((line): line is string => line !== null);
+
+  for (const option of grounding.planOptions) {
+    lines.push('', ...renderStrictRouteOption(option));
+  }
+
+  lines.push(
+    '',
+    '**Recommendation**',
+    grounding.targetDays !== null && grounding.targetDays <= 6
+      ? '- A 6-day-or-faster plan is a strong-hiker plan with little error margin. Recommend using the safer 8-day shape unless food weight, body, weather, water/ford reports, daylight, and pickup are all cleanly verified.'
+      : '- Default to the safer 8-day shape unless you have a confirmed stronger-hiker food/logistics plan and clean water/ford/weather reports.',
+    '- Build at least one extra food day or a verified exit/support option. Remote delays are normal enough that “exactly enough food” is not a safe default.',
+    '',
+    '**Food / resupply / support assumptions**',
+    '- Monson is the last normal full-service planning stop before this corridor. Abol Bridge is the north-end handoff, not a substitute for carrying/arranging the wilderness food plan.',
+    '- Food drops, hostel support, lodge access, or logging-road pickups must be legal, current, and prearranged. If you cannot name the provider, road, time, and backup, do not plan on it.',
+    '- Keep a written offline plan for pickup, bailouts, and what happens if weather/fords delay you 24-48 hours.',
+    '',
+    '**Shelter / campsite assumptions**',
+    '- Lean-tos and campsites in the table are route-order anchors and candidate overnights, not guaranteed space, water, legal status, or current condition.',
+    '- Use current MATC/AMC/A.T. Guide/FarOut-style information for exact shelter condition, tenting rules, capacity/crowding, privies, and water before treating an endpoint as final.',
+    '- If a planned site is closed/full/unsafe, change the day shape instead of inventing stealth, roadside, or lodge-adjacent camping.',
+    '',
+    '**Water / fords / weather**',
+    waterCapacity !== null
+      ? `- Your workspace water capacity is ${waterCapacity}L; abundant Maine water still does not remove the need to verify long carries, treat all water, and carry margin in heat.`
+      : '- Water may be frequent, but verify each source and treat all natural water.',
+    '- Fords and stream crossings can become unsafe after rain. Check recent reports and be willing to wait, backtrack, or use the verified bailout/support plan.',
+    '- Pull NWS forecasts/alerts for Monson, central wilderness/high points such as White Cap, and Abol/Katahdin area before entry; weather can turn a normal day into a delay day.',
+    '',
+    '**Baxter / north-end handoff**',
+    '- Reaching Abol Bridge is not the same as having a legal Baxter/Katahdin plan. Handle Baxter permits, The Birches/campsite eligibility, KTP/day-use access, closures, water, and summit weather as a separate strict check.',
+    '- Do not let Katahdin excitement compress the wilderness food, ford, or recovery margins.',
+    '',
+    '**Safety / live conditions**',
+    ...renderStrictRouteOfficialSummary(official, grounding.state),
+    '',
+    '**Final checklist before leaving**',
+    '- Verify exact AT mileages, lean-to/campsite sequence, legal camping, and current water/ford notes in a current user-owned guide plus current comments.',
+    '- Confirm full food carry or a named legal food-drop/shuttle provider, with road/time/backup details written offline.',
+    '- Confirm Monson/Abol pickup, parking, lodging/store hours, emergency contacts, offline maps, battery, headlamp, rain/warm layers, food storage, and at least one delay-day decision point.',
+    '- Check ATC/MATC/land-manager closures, fire restrictions, bridges/fords, logging-road access, and weather 24-48 hours before entering.',
+    '',
+    '**Source receipts**',
+    routeReceipt ? `- ${routeReceipt.title} [${routeReceipt.trust}/${routeReceipt.accessMode}]: ${routeReceipt.citation}` : `- Route validator: ${grounding.source.citation}`,
+    officialReceipt ? `- ${officialReceipt.title} [${officialReceipt.trust}/${officialReceipt.accessMode}]: ${officialReceipt.citation}` : '- 100-Mile Wilderness official/regional source manifest: available, but no receipt was produced in this turn.',
+    atcReceipt ? `- ${atcReceipt.title} [${atcReceipt.trust}/${atcReceipt.accessMode}]: ${atcReceipt.citation}` : '- ATC Trail Updates source manifest: available, but no ATC receipt was produced in this turn.',
+    nwsReceipt ? `- ${nwsReceipt.title} [${nwsReceipt.trust}/${nwsReceipt.accessMode}]: ${nwsReceipt.citation}` : '- NWS source manifest: available, but no weather receipt was produced in this turn.',
+    guideReceipt ? `- Needed but not bundled: ${guideReceipt.title} [${guideReceipt.trust}/${guideReceipt.accessMode}]. ${guideReceipt.caveats[0]}` : '- Needed but not bundled: user-owned guide data.',
+    faroutReceipt ? `- Needed but not bundled: ${faroutReceipt.title} [${faroutReceipt.trust}/${faroutReceipt.accessMode}]. ${faroutReceipt.caveats[0]}` : '- Needed but not bundled: current user-supplied water/shelter comments.'
+  );
+
+  return lines.join('\n');
+}
+
+
 function buildStrictWhitesFranconiaCrawfordAtRouteItineraryReply(
   record: WorkspaceRecord,
   grounding: AtRouteGrounding,
@@ -1818,6 +1923,10 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
 
   if (isShenandoahRouteGrounding(grounding)) {
     return buildStrictShenandoahAtRouteItineraryReply(record, grounding, official);
+  }
+
+  if (isHundredMileWildernessRouteGrounding(grounding)) {
+    return buildStrictHundredMileWildernessAtRouteItineraryReply(record, grounding, official);
   }
 
   if (isWhitesFranconiaCrawfordRouteGrounding(grounding)) {
