@@ -356,17 +356,13 @@
   function toggleHistoryPanel() {
     const nextOpen = !historyOpen;
     historyOpen = nextOpen;
-    if (nextOpen && isMobileWorkspace()) {
-      docsOpen = false;
-    }
+    if (nextOpen) docsOpen = false;
   }
 
   function toggleDocsPanel() {
     const nextOpen = !docsOpen;
     docsOpen = nextOpen;
-    if (nextOpen && isMobileWorkspace()) {
-      historyOpen = false;
-    }
+    if (nextOpen) historyOpen = false;
   }
 
   async function focusPromptComposer() {
@@ -1129,11 +1125,6 @@
   }
 
   onMount(() => {
-    if (window.matchMedia('(min-width: 900px)').matches) {
-      historyOpen = true;
-      docsOpen = true;
-    }
-
     consumeConnectQueryState();
     loadState()
       .then(async () => {
@@ -1161,6 +1152,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
       </svg>
+      <span class="command-label">Chats</span>
     </button>
 
     <div class="scout-title" class:scout-title--warn={!connection} aria-live="polite">
@@ -1180,6 +1172,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
+      <span class="command-label">Docs</span>
     </button>
   </header>
 
@@ -1191,11 +1184,11 @@
     <article class="workspace-alert">{error}</article>
   {/if}
 
-  {#if !connection && !loading}
+  {#if !connection && !loading && messages.length > 0}
     <section class="connect-strip">
       <div>
-        <strong>Connect Scout so the composer works.</strong>
-        <span>Beta-only setup. The finished product should make this invisible.</span>
+        <strong>Connect Scout to send prompts.</strong>
+        <span>Setup is only needed once.</span>
       </div>
       <button class="primary-button" type="button" onclick={startConnect} disabled={connectBusy}>
         {connectBusy ? 'Starting…' : 'Connect Scout'}
@@ -1233,7 +1226,7 @@
   <div class="workspace-grid">
     <aside id="history-panel" class="workspace-panel history-panel" class:panel-open={historyOpen} aria-label="Conversation history">
       <div class="panel-head">
-        <h2><span aria-hidden="true">◴</span> Conversations</h2>
+        <h2>Conversations</h2>
         <button class="icon-button" type="button" aria-label="Close conversations" onclick={() => (historyOpen = false)}>×</button>
       </div>
 
@@ -1283,8 +1276,26 @@
         <div class="message-list" bind:this={threadMessages}>
           {#if messages.length === 0 && !sendBusy}
             <article class="empty-thread">
+              <span class="empty-kicker">Start here</span>
               <strong>What do you need to decide next?</strong>
-              <span>Ask about today’s miles, water, weather, resupply, body risk, or a gear/logistics call.</span>
+              <span>Pick a trail question or type your own. Scout works best on one practical decision at a time.</span>
+              {#if connection}
+                <div class="empty-actions" aria-label="Quick Scout questions">
+                  {#each composerPromptStarters(profile, dailyBrief).slice(0, 4) as starter}
+                    <button type="button" onclick={() => useExamplePrompt(starter)} disabled={sendBusy} title={starter.text}>
+                      <span aria-hidden="true">{starter.icon ?? '✦'}</span>
+                      {starter.title}
+                    </button>
+                  {/each}
+                </div>
+              {:else}
+                <div class="empty-connect">
+                  <span>Connect once, then ask Scout from here.</span>
+                  <button class="primary-button" type="button" onclick={startConnect} disabled={connectBusy}>
+                    {connectBusy ? 'Starting…' : 'Connect Scout'}
+                  </button>
+                </div>
+              {/if}
             </article>
           {:else}
             {#each messages as message}
@@ -1369,14 +1380,16 @@
           </div>
         {/if}
 
-        <div class="composer-starters" aria-label="Prompt starters">
-          {#each composerPromptStarters(profile, dailyBrief) as starter}
-            <button type="button" onclick={() => useExamplePrompt(starter)} disabled={!connection || sendBusy} title={starter.text}>
-              <span aria-hidden="true">{starter.icon ?? '✦'}</span>
-              {starter.title}
-            </button>
-          {/each}
-        </div>
+        {#if messages.length > 0}
+          <div class="composer-starters" aria-label="Prompt starters">
+            {#each composerPromptStarters(profile, dailyBrief).slice(0, 3) as starter}
+              <button type="button" onclick={() => useExamplePrompt(starter)} disabled={!connection || sendBusy} title={starter.text}>
+                <span aria-hidden="true">{starter.icon ?? '✦'}</span>
+                {starter.title}
+              </button>
+            {/each}
+          </div>
+        {/if}
 
         <div class="prompt-box">
           <label class="sr-only" for="scout-prompt">Ask Scout</label>
@@ -1384,7 +1397,7 @@
             class="location-button"
             type="button"
             onclick={attachCurrentLocation}
-            disabled={sendBusy || locationBusy}
+            disabled={sendBusy || locationBusy || !connection}
             aria-label="Add current GPS location"
             title="Add current GPS location"
           >
@@ -1403,8 +1416,8 @@
             bind:this={promptTextarea}
             bind:value={replyInput}
             rows="1"
-            disabled={sendBusy}
-            placeholder="Ask Scout about the trail…"
+            disabled={sendBusy || !connection}
+            placeholder={connection ? 'Ask Scout about the trail…' : 'Connect Scout to ask…'}
             oninput={(event) => syncPromptHeight(event.currentTarget as HTMLTextAreaElement)}
           ></textarea>
           <button
@@ -1449,9 +1462,8 @@
       </div>
 
       <section class="thread-summary-card doc-summary-card" aria-label="Document library summary">
-        <strong>{startedStandardDocumentCount()}/{STANDARD_DOCUMENT_SLOTS.length} standard docs</strong>
-        <span>{extraDocumentCount()} extra · {resources.length} resources</span>
-        <a class="secondary-button" href="/app/docs">Open library</a>
+        <strong>What Scout can use</strong>
+        <span>Trail brief · docs · uploaded sources</span>
       </section>
 
       {#if currentDocument}
@@ -1465,15 +1477,14 @@
         </section>
       {/if}
 
-      <nav class="drawer-nav docs-nav compact-nav" aria-label="Document sections">
-        <button class="drawer-nav-item active" type="button" onclick={loadDailyBrief}><span aria-hidden="true">▣</span> Trail Brief</button>
-        <a class="drawer-nav-item" href="/app/docs"><span aria-hidden="true">▤</span> Library</a>
-        <a class="drawer-nav-item" href="/app/resources"><span aria-hidden="true">◎</span> Resources</a>
-      </nav>
+      <div class="context-actions" aria-label="Context actions">
+        <a class="secondary-button" href="/app/docs">Open docs</a>
+        <a class="secondary-button" href="/app/resources">Add source</a>
+      </div>
 
       <section class="panel-card">
         <div class="mini-head">
-          <strong>Trail Brief</strong>
+          <strong>Trail brief</strong>
           <button class="tiny-button" type="button" onclick={loadDailyBrief} disabled={dailyBriefLoading}>{dailyBriefLoading ? 'Checking…' : 'Refresh'}</button>
         </div>
         {#if dailyBriefLoading && !dailyBrief}
@@ -1498,7 +1509,10 @@
         {#if dailyBriefError}<p class="workspace-alert">{dailyBriefError}</p>{/if}
       </section>
 
-      <section class="panel-card">
+      <details class="panel-card context-details">
+        <summary>Manage docs and sources</summary>
+        <div class="context-stack">
+          <section class="panel-card panel-card--nested">
         <div class="mini-head">
           <strong>Standard docs</strong>
           <a href="/app/docs">Open shelf</a>
@@ -1512,9 +1526,9 @@
             </button>
           {/each}
         </div>
-      </section>
+          </section>
 
-      <section class="panel-card">
+          <section class="panel-card panel-card--nested">
         <div class="mini-head">
           <strong>Living docs</strong>
           <a href="/app/docs">Open all</a>
@@ -1533,9 +1547,9 @@
             {/each}
           </div>
         {/if}
-      </section>
+          </section>
 
-      <section class="panel-card">
+          <section class="panel-card panel-card--nested">
         <div class="mini-head">
           <strong>Resources</strong>
           <a href="/app/resources">Add source</a>
@@ -1552,9 +1566,9 @@
             {/each}
           </div>
         {/if}
-      </section>
+          </section>
 
-      <section class="panel-card">
+          <section class="panel-card panel-card--nested">
         <div class="mini-head"><strong>Legacy private docs</strong></div>
         {#if documents.filter((document) => document.rights !== 'assistant-generated').length === 0}
           <p class="small-note">No legacy imported docs. New source material belongs in Resources.</p>
@@ -1568,10 +1582,13 @@
             {/each}
           </div>
         {/if}
-      </section>
+          </section>
+
+        </div>
+      </details>
 
       <details class="panel-card advanced-card">
-        <summary>Advanced beta</summary>
+        <summary>Connection settings</summary>
         <p><strong>Model lane:</strong> {connection ? `${connection.label}${connection.model ? ` · ${connection.model}` : ''}` : 'not connected'}</p>
         {#if connection?.providerId === 'openai-codex'}
           <button class="secondary-button" type="button" onclick={disconnect} disabled={disconnectBusy}>{disconnectBusy ? 'Disconnecting…' : 'Disconnect ChatGPT'}</button>
@@ -1648,10 +1665,10 @@
     min-height: 0;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    gap: 0.5rem;
+    gap: 0.55rem;
     box-sizing: border-box;
     overflow: hidden;
-    padding: 0.5rem 0.5rem max(0.5rem, env(safe-area-inset-bottom));
+    padding: 0.55rem 0.55rem max(0.55rem, env(safe-area-inset-bottom));
   }
 
   .workspace-commandbar,
@@ -1667,38 +1684,53 @@
   .workspace-commandbar {
     z-index: 25;
     display: grid;
-    grid-template-columns: 2.65rem minmax(0, 1fr) 2.65rem;
+    grid-template-columns: minmax(6.4rem, auto) minmax(0, 1fr) minmax(6.4rem, auto);
     align-items: center;
-    min-height: 3.1rem;
-    border-width: 0 0 1px;
-    border-radius: 0 0 20px 20px;
-    background: linear-gradient(180deg, rgba(255, 253, 248, 0.96), rgba(245, 242, 232, 0.94));
-    box-shadow: 0 10px 26px rgba(31, 41, 55, 0.045);
-    padding: 0 0.4rem;
+    min-height: 3.25rem;
+    border-radius: 20px;
+    border-color: rgba(77, 89, 74, 0.12);
+    background: rgba(255, 253, 248, 0.92);
+    box-shadow: 0 8px 22px rgba(31, 41, 55, 0.05);
+    padding: 0.32rem;
   }
 
   .command-icon {
-    display: grid;
-    place-items: center;
-    width: 2.35rem;
-    height: 2.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.42rem;
+    min-width: 0;
+    min-height: 2.45rem;
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: 14px;
     background: transparent;
-    color: var(--pine, #4d594a);
+    color: #40503f;
     cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    padding: 0 0.72rem;
+    text-transform: uppercase;
   }
 
   .command-icon svg {
-    width: 1.35rem;
-    height: 1.35rem;
+    flex: 0 0 auto;
+    width: 1.18rem;
+    height: 1.18rem;
+  }
+
+  .command-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .command-icon.active,
   .command-icon:hover {
-    border-color: rgba(77, 89, 74, 0.14);
-    background: rgba(166, 181, 137, 0.14);
-    color: var(--pine, #4d594a);
+    border-color: rgba(77, 89, 74, 0.18);
+    background: rgba(237, 243, 229, 0.78);
+    color: #26372d;
   }
 
   .scout-title {
@@ -1708,9 +1740,9 @@
     gap: 0.45rem;
     color: var(--pine, #4d594a);
     font-family: Oswald, Impact, sans-serif;
-    font-size: 0.94rem;
+    font-size: 1.04rem;
     font-weight: 900;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
   }
 
@@ -1758,7 +1790,7 @@
     min-width: 0;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'conversation';
-    gap: 0;
+    gap: 0.55rem;
     align-items: stretch;
     min-height: 0;
     height: 100%;
@@ -1819,19 +1851,16 @@
   .route-pill {
     width: fit-content;
     max-width: min(100%, 24rem);
-    margin: 0 auto 1.7rem;
-    border: 1px solid rgba(39, 51, 43, 0.22);
-    border-radius: 6px;
-    background: rgba(255, 253, 248, 0.86);
-    color: #27332b;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.82rem;
+    margin: 0 auto 1.15rem;
+    border: 1px solid rgba(77, 89, 74, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.68);
+    color: #52604d;
+    font-size: 0.78rem;
     font-weight: 900;
-    letter-spacing: 0.08em;
-    padding: 0.62rem 1.05rem;
+    letter-spacing: 0.055em;
+    padding: 0.42rem 0.82rem;
     text-align: center;
-    text-transform: uppercase;
-    box-shadow: 0 4px 12px rgba(31, 41, 55, 0.04);
   }
 
   .message-list {
@@ -1987,20 +2016,99 @@
 
   .empty-thread {
     display: grid;
-    gap: 0.32rem;
-    width: min(100%, 30rem);
-    margin: 0;
-    border: 1px solid rgba(39, 51, 43, 0.14);
-    border-radius: 18px;
-    background: rgba(245, 244, 240, 0.82);
+    gap: 0.58rem;
+    width: min(100%, 34rem);
+    box-sizing: border-box;
+    margin: 0 auto;
+    border: 1px solid rgba(39, 51, 43, 0.12);
+    border-radius: 22px;
+    background: rgba(255, 253, 248, 0.9);
     color: #667064;
-    box-shadow: 0 10px 22px rgba(31, 41, 55, 0.04);
-    padding: 1.05rem 1.14rem;
+    box-shadow: 0 14px 30px rgba(31, 41, 55, 0.055);
+    padding: 1.2rem;
     text-align: left;
   }
 
-  .empty-thread strong {
+  .empty-kicker {
+    width: fit-content;
+    border-radius: 999px;
+    background: rgba(237, 243, 229, 0.9);
     color: #394638;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    padding: 0.28rem 0.55rem;
+    text-transform: uppercase;
+  }
+
+  .empty-thread strong {
+    color: #27332b;
+    font-size: clamp(1.45rem, 3vw, 2.15rem);
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+  }
+
+  .empty-thread > span:not(.empty-kicker) {
+    max-width: 28rem;
+    font-size: 0.98rem;
+    font-weight: 750;
+    line-height: 1.45;
+  }
+
+  .empty-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.2rem;
+  }
+
+  .empty-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    min-height: 2.7rem;
+    border: 1px solid rgba(77, 89, 74, 0.14);
+    border-radius: 14px;
+    background: rgba(245, 242, 232, 0.72);
+    color: #27332b;
+    cursor: pointer;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.055em;
+    padding: 0 0.72rem;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .empty-actions button:first-child {
+    border-color: rgba(77, 89, 74, 0.32);
+    background: #24362c;
+    color: #fffdf8;
+  }
+
+  .empty-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .empty-connect {
+    display: grid;
+    gap: 0.62rem;
+    margin-top: 0.15rem;
+  }
+
+  .empty-connect span {
+    color: #52604d;
+    font-size: 0.9rem;
+    font-weight: 850;
+  }
+
+  .empty-connect .primary-button {
+    min-height: 2.78rem;
+    width: fit-content;
+    padding-inline: 1rem;
   }
 
   .composer-shell {
@@ -2049,8 +2157,10 @@
 
   .composer-starters {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.38rem;
-    overflow-x: auto;
+    max-height: 4.65rem;
+    overflow: hidden;
     padding-bottom: 0.02rem;
     scrollbar-width: none;
   }
@@ -2218,20 +2328,20 @@
     z-index: 35;
     top: 0;
     bottom: 0;
-    width: min(26rem, calc(100vw - 4.2rem));
+    width: min(25rem, calc(100vw - 4.2rem));
     max-width: 100%;
     min-width: 0;
     display: grid;
     grid-auto-rows: max-content;
-    gap: 1.05rem;
+    gap: 0.78rem;
     box-sizing: border-box;
     overflow-x: hidden;
     overflow-y: auto;
     border-width: 0 1px 0 0;
-    border-radius: 0 24px 24px 0;
-    background: linear-gradient(180deg, rgba(255, 253, 248, 0.96), rgba(245, 242, 232, 0.98));
-    box-shadow: 18px 0 38px rgba(31, 41, 55, 0.14);
-    padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem max(1rem, env(safe-area-inset-bottom));
+    border-radius: 0 22px 22px 0;
+    background: rgba(255, 253, 248, 0.94);
+    box-shadow: 14px 0 30px rgba(31, 41, 55, 0.12);
+    padding: max(0.95rem, env(safe-area-inset-top)) 0.9rem max(0.9rem, env(safe-area-inset-bottom));
     transition: transform 190ms ease;
   }
 
@@ -2245,8 +2355,8 @@
     grid-area: docs;
     right: 0;
     border-width: 0 0 0 1px;
-    border-radius: 24px 0 0 24px;
-    box-shadow: -18px 0 38px rgba(31, 41, 55, 0.14);
+    border-radius: 22px 0 0 22px;
+    box-shadow: -14px 0 30px rgba(31, 41, 55, 0.12);
     transform: translateX(calc(100% + 1rem));
   }
 
@@ -2304,10 +2414,10 @@
     position: sticky;
     top: 0;
     z-index: 6;
-    margin: -0.35rem -0.35rem 0;
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(245, 242, 232, 0.94));
-    padding: 0.35rem;
+    margin: -0.15rem -0.1rem 0;
+    border-bottom: 1px solid rgba(39, 51, 43, 0.1);
+    background: rgba(255, 253, 248, 0.94);
+    padding: 0.15rem 0 0.72rem;
     backdrop-filter: blur(10px);
   }
 
@@ -2316,23 +2426,35 @@
     align-items: center;
     gap: 0.45rem;
     margin: 0;
-    color: var(--pine, #4d594a);
+    color: #27332b;
     font-family: Oswald, Impact, sans-serif;
-    font-size: 1.6rem;
+    font-size: 1.08rem;
     font-weight: 900;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
   .icon-button {
     display: grid;
     place-items: center;
-    width: 2.45rem;
-    height: 2.45rem;
+    width: 2.1rem;
+    height: 2.1rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.64);
-    font-size: 1.35rem;
+    background: rgba(245, 242, 232, 0.76);
+    font-size: 1.12rem;
     line-height: 1;
+  }
+
+  .context-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.48rem;
+  }
+
+  .context-actions .secondary-button {
+    min-height: 2.55rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.66);
   }
 
   .drawer-nav {
@@ -2348,12 +2470,12 @@
 
   .thread-summary-card {
     display: grid;
-    gap: 0.48rem;
+    gap: 0.42rem;
     border: 1px solid rgba(77, 89, 74, 0.13);
-    border-radius: 18px;
-    background: rgba(237, 243, 229, 0.74);
+    border-radius: 16px;
+    background: rgba(237, 243, 229, 0.7);
     color: #394638;
-    padding: 0.8rem;
+    padding: 0.7rem;
   }
 
   .thread-summary-card strong {
@@ -2385,18 +2507,18 @@
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 0.85rem;
-    min-height: 3.25rem;
-    border: 0;
-    border-radius: 16px;
-    background: transparent;
+    gap: 0.7rem;
+    min-height: 2.8rem;
+    border: 1px solid rgba(77, 89, 74, 0.11);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.46);
     color: var(--pine, #4d594a);
     cursor: pointer;
     font: inherit;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 850;
-    letter-spacing: 0.08em;
-    padding: 0 1rem;
+    letter-spacing: 0.04em;
+    padding: 0 0.8rem;
     text-align: left;
     text-decoration: none;
   }
@@ -2407,9 +2529,11 @@
     text-align: center;
   }
 
-  .drawer-nav-item.active {
-    background: var(--pine, #4d594a);
-    color: #fff;
+  .drawer-nav-item.active,
+  .drawer-nav-item:hover {
+    border-color: rgba(77, 89, 74, 0.2);
+    background: rgba(237, 243, 229, 0.86);
+    color: #27332b;
   }
 
   .drawer-section-label {
@@ -2435,11 +2559,17 @@
     display: grid;
     gap: 0.34rem;
     border-width: 0 0 1px;
-    border-color: rgba(39, 51, 43, 0.12);
-    border-radius: 0;
+    border-color: rgba(39, 51, 43, 0.1);
+    border-radius: 10px;
     background: transparent;
-    padding: 0.95rem 0;
+    padding: 0.82rem 0.45rem;
     text-align: left;
+  }
+
+  .history-item:hover,
+  .doc-list button:hover,
+  .doc-list button.active {
+    background: rgba(237, 243, 229, 0.56);
   }
 
   .history-item span {
@@ -2470,16 +2600,44 @@
 
   .panel-card {
     display: grid;
-    gap: 0.62rem;
+    gap: 0.56rem;
     border: 1px solid rgba(230, 225, 212, 0.95);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.7);
-    padding: 0.75rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.68);
+    padding: 0.68rem;
   }
 
   .panel-card details {
     border-top: 1px solid rgba(77, 89, 74, 0.1);
     padding-top: 0.5rem;
+  }
+
+  .context-details {
+    background: rgba(255, 255, 255, 0.52);
+  }
+
+  .context-details > summary,
+  .advanced-card > summary {
+    cursor: pointer;
+    color: #27332b;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .context-stack {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 0.7rem;
+  }
+
+  .panel-card--nested {
+    border-color: rgba(77, 89, 74, 0.1);
+    background: rgba(255, 253, 248, 0.68);
+    box-shadow: none;
+    padding: 0.62rem;
   }
 
   .selected-doc-card {
@@ -2531,18 +2689,37 @@
   }
 
   .connect-strip {
+    position: absolute;
+    top: 4.35rem;
+    left: 50%;
+    z-index: 28;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.65rem;
-    border-radius: 20px;
-    padding: 0.75rem;
+    gap: 0.55rem;
+    width: min(34rem, calc(100% - 2rem));
+    border-radius: 18px;
+    background: rgba(255, 253, 248, 0.94);
+    padding: 0.58rem 0.68rem;
+    transform: translateX(-50%);
   }
 
   .connect-strip div {
     display: grid;
-    flex: 1 1 18rem;
-    gap: 0.15rem;
+    flex: 1 1 13rem;
+    gap: 0.05rem;
+  }
+
+  .connect-strip span {
+    color: #52604d;
+    font-size: 0.82rem;
+    font-weight: 750;
+  }
+
+  .connect-strip .primary-button,
+  .connect-strip .secondary-button {
+    min-height: 2.05rem;
+    padding-inline: 0.7rem;
   }
 
   .workspace-alert {
@@ -2573,59 +2750,27 @@
   }
 
   @media (min-width: 900px) {
-    .scout-workspace.history-open.docs-open .workspace-grid {
-      grid-template-columns: minmax(220px, 0.28fr) minmax(0, 1fr) minmax(270px, 0.34fr);
-      grid-template-areas: 'history conversation docs';
-    }
-
-    .scout-workspace.history-open:not(.docs-open) .workspace-grid {
-      grid-template-columns: minmax(220px, 0.28fr) minmax(0, 1fr);
-      grid-template-areas: 'history conversation';
-    }
-
-    .scout-workspace:not(.history-open).docs-open .workspace-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(270px, 0.34fr);
-      grid-template-areas: 'conversation docs';
-    }
-
-    .scout-workspace:not(.history-open):not(.docs-open) .workspace-grid {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-areas: 'conversation';
-    }
-
     .workspace-panel {
-      position: relative;
-      top: auto;
-      bottom: auto;
-      z-index: 1;
-      width: auto;
-      height: 100%;
-      max-height: 100%;
-      min-height: 0;
-      transform: none;
+      top: 4.45rem;
+      bottom: 0.75rem;
+      width: min(18.75rem, calc(100vw - 3rem));
+      max-height: calc(100dvh - 5.2rem);
+      border-radius: 22px;
     }
 
-    .history-panel:not(.panel-open),
-    .docs-panel:not(.panel-open) {
-      display: none;
+    .history-panel {
+      left: 0.75rem;
+      transform: translateX(calc(-100% - 1.5rem));
+    }
+
+    .docs-panel {
+      right: 0.75rem;
+      transform: translateX(calc(100% + 1.5rem));
     }
 
     .workspace-scrim {
-      display: none;
-    }
-  }
-
-  @media (min-width: 1240px) {
-    .scout-workspace.history-open.docs-open .workspace-grid {
-      grid-template-columns: minmax(250px, 0.25fr) minmax(0, 1fr) minmax(320px, 0.32fr);
-    }
-
-    .scout-workspace.history-open:not(.docs-open) .workspace-grid {
-      grid-template-columns: minmax(250px, 0.25fr) minmax(0, 1fr);
-    }
-
-    .scout-workspace:not(.history-open).docs-open .workspace-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.32fr);
+      background: rgba(39, 51, 43, 0.12);
+      backdrop-filter: none;
     }
   }
 
@@ -2636,22 +2781,22 @@
     }
 
     .workspace-commandbar {
-      grid-template-columns: 3.7rem minmax(0, 1fr) 3.7rem;
-      min-height: 2.7rem;
+      grid-template-columns: 5.7rem minmax(0, 1fr) 5.7rem;
+      min-height: 3.05rem;
       border-radius: 0;
       border-width: 0 0 1px;
-      border-color: rgba(39, 51, 43, 0.18);
-      background: #fffdf8;
+      border-color: rgba(39, 51, 43, 0.14);
+      background: rgba(255, 253, 248, 0.96);
       box-shadow: none;
-      padding-inline: 0.45rem;
+      padding: 0 0.38rem;
     }
 
     .scout-title {
       color: #24362c;
       font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 1.78rem;
+      font-size: 1.38rem;
       font-weight: 900;
-      letter-spacing: -0.055em;
+      letter-spacing: -0.035em;
       line-height: 1;
       text-transform: none;
     }
@@ -2661,15 +2806,19 @@
     }
 
     .command-icon {
-      justify-self: center;
-      width: 2.45rem;
-      height: 2.45rem;
+      justify-self: stretch;
+      gap: 0.28rem;
+      min-height: 2.44rem;
+      border-radius: 12px;
       color: #24362c;
+      font-size: 0.68rem;
+      letter-spacing: 0.04em;
+      padding-inline: 0.42rem;
     }
 
     .command-icon svg {
-      width: 1.45rem;
-      height: 1.45rem;
+      width: 1.18rem;
+      height: 1.18rem;
     }
 
     .conversation-shell {
@@ -2707,6 +2856,24 @@
       gap: 1.88rem;
       max-width: none;
     }
+    .empty-thread {
+      width: 100%;
+      padding: 1rem;
+    }
+
+    .empty-thread strong {
+      font-size: 1.46rem;
+    }
+
+    .empty-actions {
+      grid-template-columns: 1fr;
+    }
+
+    .empty-actions button {
+      width: 100%;
+      min-height: 2.55rem;
+    }
+
 
     .message {
       max-width: 92%;
