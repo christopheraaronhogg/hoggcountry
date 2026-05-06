@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { createWorkspaceResource, deleteWorkspaceResource, importResourceFiles, listWorkspaceResources } from '$lib/manual-db';
   import type { WorkspaceResource, WorkspaceResourceKind, WorkspaceResourceSensitivity } from '@hoggcountry/manual-core';
@@ -140,8 +141,8 @@
       Upload files, save links, or paste notes for Scout to use as private context. Resources are source material; Docs are the maintained plans and reports Scout helps revise.
     </p>
     <div class="hero-actions">
-      <a class="btn btn-secondary" href="/app/docs">Open Docs</a>
-      <a class="btn btn-ghost" href="/app/claw">Ask Scout</a>
+      <a class="btn btn-secondary" href={resolve('/app/docs')}>Open Docs</a>
+      <a class="btn btn-ghost" href={resolve('/app/claw')}>Ask Scout</a>
     </div>
   </div>
 
@@ -162,6 +163,27 @@
 {#if notice}
   <p class="surface-alert surface-alert--success">{notice}</p>
 {/if}
+
+<section class="bundled-resource-card card">
+  <div>
+    <p class="eyebrow">Bundled resource pack</p>
+    <h2>King James Version Pure Cambridge Edition</h2>
+    <p>
+      Full read-only KJV PCE corpus for Scout scripture lookup and Field Manual search. It stays outside your private
+      resource locker so every workspace uses the same verified source pack.
+    </p>
+  </div>
+  <div class="artifact-meta">
+    <span>31,102 verses</span>
+    <span>searchable</span>
+    <span>KJV PCE citations</span>
+  </div>
+  <div class="artifact-actions">
+    <a class="btn btn-secondary" href={resolve('/guide/manual-builder/?tab=scripture')}>Search Field Manual</a>
+    <a class="btn btn-ghost" href={resolve('/kjv-pce.md')}>Open Markdown</a>
+    <a class="btn btn-ghost" href={resolve('/app/claw')}>Ask Scout</a>
+  </div>
+</section>
 
 <section class="resource-create-card card">
   <div class="section-title-row">
@@ -241,7 +263,7 @@
     </article>
   {:else}
     <div class="resource-grid">
-      {#each resources as resource}
+      {#each resources as resource (resource.id)}
         <article class="resource-card card" id={`resource-${resource.id}`}>
           <div class="resource-topline">
             <p class="eyebrow">{resourceKindLabel(resource.kind)}</p>
@@ -261,8 +283,8 @@
           {/if}
           <p class="meta-line">Updated {updatedAt(resource)}</p>
           <div class="artifact-actions">
-            <a class="btn btn-secondary" href={`/app/claw?resourceId=${encodeURIComponent(resource.id)}`}>Ask Scout</a>
-            <a class="btn btn-ghost" href={`/app/claw?resourceId=${encodeURIComponent(resource.id)}&resourceAction=document`}>Draft Doc</a>
+            <a class="btn btn-secondary" href={resolve(`/app/claw?resourceId=${encodeURIComponent(resource.id)}`)}>Ask Scout</a>
+            <a class="btn btn-ghost" href={resolve(`/app/claw?resourceId=${encodeURIComponent(resource.id)}&resourceAction=document`)}>Draft Doc</a>
             <button class="btn btn-ghost danger-button" type="button" onclick={() => handleDelete(resource)}>Delete</button>
           </div>
         </article>
@@ -392,9 +414,25 @@
   }
 
   .resource-create-card,
+  .bundled-resource-card,
   .resources-list-section,
   .resources-rules {
     margin-top: 1rem;
+  }
+
+  .bundled-resource-card {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .bundled-resource-card h2,
+  .bundled-resource-card p {
+    margin: 0;
+  }
+
+  .bundled-resource-card p {
+    color: var(--muted);
   }
 
   .resource-create-card {

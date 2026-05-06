@@ -10,7 +10,7 @@
  * static assets, background revalidation for cached assets.
  */
 
-const CACHE_NAME = 'hogg-country-v19';
+const CACHE_NAME = 'hogg-country-v20';
 
 // Core pages to precache on install — scoped to the v1 IA.
 // Today and Plan will be added here as they come online.
@@ -57,6 +57,8 @@ const STATIC_ASSETS = [
   '/guide-search-index.json',
   '/guide-context.txt',
   '/kjv-context.txt',
+  '/kjv-pce.md',
+  '/kjv-pce.jsonl',
   '/proverbs.json',
   '/at-mileposts.json',
   '/AT-Field-Guide-2026.pdf',

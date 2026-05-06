@@ -127,6 +127,14 @@ const HOGG_OWNED_LICENSE: ScoutSourceLicense = {
   notes: 'Owned or reviewed Hogg Country material suitable for general Scout grounding.'
 };
 
+const KJV_PCE_LICENSE: ScoutSourceLicense = {
+  label: 'King James Version Pure Cambridge Edition bundled corpus',
+  termsUrl: 'https://github.com/webplantmedia/the-holy-bible',
+  attributionRequired: true,
+  redistributionAllowed: true,
+  notes: 'Built from the pinned webplantmedia/the-holy-bible cpe_bible table; KJV text is public domain in the United States, and source attribution is retained. Do not relabel other KJV data as PCE.'
+};
+
 const OFFICIAL_PUBLIC_LICENSE: ScoutSourceLicense = {
   label: 'Official public source',
   attributionRequired: true,
@@ -168,6 +176,29 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     allowedActions: ['catalog', 'search', 'open'],
     caveats: ['Good baseline guidance, not a replacement for live closures, weather, or user-owned guidebook details.'],
     keywords: ['guide', 'field guide', 'gear', 'shelter', 'tent', 'routine', 'resupply', 'zero', 'water', 'detour', 'helene']
+  },
+  {
+    id: 'kjv-pce',
+    title: 'King James Version Pure Cambridge Edition',
+    displayCategory: 'bundled scripture corpus',
+    lane: 'open-data',
+    trust: 'reviewed',
+    accessMode: 'bundled-index',
+    privacy: 'Bundled public/read-only resource pack; not copied into private workspace resources.',
+    useWhen: 'Exact scripture lookup, KJV PCE quotation, Bible phrase search, book/chapter lookup, short reference ranges, and gentle scripture support when the hiker asks for it or it is clearly relevant.',
+    license: KJV_PCE_LICENSE,
+    freshness: { generatedAt: '2026-05-06', updateCadence: 'manual' },
+    coverage: {
+      topics: ['scripture', 'bible', 'kjv', 'kjv pce', 'pure cambridge edition', 'verse', 'reference', 'proverbs', 'psalms', 'wisdom', 'fear', 'rest', 'guidance', 'peace']
+    },
+    citationTemplate: 'KJV PCE — {reference}',
+    allowedActions: ['catalog', 'search', 'open'],
+    caveats: [
+      'Use exact verse text from the bundled corpus; do not invent scripture wording from model memory.',
+      'If an exact reference lookup fails, say so and offer nearby reference or phrase-search results.',
+      'Use scripture gently and only when relevant or requested.'
+    ],
+    keywords: ['scripture', 'bible', 'holy bible', 'kjv', 'king james', 'pce', 'pure cambridge', 'pure cambridge edition', 'verse', 'verses', 'quote', 'reference', 'chapter', 'proverbs', 'psalms', 'psalm', 'gospel', 'jesus', 'lord', 'wisdom', 'fear', 'peace', 'rest', 'guidance']
   },
   {
     id: 'dad-public-pilot',
@@ -677,6 +708,7 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|mental\s+halfway|psychological\s+halfway|harpers?\s+ferry|harper['’]?s?\s+ferry|atc\s+hq|keys\s+gap|weverton|ed\s+garvey|dahlgren|gathland|crampton\s+gap|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
   if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 6;
   if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
+  if (manifest.id === 'kjv-pce' && /\b(scripture|bible|kjv|king\s+james|pce|pure\s+cambridge|verse|verses|quote|proverbs|psalms?|john|romans|isaiah|matthew|hebrews|james|timothy)\b|(?:\b[1-3]\s*)?\b[A-Z][a-z]+\s+\d{1,3}:\d{1,3}/u.test(query.query)) score += 10;
 
   return score;
 }

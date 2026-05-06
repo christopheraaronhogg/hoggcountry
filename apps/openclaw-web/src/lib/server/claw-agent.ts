@@ -9,6 +9,7 @@ import {
   type WorkspaceResource
 } from '@hoggcountry/manual-core';
 import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
+import { searchKjvPce } from '@hoggcountry/corpus/kjv-pce';
 import {
   SCOUT_SOURCE_CATALOG,
   buildScoutSourceReceipt,
@@ -223,6 +224,16 @@ function shouldIncludeDadPilotContext(record: WorkspaceRecord, prompt = ''): boo
   return recordLooksLikeDadPilot(record) || promptAsksForDadPilotContext(prompt);
 }
 
+function extractKjvReferenceCandidates(prompt: string): string[] {
+  const references = prompt.match(/\b(?:[1-3]\s*)?[A-Z][a-z]+(?:\s+of\s+[A-Z][a-z]+)?\s+\d{1,3}:\d{1,3}(?:\s*[-–]\s*\d{1,3})?/gu) ?? [];
+  return references.map((reference) => reference.replace(/\s+/gu, ' ').trim());
+}
+
+function promptAsksForScripture(prompt: string): boolean {
+  return /\b(scripture|bible|kjv|king\s+james|pce|pure\s+cambridge|verse|verses|quote|proverbs|psalms?|gospel)\b/iu.test(prompt)
+    || extractKjvReferenceCandidates(prompt).length > 0;
+}
+
 function deriveScoutSourceQueries(prompt: string): string[] {
   const lowered = prompt.toLowerCase();
   const terms = promptTerms(prompt);
@@ -258,6 +269,9 @@ function deriveScoutSourceQueries(prompt: string): string[] {
   }
   if (promptAsksForDadPilotContext(prompt)) {
     queries.push('Dad', 'Trail Update', 'Garmin');
+  }
+  if (promptAsksForScripture(prompt)) {
+    queries.push(...extractKjvReferenceCandidates(prompt), 'KJV PCE scripture', 'Bible verse');
   }
   if (containsAny(lowered, ['journal', 'family', 'friends', 'profile', 'share', 'public', 'private', 'location history'])) {
     queries.push('profile', 'journal', 'location', 'share');
@@ -331,6 +345,21 @@ function searchDadPilotContext(summary: DadPilotSummary | null, queries: readonl
   ];
 }
 
+function searchKjvPceContext(query: string, limit = 8): ScoutContextHit[] {
+  if (!promptAsksForScripture(query)) return [];
+  return searchKjvPce(query, limit).map((hit) => ({
+    id: hit.id,
+    sourceType: 'corpus' as const,
+    sourceLabel: 'KJV PCE',
+    title: hit.reference,
+    excerpt: `${hit.citation}: ${hit.text}`,
+    href: `/kjv-pce.md#${hit.verse.book.toLowerCase().replace(/[^a-z0-9]+/gu, '-')}`,
+    score: hit.score,
+    trust: 'reviewed' as const,
+    access: 'searchable-now' as const
+  }));
+}
+
 function searchScoutSources(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null, prompt: string, limit = 8): ScoutContextHit[] {
   const queries = deriveScoutSourceQueries(prompt);
   const byKey = new Map<string, ScoutContextHit>();
@@ -341,7 +370,8 @@ function searchScoutSources(record: WorkspaceRecord, dadPilotSummary: DadPilotSu
       ...searchImportedDocuments(record.documents, query),
       ...searchWorkspaceResources(record.resources, query),
       ...searchWorkspaceTools(record.tools, query),
-      ...searchPublicCorpus(publicCorpus, query)
+      ...searchPublicCorpus(publicCorpus, query),
+      ...searchKjvPceContext(query, 6)
     ];
 
     for (const hit of hits.map(decorateSearchHit)) {
@@ -509,7 +539,7 @@ function buildScoutSourceSearchTool(record: WorkspaceRecord, dadPilotSummary: Da
   return {
     name: 'search_scout_sources',
     label: 'Search Scout sources',
-    description: 'Searches private workspace notes, saved docs, checklists/tools, reviewed Hogg Country corpus, and public Dad pilot signals. Also recommends source lanes Scout should request, import, or verify next.',
+    description: 'Searches private workspace notes, saved docs, checklists/tools, reviewed Hogg Country corpus, bundled KJV PCE scripture, and public Dad pilot signals. Also recommends source lanes Scout should request, import, or verify next.',
     parameters: SCOUT_SOURCE_SEARCH_PARAMETERS,
     executionMode: 'parallel',
     async execute(_toolCallId, params) {
@@ -534,7 +564,7 @@ function buildScoutSourceContext(record: WorkspaceRecord, dadPilotSummary: DadPi
   const context = [
     'Scout source search context for this turn:',
     renderScoutSourceSearchResult(buildScoutSourceSearchDetails(record, dadPilotSummary, prompt)),
-    'Grounding rules: use searchable-now hits as context; do not claim live conditions from external-check or user-import sources unless the user has supplied/fetched them; for weather, closures, water reliability, and same-day town logistics, name the official/direct source that should be checked before acting.'
+    'Grounding rules: use searchable-now hits as context; cite KJV PCE hits exactly for scripture and do not invent verse wording; do not claim live conditions from external-check or user-import sources unless the user has supplied/fetched them; for weather, closures, water reliability, and same-day town logistics, name the official/direct source that should be checked before acting.'
   ].join('\n');
 
   return context.length > SCOUT_PRELOADED_SOURCE_MAX_CHARS
@@ -843,6 +873,7 @@ function buildSystemPrompt(
     liveToolsAvailable
       ? 'You also have a search_scout_sources tool. Use it when the user asks a research/planning question and the provided context is too thin, too broad, or needs a narrower location/topic search.'
       : 'This runtime may provide preloaded source-search context instead of live tool calls; use the context you have and clearly name missing searches.',
+    'For scripture quotes, use the bundled KJV PCE source lane/search results. Do not invent verse wording from memory. If exact reference lookup fails, say so and offer nearby reference or phrase-search results. Use scripture gently and only when relevant or requested.',
     liveToolsAvailable
       ? 'You also have a check_official_trail_sources tool. Use it for safety-sensitive current conditions: closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other live ATC/NWS checks. Pass latitude/longitude for NWS, or useDadLocation when the question is about Dad and the public Garmin fix is relevant.'
       : 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.',

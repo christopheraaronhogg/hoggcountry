@@ -3,6 +3,8 @@
 export interface ScriptureVerse {
   reference: string;
   text: string;
+  citation?: string;
+  snippet?: string;
 }
 
 export interface ScriptureTopic {
@@ -17,6 +19,7 @@ export interface ScriptureSearchResult {
   topic: ScriptureTopic;
   verse: ScriptureVerse;
   score: number;
+  matchType?: 'reference' | 'chapter' | 'phrase' | 'topic';
 }
 
 export interface ScriptureManualEntryOptions {
@@ -202,7 +205,7 @@ export function buildScriptureManualEntry(
       corpus: 'scripture',
       sourceId: verse.reference,
       href: buildScriptureSourceHref(topic, options.basePath),
-      citation: `KJV - ${verse.reference}`,
+      citation: verse.citation ?? `KJV PCE — ${verse.reference}`,
     },
     meta: {
       chapterTitle: topic.title,
@@ -220,7 +223,6 @@ export function searchScripture(query: string, limit = 12): ScriptureSearchResul
 
   const terms = normalizedQuery.split(' ').filter(Boolean);
   const results: ScriptureSearchResult[] = [];
-
   for (const topic of SCRIPTURE_TOPICS) {
     for (const verse of topic.verses) {
       let score = 0;
@@ -234,7 +236,7 @@ export function searchScripture(query: string, limit = 12): ScriptureSearchResul
       }
 
       if (score > 0) {
-        results.push({ topic, verse, score });
+        results.push({ topic, verse, score, matchType: 'topic' });
       }
     }
   }
@@ -246,4 +248,3 @@ export function searchScripture(query: string, limit = 12): ScriptureSearchResul
     })
     .slice(0, limit);
 }
-
