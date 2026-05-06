@@ -1,0 +1,307 @@
+{
+  "metadata": {
+    "runId": "scout-rel-2026-05-06T18-54-11-698Z",
+    "timestamp": "2026-05-06T18:54:11.699Z",
+    "gitCommitSha": "4f3d2dd6d0e65d3ce0174392d4bb5a5a7b5c1928",
+    "gitCommitMessage": "chore: retrigger forge deployment",
+    "changedFiles": [
+      "cripts/eval-scout-reliability.mjs",
+      "data/scout-reliability/runs/scout-rel-2026-05-06T18-50-37-923Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-06T18-52-15-135Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-06T18-52-15-158Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-06T18-52-56-050Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-06T18-53-02-840Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-06T18-54-04-598Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-06T18-54-04-627Z.json",
+      "scripts/eval-scout-reliability.mjs"
+    ],
+    "deployedRevision": null,
+    "forgeReleaseId": null,
+    "environment": "Forge",
+    "model": "deepseek-v4-pro",
+    "mode": "api",
+    "scenarioCount": 1,
+    "passFailCounts": {
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    "difficultyRangeTested": [
+      5,
+      5
+    ],
+    "filters": {
+      "difficultyMin": null,
+      "difficultyMax": null,
+      "region": null,
+      "id": "at-wv-md-002-harpers-failed-mixed-plan"
+    },
+    "patchNotes": "Forge live smoke after deploy trigger; expected current reliability slice but live build stayed stale.",
+    "deploymentNotes": "",
+    "knownRemainingFailures": "Forge health stayed on old SHA 68bcc776 after pushing 4f3d2dd; reliability GUI route returned old 404; live Harpers prompt still routed to Pine Grove strict-route plan."
+  },
+  "scenarios": [
+    {
+      "id": "at-wv-md-002-harpers-failed-mixed-plan",
+      "prompt": "Plan for a 1 day, and a 2 day hike. Planning on hiking with dad for the last day into Harper's ferry (mental halfway point) on Tuesday, then hiking Friday Saturday as well. (Plan on overnight) You plan for me, then let the system plan for me. I want to compare results myself so give me the full results",
+      "regionState": "West Virginia / Maryland / Virginia",
+      "approximateAtMileRange": [
+        1018.1,
+        1061
+      ],
+      "expectedCorridor": "Harpers Ferry / ATC HQ family finish plus nearby Maryland overnight",
+      "expectedStart": "Keys Gap or another Harpers Ferry finish approach for Dad; Harpers Ferry or Weverton/Gathland context for overnight",
+      "expectedEnd": "Harpers Ferry / ATC HQ for Dad day, then Ed Garvey/Dahlgren/Gathland corridor for overnight",
+      "expectedDirection": "NOBO unless user changes it",
+      "expectedPlanType": "mixed 1-day family finish plus 2-day / 1-night backpack",
+      "requiredOutputSections": [
+        "recommendation",
+        "route options or day plan",
+        "mileage targets",
+        "logistics / parking / shuttle",
+        "water",
+        "weather",
+        "legal overnight/camping",
+        "bailout",
+        "final checklist",
+        "source receipts or missing-source caveats"
+      ],
+      "requiredCaveats": [
+        "Harpers Ferry is mental halfway",
+        "Pine Grove is true halfway and not the destination",
+        "verify legal overnight/water/shuttle/current data"
+      ],
+      "disallowedMistakes": [
+        "route to Pine Grove Furnace",
+        "treat mental halfway as true halfway",
+        "collapse Dad day and overnight into one plan",
+        "invent legal camping",
+        "invent water certainty"
+      ],
+      "difficulty": 5,
+      "difficultyRationale": "Combines explicit place, ambiguous halfway language, Dad/family finish, and a separate overnight request.",
+      "deterministicStrictRouteSupport": "now",
+      "expectedSourceId": "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+      "expectedStartPointId": "keys-gap-va-wv",
+      "expectedDestinationPointId": "harpers-ferry-atc-hq-wv",
+      "expectedAnchors": [
+        "Harpers Ferry",
+        "ATC HQ",
+        "Keys Gap",
+        "Weverton",
+        "Ed Garvey",
+        "Dahlgren",
+        "Pine Grove"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "at-wv-md-002-harpers-failed-mixed-plan",
+      "difficulty": 5,
+      "regionState": "West Virginia / Maryland / Virginia",
+      "status": "failed",
+      "pass": false,
+      "failureReason": "Expected anchor mentioned: Harpers Ferry; Expected anchor mentioned: ATC HQ; Expected anchor mentioned: Keys Gap; Expected anchor mentioned: Weverton; Expected anchor mentioned: Ed Garvey; Expected anchor mentioned: Dahlgren; Required section present: recommendation; Required caveat represented: Harpers Ferry is mental halfway; Disallowed mistake absent: route to Pine Grove Furnace; Disallowed mistake absent: collapse Dad day and overnight into one plan; Route claim validator found no blocking issues",
+      "assertions": [
+        {
+          "id": "grounding:present",
+          "label": "Strict route grounding is available",
+          "passed": true
+        },
+        {
+          "id": "grounding:source",
+          "label": "Expected source hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+          "passed": true,
+          "actual": "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06"
+        },
+        {
+          "id": "grounding:start",
+          "label": "Expected start keys-gap-va-wv",
+          "passed": true,
+          "actual": "keys-gap-va-wv"
+        },
+        {
+          "id": "grounding:destination",
+          "label": "Expected destination harpers-ferry-atc-hq-wv",
+          "passed": true,
+          "actual": "harpers-ferry-atc-hq-wv"
+        },
+        {
+          "id": "anchor:Harpers Ferry",
+          "label": "Expected anchor mentioned: Harpers Ferry",
+          "passed": false
+        },
+        {
+          "id": "anchor:ATC HQ",
+          "label": "Expected anchor mentioned: ATC HQ",
+          "passed": false
+        },
+        {
+          "id": "anchor:Keys Gap",
+          "label": "Expected anchor mentioned: Keys Gap",
+          "passed": false
+        },
+        {
+          "id": "anchor:Weverton",
+          "label": "Expected anchor mentioned: Weverton",
+          "passed": false
+        },
+        {
+          "id": "anchor:Ed Garvey",
+          "label": "Expected anchor mentioned: Ed Garvey",
+          "passed": false
+        },
+        {
+          "id": "anchor:Dahlgren",
+          "label": "Expected anchor mentioned: Dahlgren",
+          "passed": false
+        },
+        {
+          "id": "anchor:Pine Grove",
+          "label": "Expected anchor mentioned: Pine Grove",
+          "passed": true
+        },
+        {
+          "id": "section:recommendation",
+          "label": "Required section present: recommendation",
+          "passed": false
+        },
+        {
+          "id": "section:route options or day plan",
+          "label": "Required section present: route options or day plan",
+          "passed": true
+        },
+        {
+          "id": "section:mileage targets",
+          "label": "Required section present: mileage targets",
+          "passed": true
+        },
+        {
+          "id": "section:logistics / parking / shuttle",
+          "label": "Required section present: logistics / parking / shuttle",
+          "passed": true
+        },
+        {
+          "id": "section:water",
+          "label": "Required section present: water",
+          "passed": true
+        },
+        {
+          "id": "section:weather",
+          "label": "Required section present: weather",
+          "passed": true
+        },
+        {
+          "id": "section:legal overnight/camping",
+          "label": "Required section present: legal overnight/camping",
+          "passed": true
+        },
+        {
+          "id": "section:bailout",
+          "label": "Required section present: bailout",
+          "passed": true
+        },
+        {
+          "id": "section:final checklist",
+          "label": "Required section present: final checklist",
+          "passed": true
+        },
+        {
+          "id": "section:source receipts or missing-source caveats",
+          "label": "Required section present: source receipts or missing-source caveats",
+          "passed": true
+        },
+        {
+          "id": "caveat:Harpers Ferry is mental halfway",
+          "label": "Required caveat represented: Harpers Ferry is mental halfway",
+          "passed": false
+        },
+        {
+          "id": "caveat:Pine Grove is true halfway and not the destination",
+          "label": "Required caveat represented: Pine Grove is true halfway and not the destination",
+          "passed": true
+        },
+        {
+          "id": "caveat:verify legal overnight/water/shuttle/current data",
+          "label": "Required caveat represented: verify legal overnight/water/shuttle/current data",
+          "passed": true
+        },
+        {
+          "id": "disallowed:route to Pine Grove Furnace",
+          "label": "Disallowed mistake absent: route to Pine Grove Furnace",
+          "passed": false
+        },
+        {
+          "id": "disallowed:treat mental halfway as true halfway",
+          "label": "Disallowed mistake absent: treat mental halfway as true halfway",
+          "passed": true
+        },
+        {
+          "id": "disallowed:collapse Dad day and overnight into one plan",
+          "label": "Disallowed mistake absent: collapse Dad day and overnight into one plan",
+          "passed": false
+        },
+        {
+          "id": "disallowed:invent legal camping",
+          "label": "Disallowed mistake absent: invent legal camping",
+          "passed": true
+        },
+        {
+          "id": "disallowed:invent water certainty",
+          "label": "Disallowed mistake absent: invent water certainty",
+          "passed": true
+        },
+        {
+          "id": "route-claim-validator",
+          "label": "Route claim validator found no blocking issues",
+          "passed": false,
+          "issues": [
+            {
+              "kind": "blocked-endpoint",
+              "severity": "block",
+              "sourceSystemId": "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+              "evidence": "| Pine Grove Furnace State Park | 1105.9 | start | park |",
+              "message": "Pine Grove Furnace State Park appears in the answer but is not validated for this route corridor."
+            }
+          ]
+        }
+      ],
+      "rawResponse": "### Scout strict-route plan\n\nI’m using strict route mode because this asks for a real AT itinerary. The route order below comes from the validator, not model memory.\nWorkspace context: Scout QA.\n\n**Route-order guardrail**\n- Direction: NOBO.\n- Requested trip length detected: 1 day.\n- Source: Hogg Country Pine Grove route-order QA fixture. Use these values as a guardrail to prevent wrong order and impossible legs. Treat exact mileages, legal camping, water, and services as verify-before-leaving facts.\n\n| Point | Route mile | From start | Type |\n|---|---:|---:|---|\n| Pine Grove Furnace State Park | 1105.9 | start | park |\n| James Fry Shelter side trail | 1113.1 | +7.2 | shelter |\n| Alec Kennedy Shelter | 1121.2 | +15.3 | shelter |\n| PA 174 / Boiling Springs | 1125.1 | +19.2 | town |\n| Darlington Shelter | 1139.4 | +33.5 | shelter |\n| Duncannon | 1150.8 | +44.9 | town |\n\n**Important corrections / guardrails**\n- Use these values as a guardrail to prevent wrong order and impossible legs. Treat exact mileages, legal camping, water, and services as verify-before-leaving facts.\n- NOBO order guardrail: Boiling Springs comes before Darlington from Pine Grove Furnace.\n- Tagg Run Shelter is not in this validator corridor and must not be used as a firm endpoint without another source.\n\n**Route options**\n\n**Conservative 3-day shape to Darlington** — 33.5 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Pine Grove Furnace State Park → James Fry Shelter side trail | 7.2 | Short first day; verify shelter/water in the current guide. |\n| 2 | James Fry Shelter side trail → PA 174 / Boiling Springs | 12.0 | Town/service day; only overnight here if lodging/camping is verified. |\n| 3 | PA 174 / Boiling Springs → Darlington Shelter | 14.3 | Shelter endpoint; verify water and shelter status before committing. |\n- Boiling Springs is treated as a town/service stop, not an assumed legal campsite.\n- This option prioritizes avoiding an invented endpoint over forcing exactly 13 miles per day.\n\n**Stronger 3-day shape to Duncannon** — 44.9 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Pine Grove Furnace State Park → Alec Kennedy Shelter | 15.3 | Longer first day; verify water before relying on the shelter. |\n| 2 | Alec Kennedy Shelter → Darlington Shelter | 18.2 | Long middle day; use only if body, weather, water, and daylight all line up. |\n| 3 | Darlington Shelter → Duncannon | 11.4 | Town finish; verify service hours and pickup/lodging before leaving. |\n- This is a bigger-mile option; Day 2 is the stress point.\n- Use only with current water/shelter reports and a clear pickup/lodging plan.\n\n**Camping / shelter assumptions**\n- Shelter names in the route table are candidate endpoints only after current guide/FarOut-style condition checks confirm legality, capacity, and water.\n- Boiling Springs is a town/service stop in this guardrail, not an assumed legal campsite. Confirm lodging/camping before making it an overnight endpoint.\n- Do not use Tagg Run as a Pine Grove NOBO endpoint from Scout unless you import or fetch a source that proves it belongs in this segment.\n\n**Food and water**\n- Carry the full 3-day food plan from the start unless your current guide confirms a real resupply/pickup plan at Boiling Springs or Duncannon.\n- Confirm water before committing to any shelter or dry ridge; Scout does not have current water reliability here.\n- Filter all natural sources. For each morning, verify the next reliable water before leaving camp/town.\n\n**Gear / supply focus**\n- Rain shell, dry sleep layers, treated socks/pants, tick remover, headlamp, offline maps/guide, water filter, and enough battery to check weather before committing to the next leg.\n- If fire risk is elevated, verify stove restrictions and do not assume campfires are allowed.\n\n**Safety / live conditions**\n- Official/live check fetched: 2026-05-06T18:54:11.632Z.\n- ATC Trail Updates (PA-matched): VA-MA: Elevated Fire Risk (https://appalachiantrail.org/trail-updates/ga-pa-elevated-fire-risk/).\n- NWS: no forecast/alert receipt available in this turn. Pull the point forecast 24–48 hours before stepping off.\n- Ticks are a high-priority PA risk in May: permethrin, nightly checks, and fast removal plan.\n\n**Final checklist before leaving**\n- Verify exact route mileages and legal overnight endpoints in your current user-owned guide.\n- Re-check ATC Trail Updates for PA closures, detours, fire restrictions, and bear/camping notices.\n- Pull the NWS point forecast/alerts for Pine Grove Furnace and each overnight area 24–48 hours before departure.\n- Check water reliability and shelter comments for James Fry, Alec Kennedy, Darlington, and any town/road stop you plan to use.\n- Confirm parking, shuttle/pickup, town hours, lodging/camping, and bailout options before committing to the stronger plan.\n\n**Source receipts**\n- Hogg Country Pine Grove route-order QA validator [reviewed/route-validator]: Hogg Country Pine Grove route-order QA fixture, generated 2026-05-04.\n- Appalachian Trail Conservancy official trail updates [official/live-fetch]: ATC Trail Updates, fetched 2026-05-06T18:54:11.632Z: source URL not recorded\n- NWS source manifest: available, but no weather receipt was produced in this turn.\n- Needed but not bundled: A.T. Guide / AWOL data imported by the hiker [reviewed/user-import-required]. Do not scrape or bundle copyrighted guide content; ask the hiker to import/search what they own.\n- Needed but not bundled: FarOut recent comments/screenshots supplied by the hiker [open-crowd/user-import-required]. Crowd reports can be stale or wrong; prefer recent dated comments and cross-check risky claims.\n- Missing source class remains current user-owned guide/current comments for exact shelter condition, water reliability, services, and legal camping.",
+      "grounding": {
+        "sourceId": "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+        "direction": "NOBO",
+        "start": "Keys Gap / VA-WV 9",
+        "destination": "Harpers Ferry / ATC HQ",
+        "planOptions": [
+          "harpers-dad-keys-gap-finish",
+          "harpers-dad-weverton-longer-finish",
+          "harpers-overnight-maryland-ed-garvey-dahlgren"
+        ],
+        "warnings": [
+          "Use these values as a route-order and ambiguity guardrail. Harpers Ferry / ATC HQ is the psychological or mental halfway point; Pine Grove Furnace is the true/mathematical halfway area and must not override an explicit Harpers Ferry destination.",
+          "Harpers Ferry ambiguity guardrail: explicit Harpers Ferry / ATC HQ / mental-halfway language wins over generic true-halfway language; do not route this request to Pine Grove Furnace unless Pine Grove is explicitly named.",
+          "Harpers Ferry planning guardrail: separate the Dad finish hike into Harpers Ferry from the Friday/Saturday overnight plan near Harpers Ferry; do not collapse the two requests into one route.",
+          "Maryland/WV/VA legal overnight guardrail: treat Ed Garvey Memorial Shelter and Dahlgren Backpack Campground as candidate legal anchors only after current Maryland DNR/local/user-owned guide verification; do not invent stealth or roadside camping.",
+          "Pine Grove Furnace State Park, True Halfway Point, Half Gallon Challenge is not in this validator corridor and must not be used as a firm endpoint without another source."
+        ]
+      },
+      "sourceReceipts": [
+        "hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06",
+        "at-guide-user-owned",
+        "farout-current-comments",
+        "atc-trail-updates",
+        "nws-weather"
+      ],
+      "missingSourceClasses": [
+        "current user-owned guide mileage",
+        "current water comments",
+        "live legal overnight verification"
+      ],
+      "manualReview": {
+        "status": "not-reviewed",
+        "notes": ""
+      }
+    }
+  ]
+}
