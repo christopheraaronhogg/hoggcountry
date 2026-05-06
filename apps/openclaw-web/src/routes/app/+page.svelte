@@ -21,13 +21,13 @@
     },
     {
       label: 'Water',
-      detail: 'Check next water risk',
+      detail: 'Water risk',
       icon: '◎',
       prompt: 'Check water assumptions for my next hiking day. Tell me what is known, what needs a current source check, and how much water capacity I should leave with.'
     },
     {
       label: 'Resupply',
-      detail: 'Estimate food carry',
+      detail: 'Food carry',
       icon: '▱',
       prompt: 'Plan my next resupply. Keep it conservative, show likely food carry, town options, and the assumptions that need confirming before I leave.'
     }
@@ -64,6 +64,11 @@
   function paceLabel(): string {
     if (!profile || profile.targetPace <= 0) return 'Set pace';
     return `${profile.targetPace.toFixed(0)} mpd`;
+  }
+
+  function resourceLabel(): string {
+    const total = docCount + resourceCount;
+    return total > 0 ? `${total} saved` : 'Add sources';
   }
 
   function askHref(text = prompt): string {
@@ -110,14 +115,11 @@
       <small>Pace</small>
     </a>
     <a href="/app/resources">
-      <strong>{docCount + resourceCount}</strong>
-      <small>Resources</small>
+      <strong>{resourceLabel()}</strong>
+      <small>Context</small>
     </a>
   </section>
 
-  {#if !manualReady}
-    <p class="quiet-note">Profile is optional. Scout can still answer one trail question at a time.</p>
-  {/if}
 </section>
 
 <style>
@@ -254,8 +256,7 @@
   }
 
   .quick-card small,
-  .status-row small,
-  .quiet-note {
+  .status-row small {
     color: var(--muted);
     font-size: 0.78rem;
     font-weight: 780;
@@ -299,11 +300,6 @@
     white-space: nowrap;
   }
 
-  .quiet-note {
-    margin: -0.1rem 0 0;
-    text-align: center;
-  }
-
   .sr-only {
     position: absolute;
     width: 1px;
@@ -318,11 +314,10 @@
 
   @media (max-width: 560px) {
     .home-screen {
-      gap: 0.72rem;
-      padding-top: 0.1rem;
-      padding-bottom: calc(6.2rem + env(safe-area-inset-bottom));
+      gap: 0.58rem;
+      padding-top: 0.05rem;
+      padding-bottom: calc(5.8rem + env(safe-area-inset-bottom));
     }
-
 
     .home-hero h1 {
       font-size: clamp(2.55rem, 13vw, 3.55rem);
@@ -357,27 +352,31 @@
     }
 
     .quick-list {
-      grid-template-columns: 1fr;
-      gap: 0.44rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.42rem;
     }
 
     .quick-card {
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      gap: 0 0.6rem;
-      min-height: 3.45rem;
+      gap: 0.12rem;
+      min-height: 4.25rem;
       border-radius: 15px;
-      padding: 0.62rem 0.72rem;
+      padding: 0.55rem 0.48rem;
+      text-align: center;
     }
 
     .quick-card span {
-      grid-row: span 2;
+      font-size: 1.05rem;
+    }
+
+    .quick-card strong {
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
     }
 
     .quick-card small {
-      font-size: 0.74rem;
+      font-size: 0.68rem;
+      line-height: 1.15;
     }
-
 
     .status-row {
       grid-template-columns: 1fr 1fr;
@@ -386,6 +385,5 @@
     .status-row a:last-child {
       display: none;
     }
-
   }
 </style>
