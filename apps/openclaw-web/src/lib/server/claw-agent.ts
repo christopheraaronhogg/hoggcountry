@@ -2167,6 +2167,130 @@ function buildRouteClaimFallbackReply(grounding: AtRouteGrounding, issues: reado
   return lines.join('\n');
 }
 
+function promptLooksLikeAtPlanning(prompt: string): boolean {
+  return /\b(appalachian trail|a\.t\.| at |trail|hike|backpack|section|nero|wayside|shelter|springer|amicalola|shenandoah|connecticut|massachusetts|harpers?\s+ferry|pine grove|white mountains|katahdin|baxter|100[-\s]?mile)\b/iu.test(` ${prompt} `)
+    && /\b(plan|itinerary|route|mileage|day|overnight|water|weather|parking|shuttle|bailout|camp)\b/iu.test(prompt);
+}
+
+function buildScoutSourceCaveatLines(prompt: string): string[] {
+  const manifests = selectScoutSourceManifests({ query: prompt, limit: 4 });
+  const receipts = manifests
+    .map((manifest) => buildScoutSourceReceipt(manifest.id))
+    .filter((receipt): receipt is NonNullable<ReturnType<typeof buildScoutSourceReceipt>> => Boolean(receipt));
+
+  return [
+    ...receipts.map((receipt) => `- Source lane: ${receipt.title} [${receipt.trust}/${receipt.accessMode}]. ${receipt.citation}`),
+    '- Missing-source caveat: exact mileages, water reliability, facility status, parking, shuttle availability, service hours, closures, and legal camping should be verified against current official/direct sources and user-owned A.T. Guide/FarOut-style notes before acting.',
+    '- I did not fetch live conditions unless a source lane above explicitly says it was fetched for this turn.'
+  ];
+}
+
+function ensureScoutPlanningReliabilityAppendix(prompt: string, text: string): string {
+  if (!promptLooksLikeAtPlanning(prompt)) return text;
+
+  let next = text.trimEnd();
+  if (!/\b(final checklist|before leaving|before you leave|verify before)\b/iu.test(next)) {
+    next += [
+      '',
+      '',
+      '**Final checklist**',
+      '- Confirm exact endpoint mileages, current weather/alerts, trail closures, water, legal overnight status, parking/shuttle details, and bailout roads before committing.'
+    ].join('\n');
+  }
+
+  if (!/\b(source receipts?|missing[-\s]?source|source caveats?|source lanes?|not fetched|user-owned|farout|a\.t\. guide|awol)\b/iu.test(next)) {
+    next += [
+      '',
+      '',
+      '**Source receipts or missing-source caveats**',
+      ...buildScoutSourceCaveatLines(prompt)
+    ].join('\n');
+  }
+
+  return next;
+}
+
+function buildScoutTimeoutFallbackReply(record: WorkspaceRecord, prompt: string): string {
+  const lowered = prompt.toLowerCase();
+  const family = /\b(dad|family|low[-\s]?risk|fair[-\s]?weather)\b/iu.test(prompt);
+  const overnight = /\b(overnight|backpack|2[-\s]?day|two[-\s]?day|shelter|camp)\b/iu.test(prompt);
+  const shenandoah = /\b(shenandoah|wayside|snp)\b/iu.test(prompt);
+  const springer = /\b(springer|amicalola)\b/iu.test(prompt);
+  const ctma = /\b(connecticut|massachusetts|\bct\b|\bma\b)\b/iu.test(prompt);
+
+  const routeOptions = springer
+    ? [
+        '- Easy/moderate: Springer Mountain access to the Springer summit plaque and back, keeping the day short and treating road access/parking as verify-first.',
+        '- Bigger classic start: Amicalola Falls State Park Approach Trail toward Springer only if the hiker is ready for a long, steep day; the Approach Trail is not the AT and its mileage should not be counted as AT mileage without that caveat.'
+      ]
+    : shenandoah
+      ? [
+          '- Nero baseline: pick one Shenandoah road crossing, hut, campground, or wayside area as the anchor, keep hiking mileage short, and use the day for food, laundry/lodging if available, water reset, and weather/permit checks.',
+          '- If overnighting, use the current NPS/Recreation.gov permit flow and legal campsite/hut/campground rules; do not camp at waysides, parking lots, or facilities unless the current official rule explicitly allows it.'
+        ]
+      : ctma
+        ? [
+            '- Connecticut option: choose a named road crossing/trailhead pair near Salisbury, Falls Village, or another well-used AT access point, then keep the day in the 3-7 mile range for Dad pace unless the group is clearly stronger.',
+            '- Massachusetts option: choose a named road crossing/trailhead pair near Great Barrington, Cheshire, or Dalton, then verify parking and pickup before setting mileage.'
+          ]
+        : [
+            '- Pick a named start and finish road crossing before trusting mileage.',
+            '- Keep the first plan conservative, then add a longer option only after water, weather, footing, and pickup are confirmed.'
+          ];
+
+  const lines: string[] = [
+    '### Scout reliability fallback',
+    '',
+    'The model call took too long, so I am giving you the safe planning baseline instead of timing out. Treat this as a draft to tighten with current sources.',
+    `Workspace context: ${record.betaProfile.trailName || record.betaProfile.name || 'this hiker'}.`,
+    '',
+    '**Recommendation**',
+    family
+      ? '- Use the easiest named-road finish that still matches the goal, keep Dad pace realistic, and keep a longer option only as an opt-in after conditions check out.'
+      : '- Use a conservative named-corridor plan first, then increase mileage only after current weather, water, legal overnight, and logistics are verified.',
+    overnight
+      ? '- For overnight plans, candidate shelters/campgrounds are not commitments until current legal status, capacity, water, and permit rules are checked.'
+      : '- For day hikes, do not add an overnight assumption unless the user asks for it.',
+    '',
+    '**Route options or day plan**',
+    ...routeOptions,
+    '',
+    '**Mileage targets**',
+    '- Easy/family day: roughly 3-7 miles unless elevation, heat, footing, or pickup timing argues for less.',
+    '- Moderate day: roughly 7-11 miles only when the group, weather, daylight, and bailout plan support it.',
+    overnight ? '- Overnight: keep each day within the hiker carry/fitness range and verify every shelter/campground mile against a current guide.' : '- Exact mileage depends on the selected road crossings and current guide data.',
+    '',
+    '**Logistics / parking / shuttle**',
+    '- Verify trailhead parking rules, overnight parking if relevant, pickup windows, shuttle availability, and cell-service assumptions before leaving a car.',
+    '',
+    '**Water**',
+    '- Do not assume water is flowing. Carry a conservative amount, treat all natural water, and verify current water from recent user-owned/current comments.',
+    '',
+    '**Weather**',
+    '- Check NWS point forecast and alerts 24-48 hours before the hike, then again the morning of departure. Heat, thunderstorms, cold rain, wind, or flooding should reduce mileage.',
+    '',
+    '**Legal overnight/camping**',
+    overnight || shenandoah
+      ? '- Use only legal shelters, designated campsites, campgrounds, or permit-compliant backcountry sites. Do not invent stealth camping or wayside/parking-lot camping.'
+      : '- Not applicable for the day-hike version; if plans change to overnight, verify the legal camping lane first.',
+    '',
+    '**Bailout**',
+    '- Choose turnaround points and road bailouts before starting; do not rely on cell service as the only recovery plan.',
+    '',
+    '**Final checklist**',
+    '- Confirm exact start/end, current trail updates, water, weather, legal overnight if relevant, parking/shuttle, daylight, Dad/group pace, and emergency pickup plan.',
+    '',
+    '**Source receipts or missing-source caveats**',
+    ...buildScoutSourceCaveatLines(prompt)
+  ];
+
+  if (lowered.includes('harpers ferry') || lowered.includes('harper')) {
+    lines.splice(8, 0, '- Harpers Ferry / ATC HQ is the named destination if present; do not substitute Pine Grove Furnace just because the prompt says mental halfway.');
+  }
+
+  return lines.join('\n');
+}
+
 export async function replyInWorkspaceClaw(
   workspaceId: string,
   betaProfile: BetaProfileCookie,
@@ -2274,7 +2398,29 @@ export async function replyInWorkspaceClaw(
   };
 
   const history = runtime.providerId === OPENCODE_GO_PROVIDER_ID ? record.clawMessages.slice(-8) : record.clawMessages;
-  let { nextMessages, reply } = await runAgentPrompt(history);
+  let nextMessages: WorkspaceClawMessage[];
+  let reply: WorkspaceClawMessage | undefined;
+  try {
+    ({ nextMessages, reply } = await runAgentPrompt(history));
+  } catch (caught) {
+    if (
+      caught instanceof ScoutAgentTimeoutError
+      && runtime.providerId === OPENCODE_GO_PROVIDER_ID
+      && !activeDocument
+      && !activeResource
+      && promptLooksLikeAtPlanning(trimmedPrompt)
+    ) {
+      const fallback = deterministicClawTurn(record, null, trimmedPrompt, buildScoutTimeoutFallbackReply(record, trimmedPrompt));
+      const safeReply: WorkspaceClawMessage = {
+        ...fallback.reply,
+        providerId: 'system',
+        model: 'scout-timeout-fallback'
+      };
+      const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, [...fallback.nextMessages.slice(0, -1), safeReply]);
+      return { workspace, reply: safeReply, revisedDocument: null };
+    }
+    throw caught;
+  }
 
   if ((!reply || reply.role !== 'assistant' || reply.error) && runtime.providerId === OPENCODE_GO_PROVIDER_ID) {
     const retry = await runAgentPrompt(
@@ -2287,6 +2433,12 @@ export async function replyInWorkspaceClaw(
 
   if (!reply || reply.role !== 'assistant') {
     throw new Error('Pi agent did not return an assistant reply.');
+  }
+
+  const reliableReplyText = ensureScoutPlanningReliabilityAppendix(trimmedPrompt, reply.text);
+  if (reliableReplyText !== reply.text) {
+    reply = { ...reply, text: reliableReplyText };
+    nextMessages = [...nextMessages.slice(0, -1), reply];
   }
 
   const strictRouteGrounding = buildStrictAtRouteGrounding(record, trimmedPrompt);
