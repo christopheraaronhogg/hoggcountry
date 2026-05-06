@@ -18,6 +18,7 @@ import {
   type WorkspaceTool
 } from '@hoggcountry/manual-core';
 import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
+import type { ScoutSkill, ScoutSkillSettings } from '@hoggcountry/scout-skills';
 
 interface WorkspaceSnapshot {
   readonly workspaceId: string;
@@ -26,6 +27,7 @@ interface WorkspaceSnapshot {
   readonly documents: ImportedDocument[];
   readonly resources: WorkspaceResource[];
   readonly tools: WorkspaceTool[];
+  readonly skillSettings: ScoutSkillSettings;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -126,6 +128,25 @@ export async function listImportedDocuments(): Promise<ImportedDocument[]> {
 
 export async function listWorkspaceResources(): Promise<WorkspaceResource[]> {
   return (await getSnapshot()).resources;
+}
+
+export async function getScoutSkillSettings(): Promise<{
+  skills: ScoutSkill[];
+  settings: ScoutSkillSettings;
+  enabledSkillIds: string[];
+}> {
+  return requestJson('/app-api/workspace/skills');
+}
+
+export async function setWorkspaceScoutSkillEnabled(skillId: string, enabled: boolean): Promise<{
+  skills: ScoutSkill[];
+  settings: ScoutSkillSettings;
+  enabledSkillIds: string[];
+}> {
+  return requestJson('/app-api/workspace/skills', {
+    method: 'PATCH',
+    body: JSON.stringify({ skillId, enabled })
+  });
 }
 
 export async function importResourceFiles(files: FileList | File[]): Promise<WorkspaceResource[]> {

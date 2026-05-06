@@ -20,6 +20,12 @@ import {
   type ScoutSourceTrust
 } from '@hoggcountry/scout-sources';
 import {
+  buildScoutSkillPromptContext,
+  createScoutSkillSearchHit,
+  disabledScoutSkillOwnsSourceManifest,
+  scoutSkillEnabled
+} from '@hoggcountry/scout-skills';
+import {
   buildAtRouteGrounding,
   formatAtRouteMileage,
   validateAtRouteAnswerClaims,
@@ -125,6 +131,11 @@ const ZERO_USAGE = {
 interface ScoutContextHit extends SearchHit {
   readonly trust: ScoutSourceTrust;
   readonly access: ScoutSourceAccess;
+  readonly skillId?: string;
+  readonly resourceId?: string;
+  readonly citation?: string;
+  readonly confidence?: number;
+  readonly relevance?: number;
 }
 
 interface ScoutSourceSearchDetails {
@@ -224,6 +235,10 @@ function shouldIncludeDadPilotContext(record: WorkspaceRecord, prompt = ''): boo
   return recordLooksLikeDadPilot(record) || promptAsksForDadPilotContext(prompt);
 }
 
+function skillEnabled(record: WorkspaceRecord, skillId: string): boolean {
+  return scoutSkillEnabled(record.skillSettings, skillId);
+}
+
 function extractKjvReferenceCandidates(prompt: string): string[] {
   const references = prompt.match(/\b(?:[1-3]\s*)?[A-Z][a-z]+(?:\s+of\s+[A-Z][a-z]+)?\s+\d{1,3}:\d{1,3}(?:\s*[-–]\s*\d{1,3})?/gu) ?? [];
   return references.map((reference) => reference.replace(/\s+/gu, ' ').trim());
@@ -292,9 +307,10 @@ function catalogScore(entry: ScoutSourceCatalogEntry, prompt: string, terms: rea
   return score;
 }
 
-function recommendedScoutSources(prompt: string, limit = 6): ScoutSourceCatalogEntry[] {
+function recommendedScoutSources(record: WorkspaceRecord, prompt: string, limit = 6): ScoutSourceCatalogEntry[] {
   const terms = promptTerms(prompt);
   return [...SCOUT_SOURCE_CATALOG]
+    .filter((entry) => !disabledScoutSkillOwnsSourceManifest(record.skillSettings, entry.id))
     .map((entry) => ({ entry, score: catalogScore(entry, prompt, terms) }))
     .filter((item) => item.score > 0)
     .sort((left, right) => right.score - left.score)
@@ -345,9 +361,19 @@ function searchDadPilotContext(summary: DadPilotSummary | null, queries: readonl
   ];
 }
 
-function searchKjvPceContext(query: string, limit = 8): ScoutContextHit[] {
-  if (!promptAsksForScripture(query)) return [];
+function searchKjvPceContext(record: WorkspaceRecord, query: string, limit = 8): ScoutContextHit[] {
+  if (!skillEnabled(record, 'kjv-pce-scripture') || !promptAsksForScripture(query)) return [];
   return searchKjvPce(query, limit).map((hit) => ({
+    ...createScoutSkillSearchHit({
+      skillId: 'kjv-pce-scripture',
+      resourceId: 'kjv-pce',
+      sourceId: 'kjv-pce',
+      title: hit.reference,
+      excerpt: hit.text,
+      citation: hit.citation,
+      confidence: 0.95,
+      relevance: Math.min(1, Math.max(0.25, hit.score / 1000))
+    }),
     id: hit.id,
     sourceType: 'corpus' as const,
     sourceLabel: 'KJV PCE',
@@ -365,13 +391,18 @@ function searchScoutSources(record: WorkspaceRecord, dadPilotSummary: DadPilotSu
   const byKey = new Map<string, ScoutContextHit>();
 
   for (const query of queries) {
+    const privateWorkspaceHits = skillEnabled(record, 'private-workspace-resources')
+      ? [
+          ...searchManualSections(record.sections, query),
+          ...searchImportedDocuments(record.documents, query),
+          ...searchWorkspaceResources(record.resources, query),
+          ...searchWorkspaceTools(record.tools, query)
+        ]
+      : [];
     const hits = [
-      ...searchManualSections(record.sections, query),
-      ...searchImportedDocuments(record.documents, query),
-      ...searchWorkspaceResources(record.resources, query),
-      ...searchWorkspaceTools(record.tools, query),
+      ...privateWorkspaceHits,
       ...searchPublicCorpus(publicCorpus, query),
-      ...searchKjvPceContext(query, 6)
+      ...searchKjvPceContext(record, query, 6)
     ];
 
     for (const hit of hits.map(decorateSearchHit)) {
@@ -393,7 +424,9 @@ function searchScoutSources(record: WorkspaceRecord, dadPilotSummary: DadPilotSu
 function renderScoutSourceSearchResult(details: ScoutSourceSearchDetails): string {
   const hitLines = details.hits.map((hit, index) => {
     const href = hit.href ? ` href=${hit.href}` : '';
-    return `${index + 1}. [${hit.sourceLabel}; ${hit.trust}; ${hit.access}] ${hit.title}${href}: ${excerpt(hit.excerpt, 320)}`;
+    const skill = hit.skillId ? ` skill=${hit.skillId}` : '';
+    const citation = hit.citation ? ` Citation: ${hit.citation}` : '';
+    return `${index + 1}. [${hit.sourceLabel}; ${hit.trust}; ${hit.access}${skill}] ${hit.title}${href}: ${excerpt(hit.excerpt, 320)}${citation}`;
   });
 
   const recommendationLines = details.recommendations.map((source, index) => (
@@ -423,7 +456,7 @@ function buildScoutSourceSearchDetails(
   return {
     queries: deriveScoutSourceQueries(prompt),
     hits: searchScoutSources(record, dadPilotSummary, prompt, limit),
-    recommendations: recommendedScoutSources(prompt)
+    recommendations: recommendedScoutSources(record, prompt)
   };
 }
 
@@ -434,21 +467,22 @@ function buildScoutSourceCatalogDetails(input: {
   readonly mileEnd?: number | null;
   readonly includeUnavailable?: boolean | null;
   readonly limit?: number | null;
-}): ScoutSourceCatalogDetails {
+}, record?: WorkspaceRecord): ScoutSourceCatalogDetails {
   const mileRange = typeof input.mileStart === 'number' && typeof input.mileEnd === 'number'
     ? [input.mileStart, input.mileEnd] as const
     : null;
+  const sources = selectScoutSourceManifests({
+    query: input.query,
+    state: input.state?.trim() || null,
+    mileRange,
+    includeUnavailable: input.includeUnavailable ?? false,
+    limit: input.limit ?? 8
+  }).filter((source) => !record || !disabledScoutSkillOwnsSourceManifest(record.skillSettings, source.id));
   return {
     query: input.query,
     state: input.state?.trim() || null,
     mileRange,
-    sources: selectScoutSourceManifests({
-      query: input.query,
-      state: input.state?.trim() || null,
-      mileRange,
-      includeUnavailable: input.includeUnavailable ?? false,
-      limit: input.limit ?? 8
-    })
+    sources
   };
 }
 
@@ -478,7 +512,7 @@ function renderScoutSourceCatalogResult(details: ScoutSourceCatalogDetails): str
   return lines.join('\n');
 }
 
-function buildScoutSourceCatalogTool(): AgentTool<typeof SCOUT_SOURCE_CATALOG_PARAMETERS, ScoutSourceCatalogDetails> {
+function buildScoutSourceCatalogTool(record: WorkspaceRecord): AgentTool<typeof SCOUT_SOURCE_CATALOG_PARAMETERS, ScoutSourceCatalogDetails> {
   return {
     name: 'catalog_scout_sources',
     label: 'Catalog Scout sources',
@@ -495,7 +529,7 @@ function buildScoutSourceCatalogTool(): AgentTool<typeof SCOUT_SOURCE_CATALOG_PA
         mileEnd: params.mileEnd ?? null,
         includeUnavailable: params.includeUnavailable ?? false,
         limit
-      });
+      }, record);
       const text = renderScoutSourceCatalogResult(details);
 
       return {
@@ -577,6 +611,7 @@ function shouldPreloadOfficialTrailSources(prompt: string): boolean {
 }
 
 async function buildPreloadedOfficialSourceContext(prompt: string, record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): Promise<string | null> {
+  if (!skillEnabled(record, 'official-trail-sources')) return null;
   if (!shouldPreloadOfficialTrailSources(prompt)) return null;
 
   const useDadLocation = promptAsksForDadPilotContext(prompt);
@@ -844,6 +879,8 @@ function buildSystemPrompt(
   const resources = record.resources.slice(0, 6).map((resource) => resource.title);
   const tools = record.tools.slice(0, 6).map((tool) => tool.title);
   const dadPilotContext = buildDadPilotSystemContext(dadPilotSummary ?? null);
+  const skillContext = buildScoutSkillPromptContext(record.skillSettings);
+  const officialSourcesEnabled = skillEnabled(record, 'official-trail-sources');
 
   return [
     'You are Scout, Hogg Country\'s private trail delegate for a single hiker.',
@@ -865,6 +902,7 @@ function buildSystemPrompt(
     docs.length > 0 ? `Saved docs: ${docs.join(', ')}` : 'Saved docs: none yet.',
     resources.length > 0 ? `Private resources: ${resources.join(', ')}` : 'Private resources: none yet.',
     tools.length > 0 ? `Available tools/checklists: ${tools.join(', ')}` : 'Available tools/checklists: none yet.',
+    skillContext,
     'Be especially good at itinerary planning, loadout choices, food-carry limits, resupply timing, budget tradeoffs, health/body tracking, hostel or town sequencing, and turning rough trail constraints into usable plans.',
     'Before answering research-like questions, use the provided Scout source search context. Separate what is searchable-now from what still needs an official/direct live check or user import.',
     liveToolsAvailable
@@ -873,10 +911,11 @@ function buildSystemPrompt(
     liveToolsAvailable
       ? 'You also have a search_scout_sources tool. Use it when the user asks a research/planning question and the provided context is too thin, too broad, or needs a narrower location/topic search.'
       : 'This runtime may provide preloaded source-search context instead of live tool calls; use the context you have and clearly name missing searches.',
-    'For scripture quotes, use the bundled KJV PCE source lane/search results. Do not invent verse wording from memory. If exact reference lookup fails, say so and offer nearby reference or phrase-search results. Use scripture gently and only when relevant or requested.',
-    liveToolsAvailable
+    liveToolsAvailable && officialSourcesEnabled
       ? 'You also have a check_official_trail_sources tool. Use it for safety-sensitive current conditions: closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other live ATC/NWS checks. Pass latitude/longitude for NWS, or useDadLocation when the question is about Dad and the public Garmin fix is relevant.'
-      : 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.',
+      : officialSourcesEnabled
+        ? 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.'
+        : 'Official Trail Sources skill is disabled for this workspace; do not call or imply official live-source retrieval unless the user asks to enable that skill.',
     'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied; name the source that should be checked.',
     'For current-position questions, use the hiker profile current mile and its updatedAt timestamp as the first location signal. If the mile is 0/unset, stale, or does not match the question, ask the hiker to tap the current-location/GPS button or send the road crossing/AT mile; do not guess where they are.',
     scoutSourceContext,
@@ -884,9 +923,15 @@ function buildSystemPrompt(
     'When asked for a plan, prefer a compact artifact with current snapshot, assumptions, day-by-day or category breakdown, concrete next actions, and missing intel that would tighten the answer.',
     'For real-world AT planning, keep the tone natural but include a dependable safety skeleton: Recommendation, route options or day plan, mileage targets, logistics/parking/shuttle, water, weather, legal overnight/camping when relevant, bailout, final checklist, and source receipts or missing-source caveats.',
     'When revising a saved document, preserve useful existing structure, update stale facts, add a brief change-history note, and return the full revised document body.',
-    buildActiveResourceContext(activeResource),
+    skillEnabled(record, 'private-workspace-resources')
+      ? buildActiveResourceContext(activeResource)
+      : activeResource
+        ? 'Private Workspace Resources skill is disabled; do not use the attached private resource content unless the user asks to enable that skill.'
+        : null,
     activeDocument
-      ? activeDocument.rights === 'assistant-generated'
+      ? !skillEnabled(record, 'private-workspace-resources') && activeDocument.rights !== 'assistant-generated'
+        ? 'Private Workspace Resources skill is disabled; do not use the attached private imported document unless the user asks to enable that skill.'
+        : activeDocument.rights === 'assistant-generated'
         ? [
             `Active saved plan title: ${activeDocument.title}`,
             'The user is asking you to revise that saved plan in place.',
@@ -1179,6 +1224,7 @@ function documentEvidenceChunks(document: ImportedDocument, prompt: string, limi
 }
 
 function buildPrivateImportSearchReply(record: WorkspaceRecord, prompt: string): string | null {
+  if (!skillEnabled(record, 'private-workspace-resources')) return null;
   if (!promptAsksForPrivateImportSearch(prompt)) return null;
 
   const privateDocuments = record.documents.filter((document) => document.rights === 'user-imported' && document.searchable !== false);
@@ -1243,6 +1289,7 @@ function atcUpdateMatchesApproxState(update: { readonly meta: string; readonly t
 }
 
 async function buildOfficialRelevanceReply(record: WorkspaceRecord, prompt: string): Promise<string | null> {
+  if (!skillEnabled(record, 'official-trail-sources')) return null;
   if (!promptAsksForOfficialRelevanceReview(prompt)) return null;
 
   const state = approximateAtStateForMile(record.profile?.currentMile);
@@ -2606,14 +2653,18 @@ export async function replyInWorkspaceClaw(
   }
 
   if (!activeDocument && !activeResource) {
-    const strictRouteReply = await buildStrictAtRouteItineraryReply(record, trimmedPrompt);
+    const strictRouteReply = skillEnabled(record, 'at-mile-marker-reference')
+      ? await buildStrictAtRouteItineraryReply(record, trimmedPrompt)
+      : null;
     if (strictRouteReply) {
       const { nextMessages, reply } = deterministicClawTurn(record, null, trimmedPrompt, strictRouteReply);
       const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
       return { workspace, reply, revisedDocument: null };
     }
 
-    const regionalPlanningReply = buildRegionalAtPlanningFallbackReply(record, trimmedPrompt);
+    const regionalPlanningReply = skillEnabled(record, 'at-mile-marker-reference')
+      ? buildRegionalAtPlanningFallbackReply(record, trimmedPrompt)
+      : null;
     if (regionalPlanningReply) {
       const { nextMessages, reply } = deterministicClawTurn(record, null, trimmedPrompt, regionalPlanningReply);
       const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
@@ -2656,6 +2707,11 @@ export async function replyInWorkspaceClaw(
     extraSystemInstruction: string | null = null
   ): Promise<{ nextMessages: WorkspaceClawMessage[]; reply: WorkspaceClawMessage | undefined }> => {
     const sourceContext = [baseSourceContext, extraSystemInstruction].filter(Boolean).join('\n\n') || null;
+    const agentTools = [
+      buildScoutSourceCatalogTool(record),
+      buildScoutSourceSearchTool(record, dadPilotSummary),
+      skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(dadPilotSummary) : null
+    ].filter((tool): tool is AgentTool<any, any> => tool !== null);
     const agent = new Agent({
       initialState: {
         systemPrompt: buildSystemPrompt(
@@ -2668,7 +2724,7 @@ export async function replyInWorkspaceClaw(
         ),
         model: runtime.model,
         thinkingLevel: 'low',
-        tools: [buildScoutSourceCatalogTool(), buildScoutSourceSearchTool(record, dadPilotSummary), buildOfficialTrailSourceTool(dadPilotSummary)],
+        tools: agentTools,
         messages: history.map(toPiMessage)
       },
       sessionId: `workspace:${workspaceId}:claw`,

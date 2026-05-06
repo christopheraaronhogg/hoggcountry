@@ -143,6 +143,7 @@
     <div class="hero-actions">
       <a class="btn btn-secondary" href={resolve('/app/docs')}>Open Docs</a>
       <a class="btn btn-ghost" href={resolve('/app/claw')}>Ask Scout</a>
+      <a class="btn btn-ghost" href={resolve('/app/settings/skills')}>Scout Skills</a>
     </div>
   </div>
 
@@ -181,6 +182,7 @@
   <div class="artifact-actions">
     <a class="btn btn-secondary" href={resolve('/guide/manual-builder/?tab=scripture')}>Search Field Manual</a>
     <a class="btn btn-ghost" href={resolve('/kjv-pce.md')}>Open Markdown</a>
+    <a class="btn btn-ghost" href={resolve('/app/settings/skills')}>Skill settings</a>
     <a class="btn btn-ghost" href={resolve('/app/claw')}>Ask Scout</a>
   </div>
 </section>

@@ -27,6 +27,12 @@ import {
   type WorkspaceResourceSensitivity,
   type WorkspaceTool
 } from '@hoggcountry/manual-core';
+import {
+  defaultScoutSkillSettings,
+  normalizeScoutSkillSettings,
+  setScoutSkillEnabled,
+  type ScoutSkillSettings
+} from '@hoggcountry/scout-skills';
 import type { BetaProfileCookie } from '$lib/beta';
 import { OPENAI_CODEX_LOCAL_REDIRECT_URI } from '$lib/server/claw-openai-codex';
 
@@ -121,12 +127,13 @@ export interface WorkspaceSnapshot {
   readonly clawMessages: WorkspaceClawMessage[];
   readonly factCandidates: WorkspaceFactCandidate[];
   readonly locationHistory: WorkspaceLocationFix[];
+  readonly skillSettings: ScoutSkillSettings;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
 
 export interface WorkspaceRecord extends WorkspaceSnapshot {
-  readonly version: 4;
+  readonly version: 5;
   readonly openAICodexCredentials: WorkspaceEncryptedSecret | null;
   readonly pendingOpenAICodexAuth: WorkspacePendingOpenAICodexAuth | null;
 }
@@ -624,6 +631,7 @@ function sanitizeRecord(record: WorkspaceRecord): WorkspaceSnapshot {
     clawMessages: record.clawMessages,
     factCandidates: record.factCandidates,
     locationHistory: record.locationHistory,
+    skillSettings: record.skillSettings,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };
@@ -633,7 +641,7 @@ function baseRecord(workspaceId: string, betaProfile: BetaProfileCookie): Worksp
   const timestamp = nowIso();
 
   return {
-    version: 4,
+    version: 5,
     workspaceId,
     betaProfile,
     profile: null,
@@ -645,6 +653,7 @@ function baseRecord(workspaceId: string, betaProfile: BetaProfileCookie): Worksp
     clawMessages: [],
     factCandidates: [],
     locationHistory: [],
+    skillSettings: defaultScoutSkillSettings(timestamp),
     openAICodexCredentials: null,
     pendingOpenAICodexAuth: null,
     createdAt: timestamp,
@@ -660,7 +669,7 @@ function normalizeRecord(raw: unknown, workspaceId: string, betaProfile: BetaPro
   const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : createdAt;
 
   return {
-    version: 4,
+    version: 5,
     workspaceId,
     betaProfile: isObject(raw.betaProfile)
       ? {
@@ -678,6 +687,7 @@ function normalizeRecord(raw: unknown, workspaceId: string, betaProfile: BetaPro
     clawMessages: normalizeClawMessages(raw.clawMessages),
     factCandidates: normalizeFactCandidates(raw.factCandidates),
     locationHistory: normalizeLocationHistory(raw.locationHistory),
+    skillSettings: normalizeScoutSkillSettings(raw.skillSettings, updatedAt),
     openAICodexCredentials: normalizeEncryptedSecret(raw.openAICodexCredentials),
     pendingOpenAICodexAuth: normalizePendingOpenAICodexAuth(raw.pendingOpenAICodexAuth),
     createdAt,
@@ -741,6 +751,21 @@ export async function getWorkspace(
   betaProfile: BetaProfileCookie
 ): Promise<WorkspaceSnapshot> {
   return sanitizeRecord(await getWorkspaceRecord(workspaceId, betaProfile));
+}
+
+export async function updateWorkspaceScoutSkillSetting(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  skillId: string,
+  enabled: boolean
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      skillSettings: setScoutSkillEnabled(record.skillSettings, skillId, enabled, nowIso())
+    })
+  );
 }
 
 async function persist(record: WorkspaceRecord): Promise<WorkspaceRecord> {

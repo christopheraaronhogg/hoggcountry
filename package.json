@@ -24,7 +24,7 @@
     "build:pdf": "node scripts/generate-pdf.js",
     "build:all": "npm run build && node scripts/generate-pdf.js",
     "update-guide": "node scripts/parse-master-guide.js",
-    "test": "node --experimental-strip-types --experimental-transform-types --test scripts/parse-master-guide.test.js scripts/kjv-pce.test.mjs",
+    "test": "node --experimental-strip-types --experimental-transform-types --test scripts/parse-master-guide.test.js scripts/kjv-pce.test.mjs scripts/scout-skills.test.mjs",
     "test:guide": "node --test scripts/parse-master-guide.test.js",
     "dogfood:manual": "node scripts/dogfood-field-manual.mjs",
     "eval:scout-grounding": "node --experimental-strip-types --experimental-transform-types scripts/eval-scout-grounding.mjs",
