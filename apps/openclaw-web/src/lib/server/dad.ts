@@ -1,4 +1,5 @@
 import { YT_FEED_URL, LIVE_TRACKING_URL } from '../../../../../src/lib/config';
+import { nearestAtMilepost } from './at-location';
 import { fetchGarminTrack, type GarminFeatureCollection } from './garmin';
 import { fetchYouTubeRSS, type YtVideo } from './youtube';
 
@@ -18,10 +19,20 @@ export interface DadTrailUpdateSummary {
   readonly mediaType: string | null;
 }
 
+export interface DadTrailLocationSummary {
+  readonly nearestMile: number;
+  readonly scaledTrailMiles: number | null;
+  readonly trailLatitude: number;
+  readonly trailLongitude: number;
+  readonly distanceToTrailMiles: number;
+  readonly label: string;
+}
+
 export interface DadPilotSummary {
   readonly latestFixLabel: string;
   readonly latestFixAt: string | null;
   readonly latestFixIsPreview: boolean;
+  readonly latestTrailLocation: DadTrailLocationSummary | null;
   readonly dispatchCount: number;
   readonly latestDispatchTitle: string | null;
   readonly latestDispatchPublished: string | null;
@@ -88,6 +99,51 @@ function previewTrack(): GarminFeatureCollection {
   };
 }
 
+async function attachTrailLocation(track: GarminFeatureCollection): Promise<GarminFeatureCollection> {
+  const latestPoint = track.properties?.latestPoint as { coords?: [number, number]; when?: string } | undefined;
+  const coords = latestPoint?.coords;
+
+  if (!coords) return track;
+
+  try {
+    const [latitude, longitude] = coords;
+    const nearest = await nearestAtMilepost(latitude, longitude);
+    const latestTrailLocation: DadTrailLocationSummary = {
+      nearestMile: nearest.mile,
+      scaledTrailMiles: nearest.scaledTrailMiles,
+      trailLatitude: nearest.latitude,
+      trailLongitude: nearest.longitude,
+      distanceToTrailMiles: nearest.distanceMiles,
+      label: `AT mile ${nearest.mile.toFixed(1)}`
+    };
+
+    return {
+      ...track,
+      properties: {
+        ...track.properties,
+        latestTrailLocation
+      },
+      features: [
+        ...track.features,
+        {
+          type: 'Feature',
+          properties: {
+            kind: 'snapped-trail-mile',
+            name: `${latestTrailLocation.label} · ${nearest.distanceMiles.toFixed(1)} mi from Garmin fix`,
+            when: latestPoint.when
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [nearest.longitude, nearest.latitude]
+          }
+        }
+      ]
+    };
+  } catch {
+    return track;
+  }
+}
+
 export async function loadDadTrack(): Promise<GarminFeatureCollection> {
   if (cachedTrack && Date.now() - cachedTrack.ts < TRACK_CACHE_MS) {
     return cachedTrack.track;
@@ -98,11 +154,12 @@ export async function loadDadTrack(): Promise<GarminFeatureCollection> {
 
   try {
     const shareId = LIVE_TRACKING_URL.split('/').filter(Boolean).at(-1) ?? 'hoggcountry';
-    const track = await fetchGarminTrack(shareId, { signal: controller.signal });
+    const track = await attachTrailLocation(await fetchGarminTrack(shareId, { signal: controller.signal }));
     cachedTrack = { track, ts: Date.now() };
     return track;
   } catch {
-    return cachedTrack?.track ?? previewTrack();
+    const fallback = cachedTrack?.track ?? await attachTrailLocation(previewTrack());
+    return fallback;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -174,7 +231,11 @@ export async function loadDadTrailUpdates(limit = 3): Promise<DadTrailUpdateSumm
   }
 }
 
-export function buildDadStatusCards(videoCount: number, latestPointLabel: string): DadStatusCard[] {
+export function buildDadStatusCards(videoCount: number, latestPointLabel: string, latestTrailLocation?: DadTrailLocationSummary | null): DadStatusCard[] {
+  const trailLocationLabel = latestTrailLocation
+    ? `${latestTrailLocation.label} (${latestTrailLocation.distanceToTrailMiles.toFixed(1)} mi off fix)`
+    : latestPointLabel;
+
   return [
     {
       title: 'Guide',
@@ -188,8 +249,10 @@ export function buildDadStatusCards(videoCount: number, latestPointLabel: string
     },
     {
       title: 'Latest fix',
-      value: latestPointLabel,
-      detail: 'Map status is ready for live Garmin points, with a graceful preview fallback when a fresh fix is not available.'
+      value: trailLocationLabel,
+      detail: latestTrailLocation
+        ? `Garmin coordinates snap to the nearest AT mile marker; raw fix ${latestPointLabel}.`
+        : 'Map status is ready for live Garmin points, with a graceful preview fallback when a fresh fix is not available.'
     }
   ];
 }
@@ -197,6 +260,7 @@ export function buildDadStatusCards(videoCount: number, latestPointLabel: string
 export async function loadDadPilotSummary(): Promise<DadPilotSummary> {
   const [videos, track, trailUpdates] = await Promise.all([loadDadVideos(6), loadDadTrack(), loadDadTrailUpdates(3)]);
   const latestPoint = track.properties?.latestPoint as { coords?: [number, number]; when?: string } | undefined;
+  const latestTrailLocation = (track.properties?.latestTrailLocation as DadTrailLocationSummary | undefined) ?? null;
 
   return {
     latestFixLabel: latestPoint?.coords
@@ -204,6 +268,7 @@ export async function loadDadPilotSummary(): Promise<DadPilotSummary> {
       : 'Preview fix',
     latestFixAt: typeof latestPoint?.when === 'string' ? latestPoint.when : null,
     latestFixIsPreview: !latestPoint?.coords,
+    latestTrailLocation,
     dispatchCount: videos.length,
     latestDispatchTitle: videos[0]?.title ?? null,
     latestDispatchPublished: videos[0]?.published ?? null,

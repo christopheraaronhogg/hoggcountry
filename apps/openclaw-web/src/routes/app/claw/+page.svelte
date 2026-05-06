@@ -69,10 +69,20 @@
     readonly mediaType: string | null;
   }
 
+  interface DadTrailLocationSummary {
+    readonly nearestMile: number;
+    readonly scaledTrailMiles: number | null;
+    readonly trailLatitude: number;
+    readonly trailLongitude: number;
+    readonly distanceToTrailMiles: number;
+    readonly label: string;
+  }
+
   interface DadPilotSummary {
     readonly latestFixLabel: string;
     readonly latestFixAt: string | null;
     readonly latestFixIsPreview: boolean;
+    readonly latestTrailLocation: DadTrailLocationSummary | null;
     readonly dispatchCount: number;
     readonly latestDispatchTitle: string | null;
     readonly latestDispatchPublished: string | null;
@@ -542,7 +552,10 @@
   function buildDadPilotPrompts(summary: DadPilotSummary | null): ExamplePrompt[] {
     if (!summary) return [];
 
-    const fixLine = `Latest public Garmin fix: ${summary.latestFixLabel}${summary.latestFixAt ? ` at ${new Date(summary.latestFixAt).toLocaleString()}` : ''}.`;
+    const trailLocationLine = summary.latestTrailLocation
+      ? `Snapped AT position: ${summary.latestTrailLocation.label}; Garmin fix is ${summary.latestTrailLocation.distanceToTrailMiles.toFixed(1)} miles from that AT milepost.`
+      : 'Snapped AT mile unavailable; use the raw Garmin fix conservatively.';
+    const fixLine = `Latest public Garmin fix: ${summary.latestFixLabel}${summary.latestFixAt ? ` at ${new Date(summary.latestFixAt).toLocaleString()}` : ''}. ${trailLocationLine}`;
     const dispatchLine = summary.latestDispatchTitle
       ? `Latest public YouTube dispatch: ${summary.latestDispatchTitle}${summary.latestDispatchPublished ? ` (${new Date(summary.latestDispatchPublished).toLocaleDateString()})` : ''}.`
       : `Recent YouTube dispatch count: ${summary.dispatchCount}.`;

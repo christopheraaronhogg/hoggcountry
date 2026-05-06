@@ -28,12 +28,14 @@
 
       if (geometry.type === 'Point') {
         const [lon, lat] = geometry.coordinates;
+        const kind = String(feature?.properties?.kind ?? 'point');
+        const isSnappedTrailMile = kind === 'snapped-trail-mile';
         latLngs.push([lat, lon]);
         L.circleMarker([lat, lon], {
-          radius: 8,
-          weight: 2,
+          radius: isSnappedTrailMile ? 10 : 8,
+          weight: isSnappedTrailMile ? 3 : 2,
           color: '#ffffff',
-          fillColor: '#d97706',
+          fillColor: isSnappedTrailMile ? '#4d594a' : '#d97706',
           fillOpacity: 0.95
         })
           .bindPopup(String(feature?.properties?.name ?? title))
