@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import { buildClawLanes } from '$lib/claw';
   import { inferStandardDocumentSlotKey, isStandardDocumentSlotKey, STANDARD_DOCUMENT_SLOTS, standardDocumentSlotForKey, type ImportedDocument, type ManualProfile, type ManualSection, type StandardDocumentSlotKey, type WorkspaceResource, type WorkspaceTool } from '@hoggcountry/manual-core';
   import type { ClawLane } from '$lib/claw';
@@ -10,6 +10,7 @@
     readonly documents: ImportedDocument[];
     readonly resources: WorkspaceResource[];
     readonly tools: WorkspaceTool[];
+    readonly locationHistory?: unknown[];
   }
 
   interface ProviderConnection {
@@ -141,8 +142,10 @@
   let dailyBriefLoading = $state(false);
   let dailyBriefError = $state('');
   let locationBusy = $state(false);
+  let locationTracking = $state(false);
   let locationNotice = $state('');
   let locationError = $state('');
+  let locationWatchId: number | null = null;
   let documents = $state<ImportedDocument[]>([]);
   let resources = $state<WorkspaceResource[]>([]);
   let selectedDocumentId = $state<string>('');
@@ -771,6 +774,53 @@
     });
   }
 
+  async function postLocationFix(position: GeolocationPosition): Promise<ScoutLocationUpdatePayload> {
+    return await jsonOrThrow(
+      await fetch('/app-api/workspace/profile/current-location', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracyMeters: position.coords.accuracy
+        })
+      })
+    ) as ScoutLocationUpdatePayload;
+  }
+
+  async function logBackgroundLocation(position: GeolocationPosition) {
+    try {
+      const payload = await postLocationFix(position);
+      applyWorkspaceSnapshot(payload.workspace);
+      if (payload.location.distanceToTrailMiles <= 2) {
+        locationNotice = `Trail GPS tracking on · latest useful fix near mile ${payload.location.nearestMile.toFixed(1)}.`;
+      }
+    } catch (caught) {
+      console.error(caught);
+      locationError = geolocationErrorMessage(caught);
+    }
+  }
+
+  function startTrailLocationTracking() {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator) || locationWatchId !== null) return;
+
+    locationWatchId = navigator.geolocation.watchPosition(
+      (position) => { void logBackgroundLocation(position); },
+      (caught) => {
+        locationTracking = false;
+        locationError = geolocationErrorMessage(caught);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5 * 60_000,
+        timeout: 20_000
+      }
+    );
+    locationTracking = true;
+  }
+
   async function attachCurrentLocation() {
     locationBusy = true;
     locationNotice = '';
@@ -780,25 +830,14 @@
 
     try {
       const position = await currentPosition();
-      const payload = await jsonOrThrow(
-        await fetch('/app-api/workspace/profile/current-location', {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json'
-          },
-          body: JSON.stringify({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracyMeters: position.coords.accuracy
-          })
-        })
-      ) as ScoutLocationUpdatePayload;
+      const payload = await postLocationFix(position);
 
       applyWorkspaceSnapshot(payload.workspace);
       replyInput = mergeLocationIntoPrompt(replyInput, locationPromptLine(payload));
       locationNotice = payload.profileUpdated
-        ? `GPS added · profile is now mile ${payload.location.nearestMile.toFixed(1)}.`
-        : `GPS added · nearest AT mile ${payload.location.nearestMile.toFixed(1)} (${formatLocationDistance(payload.location.distanceToTrailMiles)}). Profile unchanged.`;
+        ? `GPS added · profile is now mile ${payload.location.nearestMile.toFixed(1)}. Trail GPS tracking is on while this page is open.`
+        : `GPS added · nearest AT mile ${payload.location.nearestMile.toFixed(1)} (${formatLocationDistance(payload.location.distanceToTrailMiles)}). Profile unchanged. Trail GPS tracking is on while this page is open.`;
+      startTrailLocationTracking();
       await focusPromptComposer();
     } catch (caught) {
       console.error(caught);
@@ -1149,6 +1188,12 @@
       })
       .catch(() => undefined);
   });
+
+  onDestroy(() => {
+    if (locationWatchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.clearWatch(locationWatchId);
+    }
+  });
 </script>
 
 <section class="scout-workspace" class:history-open={historyOpen} class:docs-open={docsOpen}>
@@ -1403,11 +1448,12 @@
           <label class="sr-only" for="scout-prompt">Ask Scout</label>
           <button
             class="location-button"
+            class:active={locationTracking}
             type="button"
             onclick={attachCurrentLocation}
             disabled={sendBusy || locationBusy || !connection}
-            aria-label="Add current GPS location"
-            title="Add current GPS location"
+            aria-label={locationTracking ? 'Trail GPS tracking is on' : 'Add current GPS location'}
+            title={locationTracking ? 'Trail GPS tracking is on while this page is open' : 'Add current GPS location'}
           >
             {#if locationBusy}
               <span aria-hidden="true">◎</span>
@@ -2199,9 +2245,14 @@
     padding: 0;
   }
 
-  .location-button:hover {
+  .location-button:hover,
+  .location-button.active {
     background: rgba(166, 181, 137, 0.28);
     color: #24362c;
+  }
+
+  .location-button.active {
+    box-shadow: 0 0 0 2px rgba(77, 89, 74, 0.18);
   }
 
   .location-button svg {

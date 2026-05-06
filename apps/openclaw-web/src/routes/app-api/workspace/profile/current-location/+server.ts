@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { nearestAtMilepost } from '$lib/server/at-location';
-import { getWorkspace, setWorkspaceCurrentMile } from '$lib/server/workspace-store';
+import { getWorkspace, recordWorkspaceLocationFix, setWorkspaceCurrentMile } from '$lib/server/workspace-store';
 import { requireWorkspace, ok } from '$lib/server/workspace-endpoint';
 
 const PROFILE_UPDATE_MAX_DISTANCE_MILES = 15;
@@ -35,9 +35,19 @@ export const POST: RequestHandler = async (event) => {
   const currentWorkspace = await getWorkspace(workspaceId, betaProfile);
   const closeEnoughForProfile = nearest.distanceMiles <= PROFILE_UPDATE_MAX_DISTANCE_MILES;
   const profileUpdated = Boolean(currentWorkspace.profile && closeEnoughForProfile);
-  const workspace = profileUpdated
-    ? await setWorkspaceCurrentMile(workspaceId, betaProfile, nearest.mile)
-    : currentWorkspace;
+  if (profileUpdated) {
+    await setWorkspaceCurrentMile(workspaceId, betaProfile, nearest.mile);
+  }
+  const workspace = await recordWorkspaceLocationFix(workspaceId, betaProfile, {
+    latitude,
+    longitude,
+    accuracyMeters,
+    nearestMile: nearest.mile,
+    distanceToTrailMiles: nearest.distanceMiles,
+    trailLatitude: nearest.latitude,
+    trailLongitude: nearest.longitude,
+    profileUpdated
+  });
   const profileUpdateReason = profileUpdated
     ? null
     : currentWorkspace.profile

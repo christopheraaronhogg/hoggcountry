@@ -79,6 +79,20 @@ export interface WorkspaceFactCandidateInput {
   readonly createdAt?: string;
 }
 
+export interface WorkspaceLocationFix {
+  readonly id: string;
+  readonly source: 'browser-gps';
+  readonly recordedAt: string;
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly accuracyMeters: number | null;
+  readonly nearestMile: number;
+  readonly distanceToTrailMiles: number;
+  readonly trailLatitude: number;
+  readonly trailLongitude: number;
+  readonly profileUpdated: boolean;
+}
+
 export interface WorkspaceEncryptedSecret {
   readonly version: 1;
   readonly algorithm: 'aes-256-gcm';
@@ -106,6 +120,7 @@ export interface WorkspaceSnapshot {
   readonly providerConnections: WorkspaceProviderConnection[];
   readonly clawMessages: WorkspaceClawMessage[];
   readonly factCandidates: WorkspaceFactCandidate[];
+  readonly locationHistory: WorkspaceLocationFix[];
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -273,6 +288,50 @@ function normalizeFactCandidates(input: unknown): WorkspaceFactCandidate[] {
     })
     .filter((candidate): candidate is WorkspaceFactCandidate => candidate !== null)
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+}
+
+
+function finiteNumber(value: unknown): number | null {
+  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function normalizeLocationHistory(input: unknown): WorkspaceLocationFix[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .filter(isObject)
+    .map((fix) => {
+      const latitude = finiteNumber(fix.latitude);
+      const longitude = finiteNumber(fix.longitude);
+      const nearestMile = finiteNumber(fix.nearestMile);
+      const distanceToTrailMiles = finiteNumber(fix.distanceToTrailMiles);
+      const trailLatitude = finiteNumber(fix.trailLatitude);
+      const trailLongitude = finiteNumber(fix.trailLongitude);
+      if (
+        latitude === null || latitude < -90 || latitude > 90 ||
+        longitude === null || longitude < -180 || longitude > 180 ||
+        nearestMile === null || distanceToTrailMiles === null ||
+        trailLatitude === null || trailLongitude === null
+      ) return null;
+
+      return {
+        id: typeof fix.id === 'string' && fix.id ? fix.id : createId('loc'),
+        source: 'browser-gps' as const,
+        recordedAt: typeof fix.recordedAt === 'string' && fix.recordedAt ? fix.recordedAt : nowIso(),
+        latitude,
+        longitude,
+        accuracyMeters: finiteNumber(fix.accuracyMeters),
+        nearestMile,
+        distanceToTrailMiles: Math.max(0, distanceToTrailMiles),
+        trailLatitude,
+        trailLongitude,
+        profileUpdated: Boolean(fix.profileUpdated)
+      };
+    })
+    .filter((fix): fix is WorkspaceLocationFix => fix !== null)
+    .sort((left, right) => left.recordedAt.localeCompare(right.recordedAt))
+    .slice(-120);
 }
 
 const DOCUMENT_STATUSES = ['draft', 'needs-review', 'active', 'archived'] as const satisfies readonly ImportedDocumentStatus[];
@@ -564,6 +623,7 @@ function sanitizeRecord(record: WorkspaceRecord): WorkspaceSnapshot {
     providerConnections: record.providerConnections,
     clawMessages: record.clawMessages,
     factCandidates: record.factCandidates,
+    locationHistory: record.locationHistory,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };
@@ -584,6 +644,7 @@ function baseRecord(workspaceId: string, betaProfile: BetaProfileCookie): Worksp
     providerConnections: [],
     clawMessages: [],
     factCandidates: [],
+    locationHistory: [],
     openAICodexCredentials: null,
     pendingOpenAICodexAuth: null,
     createdAt: timestamp,
@@ -616,6 +677,7 @@ function normalizeRecord(raw: unknown, workspaceId: string, betaProfile: BetaPro
     providerConnections: normalizeProviderConnections(raw.providerConnections, createdAt),
     clawMessages: normalizeClawMessages(raw.clawMessages),
     factCandidates: normalizeFactCandidates(raw.factCandidates),
+    locationHistory: normalizeLocationHistory(raw.locationHistory),
     openAICodexCredentials: normalizeEncryptedSecret(raw.openAICodexCredentials),
     pendingOpenAICodexAuth: normalizePendingOpenAICodexAuth(raw.pendingOpenAICodexAuth),
     createdAt,
@@ -785,6 +847,68 @@ export async function setWorkspaceCurrentMile(
         ...record.profile,
         currentMile: Number.isFinite(currentMile) ? Math.max(0, currentMile) : record.profile.currentMile
       })
+    })
+  );
+}
+
+
+export interface WorkspaceLocationFixInput {
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly accuracyMeters: number | null;
+  readonly nearestMile: number;
+  readonly distanceToTrailMiles: number;
+  readonly trailLatitude: number;
+  readonly trailLongitude: number;
+  readonly profileUpdated: boolean;
+}
+
+const LOCATION_HISTORY_MAX_FIXES = 120;
+const LOCATION_HISTORY_NEAR_TRAIL_MILES = 2;
+const LOCATION_HISTORY_MIN_MILE_DELTA = 0.25;
+const LOCATION_HISTORY_MIN_INTERVAL_MS = 20 * 60 * 1000;
+const LOCATION_HISTORY_KEEPALIVE_MS = 60 * 60 * 1000;
+
+function shouldAppendLocationFix(history: readonly WorkspaceLocationFix[], fix: WorkspaceLocationFix, nowMs: number): boolean {
+  if (fix.distanceToTrailMiles > LOCATION_HISTORY_NEAR_TRAIL_MILES) return false;
+  const previous = history.at(-1);
+  if (!previous) return true;
+
+  const elapsedMs = nowMs - Date.parse(previous.recordedAt);
+  const mileDelta = Math.abs(fix.nearestMile - previous.nearestMile);
+  if (mileDelta >= LOCATION_HISTORY_MIN_MILE_DELTA && elapsedMs >= LOCATION_HISTORY_MIN_INTERVAL_MS) return true;
+  return elapsedMs >= LOCATION_HISTORY_KEEPALIVE_MS;
+}
+
+export async function recordWorkspaceLocationFix(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: WorkspaceLocationFixInput
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const recordedAt = nowIso();
+  const fix: WorkspaceLocationFix = {
+    id: createId('loc'),
+    source: 'browser-gps',
+    recordedAt,
+    latitude: input.latitude,
+    longitude: input.longitude,
+    accuracyMeters: Number.isFinite(input.accuracyMeters) ? input.accuracyMeters : null,
+    nearestMile: input.nearestMile,
+    distanceToTrailMiles: input.distanceToTrailMiles,
+    trailLatitude: input.trailLatitude,
+    trailLongitude: input.trailLongitude,
+    profileUpdated: input.profileUpdated
+  };
+
+  if (!shouldAppendLocationFix(record.locationHistory, fix, Date.parse(recordedAt))) {
+    return sanitizeRecord(record);
+  }
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      locationHistory: [...record.locationHistory, fix].slice(-LOCATION_HISTORY_MAX_FIXES)
     })
   );
 }

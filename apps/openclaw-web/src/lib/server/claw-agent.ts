@@ -759,6 +759,26 @@ function buildDadPilotSystemContext(summary: DadPilotSummary | null): string | n
   ].join('\n');
 }
 
+
+function buildLocationHistoryContext(record: WorkspaceRecord): string {
+  const history = record.locationHistory ?? [];
+  if (history.length === 0) return 'Recent GPS fixes: none logged.';
+  const latest = history.at(-1);
+  const recent = history.slice(-6).map((fix) => (
+    `${fix.recordedAt}: AT mile ${fix.nearestMile.toFixed(1)} (${fix.distanceToTrailMiles.toFixed(2)} mi from trail, accuracy ${fix.accuracyMeters !== null ? `${Math.round(fix.accuracyMeters)}m` : 'unknown'})`
+  ));
+  const oldest = history.at(0);
+  const progress = oldest && latest
+    ? `Logged trail progress: ${oldest.nearestMile.toFixed(1)} → ${latest.nearestMile.toFixed(1)} over ${history.length} useful fixes.`
+    : null;
+
+  return [
+    latest ? `Latest GPS fix: ${latest.recordedAt}, nearest AT mile ${latest.nearestMile.toFixed(1)}, ${latest.distanceToTrailMiles.toFixed(2)} mi from trail.` : null,
+    progress,
+    `Recent useful GPS fixes: ${recent.join(' | ')}`
+  ].filter((line): line is string => Boolean(line)).join('\n');
+}
+
 function buildActiveResourceContext(activeResource: WorkspaceResource | null | undefined): string | null {
   if (!activeResource) return null;
 
@@ -807,8 +827,9 @@ function buildSystemPrompt(
     `Trail name: ${record.betaProfile.trailName || 'Unknown'}`,
     `Workspace id: ${record.workspaceId}`,
     profile
-      ? `Profile: start ${profile.startDate || 'unknown'}, current mile ${Number.isFinite(profile.currentMile) ? profile.currentMile.toFixed(1) : 'unknown'}, direction ${profile.direction || 'unknown'}, target pace ${profile.targetPace || 0} mpd.`
+      ? `Profile: start ${profile.startDate || 'unknown'}, current mile ${Number.isFinite(profile.currentMile) ? profile.currentMile.toFixed(1) : 'unknown'}, last updated ${profile.updatedAt || 'unknown'}, direction ${profile.direction || 'unknown'}, target pace ${profile.targetPace || 0} mpd.`
       : 'Profile: not initialized yet.',
+    buildLocationHistoryContext(record),
     notes.length > 0 ? `Manual notes: ${notes.join(' | ')}` : 'Manual notes: none yet.',
     dadPilotContext,
     docs.length > 0 ? `Saved docs: ${docs.join(', ')}` : 'Saved docs: none yet.',
