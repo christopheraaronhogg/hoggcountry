@@ -49,6 +49,7 @@ import {
   type WorkspaceRecord,
   type WorkspaceSnapshot
 } from '$lib/server/workspace-store';
+import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
 
 const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
 const OPENCODE_GO_PROVIDER_ID = 'opencode-go';
@@ -800,6 +801,7 @@ function buildSystemPrompt(
     'Use short useful answers. If context is thin, still give a safe beginner baseline, then ask only the one or two details that actually change the next decision.',
     'Do not require the hiker to arrive with a complete profile, guidebook, mileage source, or perfect prep. Build from almost nothing, infer cautiously from the conversation, and suggest optional artifacts only when they would materially improve the plan.',
     'Do not roleplay. Do not oversell certainty. Prefer concrete next actions over generic encouragement.',
+    SCOUT_VOICE_EXAMPLES,
     '',
     `Hiker name: ${record.betaProfile.name || 'Unknown'}`,
     `Trail name: ${record.betaProfile.trailName || 'Unknown'}`,
@@ -1416,7 +1418,7 @@ function buildStrictHarpersFerryAtRouteItineraryReply(
     '',
     '**Recommendation**',
     '- Treat Tuesday as a Dad/family finish hike into Harpers Ferry / ATC HQ.',
-    '- Treat Friday/Saturday as a separate 2-day / 1-night backpack near Harpers Ferry, likely north into Maryland if shuttle, legal overnight, water, weather, and parking all check out.',
+    '- Treat Friday/Saturday as a separate solo overnight / 2-day / 1-night backpack near Harpers Ferry, likely north into Maryland if shuttle, legal overnight, water, weather, and parking all check out.',
     '- Harpers Ferry is the psychological/mental halfway landmark. Pine Grove Furnace is the true/mathematical halfway area; that phrase must not override the named Harpers Ferry destination.',
     '',
     '**Route-order guardrail**',
@@ -1444,7 +1446,7 @@ function buildStrictHarpersFerryAtRouteItineraryReply(
 
   lines.push(
     '',
-    '**Friday/Saturday 2-day / 1-night nearby overnight**'
+    '**Friday/Saturday 2-day / 1-night nearby overnight (solo overnight)**'
   );
   for (const option of overnightOptions) {
     lines.push('', ...renderStrictRouteOption(option));
@@ -2086,6 +2088,9 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
     '',
     '**Important corrections / guardrails**',
     ...grounding.warnings.map((warning) => `- ${warning}`),
+    /\bharpers?\s+ferry\b|\batc\s+hq\b|\bmental\s+halfway\b/iu.test(prompt)
+      ? '- Halfway distinction: Pine Grove Furnace is the true/mathematical halfway area for this Pine Grove plan; Harpers Ferry / ATC HQ is the mental halfway comparison landmark unless the user explicitly changes the requested route.'
+      : null,
     '',
     '**Recommendation**',
     '- Use the lower-risk option unless current water, legal overnight, weather, daylight, body, parking, and shuttle details are all verified.',
@@ -2166,6 +2171,227 @@ function buildRouteClaimFallbackReply(grounding: AtRouteGrounding, issues: reado
     '- If you want, ask again with an imported/current guide page attached and Scout will use that as the source layer instead of guessing.'
   ].filter((line): line is string => line !== null);
   return lines.join('\n');
+}
+
+function basicSourceReceiptLines(routeLabel: string): string[] {
+  const atcReceipt = buildScoutSourceReceipt('atc-trail-updates');
+  const nwsReceipt = buildScoutSourceReceipt('nws-weather');
+  const guideReceipt = buildScoutSourceReceipt('at-guide-user-owned');
+  const faroutReceipt = buildScoutSourceReceipt('farout-current-comments');
+
+  return [
+    `- Route grounding: ${routeLabel}. This is a deterministic planning guardrail, not a live mile-by-mile guide extract.`,
+    atcReceipt ? `- ${atcReceipt.title} [${atcReceipt.trust}/${atcReceipt.accessMode}]: ${atcReceipt.citation}` : '- ATC Trail Updates source manifest: available, but no live receipt was produced in this turn.',
+    nwsReceipt ? `- ${nwsReceipt.title} [${nwsReceipt.trust}/${nwsReceipt.accessMode}]: ${nwsReceipt.citation}` : '- NWS source manifest: available, but no live weather receipt was produced in this turn.',
+    guideReceipt ? `- Needed but not bundled: ${guideReceipt.title} [${guideReceipt.trust}/${guideReceipt.accessMode}]. ${guideReceipt.caveats[0]}` : '- Needed but not bundled: user-owned guide data.',
+    faroutReceipt ? `- Needed but not bundled: ${faroutReceipt.title} [${faroutReceipt.trust}/${faroutReceipt.accessMode}]. ${faroutReceipt.caveats[0]}` : '- Needed but not bundled: current user-supplied water/shelter comments.',
+    '- Missing-source caveat: verify exact mileages, legal overnight status, water reliability, closures/detours, road access, parking, and shuttle details before leaving.'
+  ];
+}
+
+function buildRegionalAtPlanningFallbackReply(record: WorkspaceRecord, prompt: string): string | null {
+  const normalized = prompt.toLowerCase();
+  const profileBits = [
+    record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
+    record.profile?.direction,
+    typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
+    typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
+  ].filter(Boolean).join(' · ');
+
+  const intro = [
+    '### Scout deterministic planning guardrail',
+    '',
+    'I’m using a deterministic Scout reliability fallback for this medium-risk AT planning class because wrong corridors, invented current water, invented legal camping, or provider timeouts are worse than a cautious draft.',
+    profileBits ? `Workspace context: ${profileBits}.` : null,
+    ''
+  ].filter((line): line is string => line !== null);
+
+  const commonSections = (routeLabel: string, extraChecklist: readonly string[] = []) => [
+    '',
+    '**Source receipts / missing-source caveats**',
+    ...basicSourceReceiptLines(routeLabel),
+    '',
+    '**Final checklist**',
+    '- Confirm exact route miles and road-crossing names in a current user-owned guide before driving.',
+    '- Re-check ATC Trail Updates, land-manager notices, closures/detours, and fire restrictions.',
+    '- Pull the NWS point forecast and alerts 24-48 hours before the hike and again the morning of departure.',
+    '- Confirm parking, overnight parking if relevant, shuttle/pickup timing, bailout road access, and cell-service assumptions.',
+    '- Confirm water reliability from current comments or local/current sources and treat all natural water.',
+    ...extraChecklist
+  ];
+
+  if (/\bnew\s+jersey\b/u.test(normalized) && /\bnew\s+york\b/u.test(normalized)) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Keep this as a New Jersey / New York AT road-crossing weekend, not a vague northeastern section. Pick endpoints only after current guide and parking checks.',
+      '- Use a conservative road-crossing pair first; weekend parking, shuttle availability, water, and weather should decide whether to lengthen it.',
+      '',
+      '**Route options or day plan**',
+      '- Easier option: choose one known New Jersey AT road crossing to another nearby New Jersey/New York road crossing for a short Saturday/Sunday section, then shuttle from the exit car to the start.',
+      '- Moderate option: extend into the New York border/Hudson-side approach only if the current guide confirms legal overnight, water, and bailout roads.',
+      '- Do not invent exact shelter, spring, or shuttle certainty here. Treat road crossing, parking, shuttle, and water as current-check items.',
+      '',
+      '**Mileage targets**',
+      '- Family/newer-hiker weekend: roughly 8-12 trail miles per full day after elevation, footing, heat, and pickup timing are checked.',
+      '- Stronger weekend: roughly 12-16 trail miles per day only with confirmed water, legal camp, and reliable exit logistics.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- New Jersey / New York road crossings can be convenient but crowded on weekends. Park at the exit, shuttle to the start, and verify overnight parking before leaving a car.',
+      '- Build a bailout around named road crossings, not “somewhere near town.” Confirm cell coverage is not your only backup.',
+      '',
+      '**Water**',
+      '- Do not assume springs or pumps are flowing. Carry a conservative amount, treat all natural water, and verify current comments before relying on a source.',
+      '',
+      '**Weather**',
+      '- Use NWS point forecasts for the actual ridge/road-crossing area. Heat, thunderstorms, icy rock, wind, or wildfire smoke should shorten the plan.',
+      '',
+      '**Legal overnight/camping**',
+      '- Use only legal shelters, designated campsites, campgrounds, or lodging confirmed by current sources. Do not invent stealth camping near road crossings.',
+      '',
+      '**Bailout**',
+      '- Bailout should be a verified road crossing with legal pickup/parking, not an assumed side road or private driveway.',
+      ...commonSections('New Jersey / New York AT road-crossing weekend')
+    ].join('\n');
+  }
+
+  if (/\bvermont\b/u.test(normalized) && /\blong\s+trail\b/u.test(normalized)) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Treat this as a Vermont AT / Long Trail overlap backpack with mud-season and road-access gates first. If mud-season advisories, closures, fragile treadway, or road conditions are bad, postpone or choose a hardened day hike.',
+      '',
+      '**Route options or day plan**',
+      '- Easier option: pick a short southern Vermont AT / Long Trail overlap segment with confirmed open road access, a confirmed legal shelter/campsite, and a simple shuttle.',
+      '- Moderate option: use a longer two-day overlap segment only if the legal overnight site, water, trail condition, and access roads are current-confirmed.',
+      '- Keep shelter names provisional until a current user-owned guide/current comments confirm status, capacity, tenting rules, and water.',
+      '',
+      '**Mileage targets**',
+      '- Mud-season target: keep each day shorter than normal because treadway damage, snowmelt, blowdowns, and slippery footing can make 8-12 miles feel much bigger.',
+      '- If road access is uncertain, reduce mileage and keep the exit simple.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Road access is a gating item in Vermont mud season. Verify the access road is open, legal, and passable before using it as a start, exit, or bailout.',
+      '- Confirm parking and overnight parking at both ends; do not assume forest-road shoulders are legal.',
+      '',
+      '**Water**',
+      '- Water may be abundant in mud season but still must be treated, and crossings can become unsafe after rain or snowmelt.',
+      '',
+      '**Weather**',
+      '- Check NWS point forecasts for rain, cold nights, wind, and hypothermia risk. Wet 40s can be more dangerous than a dry cold day.',
+      '',
+      '**Legal overnight/camping**',
+      '- Use only legal shelters, tent sites, campgrounds, or land-manager-approved sites. Do not invent shelter status or assume overflow tenting is legal.',
+      '',
+      '**Bailout**',
+      '- Bailout depends on open/passable road access. If road status is not confirmed, the bailout is not real.',
+      ...commonSections('Vermont AT / Long Trail overlap with mud-season guardrails', ['- Check Green Mountain Club / land-manager mud-season guidance before stepping onto soft trail.'])
+    ].join('\n');
+  }
+
+  if (/\bat\s*mile\s*890\b/u.test(normalized) || (/\bshenandoah\b/u.test(normalized) && /\bcurrent\s+mile\b/u.test(normalized))) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Treat AT mile 890 in Shenandoah as an approximate current-mile anchor, not an exact campsite or road crossing. Verify the real location before selecting legal overnight endpoints.',
+      '- With 2 days before pickup, choose a conservative Shenandoah plan that protects water, heat, legal camping/permit rules, and pickup certainty.',
+      '',
+      '**Route options or day plan**',
+      '- Option A: if AT mile 890 is accurate, plan two moderate days around the nearest verified Shenandoah road crossing/hut/campground corridor and keep pickup at a confirmed road or wayside-area road access point.',
+      '- Option B: if the current mile is wrong by several miles, stop treating exact mileage as authoritative; use named landmarks from your guide/GPS and rebuild the plan around the nearest legal overnight and pickup point.',
+      '- Option C: if heat, storms, water uncertainty, or permit legality is weak, shorten to a nero/day-hike plus pickup reset.',
+      '',
+      '**Mileage targets**',
+      '- Conservative Shenandoah heat target: roughly 8-12 miles per day unless current water and heat index support more.',
+      '- Do not stretch to a bigger day just because the pickup is fixed; move the pickup or take a shorter bailout if needed.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Confirm the exact pickup point, road access, Skyline Drive status, shuttle timing, and cell-service expectations before committing.',
+      '',
+      '**Water**',
+      '- Shenandoah summer water can be thin. Verify the next reliable source before leaving each stop, carry extra when uncertain, and treat all natural water.',
+      '',
+      '**Weather**',
+      '- Heat, thunderstorms, cold rain, or poor visibility should reduce mileage. Pull NWS point forecasts for the actual ridge/road corridor.',
+      '',
+      '**Legal overnight/camping**',
+      '- Use the current NPS/Recreation.gov Shenandoah backcountry permit flow and current camping rules. Do not invent legal camping from an AT mile number.',
+      '',
+      '**Bailout**',
+      '- Bailout should be a named road crossing, wayside/road-access area, or legal pickup point verified in current sources.',
+      ...commonSections('Shenandoah current-mile planning around AT mile 890', ['- Confirm the AT mile 890 position against GPS/current guide before choosing the final camp or pickup.'])
+    ].join('\n');
+  }
+
+  if (/\bbear\s+mountain\b/u.test(normalized) && /\bnew\s+york\b/u.test(normalized)) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Use the New York Bear Mountain / Hudson AT context named in the prompt. Do not substitute another Bear Mountain.',
+      '- For Dad, pick the easier Hudson/Bear Mountain finish first, then offer a longer option only if footing, heat, crowds, and pickup timing work.',
+      '',
+      '**Route options or day plan**',
+      '- Easier Dad option: a shorter Bear Mountain / Hudson-area AT day with a confirmed trailhead, parking plan, water carried from the start, and a fixed turnaround or pickup.',
+      '- Longer option: extend along the AT approach/exit around Bear Mountain only if current maps confirm the route, elevation, road crossings, and shuttle plan.',
+      '- Crowd plan: start early, expect busy parking and summit/park traffic, and avoid relying on a full lot as the only plan.',
+      '',
+      '**Mileage targets**',
+      '- Dad-friendly: roughly 3-7 miles depending on climb, heat, footing, and crowds.',
+      '- Longer but still realistic: roughly 7-10 miles with a verified bailout and pickup.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Verify Bear Mountain State Park / Hudson-area parking, fees, opening hours, and shuttle/pickup legality before driving.',
+      '',
+      '**Water**',
+      '- Carry enough water from the start unless a current source confirms potable/refill options. Treat natural water.',
+      '',
+      '**Weather**',
+      '- Use NWS point forecasts for Bear Mountain/Hudson Highlands. Heat, lightning, ice, or high wind should shorten the day.',
+      '',
+      '**Legal overnight/camping**',
+      '- This is a 1-day plan. Do not add overnight camping unless the user asks and legal sites are current-confirmed.',
+      '',
+      '**Bailout**',
+      '- Use marked trails/roads and confirmed pickup points; do not depend on cutting through closed/private areas.',
+      ...commonSections('New York Bear Mountain / Hudson AT day-hike guardrail')
+    ].join('\n');
+  }
+
+  if (/\bmassachusetts\b/u.test(normalized) && /\b55\s*miles?\b/u.test(normalized)) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Do not accept “55 miles but easy for a newer hiker” as a safe weekend backpack. In Massachusetts, that is an aggressive mileage request, not an easy plan.',
+      '- Offer a shorter alternative first, then describe what would have to be true before attempting anything near 55 miles.',
+      '',
+      '**Route options or day plan**',
+      '- Safer shorter alternative: choose a Massachusetts AT section around 18-30 total weekend miles with legal camp/shelter, confirmed water, and simple shuttle.',
+      '- Moderate alternative: roughly 30-38 total miles only if the newer hiker has proven pace, current water is confirmed, and bailout/pickup points are locked.',
+      '- 55-mile attempt: treat as a high-output plan requiring training, daylight, exact legal camps, verified water, and a willingness to bail. It is not the recommended plan.',
+      '',
+      '**Mileage targets**',
+      '- Newer-hiker easy target: roughly 8-12 miles per full day, less with steep terrain, heat, rain, or heavy pack.',
+      '- 55 miles from Friday night to Sunday likely forces long days and should trigger a shorter alternative or extra day.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Verify Massachusetts trailhead parking, overnight parking, shuttle timing, and road-access bailouts before choosing endpoints.',
+      '',
+      '**Water**',
+      '- Do not assume water certainty. Verify current sources and carry enough margin for dry stretches; treat all natural water.',
+      '',
+      '**Weather**',
+      '- Rain, heat, cold nights, or thunderstorms should reduce mileage. Pull NWS point forecasts for the actual section.',
+      '',
+      '**Legal overnight/camping**',
+      '- Use only legal shelters, designated campsites, campgrounds, or lodging verified in a current guide/land-manager source. Do not invent camps to make 55 miles fit.',
+      '',
+      '**Bailout**',
+      '- Build bailout around named road crossings and pickup windows every day. If bailout is vague, the mileage is too aggressive.',
+      ...commonSections('Massachusetts AT impossible-mileage safety guardrail', ['- Reframe the plan with the newer hiker’s real pace before locking endpoints.'])
+    ].join('\n');
+  }
+
+  return null;
 }
 
 function promptLooksLikeAtPlanning(prompt: string): boolean {
@@ -2330,6 +2556,13 @@ export async function replyInWorkspaceClaw(
     const strictRouteReply = await buildStrictAtRouteItineraryReply(record, trimmedPrompt);
     if (strictRouteReply) {
       const { nextMessages, reply } = deterministicClawTurn(record, null, trimmedPrompt, strictRouteReply);
+      const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
+      return { workspace, reply, revisedDocument: null };
+    }
+
+    const regionalPlanningReply = buildRegionalAtPlanningFallbackReply(record, trimmedPrompt);
+    if (regionalPlanningReply) {
+      const { nextMessages, reply } = deterministicClawTurn(record, null, trimmedPrompt, regionalPlanningReply);
       const workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
       return { workspace, reply, revisedDocument: null };
     }
