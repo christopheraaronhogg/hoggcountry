@@ -312,6 +312,7 @@ function writeSqlite(sqlitePath, verses) {
   ]);
 
   const sql = [
+    'DROP TABLE IF EXISTS verses_fts;',
     'DROP TABLE IF EXISTS verses;',
     'CREATE TABLE verses (reference_key TEXT PRIMARY KEY, reference TEXT NOT NULL, book TEXT NOT NULL, book_number INTEGER NOT NULL, chapter INTEGER NOT NULL, verse INTEGER NOT NULL, testament TEXT NOT NULL, text TEXT NOT NULL);',
     'CREATE INDEX idx_kjv_pce_book_chapter ON verses(book_number, chapter, verse);',
