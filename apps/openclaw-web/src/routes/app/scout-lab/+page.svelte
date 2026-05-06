@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { SCOUT_LAB_VARIANTS } from '$lib/scout-lab';
 </script>
 
@@ -13,8 +14,14 @@
 </section>
 
 <section class="stack" style="margin-top:1rem;">
-  {#each SCOUT_LAB_VARIANTS as variant}
-    <a class="card panel-copy" href={`/app/scout-lab/${variant.id}`}>
+  <a class="card panel-copy" href={resolve('/app/scout-lab/reliability')}>
+    <p class="eyebrow">QA console</p>
+    <h2>Reliability Results</h2>
+    <p class="muted">Inspect Scout AT planning scenarios, deterministic checks, raw run artifacts, patch notes, and run-to-run changes.</p>
+  </a>
+
+  {#each SCOUT_LAB_VARIANTS as variant (variant.id)}
+    <a class="card panel-copy" href={resolve('/app/scout-lab/[variant]', { variant: variant.id })}>
       <p class="eyebrow">{variant.eyebrow}</p>
       <h2>{variant.name}</h2>
       <p class="muted">{variant.summary}</p>

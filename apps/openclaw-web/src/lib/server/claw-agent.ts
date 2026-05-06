@@ -1381,6 +1381,119 @@ function isWhitesFranconiaCrawfordRouteGrounding(grounding: AtRouteGrounding): b
   return grounding.source.id === 'hoggcountry-whites-franconia-crawford-qa-2026-05-06';
 }
 
+function isHarpersFerryRouteGrounding(grounding: AtRouteGrounding): boolean {
+  return grounding.source.id === 'hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06';
+}
+
+function buildStrictHarpersFerryAtRouteItineraryReply(
+  record: WorkspaceRecord,
+  grounding: AtRouteGrounding,
+  official: OfficialTrailSourceCheckDetails
+): string {
+  const profileBits = [
+    record.betaProfile.trailName || record.betaProfile.name || 'Hiker',
+    record.profile?.direction,
+    typeof record.profile?.targetPace === 'number' ? `workspace target ${record.profile.targetPace} mpd` : null,
+    typeof record.profile?.waterCapacityLiters === 'number' ? `${record.profile.waterCapacityLiters}L water capacity` : null
+  ].filter(Boolean).join(' · ');
+  const routeReceipt = buildScoutSourceReceipt(grounding.source.id);
+  const harpersReceipt = buildScoutSourceReceipt('harpers-ferry-maryland-dnr-nps-atc');
+  const atcReceipt = buildScoutSourceReceipt('atc-trail-updates', { fetchedAt: official.fetchedAt });
+  const nwsReceipt = official.weather ? buildScoutSourceReceipt('nws-weather', { fetchedAt: official.fetchedAt }) : null;
+  const guideReceipt = buildScoutSourceReceipt('at-guide-user-owned');
+  const faroutReceipt = buildScoutSourceReceipt('farout-current-comments');
+  const routeTotal = grounding.destination ? formatAtRouteMileage(Math.abs(grounding.destination.mile - grounding.start.mile)) : null;
+
+  const dadOptions = grounding.planOptions.filter((option) => option.id.startsWith('harpers-dad-'));
+  const overnightOptions = grounding.planOptions.filter((option) => option.id.startsWith('harpers-overnight-'));
+
+  const lines: string[] = [
+    '### Scout strict-route plan',
+    '',
+    'I’m using strict Harpers Ferry mental-halfway mode because this prompt names Harpers Ferry / ATC HQ and also contains ambiguous halfway language. The explicit place wins: this plan must not route to Pine Grove Furnace unless Pine Grove is separately named.',
+    profileBits ? `Workspace context: ${profileBits}.` : null,
+    '',
+    '**Recommendation**',
+    '- Treat Tuesday as a Dad/family finish hike into Harpers Ferry / ATC HQ.',
+    '- Treat Friday/Saturday as a separate 2-day / 1-night backpack near Harpers Ferry, likely north into Maryland if shuttle, legal overnight, water, weather, and parking all check out.',
+    '- Harpers Ferry is the psychological/mental halfway landmark. Pine Grove Furnace is the true/mathematical halfway area; that phrase must not override the named Harpers Ferry destination.',
+    '',
+    '**Route-order guardrail**',
+    `- Direction context: ${grounding.direction}.`,
+    grounding.targetDays ? `- Requested trip length detected: ${grounding.targetDays} day${grounding.targetDays === 1 ? '' : 's'}, but this prompt contains both a 1-day plan and a 2-day overnight plan.` : '- Requested trip shape: mixed 1-day finish plus 2-day / 1-night overnight.',
+    grounding.destination ? `- Validated family-finish corridor: ${grounding.start.name} ${grounding.direction} to ${grounding.destination.name}${routeTotal ? ` (~${routeTotal} mi by this guardrail)` : ''}.` : `- Validated corridor starts at ${grounding.start.name}; verify the final endpoint in your current guide/source.`,
+    `- Source: ${grounding.source.label}. ${grounding.source.exactMileageCaveat}`,
+    '',
+    '| Point | Approx route mile | From start | Type |',
+    '|---|---:|---:|---|',
+    ...grounding.corridor.map((point) => formatStrictRoutePoint(point, grounding.start)),
+    '',
+    '**Important corrections / guardrails**',
+    ...grounding.warnings.map((warning) => `- ${warning}`),
+    '- Do not use Pine Grove Furnace, the Half Gallon Challenge, or the true-halfway corridor as the route target for this Harpers Ferry prompt.',
+    '- Dad-friendly does not automatically mean only a 6-mile day. Present easier/moderate and longer options with shuttle and heat tradeoffs.',
+    '',
+    '**Tuesday Dad finish options**'
+  ].filter((line): line is string => line !== null);
+
+  for (const option of dadOptions) {
+    lines.push('', ...renderStrictRouteOption(option));
+  }
+
+  lines.push(
+    '',
+    '**Friday/Saturday 2-day / 1-night nearby overnight**'
+  );
+  for (const option of overnightOptions) {
+    lines.push('', ...renderStrictRouteOption(option));
+  }
+
+  lines.push(
+    '',
+    '**Legal overnight / camping assumptions**',
+    '- Treat Ed Garvey Memorial Shelter and Dahlgren Backpack Campground as candidate legal overnight anchors, not guaranteed reservations, capacity, water, or current legal status.',
+    '- Verify the current Maryland DNR/South Mountain, ATC, local land-manager, and user-owned guide rules before committing to the exact overnight.',
+    '- Do not invent stealth, roadside, parking-lot, riverbank, overlook, or “near the shelter” camping if the official/current source does not make it legal.',
+    '- If the legal overnight is not confirmed, change the endpoint, use a legal campground/lodging option, or turn the Friday/Saturday plan into day hikes.',
+    '',
+    '**Water**',
+    typeof record.profile?.waterCapacityLiters === 'number'
+      ? `- Your workspace water capacity is ${record.profile.waterCapacityLiters}L; treat that as planning context, not proof that any Maryland ridge/source is reliable.`
+      : '- Confirm water before committing to either Dad day or the overnight; Scout does not have current water reliability here.',
+    '- Treat all natural water. Use current guide/FarOut-style comments or official/current local reports for Ed Garvey, Dahlgren, and any springs/streams.',
+    '- If water is uncertain or heat is high, shorten the day, carry extra, or pick a plan with confirmed services.',
+    '',
+    '**Weather**',
+    '- Pull NWS point forecasts and alerts for Harpers Ferry/river level and the Maryland ridge 24-48 hours before leaving.',
+    '- Heat, thunderstorms, cold rain, high water, or poor visibility should push the plan toward the easier finish option or a day-hike-only fallback.',
+    '',
+    '**Parking / shuttle / bailout**',
+    '- Confirm legal parking and pickup timing for Keys Gap, Harpers Ferry/ATC HQ, Weverton, Gathland, Dahlgren, and any selected endpoint before leaving a car.',
+    '- Harpers Ferry weekend parking and shuttle logistics can be the limiting factor; do not assume same-day parking or cell-service recovery.',
+    '- Set Dad bailout points before the hike starts. For the overnight, preselect road-crossing exits and a ride plan rather than relying on “we can just get off trail.”',
+    '',
+    '**Safety / live conditions**',
+    ...renderStrictRouteOfficialSummary(official, grounding.state),
+    '',
+    '**Final checklist before leaving**',
+    '- Verify exact AT mileages, route sequence, road crossings, and elevation in your current user-owned A.T. Guide/AWOL or equivalent.',
+    '- Confirm Harpers Ferry/ATC HQ timing, Keys Gap/Weverton/Gathland/Dahlgren parking, shuttle/pickup, and whether overnight parking is allowed.',
+    '- Confirm the legal overnight anchor, water status, facility status, closures/detours, fire rules, and food storage expectations.',
+    '- Pull NWS forecast/alerts for town/river and ridge points.',
+    '- Carry offline maps, headlamp, rain layer, water treatment, extra water margin, emergency contact plan, and a written pickup/bailout plan.',
+    '',
+    '**Source receipts**',
+    routeReceipt ? `- ${routeReceipt.title} [${routeReceipt.trust}/${routeReceipt.accessMode}]: ${routeReceipt.citation}` : `- Route validator: ${grounding.source.citation}`,
+    harpersReceipt ? `- Needed current check: ${harpersReceipt.title} [${harpersReceipt.trust}/${harpersReceipt.accessMode}]: ${harpersReceipt.citation}` : '- Harpers Ferry/Maryland DNR/NPS/ATC source manifest: available, but no receipt was produced in this turn.',
+    atcReceipt ? `- ${atcReceipt.title} [${atcReceipt.trust}/${atcReceipt.accessMode}]: ${atcReceipt.citation}` : '- ATC Trail Updates source manifest: available, but no ATC receipt was produced in this turn.',
+    nwsReceipt ? `- ${nwsReceipt.title} [${nwsReceipt.trust}/${nwsReceipt.accessMode}]: ${nwsReceipt.citation}` : '- NWS source manifest: available, but no weather receipt was produced in this turn.',
+    guideReceipt ? `- Needed but not bundled: ${guideReceipt.title} [${guideReceipt.trust}/${guideReceipt.accessMode}]. ${guideReceipt.caveats[0]}` : '- Needed but not bundled: user-owned guide data.',
+    faroutReceipt ? `- Needed but not bundled: ${faroutReceipt.title} [${faroutReceipt.trust}/${faroutReceipt.accessMode}]. ${faroutReceipt.caveats[0]}` : '- Needed but not bundled: current user-supplied water/shelter comments.'
+  );
+
+  return lines.join('\n');
+}
+
 function buildStrictGsmnpAtRouteItineraryReply(
   record: WorkspaceRecord,
   grounding: AtRouteGrounding,
@@ -1917,6 +2030,10 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
     errors: [`Official source check failed: ${error instanceof Error ? error.message : 'unknown error'}`]
   } satisfies OfficialTrailSourceCheckDetails));
 
+  if (isHarpersFerryRouteGrounding(grounding)) {
+    return buildStrictHarpersFerryAtRouteItineraryReply(record, grounding, official);
+  }
+
   if (isGsmnpRouteGrounding(grounding)) {
     return buildStrictGsmnpAtRouteItineraryReply(record, grounding, official);
   }
@@ -1967,6 +2084,10 @@ async function buildStrictAtRouteItineraryReply(record: WorkspaceRecord, prompt:
     '',
     '**Important corrections / guardrails**',
     ...grounding.warnings.map((warning) => `- ${warning}`),
+    '',
+    '**Recommendation**',
+    '- Use the lower-risk option unless current water, legal overnight, weather, daylight, body, parking, and shuttle details are all verified.',
+    '- Treat this as a route-order guardrail first; exact mileages and services still need current user-owned/current-source confirmation.',
     '',
     '**Route options**'
   ].filter((line): line is string => line !== null);

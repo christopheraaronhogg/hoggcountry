@@ -21,6 +21,8 @@ const requiredIds = [
   'gsmnp-backcountry-permits',
   'hoggcountry-shenandoah-at-corridor-qa-2026-05-05',
   'shenandoah-backcountry-permits',
+  'hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06',
+  'harpers-ferry-maryland-dnr-nps-atc',
   'hoggcountry-100-mile-wilderness-qa-2026-05-06',
   'hundred-mile-wilderness-matc-atc-logistics',
   'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05',
@@ -66,6 +68,18 @@ assert.ok(shenandoahSources.includes('shenandoah-backcountry-permits'), 'Shenand
 assert.ok(shenandoahSources.includes('at-guide-user-owned'), 'Shenandoah exact hut/mileage itinerary should require user-owned guide data');
 assert.ok(shenandoahSources.includes('nws-weather'), 'Shenandoah heat/thunderstorm itinerary should select NWS');
 
+const harpersSources = selectScoutSourceManifests({
+  query: "Harper's Ferry mental halfway ATC HQ Dad finish hike Keys Gap and Friday Saturday overnight near Weverton Ed Garvey Dahlgren Gathland with legal camping water parking shuttle weather",
+  state: 'VA/WV/MD',
+  mileRange: [1018.1, 1061.0],
+  limit: 10
+}).map((source) => source.id);
+assert.ok(harpersSources.includes('hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06'), 'Harpers Ferry mental-halfway itinerary should select the route/logistics validator');
+assert.ok(harpersSources.includes('harpers-ferry-maryland-dnr-nps-atc'), 'Harpers Ferry overnight/logistics prompts should select NPS/Maryland DNR/ATC source checks');
+assert.ok(harpersSources.includes('at-guide-user-owned'), 'Harpers Ferry exact mileage/overnight itinerary should require user-owned guide data');
+assert.ok(harpersSources.includes('farout-current-comments'), 'Harpers Ferry water/shelter itinerary should require current comments');
+assert.ok(harpersSources.includes('nws-weather'), 'Harpers Ferry weather-bearing itinerary should select NWS');
+
 const whitesSources = selectScoutSourceManifests({
   query: 'Franconia Notch I-93 to Crawford Notch US 302 White Mountains NOBO 3 day section hiker itinerary with AMC huts tentsites legal camping above treeline lightning water parking shuttle bailouts',
   state: 'NH',
@@ -105,7 +119,7 @@ assert.ok(baxterSources.includes('nws-weather'), 'Baxter weather/closure itinera
 const waterSources = selectScoutSourceManifests({
   query: 'Are the next shelter water sources dry and are recent FarOut comments enough to trust it?',
   topics: ['water', 'shelter'],
-  limit: 10
+  limit: 20
 }).map((source) => source.id);
 assert.ok(waterSources.includes('farout-current-comments'), 'Recent water/shelter condition prompts should select hiker-supplied current comments');
 assert.ok(waterSources.includes('private-workspace'), 'Private workspace should remain a searchable source lane');
@@ -118,6 +132,12 @@ const shenandoahReceipt = buildScoutSourceReceipt('hoggcountry-shenandoah-at-cor
 assert.ok(shenandoahReceipt?.citation.includes('Shenandoah AT south/central corridor'), 'Shenandoah receipt should expose the validator citation');
 const shenandoahPermitReceipt = buildScoutSourceReceipt('shenandoah-backcountry-permits');
 assert.ok(shenandoahPermitReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched Shenandoah official receipt should not imply a live fetch');
+const harpersReceipt = buildScoutSourceReceipt('hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06');
+assert.ok(harpersReceipt?.citation.includes('Harpers Ferry mental-halfway'), 'Harpers Ferry receipt should expose the validator citation');
+assert.equal(harpersReceipt?.accessMode, 'route-validator', 'Harpers Ferry route receipt should identify deterministic validator access');
+const harpersOfficialReceipt = buildScoutSourceReceipt('harpers-ferry-maryland-dnr-nps-atc');
+assert.ok(harpersOfficialReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched Harpers Ferry official/regional receipt should not imply a live fetch');
+assert.equal(harpersOfficialReceipt?.trust, 'official', 'Harpers Ferry official/regional receipt should be distinguished from local QA fixtures');
 const whitesReceipt = buildScoutSourceReceipt('hoggcountry-whites-franconia-crawford-qa-2026-05-06');
 assert.ok(whitesReceipt?.citation.includes('White Mountains Franconia Notch'), 'Whites receipt should expose the validator citation');
 assert.equal(whitesReceipt?.accessMode, 'route-validator', 'Whites route receipt should identify deterministic validator access');

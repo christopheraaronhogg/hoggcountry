@@ -105,6 +105,14 @@ export const SHENANDOAH_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
   exactMileageCaveat: 'Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, NPS map, Recreation.gov itinerary, or recent water/shelter report.'
 } as const;
 
+export const HARPERS_FERRY_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
+  id: 'hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06',
+  label: 'Hogg Country Harpers Ferry mental-halfway corridor and mixed-plan QA fixture',
+  citation: 'Internal dogfood guardrail created from Chris’s 2026-05-06 Harpers Ferry failure prompt plus Hogg Country field guide anchors; verify exact mileages, parking, water, legal camping, shuttle, and current closures before leaving.',
+  authority: 'internal-qa',
+  exactMileageCaveat: 'Use these values as a route-order and ambiguity guardrail. Harpers Ferry / ATC HQ is the psychological or mental halfway point; Pine Grove Furnace is the true/mathematical halfway area and must not override an explicit Harpers Ferry destination.'
+} as const;
+
 export const BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
   id: 'hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05',
   label: 'Hogg Country Baxter/Katahdin AT finish corridor and regulation QA fixture',
@@ -341,6 +349,68 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
     notes: 'White Mountains road crossing / pickup corridor; state-park camping rules, parking, road access, and shuttle logistics require current confirmation.'
   },
   {
+    id: 'keys-gap-va-wv',
+    name: 'Keys Gap / VA-WV 9',
+    kind: 'road-crossing',
+    state: 'VA/WV',
+    mile: 1018.1,
+    latitude: 39.2642,
+    longitude: -77.7622,
+    aliases: ['keys gap', 'keyes gap', 'va-wv 9', 'va wv 9', 'route 9', 'wv 9', 'va 9'],
+    notes: 'Common south-side road crossing for a Harpers Ferry finish. Verify parking/shuttle legality and exact AT mileage with current local sources.'
+  },
+  {
+    id: 'harpers-ferry-atc-hq-wv',
+    name: 'Harpers Ferry / ATC HQ',
+    kind: 'town',
+    state: 'WV',
+    mile: 1024.4,
+    latitude: 39.3254,
+    longitude: -77.7389,
+    aliases: ['harpers ferry', 'harper’s ferry', "harper's ferry", 'harper ferry', 'harpers ferry wv', 'harpers ferry west virginia', 'atc hq', 'atc headquarters', 'appalachian trail conservancy headquarters', 'mental halfway', 'mental halfway point', 'psychological halfway', 'psychological halfway point'],
+    notes: 'ATC headquarters / psychological halfway town. This is distinct from Pine Grove Furnace, the true/mathematical halfway area.'
+  },
+  {
+    id: 'weverton-cliffs-md',
+    name: 'Weverton / Weverton Cliffs',
+    kind: 'road-crossing',
+    state: 'MD',
+    mile: 1040.6,
+    latitude: 39.3339,
+    longitude: -77.6767,
+    aliases: ['weverton', 'weverton road', 'weverton cliffs', 'weverton cliff', 'weverton md'],
+    notes: 'Maryland road/trailhead and cliffs context north/east of Harpers Ferry. Verify parking rules and shuttle timing.'
+  },
+  {
+    id: 'ed-garvey-memorial-shelter-md',
+    name: 'Ed Garvey Memorial Shelter',
+    kind: 'shelter',
+    state: 'MD',
+    mile: 1043.3,
+    aliases: ['ed garvey', 'ed garvey memorial shelter', 'garvey shelter', 'ed garvey shelter'],
+    notes: 'Maryland shelter candidate. Verify current legal use, water, capacity, and any temporary closure before relying on it.'
+  },
+  {
+    id: 'dahlgren-backpack-campground-md',
+    name: 'Dahlgren Backpack Campground',
+    kind: 'shelter',
+    state: 'MD',
+    mile: 1055.0,
+    aliases: ['dahlgren', 'dahlgren backpack campground', 'dahlgren campground', 'dahlgren backpack camp'],
+    notes: 'Maryland backpack campground candidate. Verify current legal use, water, restroom/shower status, and rules.'
+  },
+  {
+    id: 'gathland-state-park-md',
+    name: 'Gathland State Park / Crampton Gap',
+    kind: 'park',
+    state: 'MD',
+    mile: 1061.0,
+    latitude: 39.4054,
+    longitude: -77.6425,
+    aliases: ['gathland', 'gathland state park', 'crampton gap', 'cramptons gap'],
+    notes: 'Maryland park/road context. Park facilities and nearby water/camping assumptions require current Maryland DNR/local checks.'
+  },
+  {
     id: 'pine-grove-furnace-state-park-pa',
     name: 'Pine Grove Furnace State Park',
     kind: 'park',
@@ -548,6 +618,7 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
 ] as const;
 
 const KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS = ['Tagg Run Shelter'] as const;
+const KNOWN_BLOCKED_HARPERS_FERRY_ENDPOINTS = ['Pine Grove Furnace State Park', 'True Halfway Point', 'Half Gallon Challenge'] as const;
 const KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS = ['Big Meadows', "Byrd's Nest #3", 'Byrds Nest 3'] as const;
 const KNOWN_BLOCKED_BAXTER_FINISH_ENDPOINTS = ['Knife Edge', 'Chimney Pond', 'Roaring Brook'] as const;
 const KNOWN_BLOCKED_WHITES_FRANCONIA_CRAWFORD_ENDPOINTS = ['Mizpah Spring Hut', 'Nauman Tentsite', 'Presidential Range', 'Pinkham Notch'] as const;
@@ -590,6 +661,14 @@ const WHITES_FRANCONIA_CRAWFORD_AT_POINT_IDS = [
   'ethan-pond-shelter-nh',
   'crawford-notch-us-302-nh'
 ] as const;
+const HARPERS_FERRY_AT_POINT_IDS = [
+  'keys-gap-va-wv',
+  'harpers-ferry-atc-hq-wv',
+  'weverton-cliffs-md',
+  'ed-garvey-memorial-shelter-md',
+  'dahlgren-backpack-campground-md',
+  'gathland-state-park-md'
+] as const;
 
 const ROUTE_PROMPT_TERMS = [
   'appalachian trail',
@@ -603,8 +682,10 @@ const ROUTE_PROMPT_TERMS = [
   'mileage',
   'mileages',
   'daily mileage',
+  'hike',
   'shelter',
   'camping',
+  'summit',
   'trail plan',
   'hiking'
 ] as const;
@@ -705,6 +786,28 @@ export function shouldUseStrictAtRouteGrounding(prompt: string): boolean {
   return hasRouteContext && hasKnownPoint && asksForPlan;
 }
 
+function promptExplicitlyMentionsHarpersFerry(prompt: string): boolean {
+  return /\b(?:harpers?|harper['’]?s?)\s+ferr(?:y|ies)\b/iu.test(prompt)
+    || /\batc\s+hq\b/iu.test(prompt)
+    || includesNormalized(prompt, 'mental halfway point')
+    || includesNormalized(prompt, 'psychological halfway point');
+}
+
+function promptExplicitlyMentionsPineGrove(prompt: string): boolean {
+  return /\bpine\s+grove(?:\s+furnace)?\b/iu.test(prompt)
+    || /\bhalf\s+gallon\s+challenge\b/iu.test(prompt);
+}
+
+function isHarpersFerryFamilyFinishRequest(prompt: string): boolean {
+  return promptExplicitlyMentionsHarpersFerry(prompt)
+    && /\b(?:dad|father|family|finish(?:ing)?|last\s+day|into|tuesday)\b/iu.test(prompt);
+}
+
+function isPineGrovePrimaryRequest(prompt: string): boolean {
+  return promptExplicitlyMentionsPineGrove(prompt)
+    && /\b(?:want|plan|hike|route|itinerary|weekend|starting|start)\b[^.]{0,100}\bpine\s+grove(?:\s+furnace)?\b/iu.test(prompt);
+}
+
 export function findAtRoutePoint(query: string | null | undefined): AtRoutePoint | null {
   const value = query?.trim();
   if (!value) return null;
@@ -802,6 +905,57 @@ function buildPineGrovePlanOptions(direction: AtRouteDirection): readonly AtRout
       caveats: [
         'This is a bigger-mile option; Day 2 is the stress point.',
         'Use only with current water/shelter reports and a clear pickup/lodging plan.'
+      ]
+    }
+  ];
+}
+
+function buildHarpersFerryPlanOptions(direction: AtRouteDirection): readonly AtRoutePlanOption[] {
+  const dadFinishDays = [
+    buildDay(1, 'keys-gap-va-wv', 'harpers-ferry-atc-hq-wv', 'Moderate finish into Harpers Ferry / ATC HQ. Verify Keys Gap parking/shuttle legality, Dad pace, heat, and exact pickup timing.')
+  ] as const;
+
+  const longerDadFinishDays = [
+    buildDay(1, 'weverton-cliffs-md', 'harpers-ferry-atc-hq-wv', 'Longer southbound-style finish into Harpers Ferry with Weverton/river context. Verify shuttle direction, parking, and whether Dad wants cliffs/elevation.')
+  ] as const;
+
+  const marylandOvernightDays = direction === 'SOBO' ? [
+    buildDay(1, 'gathland-state-park-md', 'dahlgren-backpack-campground-md', 'Shorter legal-overnight-focused day if Dahlgren is current/legal/available. Verify Maryland DNR rules and water.'),
+    buildDay(2, 'dahlgren-backpack-campground-md', 'harpers-ferry-atc-hq-wv', 'Finish back into Harpers Ferry. Confirm shuttle/parking and avoid assuming water or facilities without a current check.')
+  ] as const : [
+    buildDay(1, 'harpers-ferry-atc-hq-wv', 'ed-garvey-memorial-shelter-md', 'Friday northbound overnight shape from Harpers Ferry through Weverton context to Ed Garvey. Verify legal shelter use and water before leaving.'),
+    buildDay(2, 'ed-garvey-memorial-shelter-md', 'dahlgren-backpack-campground-md', 'Saturday finish toward Dahlgren/Gathland corridor. Verify campground rules, water, pickup, and whether continuing to Gathland is the better endpoint.')
+  ] as const;
+
+  return [
+    {
+      id: 'harpers-dad-keys-gap-finish',
+      label: 'Dad-friendly Tuesday finish into Harpers Ferry from Keys Gap',
+      totalMiles: roundMileage(dadFinishDays.reduce((sum, day) => sum + day.miles, 0)),
+      days: dadFinishDays,
+      caveats: [
+        'This is the easier/moderate finish option, not the only Dad option.',
+        'Exact parking, shuttle legality, heat, and ATC HQ timing need current confirmation.'
+      ]
+    },
+    {
+      id: 'harpers-dad-weverton-longer-finish',
+      label: 'Longer Dad finish option using Weverton / river-cliffs context',
+      totalMiles: roundMileage(longerDadFinishDays.reduce((sum, day) => sum + day.miles, 0)),
+      days: longerDadFinishDays,
+      caveats: [
+        'This is a bigger family-day option with more shuttle complexity.',
+        'Use only if Dad wants the added distance/elevation and the pickup/parking plan is confirmed.'
+      ]
+    },
+    {
+      id: direction === 'SOBO' ? 'harpers-overnight-gathland-dahlgren-return' : 'harpers-overnight-maryland-ed-garvey-dahlgren',
+      label: direction === 'SOBO' ? 'Friday/Saturday Maryland overnight returning toward Harpers Ferry' : 'Friday/Saturday Maryland overnight near Harpers Ferry',
+      totalMiles: roundMileage(marylandOvernightDays.reduce((sum, day) => sum + day.miles, 0)),
+      days: marylandOvernightDays,
+      caveats: [
+        'This is a nearby overnight planning shape, separate from the Tuesday Dad finish.',
+        'Legal camping, water, facilities, and shuttle details must be verified with current Maryland DNR/local/user-owned guide or FarOut-style source material.'
       ]
     }
   ];
@@ -1124,6 +1278,7 @@ function findPointAliasesInOrder(text: string, points: readonly AtRoutePoint[]):
 }
 
 function lineHasRouteSequenceSyntax(line: string): boolean {
+  if (/\bcomes\s+before\b/iu.test(line)) return false;
   return /(?:→|->|\bto\b|\bthen\b|\bafter\b|\bbefore\b)/iu.test(line);
 }
 
@@ -1580,6 +1735,7 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
   const pointOrder = new Map(grounding.corridor.map((point, index) => [point.id, index]));
   for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
     const line = rawLine.trim();
+    if (line.startsWith('|')) continue;
     if (!line || !lineHasRouteSequenceSyntax(line)) continue;
     const mentioned = findPointAliasesInOrder(line, grounding.corridor);
     if (mentioned.length < 2) continue;
@@ -1616,21 +1772,42 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
   const prompt = input.prompt.trim();
   if (!shouldUseStrictAtRouteGrounding(prompt)) return null;
 
-  const mentionedPoints = extractMentionedAtRoutePoints(prompt);
+  const promptMentionsHarpersFerry = promptExplicitlyMentionsHarpersFerry(prompt);
+  const promptMentionsPineGrove = promptExplicitlyMentionsPineGrove(prompt);
+  let mentionedPoints = extractMentionedAtRoutePoints(prompt);
+  if (promptMentionsHarpersFerry && !promptMentionsPineGrove) {
+    mentionedPoints = mentionedPoints.filter((point) => point.id !== 'pine-grove-furnace-state-park-pa');
+  }
   const mentionedInOrder = findPointAliasesInOrder(prompt, mentionedPoints);
-  const start = findAtRoutePoint(input.startQuery)
+  const explicitStart = findAtRoutePoint(input.startQuery);
+  let start = explicitStart
     ?? mentionedInOrder[0]
     ?? mentionedPoints[0]
     ?? null;
   if (!start) return null;
 
   const direction = input.direction ?? inferAtRouteDirection(prompt);
+  const harpersFamilyFinish = isHarpersFerryFamilyFinishRequest(prompt);
+  const pineGrovePrimary = isPineGrovePrimaryRequest(prompt);
+  const harpersFerryPoint = pointById('harpers-ferry-atc-hq-wv');
+  if (!explicitStart && pineGrovePrimary) {
+    start = pointById('pine-grove-furnace-state-park-pa');
+  }
+  if (!explicitStart && harpersFamilyFinish && (start.id === harpersFerryPoint.id || mentionedInOrder.length <= 1)) {
+    start = pointById(direction === 'SOBO' ? 'weverton-cliffs-md' : 'keys-gap-va-wv');
+  }
   const targetDays = input.targetDays ?? extractAtRouteDayCount(prompt);
   const targetDailyMileage = typeof input.targetDailyMileage === 'number' && Number.isFinite(input.targetDailyMileage) && input.targetDailyMileage > 0
     ? roundMileage(input.targetDailyMileage)
     : null;
   const targetTotalMiles = targetDays && targetDailyMileage ? roundMileage(targetDays * targetDailyMileage) : null;
-  const destination = [...mentionedInOrder].reverse().find((point) => point.id !== start.id) ?? null;
+  let destination = [...mentionedInOrder].reverse().find((point) => point.id !== start.id) ?? null;
+  if (pineGrovePrimary && destination?.id === harpersFerryPoint.id) {
+    destination = null;
+  }
+  if (!destination && harpersFamilyFinish && start.id !== harpersFerryPoint.id) {
+    destination = harpersFerryPoint;
+  }
   const mentionedCorridorMiles = mentionedPoints.length > 0
     ? Math.max(...mentionedPoints.map((point) => Math.abs(point.mile - start.mile)))
     : 0;
@@ -1649,6 +1826,10 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
   const legs = legsFor(corridor, direction);
   const unrecognizedNames = extractUnrecognizedAtRouteNames(prompt);
   const isPineGrove = start.id === 'pine-grove-furnace-state-park-pa';
+  const isHarpersFerry = !pineGrovePrimary && (corridor.some((point) => HARPERS_FERRY_AT_POINT_IDS.includes(point.id as typeof HARPERS_FERRY_AT_POINT_IDS[number]))
+    || start.id === 'harpers-ferry-atc-hq-wv'
+    || destination?.id === 'harpers-ferry-atc-hq-wv'
+    || promptMentionsHarpersFerry);
   const isGsmnp = start.id === 'fontana-dam-nc' || corridor.some((point) => point.id === 'newfound-gap-tn-nc');
   const isShenandoah = corridor.some((point) => SHENANDOAH_AT_POINT_IDS.includes(point.id as typeof SHENANDOAH_AT_POINT_IDS[number]));
   const promptNamesHundredMileWilderness = includesNormalized(prompt, '100 mile wilderness') || includesNormalized(prompt, '100-mile wilderness') || includesNormalized(prompt, 'hundred mile wilderness');
@@ -1667,39 +1848,45 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
   const isSwiftRunRequest = destination?.id === 'swift-run-gap-va' || start.id === 'swift-run-gap-va' || includesNormalized(prompt, 'swift run gap');
   const isCrawfordRequest = destination?.id === 'crawford-notch-us-302-nh' || start.id === 'crawford-notch-us-302-nh' || includesNormalized(prompt, 'crawford notch') || includesNormalized(prompt, 'us 302');
   const hasWhitesWaterWeatherConstraint = /\b(?:2(?:\.5)?\s*l|2(?:\.5)?\s+liters|two\s+(?:and\s+a\s+half\s+)?liters|first\s+time|early\s+september|september|lightning|thunder|above[-\s]?treeline|ridge|weather|water)\b/iu.test(prompt);
-  const source = isGsmnp
-    ? GSMNP_AT_CORRIDOR_QA_SOURCE
-    : isShenandoah
-      ? SHENANDOAH_AT_CORRIDOR_QA_SOURCE
-      : isHundredMileWilderness
-        ? HUNDRED_MILE_WILDERNESS_AT_CORRIDOR_QA_SOURCE
-        : isWhitesFranconiaCrawford
-          ? WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE
-        : isBaxterKatahdin
-          ? BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE
-          : AT_ROUTE_QA_SOURCE;
+  const source = isHarpersFerry
+    ? HARPERS_FERRY_AT_CORRIDOR_QA_SOURCE
+    : isGsmnp
+      ? GSMNP_AT_CORRIDOR_QA_SOURCE
+      : isShenandoah
+        ? SHENANDOAH_AT_CORRIDOR_QA_SOURCE
+        : isHundredMileWilderness
+          ? HUNDRED_MILE_WILDERNESS_AT_CORRIDOR_QA_SOURCE
+          : isWhitesFranconiaCrawford
+            ? WHITES_FRANCONIA_CRAWFORD_AT_CORRIDOR_QA_SOURCE
+          : isBaxterKatahdin
+            ? BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE
+            : AT_ROUTE_QA_SOURCE;
   const blockedEndpointNames = isPineGrove
     ? [...KNOWN_BLOCKED_PINE_GROVE_ENDPOINTS]
-    : isShenandoah && isSwiftRunRequest
-      ? [...KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS]
-      : isWhitesFranconiaCrawford && isCrawfordRequest
-        ? [...KNOWN_BLOCKED_WHITES_FRANCONIA_CRAWFORD_ENDPOINTS]
-        : isBaxterKatahdin
-          ? [...KNOWN_BLOCKED_BAXTER_FINISH_ENDPOINTS]
-          : [];
+    : isHarpersFerry
+      ? [...KNOWN_BLOCKED_HARPERS_FERRY_ENDPOINTS]
+      : isShenandoah && isSwiftRunRequest
+        ? [...KNOWN_BLOCKED_SHENANDOAH_SWIFT_ENDPOINTS]
+        : isWhitesFranconiaCrawford && isCrawfordRequest
+          ? [...KNOWN_BLOCKED_WHITES_FRANCONIA_CRAWFORD_ENDPOINTS]
+          : isBaxterKatahdin
+            ? [...KNOWN_BLOCKED_BAXTER_FINISH_ENDPOINTS]
+            : [];
   const planOptions = isPineGrove
     ? buildPineGrovePlanOptions(direction)
-    : isGsmnp
-      ? buildGsmnpPlanOptions(direction)
-      : isShenandoah
-        ? buildShenandoahPlanOptions(direction)
-        : isHundredMileWilderness && (start.id === 'monson-me' || start.id === 'abol-bridge-me')
-          ? buildHundredMileWildernessPlanOptions(direction)
-          : isWhitesFranconiaCrawford && (start.id === 'franconia-notch-i-93-nh' || start.id === 'crawford-notch-us-302-nh')
-            ? buildWhitesFranconiaCrawfordPlanOptions(direction)
-          : isBaxterKatahdin && (start.id === 'abol-bridge-me' || start.id === 'katahdin-stream-campground-me')
-            ? buildBaxterKatahdinPlanOptions(direction)
-            : [];
+    : isHarpersFerry
+      ? buildHarpersFerryPlanOptions(direction)
+      : isGsmnp
+        ? buildGsmnpPlanOptions(direction)
+        : isShenandoah
+          ? buildShenandoahPlanOptions(direction)
+          : isHundredMileWilderness && (start.id === 'monson-me' || start.id === 'abol-bridge-me')
+            ? buildHundredMileWildernessPlanOptions(direction)
+            : isWhitesFranconiaCrawford && (start.id === 'franconia-notch-i-93-nh' || start.id === 'crawford-notch-us-302-nh')
+              ? buildWhitesFranconiaCrawfordPlanOptions(direction)
+            : isBaxterKatahdin && (start.id === 'abol-bridge-me' || start.id === 'katahdin-stream-campground-me')
+              ? buildBaxterKatahdinPlanOptions(direction)
+              : [];
   const warnings = [
     source.exactMileageCaveat,
     direction === 'NOBO' && isPineGrove
@@ -1707,6 +1894,15 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
       : null,
     direction === 'NOBO' && isGsmnp
       ? 'GSMNP regulation guardrail: a section hiker should assume site/date-specific backcountry permits, designated shelters/campsites only, and no tenting outside a shelter unless the official permit/source explicitly allows it.'
+      : null,
+    isHarpersFerry
+      ? 'Harpers Ferry ambiguity guardrail: explicit Harpers Ferry / ATC HQ / mental-halfway language wins over generic true-halfway language; do not route this request to Pine Grove Furnace unless Pine Grove is explicitly named.'
+      : null,
+    isHarpersFerry
+      ? 'Harpers Ferry planning guardrail: separate the Dad finish hike into Harpers Ferry from the Friday/Saturday overnight plan near Harpers Ferry; do not collapse the two requests into one route.'
+      : null,
+    isHarpersFerry
+      ? 'Maryland/WV/VA legal overnight guardrail: treat Ed Garvey Memorial Shelter and Dahlgren Backpack Campground as candidate legal anchors only after current Maryland DNR/local/user-owned guide verification; do not invent stealth or roadside camping.'
       : null,
     isShenandoah
       ? 'Shenandoah regulation guardrail: use current NPS/Recreation.gov permit rules, campsite setbacks, food-storage/fire rules, and current water/closure checks; do not rely on old free/self-registration permit guidance.'

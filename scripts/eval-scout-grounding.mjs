@@ -40,6 +40,25 @@ assert.ok(issues.some((issue) => issue.kind === 'bad-mileage'), 'Validator shoul
 const safeDraft = `Day 1: Pine Grove Furnace State Park to James Fry Shelter side trail. Day 2: James Fry Shelter to PA 174 / Boiling Springs. Day 3: PA 174 / Boiling Springs to Darlington Shelter.`;
 assert.deepEqual(validateAtRouteAnswerClaims(safeDraft, grounding), [], 'Validator should allow the known safe Pine Grove NOBO sequence');
 
+const harpersPrompt = `Plan for a 1 day, and a 2 day hike. Planning on hiking with dad for the last day into Harper's ferry (mental halfway point) on Tuesday, then hiking Friday Saturday as well. (Plan on overnight) You plan for me, then let the system plan for me. I want to compare results myself so give me the full results`;
+const harpers = buildAtRouteGrounding({ prompt: harpersPrompt });
+assert.ok(harpers, 'Harpers Ferry failure prompt should trigger strict AT route grounding');
+assert.equal(harpers.source.id, 'hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06');
+assert.equal(harpers.start.id, 'keys-gap-va-wv', 'Harpers family-finish prompt should choose Keys Gap as the default easier/moderate finish start');
+assert.equal(harpers.destination?.id, 'harpers-ferry-atc-hq-wv', 'Harpers Ferry / ATC HQ should be selected as the explicit destination');
+assert.equal(harpers.direction, 'NOBO');
+assert.notEqual(harpers.start.id, 'pine-grove-furnace-state-park-pa', 'Harpers Ferry prompt must not route to Pine Grove Furnace');
+assert.ok(harpers.blockedEndpointNames.includes('Pine Grove Furnace State Park'), 'Pine Grove should be explicitly blocked for the Harpers mental-halfway prompt');
+assert.ok(harpers.blockedEndpointNames.includes('True Halfway Point'), 'True halfway should be blocked when Harpers Ferry is explicitly named');
+assert.ok(harpers.planOptions.some((option) => option.id === 'harpers-dad-keys-gap-finish'), 'Dad-friendly Keys Gap finish option should be available');
+assert.ok(harpers.planOptions.some((option) => option.id === 'harpers-dad-weverton-longer-finish'), 'Longer Weverton Dad option should be available');
+assert.ok(harpers.planOptions.some((option) => option.id === 'harpers-overnight-maryland-ed-garvey-dahlgren'), 'Friday/Saturday Maryland overnight option should be available');
+const harpersBadDraft = `Because you said halfway point, route this to Pine Grove Furnace State Park and the Half Gallon Challenge. Day 1: Pine Grove Furnace to James Fry Shelter.`;
+const harpersIssues = validateAtRouteAnswerClaims(harpersBadDraft, harpers);
+assert.ok(harpersIssues.some((issue) => issue.kind === 'blocked-endpoint'), 'Validator should block Pine Grove/true-halfway routing for the Harpers prompt');
+const harpersSafeDraft = `This is Harpers Ferry / ATC HQ mental-halfway planning, not Pine Grove. Tuesday Dad option: Keys Gap to Harpers Ferry / ATC HQ. Friday/Saturday option: Harpers Ferry to Ed Garvey Memorial Shelter, then Ed Garvey to Dahlgren Backpack Campground after current Maryland DNR/user-owned guide verification for legal overnight and water.`;
+assert.deepEqual(validateAtRouteAnswerClaims(harpersSafeDraft, harpers), [], 'Validator should allow Harpers Ferry routing with explicit Pine Grove correction and legal/water caveats');
+
 const smokiesPrompt = `Random QA scenario for Scout. Assume I am a section hiker, not an A.T. thru-hiker. It is late October. I want to hike the Appalachian Trail northbound through Great Smoky Mountains National Park from Fontana Dam to Newfound Gap in 4 hiking days / 3 nights. Build me a practical plan: route options, daily mileage targets, shelter/reservation/camping assumptions, food and water plan, weather/cold/bear safety, permits, shuttle/parking logistics, and a final checklist.`;
 const smokies = buildAtRouteGrounding({ prompt: smokiesPrompt, targetDailyMileage: 13 });
 assert.ok(smokies, 'Smokies prompt should trigger strict AT route grounding');
@@ -212,6 +231,9 @@ const runtimeResolveIndex = clawAgentSource.indexOf('const runtime = await resol
 assert.ok(replyFunctionStart >= 0 && strictReplyIndex >= 0 && runtimeResolveIndex >= 0, 'Strict reply/provider runtime wiring should remain findable');
 assert.ok(strictReplyIndex < runtimeResolveIndex, 'Strict deterministic route replies must run before provider runtime resolution so missing API credentials do not block validator-only answers');
 assert.ok(clawAgentSource.includes('deterministicClawTurn(record, null, trimmedPrompt, strictRouteReply)'), 'Strict route replies should be recorded as system/strict-route-validator turns, not as cloud model turns');
+assert.ok(clawAgentSource.includes('strict Harpers Ferry mental-halfway mode'), 'Strict Harpers Ferry replies should use a deterministic compact reply path');
+assert.ok(clawAgentSource.includes('Pine Grove Furnace is the true/mathematical halfway area'), 'Strict Harpers Ferry replies should explain mental halfway versus true halfway');
+assert.ok(clawAgentSource.includes('Friday/Saturday 2-day / 1-night nearby overnight'), 'Strict Harpers Ferry replies should separate the overnight plan from the Dad finish');
 assert.ok(clawAgentSource.includes('No shelter-overflow assumption'), 'Strict GSMNP replies should explicitly reject shelter-full overflow tenting assumptions');
 assert.ok(clawAgentSource.includes('strict Shenandoah route/regulation mode'), 'Strict Shenandoah replies should use a deterministic compact reply path');
 assert.ok(clawAgentSource.includes('old free/self-registration paper-permit guidance'), 'Strict Shenandoah replies should explicitly reject stale self-registration permit guidance');
@@ -224,4 +246,4 @@ assert.ok(clawAgentSource.includes('strict Baxter/Katahdin route/regulation mode
 assert.ok(clawAgentSource.includes('Long-Distance Hiker Permit in person at Katahdin Stream'), 'Strict Baxter replies should require the in-person LD permit flow');
 assert.ok(clawAgentSource.includes('there is no work-for-stay in Baxter State Park'), 'Strict Baxter replies should reject Birches/Baxter work-for-stay assumptions');
 
-console.log('Scout grounding eval passed: Pine Grove, GSMNP, Shenandoah, White Mountains, 100-Mile Wilderness, and Baxter/Katahdin route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water/food/summit guardrails, and shelter-overflow/work-for-stay refusal are active.');
+console.log('Scout grounding eval passed: Pine Grove, Harpers Ferry, GSMNP, Shenandoah, White Mountains, 100-Mile Wilderness, and Baxter/Katahdin route order, blocked endpoints, bad mileage, providerless strict replies, permit/camping/water/food/summit guardrails, and shelter-overflow/work-for-stay refusal are active.');

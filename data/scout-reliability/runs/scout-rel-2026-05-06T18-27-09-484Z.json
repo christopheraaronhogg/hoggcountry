@@ -1,0 +1,255 @@
+{
+  "metadata": {
+    "runId": "scout-rel-2026-05-06T18-27-09-484Z",
+    "timestamp": "2026-05-06T18:27:09.485Z",
+    "gitCommitSha": "481b2a10346106cfa542996a2ff2638ca7f3fbcc",
+    "gitCommitMessage": "fix: harden hundred mile wilderness scout routing",
+    "changedFiles": [
+      "apps/openclaw-web/backend/",
+      "apps/openclaw-web/src/lib/server/claw-agent.ts",
+      "apps/openclaw-web/src/lib/server/scout-reliability.ts",
+      "apps/openclaw-web/src/routes/app/scout-lab/+page.svelte",
+      "apps/openclaw-web/src/routes/app/scout-lab/reliability/",
+      "data/",
+      "docs/scout-reliability-runbook.md",
+      "package.json",
+      "packages/scout-sources/src/index.ts",
+      "packages/trail-data/src/at-route-validator.ts",
+      "pps/openclaw-web/src/lib/server/claw-agent.ts",
+      "scripts/eval-scout-grounding.mjs",
+      "scripts/eval-scout-reliability.mjs",
+      "scripts/eval-scout-sources.mjs"
+    ],
+    "deployedRevision": null,
+    "forgeReleaseId": null,
+    "environment": "local",
+    "model": "deepseek-v4-pro",
+    "mode": "api",
+    "scenarioCount": 1,
+    "passFailCounts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "difficultyRangeTested": [
+      3,
+      3
+    ],
+    "filters": {
+      "difficultyMin": null,
+      "difficultyMax": null,
+      "region": null,
+      "id": "at-pa-002-pine-grove-three-day"
+    },
+    "patchNotes": "Local API smoke for easy Pine Grove strict corridor.",
+    "deploymentNotes": "",
+    "knownRemainingFailures": ""
+  },
+  "scenarios": [
+    {
+      "id": "at-pa-002-pine-grove-three-day",
+      "prompt": "I'm starting at the AT halfway mark around Pine Grove Furnace State Park and hiking northbound for 3 days. Build a practical plan with route options, daily mileage targets, camping/shelter assumptions, food and water, weather, parking/shuttle, bailout, source caveats, and final checklist.",
+      "regionState": "Pennsylvania / PA",
+      "approximateAtMileRange": [
+        1105.9,
+        1150.8
+      ],
+      "expectedCorridor": "Pine Grove Furnace to Darlington / Duncannon corridor",
+      "expectedStart": "Pine Grove Furnace State Park",
+      "expectedEnd": "Darlington Shelter or Duncannon depending option",
+      "expectedDirection": "NOBO",
+      "expectedPlanType": "3-day section backpack",
+      "requiredOutputSections": [
+        "recommendation",
+        "route options or day plan",
+        "mileage targets",
+        "logistics / parking / shuttle",
+        "water",
+        "weather",
+        "legal overnight/camping",
+        "bailout",
+        "final checklist",
+        "source receipts or missing-source caveats"
+      ],
+      "requiredCaveats": [
+        "Boiling Springs is not assumed legal camping",
+        "verify shelters and water",
+        "exact mileages require current guide"
+      ],
+      "disallowedMistakes": [
+        "use Tagg Run Shelter",
+        "misorder Boiling Springs and Darlington",
+        "invent legal camping"
+      ],
+      "difficulty": 3,
+      "difficultyRationale": "Existing strict corridor with overnight and service-town caveats.",
+      "deterministicStrictRouteSupport": "now",
+      "expectedSourceId": "hoggcountry-pine-grove-route-qa-2026-05-04",
+      "expectedStartPointId": "pine-grove-furnace-state-park-pa",
+      "expectedAnchors": [
+        "Pine Grove Furnace",
+        "Boiling Springs",
+        "Darlington",
+        "Duncannon",
+        "water"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "at-pa-002-pine-grove-three-day",
+      "difficulty": 3,
+      "regionState": "Pennsylvania / PA",
+      "status": "passed",
+      "pass": true,
+      "failureReason": "",
+      "assertions": [
+        {
+          "id": "grounding:present",
+          "label": "Strict route grounding is available",
+          "passed": true
+        },
+        {
+          "id": "grounding:source",
+          "label": "Expected source hoggcountry-pine-grove-route-qa-2026-05-04",
+          "passed": true,
+          "actual": "hoggcountry-pine-grove-route-qa-2026-05-04"
+        },
+        {
+          "id": "grounding:start",
+          "label": "Expected start pine-grove-furnace-state-park-pa",
+          "passed": true,
+          "actual": "pine-grove-furnace-state-park-pa"
+        },
+        {
+          "id": "anchor:Pine Grove Furnace",
+          "label": "Expected anchor mentioned: Pine Grove Furnace",
+          "passed": true
+        },
+        {
+          "id": "anchor:Boiling Springs",
+          "label": "Expected anchor mentioned: Boiling Springs",
+          "passed": true
+        },
+        {
+          "id": "anchor:Darlington",
+          "label": "Expected anchor mentioned: Darlington",
+          "passed": true
+        },
+        {
+          "id": "anchor:Duncannon",
+          "label": "Expected anchor mentioned: Duncannon",
+          "passed": true
+        },
+        {
+          "id": "anchor:water",
+          "label": "Expected anchor mentioned: water",
+          "passed": true
+        },
+        {
+          "id": "section:recommendation",
+          "label": "Required section present: recommendation",
+          "passed": true
+        },
+        {
+          "id": "section:route options or day plan",
+          "label": "Required section present: route options or day plan",
+          "passed": true
+        },
+        {
+          "id": "section:mileage targets",
+          "label": "Required section present: mileage targets",
+          "passed": true
+        },
+        {
+          "id": "section:logistics / parking / shuttle",
+          "label": "Required section present: logistics / parking / shuttle",
+          "passed": true
+        },
+        {
+          "id": "section:water",
+          "label": "Required section present: water",
+          "passed": true
+        },
+        {
+          "id": "section:weather",
+          "label": "Required section present: weather",
+          "passed": true
+        },
+        {
+          "id": "section:legal overnight/camping",
+          "label": "Required section present: legal overnight/camping",
+          "passed": true
+        },
+        {
+          "id": "section:bailout",
+          "label": "Required section present: bailout",
+          "passed": true
+        },
+        {
+          "id": "section:final checklist",
+          "label": "Required section present: final checklist",
+          "passed": true
+        },
+        {
+          "id": "section:source receipts or missing-source caveats",
+          "label": "Required section present: source receipts or missing-source caveats",
+          "passed": true
+        },
+        {
+          "id": "caveat:Boiling Springs is not assumed legal camping",
+          "label": "Required caveat represented: Boiling Springs is not assumed legal camping",
+          "passed": true
+        },
+        {
+          "id": "caveat:verify shelters and water",
+          "label": "Required caveat represented: verify shelters and water",
+          "passed": true
+        },
+        {
+          "id": "caveat:exact mileages require current guide",
+          "label": "Required caveat represented: exact mileages require current guide",
+          "passed": true
+        },
+        {
+          "id": "route-claim-validator",
+          "label": "Route claim validator found no blocking issues",
+          "passed": true,
+          "issues": []
+        }
+      ],
+      "rawResponse": "### Scout strict-route plan\n\nI’m using strict route mode because this asks for a real AT itinerary. The route order below comes from the validator, not model memory.\nWorkspace context: Scout QA.\n\n**Route-order guardrail**\n- Direction: NOBO.\n- Requested trip length detected: 3 days.\n- Source: Hogg Country Pine Grove route-order QA fixture. Use these values as a guardrail to prevent wrong order and impossible legs. Treat exact mileages, legal camping, water, and services as verify-before-leaving facts.\n\n| Point | Route mile | From start | Type |\n|---|---:|---:|---|\n| Pine Grove Furnace State Park | 1105.9 | start | park |\n| James Fry Shelter side trail | 1113.1 | +7.2 | shelter |\n| Alec Kennedy Shelter | 1121.2 | +15.3 | shelter |\n| PA 174 / Boiling Springs | 1125.1 | +19.2 | town |\n| Darlington Shelter | 1139.4 | +33.5 | shelter |\n| Duncannon | 1150.8 | +44.9 | town |\n\n**Important corrections / guardrails**\n- Use these values as a guardrail to prevent wrong order and impossible legs. Treat exact mileages, legal camping, water, and services as verify-before-leaving facts.\n- NOBO order guardrail: Boiling Springs comes before Darlington from Pine Grove Furnace.\n- Tagg Run Shelter is not in this validator corridor and must not be used as a firm endpoint without another source.\n\n**Recommendation**\n- Use the lower-risk option unless current water, legal overnight, weather, daylight, body, parking, and shuttle details are all verified.\n- Treat this as a route-order guardrail first; exact mileages and services still need current user-owned/current-source confirmation.\n\n**Route options**\n\n**Conservative 3-day shape to Darlington** — 33.5 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Pine Grove Furnace State Park → James Fry Shelter side trail | 7.2 | Short first day; verify shelter/water in the current guide. |\n| 2 | James Fry Shelter side trail → PA 174 / Boiling Springs | 12.0 | Town/service day; only overnight here if lodging/camping is verified. |\n| 3 | PA 174 / Boiling Springs → Darlington Shelter | 14.3 | Shelter endpoint; verify water and shelter status before committing. |\n- Boiling Springs is treated as a town/service stop, not an assumed legal campsite.\n- This option prioritizes avoiding an invented endpoint over forcing exactly 13 miles per day.\n\n**Stronger 3-day shape to Duncannon** — 44.9 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Pine Grove Furnace State Park → Alec Kennedy Shelter | 15.3 | Longer first day; verify water before relying on the shelter. |\n| 2 | Alec Kennedy Shelter → Darlington Shelter | 18.2 | Long middle day; use only if body, weather, water, and daylight all line up. |\n| 3 | Darlington Shelter → Duncannon | 11.4 | Town finish; verify service hours and pickup/lodging before leaving. |\n- This is a bigger-mile option; Day 2 is the stress point.\n- Use only with current water/shelter reports and a clear pickup/lodging plan.\n\n**Camping / shelter assumptions**\n- Shelter names in the route table are candidate endpoints only after current guide/FarOut-style condition checks confirm legality, capacity, and water.\n- Boiling Springs is a town/service stop in this guardrail, not an assumed legal campsite. Confirm lodging/camping before making it an overnight endpoint.\n- Do not use Tagg Run as a Pine Grove NOBO endpoint from Scout unless you import or fetch a source that proves it belongs in this segment.\n\n**Food and water**\n- Carry the full 3-day food plan from the start unless your current guide confirms a real resupply/pickup plan at Boiling Springs or Duncannon.\n- Confirm water before committing to any shelter or dry ridge; Scout does not have current water reliability here.\n- Filter all natural sources. For each morning, verify the next reliable water before leaving camp/town.\n\n**Gear / supply focus**\n- Rain shell, dry sleep layers, treated socks/pants, tick remover, headlamp, offline maps/guide, water filter, and enough battery to check weather before committing to the next leg.\n- If fire risk is elevated, verify stove restrictions and do not assume campfires are allowed.\n\n**Safety / live conditions**\n- Official/live check fetched: 2026-05-06T18:27:09.471Z.\n- ATC Trail Updates (PA-matched): VA-MA: Elevated Fire Risk (https://appalachiantrail.org/trail-updates/ga-pa-elevated-fire-risk/).\n- NWS active alerts near Bendersville, PA: none returned for this point.\n- NWS near-term forecast: This Afternoon: 65°F, 9 mph SW, Showers And Thunderstorms Likely | Tonight: 45°F, 5 to 9 mph NW, Slight Chance Showers And Thunderstorms then Mostly Cloudy.\n- Ticks are a high-priority PA risk in May: permethrin, nightly checks, and fast removal plan.\n\n**Final checklist before leaving**\n- Verify exact route mileages and legal overnight endpoints in your current user-owned guide.\n- Re-check ATC Trail Updates for PA closures, detours, fire restrictions, and bear/camping notices.\n- Pull the NWS point forecast/alerts for Pine Grove Furnace and each overnight area 24–48 hours before departure.\n- Check water reliability and shelter comments for James Fry, Alec Kennedy, Darlington, and any town/road stop you plan to use.\n- Confirm parking, shuttle/pickup, town hours, lodging/camping, and bailout options before committing to the stronger plan.\n\n**Source receipts**\n- Hogg Country Pine Grove route-order QA validator [reviewed/route-validator]: Hogg Country Pine Grove route-order QA fixture, generated 2026-05-04.\n- Appalachian Trail Conservancy official trail updates [official/live-fetch]: ATC Trail Updates, fetched 2026-05-06T18:27:09.471Z: source URL not recorded\n- National Weather Service point forecast, alerts, and forecast discussions [official/live-fetch]: National Weather Service point forecast/alerts, fetched 2026-05-06T18:27:09.471Z: source URL not recorded\n- Needed but not bundled: A.T. Guide / AWOL data imported by the hiker [reviewed/user-import-required]. Do not scrape or bundle copyrighted guide content; ask the hiker to import/search what they own.\n- Needed but not bundled: FarOut recent comments/screenshots supplied by the hiker [open-crowd/user-import-required]. Crowd reports can be stale or wrong; prefer recent dated comments and cross-check risky claims.\n- Missing source class remains current user-owned guide/current comments for exact shelter condition, water reliability, services, and legal camping.",
+      "grounding": {
+        "sourceId": "hoggcountry-pine-grove-route-qa-2026-05-04",
+        "direction": "NOBO",
+        "start": "Pine Grove Furnace State Park",
+        "destination": null,
+        "planOptions": [
+          "pine-grove-conservative-darlington",
+          "pine-grove-stronger-duncannon"
+        ],
+        "warnings": [
+          "Use these values as a guardrail to prevent wrong order and impossible legs. Treat exact mileages, legal camping, water, and services as verify-before-leaving facts.",
+          "NOBO order guardrail: Boiling Springs comes before Darlington from Pine Grove Furnace.",
+          "Tagg Run Shelter is not in this validator corridor and must not be used as a firm endpoint without another source."
+        ]
+      },
+      "sourceReceipts": [
+        "hoggcountry-pine-grove-route-qa-2026-05-04",
+        "at-guide-user-owned",
+        "farout-current-comments",
+        "atc-trail-updates",
+        "nws-weather"
+      ],
+      "missingSourceClasses": [
+        "current user-owned guide mileage",
+        "current water comments",
+        "live legal overnight verification"
+      ],
+      "manualReview": {
+        "status": "not-reviewed",
+        "notes": ""
+      }
+    }
+  ]
+}

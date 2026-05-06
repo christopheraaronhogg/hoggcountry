@@ -301,6 +301,29 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     keywords: ['shenandoah', 'snp', 'rockfish gap', 'swift run gap', 'calf mountain', 'blackrock hut', 'pinefield hut', 'hightop hut', 'big meadows', 'byrds nest', 'permit', 'recreation.gov', 'camping', 'setbacks', 'water', 'nobo', 'itinerary']
   },
   {
+    id: 'hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06',
+    title: 'Hogg Country Harpers Ferry mental-halfway route and family/overnight QA validator',
+    displayCategory: 'deterministic route/logistics validator',
+    lane: 'hogg-owned',
+    trust: 'reviewed',
+    accessMode: 'route-validator',
+    privacy: 'Shared internal QA fixture; no private user data.',
+    useWhen: 'Harpers Ferry / ATC HQ / mental-halfway AT planning, Dad/family finish hikes into town, nearby Maryland overnight planning, route-order checks, Pine Grove/true-halfway confusion prevention, and legal overnight/water/shuttle caveats.',
+    license: HOGG_OWNED_LICENSE,
+    freshness: { generatedAt: '2026-05-06', updateCadence: 'manual' },
+    coverage: {
+      trail: 'AT',
+      states: ['VA', 'WV', 'MD'],
+      mileStart: 1018.1,
+      mileEnd: 1061.0,
+      topics: ['route validator', 'harpers ferry', 'atc hq', 'mental halfway', 'keys gap', 'weverton', 'ed garvey', 'dahlgren', 'gathland', 'camping', 'water', 'shuttle', 'mileage']
+    },
+    citationTemplate: 'Hogg Country Harpers Ferry mental-halfway route/logistics QA fixture, generated 2026-05-06 from dogfood QA and deterministic AT corridor anchors.',
+    allowedActions: ['catalog', 'route-validate'],
+    caveats: ['Use as a guardrail for route order, prompt interpretation, and Pine Grove confusion prevention; exact mileages, parking, shuttle availability, legal overnight status, water, closures, and facilities still require current NPS/Maryland DNR/ATC/user-owned guide/FarOut verification.'],
+    keywords: ['harpers ferry', "harper's ferry", 'harper ferry', 'atc hq', 'appalachian trail conservancy hq', 'mental halfway', 'psychological halfway', 'keys gap', 'va-wv 9', 'weverton', 'weverton cliffs', 'shenandoah river', 'loudoun heights', 'ed garvey', 'ed garvey memorial shelter', 'dahlgren', 'dahlgren backpack campground', 'gathland', 'crampton gap', 'maryland', 'dad', 'family', 'overnight', 'shuttle', 'parking', 'water', 'nobo', 'sobo', 'itinerary']
+  },
+  {
     id: 'hoggcountry-100-mile-wilderness-qa-2026-05-06',
     title: 'Hogg Country 100-Mile Wilderness Monson to Abol Bridge corridor and logistics QA validator',
     displayCategory: 'deterministic route/logistics validator',
@@ -385,6 +408,23 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     allowedActions: ['catalog', 'live-fetch'],
     caveats: ['Rules, hut/tentsite availability, caretaker season, fees, water, weather, road access, and parking change; Scout should fail closed and tell the hiker to verify exact AMC/WMNF/NH State Parks conditions before leaving.'],
     keywords: ['white mountains', 'whites', 'wmnf', 'white mountain national forest', 'amc', 'appalachian mountain club', 'nh state parks', 'franconia notch', 'crawford notch', 'hut', 'huts', 'tentsite', 'camping', 'above treeline', 'alpine zone', 'forest protection area', 'work for stay', 'water', 'weather', 'parking', 'shuttle']
+  },
+  {
+    id: 'harpers-ferry-maryland-dnr-nps-atc',
+    title: 'Harpers Ferry, Maryland DNR South Mountain, NPS, ATC, and local logistics checks',
+    displayCategory: 'official/regional land-manager and logistics checks',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public official/regional source.',
+    useWhen: 'Harpers Ferry AT day hikes, ATC HQ context, Weverton/Gathland/South Mountain overnight planning, Maryland shelter/campground legality, water, parking, shuttle, closures, and current rule checks.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', states: ['VA', 'WV', 'MD'], mileStart: 1018.1, mileEnd: 1061.0, topics: ['harpers ferry', 'maryland dnr', 'south mountain', 'nps', 'atc', 'camping', 'water', 'parking', 'shuttle', 'closures'] },
+    citationTemplate: 'NPS Harpers Ferry, Maryland DNR/South Mountain, ATC Trail Updates, and local logistics pages; live conditions/rules must be checked before leaving. Scout fetched timestamp: {fetchedAt}. https://www.nps.gov/hafe/ https://dnr.maryland.gov/publiclands/Pages/western/southmountain.aspx https://appalachiantrail.org/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Parking, shuttle services, legal overnight status, campground/shelter rules, water, closures, facility hours, and NPS/Maryland DNR rules change; Scout should fail closed and require current verification before treating an overnight or parking plan as firm.'],
+    keywords: ['harpers ferry', "harper's ferry", 'harper ferry', 'atc hq', 'nps harpers ferry', 'maryland dnr', 'south mountain', 'weverton', 'ed garvey', 'dahlgren', 'gathland', 'crampton gap', 'camping', 'shelter', 'water', 'parking', 'shuttle', 'closure', 'legal overnight']
   },
   {
     id: 'hundred-mile-wilderness-matc-atc-logistics',
@@ -634,7 +674,7 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (!manifestCoversMileRange(manifest, query.mileRange)) score -= manifest.coverage.mileStart !== undefined && manifest.coverage.mileEnd !== undefined ? 12 : 4;
   if (manifest.accessMode === 'disabled-pending-review' && !query.includeUnavailable) score -= 8;
   if (manifest.trust === 'official' && /\b(weather|closure|detour|fire|alert|official|lightning|thunder|thunderstorm|wind|above[-\s]?treeline)\b/iu.test(query.query)) score += 3;
-  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
+  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|mental\s+halfway|psychological\s+halfway|harpers?\s+ferry|harper['’]?s?\s+ferry|atc\s+hq|keys\s+gap|weverton|ed\s+garvey|dahlgren|gathland|crampton\s+gap|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
   if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 6;
   if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
 
