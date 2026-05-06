@@ -1,0 +1,280 @@
+{
+  "metadata": {
+    "runId": "scout-rel-2026-05-06T19-35-58-800Z",
+    "timestamp": "2026-05-06T19:35:58.801Z",
+    "gitCommitSha": "2cec0e922357352a59a88d762358d366bf6cdd42",
+    "gitCommitMessage": "fix: add scout planning timeout fallback",
+    "changedFiles": [],
+    "deployedRevision": null,
+    "forgeReleaseId": null,
+    "environment": "Forge",
+    "model": "deepseek-v4-pro",
+    "mode": "api",
+    "scenarioCount": 1,
+    "passFailCounts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "difficultyRangeTested": [
+      8,
+      8
+    ],
+    "filters": {
+      "difficultyMin": null,
+      "difficultyMax": null,
+      "region": null,
+      "id": "at-me-001-hundred-mile-food-carry"
+    },
+    "patchNotes": "Forge live harder strict-route smoke after release 1778096040 deployed 2cec0e9.",
+    "deploymentNotes": "Manual SSH release 1778096040 on personal Forge; PM2 hoggcountry-openclaw exec cwd verified at current/apps/openclaw-web.",
+    "knownRemainingFailures": ""
+  },
+  "scenarios": [
+    {
+      "id": "at-me-001-hundred-mile-food-carry",
+      "prompt": "I am a NOBO AT section hiker leaving Monson for the 100-Mile Wilderness to Abol Bridge. Build an honest 7 or 8 day itinerary with daily mileage, lean-to/campsite options, food carry vs food drops, water and fords, bailout assumptions, weather delays, Abol pickup, and Baxter handoff checklist.",
+      "regionState": "Maine / ME",
+      "approximateAtMileRange": [
+        2078.1,
+        2177.7
+      ],
+      "expectedCorridor": "Monson to Abol Bridge / 100-Mile Wilderness",
+      "expectedStart": "Monson",
+      "expectedEnd": "Abol Bridge",
+      "expectedDirection": "NOBO",
+      "expectedPlanType": "remote 7-8 day wilderness section",
+      "requiredOutputSections": [
+        "recommendation",
+        "route options or day plan",
+        "mileage targets",
+        "logistics / parking / shuttle",
+        "water",
+        "weather",
+        "legal overnight/camping",
+        "bailout",
+        "final checklist",
+        "source receipts or missing-source caveats"
+      ],
+      "requiredCaveats": [
+        "full food carry or prearranged legal food drop",
+        "bailouts/logging roads not casual",
+        "fords can be dangerous after rain",
+        "current water/campsite checks"
+      ],
+      "disallowedMistakes": [
+        "understate route as 70 miles",
+        "promise easy resupply",
+        "promise cell-service bailout",
+        "say fords are always passable"
+      ],
+      "difficulty": 8,
+      "difficultyRationale": "Remote food carry, sparse bailout/resupply, fords, and long weather exposure.",
+      "deterministicStrictRouteSupport": "now",
+      "expectedSourceId": "hoggcountry-100-mile-wilderness-qa-2026-05-06",
+      "expectedStartPointId": "monson-me",
+      "expectedDestinationPointId": "abol-bridge-me",
+      "expectedAnchors": [
+        "Monson",
+        "Abol Bridge",
+        "food carry",
+        "fords",
+        "water",
+        "bailout"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "at-me-001-hundred-mile-food-carry",
+      "difficulty": 8,
+      "regionState": "Maine / ME",
+      "status": "passed",
+      "pass": true,
+      "failureReason": "",
+      "assertions": [
+        {
+          "id": "grounding:present",
+          "label": "Strict route grounding is available",
+          "passed": true
+        },
+        {
+          "id": "grounding:source",
+          "label": "Expected source hoggcountry-100-mile-wilderness-qa-2026-05-06",
+          "passed": true,
+          "actual": "hoggcountry-100-mile-wilderness-qa-2026-05-06"
+        },
+        {
+          "id": "grounding:start",
+          "label": "Expected start monson-me",
+          "passed": true,
+          "actual": "monson-me"
+        },
+        {
+          "id": "grounding:destination",
+          "label": "Expected destination abol-bridge-me",
+          "passed": true,
+          "actual": "abol-bridge-me"
+        },
+        {
+          "id": "anchor:Monson",
+          "label": "Expected anchor mentioned: Monson",
+          "passed": true
+        },
+        {
+          "id": "anchor:Abol Bridge",
+          "label": "Expected anchor mentioned: Abol Bridge",
+          "passed": true
+        },
+        {
+          "id": "anchor:food carry",
+          "label": "Expected anchor mentioned: food carry",
+          "passed": true
+        },
+        {
+          "id": "anchor:fords",
+          "label": "Expected anchor mentioned: fords",
+          "passed": true
+        },
+        {
+          "id": "anchor:water",
+          "label": "Expected anchor mentioned: water",
+          "passed": true
+        },
+        {
+          "id": "anchor:bailout",
+          "label": "Expected anchor mentioned: bailout",
+          "passed": true
+        },
+        {
+          "id": "section:recommendation",
+          "label": "Required section present: recommendation",
+          "passed": true
+        },
+        {
+          "id": "section:route options or day plan",
+          "label": "Required section present: route options or day plan",
+          "passed": true
+        },
+        {
+          "id": "section:mileage targets",
+          "label": "Required section present: mileage targets",
+          "passed": true
+        },
+        {
+          "id": "section:logistics / parking / shuttle",
+          "label": "Required section present: logistics / parking / shuttle",
+          "passed": true
+        },
+        {
+          "id": "section:water",
+          "label": "Required section present: water",
+          "passed": true
+        },
+        {
+          "id": "section:weather",
+          "label": "Required section present: weather",
+          "passed": true
+        },
+        {
+          "id": "section:legal overnight/camping",
+          "label": "Required section present: legal overnight/camping",
+          "passed": true
+        },
+        {
+          "id": "section:bailout",
+          "label": "Required section present: bailout",
+          "passed": true
+        },
+        {
+          "id": "section:final checklist",
+          "label": "Required section present: final checklist",
+          "passed": true
+        },
+        {
+          "id": "section:source receipts or missing-source caveats",
+          "label": "Required section present: source receipts or missing-source caveats",
+          "passed": true
+        },
+        {
+          "id": "caveat:full food carry or prearranged legal food drop",
+          "label": "Required caveat represented: full food carry or prearranged legal food drop",
+          "passed": true
+        },
+        {
+          "id": "caveat:bailouts/logging roads not casual",
+          "label": "Required caveat represented: bailouts/logging roads not casual",
+          "passed": true
+        },
+        {
+          "id": "caveat:fords can be dangerous after rain",
+          "label": "Required caveat represented: fords can be dangerous after rain",
+          "passed": true
+        },
+        {
+          "id": "caveat:current water/campsite checks",
+          "label": "Required caveat represented: current water/campsite checks",
+          "passed": true
+        },
+        {
+          "id": "disallowed:understate route as 70 miles",
+          "label": "Disallowed mistake absent: understate route as 70 miles",
+          "passed": true
+        },
+        {
+          "id": "disallowed:promise easy resupply",
+          "label": "Disallowed mistake absent: promise easy resupply",
+          "passed": true
+        },
+        {
+          "id": "disallowed:promise cell-service bailout",
+          "label": "Disallowed mistake absent: promise cell-service bailout",
+          "passed": true
+        },
+        {
+          "id": "disallowed:say fords are always passable",
+          "label": "Disallowed mistake absent: say fords are always passable",
+          "passed": true
+        },
+        {
+          "id": "route-claim-validator",
+          "label": "Route claim validator found no blocking issues",
+          "passed": true,
+          "issues": []
+        }
+      ],
+      "rawResponse": "### Scout strict-route plan\n\nI’m using strict 100-Mile Wilderness route/logistics mode because this asks for a real Monson ↔ Abol Bridge itinerary. The route order, food-carry, bailout, water/ford, and Baxter handoff guardrails below come from host validation, not model memory.\nWorkspace context: Scout QA 8.at-me-001-hundred-mile-food-carry.\n\n**Route-order guardrail**\n- Direction: NOBO.\n- Requested trip length detected: 8 days.\n- Corridor: Monson NOBO to Abol Bridge (~99.6 mi by this guardrail).\n- Source: Hogg Country 100-Mile Wilderness Monson ↔ Abol Bridge corridor and logistics QA fixture. Use these values as a route-order and logistics guardrail, not as a replacement for a current A.T. Guide, MATC/AMC map, local hostel/shuttle confirmation, land-manager notice, or recent water/ford/report.\n\n| Point | Approx route mile | From start | Type |\n|---|---:|---:|---|\n| Monson | 2078.1 | start | town |\n| Wilson Valley Lean-to | 2088.5 | +10.4 | shelter |\n| Long Pond Stream Lean-to | 2094.5 | +16.4 | shelter |\n| Chairback Gap Lean-to | 2100.2 | +22.1 | shelter |\n| Carl A. Newhall Lean-to | 2108.4 | +30.3 | shelter |\n| Logan Brook Lean-to | 2114.9 | +36.8 | shelter |\n| East Branch Lean-to | 2124.0 | +45.9 | shelter |\n| Cooper Brook Falls Lean-to | 2135.1 | +57.0 | shelter |\n| Antlers Campsite | 2150.7 | +72.6 | shelter |\n| Wadleigh Stream Lean-to | 2157.5 | +79.4 | shelter |\n| Rainbow Stream Lean-to | 2167.0 | +88.9 | shelter |\n| Abol Bridge | 2177.7 | +99.6 | road-crossing |\n\n**Important corrections / guardrails**\n- Use these values as a route-order and logistics guardrail, not as a replacement for a current A.T. Guide, MATC/AMC map, local hostel/shuttle confirmation, land-manager notice, or recent water/ford/report.\n- 100-Mile Wilderness logistics guardrail: treat Monson/ME 15 to Abol Bridge as a remote food-carry corridor; no ordinary resupply, food drop, bailout, road access, or cell-service recovery should be assumed without current local/land-manager confirmation.\n- 100-Mile Wilderness water/ford guardrail: water is abundant but must be treated, and fords/stream crossings can become dangerous after rain; build delay food and bailout margin before entering.\n- Monson → Abol Bridge is about 99.6 mi in this guardrail, not a short Baxter approach.\n- Default food assumption: leave Monson/Abol with the full wilderness food plan unless a legal food drop/shuttle is prearranged and confirmed before entry.\n- Do not treat logging roads, lodges, road crossings, cell service, or same-day shuttles as reliable bailouts. Prearrange and verify any support plan locally.\n- The Kennebec ferry/river is not inside this Monson ↔ Abol Bridge corridor; do not use it as a 100-Mile Wilderness crossing or bailout.\n\n**Route options**\n\n**Safer 8-day 100-Mile Wilderness shape: Monson to Abol Bridge** — 99.6 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Monson → Long Pond Stream Lean-to | 16.4 | Conservative opening from Monson/ME 15; confirm exact trailhead dropoff and water/ford status. |\n| 2 | Long Pond Stream Lean-to → Carl A. Newhall Lean-to | 13.9 | Chairback terrain day; do not treat the early wilderness as easy mileage. |\n| 3 | Carl A. Newhall Lean-to → Logan Brook Lean-to | 6.5 | White Cap approach; verify exposed/higher terrain weather and water. |\n| 4 | Logan Brook Lean-to → East Branch Lean-to | 9.1 | Moderate terrain-management day; preserve food/weather margin. |\n| 5 | East Branch Lean-to → Cooper Brook Falls Lean-to | 11.1 | Mid-wilderness day; bailouts require prearranged road/shuttle knowledge. |\n| 6 | Cooper Brook Falls Lean-to → Antlers Campsite | 15.6 | Long lake/campsite leg; verify legal use and water/crowding. |\n| 7 | Antlers Campsite → Rainbow Stream Lean-to | 16.3 | North wilderness leg; keep ford/water checks current. |\n| 8 | Rainbow Stream Lean-to → Abol Bridge | 10.7 | Finish to Abol Bridge; confirm store/service hours, pickup, and whether you continue into Baxter separately. |\n- This is the safer default for a heavy food carry, stream/ford uncertainty, and remote logistics.\n- Lean-tos/campsites are route-order candidates only. Verify legal use, water, crowding, and current conditions.\n\n**Stronger 7-day 100-Mile Wilderness shape: Monson to Abol Bridge** — 99.6 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Monson → Long Pond Stream Lean-to | 16.4 | Opening day is already real work with a heavy food carry; verify water/ford status. |\n| 2 | Long Pond Stream Lean-to → Logan Brook Lean-to | 20.4 | Long rugged Chairback/White Cap day; only use if body, weather, water, and daylight line up. |\n| 3 | Logan Brook Lean-to → East Branch Lean-to | 9.1 | Moderate recovery day after the bigger mountain push. |\n| 4 | East Branch Lean-to → Cooper Brook Falls Lean-to | 11.1 | Mid-wilderness day; keep food/drop assumptions conservative. |\n| 5 | Cooper Brook Falls Lean-to → Antlers Campsite | 15.6 | Long lake/campsite leg; verify legal site use and water. |\n| 6 | Antlers Campsite → Rainbow Stream Lean-to | 16.3 | North wilderness day; verify ford/water reports. |\n| 7 | Rainbow Stream Lean-to → Abol Bridge | 10.7 | Finish to Abol Bridge; confirm pickup/service hours and Baxter handoff separately. |\n- This is for a stronger hiker with a confirmed food plan and clean weather/water/ford reports.\n- Do not compress this because Abol/Katahdin excitement is pulling the schedule north.\n\n**Recommendation**\n- Default to the safer 8-day shape unless you have a confirmed stronger-hiker food/logistics plan and clean water/ford/weather reports.\n- Build at least one extra food day or a verified exit/support option. Remote delays are normal enough that “exactly enough food” is not a safe default.\n\n**Food / resupply / support assumptions**\n- Monson is the last normal full-service planning stop before this corridor. Abol Bridge is the north-end handoff, not a substitute for carrying/arranging the wilderness food plan.\n- Food drops, hostel support, lodge access, or logging-road pickups must be legal, current, and prearranged. If you cannot name the provider, road, time, and backup, do not plan on it.\n- Keep a written offline plan for pickup, bailouts, and what happens if weather/fords delay you 24-48 hours.\n\n**Shelter / campsite assumptions**\n- Lean-tos and campsites in the table are route-order anchors and candidate overnights, not guaranteed space, water, legal status, or current condition.\n- Use current MATC/AMC/A.T. Guide/FarOut-style information for exact shelter condition, tenting rules, capacity/crowding, privies, and water before treating an endpoint as final.\n- If a planned site is closed/full/unsafe, change the day shape instead of inventing stealth, roadside, or lodge-adjacent camping.\n\n**Water / fords / weather**\n- Water may be frequent, but verify each source and treat all natural water.\n- Fords and stream crossings can become unsafe after rain. Check recent reports and be willing to wait, backtrack, or use the verified bailout/support plan.\n- Pull NWS forecasts/alerts for Monson, central wilderness/high points such as White Cap, and Abol/Katahdin area before entry; weather can turn a normal day into a delay day.\n\n**Baxter / north-end handoff**\n- Reaching Abol Bridge is not the same as having a legal Baxter/Katahdin plan. Handle Baxter permits, The Birches/campsite eligibility, KTP/day-use access, closures, water, and summit weather as a separate strict check.\n- Do not let Katahdin excitement compress the wilderness food, ford, or recovery margins.\n\n**Safety / live conditions**\n- Official/live check fetched: 2026-05-06T19:35:58.720Z.\n- ATC Trail Updates: returned items, but none were clearly tagged ME; do not treat them as this route’s closure/fire condition without checking the page.\n- NWS: no forecast/alert receipt available in this turn. Pull the point forecast 24–48 hours before stepping off.\n\n**Final checklist before leaving**\n- Verify exact AT mileages, lean-to/campsite sequence, legal camping, and current water/ford notes in a current user-owned guide plus current comments.\n- Confirm full food carry or a named legal food-drop/shuttle provider, with road/time/backup details written offline.\n- Confirm Monson/Abol pickup, parking, lodging/store hours, emergency contacts, offline maps, battery, headlamp, rain/warm layers, food storage, and at least one delay-day decision point.\n- Check ATC/MATC/land-manager closures, fire restrictions, bridges/fords, logging-road access, and weather 24-48 hours before entering.\n\n**Source receipts**\n- Hogg Country 100-Mile Wilderness Monson to Abol Bridge corridor and logistics QA validator [reviewed/route-validator]: Hogg Country 100-Mile Wilderness Monson ↔ Abol Bridge route/logistics QA fixture, generated 2026-05-06 from dogfood QA plus MATC/ATC/AMC/local logistics source checks.\n- 100-Mile Wilderness MATC/ATC/AMC and local logistics checks [official/live-fetch]: MATC/ATC/AMC and local 100-Mile Wilderness logistics/conditions pages; live conditions and services must be checked before leaving. Scout fetched timestamp: not fetched. https://www.matc.org/ https://appalachiantrail.org/ https://www.outdoors.org/\n- Appalachian Trail Conservancy official trail updates [official/live-fetch]: ATC Trail Updates, fetched 2026-05-06T19:35:58.720Z: source URL not recorded\n- NWS source manifest: available, but no weather receipt was produced in this turn.\n- Needed but not bundled: A.T. Guide / AWOL data imported by the hiker [reviewed/user-import-required]. Do not scrape or bundle copyrighted guide content; ask the hiker to import/search what they own.\n- Needed but not bundled: FarOut recent comments/screenshots supplied by the hiker [open-crowd/user-import-required]. Crowd reports can be stale or wrong; prefer recent dated comments and cross-check risky claims.",
+      "grounding": {
+        "sourceId": "hoggcountry-100-mile-wilderness-qa-2026-05-06",
+        "direction": "NOBO",
+        "start": "Monson",
+        "destination": "Abol Bridge",
+        "planOptions": [
+          "hundred-mile-safer-eight-day-monson-abol",
+          "hundred-mile-stronger-seven-day-monson-abol"
+        ],
+        "warnings": [
+          "Use these values as a route-order and logistics guardrail, not as a replacement for a current A.T. Guide, MATC/AMC map, local hostel/shuttle confirmation, land-manager notice, or recent water/ford/report.",
+          "100-Mile Wilderness logistics guardrail: treat Monson/ME 15 to Abol Bridge as a remote food-carry corridor; no ordinary resupply, food drop, bailout, road access, or cell-service recovery should be assumed without current local/land-manager confirmation.",
+          "100-Mile Wilderness water/ford guardrail: water is abundant but must be treated, and fords/stream crossings can become dangerous after rain; build delay food and bailout margin before entering."
+        ]
+      },
+      "sourceReceipts": [
+        "hoggcountry-100-mile-wilderness-qa-2026-05-06",
+        "at-guide-user-owned",
+        "farout-current-comments",
+        "atc-trail-updates",
+        "nws-weather"
+      ],
+      "missingSourceClasses": [
+        "current user-owned guide mileage",
+        "current water comments",
+        "live legal overnight verification"
+      ],
+      "manualReview": {
+        "status": "not-reviewed",
+        "notes": ""
+      }
+    }
+  ]
+}
