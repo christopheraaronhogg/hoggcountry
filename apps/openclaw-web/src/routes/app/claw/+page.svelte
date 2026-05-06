@@ -1236,16 +1236,10 @@
         <button class="secondary-button" type="button" onclick={() => { closeMobilePanels(); void focusPromptComposer(); }}>Ask next</button>
       </section>
 
-      <nav class="drawer-nav compact-nav" aria-label="Workspace shortcuts">
-        <a class="drawer-nav-item" href="/app/docs"><span aria-hidden="true">▤</span> Documents</a>
-        <a class="drawer-nav-item" href="/app/resources"><span aria-hidden="true">◎</span> Resources</a>
-        <a class="drawer-nav-item" href="/app/setup"><span aria-hidden="true">⚙</span> Hiker profile</a>
-      </nav>
-
       <div class="drawer-section-label">Recent turns</div>
 
       {#if messages.length === 0}
-        <p class="small-note">No thread yet. Start with today, next resupply, body risk, or prep.</p>
+        <p class="small-note">No chats yet. Start with one practical trail question.</p>
       {:else}
         <div class="history-list" aria-label="Recent Scout thread turns">
           {#each messageHistory() as message}
@@ -1271,14 +1265,14 @@
         <button class="rail-toggle" type="button" onclick={toggleDocsPanel} aria-expanded={docsOpen} aria-controls="docs-panel">Docs ▸</button>
       </div>
 
-      <section class="message-viewport" bind:this={threadCard}>
+      <section class="message-viewport" class:message-viewport--empty={messages.length === 0 && !sendBusy} bind:this={threadCard}>
         <div class="route-pill">{routePillLabel(profile)}</div>
         <div class="message-list" bind:this={threadMessages}>
           {#if messages.length === 0 && !sendBusy}
             <article class="empty-thread">
               <span class="empty-kicker">Start here</span>
               <strong>What do you need to decide next?</strong>
-              <span>Pick a trail question or type your own. Scout works best on one practical decision at a time.</span>
+              <span>Ask one practical trail question. Scout will keep the answer grounded and brief.</span>
               {#if connection}
                 <div class="empty-actions" aria-label="Quick Scout questions">
                   {#each composerPromptStarters(profile, dailyBrief).slice(0, 4) as starter}
@@ -1357,6 +1351,7 @@
         </div>
       </section>
 
+      {#if connection || messages.length > 0 || replyInput.trim() || currentDocument || currentResource || targetStandardSlot() || locationNotice || locationError || saveNotice || saveError}
       <section id="ask-scout" class="composer-shell" aria-label="Ask Scout">
         {#if currentDocument}
           <div class="document-context-pill">
@@ -1424,7 +1419,7 @@
             class="send-button prompt-send"
             type="button"
             onclick={sendMessage}
-            disabled={sendBusy || !replyInput.trim()}
+            disabled={sendBusy || !connection || !replyInput.trim()}
             aria-label="Send to Scout"
             title="Send to Scout"
           >
@@ -1453,6 +1448,7 @@
           <p class="workspace-alert">{saveError}</p>
         {/if}
       </section>
+      {/if}
     </main>
 
     <aside id="docs-panel" class="workspace-panel docs-panel" class:panel-open={docsOpen} aria-label="Documents and trail brief">
@@ -1846,6 +1842,12 @@
     overflow-y: auto;
     padding: 1.4rem 1rem 0.95rem;
     scroll-behavior: smooth;
+  }
+
+  .message-viewport--empty {
+    display: grid;
+    align-content: center;
+    padding-bottom: 1.4rem;
   }
 
   .route-pill {
@@ -2838,6 +2840,10 @@
 
     .message-viewport {
       padding: 1.72rem 1.25rem 0.85rem;
+    }
+
+    .message-viewport--empty {
+      padding-bottom: 1.72rem;
     }
 
     .route-pill {
