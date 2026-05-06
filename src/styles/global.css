@@ -51,7 +51,7 @@ body {
   margin: 0;
   /* 1. The primary topo map layer */
   background:
-    url('/topo.svg'),
+    url('/default-background.svg'),
     /* 2. Corner shadows for a subtle vignette/paper-curl effect */
     radial-gradient(1200px 800px at 15% -5%, rgba(0,0,0,0.03), transparent 65%),
     radial-gradient(1000px 600px at 85% 15%, rgba(0,0,0,0.025), transparent 60%),
