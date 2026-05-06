@@ -1431,6 +1431,7 @@ function buildStrictHarpersFerryAtRouteItineraryReply(
     '',
     '**Important corrections / guardrails**',
     ...grounding.warnings.map((warning) => `- ${warning}`),
+    '- If Pine Grove Furnace appears only as a comparison landmark, keep it as comparison only; the route stays near Harpers Ferry unless the user explicitly changes the requested hike.',
     '- Do not use Pine Grove Furnace, the Half Gallon Challenge, or the true-halfway corridor as the route target for this Harpers Ferry prompt.',
     '- Dad-friendly does not automatically mean only a 6-mile day. Present easier/moderate and longer options with shuttle and heat tradeoffs.',
     '',

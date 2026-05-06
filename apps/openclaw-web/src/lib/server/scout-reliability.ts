@@ -18,10 +18,22 @@ export interface ScoutReliabilityScenario {
   readonly difficulty: number;
   readonly difficultyRationale: string;
   readonly deterministicStrictRouteSupport: 'now' | 'later';
+  readonly expectedExecutionMode?: string;
   readonly expectedSourceId?: string;
   readonly expectedStartPointId?: string;
   readonly expectedDestinationPointId?: string;
   readonly expectedAnchors?: readonly string[];
+  readonly sourceExpectations?: {
+    readonly requiredSourceIds: readonly string[];
+    readonly missingSourceClasses: readonly string[];
+    readonly liveFetchRequiredBeforeActing: boolean;
+  };
+  readonly scoringCriteria?: {
+    readonly passThreshold: number;
+    readonly blockerFlags: readonly string[];
+    readonly requiredCategories: readonly string[];
+    readonly categoryWeights: Record<string, number>;
+  };
 }
 
 export interface ScoutReliabilityAssertionResult {
@@ -41,6 +53,15 @@ export interface ScoutReliabilityScenarioResult {
   readonly failureReason: string;
   readonly assertions: readonly ScoutReliabilityAssertionResult[];
   readonly rawResponse: string;
+  readonly score?: {
+    readonly total: number;
+    readonly passThreshold: number;
+    readonly categoryScores: Record<string, number>;
+    readonly severityFlags: readonly string[];
+    readonly failureReasons: readonly string[];
+    readonly blockerCount: number;
+    readonly safetyRiskCount: number;
+  };
   readonly grounding: {
     readonly sourceId: string;
     readonly direction: string;
@@ -67,6 +88,14 @@ export interface ScoutReliabilityRunMetadata {
   readonly forgeReleaseId: string | null;
   readonly environment: string;
   readonly model: string;
+  readonly modelProvider?: string;
+  readonly modelId?: string;
+  readonly modelDisplayName?: string;
+  readonly modelSettings?: Record<string, unknown>;
+  readonly promptVersion?: string;
+  readonly siteGitSha?: string;
+  readonly evaluatorVersion?: string;
+  readonly scenarioSuiteVersion?: string;
   readonly mode: string;
   readonly scenarioCount: number;
   readonly passFailCounts: {
@@ -75,6 +104,14 @@ export interface ScoutReliabilityRunMetadata {
     readonly skipped: number;
   };
   readonly difficultyRangeTested: readonly [number, number] | null;
+  readonly scoreSummary?: {
+    readonly averageScore: number;
+    readonly coverageScore: number;
+    readonly passRate: number;
+    readonly blockerCount: number;
+    readonly safetyRiskCount: number;
+    readonly severityCounts: Record<string, number>;
+  };
   readonly filters: Record<string, unknown>;
   readonly patchNotes: string;
   readonly deploymentNotes: string;

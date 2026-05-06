@@ -59,6 +59,19 @@ assert.ok(harpersIssues.some((issue) => issue.kind === 'blocked-endpoint'), 'Val
 const harpersSafeDraft = `This is Harpers Ferry / ATC HQ mental-halfway planning, not Pine Grove. Tuesday Dad option: Keys Gap to Harpers Ferry / ATC HQ. Friday/Saturday option: Harpers Ferry to Ed Garvey Memorial Shelter, then Ed Garvey to Dahlgren Backpack Campground after current Maryland DNR/user-owned guide verification for legal overnight and water.`;
 assert.deepEqual(validateAtRouteAnswerClaims(harpersSafeDraft, harpers), [], 'Validator should allow Harpers Ferry routing with explicit Pine Grove correction and legal/water caveats');
 
+const overlappingLandmarksPrompt = `Plan a weekend AT hike where I mention Harpers Ferry, the Mason-Dixon area, and Pine Grove Furnace because I am comparing halfway landmarks. I actually want the route near Harpers Ferry, not Pennsylvania. Keep the answer accurate and useful.`;
+const overlappingLandmarks = buildAtRouteGrounding({ prompt: overlappingLandmarksPrompt });
+assert.ok(overlappingLandmarks, 'Overlapping Harpers/Pine Grove prompt should still trigger route grounding');
+assert.equal(overlappingLandmarks.source.id, 'hoggcountry-harpers-ferry-mental-halfway-qa-2026-05-06');
+assert.notEqual(overlappingLandmarks.start.id, 'pine-grove-furnace-state-park-pa', 'Comparison-only Pine Grove mention must not become the route start');
+assert.ok(overlappingLandmarks.blockedEndpointNames.includes('Pine Grove Furnace State Park'), 'Comparison-only Pine Grove should be blocked as a route endpoint');
+
+const pineGroveComparisonPrimaryPrompt = `Explain and plan around the AT true halfway versus mental halfway. I want a short plan for Pine Grove Furnace this weekend, but also tell me how that differs from Harpers Ferry / ATC HQ.`;
+const pineGroveComparisonPrimary = buildAtRouteGrounding({ prompt: pineGroveComparisonPrimaryPrompt });
+assert.ok(pineGroveComparisonPrimary, 'Pine Grove primary comparison prompt should trigger route grounding');
+assert.equal(pineGroveComparisonPrimary.source.id, 'hoggcountry-pine-grove-route-qa-2026-05-04');
+assert.equal(pineGroveComparisonPrimary.start.id, 'pine-grove-furnace-state-park-pa', 'Pine Grove should remain primary when the requested hike is Pine Grove');
+
 const smokiesPrompt = `Random QA scenario for Scout. Assume I am a section hiker, not an A.T. thru-hiker. It is late October. I want to hike the Appalachian Trail northbound through Great Smoky Mountains National Park from Fontana Dam to Newfound Gap in 4 hiking days / 3 nights. Build me a practical plan: route options, daily mileage targets, shelter/reservation/camping assumptions, food and water plan, weather/cold/bear safety, permits, shuttle/parking logistics, and a final checklist.`;
 const smokies = buildAtRouteGrounding({ prompt: smokiesPrompt, targetDailyMileage: 13 });
 assert.ok(smokies, 'Smokies prompt should trigger strict AT route grounding');

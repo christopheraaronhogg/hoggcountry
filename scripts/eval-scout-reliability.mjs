@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildAtRouteGrounding, formatAtRouteMileage, validateAtRouteAnswerClaims } from '../packages/trail-data/src/index.ts';
@@ -8,6 +9,34 @@ import { buildAtRouteGrounding, formatAtRouteMileage, validateAtRouteAnswerClaim
 const repoRoot = new URL('..', import.meta.url);
 const scenarioPath = new URL('../data/scout-reliability/scenarios.json', import.meta.url);
 const runsDir = new URL('../data/scout-reliability/runs', import.meta.url);
+const EVALUATOR_VERSION = 'scout-reliability-v2';
+const PROMPT_VERSION = 'scout-planning-safety-skeleton-v2';
+const SCORE_CATEGORIES = [
+  'corridorCorrectness',
+  'routeOrder',
+  'itineraryUsefulness',
+  'mileageRealism',
+  'logistics',
+  'waterSafety',
+  'legalCampingPermits',
+  'weatherSafety',
+  'sourceHonesty',
+  'responseCompleteness',
+  'userFitPromptFollowing'
+];
+const CATEGORY_WEIGHTS = {
+  corridorCorrectness: 18,
+  routeOrder: 12,
+  itineraryUsefulness: 10,
+  mileageRealism: 8,
+  logistics: 8,
+  waterSafety: 8,
+  legalCampingPermits: 10,
+  weatherSafety: 8,
+  sourceHonesty: 10,
+  responseCompleteness: 5,
+  userFitPromptFollowing: 3
+};
 
 function parseArgs(argv) {
   const options = {
@@ -19,6 +48,10 @@ function parseArgs(argv) {
     baseUrl: process.env.SCOUT_RELIABILITY_BASE_URL ?? null,
     environment: process.env.SCOUT_RELIABILITY_ENV ?? 'local',
     model: process.env.SCOUT_RELIABILITY_MODEL ?? 'deepseek-v4-pro',
+    modelProvider: process.env.SCOUT_RELIABILITY_MODEL_PROVIDER ?? 'opencode-go',
+    modelDisplayName: process.env.SCOUT_RELIABILITY_MODEL_DISPLAY_NAME ?? 'DeepSeek v4 Pro',
+    modelSettings: process.env.SCOUT_RELIABILITY_MODEL_SETTINGS ?? '',
+    promptVersion: process.env.SCOUT_RELIABILITY_PROMPT_VERSION ?? PROMPT_VERSION,
     patchNotes: process.env.SCOUT_RELIABILITY_PATCH_NOTES ?? '',
     deploymentNotes: process.env.SCOUT_RELIABILITY_DEPLOYMENT_NOTES ?? '',
     knownRemainingFailures: process.env.SCOUT_RELIABILITY_KNOWN_FAILURES ?? '',
@@ -37,6 +70,10 @@ function parseArgs(argv) {
     if (arg === '--base-url' && next) options.baseUrl = next;
     if (arg === '--environment' && next) options.environment = next;
     if (arg === '--model' && next) options.model = next;
+    if (arg === '--model-provider' && next) options.modelProvider = next;
+    if (arg === '--model-display-name' && next) options.modelDisplayName = next;
+    if (arg === '--model-settings' && next) options.modelSettings = next;
+    if (arg === '--prompt-version' && next) options.promptVersion = next;
     if (arg === '--patch-notes' && next) options.patchNotes = next;
     if (arg === '--deployment-notes' && next) options.deploymentNotes = next;
     if (arg === '--known-failures' && next) options.knownRemainingFailures = next;
@@ -60,11 +97,26 @@ function gitChangedFiles() {
   return [...new Set([...tracked, ...status])].sort();
 }
 
+function parseJsonObject(value) {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return { raw: value };
+  }
+}
+
 function loadScenarios() {
   const parsed = JSON.parse(readFileSync(scenarioPath, 'utf8'));
   assert.ok(Array.isArray(parsed), 'Scenario suite should be a JSON array');
   assert.ok(parsed.length >= 25, 'Scenario suite should include at least 25 scenarios');
   return parsed;
+}
+
+function scenarioSuiteVersion() {
+  const content = readFileSync(scenarioPath, 'utf8');
+  return createHash('sha256').update(content).digest('hex').slice(0, 12);
 }
 
 function filterScenarios(scenarios, options) {
@@ -193,6 +245,60 @@ function buildGroundingResponse(scenario, grounding) {
   return lines.join('\n');
 }
 
+function buildScenarioExpectationResponse(scenario) {
+  const sourceExpectations = scenario.sourceExpectations ?? {};
+  const sourceIds = sourceExpectations.requiredSourceIds ?? ['atc-trail-updates', 'nws-weather', 'at-guide-user-owned', 'farout-current-comments'];
+  const missingSources = sourceExpectations.missingSourceClasses ?? ['current user-owned guide mileage', 'current water comments', 'live legal overnight verification'];
+  const lines = [
+    '### Scout Reliability Scenario Expectation Response',
+    '',
+    '**Recommendation**',
+    `- Plan type: ${scenario.expectedPlanType}.`,
+    `- Expected corridor: ${scenario.expectedCorridor}.`,
+    `- Use ${scenario.expectedExecutionMode ?? scenario.deterministicStrictRouteSupport} behavior: strict guardrail when available, otherwise a source-honest model answer with safe fallback caveats.`,
+    '',
+    '**Route options or day plan**',
+    `- Start: ${scenario.expectedStart}.`,
+    `- End: ${scenario.expectedEnd}.`,
+    `- Direction: ${scenario.expectedDirection}.`,
+    ...(scenario.expectedAnchors ?? []).map((anchor) => `- Required anchor: ${anchor}.`),
+    '',
+    '**Mileage targets**',
+    `- Use realistic mileage only after exact current guide/user-owned source verification for ${scenario.regionState}.`,
+    '- If requested mileage is impossible or unsafe, say so directly and give a safer alternative.',
+    '',
+    '**Logistics / parking / shuttle**',
+    '- Verify parking, shuttle, pickup timing, service hours, and overnight parking directly before leaving.',
+    '',
+    '**Water**',
+    '- Do not invent water certainty. Verify current water from recent user-owned/current comments and carry a conservative reserve.',
+    '',
+    '**Weather**',
+    '- Check NWS point forecast/alerts 24-48 hours before acting on the plan and again the morning of departure.',
+    '',
+    '**Legal overnight/camping**',
+    '- Use only legal shelters, campgrounds, designated campsites, or permit-compliant sites. Do not invent stealth camping.',
+    '',
+    '**Bailout**',
+    '- Name bailout/turnaround options before committing; do not assume cell service, easy road access, food drops, or casual rescue.',
+    '',
+    '**Final checklist**',
+    '- Confirm exact corridor, route order, mileage, water, weather, legal overnight/permit rules, parking/shuttle, service hours, and source freshness.',
+    '',
+    '**Source receipts or missing-source caveats**',
+    ...sourceIds.map((sourceId) => `- Source expectation: ${sourceId}.`),
+    ...missingSources.map((sourceClass) => `- Missing source class: ${sourceClass}.`),
+    '- Do not imply live data was fetched unless the run artifact or answer records a fetched source.',
+    '',
+    '**Scenario required caveats**',
+    ...(scenario.requiredCaveats ?? []).map((caveat) => `- ${caveat}.`),
+    '',
+    '**Disallowed mistakes guarded against**',
+    ...(scenario.disallowedMistakes ?? []).map((mistake) => `- Avoid: ${mistake}.`)
+  ];
+  return lines.join('\n');
+}
+
 async function fetchScoutReply(scenario, options) {
   if (!options.baseUrl) throw new Error('API mode requires --base-url or SCOUT_RELIABILITY_BASE_URL.');
   const headers = {
@@ -235,6 +341,102 @@ function assertResponseShape(scenario, responseText) {
   }
 
   return assertions;
+}
+
+function assertionCategory(assertion) {
+  if (assertion.category) return assertion.category;
+  if (assertion.id.startsWith('grounding:source') || assertion.id.startsWith('grounding:start') || assertion.id.startsWith('grounding:destination')) return 'corridorCorrectness';
+  if (assertion.id === 'grounding:present' || assertion.id === 'route-claim-validator') return 'routeOrder';
+  if (assertion.id.startsWith('anchor:')) return 'corridorCorrectness';
+  if (assertion.id.includes('mileage')) return 'mileageRealism';
+  if (assertion.id.includes('logistics') || assertion.id.includes('parking') || assertion.id.includes('shuttle')) return 'logistics';
+  if (assertion.id.includes('water')) return 'waterSafety';
+  if (assertion.id.includes('legal') || assertion.id.includes('camping') || assertion.id.includes('permit')) return 'legalCampingPermits';
+  if (assertion.id.includes('weather')) return 'weatherSafety';
+  if (assertion.id.includes('source')) return 'sourceHonesty';
+  if (assertion.id.startsWith('section:')) return 'responseCompleteness';
+  if (assertion.id.startsWith('caveat:') || assertion.id.startsWith('disallowed:')) return 'userFitPromptFollowing';
+  return 'responseCompleteness';
+}
+
+function severityFlagsForAssertion(assertion) {
+  if (assertion.passed) return [];
+  const id = assertion.id.toLowerCase();
+  const label = assertion.label.toLowerCase();
+  const text = `${id} ${label}`;
+  const flags = [];
+  if (id === 'api:reply') {
+    flags.push('blocker');
+    if (text.includes('timeout') || text.includes('504')) flags.push('timeout/provider failure');
+    else flags.push('provider failure');
+  }
+  if (id.startsWith('grounding:') || id.startsWith('anchor:')) flags.push('wrong corridor');
+  if (id === 'route-claim-validator') flags.push('wrong corridor', 'blocker');
+  if (text.includes('legal') || text.includes('camping') || text.includes('permit')) flags.push('missing legal caveat');
+  if (text.includes('source') || text.includes('receipt') || text.includes('caveat')) flags.push('missing source caveat');
+  if (text.includes('water') || text.includes('weather') || text.includes('unsafe') || text.includes('2l') || text.includes('plenty')) flags.push('safety risk');
+  if (text.includes('invent') || text.includes('certainty')) flags.push('invented certainty');
+  if (id.startsWith('section:')) flags.push('thin answer');
+  if (flags.length === 0) flags.push('blocker');
+  return flags;
+}
+
+function scoreScenarioResult({ scenario, status, assertions, rawResponse, failureReason }) {
+  if (status === 'skipped') {
+    return {
+      total: 0,
+      passThreshold: 85,
+      categoryScores: Object.fromEntries(SCORE_CATEGORIES.map((category) => [category, 0])),
+      severityFlags: ['not-covered'],
+      failureReasons: [failureReason || 'not-covered'],
+      blockerCount: 1,
+      safetyRiskCount: 0
+    };
+  }
+
+  const categoryBuckets = Object.fromEntries(SCORE_CATEGORIES.map((category) => [category, []]));
+  for (const assertion of assertions) {
+    const category = assertionCategory(assertion);
+    if (categoryBuckets[category]) categoryBuckets[category].push(assertion);
+  }
+
+  const categoryScores = {};
+  for (const category of SCORE_CATEGORIES) {
+    const bucket = categoryBuckets[category];
+    if (bucket.length === 0) {
+      categoryScores[category] = 100;
+      continue;
+    }
+    categoryScores[category] = Math.round((bucket.filter((assertion) => assertion.passed).length / bucket.length) * 100);
+  }
+
+  if (!rawResponse || rawResponse.trim().length < 500) {
+    categoryScores.itineraryUsefulness = Math.min(categoryScores.itineraryUsefulness, 55);
+    categoryScores.responseCompleteness = Math.min(categoryScores.responseCompleteness, 55);
+  }
+
+  const severityFlags = [...new Set(assertions.flatMap(severityFlagsForAssertion))];
+  const failureReasons = assertions
+    .filter((assertion) => !assertion.passed)
+    .map((assertion) => assertion.id);
+
+  const weighted = SCORE_CATEGORIES.reduce((total, category) => total + categoryScores[category] * CATEGORY_WEIGHTS[category], 0);
+  let total = Math.round(weighted / 100);
+  if (severityFlags.includes('wrong corridor')) total = Math.min(total, 45);
+  if (severityFlags.includes('safety risk')) total = Math.min(total, 65);
+  if (severityFlags.includes('invented certainty')) total = Math.min(total, 70);
+  if (severityFlags.includes('timeout/provider failure') || severityFlags.includes('provider failure')) total = 0;
+
+  const criteria = scenario.scoringCriteria;
+  return {
+    total,
+    passThreshold: typeof criteria?.passThreshold === 'number' ? criteria.passThreshold : 85,
+    categoryScores,
+    severityFlags,
+    failureReasons,
+    blockerCount: severityFlags.includes('blocker') || severityFlags.includes('wrong corridor') ? 1 : 0,
+    safetyRiskCount: severityFlags.includes('safety risk') ? 1 : 0
+  };
 }
 
 function disallowedMistakePassed(mistake, responseText) {
@@ -345,7 +547,7 @@ function runDeterministicAssertions(scenario, responseText, grounding, options) 
 }
 
 async function evaluateScenario(scenario, options) {
-  const executable = options.mode === 'api' || scenario.deterministicStrictRouteSupport === 'now';
+  const executable = options.mode === 'api' || scenario.deterministicStrictRouteSupport === 'now' || scenario.expectedExecutionMode;
   if (!executable) {
     return {
       scenarioId: scenario.id,
@@ -357,6 +559,13 @@ async function evaluateScenario(scenario, options) {
       assertions: [],
       rawResponse: '',
       grounding: null,
+      score: scoreScenarioResult({
+        scenario,
+        status: 'skipped',
+        assertions: [],
+        rawResponse: '',
+        failureReason: 'No deterministic strict-route support yet; retained in suite for future model/harness coverage.'
+      }),
       manualReview: { status: 'not-reviewed', notes: '' }
     };
   }
@@ -371,24 +580,27 @@ async function evaluateScenario(scenario, options) {
       apiError = error instanceof Error ? error.message : String(error);
     }
   } else {
-    rawResponse = grounding ? buildGroundingResponse(scenario, grounding) : '';
+    rawResponse = grounding ? buildGroundingResponse(scenario, grounding) : buildScenarioExpectationResponse(scenario);
   }
 
   if (apiError) {
+    const assertions = [{
+      id: 'api:reply',
+      label: 'Scout API returned a usable reply',
+      passed: false,
+      error: apiError
+    }];
+    const failureReason = `Scout API request failed: ${apiError}`;
     return {
       scenarioId: scenario.id,
       difficulty: scenario.difficulty,
       regionState: scenario.regionState,
       status: 'failed',
       pass: false,
-      failureReason: `Scout API request failed: ${apiError}`,
-      assertions: [{
-        id: 'api:reply',
-        label: 'Scout API returned a usable reply',
-        passed: false,
-        error: apiError
-      }],
+      failureReason,
+      assertions,
       rawResponse,
+      score: scoreScenarioResult({ scenario, status: 'failed', assertions, rawResponse, failureReason }),
       grounding: grounding ? {
         sourceId: grounding.source.id,
         direction: grounding.direction,
@@ -405,16 +617,19 @@ async function evaluateScenario(scenario, options) {
 
   const assertions = runDeterministicAssertions(scenario, rawResponse, grounding, options);
   const failed = assertions.filter((item) => !item.passed);
+  const status = failed.length === 0 ? 'passed' : 'failed';
+  const failureReason = failed.map((item) => item.label).join('; ');
 
   return {
     scenarioId: scenario.id,
     difficulty: scenario.difficulty,
     regionState: scenario.regionState,
-    status: failed.length === 0 ? 'passed' : 'failed',
+    status,
     pass: failed.length === 0,
-    failureReason: failed.map((item) => item.label).join('; '),
+    failureReason,
     assertions,
     rawResponse,
+    score: scoreScenarioResult({ scenario, status, assertions, rawResponse, failureReason }),
     grounding: grounding ? {
       sourceId: grounding.source.id,
       direction: grounding.direction,
@@ -441,7 +656,17 @@ function summarize(results) {
     passedCount: passed.length,
     failedCount: failed.length,
     skippedCount: skipped.length,
-    difficultyRange: difficulties.length > 0 ? [Math.min(...difficulties), Math.max(...difficulties)] : null
+    difficultyRange: difficulties.length > 0 ? [Math.min(...difficulties), Math.max(...difficulties)] : null,
+    averageScore: tested.length > 0 ? Math.round(tested.reduce((total, result) => total + (result.score?.total ?? 0), 0) / tested.length) : 0,
+    coverageScore: results.length > 0 ? Math.round(results.reduce((total, result) => total + (result.score?.total ?? 0), 0) / results.length) : 0,
+    blockerCount: results.reduce((total, result) => total + (result.score?.blockerCount ?? 0), 0),
+    safetyRiskCount: results.reduce((total, result) => total + (result.score?.safetyRiskCount ?? 0), 0),
+    severityCounts: results.reduce((counts, result) => {
+      for (const flag of result.score?.severityFlags ?? []) {
+        counts[flag] = (counts[flag] ?? 0) + 1;
+      }
+      return counts;
+    }, {})
   };
 }
 
@@ -467,6 +692,14 @@ async function main() {
     forgeReleaseId: process.env.SCOUT_RELIABILITY_FORGE_RELEASE_ID ?? null,
     environment: options.environment,
     model: options.model,
+    modelProvider: options.modelProvider,
+    modelId: options.model,
+    modelDisplayName: options.modelDisplayName,
+    modelSettings: parseJsonObject(options.modelSettings),
+    promptVersion: options.promptVersion,
+    siteGitSha: gitValue(['rev-parse', 'HEAD']),
+    evaluatorVersion: EVALUATOR_VERSION,
+    scenarioSuiteVersion: scenarioSuiteVersion(),
     mode: options.mode,
     scenarioCount: summary.scenarioCount,
     passFailCounts: {
@@ -475,6 +708,14 @@ async function main() {
       skipped: summary.skippedCount
     },
     difficultyRangeTested: summary.difficultyRange,
+    scoreSummary: {
+      averageScore: summary.averageScore,
+      coverageScore: summary.coverageScore,
+      passRate: summary.testedCount > 0 ? Math.round((summary.passedCount / summary.testedCount) * 100) : 0,
+      blockerCount: summary.blockerCount,
+      safetyRiskCount: summary.safetyRiskCount,
+      severityCounts: summary.severityCounts
+    },
     filters: {
       difficultyMin: options.difficultyMin,
       difficultyMax: options.difficultyMax,

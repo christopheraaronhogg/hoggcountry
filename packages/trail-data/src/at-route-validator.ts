@@ -798,12 +798,23 @@ function promptExplicitlyMentionsPineGrove(prompt: string): boolean {
     || /\bhalf\s+gallon\s+challenge\b/iu.test(prompt);
 }
 
+function promptDemotesPineGroveToComparison(prompt: string): boolean {
+  return promptExplicitlyMentionsHarpersFerry(prompt)
+    && promptExplicitlyMentionsPineGrove(prompt)
+    && (
+      /\b(?:not\s+pennsylvania|not\s+pa)\b/iu.test(prompt)
+      || /\bpine\s+grove(?:\s+furnace)?\b[^.]{0,100}\b(?:comparison\s+only|true\s+halfway|not\s+(?:the\s+)?(?:route|destination|endpoint|hike))\b/iu.test(prompt)
+      || /\b(?:actually|really)\s+want\b[^.]{0,120}\b(?:harpers?\s+ferr(?:y|ies)|maryland|wv|west\s+virginia)\b/iu.test(prompt)
+    );
+}
+
 function isHarpersFerryFamilyFinishRequest(prompt: string): boolean {
   return promptExplicitlyMentionsHarpersFerry(prompt)
     && /\b(?:dad|father|family|finish(?:ing)?|last\s+day|into|tuesday)\b/iu.test(prompt);
 }
 
 function isPineGrovePrimaryRequest(prompt: string): boolean {
+  if (promptDemotesPineGroveToComparison(prompt)) return false;
   return promptExplicitlyMentionsPineGrove(prompt)
     && /\b(?:want|plan|hike|route|itinerary|weekend|starting|start)\b[^.]{0,100}\bpine\s+grove(?:\s+furnace)?\b/iu.test(prompt);
 }
@@ -1279,7 +1290,8 @@ function findPointAliasesInOrder(text: string, points: readonly AtRoutePoint[]):
 
 function lineHasRouteSequenceSyntax(line: string): boolean {
   if (/\bcomes\s+before\b/iu.test(line)) return false;
-  return /(?:→|->|\bto\b|\bthen\b|\bafter\b|\bbefore\b)/iu.test(line);
+  const routeSyntaxText = line.replace(/\bbefore\s+(?:leaving|committing|starting|acting|relying|stepping|you|the\s+hike|the\s+trip|departure)\b/giu, '');
+  return /(?:→|->|\bto\b|\bthen\b|\bafter\b|\bbefore\b)/iu.test(routeSyntaxText);
 }
 
 function mileageClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
@@ -1774,8 +1786,9 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
 
   const promptMentionsHarpersFerry = promptExplicitlyMentionsHarpersFerry(prompt);
   const promptMentionsPineGrove = promptExplicitlyMentionsPineGrove(prompt);
+  const pineGroveIsComparisonOnly = promptDemotesPineGroveToComparison(prompt);
   let mentionedPoints = extractMentionedAtRoutePoints(prompt);
-  if (promptMentionsHarpersFerry && !promptMentionsPineGrove) {
+  if (promptMentionsHarpersFerry && (!promptMentionsPineGrove || pineGroveIsComparisonOnly)) {
     mentionedPoints = mentionedPoints.filter((point) => point.id !== 'pine-grove-furnace-state-park-pa');
   }
   const mentionedInOrder = findPointAliasesInOrder(prompt, mentionedPoints);
