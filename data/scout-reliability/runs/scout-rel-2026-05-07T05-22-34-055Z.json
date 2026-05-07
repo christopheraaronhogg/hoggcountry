@@ -1,0 +1,336 @@
+{
+  "metadata": {
+    "runId": "scout-rel-2026-05-07T05-22-34-055Z",
+    "timestamp": "2026-05-07T05:22:34.056Z",
+    "gitCommitSha": "dc07f321ae35cbe3a4fdc8bdb010998113e26afc",
+    "gitCommitMessage": "fix: make kjv sqlite build idempotent",
+    "changedFiles": [
+      "apps/openclaw-web/src/lib/server/claw-agent.ts",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T01-29-51-084Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-17-20-411Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-21-08-629Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-24-45-791Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-28-36-935Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-31-43-395Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-35-40-942Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-37-49-872Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-40-30-044Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-43-58-075Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-47-09-708Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-47-33-766Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-51-35-629Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-53-59-710Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-56-10-113Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-20-35-903Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-29-323Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-30-688Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-31-002Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-31-280Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-33-453Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-33-766Z.json",
+      "packages/trail-data/src/at-route-validator.ts",
+      "pps/openclaw-web/src/lib/server/claw-agent.ts"
+    ],
+    "deployedRevision": null,
+    "forgeReleaseId": null,
+    "environment": "local-preview",
+    "model": "deepseek-v4-pro",
+    "modelProvider": "opencode-go",
+    "modelId": "deepseek-v4-pro",
+    "modelDisplayName": "DeepSeek v4 Pro",
+    "modelSettings": {},
+    "promptVersion": "scout-planning-safety-skeleton-v2",
+    "siteGitSha": "dc07f321ae35cbe3a4fdc8bdb010998113e26afc",
+    "evaluatorVersion": "scout-reliability-v2",
+    "scenarioSuiteVersion": "2281e5397358",
+    "mode": "api",
+    "scenarioCount": 1,
+    "passFailCounts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "difficultyRangeTested": [
+      2,
+      2
+    ],
+    "scoreSummary": {
+      "totalScore": 100,
+      "averageScore": 100,
+      "coverageScore": 100,
+      "passRate": 100,
+      "blockerCount": 0,
+      "safetyRiskCount": 0,
+      "wrongCorridorCount": 0,
+      "severityCounts": {}
+    },
+    "humanReviewLabels": [
+      "not-reviewed",
+      "good",
+      "acceptable with caveats",
+      "unsafe",
+      "wrong corridor",
+      "needs source check",
+      "too thin",
+      "excellent"
+    ],
+    "humanReviewStatusCounts": {
+      "not-reviewed": 1
+    },
+    "filters": {
+      "difficultyMin": null,
+      "difficultyMax": null,
+      "region": null,
+      "id": "at-ct-ma-001-family-fair-weather"
+    },
+    "patchNotes": "",
+    "deploymentNotes": "",
+    "knownRemainingFailures": ""
+  },
+  "scenarios": [
+    {
+      "id": "at-ct-ma-001-family-fair-weather",
+      "prompt": "Plan a low-risk fair-weather family hike on the Appalachian Trail in Connecticut or Massachusetts with Dad pace, realistic mileage options, parking/shuttle, water, weather, bailout, and checklist.",
+      "regionState": "Connecticut / Massachusetts",
+      "approximateAtMileRange": [
+        1460,
+        1585
+      ],
+      "expectedCorridor": "CT/MA family-suitable AT section",
+      "expectedStart": "selected named trailhead or road crossing",
+      "expectedEnd": "selected named trailhead or road crossing",
+      "expectedDirection": "unknown until endpoints are chosen",
+      "expectedPlanType": "family/day hike",
+      "requiredOutputSections": [
+        "recommendation",
+        "route options or day plan",
+        "mileage targets",
+        "logistics / parking / shuttle",
+        "water",
+        "weather",
+        "bailout",
+        "final checklist",
+        "source receipts or missing-source caveats"
+      ],
+      "requiredCaveats": [
+        "must choose/verify exact trailhead",
+        "Dad pace and heat matter",
+        "water and parking currentness"
+      ],
+      "disallowedMistakes": [
+        "invent exact current parking",
+        "overpromise water",
+        "recommend unsafe mileage for Dad"
+      ],
+      "difficulty": 2,
+      "difficultyRationale": "Family day hike with simple risk profile, but exact endpoint selection should be honest.",
+      "deterministicStrictRouteSupport": "later",
+      "expectedAnchors": [
+        "Connecticut",
+        "Massachusetts",
+        "Dad",
+        "parking",
+        "water",
+        "weather"
+      ],
+      "sourceExpectations": {
+        "requiredSourceIds": [
+          "atc-trail-updates",
+          "nws-weather",
+          "at-guide-user-owned",
+          "farout-current-comments",
+          "hostel-shuttle-direct"
+        ],
+        "missingSourceClasses": [
+          "current user-owned guide mileage",
+          "current water comments",
+          "live legal overnight verification",
+          "live weather/closure check when acting on the plan"
+        ],
+        "liveFetchRequiredBeforeActing": true
+      },
+      "scoringCriteria": {
+        "passThreshold": 85,
+        "blockerFlags": [
+          "wrong corridor",
+          "safety risk",
+          "invented certainty",
+          "timeout/provider failure"
+        ],
+        "requiredCategories": [
+          "itineraryUsefulness",
+          "mileageRealism",
+          "logistics",
+          "waterSafety",
+          "weatherSafety",
+          "responseCompleteness",
+          "sourceHonesty"
+        ],
+        "categoryWeights": {
+          "corridorCorrectness": 18,
+          "routeOrder": 12,
+          "itineraryUsefulness": 10,
+          "mileageRealism": 8,
+          "logistics": 8,
+          "waterSafety": 8,
+          "legalCampingPermits": 10,
+          "weatherSafety": 8,
+          "sourceHonesty": 10,
+          "responseCompleteness": 5,
+          "userFitPromptFollowing": 3
+        }
+      },
+      "expectedExecutionMode": "cloud-model-or-safe-fallback"
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "at-ct-ma-001-family-fair-weather",
+      "difficulty": 2,
+      "regionState": "Connecticut / Massachusetts",
+      "status": "passed",
+      "pass": true,
+      "failureReason": "",
+      "assertions": [
+        {
+          "id": "anchor:Connecticut",
+          "label": "Expected anchor mentioned: Connecticut",
+          "passed": true
+        },
+        {
+          "id": "anchor:Massachusetts",
+          "label": "Expected anchor mentioned: Massachusetts",
+          "passed": true
+        },
+        {
+          "id": "anchor:Dad",
+          "label": "Expected anchor mentioned: Dad",
+          "passed": true
+        },
+        {
+          "id": "anchor:parking",
+          "label": "Expected anchor mentioned: parking",
+          "passed": true
+        },
+        {
+          "id": "anchor:water",
+          "label": "Expected anchor mentioned: water",
+          "passed": true
+        },
+        {
+          "id": "anchor:weather",
+          "label": "Expected anchor mentioned: weather",
+          "passed": true
+        },
+        {
+          "id": "section:recommendation",
+          "label": "Required section present: recommendation",
+          "passed": true
+        },
+        {
+          "id": "section:route options or day plan",
+          "label": "Required section present: route options or day plan",
+          "passed": true
+        },
+        {
+          "id": "section:mileage targets",
+          "label": "Required section present: mileage targets",
+          "passed": true
+        },
+        {
+          "id": "section:logistics / parking / shuttle",
+          "label": "Required section present: logistics / parking / shuttle",
+          "passed": true
+        },
+        {
+          "id": "section:water",
+          "label": "Required section present: water",
+          "passed": true
+        },
+        {
+          "id": "section:weather",
+          "label": "Required section present: weather",
+          "passed": true
+        },
+        {
+          "id": "section:bailout",
+          "label": "Required section present: bailout",
+          "passed": true
+        },
+        {
+          "id": "section:final checklist",
+          "label": "Required section present: final checklist",
+          "passed": true
+        },
+        {
+          "id": "section:source receipts or missing-source caveats",
+          "label": "Required section present: source receipts or missing-source caveats",
+          "passed": true
+        },
+        {
+          "id": "caveat:must choose/verify exact trailhead",
+          "label": "Required caveat represented: must choose/verify exact trailhead",
+          "passed": true
+        },
+        {
+          "id": "caveat:Dad pace and heat matter",
+          "label": "Required caveat represented: Dad pace and heat matter",
+          "passed": true
+        },
+        {
+          "id": "caveat:water and parking currentness",
+          "label": "Required caveat represented: water and parking currentness",
+          "passed": true
+        },
+        {
+          "id": "disallowed:invent exact current parking",
+          "label": "Disallowed mistake absent: invent exact current parking",
+          "passed": true
+        },
+        {
+          "id": "disallowed:overpromise water",
+          "label": "Disallowed mistake absent: overpromise water",
+          "passed": true
+        },
+        {
+          "id": "disallowed:recommend unsafe mileage for Dad",
+          "label": "Disallowed mistake absent: recommend unsafe mileage for Dad",
+          "passed": true
+        }
+      ],
+      "rawResponse": "### Scout deterministic planning guardrail\n\nI’m using a deterministic Scout reliability fallback for this medium-risk AT planning class because wrong corridors, invented current water, invented legal camping, or provider timeouts are worse than a cautious draft.\nWorkspace context: Scout QA 2.at-ct-ma-001-family-fair-weather.\n\n**Recommendation**\n- Choose the Connecticut/Massachusetts family hike by road access and Dad pace first, not by a flashy summit. Must choose/verify exact trailhead before trusting mileage.\n- Dad pace and heat matter: keep the default day short enough that the slowest hiker can finish with daylight, water, and a calm pickup plan.\n\n**Route options or day plan**\n- Easiest family option: a Connecticut AT road-crossing out-and-back or short point-to-point near a well-used access point, with a fixed turnaround time.\n- Moderate option: a Massachusetts AT day hike only if climb, footing, parking, heat, and pickup timing are verified and the group is comfortable.\n- Do not lock a shelter, summit, or exact endpoint until current guide/map/parking details confirm it fits the group.\n\n**Mileage targets**\n- Dad/family easy target: roughly 3-7 miles depending on heat, climb, pack weight, and group speed.\n- Moderate fair-weather target: roughly 7-10 miles only with a clear bailout and enough daylight margin.\n\n**Logistics / parking / shuttle**\n- Must choose/verify exact trailhead, parking rules, pickup point, road access, and shuttle timing before driving. Water and parking currentness should be checked the day before.\n\n**Water**\n- Carry enough from the start unless a current source confirms a refill. Treat natural water and do not assume every marked source is flowing.\n\n**Weather**\n- Pick a fair-weather window. Heat, thunderstorms, wet rock, cold rain, or wildfire smoke should shorten the route or move it to another day.\n\n**Legal overnight/camping**\n- This is a day-hike recommendation unless the user asks for overnight. Do not add camping unless legal sites and water are current-confirmed.\n\n**Bailout**\n- Bailout should be an early turnaround or a named road crossing with legal pickup. Do not depend on cell service as the plan.\n\n**Source receipts / missing-source caveats**\n- Route grounding: Connecticut / Massachusetts family fair-weather hike guardrail. This is a deterministic planning guardrail, not a live mile-by-mile guide extract.\n- Appalachian Trail Conservancy official trail updates [official/live-fetch]: ATC Trail Updates, fetched not fetched: source URL not recorded\n- National Weather Service point forecast, alerts, and forecast discussions [official/live-fetch]: National Weather Service point forecast/alerts, fetched not fetched: source URL not recorded\n- Needed but not bundled: A.T. Guide / AWOL data imported by the hiker [reviewed/user-import-required]. Do not scrape or bundle copyrighted guide content; ask the hiker to import/search what they own.\n- Needed but not bundled: FarOut recent comments/screenshots supplied by the hiker [open-crowd/user-import-required]. Crowd reports can be stale or wrong; prefer recent dated comments and cross-check risky claims.\n- Missing-source caveat: verify exact mileages, legal overnight status, water reliability, closures/detours, road access, parking, and shuttle details before leaving.\n\n**Final checklist**\n- Confirm exact route miles and road-crossing names in a current user-owned guide before driving.\n- Re-check ATC Trail Updates, land-manager notices, closures/detours, and fire restrictions.\n- Pull the NWS point forecast and alerts 24-48 hours before the hike and again the morning of departure.\n- Confirm parking, overnight parking if relevant, shuttle/pickup timing, bailout road access, and cell-service assumptions.\n- Confirm water reliability from current comments or local/current sources and treat all natural water.\n- Re-check Dad pace, heat, water and parking currentness before finalizing the exact trailhead.",
+      "score": {
+        "total": 100,
+        "passThreshold": 85,
+        "categoryScores": {
+          "corridorCorrectness": 100,
+          "routeOrder": 100,
+          "itineraryUsefulness": 100,
+          "mileageRealism": 100,
+          "logistics": 100,
+          "waterSafety": 100,
+          "legalCampingPermits": 100,
+          "weatherSafety": 100,
+          "sourceHonesty": 100,
+          "responseCompleteness": 100,
+          "userFitPromptFollowing": 100
+        },
+        "severityFlags": [],
+        "failureReasons": [],
+        "blockerCount": 0,
+        "safetyRiskCount": 0
+      },
+      "grounding": null,
+      "sourceReceipts": [],
+      "missingSourceClasses": [
+        "current user-owned guide mileage",
+        "current water comments",
+        "live legal overnight verification"
+      ],
+      "manualReview": {
+        "status": "not-reviewed",
+        "notes": ""
+      }
+    }
+  ]
+}

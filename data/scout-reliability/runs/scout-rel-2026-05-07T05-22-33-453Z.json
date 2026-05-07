@@ -1,0 +1,396 @@
+{
+  "metadata": {
+    "runId": "scout-rel-2026-05-07T05-22-33-453Z",
+    "timestamp": "2026-05-07T05:22:33.454Z",
+    "gitCommitSha": "dc07f321ae35cbe3a4fdc8bdb010998113e26afc",
+    "gitCommitMessage": "fix: make kjv sqlite build idempotent",
+    "changedFiles": [
+      "apps/openclaw-web/src/lib/server/claw-agent.ts",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T01-29-51-084Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-17-20-411Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-21-08-629Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-24-45-791Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-28-36-935Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-31-43-395Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-35-40-942Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-37-49-872Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-40-30-044Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-43-58-075Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-47-09-708Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-47-33-766Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-51-35-629Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-53-59-710Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T04-56-10-113Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-20-35-903Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-29-323Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-30-688Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-31-002Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T05-22-31-280Z.json",
+      "packages/trail-data/src/at-route-validator.ts",
+      "pps/openclaw-web/src/lib/server/claw-agent.ts"
+    ],
+    "deployedRevision": null,
+    "forgeReleaseId": null,
+    "environment": "local-preview",
+    "model": "deepseek-v4-pro",
+    "modelProvider": "opencode-go",
+    "modelId": "deepseek-v4-pro",
+    "modelDisplayName": "DeepSeek v4 Pro",
+    "modelSettings": {},
+    "promptVersion": "scout-planning-safety-skeleton-v2",
+    "siteGitSha": "dc07f321ae35cbe3a4fdc8bdb010998113e26afc",
+    "evaluatorVersion": "scout-reliability-v2",
+    "scenarioSuiteVersion": "2281e5397358",
+    "mode": "api",
+    "scenarioCount": 1,
+    "passFailCounts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "difficultyRangeTested": [
+      9,
+      9
+    ],
+    "scoreSummary": {
+      "totalScore": 100,
+      "averageScore": 100,
+      "coverageScore": 100,
+      "passRate": 100,
+      "blockerCount": 0,
+      "safetyRiskCount": 0,
+      "wrongCorridorCount": 0,
+      "severityCounts": {}
+    },
+    "humanReviewLabels": [
+      "not-reviewed",
+      "good",
+      "acceptable with caveats",
+      "unsafe",
+      "wrong corridor",
+      "needs source check",
+      "too thin",
+      "excellent"
+    ],
+    "humanReviewStatusCounts": {
+      "not-reviewed": 1
+    },
+    "filters": {
+      "difficultyMin": null,
+      "difficultyMax": null,
+      "region": null,
+      "id": "at-me-004-sobo-katahdin-start"
+    },
+    "patchNotes": "",
+    "deploymentNotes": "",
+    "knownRemainingFailures": ""
+  },
+  "scenarios": [
+    {
+      "id": "at-me-004-sobo-katahdin-start",
+      "prompt": "Plan a SOBO Appalachian Trail start in Baxter from Katahdin Stream Campground over Baxter Peak / Katahdin and toward Hurd Brook. Include permit/access, camping, water, weather/closures, parking/shuttle, and checklist.",
+      "regionState": "Maine / ME",
+      "approximateAtMileRange": [
+        2178.5,
+        2197.7
+      ],
+      "expectedCorridor": "Katahdin Stream / Baxter Peak / Hurd Brook SOBO start",
+      "expectedStart": "Katahdin Stream Campground",
+      "expectedEnd": "Hurd Brook / Abol Bridge direction",
+      "expectedDirection": "SOBO",
+      "expectedPlanType": "Baxter SOBO start",
+      "requiredOutputSections": [
+        "recommendation",
+        "route options or day plan",
+        "mileage targets",
+        "logistics / parking / shuttle",
+        "water",
+        "weather",
+        "legal overnight/camping",
+        "bailout",
+        "final checklist",
+        "source receipts or missing-source caveats"
+      ],
+      "requiredCaveats": [
+        "Baxter access and trail status",
+        "day-use/camping reservation context",
+        "Katahdin weather/turnaround",
+        "legal campsite verification"
+      ],
+      "disallowedMistakes": [
+        "skip Baxter access rules",
+        "treat Katahdin as casual",
+        "invent camping",
+        "ignore closures"
+      ],
+      "difficulty": 9,
+      "difficultyRationale": "High-consequence terrain and Baxter access rules even without a NOBO finish.",
+      "deterministicStrictRouteSupport": "now",
+      "expectedSourceId": "hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05",
+      "expectedStartPointId": "katahdin-stream-campground-me",
+      "expectedAnchors": [
+        "Katahdin Stream",
+        "Baxter Peak",
+        "Hurd Brook",
+        "permit",
+        "weather"
+      ],
+      "sourceExpectations": {
+        "requiredSourceIds": [
+          "hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05",
+          "atc-trail-updates",
+          "nws-weather",
+          "at-guide-user-owned",
+          "farout-current-comments",
+          "baxter-state-park-at-permits",
+          "hostel-shuttle-direct"
+        ],
+        "missingSourceClasses": [
+          "current user-owned guide mileage",
+          "current water comments",
+          "live legal overnight verification",
+          "live weather/closure check when acting on the plan"
+        ],
+        "liveFetchRequiredBeforeActing": true
+      },
+      "scoringCriteria": {
+        "passThreshold": 90,
+        "blockerFlags": [
+          "wrong corridor",
+          "safety risk",
+          "invented certainty",
+          "timeout/provider failure"
+        ],
+        "requiredCategories": [
+          "itineraryUsefulness",
+          "mileageRealism",
+          "logistics",
+          "waterSafety",
+          "weatherSafety",
+          "legalCampingPermits",
+          "responseCompleteness",
+          "sourceHonesty"
+        ],
+        "categoryWeights": {
+          "corridorCorrectness": 18,
+          "routeOrder": 12,
+          "itineraryUsefulness": 10,
+          "mileageRealism": 8,
+          "logistics": 8,
+          "waterSafety": 8,
+          "legalCampingPermits": 10,
+          "weatherSafety": 8,
+          "sourceHonesty": 10,
+          "responseCompleteness": 5,
+          "userFitPromptFollowing": 3
+        }
+      },
+      "expectedExecutionMode": "strict-fallback-preferred"
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "at-me-004-sobo-katahdin-start",
+      "difficulty": 9,
+      "regionState": "Maine / ME",
+      "status": "passed",
+      "pass": true,
+      "failureReason": "",
+      "assertions": [
+        {
+          "id": "grounding:present",
+          "label": "Strict route grounding is available",
+          "passed": true
+        },
+        {
+          "id": "grounding:source",
+          "label": "Expected source hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05",
+          "passed": true,
+          "actual": "hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05"
+        },
+        {
+          "id": "grounding:start",
+          "label": "Expected start katahdin-stream-campground-me",
+          "passed": true,
+          "actual": "katahdin-stream-campground-me"
+        },
+        {
+          "id": "anchor:Katahdin Stream",
+          "label": "Expected anchor mentioned: Katahdin Stream",
+          "passed": true
+        },
+        {
+          "id": "anchor:Baxter Peak",
+          "label": "Expected anchor mentioned: Baxter Peak",
+          "passed": true
+        },
+        {
+          "id": "anchor:Hurd Brook",
+          "label": "Expected anchor mentioned: Hurd Brook",
+          "passed": true
+        },
+        {
+          "id": "anchor:permit",
+          "label": "Expected anchor mentioned: permit",
+          "passed": true
+        },
+        {
+          "id": "anchor:weather",
+          "label": "Expected anchor mentioned: weather",
+          "passed": true
+        },
+        {
+          "id": "section:recommendation",
+          "label": "Required section present: recommendation",
+          "passed": true
+        },
+        {
+          "id": "section:route options or day plan",
+          "label": "Required section present: route options or day plan",
+          "passed": true
+        },
+        {
+          "id": "section:mileage targets",
+          "label": "Required section present: mileage targets",
+          "passed": true
+        },
+        {
+          "id": "section:logistics / parking / shuttle",
+          "label": "Required section present: logistics / parking / shuttle",
+          "passed": true
+        },
+        {
+          "id": "section:water",
+          "label": "Required section present: water",
+          "passed": true
+        },
+        {
+          "id": "section:weather",
+          "label": "Required section present: weather",
+          "passed": true
+        },
+        {
+          "id": "section:legal overnight/camping",
+          "label": "Required section present: legal overnight/camping",
+          "passed": true
+        },
+        {
+          "id": "section:bailout",
+          "label": "Required section present: bailout",
+          "passed": true
+        },
+        {
+          "id": "section:final checklist",
+          "label": "Required section present: final checklist",
+          "passed": true
+        },
+        {
+          "id": "section:source receipts or missing-source caveats",
+          "label": "Required section present: source receipts or missing-source caveats",
+          "passed": true
+        },
+        {
+          "id": "caveat:Baxter access and trail status",
+          "label": "Required caveat represented: Baxter access and trail status",
+          "passed": true
+        },
+        {
+          "id": "caveat:day-use/camping reservation context",
+          "label": "Required caveat represented: day-use/camping reservation context",
+          "passed": true
+        },
+        {
+          "id": "caveat:Katahdin weather/turnaround",
+          "label": "Required caveat represented: Katahdin weather/turnaround",
+          "passed": true
+        },
+        {
+          "id": "caveat:legal campsite verification",
+          "label": "Required caveat represented: legal campsite verification",
+          "passed": true
+        },
+        {
+          "id": "disallowed:skip Baxter access rules",
+          "label": "Disallowed mistake absent: skip Baxter access rules",
+          "passed": true
+        },
+        {
+          "id": "disallowed:treat Katahdin as casual",
+          "label": "Disallowed mistake absent: treat Katahdin as casual",
+          "passed": true
+        },
+        {
+          "id": "disallowed:invent camping",
+          "label": "Disallowed mistake absent: invent camping",
+          "passed": true
+        },
+        {
+          "id": "disallowed:ignore closures",
+          "label": "Disallowed mistake absent: ignore closures",
+          "passed": true
+        },
+        {
+          "id": "route-claim-validator",
+          "label": "Route claim validator found no blocking issues",
+          "passed": true,
+          "issues": []
+        }
+      ],
+      "rawResponse": "### Scout strict-route plan\n\nI’m using strict Baxter/Katahdin route/regulation mode because this asks for a real AT finish/start plan. The route order, permit/camping, summit timing, water, and closure guardrails below come from host validation, not model memory.\nWorkspace context: Scout QA 9.at-me-004-sobo-katahdin-start.\n\n**Route-order guardrail**\n- Direction: SOBO.\n- Corridor: Katahdin Stream Campground SOBO to Hurd Brook Lean-to (~6.5 mi by this guardrail, one-way summit mileage only).\n- Source: Hogg Country Baxter/Katahdin AT finish corridor and regulation QA fixture. Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, Baxter State Park conditions/ranger guidance, current camping reservation, or recent water/weather report.\n\n| Point | Approx route mile | From start | Type |\n|---|---:|---:|---|\n| Katahdin Stream Campground | 2192.5 | start | landmark |\n| Hurd Brook Lean-to | 2186.0 | -6.5 | shelter |\n\n**Important corrections / guardrails**\n- Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, Baxter State Park conditions/ranger guidance, current camping reservation, or recent water/weather report.\n- Baxter/Katahdin permit guardrail: all AT hikers must secure the current Long-Distance Hiker Permit in person at Katahdin Stream before summiting; pre-registration cards, ATC registration, and online campground reservations are not substitutes.\n- Baxter camping guardrail: The Birches is only for eligible NOBO hikers if space is available, is capped at 12 persons/night, requires the current cash fee, and has no work-for-stay.\n- Baxter access/season guardrail: Katahdin trails can close for weather/conditions, shoulder-season closures apply, summer camping is not available after the posted October cutoff, and Baxter recommends AT hikers summit before October 15.\n- Katahdin summit guardrail: treat the Hunt Trail summit as a very strenuous 8-12 hour round-trip/exit day with an early start, turnaround time, headlamp, at least 2 quarts water per person, treated natural water, and current ranger/forecast checks.\n- Knife Edge, Chimney Pond, Roaring Brook is not in this validator corridor and must not be used as a firm endpoint without another source.\n- The summit day is not just the one-way AT miles to Baxter Peak. Plan the descent/exit, daylight, weather, ranger guidance, and transport before starting.\n- Do not add Knife Edge, Chimney Pond, Roaring Brook, or any non-AT exposed side route to a finish plan unless current Baxter conditions/rangers, route logistics, and transportation explicitly support that separate objective.\n\n**Route options**\n\n**SOBO Katahdin start with legal access gate** — 11.7 mi total\n| Day | Leg | Miles | Guardrail note |\n|---|---|---:|---|\n| 1 | Katahdin Stream Campground → Baxter Peak / Katahdin | 5.2 | SOBO start requires the same in-person LD permit plus a campground reservation or day-use/KTP access plan before attempting Katahdin. |\n| 2 | Katahdin Stream Campground → Hurd Brook Lean-to | 6.5 | After descending/returning safely, leave Baxter only on a legal route with confirmed camping and food carry. |\n- The summit day mileage shown is one-way AT mileage; the real day includes descent/exit and can take 8-12 hours.\n- SOBO hikers do not get to bypass Baxter access, camping, parking, or LD permit rules.\n\n**Recommendation**\n- Treat the Katahdin summit/start as a permit-and-access-gated all-day objective first, then start south only after the descent, legal camping, food, water, and pickup/bailout plan are confirmed.\n- If any Baxter permit/access/camping/weather check is uncertain, stop at the safer legal endpoint or move the summit attempt rather than forcing the itinerary.\n\n**Permit / access / camping assumptions**\n- Secure the current Baxter State Park Long-Distance Hiker Permit in person at Katahdin Stream Campground before attempting Katahdin. Online reservations, ATCamp, ATC hang tags, and pre-registration cards are not substitutes.\n- The Birches is not guaranteed: eligible NOBO hikers must have hiked continuously from Monson through the 100-Mile Wilderness, space must be available, the 12-person/night cap applies, the current cash fee applies, and there is no work-for-stay in Baxter State Park.\n- If The Birches is unavailable or you are not eligible, use a reserved legal campground/site or change the timing. Do not invent overflow, stealth, parking-lot, summit, or roadside camping.\n- If entering by vehicle for a day hike or SOBO start without camping in the park the night before, verify the current Katahdin Trailhead Pass/day-use parking requirement and gate timing.\n\n**Summit safety**\n- Treat Katahdin/Hunt Trail as a very strenuous all-day objective. Baxter describes Katahdin hikes as about 8-12 hours round trip and the Hunt Trail as 5.2 mi one-way with long above-treeline exposure.\n- Start early, set a turnaround time, carry a headlamp/flashlight, and remember that the safe goal is returning to the trailhead, not just tagging the summit.\n- Katahdin trails can close at any time for weather or trail conditions. Shoulder-season closures apply; Baxter recommends AT hikers complete the summit hike before October 15.\n- Carry at least the current official minimum water for Katahdin and more in heat; do not rely on exposed upper-mountain water.\n- Treat all natural water in Baxter. Confirm Katahdin Stream/Hurd Brook/Rainbow Spring status from current sources before relying on them.\n\n**Food / logistics**\n- There are no in-park stores to rescue a bad food/sleeping/cooking plan. Carry the needed food and overnight kit before entering Baxter.\n- Confirm Abol Bridge/Millinocket shuttle, park road/gate timing, campsite check-in, and post-summit pickup before leaving the last reliable service point.\n\n**Safety / live conditions**\n- Official/live check fetched: 2026-05-07T05:22:33.398Z.\n- ATC Trail Updates: returned items, but none were clearly tagged ME; do not treat them as this route’s closure/fire condition without checking the page.\n- NWS active alerts near Millinocket, ME: none returned for this point.\n- NWS near-term forecast: Overnight: 39°F, 9 mph NW, Light Rain | Thursday: 53°F, 5 to 10 mph NW, Partly Sunny then Scattered Rain Showers.\n\n**Final checklist before leaving**\n- Verify exact AT mileages and final campsite sequence in your current user-owned guide.\n- Check Baxter State Park current conditions, Katahdin trail status, LD permit process, The Birches/campsite availability, campground reservation, KTP/day-use access, gate timing, and fees.\n- Pull NWS point forecasts/alerts for Katahdin/Baxter Peak and the Katahdin Stream/Abol Bridge approach 24-48 hours before the attempt.\n- Confirm water, food carry, headlamp, insulation/rain layers, emergency shelter, offline map, shuttle/pickup, and a hard turnaround time.\n\n**Source receipts**\n- Hogg Country Baxter/Katahdin AT finish corridor and regulation QA validator [reviewed/route-validator]: Hogg Country Baxter/Katahdin AT finish corridor and regulation QA fixture, generated 2026-05-05 from Hogg Country guide data plus official Baxter State Park AT/hiking/camping pages and ATC permit checks.\n- Baxter State Park AT Long-Distance Hiker Permit, The Birches, camping, trailhead access, water, and Katahdin conditions [official/live-fetch]: Baxter State Park AT, hiking, camping, and ATC permits pages; live conditions/rules must be checked before leaving. Scout fetched timestamp: not fetched. https://baxterstatepark.org/general-info/the-at/ https://baxterstatepark.org/general-info/ https://baxterstatepark.org/camp-summer/ https://appalachiantrail.org/explore/hike-the-a-t/thru-hiking/permits-regulations/\n- Appalachian Trail Conservancy official trail updates [official/live-fetch]: ATC Trail Updates, fetched 2026-05-07T05:22:33.398Z: source URL not recorded\n- National Weather Service point forecast, alerts, and forecast discussions [official/live-fetch]: National Weather Service point forecast/alerts, fetched 2026-05-07T05:22:33.398Z: source URL not recorded\n- Needed but not bundled: A.T. Guide / AWOL data imported by the hiker [reviewed/user-import-required]. Do not scrape or bundle copyrighted guide content; ask the hiker to import/search what they own.\n- Needed but not bundled: FarOut recent comments/screenshots supplied by the hiker [open-crowd/user-import-required]. Crowd reports can be stale or wrong; prefer recent dated comments and cross-check risky claims.",
+      "score": {
+        "total": 100,
+        "passThreshold": 90,
+        "categoryScores": {
+          "corridorCorrectness": 100,
+          "routeOrder": 100,
+          "itineraryUsefulness": 100,
+          "mileageRealism": 100,
+          "logistics": 100,
+          "waterSafety": 100,
+          "legalCampingPermits": 100,
+          "weatherSafety": 100,
+          "sourceHonesty": 100,
+          "responseCompleteness": 100,
+          "userFitPromptFollowing": 100
+        },
+        "severityFlags": [],
+        "failureReasons": [],
+        "blockerCount": 0,
+        "safetyRiskCount": 0
+      },
+      "grounding": {
+        "sourceId": "hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05",
+        "direction": "SOBO",
+        "start": "Katahdin Stream Campground",
+        "destination": "Hurd Brook Lean-to",
+        "planOptions": [
+          "baxter-sobo-permit-and-hurd-brook-start"
+        ],
+        "warnings": [
+          "Use these values as a route-order and regulation guardrail, not as a replacement for a current A.T. Guide, Baxter State Park conditions/ranger guidance, current camping reservation, or recent water/weather report.",
+          "Baxter/Katahdin permit guardrail: all AT hikers must secure the current Long-Distance Hiker Permit in person at Katahdin Stream before summiting; pre-registration cards, ATC registration, and online campground reservations are not substitutes.",
+          "Baxter camping guardrail: The Birches is only for eligible NOBO hikers if space is available, is capped at 12 persons/night, requires the current cash fee, and has no work-for-stay.",
+          "Baxter access/season guardrail: Katahdin trails can close for weather/conditions, shoulder-season closures apply, summer camping is not available after the posted October cutoff, and Baxter recommends AT hikers summit before October 15.",
+          "Katahdin summit guardrail: treat the Hunt Trail summit as a very strenuous 8-12 hour round-trip/exit day with an early start, turnaround time, headlamp, at least 2 quarts water per person, treated natural water, and current ranger/forecast checks.",
+          "Knife Edge, Chimney Pond, Roaring Brook is not in this validator corridor and must not be used as a firm endpoint without another source."
+        ]
+      },
+      "sourceReceipts": [
+        "hoggcountry-baxter-katahdin-at-corridor-qa-2026-05-05",
+        "at-guide-user-owned",
+        "farout-current-comments",
+        "atc-trail-updates",
+        "nws-weather"
+      ],
+      "missingSourceClasses": [
+        "current user-owned guide mileage",
+        "current water comments",
+        "live legal overnight verification"
+      ],
+      "manualReview": {
+        "status": "not-reviewed",
+        "notes": ""
+      }
+    }
+  ]
+}
