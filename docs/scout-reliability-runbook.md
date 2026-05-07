@@ -56,13 +56,15 @@ Use `SCOUT_RELIABILITY_MODEL=deepseek-v4-pro` unless the task is explicitly mode
 
 ## Critical Model Review
 
-The harness captures responses and hard telemetry; it is not the quality judge. Review model-authored responses against `data/scout-reliability/reference-responses.json`:
+The harness captures responses and hard telemetry; it is not the quality judge. By default, quality review is an assistant/human rubric review over the saved artifact, not a paid model-judge API call. Do not spend external judge tokens unless Chris explicitly asks for it.
+
+Use the local review script only as a first-pass organizer for deterministic-row exclusion and obvious text-scan notes:
 
 ```bash
 npm run review:scout-model -- --run data/scout-reliability/runs/<run-id>.json
 ```
 
-The references are baseline expectations, not golden wording. Score the model critically for corridor correctness, source honesty, safety/legal realism, practical usefulness, and prompt fit. A response can beat the reference if it is more accurate or helpful. Rows that begin as deterministic guardrails or strict-route canned plans must be excluded from model comparison.
+Then review model-authored responses directly against `data/scout-reliability/reference-responses.json`. The references are baseline expectations, not golden wording. Score the model critically for corridor correctness, source honesty, safety/legal realism, practical usefulness, and prompt fit. A response can beat the reference if it is more accurate or helpful. Rows that begin as deterministic guardrails or strict-route canned plans must be excluded from model comparison.
 
 ## Artifacts
 

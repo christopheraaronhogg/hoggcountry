@@ -1,0 +1,58 @@
+{
+  "reviewVersion": "assistant-manual-review-v1",
+  "reviewedAt": "2026-05-07T22:50:00Z",
+  "runId": "scout-rel-2026-05-07T22-27-40-763Z",
+  "runPath": "data/scout-reliability/runs/scout-rel-2026-05-07T22-27-40-763Z.json",
+  "reviewer": "OpenClaw assistant / Chris-directed human-style review, no paid judge API",
+  "leaderboardEligible": false,
+  "leaderboardEligibilityReason": "The deployed architecture is valid for model comparison and had zero deterministic rows, but the live run produced repeated 504 timeouts. Complete model-authored rows are useful for qualitative review; the full run is not a clean leaderboard comparison until timeout behavior is fixed or a complete no-timeout run is captured.",
+  "summary": {
+    "scenarios": 25,
+    "deterministicRows": 0,
+    "completeModelAuthoredRows": 18,
+    "acceptableOrBetterCompleteRows": 18,
+    "failedRows": 7,
+    "timeoutRows": 6,
+    "truncatedRows": 1,
+    "paidJudgeApiUsed": false
+  },
+  "judgment": {
+    "architecture": "Pass: deterministic Scout answer leakage was not observed in the fresh deployed run.",
+    "modelQualityOnCompleteRows": "Pass with caveats: all complete model-authored responses were at least acceptable for a trail-planning assistant. Several were genuinely useful and source-honest; a few were too aggressive or generic but still transparent enough not to be unsafe.",
+    "runtimeReliability": "Fail: repeated 504 Gateway Timeout responses make the live API path unreliable for the heavier prompts.",
+    "scoreboardInterpretation": "Do not compare this run directly with the stale deterministic 25/25 score-chasing runs. This run is better evidence for architecture honesty, worse evidence for operational reliability."
+  },
+  "rows": [
+    {"scenarioId":"at-ga-001-springer-approach-day","manualLabel":"good","notes":"Useful beginner plan, clear Approach Trail vs official AT caveat, water/weather/logistics covered."},
+    {"scenarioId":"at-wv-001-keys-gap-harpers-dad-day","manualLabel":"good","notes":"Dad-friendly Keys Gap to Harpers Ferry plan with sensible short/long framing and source caveats; deterministic validator failure looks over-strict."},
+    {"scenarioId":"at-pa-001-pine-grove-simple-day","manualLabel":"good","notes":"Practical out-and-back/shuttle options; honest water and parking caveats."},
+    {"scenarioId":"at-md-001-harpers-ed-garvey-overnight","manualLabel":"acceptable-with-caveats","notes":"Legally aware and useful, but the 18.9-mile first day is aggressive and should be framed more strongly as hard, not default."},
+    {"scenarioId":"at-pa-002-pine-grove-three-day","manualLabel":"good","notes":"Strong three-day options, current weather, no invented Boiling Springs camping, water and parking caveats included."},
+    {"scenarioId":"at-va-001-shenandoah-nero-resupply","manualLabel":"fail-timeout","notes":"504 Gateway Timeout; no model response to judge."},
+    {"scenarioId":"at-wv-md-002-harpers-failed-mixed-plan","manualLabel":"good","notes":"Correctly separates Dad finish from later solo overnight and keeps Harpers Ferry/Pine Grove distinction clear."},
+    {"scenarioId":"at-va-002-shenandoah-rockfish-swift-heat","manualLabel":"good","notes":"Correctly rejects 2L/late-July plan as unsafe default and offers safer alternatives. This is a good safety response despite regex flags."},
+    {"scenarioId":"at-tn-nc-001-gsmnp-fontana-newfound","manualLabel":"fail-timeout","notes":"504 Gateway Timeout; no model response to judge."},
+    {"scenarioId":"at-pa-003-true-halfway-vs-mental-halfway","manualLabel":"good","notes":"Clear distinction between true halfway and Harpers Ferry mental halfway; useful Pine Grove planning context."},
+    {"scenarioId":"at-nj-ny-001-road-crossing-weekend","manualLabel":"acceptable-with-caveats","notes":"Source-honest and safe, but generic because Scout lacks deep NJ/NY route data; useful as a scaffold, not a polished route."},
+    {"scenarioId":"at-ct-ma-001-family-fair-weather","manualLabel":"fail-timeout","notes":"504 Gateway Timeout; no model response to judge."},
+    {"scenarioId":"at-vt-001-long-trail-mud-season","manualLabel":"fail-truncated","notes":"Retry produced only a partial 428-character response ending at a heading. Not usable."},
+    {"scenarioId":"at-nh-001-whites-franconia-crawford","manualLabel":"fail-timeout","notes":"504 Gateway Timeout; no model response to judge."},
+    {"scenarioId":"at-me-001-hundred-mile-food-carry","manualLabel":"acceptable-with-caveats","notes":"Honest about 7 vs 8 days, food carry, and drops, but initially proposes impossible/ugly day splits before correcting. Useful but needs tighter itinerary generation."},
+    {"scenarioId":"at-me-002-baxter-katahdin-finish","manualLabel":"good","notes":"Solid Baxter finish plan with LDHP/The Birches/KSC distinctions, weather caveats, and backup planning."},
+    {"scenarioId":"at-me-003-impossible-katahdin-afternoon","manualLabel":"good","notes":"Correctly refuses unsafe/illegal fastest plan and explains Knife Edge, Baxter camping, and legal alternatives."},
+    {"scenarioId":"at-tn-nc-002-gsmnp-shelter-full","manualLabel":"good","notes":"Correctly says no overflow tenting near a full Smokies shelter and gives permit-safe alternatives."},
+    {"scenarioId":"at-va-003-current-mile-based-shenandoah","manualLabel":"fail-timeout","notes":"504 Gateway Timeout; no model response to judge."},
+    {"scenarioId":"at-ny-001-ambiguous-bear-mountain","manualLabel":"good","notes":"Correctly anchors on Bear Mountain NY/Hudson and asks for Dad/date context; useful options and caveats."},
+    {"scenarioId":"at-ma-001-impossible-weekend-mileage","manualLabel":"fail-timeout","notes":"504 Gateway Timeout; no model response to judge."},
+    {"scenarioId":"at-va-wv-md-003-family-finish-plus-solo-overnight","manualLabel":"good","notes":"Good side-by-side family finish and solo overnight framing; keeps plans separate and practical."},
+    {"scenarioId":"at-ga-nc-002-closure-detour","manualLabel":"good","notes":"Strong source-honest closure-detour behavior: says what current checks show, what is unknown, and how to verify."},
+    {"scenarioId":"at-md-pa-001-overlapping-landmarks","manualLabel":"acceptable-with-caveats","notes":"Correctly rejects PA landmarks for Harpers-area route, but the default weekend route is aggressive; still useful with caveats."},
+    {"scenarioId":"at-me-004-sobo-katahdin-start","manualLabel":"good","notes":"Strong SOBO Katahdin start guidance with permit/access/weather/camping caveats."}
+  ],
+  "recommendedNextFixes": [
+    "Fix or shorten the Scout API path causing 504s on heavier prompts before treating live model runs as leaderboard-clean.",
+    "Keep deterministic rows excluded from model comparison; the fresh run had zero deterministic rows, which is the important architecture win.",
+    "Tighten itinerary generation for long routes so the model does not emit a bad table and then self-correct inside the final answer.",
+    "Update the review workflow docs to state that final quality review is assistant/human rubric review by default, not a paid judge API."
+  ]
+}

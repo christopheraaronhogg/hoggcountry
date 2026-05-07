@@ -1,0 +1,234 @@
+{
+  "metadata": {
+    "runId": "scout-rel-2026-05-07T22-36-54-723Z",
+    "timestamp": "2026-05-07T22:36:54.726Z",
+    "gitCommitSha": "76b6e1bcde554a17fd248a5c7e0ee43a0ba9b9a3",
+    "gitCommitMessage": "ci: build forge release before upload",
+    "changedFiles": [
+      "data/scout-reliability/model-reviews/scout-rel-2026-05-07T22-27-40-763Z.review.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T22-27-40-763Z.json"
+    ],
+    "deployedRevision": null,
+    "forgeReleaseId": null,
+    "environment": "forge",
+    "model": "deepseek-v4-pro",
+    "modelProvider": "opencode-go",
+    "modelId": "deepseek-v4-pro",
+    "modelDisplayName": "DeepSeek v4 Pro",
+    "modelSettings": {},
+    "promptVersion": "scout-planning-safety-skeleton-v2",
+    "siteGitSha": "76b6e1bcde554a17fd248a5c7e0ee43a0ba9b9a3",
+    "evaluatorVersion": "scout-reliability-v2",
+    "scenarioSuiteName": "regression",
+    "scenarioSuitePath": "/Users/chrishogg/GitHub/hoggcountry/data/scout-reliability/scenarios.json",
+    "scenarioSuiteVersion": "2281e5397358",
+    "mode": "api",
+    "apiTimeoutMs": 240000,
+    "scenarioCount": 1,
+    "passFailCounts": {
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    "difficultyRangeTested": [
+      3,
+      3
+    ],
+    "scoreSummary": {
+      "totalScore": 0,
+      "averageScore": 0,
+      "coverageScore": 0,
+      "passRate": 0,
+      "blockerCount": 1,
+      "safetyRiskCount": 0,
+      "wrongCorridorCount": 0,
+      "severityCounts": {
+        "blocker": 1,
+        "provider failure": 1
+      }
+    },
+    "humanReviewLabels": [
+      "not-reviewed",
+      "good",
+      "acceptable with caveats",
+      "unsafe",
+      "wrong corridor",
+      "needs source check",
+      "too thin",
+      "too terse",
+      "generic blog",
+      "friendly/useful",
+      "overcautious",
+      "context-aware",
+      "excellent"
+    ],
+    "humanReviewStatusCounts": {
+      "not-reviewed": 1
+    },
+    "filters": {
+      "difficultyMin": null,
+      "difficultyMax": null,
+      "region": null,
+      "id": "at-va-001-shenandoah-nero-resupply",
+      "suiteName": "regression",
+      "scenarioFile": "/Users/chrishogg/GitHub/hoggcountry/data/scout-reliability/scenarios.json"
+    },
+    "patchNotes": "",
+    "deploymentNotes": "Forge deploy 76b6e1b via SSH Actions; deterministic replies removed; timeout retry",
+    "knownRemainingFailures": ""
+  },
+  "scenarios": [
+    {
+      "id": "at-va-001-shenandoah-nero-resupply",
+      "prompt": "Plan a low-risk Shenandoah nero/day-off around an AT road crossing or wayside for a section hiker. Keep it honest about lodging/food hours, water, weather, permits if overnighting, parking/shuttle, and bailout.",
+      "regionState": "Virginia / VA",
+      "approximateAtMileRange": [
+        900,
+        930
+      ],
+      "expectedCorridor": "Shenandoah AT road/wayside context",
+      "expectedStart": "current road crossing or hut/wayside area",
+      "expectedEnd": "same area or short AT move",
+      "expectedDirection": "unknown",
+      "expectedPlanType": "nero/day-off logistics",
+      "requiredOutputSections": [
+        "recommendation",
+        "route options or day plan",
+        "mileage targets",
+        "logistics / parking / shuttle",
+        "water",
+        "weather",
+        "legal overnight/camping",
+        "bailout",
+        "final checklist",
+        "source receipts or missing-source caveats"
+      ],
+      "requiredCaveats": [
+        "verify service hours",
+        "waysides are not legal camping",
+        "use current NPS/Recreation.gov if overnighting"
+      ],
+      "disallowedMistakes": [
+        "plan camping at a wayside or parking lot",
+        "invent service hours",
+        "use stale self-registration permit guidance"
+      ],
+      "difficulty": 3,
+      "difficultyRationale": "Low physical risk but park-service and legal overnight assumptions matter.",
+      "deterministicStrictRouteSupport": "later",
+      "expectedAnchors": [
+        "Shenandoah",
+        "wayside",
+        "permit",
+        "parking",
+        "water"
+      ],
+      "sourceExpectations": {
+        "requiredSourceIds": [
+          "atc-trail-updates",
+          "nws-weather",
+          "at-guide-user-owned",
+          "farout-current-comments",
+          "shenandoah-nps-recreation-gov",
+          "hostel-shuttle-direct"
+        ],
+        "missingSourceClasses": [
+          "current user-owned guide mileage",
+          "current water comments",
+          "live legal overnight verification",
+          "live weather/closure check when acting on the plan"
+        ],
+        "liveFetchRequiredBeforeActing": true
+      },
+      "scoringCriteria": {
+        "passThreshold": 85,
+        "blockerFlags": [
+          "wrong corridor",
+          "safety risk",
+          "invented certainty",
+          "timeout/provider failure"
+        ],
+        "requiredCategories": [
+          "itineraryUsefulness",
+          "mileageRealism",
+          "logistics",
+          "waterSafety",
+          "weatherSafety",
+          "legalCampingPermits",
+          "responseCompleteness",
+          "sourceHonesty"
+        ],
+        "categoryWeights": {
+          "corridorCorrectness": 18,
+          "routeOrder": 12,
+          "itineraryUsefulness": 10,
+          "mileageRealism": 8,
+          "logistics": 8,
+          "waterSafety": 8,
+          "legalCampingPermits": 10,
+          "weatherSafety": 8,
+          "sourceHonesty": 10,
+          "responseCompleteness": 5,
+          "userFitPromptFollowing": 3
+        }
+      },
+      "expectedExecutionMode": "cloud-model-or-safe-fallback"
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "at-va-001-shenandoah-nero-resupply",
+      "difficulty": 3,
+      "regionState": "Virginia / VA",
+      "status": "failed",
+      "pass": false,
+      "failureReason": "Scout API request failed: Scout API returned 504: Gateway Timeout",
+      "assertions": [
+        {
+          "id": "api:reply",
+          "label": "Scout API returned a usable reply",
+          "passed": false,
+          "error": "Scout API returned 504: Gateway Timeout"
+        }
+      ],
+      "rawResponse": "",
+      "score": {
+        "total": 0,
+        "passThreshold": 85,
+        "categoryScores": {
+          "corridorCorrectness": 100,
+          "routeOrder": 100,
+          "itineraryUsefulness": 55,
+          "mileageRealism": 100,
+          "logistics": 100,
+          "waterSafety": 100,
+          "legalCampingPermits": 100,
+          "weatherSafety": 100,
+          "sourceHonesty": 100,
+          "responseCompleteness": 0,
+          "userFitPromptFollowing": 100
+        },
+        "severityFlags": [
+          "blocker",
+          "provider failure"
+        ],
+        "failureReasons": [
+          "api:reply"
+        ],
+        "blockerCount": 1,
+        "safetyRiskCount": 0
+      },
+      "grounding": null,
+      "sourceReceipts": [],
+      "missingSourceClasses": [
+        "current user-owned guide mileage",
+        "current water comments",
+        "live legal overnight verification"
+      ],
+      "manualReview": {
+        "status": "not-reviewed",
+        "notes": ""
+      }
+    }
+  ]
+}

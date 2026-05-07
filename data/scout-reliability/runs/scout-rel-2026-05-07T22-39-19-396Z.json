@@ -1,0 +1,348 @@
+{
+  "metadata": {
+    "runId": "scout-rel-2026-05-07T22-39-19-396Z",
+    "timestamp": "2026-05-07T22:39:19.398Z",
+    "gitCommitSha": "76b6e1bcde554a17fd248a5c7e0ee43a0ba9b9a3",
+    "gitCommitMessage": "ci: build forge release before upload",
+    "changedFiles": [
+      "data/scout-reliability/model-reviews/scout-rel-2026-05-07T22-27-40-763Z.review.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T22-27-40-763Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T22-36-54-723Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T22-37-55-919Z.json",
+      "data/scout-reliability/runs/scout-rel-2026-05-07T22-38-53-158Z.json"
+    ],
+    "deployedRevision": null,
+    "forgeReleaseId": null,
+    "environment": "forge",
+    "model": "deepseek-v4-pro",
+    "modelProvider": "opencode-go",
+    "modelId": "deepseek-v4-pro",
+    "modelDisplayName": "DeepSeek v4 Pro",
+    "modelSettings": {},
+    "promptVersion": "scout-planning-safety-skeleton-v2",
+    "siteGitSha": "76b6e1bcde554a17fd248a5c7e0ee43a0ba9b9a3",
+    "evaluatorVersion": "scout-reliability-v2",
+    "scenarioSuiteName": "regression",
+    "scenarioSuitePath": "/Users/chrishogg/GitHub/hoggcountry/data/scout-reliability/scenarios.json",
+    "scenarioSuiteVersion": "2281e5397358",
+    "mode": "api",
+    "apiTimeoutMs": 240000,
+    "scenarioCount": 1,
+    "passFailCounts": {
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    "difficultyRangeTested": [
+      6,
+      6
+    ],
+    "scoreSummary": {
+      "totalScore": 45,
+      "averageScore": 45,
+      "coverageScore": 45,
+      "passRate": 0,
+      "blockerCount": 1,
+      "safetyRiskCount": 0,
+      "wrongCorridorCount": 1,
+      "severityCounts": {
+        "wrong corridor": 1,
+        "thin answer": 1,
+        "missing source caveat": 1
+      }
+    },
+    "humanReviewLabels": [
+      "not-reviewed",
+      "good",
+      "acceptable with caveats",
+      "unsafe",
+      "wrong corridor",
+      "needs source check",
+      "too thin",
+      "too terse",
+      "generic blog",
+      "friendly/useful",
+      "overcautious",
+      "context-aware",
+      "excellent"
+    ],
+    "humanReviewStatusCounts": {
+      "not-reviewed": 1
+    },
+    "filters": {
+      "difficultyMin": null,
+      "difficultyMax": null,
+      "region": null,
+      "id": "at-vt-001-long-trail-mud-season",
+      "suiteName": "regression",
+      "scenarioFile": "/Users/chrishogg/GitHub/hoggcountry/data/scout-reliability/scenarios.json"
+    },
+    "patchNotes": "",
+    "deploymentNotes": "Forge deploy 76b6e1b via SSH Actions; deterministic replies removed; timeout retry",
+    "knownRemainingFailures": ""
+  },
+  "scenarios": [
+    {
+      "id": "at-vt-001-long-trail-mud-season",
+      "prompt": "Plan a 2-day Appalachian Trail / Long Trail overlap backpack in Vermont during possible mud season. Include route options, legal overnight assumptions, water, weather, road/parking, bailout, and final checklist.",
+      "regionState": "Vermont / VT",
+      "approximateAtMileRange": [
+        1600,
+        1700
+      ],
+      "expectedCorridor": "Vermont AT / Long Trail overlap",
+      "expectedStart": "chosen named VT road crossing",
+      "expectedEnd": "chosen named VT road crossing or shelter",
+      "expectedDirection": "unknown until endpoints are chosen",
+      "expectedPlanType": "2-day / 1-night backpack",
+      "requiredOutputSections": [
+        "recommendation",
+        "route options or day plan",
+        "mileage targets",
+        "logistics / parking / shuttle",
+        "water",
+        "weather",
+        "legal overnight/camping",
+        "bailout",
+        "final checklist",
+        "source receipts or missing-source caveats"
+      ],
+      "requiredCaveats": [
+        "mud season/closure etiquette",
+        "verify legal camping/shelter",
+        "verify current water and road access"
+      ],
+      "disallowedMistakes": [
+        "ignore mud-season closures or advisories",
+        "invent shelter status",
+        "invent road access"
+      ],
+      "difficulty": 6,
+      "difficultyRationale": "Overlap naming, mud-season ethics/closures, and legal overnight status can all shift the answer.",
+      "deterministicStrictRouteSupport": "later",
+      "expectedAnchors": [
+        "Vermont",
+        "Long Trail",
+        "mud season",
+        "shelter",
+        "water",
+        "road access"
+      ],
+      "sourceExpectations": {
+        "requiredSourceIds": [
+          "atc-trail-updates",
+          "nws-weather",
+          "at-guide-user-owned",
+          "farout-current-comments"
+        ],
+        "missingSourceClasses": [
+          "current user-owned guide mileage",
+          "current water comments",
+          "live legal overnight verification",
+          "live weather/closure check when acting on the plan"
+        ],
+        "liveFetchRequiredBeforeActing": true
+      },
+      "scoringCriteria": {
+        "passThreshold": 85,
+        "blockerFlags": [
+          "wrong corridor",
+          "safety risk",
+          "invented certainty",
+          "timeout/provider failure"
+        ],
+        "requiredCategories": [
+          "itineraryUsefulness",
+          "mileageRealism",
+          "logistics",
+          "waterSafety",
+          "weatherSafety",
+          "legalCampingPermits",
+          "responseCompleteness",
+          "sourceHonesty"
+        ],
+        "categoryWeights": {
+          "corridorCorrectness": 18,
+          "routeOrder": 12,
+          "itineraryUsefulness": 10,
+          "mileageRealism": 8,
+          "logistics": 8,
+          "waterSafety": 8,
+          "legalCampingPermits": 10,
+          "weatherSafety": 8,
+          "sourceHonesty": 10,
+          "responseCompleteness": 5,
+          "userFitPromptFollowing": 3
+        }
+      },
+      "expectedExecutionMode": "cloud-model-or-safe-fallback"
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "at-vt-001-long-trail-mud-season",
+      "difficulty": 6,
+      "regionState": "Vermont / VT",
+      "status": "failed",
+      "pass": false,
+      "failureReason": "Expected anchor mentioned: road access; Required section present: recommendation; Required section present: route options or day plan; Required section present: logistics / parking / shuttle; Required section present: bailout; Required section present: final checklist; Required caveat represented: mud season/closure etiquette",
+      "assertions": [
+        {
+          "id": "anchor:Vermont",
+          "label": "Expected anchor mentioned: Vermont",
+          "passed": true
+        },
+        {
+          "id": "anchor:Long Trail",
+          "label": "Expected anchor mentioned: Long Trail",
+          "passed": true
+        },
+        {
+          "id": "anchor:mud season",
+          "label": "Expected anchor mentioned: mud season",
+          "passed": true
+        },
+        {
+          "id": "anchor:shelter",
+          "label": "Expected anchor mentioned: shelter",
+          "passed": true
+        },
+        {
+          "id": "anchor:water",
+          "label": "Expected anchor mentioned: water",
+          "passed": true
+        },
+        {
+          "id": "anchor:road access",
+          "label": "Expected anchor mentioned: road access",
+          "passed": false
+        },
+        {
+          "id": "section:recommendation",
+          "label": "Required section present: recommendation",
+          "passed": false
+        },
+        {
+          "id": "section:route options or day plan",
+          "label": "Required section present: route options or day plan",
+          "passed": false
+        },
+        {
+          "id": "section:mileage targets",
+          "label": "Required section present: mileage targets",
+          "passed": true
+        },
+        {
+          "id": "section:logistics / parking / shuttle",
+          "label": "Required section present: logistics / parking / shuttle",
+          "passed": false
+        },
+        {
+          "id": "section:water",
+          "label": "Required section present: water",
+          "passed": true
+        },
+        {
+          "id": "section:weather",
+          "label": "Required section present: weather",
+          "passed": true
+        },
+        {
+          "id": "section:legal overnight/camping",
+          "label": "Required section present: legal overnight/camping",
+          "passed": true
+        },
+        {
+          "id": "section:bailout",
+          "label": "Required section present: bailout",
+          "passed": false
+        },
+        {
+          "id": "section:final checklist",
+          "label": "Required section present: final checklist",
+          "passed": false
+        },
+        {
+          "id": "section:source receipts or missing-source caveats",
+          "label": "Required section present: source receipts or missing-source caveats",
+          "passed": true
+        },
+        {
+          "id": "caveat:mud season/closure etiquette",
+          "label": "Required caveat represented: mud season/closure etiquette",
+          "passed": false
+        },
+        {
+          "id": "caveat:verify legal camping/shelter",
+          "label": "Required caveat represented: verify legal camping/shelter",
+          "passed": true
+        },
+        {
+          "id": "caveat:verify current water and road access",
+          "label": "Required caveat represented: verify current water and road access",
+          "passed": true
+        },
+        {
+          "id": "disallowed:ignore mud-season closures or advisories",
+          "label": "Disallowed mistake absent: ignore mud-season closures or advisories",
+          "passed": true
+        },
+        {
+          "id": "disallowed:invent shelter status",
+          "label": "Disallowed mistake absent: invent shelter status",
+          "passed": true
+        },
+        {
+          "id": "disallowed:invent road access",
+          "label": "Disallowed mistake absent: invent road access",
+          "passed": true
+        }
+      ],
+      "rawResponse": "Here's what I've got and what I don't: I have general AT operating guidance (weather strategy, shelter-vs-tent, water treatment, gear) but nothing specific to Vermont's AT/Long Trail overlap — no mile-by-mile data, no Vermont-specific legal camping rules, no GMC mud season policy. That's the honest starting point.\n\nHere's the plan, built from what I know and clearly marked where you must verify before leaving.\n\n---\n\n## 2-Day",
+      "score": {
+        "total": 45,
+        "passThreshold": 85,
+        "categoryScores": {
+          "corridorCorrectness": 83,
+          "routeOrder": 100,
+          "itineraryUsefulness": 55,
+          "mileageRealism": 100,
+          "logistics": 0,
+          "waterSafety": 100,
+          "legalCampingPermits": 100,
+          "weatherSafety": 100,
+          "sourceHonesty": 100,
+          "responseCompleteness": 0,
+          "userFitPromptFollowing": 75
+        },
+        "severityFlags": [
+          "wrong corridor",
+          "thin answer",
+          "missing source caveat"
+        ],
+        "failureReasons": [
+          "anchor:road access",
+          "section:recommendation",
+          "section:route options or day plan",
+          "section:logistics / parking / shuttle",
+          "section:bailout",
+          "section:final checklist",
+          "caveat:mud season/closure etiquette"
+        ],
+        "blockerCount": 1,
+        "safetyRiskCount": 0
+      },
+      "grounding": null,
+      "sourceReceipts": [],
+      "missingSourceClasses": [
+        "current user-owned guide mileage",
+        "current water comments",
+        "live legal overnight verification"
+      ],
+      "manualReview": {
+        "status": "not-reviewed",
+        "notes": ""
+      }
+    }
+  ]
+}
