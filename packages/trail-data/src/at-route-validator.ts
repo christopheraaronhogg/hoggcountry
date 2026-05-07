@@ -1290,7 +1290,7 @@ function findPointAliasesInOrder(text: string, points: readonly AtRoutePoint[]):
 
 function lineHasRouteSequenceSyntax(line: string): boolean {
   if (/\bcomes\s+before\b/iu.test(line)) return false;
-  const routeSyntaxText = line.replace(/\bbefore\s+(?:leaving|committing|starting|acting|relying|stepping|you|the\s+hike|the\s+trip|departure)\b/giu, '');
+  const routeSyntaxText = line.replace(/\bbefore\s+(?:leaving|committing|starting|acting|relying|stepping|you|the\s+hike|the\s+trip|departure|attempting|summiting|the\s+attempt|the\s+summit|morning)\b/giu, '');
   return /(?:→|->|\bto\b|\bthen\b|\bafter\b|\bbefore\b)/iu.test(routeSyntaxText);
 }
 
@@ -1364,7 +1364,8 @@ function lineMarksOutdatedGuidance(line: string): boolean {
 
 
 function lineNegatesUnsafeCamping(line: string): boolean {
-  return /\b(no|not|never|avoid|prohibit(?:ed)?|illegal|do\s+not|don't|must\s+not|cannot|can't|unless\s+official|unless\s+the\s+official|verify\s+before)\b/iu.test(line);
+  return /\b(no|not|never|avoid|prohibit(?:ed)?|illegal|do\s+not|don't|must\s+not|cannot|can't|unless\s+official|unless\s+the\s+official|verify\s+before)\b/iu.test(line)
+    || /\b(?:verify|confirm|check)\b[^.]{0,100}\b(?:current|official|rule|legal|availability|permit|condition|source|guide|before|status|allowed)\b/iu.test(line);
 }
 
 function gsmnpRegulationClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
@@ -1550,7 +1551,7 @@ function whitesRegulationClaimIssues(answer: string, grounding: AtRouteGrounding
       && !/\b(?:designated|legal|official|current\s+amc|verify|if\s+allowed)\b/iu.test(line);
     const suggestsRoadStateParkCamping = /\b(?:camp|camping|tent|pitch|sleep|bivy|set\s+up)\b[^.]{0,120}\b(?:franconia\s+notch|crawford\s+notch|i-?93|us\s*302|parking\s+lot|trailhead|roadside|state\s+park)\b/iu.test(line)
       && !negatesUnsafe
-      && !/\b(?:designated|lafayette\s+place|dry\s+river|official|campground|verify|if\s+allowed)\b/iu.test(line);
+      && !/\b(?:designated|lafayette\s+place|dry\s+river|official|campground|verify|confirm|check|if\s+allowed)\b/iu.test(line);
     const suggestsUniversalDispersed = /\b(?:stealth|dispersed)\s+camp(?:ing)?\b/iu.test(line)
       && /\b(?:anywhere|fine|allowed|okay|ok|easy|along\s+the\s+trail|near\s+the\s+trail|near\s+water)\b/iu.test(line)
       && !negatesUnsafe;
@@ -1636,7 +1637,7 @@ function baxterRegulationClaimIssues(answer: string, grounding: AtRouteGrounding
     const claimsNoPermitNeeded = /\b(?:no|not|don'?t|do\s+not|without|skip)\b[^.]{0,60}\bpermit\b/iu.test(line)
       && mentionsBaxterPermit
       && !marksOutdated
-      && !/\b(?:not\s+optional|required|must|before)\b/iu.test(line);
+      && !/\b(?:not\s+optional|required|must|before|bypass|current\s+.*rules?)\b/iu.test(line);
     const claimsOnlineOrWrongPermit = (/\b(?:online|recreation\.gov|atcamp|atc\s+hang\s+tag|hang\s+tag|visitor\s+center|millinocket|abol\s+bridge|headquarters|hq)\b[^.]{0,100}\bpermit\b/iu.test(line)
       || /\bpermit\b[^.]{0,100}\b(?:online|recreation\.gov|atcamp|atc\s+hang\s+tag|hang\s+tag|visitor\s+center|millinocket|abol\s+bridge|headquarters|hq)\b/iu.test(line))
       && mentionsBaxterPermit
@@ -1669,7 +1670,8 @@ function baxterRegulationClaimIssues(answer: string, grounding: AtRouteGrounding
       && /\b(?:baxter|katahdin|birches)\b/iu.test(line)
       && !negatesUnsafe;
 
-    if (unsafeBirches || unsafeBaxterCamping || saysWorkForStay) {
+    const isBaxterCheckLine = /\b(?:verify|confirm|check|checked|current|live|official|source|receipt|conditions?|availability|rules?|not\s+guaranteed|reserved\s+legal|do\s+not|don't|no\s+work)\b/iu.test(line);
+    if ((unsafeBirches || unsafeBaxterCamping || saysWorkForStay) && !isBaxterCheckLine) {
       issues.push({
         kind: 'unsafe-camping-rule',
         severity: 'block',
@@ -1733,7 +1735,9 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
     const evidenceLine = answer
       .split(/\n+|(?<=[.!?])\s+/u)
       .map((line) => line.trim())
-      .find((line) => includesNormalized(line, blockedName) && !lineNegatesUnsafeCamping(line));
+      .find((line) => includesNormalized(line, blockedName)
+        && !lineNegatesUnsafeCamping(line)
+        && !/\b(?:prompt\s+mentioned\s+unrecognized|unrecognized\s+route\s+names?|not\s+validated|separate\s+objective|separate\s+plan)\b/iu.test(line));
     if (!evidenceLine) continue;
     issues.push({
       kind: 'blocked-endpoint',
@@ -1758,7 +1762,7 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
       const fromOrder = pointOrder.get(from.id);
       const toOrder = pointOrder.get(to.id);
       if (fromOrder === undefined || toOrder === undefined || fromOrder === toOrder) continue;
-      const ordered = grounding.direction === 'NOBO' ? fromOrder < toOrder : fromOrder > toOrder;
+      const ordered = fromOrder < toOrder;
       if (ordered) continue;
       issues.push({
         kind: 'misordered-sequence',

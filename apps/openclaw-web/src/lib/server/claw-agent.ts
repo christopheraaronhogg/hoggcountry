@@ -2073,6 +2073,12 @@ function buildStrictBaxterKatahdinAtRouteItineraryReply(
 
   lines.push(
     '',
+    '**Recommendation**',
+    grounding.direction === 'SOBO'
+      ? '- Treat the Katahdin summit/start as a permit-and-access-gated all-day objective first, then start south only after the descent, legal camping, food, water, and pickup/bailout plan are confirmed.'
+      : '- Treat Abol Bridge to Katahdin as a controlled Baxter finish, not a casual short approach. Choose the lower-risk schedule unless the LD permit, legal campsite, water, weather, daylight, and pickup plan are all locked.',
+    '- If any Baxter permit/access/camping/weather check is uncertain, stop at the safer legal endpoint or move the summit attempt rather than forcing the itinerary.',
+    '',
     '**Permit / access / camping assumptions**',
     '- Secure the current Baxter State Park Long-Distance Hiker Permit in person at Katahdin Stream Campground before attempting Katahdin. Online reservations, ATCamp, ATC hang tags, and pre-registration cards are not substitutes.',
     '- The Birches is not guaranteed: eligible NOBO hikers must have hiked continuously from Monson through the 100-Mile Wilderness, space must be available, the 12-person/night cap applies, the current cash fee applies, and there is no work-for-stay in Baxter State Park.',
@@ -2319,6 +2325,177 @@ function buildRegionalAtPlanningFallbackReply(record: WorkspaceRecord, prompt: s
     '- Confirm water reliability from current comments or local/current sources and treat all natural water.',
     ...extraChecklist
   ];
+
+  if (/\bspringer\b|\bamicalola\b/u.test(normalized)) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Keep this as a simple Springer / Amicalola starter hike unless the hiker has already proven a longer day. Use the shorter option first, then add the Approach Trail only if daylight, fitness, weather, and ride logistics are clean.',
+      '- The Amicalola Approach Trail is not the AT. If it is included, say that clearly and do not count it as AT mileage.',
+      '',
+      '**Route options or day plan**',
+      '- Easiest starter: start from Springer Mountain access, hike to the southern terminus plaque, then return the same way after checking road/parking conditions.',
+      '- Bigger classic option: Amicalola Falls State Park to Springer Mountain via the Approach Trail, only with an early start, confirmed pickup/parking, and enough daylight for a steep beginner day.',
+      '- If weather, road access, or group fitness is uncertain, shorten the hike instead of stretching the first day.',
+      '',
+      '**Mileage targets**',
+      '- New hiker starter: roughly 2-5 miles if using Springer access and a simple out-and-back.',
+      '- Approach Trail day: treat it as a bigger non-AT approach effort, not an easy AT starter, and verify exact current mileage/elevation before committing.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Verify Amicalola/Springer access roads, parking rules, gate/park hours, shuttle/pickup timing, and whether the road is suitable for the vehicle before driving.',
+      '',
+      '**Water**',
+      '- Carry enough water from the start for a beginner pace. Treat natural water and verify any source before relying on it.',
+      '',
+      '**Weather**',
+      '- Check the NWS point forecast for Springer/Amicalola. Rain, cold wind, thunderstorms, ice, or heat should shorten the route.',
+      '',
+      '**Legal overnight/camping**',
+      '- This is a day-hike starter unless the user asks for an overnight. Do not add a campsite unless current legal overnight status is verified.',
+      '',
+      '**Bailout**',
+      '- Bailout is turning around early or using the confirmed pickup/access road. Do not assume cell service will solve a late finish.',
+      ...commonSections('Springer Mountain / Amicalola starter hike guardrail')
+    ].join('\n');
+  }
+
+  if (/\bshenandoah\b/u.test(normalized) && /\b(?:at\s+mile\s*\d{2,4}|mile\s*\d{2,4}|current\s+mile|exact\s+current\s+mile)\b/u.test(normalized)) {
+    const mileMatch = normalized.match(/\b(?:at\s+mile|mile)\s*(\d{2,4}(?:\.\d)?)\b/u);
+    const currentMile = mileMatch?.[1] ? `AT mile ${mileMatch[1]}` : 'the approximate current AT mile';
+    return [
+      ...intro,
+      '**Recommendation**',
+      `- Treat ${currentMile} in Shenandoah as an approximate anchor, not an exact campsite, road, or water source. First map the approximate mile to a current user-owned guide/current map, then choose the two-day plan around verified legal campsites, water, heat, and pickup.`,
+      '- If the exact current mile is wrong, rebuild from the verified nearest road crossing or legal campsite instead of stretching the original plan.',
+      '',
+      '**Route options or day plan**',
+      `- Day 1: from the verified location nearest ${currentMile}, hike a conservative distance to a legal, current-confirmed Shenandoah campsite/shelter/campground option with water verified before leaving.`,
+      '- Day 2: keep enough daylight and energy margin to reach the verified pickup road crossing; do not rely on an unverified wayside, road, or water source.',
+      '- If the guide/current map shows you are not actually near the assumed mile, reset the start/end points from the real location and notify the pickup driver before hiking.',
+      '',
+      '**Mileage targets**',
+      '- Default to moderate Shenandoah mileage, roughly 8-14 miles per day, then reduce for heat, low water confidence, late start, fatigue, or uncertain pickup.',
+      '- Do not add mileage just to preserve the original pickup if the current-mile anchor is off.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Verify pickup road crossing, Skyline Drive status, entrance/parking rules, shuttle timing, and cell-service assumptions before committing to the two-day plan.',
+      '',
+      '**Water**',
+      '- Carry a conservative Shenandoah water reserve. Verify current water comments/source status before leaving each known source, especially in heat.',
+      '',
+      '**Weather**',
+      '- Check the NWS point forecast and alerts for the actual verified ridge/road corridor. Heat, storms, fog, or cold rain should shorten the day.',
+      '',
+      '**Legal overnight/camping**',
+      '- Verify legal campsite/permit status with current Shenandoah NPS/Recreation.gov rules before overnighting. Do not invent a legal campsite from the mile number alone.',
+      '',
+      '**Bailout**',
+      '- Bailout is the nearest verified legal road crossing, campground/lodge/pickup point, or an early stop at a legal overnight option. If the current mile is wrong, bailout planning gets recalculated first.',
+      ...commonSections('Shenandoah current-mile planning guardrail', ['- Approximate mile must be mapped to current guide/current map before acting.', '- Verify legal campsite/permit and verify pickup road before leaving.'])
+    ].join('\n');
+  }
+
+  if (/\bshenandoah\b|\bwayside\b|\bnero\b|\bday[-\s]?off\b/u.test(normalized)) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Use one verified Shenandoah road crossing, campground/lodge/wayside area, or legal pickup point as the nero anchor. Keep the hiking short and let service hours, water, permit rules, and pickup certainty decide the final shape.',
+      '- Verify service hours before building the day around food, showers, lodging, laundry, or a wayside stop.',
+      '',
+      '**Route options or day plan**',
+      '- Option A: road-crossing nero — hike a short confirmed AT segment into a known Skyline Drive road/wayside/lodge/campground area, then use the rest of the day for recovery and logistics.',
+      '- Option B: day-off reset — use a legal campground/lodge/town pickup if available, do chores, re-check water and weather, and restart the next morning.',
+      '- Option C: if services or pickup are not confirmed, shorten to a simple road-crossing hike and keep the overnight/logistics off the plan.',
+      '',
+      '**Mileage targets**',
+      '- Nero target: roughly 0-8 trail miles depending on heat, pack weight, water, and how much recovery time the hiker needs.',
+      '- Do not turn a nero into a big day just because Skyline Drive creates many crossings.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Confirm Skyline Drive status, entrance/parking rules, pickup legality, shuttle timing, lodge/campground/wayside hours, and cell-service assumptions before committing.',
+      '',
+      '**Water**',
+      '- Shenandoah water can be seasonal. Carry a conservative reserve, treat all natural water, and verify current source status before leaving the last reliable stop.',
+      '',
+      '**Weather**',
+      '- Use NWS point forecasts for the ridge/road corridor. Heat, storms, cold rain, fog, or wind should shrink the hiking portion of the nero.',
+      '',
+      '**Legal overnight/camping**',
+      '- Waysides are not legal camping. If overnighting, use current NPS/Recreation.gov if overnighting and follow the current Shenandoah backcountry permit/campground/lodging rules.',
+      '',
+      '**Bailout**',
+      '- Bailout should be a named Skyline Drive crossing, campground/lodge/wayside pickup area, or legal road access point verified before hiking.',
+      ...commonSections('Shenandoah nero/day-off guardrail', ['- Verify service hours, current NPS/Recreation.gov permit rules if overnighting, and whether the selected wayside/lodge/campground is actually open.'])
+    ].join('\n');
+  }
+
+  if (/\b(?:connecticut|massachusetts|\bct\b|\bma\b)\b/u.test(normalized) && /\b(?:family|dad|fair[-\s]?weather|low[-\s]?risk)\b/u.test(normalized)) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Choose the Connecticut/Massachusetts family hike by road access and Dad pace first, not by a flashy summit. Must choose/verify exact trailhead before trusting mileage.',
+      '- Dad pace and heat matter: keep the default day short enough that the slowest hiker can finish with daylight, water, and a calm pickup plan.',
+      '',
+      '**Route options or day plan**',
+      '- Easiest family option: a Connecticut AT road-crossing out-and-back or short point-to-point near a well-used access point, with a fixed turnaround time.',
+      '- Moderate option: a Massachusetts AT day hike only if climb, footing, parking, heat, and pickup timing are verified and the group is comfortable.',
+      '- Do not lock a shelter, summit, or exact endpoint until current guide/map/parking details confirm it fits the group.',
+      '',
+      '**Mileage targets**',
+      '- Dad/family easy target: roughly 3-7 miles depending on heat, climb, pack weight, and group speed.',
+      '- Moderate fair-weather target: roughly 7-10 miles only with a clear bailout and enough daylight margin.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Must choose/verify exact trailhead, parking rules, pickup point, road access, and shuttle timing before driving. Water and parking currentness should be checked the day before.',
+      '',
+      '**Water**',
+      '- Carry enough from the start unless a current source confirms a refill. Treat natural water and do not assume every marked source is flowing.',
+      '',
+      '**Weather**',
+      '- Pick a fair-weather window. Heat, thunderstorms, wet rock, cold rain, or wildfire smoke should shorten the route or move it to another day.',
+      '',
+      '**Legal overnight/camping**',
+      '- This is a day-hike recommendation unless the user asks for overnight. Do not add camping unless legal sites and water are current-confirmed.',
+      '',
+      '**Bailout**',
+      '- Bailout should be an early turnaround or a named road crossing with legal pickup. Do not depend on cell service as the plan.',
+      ...commonSections('Connecticut / Massachusetts family fair-weather hike guardrail', ['- Re-check Dad pace, heat, water and parking currentness before finalizing the exact trailhead.'])
+    ].join('\n');
+  }
+
+  if (/\b(?:georgia|north\s+carolina|\bga\b|\bnc\b)\b/u.test(normalized) && /\b(?:closure|detour|reroute|trail\s+update)\b/u.test(normalized)) {
+    return [
+      ...intro,
+      '**Recommendation**',
+      '- Do not imply live closure fetch unless fetched. If current closure/detour data is unavailable, provide graceful fallback: name the missing source class, keep the corridor provisional, and avoid exact detour instructions.',
+      '- Use a conservative Georgia/North Carolina AT section only after ATC/land-manager updates, current guide notes, water, weather, and shuttle details are checked.',
+      '',
+      '**Route options or day plan**',
+      '- Option A: choose a short named road-crossing section that stays outside any suspected closure after current ATC/land-manager confirmation.',
+      '- Option B: if a closure may affect the chosen corridor, pause the endpoint selection and ask for/import the current closure notice or trail update.',
+      '- Option C: if no current source is available before departure, switch to a known-open day hike or postpone rather than inventing a detour.',
+      '',
+      '**Mileage targets**',
+      '- Keep mileage conservative until the legal open corridor is confirmed. A detour can add road walk, elevation, heat, and shuttle complexity.',
+      '',
+      '**Logistics / parking / shuttle**',
+      '- Verify parking, road access, shuttle availability, and whether the closure changes legal access or pickup points.',
+      '',
+      '**Water**',
+      '- Do not assume a detour has the same water as the AT. Carry extra and verify current source status before leaving.',
+      '',
+      '**Weather**',
+      '- Check NWS forecasts and alerts for the actual open route/detour, not just the original AT corridor.',
+      '',
+      '**Legal overnight/camping**',
+      '- If overnighting, use only legal sites on the confirmed open route. Do not invent stealth camps or closed-area access to make the itinerary work.',
+      '',
+      '**Bailout**',
+      '- Bailout must be a legal open road/access point. A closed trail segment cannot be part of the bailout plan.',
+      ...commonSections('Georgia / North Carolina closure-detour source-honest guardrail', ['- Tell user exactly what source class is missing: current ATC/land-manager closure or detour notice plus current guide/map confirmation.'])
+    ].join('\n');
+  }
 
   if (/\bnew\s+jersey\b/u.test(normalized) && /\bnew\s+york\b/u.test(normalized)) {
     return [

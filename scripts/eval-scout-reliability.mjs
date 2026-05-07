@@ -19,6 +19,11 @@ const HUMAN_REVIEW_LABELS = [
   'wrong corridor',
   'needs source check',
   'too thin',
+  'too terse',
+  'generic blog',
+  'friendly/useful',
+  'overcautious',
+  'context-aware',
   'excellent'
 ];
 const SCORE_CATEGORIES = [
