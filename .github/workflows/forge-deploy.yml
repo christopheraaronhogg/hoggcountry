@@ -14,6 +14,18 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build OpenClaw web for Forge
+        run: OPENCLAW_WEB_ADAPTER=node npm run build -w @hoggcountry/openclaw-web
+
       - name: Set up SSH
         env:
           FORGE_SSH_PRIVATE_KEY: ${{ secrets.FORGE_SSH_PRIVATE_KEY }}
@@ -26,32 +38,48 @@ jobs:
           chmod 600 ~/.ssh/forge_deploy_key
           ssh-keyscan -H "$FORGE_SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: Deploy on Forge host
+      - name: Upload release to Forge host
+        env:
+          FORGE_SSH_HOST: ${{ vars.FORGE_SSH_HOST }}
+          FORGE_SSH_USER: ${{ vars.FORGE_SSH_USER }}
+          FORGE_SITE_PATH: ${{ vars.FORGE_SITE_PATH }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          test -n "$FORGE_SSH_HOST"
+          test -n "$FORGE_SITE_PATH"
+          export RELEASE="gha-${GITHUB_RUN_ID}-$(date -u +%Y%m%d%H%M%S)"
+          export REMOTE="${FORGE_SSH_USER:-forge}@${FORGE_SSH_HOST}"
+          export REL="${FORGE_SITE_PATH}/releases/${RELEASE}"
+          ssh -i ~/.ssh/forge_deploy_key -o IdentitiesOnly=yes "$REMOTE" "mkdir -p '$REL'"
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude 'backend/vendor' \
+            --exclude 'backend/storage' \
+            -e "ssh -i ~/.ssh/forge_deploy_key -o IdentitiesOnly=yes" \
+            ./ "$REMOTE:$REL/"
+          echo "RELEASE=$RELEASE" >> "$GITHUB_ENV"
+
+      - name: Activate release on Forge host
         env:
           FORGE_SSH_HOST: ${{ vars.FORGE_SSH_HOST }}
           FORGE_SSH_USER: ${{ vars.FORGE_SSH_USER }}
           FORGE_SITE_PATH: ${{ vars.FORGE_SITE_PATH }}
           GITHUB_SHA: ${{ github.sha }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE: ${{ env.RELEASE }}
         run: |
           test -n "$FORGE_SSH_HOST"
           test -n "$FORGE_SITE_PATH"
+          test -n "$RELEASE"
           ssh -i ~/.ssh/forge_deploy_key -o IdentitiesOnly=yes "${FORGE_SSH_USER:-forge}@${FORGE_SSH_HOST}" \
-            "GITHUB_SHA='$GITHUB_SHA' GITHUB_REPOSITORY='$GITHUB_REPOSITORY' FORGE_SITE_PATH='$FORGE_SITE_PATH' bash -s" <<'REMOTE'
+            "GITHUB_SHA='$GITHUB_SHA' RELEASE='$RELEASE' FORGE_SITE_PATH='$FORGE_SITE_PATH' bash -s" <<'REMOTE'
           set -euo pipefail
 
           APP="$FORGE_SITE_PATH"
           SHA="$GITHUB_SHA"
-          REPO="https://github.com/${GITHUB_REPOSITORY}.git"
-          RELEASE="gha-${GITHUB_RUN_ID:-manual}-$(date -u +%Y%m%d%H%M%S)"
           REL="$APP/releases/$RELEASE"
 
-          mkdir -p "$APP/releases" "$APP/shared"
-          git clone --no-checkout --depth 1 "$REPO" "$REL"
           cd "$REL"
-          git fetch --depth 1 origin "$SHA"
-          git checkout --detach "$SHA"
-
           ln -nfs "$APP/.env" backend/.env
           rm -rf backend/storage
           ln -nfs "$APP/storage" backend/storage
@@ -65,7 +93,7 @@ jobs:
           if [ -d "$APP/shared/node_modules" ]; then
             cp -al "$APP/shared/node_modules" node_modules
           else
-            npm install --package-lock=false
+            npm install --package-lock=false --omit=dev
           fi
 
           rm -rf node_modules/@hoggcountry
@@ -88,7 +116,7 @@ jobs:
           }
           NODE
 
-          npm run build:openclaw:forge
+          test -f apps/openclaw-web/build/index.js
 
           update_env_var() {
             key="$1"
@@ -105,12 +133,6 @@ jobs:
           update_env_var APP_BUILD_BRANCH "main"
           update_env_var APP_BUILD_TIME "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-          rm -rf "$APP/shared/node_modules.next"
-          cp -al node_modules "$APP/shared/node_modules.next"
-          rm -rf "$APP/shared/node_modules.next/@hoggcountry"
-          rm -rf "$APP/shared/node_modules"
-          mv "$APP/shared/node_modules.next" "$APP/shared/node_modules"
-
           ln -nfs "$REL" "$APP/current"
           cd "$APP/current"
           pm2 delete hoggcountry-openclaw || true
@@ -121,12 +143,9 @@ jobs:
           php artisan optimize:clear
           php artisan config:clear
           php artisan route:clear
-
-          cd "$APP/current"
-          npm run verify:forge -- --expected-sha "$SHA"
           REMOTE
 
-      - name: Verify Forge deploy from runner
+      - name: Verify Forge deploy
         run: node scripts/verify-forge-deploy.mjs --base-url "${FORGE_BASE_URL:-https://hoggcountry.on-forge.com}" --expected-sha "${GITHUB_SHA}"
         env:
           FORGE_BASE_URL: ${{ vars.FORGE_BASE_URL }}
