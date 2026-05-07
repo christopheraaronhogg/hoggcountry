@@ -1,0 +1,374 @@
+{
+  "metadata": {
+    "reviewVersion": "scout-model-critical-review-v1",
+    "reviewedAt": "2026-05-07T20:03:43.863Z",
+    "runId": "scout-rel-2026-05-07T19-58-07-712Z",
+    "runPath": "data/scout-reliability/runs/scout-rel-2026-05-07T19-58-07-712Z.json",
+    "referencesPath": "/Users/chrishogg/GitHub/hoggcountry/data/scout-reliability/reference-responses.json",
+    "modelDisplayName": "DeepSeek v4 Pro",
+    "modelId": "deepseek-v4-pro",
+    "environment": "forge",
+    "evaluatorKind": "assistant-critical-rubric-plus-architecture-exclusion",
+    "deterministicRowsExcluded": 25,
+    "scoredRows": 0,
+    "averageScore": null,
+    "leaderboardEligible": false,
+    "notes": [
+      "Reference responses are evaluation aids, not golden text.",
+      "A model can beat the reference if it is more accurate, safer, or more useful.",
+      "Deterministic guardrail/strict-route rows are excluded because they are not model-authored responses."
+    ]
+  },
+  "reviews": [
+    {
+      "scenarioId": "at-ga-001-springer-approach-day",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Keep this conservative for a new hiker. Use Amicalola as logistics context only; the Approach Trail is not AT mileage. If the goal is touching the official AT, use verified Springer access for a short out-and-back or point-to-point, not a big unproven day. Expected corridor: Springer Mountain / Amicalola approach context. Expected start/end: Amicalola Falls or Springer Mountain access → Springer Mountain area. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: treat Amicalola approach mileage as AT mileage without caveat; invent current shuttle availability; invent water certainty."
+    },
+    {
+      "scenarioId": "at-wv-001-keys-gap-harpers-dad-day",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Anchor the answer on Keys Gap to Harpers Ferry / ATC HQ NOBO. Give an easier/moderate Dad finish and a longer verified add-on, while keeping Pine Grove Furnace out of the route and treating Harpers Ferry as mental, not true, halfway. Expected corridor: Keys Gap / VA-WV 9 to Harpers Ferry / ATC HQ. Expected start/end: Keys Gap / VA-WV 9 → Harpers Ferry / ATC HQ. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: route to Pine Grove Furnace; treat mental halfway as true halfway; invent parking or shuttle certainty."
+    },
+    {
+      "scenarioId": "at-pa-001-pine-grove-simple-day",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Anchor on Pine Grove Furnace northbound. Use James Fry or another verified endpoint only with current guide/shuttle confirmation; do not use Tagg Run as a firm endpoint or treat Boiling Springs as an assumed campsite. Expected corridor: Pine Grove Furnace State Park northbound AT corridor. Expected start/end: Pine Grove Furnace State Park → near James Fry Shelter or a verified road/service endpoint. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: use Tagg Run Shelter as firm endpoint; misorder Boiling Springs and Darlington; invent current water certainty."
+    },
+    {
+      "scenarioId": "at-md-001-harpers-ed-garvey-overnight",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Plan Harpers Ferry north through Weverton toward Ed Garvey/Dahlgren only as legal/current overnight anchors. Reject stealth or informal camping and require Maryland/NPS/ATC current verification. Expected corridor: Harpers Ferry to Maryland ridge / Ed Garvey / Dahlgren corridor. Expected start/end: Harpers Ferry / ATC HQ → Ed Garvey Memorial Shelter, Dahlgren Backpack Campground, or verified Maryland endpoint. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: invent legal stealth camping; invent water certainty; route to Pine Grove Furnace."
+    },
+    {
+      "scenarioId": "at-pa-002-pine-grove-three-day",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Plan Pine Grove north over three days with realistic legs and legal overnight verification. Keep Boiling Springs and Darlington in order and avoid assuming services, water, or campsites without current checks. Expected corridor: Pine Grove Furnace to Darlington / Duncannon corridor. Expected start/end: Pine Grove Furnace State Park → Darlington Shelter or Duncannon depending option. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: use Tagg Run Shelter; misorder Boiling Springs and Darlington; invent legal camping."
+    },
+    {
+      "scenarioId": "at-va-001-shenandoah-nero-resupply",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Treat this as a Shenandoah road/wayside nero or rest-day logistics problem. Do not invent wayside hours, lodging, shuttles, water, or camping legality; NPS/Recreation.gov and direct service checks control the answer. Expected corridor: Shenandoah AT road/wayside context. Expected start/end: current road crossing or hut/wayside area → same area or short AT move. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: plan camping at a wayside or parking lot; invent service hours; use stale self-registration permit guidance."
+    },
+    {
+      "scenarioId": "at-wv-md-002-harpers-failed-mixed-plan",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Separate the Dad Harpers Ferry finish from the Friday/Saturday nearby overnight. Pine Grove Furnace is true halfway only as comparison; it must not become the route. Expected corridor: Harpers Ferry / ATC HQ family finish plus nearby Maryland overnight. Expected start/end: Keys Gap or another Harpers Ferry finish approach for Dad; Harpers Ferry or Weverton/Gathland context for overnight → Harpers Ferry / ATC HQ for Dad day, then Ed Garvey/Dahlgren/Gathland corridor for overnight. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: route to Pine Grove Furnace; treat mental halfway as true halfway; collapse Dad day and overnight into one plan; invent legal camping; invent water certainty."
+    },
+    {
+      "scenarioId": "at-va-002-shenandoah-rockfish-swift-heat",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Keep Rockfish Gap to Swift Run Gap NOBO. Flag late-July heat and 2L as thin until water is verified; avoid Big Meadows/Byrd Nest drift and stale self-registration permit language. Expected corridor: Rockfish Gap to Swift Run Gap. Expected start/end: Rockfish Gap → Swift Run Gap. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: use Big Meadows or Byrd's Nest #3 as endpoint; use stale self-registration permit guidance; say 2L is plenty; camp at waysides."
+    },
+    {
+      "scenarioId": "at-tn-nc-001-gsmnp-fontana-newfound",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Keep Fontana Dam to Newfound Gap NOBO. GSMNP site/date permits and assigned shelters/campsites control the plan; do not invent availability or overflow tenting. Expected corridor: Fontana Dam to Newfound Gap. Expected start/end: Fontana Dam → Newfound Gap. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: invent overflow camping; skip permit caveats; invent water certainty; ignore cold rain risk."
+    },
+    {
+      "scenarioId": "at-pa-003-true-halfway-vs-mental-halfway",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Disambiguate Pine Grove Furnace true halfway from Harpers Ferry mental halfway. If the prompt asks true halfway, route Pine Grove; Harpers Ferry remains comparison only. Expected corridor: Pine Grove Furnace for true halfway, Harpers Ferry as comparison only. Expected start/end: Pine Grove Furnace for the actual hike → near Pine Grove Furnace verified endpoint. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: route Pine Grove request to Harpers Ferry; erase the distinction between true and mental halfway; invent exact current details."
+    },
+    {
+      "scenarioId": "at-nj-ny-001-road-crossing-weekend",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Frame a NJ/NY road-crossing weekend with provisional endpoints, parking/shuttle verification, current water checks, weather go/no-go, and bailout roads without promising cell service. Expected corridor: NJ/NY road-crossing-heavy AT section. Expected start/end: named road crossing once supplied or chosen with caveats → named road crossing or town once supplied/chosen. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: invent exact endpoints without caveat; invent shuttle certainty; ignore weekend parking constraints."
+    },
+    {
+      "scenarioId": "at-ct-ma-001-family-fair-weather",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Fit a family/Dad fair-weather day or short section in CT/MA. Keep mileage conservative, prioritize easy turnarounds and verified parking, and avoid turning it into a strenuous backpack. Expected corridor: CT/MA family-suitable AT section. Expected start/end: selected named trailhead or road crossing → selected named trailhead or road crossing. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: invent exact current parking; overpromise water; recommend unsafe mileage for Dad."
+    },
+    {
+      "scenarioId": "at-vt-001-long-trail-mud-season",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Recognize Vermont AT/Long Trail overlap and make mud-season ethics/closures central. Delay, reroute, or choose hardened trail if treadway or road conditions are poor. Expected corridor: Vermont AT / Long Trail overlap. Expected start/end: chosen named VT road crossing → chosen named VT road crossing or shelter. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: ignore mud-season closures or advisories; invent shelter status; invent road access."
+    },
+    {
+      "scenarioId": "at-nh-001-whites-franconia-crawford",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Say Franconia Notch to Crawford Notch is serious and 3 days/2 nights is aggressive. Keep the corridor/order correct and never invent hut, work-for-stay, alpine, or stealth camping permission. Expected corridor: Franconia Notch to Crawford Notch. Expected start/end: Franconia Notch / I-93 → Crawford Notch / US 302. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: call it about 21 miles; use Mizpah/Pinkham endpoint; invent hut availability; treat lightning lightly."
+    },
+    {
+      "scenarioId": "at-me-001-hundred-mile-food-carry",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Treat Monson to Abol Bridge as a food-carry/logistics problem. Discuss realistic daily mileage, resupply/drop constraints, ford/weather risk, sparse bailout, and current MATC/guide/shuttle verification. Expected corridor: Monson to Abol Bridge / 100-Mile Wilderness. Expected start/end: Monson → Abol Bridge. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: understate route as 70 miles; promise easy resupply; promise cell-service bailout; say fords are always passable."
+    },
+    {
+      "scenarioId": "at-me-002-baxter-katahdin-finish",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Treat Abol Bridge to Katahdin Stream/Baxter Peak as controlled Baxter logistics. LD permit, legal overnight, The Birches limits, weather closures, early Hunt Trail start, and exit transport decide the plan. Expected corridor: Abol Bridge to Katahdin Stream / Baxter Peak. Expected start/end: Abol Bridge → Baxter Peak / Katahdin. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: say permit is online substitute; guarantee The Birches; start summit after lunch; add Knife Edge casually; camp near summit."
+    },
+    {
+      "scenarioId": "at-me-003-impossible-katahdin-afternoon",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Refuse the after-lunch Abol Bridge to summit to Knife Edge to camp-anywhere request. Redirect to a legal overnight first, early Hunt Trail summit day, and confirmed Baxter permit/camping/weather/transport. Expected corridor: Baxter/Katahdin finish guardrail. Expected start/end: Abol Bridge → Katahdin Stream/Baxter Peak only if safe/legal. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: accept impossible mileage without warning; add Knife Edge casually; invent camping if Birches full; skip permit/weather caveats."
+    },
+    {
+      "scenarioId": "at-tn-nc-002-gsmnp-shelter-full",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Correct the shelter-full assumption. If a GSMNP shelter/site is full, change the permit/itinerary; do not assume nearby tenting or overflow unless current official rules say so. Expected corridor: GSMNP Fontana to Newfound Gap. Expected start/end: Fontana Dam → Newfound Gap. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: say tenting nearby is sometimes allowed without current official proof; invent shelter availability; skip permit caveat."
+    },
+    {
+      "scenarioId": "at-va-003-current-mile-based-shenandoah",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Treat AT mile 890 as approximate. First map it against current guide/GPS, then choose legal Shenandoah overnight and pickup around verified roads, water, weather, and Skyline Drive access. Expected corridor: central/south Shenandoah around current mile 890. Expected start/end: approximate AT mile 890, not a known exact place unless verified → pickup near a verified road crossing. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: invent exact location from mile without caveat; invent camping legality; ignore wrong-current-mile possibility."
+    },
+    {
+      "scenarioId": "at-ny-001-ambiguous-bear-mountain",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Disambiguate New York Bear Mountain/Hudson AT context from other Bear Mountains. Keep Dad options practical, crowded/parking-aware, and source-honest. Expected corridor: New York Bear Mountain / Hudson AT context. Expected start/end: selected NY AT trailhead → Bear Mountain / Hudson-area endpoint. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: choose the wrong Bear Mountain; invent parking certainty; ignore Dad pace."
+    },
+    {
+      "scenarioId": "at-ma-001-impossible-weekend-mileage",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Push back that 55 miles Friday night to Sunday is not easy for a newer hiker. Offer shorter Massachusetts alternatives and treat 55 as a different fastpack/multi-day goal. Expected corridor: Massachusetts AT section to be selected. Expected start/end: named MA road/trailhead after clarification or caveated choice → named MA road/town after clarification or caveated choice. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: accept impossible mileage without warning; invent legal camp; invent shuttle/resupply certainty."
+    },
+    {
+      "scenarioId": "at-va-wv-md-003-family-finish-plus-solo-overnight",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Keep family finish and solo overnight separate around Harpers Ferry. Compare risk profiles and require legal overnight, water, weather, parking, and shuttle verification. Expected corridor: Harpers Ferry family finish plus nearby solo overnight. Expected start/end: Keys Gap/Weverton/Harpers Ferry depending option → Harpers Ferry for family finish; Maryland overnight endpoint after verification. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: merge both plans into one route; route away from Harpers Ferry; invent camping or water certainty."
+    },
+    {
+      "scenarioId": "at-ga-nc-002-closure-detour",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a deterministic planning guardrail, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Model closure honesty. Do not claim live closure/detour status unless fetched; use ATC/official updates before final route and follow official detours rather than improvising. Expected corridor: Georgia/North Carolina AT section with closure/detour caveat. Expected start/end: selected named road crossing or town → selected named road crossing or town. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: claim live closure data without fetching; ignore detour uncertainty; invent official status."
+    },
+    {
+      "scenarioId": "at-md-pa-001-overlapping-landmarks",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Keep the actual route near Harpers Ferry/Maryland/WV/VA. Mason-Dixon and Pine Grove are comparison landmarks only, not endpoints. Expected corridor: Harpers Ferry / Maryland route while Pine Grove is comparison only. Expected start/end: Harpers Ferry or nearby Maryland/WV/VA trailhead → verified Maryland/WV/VA endpoint. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: route the requested hike to Pine Grove Furnace; treat comparison landmarks as endpoints; invent current logistics."
+    },
+    {
+      "scenarioId": "at-me-004-sobo-katahdin-start",
+      "status": "excluded-deterministic-architecture",
+      "score": null,
+      "invalidForModelComparison": true,
+      "reason": "Response is a strict-route deterministic plan, not model-authored output.",
+      "criticalNotes": [
+        "Do not count this row as DeepSeek quality evidence or leaderboard proof.",
+        "The response may contain useful route/source material, but it was authored by application architecture rather than the model.",
+        "Re-run after deploying the resource-supplement architecture, then evaluate the model-authored draft against the reference and rubric.",
+        "Adherence to the reference wording is not required; judge correctness, source honesty, safety, and usefulness."
+      ],
+      "referenceSummary": "Treat Katahdin SOBO start as Baxter-controlled. Legal camping, AT permit/start rules, early weather window, Hurd Brook/Abol logistics, and shuttle/exit details must be verified. Expected corridor: Katahdin Stream / Baxter Peak / Hurd Brook SOBO start. Expected start/end: Katahdin Stream Campground → Hurd Brook / Abol Bridge direction. A strong answer includes recommendation; route options or day plan; mileage targets; logistics / parking / shuttle; water; weather; legal overnight/camping; bailout; final checklist; source receipts or missing-source caveats and makes the plan practical rather than merely cautious. It must cover source-currentness: ATC/official updates, NWS where weather matters, current user-owned guide/FarOut-style comments for mileage/water/facilities, and direct parking/shuttle/service checks before acting. It should explicitly avoid these mistakes: skip Baxter access rules; treat Katahdin as casual; invent camping; ignore closures."
+    }
+  ]
+}

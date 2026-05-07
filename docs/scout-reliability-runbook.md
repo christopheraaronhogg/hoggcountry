@@ -54,6 +54,16 @@ The holdout score should be reported separately from the regression leaderboard.
 
 Use `SCOUT_RELIABILITY_MODEL=deepseek-v4-pro` unless the task is explicitly model comparison. Later comparisons can reuse the same suite by changing only the model metadata and provider path.
 
+## Critical Model Review
+
+The harness captures responses and hard telemetry; it is not the quality judge. Review model-authored responses against `data/scout-reliability/reference-responses.json`:
+
+```bash
+npm run review:scout-model -- --run data/scout-reliability/runs/<run-id>.json
+```
+
+The references are baseline expectations, not golden wording. Score the model critically for corridor correctness, source honesty, safety/legal realism, practical usefulness, and prompt fit. A response can beat the reference if it is more accurate or helpful. Rows that begin as deterministic guardrails or strict-route canned plans must be excluded from model comparison.
+
 ## Artifacts
 
 Runs are written to `data/scout-reliability/runs/*.json`.

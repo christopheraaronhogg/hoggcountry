@@ -47,6 +47,7 @@ import {
   type WorkspaceRecord,
   type WorkspaceSnapshot
 } from '$lib/server/workspace-store';
+import { buildAtRouteGrounding, formatAtRouteMileage, type AtRouteGrounding } from '@hoggcountry/trail-data';
 import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
 
 const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
@@ -57,6 +58,7 @@ const OPENCODE_GO_REPLY_MAX_TOKENS = 1400;
 const SCOUT_AGENT_TURN_TIMEOUT_MS = 55_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
+const SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS = 3200;
 
 type ClawProviderId = typeof OPENAI_CODEX_PROVIDER_ID | typeof OPENCODE_GO_PROVIDER_ID;
 
@@ -599,6 +601,48 @@ function buildScoutSourceContext(record: WorkspaceRecord, dadPilotSummary: DadPi
 
 function shouldPreloadOfficialTrailSources(prompt: string): boolean {
   return /\b(weather|forecast|alert|closure|closed|detour|reroute|burn ban|bear|storm|thunder|heat|cold|wind|flood|snow|ice|24 hours|daily trail brief|go\/no-go)\b/iu.test(prompt);
+}
+
+function renderAtRouteResourceContext(grounding: AtRouteGrounding): string {
+  const pointLines = grounding.corridor.map((point, index) => {
+    const fromStart = formatAtRouteMileage(Math.abs(point.mile - grounding.start.mile));
+    return `${index + 1}. ${point.name} (${point.kind}, ${point.state}) route mile ${formatAtRouteMileage(point.mile)}; from start ${fromStart}${point.notes ? `; note: ${point.notes}` : ''}`;
+  });
+
+  const optionLines = grounding.planOptions.flatMap((option) => [
+    `- ${option.label}: ${formatAtRouteMileage(option.totalMiles)} mi total`,
+    ...option.days.map((day) => `  Day ${day.day}: ${day.from.name} → ${day.to.name}, ${formatAtRouteMileage(day.miles)} mi. ${day.note}`),
+    ...option.caveats.map((caveat) => `  Caveat: ${caveat}`)
+  ]);
+
+  return [
+    'Scout route resource for this turn:',
+    `Source: ${grounding.source.label} [${grounding.source.authority}]`,
+    `Citation: ${grounding.source.citation}`,
+    `Use limit: ${grounding.source.exactMileageCaveat}`,
+    `Direction: ${grounding.direction}`,
+    grounding.destination
+      ? `Corridor: ${grounding.start.name} → ${grounding.destination.name}`
+      : `Corridor starts at ${grounding.start.name}`,
+    grounding.targetDays ? `Requested/derived trip length: ${grounding.targetDays} day(s)` : null,
+    'Route-order anchors:',
+    pointLines.join('\n'),
+    optionLines.length > 0 ? `Suggested resource-derived route shapes:\n${optionLines.join('\n')}` : null,
+    grounding.warnings.length > 0 ? `Resource caveats:\n${grounding.warnings.map((warning) => `- ${warning}`).join('\n')}` : null,
+    grounding.blockedEndpointNames.length > 0 ? `Blocked endpoint names for this prompt: ${grounding.blockedEndpointNames.join(', ')}` : null,
+    'Grounding rule: this is a deterministic resource, not an answer. Use it to improve route order, legal/safety caveats, and source receipts; generate the response yourself and say what still needs current official/user-owned verification.'
+  ].filter((line): line is string => Boolean(line)).join('\n');
+}
+
+function buildPreloadedRouteResourceContext(prompt: string, record: WorkspaceRecord): string | null {
+  if (!skillEnabled(record, 'at-mile-marker-reference')) return null;
+  const grounding = buildAtRouteGrounding({ prompt });
+  if (!grounding) return null;
+
+  const context = renderAtRouteResourceContext(grounding);
+  return context.length > SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS
+    ? `${context.slice(0, SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS - 1).trimEnd()}…`
+    : context;
 }
 
 async function buildPreloadedOfficialSourceContext(prompt: string, record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): Promise<string | null> {
@@ -1185,6 +1229,7 @@ export async function replyInWorkspaceClaw(
   const dadPilotSummary = shouldIncludeDadPilotContext(record, trimmedPrompt) ? await loadDadPilotSummary().catch(() => null) : null;
   const sourceContexts = [
     buildScoutSourceContext(record, dadPilotSummary, trimmedPrompt),
+    buildPreloadedRouteResourceContext(trimmedPrompt, record),
     runtime.providerId === OPENCODE_GO_PROVIDER_ID ? await buildPreloadedOfficialSourceContext(trimmedPrompt, record, dadPilotSummary) : null
   ].filter((context): context is string => Boolean(context));
 
