@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { buildAtRouteGrounding, formatAtRouteMileage, validateAtRouteAnswerClaims } from '../packages/trail-data/src/index.ts';
 
 const repoRoot = new URL('..', import.meta.url);
-const scenarioPath = new URL('../data/scout-reliability/scenarios.json', import.meta.url);
+const defaultScenarioPath = new URL('../data/scout-reliability/scenarios.json', import.meta.url);
 const runsDir = new URL('../data/scout-reliability/runs', import.meta.url);
 const EVALUATOR_VERSION = 'scout-reliability-v2';
 const PROMPT_VERSION = 'scout-planning-safety-skeleton-v2';
@@ -71,7 +71,10 @@ function parseArgs(argv) {
     deploymentNotes: process.env.SCOUT_RELIABILITY_DEPLOYMENT_NOTES ?? '',
     knownRemainingFailures: process.env.SCOUT_RELIABILITY_KNOWN_FAILURES ?? '',
     apiRunSeed: `eval-${Date.now()}-${process.pid}`,
-    sharedCookie: process.env.SCOUT_RELIABILITY_SHARED_COOKIE === '1'
+    apiTimeoutMs: Number.parseInt(process.env.SCOUT_RELIABILITY_API_TIMEOUT_MS ?? '120000', 10),
+    sharedCookie: process.env.SCOUT_RELIABILITY_SHARED_COOKIE === '1',
+    scenarioFile: process.env.SCOUT_RELIABILITY_SCENARIO_FILE ?? defaultScenarioPath.pathname,
+    suiteName: process.env.SCOUT_RELIABILITY_SUITE_NAME ?? 'regression'
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -88,10 +91,13 @@ function parseArgs(argv) {
     if (arg === '--model-provider' && next) options.modelProvider = next;
     if (arg === '--model-display-name' && next) options.modelDisplayName = next;
     if (arg === '--model-settings' && next) options.modelSettings = next;
+    if (arg === '--api-timeout-ms' && next) options.apiTimeoutMs = Number.parseInt(next, 10);
     if (arg === '--prompt-version' && next) options.promptVersion = next;
     if (arg === '--patch-notes' && next) options.patchNotes = next;
     if (arg === '--deployment-notes' && next) options.deploymentNotes = next;
     if (arg === '--known-failures' && next) options.knownRemainingFailures = next;
+    if ((arg === '--scenario-file' || arg === '--suite-file') && next) options.scenarioFile = next;
+    if ((arg === '--suite-name' || arg === '--suite') && next) options.suiteName = next;
     if (arg.startsWith('--') && next) index += 1;
   }
 
@@ -108,7 +114,18 @@ function gitValue(args, fallback = 'unknown') {
 
 function gitChangedFiles() {
   const tracked = gitValue(['diff', '--name-only'], '').split('\n').filter(Boolean);
-  const status = gitValue(['status', '--short'], '').split('\n').filter(Boolean).map((line) => line.slice(3).trim()).filter(Boolean);
+  let status = [];
+  try {
+    const rawStatus = execFileSync('git', ['status', '--porcelain=v1', '-z'], { cwd: repoRoot });
+    const entries = rawStatus.toString('utf8').split('\0').filter(Boolean);
+    status = entries.map((entry) => {
+      const renameSeparator = entry.indexOf(' -> ');
+      if (renameSeparator !== -1) return entry.slice(renameSeparator + 4).trim();
+      return entry.slice(3).trim();
+    }).filter(Boolean);
+  } catch {
+    status = [];
+  }
   return [...new Set([...tracked, ...status])].sort();
 }
 
@@ -122,15 +139,15 @@ function parseJsonObject(value) {
   }
 }
 
-function loadScenarios() {
-  const parsed = JSON.parse(readFileSync(scenarioPath, 'utf8'));
+function loadScenarios(scenarioFile) {
+  const parsed = JSON.parse(readFileSync(scenarioFile, 'utf8'));
   assert.ok(Array.isArray(parsed), 'Scenario suite should be a JSON array');
   assert.ok(parsed.length >= 25, 'Scenario suite should include at least 25 scenarios');
   return parsed;
 }
 
-function scenarioSuiteVersion() {
-  const content = readFileSync(scenarioPath, 'utf8');
+function scenarioSuiteVersion(scenarioFile) {
+  const content = readFileSync(scenarioFile, 'utf8');
   return createHash('sha256').update(content).digest('hex').slice(0, 12);
 }
 
@@ -321,11 +338,22 @@ async function fetchScoutReply(scenario, options) {
   };
   headers.cookie = scenarioCookie(scenario, options);
   if (process.env.SCOUT_RELIABILITY_AUTHORIZATION) headers.authorization = process.env.SCOUT_RELIABILITY_AUTHORIZATION;
-  const response = await fetch(new URL('/app-api/claw/reply', options.baseUrl), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ message: scenario.prompt })
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number.isFinite(options.apiTimeoutMs) ? options.apiTimeoutMs : 120000);
+  let response;
+  try {
+    response = await fetch(new URL('/app-api/claw/reply', options.baseUrl), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ message: scenario.prompt }),
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error(`Scout API timed out after ${options.apiTimeoutMs}ms`);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
   const payload = await response.json().catch(() => null);
   if (!response.ok) throw new Error(`Scout API returned ${response.status}: ${payload?.message ?? response.statusText}`);
   const replyValue = payload?.data?.reply ?? payload?.reply ?? '';
@@ -693,11 +721,12 @@ function summarize(results) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  const scenarios = filterScenarios(loadScenarios(), options);
+  const scenarios = filterScenarios(loadScenarios(options.scenarioFile), options);
   assert.ok(scenarios.length > 0, 'No scenarios matched the selected filters');
 
   const results = [];
-  for (const scenario of scenarios) {
+  for (const [index, scenario] of scenarios.entries()) {
+    if (options.mode === 'api') console.log(`Evaluating ${index + 1}/${scenarios.length}: ${scenario.id}`);
     results.push(await evaluateScenario(scenario, options));
   }
 
@@ -720,8 +749,11 @@ async function main() {
     promptVersion: options.promptVersion,
     siteGitSha: gitValue(['rev-parse', 'HEAD']),
     evaluatorVersion: EVALUATOR_VERSION,
-    scenarioSuiteVersion: scenarioSuiteVersion(),
+    scenarioSuiteName: options.suiteName,
+    scenarioSuitePath: options.scenarioFile,
+    scenarioSuiteVersion: scenarioSuiteVersion(options.scenarioFile),
     mode: options.mode,
+    apiTimeoutMs: options.apiTimeoutMs,
     scenarioCount: summary.scenarioCount,
     passFailCounts: {
       passed: summary.passedCount,
@@ -745,7 +777,9 @@ async function main() {
       difficultyMin: options.difficultyMin,
       difficultyMax: options.difficultyMax,
       region: options.region,
-      id: options.id
+      id: options.id,
+      suiteName: options.suiteName,
+      scenarioFile: options.scenarioFile
     },
     patchNotes: options.patchNotes,
     deploymentNotes: options.deploymentNotes,
@@ -762,7 +796,7 @@ async function main() {
   writeFileSync(outputPath, `${JSON.stringify(artifact, null, 2)}\n`);
 
   console.log(`Scout reliability run ${runId}`);
-  console.log(`Mode: ${options.mode}; model: ${options.model}; env: ${options.environment}`);
+  console.log(`Mode: ${options.mode}; model: ${options.model}; env: ${options.environment}; suite: ${options.suiteName}`);
   console.log(`Scenarios: ${summary.scenarioCount}; tested: ${summary.testedCount}; passed: ${summary.passedCount}; failed: ${summary.failedCount}; skipped: ${summary.skippedCount}`);
   if (summary.failedCount > 0) {
     for (const result of results.filter((item) => item.status === 'failed')) {

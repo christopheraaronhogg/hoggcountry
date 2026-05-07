@@ -4,7 +4,9 @@ This workflow is for Scout planning reliability, not prose polishing. The goal i
 
 ## Scenario Suite
 
-Scenarios live in `data/scout-reliability/scenarios.json`.
+Regression scenarios live in `data/scout-reliability/scenarios.json`.
+
+Unseen generalization checks live in `data/scout-reliability/holdout-scenarios.json`. Treat the holdout suite as an overfit detector: do not patch Scout for a single holdout prompt and immediately count that same prompt as proof of general readiness. Keep failures as signal, improve general mechanisms, then add new unseen prompts before claiming broad progress.
 
 Each scenario records:
 
@@ -39,6 +41,16 @@ API mode against a local or Forge URL:
 SCOUT_RELIABILITY_COOKIE="your beta/session cookie" \
 npm run eval:scout-reliability -- --mode api --base-url http://127.0.0.1:5173 --difficulty-max 3
 ```
+
+Unseen holdout suite:
+
+```bash
+npm run eval:scout-holdout -- --patch-notes "Holdout grounding baseline"
+SCOUT_RELIABILITY_ENV=forge-api-holdout \
+npm run eval:scout-holdout -- --mode api --base-url https://hoggcountry.on-forge.com --api-timeout-ms 90000 --patch-notes "Holdout Forge API baseline"
+```
+
+The holdout score should be reported separately from the regression leaderboard.
 
 Use `SCOUT_RELIABILITY_MODEL=deepseek-v4-pro` unless the task is explicitly model comparison. Later comparisons can reuse the same suite by changing only the model metadata and provider path.
 
