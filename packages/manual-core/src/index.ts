@@ -769,6 +769,7 @@ export function searchImportedDocuments(docs: ImportedDocument[], query: string)
         sourceLabel: doc.rights === 'assistant-generated' ? 'Saved Plan' : 'Imported Doc',
         title: doc.title,
         excerpt: buildExcerpt(doc.textContent, normalized),
+        href: `/app/docs/${encodeURIComponent(doc.id)}`,
         score,
       } satisfies SearchHit;
     })
@@ -821,6 +822,7 @@ export function searchWorkspaceTools(tools: WorkspaceTool[], query: string): Sea
         sourceLabel: 'Trail Tool',
         title: tool.title,
         excerpt: buildExcerpt(`${tool.summary} ${tool.instructions}`, normalized),
+        href: `/app/tools#tool-${encodeURIComponent(tool.id)}`,
         score: score + 1,
       } satisfies SearchHit;
     })

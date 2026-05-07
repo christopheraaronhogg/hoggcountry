@@ -866,8 +866,8 @@ function buildSystemPrompt(
 ): string {
   const profile = record.profile;
   const notes = userBlocksSummary(record);
-  const docs = record.documents.slice(0, 6).map((document) => document.title);
-  const resources = record.resources.slice(0, 6).map((resource) => resource.title);
+  const docs = record.documents.slice(0, 6).map((document) => `${document.title} (/app/docs/${encodeURIComponent(document.id)})`);
+  const resources = record.resources.slice(0, 6).map((resource) => `${resource.title} (/app/resources#resource-${encodeURIComponent(resource.id)})`);
   const tools = record.tools.slice(0, 6).map((tool) => tool.title);
   const dadPilotContext = buildDadPilotSystemContext(dadPilotSummary ?? null);
   const skillContext = buildScoutSkillPromptContext(record.skillSettings);
@@ -908,6 +908,7 @@ function buildSystemPrompt(
         ? 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.'
         : 'Official Trail Sources skill is disabled for this workspace; do not call or imply official live-source retrieval unless the user asks to enable that skill.',
     'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied; name the source that should be checked.',
+    'Do not return deterministic or hardwired planning answers. If the user asks for something deterministic, point them to the relevant saved docs, resources, source-search hits, or official source lanes by title and link, then explain what those documents can and cannot prove.',
     'For current-position questions, use the hiker profile current mile and its updatedAt timestamp as the first location signal. If the mile is 0/unset, stale, or does not match the question, ask the hiker to tap the current-location/GPS button or send the road crossing/AT mile; do not guess where they are.',
     scoutSourceContext,
     'Treat saved assistant-generated documents as living Scout documents, not one-off files. The user wants Scout to keep them current through conversation.',
