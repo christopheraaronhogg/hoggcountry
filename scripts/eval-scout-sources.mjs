@@ -29,6 +29,10 @@ const requiredIds = [
   'baxter-state-park-at-permits',
   'hoggcountry-whites-franconia-crawford-qa-2026-05-06',
   'white-mountain-national-forest-amc-rules',
+  'green-mountain-club-long-trail-mud-season',
+  'new-england-state-land-at-rules',
+  'nws-noaa-trail-weather-safety-doctrine',
+  'nps-usfs-cdc-backcountry-safety-doctrine',
   'atc-trail-updates',
   'nws-weather'
 ];
@@ -116,13 +120,48 @@ assert.ok(baxterSources.includes('baxter-state-park-at-permits'), 'Baxter/Katahd
 assert.ok(baxterSources.includes('at-guide-user-owned'), 'Baxter exact mileage/campsite itinerary should require user-owned guide data');
 assert.ok(baxterSources.includes('nws-weather'), 'Baxter weather/closure itinerary should select NWS');
 
+const vermontSources = selectScoutSourceManifests({
+  query: 'Vermont Long Trail AT overlap two day hike during mud season with road access shelter water camping and bad weather fallback',
+  state: 'VT',
+  mileRange: [1602.0, 1751.0],
+  limit: 10
+}).map((source) => source.id);
+assert.ok(vermontSources.includes('green-mountain-club-long-trail-mud-season'), 'Vermont / Long Trail mud-season planning should select GMC official guidance');
+assert.ok(vermontSources.includes('nws-weather'), 'Vermont bad-weather prompts should still select NWS live weather');
+
+const ctMaSources = selectScoutSourceManifests({
+  query: 'Connecticut Massachusetts family fair weather AT day hike with legal camping parking road access water and state park rules',
+  state: 'CT/MA',
+  mileRange: [1456.0, 1602.0],
+  limit: 10
+}).map((source) => source.id);
+assert.ok(ctMaSources.includes('new-england-state-land-at-rules'), 'CT/MA planning should select state-land official rules');
+
+const weatherDoctrineSources = selectScoutSourceManifests({
+  query: 'Late July heat thunderstorm lightning flood wind exposed ridge go/no-go safety for a trail plan',
+  topics: ['weather', 'safety'],
+  limit: 10
+}).map((source) => source.id);
+assert.ok(weatherDoctrineSources.includes('nws-noaa-trail-weather-safety-doctrine'), 'Weather-risk prompts should select NOAA/NWS safety doctrine');
+assert.ok(weatherDoctrineSources.includes('nws-weather'), 'Weather-risk prompts should select live NWS weather');
+
 const waterSources = selectScoutSourceManifests({
-  query: 'Are the next shelter water sources dry and are recent FarOut comments enough to trust it?',
+  query: 'Are the next shelter water sources dry and are recent FarOut comments enough to trust it? Also remind me about filtering, food storage, bears, ticks, and Leave No Trace.',
   topics: ['water', 'shelter'],
   limit: 20
 }).map((source) => source.id);
 assert.ok(waterSources.includes('farout-current-comments'), 'Recent water/shelter condition prompts should select hiker-supplied current comments');
 assert.ok(waterSources.includes('private-workspace'), 'Private workspace should remain a searchable source lane');
+assert.ok(waterSources.includes('nps-usfs-cdc-backcountry-safety-doctrine'), 'General backcountry safety prompts should select public government safety doctrine');
+
+const gmcReceipt = buildScoutSourceReceipt('green-mountain-club-long-trail-mud-season');
+assert.ok(gmcReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched GMC receipt should not imply a live fetch');
+const newEnglandReceipt = buildScoutSourceReceipt('new-england-state-land-at-rules');
+assert.ok(newEnglandReceipt?.citation.includes('Massachusetts DCR'), 'New England state-land receipt should name state land sources');
+const weatherDoctrineReceipt = buildScoutSourceReceipt('nws-noaa-trail-weather-safety-doctrine');
+assert.ok(weatherDoctrineReceipt?.citation.includes('weather.gov/safety'), 'Weather safety doctrine receipt should point to NWS safety guidance');
+const backcountrySafetyReceipt = buildScoutSourceReceipt('nps-usfs-cdc-backcountry-safety-doctrine');
+assert.ok(backcountrySafetyReceipt?.citation.includes('CDC'), 'Backcountry safety doctrine receipt should name public government safety sources');
 
 const routeReceipt = buildScoutSourceReceipt('hoggcountry-pine-grove-route-qa-2026-05-04');
 assert.ok(routeReceipt?.citation.includes('Pine Grove route-order QA fixture'), 'Route receipt should expose the validator citation');

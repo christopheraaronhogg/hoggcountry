@@ -57,6 +57,7 @@ const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-pro';
 const OPENCODE_GO_REPLY_MAX_TOKENS = 1400;
 const SCOUT_AGENT_TURN_TIMEOUT_MS = 55_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
+const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
 const SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS = 3200;
 
@@ -582,6 +583,40 @@ function buildScoutSourceSearchTool(record: WorkspaceRecord, dadPilotSummary: Da
       };
     }
   };
+}
+
+function buildScoutSourcePlanContext(record: WorkspaceRecord, prompt: string): string | null {
+  const sources = selectScoutSourceManifests({
+    query: prompt,
+    state: record.profile ? approximateAtStateForMile(record.profile.currentMile) : null,
+    limit: 8
+  }).filter((source) => !disabledScoutSkillOwnsSourceManifest(record.skillSettings, source.id));
+
+  if (sources.length === 0) return null;
+
+  const sourceLines = sources.map((source) => {
+    const receipt = buildScoutSourceReceipt(source.id);
+    const status = source.accessMode === 'bundled-index' || source.accessMode === 'workspace-private'
+      ? 'available now'
+      : source.accessMode === 'route-validator'
+        ? 'constraint/resource, not prose'
+        : source.accessMode === 'live-fetch'
+          ? 'must fetch or cite as missing'
+          : source.accessMode === 'user-import-required'
+            ? 'requires hiker-owned import'
+            : 'not available by default';
+    return `- ${source.title} (${source.trust}/${source.accessMode}; ${status}). Use for: ${source.useWhen} Receipt/caveat: ${receipt?.citation ?? source.citationTemplate}`;
+  });
+
+  const context = [
+    'Scout source plan for this turn:',
+    ...sourceLines,
+    'Source-planning rule: decide from these lanes what is available now, what is only a route/legal/safety constraint, and what must be named as missing. Do not turn these into canned answer text.'
+  ].join('\n');
+
+  return context.length > SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS
+    ? `${context.slice(0, SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS - 1).trimEnd()}…`
+    : context;
 }
 
 function buildScoutSourceContext(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null, prompt: string): string | null {
@@ -1228,6 +1263,7 @@ export async function replyInWorkspaceClaw(
   const runtime = await resolveClawRuntime(record);
   const dadPilotSummary = shouldIncludeDadPilotContext(record, trimmedPrompt) ? await loadDadPilotSummary().catch(() => null) : null;
   const sourceContexts = [
+    buildScoutSourcePlanContext(record, trimmedPrompt),
     buildScoutSourceContext(record, dadPilotSummary, trimmedPrompt),
     buildPreloadedRouteResourceContext(trimmedPrompt, record),
     runtime.providerId === OPENCODE_GO_PROVIDER_ID ? await buildPreloadedOfficialSourceContext(trimmedPrompt, record, dadPilotSummary) : null

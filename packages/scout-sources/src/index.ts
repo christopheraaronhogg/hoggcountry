@@ -526,6 +526,74 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     keywords: ['gsmnp', 'smokies', 'great smoky mountains', 'permit', 'permits', 'reservation', 'recreation.gov', 'nps', 'backcountry', 'shelter', 'camping', 'parking tag', 'fontana', 'newfound gap']
   },
   {
+    id: 'green-mountain-club-long-trail-mud-season',
+    title: 'Green Mountain Club Long Trail / Vermont AT mud-season, shelter, water, and road-access guidance',
+    displayCategory: 'official/regional trail organization rules',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public official/regional source.',
+    useWhen: 'Vermont AT / Long Trail overlap planning, mud-season go/no-go decisions, fragile-trail etiquette, shelter/camping assumptions, road access, water, and bad-weather fallback planning.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', states: ['VT'], mileStart: 1602.0, mileEnd: 1751.0, topics: ['vermont', 'long trail', 'green mountain club', 'mud season', 'shelter', 'camping', 'road access', 'water'] },
+    citationTemplate: 'Green Mountain Club Long Trail / Vermont AT mud-season, shelter, and conditions pages; live conditions/rules must be checked before leaving. Scout fetched timestamp: {fetchedAt}. https://www.greenmountainclub.org/ https://www.greenmountainclub.org/hiking/mud-season/ https://www.greenmountainclub.org/hiking/trip-planning/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Mud-season guidance, shelter status, road access, and water change; Scout should fail closed on fragile-trail or closure questions and recommend current GMC/local land-manager verification before committing.'],
+    keywords: ['vermont', 'vt', 'long trail', 'green mountain club', 'gmc', 'mud season', 'mud', 'fragile trail', 'road access', 'shelter', 'camping', 'water', 'rutland', 'manchester', 'killington', 'stratton', 'weather']
+  },
+  {
+    id: 'new-england-state-land-at-rules',
+    title: 'New England state land AT rules: Massachusetts, Connecticut, and regional road-access/camping checks',
+    displayCategory: 'official state land and road-access rules',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public official source.',
+    useWhen: 'Massachusetts and Connecticut AT family/day-hike or overnight planning, legal camping uncertainty, state-park/forest rules, road access, parking, water, and weather fallback decisions.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', states: ['CT', 'MA'], mileStart: 1456.0, mileEnd: 1602.0, topics: ['connecticut', 'massachusetts', 'state forest', 'state park', 'camping', 'parking', 'road access', 'water'] },
+    citationTemplate: 'Massachusetts DCR, Connecticut DEEP, ATC, and local state-land pages for AT camping/parking/road access; live conditions/rules must be checked before leaving. Scout fetched timestamp: {fetchedAt}. https://www.mass.gov/orgs/department-of-conservation-recreation https://portal.ct.gov/deep https://appalachiantrail.org/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['State-land rules vary by site; Scout should not invent legal camping, parking, water, or shuttle certainty and should name MA DCR/CT DEEP/ATC checks before firm overnight plans.'],
+    keywords: ['massachusetts', 'ma', 'connecticut', 'ct', 'dcr', 'deep', 'state forest', 'state park', 'family', 'fair weather', 'camping', 'parking', 'road access', 'water', 'sages ravine', 'bear mountain', 'great barrington', 'salisbury']
+  },
+  {
+    id: 'nws-noaa-trail-weather-safety-doctrine',
+    title: 'NOAA/NWS trail-weather safety doctrine: heat, lightning, flooding, cold, wind, snow, and exposed-ridge timing',
+    displayCategory: 'public-domain government weather safety doctrine',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public government source.',
+    useWhen: 'Any trail plan where heat, thunderstorms/lightning, flooding, wind, cold exposure, snow/ice, or exposed-ridge timing affects the go/no-go decision or water/carry margin.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'manual', staleAfterDays: 30 },
+    coverage: { topics: ['heat', 'lightning', 'thunderstorm', 'flash flood', 'wind', 'cold', 'hypothermia', 'snow', 'ice', 'weather safety'] },
+    citationTemplate: 'NOAA/NWS weather safety guidance for heat, lightning, flooding, cold, wind, and winter hazards; Scout fetched timestamp: {fetchedAt}. https://www.weather.gov/safety/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Doctrine supports safety framing but does not replace a point forecast, local alerts, or land-manager closures. Pair with NWS point forecast/alerts for current decisions.'],
+    keywords: ['heat', 'heat index', 'lightning', 'thunderstorm', 'storm', 'flash flood', 'flood', 'wind', 'cold', 'hypothermia', 'snow', 'ice', 'winter', 'weather safety', 'nws', 'noaa', 'go no go']
+  },
+  {
+    id: 'nps-usfs-cdc-backcountry-safety-doctrine',
+    title: 'NPS/USFS/CDC backcountry safety doctrine: water treatment, bears/food storage, ticks, fire, and Leave No Trace',
+    displayCategory: 'public government outdoor safety doctrine',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public government source.',
+    useWhen: 'General backpacking safety across the AT: water treatment, food storage, bear protocols, ticks, fire restrictions, sanitation, Leave No Trace, and beginner baseline advice.',
+    license: OFFICIAL_PUBLIC_LICENSE,
+    freshness: { updateCadence: 'manual', staleAfterDays: 30 },
+    coverage: { trail: 'AT', topics: ['water treatment', 'bear', 'food storage', 'ticks', 'fire', 'leave no trace', 'sanitation', 'beginner safety'] },
+    citationTemplate: 'NPS/USFS/CDC public safety guidance for water treatment, bears/food storage, ticks, fire, and Leave No Trace; Scout fetched timestamp: {fetchedAt}. https://www.nps.gov/subjects/healthandsafety/ https://www.fs.usda.gov/visit/know-before-you-go https://www.cdc.gov/ticks/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: ['Use as broad safety doctrine only. Park/forest-specific food-storage, camping, fire, and water rules still require the local land-manager source.'],
+    keywords: ['water treatment', 'filter', 'purify', 'bear', 'food storage', 'bear canister', 'ursack', 'ticks', 'lyme', 'fire', 'burn ban', 'leave no trace', 'lnt', 'sanitation', 'cathole', 'beginner', 'safety']
+  },
+  {
     id: 'atc-trail-updates',
     title: 'Appalachian Trail Conservancy official trail updates',
     displayCategory: 'official closures and detours',
@@ -705,8 +773,12 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (!manifestCoversMileRange(manifest, query.mileRange)) score -= manifest.coverage.mileStart !== undefined && manifest.coverage.mileEnd !== undefined ? 12 : 4;
   if (manifest.accessMode === 'disabled-pending-review' && !query.includeUnavailable) score -= 8;
   if (manifest.trust === 'official' && /\b(weather|closure|detour|fire|alert|official|lightning|thunder|thunderstorm|wind|above[-\s]?treeline)\b/iu.test(query.query)) score += 3;
-  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|mental\s+halfway|psychological\s+halfway|harpers?\s+ferry|harper['’]?s?\s+ferry|atc\s+hq|keys\s+gap|weverton|ed\s+garvey|dahlgren|gathland|crampton\s+gap|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
-  if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 6;
+  if (manifest.id === 'green-mountain-club-long-trail-mud-season' && /\b(vermont|\bvt\b|long\s+trail|green\s+mountain|\bgmc\b|mud\s+season|killington|stratton|manchester|rutland)\b/iu.test(query.query)) score += 9;
+  if (manifest.id === 'new-england-state-land-at-rules' && /\b(connecticut|\bct\b|massachusetts|\bma\b|sages\s+ravine|bear\s+mountain|great\s+barrington|salisbury|family|fair[-\s]?weather)\b/iu.test(query.query)) score += 8;
+  if (manifest.id === 'nws-noaa-trail-weather-safety-doctrine' && /\b(heat|hot|lightning|thunder|thunderstorm|storm|flood|wind|cold|hypothermia|snow|ice|winter|exposed|ridge|go\/?no[-\s]?go)\b/iu.test(query.query)) score += 8;
+  if (manifest.id === 'nps-usfs-cdc-backcountry-safety-doctrine' && /\b(water|filter|purif|bear|food\s+storage|canister|ursack|tick|lyme|fire|burn\s+ban|leave\s+no\s+trace|\blnt\b|sanitation|beginner|starter|new\s+hiker)\b/iu.test(query.query)) score += 7;
+  if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|mental\s+halfway|psychological\s+halfway|harpers?\s+ferry|harper['’]?s?\s+ferry|atc\s+hq|keys\s+gap|weverton|ed\s+garvey|dahlgren|gathland|crampton\s+gap|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|vermont|long\s+trail|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
+  if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 10;
   if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
   if (manifest.id === 'kjv-pce' && /\b(scripture|bible|kjv|king\s+james|pce|pure\s+cambridge|verse|verses|quote|proverbs|psalms?|john|romans|isaiah|matthew|hebrews|james|timothy)\b|(?:\b[1-3]\s*)?\b[A-Z][a-z]+\s+\d{1,3}:\d{1,3}/u.test(query.query)) score += 10;
 
