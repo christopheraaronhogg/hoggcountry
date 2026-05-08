@@ -1242,14 +1242,6 @@
     }
   }
 
-  function thinkingEffortLabel(value: ScoutThinkingEffort) {
-    if (value === 'off') return 'No extra thinking';
-    if (value === 'minimal') return 'Fast';
-    if (value === 'medium') return 'Deeper';
-    if (value === 'high') return 'Deepest';
-    return 'Balanced';
-  }
-
   function checkingStatusText() {
     if (streamStatus === 'thinking') return `Scout is thinking${thinkingActivityChars > 0 ? ` (${thinkingActivityChars.toLocaleString()} hidden chars)` : ''}…`;
     if (streamStatus === 'working') return 'Scout is still thinking…';
@@ -1699,6 +1691,20 @@
           </div>
         {/if}
 
+        <div class="composer-toolbar">
+          <label class="composer-title" for="scout-prompt">Ask Scout</label>
+          <label class="thinking-control" for="scout-thinking-effort" title="Controls Scout's native reasoning effort. Raw reasoning stays private.">
+            <span>Effort</span>
+            <select id="scout-thinking-effort" value={thinkingEffort} onchange={(event) => updateThinkingEffort(event.currentTarget.value)} disabled={sendBusy || !connection}>
+              <option value="off">Off</option>
+              <option value="minimal">Fast</option>
+              <option value="low">Balanced</option>
+              <option value="medium">Deeper</option>
+              <option value="high">Deepest</option>
+            </select>
+          </label>
+        </div>
+
         <div class="prompt-box">
           <label class="sr-only" for="scout-prompt">Ask Scout</label>
           <button
@@ -1741,18 +1747,6 @@
               <path d="M3.7 20.3 21 12 3.7 3.7l-.2 6.4 10.1 1.9-10.1 1.9.2 6.4Z" fill="currentColor" />
             </svg>
           </button>
-        </div>
-
-        <div class="thinking-control" aria-label="Scout thinking control">
-          <label for="scout-thinking-effort">Thinking</label>
-          <select id="scout-thinking-effort" value={thinkingEffort} onchange={(event) => updateThinkingEffort(event.currentTarget.value)} disabled={sendBusy || !connection}>
-            <option value="off">Off</option>
-            <option value="minimal">Fast</option>
-            <option value="low">Balanced</option>
-            <option value="medium">Deeper</option>
-            <option value="high">Deepest</option>
-          </select>
-          <span>{thinkingEffortLabel(thinkingEffort)} · raw thinking stays private</span>
         </div>
 
         {#if locationNotice}
@@ -2608,37 +2602,60 @@
     outline: none;
   }
 
-  .thinking-control {
+  .composer-toolbar {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.38rem;
-    color: #6a7566;
-    font-size: 0.76rem;
-    font-weight: 800;
+    justify-content: space-between;
+    gap: 0.7rem;
+    padding: 0 0.18rem;
   }
 
-  .thinking-control label {
+  .composer-title {
     color: #394638;
     font-family: Oswald, Impact, sans-serif;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.085em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .thinking-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.34rem;
+    min-width: 0;
+    color: #6a7566;
+    font-size: 0.72rem;
+    font-weight: 850;
+    line-height: 1;
+  }
+
+  .thinking-control span {
+    color: #6a7566;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.72rem;
     font-weight: 900;
     letter-spacing: 0.07em;
     text-transform: uppercase;
   }
 
   .thinking-control select {
-    min-height: 1.85rem;
-    border: 1px solid rgba(77, 89, 74, 0.16);
+    max-width: 7.6rem;
+    min-height: 1.72rem;
+    border: 1px solid rgba(77, 89, 74, 0.14);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 253, 248, 0.9);
     color: #394638;
+    cursor: pointer;
     font: inherit;
+    font-size: 0.76rem;
     font-weight: 900;
-    padding: 0 0.55rem;
+    padding: 0 1.35rem 0 0.52rem;
   }
 
   .thinking-control select:disabled {
+    cursor: not-allowed;
     opacity: 0.55;
   }
 
