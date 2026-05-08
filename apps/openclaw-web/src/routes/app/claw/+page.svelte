@@ -202,6 +202,9 @@
   const assistantReplyCount = $derived(messages.filter((message) => message.role === 'assistant').length);
   const userAskCount = $derived(messages.filter((message) => message.role === 'user').length);
   const composerStarters = $derived(composerPromptStarters(profile, dailyBrief));
+  const emptyThreadStarters = $derived(composerStarters.slice(0, 4));
+  const compactComposerStarters = $derived(composerStarters.slice(0, 3));
+  const visibleResources = $derived(resources.slice(0, 6));
   const selectedTargetStandardSlot = $derived(targetStandardSlotKey ? standardDocumentSlotForKey(targetStandardSlotKey) : null);
   const streamingMessageBlocks = $derived(streamingAssistantText ? parseMessageBlocks(streamingAssistantText) : []);
 
@@ -1581,7 +1584,7 @@
         <details>
           <summary>Manual fallback</summary>
           <ol>
-            {#each connectInstructions as instruction}
+            {#each connectInstructions as instruction, instructionIndex (`connect-instruction-${instructionIndex}`)}
               <li>{instruction}</li>
             {/each}
           </ol>
@@ -1664,7 +1667,7 @@
               <span>Ask one practical trail question. Scout will keep the answer grounded and brief.</span>
               {#if connection}
                 <div class="empty-actions" aria-label="Quick Scout questions">
-                  {#each composerStarters.slice(0, 4) as starter (starter.title)}
+                  {#each emptyThreadStarters as starter (starter.title)}
                     <button type="button" onclick={() => useExamplePrompt(starter)} disabled={sendBusy} title={starter.text}>
                       <span aria-hidden="true">{starter.icon ?? '✦'}</span>
                       {starter.title}
@@ -1790,7 +1793,7 @@
 
         <div class="composer-starters" aria-label="Prompt starters and effort">
           {#if messages.length > 0}
-            {#each composerStarters.slice(0, 3) as starter (starter.title)}
+            {#each compactComposerStarters as starter (starter.title)}
               <button type="button" onclick={() => useExamplePrompt(starter)} disabled={!connection || sendBusy} title={starter.text}>
                 <span aria-hidden="true">{starter.icon ?? '✦'}</span>
                 {starter.title}
@@ -1942,7 +1945,7 @@
               <a href="/app/docs">Open all</a>
             </div>
             <div class="doc-list standard-slot-list">
-              {#each STANDARD_DOCUMENT_SLOTS as slot}
+              {#each STANDARD_DOCUMENT_SLOTS as slot (slot.key)}
                 {@const doc = standardSlotDocument(slot.key)}
                 <button class:active={targetStandardSlotKey === slot.key || selectedDocumentId === doc?.id} type="button" onclick={() => focusStandardSlot(slot.key)} title={doc ? doc.title : slot.purpose}>
                   <span>{slot.title}</span>
@@ -1961,7 +1964,7 @@
               <p class="small-note">No sources yet. Add files, URLs, or pasted notes.</p>
             {:else}
               <div class="doc-list">
-                {#each resources.slice(0, 6) as resource}
+                {#each visibleResources as resource (resource.id)}
                   <button class:active={selectedResourceId === resource.id} type="button" onclick={() => focusResource(resource)} title={resource.title}>
                     <span>{resource.title}</span>
                     <small>{resource.kind} · {resource.sensitivity}</small>
