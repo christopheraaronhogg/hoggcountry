@@ -176,7 +176,6 @@
   let pendingPrompt = $state('');
   let historyOpen = $state(false);
   let docsOpen = $state(false);
-  let expandedMessageIds = $state<string[]>([]);
   let threadCard: HTMLElement | null = null;
   let threadMessages: HTMLDivElement | null = null;
   let promptTextarea: HTMLTextAreaElement | null = null;
@@ -456,8 +455,6 @@
     return messages.slice(-6);
   }
 
-  const longMessageLimit = 1800;
-
   function assistantMessageCount(): number {
     return messages.filter((message) => message.role === 'assistant').length;
   }
@@ -466,26 +463,8 @@
     return messages.filter((message) => message.role === 'user').length;
   }
 
-  function isMessageExpanded(message: ClawMessage): boolean {
-    return expandedMessageIds.includes(message.id);
-  }
-
-  function isLongMessage(message: ClawMessage): boolean {
-    return message.text.length > longMessageLimit;
-  }
-
-  function toggleMessageExpansion(message: ClawMessage) {
-    expandedMessageIds = isMessageExpanded(message)
-      ? expandedMessageIds.filter((id) => id !== message.id)
-      : [...expandedMessageIds, message.id];
-  }
-
   function messageDisplayText(message: ClawMessage): string {
-    if (!isLongMessage(message) || isMessageExpanded(message)) {
-      return message.text;
-    }
-
-    return `${message.text.slice(0, longMessageLimit).trimEnd()}…`;
+    return message.text;
   }
 
   function cleanInlineMarkdown(value: string): string {
@@ -1137,7 +1116,6 @@
     saveNotice = '';
     saveError = '';
     pendingPrompt = '';
-    expandedMessageIds = [];
 
     try {
       const payload = await jsonOrThrow(
@@ -1490,11 +1468,6 @@
                   {/each}
                 </div>
                 <div class="message-footer">
-                  {#if isLongMessage(message)}
-                    <button type="button" onclick={() => toggleMessageExpansion(message)}>
-                      {isMessageExpanded(message) ? 'Collapse' : 'Show full'}
-                    </button>
-                  {/if}
                   {#if message.model}<span>{message.model}</span>{/if}
                   {#if message.error}<span>error</span>{/if}
                   {#if message.role === 'assistant' && !message.error}
