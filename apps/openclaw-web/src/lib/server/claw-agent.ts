@@ -54,8 +54,8 @@ const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
 const OPENCODE_GO_PROVIDER_ID = 'opencode-go';
 const OPENAI_CODEX_MODEL = 'gpt-5.4';
 const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-pro';
-const OPENCODE_GO_REPLY_MAX_TOKENS = 1400;
-const SCOUT_AGENT_TURN_TIMEOUT_MS = 55_000;
+const OPENCODE_GO_REPLY_MAX_TOKENS = 2600;
+const SCOUT_AGENT_TURN_TIMEOUT_MS = 85_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
@@ -748,7 +748,7 @@ function resolveModelOrThrow(providerId: ClawProviderId, modelId: string): Model
       api: 'openai-completions',
       provider: OPENCODE_GO_PROVIDER_ID,
       baseUrl: 'https://opencode.ai/zen/go/v1',
-      reasoning: false,
+      reasoning: true,
       input: ['text'],
       cost: {
         input: 0,
@@ -776,16 +776,16 @@ function applyOpenCodeGoPayloadCompat(payload: unknown): unknown {
   if (!payload || typeof payload !== 'object') return payload;
 
   const params = payload as {
-    thinking?: { type: 'disabled' };
+    thinking?: { type: 'enabled' };
     max_tokens?: number;
     max_completion_tokens?: number;
   };
 
-  // OpenCode Go's DeepSeek V4 Pro defaults to a thinking-only mode unless this is explicit.
-  params.thinking = { type: 'disabled' };
+  // Use OpenCode Go's native model thinking instead of a simulated scratchpad.
+  params.thinking = { type: 'enabled' };
 
-  // The OpenAI-compatible DeepSeek lane honors max_tokens; keeping the completion-only
-  // field can let the model spend the whole budget on reasoning before producing text.
+  // The OpenAI-compatible DeepSeek lane honors max_tokens. Keep an explicit
+  // output budget so native thinking does not consume the entire visible reply.
   if (typeof params.max_completion_tokens === 'number' && typeof params.max_tokens !== 'number') {
     params.max_tokens = params.max_completion_tokens;
     delete params.max_completion_tokens;
@@ -958,6 +958,8 @@ function buildSystemPrompt(
     'Use short useful answers. If context is thin, still give a safe beginner baseline, then ask only the one or two details that actually change the next decision.',
     'Do not require the hiker to arrive with a complete profile, guidebook, mileage source, or perfect prep. Build from almost nothing, infer cautiously from the conversation, and suggest optional artifacts only when they would materially improve the plan.',
     'Do not roleplay. Do not oversell certainty. Prefer concrete next actions over generic encouragement.',
+    'Use private reasoning to understand the hiker\'s intent before answering. Do not expose your reasoning, tool plan, source-search process, validator names, or phrases like “let me catalog/search/pull.” Do the work silently, then answer naturally.',
+    'When context conflicts, honor the user\'s obvious intent first. Mention stale GPS/profile/doc conflicts only when they change the decision. Do not let a stale profile mile dominate a clearly stated hypothetical or future section plan.',
     SCOUT_VOICE_EXAMPLES,
     '',
     `Hiker name: ${record.betaProfile.name || 'Unknown'}`,
@@ -987,12 +989,13 @@ function buildSystemPrompt(
         ? 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.'
         : 'Official Trail Sources skill is disabled for this workspace; do not call or imply official live-source retrieval unless the user asks to enable that skill.',
     'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied; name the source that should be checked.',
+    'Use sources as quiet grounding, not as the answer structure. Source receipts belong near the end, short and human-readable, unless the user asks for audit details.',
     'Do not return deterministic or hardwired planning answers. If the user asks for something deterministic, point them to the relevant saved docs, resources, source-search hits, or official source lanes by title and link, then explain what those documents can and cannot prove.',
     'For current-position questions, use the hiker profile current mile and its updatedAt timestamp as the first location signal. If the mile is 0/unset, stale, or does not match the question, ask the hiker to tap the current-location/GPS button or send the road crossing/AT mile; do not guess where they are.',
     scoutSourceContext,
     'Treat saved assistant-generated documents as living Scout documents, not one-off files. The user wants Scout to keep them current through conversation.',
     'When asked for a plan, prefer a compact artifact with current snapshot, assumptions, day-by-day or category breakdown, concrete next actions, and missing intel that would tighten the answer.',
-    'For real-world AT planning, keep the tone natural but include a dependable safety skeleton: Recommendation, route options or day plan, mileage targets, logistics/parking/shuttle, water, weather, legal overnight/camping when relevant, bailout, final checklist, and source receipts or missing-source caveats.',
+    'For real-world AT planning, keep the tone natural. Use the dependable safety skeleton as coverage, not rigid headings: recommendation, route/day shape, mileage targets, logistics/parking/shuttle, water, weather, legal overnight/camping when relevant, bailout, final checklist, and source receipts or missing-source caveats.',
     'When revising a saved document, preserve useful existing structure, update stale facts, add a brief change-history note, and return the full revised document body.',
     skillEnabled(record, 'private-workspace-resources')
       ? buildActiveResourceContext(activeResource)
@@ -1292,7 +1295,7 @@ export async function replyInWorkspaceClaw(
           activeResource
         ),
         model: runtime.model,
-        thinkingLevel: 'low',
+        thinkingLevel: 'medium',
         tools: agentTools,
         messages: history.map(toPiMessage)
       },
