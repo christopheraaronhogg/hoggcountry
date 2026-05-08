@@ -135,7 +135,7 @@ class OpenClawWebProxyController extends Controller
         $body = $upstream->getBody();
         $response = response()->stream(function () use ($body): void {
             while (! $body->eof()) {
-                echo $body->read(8192);
+                echo $body->read(1024);
 
                 if (function_exists('ob_flush')) {
                     @ob_flush();

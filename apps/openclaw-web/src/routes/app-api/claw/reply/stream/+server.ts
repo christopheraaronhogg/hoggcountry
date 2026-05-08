@@ -39,6 +39,10 @@ export const POST: RequestHandler = async (event) => {
 
       send('status', { status: 'started' });
 
+      const heartbeat = setInterval(() => {
+        send('status', { status: 'working' });
+      }, 10000);
+
       void (async () => {
         try {
           const result = await replyInWorkspaceClaw(workspaceId, betaProfile, message, {
@@ -77,6 +81,8 @@ export const POST: RequestHandler = async (event) => {
 
           send('error', { message: caught instanceof Error ? caught.message : 'Could not send the cloud prompt.', status: 500 });
         } finally {
+          clearInterval(heartbeat);
+
           if (!closed) {
             closed = true;
             try {
