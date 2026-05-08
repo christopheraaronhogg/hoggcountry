@@ -156,6 +156,7 @@
   let loading = $state(true);
   let error = $state('');
   let sendBusy = $state(false);
+  let newThreadBusy = $state(false);
   let connectBusy = $state(false);
   let disconnectBusy = $state(false);
   let seedBusy = $state(false);
@@ -1117,6 +1118,36 @@
     }
   }
 
+  async function startNewThread() {
+    if (newThreadBusy || sendBusy || messages.length === 0) return;
+
+    newThreadBusy = true;
+    error = '';
+    saveNotice = '';
+    saveError = '';
+    pendingPrompt = '';
+    expandedMessageIds = [];
+
+    try {
+      const payload = await jsonOrThrow(
+        await fetch('/app-api/claw/thread', {
+          method: 'DELETE'
+        })
+      );
+
+      messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : [];
+      factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
+      connection = (payload.connection ?? connection) as ProviderConnection | null;
+      historyOpen = false;
+      await focusPromptComposer();
+    } catch (caught) {
+      console.error(caught);
+      error = caught instanceof Error ? caught.message : 'Could not start a new Scout thread.';
+    } finally {
+      newThreadBusy = false;
+    }
+  }
+
   async function sendMessage() {
     const message = replyInput.trim();
     if (!message) return;
@@ -1403,7 +1434,14 @@
           <strong>Plan thread</strong>
           <span>{messages.length} turn{messages.length === 1 ? '' : 's'}</span>
         </div>
-        <button class="rail-toggle" type="button" onclick={toggleDocsPanel} aria-expanded={docsOpen} aria-controls="docs-panel">Sources ▸</button>
+        <div class="conversation-topline-actions">
+          {#if messages.length > 0}
+            <button class="rail-toggle" type="button" onclick={startNewThread} disabled={newThreadBusy || sendBusy} title="Clear Scout chat history for this workspace">
+              {newThreadBusy ? 'Starting…' : 'New thread'}
+            </button>
+          {/if}
+          <button class="rail-toggle" type="button" onclick={toggleDocsPanel} aria-expanded={docsOpen} aria-controls="docs-panel">Sources ▸</button>
+        </div>
       </div>
 
       <section class="message-viewport" class:message-viewport--empty={messages.length === 0 && !sendBusy} bind:this={threadCard}>
@@ -1517,6 +1555,12 @@
         {/if}
 
         {#if messages.length > 0}
+          <div class="thread-actions" aria-label="Scout thread actions">
+            <button class="tiny-button" type="button" onclick={startNewThread} disabled={newThreadBusy || sendBusy} title="Clear Scout chat history for this workspace">
+              {newThreadBusy ? 'Starting new thread…' : 'New thread'}
+            </button>
+            <span>Clears this chat only. Profile, docs, resources, and saved plans stay put.</span>
+          </div>
           <div class="composer-starters" aria-label="Prompt starters">
             {#each composerPromptStarters(profile, dailyBrief).slice(0, 3) as starter}
               <button type="button" onclick={() => useExamplePrompt(starter)} disabled={!connection || sendBusy} title={starter.text}>
@@ -1925,6 +1969,16 @@
     text-align: center;
   }
 
+  .conversation-topline-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
+  .conversation-topline-actions .rail-toggle {
+    white-space: nowrap;
+  }
+
   .conversation-topline strong,
   .conversation-topline span {
     display: block;
@@ -2254,6 +2308,20 @@
     font-weight: 900;
     text-decoration: underline;
     text-underline-offset: 0.16rem;
+  }
+
+  .thread-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
+    color: #6a7566;
+    font-size: 0.78rem;
+    font-weight: 750;
+  }
+
+  .thread-actions span {
+    min-width: 0;
   }
 
   .composer-starters {
