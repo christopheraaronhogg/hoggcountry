@@ -57,13 +57,90 @@ const manualNote = table(
   }
 );
 
+const scoutWorkspaceAccess = table(
+  {
+    name: 'scout_workspace_access',
+    indexes: [
+      { accessor: 'identity', name: 'scout_workspace_access_identity_idx', algorithm: 'btree', columns: ['identity'] },
+      { accessor: 'workspaceId', name: 'scout_workspace_access_workspace_id_idx', algorithm: 'btree', columns: ['workspaceId'] }
+    ]
+  },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    identity: t.identity(),
+    workspaceId: t.string(),
+    createdAt: t.string()
+  }
+);
+
+const scoutTurn = table(
+  {
+    name: 'scout_turn',
+    indexes: [
+      { accessor: 'workspaceId', name: 'scout_turn_workspace_id_idx', algorithm: 'btree', columns: ['workspaceId'] },
+      { accessor: 'turnId', name: 'scout_turn_turn_id_idx', algorithm: 'btree', columns: ['turnId'] }
+    ]
+  },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    workspaceId: t.string(),
+    turnId: t.string(),
+    status: t.string(),
+    thinkingEffort: t.string(),
+    startedAt: t.string(),
+    updatedAt: t.string()
+  }
+);
+
+const scoutTurnEvent = table(
+  {
+    name: 'scout_turn_event',
+    indexes: [
+      { accessor: 'workspaceId', name: 'scout_turn_event_workspace_id_idx', algorithm: 'btree', columns: ['workspaceId'] },
+      { accessor: 'turnId', name: 'scout_turn_event_turn_id_idx', algorithm: 'btree', columns: ['turnId'] }
+    ]
+  },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    workspaceId: t.string(),
+    turnId: t.string(),
+    eventSeq: t.u64(),
+    kind: t.string(),
+    payloadJson: t.string(),
+    createdAt: t.string()
+  }
+);
+
 const openclawDb = schema({
   dadUpdate,
   videoDispatch,
   publicAnnouncement,
   betaProfile,
-  manualNote
+  manualNote,
+  scoutWorkspaceAccess,
+  scoutTurn,
+  scoutTurnEvent
 });
+
+export const myScoutTurns = openclawDb.view({ name: 'my_scout_turns', public: true }, t.array(scoutTurn.rowType), (ctx) => {
+  return ctx.from.scoutTurn
+    .leftSemijoin(ctx.from.scoutWorkspaceAccess.where((access) => access.identity.eq(ctx.sender)), (turn, access) =>
+      turn.workspaceId.eq(access.workspaceId)
+    )
+    .build();
+});
+
+export const myScoutTurnEvents = openclawDb.view(
+  { name: 'my_scout_turn_events', public: true },
+  t.array(scoutTurnEvent.rowType),
+  (ctx) => {
+    return ctx.from.scoutTurnEvent
+      .leftSemijoin(ctx.from.scoutWorkspaceAccess.where((access) => access.identity.eq(ctx.sender)), (event, access) =>
+        event.workspaceId.eq(access.workspaceId)
+      )
+      .build();
+  }
+);
 
 export default openclawDb;
 
@@ -77,6 +154,14 @@ export const init = openclawDb.init((ctx) => {
     });
   }
 });
+
+function hasScoutWorkspaceAccess(ctx: { db: any; sender: unknown }, workspaceId: string): boolean {
+  for (const access of ctx.db.scoutWorkspaceAccess.identity.filter(ctx.sender)) {
+    if (access.workspaceId === workspaceId) return true;
+  }
+
+  return false;
+}
 
 export const registerBetaProfile = openclawDb.reducer(
   {
@@ -109,6 +194,88 @@ export const appendManualNote = openclawDb.reducer(
       sectionId: payload.sectionId,
       title: payload.title,
       body: payload.body,
+      createdAt: new Date().toISOString()
+    });
+  }
+);
+
+export const joinScoutWorkspace = openclawDb.reducer(
+  {
+    workspaceId: t.string()
+  },
+  (ctx, payload) => {
+    const workspaceId = payload.workspaceId.trim();
+    if (!workspaceId) return;
+
+    if (hasScoutWorkspaceAccess(ctx, workspaceId)) return;
+
+    ctx.db.scoutWorkspaceAccess.insert({
+      id: 0n,
+      identity: ctx.sender,
+      workspaceId,
+      createdAt: new Date().toISOString()
+    });
+  }
+);
+
+export const mirrorScoutTurn = openclawDb.reducer(
+  {
+    workspaceId: t.string(),
+    turnId: t.string(),
+    status: t.string(),
+    thinkingEffort: t.string()
+  },
+  (ctx, payload) => {
+    const now = new Date().toISOString();
+    const workspaceId = payload.workspaceId.trim();
+    const turnId = payload.turnId.trim();
+    if (!workspaceId || !turnId) return;
+
+    if (!hasScoutWorkspaceAccess(ctx, workspaceId)) return;
+
+    for (const existing of ctx.db.scoutTurn.turnId.filter(turnId)) {
+      if (existing.workspaceId !== workspaceId) continue;
+      ctx.db.scoutTurn.id.update({
+        ...existing,
+        status: payload.status,
+        thinkingEffort: payload.thinkingEffort,
+        updatedAt: now
+      });
+      return;
+    }
+
+    ctx.db.scoutTurn.insert({
+      id: 0n,
+      workspaceId,
+      turnId,
+      status: payload.status,
+      thinkingEffort: payload.thinkingEffort,
+      startedAt: now,
+      updatedAt: now
+    });
+  }
+);
+
+export const mirrorScoutTurnEvent = openclawDb.reducer(
+  {
+    workspaceId: t.string(),
+    turnId: t.string(),
+    eventSeq: t.u64(),
+    kind: t.string(),
+    payloadJson: t.string()
+  },
+  (ctx, payload) => {
+    const workspaceId = payload.workspaceId.trim();
+    const turnId = payload.turnId.trim();
+    if (!workspaceId || !turnId || !hasScoutWorkspaceAccess(ctx, workspaceId)) return;
+
+    ctx.db.scoutTurnEvent.insert({
+      id: 0n,
+      workspaceId,
+      turnId,
+      eventSeq: payload.eventSeq,
+      kind: payload.kind,
+      payloadJson: payload.payloadJson,
       createdAt: new Date().toISOString()
     });
   }

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { replyInWorkspaceClaw, ScoutAgentTimeoutError, type ScoutThinkingEffort } from '$lib/server/claw-agent';
 import { getConfiguredClawConnection } from '$lib/server/claw-connection';
+import { mirrorScoutTurnEventToSpacetimeSoon, mirrorScoutTurnToSpacetimeSoon } from '$lib/server/scout-spacetime-mirror';
 import type { BetaProfileCookie } from '$lib/beta';
 
 const TURN_TTL_MS = 30 * 60 * 1000;
@@ -20,6 +21,7 @@ type TurnRecord = {
   readonly id: string;
   readonly workspaceId: string;
   readonly createdAt: number;
+  readonly thinkingEffort: ScoutThinkingEffort;
   readonly listeners: Set<TurnEventListener>;
   updatedAt: number;
   status: TurnStatus;
@@ -38,6 +40,7 @@ function pushEvent(turn: TurnRecord, event: TurnEvent['event'], data: Record<str
   };
   turn.events.push(next);
   turn.updatedAt = Date.now();
+  mirrorScoutTurnEventToSpacetimeSoon({ workspaceId: turn.workspaceId, turnId: turn.id, event: next });
   for (const listener of turn.listeners) {
     listener([next]);
   }
@@ -67,6 +70,7 @@ export function startScoutReplyTurn(input: {
     id: randomUUID(),
     workspaceId: input.workspaceId,
     createdAt: Date.now(),
+    thinkingEffort: input.thinkingEffort,
     listeners: new Set(),
     updatedAt: Date.now(),
     status: 'running',
@@ -76,6 +80,12 @@ export function startScoutReplyTurn(input: {
   };
 
   turns.set(turn.id, turn);
+  mirrorScoutTurnToSpacetimeSoon({
+    workspaceId: turn.workspaceId,
+    turnId: turn.id,
+    status: turn.status,
+    thinkingEffort: turn.thinkingEffort
+  });
   pushEvent(turn, 'status', { status: 'started' });
 
   void (async () => {
@@ -107,6 +117,12 @@ export function startScoutReplyTurn(input: {
 
       turn.status = 'done';
       turn.result = payload;
+      mirrorScoutTurnToSpacetimeSoon({
+        workspaceId: turn.workspaceId,
+        turnId: turn.id,
+        status: turn.status,
+        thinkingEffort: turn.thinkingEffort
+      });
       pushEvent(turn, 'done', payload);
     } catch (caught) {
       let payload: Record<string, unknown>;
@@ -126,6 +142,12 @@ export function startScoutReplyTurn(input: {
 
       turn.status = 'error';
       turn.error = payload;
+      mirrorScoutTurnToSpacetimeSoon({
+        workspaceId: turn.workspaceId,
+        turnId: turn.id,
+        status: turn.status,
+        thinkingEffort: turn.thinkingEffort
+      });
       pushEvent(turn, 'error', payload);
     } finally {
       clearInterval(heartbeat);

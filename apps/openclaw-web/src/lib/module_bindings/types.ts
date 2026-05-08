@@ -40,6 +40,12 @@ export const ManualNote = __t.object("ManualNote", {
 });
 export type ManualNote = __Infer<typeof ManualNote>;
 
+export const MyScoutTurnEvents = __t.object("MyScoutTurnEvents", {});
+export type MyScoutTurnEvents = __Infer<typeof MyScoutTurnEvents>;
+
+export const MyScoutTurns = __t.object("MyScoutTurns", {});
+export type MyScoutTurns = __Infer<typeof MyScoutTurns>;
+
 export const PublicAnnouncement = __t.object("PublicAnnouncement", {
   id: __t.u64(),
   title: __t.string(),
@@ -47,6 +53,36 @@ export const PublicAnnouncement = __t.object("PublicAnnouncement", {
   publishedAt: __t.string(),
 });
 export type PublicAnnouncement = __Infer<typeof PublicAnnouncement>;
+
+export const ScoutTurn = __t.object("ScoutTurn", {
+  id: __t.u64(),
+  workspaceId: __t.string(),
+  turnId: __t.string(),
+  status: __t.string(),
+  thinkingEffort: __t.string(),
+  startedAt: __t.string(),
+  updatedAt: __t.string(),
+});
+export type ScoutTurn = __Infer<typeof ScoutTurn>;
+
+export const ScoutTurnEvent = __t.object("ScoutTurnEvent", {
+  id: __t.u64(),
+  workspaceId: __t.string(),
+  turnId: __t.string(),
+  eventSeq: __t.u64(),
+  kind: __t.string(),
+  payloadJson: __t.string(),
+  createdAt: __t.string(),
+});
+export type ScoutTurnEvent = __Infer<typeof ScoutTurnEvent>;
+
+export const ScoutWorkspaceAccess = __t.object("ScoutWorkspaceAccess", {
+  id: __t.u64(),
+  identity: __t.identity(),
+  workspaceId: __t.string(),
+  createdAt: __t.string(),
+});
+export type ScoutWorkspaceAccess = __Infer<typeof ScoutWorkspaceAccess>;
 
 export const VideoDispatch = __t.object("VideoDispatch", {
   id: __t.u64(),

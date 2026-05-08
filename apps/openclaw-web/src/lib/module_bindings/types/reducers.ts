@@ -7,8 +7,14 @@ import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
 import AppendManualNoteReducer from "../append_manual_note_reducer";
+import JoinScoutWorkspaceReducer from "../join_scout_workspace_reducer";
+import MirrorScoutTurnReducer from "../mirror_scout_turn_reducer";
+import MirrorScoutTurnEventReducer from "../mirror_scout_turn_event_reducer";
 import RegisterBetaProfileReducer from "../register_beta_profile_reducer";
 
 export type AppendManualNoteParams = __Infer<typeof AppendManualNoteReducer>;
+export type JoinScoutWorkspaceParams = __Infer<typeof JoinScoutWorkspaceReducer>;
+export type MirrorScoutTurnParams = __Infer<typeof MirrorScoutTurnReducer>;
+export type MirrorScoutTurnEventParams = __Infer<typeof MirrorScoutTurnEventReducer>;
 export type RegisterBetaProfileParams = __Infer<typeof RegisterBetaProfileReducer>;
 

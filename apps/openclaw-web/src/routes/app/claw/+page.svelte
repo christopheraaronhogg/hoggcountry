@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
+  import { useSpacetimeDB } from 'spacetimedb/svelte';
+  import { tables, type DbConnection, type SubscriptionHandle } from '$lib/module_bindings';
   import { buildClawLanes } from '$lib/claw';
   import { inferStandardDocumentSlotKey, isStandardDocumentSlotKey, STANDARD_DOCUMENT_SLOTS, standardDocumentSlotForKey, type ImportedDocument, type ManualProfile, type ManualSection, type StandardDocumentSlotKey, type WorkspaceResource, type WorkspaceTool } from '@hoggcountry/manual-core';
   import type { ClawLane } from '$lib/claw';
@@ -185,6 +187,12 @@
   let threadCard: HTMLElement | null = null;
   let threadMessages: HTMLDivElement | null = null;
   let promptTextarea: HTMLTextAreaElement | null = null;
+  let currentWorkspaceId = '';
+  let scoutRealtimeWorkspaceId = '';
+  let scoutRealtimeSubscription: SubscriptionHandle | null = null;
+  let spacetimeUnsubscribe: (() => void) | null = null;
+
+  const spacetime = useSpacetimeDB();
 
   async function jsonOrThrow(response: Response) {
     if (response.ok) {
@@ -1021,6 +1029,23 @@
     }
   }
 
+  async function syncScoutRealtime(connectionState: { isActive: boolean; getConnection: <T>() => T | null }) {
+    if (!currentWorkspaceId || !connectionState.isActive) return;
+    const realtimeConnection = connectionState.getConnection<DbConnection>();
+    if (!realtimeConnection) return;
+
+    try {
+      await realtimeConnection.reducers.joinScoutWorkspace({ workspaceId: currentWorkspaceId });
+
+      if (scoutRealtimeWorkspaceId === currentWorkspaceId && scoutRealtimeSubscription) return;
+      scoutRealtimeSubscription?.unsubscribe();
+      scoutRealtimeSubscription = realtimeConnection.subscriptionBuilder().subscribe([tables.myScoutTurns, tables.myScoutTurnEvents]);
+      scoutRealtimeWorkspaceId = currentWorkspaceId;
+    } catch (caught) {
+      console.warn('Scout realtime sync unavailable:', caught);
+    }
+  }
+
   async function loadState() {
     loading = true;
     error = '';
@@ -1032,9 +1057,11 @@
       ]);
 
       applyWorkspaceSnapshot(workspacePayload as WorkspaceSnapshot);
+      currentWorkspaceId = typeof clawPayload.workspaceId === 'string' ? clawPayload.workspaceId : '';
       connection = (clawPayload.connection ?? null) as ProviderConnection | null;
       messages = Array.isArray(clawPayload.messages) ? (clawPayload.messages as ClawMessage[]) : [];
       factCandidates = Array.isArray(clawPayload.factCandidates) ? (clawPayload.factCandidates as FactCandidate[]) : [];
+      void syncScoutRealtime($spacetime);
       void loadDadPilot();
     } catch (caught) {
       console.error(caught);
@@ -1451,6 +1478,10 @@
     }
 
     consumeConnectQueryState();
+    spacetimeUnsubscribe = spacetime.subscribe((state) => {
+      void syncScoutRealtime(state);
+    });
+
     loadState()
       .then(async () => {
         await consumeStandardDocumentQueryState();
@@ -1465,6 +1496,8 @@
     if (locationWatchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.clearWatch(locationWatchId);
     }
+    spacetimeUnsubscribe?.();
+    scoutRealtimeSubscription?.unsubscribe();
   });
 </script>
 
