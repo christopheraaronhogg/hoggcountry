@@ -20,21 +20,24 @@ export const GET: RequestHandler = (event) => {
   if (!Number.isFinite(lastEventId)) lastEventId = 0;
 
   const encoder = new TextEncoder();
+  let closeStream: (() => void) | null = null;
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       let closed = false;
       let cursor = lastEventId;
+      let interval: ReturnType<typeof setInterval> | null = null;
 
       const close = () => {
         if (closed) return;
         closed = true;
-        clearInterval(interval);
+        if (interval) clearInterval(interval);
         try {
           controller.close();
         } catch {
           // The browser or proxy may already have closed the stream.
         }
       };
+      closeStream = close;
 
       const send = (chunk: string) => {
         if (closed) return;
@@ -63,7 +66,7 @@ export const GET: RequestHandler = (event) => {
         }
       };
 
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         flush();
         send(`: heartbeat ${Date.now()}\n\n`);
       }, 1000);
@@ -71,6 +74,7 @@ export const GET: RequestHandler = (event) => {
       flush();
     },
     cancel() {
+      closeStream?.();
       // The model turn keeps running so the client can recover by polling or reconnecting.
     }
   });
