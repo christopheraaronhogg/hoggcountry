@@ -127,6 +127,8 @@
     readonly trailLongitude: number;
   }
 
+  type ScoutThinkingEffort = 'off' | 'minimal' | 'low' | 'medium' | 'high';
+
   interface ScoutLocationUpdatePayload {
     readonly location: ScoutLocationPayload;
     readonly profileUpdated: boolean;
@@ -158,6 +160,8 @@
   let sendBusy = $state(false);
   let streamingReplyVisible = $state(false);
   let streamStatus = $state('');
+  let thinkingEffort = $state<ScoutThinkingEffort>('low');
+  let thinkingActivityChars = $state(0);
   let newThreadBusy = $state(false);
   let connectBusy = $state(false);
   let disconnectBusy = $state(false);
@@ -218,6 +222,7 @@
       readonly onDelta: (delta: string) => void | Promise<void>;
       readonly onDone: (payload: Record<string, unknown>) => void | Promise<void>;
       readonly onStatus?: (status: string) => void | Promise<void>;
+      readonly onThinking?: (activity: { status?: unknown; chars?: unknown }) => void | Promise<void>;
     }
   ) {
     if (!response.ok || !response.body) {
@@ -248,6 +253,11 @@
       if (eventName === 'status') {
         const status = typeof payload.status === 'string' ? payload.status.trim() : '';
         if (status) await handlers.onStatus?.(status);
+        return;
+      }
+
+      if (eventName === 'thinking') {
+        await handlers.onThinking?.(payload);
         return;
       }
 
@@ -1169,7 +1179,8 @@
         body: JSON.stringify({
           message,
           documentId: selectedDocumentId || null,
-          resourceId: selectedResourceId || null
+          resourceId: selectedResourceId || null,
+          thinkingEffort
         })
       })
     ) as Promise<Record<string, unknown>>;
@@ -1185,7 +1196,8 @@
         body: JSON.stringify({
           message,
           documentId: selectedDocumentId || null,
-          resourceId: selectedResourceId || null
+          resourceId: selectedResourceId || null,
+          thinkingEffort
         })
       })
     ) as { turnId?: unknown };
@@ -1223,6 +1235,27 @@
     throw new Error('Scout is still working on that reply. Try opening this thread again in a minute.');
   }
 
+  function updateThinkingEffort(value: string) {
+    if (value === 'off' || value === 'minimal' || value === 'low' || value === 'medium' || value === 'high') {
+      thinkingEffort = value;
+      window.localStorage.setItem('hoggcountry.scoutThinkingEffort', value);
+    }
+  }
+
+  function thinkingEffortLabel(value: ScoutThinkingEffort) {
+    if (value === 'off') return 'No extra thinking';
+    if (value === 'minimal') return 'Fast';
+    if (value === 'medium') return 'Deeper';
+    if (value === 'high') return 'Deepest';
+    return 'Balanced';
+  }
+
+  function checkingStatusText() {
+    if (streamStatus === 'thinking') return `Scout is thinking${thinkingActivityChars > 0 ? ` (${thinkingActivityChars.toLocaleString()} hidden chars)` : ''}…`;
+    if (streamStatus === 'working') return 'Scout is still thinking…';
+    return 'Scout is checking trail notes…';
+  }
+
   async function sendMessage() {
     const message = replyInput.trim();
     if (!message) return;
@@ -1250,6 +1283,7 @@
     sendBusy = true;
     streamingReplyVisible = false;
     streamStatus = '';
+    thinkingActivityChars = 0;
     pendingPrompt = message;
     error = '';
     saveNotice = '';
@@ -1281,6 +1315,14 @@
         onDone: applyScoutReplyPayload,
         onStatus: async (status) => {
           streamStatus = status;
+        },
+        onThinking: async (activity) => {
+          const status = typeof activity.status === 'string' ? activity.status : '';
+          if (status === 'start' || status === 'delta') streamStatus = 'thinking';
+          if (status === 'end') streamStatus = 'working';
+          if (typeof activity.chars === 'number' && Number.isFinite(activity.chars)) {
+            thinkingActivityChars += activity.chars;
+          }
         }
       });
     } catch (caught) {
@@ -1316,6 +1358,7 @@
       sendBusy = false;
       streamingReplyVisible = false;
       streamStatus = '';
+      thinkingActivityChars = 0;
       await focusCloudThread();
       await scrollCloudThreadToLatest();
     }
@@ -1380,6 +1423,11 @@
   }
 
   onMount(() => {
+    const savedThinkingEffort = window.localStorage.getItem('hoggcountry.scoutThinkingEffort');
+    if (savedThinkingEffort === 'off' || savedThinkingEffort === 'minimal' || savedThinkingEffort === 'low' || savedThinkingEffort === 'medium' || savedThinkingEffort === 'high') {
+      thinkingEffort = savedThinkingEffort;
+    }
+
     consumeConnectQueryState();
     loadState()
       .then(async () => {
@@ -1606,7 +1654,7 @@
             {#if sendBusy && !streamingReplyVisible}
               <article class="checking-card" aria-live="polite">
                 <span class="checking-icon" aria-hidden="true">◎</span>
-                <em>{streamStatus === 'working' ? 'Scout is still thinking…' : 'Scout is checking trail notes…'}</em>
+                <em>{checkingStatusText()}</em>
                 <span class="checking-dots" aria-hidden="true">
                   <span>•</span><span>•</span><span>•</span>
                 </span>
@@ -1693,6 +1741,18 @@
               <path d="M3.7 20.3 21 12 3.7 3.7l-.2 6.4 10.1 1.9-10.1 1.9.2 6.4Z" fill="currentColor" />
             </svg>
           </button>
+        </div>
+
+        <div class="thinking-control" aria-label="Scout thinking control">
+          <label for="scout-thinking-effort">Thinking</label>
+          <select id="scout-thinking-effort" value={thinkingEffort} onchange={(event) => updateThinkingEffort(event.currentTarget.value)} disabled={sendBusy || !connection}>
+            <option value="off">Off</option>
+            <option value="minimal">Fast</option>
+            <option value="low">Balanced</option>
+            <option value="medium">Deeper</option>
+            <option value="high">Deepest</option>
+          </select>
+          <span>{thinkingEffortLabel(thinkingEffort)} · raw thinking stays private</span>
         </div>
 
         {#if locationNotice}
@@ -2546,6 +2606,40 @@
     border-color: rgba(77, 89, 74, 0.46);
     box-shadow: 0 0 0 4px rgba(166, 181, 137, 0.22);
     outline: none;
+  }
+
+  .thinking-control {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.38rem;
+    color: #6a7566;
+    font-size: 0.76rem;
+    font-weight: 800;
+  }
+
+  .thinking-control label {
+    color: #394638;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .thinking-control select {
+    min-height: 1.85rem;
+    border: 1px solid rgba(77, 89, 74, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    color: #394638;
+    font: inherit;
+    font-weight: 900;
+    padding: 0 0.55rem;
+  }
+
+  .thinking-control select:disabled {
+    opacity: 0.55;
   }
 
   .send-button,

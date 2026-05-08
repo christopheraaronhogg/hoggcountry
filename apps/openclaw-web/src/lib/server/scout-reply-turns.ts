@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { replyInWorkspaceClaw, ScoutAgentTimeoutError } from '$lib/server/claw-agent';
+import { replyInWorkspaceClaw, ScoutAgentTimeoutError, type ScoutThinkingEffort } from '$lib/server/claw-agent';
 import { getConfiguredClawConnection } from '$lib/server/claw-connection';
 import type { BetaProfileCookie } from '$lib/beta';
 
@@ -10,7 +10,7 @@ type TurnStatus = 'running' | 'done' | 'error';
 
 type TurnEvent = {
   readonly id: number;
-  readonly event: 'status' | 'delta' | 'done' | 'error';
+  readonly event: 'status' | 'thinking' | 'delta' | 'done' | 'error';
   readonly data: Record<string, unknown>;
 };
 
@@ -53,6 +53,7 @@ export function startScoutReplyTurn(input: {
   readonly message: string;
   readonly documentId: string | null;
   readonly resourceId: string | null;
+  readonly thinkingEffort: ScoutThinkingEffort;
 }) {
   pruneTurns();
 
@@ -79,8 +80,12 @@ export function startScoutReplyTurn(input: {
       const result = await replyInWorkspaceClaw(input.workspaceId, input.betaProfile, input.message, {
         documentId: input.documentId,
         resourceId: input.resourceId,
+        thinkingEffort: input.thinkingEffort,
         onTextDelta: (delta) => {
           if (delta) pushEvent(turn, 'delta', { delta });
+        },
+        onThinkingActivity: (activity) => {
+          pushEvent(turn, 'thinking', activity);
         }
       });
       const connection = getConfiguredClawConnection(result.workspace);

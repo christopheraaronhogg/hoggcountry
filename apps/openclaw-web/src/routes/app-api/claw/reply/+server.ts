@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { replyInWorkspaceClaw, ScoutAgentTimeoutError } from '$lib/server/claw-agent';
+import { normalizeScoutThinkingEffort, replyInWorkspaceClaw, ScoutAgentTimeoutError } from '$lib/server/claw-agent';
 import { getConfiguredClawConnection } from '$lib/server/claw-connection';
 import { requireWorkspace, ok } from '$lib/server/workspace-endpoint';
 
@@ -10,10 +10,12 @@ export const POST: RequestHandler = async (event) => {
     message?: unknown;
     documentId?: unknown;
     resourceId?: unknown;
+    thinkingEffort?: unknown;
   } | null;
   const message = typeof payload?.message === 'string' ? payload.message.trim() : '';
   const documentId = typeof payload?.documentId === 'string' ? payload.documentId.trim() : '';
   const resourceId = typeof payload?.resourceId === 'string' ? payload.resourceId.trim() : '';
+  const thinkingEffort = normalizeScoutThinkingEffort(payload?.thinkingEffort);
 
   if (!message) {
     throw error(400, 'Message is required.');
@@ -22,7 +24,8 @@ export const POST: RequestHandler = async (event) => {
   try {
     const result = await replyInWorkspaceClaw(workspaceId, betaProfile, message, {
       documentId: documentId || null,
-      resourceId: resourceId || null
+      resourceId: resourceId || null,
+      thinkingEffort
     });
     const connection = getConfiguredClawConnection(result.workspace);
 

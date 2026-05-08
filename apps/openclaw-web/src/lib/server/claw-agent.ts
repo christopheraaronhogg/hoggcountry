@@ -1,4 +1,4 @@
-import { Agent, type AgentEvent, type AgentTool } from '@mariozechner/pi-agent-core';
+import { Agent, type AgentEvent, type AgentTool, type ThinkingLevel } from '@mariozechner/pi-agent-core';
 import {
   searchImportedDocuments,
   searchManualSections,
@@ -62,6 +62,11 @@ import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
 
 const OPENCODE_GO_REPLY_MAX_TOKENS = 4000;
+export type ScoutThinkingEffort = Extract<ThinkingLevel, 'off' | 'minimal' | 'low' | 'medium' | 'high'>;
+
+export function normalizeScoutThinkingEffort(value: unknown): ScoutThinkingEffort {
+  return value === 'off' || value === 'minimal' || value === 'medium' || value === 'high' ? value : 'low';
+}
 const SCOUT_AGENT_TURN_TIMEOUT_MS = 900_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
@@ -753,17 +758,25 @@ function getOpenCodeGoApiKey(): string {
   return apiKey;
 }
 
-function applyOpenCodeGoPayloadCompat(payload: unknown): unknown {
+function applyOpenCodeGoPayloadCompat(payload: unknown, thinkingEffort: ScoutThinkingEffort): unknown {
   if (!payload || typeof payload !== 'object') return payload;
 
   const params = payload as {
     thinking?: { type: 'enabled' };
+    reasoning_effort?: string;
     max_tokens?: number;
     max_completion_tokens?: number;
   };
 
-  // Use OpenCode Go's native model thinking instead of a simulated scratchpad.
-  params.thinking = { type: 'enabled' };
+  // Use OpenCode Go's native model thinking instead of a simulated scratchpad when requested.
+  // Do not expose raw reasoning text to hikers; stream only activity/status signals.
+  if (thinkingEffort === 'off') {
+    delete params.thinking;
+    delete params.reasoning_effort;
+  } else {
+    params.thinking = { type: 'enabled' };
+    params.reasoning_effort = thinkingEffort;
+  }
 
   // The OpenAI-compatible DeepSeek lane honors max_tokens. Keep an explicit
   // output budget so native thinking does not consume the entire visible reply.
@@ -1193,7 +1206,9 @@ export async function replyInWorkspaceClaw(
   options?: {
     readonly documentId?: string | null;
     readonly resourceId?: string | null;
+    readonly thinkingEffort?: ScoutThinkingEffort;
     readonly onTextDelta?: (delta: string) => void | Promise<void>;
+    readonly onThinkingActivity?: (activity: { status: 'start' | 'delta' | 'end'; chars?: number }) => void | Promise<void>;
   }
 ): Promise<{
   readonly workspace: WorkspaceSnapshot;
@@ -1222,6 +1237,7 @@ export async function replyInWorkspaceClaw(
   }
 
   const runtime = await resolveClawRuntime(record);
+  const thinkingEffort = normalizeScoutThinkingEffort(options?.thinkingEffort);
   const dadPilotSummary = shouldIncludeDadPilotContext(record, trimmedPrompt) ? await loadDadPilotSummary().catch(() => null) : null;
   const sourceContexts = [
     buildScoutSourcePlanContext(record, trimmedPrompt),
@@ -1255,22 +1271,42 @@ export async function replyInWorkspaceClaw(
           activeResource
         ),
         model: runtime.model,
-        thinkingLevel: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? 'low' : 'medium',
+        thinkingLevel: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? thinkingEffort : 'medium',
         tools: agentTools,
         messages: history.map(toPiMessage)
       },
       sessionId: `workspace:${workspaceId}:claw`,
       transport: 'sse',
       getApiKey: async () => runtime.apiKey,
-      onPayload: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? applyOpenCodeGoPayloadCompat : undefined
+      onPayload: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? (payload) => applyOpenCodeGoPayloadCompat(payload, thinkingEffort) : undefined
     });
 
-    if (options?.onTextDelta) {
+    if (options?.onTextDelta || options?.onThinkingActivity) {
       agent.subscribe(async (event: AgentEvent) => {
         if (event.type !== 'message_update') return;
-        const update = event.assistantMessageEvent as { type?: string; delta?: unknown };
-        if (update.type !== 'text_delta' || typeof update.delta !== 'string' || update.delta.length === 0) return;
-        await options.onTextDelta?.(update.delta);
+        const update = event.assistantMessageEvent as { type?: string; delta?: unknown; content?: unknown };
+
+        if (update.type === 'text_delta' && typeof update.delta === 'string' && update.delta.length > 0) {
+          await options.onTextDelta?.(update.delta);
+          return;
+        }
+
+        if (update.type === 'thinking_start') {
+          await options.onThinkingActivity?.({ status: 'start' });
+          return;
+        }
+
+        if (update.type === 'thinking_delta') {
+          await options.onThinkingActivity?.({
+            status: 'delta',
+            chars: typeof update.delta === 'string' ? update.delta.length : 0
+          });
+          return;
+        }
+
+        if (update.type === 'thinking_end') {
+          await options.onThinkingActivity?.({ status: 'end' });
+        }
       });
     }
 
