@@ -25,8 +25,16 @@ export const POST: RequestHandler = async (event) => {
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
+      let closed = false;
+
       const send = (eventName: string, data: unknown) => {
-        controller.enqueue(encoder.encode(encodeSse(eventName, data)));
+        if (closed) return;
+
+        try {
+          controller.enqueue(encoder.encode(encodeSse(eventName, data)));
+        } catch {
+          closed = true;
+        }
       };
 
       send('status', { status: 'started' });
@@ -69,7 +77,14 @@ export const POST: RequestHandler = async (event) => {
 
           send('error', { message: caught instanceof Error ? caught.message : 'Could not send the cloud prompt.', status: 500 });
         } finally {
-          controller.close();
+          if (!closed) {
+            closed = true;
+            try {
+              controller.close();
+            } catch {
+              // The browser or proxy may have already closed the stream.
+            }
+          }
         }
       })();
     }
