@@ -26,11 +26,28 @@ export const spacetimeStatus = writable<SpacetimeStatus>({
 });
 
 let initialized = false;
+let currentConnection: DbConnection | null = null;
+const connectionListeners = new Set<(connection: DbConnection) => void>();
 
-function handleConnect(_connection: DbConnection, identity: Identity, token: string): void {
+export function getSpacetimeConnection(): DbConnection | null {
+  return currentConnection;
+}
+
+export function onSpacetimeConnection(listener: (connection: DbConnection) => void): () => void {
+  connectionListeners.add(listener);
+  if (currentConnection?.isActive) listener(currentConnection);
+
+  return () => {
+    connectionListeners.delete(listener);
+  };
+}
+
+function handleConnect(connection: DbConnection, identity: Identity, token: string): void {
   if (browser) {
     localStorage.setItem(tokenKey, token);
   }
+
+  currentConnection = connection;
 
   spacetimeStatus.set({
     enabled,
@@ -39,9 +56,14 @@ function handleConnect(_connection: DbConnection, identity: Identity, token: str
     connected: true,
     identity: identity.toHexString()
   });
+
+  for (const listener of connectionListeners) {
+    listener(connection);
+  }
 }
 
 function handleDisconnect(): void {
+  currentConnection = null;
   spacetimeStatus.update((current) => ({
     ...current,
     connected: false
@@ -49,6 +71,7 @@ function handleDisconnect(): void {
 }
 
 function handleConnectError(_ctx: ErrorContext, error: Error): void {
+  currentConnection = null;
   spacetimeStatus.set({
     enabled,
     host,

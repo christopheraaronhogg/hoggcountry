@@ -10,6 +10,22 @@ export const GET: RequestHandler = async (event) => {
 
   return ok({
     workspaceId,
+    workspace: {
+      workspaceId: record.workspaceId,
+      betaProfile: record.betaProfile,
+      profile: record.profile,
+      sections: record.sections,
+      documents: record.documents,
+      resources: record.resources,
+      tools: record.tools,
+      providerConnections: record.providerConnections,
+      clawMessages: record.clawMessages,
+      factCandidates: record.factCandidates,
+      locationHistory: record.locationHistory,
+      skillSettings: record.skillSettings,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt
+    },
     connection,
     messages: record.clawMessages,
     factCandidates: record.factCandidates,

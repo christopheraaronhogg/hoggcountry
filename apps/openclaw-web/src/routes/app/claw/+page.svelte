@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
-  import { useSpacetimeDB } from 'spacetimedb/svelte';
   import { tables, type DbConnection, type SubscriptionHandle } from '$lib/module_bindings';
+  import { getSpacetimeConnection, onSpacetimeConnection } from '$lib/spacetime';
   import { buildClawLanes } from '$lib/claw';
   import { inferStandardDocumentSlotKey, isStandardDocumentSlotKey, STANDARD_DOCUMENT_SLOTS, standardDocumentSlotForKey, type ImportedDocument, type ManualProfile, type ManualSection, type StandardDocumentSlotKey, type WorkspaceResource, type WorkspaceTool } from '@hoggcountry/manual-core';
   import type { ClawLane } from '$lib/claw';
@@ -184,15 +184,14 @@
   let pendingPrompt = $state('');
   let historyOpen = $state(false);
   let docsOpen = $state(false);
-  let threadCard: HTMLElement | null = null;
-  let threadMessages: HTMLDivElement | null = null;
-  let promptTextarea: HTMLTextAreaElement | null = null;
+  let threadCard = $state<HTMLElement | null>(null);
+  let threadMessages = $state<HTMLDivElement | null>(null);
+  let promptTextarea = $state<HTMLTextAreaElement | null>(null);
   let currentWorkspaceId = '';
   let scoutRealtimeWorkspaceId = '';
   let scoutRealtimeSubscription: SubscriptionHandle | null = null;
   let spacetimeUnsubscribe: (() => void) | null = null;
-
-  const spacetime = useSpacetimeDB();
+  const messageBlockCache = new Map<string, { text: string; blocks: MessageBlock[] }>();
 
   async function jsonOrThrow(response: Response) {
     if (response.ok) {
@@ -587,7 +586,18 @@
   }
 
   function messageBlocks(message: ClawMessage): MessageBlock[] {
-    return parseMessageBlocks(messageDisplayText(message));
+    const text = messageDisplayText(message);
+    const cached = messageBlockCache.get(message.id);
+    if (cached?.text === text) return cached.blocks;
+
+    const blocks = parseMessageBlocks(text);
+    messageBlockCache.set(message.id, { text, blocks });
+    if (messageBlockCache.size > 80) {
+      const firstKey = messageBlockCache.keys().next().value;
+      if (firstKey) messageBlockCache.delete(firstKey);
+    }
+
+    return blocks;
   }
 
   function messageHistory(): ClawMessage[] {
@@ -1029,10 +1039,8 @@
     }
   }
 
-  async function syncScoutRealtime(connectionState: { isActive: boolean; getConnection: <T>() => T | null }) {
-    if (!currentWorkspaceId || !connectionState.isActive) return;
-    const realtimeConnection = connectionState.getConnection<DbConnection>();
-    if (!realtimeConnection) return;
+  async function syncScoutRealtime(realtimeConnection: DbConnection) {
+    if (!currentWorkspaceId || !realtimeConnection.isActive) return;
 
     try {
       await realtimeConnection.reducers.joinScoutWorkspace({ workspaceId: currentWorkspaceId });
@@ -1051,18 +1059,18 @@
     error = '';
 
     try {
-      const [workspacePayload, clawPayload] = await Promise.all([
-        jsonOrThrow(await fetch('/app-api/workspace', { cache: 'no-store' })),
-        jsonOrThrow(await fetch('/app-api/claw', { cache: 'no-store' }))
-      ]);
+      const clawPayload = await jsonOrThrow(await fetch('/app-api/claw', { cache: 'no-store' }));
+      const workspacePayload = (clawPayload.workspace ?? null) as WorkspaceSnapshot | null;
 
-      applyWorkspaceSnapshot(workspacePayload as WorkspaceSnapshot);
+      if (workspacePayload) applyWorkspaceSnapshot(workspacePayload);
       currentWorkspaceId = typeof clawPayload.workspaceId === 'string' ? clawPayload.workspaceId : '';
       connection = (clawPayload.connection ?? null) as ProviderConnection | null;
       messages = Array.isArray(clawPayload.messages) ? (clawPayload.messages as ClawMessage[]) : [];
       factCandidates = Array.isArray(clawPayload.factCandidates) ? (clawPayload.factCandidates as FactCandidate[]) : [];
-      void syncScoutRealtime($spacetime);
-      void loadDadPilot();
+      const realtimeConnection = getSpacetimeConnection();
+      if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
+      const idle = window.requestIdleCallback ?? ((callback: IdleRequestCallback) => window.setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 1));
+      idle(() => void loadDadPilot());
     } catch (caught) {
       console.error(caught);
       error = caught instanceof Error ? caught.message : 'Could not load the Scout console.';
@@ -1478,8 +1486,8 @@
     }
 
     consumeConnectQueryState();
-    spacetimeUnsubscribe = spacetime.subscribe((state) => {
-      void syncScoutRealtime(state);
+    spacetimeUnsubscribe = onSpacetimeConnection((connection) => {
+      void syncScoutRealtime(connection);
     });
 
     loadState()
@@ -1663,19 +1671,19 @@
               {/if}
             </article>
           {:else}
-            {#each messages as message}
+            {#each messages as message (message.id)}
               <article class:message={true} class:message--assistant={message.role === 'assistant'} class:message--user={message.role === 'user'}>
                 <div class="message-label">
                   <strong>{message.role === 'assistant' ? 'Scout' : 'You'}</strong>
                   <span>{messageTime(message.createdAt)}</span>
                 </div>
                 <div class="message-body">
-                  {#each messageBlocks(message) as block}
+                  {#each messageBlocks(message) as block, blockIndex (`${message.id}-${blockIndex}`)}
                     {#if block.kind === 'heading'}
                       <h3>{block.text}</h3>
                     {:else if block.kind === 'list'}
                       <ul>
-                        {#each block.items ?? [] as item}
+                        {#each block.items ?? [] as item, itemIndex (`${message.id}-${blockIndex}-${itemIndex}`)}
                           <li>{item}</li>
                         {/each}
                       </ul>
