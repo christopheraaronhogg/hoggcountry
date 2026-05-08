@@ -46,6 +46,12 @@ export interface WorkspaceProviderConnection {
   readonly updatedAt: string;
 }
 
+export interface WorkspaceClawSourceReceipt {
+  readonly label: string;
+  readonly status: string;
+  readonly kind: string;
+}
+
 export interface WorkspaceClawMessage {
   readonly id: string;
   readonly role: 'user' | 'assistant';
@@ -54,6 +60,7 @@ export interface WorkspaceClawMessage {
   readonly providerId: 'openai-codex' | 'opencode-go' | 'system' | null;
   readonly model: string | null;
   readonly error: boolean;
+  readonly sourceReceipts?: WorkspaceClawSourceReceipt[];
 }
 
 export interface WorkspaceFactCandidate {
@@ -223,6 +230,18 @@ function normalizeClawMessages(input: unknown): WorkspaceClawMessage[] {
           : null;
       const model = typeof message.model === 'string' && message.model.trim().length > 0 ? message.model.trim() : null;
 
+      const sourceReceipts = Array.isArray(message.sourceReceipts)
+        ? message.sourceReceipts
+            .filter(isObject)
+            .flatMap((receipt) => {
+              const label = typeof receipt.label === 'string' ? receipt.label.trim() : '';
+              const status = typeof receipt.status === 'string' ? receipt.status.trim() : '';
+              const kind = typeof receipt.kind === 'string' && receipt.kind.trim() ? receipt.kind.trim() : 'source';
+              return label && status ? [{ label, status, kind }] : [];
+            })
+            .slice(0, 8)
+        : [];
+
       return {
         id: typeof message.id === 'string' && message.id ? message.id : createId(`claw-${role}`),
         role,
@@ -231,7 +250,8 @@ function normalizeClawMessages(input: unknown): WorkspaceClawMessage[] {
           typeof message.createdAt === 'string' && message.createdAt.length > 0 ? message.createdAt : nowIso(),
         providerId,
         model,
-        error: Boolean(message.error)
+        error: Boolean(message.error),
+        ...(sourceReceipts.length > 0 ? { sourceReceipts } : {})
       };
     })
     .filter((message): message is WorkspaceClawMessage => message !== null)

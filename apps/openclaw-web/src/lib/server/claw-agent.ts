@@ -43,6 +43,7 @@ import {
   reviseWorkspaceScoutDocument,
   saveWorkspaceOpenAICodexConnection,
   type WorkspaceClawMessage,
+  type WorkspaceClawSourceReceipt,
   type WorkspaceFactCandidateInput,
   type WorkspaceRecord,
   type WorkspaceSnapshot
@@ -1212,6 +1213,8 @@ export async function replyInWorkspaceClaw(
     readonly documentId?: string | null;
     readonly resourceId?: string | null;
     readonly thinkingEffort?: ScoutThinkingEffort;
+    readonly onPhase?: (phase: { phase: string; label: string; detail?: string }) => void | Promise<void>;
+    readonly onSourceReceipts?: (receipts: readonly { label: string; status: string; kind: string }[]) => void | Promise<void>;
     readonly onTextDelta?: (delta: string) => void | Promise<void>;
     readonly onThinkingActivity?: (activity: { status: 'start' | 'delta' | 'end'; chars?: number }) => void | Promise<void>;
   }
@@ -1225,6 +1228,7 @@ export async function replyInWorkspaceClaw(
     throw new Error('Prompt cannot be empty.');
   }
 
+  await options?.onPhase?.({ phase: 'workspace', label: 'Reading workspace', detail: 'Loading private profile, docs, resources, and recent Scout messages.' });
   const record = await getWorkspaceRecord(workspaceId, betaProfile);
   const activeDocument = options?.documentId
     ? record.documents.find((document) => document.id === options.documentId) ?? null
@@ -1241,15 +1245,28 @@ export async function replyInWorkspaceClaw(
     throw new Error('Resource not found.');
   }
 
+  await options?.onPhase?.({ phase: 'provider', label: 'Checking Scout connection', detail: 'Selecting the configured model lane without exposing provider secrets.' });
   const runtime = await resolveClawRuntime(record);
   const thinkingEffort = normalizeScoutThinkingEffort(options?.thinkingEffort);
   const dadPilotSummary = shouldIncludeDadPilotContext(record, trimmedPrompt) ? await loadDadPilotSummary().catch(() => null) : null;
+  await options?.onPhase?.({ phase: 'sources', label: 'Checking source lanes', detail: 'Looking for private notes, route guardrails, and official-source opportunities.' });
   const sourceContexts = [
     buildScoutSourcePlanContext(record, trimmedPrompt),
     buildScoutSourceContext(record, dadPilotSummary, trimmedPrompt),
     buildPreloadedRouteResourceContext(trimmedPrompt, record),
     runtime.providerId === OPENCODE_GO_PROVIDER_ID ? await buildPreloadedOfficialSourceContext(trimmedPrompt, record, dadPilotSummary) : null
   ].filter((context): context is string => Boolean(context));
+
+  const sourceReceipts = [
+    record.documents.length > 0 ? { label: 'Private Docs', status: `${record.documents.length} saved`, kind: 'workspace' } : null,
+    record.resources.length > 0 ? { label: 'Private Resources', status: `${record.resources.length} available`, kind: 'workspace' } : null,
+    sourceContexts.some((context) => context.includes('Scout route resource')) ? { label: 'AT route guardrails', status: 'loaded for validation', kind: 'route' } : null,
+    sourceContexts.some((context) => context.includes('Scout source catalog')) ? { label: 'Scout source catalog', status: 'planned', kind: 'catalog' } : null,
+    sourceContexts.some((context) => context.includes('Official trail source check')) ? { label: 'Official trail sources', status: 'preloaded', kind: 'official' } : null
+  ].filter((receipt): receipt is WorkspaceClawSourceReceipt => receipt !== null);
+  if (sourceReceipts.length > 0) {
+    await options?.onSourceReceipts?.(sourceReceipts);
+  }
 
   const baseSourceContext = sourceContexts.length > 0 ? sourceContexts.join('\n\n') : null;
   const turnDeadline = Date.now() + SCOUT_AGENT_TURN_TIMEOUT_MS;
@@ -1315,6 +1332,7 @@ export async function replyInWorkspaceClaw(
       });
     }
 
+    await options?.onPhase?.({ phase: 'model', label: 'Asking Scout', detail: sourceContext ? 'The model is answering with the selected context and validation guardrails.' : 'The model is answering from the private conversation context.' });
     await withScoutAgentTimeout(agent.prompt(trimmedPrompt), turnDeadline - Date.now());
 
     const nextMessages = simplifyMessages(agent.state.messages as Message[]);
@@ -1349,7 +1367,13 @@ export async function replyInWorkspaceClaw(
     });
   }
 
-  let workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, nextMessages);
+  await options?.onPhase?.({ phase: 'saving', label: 'Saving answer', detail: 'Persisting the turn into the private workspace.' });
+  const messagesWithReceipts = sourceReceipts.length > 0
+    ? nextMessages.map((message, index) => index === nextMessages.length - 1 && message.role === 'assistant'
+        ? { ...message, sourceReceipts }
+        : message)
+    : nextMessages;
+  let workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, messagesWithReceipts);
   let revisedDocument: ImportedDocument | null = null;
 
   if (activeDocument?.rights === 'assistant-generated') {

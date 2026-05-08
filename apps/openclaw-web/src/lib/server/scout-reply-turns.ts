@@ -11,7 +11,7 @@ type TurnStatus = 'running' | 'done' | 'error';
 
 export type TurnEvent = {
   readonly id: number;
-  readonly event: 'status' | 'thinking' | 'delta' | 'done' | 'error';
+  readonly event: 'status' | 'phase' | 'source_receipts' | 'thinking' | 'delta' | 'done' | 'error';
   readonly data: Record<string, unknown>;
 };
 
@@ -87,6 +87,7 @@ export function startScoutReplyTurn(input: {
     thinkingEffort: turn.thinkingEffort
   });
   pushEvent(turn, 'status', { status: 'started' });
+  pushEvent(turn, 'phase', { phase: 'starting', label: 'Starting Scout turn', detail: 'Opening the realtime turn and preparing workspace context.' });
 
   void (async () => {
     const heartbeat = setInterval(() => {
@@ -98,6 +99,12 @@ export function startScoutReplyTurn(input: {
         documentId: input.documentId,
         resourceId: input.resourceId,
         thinkingEffort: input.thinkingEffort,
+        onPhase: (phase) => {
+          pushEvent(turn, 'phase', phase);
+        },
+        onSourceReceipts: (receipts) => {
+          pushEvent(turn, 'source_receipts', { receipts });
+        },
         onTextDelta: (delta) => {
           if (delta) pushEvent(turn, 'delta', { delta });
         },

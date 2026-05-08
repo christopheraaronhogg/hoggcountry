@@ -32,6 +32,7 @@
     readonly createdAt: string;
     readonly model: string | null;
     readonly error: boolean;
+    readonly sourceReceipts?: ScoutTurnSourceReceipt[];
   }
 
   interface MessageBlock {
@@ -130,12 +131,33 @@
     readonly trailLongitude: number;
   }
 
+  interface ScoutRealtimeTurnRow {
+    readonly workspaceId: string;
+    readonly turnId: string;
+    readonly status: string;
+    readonly thinkingEffort: string;
+    readonly startedAt: string;
+    readonly updatedAt: string;
+  }
+
   interface ScoutRealtimeEventRow {
     readonly workspaceId: string;
     readonly turnId: string;
     readonly eventSeq: bigint;
     readonly kind: string;
     readonly payloadJson: string;
+  }
+
+  interface ScoutTurnPhase {
+    readonly phase: string;
+    readonly label: string;
+    readonly detail?: string;
+  }
+
+  interface ScoutTurnSourceReceipt {
+    readonly label: string;
+    readonly status: string;
+    readonly kind: string;
   }
 
   interface ScoutTurnEventEnvelope {
@@ -182,6 +204,9 @@
   let streamingReplyVisible = $state(false);
   let streamingAssistantText = $state('');
   let streamStatus = $state('');
+  let turnPhase = $state<ScoutTurnPhase | null>(null);
+  let turnSourceReceipts = $state<ScoutTurnSourceReceipt[]>([]);
+  let recoveredRealtimeTurn = $state(false);
   let thinkingEffort = $state<ScoutThinkingEffort>('low');
   let thinkingActivityChars = $state(0);
   let newThreadBusy = $state(false);
@@ -211,6 +236,7 @@
   let scoutRealtimeWorkspaceId = '';
   let scoutRealtimeSubscription: SubscriptionHandle | null = null;
   let scoutRealtimeEventCleanup: (() => void) | null = null;
+  let scoutRealtimeTurnCleanup: (() => void) | null = null;
   let spacetimeUnsubscribe: (() => void) | null = null;
   let activeRealtimeTurnId = '';
   let activeRealtimeEventCursor = 0;
@@ -225,6 +251,7 @@
   const visibleResources = $derived(resources.slice(0, 6));
   const selectedTargetStandardSlot = $derived(targetStandardSlotKey ? standardDocumentSlotForKey(targetStandardSlotKey) : null);
   const streamingMessageBlocks = $derived(streamingAssistantText ? parseMessageBlocks(streamingAssistantText) : []);
+  const activeTurnSourceReceipts = $derived(turnSourceReceipts.slice(0, 5));
 
   async function jsonOrThrow(response: Response) {
     if (response.ok) {
@@ -1072,6 +1099,29 @@
     }
   }
 
+  function normalizeTurnPhase(payload: Record<string, unknown>): ScoutTurnPhase | null {
+    const phase = typeof payload.phase === 'string' ? payload.phase.trim() : '';
+    const label = typeof payload.label === 'string' ? payload.label.trim() : '';
+    if (!phase || !label) return null;
+    return {
+      phase,
+      label,
+      detail: typeof payload.detail === 'string' && payload.detail.trim() ? payload.detail.trim() : undefined
+    };
+  }
+
+  function normalizeTurnSourceReceipts(payload: Record<string, unknown>): ScoutTurnSourceReceipt[] {
+    const receipts = Array.isArray(payload.receipts) ? payload.receipts : [];
+    return receipts.flatMap((receipt) => {
+      if (!receipt || typeof receipt !== 'object') return [];
+      const item = receipt as Record<string, unknown>;
+      const label = typeof item.label === 'string' ? item.label.trim() : '';
+      const status = typeof item.status === 'string' ? item.status.trim() : '';
+      const kind = typeof item.kind === 'string' ? item.kind.trim() : 'source';
+      return label && status ? [{ label, status, kind }] : [];
+    });
+  }
+
   function handleScoutRealtimeEventInsert(row: ScoutRealtimeEventRow) {
     if (!activeRealtimeTurnId || row.workspaceId !== currentWorkspaceId || row.turnId !== activeRealtimeTurnId) return;
 
@@ -1105,16 +1155,51 @@
     }
   }
 
+  function recoverScoutRealtimeTurn(row: ScoutRealtimeTurnRow, realtimeConnection: DbConnection) {
+    if (row.workspaceId !== currentWorkspaceId || row.status !== 'running') return;
+    if (activeRealtimeTurnId || sendBusy) return;
+
+    activeRealtimeTurnId = row.turnId;
+    activeRealtimeEventCursor = 0;
+    activeRealtimeEventHandler = applyRealtimeTurnEvent;
+    sendBusy = true;
+    recoveredRealtimeTurn = true;
+    streamingReplyVisible = false;
+    streamingAssistantText = '';
+    streamStatus = 'working';
+    turnPhase = { phase: 'recovering', label: 'Rejoining live Scout turn', detail: 'Replaying realtime events from SpacetimeDB.' };
+    turnSourceReceipts = [];
+    replayScoutRealtimeEventsFromCache(realtimeConnection);
+  }
+
+  function recoverScoutRealtimeTurnsFromCache(realtimeConnection: DbConnection) {
+    if (activeRealtimeTurnId || sendBusy) return;
+
+    const latestRunningTurn = Array.from(realtimeConnection.db.myScoutTurns.iter() as Iterable<ScoutRealtimeTurnRow>)
+      .filter((row) => row.workspaceId === currentWorkspaceId && row.status === 'running')
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+
+    if (latestRunningTurn) recoverScoutRealtimeTurn(latestRunningTurn, realtimeConnection);
+  }
+
   function attachScoutRealtimeEventHandlers(realtimeConnection: DbConnection) {
     scoutRealtimeEventCleanup?.();
+    scoutRealtimeTurnCleanup?.();
 
-    const handleInsert = (_ctx: unknown, row: ScoutRealtimeEventRow) => {
+    const handleEventInsert = (_ctx: unknown, row: ScoutRealtimeEventRow) => {
       handleScoutRealtimeEventInsert(row);
     };
+    const handleTurnInsert = (_ctx: unknown, row: ScoutRealtimeTurnRow) => {
+      recoverScoutRealtimeTurn(row, realtimeConnection);
+    };
 
-    realtimeConnection.db.myScoutTurnEvents.onInsert(handleInsert);
+    realtimeConnection.db.myScoutTurnEvents.onInsert(handleEventInsert);
+    realtimeConnection.db.myScoutTurns.onInsert(handleTurnInsert);
     scoutRealtimeEventCleanup = () => {
-      realtimeConnection.db.myScoutTurnEvents.removeOnInsert(handleInsert);
+      realtimeConnection.db.myScoutTurnEvents.removeOnInsert(handleEventInsert);
+    };
+    scoutRealtimeTurnCleanup = () => {
+      realtimeConnection.db.myScoutTurns.removeOnInsert(handleTurnInsert);
     };
   }
 
@@ -1125,16 +1210,20 @@
       await realtimeConnection.reducers.joinScoutWorkspace({ workspaceId: currentWorkspaceId });
 
       if (scoutRealtimeWorkspaceId === currentWorkspaceId && scoutRealtimeSubscription) {
-        if (!scoutRealtimeEventCleanup) attachScoutRealtimeEventHandlers(realtimeConnection);
+        if (!scoutRealtimeEventCleanup || !scoutRealtimeTurnCleanup) attachScoutRealtimeEventHandlers(realtimeConnection);
         replayScoutRealtimeEventsFromCache(realtimeConnection);
+        recoverScoutRealtimeTurnsFromCache(realtimeConnection);
         return;
       }
       scoutRealtimeSubscription?.unsubscribe();
       scoutRealtimeEventCleanup?.();
+      scoutRealtimeTurnCleanup?.();
       scoutRealtimeEventCleanup = null;
+      scoutRealtimeTurnCleanup = null;
       scoutRealtimeSubscription = realtimeConnection.subscriptionBuilder()
         .onApplied(() => {
           replayScoutRealtimeEventsFromCache(realtimeConnection);
+          recoverScoutRealtimeTurnsFromCache(realtimeConnection);
         })
         .subscribe([tables.myScoutTurns, tables.myScoutTurnEvents]);
       scoutRealtimeWorkspaceId = currentWorkspaceId;
@@ -1372,9 +1461,78 @@
   }
 
   function checkingStatusText() {
+    if (turnPhase?.label) return turnPhase.label;
     if (streamStatus === 'thinking') return `Scout is thinking${thinkingActivityChars > 0 ? ` (${thinkingActivityChars.toLocaleString()} hidden chars)` : ''}…`;
-    if (streamStatus === 'working') return 'Scout is still thinking…';
+    if (streamStatus === 'working') return recoveredRealtimeTurn ? 'Scout is still working in another window…' : 'Scout is still thinking…';
     return 'Scout is checking trail notes…';
+  }
+
+  async function applyRealtimeTurnEvent(turnEvent: ScoutTurnEventEnvelope) {
+    if (turnEvent.id > 0 && turnEvent.id <= activeRealtimeEventCursor) return;
+    if (turnEvent.id > 0) activeRealtimeEventCursor = turnEvent.id;
+
+    if (turnEvent.event === 'delta') {
+      const delta = typeof turnEvent.data.delta === 'string' ? turnEvent.data.delta : '';
+      if (delta) {
+        streamingReplyVisible = true;
+        streamingAssistantText += delta;
+        await scrollCloudThreadToLatest('auto');
+      }
+      return;
+    }
+
+    if (turnEvent.event === 'phase') {
+      turnPhase = normalizeTurnPhase(turnEvent.data) ?? turnPhase;
+      streamStatus = 'working';
+      return;
+    }
+
+    if (turnEvent.event === 'source_receipts') {
+      const receipts = normalizeTurnSourceReceipts(turnEvent.data);
+      if (receipts.length > 0) turnSourceReceipts = receipts;
+      return;
+    }
+
+    if (turnEvent.event === 'done') {
+      await applyScoutReplyPayload(turnEvent.data);
+      activeRealtimeTurnId = '';
+      activeRealtimeEventHandler = null;
+      sendBusy = false;
+      recoveredRealtimeTurn = false;
+      streamingReplyVisible = false;
+      streamingAssistantText = '';
+      streamStatus = '';
+      turnPhase = null;
+      turnSourceReceipts = [];
+      return;
+    }
+
+    if (turnEvent.event === 'status') {
+      const status = typeof turnEvent.data.status === 'string' ? turnEvent.data.status.trim() : '';
+      if (status) streamStatus = status;
+      return;
+    }
+
+    if (turnEvent.event === 'thinking') {
+      const status = typeof turnEvent.data.status === 'string' ? turnEvent.data.status : '';
+      if (status === 'start' || status === 'delta') streamStatus = 'thinking';
+      if (status === 'end') streamStatus = 'working';
+      if (typeof turnEvent.data.chars === 'number' && Number.isFinite(turnEvent.data.chars)) {
+        thinkingActivityChars += turnEvent.data.chars;
+      }
+      return;
+    }
+
+    if (turnEvent.event === 'error') {
+      activeRealtimeTurnId = '';
+      activeRealtimeEventHandler = null;
+      sendBusy = false;
+      recoveredRealtimeTurn = false;
+      const message = typeof turnEvent.data.message === 'string' && turnEvent.data.message.trim()
+        ? turnEvent.data.message.trim()
+        : 'Could not send the cloud prompt.';
+      error = message;
+    }
   }
 
   async function sendMessage() {
@@ -1430,6 +1588,18 @@
         return;
       }
 
+      if (turnEvent.event === 'phase') {
+        turnPhase = normalizeTurnPhase(turnEvent.data) ?? turnPhase;
+        streamStatus = 'working';
+        return;
+      }
+
+      if (turnEvent.event === 'source_receipts') {
+        const receipts = normalizeTurnSourceReceipts(turnEvent.data);
+        if (receipts.length > 0) turnSourceReceipts = receipts;
+        return;
+      }
+
       if (turnEvent.event === 'done') {
         turnCompleted = true;
         await flushStreamingDelta();
@@ -1468,6 +1638,9 @@
     streamingReplyVisible = false;
     streamingAssistantText = '';
     streamStatus = '';
+    turnPhase = null;
+    turnSourceReceipts = [];
+    recoveredRealtimeTurn = false;
     thinkingActivityChars = 0;
     activeRealtimeTurnId = '';
     activeRealtimeEventCursor = 0;
@@ -1543,6 +1716,9 @@
       streamingReplyVisible = false;
       streamingAssistantText = '';
       streamStatus = '';
+      turnPhase = null;
+      turnSourceReceipts = [];
+      recoveredRealtimeTurn = false;
       thinkingActivityChars = 0;
       activeRealtimeTurnId = '';
       activeRealtimeEventCursor = 0;
@@ -1642,6 +1818,7 @@
     }
     spacetimeUnsubscribe?.();
     scoutRealtimeEventCleanup?.();
+    scoutRealtimeTurnCleanup?.();
     scoutRealtimeSubscription?.unsubscribe();
   });
 </script>
@@ -1849,6 +2026,13 @@
                     {/if}
                   {/if}
                 </div>
+                {#if message.role === 'assistant' && !message.error && message.sourceReceipts?.length}
+                  <div class="turn-source-chips message-source-chips" aria-label="Scout answer receipts">
+                    {#each message.sourceReceipts.slice(0, 6) as receipt (`message-${message.id}-${receipt.kind}-${receipt.label}`)}
+                      <span>{receipt.label}: {receipt.status}</span>
+                    {/each}
+                  </div>
+                {/if}
               </article>
             {/each}
             {#if streamingReplyVisible}
@@ -1877,11 +2061,31 @@
                   {/each}
                 </div>
                 <div class="message-footer"><span>{checkingStatusText()}</span></div>
+                {#if turnPhase?.detail || activeTurnSourceReceipts.length > 0}
+                  <div class="turn-realtime-panel" aria-label="Scout realtime state">
+                    {#if turnPhase?.detail}<span>{turnPhase.detail}</span>{/if}
+                    {#if activeTurnSourceReceipts.length > 0}
+                      <div class="turn-source-chips" aria-label="Scout source receipts">
+                        {#each activeTurnSourceReceipts as receipt (`${receipt.kind}-${receipt.label}`)}
+                          <span>{receipt.label}: {receipt.status}</span>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
               </article>
             {:else if sendBusy}
               <article class="checking-card" aria-live="polite">
                 <span class="checking-icon" aria-hidden="true">◎</span>
                 <em>{checkingStatusText()}</em>
+                {#if turnPhase?.detail}<small>{turnPhase.detail}</small>{/if}
+                {#if activeTurnSourceReceipts.length > 0}
+                  <div class="turn-source-chips" aria-label="Scout source receipts">
+                    {#each activeTurnSourceReceipts as receipt (`checking-${receipt.kind}-${receipt.label}`)}
+                      <span>{receipt.label}: {receipt.status}</span>
+                    {/each}
+                  </div>
+                {/if}
                 <span class="checking-dots" aria-hidden="true">
                   <span>•</span><span>•</span><span>•</span>
                 </span>
@@ -2446,6 +2650,44 @@
     font-style: italic;
     font-weight: 650;
     line-height: 1.3;
+  }
+
+  .checking-card small {
+    grid-column: 2 / -1;
+    color: rgba(51, 51, 51, 0.52);
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .turn-realtime-panel {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.65rem;
+    color: rgba(51, 51, 51, 0.56);
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .turn-source-chips {
+    grid-column: 2 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .turn-source-chips span {
+    border: 1px solid rgba(77, 89, 74, 0.14);
+    border-radius: 999px;
+    background: rgba(77, 89, 74, 0.06);
+    color: rgba(39, 51, 43, 0.68);
+    font-size: 0.72rem;
+    font-weight: 750;
+    line-height: 1.2;
+    padding: 0.25rem 0.48rem;
+  }
+
+  .message-source-chips {
+    margin-top: 0.58rem;
   }
 
   .checking-icon {
