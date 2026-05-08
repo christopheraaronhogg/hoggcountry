@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onDestroy, onMount, tick } from 'svelte';
+  import { onDestroy, onMount, tick, untrack } from 'svelte';
+  import type { PageData } from './$types';
   import { tables, type DbConnection, type SubscriptionHandle } from '$lib/module_bindings';
   import { getSpacetimeConnection, onSpacetimeConnection } from '$lib/spacetime';
   import { buildClawLanes } from '$lib/claw';
@@ -131,6 +132,10 @@
 
   type ScoutThinkingEffort = 'off' | 'minimal' | 'low' | 'medium' | 'high';
 
+  let { data }: { data: PageData } = $props();
+  const initialConsole = untrack(() => data.console);
+  const initialWorkspace = initialConsole.workspace as WorkspaceSnapshot;
+
   interface ScoutLocationUpdatePayload {
     readonly location: ScoutLocationPayload;
     readonly profileUpdated: boolean;
@@ -138,9 +143,9 @@
     readonly workspace: WorkspaceSnapshot;
   }
 
-  let profile = $state<ManualProfile | null>(null);
-  let lanes = $state<ClawLane[]>([]);
-  let connection = $state<ProviderConnection | null>(null);
+  let profile = $state<ManualProfile | null>(initialWorkspace.profile ?? null);
+  let lanes = $state<ClawLane[]>(initialWorkspace.profile ? buildClawLanes(initialWorkspace.profile, initialWorkspace.sections, initialWorkspace.documents, initialWorkspace.tools, initialWorkspace.resources) : []);
+  let connection = $state<ProviderConnection | null>((initialConsole.connection ?? null) as ProviderConnection | null);
   let dadPilot = $state<DadPilotSummary | null>(null);
   let dailyBrief = $state<ScoutDailyBrief | null>(null);
   let dailyBriefLoading = $state(false);
@@ -150,14 +155,14 @@
   let locationNotice = $state('');
   let locationError = $state('');
   let locationWatchId: number | null = null;
-  let documents = $state<ImportedDocument[]>([]);
-  let resources = $state<WorkspaceResource[]>([]);
+  let documents = $state<ImportedDocument[]>(Array.isArray(initialWorkspace.documents) ? initialWorkspace.documents : []);
+  let resources = $state<WorkspaceResource[]>(Array.isArray(initialWorkspace.resources) ? initialWorkspace.resources : []);
   let selectedDocumentId = $state<string>('');
   let selectedResourceId = $state<string>('');
   let targetStandardSlotKey = $state<StandardDocumentSlotKey | ''>('');
-  let messages = $state<ClawMessage[]>([]);
-  let factCandidates = $state<FactCandidate[]>([]);
-  let loading = $state(true);
+  let messages = $state<ClawMessage[]>(Array.isArray(initialConsole.messages) ? (initialConsole.messages as ClawMessage[]) : []);
+  let factCandidates = $state<FactCandidate[]>(Array.isArray(initialConsole.factCandidates) ? (initialConsole.factCandidates as FactCandidate[]) : []);
+  let loading = $state(false);
   let error = $state('');
   let sendBusy = $state(false);
   let streamingReplyVisible = $state(false);
@@ -188,7 +193,7 @@
   let threadCard = $state<HTMLElement | null>(null);
   let threadMessages = $state<HTMLDivElement | null>(null);
   let promptTextarea = $state<HTMLTextAreaElement | null>(null);
-  let currentWorkspaceId = '';
+  let currentWorkspaceId = typeof initialConsole.workspaceId === 'string' ? initialConsole.workspaceId : '';
   let scoutRealtimeWorkspaceId = '';
   let scoutRealtimeSubscription: SubscriptionHandle | null = null;
   let spacetimeUnsubscribe: (() => void) | null = null;
@@ -311,13 +316,13 @@
     if (trailing) await dispatchEventBlock(trailing);
   }
 
-  function consumeConnectQueryState() {
+  function consumeConnectQueryState(): boolean {
     const url = new URL(window.location.href);
     const connected = url.searchParams.get('chatgpt_connected');
     const connectErrorMessage = url.searchParams.get('chatgpt_connect_error');
 
     if (!connected && !connectErrorMessage) {
-      return;
+      return false;
     }
 
     if (connected) {
@@ -336,6 +341,7 @@
     url.searchParams.delete('chatgpt_connected');
     url.searchParams.delete('chatgpt_connect_error');
     window.history.replaceState({}, '', url);
+    return Boolean(connected);
   }
 
   function severityLabel(severity: ScoutDailyBriefItem['severity']): string {
@@ -1484,12 +1490,17 @@
       thinkingEffort = savedThinkingEffort;
     }
 
-    consumeConnectQueryState();
+    const shouldRefreshState = consumeConnectQueryState();
     spacetimeUnsubscribe = onSpacetimeConnection((connection) => {
       void syncScoutRealtime(connection);
     });
 
-    loadState()
+    const realtimeConnection = getSpacetimeConnection();
+    if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
+    const idle = window.requestIdleCallback ?? ((callback: IdleRequestCallback) => window.setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 1));
+    idle(() => void loadDadPilot());
+
+    (shouldRefreshState ? loadState() : Promise.resolve())
       .then(async () => {
         await consumeStandardDocumentQueryState();
         await consumeDocumentQueryState();
