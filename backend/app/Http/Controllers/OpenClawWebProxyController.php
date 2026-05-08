@@ -115,6 +115,7 @@ class OpenClawWebProxyController extends Controller
             $client = new \GuzzleHttp\Client([
                 'allow_redirects' => false,
                 'http_errors' => false,
+                'read_timeout' => 30,
                 'timeout' => $this->proxyTimeout($path),
             ]);
 

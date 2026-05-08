@@ -157,6 +157,7 @@
   let error = $state('');
   let sendBusy = $state(false);
   let streamingReplyVisible = $state(false);
+  let streamStatus = $state('');
   let newThreadBusy = $state(false);
   let connectBusy = $state(false);
   let disconnectBusy = $state(false);
@@ -216,6 +217,7 @@
     handlers: {
       readonly onDelta: (delta: string) => void | Promise<void>;
       readonly onDone: (payload: Record<string, unknown>) => void | Promise<void>;
+      readonly onStatus?: (status: string) => void | Promise<void>;
     }
   ) {
     if (!response.ok || !response.body) {
@@ -240,6 +242,12 @@
       if (eventName === 'delta') {
         const delta = typeof payload.delta === 'string' ? payload.delta : '';
         if (delta) await handlers.onDelta(delta);
+        return;
+      }
+
+      if (eventName === 'status') {
+        const status = typeof payload.status === 'string' ? payload.status.trim() : '';
+        if (status) await handlers.onStatus?.(status);
         return;
       }
 
@@ -1193,6 +1201,7 @@
 
     sendBusy = true;
     streamingReplyVisible = false;
+    streamStatus = '';
     pendingPrompt = message;
     error = '';
     saveNotice = '';
@@ -1231,10 +1240,13 @@
 
           await scrollCloudThreadToLatest();
         },
-        onDone: applyScoutReplyPayload
+        onDone: applyScoutReplyPayload,
+        onStatus: async (status) => {
+          streamStatus = status;
+        }
       });
     } catch (caught) {
-      if (!receivedAssistantText && !streamStarted) {
+      if (!receivedAssistantText) {
         try {
           const payload = await fetchJsonScoutReply(message);
           await applyScoutReplyPayload(payload);
@@ -1255,6 +1267,7 @@
       pendingPrompt = '';
       sendBusy = false;
       streamingReplyVisible = false;
+      streamStatus = '';
       await focusCloudThread();
       await scrollCloudThreadToLatest();
     }
@@ -1544,7 +1557,7 @@
             {#if sendBusy && !streamingReplyVisible}
               <article class="checking-card" aria-live="polite">
                 <span class="checking-icon" aria-hidden="true">◎</span>
-                <em>Scout is checking trail notes…</em>
+                <em>{streamStatus === 'working' ? 'Scout is still thinking…' : 'Scout is checking trail notes…'}</em>
                 <span class="checking-dots" aria-hidden="true">
                   <span>•</span><span>•</span><span>•</span>
                 </span>
