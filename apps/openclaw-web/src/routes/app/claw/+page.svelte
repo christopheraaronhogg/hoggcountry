@@ -1523,7 +1523,9 @@
               <article class="checking-card" aria-live="polite">
                 <span class="checking-icon" aria-hidden="true">◎</span>
                 <em>Scout is checking trail notes…</em>
-                <span class="checking-dots" aria-hidden="true">•••</span>
+                <span class="checking-dots" aria-hidden="true">
+                  <span>•</span><span>•</span><span>•</span>
+                </span>
               </article>
             {/if}
           {/if}
@@ -2087,9 +2089,46 @@
   }
 
   .checking-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.08em;
     color: rgba(77, 89, 74, 0.38);
     font-size: 1.4rem;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.04em;
+  }
+
+  .checking-dots span {
+    display: inline-block;
+    animation: checking-dot-dance 1.05s ease-in-out infinite;
+    transform-origin: center bottom;
+  }
+
+  .checking-dots span:nth-child(2) {
+    animation-delay: 0.14s;
+  }
+
+  .checking-dots span:nth-child(3) {
+    animation-delay: 0.28s;
+  }
+
+  @keyframes checking-dot-dance {
+    0%, 72%, 100% {
+      opacity: 0.42;
+      transform: translateY(0) scale(0.9);
+    }
+
+    28% {
+      opacity: 1;
+      transform: translateY(-0.28rem) scale(1.08);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .checking-dots span {
+      animation: none;
+      opacity: 0.72;
+      transform: none;
+    }
   }
 
   .message-body {
