@@ -46,6 +46,29 @@ class OpenClawWebProxyTest extends TestCase
         });
     }
 
+    public function test_static_asset_cache_headers_are_preserved_without_laravel_no_cache_defaults(): void
+    {
+        config()->set('services.openclaw_web.enabled', true);
+        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+
+        Http::fake([
+            'http://127.0.0.1:3000/_app/immutable/chunks/app.js' => Http::response('console.log("ok")', 200, [
+                'Content-Type' => 'text/javascript; charset=utf-8',
+                'Cache-Control' => 'public, max-age=31536000, immutable',
+            ]),
+        ]);
+
+        $response = $this->get('/_app/immutable/chunks/app.js');
+
+        $response->assertOk();
+        $cacheControl = (string) $response->headers->get('Cache-Control');
+        $this->assertStringContainsString('public', $cacheControl);
+        $this->assertStringContainsString('max-age=31536000', $cacheControl);
+        $this->assertStringContainsString('immutable', $cacheControl);
+        $this->assertStringNotContainsString('no-cache', $cacheControl);
+        $this->assertStringNotContainsString('private', $cacheControl);
+    }
+
     public function test_redirect_responses_are_passed_through_without_following_them(): void
     {
         config()->set('services.openclaw_web.enabled', true);

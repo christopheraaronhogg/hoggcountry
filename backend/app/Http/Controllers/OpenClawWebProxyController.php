@@ -91,6 +91,7 @@ class OpenClawWebProxyController extends Controller
         }
 
         $response = response($upstream->body(), $upstream->status());
+        $response->headers->remove('Cache-Control');
 
         foreach ($upstream->headers() as $header => $values) {
             $lowerHeader = Str::lower($header);
