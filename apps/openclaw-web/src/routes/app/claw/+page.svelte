@@ -1173,15 +1173,6 @@
       model: null,
       error: false
     };
-    const streamingAssistantId = `streaming-assistant-${now}`;
-    const streamingAssistantMessage: ClawMessage = {
-      id: streamingAssistantId,
-      role: 'assistant',
-      text: '',
-      createdAt: new Date(now + 1).toISOString(),
-      model: connection?.model ?? null,
-      error: false
-    };
 
     sendBusy = true;
     pendingPrompt = message;
@@ -1190,13 +1181,13 @@
     saveError = '';
     replyInput = '';
     await resetPromptHeight();
-    messages = [...messages, pendingUserMessage, streamingAssistantMessage];
+    messages = [...messages, pendingUserMessage];
     await focusCloudThread();
     await scrollCloudThreadToLatest();
 
     try {
-      await readScoutReplyStream(
-        await fetch('/app-api/claw/reply/stream', {
+      const payload = await jsonOrThrow(
+        await fetch('/app-api/claw/reply', {
           method: 'POST',
           headers: {
             'content-type': 'application/json'
@@ -1206,28 +1197,20 @@
             documentId: selectedDocumentId || null,
             resourceId: selectedResourceId || null
           })
-        }),
-        {
-          onDelta: async (delta) => {
-            messages = messages.map((item) => item.id === streamingAssistantId
-              ? { ...item, text: `${item.text}${delta}` }
-              : item);
-            await scrollCloudThreadToLatest();
-          },
-          onDone: async (payload) => {
-            messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : messages;
-            documents = Array.isArray(payload.documents) ? (payload.documents as ImportedDocument[]) : documents;
-            ensureSelectedDocument(documents);
-            factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
-            connection = (payload.connection ?? null) as ProviderConnection | null;
-            const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
-            if (revisedDocument) {
-              savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
-              saveNotice = `Saved a new review version for "${revisedDocument.title}" in Docs.`;
-            }
-          }
-        }
+        })
       );
+
+      messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : messages;
+      documents = Array.isArray(payload.documents) ? (payload.documents as ImportedDocument[]) : documents;
+      ensureSelectedDocument(documents);
+      factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
+      connection = (payload.connection ?? null) as ProviderConnection | null;
+      const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
+      if (revisedDocument) {
+        savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
+        saveNotice = `Saved a new review version for "${revisedDocument.title}" in Docs.`;
+      }
+
       pendingPrompt = '';
       await focusCloudThread();
       await scrollCloudThreadToLatest();
