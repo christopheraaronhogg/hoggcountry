@@ -61,8 +61,8 @@ import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
 
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
 
-const OPENCODE_GO_REPLY_MAX_TOKENS = 8000;
-const SCOUT_AGENT_TURN_TIMEOUT_MS = 180_000;
+const OPENCODE_GO_REPLY_MAX_TOKENS = 5000;
+const SCOUT_AGENT_TURN_TIMEOUT_MS = 240_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
@@ -1233,11 +1233,13 @@ export async function replyInWorkspaceClaw(
     extraSystemInstruction: string | null = null
   ): Promise<{ nextMessages: WorkspaceClawMessage[]; reply: WorkspaceClawMessage | undefined }> => {
     const sourceContext = [baseSourceContext, extraSystemInstruction].filter(Boolean).join('\n\n') || null;
-    const agentTools = [
-      buildScoutSourceCatalogTool(record),
-      buildScoutSourceSearchTool(record, dadPilotSummary),
-      skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(dadPilotSummary) : null
-    ].filter((tool): tool is AgentTool<any, any> => tool !== null);
+    const agentTools = runtime.providerId === OPENCODE_GO_PROVIDER_ID
+      ? []
+      : [
+          buildScoutSourceCatalogTool(record),
+          buildScoutSourceSearchTool(record, dadPilotSummary),
+          skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(dadPilotSummary) : null
+        ].filter((tool): tool is AgentTool<any, any> => tool !== null);
     const agent = new Agent({
       initialState: {
         systemPrompt: buildSystemPrompt(
@@ -1249,7 +1251,7 @@ export async function replyInWorkspaceClaw(
           activeResource
         ),
         model: runtime.model,
-        thinkingLevel: 'medium',
+        thinkingLevel: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? 'low' : 'medium',
         tools: agentTools,
         messages: history.map(toPiMessage)
       },
