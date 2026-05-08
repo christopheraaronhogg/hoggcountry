@@ -47,6 +47,17 @@
     readonly preview: string;
   }
 
+  interface ConversationTurnView {
+    readonly id: string;
+    readonly user: ClawMessageView | null;
+    readonly assistant: ClawMessageView | null;
+    readonly title: string;
+    readonly preview: string;
+    readonly time: string;
+    readonly status: 'new' | 'waiting' | 'error' | 'read';
+    readonly targetMessageId: string;
+  }
+
   interface FactCandidate {
     readonly id: string;
     readonly kind: 'hostel' | 'resupply' | 'shuttle' | 'water' | 'closure' | 'weather_pattern' | 'gear' | 'medical' | 'other';
@@ -253,6 +264,7 @@
   let pendingPrompt = $state('');
   let historyOpen = $state(false);
   let docsOpen = $state(false);
+  let lastSeenAssistantMessageId = $state('');
   let threadCard = $state<HTMLElement | null>(null);
   let threadMessages = $state<HTMLDivElement | null>(null);
   let promptTextarea = $state<HTMLTextAreaElement | null>(null);
@@ -276,7 +288,10 @@
     time: messageTime(message.createdAt),
     preview: threadPreview(message)
   })));
-  const messageHistoryList = $derived([...messageViews].reverse());
+  const conversationTurns = $derived.by(() => buildConversationTurns(messageViews, lastSeenAssistantMessageId, sendBusy));
+  const latestAssistantMessageId = $derived([...messages].reverse().find((message) => message.role === 'assistant' && !message.error)?.id ?? '');
+  const hasUnreadAssistantReply = $derived(Boolean(latestAssistantMessageId && latestAssistantMessageId !== lastSeenAssistantMessageId));
+  const latestConversationStatus = $derived(sendBusy ? 'Scout is typing' : hasUnreadAssistantReply ? 'New Scout reply' : messages.length > 0 ? 'All caught up' : 'No chats yet');
   const messageStats = $derived.by(() => messages.reduce(
     (stats, message) => {
       if (message.role === 'assistant') stats.assistant += 1;
@@ -589,6 +604,69 @@
     await tick();
     syncPromptHeight();
     promptTextarea?.focus();
+  }
+
+  function markLatestAssistantSeen() {
+    if (!latestAssistantMessageId) return;
+    lastSeenAssistantMessageId = latestAssistantMessageId;
+    try {
+      window.localStorage.setItem('scout:last-seen-assistant-message-id', latestAssistantMessageId);
+    } catch {
+      // Ignore private browsing / storage restrictions.
+    }
+  }
+
+  async function jumpToMessage(messageId: string) {
+    closeMobilePanels();
+    await tick();
+    const target = document.getElementById(`scout-message-${messageId}`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      await focusCloudThread();
+    }
+    markLatestAssistantSeen();
+  }
+
+  function buildConversationTurns(views: ClawMessageView[], seenAssistantId: string, busy: boolean): ConversationTurnView[] {
+    const turns: ConversationTurnView[] = [];
+    let index = 0;
+
+    while (index < views.length) {
+      const current = views[index];
+      const next = views[index + 1];
+      const user = current?.message.role === 'user' ? current : null;
+      const assistant = user && next?.message.role === 'assistant' ? next : current?.message.role === 'assistant' ? current : null;
+      const target = user ?? assistant;
+      if (!target) {
+        index += 1;
+        continue;
+      }
+
+      const isLatestAssistant = Boolean(assistant && assistant.message.id === latestAssistantMessageId);
+      const status: ConversationTurnView['status'] = assistant?.message.error
+        ? 'error'
+        : user && !assistant && busy
+          ? 'waiting'
+          : isLatestAssistant && assistant.message.id !== seenAssistantId
+            ? 'new'
+            : 'read';
+
+      turns.push({
+        id: `${user?.message.id ?? 'assistant'}-${assistant?.message.id ?? 'pending'}`,
+        user,
+        assistant,
+        title: user ? user.preview : 'Scout update',
+        preview: assistant ? assistant.preview : busy ? 'Scout is working on this reply…' : 'No Scout reply yet.',
+        time: (assistant ?? user ?? target).time,
+        status,
+        targetMessageId: target.message.id
+      });
+
+      index += user && assistant ? 2 : 1;
+    }
+
+    return turns.reverse();
   }
 
   function recentThreadMessages(): ClawMessage[] {
@@ -1846,6 +1924,18 @@
   }
 
   onMount(() => {
+    try {
+      const storedLastSeenAssistantId = window.localStorage.getItem('scout:last-seen-assistant-message-id');
+      if (storedLastSeenAssistantId) {
+        lastSeenAssistantMessageId = storedLastSeenAssistantId;
+      } else if (latestAssistantMessageId) {
+        lastSeenAssistantMessageId = latestAssistantMessageId;
+        window.localStorage.setItem('scout:last-seen-assistant-message-id', latestAssistantMessageId);
+      }
+    } catch {
+      lastSeenAssistantMessageId = latestAssistantMessageId;
+    }
+
     const savedThinkingEffort = window.localStorage.getItem('hoggcountry.scoutThinkingEffort');
     if (savedThinkingEffort === 'off' || savedThinkingEffort === 'minimal' || savedThinkingEffort === 'low' || savedThinkingEffort === 'medium' || savedThinkingEffort === 'high') {
       thinkingEffort = savedThinkingEffort;
@@ -1979,12 +2069,13 @@
     <aside id="history-panel" class="workspace-panel history-panel" class:panel-open={historyOpen} aria-label="Conversation history">
       <div class="panel-head">
         <h2>Conversations</h2>
+        {#if hasUnreadAssistantReply}<span class="panel-unread-pill">New reply</span>{/if}
         <button class="icon-button" type="button" aria-label="Close conversations" onclick={() => (historyOpen = false)}>×</button>
       </div>
 
       <section class="thread-summary-card" aria-label="Current Scout conversation summary">
         <strong>Current thread</strong>
-        <span>{userAskCount} asks · {assistantReplyCount} Scout replies</span>
+        <span>{userAskCount} asks · {assistantReplyCount} Scout replies · {latestConversationStatus}</span>
         <div class="thread-summary-actions" aria-label="Current thread actions">
           <button class="secondary-button" type="button" onclick={() => { closeMobilePanels(); void focusPromptComposer(); }}>Ask next</button>
           <button class="secondary-button" type="button" onclick={startNewThread} disabled={newThreadBusy || sendBusy || messages.length === 0} title="Clear Scout chat history for this workspace">
@@ -1994,19 +2085,20 @@
         <small>Clears this chat only. Profile, docs, resources, and saved plans stay put.</small>
       </section>
 
-      <div class="drawer-section-label">Recent turns</div>
+      <div class="drawer-section-label">Conversation jumps</div>
 
-      {#if messages.length === 0}
+      {#if conversationTurns.length === 0}
         <p class="small-note">No chats yet. Start with one practical trail question.</p>
       {:else}
-        <div class="history-list" aria-label="Recent Scout thread turns">
-          {#each messageHistoryList as view (view.message.id)}
-            <button type="button" class:history-item={true} class:history-item--assistant={view.message.role === 'assistant'} onclick={() => { closeMobilePanels(); void focusCloudThread(); }}>
+        <div class="history-list" aria-label="Recent Scout conversation jumps">
+          {#each conversationTurns as turn (turn.id)}
+            <button type="button" class:history-item={true} class:history-item--new={turn.status === 'new'} class:history-item--waiting={turn.status === 'waiting'} class:history-item--error={turn.status === 'error'} onclick={() => void jumpToMessage(turn.targetMessageId)}>
               <span>
-                <strong>{view.message.role === 'assistant' ? 'Scout' : 'You'}</strong>
-                <small>{view.time}</small>
+                <strong>{turn.status === 'new' ? 'Scout replied' : turn.status === 'waiting' ? 'Scout typing' : turn.status === 'error' ? 'Needs retry' : 'Thread'}</strong>
+                <small>{turn.time}</small>
               </span>
-              <em>{view.preview}</em>
+              <em>{turn.title}</em>
+              <small>{turn.preview}</small>
             </button>
           {/each}
         </div>
@@ -2015,7 +2107,7 @@
 
     <main class="conversation-shell" aria-label="Scout conversation">
       <div class="conversation-topline">
-        <button class="rail-toggle" type="button" onclick={toggleHistoryPanel} aria-expanded={historyOpen} aria-controls="history-panel">☰ Conversations</button>
+        <button class="rail-toggle" class:rail-toggle--unread={hasUnreadAssistantReply} type="button" onclick={toggleHistoryPanel} aria-expanded={historyOpen} aria-controls="history-panel">☰ Conversations{#if hasUnreadAssistantReply}<span aria-label="Unread Scout reply"></span>{/if}</button>
         <div>
           <strong>Plan thread</strong>
           <span>{messages.length} turn{messages.length === 1 ? '' : 's'}</span>
@@ -2054,7 +2146,7 @@
           {:else}
             {#each messageViews as view (view.message.id)}
               {@const message = view.message}
-              <article class:message={true} class:message--assistant={message.role === 'assistant'} class:message--user={message.role === 'user'}>
+              <article id={`scout-message-${message.id}`} class:message={true} class:message--assistant={message.role === 'assistant'} class:message--user={message.role === 'user'}>
                 <div class="message-label">
                   <strong>{message.role === 'assistant' ? 'Scout' : 'You'}</strong>
                   <span>{view.time}</span>
@@ -2132,6 +2224,9 @@
                 <div class="checking-content">
                   <div class="checking-status">
                     <em>{checkingStatusText()}</em>
+                    <span class="checking-dots" aria-hidden="true">
+                      <span>•</span><span>•</span><span>•</span>
+                    </span>
                   </div>
                   {#if turnPhase?.detail}<small>{turnPhase.detail}</small>{/if}
                   {#if activeTurnSourceReceipts.length > 0}
@@ -2539,6 +2634,24 @@
     padding: 0 0.72rem;
   }
 
+  .rail-toggle {
+    position: relative;
+  }
+
+  .rail-toggle--unread {
+    border-color: rgba(187, 91, 45, 0.42);
+    background: rgba(255, 246, 235, 0.92);
+    color: #6b351f;
+  }
+
+  .rail-toggle--unread > span {
+    width: 0.58rem;
+    height: 0.58rem;
+    border-radius: 999px;
+    background: #bb5b2d;
+    box-shadow: 0 0 0 3px rgba(187, 91, 45, 0.16);
+  }
+
   .rail-toggle:hover,
   .doc-list button.active {
     background: #28382f;
@@ -2763,8 +2876,47 @@
     font-weight: 900;
   }
 
-  .checking-card em::after {
-    content: '…';
+  .checking-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.08em;
+    color: rgba(77, 89, 74, 0.44);
+    font-size: 1.12rem;
+    letter-spacing: 0.04em;
+  }
+
+  .checking-dots span {
+    display: inline-block;
+    animation: checking-dot-dance 1.05s ease-in-out infinite;
+    transform-origin: center bottom;
+  }
+
+  .checking-dots span:nth-child(2) {
+    animation-delay: 0.14s;
+  }
+
+  .checking-dots span:nth-child(3) {
+    animation-delay: 0.28s;
+  }
+
+  @keyframes checking-dot-dance {
+    0%, 72%, 100% {
+      opacity: 0.42;
+      transform: translateY(0) scale(0.9);
+    }
+
+    28% {
+      opacity: 1;
+      transform: translateY(-0.18rem) scale(1.04);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .checking-dots span {
+      animation: none;
+      opacity: 0.72;
+      transform: none;
+    }
   }
 
   .message-body {
@@ -3307,6 +3459,18 @@
     line-height: 1;
   }
 
+  .panel-unread-pill {
+    margin-left: auto;
+    border-radius: 999px;
+    background: #bb5b2d;
+    color: #fffdf8;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    padding: 0.22rem 0.48rem;
+    text-transform: uppercase;
+  }
 
   .resource-nav {
     display: grid;
@@ -3441,6 +3605,22 @@
     background: rgba(237, 243, 229, 0.56);
   }
 
+  .history-item--new {
+    border-left: 3px solid #bb5b2d;
+    background: rgba(255, 246, 235, 0.88);
+    padding-left: 0.65rem;
+  }
+
+  .history-item--waiting {
+    background: rgba(237, 243, 229, 0.7);
+  }
+
+  .history-item--error {
+    border-left: 3px solid #9f2f24;
+    background: rgba(253, 239, 237, 0.86);
+    padding-left: 0.65rem;
+  }
+
   .history-item span {
     display: flex;
     justify-content: space-between;
@@ -3463,8 +3643,15 @@
     text-overflow: ellipsis;
   }
 
-  .history-item--assistant {
-    background: transparent;
+  .history-item > small {
+    color: #6a7566;
+    display: -webkit-box;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.32;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .panel-card {
