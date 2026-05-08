@@ -1138,6 +1138,35 @@
     }
   }
 
+  async function applyScoutReplyPayload(payload: Record<string, unknown>) {
+    messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : messages;
+    documents = Array.isArray(payload.documents) ? (payload.documents as ImportedDocument[]) : documents;
+    ensureSelectedDocument(documents);
+    factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
+    connection = (payload.connection ?? null) as ProviderConnection | null;
+    const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
+    if (revisedDocument) {
+      savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
+      saveNotice = `Saved a new review version for "${revisedDocument.title}" in Docs.`;
+    }
+  }
+
+  async function fetchJsonScoutReply(message: string) {
+    return jsonOrThrow(
+      await fetch('/app-api/claw/reply', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          message,
+          documentId: selectedDocumentId || null,
+          resourceId: selectedResourceId || null
+        })
+      })
+    ) as Promise<Record<string, unknown>>;
+  }
+
   async function sendMessage() {
     const message = replyInput.trim();
     if (!message) return;
@@ -1160,6 +1189,7 @@
       error: false
     };
     let receivedAssistantText = false;
+    let streamStarted = false;
 
     sendBusy = true;
     streamingReplyVisible = false;
@@ -1185,6 +1215,7 @@
           resourceId: selectedResourceId || null
         })
       });
+      streamStarted = response.ok && !!response.body;
 
       await readScoutReplyStream(response, {
         onDelta: async (delta) => {
@@ -1200,32 +1231,32 @@
 
           await scrollCloudThreadToLatest();
         },
-        onDone: async (payload) => {
-          messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : messages;
-          documents = Array.isArray(payload.documents) ? (payload.documents as ImportedDocument[]) : documents;
-          ensureSelectedDocument(documents);
-          factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
-          connection = (payload.connection ?? null) as ProviderConnection | null;
-          const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
-          if (revisedDocument) {
-            savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
-            saveNotice = `Saved a new review version for "${revisedDocument.title}" in Docs.`;
-          }
-        }
+        onDone: applyScoutReplyPayload
       });
-
-      pendingPrompt = '';
-      await focusCloudThread();
-      await scrollCloudThreadToLatest();
     } catch (caught) {
-      console.error(caught);
-      replyInput = message;
-      await resetPromptHeight();
-      pendingPrompt = '';
-      error = caught instanceof Error ? caught.message : 'Could not send the cloud prompt.';
+      if (!receivedAssistantText && !streamStarted) {
+        try {
+          const payload = await fetchJsonScoutReply(message);
+          await applyScoutReplyPayload(payload);
+          error = '';
+        } catch (fallbackCaught) {
+          console.error(fallbackCaught);
+          replyInput = message;
+          await resetPromptHeight();
+          error = fallbackCaught instanceof Error ? fallbackCaught.message : 'Could not send the cloud prompt.';
+        }
+      } else {
+        console.error(caught);
+        if (!receivedAssistantText) replyInput = message;
+        await resetPromptHeight();
+        error = caught instanceof Error ? caught.message : 'Could not finish the Scout reply stream.';
+      }
     } finally {
+      pendingPrompt = '';
       sendBusy = false;
       streamingReplyVisible = false;
+      await focusCloudThread();
+      await scrollCloudThreadToLatest();
     }
   }
 
