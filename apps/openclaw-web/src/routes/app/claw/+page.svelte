@@ -2129,18 +2129,19 @@
             {:else if sendBusy}
               <article class="checking-card" aria-live="polite">
                 <span class="checking-icon" aria-hidden="true">◎</span>
-                <em>{checkingStatusText()}</em>
-                {#if turnPhase?.detail}<small>{turnPhase.detail}</small>{/if}
-                {#if activeTurnSourceReceipts.length > 0}
-                  <div class="turn-source-chips" aria-label="Scout source receipts">
-                    {#each activeTurnSourceReceipts as receipt (`checking-${receipt.kind}-${receipt.label}`)}
-                      <span>{receipt.label}: {receipt.status}</span>
-                    {/each}
+                <div class="checking-content">
+                  <div class="checking-status">
+                    <em>{checkingStatusText()}</em>
                   </div>
-                {/if}
-                <span class="checking-dots" aria-hidden="true">
-                  <span>•</span><span>•</span><span>•</span>
-                </span>
+                  {#if turnPhase?.detail}<small>{turnPhase.detail}</small>{/if}
+                  {#if activeTurnSourceReceipts.length > 0}
+                    <div class="turn-source-chips" aria-label="Scout source receipts">
+                      {#each activeTurnSourceReceipts as receipt (`checking-${receipt.kind}-${receipt.label}`)}
+                        <span>{receipt.label}: {receipt.status}</span>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
               </article>
             {/if}
           {/if}
@@ -2653,8 +2654,6 @@
     border-radius: 20px 20px 20px 8px;
     background: rgba(255, 255, 255, 0.9);
     box-shadow: var(--shadow-soft, 0 10px 22px rgba(0, 0, 0, 0.06));
-    content-visibility: auto;
-    contain-intrinsic-size: auto 180px;
     padding: 1rem;
   }
 
@@ -2685,27 +2684,39 @@
   .checking-card {
     justify-self: start;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.75rem;
-    width: min(26rem, 92%);
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.72rem;
+    width: min(31rem, 92%);
     border: 1px solid rgba(39, 51, 43, 0.12);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.74);
     color: rgba(51, 51, 51, 0.62);
     box-shadow: 0 10px 22px rgba(31, 41, 55, 0.05);
-    padding: 0.95rem 1rem;
+    padding: 0.9rem 1rem;
+  }
+
+  .checking-content {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .checking-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem;
   }
 
   .checking-card em {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
     font-style: italic;
     font-weight: 650;
     line-height: 1.3;
   }
 
   .checking-card small {
-    grid-column: 2 / -1;
     color: rgba(51, 51, 51, 0.52);
     font-size: 0.78rem;
     line-height: 1.35;
@@ -2721,7 +2732,6 @@
   }
 
   .turn-source-chips {
-    grid-column: 2 / -1;
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
@@ -2753,47 +2763,8 @@
     font-weight: 900;
   }
 
-  .checking-dots {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.08em;
-    color: rgba(77, 89, 74, 0.38);
-    font-size: 1.4rem;
-    letter-spacing: 0.04em;
-  }
-
-  .checking-dots span {
-    display: inline-block;
-    animation: checking-dot-dance 1.05s ease-in-out infinite;
-    transform-origin: center bottom;
-  }
-
-  .checking-dots span:nth-child(2) {
-    animation-delay: 0.14s;
-  }
-
-  .checking-dots span:nth-child(3) {
-    animation-delay: 0.28s;
-  }
-
-  @keyframes checking-dot-dance {
-    0%, 72%, 100% {
-      opacity: 0.42;
-      transform: translateY(0) scale(0.9);
-    }
-
-    28% {
-      opacity: 1;
-      transform: translateY(-0.28rem) scale(1.08);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .checking-dots span {
-      animation: none;
-      opacity: 0.72;
-      transform: none;
-    }
+  .checking-card em::after {
+    content: '…';
   }
 
   .message-body {
