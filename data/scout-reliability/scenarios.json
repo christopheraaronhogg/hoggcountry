@@ -119,12 +119,15 @@
     "requiredCaveats": [
       "verify Keys Gap and Harpers Ferry parking",
       "Dad-friendly does not mean only 6 miles",
-      "verify current water and weather"
+      "verify current water and weather",
+      "name practical access options and confidence",
+      "wrong mileage is the dangerous failure mode for Dad/DC logistics"
     ],
     "disallowedMistakes": [
       "route to Pine Grove Furnace",
       "treat mental halfway as true halfway",
-      "invent parking or shuttle certainty"
+      "invent parking or shuttle certainty",
+      "hand-wave Bears Den or other road crossings as tricky without naming Bears Den / VA 7 / Snickers Gap, Keys Gap, Weverton, or Gathland/Dahlgren access confidence and checks"
     ],
     "difficulty": 2,
     "difficultyRationale": "Explicit start and finish with no overnight, but Harpers Ferry has known halfway ambiguity and shuttle constraints.",
@@ -315,12 +318,18 @@
     "requiredCaveats": [
       "verify Maryland DNR/legal overnight status",
       "verify current water",
-      "do not assume parking or shuttle"
+      "do not assume parking or shuttle",
+      "I need to check current Maryland camping rules before recommending an overnight",
+      "correct the earlier bad Harpers Ferry to Ed Garvey mileage split",
+      "day-by-day logistics are draft until route validation/current checks pass"
     ],
     "disallowedMistakes": [
       "invent legal stealth camping",
       "invent water certainty",
-      "route to Pine Grove Furnace"
+      "route to Pine Grove Furnace",
+      "say Ed Garvey or Dahlgren permit/reservation status as a guess or question instead of requiring a current Maryland rules check",
+      "repeat the old roughly 19 mile Harpers Ferry to Ed Garvey split",
+      "give committed day-by-day Maryland overnight logistics before validating exact mileage, legal camping, water, access, and weather"
     ],
     "difficulty": 3,
     "difficultyRationale": "Short overnight with known anchors, but legal overnight and current water must be handled honestly.",
@@ -609,14 +618,17 @@
     "requiredCaveats": [
       "Harpers Ferry is mental halfway",
       "Pine Grove is true halfway and not the destination",
-      "verify legal overnight/water/shuttle/current data"
+      "verify legal overnight/water/shuttle/current data",
+      "name practical access options and confidence",
+      "wrong mileage is the dangerous failure mode for Dad/DC logistics"
     ],
     "disallowedMistakes": [
       "route to Pine Grove Furnace",
       "treat mental halfway as true halfway",
       "collapse Dad day and overnight into one plan",
       "invent legal camping",
-      "invent water certainty"
+      "invent water certainty",
+      "hand-wave Bears Den or other road crossings as tricky without naming Bears Den / VA 7 / Snickers Gap, Keys Gap, Weverton, or Gathland/Dahlgren access confidence and checks"
     ],
     "difficulty": 5,
     "difficultyRationale": "Combines explicit place, ambiguous halfway language, Dad/family finish, and a separate overnight request.",
@@ -2088,12 +2100,15 @@
     "requiredCaveats": [
       "separate family day and solo overnight",
       "family day and solo overnight have different risks",
-      "legal overnight/current water verification"
+      "legal overnight/current water verification",
+      "name practical access options and confidence",
+      "wrong mileage is the dangerous failure mode for Dad/DC logistics"
     ],
     "disallowedMistakes": [
       "merge both plans into one route",
       "route away from Harpers Ferry",
-      "invent camping or water certainty"
+      "invent camping or water certainty",
+      "hand-wave Bears Den or other road crossings as tricky without naming Bears Den / VA 7 / Snickers Gap, Keys Gap, Weverton, or Gathland/Dahlgren access confidence and checks"
     ],
     "difficulty": 5,
     "difficultyRationale": "Similar to the real failure without the true-halfway phrase; still requires multi-plan separation.",

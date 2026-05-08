@@ -349,6 +349,17 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
     notes: 'White Mountains road crossing / pickup corridor; state-park camping rules, parking, road access, and shuttle logistics require current confirmation.'
   },
   {
+    id: 'bears-den-va-7-snickers-gap-va',
+    name: 'Bears Den / VA 7 / Snickers Gap',
+    kind: 'road-crossing',
+    state: 'VA',
+    mile: 1002.7,
+    latitude: 39.1104,
+    longitude: -77.8526,
+    aliases: ['bears den', 'bear den', 'bears den trail center', 'bear’s den', "bear's den", 'snickers gap', 'va 7', 'va-7', 'route 7', 'harry byrd highway'],
+    notes: 'Practical south-side longer access option for a Harpers Ferry finish via the Roller Coaster/Snickers Gap corridor. Confidence: planning anchor only; verify exact trailhead, parking, overnight parking, and shuttle legality before using it.'
+  },
+  {
     id: 'keys-gap-va-wv',
     name: 'Keys Gap / VA-WV 9',
     kind: 'road-crossing',
@@ -375,36 +386,36 @@ export const AT_ROUTE_REFERENCE_POINTS: readonly AtRoutePoint[] = [
     name: 'Weverton / Weverton Cliffs',
     kind: 'road-crossing',
     state: 'MD',
-    mile: 1040.6,
+    mile: 1028.6,
     latitude: 39.3339,
     longitude: -77.6767,
     aliases: ['weverton', 'weverton road', 'weverton cliffs', 'weverton cliff', 'weverton md'],
-    notes: 'Maryland road/trailhead and cliffs context north/east of Harpers Ferry. Verify parking rules and shuttle timing.'
+    notes: 'Maryland road/trailhead and cliffs context north/east of Harpers Ferry. Earlier Scout QA overstated this split; treat this as a rough route-order anchor and verify current parking, trailhead rules, shuttle timing, and exact mileage.'
   },
   {
     id: 'ed-garvey-memorial-shelter-md',
     name: 'Ed Garvey Memorial Shelter',
     kind: 'shelter',
     state: 'MD',
-    mile: 1043.3,
+    mile: 1030.7,
     aliases: ['ed garvey', 'ed garvey memorial shelter', 'garvey shelter', 'ed garvey shelter'],
-    notes: 'Maryland shelter candidate. Verify current legal use, water, capacity, and any temporary closure before relying on it.'
+    notes: 'Maryland shelter candidate. This corrected guardrail makes Harpers Ferry to Ed Garvey a short first-day shape, not the prior bad ~19-mile split. Verify current Maryland camping rules, legal use, water, capacity, and any temporary closure before relying on it.'
   },
   {
     id: 'dahlgren-backpack-campground-md',
     name: 'Dahlgren Backpack Campground',
     kind: 'shelter',
     state: 'MD',
-    mile: 1055.0,
+    mile: 1042.8,
     aliases: ['dahlgren', 'dahlgren backpack campground', 'dahlgren campground', 'dahlgren backpack camp'],
-    notes: 'Maryland backpack campground candidate. Verify current legal use, water, restroom/shower status, and rules.'
+    notes: 'Maryland backpack campground candidate. Verify current Maryland camping rules, legal use, water, restroom/shower status, and rules before recommending an overnight.'
   },
   {
     id: 'gathland-state-park-md',
     name: 'Gathland State Park / Crampton Gap',
     kind: 'park',
     state: 'MD',
-    mile: 1061.0,
+    mile: 1044.5,
     latitude: 39.4054,
     longitude: -77.6425,
     aliases: ['gathland', 'gathland state park', 'crampton gap', 'cramptons gap'],
@@ -662,6 +673,7 @@ const WHITES_FRANCONIA_CRAWFORD_AT_POINT_IDS = [
   'crawford-notch-us-302-nh'
 ] as const;
 const HARPERS_FERRY_AT_POINT_IDS = [
+  'bears-den-va-7-snickers-gap-va',
   'keys-gap-va-wv',
   'harpers-ferry-atc-hq-wv',
   'weverton-cliffs-md',
@@ -927,15 +939,15 @@ function buildHarpersFerryPlanOptions(direction: AtRouteDirection): readonly AtR
   ] as const;
 
   const longerDadFinishDays = [
-    buildDay(1, 'weverton-cliffs-md', 'harpers-ferry-atc-hq-wv', 'Longer southbound-style finish into Harpers Ferry with Weverton/river context. Verify shuttle direction, parking, and whether Dad wants cliffs/elevation.')
+    buildDay(1, 'bears-den-va-7-snickers-gap-va', 'harpers-ferry-atc-hq-wv', 'Longer south-side finish into Harpers Ferry from the Bears Den / VA 7 / Snickers Gap access corridor. Verify Dad pace, Roller Coaster fatigue, trailhead/overnight parking legality, and shuttle pickup before offering it as the family option.')
   ] as const;
 
   const marylandOvernightDays = direction === 'SOBO' ? [
     buildDay(1, 'gathland-state-park-md', 'dahlgren-backpack-campground-md', 'Shorter legal-overnight-focused day if Dahlgren is current/legal/available. Verify Maryland DNR rules and water.'),
     buildDay(2, 'dahlgren-backpack-campground-md', 'harpers-ferry-atc-hq-wv', 'Finish back into Harpers Ferry. Confirm shuttle/parking and avoid assuming water or facilities without a current check.')
   ] as const : [
-    buildDay(1, 'harpers-ferry-atc-hq-wv', 'ed-garvey-memorial-shelter-md', 'Friday northbound overnight shape from Harpers Ferry through Weverton context to Ed Garvey. Verify legal shelter use and water before leaving.'),
-    buildDay(2, 'ed-garvey-memorial-shelter-md', 'dahlgren-backpack-campground-md', 'Saturday finish toward Dahlgren/Gathland corridor. Verify campground rules, water, pickup, and whether continuing to Gathland is the better endpoint.')
+    buildDay(1, 'harpers-ferry-atc-hq-wv', 'ed-garvey-memorial-shelter-md', 'Friday northbound overnight shape from Harpers Ferry through Weverton context to Ed Garvey. Corrects the earlier overstated first-day split; still verify exact mileage, legal shelter use, and water before leaving.'),
+    buildDay(2, 'ed-garvey-memorial-shelter-md', 'dahlgren-backpack-campground-md', 'Saturday finish toward Dahlgren/Gathland corridor. I need to check current Maryland camping rules before recommending this overnight; verify campground rules, water, pickup, and whether Gathland is the better endpoint.')
   ] as const;
 
   return [
@@ -950,13 +962,13 @@ function buildHarpersFerryPlanOptions(direction: AtRouteDirection): readonly AtR
       ]
     },
     {
-      id: 'harpers-dad-weverton-longer-finish',
-      label: 'Longer Dad finish option using Weverton / river-cliffs context',
+      id: 'harpers-dad-bears-den-longer-finish',
+      label: 'Longer Dad finish option using Bears Den / VA 7 / Snickers Gap access',
       totalMiles: roundMileage(longerDadFinishDays.reduce((sum, day) => sum + day.miles, 0)),
       days: longerDadFinishDays,
       caveats: [
-        'This is a bigger family-day option with more shuttle complexity.',
-        'Use only if Dad wants the added distance/elevation and the pickup/parking plan is confirmed.'
+        'This is a bigger family-day option with more distance and Roller Coaster fatigue than Keys Gap.',
+        'Use only if Dad wants the added distance/elevation and the trailhead/parking/shuttle plan is confirmed.'
       ]
     },
     {
@@ -965,8 +977,8 @@ function buildHarpersFerryPlanOptions(direction: AtRouteDirection): readonly AtR
       totalMiles: roundMileage(marylandOvernightDays.reduce((sum, day) => sum + day.miles, 0)),
       days: marylandOvernightDays,
       caveats: [
-        'This is a nearby overnight planning shape, separate from the Tuesday Dad finish.',
-        'Legal camping, water, facilities, and shuttle details must be verified with current Maryland DNR/local/user-owned guide or FarOut-style source material.'
+        'This is a nearby overnight planning shape, separate from the Tuesday Dad finish; it is not committed day-by-day logistics until the route validation/current-rules pass is complete.',
+        'I need to check current Maryland camping rules before recommending this overnight. Legal camping, water, facilities, and shuttle details must be verified with current Maryland DNR/local/user-owned guide or FarOut-style source material.'
       ]
     }
   ];
@@ -1366,6 +1378,67 @@ function lineMarksOutdatedGuidance(line: string): boolean {
 function lineNegatesUnsafeCamping(line: string): boolean {
   return /\b(no|not|never|avoid|prohibit(?:ed)?|illegal|do\s+not|don't|must\s+not|cannot|can't|unless\s+official|unless\s+the\s+official|verify\s+before)\b/iu.test(line)
     || /\b(?:verify|confirm|check)\b[^.]{0,100}\b(?:current|official|rule|legal|availability|permit|condition|source|guide|before|status|allowed)\b/iu.test(line);
+}
+
+function harpersFerryClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
+  if (grounding.source.id !== HARPERS_FERRY_AT_CORRIDOR_QA_SOURCE.id) return [];
+
+  const issues: AtRouteClaimIssue[] = [];
+  const hasCurrentMarylandRuleCheck = /I need to check current Maryland camping rules before recommending an overnight/iu.test(answer)
+    || /\b(?:check|verify|confirm)\b[^.]{0,120}\bcurrent\s+Maryland\s+(?:DNR\s+|South\s+Mountain\s+)?(?:camping|overnight|backpack(?:er)?\s+campground|shelter)\s+rules?\b/iu.test(answer);
+
+  for (const rawLine of answer.split(/\n+|(?<=[.!?])\s+/u)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const mentionsMarylandOvernight = /\b(?:ed\s+garvey|dahlgren|gathland|crampton\s+gap|maryland|south\s+mountain)\b/iu.test(line)
+      && /\b(?:overnight|camp(?:ing)?|shelter|backpack(?:er)?\s+campground|tent|permits?|reservations?|reserve)\b/iu.test(line);
+    const guessesPermitReservation = mentionsMarylandOvernight
+      && /\b(?:require|requires|required|need|needs|permit|reservation|reservations|reserve)\b[^.?!]{0,120}\?/iu.test(line)
+      && !hasCurrentMarylandRuleCheck;
+    const commitsMarylandOvernight = mentionsMarylandOvernight
+      && /\b(?:stay|camp|overnight|sleep|tent|book|reserve|use)\b/iu.test(line)
+      && /\b(?:ed\s+garvey|dahlgren|gathland|crampton\s+gap)\b/iu.test(line)
+      && !/\b(?:candidate|draft|if\s+(?:current|legal|allowed|verified)|after\s+(?:current\s+)?(?:Maryland|DNR|guide|rule)|verify|confirm|check|need\s+to\s+check)\b/iu.test(line);
+    if (guessesPermitReservation || commitsMarylandOvernight) {
+      issues.push({
+        kind: 'unsafe-camping-rule',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Maryland overnight wording must fail closed. Say “I need to check current Maryland camping rules before recommending an overnight,” then treat Ed Garvey/Dahlgren/Gathland as candidate anchors until current rules, water, and access are verified.'
+      });
+    }
+
+    const repeatsBadEdGarveySplit = /\b(?:harpers\s+ferry|atc\s+hq)\b[^.]{0,100}\b(?:ed\s+garvey)\b[^.]{0,80}\b(?:18(?:\.\d)?|19(?:\.\d)?|20(?:\.\d)?)\s*(?:mi|mile|miles)\b/iu.test(line)
+      || /\b(?:ed\s+garvey)\b[^.]{0,80}\b(?:18(?:\.\d)?|19(?:\.\d)?|20(?:\.\d)?)\s*(?:mi|mile|miles)\b[^.]{0,100}\b(?:harpers\s+ferry|atc\s+hq)\b/iu.test(line);
+    const repeatsBadDahlgrenSplit = /\b(?:harpers\s+ferry|atc\s+hq)\b[^.]{0,120}\b(?:dahlgren)\b[^.]{0,80}\b(?:30(?:\.\d)?|31(?:\.\d)?|32(?:\.\d)?)\s*(?:mi|mile|miles)\b/iu.test(line)
+      || /\b(?:dahlgren)\b[^.]{0,80}\b(?:30(?:\.\d)?|31(?:\.\d)?|32(?:\.\d)?)\s*(?:mi|mile|miles)\b[^.]{0,120}\b(?:harpers\s+ferry|atc\s+hq)\b/iu.test(line);
+    if (repeatsBadEdGarveySplit || repeatsBadDahlgrenSplit) {
+      issues.push({
+        kind: 'bad-mileage',
+        severity: 'block',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'This repeats the bad Maryland mileage split. The guardrail shape is roughly Harpers Ferry → Ed Garvey 6.3 mi and Harpers Ferry → Dahlgren 18.4 mi; exact current guide mileage still needs verification before day-by-day logistics.'
+      });
+    }
+
+    const handWavyBearsDen = /\b(?:bears?\s+den|snickers\s+gap|va\s*-?\s*7|route\s+7)\b/iu.test(line)
+      && /\b(?:tricky|complicated|difficult|hard|awkward)\b/iu.test(line)
+      && !/\b(?:VA\s*-?\s*7|Snickers\s+Gap|Trail\s+Center|parking|shuttle|overnight|confidence|verify|confirm|legal)\b/iu.test(line);
+    if (handWavyBearsDen) {
+      issues.push({
+        kind: 'unsafe-summit-plan',
+        severity: 'warn',
+        sourceSystemId: grounding.source.id,
+        evidence: line,
+        message: 'Bears Den access wording is too hand-wavy. Name the practical access option (Bears Den / VA 7 / Snickers Gap), confidence, and what parking/shuttle facts need verification.'
+      });
+    }
+  }
+
+  return issues;
 }
 
 function gsmnpRegulationClaimIssues(answer: string, grounding: AtRouteGrounding): AtRouteClaimIssue[] {
@@ -1776,6 +1849,7 @@ export function validateAtRouteAnswerClaims(answer: string, grounding: AtRouteGr
 
   issues.push(...mileageClaimIssues(answer, grounding));
   issues.push(...routeTotalMileageClaimIssues(answer, grounding));
+  issues.push(...harpersFerryClaimIssues(answer, grounding));
   issues.push(...gsmnpRegulationClaimIssues(answer, grounding));
   issues.push(...shenandoahRegulationClaimIssues(answer, grounding));
   issues.push(...hundredMileWildernessClaimIssues(answer, grounding));
@@ -1919,7 +1993,16 @@ export function buildAtRouteGrounding(input: BuildAtRouteGroundingInput): AtRout
       ? 'Harpers Ferry planning guardrail: separate the Dad finish hike into Harpers Ferry from the Friday/Saturday overnight plan near Harpers Ferry; do not collapse the two requests into one route.'
       : null,
     isHarpersFerry
-      ? 'Maryland/WV/VA legal overnight guardrail: treat Ed Garvey Memorial Shelter and Dahlgren Backpack Campground as candidate legal anchors only after current Maryland DNR/local/user-owned guide verification; do not invent stealth or roadside camping.'
+      ? 'Harpers Ferry validation-pass guardrail: before giving day-by-day logistics, explicitly validate route order, rough mileage splits, practical access points, legal overnight status, water, parking/shuttle, and weather. For Dad/DC logistics, wrong mileage is the dangerous failure mode.'
+      : null,
+    isHarpersFerry
+      ? 'Maryland mileage correction guardrail: do not repeat the earlier bad Harpers Ferry → Ed Garvey ~19 mi / Ed Garvey → Dahlgren ~12 mi split. Current guardrail shape is roughly Harpers Ferry → Weverton 4.2 mi, Harpers Ferry → Ed Garvey 6.3 mi, Ed Garvey → Dahlgren 12.1 mi; verify exact guidebook mileages before commitment.'
+      : null,
+    isHarpersFerry
+      ? 'Maryland/WV/VA legal overnight guardrail: say “I need to check current Maryland camping rules before recommending an overnight.” Treat Ed Garvey Memorial Shelter and Dahlgren Backpack Campground as candidate legal anchors only after current Maryland DNR/local/user-owned guide verification; do not invent stealth or roadside camping and do not phrase permit/reservation status as a guess.'
+      : null,
+    isHarpersFerry
+      ? 'Practical access guardrail: name the access option and confidence instead of saying road crossings are tricky. Examples: Keys Gap/VA-WV 9 = higher-confidence Dad-friendly finish access; Bears Den/VA 7/Snickers Gap = longer south-side option requiring parking/shuttle confirmation; Weverton = Maryland day/overnight trailhead requiring parking and overnight-use confirmation; Gathland/Crampton Gap/Dahlgren = Maryland endpoint candidates requiring current rules and pickup confirmation.'
       : null,
     isShenandoah
       ? 'Shenandoah regulation guardrail: use current NPS/Recreation.gov permit rules, campsite setbacks, food-storage/fire rules, and current water/closure checks; do not rely on old free/self-registration permit guidance.'
