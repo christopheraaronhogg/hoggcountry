@@ -14,8 +14,8 @@
     <p class="eyebrow">Scout beta</p>
     <h1>Start with Scout. Fill in details later.</h1>
     <p class="lede">
-      No prep packet required. Use an email to open a private beta workspace; Scout can ask for pace, gear, health,
-      budget, and route details only when they matter.
+      No prep packet required. Use the beta passcode and an email to open a private workspace; Scout can ask for pace,
+      gear, health, budget, and route details only when they matter.
     </p>
   </div>
 
@@ -31,18 +31,23 @@
 
 <form method="POST" class="card panel-copy" style="margin-top:1rem; display:grid; gap:0.9rem;">
   <label>
+    <span class="eyebrow">Beta passcode</span>
+    <input name="passcode" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter passcode" required />
+  </label>
+
+  <label>
     <span class="eyebrow">Name <small>(optional)</small></span>
-    <input name="name" placeholder="Name, or leave blank" />
+    <input name="name" placeholder="Name, or leave blank" value={form?.name ?? ''} />
   </label>
 
   <label>
     <span class="eyebrow">Email</span>
-    <input name="email" type="email" placeholder="you@example.com" />
+    <input name="email" type="email" placeholder="you@example.com" value={form?.email ?? ''} />
   </label>
 
   <label>
     <span class="eyebrow">Trail name <small>(optional)</small></span>
-    <input name="trailName" placeholder="Trail name, or leave blank" />
+    <input name="trailName" placeholder="Trail name, or leave blank" value={form?.trailName ?? ''} />
   </label>
 
   {#if form?.message}

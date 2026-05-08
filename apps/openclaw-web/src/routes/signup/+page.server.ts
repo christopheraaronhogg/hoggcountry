@@ -2,6 +2,8 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { BETA_COOKIE, encodeBetaProfile } from '$lib/beta';
 
+const SCOUT_BETA_PASSCODE = '3184';
+
 export const load: PageServerLoad = async ({ locals }) => {
   if (locals.betaProfile) {
     throw redirect(302, '/app');
@@ -13,6 +15,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
   default: async ({ cookies, request }) => {
     const formData = await request.formData();
+    const passcode = String(formData.get('passcode') ?? '').trim();
     const rawName = String(formData.get('name') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
     const rawTrailName = String(formData.get('trailName') ?? '').trim();
@@ -20,9 +23,20 @@ export const actions: Actions = {
     const name = rawName || fallbackName;
     const trailName = rawTrailName || name;
 
+    if (passcode !== SCOUT_BETA_PASSCODE) {
+      return fail(401, {
+        message: 'Enter the beta passcode to start asking Scout.',
+        email,
+        name: rawName,
+        trailName: rawTrailName
+      });
+    }
+
     if (!email) {
       return fail(400, {
-        message: 'Email is required for the private beta gate. Everything else can be filled in later.'
+        message: 'Email is required for the private beta gate. Everything else can be filled in later.',
+        name: rawName,
+        trailName: rawTrailName
       });
     }
 
