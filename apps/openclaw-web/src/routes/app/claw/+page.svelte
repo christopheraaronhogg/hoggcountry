@@ -130,6 +130,20 @@
     readonly trailLongitude: number;
   }
 
+  interface ScoutRealtimeEventRow {
+    readonly workspaceId: string;
+    readonly turnId: string;
+    readonly eventSeq: bigint;
+    readonly kind: string;
+    readonly payloadJson: string;
+  }
+
+  interface ScoutTurnEventEnvelope {
+    readonly id: number;
+    readonly event: string;
+    readonly data: Record<string, unknown>;
+  }
+
   type ScoutThinkingEffort = 'off' | 'minimal' | 'low' | 'medium' | 'high';
 
   let { data }: { data: PageData } = $props();
@@ -196,7 +210,11 @@
   let currentWorkspaceId = typeof initialConsole.workspaceId === 'string' ? initialConsole.workspaceId : '';
   let scoutRealtimeWorkspaceId = '';
   let scoutRealtimeSubscription: SubscriptionHandle | null = null;
+  let scoutRealtimeEventCleanup: (() => void) | null = null;
   let spacetimeUnsubscribe: (() => void) | null = null;
+  let activeRealtimeTurnId = '';
+  let activeRealtimeEventCursor = 0;
+  let activeRealtimeEventHandler: ((event: ScoutTurnEventEnvelope) => void | Promise<void>) | null = null;
   const messageBlockCache = new Map<string, { text: string; blocks: MessageBlock[] }>();
   const messageHistoryList = $derived([...messages].reverse());
   const assistantReplyCount = $derived(messages.filter((message) => message.role === 'assistant').length);
@@ -245,10 +263,11 @@
   async function readScoutReplyStream(
     response: Response,
     handlers: {
-      readonly onDelta: (delta: string) => void | Promise<void>;
-      readonly onDone: (payload: Record<string, unknown>) => void | Promise<void>;
+      readonly onDelta?: (delta: string) => void | Promise<void>;
+      readonly onDone?: (payload: Record<string, unknown>) => void | Promise<void>;
       readonly onStatus?: (status: string) => void | Promise<void>;
       readonly onThinking?: (activity: { status?: unknown; chars?: unknown }) => void | Promise<void>;
+      readonly onEvent?: (event: ScoutTurnEventEnvelope) => void | Promise<void>;
     }
   ) {
     if (!response.ok || !response.body) {
@@ -261,18 +280,25 @@
     let buffer = '';
 
     const dispatchEventBlock = async (block: string) => {
-      const eventLine = block.split('\n').find((line) => line.startsWith('event:'));
-      const dataLines = block
-        .split('\n')
+      const blockLines = block.split('\n');
+      const idLine = blockLines.find((line) => line.startsWith('id:'));
+      const eventLine = blockLines.find((line) => line.startsWith('event:'));
+      const dataLines = blockLines
         .filter((line) => line.startsWith('data:'))
         .map((line) => line.slice('data:'.length).trimStart());
       const eventName = eventLine ? eventLine.slice('event:'.length).trim() : 'message';
+      const eventId = Number.parseInt(idLine ? idLine.slice('id:'.length).trim() : '0', 10);
       const rawData = dataLines.join('\n');
       const payload = rawData ? JSON.parse(rawData) as Record<string, unknown> : {};
 
+      if (handlers.onEvent) {
+        await handlers.onEvent({ id: Number.isFinite(eventId) ? eventId : 0, event: eventName, data: payload });
+        return;
+      }
+
       if (eventName === 'delta') {
         const delta = typeof payload.delta === 'string' ? payload.delta : '';
-        if (delta) await handlers.onDelta(delta);
+        if (delta) await handlers.onDelta?.(delta);
         return;
       }
 
@@ -288,7 +314,7 @@
       }
 
       if (eventName === 'done') {
-        await handlers.onDone(payload);
+        await handlers.onDone?.(payload);
         return;
       }
 
@@ -1046,16 +1072,73 @@
     }
   }
 
+  function handleScoutRealtimeEventInsert(row: ScoutRealtimeEventRow) {
+    if (!activeRealtimeTurnId || row.workspaceId !== currentWorkspaceId || row.turnId !== activeRealtimeTurnId) return;
+
+    const eventId = Number(row.eventSeq);
+    if (!Number.isFinite(eventId) || eventId <= activeRealtimeEventCursor) return;
+
+    let payload: Record<string, unknown>;
+    try {
+      payload = row.payloadJson ? JSON.parse(row.payloadJson) as Record<string, unknown> : {};
+    } catch {
+      payload = {};
+    }
+
+    const maybePromise = activeRealtimeEventHandler?.({ id: eventId, event: row.kind, data: payload });
+    if (maybePromise && typeof maybePromise === 'object' && 'catch' in maybePromise) {
+      void maybePromise.catch((caught) => {
+        error = caught instanceof Error ? caught.message : 'Could not finish the Scout reply.';
+      });
+    }
+  }
+
+  function replayScoutRealtimeEventsFromCache(realtimeConnection: DbConnection) {
+    if (!activeRealtimeTurnId) return;
+
+    const rows = Array.from(realtimeConnection.db.myScoutTurnEvents.iter() as Iterable<ScoutRealtimeEventRow>)
+      .filter((row) => row.workspaceId === currentWorkspaceId && row.turnId === activeRealtimeTurnId)
+      .sort((a, b) => Number(a.eventSeq - b.eventSeq));
+
+    for (const row of rows) {
+      handleScoutRealtimeEventInsert(row);
+    }
+  }
+
+  function attachScoutRealtimeEventHandlers(realtimeConnection: DbConnection) {
+    scoutRealtimeEventCleanup?.();
+
+    const handleInsert = (_ctx: unknown, row: ScoutRealtimeEventRow) => {
+      handleScoutRealtimeEventInsert(row);
+    };
+
+    realtimeConnection.db.myScoutTurnEvents.onInsert(handleInsert);
+    scoutRealtimeEventCleanup = () => {
+      realtimeConnection.db.myScoutTurnEvents.removeOnInsert(handleInsert);
+    };
+  }
+
   async function syncScoutRealtime(realtimeConnection: DbConnection) {
     if (!currentWorkspaceId || !realtimeConnection.isActive) return;
 
     try {
       await realtimeConnection.reducers.joinScoutWorkspace({ workspaceId: currentWorkspaceId });
 
-      if (scoutRealtimeWorkspaceId === currentWorkspaceId && scoutRealtimeSubscription) return;
+      if (scoutRealtimeWorkspaceId === currentWorkspaceId && scoutRealtimeSubscription) {
+        if (!scoutRealtimeEventCleanup) attachScoutRealtimeEventHandlers(realtimeConnection);
+        replayScoutRealtimeEventsFromCache(realtimeConnection);
+        return;
+      }
       scoutRealtimeSubscription?.unsubscribe();
-      scoutRealtimeSubscription = realtimeConnection.subscriptionBuilder().subscribe([tables.myScoutTurns, tables.myScoutTurnEvents]);
+      scoutRealtimeEventCleanup?.();
+      scoutRealtimeEventCleanup = null;
+      scoutRealtimeSubscription = realtimeConnection.subscriptionBuilder()
+        .onApplied(() => {
+          replayScoutRealtimeEventsFromCache(realtimeConnection);
+        })
+        .subscribe([tables.myScoutTurns, tables.myScoutTurnEvents]);
       scoutRealtimeWorkspaceId = currentWorkspaceId;
+      attachScoutRealtimeEventHandlers(realtimeConnection);
     } catch (caught) {
       console.warn('Scout realtime sync unavailable:', caught);
     }
@@ -1309,8 +1392,10 @@
     };
     let receivedAssistantText = false;
     let turnId = '';
+    let turnCompleted = false;
     let pendingStreamingDelta = '';
     let streamingFrame = 0;
+    const streamAbortController = new AbortController();
 
     const flushStreamingDelta = async () => {
       streamingFrame = 0;
@@ -1335,11 +1420,58 @@
       });
     };
 
+    const applyTurnEvent = async (turnEvent: ScoutTurnEventEnvelope) => {
+      if (turnEvent.id > 0 && turnEvent.id <= activeRealtimeEventCursor) return;
+      if (turnEvent.id > 0) activeRealtimeEventCursor = turnEvent.id;
+
+      if (turnEvent.event === 'delta') {
+        const delta = typeof turnEvent.data.delta === 'string' ? turnEvent.data.delta : '';
+        if (delta) queueStreamingDelta(delta);
+        return;
+      }
+
+      if (turnEvent.event === 'done') {
+        turnCompleted = true;
+        await flushStreamingDelta();
+        await applyScoutReplyPayload(turnEvent.data);
+        streamAbortController.abort();
+        return;
+      }
+
+      if (turnEvent.event === 'status') {
+        const status = typeof turnEvent.data.status === 'string' ? turnEvent.data.status.trim() : '';
+        if (status) streamStatus = status;
+        return;
+      }
+
+      if (turnEvent.event === 'thinking') {
+        const status = typeof turnEvent.data.status === 'string' ? turnEvent.data.status : '';
+        if (status === 'start' || status === 'delta') streamStatus = 'thinking';
+        if (status === 'end') streamStatus = 'working';
+        if (typeof turnEvent.data.chars === 'number' && Number.isFinite(turnEvent.data.chars)) {
+          thinkingActivityChars += turnEvent.data.chars;
+        }
+        return;
+      }
+
+      if (turnEvent.event === 'error') {
+        turnCompleted = true;
+        streamAbortController.abort();
+        const message = typeof turnEvent.data.message === 'string' && turnEvent.data.message.trim()
+          ? turnEvent.data.message.trim()
+          : 'Could not send the cloud prompt.';
+        throw new Error(message);
+      }
+    };
+
     sendBusy = true;
     streamingReplyVisible = false;
     streamingAssistantText = '';
     streamStatus = '';
     thinkingActivityChars = 0;
+    activeRealtimeTurnId = '';
+    activeRealtimeEventCursor = 0;
+    activeRealtimeEventHandler = applyTurnEvent;
     pendingPrompt = message;
     error = '';
     saveNotice = '';
@@ -1352,30 +1484,18 @@
 
     try {
       turnId = await startScoutReplyTurn(message);
-      const response = await fetch(`/app-api/claw/reply/turn/${encodeURIComponent(turnId)}/events`);
+      activeRealtimeTurnId = turnId;
+      const realtimeConnection = getSpacetimeConnection();
+      if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
+      const response = await fetch(`/app-api/claw/reply/turn/${encodeURIComponent(turnId)}/events`, { signal: streamAbortController.signal });
 
       await readScoutReplyStream(response, {
-        onDelta: async (delta) => {
-          queueStreamingDelta(delta);
-        },
-        onDone: async (payload) => {
-          await flushStreamingDelta();
-          await applyScoutReplyPayload(payload);
-        },
-        onStatus: async (status) => {
-          streamStatus = status;
-        },
-        onThinking: async (activity) => {
-          const status = typeof activity.status === 'string' ? activity.status : '';
-          if (status === 'start' || status === 'delta') streamStatus = 'thinking';
-          if (status === 'end') streamStatus = 'working';
-          if (typeof activity.chars === 'number' && Number.isFinite(activity.chars)) {
-            thinkingActivityChars += activity.chars;
-          }
-        }
+        onEvent: applyTurnEvent
       });
     } catch (caught) {
-      if (turnId) {
+      if (turnCompleted) {
+        error = '';
+      } else if (turnId) {
         try {
           const payload = await pollScoutReplyTurn(turnId);
           await applyScoutReplyPayload(payload);
@@ -1424,6 +1544,9 @@
       streamingAssistantText = '';
       streamStatus = '';
       thinkingActivityChars = 0;
+      activeRealtimeTurnId = '';
+      activeRealtimeEventCursor = 0;
+      activeRealtimeEventHandler = null;
       await focusCloudThread();
       await scrollCloudThreadToLatest();
     }
@@ -1518,6 +1641,7 @@
       navigator.geolocation.clearWatch(locationWatchId);
     }
     spacetimeUnsubscribe?.();
+    scoutRealtimeEventCleanup?.();
     scoutRealtimeSubscription?.unsubscribe();
   });
 </script>
