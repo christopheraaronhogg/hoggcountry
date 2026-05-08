@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getConfiguredClawConnection, replyInWorkspaceClaw, ScoutAgentTimeoutError } from '$lib/server/claw-agent';
+import { replyInWorkspaceClaw, ScoutAgentTimeoutError } from '$lib/server/claw-agent';
+import { getConfiguredClawConnection } from '$lib/server/claw-connection';
 import { requireWorkspace } from '$lib/server/workspace-endpoint';
 
 function encodeSse(event: string, data: unknown): string {

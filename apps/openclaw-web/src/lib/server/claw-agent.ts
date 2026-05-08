@@ -48,29 +48,25 @@ import {
   type WorkspaceSnapshot
 } from '$lib/server/workspace-store';
 import { buildAtRouteGrounding, formatAtRouteMileage, type AtRouteGrounding } from '@hoggcountry/trail-data';
+import {
+  configuredHouseModelId,
+  configuredHouseProviderId,
+  DEFAULT_OPENCODE_GO_MODEL,
+  OPENAI_CODEX_MODEL,
+  OPENAI_CODEX_PROVIDER_ID,
+  OPENCODE_GO_PROVIDER_ID,
+  type ClawProviderId
+} from './claw-connection';
 import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
 
-const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
-const OPENCODE_GO_PROVIDER_ID = 'opencode-go';
-const OPENAI_CODEX_MODEL = 'gpt-5.4';
-const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-pro';
+export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
+
 const OPENCODE_GO_REPLY_MAX_TOKENS = 8000;
 const SCOUT_AGENT_TURN_TIMEOUT_MS = 180_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
 const SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS = 3200;
-
-type ClawProviderId = typeof OPENAI_CODEX_PROVIDER_ID | typeof OPENCODE_GO_PROVIDER_ID;
-
-export interface WorkspaceClawConnectionPayload {
-  readonly providerId: ClawProviderId;
-  readonly label: string;
-  readonly status: 'connected';
-  readonly accountId: string | null;
-  readonly expiresAt: string | null;
-  readonly model: string;
-}
 
 interface ClawRuntime {
   readonly providerId: ClawProviderId;
@@ -722,21 +718,6 @@ function excerpt(value: string, maxLength: number): string {
   return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
-function configuredHouseProviderId(): ClawProviderId | null {
-  const provider = (process.env.OPENCLAW_CLAW_PROVIDER || process.env.OPENCLAW_SCOUT_PROVIDER || '').trim();
-  if (provider === OPENCODE_GO_PROVIDER_ID) return OPENCODE_GO_PROVIDER_ID;
-  if (provider === OPENAI_CODEX_PROVIDER_ID) return null;
-  return process.env.OPENCODE_API_KEY ? OPENCODE_GO_PROVIDER_ID : null;
-}
-
-function configuredHouseModelId(providerId: ClawProviderId): string {
-  if (providerId === OPENCODE_GO_PROVIDER_ID) {
-    return (process.env.OPENCLAW_CLAW_MODEL || process.env.OPENCLAW_SCOUT_MODEL || DEFAULT_OPENCODE_GO_MODEL).trim();
-  }
-
-  return OPENAI_CODEX_MODEL;
-}
-
 function resolveModelOrThrow(providerId: ClawProviderId, modelId: string): Model<any> {
   const model = getModel(providerId as never, modelId as never);
   if (model) return model;
@@ -792,34 +773,6 @@ function applyOpenCodeGoPayloadCompat(payload: unknown): unknown {
   }
 
   return params;
-}
-
-export function getConfiguredClawConnection(record: Pick<WorkspaceSnapshot, 'providerConnections'>): WorkspaceClawConnectionPayload | null {
-  const houseProviderId = configuredHouseProviderId();
-
-  if (houseProviderId === OPENCODE_GO_PROVIDER_ID && process.env.OPENCODE_API_KEY?.trim()) {
-    const modelId = configuredHouseModelId(houseProviderId);
-    return {
-      providerId: OPENCODE_GO_PROVIDER_ID,
-      label: 'OpenCode Go house lane',
-      status: 'connected',
-      accountId: null,
-      expiresAt: null,
-      model: modelId
-    };
-  }
-
-  const connection = record.providerConnections.find((item) => item.providerId === OPENAI_CODEX_PROVIDER_ID) ?? null;
-  return connection
-    ? {
-        providerId: OPENAI_CODEX_PROVIDER_ID,
-        label: connection.label,
-        status: connection.status,
-        accountId: connection.accountId,
-        expiresAt: connection.expiresAt,
-        model: OPENAI_CODEX_MODEL
-      }
-    : null;
 }
 
 async function resolveClawRuntime(record: WorkspaceRecord): Promise<ClawRuntime> {

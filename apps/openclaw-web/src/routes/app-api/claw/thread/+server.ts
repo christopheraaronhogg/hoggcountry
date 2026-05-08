@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { getConfiguredClawConnection } from '$lib/server/claw-agent';
+import { getConfiguredClawConnection } from '$lib/server/claw-connection';
 import { requireWorkspace, ok } from '$lib/server/workspace-endpoint';
 import { getWorkspaceRecord, replaceWorkspaceClawMessages } from '$lib/server/workspace-store';
 

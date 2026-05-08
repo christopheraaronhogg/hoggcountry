@@ -440,7 +440,10 @@
   function toggleDocsPanel() {
     const nextOpen = !docsOpen;
     docsOpen = nextOpen;
-    if (nextOpen) historyOpen = false;
+    if (nextOpen) {
+      historyOpen = false;
+      if (!dailyBrief && !dailyBriefLoading && !dailyBriefError) void loadDailyBrief();
+    }
   }
 
   async function focusPromptComposer() {
@@ -1005,24 +1008,32 @@
     }
   }
 
+  async function loadDadPilot() {
+    try {
+      const payload = await fetch('/app-api/dad', { cache: 'no-store' })
+        .then((response) => (response.ok ? response.json() : null))
+        .catch(() => null);
+      dadPilot = payload ? (payload as DadPilotSummary) : null;
+    } catch {
+      dadPilot = null;
+    }
+  }
+
   async function loadState() {
     loading = true;
     error = '';
 
     try {
-      const [workspacePayload, clawPayload, dadPayload] = await Promise.all([
+      const [workspacePayload, clawPayload] = await Promise.all([
         jsonOrThrow(await fetch('/app-api/workspace', { cache: 'no-store' })),
-        jsonOrThrow(await fetch('/app-api/claw', { cache: 'no-store' })),
-        fetch('/app-api/dad', { cache: 'no-store' })
-          .then((response) => (response.ok ? response.json() : null))
-          .catch(() => null)
+        jsonOrThrow(await fetch('/app-api/claw', { cache: 'no-store' }))
       ]);
 
       applyWorkspaceSnapshot(workspacePayload as WorkspaceSnapshot);
       connection = (clawPayload.connection ?? null) as ProviderConnection | null;
-      dadPilot = dadPayload ? (dadPayload as DadPilotSummary) : null;
       messages = Array.isArray(clawPayload.messages) ? (clawPayload.messages as ClawMessage[]) : [];
       factCandidates = Array.isArray(clawPayload.factCandidates) ? (clawPayload.factCandidates as FactCandidate[]) : [];
+      void loadDadPilot();
     } catch (caught) {
       console.error(caught);
       error = caught instanceof Error ? caught.message : 'Could not load the Scout console.';
@@ -1298,7 +1309,6 @@
         await consumeDocumentQueryState();
         await consumeResourceQueryState();
         await consumePromptQueryState();
-        await loadDailyBrief();
       })
       .catch(() => undefined);
   });
