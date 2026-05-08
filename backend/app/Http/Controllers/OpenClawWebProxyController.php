@@ -59,7 +59,7 @@ class OpenClawWebProxyController extends Controller
         $multipart = $this->shouldProxyAsMultipart($request);
         $headers = $this->forwardHeaders($request);
 
-        if (Str::startsWith($path, 'app-api/claw/reply/stream')) {
+        if ($this->shouldProxyAsStream($path)) {
             return $this->proxyStream($request, $path, $target, $headers);
         }
 
@@ -87,7 +87,7 @@ class OpenClawWebProxyController extends Controller
                 $upstream = $pending->send($request->method(), $target, $options);
             }
         } catch (\Throwable $e) {
-            throw new HttpException(503, 'OpenClaw web frontend is unavailable.', $e);
+            return $this->unavailableResponse($path);
         }
 
         $response = response($upstream->body(), $upstream->status());
@@ -130,7 +130,7 @@ class OpenClawWebProxyController extends Controller
 
             $upstream = $client->request($request->method(), $target, $options);
         } catch (\Throwable $e) {
-            throw new HttpException(503, 'OpenClaw web frontend is unavailable.', $e);
+            return $this->unavailableResponse($path);
         }
 
         $body = $upstream->getBody();
@@ -162,6 +162,23 @@ class OpenClawWebProxyController extends Controller
         $response->headers->set('Cache-Control', 'no-cache, no-transform');
 
         return $response;
+    }
+
+    private function shouldProxyAsStream(string $path): bool
+    {
+        return Str::startsWith($path, 'app-api/claw/reply/stream')
+            || (Str::startsWith($path, 'app-api/claw/reply/turn/') && Str::endsWith($path, '/events'));
+    }
+
+    private function unavailableResponse(string $path): Response
+    {
+        if (Str::startsWith($path, 'app-api/')) {
+            return response()->json([
+                'message' => 'Scout is temporarily unavailable. Your prompt is still in the composer — please try again in a moment.',
+            ], 503);
+        }
+
+        throw new HttpException(503, 'OpenClaw web frontend is unavailable.');
     }
 
     private function proxyTimeout(string $path): int

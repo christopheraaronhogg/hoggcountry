@@ -208,12 +208,16 @@
       }
     }
 
-    if (response.status === 504 || message.includes('Gateway time-out')) {
-      throw new Error('Scout took too long to finish that reply. I kept the thread intact — try again, or ask Scout to continue with a shorter first pass while I keep improving the long-reply path.');
+    if (response.status === 502 || response.status === 503 || response.status === 504 || message.includes('Gateway time-out')) {
+      throw new Error('Scout is temporarily unavailable. I kept your draft intact — try again in a moment.');
+    }
+
+    if (contentType.includes('text/html') || message.includes('/*! normalize.css')) {
+      throw new Error('Scout returned an unexpected server error page. I kept your draft intact — try again in a moment.');
     }
 
     const cleaned = message.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    throw new Error(cleaned || 'Request failed.');
+    throw new Error(cleaned.slice(0, 300) || 'Request failed.');
   }
 
   async function readScoutReplyStream(

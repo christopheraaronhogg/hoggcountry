@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\OpenClawWebProxyController;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class OpenClawWebProxyTest extends TestCase
@@ -129,5 +131,33 @@ class OpenClawWebProxyTest extends TestCase
         $response->assertJsonPath('data.service', 'hoggcountry-api');
 
         Http::assertNothingSent();
+    }
+
+    public function test_app_api_proxy_failures_return_json_instead_of_laravel_error_html(): void
+    {
+        config()->set('services.openclaw_web.enabled', true);
+        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:9');
+
+        $response = $this->withHeaders([
+            'Accept' => '*/*',
+            'Content-Type' => 'application/json',
+        ])->post('/app-api/claw/reply/turn', [
+            'message' => 'Where should I camp tonight?',
+        ]);
+
+        $response->assertStatus(503);
+        $response->assertHeader('Content-Type', 'application/json');
+        $response->assertJsonPath('message', 'Scout is temporarily unavailable. Your prompt is still in the composer — please try again in a moment.');
+    }
+
+    public function test_turn_event_routes_are_treated_as_streams(): void
+    {
+        $method = new ReflectionMethod(OpenClawWebProxyController::class, 'shouldProxyAsStream');
+        $method->setAccessible(true);
+        $controller = new OpenClawWebProxyController();
+
+        $this->assertTrue($method->invoke($controller, 'app-api/claw/reply/stream'));
+        $this->assertTrue($method->invoke($controller, 'app-api/claw/reply/turn/abc123/events'));
+        $this->assertFalse($method->invoke($controller, 'app-api/claw/reply/turn'));
     }
 }
