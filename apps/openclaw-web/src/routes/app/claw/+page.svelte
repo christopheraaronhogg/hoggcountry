@@ -1732,7 +1732,7 @@
             bind:value={replyInput}
             rows="1"
             disabled={sendBusy || !connection}
-            placeholder={connection ? 'Ask Scout about the trail…' : 'Connect Scout to ask…'}
+            placeholder={connection ? 'Ask Scout…' : 'Connect Scout…'}
             oninput={(event) => syncPromptHeight(event.currentTarget as HTMLTextAreaElement)}
           ></textarea>
           <button
