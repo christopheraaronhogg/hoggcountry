@@ -61,8 +61,8 @@ import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
 
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
 
-const OPENCODE_GO_REPLY_MAX_TOKENS = 5000;
-const SCOUT_AGENT_TURN_TIMEOUT_MS = 240_000;
+const OPENCODE_GO_REPLY_MAX_TOKENS = 4000;
+const SCOUT_AGENT_TURN_TIMEOUT_MS = 480_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
