@@ -1175,6 +1175,54 @@
     ) as Promise<Record<string, unknown>>;
   }
 
+  async function startScoutReplyTurn(message: string) {
+    const payload = await jsonOrThrow(
+      await fetch('/app-api/claw/reply/turn', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          message,
+          documentId: selectedDocumentId || null,
+          resourceId: selectedResourceId || null
+        })
+      })
+    ) as { turnId?: unknown };
+
+    if (typeof payload.turnId !== 'string' || !payload.turnId) {
+      throw new Error('Scout did not start a reply turn.');
+    }
+
+    return payload.turnId;
+  }
+
+  async function pollScoutReplyTurn(turnId: string) {
+    const started = Date.now();
+
+    while (Date.now() - started < 16 * 60 * 1000) {
+      const snapshot = await jsonOrThrow(
+        await fetch(`/app-api/claw/reply/turn?turnId=${encodeURIComponent(turnId)}`)
+      ) as { status?: unknown; result?: unknown; error?: unknown };
+
+      if (snapshot.status === 'done' && snapshot.result && typeof snapshot.result === 'object') {
+        return snapshot.result as Record<string, unknown>;
+      }
+
+      if (snapshot.status === 'error') {
+        const errorPayload = snapshot.error && typeof snapshot.error === 'object'
+          ? snapshot.error as { message?: unknown }
+          : null;
+        throw new Error(typeof errorPayload?.message === 'string' ? errorPayload.message : 'Scout could not finish that reply.');
+      }
+
+      streamStatus = 'working';
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+
+    throw new Error('Scout is still working on that reply. Try opening this thread again in a minute.');
+  }
+
   async function sendMessage() {
     const message = replyInput.trim();
     if (!message) return;
@@ -1197,7 +1245,7 @@
       error: false
     };
     let receivedAssistantText = false;
-    let streamStarted = false;
+    let turnId = '';
 
     sendBusy = true;
     streamingReplyVisible = false;
@@ -1213,18 +1261,8 @@
     await scrollCloudThreadToLatest();
 
     try {
-      const response = await fetch('/app-api/claw/reply/stream', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          message,
-          documentId: selectedDocumentId || null,
-          resourceId: selectedResourceId || null
-        })
-      });
-      streamStarted = response.ok && !!response.body;
+      turnId = await startScoutReplyTurn(message);
+      const response = await fetch(`/app-api/claw/reply/turn/${encodeURIComponent(turnId)}/events`);
 
       await readScoutReplyStream(response, {
         onDelta: async (delta) => {
@@ -1246,7 +1284,18 @@
         }
       });
     } catch (caught) {
-      if (!receivedAssistantText) {
+      if (turnId) {
+        try {
+          const payload = await pollScoutReplyTurn(turnId);
+          await applyScoutReplyPayload(payload);
+          error = '';
+        } catch (fallbackCaught) {
+          console.error(fallbackCaught);
+          if (!receivedAssistantText) replyInput = message;
+          await resetPromptHeight();
+          error = fallbackCaught instanceof Error ? fallbackCaught.message : 'Could not finish the Scout reply.';
+        }
+      } else if (!receivedAssistantText) {
         try {
           const payload = await fetchJsonScoutReply(message);
           await applyScoutReplyPayload(payload);
@@ -1259,7 +1308,6 @@
         }
       } else {
         console.error(caught);
-        if (!receivedAssistantText) replyInput = message;
         await resetPromptHeight();
         error = caught instanceof Error ? caught.message : 'Could not finish the Scout reply stream.';
       }
