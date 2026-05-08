@@ -166,7 +166,7 @@ class OpenClawWebProxyController extends Controller
     private function proxyTimeout(string $path): int
     {
         if (Str::startsWith($path, 'app-api/claw/reply')) {
-            return 120;
+            return 240;
         }
 
         return 20;
