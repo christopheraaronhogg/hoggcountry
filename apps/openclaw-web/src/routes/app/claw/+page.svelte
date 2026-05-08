@@ -1445,7 +1445,13 @@
       <section class="thread-summary-card" aria-label="Current Scout conversation summary">
         <strong>Current thread</strong>
         <span>{userMessageCount()} asks · {assistantMessageCount()} Scout replies</span>
-        <button class="secondary-button" type="button" onclick={() => { closeMobilePanels(); void focusPromptComposer(); }}>Ask next</button>
+        <div class="thread-summary-actions" aria-label="Current thread actions">
+          <button class="secondary-button" type="button" onclick={() => { closeMobilePanels(); void focusPromptComposer(); }}>Ask next</button>
+          <button class="secondary-button" type="button" onclick={startNewThread} disabled={newThreadBusy || sendBusy || messages.length === 0} title="Clear Scout chat history for this workspace">
+            {newThreadBusy ? 'Starting…' : 'New thread'}
+          </button>
+        </div>
+        <small>Clears this chat only. Profile, docs, resources, and saved plans stay put.</small>
       </section>
 
       <div class="drawer-section-label">Recent turns</div>
@@ -1475,11 +1481,6 @@
           <span>{messages.length} turn{messages.length === 1 ? '' : 's'}</span>
         </div>
         <div class="conversation-topline-actions">
-          {#if messages.length > 0}
-            <button class="rail-toggle" type="button" onclick={startNewThread} disabled={newThreadBusy || sendBusy} title="Clear Scout chat history for this workspace">
-              {newThreadBusy ? 'Starting…' : 'New thread'}
-            </button>
-          {/if}
           <button class="rail-toggle" type="button" onclick={toggleDocsPanel} aria-expanded={docsOpen} aria-controls="docs-panel">Sources ▸</button>
         </div>
       </div>
@@ -1592,12 +1593,6 @@
         {/if}
 
         {#if messages.length > 0}
-          <div class="thread-actions" aria-label="Scout thread actions">
-            <button class="tiny-button" type="button" onclick={startNewThread} disabled={newThreadBusy || sendBusy} title="Clear Scout chat history for this workspace">
-              {newThreadBusy ? 'Starting new thread…' : 'New thread'}
-            </button>
-            <span>Clears this chat only. Profile, docs, resources, and saved plans stay put.</span>
-          </div>
           <div class="composer-starters" aria-label="Prompt starters">
             {#each composerPromptStarters(profile, dailyBrief).slice(0, 3) as starter}
               <button type="button" onclick={() => useExamplePrompt(starter)} disabled={!connection || sendBusy} title={starter.text}>
@@ -2384,20 +2379,6 @@
     text-underline-offset: 0.16rem;
   }
 
-  .thread-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    margin-bottom: 0.75rem;
-    color: #6a7566;
-    font-size: 0.78rem;
-    font-weight: 750;
-  }
-
-  .thread-actions span {
-    min-width: 0;
-  }
-
   .composer-starters {
     display: flex;
     flex-wrap: wrap;
@@ -2762,10 +2743,22 @@
     text-transform: uppercase;
   }
 
-  .thread-summary-card span {
+  .thread-summary-card span,
+  .thread-summary-card small {
     color: #52604d;
     font-size: 0.9rem;
     font-weight: 750;
+  }
+
+  .thread-summary-card small {
+    font-size: 0.76rem;
+    line-height: 1.28;
+  }
+
+  .thread-summary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
   }
 
   .thread-summary-card .secondary-button {
