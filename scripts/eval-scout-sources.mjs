@@ -33,6 +33,16 @@ const requiredIds = [
   'new-england-state-land-at-rules',
   'nws-noaa-trail-weather-safety-doctrine',
   'nps-usfs-cdc-backcountry-safety-doctrine',
+  'usgs-national-map-hydro-topo-elevation',
+  'usgs-water-data-stream-gauges',
+  'nps-public-api-park-alerts-campgrounds',
+  'census-tiger-roads-places-public-domain',
+  'epa-airnow-smoke-aqi',
+  'cdc-epa-tick-insect-repellent-public-health',
+  'usfs-enterprise-data-warehouse-roads-boundaries-recreation',
+  'noaa-hazard-mapping-system-fire-smoke',
+  'cdc-heatrisk-heat-health',
+  'usda-plants-poison-invasive-edible-context',
   'atc-trail-updates',
   'nws-weather'
 ];
@@ -154,6 +164,60 @@ assert.ok(waterSources.includes('farout-current-comments'), 'Recent water/shelte
 assert.ok(waterSources.includes('private-workspace'), 'Private workspace should remain a searchable source lane');
 assert.ok(waterSources.includes('nps-usfs-cdc-backcountry-safety-doctrine'), 'General backcountry safety prompts should select public government safety doctrine');
 
+const publicDomainMapSources = selectScoutSourceManifests({
+  query: 'Use public domain topo map data for road crossings near town, stream crossings, elevation gain, terrain, and a nearby ford risk check after heavy rain',
+  topics: ['map', 'water crossing'],
+  limit: 12
+}).map((source) => source.id);
+assert.ok(publicDomainMapSources.includes('usgs-national-map-hydro-topo-elevation'), 'Topo/terrain prompts should select USGS National Map public-domain data');
+assert.ok(publicDomainMapSources.includes('usgs-water-data-stream-gauges'), 'Ford/high-water prompts should select USGS Water Data stream gauges');
+assert.ok(publicDomainMapSources.includes('census-tiger-roads-places-public-domain'), 'Road/town access prompts should select Census TIGER road/place data');
+
+const npsParkSources = selectScoutSourceManifests({
+  query: 'Check NPS park alerts, campgrounds, road status, visitor center info, and safety pages for Shenandoah and Harpers Ferry',
+  state: 'VA/WV',
+  limit: 12
+}).map((source) => source.id);
+assert.ok(npsParkSources.includes('nps-public-api-park-alerts-campgrounds'), 'NPS park alert/campground prompts should select the NPS public API/pages lane');
+
+const publicHealthSources = selectScoutSourceManifests({
+  query: 'Wildfire smoke AQI is bad and the family hike has tick Lyme repellent permethrin questions',
+  topics: ['health'],
+  limit: 12
+}).map((source) => source.id);
+assert.ok(publicHealthSources.includes('epa-airnow-smoke-aqi'), 'Smoke/AQI prompts should select EPA AirNow');
+assert.ok(publicHealthSources.includes('cdc-epa-tick-insect-repellent-public-health'), 'Tick/repellent prompts should select CDC/EPA public health guidance');
+
+const forestAccessSources = selectScoutSourceManifests({
+  query: 'National forest road access trailhead gate jurisdiction forest boundary ranger district recreation site check for a USFS AT section',
+  topics: ['road access', 'jurisdiction'],
+  limit: 12
+}).map((source) => source.id);
+assert.ok(forestAccessSources.includes('usfs-enterprise-data-warehouse-roads-boundaries-recreation'), 'USFS road/boundary prompts should select USFS Enterprise Data Warehouse');
+
+const smokeFireSources = selectScoutSourceManifests({
+  query: 'Wildfire active fire smoke plume haze visibility and satellite context before hiking through smoky air',
+  topics: ['fire', 'smoke'],
+  limit: 12
+}).map((source) => source.id);
+assert.ok(smokeFireSources.includes('noaa-hazard-mapping-system-fire-smoke'), 'Fire/smoke plume prompts should select NOAA HMS');
+assert.ok(smokeFireSources.includes('epa-airnow-smoke-aqi'), 'Smoke prompts should still select EPA AirNow for AQI');
+
+const heatHealthSources = selectScoutSourceManifests({
+  query: 'HeatRisk hot weather hydration shade heat exhaustion heat stroke family hiker asthma planning',
+  topics: ['heat', 'health'],
+  limit: 12
+}).map((source) => source.id);
+assert.ok(heatHealthSources.includes('cdc-heatrisk-heat-health'), 'Heat-health prompts should select CDC HeatRisk guidance');
+assert.ok(heatHealthSources.includes('nws-weather'), 'Heat-health prompts should still select NWS live weather');
+
+const plantSources = selectScoutSourceManifests({
+  query: 'Poison ivy poison oak poison sumac invasive plants and foraging safety warning on the AT',
+  topics: ['plants'],
+  limit: 12
+}).map((source) => source.id);
+assert.ok(plantSources.includes('usda-plants-poison-invasive-edible-context'), 'Plant hazard/context prompts should select USDA PLANTS');
+
 const gmcReceipt = buildScoutSourceReceipt('green-mountain-club-long-trail-mud-season');
 assert.ok(gmcReceipt?.citation.includes('Scout fetched timestamp: not fetched'), 'Unfetched GMC receipt should not imply a live fetch');
 const newEnglandReceipt = buildScoutSourceReceipt('new-england-state-land-at-rules');
@@ -162,6 +226,27 @@ const weatherDoctrineReceipt = buildScoutSourceReceipt('nws-noaa-trail-weather-s
 assert.ok(weatherDoctrineReceipt?.citation.includes('weather.gov/safety'), 'Weather safety doctrine receipt should point to NWS safety guidance');
 const backcountrySafetyReceipt = buildScoutSourceReceipt('nps-usfs-cdc-backcountry-safety-doctrine');
 assert.ok(backcountrySafetyReceipt?.citation.includes('CDC'), 'Backcountry safety doctrine receipt should name public government safety sources');
+const usgsMapReceipt = buildScoutSourceReceipt('usgs-national-map-hydro-topo-elevation');
+assert.ok(usgsMapReceipt?.citation.includes('USGS National Map'), 'USGS map receipt should name The National Map');
+assert.equal(usgsMapReceipt?.accessMode, 'live-fetch', 'USGS map receipt should identify live-fetch access');
+const usgsWaterReceipt = buildScoutSourceReceipt('usgs-water-data-stream-gauges');
+assert.ok(usgsWaterReceipt?.citation.includes('USGS Water Data'), 'USGS water receipt should name Water Data/NWIS');
+const npsApiReceipt = buildScoutSourceReceipt('nps-public-api-park-alerts-campgrounds');
+assert.ok(npsApiReceipt?.citation.includes('NPS official pages/API'), 'NPS public API receipt should name NPS official pages/API');
+const censusReceipt = buildScoutSourceReceipt('census-tiger-roads-places-public-domain');
+assert.ok(censusReceipt?.citation.includes('TIGER/Line'), 'Census TIGER receipt should name TIGER/Line data');
+const airNowReceipt = buildScoutSourceReceipt('epa-airnow-smoke-aqi');
+assert.ok(airNowReceipt?.citation.includes('AirNow'), 'EPA AirNow receipt should name AirNow');
+const tickReceipt = buildScoutSourceReceipt('cdc-epa-tick-insect-repellent-public-health');
+assert.ok(tickReceipt?.citation.includes('CDC'), 'CDC/EPA tick receipt should name CDC guidance');
+const usfsEdwReceipt = buildScoutSourceReceipt('usfs-enterprise-data-warehouse-roads-boundaries-recreation');
+assert.ok(usfsEdwReceipt?.citation.includes('USFS Enterprise Data Warehouse'), 'USFS EDW receipt should name the Enterprise Data Warehouse');
+const noaaHmsReceipt = buildScoutSourceReceipt('noaa-hazard-mapping-system-fire-smoke');
+assert.ok(noaaHmsReceipt?.citation.includes('Hazard Mapping System'), 'NOAA HMS receipt should name Hazard Mapping System');
+const cdcHeatReceipt = buildScoutSourceReceipt('cdc-heatrisk-heat-health');
+assert.ok(cdcHeatReceipt?.citation.includes('CDC Heat'), 'CDC HeatRisk receipt should name CDC Heat guidance');
+const usdaPlantsReceipt = buildScoutSourceReceipt('usda-plants-poison-invasive-edible-context');
+assert.ok(usdaPlantsReceipt?.citation.includes('USDA PLANTS'), 'USDA PLANTS receipt should name the database');
 
 const routeReceipt = buildScoutSourceReceipt('hoggcountry-pine-grove-route-qa-2026-05-04');
 assert.ok(routeReceipt?.citation.includes('Pine Grove route-order QA fixture'), 'Route receipt should expose the validator citation');

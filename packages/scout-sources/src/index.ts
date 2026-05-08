@@ -142,6 +142,13 @@ const OFFICIAL_PUBLIC_LICENSE: ScoutSourceLicense = {
   notes: 'Fetch or cite the official page/API for the turn; do not imply a live check unless fetched.'
 };
 
+const FEDERAL_PUBLIC_DOMAIN_LICENSE: ScoutSourceLicense = {
+  label: 'U.S. federal public-domain/open-data source',
+  attributionRequired: true,
+  redistributionAllowed: true,
+  notes: 'Generally public domain when created by U.S. federal employees as part of official duties; retain agency citation and do not imply agency endorsement. Check pages for third-party exceptions, trademarks, logos, photos, or non-federal contributions.'
+};
+
 export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
   {
     id: 'private-workspace',
@@ -594,6 +601,206 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     keywords: ['water treatment', 'filter', 'purify', 'bear', 'food storage', 'bear canister', 'ursack', 'ticks', 'lyme', 'fire', 'burn ban', 'leave no trace', 'lnt', 'sanitation', 'cathole', 'beginner', 'safety']
   },
   {
+    id: 'usgs-national-map-hydro-topo-elevation',
+    title: 'USGS National Map public-domain topo, hydrography, names, and elevation data',
+    displayCategory: 'public-domain federal map data',
+    lane: 'open-data',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal geospatial data.',
+    useWhen: 'Topo context, stream/river crossings, elevation and ridge/valley context, water-feature names, road/trailhead map sanity checks, and rough route terrain validation when user-owned guide data is missing.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'manual', staleAfterDays: 90 },
+    coverage: { trail: 'AT', topics: ['topo', 'map', 'hydrography', 'stream', 'river', 'water crossing', 'elevation', 'contours', 'terrain', 'place names', 'trailhead', 'road crossing'] },
+    citationTemplate: 'USGS National Map data/services; Scout fetched timestamp: {fetchedAt}. https://www.usgs.gov/programs/national-geospatial-program/national-map and https://apps.nationalmap.gov/services/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'Good for public-domain map grounding and terrain/water-feature sanity checks, not for AT guidebook mileage, campsite legality, water reliability, or current closures.',
+      'Retain USGS attribution and do not present adapted map data as official USGS output.'
+    ],
+    keywords: ['usgs', 'national map', 'topo', 'topographic', 'hydrography', 'nhd', '3dep', 'elevation', 'contour', 'stream', 'river', 'creek', 'brook', 'ford', 'crossing', 'water crossing', 'terrain', 'ridge', 'valley', 'gnis', 'place name', 'trailhead', 'road crossing']
+  },
+  {
+    id: 'usgs-water-data-stream-gauges',
+    title: 'USGS Water Data stream gauges for ford, river, and flood-risk context',
+    displayCategory: 'public-domain federal water data',
+    lane: 'open-data',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal hydrologic observations.',
+    useWhen: 'Ford and stream-crossing risk, rain-swollen creek context, nearby river stage/discharge, flood trend awareness, and conservative go/no-go language around high water.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 1 },
+    coverage: { trail: 'AT', topics: ['stream gauge', 'river gauge', 'flood', 'ford', 'fording', 'discharge', 'stage', 'high water', 'rain', 'creek crossing'] },
+    citationTemplate: 'USGS Water Data / National Water Information System; Scout fetched timestamp: {fetchedAt}. https://waterdata.usgs.gov/ and https://waterservices.usgs.gov/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'A nearby gauge is not the same as the exact AT crossing; use it as risk context only and pair with NWS alerts/local land-manager guidance.',
+      'Do not tell a hiker a ford is safe from gauge data alone.'
+    ],
+    keywords: ['usgs water', 'water data', 'nwis', 'stream gauge', 'river gauge', 'gauge', 'gage', 'flood', 'flooding', 'ford', 'fording', 'creek crossing', 'water crossing', 'high water', 'discharge', 'stage', 'cfs', 'rain swollen', 'swift water']
+  },
+  {
+    id: 'nps-public-api-park-alerts-campgrounds',
+    title: 'NPS public-domain park API/pages: alerts, closures, campgrounds, visitor info, and safety pages',
+    displayCategory: 'public-domain federal park data',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal park data and NPS-created public-domain content unless marked otherwise.',
+    useWhen: 'AT segments inside or near NPS units: Shenandoah, Great Smoky Mountains, Harpers Ferry, Delaware Water Gap, Blue Ridge Parkway, C&O Canal/Potomac context, park alerts, campground/visitor-center info, permits, roads, and safety pages.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 7 },
+    coverage: { trail: 'AT', topics: ['nps', 'national park', 'park alert', 'closure', 'campground', 'visitor center', 'permit', 'road status', 'safety', 'shenandoah', 'gsmnp', 'harpers ferry', 'delaware water gap'] },
+    citationTemplate: 'NPS official pages/API; Scout fetched timestamp: {fetchedAt}. https://www.nps.gov/subjects/developer/ and https://www.nps.gov/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'NPS pages can include third-party media or logos; bundle only clearly federal text/data and cite the exact page/API endpoint.',
+      'Park-specific permits and reservations may still depend on Recreation.gov/live availability rather than static NPS page text.'
+    ],
+    keywords: ['nps', 'national park service', 'national park', 'park alert', 'alerts', 'closure', 'closures', 'campground', 'visitor center', 'permit', 'permits', 'road status', 'road closure', 'shenandoah', 'great smoky mountains', 'gsmnp', 'harpers ferry', 'delaware water gap', 'blue ridge parkway', 'c&o canal']
+  },
+  {
+    id: 'census-tiger-roads-places-public-domain',
+    title: 'U.S. Census TIGER/Line public roads, boundaries, and place-name data',
+    displayCategory: 'public-domain federal road/place data',
+    lane: 'open-data',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal geospatial data.',
+    useWhen: 'Town, county, road-crossing, jurisdiction, and access-point context; distinguishing nearby towns/roads from AT corridor facts; rough shuttle/road-name sanity checks before asking for direct confirmation.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'manual', staleAfterDays: 365 },
+    coverage: { trail: 'AT', topics: ['roads', 'towns', 'places', 'county', 'state boundary', 'municipality', 'road crossing', 'shuttle', 'access point'] },
+    citationTemplate: 'U.S. Census Bureau TIGER/Line data products; Scout fetched timestamp: {fetchedAt}. https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'Good for public roads, boundaries, and place context; not evidence for trail mileage, parking legality, shuttle availability, services, or current road closures.',
+      'Use as map sanity context and still require direct/local confirmation for pickup plans.'
+    ],
+    keywords: ['census', 'tiger', 'tiger line', 'road', 'roads', 'county', 'town', 'place', 'municipality', 'boundary', 'state line', 'road crossing', 'access point', 'pickup', 'shuttle', 'parking', 'nearest town']
+  },
+  {
+    id: 'epa-airnow-smoke-aqi',
+    title: 'EPA AirNow smoke and air-quality checks for wildfire haze and unhealthy AQI',
+    displayCategory: 'public federal air-quality data',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal/state/local air-quality observations and forecasts.',
+    useWhen: 'Wildfire smoke, haze, asthma/respiratory constraints, unhealthy AQI, reroute/rest-day decisions, and exposed-ridge or town-day timing when air quality matters.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 1 },
+    coverage: { topics: ['air quality', 'aqi', 'smoke', 'wildfire smoke', 'haze', 'respiratory', 'asthma', 'pm2.5', 'ozone'] },
+    citationTemplate: 'EPA AirNow air-quality data; Scout fetched timestamp: {fetchedAt}. https://www.airnow.gov/ and https://docs.airnowapi.org/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'Air quality can change quickly and can be location-specific; pair with NWS/fire/land-manager guidance for current decisions.',
+      'Do not give medical advice; recommend conservative exposure reduction and professional care for respiratory symptoms.'
+    ],
+    keywords: ['airnow', 'epa', 'air quality', 'aqi', 'smoke', 'wildfire smoke', 'wildfire', 'haze', 'respiratory', 'asthma', 'pm2.5', 'ozone', 'unhealthy air', 'smoky']
+  },
+  {
+    id: 'cdc-epa-tick-insect-repellent-public-health',
+    title: 'CDC/EPA public-domain tick-bite prevention and insect-repellent guidance',
+    displayCategory: 'public-domain federal health guidance',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal health/safety guidance.',
+    useWhen: 'Tick season, Lyme disease risk, family hikes, permethrin/repellent choices, post-hike tick checks, and practical prevention habits for wooded/brushy AT sections.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'manual', staleAfterDays: 90 },
+    coverage: { trail: 'AT', topics: ['ticks', 'lyme', 'repellent', 'permethrin', 'deet', 'picaridin', 'tick check', 'public health'] },
+    citationTemplate: 'CDC tick-bite prevention and EPA insect-repellent guidance; Scout fetched timestamp: {fetchedAt}. https://www.cdc.gov/ticks/prevention/ and https://www.epa.gov/insect-repellents',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'Use for prevention guidance, not diagnosis or treatment. For symptoms or embedded-tick medical decisions, tell the hiker to contact a clinician/public-health source.',
+      'Follow product labels and age/pregnancy-specific restrictions from EPA/CDC guidance.'
+    ],
+    keywords: ['cdc', 'epa', 'tick', 'ticks', 'lyme', 'tick bite', 'tick check', 'permethrin', 'repellent', 'insect repellent', 'deet', 'picaridin', 'ir3535', 'oil of lemon eucalyptus', 'family hike', 'public health']
+  },
+  {
+    id: 'usfs-enterprise-data-warehouse-roads-boundaries-recreation',
+    title: 'USFS Enterprise Data Warehouse public roads, ownership, recreation, and forest-boundary services',
+    displayCategory: 'public-domain federal forest data',
+    lane: 'open-data',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal forest geospatial data.',
+    useWhen: 'National forest AT sections: forest boundary context, road/access sanity checks, recreation-site lookup, fire/closure context, ownership/jurisdiction handoffs, and identifying when USFS land-manager pages are the right next check.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'manual', staleAfterDays: 90 },
+    coverage: { trail: 'AT', topics: ['usfs', 'national forest', 'forest boundary', 'forest road', 'trailhead', 'recreation site', 'ownership', 'jurisdiction', 'road access'] },
+    citationTemplate: 'USFS Enterprise Data Warehouse ArcGIS services; Scout fetched timestamp: {fetchedAt}. https://apps.fs.usda.gov/arcx/rest/services/EDW',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'Use as public map/jurisdiction context only. Motor-vehicle status, seasonal gate closures, fire restrictions, camping rules, and trail closures still require the current forest/district page or ranger-district confirmation.',
+      'Forest Service data can lag field conditions; do not use it as the sole basis for same-day road access.'
+    ],
+    keywords: ['usfs', 'forest service', 'national forest', 'enterprise data warehouse', 'edw', 'forest boundary', 'ownership', 'jurisdiction', 'forest road', 'road access', 'trailhead', 'recreation site', 'campground', 'gate', 'ranger district']
+  },
+  {
+    id: 'noaa-hazard-mapping-system-fire-smoke',
+    title: 'NOAA Hazard Mapping System active fire and smoke product',
+    displayCategory: 'public-domain federal fire/smoke data',
+    lane: 'live-official',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal satellite fire/smoke analysis.',
+    useWhen: 'Smoke plume, active-fire, haze, and visibility-risk context; pairing with AirNow AQI and land-manager/NWS alerts for conservative hike timing and reroute/rest-day decisions.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 1 },
+    coverage: { topics: ['fire', 'wildfire', 'smoke', 'haze', 'satellite', 'visibility', 'air quality'] },
+    citationTemplate: 'NOAA/NESDIS Hazard Mapping System Fire and Smoke Product; Scout fetched timestamp: {fetchedAt}. https://www.ospo.noaa.gov/products/land/hms.html',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'Satellite fire/smoke detections are situational awareness, not a trail-closure source. Pair with NWS alerts, AirNow AQI, and local land-manager/fire-incident pages.',
+      'Smoke plume location does not prove ground-level exposure at a specific shelter or ridge.'
+    ],
+    keywords: ['noaa hms', 'hazard mapping system', 'fire', 'wildfire', 'active fire', 'smoke', 'smoke plume', 'haze', 'visibility', 'satellite', 'viirs', 'modis', 'goes', 'air quality']
+  },
+  {
+    id: 'cdc-heatrisk-heat-health',
+    title: 'CDC HeatRisk and heat-health guidance for hot-weather hiking decisions',
+    displayCategory: 'public-domain federal heat-health guidance',
+    lane: 'official-public',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal health guidance.',
+    useWhen: 'Hot-weather itineraries, family/older hiker risk, asthma/heart/pregnancy constraints, hydration/rest timing, and conservative heat go/no-go framing alongside NWS forecasts.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'manual', staleAfterDays: 90 },
+    coverage: { topics: ['heat', 'heatrisk', 'hydration', 'heat illness', 'heat exhaustion', 'heat stroke', 'family', 'asthma', 'heart condition'] },
+    citationTemplate: 'CDC Heat and Health / HeatRisk guidance; Scout fetched timestamp: {fetchedAt}. https://www.cdc.gov/heat-health/ and https://ephtracking.cdc.gov/Applications/HeatRisk/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'Use for prevention and risk framing, not diagnosis or treatment. Emergency symptoms require emergency medical care.',
+      'Pair with local NWS point forecast/alerts and the hiker’s actual water/shade/bailout options.'
+    ],
+    keywords: ['cdc', 'heatrisk', 'heat', 'hot', 'hydration', 'stay cool', 'heat exhaustion', 'heat stroke', 'heat illness', 'asthma', 'heart condition', 'pregnant', 'family', 'shade', 'cooling']
+  },
+  {
+    id: 'usda-plants-poison-invasive-edible-context',
+    title: 'USDA PLANTS public federal plant profiles for poison, invasive, and habitat context',
+    displayCategory: 'public-domain federal plant data',
+    lane: 'open-data',
+    trust: 'official',
+    accessMode: 'live-fetch',
+    privacy: 'Public federal plant database.',
+    useWhen: 'Plant-name grounding for poison ivy/oak/sumac, invasive plant context, habitat/range sanity checks, and conservative beginner nature notes without giving foraging guarantees.',
+    license: FEDERAL_PUBLIC_DOMAIN_LICENSE,
+    freshness: { updateCadence: 'manual', staleAfterDays: 365 },
+    coverage: { trail: 'AT', topics: ['plants', 'poison ivy', 'poison oak', 'poison sumac', 'invasive plants', 'habitat', 'range', 'botany'] },
+    citationTemplate: 'USDA PLANTS Database; Scout fetched timestamp: {fetchedAt}. https://plants.usda.gov/',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'Do not identify edible plants or fungi from Scout text alone. Treat plant guidance as conservative avoidance/context unless verified by a qualified human and local source.',
+      'Photos or third-party materials may carry separate rights; cite official USDA profile/data pages.'
+    ],
+    keywords: ['usda plants', 'plants database', 'plant', 'plants', 'poison ivy', 'poison oak', 'poison sumac', 'toxic plant', 'invasive', 'invasive species', 'habitat', 'range', 'botany', 'foraging', 'edible']
+  },
+  {
     id: 'atc-trail-updates',
     title: 'Appalachian Trail Conservancy official trail updates',
     displayCategory: 'official closures and detours',
@@ -777,6 +984,17 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (manifest.id === 'new-england-state-land-at-rules' && /\b(connecticut|\bct\b|massachusetts|\bma\b|sages\s+ravine|bear\s+mountain|great\s+barrington|salisbury|family|fair[-\s]?weather)\b/iu.test(query.query)) score += 8;
   if (manifest.id === 'nws-noaa-trail-weather-safety-doctrine' && /\b(heat|hot|lightning|thunder|thunderstorm|storm|flood|wind|cold|hypothermia|snow|ice|winter|exposed|ridge|go\/?no[-\s]?go)\b/iu.test(query.query)) score += 8;
   if (manifest.id === 'nps-usfs-cdc-backcountry-safety-doctrine' && /\b(water|filter|purif|bear|food\s+storage|canister|ursack|tick|lyme|fire|burn\s+ban|leave\s+no\s+trace|\blnt\b|sanitation|beginner|starter|new\s+hiker)\b/iu.test(query.query)) score += 7;
+  if (manifest.id === 'nws-weather' && /\b(weather|forecast|alert|heat|hot|lightning|thunder|thunderstorm|storm|rain|flood|wind|cold|hypothermia|snow|ice|winter|exposed|ridge|above[-\s]?treeline|go\/?no[-\s]?go)\b/iu.test(query.query)) score += 12;
+  if (manifest.id === 'usgs-water-data-stream-gauges' && /\b(ford|fording|stream\s+gauge|river\s+gauge|gauge|gage|flood|high\s+water|discharge|stage|cfs|creek\s+crossing|water\s+crossing|rain[-\s]?swollen)\b/iu.test(query.query)) score += 8;
+  if (manifest.id === 'usgs-national-map-hydro-topo-elevation' && /\b(topo|topographic|map|hydrography|elevation|contour|terrain|ridge|valley|road\s+crossing|trailhead|place\s+name|gnis)\b/iu.test(query.query)) score += 7;
+  if (manifest.id === 'nps-public-api-park-alerts-campgrounds' && /\b(nps|national\s+park|park\s+alert|shenandoah|great\s+smoky|gsmnp|harpers?\s+ferry|delaware\s+water\s+gap|blue\s+ridge\s+parkway|campground|visitor\s+center|road\s+status)\b/iu.test(query.query)) score += 7;
+  if (manifest.id === 'census-tiger-roads-places-public-domain' && /\b(census|tiger|road|roads|county|town|place|municipality|boundary|state\s+line|road\s+crossing|access\s+point|pickup|nearest\s+town)\b/iu.test(query.query)) score += 6;
+  if (manifest.id === 'epa-airnow-smoke-aqi' && /\b(airnow|air\s+quality|aqi|smoke|wildfire|haze|respiratory|asthma|pm2\.?5|ozone|unhealthy\s+air)\b/iu.test(query.query)) score += 8;
+  if (manifest.id === 'cdc-epa-tick-insect-repellent-public-health' && /\b(tick|ticks|lyme|repellent|permethrin|deet|picaridin|tick\s+check|tick\s+bite|family\s+hike)\b/iu.test(query.query)) score += 8;
+  if (manifest.id === 'usfs-enterprise-data-warehouse-roads-boundaries-recreation' && /\b(usfs|forest\s+service|national\s+forest|forest\s+boundary|ownership|jurisdiction|forest\s+road|road\s+access|trailhead|recreation\s+site|ranger\s+district|gate)\b/iu.test(query.query)) score += 7;
+  if (manifest.id === 'noaa-hazard-mapping-system-fire-smoke' && /\b(hazard\s+mapping\s+system|\bhms\b|fire|wildfire|active\s+fire|smoke|smoke\s+plume|haze|visibility|satellite|viirs|modis|goes)\b/iu.test(query.query)) score += 8;
+  if (manifest.id === 'cdc-heatrisk-heat-health' && /\b(heatrisk|heat|hot|hydration|heat\s+exhaustion|heat\s+stroke|heat\s+illness|asthma|heart\s+condition|pregnant|shade|cooling)\b/iu.test(query.query)) score += 8;
+  if (manifest.id === 'usda-plants-poison-invasive-edible-context' && /\b(usda\s+plants|plant|plants|poison\s+ivy|poison\s+oak|poison\s+sumac|toxic\s+plant|invasive|invasive\s+species|habitat|range|botany|foraging|edible)\b/iu.test(query.query)) score += 8;
   if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|mental\s+halfway|psychological\s+halfway|harpers?\s+ferry|harper['’]?s?\s+ferry|atc\s+hq|keys\s+gap|weverton|ed\s+garvey|dahlgren|gathland|crampton\s+gap|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|vermont|long\s+trail|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
   if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 10;
   if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
