@@ -59,6 +59,10 @@ class OpenClawWebProxyController extends Controller
         $multipart = $this->shouldProxyAsMultipart($request);
         $headers = $this->forwardHeaders($request);
 
+        if (Str::startsWith($path, 'app-api/claw/reply/stream')) {
+            return $this->proxyStream($request, $path, $target, $headers);
+        }
+
         if ($multipart) {
             unset($headers['content-type']);
         }
@@ -99,6 +103,62 @@ class OpenClawWebProxyController extends Controller
                 $response->headers->set($header, $value, false);
             }
         }
+
+        return $response;
+    }
+
+    private function proxyStream(Request $request, string $path, string $target, array $headers): Response
+    {
+        unset($headers['content-length']);
+
+        try {
+            $client = new \GuzzleHttp\Client([
+                'allow_redirects' => false,
+                'http_errors' => false,
+                'timeout' => $this->proxyTimeout($path),
+            ]);
+
+            $options = [
+                'headers' => $headers,
+                'stream' => true,
+            ];
+
+            if (! in_array($request->method(), ['GET', 'HEAD'], true)) {
+                $options['body'] = $request->getContent();
+            }
+
+            $upstream = $client->request($request->method(), $target, $options);
+        } catch (\Throwable $e) {
+            throw new HttpException(503, 'OpenClaw web frontend is unavailable.', $e);
+        }
+
+        $body = $upstream->getBody();
+        $response = response()->stream(function () use ($body): void {
+            while (! $body->eof()) {
+                echo $body->read(8192);
+
+                if (function_exists('ob_flush')) {
+                    @ob_flush();
+                }
+
+                flush();
+            }
+        }, $upstream->getStatusCode());
+
+        foreach ($upstream->getHeaders() as $header => $values) {
+            $lowerHeader = Str::lower($header);
+
+            if (in_array($lowerHeader, ['connection', 'content-encoding', 'content-length', 'date', 'server', 'transfer-encoding'], true)) {
+                continue;
+            }
+
+            foreach ($values as $value) {
+                $response->headers->set($header, $value, false);
+            }
+        }
+
+        $response->headers->set('X-Accel-Buffering', 'no');
+        $response->headers->set('Cache-Control', 'no-cache, no-transform');
 
         return $response;
     }

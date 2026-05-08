@@ -210,6 +210,70 @@
     throw new Error(cleaned || 'Request failed.');
   }
 
+  async function readScoutReplyStream(
+    response: Response,
+    handlers: {
+      readonly onDelta: (delta: string) => void | Promise<void>;
+      readonly onDone: (payload: Record<string, unknown>) => void | Promise<void>;
+    }
+  ) {
+    if (!response.ok || !response.body) {
+      await jsonOrThrow(response);
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    const dispatchEventBlock = async (block: string) => {
+      const eventLine = block.split('\n').find((line) => line.startsWith('event:'));
+      const dataLines = block
+        .split('\n')
+        .filter((line) => line.startsWith('data:'))
+        .map((line) => line.slice('data:'.length).trimStart());
+      const eventName = eventLine ? eventLine.slice('event:'.length).trim() : 'message';
+      const rawData = dataLines.join('\n');
+      const payload = rawData ? JSON.parse(rawData) as Record<string, unknown> : {};
+
+      if (eventName === 'delta') {
+        const delta = typeof payload.delta === 'string' ? payload.delta : '';
+        if (delta) await handlers.onDelta(delta);
+        return;
+      }
+
+      if (eventName === 'done') {
+        await handlers.onDone(payload);
+        return;
+      }
+
+      if (eventName === 'error') {
+        const message = typeof payload.message === 'string' && payload.message.trim()
+          ? payload.message.trim()
+          : 'Could not send the cloud prompt.';
+        throw new Error(message);
+      }
+    };
+
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+
+      let boundary = buffer.indexOf('\n\n');
+      while (boundary !== -1) {
+        const block = buffer.slice(0, boundary).trimEnd();
+        buffer = buffer.slice(boundary + 2);
+        if (block) await dispatchEventBlock(block);
+        boundary = buffer.indexOf('\n\n');
+      }
+
+      if (done) break;
+    }
+
+    const trailing = buffer.trim();
+    if (trailing) await dispatchEventBlock(trailing);
+  }
+
   function consumeConnectQueryState() {
     const url = new URL(window.location.href);
     const connected = url.searchParams.get('chatgpt_connected');
@@ -1058,12 +1122,22 @@
     if (!message) return;
 
     const previousMessages = messages;
+    const now = Date.now();
     const pendingUserMessage: ClawMessage = {
-      id: `pending-user-${Date.now()}`,
+      id: `pending-user-${now}`,
       role: 'user',
       text: message,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(now).toISOString(),
       model: null,
+      error: false
+    };
+    const streamingAssistantId = `streaming-assistant-${now}`;
+    const streamingAssistantMessage: ClawMessage = {
+      id: streamingAssistantId,
+      role: 'assistant',
+      text: '',
+      createdAt: new Date(now + 1).toISOString(),
+      model: connection?.model ?? null,
       error: false
     };
 
@@ -1074,13 +1148,13 @@
     saveError = '';
     replyInput = '';
     await resetPromptHeight();
-    messages = [...messages, pendingUserMessage];
+    messages = [...messages, pendingUserMessage, streamingAssistantMessage];
     await focusCloudThread();
     await scrollCloudThreadToLatest();
 
     try {
-      const payload = await jsonOrThrow(
-        await fetch('/app-api/claw/reply', {
+      await readScoutReplyStream(
+        await fetch('/app-api/claw/reply/stream', {
           method: 'POST',
           headers: {
             'content-type': 'application/json'
@@ -1090,19 +1164,28 @@
             documentId: selectedDocumentId || null,
             resourceId: selectedResourceId || null
           })
-        })
+        }),
+        {
+          onDelta: async (delta) => {
+            messages = messages.map((item) => item.id === streamingAssistantId
+              ? { ...item, text: `${item.text}${delta}` }
+              : item);
+            await scrollCloudThreadToLatest();
+          },
+          onDone: async (payload) => {
+            messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : messages;
+            documents = Array.isArray(payload.documents) ? (payload.documents as ImportedDocument[]) : documents;
+            ensureSelectedDocument(documents);
+            factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
+            connection = (payload.connection ?? null) as ProviderConnection | null;
+            const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
+            if (revisedDocument) {
+              savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
+              saveNotice = `Saved a new review version for "${revisedDocument.title}" in Docs.`;
+            }
+          }
+        }
       );
-
-      messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : messages;
-      documents = Array.isArray(payload.documents) ? (payload.documents as ImportedDocument[]) : documents;
-      ensureSelectedDocument(documents);
-      factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
-      connection = (payload.connection ?? null) as ProviderConnection | null;
-      const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
-      if (revisedDocument) {
-        savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
-        saveNotice = `Saved a new review version for "${revisedDocument.title}" in Docs.`;
-      }
       pendingPrompt = '';
       await focusCloudThread();
       await scrollCloudThreadToLatest();

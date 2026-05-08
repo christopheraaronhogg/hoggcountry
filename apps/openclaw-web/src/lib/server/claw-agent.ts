@@ -1,4 +1,4 @@
-import { Agent, type AgentTool } from '@mariozechner/pi-agent-core';
+import { Agent, type AgentEvent, type AgentTool } from '@mariozechner/pi-agent-core';
 import {
   searchImportedDocuments,
   searchManualSections,
@@ -1236,6 +1236,7 @@ export async function replyInWorkspaceClaw(
   options?: {
     readonly documentId?: string | null;
     readonly resourceId?: string | null;
+    readonly onTextDelta?: (delta: string) => void | Promise<void>;
   }
 ): Promise<{
   readonly workspace: WorkspaceSnapshot;
@@ -1304,6 +1305,15 @@ export async function replyInWorkspaceClaw(
       getApiKey: async () => runtime.apiKey,
       onPayload: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? applyOpenCodeGoPayloadCompat : undefined
     });
+
+    if (options?.onTextDelta) {
+      agent.subscribe(async (event: AgentEvent) => {
+        if (event.type !== 'message_update') return;
+        const update = event.assistantMessageEvent as { type?: string; delta?: unknown };
+        if (update.type !== 'text_delta' || typeof update.delta !== 'string' || update.delta.length === 0) return;
+        await options.onTextDelta?.(update.delta);
+      });
+    }
 
     await withScoutAgentTimeout(agent.prompt(trimmedPrompt), turnDeadline - Date.now());
 
