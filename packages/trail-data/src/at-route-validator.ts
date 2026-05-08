@@ -110,7 +110,7 @@ export const HARPERS_FERRY_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
   label: 'Hogg Country Harpers Ferry mental-halfway corridor and mixed-plan QA fixture',
   citation: 'Internal dogfood guardrail created from Chris’s 2026-05-06 Harpers Ferry failure prompt plus Hogg Country field guide anchors; verify exact mileages, parking, water, legal camping, shuttle, and current closures before leaving.',
   authority: 'internal-qa',
-  exactMileageCaveat: 'Use these values as a route-order and ambiguity guardrail. Harpers Ferry / ATC HQ is the psychological or mental halfway point; Pine Grove Furnace is the true/mathematical halfway area and must not override an explicit Harpers Ferry destination.'
+  exactMileageCaveat: 'Use these values as a route-order and ambiguity guardrail, not as final guidebook mileage. Treat exact mileages, legal camping, parking, shuttles, water, and services as current-guide/direct-source checks. Harpers Ferry / ATC HQ is the psychological or mental halfway point; Pine Grove Furnace is the true/mathematical halfway area and must not override an explicit Harpers Ferry destination.'
 } as const;
 
 export const BAXTER_KATAHDIN_AT_CORRIDOR_QA_SOURCE: AtRouteReferenceSource = {
