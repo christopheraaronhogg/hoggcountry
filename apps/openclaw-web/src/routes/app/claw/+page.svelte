@@ -161,6 +161,7 @@
   let error = $state('');
   let sendBusy = $state(false);
   let streamingReplyVisible = $state(false);
+  let streamingAssistantText = $state('');
   let streamStatus = $state('');
   let thinkingEffort = $state<ScoutThinkingEffort>('low');
   let thinkingActivityChars = $state(0);
@@ -192,6 +193,12 @@
   let scoutRealtimeSubscription: SubscriptionHandle | null = null;
   let spacetimeUnsubscribe: (() => void) | null = null;
   const messageBlockCache = new Map<string, { text: string; blocks: MessageBlock[] }>();
+  const messageHistoryList = $derived([...messages].reverse());
+  const assistantReplyCount = $derived(messages.filter((message) => message.role === 'assistant').length);
+  const userAskCount = $derived(messages.filter((message) => message.role === 'user').length);
+  const composerStarters = $derived(composerPromptStarters(profile, dailyBrief));
+  const selectedTargetStandardSlot = $derived(targetStandardSlotKey ? standardDocumentSlotForKey(targetStandardSlotKey) : null);
+  const streamingMessageBlocks = $derived(streamingAssistantText ? parseMessageBlocks(streamingAssistantText) : []);
 
   async function jsonOrThrow(response: Response) {
     if (response.ok) {
@@ -485,14 +492,6 @@
     return messages.slice(-6);
   }
 
-  function assistantMessageCount(): number {
-    return messages.filter((message) => message.role === 'assistant').length;
-  }
-
-  function userMessageCount(): number {
-    return messages.filter((message) => message.role === 'user').length;
-  }
-
   function messageDisplayText(message: ClawMessage): string {
     return message.text;
   }
@@ -600,10 +599,6 @@
     return blocks;
   }
 
-  function messageHistory(): ClawMessage[] {
-    return [...messages].reverse();
-  }
-
   function threadPreview(message: ClawMessage): string {
     return shortText(message.text, 76);
   }
@@ -693,10 +688,6 @@
 
   function extraDocumentCount(): number {
     return documents.filter((document) => !slotKeyForDocument(document) && document.status !== 'archived').length;
-  }
-
-  function targetStandardSlot() {
-    return targetStandardSlotKey ? standardDocumentSlotForKey(targetStandardSlotKey) : null;
   }
 
   function findDocument(documentId: string): ImportedDocument | null {
@@ -1008,7 +999,14 @@
 
   async function scrollCloudThreadToLatest(behavior: ScrollBehavior = 'smooth') {
     await tick();
-    const latest = threadMessages?.lastElementChild;
+    if (!threadMessages) return;
+
+    if (behavior === 'auto') {
+      threadMessages.scrollTop = threadMessages.scrollHeight;
+      return;
+    }
+
+    const latest = threadMessages.lastElementChild;
     if (latest instanceof HTMLElement) {
       latest.scrollIntoView({ behavior, block: 'end' });
     }
@@ -1300,14 +1298,6 @@
       model: null,
       error: false
     };
-    const streamingAssistantMessage: ClawMessage = {
-      id: `pending-assistant-${now}`,
-      role: 'assistant',
-      text: '',
-      createdAt: new Date(now + 1).toISOString(),
-      model: null,
-      error: false
-    };
     let receivedAssistantText = false;
     let turnId = '';
     let pendingStreamingDelta = '';
@@ -1322,13 +1312,9 @@
       if (!receivedAssistantText) {
         receivedAssistantText = true;
         streamingReplyVisible = true;
-        messages = [...messages, { ...streamingAssistantMessage, text: delta }];
-      } else {
-        messages = messages.map((threadMessage) => threadMessage.id === streamingAssistantMessage.id
-          ? { ...threadMessage, text: `${threadMessage.text}${delta}` }
-          : threadMessage);
       }
 
+      streamingAssistantText += delta;
       await scrollCloudThreadToLatest('auto');
     };
 
@@ -1342,6 +1328,7 @@
 
     sendBusy = true;
     streamingReplyVisible = false;
+    streamingAssistantText = '';
     streamStatus = '';
     thinkingActivityChars = 0;
     pendingPrompt = message;
@@ -1386,7 +1373,18 @@
           error = '';
         } catch (fallbackCaught) {
           console.error(fallbackCaught);
-          if (!receivedAssistantText) replyInput = message;
+          if (receivedAssistantText && streamingAssistantText.trim()) {
+            messages = [...messages, {
+              id: `partial-assistant-${now}`,
+              role: 'assistant',
+              text: streamingAssistantText.trim(),
+              createdAt: new Date().toISOString(),
+              model: null,
+              error: true
+            }];
+          } else {
+            replyInput = message;
+          }
           await resetPromptHeight();
           error = fallbackCaught instanceof Error ? fallbackCaught.message : 'Could not finish the Scout reply.';
         }
@@ -1414,6 +1412,7 @@
       pendingPrompt = '';
       sendBusy = false;
       streamingReplyVisible = false;
+      streamingAssistantText = '';
       streamStatus = '';
       thinkingActivityChars = 0;
       await focusCloudThread();
@@ -1603,7 +1602,7 @@
 
       <section class="thread-summary-card" aria-label="Current Scout conversation summary">
         <strong>Current thread</strong>
-        <span>{userMessageCount()} asks · {assistantMessageCount()} Scout replies</span>
+        <span>{userAskCount} asks · {assistantReplyCount} Scout replies</span>
         <div class="thread-summary-actions" aria-label="Current thread actions">
           <button class="secondary-button" type="button" onclick={() => { closeMobilePanels(); void focusPromptComposer(); }}>Ask next</button>
           <button class="secondary-button" type="button" onclick={startNewThread} disabled={newThreadBusy || sendBusy || messages.length === 0} title="Clear Scout chat history for this workspace">
@@ -1619,7 +1618,7 @@
         <p class="small-note">No chats yet. Start with one practical trail question.</p>
       {:else}
         <div class="history-list" aria-label="Recent Scout thread turns">
-          {#each messageHistory() as message}
+          {#each messageHistoryList as message (message.id)}
             <button type="button" class:history-item={true} class:history-item--assistant={message.role === 'assistant'} onclick={() => { closeMobilePanels(); void focusCloudThread(); }}>
               <span>
                 <strong>{message.role === 'assistant' ? 'Scout' : 'You'}</strong>
@@ -1654,7 +1653,7 @@
               <span>Ask one practical trail question. Scout will keep the answer grounded and brief.</span>
               {#if connection}
                 <div class="empty-actions" aria-label="Quick Scout questions">
-                  {#each composerPromptStarters(profile, dailyBrief).slice(0, 4) as starter}
+                  {#each composerStarters.slice(0, 4) as starter (starter.title)}
                     <button type="button" onclick={() => useExamplePrompt(starter)} disabled={sendBusy} title={starter.text}>
                       <span aria-hidden="true">{starter.icon ?? '✦'}</span>
                       {starter.title}
@@ -1700,9 +1699,9 @@
                   {#if message.model}<span>{message.model}</span>{/if}
                   {#if message.error}<span>error</span>{/if}
                   {#if message.role === 'assistant' && !message.error}
-                    {#if targetStandardSlot()}
+                    {#if selectedTargetStandardSlot}
                       <button type="button" onclick={() => saveReplyAsDocument(message.id, targetStandardSlotKey || null)} disabled={savingMessageId === message.id || savedMessageIds.includes(message.id)}>
-                        {savingMessageId === message.id ? 'Saving…' : savedMessageIds.includes(message.id) ? 'Saved' : `Save to ${targetStandardSlot()?.shortTitle}`}
+                        {savingMessageId === message.id ? 'Saving…' : savedMessageIds.includes(message.id) ? 'Saved' : `Save to ${selectedTargetStandardSlot.shortTitle}`}
                       </button>
                       <button type="button" onclick={() => saveReplyAsDocument(message.id, null)} disabled={savingMessageId === message.id || savedMessageIds.includes(message.id)}>Save extra</button>
                     {:else}
@@ -1714,7 +1713,34 @@
                 </div>
               </article>
             {/each}
-            {#if sendBusy && !streamingReplyVisible}
+            {#if streamingReplyVisible}
+              <article class="message message--assistant message--streaming" aria-live="polite">
+                <div class="message-label">
+                  <strong>Scout</strong>
+                  <span>Now</span>
+                </div>
+                <div class="message-body">
+                  {#each streamingMessageBlocks as block, blockIndex (`streaming-${blockIndex}`)}
+                    {#if block.kind === 'heading'}
+                      <h3>{block.text}</h3>
+                    {:else if block.kind === 'list'}
+                      <ul>
+                        {#each block.items ?? [] as item, itemIndex (`streaming-${blockIndex}-${itemIndex}`)}
+                          <li>{item}</li>
+                        {/each}
+                      </ul>
+                    {:else if block.kind === 'table'}
+                      <pre>{block.text}</pre>
+                    {:else if block.kind === 'rule'}
+                      <hr />
+                    {:else}
+                      <p>{block.text}</p>
+                    {/if}
+                  {/each}
+                </div>
+                <div class="message-footer"><span>{checkingStatusText()}</span></div>
+              </article>
+            {:else if sendBusy}
               <article class="checking-card" aria-live="polite">
                 <span class="checking-icon" aria-hidden="true">◎</span>
                 <em>{checkingStatusText()}</em>
@@ -1727,7 +1753,7 @@
         </div>
       </section>
 
-      {#if connection || messages.length > 0 || replyInput.trim() || currentDocument || currentResource || targetStandardSlot() || locationNotice || locationError || saveNotice || saveError}
+      {#if connection || messages.length > 0 || replyInput.trim() || currentDocument || currentResource || selectedTargetStandardSlot || locationNotice || locationError || saveNotice || saveError}
       <section id="ask-scout" class="composer-shell" aria-label="Ask Scout">
         {#if currentDocument}
           <div class="document-context-pill">
@@ -1743,17 +1769,17 @@
             <a href={`/app/resources#resource-${encodeURIComponent(currentResource.id)}`}>Open resource</a>
             <button type="button" onclick={() => (selectedResourceId = '')}>Clear</button>
           </div>
-        {:else if targetStandardSlot()}
+        {:else if selectedTargetStandardSlot}
           <div class="document-context-pill">
             <span>Drafting standard doc</span>
-            <strong>{targetStandardSlot()?.title}</strong>
+            <strong>{selectedTargetStandardSlot.title}</strong>
             <button type="button" onclick={() => { targetStandardSlotKey = ''; replyInput = ''; }}>Clear</button>
           </div>
         {/if}
 
         <div class="composer-starters" aria-label="Prompt starters and effort">
           {#if messages.length > 0}
-            {#each composerPromptStarters(profile, dailyBrief).slice(0, 3) as starter}
+            {#each composerStarters.slice(0, 3) as starter (starter.title)}
               <button type="button" onclick={() => useExamplePrompt(starter)} disabled={!connection || sendBusy} title={starter.text}>
                 <span aria-hidden="true">{starter.icon ?? '✦'}</span>
                 {starter.title}
@@ -2233,6 +2259,8 @@
     border-radius: 20px 20px 20px 8px;
     background: rgba(255, 255, 255, 0.9);
     box-shadow: var(--shadow-soft, 0 10px 22px rgba(0, 0, 0, 0.06));
+    content-visibility: auto;
+    contain-intrinsic-size: auto 180px;
     padding: 1rem;
   }
 
@@ -2252,6 +2280,12 @@
 
   .message--assistant {
     justify-self: start;
+  }
+
+  .message--streaming {
+    content-visibility: visible;
+    border-color: rgba(80, 122, 94, 0.2);
+    box-shadow: 0 12px 30px rgba(49, 84, 61, 0.09);
   }
 
   .checking-card {
