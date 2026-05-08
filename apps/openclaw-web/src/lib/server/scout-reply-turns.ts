@@ -8,16 +8,19 @@ const TURN_CLEANUP_MS = 2 * 60 * 1000;
 
 type TurnStatus = 'running' | 'done' | 'error';
 
-type TurnEvent = {
+export type TurnEvent = {
   readonly id: number;
   readonly event: 'status' | 'thinking' | 'delta' | 'done' | 'error';
   readonly data: Record<string, unknown>;
 };
 
+type TurnEventListener = (events: TurnEvent[]) => void;
+
 type TurnRecord = {
   readonly id: string;
   readonly workspaceId: string;
   readonly createdAt: number;
+  readonly listeners: Set<TurnEventListener>;
   updatedAt: number;
   status: TurnStatus;
   events: TurnEvent[];
@@ -35,6 +38,9 @@ function pushEvent(turn: TurnRecord, event: TurnEvent['event'], data: Record<str
   };
   turn.events.push(next);
   turn.updatedAt = Date.now();
+  for (const listener of turn.listeners) {
+    listener([next]);
+  }
   return next;
 }
 
@@ -61,6 +67,7 @@ export function startScoutReplyTurn(input: {
     id: randomUUID(),
     workspaceId: input.workspaceId,
     createdAt: Date.now(),
+    listeners: new Set(),
     updatedAt: Date.now(),
     status: 'running',
     events: [],
@@ -152,4 +159,24 @@ export function scoutReplyTurnEventsSince(workspaceId: string, turnId: string, l
   const turn = getScoutReplyTurn(workspaceId, turnId);
   if (!turn) return null;
   return turn.events.filter((event) => event.id > lastEventId);
+}
+
+export function watchScoutReplyTurnEvents(
+  workspaceId: string,
+  turnId: string,
+  lastEventId: number,
+  listener: TurnEventListener
+) {
+  const turn = getScoutReplyTurn(workspaceId, turnId);
+  if (!turn) return null;
+
+  turn.listeners.add(listener);
+  queueMicrotask(() => {
+    const existing = turn.events.filter((event) => event.id > lastEventId);
+    if (existing.length > 0) listener(existing);
+  });
+
+  return () => {
+    turn.listeners.delete(listener);
+  };
 }

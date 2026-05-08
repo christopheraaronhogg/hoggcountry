@@ -988,11 +988,11 @@
     threadCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  async function scrollCloudThreadToLatest() {
+  async function scrollCloudThreadToLatest(behavior: ScrollBehavior = 'smooth') {
     await tick();
     const latest = threadMessages?.lastElementChild;
     if (latest instanceof HTMLElement) {
-      latest.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      latest.scrollIntoView({ behavior, block: 'end' });
     }
   }
 
@@ -1275,6 +1275,35 @@
     };
     let receivedAssistantText = false;
     let turnId = '';
+    let pendingStreamingDelta = '';
+    let streamingFrame = 0;
+
+    const flushStreamingDelta = async () => {
+      streamingFrame = 0;
+      const delta = pendingStreamingDelta;
+      pendingStreamingDelta = '';
+      if (!delta) return;
+
+      if (!receivedAssistantText) {
+        receivedAssistantText = true;
+        streamingReplyVisible = true;
+        messages = [...messages, { ...streamingAssistantMessage, text: delta }];
+      } else {
+        messages = messages.map((threadMessage) => threadMessage.id === streamingAssistantMessage.id
+          ? { ...threadMessage, text: `${threadMessage.text}${delta}` }
+          : threadMessage);
+      }
+
+      await scrollCloudThreadToLatest('auto');
+    };
+
+    const queueStreamingDelta = (delta: string) => {
+      pendingStreamingDelta += delta;
+      if (streamingFrame) return;
+      streamingFrame = window.requestAnimationFrame(() => {
+        void flushStreamingDelta();
+      });
+    };
 
     sendBusy = true;
     streamingReplyVisible = false;
@@ -1296,19 +1325,12 @@
 
       await readScoutReplyStream(response, {
         onDelta: async (delta) => {
-          if (!receivedAssistantText) {
-            receivedAssistantText = true;
-            streamingReplyVisible = true;
-            messages = [...messages, { ...streamingAssistantMessage, text: delta }];
-          } else {
-            messages = messages.map((threadMessage) => threadMessage.id === streamingAssistantMessage.id
-              ? { ...threadMessage, text: `${threadMessage.text}${delta}` }
-              : threadMessage);
-          }
-
-          await scrollCloudThreadToLatest();
+          queueStreamingDelta(delta);
         },
-        onDone: applyScoutReplyPayload,
+        onDone: async (payload) => {
+          await flushStreamingDelta();
+          await applyScoutReplyPayload(payload);
+        },
         onStatus: async (status) => {
           streamStatus = status;
         },
@@ -1350,6 +1372,10 @@
         error = caught instanceof Error ? caught.message : 'Could not finish the Scout reply stream.';
       }
     } finally {
+      if (streamingFrame) {
+        window.cancelAnimationFrame(streamingFrame);
+        await flushStreamingDelta();
+      }
       pendingPrompt = '';
       sendBusy = false;
       streamingReplyVisible = false;

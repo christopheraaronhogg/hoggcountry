@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireWorkspace } from '$lib/server/workspace-endpoint';
-import { getScoutReplyTurn, scoutReplyTurnEventsSince } from '$lib/server/scout-reply-turns';
+import { getScoutReplyTurn, watchScoutReplyTurnEvents, type TurnEvent } from '$lib/server/scout-reply-turns';
 
 function encodeSse(id: number, event: string, data: unknown): string {
   return `id: ${id}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -25,12 +25,14 @@ export const GET: RequestHandler = (event) => {
     start(controller) {
       let closed = false;
       let cursor = lastEventId;
-      let interval: ReturnType<typeof setInterval> | null = null;
+      let heartbeat: ReturnType<typeof setInterval> | null = null;
+      let unsubscribe: (() => void) | null = null;
 
       const close = () => {
         if (closed) return;
         closed = true;
-        if (interval) clearInterval(interval);
+        if (heartbeat) clearInterval(heartbeat);
+        unsubscribe?.();
         try {
           controller.close();
         } catch {
@@ -48,15 +50,9 @@ export const GET: RequestHandler = (event) => {
         }
       };
 
-      const flush = () => {
-        const events = scoutReplyTurnEventsSince(workspaceId, turnId, cursor);
-        if (!events) {
-          send(encodeSse(cursor + 1, 'error', { message: 'Scout turn not found.', status: 404 }));
-          close();
-          return;
-        }
-
+      const flushEvents = (events: TurnEvent[]) => {
         for (const turnEvent of events) {
+          if (turnEvent.id <= cursor) continue;
           cursor = turnEvent.id;
           send(encodeSse(turnEvent.id, turnEvent.event, turnEvent.data));
           if (turnEvent.event === 'done' || turnEvent.event === 'error') {
@@ -66,12 +62,16 @@ export const GET: RequestHandler = (event) => {
         }
       };
 
-      interval = setInterval(() => {
-        flush();
-        send(`: heartbeat ${Date.now()}\n\n`);
-      }, 1000);
+      unsubscribe = watchScoutReplyTurnEvents(workspaceId, turnId, cursor, flushEvents);
+      if (!unsubscribe) {
+        send(encodeSse(cursor + 1, 'error', { message: 'Scout turn not found.', status: 404 }));
+        close();
+        return;
+      }
 
-      flush();
+      heartbeat = setInterval(() => {
+        send(`: heartbeat ${Date.now()}\n\n`);
+      }, 3000);
     },
     cancel() {
       closeStream?.();
