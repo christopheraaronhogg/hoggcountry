@@ -62,7 +62,7 @@ import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
 
 const OPENCODE_GO_REPLY_MAX_TOKENS = 4000;
-const SCOUT_AGENT_TURN_TIMEOUT_MS = 480_000;
+const SCOUT_AGENT_TURN_TIMEOUT_MS = 900_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
@@ -78,7 +78,7 @@ interface ClawRuntime {
 
 export class ScoutAgentTimeoutError extends Error {
   constructor() {
-    super('Scout took too long to finish that reply. Try a narrower question, or ask Scout to use today’s brief first.');
+    super('Scout took too long to finish that reply. The thread is intact — try again, or ask Scout to continue with a shorter first pass while I keep improving the long-reply path.');
     this.name = 'ScoutAgentTimeoutError';
   }
 }

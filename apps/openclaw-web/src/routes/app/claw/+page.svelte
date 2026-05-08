@@ -156,6 +156,7 @@
   let loading = $state(true);
   let error = $state('');
   let sendBusy = $state(false);
+  let streamingReplyVisible = $state(false);
   let newThreadBusy = $state(false);
   let connectBusy = $state(false);
   let disconnectBusy = $state(false);
@@ -203,7 +204,7 @@
     }
 
     if (response.status === 504 || message.includes('Gateway time-out')) {
-      throw new Error('Scout timed out before the server returned a reply. Try a narrower question, or use today’s brief first.');
+      throw new Error('Scout took too long to finish that reply. I kept the thread intact — try again, or ask Scout to continue with a shorter first pass while I keep improving the long-reply path.');
     }
 
     const cleaned = message.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1141,7 +1142,6 @@
     const message = replyInput.trim();
     if (!message) return;
 
-    const previousMessages = messages;
     const now = Date.now();
     const pendingUserMessage: ClawMessage = {
       id: `pending-user-${now}`,
@@ -1151,8 +1151,18 @@
       model: null,
       error: false
     };
+    const streamingAssistantMessage: ClawMessage = {
+      id: `pending-assistant-${now}`,
+      role: 'assistant',
+      text: '',
+      createdAt: new Date(now + 1).toISOString(),
+      model: null,
+      error: false
+    };
+    let receivedAssistantText = false;
 
     sendBusy = true;
+    streamingReplyVisible = false;
     pendingPrompt = message;
     error = '';
     saveNotice = '';
@@ -1164,43 +1174,58 @@
     await scrollCloudThreadToLatest();
 
     try {
-      const payload = await jsonOrThrow(
-        await fetch('/app-api/claw/reply', {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json'
-          },
-          body: JSON.stringify({
-            message,
-            documentId: selectedDocumentId || null,
-            resourceId: selectedResourceId || null
-          })
+      const response = await fetch('/app-api/claw/reply/stream', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          message,
+          documentId: selectedDocumentId || null,
+          resourceId: selectedResourceId || null
         })
-      );
+      });
 
-      messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : messages;
-      documents = Array.isArray(payload.documents) ? (payload.documents as ImportedDocument[]) : documents;
-      ensureSelectedDocument(documents);
-      factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
-      connection = (payload.connection ?? null) as ProviderConnection | null;
-      const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
-      if (revisedDocument) {
-        savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
-        saveNotice = `Saved a new review version for "${revisedDocument.title}" in Docs.`;
-      }
+      await readScoutReplyStream(response, {
+        onDelta: async (delta) => {
+          if (!receivedAssistantText) {
+            receivedAssistantText = true;
+            streamingReplyVisible = true;
+            messages = [...messages, { ...streamingAssistantMessage, text: delta }];
+          } else {
+            messages = messages.map((threadMessage) => threadMessage.id === streamingAssistantMessage.id
+              ? { ...threadMessage, text: `${threadMessage.text}${delta}` }
+              : threadMessage);
+          }
+
+          await scrollCloudThreadToLatest();
+        },
+        onDone: async (payload) => {
+          messages = Array.isArray(payload.messages) ? (payload.messages as ClawMessage[]) : messages;
+          documents = Array.isArray(payload.documents) ? (payload.documents as ImportedDocument[]) : documents;
+          ensureSelectedDocument(documents);
+          factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
+          connection = (payload.connection ?? null) as ProviderConnection | null;
+          const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
+          if (revisedDocument) {
+            savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
+            saveNotice = `Saved a new review version for "${revisedDocument.title}" in Docs.`;
+          }
+        }
+      });
 
       pendingPrompt = '';
       await focusCloudThread();
       await scrollCloudThreadToLatest();
     } catch (caught) {
       console.error(caught);
-      messages = previousMessages;
       replyInput = message;
       await resetPromptHeight();
       pendingPrompt = '';
       error = caught instanceof Error ? caught.message : 'Could not send the cloud prompt.';
     } finally {
       sendBusy = false;
+      streamingReplyVisible = false;
     }
   }
 
@@ -1485,7 +1510,7 @@
                 </div>
               </article>
             {/each}
-            {#if sendBusy}
+            {#if sendBusy && !streamingReplyVisible}
               <article class="checking-card" aria-live="polite">
                 <span class="checking-icon" aria-hidden="true">◎</span>
                 <em>Scout is checking trail notes…</em>

@@ -74,7 +74,7 @@ export const POST: RequestHandler = async (event) => {
 
           if (caught instanceof Error && caught.message.includes('Pi agent did not return an assistant reply')) {
             send('error', {
-              message: 'Scout did not return a usable reply. Try again with a narrower trail question, or use today’s brief first.',
+              message: 'Scout did not return a usable reply. Try again, or ask for a shorter first pass and then continue.',
               status: 502
             });
             return;

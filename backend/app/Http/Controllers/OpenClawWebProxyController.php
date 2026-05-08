@@ -135,7 +135,7 @@ class OpenClawWebProxyController extends Controller
         $body = $upstream->getBody();
         $response = response()->stream(function () use ($body): void {
             while (! $body->eof()) {
-                echo $body->read(1024);
+                echo $body->read(128);
 
                 if (function_exists('ob_flush')) {
                     @ob_flush();
@@ -166,7 +166,7 @@ class OpenClawWebProxyController extends Controller
     private function proxyTimeout(string $path): int
     {
         if (Str::startsWith($path, 'app-api/claw/reply')) {
-            return 540;
+            return 960;
         }
 
         return 20;
