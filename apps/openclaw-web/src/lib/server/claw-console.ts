@@ -11,20 +11,11 @@ export async function getClawConsolePayload(
   return {
     workspaceId,
     workspace: {
-      workspaceId: record.workspaceId,
-      betaProfile: record.betaProfile,
       profile: record.profile,
       sections: record.sections,
       documents: record.documents,
       resources: record.resources,
-      tools: record.tools,
-      providerConnections: record.providerConnections,
-      clawMessages: record.clawMessages,
-      factCandidates: record.factCandidates,
-      locationHistory: record.locationHistory,
-      skillSettings: record.skillSettings,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt
+      tools: record.tools
     },
     connection,
     messages: record.clawMessages,

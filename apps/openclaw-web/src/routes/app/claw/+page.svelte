@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onDestroy, onMount, tick, untrack } from 'svelte';
   import type { PageData } from './$types';
-  import { tables, type DbConnection, type SubscriptionHandle } from '$lib/module_bindings';
-  import { getSpacetimeConnection, onSpacetimeConnection } from '$lib/spacetime';
+  import type { DbConnection, SubscriptionHandle, tables as SpacetimeTables } from '$lib/module_bindings';
+  import type { getSpacetimeConnection as getSpacetimeConnectionType, onSpacetimeConnection as onSpacetimeConnectionType } from '$lib/spacetime';
   import { buildClawLanes } from '$lib/claw';
   import { inferStandardDocumentSlotKey, isStandardDocumentSlotKey, STANDARD_DOCUMENT_SLOTS, standardDocumentSlotForKey, type ImportedDocument, type ManualProfile, type ManualSection, type StandardDocumentSlotKey, type WorkspaceResource, type WorkspaceTool } from '@hoggcountry/manual-core';
   import type { ClawLane } from '$lib/claw';
@@ -13,7 +13,6 @@
     readonly documents: ImportedDocument[];
     readonly resources: WorkspaceResource[];
     readonly tools: WorkspaceTool[];
-    readonly locationHistory?: unknown[];
   }
 
   interface ProviderConnection {
@@ -175,6 +174,24 @@
 
   type ScoutThinkingEffort = 'off' | 'minimal' | 'low' | 'medium' | 'high';
 
+  interface SpacetimeRuntime {
+    readonly tables: typeof SpacetimeTables;
+    readonly getSpacetimeConnection: typeof getSpacetimeConnectionType;
+    readonly onSpacetimeConnection: typeof onSpacetimeConnectionType;
+  }
+
+  let spacetimeRuntimePromise: Promise<SpacetimeRuntime> | null = null;
+
+  function loadSpacetimeRuntime(): Promise<SpacetimeRuntime> {
+    spacetimeRuntimePromise ??= Promise.all([import('$lib/module_bindings'), import('$lib/spacetime')])
+      .then(([bindings, spacetime]) => ({
+        tables: bindings.tables,
+        getSpacetimeConnection: spacetime.getSpacetimeConnection,
+        onSpacetimeConnection: spacetime.onSpacetimeConnection
+      }));
+    return spacetimeRuntimePromise;
+  }
+
   let { data }: { data: PageData } = $props();
   const initialConsole = untrack(() => data.console);
   const initialWorkspace = initialConsole.workspace as WorkspaceSnapshot;
@@ -187,10 +204,10 @@
   }
 
   let profile = $state<ManualProfile | null>(initialWorkspace.profile ?? null);
-  let lanes = $state<ClawLane[]>(initialWorkspace.profile ? buildClawLanes(initialWorkspace.profile, initialWorkspace.sections, initialWorkspace.documents, initialWorkspace.tools, initialWorkspace.resources) : []);
+  let lanes = $state.raw<ClawLane[]>(initialWorkspace.profile ? buildClawLanes(initialWorkspace.profile, initialWorkspace.sections, initialWorkspace.documents, initialWorkspace.tools, initialWorkspace.resources) : []);
   let connection = $state<ProviderConnection | null>((initialConsole.connection ?? null) as ProviderConnection | null);
-  let dadPilot = $state<DadPilotSummary | null>(null);
-  let dailyBrief = $state<ScoutDailyBrief | null>(null);
+  let dadPilot = $state.raw<DadPilotSummary | null>(null);
+  let dailyBrief = $state.raw<ScoutDailyBrief | null>(null);
   let dailyBriefLoading = $state(false);
   let dailyBriefError = $state('');
   let locationBusy = $state(false);
@@ -198,13 +215,13 @@
   let locationNotice = $state('');
   let locationError = $state('');
   let locationWatchId: number | null = null;
-  let documents = $state<ImportedDocument[]>(Array.isArray(initialWorkspace.documents) ? initialWorkspace.documents : []);
-  let resources = $state<WorkspaceResource[]>(Array.isArray(initialWorkspace.resources) ? initialWorkspace.resources : []);
+  let documents = $state.raw<ImportedDocument[]>(Array.isArray(initialWorkspace.documents) ? initialWorkspace.documents : []);
+  let resources = $state.raw<WorkspaceResource[]>(Array.isArray(initialWorkspace.resources) ? initialWorkspace.resources : []);
   let selectedDocumentId = $state<string>('');
   let selectedResourceId = $state<string>('');
   let targetStandardSlotKey = $state<StandardDocumentSlotKey | ''>('');
-  let messages = $state<ClawMessage[]>(Array.isArray(initialConsole.messages) ? (initialConsole.messages as ClawMessage[]) : []);
-  let factCandidates = $state<FactCandidate[]>(Array.isArray(initialConsole.factCandidates) ? (initialConsole.factCandidates as FactCandidate[]) : []);
+  let messages = $state.raw<ClawMessage[]>(Array.isArray(initialConsole.messages) ? (initialConsole.messages as ClawMessage[]) : []);
+  let factCandidates = $state.raw<FactCandidate[]>(Array.isArray(initialConsole.factCandidates) ? (initialConsole.factCandidates as FactCandidate[]) : []);
   let loading = $state(false);
   let error = $state('');
   let sendBusy = $state(false);
@@ -212,7 +229,7 @@
   let streamingAssistantText = $state('');
   let streamStatus = $state('');
   let turnPhase = $state<ScoutTurnPhase | null>(null);
-  let turnSourceReceipts = $state<ScoutTurnSourceReceipt[]>([]);
+  let turnSourceReceipts = $state.raw<ScoutTurnSourceReceipt[]>([]);
   let recoveredRealtimeTurn = $state(false);
   let thinkingEffort = $state<ScoutThinkingEffort>('low');
   let thinkingActivityChars = $state(0);
@@ -221,7 +238,7 @@
   let disconnectBusy = $state(false);
   let seedBusy = $state(false);
   let savingMessageId = $state<string | null>(null);
-  let savedMessageIds = $state<string[]>([]);
+  let savedMessageIds = $state.raw<string[]>([]);
   let saveNotice = $state('');
   let saveError = $state('');
   let savedDocumentHref = $state('');
@@ -248,6 +265,7 @@
   let activeRealtimeTurnId = '';
   let activeRealtimeEventCursor = 0;
   let activeRealtimeEventHandler: ((event: ScoutTurnEventEnvelope) => void | Promise<void>) | null = null;
+  let componentDestroyed = false;
   let streamingAppendBuffer = '';
   let streamingAppendFrame = 0;
   let streamingScrollFrame = 0;
@@ -1281,6 +1299,7 @@
       scoutRealtimeTurnCleanup?.();
       scoutRealtimeEventCleanup = null;
       scoutRealtimeTurnCleanup = null;
+      const { tables } = await loadSpacetimeRuntime();
       scoutRealtimeSubscription = realtimeConnection.subscriptionBuilder()
         .onApplied(() => {
           replayScoutRealtimeEventsFromCache(realtimeConnection);
@@ -1307,8 +1326,10 @@
       connection = (clawPayload.connection ?? null) as ProviderConnection | null;
       messages = Array.isArray(clawPayload.messages) ? (clawPayload.messages as ClawMessage[]) : [];
       factCandidates = Array.isArray(clawPayload.factCandidates) ? (clawPayload.factCandidates as FactCandidate[]) : [];
-      const realtimeConnection = getSpacetimeConnection();
-      if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
+      void loadSpacetimeRuntime().then(({ getSpacetimeConnection }) => {
+        const realtimeConnection = getSpacetimeConnection();
+        if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
+      });
       const idle = window.requestIdleCallback ?? ((callback: IdleRequestCallback) => window.setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 1));
       idle(() => void loadDadPilot());
     } catch (caught) {
@@ -1697,8 +1718,10 @@
     try {
       turnId = await startScoutReplyTurn(message);
       activeRealtimeTurnId = turnId;
-      const realtimeConnection = getSpacetimeConnection();
-      if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
+      void loadSpacetimeRuntime().then(({ getSpacetimeConnection }) => {
+        const realtimeConnection = getSpacetimeConnection();
+        if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
+      });
       const response = await fetch(`/app-api/claw/reply/turn/${encodeURIComponent(turnId)}/events`, { signal: streamAbortController.signal });
 
       await readScoutReplyStream(response, {
@@ -1829,14 +1852,19 @@
     }
 
     const shouldRefreshState = consumeConnectQueryState();
-    spacetimeUnsubscribe = onSpacetimeConnection((connection) => {
-      void syncScoutRealtime(connection);
-    });
-
-    const realtimeConnection = getSpacetimeConnection();
-    if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
     const idle = window.requestIdleCallback ?? ((callback: IdleRequestCallback) => window.setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 1));
-    idle(() => void loadDadPilot());
+    idle(() => {
+      void loadDadPilot();
+      void loadSpacetimeRuntime().then(({ getSpacetimeConnection, onSpacetimeConnection }) => {
+        if (componentDestroyed) return;
+        spacetimeUnsubscribe = onSpacetimeConnection((connection) => {
+          void syncScoutRealtime(connection);
+        });
+
+        const realtimeConnection = getSpacetimeConnection();
+        if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
+      });
+    });
 
     (shouldRefreshState ? loadState() : Promise.resolve())
       .then(async () => {
@@ -1849,6 +1877,7 @@
   });
 
   onDestroy(() => {
+    componentDestroyed = true;
     if (locationWatchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.clearWatch(locationWatchId);
     }
