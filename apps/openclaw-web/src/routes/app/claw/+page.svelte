@@ -1684,22 +1684,18 @@
           </div>
         {/if}
 
-        {#if messages.length > 0}
-          <div class="composer-starters" aria-label="Prompt starters">
+        <div class="composer-starters" aria-label="Prompt starters and effort">
+          {#if messages.length > 0}
             {#each composerPromptStarters(profile, dailyBrief).slice(0, 3) as starter}
               <button type="button" onclick={() => useExamplePrompt(starter)} disabled={!connection || sendBusy} title={starter.text}>
                 <span aria-hidden="true">{starter.icon ?? '✦'}</span>
                 {starter.title}
               </button>
             {/each}
-          </div>
-        {/if}
-
-        <div class="composer-toolbar">
-          <label class="composer-title" for="scout-prompt">Ask Scout</label>
-          <label class="thinking-control" for="scout-thinking-effort" title="Controls Scout's native reasoning effort. Raw reasoning stays private.">
-            <span>Effort</span>
-            <select id="scout-thinking-effort" value={thinkingEffort} onchange={(event) => updateThinkingEffort(event.currentTarget.value)} disabled={sendBusy || !connection}>
+          {/if}
+          <label class="thinking-control" for="scout-thinking-effort" title="Scout reasoning effort. Raw thinking stays private.">
+            <span class="sr-only">Effort</span>
+            <select id="scout-thinking-effort" aria-label="Scout reasoning effort" value={thinkingEffort} onchange={(event) => updateThinkingEffort(event.currentTarget.value)} disabled={sendBusy || !connection}>
               <option value="off">Off</option>
               <option value="minimal">Fast</option>
               <option value="low">Balanced</option>
@@ -2606,56 +2602,23 @@
     outline: none;
   }
 
-  .composer-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.7rem;
-    padding: 0 0.18rem;
-  }
-
-  .composer-title {
-    color: #394638;
-    font-family: Oswald, Impact, sans-serif;
-    font-size: 0.78rem;
-    font-weight: 900;
-    letter-spacing: 0.085em;
-    line-height: 1;
-    text-transform: uppercase;
-  }
-
   .thinking-control {
     display: inline-flex;
-    align-items: center;
-    gap: 0.34rem;
     min-width: 0;
-    color: #6a7566;
-    font-size: 0.72rem;
-    font-weight: 850;
-    line-height: 1;
-  }
-
-  .thinking-control span {
-    color: #6a7566;
-    font-family: Oswald, Impact, sans-serif;
-    font-size: 0.72rem;
-    font-weight: 900;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
   }
 
   .thinking-control select {
-    max-width: 7.6rem;
-    min-height: 1.72rem;
-    border: 1px solid rgba(77, 89, 74, 0.14);
+    max-width: 6.4rem;
+    min-height: 2rem;
+    border: 1px solid rgba(77, 89, 74, 0.16);
     border-radius: 999px;
-    background: rgba(255, 253, 248, 0.9);
+    background: rgba(255, 253, 248, 0.82);
     color: #394638;
     cursor: pointer;
     font: inherit;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-weight: 900;
-    padding: 0 1.35rem 0 0.52rem;
+    padding: 0 1.38rem 0 0.68rem;
   }
 
   .thinking-control select:disabled {
