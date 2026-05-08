@@ -41,6 +41,13 @@
     readonly items?: string[];
   }
 
+  interface ClawMessageView {
+    readonly message: ClawMessage;
+    readonly blocks: MessageBlock[];
+    readonly time: string;
+    readonly preview: string;
+  }
+
   interface FactCandidate {
     readonly id: string;
     readonly kind: 'hostel' | 'resupply' | 'shuttle' | 'water' | 'closure' | 'weather_pattern' | 'gear' | 'medical' | 'other';
@@ -241,16 +248,32 @@
   let activeRealtimeTurnId = '';
   let activeRealtimeEventCursor = 0;
   let activeRealtimeEventHandler: ((event: ScoutTurnEventEnvelope) => void | Promise<void>) | null = null;
+  let streamingAppendBuffer = '';
+  let streamingAppendFrame = 0;
+  let streamingScrollFrame = 0;
   const messageBlockCache = new Map<string, { text: string; blocks: MessageBlock[] }>();
-  const messageHistoryList = $derived([...messages].reverse());
-  const assistantReplyCount = $derived(messages.filter((message) => message.role === 'assistant').length);
-  const userAskCount = $derived(messages.filter((message) => message.role === 'user').length);
+  const messageViews = $derived.by(() => messages.map((message) => ({
+    message,
+    blocks: messageBlocks(message),
+    time: messageTime(message.createdAt),
+    preview: threadPreview(message)
+  })));
+  const messageHistoryList = $derived([...messageViews].reverse());
+  const messageStats = $derived.by(() => messages.reduce(
+    (stats, message) => {
+      if (message.role === 'assistant') stats.assistant += 1;
+      if (message.role === 'user') stats.user += 1;
+      return stats;
+    },
+    { assistant: 0, user: 0 }
+  ));
+  const assistantReplyCount = $derived(messageStats.assistant);
+  const userAskCount = $derived(messageStats.user);
   const composerStarters = $derived(composerPromptStarters(profile, dailyBrief));
   const emptyThreadStarters = $derived(composerStarters.slice(0, 4));
   const compactComposerStarters = $derived(composerStarters.slice(0, 3));
   const visibleResources = $derived(resources.slice(0, 6));
   const selectedTargetStandardSlot = $derived(targetStandardSlotKey ? standardDocumentSlotForKey(targetStandardSlotKey) : null);
-  const streamingMessageBlocks = $derived(streamingAssistantText ? parseMessageBlocks(streamingAssistantText) : []);
   const activeTurnSourceReceipts = $derived(turnSourceReceipts.slice(0, 5));
 
   async function jsonOrThrow(response: Response) {
@@ -1059,6 +1082,44 @@
     threadCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function scheduleThreadBottomScroll() {
+    if (streamingScrollFrame) return;
+    streamingScrollFrame = window.requestAnimationFrame(() => {
+      streamingScrollFrame = 0;
+      if (threadMessages) threadMessages.scrollTop = threadMessages.scrollHeight;
+    });
+  }
+
+  function appendStreamingText(delta: string) {
+    if (!delta) return;
+    streamingReplyVisible = true;
+    streamingAppendBuffer += delta;
+    if (streamingAppendFrame) return;
+
+    streamingAppendFrame = window.requestAnimationFrame(() => {
+      streamingAppendFrame = 0;
+      const chunk = streamingAppendBuffer;
+      streamingAppendBuffer = '';
+      if (!chunk) return;
+      streamingAssistantText += chunk;
+      scheduleThreadBottomScroll();
+    });
+  }
+
+  function flushStreamingText() {
+    if (streamingAppendFrame) {
+      window.cancelAnimationFrame(streamingAppendFrame);
+      streamingAppendFrame = 0;
+    }
+    const chunk = streamingAppendBuffer;
+    streamingAppendBuffer = '';
+    if (chunk) {
+      streamingReplyVisible = true;
+      streamingAssistantText += chunk;
+    }
+    if (threadMessages) threadMessages.scrollTop = threadMessages.scrollHeight;
+  }
+
   async function scrollCloudThreadToLatest(behavior: ScrollBehavior = 'smooth') {
     await tick();
     if (!threadMessages) return;
@@ -1473,11 +1534,7 @@
 
     if (turnEvent.event === 'delta') {
       const delta = typeof turnEvent.data.delta === 'string' ? turnEvent.data.delta : '';
-      if (delta) {
-        streamingReplyVisible = true;
-        streamingAssistantText += delta;
-        await scrollCloudThreadToLatest('auto');
-      }
+      appendStreamingText(delta);
       return;
     }
 
@@ -1494,6 +1551,7 @@
     }
 
     if (turnEvent.event === 'done') {
+      flushStreamingText();
       await applyScoutReplyPayload(turnEvent.data);
       activeRealtimeTurnId = '';
       activeRealtimeEventHandler = null;
@@ -1551,31 +1609,12 @@
     let receivedAssistantText = false;
     let turnId = '';
     let turnCompleted = false;
-    let pendingStreamingDelta = '';
-    let streamingFrame = 0;
     const streamAbortController = new AbortController();
 
-    const flushStreamingDelta = async () => {
-      streamingFrame = 0;
-      const delta = pendingStreamingDelta;
-      pendingStreamingDelta = '';
-      if (!delta) return;
-
-      if (!receivedAssistantText) {
-        receivedAssistantText = true;
-        streamingReplyVisible = true;
-      }
-
-      streamingAssistantText += delta;
-      await scrollCloudThreadToLatest('auto');
-    };
-
     const queueStreamingDelta = (delta: string) => {
-      pendingStreamingDelta += delta;
-      if (streamingFrame) return;
-      streamingFrame = window.requestAnimationFrame(() => {
-        void flushStreamingDelta();
-      });
+      if (!delta) return;
+      receivedAssistantText = true;
+      appendStreamingText(delta);
     };
 
     const applyTurnEvent = async (turnEvent: ScoutTurnEventEnvelope) => {
@@ -1602,7 +1641,7 @@
 
       if (turnEvent.event === 'done') {
         turnCompleted = true;
-        await flushStreamingDelta();
+        flushStreamingText();
         await applyScoutReplyPayload(turnEvent.data);
         streamAbortController.abort();
         return;
@@ -1707,10 +1746,7 @@
         error = caught instanceof Error ? caught.message : 'Could not finish the Scout reply stream.';
       }
     } finally {
-      if (streamingFrame) {
-        window.cancelAnimationFrame(streamingFrame);
-        await flushStreamingDelta();
-      }
+      flushStreamingText();
       pendingPrompt = '';
       sendBusy = false;
       streamingReplyVisible = false;
@@ -1820,6 +1856,8 @@
     scoutRealtimeEventCleanup?.();
     scoutRealtimeTurnCleanup?.();
     scoutRealtimeSubscription?.unsubscribe();
+    if (streamingAppendFrame) window.cancelAnimationFrame(streamingAppendFrame);
+    if (streamingScrollFrame) window.cancelAnimationFrame(streamingScrollFrame);
   });
 </script>
 
@@ -1933,13 +1971,13 @@
         <p class="small-note">No chats yet. Start with one practical trail question.</p>
       {:else}
         <div class="history-list" aria-label="Recent Scout thread turns">
-          {#each messageHistoryList as message (message.id)}
-            <button type="button" class:history-item={true} class:history-item--assistant={message.role === 'assistant'} onclick={() => { closeMobilePanels(); void focusCloudThread(); }}>
+          {#each messageHistoryList as view (view.message.id)}
+            <button type="button" class:history-item={true} class:history-item--assistant={view.message.role === 'assistant'} onclick={() => { closeMobilePanels(); void focusCloudThread(); }}>
               <span>
-                <strong>{message.role === 'assistant' ? 'Scout' : 'You'}</strong>
-                <small>{messageTime(message.createdAt)}</small>
+                <strong>{view.message.role === 'assistant' ? 'Scout' : 'You'}</strong>
+                <small>{view.time}</small>
               </span>
-              <em>{threadPreview(message)}</em>
+              <em>{view.preview}</em>
             </button>
           {/each}
         </div>
@@ -1985,14 +2023,15 @@
               {/if}
             </article>
           {:else}
-            {#each messages as message (message.id)}
+            {#each messageViews as view (view.message.id)}
+              {@const message = view.message}
               <article class:message={true} class:message--assistant={message.role === 'assistant'} class:message--user={message.role === 'user'}>
                 <div class="message-label">
                   <strong>{message.role === 'assistant' ? 'Scout' : 'You'}</strong>
-                  <span>{messageTime(message.createdAt)}</span>
+                  <span>{view.time}</span>
                 </div>
                 <div class="message-body">
-                  {#each messageBlocks(message) as block, blockIndex (`${message.id}-${blockIndex}`)}
+                  {#each view.blocks as block, blockIndex (`${message.id}-${blockIndex}`)}
                     {#if block.kind === 'heading'}
                       <h3>{block.text}</h3>
                     {:else if block.kind === 'list'}
@@ -2041,24 +2080,8 @@
                   <strong>Scout</strong>
                   <span>Now</span>
                 </div>
-                <div class="message-body">
-                  {#each streamingMessageBlocks as block, blockIndex (`streaming-${blockIndex}`)}
-                    {#if block.kind === 'heading'}
-                      <h3>{block.text}</h3>
-                    {:else if block.kind === 'list'}
-                      <ul>
-                        {#each block.items ?? [] as item, itemIndex (`streaming-${blockIndex}-${itemIndex}`)}
-                          <li>{item}</li>
-                        {/each}
-                      </ul>
-                    {:else if block.kind === 'table'}
-                      <pre>{block.text}</pre>
-                    {:else if block.kind === 'rule'}
-                      <hr />
-                    {:else}
-                      <p>{block.text}</p>
-                    {/if}
-                  {/each}
+                <div class="message-body message-body--streaming-raw">
+                  <p>{streamingAssistantText}</p>
                 </div>
                 <div class="message-footer"><span>{checkingStatusText()}</span></div>
                 {#if turnPhase?.detail || activeTurnSourceReceipts.length > 0}
@@ -2756,6 +2779,10 @@
   .message-body ul,
   .message-body pre {
     margin: 0;
+  }
+
+  .message-body--streaming-raw p {
+    white-space: pre-wrap;
   }
 
   .message-body h3 {
