@@ -38,6 +38,39 @@ jobs:
           chmod 600 ~/.ssh/forge_deploy_key
           ssh-keyscan -H "$FORGE_SSH_HOST" >> ~/.ssh/known_hosts
 
+      - name: Prune stale Forge releases before upload
+        env:
+          FORGE_SSH_HOST: ${{ vars.FORGE_SSH_HOST }}
+          FORGE_SSH_USER: ${{ vars.FORGE_SSH_USER }}
+          FORGE_SITE_PATH: ${{ vars.FORGE_SITE_PATH }}
+        run: |
+          test -n "$FORGE_SSH_HOST"
+          test -n "$FORGE_SITE_PATH"
+          ssh -i ~/.ssh/forge_deploy_key -o IdentitiesOnly=yes "${FORGE_SSH_USER:-forge}@${FORGE_SSH_HOST}" \
+            "FORGE_SITE_PATH='$FORGE_SITE_PATH' bash -s" <<'REMOTE'
+          set -euo pipefail
+          APP="$FORGE_SITE_PATH"
+          RELEASES="$APP/releases"
+          mkdir -p "$RELEASES"
+          KEEP_FILE=$(mktemp)
+          CUR=$(readlink -f "$APP/current" 2>/dev/null || true)
+          if [ -n "$CUR" ] && [ -d "$CUR" ]; then
+            printf '%s\n' "$CUR" >> "$KEEP_FILE"
+          fi
+          ls -1dt "$RELEASES"/* 2>/dev/null | grep -vxF "$CUR" | head -n 2 >> "$KEEP_FILE" || true
+          for release in "$RELEASES"/*; do
+            [ -d "$release" ] || continue
+            if grep -qxF "$release" "$KEEP_FILE"; then
+              echo "Keeping $release"
+            else
+              echo "Pruning $release"
+              rm -rf "$release"
+            fi
+          done
+          rm -f "$KEEP_FILE"
+          df -h /
+          REMOTE
+
       - name: Upload release to Forge host
         env:
           FORGE_SSH_HOST: ${{ vars.FORGE_SSH_HOST }}
@@ -143,6 +176,21 @@ jobs:
           php artisan optimize:clear
           php artisan config:clear
           php artisan route:clear
+
+          KEEP_FILE=$(mktemp)
+          printf '%s\n' "$REL" >> "$KEEP_FILE"
+          ls -1dt "$APP"/releases/* 2>/dev/null | grep -vxF "$REL" | head -n 2 >> "$KEEP_FILE" || true
+          for release in "$APP"/releases/*; do
+            [ -d "$release" ] || continue
+            if grep -qxF "$release" "$KEEP_FILE"; then
+              echo "Keeping $release"
+            else
+              echo "Pruning $release"
+              rm -rf "$release"
+            fi
+          done
+          rm -f "$KEEP_FILE"
+          df -h /
           REMOTE
 
       - name: Verify Forge deploy
