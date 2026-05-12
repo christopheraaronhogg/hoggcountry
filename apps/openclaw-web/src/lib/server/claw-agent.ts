@@ -67,6 +67,7 @@ import {
   renderCurrentDatetime,
   type CurrentDatetimeDetails
 } from './scout-date-authority';
+import { renderWebResearchResult, researchWeb, type WebResearchDetails } from './scout-web-research';
 
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
 export { buildCurrentDateAuthority, buildCurrentDatetimeDetails } from './scout-date-authority';
@@ -186,6 +187,8 @@ interface ScoutSegmentPlanDetails {
   readonly missingChecks: readonly string[];
 }
 
+interface ScoutWebResearchToolDetails extends WebResearchDetails {}
+
 const SCOUT_SOURCE_CATALOG_PARAMETERS = Type.Object({
   query: Type.String({
     minLength: 2,
@@ -209,6 +212,22 @@ const SCOUT_SOURCE_SEARCH_PARAMETERS = Type.Object({
     description: 'The trail question, location, or topic Scout should search sources for.'
   }),
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 10, description: 'Maximum searchable hits to return.' }))
+});
+
+const WEB_RESEARCH_PARAMETERS = Type.Object({
+  query: Type.String({
+    minLength: 3,
+    maxLength: 300,
+    description: 'The current web research query. Keep it specific and avoid private/internal URLs.'
+  }),
+  allowedDomains: Type.Optional(Type.String({
+    maxLength: 300,
+    description: 'Optional comma-separated public domains to restrict research to, such as appalachiantrail.org, nps.gov, weather.gov, or a hostel domain.'
+  })),
+  limit: Type.Optional(Type.Number({ minimum: 1, maximum: 5, description: 'Maximum web results to return.' })),
+  fetchPages: Type.Optional(Type.Boolean({
+    description: 'Fetch readable page excerpts for returned search results. Defaults to true.'
+  }))
 });
 
 const OFFICIAL_TRAIL_SOURCE_PARAMETERS = Type.Object({
@@ -788,6 +807,30 @@ function buildScoutSourceCatalogTool(record: WorkspaceRecord): AgentTool<typeof 
 
       return {
         content: [{ type: 'text', text: text.length > 6000 ? `${text.slice(0, 5999).trimEnd()}…` : text }],
+        details
+      };
+    }
+  };
+}
+
+function buildWebResearchTool(): AgentTool<typeof WEB_RESEARCH_PARAMETERS, ScoutWebResearchToolDetails> {
+  return {
+    name: 'research_web',
+    label: 'Research the web',
+    description: 'Searches the public web and fetches short page excerpts for general current research. Use for current facts that are not covered by private workspace search or dedicated official weather/trail tools. Do not use for local/private/internal URLs.',
+    parameters: WEB_RESEARCH_PARAMETERS,
+    executionMode: 'parallel',
+    async execute(_toolCallId, params) {
+      const details = await researchWeb({
+        query: params.query,
+        allowedDomains: params.allowedDomains ?? null,
+        limit: params.limit ?? null,
+        fetchPages: params.fetchPages ?? true
+      });
+      const text = renderWebResearchResult(details);
+
+      return {
+        content: [{ type: 'text', text: text.length > 8000 ? `${text.slice(0, 7999).trimEnd()}...` : text }],
         details
       };
     }
@@ -1410,6 +1453,7 @@ function buildSystemPrompt(
   const dadPilotContext = buildDadPilotSystemContext(dadPilotSummary ?? null);
   const skillContext = buildScoutSkillPromptContext(record.skillSettings);
   const officialSourcesEnabled = skillEnabled(record, 'official-trail-sources');
+  const webResearchEnabled = skillEnabled(record, 'web-research');
 
   return [
     'You are Scout, Hogg Country\'s private trail delegate for a single hiker.',
@@ -1446,12 +1490,18 @@ function buildSystemPrompt(
     liveToolsAvailable
       ? 'You also have a search_scout_sources tool. Use it when the user asks a research/planning question and the provided context is too thin, too broad, or needs a narrower location/topic search.'
       : 'This runtime may provide preloaded source-search context instead of live tool calls; use the context you have and clearly name missing searches.',
+    liveToolsAvailable && webResearchEnabled
+      ? 'You also have a research_web tool. Use it for current public web research that is not covered by private workspace search, route validation, or dedicated official trail/weather tools. Prefer allowedDomains for source-sensitive questions. Do not use it for private, local, loopback, intranet, or user-secret URLs.'
+      : webResearchEnabled
+        ? 'This runtime does not expose live web research tools; if general web evidence is needed, say that web research requires service connectivity.'
+        : 'Web Research skill is disabled for this workspace; do not claim general internet research or cite fresh public web pages unless the user asks to enable that skill.',
     liveToolsAvailable && officialSourcesEnabled
       ? 'You also have a check_official_trail_sources tool. Use it for safety-sensitive current conditions: closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other live ATC/NWS checks. For weather, call it; it can use explicit coordinates, the workspace profile current AT mile, or useDadLocation when the question is about Dad and the public Garmin fix is relevant.'
       : officialSourcesEnabled
         ? 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.'
         : 'Official Trail Sources skill is disabled for this workspace; do not call or imply official live-source retrieval unless the user asks to enable that skill.',
     'Claim gating: current datetime/date labels must come from the injected Current date authority or get_current_datetime only. Current/future weather, active alerts, and “no alerts” claims must come from get_weather_forecast, get_weather_alerts, check_official_trail_sources, or preloaded official-source context from this turn. If that evidence is missing, answer with the missing-source caveat and no forecast specifics.',
+    'General current internet claims must come from research_web, a supplied user source, private workspace context, or preloaded source context. Cite source title, URL, and fetchedAt when using web research. For weather and safety-sensitive AT conditions, prefer get_weather_forecast/get_weather_alerts/check_official_trail_sources over general web search.',
     'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied. Do not say “fetched just now,” “NWS says,” or similar unless get_weather_forecast, get_weather_alerts, check_official_trail_sources, or preloaded official-source context returned that exact source this turn. If the tool/source is missing, say what is missing instead of filling the gap.',
     'For route planning, distinguish route shape from confirmed facts. It is fine to give a useful corridor, start/end options, and approximate mileages, but label exact mileages, legal camping, parking, shuttles, water, and service hours as verify-against-current-guide/direct-source items until the hiker supplies or fetches that source.',
     'Before giving day-by-day route logistics, do a quiet route validation pass and then summarize the result plainly: route order, rough mileage split, practical access point confidence, legal overnight status, water, parking/shuttle, and weather. If that pass is incomplete, say the itinerary is a draft shape and name the missing checks before commitment.',
@@ -1777,6 +1827,7 @@ export async function replyInWorkspaceClaw(
     record.resources.length > 0 ? { label: 'Private Resources', status: `${record.resources.length} available`, kind: 'workspace' } : null,
     sourceContexts.some((context) => context.includes('Scout route resource')) ? { label: 'AT route guardrails', status: 'loaded for validation', kind: 'route' } : null,
     sourceContexts.some((context) => context.includes('Scout source catalog')) ? { label: 'Scout source catalog', status: 'planned', kind: 'catalog' } : null,
+    skillEnabled(record, 'web-research') ? { label: 'Web research', status: 'available when online', kind: 'web' } : null,
     ...(preloadedOfficial ? buildOfficialSourceReceipts(preloadedOfficial.details) : [])
   ].filter((receipt): receipt is WorkspaceClawSourceReceipt => receipt !== null);
   if (sourceReceipts.length > 0) {
@@ -1800,6 +1851,7 @@ export async function replyInWorkspaceClaw(
           skillEnabled(record, 'at-mile-marker-reference') ? buildPlanSegmentTool(record) : null,
           buildScoutSourceCatalogTool(record),
           buildScoutSourceSearchTool(record, dadPilotSummary),
+          skillEnabled(record, 'web-research') ? buildWebResearchTool() : null,
           skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(record, dadPilotSummary) : null
         ].filter((tool): tool is AgentTool<any, any> => tool !== null);
     const agent = new Agent({

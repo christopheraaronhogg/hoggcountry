@@ -1,16 +1,27 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { getProfile, hasManual, listImportedDocuments, listWorkspaceResources } from '$lib/manual-db';
+  import { offlineFieldPackSummary, refreshOfflineFieldPack } from '$lib/offline-field-pack';
   import type { ManualProfile } from '@hoggcountry/manual-core';
   import type { PageData } from './$types';
 
   const { data } = $props<{ data: PageData }>();
+
+  interface BeforeInstallPromptEvent extends Event {
+    readonly platforms?: string[];
+    readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+    prompt(): Promise<void>;
+  }
 
   let manualReady = $state(false);
   let profile = $state<ManualProfile | null>(null);
   let docCount = $state(0);
   let resourceCount = $state(0);
   let prompt = $state('');
+  let fieldPackStatus = $state('No field pack saved');
+  let fieldPackBusy = $state(false);
+  let fieldPackError = $state('');
+  let installPrompt = $state<BeforeInstallPromptEvent | null>(null);
 
   const quickPrompts = [
     {
@@ -33,18 +44,57 @@
     }
   ];
 
-  onMount(async () => {
-    manualReady = await hasManual();
-    const [workspaceProfile, docs, resources] = await Promise.all([
-      getProfile().catch(() => null),
-      listImportedDocuments().catch(() => []),
-      listWorkspaceResources().catch(() => [])
-    ]);
+  onMount(() => {
+    fieldPackStatus = offlineFieldPackSummary();
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      installPrompt = event as BeforeInstallPromptEvent;
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    profile = workspaceProfile;
-    docCount = docs.length;
-    resourceCount = resources.length;
+    void (async () => {
+      manualReady = await hasManual();
+      const [workspaceProfile, docs, resources] = await Promise.all([
+        getProfile().catch(() => null),
+        listImportedDocuments().catch(() => []),
+        listWorkspaceResources().catch(() => [])
+      ]);
+
+      profile = workspaceProfile;
+      docCount = docs.length;
+      resourceCount = resources.length;
+
+      const idle = window.requestIdleCallback ?? ((callback: IdleRequestCallback) => window.setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 1));
+      if (navigator.onLine) idle(() => void saveFieldPack(true));
+    })();
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   });
+
+  async function saveFieldPack(quiet = false) {
+    fieldPackBusy = true;
+    if (!quiet) fieldPackError = '';
+
+    try {
+      const pack = await refreshOfflineFieldPack();
+      fieldPackStatus = offlineFieldPackSummary(pack);
+    } catch (caught) {
+      if (!quiet) {
+        fieldPackError = caught instanceof Error ? caught.message : 'Could not save field pack.';
+      }
+    } finally {
+      fieldPackBusy = false;
+    }
+  }
+
+  async function installApp() {
+    if (!installPrompt) return;
+    const promptEvent = installPrompt;
+    installPrompt = null;
+    await promptEvent.prompt();
+  }
 
   function currentMileLabel(): string {
     if (!profile || profile.currentMile <= 0) return 'Mile not set';
@@ -94,6 +144,22 @@
   </form>
 
   <a class="primary-link" href={askHref('Build my daily trail brief. Include weather, water, sleep target, body risk, resupply pressure, and the assumptions I should verify before relying on it.')}>Build trail brief</a>
+
+  <section class="field-pack" aria-label="Offline field pack">
+    <div>
+      <strong>Field pack</strong>
+      <small>{fieldPackStatus}</small>
+    </div>
+    <button type="button" onclick={() => saveFieldPack()} disabled={fieldPackBusy}>
+      {fieldPackBusy ? 'Saving...' : 'Save'}
+    </button>
+    {#if installPrompt}
+      <button type="button" onclick={installApp}>Install</button>
+    {/if}
+  </section>
+  {#if fieldPackError}
+    <p class="field-pack-error">{fieldPackError}</p>
+  {/if}
 
   <div class="quick-list" aria-label="Quick Scout prompts">
     {#each quickPrompts as item}
@@ -279,6 +345,64 @@
     text-transform: uppercase;
   }
 
+  .field-pack {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.48rem;
+    border: 1px solid rgba(77, 89, 74, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 253, 248, 0.86);
+    box-shadow: 0 10px 24px rgba(31, 41, 55, 0.055);
+    padding: 0.68rem 0.72rem;
+  }
+
+  .field-pack div {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .field-pack strong {
+    color: #27332b;
+    font-family: Oswald, Impact, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .field-pack small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 780;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .field-pack button {
+    min-height: 2.2rem;
+    border: 1px solid rgba(77, 89, 74, 0.14);
+    border-radius: 12px;
+    background: #eef1e8;
+    color: #27332b;
+    cursor: pointer;
+    font-weight: 900;
+    padding: 0 0.76rem;
+  }
+
+  .field-pack button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .field-pack-error {
+    margin: -0.35rem 0 0;
+    color: #8a2f2f;
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
   .status-row {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -326,6 +450,16 @@
     .primary-link {
       min-height: 2.95rem;
       width: 100%;
+    }
+
+    .field-pack {
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding: 0.6rem;
+    }
+
+    .field-pack button {
+      min-height: 2.05rem;
+      padding-inline: 0.62rem;
     }
 
     .route-chip {

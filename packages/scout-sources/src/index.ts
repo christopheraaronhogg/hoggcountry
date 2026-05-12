@@ -149,6 +149,13 @@ const FEDERAL_PUBLIC_DOMAIN_LICENSE: ScoutSourceLicense = {
   notes: 'Generally public domain when created by U.S. federal employees as part of official duties; retain agency citation and do not imply agency endorsement. Check pages for third-party exceptions, trademarks, logos, photos, or non-federal contributions.'
 };
 
+const WEB_RESEARCH_LICENSE: ScoutSourceLicense = {
+  label: 'Third-party public web pages',
+  attributionRequired: true,
+  redistributionAllowed: 'unknown',
+  notes: 'Use short cited excerpts only. Respect source pages, timestamps, and domain-specific terms. Do not treat general web results as official unless the result is itself an official source.'
+};
+
 export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
   {
     id: 'private-workspace',
@@ -166,6 +173,26 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
     allowedActions: ['catalog', 'search', 'open'],
     caveats: ['Treat as authoritative for the hiker, but still ask when details are stale or missing.'],
     keywords: ['profile', 'manual', 'notes', 'gear', 'loadout', 'health', 'budget', 'pace', 'plan', 'docs', 'checklist', 'private']
+  },
+  {
+    id: 'web-research',
+    title: 'Public web research: search results and fetched page excerpts',
+    displayCategory: 'general web research',
+    lane: 'third-party-review-needed',
+    trust: 'unknown',
+    accessMode: 'live-fetch',
+    privacy: 'Public web only; private, local, loopback, and internal URLs are blocked.',
+    useWhen: 'Current public facts outside Scout’s private workspace, bundled route data, official AT/NWS lanes, or user-imported guide data.',
+    license: WEB_RESEARCH_LICENSE,
+    freshness: { updateCadence: 'live', staleAfterDays: 1 },
+    coverage: { topics: ['web', 'research', 'current events', 'products', 'town services', 'hostels', 'gear', 'general public sources'] },
+    citationTemplate: 'Public web research, fetched {fetchedAt}: {url}',
+    allowedActions: ['catalog', 'live-fetch'],
+    caveats: [
+      'General web results may be stale, promotional, incomplete, or unofficial.',
+      'For weather, alerts, closures, permits, and safety-sensitive trail decisions, prefer dedicated official-source tools and cite the official source.'
+    ],
+    keywords: ['internet', 'web', 'research', 'search', 'current', 'latest', 'website', 'public source', 'hostel', 'gear', 'product', 'town services']
   },
   {
     id: 'hogg-country-corpus',
@@ -985,6 +1012,7 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (manifest.id === 'nws-noaa-trail-weather-safety-doctrine' && /\b(heat|hot|lightning|thunder|thunderstorm|storm|flood|wind|cold|hypothermia|snow|ice|winter|exposed|ridge|go\/?no[-\s]?go)\b/iu.test(query.query)) score += 8;
   if (manifest.id === 'nps-usfs-cdc-backcountry-safety-doctrine' && /\b(water|filter|purif|bear|food\s+storage|canister|ursack|tick|lyme|fire|burn\s+ban|leave\s+no\s+trace|\blnt\b|sanitation|beginner|starter|new\s+hiker)\b/iu.test(query.query)) score += 7;
   if (manifest.id === 'nws-weather' && /\b(weather|forecast|alert|heat|hot|lightning|thunder|thunderstorm|storm|rain|flood|wind|cold|hypothermia|snow|ice|winter|exposed|ridge|above[-\s]?treeline|go\/?no[-\s]?go)\b/iu.test(query.query)) score += 12;
+  if (manifest.id === 'web-research' && /\b(internet|web|search|research|latest|current|today|news|website|online|look\s+up|google|source|sources|product|gear\s+review|hostel|shuttle|hours)\b/iu.test(query.query)) score += 8;
   if (manifest.id === 'usgs-water-data-stream-gauges' && /\b(ford|fording|stream\s+gauge|river\s+gauge|gauge|gage|flood|high\s+water|discharge|stage|cfs|creek\s+crossing|water\s+crossing|rain[-\s]?swollen)\b/iu.test(query.query)) score += 8;
   if (manifest.id === 'usgs-national-map-hydro-topo-elevation' && /\b(topo|topographic|map|hydrography|elevation|contour|terrain|ridge|valley|road\s+crossing|trailhead|place\s+name|gnis)\b/iu.test(query.query)) score += 7;
   if (manifest.id === 'nps-public-api-park-alerts-campgrounds' && /\b(nps|national\s+park|park\s+alert|shenandoah|great\s+smoky|gsmnp|harpers?\s+ferry|delaware\s+water\s+gap|blue\s+ridge\s+parkway|campground|visitor\s+center|road\s+status)\b/iu.test(query.query)) score += 7;

@@ -4,6 +4,14 @@
   import type { DbConnection, SubscriptionHandle, tables as SpacetimeTables } from '$lib/module_bindings';
   import type { getSpacetimeConnection as getSpacetimeConnectionType, onSpacetimeConnection as onSpacetimeConnectionType } from '$lib/spacetime';
   import { buildClawLanes } from '$lib/claw';
+  import {
+    cacheClawConsolePayload,
+    cacheDailyBrief,
+    offlineFieldPackLabel,
+    offlineFieldPackSummary,
+    readOfflineFieldPack,
+    type OfflineClawConsolePayload
+  } from '$lib/offline-field-pack';
   import { inferStandardDocumentSlotKey, isStandardDocumentSlotKey, STANDARD_DOCUMENT_SLOTS, standardDocumentSlotForKey, type ImportedDocument, type ManualProfile, type ManualSection, type StandardDocumentSlotKey, type WorkspaceResource, type WorkspaceTool } from '@hoggcountry/manual-core';
   import type { ClawLane } from '$lib/claw';
 
@@ -226,6 +234,8 @@
   let locationNotice = $state('');
   let locationError = $state('');
   let locationWatchId: number | null = null;
+  let sections = $state.raw<ManualSection[]>(Array.isArray(initialWorkspace.sections) ? initialWorkspace.sections : []);
+  let tools = $state.raw<WorkspaceTool[]>(Array.isArray(initialWorkspace.tools) ? initialWorkspace.tools : []);
   let documents = $state.raw<ImportedDocument[]>(Array.isArray(initialWorkspace.documents) ? initialWorkspace.documents : []);
   let resources = $state.raw<WorkspaceResource[]>(Array.isArray(initialWorkspace.resources) ? initialWorkspace.resources : []);
   let selectedDocumentId = $state<string>('');
@@ -235,6 +245,7 @@
   let factCandidates = $state.raw<FactCandidate[]>(Array.isArray(initialConsole.factCandidates) ? (initialConsole.factCandidates as FactCandidate[]) : []);
   let loading = $state(false);
   let error = $state('');
+  let offlineNotice = $state('');
   let sendBusy = $state(false);
   let streamingReplyVisible = $state(false);
   let streamingAssistantText = $state('');
@@ -965,11 +976,39 @@
 
   function applyWorkspaceSnapshot(workspace: WorkspaceSnapshot) {
     profile = workspace.profile;
+    sections = Array.isArray(workspace.sections) ? workspace.sections : [];
+    tools = Array.isArray(workspace.tools) ? workspace.tools : [];
     documents = Array.isArray(workspace.documents) ? workspace.documents : [];
     resources = Array.isArray(workspace.resources) ? workspace.resources : [];
     ensureSelectedDocument(documents);
     ensureSelectedResource(resources);
     lanes = workspace.profile ? buildClawLanes(workspace.profile, workspace.sections, workspace.documents, workspace.tools, workspace.resources) : [];
+  }
+
+  function cacheCurrentClawConsolePayload() {
+    if (!currentWorkspaceId) return;
+    cacheClawConsolePayload({
+      workspaceId: currentWorkspaceId,
+      workspace: {
+        profile,
+        sections,
+        documents,
+        resources,
+        tools
+      },
+      connection,
+      messages,
+      factCandidates,
+      hasPendingConnect: false
+    });
+  }
+
+  function applyCachedClawConsolePayload(cached: OfflineClawConsolePayload) {
+    applyWorkspaceSnapshot(cached.workspace as WorkspaceSnapshot);
+    currentWorkspaceId = cached.workspaceId;
+    connection = cached.connection as ProviderConnection | null;
+    messages = Array.isArray(cached.messages) ? cached.messages as ClawMessage[] : [];
+    factCandidates = Array.isArray(cached.factCandidates) ? cached.factCandidates as FactCandidate[] : [];
   }
 
   function formatLocationDistance(miles: number): string {
@@ -1239,9 +1278,17 @@
 
     try {
       dailyBrief = await jsonOrThrow(await fetch('/app-api/claw/daily-brief', { cache: 'no-store' })) as ScoutDailyBrief;
+      cacheDailyBrief(dailyBrief);
     } catch (caught) {
       console.error(caught);
-      dailyBriefError = caught instanceof Error ? caught.message : 'Could not load the Daily Trail Brief.';
+      const cachedBrief = readOfflineFieldPack()?.dailyBrief ?? null;
+      if (cachedBrief) {
+        dailyBrief = cachedBrief as ScoutDailyBrief;
+        dailyBriefError = '';
+        offlineNotice = `Using cached field pack: ${offlineFieldPackSummary()}.`;
+      } else {
+        dailyBriefError = caught instanceof Error ? caught.message : 'Could not load the Daily Trail Brief.';
+      }
     } finally {
       dailyBriefLoading = false;
     }
@@ -1396,6 +1443,7 @@
   async function loadState() {
     loading = true;
     error = '';
+    offlineNotice = '';
 
     try {
       const clawPayload = await jsonOrThrow(await fetch('/app-api/claw', { cache: 'no-store' }));
@@ -1406,6 +1454,7 @@
       connection = (clawPayload.connection ?? null) as ProviderConnection | null;
       messages = Array.isArray(clawPayload.messages) ? (clawPayload.messages as ClawMessage[]) : [];
       factCandidates = Array.isArray(clawPayload.factCandidates) ? (clawPayload.factCandidates as FactCandidate[]) : [];
+      cacheClawConsolePayload(clawPayload as OfflineClawConsolePayload);
       void loadSpacetimeRuntime().then(({ getSpacetimeConnection }) => {
         const realtimeConnection = getSpacetimeConnection();
         if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
@@ -1414,7 +1463,14 @@
       idle(() => void loadDadPilot());
     } catch (caught) {
       console.error(caught);
-      error = caught instanceof Error ? caught.message : 'Could not load the Scout console.';
+      const cached = readOfflineFieldPack()?.claw ?? null;
+      if (cached) {
+        applyCachedClawConsolePayload(cached);
+        error = '';
+        offlineNotice = `Using cached field pack: ${offlineFieldPackSummary()}.`;
+      } else {
+        error = caught instanceof Error ? caught.message : 'Could not load the Scout console.';
+      }
     } finally {
       loading = false;
     }
@@ -1542,6 +1598,7 @@
     ensureSelectedDocument(documents);
     factCandidates = Array.isArray(payload.factCandidates) ? (payload.factCandidates as FactCandidate[]) : factCandidates;
     connection = (payload.connection ?? null) as ProviderConnection | null;
+    cacheCurrentClawConsolePayload();
     const revisedDocument = (payload.revisedDocument ?? null) as ImportedDocument | null;
     if (revisedDocument) {
       savedDocumentHref = `/app/docs/${encodeURIComponent(revisedDocument.id)}`;
@@ -1627,6 +1684,41 @@
     if (streamStatus === 'thinking') return `Scout is thinking${thinkingActivityChars > 0 ? ` (${thinkingActivityChars.toLocaleString()} hidden chars)` : ''}…`;
     if (streamStatus === 'working') return recoveredRealtimeTurn ? 'Scout is still working in another window…' : 'Scout is still thinking…';
     return 'Scout is checking trail notes…';
+  }
+
+  function buildOfflineScoutMessage(userMessage: string, timestamp: number): ClawMessage {
+    const pack = readOfflineFieldPack();
+    const cachedProfile = pack?.workspace?.profile ?? profile;
+    const cachedDocs = pack?.workspace?.documents.length ?? documents.length;
+    const cachedResources = pack?.workspace?.resources.length ?? resources.length;
+    const cachedBrief = pack?.dailyBrief ?? dailyBrief;
+    const lastAssistant = [...(pack?.claw?.messages ?? messages)]
+      .reverse()
+      .find((message) => message.role === 'assistant' && !message.error);
+    const lines = [
+      `Offline mode. I can use cached Scout context on this phone (${offlineFieldPackLabel(pack)}), but I cannot call the cloud model, fetch NWS weather, check ATC updates, or research the web until service returns.`,
+      cachedProfile
+        ? `Cached profile: ${cachedProfile.direction} mile ${cachedProfile.currentMile.toFixed(1)}, target ${cachedProfile.targetPace.toFixed(1)} mpd, updated ${cachedProfile.updatedAt || 'unknown'}.`
+        : 'Cached profile: not saved yet.',
+      `Cached sources: ${cachedDocs} docs and ${cachedResources} resources.`,
+      cachedBrief ? `Cached daily brief (${dailyBriefTime(cachedBrief.generatedAt)}): ${cachedBrief.summary}` : 'Cached daily brief: not saved yet.',
+      lastAssistant ? `Last cached Scout reply: ${threadPreview(lastAssistant)}` : null,
+      `Your offline ask: ${userMessage}`,
+      'Field answer: use saved profile/docs for route shape and conservative planning only. For anything involving tomorrow/today weather, active alerts, closures, legal camping, water reliability, town hours, or web research, treat the answer as unverified until this phone is back online and Scout can run the live tools.'
+    ].filter((line): line is string => Boolean(line));
+
+    return {
+      id: `offline-assistant-${timestamp}`,
+      role: 'assistant',
+      text: lines.join('\n\n'),
+      createdAt: new Date(timestamp).toISOString(),
+      model: 'offline-field-pack',
+      error: false,
+      sourceReceipts: [
+        { label: 'Offline field pack', status: offlineFieldPackLabel(pack), kind: 'offline' },
+        { label: 'Live tools unavailable', status: 'cloud model, weather, official sources, and web research need service', kind: 'offline' }
+      ]
+    };
   }
 
   async function applyRealtimeTurnEvent(turnEvent: ScoutTurnEventEnvelope) {
@@ -1787,6 +1879,7 @@
     activeRealtimeEventHandler = applyTurnEvent;
     pendingPrompt = message;
     error = '';
+    offlineNotice = '';
     saveNotice = '';
     saveError = '';
     replyInput = '';
@@ -1794,6 +1887,29 @@
     messages = [...messages, pendingUserMessage];
     await focusCloudThread();
     await scrollCloudThreadToLatest();
+
+    if (isOffline || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+      const offlineReply = buildOfflineScoutMessage(message, now + 1);
+      messages = [...messages, offlineReply];
+      cacheCurrentClawConsolePayload();
+      offlineNotice = 'Offline field-pack reply. Live Scout will be available when service returns.';
+      flushStreamingText();
+      pendingPrompt = '';
+      sendBusy = false;
+      streamingReplyVisible = false;
+      streamingAssistantText = '';
+      streamStatus = '';
+      turnPhase = null;
+      turnSourceReceipts = [];
+      recoveredRealtimeTurn = false;
+      thinkingActivityChars = 0;
+      activeRealtimeTurnId = '';
+      activeRealtimeEventCursor = 0;
+      activeRealtimeEventHandler = null;
+      await focusCloudThread();
+      await scrollCloudThreadToLatest();
+      return;
+    }
 
     try {
       turnId = await startScoutReplyTurn(message);
@@ -1947,6 +2063,7 @@
       thinkingEffort = savedThinkingEffort;
     }
 
+    cacheCurrentClawConsolePayload();
     updateOnlineState();
     window.addEventListener('online', updateOnlineState);
     window.addEventListener('offline', updateOnlineState);
@@ -2049,7 +2166,11 @@
     <article class="workspace-alert">{error}</article>
   {/if}
 
-  {#if !connection && !loading && messages.length > 0}
+  {#if offlineNotice}
+    <article class="workspace-alert workspace-alert--quiet">{offlineNotice}</article>
+  {/if}
+
+  {#if !connection && !loading && messages.length > 0 && !isOffline}
     <section class="connect-strip">
       <div>
         <strong>Connect Scout to send prompts.</strong>
@@ -2266,7 +2387,7 @@
         </div>
       </section>
 
-      {#if connection || messages.length > 0 || replyInput.trim() || currentDocument || currentResource || selectedTargetStandardSlot || locationNotice || locationError || saveNotice || saveError}
+      {#if connection || isOffline || messages.length > 0 || replyInput.trim() || currentDocument || currentResource || selectedTargetStandardSlot || locationNotice || locationError || saveNotice || saveError}
       <section id="ask-scout" class="composer-shell" aria-label="Ask Scout">
         {#if currentDocument}
           <div class="document-context-pill">
@@ -2293,7 +2414,7 @@
         <div class="composer-starters" aria-label="Prompt starters and effort">
           {#if messages.length > 0}
             {#each compactComposerStarters as starter (starter.title)}
-              <button type="button" onclick={() => useExamplePrompt(starter)} disabled={!connection || sendBusy} title={starter.text}>
+              <button type="button" onclick={() => useExamplePrompt(starter)} disabled={(!connection && !isOffline) || sendBusy} title={starter.text}>
                 <span aria-hidden="true">{starter.icon ?? '✦'}</span>
                 {starter.title}
               </button>
@@ -2337,15 +2458,15 @@
             bind:this={promptTextarea}
             bind:value={replyInput}
             rows="1"
-            disabled={sendBusy || !connection}
-            placeholder={connection ? 'Ask Scout…' : 'Connect Scout…'}
+            disabled={sendBusy || (!connection && !isOffline)}
+            placeholder={isOffline ? 'Ask cached Scout…' : connection ? 'Ask Scout…' : 'Connect Scout…'}
             oninput={(event) => syncPromptHeight(event.currentTarget as HTMLTextAreaElement)}
           ></textarea>
           <button
             class="send-button prompt-send"
             type="button"
             onclick={sendMessage}
-            disabled={sendBusy || !connection || !replyInput.trim()}
+            disabled={sendBusy || (!connection && !isOffline) || !replyInput.trim()}
             aria-label="Send to Scout"
             title="Send to Scout"
           >
@@ -2357,6 +2478,9 @@
 
         {#if locationNotice}
           <p class="location-note">{locationNotice}</p>
+        {/if}
+        {#if isOffline}
+          <p class="location-note">Offline: cached answers only. Weather, official trail checks, and web research need service.</p>
         {/if}
         {#if locationError}
           <p class="workspace-alert">{locationError}</p>
@@ -2427,9 +2551,17 @@
         <section class="panel-card brief-card">
           <div class="mini-head">
             <strong>Trail brief</strong>
-            <button class="tiny-button" type="button" onclick={useDailyBriefPrompt} disabled={!connection || sendBusy}>Use</button>
+            <button class="tiny-button" type="button" onclick={useDailyBriefPrompt} disabled={(!connection && !isOffline) || sendBusy}>Use</button>
           </div>
+          <small class="brief-meta">{dailyBriefTime(dailyBrief.generatedAt)}</small>
           <p class="brief-summary">{dailyBrief.summary}</p>
+          {#if dailyBrief.sourceReceipts.length > 0}
+            <div class="turn-source-chips brief-source-chips" aria-label="Daily brief source receipts">
+              {#each dailyBrief.sourceReceipts.slice(0, 3) as receipt (`brief-${receipt.label}`)}
+                <span>{receipt.label}: {receipt.status}</span>
+              {/each}
+            </div>
+          {/if}
         </section>
       {:else if dailyBriefError}
         <p class="workspace-alert">{dailyBriefError}</p>
@@ -3760,6 +3892,12 @@
     margin: 0;
     color: #52604d;
     line-height: 1.45;
+  }
+
+  .brief-meta {
+    color: #6a7566;
+    font-size: 0.76rem;
+    font-weight: 820;
   }
 
   .success-note {

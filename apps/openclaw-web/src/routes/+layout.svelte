@@ -35,6 +35,11 @@
 
   if (browser) {
     initSpacetimeProvider();
+    if ('serviceWorker' in navigator) {
+      void navigator.serviceWorker.register('/service-worker.js').catch((error) => {
+        console.warn('Scout service worker registration failed:', error);
+      });
+    }
     $effect(() => {
       updateGuideHeaderState();
     });

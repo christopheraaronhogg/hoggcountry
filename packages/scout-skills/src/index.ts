@@ -143,6 +143,35 @@ export const BUILTIN_SCOUT_SKILLS: readonly ScoutSkill[] = [
     updatedAt: '2026-05-06'
   },
   {
+    id: 'web-research',
+    title: 'Public Web Research',
+    description: 'Use live public web search and fetched page excerpts for current general research when Scout’s private, bundled, or dedicated official tools do not cover the question.',
+    category: 'custom',
+    enabledByDefault: true,
+    userToggleable: true,
+    accessLevel: 'mixed',
+    resourceIds: [],
+    corpusIds: [],
+    sourceManifestIds: ['web-research'],
+    triggerKeywords: ['internet', 'web', 'search', 'research', 'latest', 'current', 'today', 'website', 'online', 'look up', 'product', 'hostel', 'shuttle'],
+    triggerIntents: ['general-web-research', 'current-public-source-check', 'town-service-research', 'gear-product-research'],
+    retrievalStrategy: 'live-source-check',
+    citationTemplate: 'Public web research, fetched {fetchedAt}: {url}',
+    promptInstructions: [
+      'Use public web research only for public current facts that are not better handled by official trail/weather tools, private workspace search, bundled route data, or user-owned guide imports.',
+      'Cite source title, URL, and fetched timestamp for web-derived claims.',
+      'Prefer domain filters for source-sensitive questions.',
+      'Do not use public web search for private, local, loopback, intranet, or user-secret URLs.'
+    ],
+    caveats: ['General web results may be stale, promotional, incomplete, or unofficial.'],
+    safetyRules: [
+      'Weather, active alerts, closures, permits, legal camping, and safety-sensitive trail conditions should use official trail/weather source tools when available.',
+      'Disabled means Scout should not claim fresh general web research or cite newly fetched public web pages.'
+    ],
+    version: '2026-05-12',
+    updatedAt: '2026-05-12'
+  },
+  {
     id: 'private-workspace-resources',
     title: 'Private Workspace Resources',
     description: 'Use this workspace’s uploaded files, saved documents, manual notes, tools, and private resource locker as private source context.',

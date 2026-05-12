@@ -7,7 +7,7 @@
 
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
@@ -295,8 +295,18 @@ function buildLegacyContext(verses, metadata) {
 }
 
 function writeSqlite(sqlitePath, verses) {
-  if (!existsSync('/usr/bin/sqlite3') && !existsSync('/opt/homebrew/bin/sqlite3')) {
+  const sqliteVersion = spawnSync('sqlite3', ['--version'], { encoding: 'utf8' });
+  if (sqliteVersion.status !== 0) {
     console.warn('sqlite3 not found; skipping SQLite output.');
+    return;
+  }
+  const ftsProbe = spawnSync('sqlite3', [':memory:'], {
+    input: 'CREATE VIRTUAL TABLE verses_fts USING fts5(text);',
+    encoding: 'utf8',
+  });
+  const supportsFts5 = ftsProbe.status === 0;
+  if (!supportsFts5) {
+    console.warn('sqlite3 was found but lacks FTS5; skipping SQLite output.');
     return;
   }
 
@@ -311,9 +321,9 @@ function writeSqlite(sqlitePath, verses) {
     verse.text,
   ]);
 
+  rmSync(sqlitePath, { force: true });
+
   const sql = [
-    'DROP TABLE IF EXISTS verses_fts;',
-    'DROP TABLE IF EXISTS verses;',
     'CREATE TABLE verses (reference_key TEXT PRIMARY KEY, reference TEXT NOT NULL, book TEXT NOT NULL, book_number INTEGER NOT NULL, chapter INTEGER NOT NULL, verse INTEGER NOT NULL, testament TEXT NOT NULL, text TEXT NOT NULL);',
     'CREATE INDEX idx_kjv_pce_book_chapter ON verses(book_number, chapter, verse);',
     'CREATE VIRTUAL TABLE verses_fts USING fts5(reference, book, testament, text, content="verses", content_rowid="rowid");',

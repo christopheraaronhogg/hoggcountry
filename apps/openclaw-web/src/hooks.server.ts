@@ -8,5 +8,10 @@ export const handle: Handle = async ({ event, resolve }) => {
     ? createHash('sha256').update(event.locals.betaProfile.email.trim().toLowerCase()).digest('hex')
     : null;
 
-  return resolve(event);
+  const response = await resolve(event);
+  if (event.url.pathname.startsWith('/app') || event.url.pathname.startsWith('/app-api')) {
+    response.headers.append('vary', 'cookie');
+  }
+
+  return response;
 };

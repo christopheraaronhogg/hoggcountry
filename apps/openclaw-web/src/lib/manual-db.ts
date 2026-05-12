@@ -19,8 +19,9 @@ import {
 } from '@hoggcountry/manual-core';
 import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
 import type { ScoutSkill, ScoutSkillSettings } from '@hoggcountry/scout-skills';
+import { cacheWorkspaceSnapshot, readCachedWorkspaceSnapshot, type OfflineWorkspaceSnapshot } from '$lib/offline-field-pack';
 
-interface WorkspaceSnapshot {
+interface WorkspaceSnapshot extends OfflineWorkspaceSnapshot {
   readonly workspaceId: string;
   readonly profile: ManualProfile | null;
   readonly sections: ManualSection[];
@@ -54,7 +55,15 @@ async function requestJson<T>(input: string, init?: RequestInit): Promise<T> {
 }
 
 async function getSnapshot(): Promise<WorkspaceSnapshot> {
-  return requestJson<WorkspaceSnapshot>(WORKSPACE_ENDPOINT);
+  try {
+    const snapshot = await requestJson<WorkspaceSnapshot>(WORKSPACE_ENDPOINT, { cache: 'no-store' });
+    cacheWorkspaceSnapshot(snapshot);
+    return snapshot;
+  } catch (error) {
+    const cached = readCachedWorkspaceSnapshot();
+    if (cached) return cached as WorkspaceSnapshot;
+    throw error;
+  }
 }
 
 export function createDefaultProfile(seed?: { trailName?: string }): ManualProfile {
@@ -109,6 +118,7 @@ export async function setCurrentMile(mile: number): Promise<ManualProfile | null
     method: 'POST',
     body: JSON.stringify({ currentMile: mile })
   });
+  cacheWorkspaceSnapshot(snapshot);
 
   return snapshot.profile;
 }
@@ -118,6 +128,7 @@ export async function addNoteToSection(sectionId: string, title: string, content
     method: 'POST',
     body: JSON.stringify({ sectionId, title, content })
   });
+  cacheWorkspaceSnapshot(snapshot);
 
   return snapshot.sections;
 }
@@ -162,6 +173,7 @@ export async function importResourceFiles(files: FileList | File[]): Promise<Wor
     method: 'POST',
     body: formData
   });
+  cacheWorkspaceSnapshot(snapshot);
 
   return snapshot.resources;
 }
@@ -178,6 +190,7 @@ export async function createWorkspaceResource(input: {
     method: 'POST',
     body: JSON.stringify(input)
   });
+  cacheWorkspaceSnapshot(payload.workspace);
 
   return payload.resource;
 }
@@ -201,6 +214,7 @@ export async function importDocumentFiles(files: FileList | File[]): Promise<Imp
     method: 'POST',
     body: formData
   });
+  cacheWorkspaceSnapshot(snapshot);
 
   return snapshot.documents;
 }
@@ -215,6 +229,7 @@ export async function createWorkspaceDocument(input: {
     method: 'POST',
     body: JSON.stringify(input)
   });
+  cacheWorkspaceSnapshot(payload.workspace);
 
   return payload.document;
 }
@@ -257,6 +272,7 @@ export async function addChecklistTool(input: {
     method: 'POST',
     body: JSON.stringify(input)
   });
+  cacheWorkspaceSnapshot(snapshot);
 
   return snapshot.tools;
 }
@@ -265,6 +281,7 @@ export async function deleteTool(toolId: string): Promise<WorkspaceTool[]> {
   const snapshot = await requestJson<WorkspaceSnapshot>(WORKSPACE_ENDPOINT + `/tools/${toolId}`, {
     method: 'DELETE'
   });
+  cacheWorkspaceSnapshot(snapshot);
 
   return snapshot.tools;
 }
