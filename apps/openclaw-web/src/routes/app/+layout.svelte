@@ -53,6 +53,7 @@
     {#each appTabs as tab}
       <a href={tab.href} class:is-active={tabActive(tab.href)}>{tab.label}</a>
     {/each}
+    <a href="/app/logout">Switch</a>
   </nav>
 </section>
 

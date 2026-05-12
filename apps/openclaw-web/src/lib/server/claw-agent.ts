@@ -82,6 +82,8 @@ const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
 const SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS = 3200;
+const SCOUT_MODEL_HISTORY_MESSAGES = 8;
+const SCOUT_STORED_HISTORY_MESSAGES = 200;
 
 interface ClawRuntime {
   readonly providerId: ClawProviderId;
@@ -1588,7 +1590,21 @@ function simplifyMessages(messages: Message[]): WorkspaceClawMessage[] {
 
       return [];
     })
-    .slice(-40);
+    .slice(-SCOUT_STORED_HISTORY_MESSAGES);
+}
+
+function mergeClawMessageHistory(
+  existing: readonly WorkspaceClawMessage[],
+  next: readonly WorkspaceClawMessage[]
+): WorkspaceClawMessage[] {
+  const byId = new Map<string, WorkspaceClawMessage>();
+  for (const message of [...existing, ...next]) {
+    byId.set(message.id, message);
+  }
+
+  return [...byId.values()]
+    .sort((left, right) => toTimestamp(left.createdAt) - toTimestamp(right.createdAt))
+    .slice(-SCOUT_STORED_HISTORY_MESSAGES);
 }
 
 function stripJsonFence(value: string): string {
@@ -1844,7 +1860,7 @@ export async function replyInWorkspaceClaw(
     return { nextMessages, reply };
   };
 
-  const history = runtime.providerId === OPENCODE_GO_PROVIDER_ID ? record.clawMessages.slice(-8) : record.clawMessages;
+  const history = runtime.providerId === OPENCODE_GO_PROVIDER_ID ? record.clawMessages.slice(-SCOUT_MODEL_HISTORY_MESSAGES) : record.clawMessages;
   let nextMessages: WorkspaceClawMessage[];
   let reply: WorkspaceClawMessage | undefined;
   ({ nextMessages, reply } = await runAgentPrompt(history));
@@ -1854,7 +1870,7 @@ export async function replyInWorkspaceClaw(
       [],
       'Retry mode: the previous model call did not produce a usable assistant answer. Answer from the private workspace/source context above, keep the response concise, and do not invent missing source facts.'
     );
-    nextMessages = [...record.clawMessages, ...retry.nextMessages].slice(-40);
+    nextMessages = mergeClawMessageHistory(record.clawMessages, retry.nextMessages);
     reply = retry.reply;
   }
 
@@ -1872,11 +1888,12 @@ export async function replyInWorkspaceClaw(
   }
 
   await options?.onPhase?.({ phase: 'saving', label: 'Saving answer', detail: 'Persisting the turn into the private workspace.' });
+  const persistedMessages = mergeClawMessageHistory(record.clawMessages, nextMessages);
   const messagesWithReceipts = sourceReceipts.length > 0
-    ? nextMessages.map((message, index) => index === nextMessages.length - 1 && message.role === 'assistant'
+    ? persistedMessages.map((message) => message.id === reply.id && message.role === 'assistant'
         ? { ...message, sourceReceipts }
         : message)
-    : nextMessages;
+    : persistedMessages;
   let workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, messagesWithReceipts);
   let revisedDocument: ImportedDocument | null = null;
 

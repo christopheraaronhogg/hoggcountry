@@ -36,6 +36,8 @@ import {
 import type { BetaProfileCookie } from '$lib/beta';
 import { OPENAI_CODEX_LOCAL_REDIRECT_URI } from '$lib/server/claw-openai-codex';
 
+const MAX_STORED_CLAW_MESSAGES = 200;
+
 export interface WorkspaceProviderConnection {
   readonly providerId: 'openai-codex';
   readonly label: string;
@@ -1787,7 +1789,7 @@ export async function replaceWorkspaceClawMessages(
   return sanitizeRecord(
     await persist({
       ...record,
-      clawMessages: normalizeClawMessages(messages).slice(-40)
+      clawMessages: normalizeClawMessages(messages).slice(-MAX_STORED_CLAW_MESSAGES)
     })
   );
 }
