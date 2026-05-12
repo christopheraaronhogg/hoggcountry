@@ -51,8 +51,11 @@ The current shape is a content-rich public site, a new product-grade SvelteKit f
   - dedicated SvelteKit + Capacitor application for iOS and Android packaging
   - shared TypeScript domain logic where practical
   - local offline queue using device storage
+  - long-term target: installable local-first Scout app with an on-device model runtime, local encrypted profile/docs/thread storage, downloaded route packs, and optional cloud model routing when service is available
 
 The existing `/native` Laravel Inertia route is useful as a proving surface, but it should not be the long-term mobile architecture. Inertia is fine for internal or admin-adjacent app shells; it is not the clearest route to a polished consumer mobile app distributed through the App Store and Play Store.
+
+See `docs/plans/2026-05-12-scout-local-first-phone-ai.md` for the current end-goal plan: Scout should work on the hiker's phone with no internet connection, using a compact local model target such as Google Gemma 4 when viable, with paid cloud models as an online enhancement rather than the baseline product dependency.
 
 ### Content platform architecture
 
@@ -109,6 +112,7 @@ The existing `/native` Laravel Inertia route is useful as a proving surface, but
 - product state is structured around SpacetimeDB tables/reducers and generated TypeScript bindings
 - user-facing assistant name is now `Scout`, but the working route and some internal code still remain on temporary `claw` names like `/app/claw` during the transition
 - `/app/claw` now persists cloud conversation state and pending fact candidates per workspace so strong turns can feed a reviewable trail-intelligence queue
+- the long-term Scout runtime should preserve this per-user state locally on the phone first, then sync when service returns, because AT usage often happens outside cell coverage
 - Scout can now save strong assistant replies into the workspace Docs locker as searchable markdown plan artifacts, and can revise those saved plans in place from the Scout screen, giving the product its first real chat-to-artifact-to-revision loop
 - `/app/claw` now also exposes a Dad field-pilot block that pulls the latest public Garmin fix and dispatch title into one-click Scout prompts, so plan quality can be pressure-tested against live trail context instead of only synthetic prompts
 - local device persistence still exists where offline manual/doc access matters
