@@ -1,8 +1,16 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { BETA_COOKIE, encodeBetaProfile } from '$lib/beta';
+import { resolveScoutQuickLogin } from '$lib/server/scout-beta-logins';
 
 const SCOUT_BETA_PASSCODE = '3184';
+const BETA_COOKIE_OPTIONS = {
+  path: '/',
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: false,
+  maxAge: 60 * 60 * 24 * 30
+};
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (locals.betaProfile) {
@@ -15,6 +23,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
   default: async ({ cookies, request }) => {
     const formData = await request.formData();
+    const quickUsername = String(formData.get('quickUsername') ?? '').trim();
+    const quickPassword = String(formData.get('quickPassword') ?? '').trim();
     const passcode = String(formData.get('passcode') ?? '').trim();
     const rawName = String(formData.get('name') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
@@ -22,6 +32,19 @@ export const actions: Actions = {
     const fallbackName = email.split('@')[0]?.replace(/[._-]+/g, ' ').trim() || 'Hiker';
     const name = rawName || fallbackName;
     const trailName = rawTrailName || name;
+
+    if (quickUsername || quickPassword) {
+      const profile = resolveScoutQuickLogin(quickUsername, quickPassword);
+      if (!profile) {
+        return fail(401, {
+          message: 'Use chris or dad with the shared trail beta password.',
+          quickUsername
+        });
+      }
+
+      cookies.set(BETA_COOKIE, encodeBetaProfile(profile), BETA_COOKIE_OPTIONS);
+      throw redirect(303, '/app/claw');
+    }
 
     if (passcode !== SCOUT_BETA_PASSCODE) {
       return fail(401, {
@@ -47,13 +70,7 @@ export const actions: Actions = {
         email,
         trailName
       }),
-      {
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
-        maxAge: 60 * 60 * 24 * 30
-      }
+      BETA_COOKIE_OPTIONS
     );
 
     throw redirect(303, '/app/claw');
