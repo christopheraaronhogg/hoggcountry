@@ -11,6 +11,7 @@
   const currentYear = new Date().getFullYear();
   let toolsOpen = $state(false);
   let guideHeaderHidden = $state(false);
+  let isOffline = $state(false);
 
   const publicToolsLinks = [
     { href: '/guide', label: 'Field Guide', external: false },
@@ -27,10 +28,25 @@
     guideHeaderHidden = page.url.pathname === '/guide' && window.scrollY >= 50;
   }
 
+  function updateOnlineState() {
+    if (!browser) return;
+    isOffline = !navigator.onLine;
+  }
+
   if (browser) {
     initSpacetimeProvider();
     $effect(() => {
       updateGuideHeaderState();
+    });
+    $effect(() => {
+      updateOnlineState();
+      window.addEventListener('online', updateOnlineState);
+      window.addEventListener('offline', updateOnlineState);
+
+      return () => {
+        window.removeEventListener('online', updateOnlineState);
+        window.removeEventListener('offline', updateOnlineState);
+      };
     });
   }
 </script>
@@ -48,6 +64,14 @@
             <span class="brand-tag">Private Scout workspace</span>
           </span>
         </a>
+        <span
+          class="connection-badge"
+          class:is-offline={isOffline}
+          class:is-online={!isOffline}
+          title={isOffline ? 'No network detected. Cloud Scout replies and live weather/source checks will not work until service returns.' : 'Network detected. Cloud Scout and live source checks can run.'}
+        >
+          {isOffline ? 'Offline' : 'Online'}
+        </span>
       </div>
     </header>
 
@@ -111,7 +135,9 @@
             <span class="nav-toggle__label">Tools</span>
           </button>
 
-          <span id="offline-status" class="offline-badge" title="Offline status" style="display: none;"></span>
+          {#if isOffline}
+            <span class="connection-badge is-offline" title="No network detected. Saved guide pages may still work if cached.">Offline</span>
+          {/if}
         </div>
       </nav>
 
@@ -522,12 +548,29 @@
     letter-spacing: 0.02em;
   }
 
-  .offline-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 10px;
-    font-weight: 600;
+  .connection-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    border-radius: 999px;
+    padding: 0 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
     white-space: nowrap;
+    border: 1px solid transparent;
+  }
+
+  .connection-badge.is-online {
+    color: #22573e;
+    background: rgba(65, 130, 87, 0.12);
+    border-color: rgba(65, 130, 87, 0.24);
+  }
+
+  .connection-badge.is-offline {
+    color: #8a2f2f;
+    background: rgba(176, 62, 62, 0.12);
+    border-color: rgba(176, 62, 62, 0.24);
   }
 
   .public-meta-footer {
