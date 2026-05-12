@@ -59,6 +59,7 @@ import {
   type ClawProviderId
 } from './claw-connection';
 import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
+import { atMilepostNearMile } from './at-location';
 
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
 
@@ -73,6 +74,7 @@ const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
 const SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS = 3200;
+const SCOUT_DATE_TIMEZONE = 'America/New_York';
 
 interface ClawRuntime {
   readonly providerId: ClawProviderId;
@@ -188,6 +190,9 @@ const OFFICIAL_TRAIL_SOURCE_PARAMETERS = Type.Object({
   longitude: Type.Optional(Type.Number({ minimum: -180, maximum: 180, description: 'Longitude for NWS point forecast/alerts.' })),
   useDadLocation: Type.Optional(Type.Boolean({
     description: 'Use the latest public Dad Garmin fix for NWS when the question is about Dad/current pilot context.'
+  })),
+  useProfileLocation: Type.Optional(Type.Boolean({
+    description: 'Use the workspace profile current AT mile as the NWS point forecast location when explicit coordinates are not provided. Defaults to true for weather questions with a usable current mile.'
   }))
 });
 
@@ -212,6 +217,54 @@ function promptTerms(input: string): string[] {
 
 function containsAny(input: string, needles: readonly string[]): boolean {
   return needles.some((needle) => input.includes(needle));
+}
+
+function datePartsInTimezone(value: Date, timezone: string): { iso: string; weekday: string; label: string } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    weekday: 'long',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(value);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? '';
+  const iso = `${part('year')}-${part('month')}-${part('day')}`;
+  const weekday = part('weekday');
+  return {
+    iso,
+    weekday,
+    label: `${weekday}, ${iso}`
+  };
+}
+
+function buildCurrentDateAuthority(): string {
+  const now = new Date();
+  const today = datePartsInTimezone(now, SCOUT_DATE_TIMEZONE);
+  const tomorrowAnchor = new Date(Date.parse(`${today.iso}T12:00:00Z`) + 24 * 60 * 60 * 1000);
+  const tomorrow = datePartsInTimezone(tomorrowAnchor, SCOUT_DATE_TIMEZONE);
+
+  return [
+    `Current date authority: server clock fetched this turn at ${now.toISOString()} (${SCOUT_DATE_TIMEZONE}).`,
+    `Today is ${today.label}. Tomorrow is ${tomorrow.label}.`,
+    'Resolve “today,” “tomorrow,” “tonight,” and weekday references from this date authority only.',
+    'Never derive the current date from profile.updatedAt, saved documents, training plans, previous messages, or weather/source timestamps; those are data freshness signals only.'
+  ].join(' ');
+}
+
+async function profileCoordinates(record: WorkspaceRecord): Promise<{ readonly latitude: number; readonly longitude: number; readonly mile: number } | null> {
+  const mile = record.profile?.currentMile;
+  if (typeof mile !== 'number' || !Number.isFinite(mile) || mile <= 0) return null;
+
+  try {
+    const milepost = await atMilepostNearMile(mile);
+    return {
+      latitude: milepost.latitude,
+      longitude: milepost.longitude,
+      mile: milepost.mile
+    };
+  } catch {
+    return null;
+  }
 }
 
 function promptAsksForDadPilotContext(prompt: string): boolean {
@@ -536,21 +589,24 @@ function buildScoutSourceCatalogTool(record: WorkspaceRecord): AgentTool<typeof 
   };
 }
 
-function buildOfficialTrailSourceTool(dadPilotSummary: DadPilotSummary | null): AgentTool<typeof OFFICIAL_TRAIL_SOURCE_PARAMETERS, OfficialTrailSourceCheckDetails> {
+function buildOfficialTrailSourceTool(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): AgentTool<typeof OFFICIAL_TRAIL_SOURCE_PARAMETERS, OfficialTrailSourceCheckDetails> {
   return {
     name: 'check_official_trail_sources',
     label: 'Check official trail sources',
-    description: 'Fetches live official source context from ATC Trail Updates and, when coordinates are available, NWS point forecast/alerts. Use for closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other safety-sensitive current conditions.',
+    description: 'Fetches live official source context from ATC Trail Updates and NWS point forecast/alerts. Use for closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other safety-sensitive current conditions. For weather, this tool will use explicit coordinates first, then the workspace profile current AT mile when available, then Dad Garmin if requested.',
     parameters: OFFICIAL_TRAIL_SOURCE_PARAMETERS,
     executionMode: 'parallel',
     async execute(_toolCallId, params) {
+      const profilePoint = params.latitude === undefined || params.longitude === undefined
+        ? await profileCoordinates(record)
+        : null;
       const details = await checkOfficialTrailSources(
         {
           query: params.query,
           source: params.source ?? 'auto',
           state: params.state ?? null,
-          latitude: params.latitude ?? null,
-          longitude: params.longitude ?? null,
+          latitude: params.latitude ?? (params.useProfileLocation === false ? null : profilePoint?.latitude ?? null),
+          longitude: params.longitude ?? (params.useProfileLocation === false ? null : profilePoint?.longitude ?? null),
           useDadLocation: params.useDadLocation ?? false
         },
         dadPilotSummary
@@ -688,12 +744,15 @@ async function buildPreloadedOfficialSourceContext(prompt: string, record: Works
   if (!shouldPreloadOfficialTrailSources(prompt)) return null;
 
   const useDadLocation = promptAsksForDadPilotContext(prompt);
+  const profilePoint = useDadLocation ? null : await profileCoordinates(record);
 
   const details = await checkOfficialTrailSources(
     {
       query: prompt,
       source: 'auto',
       state: record.profile ? approximateAtStateForMile(record.profile.currentMile) : null,
+      latitude: profilePoint?.latitude ?? null,
+      longitude: profilePoint?.longitude ?? null,
       useDadLocation
     },
     dadPilotSummary
@@ -933,6 +992,7 @@ function buildSystemPrompt(
     `Hiker name: ${record.betaProfile.name || 'Unknown'}`,
     `Trail name: ${record.betaProfile.trailName || 'Unknown'}`,
     `Workspace id: ${record.workspaceId}`,
+    buildCurrentDateAuthority(),
     profile
       ? `Profile: start ${profile.startDate || 'unknown'}, current mile ${Number.isFinite(profile.currentMile) ? profile.currentMile.toFixed(1) : 'unknown'}, last updated ${profile.updatedAt || 'unknown'}, direction ${profile.direction || 'unknown'}, target pace ${profile.targetPace || 0} mpd.`
       : 'Profile: not initialized yet.',
@@ -952,11 +1012,11 @@ function buildSystemPrompt(
       ? 'You also have a search_scout_sources tool. Use it when the user asks a research/planning question and the provided context is too thin, too broad, or needs a narrower location/topic search.'
       : 'This runtime may provide preloaded source-search context instead of live tool calls; use the context you have and clearly name missing searches.',
     liveToolsAvailable && officialSourcesEnabled
-      ? 'You also have a check_official_trail_sources tool. Use it for safety-sensitive current conditions: closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other live ATC/NWS checks. Pass latitude/longitude for NWS, or useDadLocation when the question is about Dad and the public Garmin fix is relevant.'
+      ? 'You also have a check_official_trail_sources tool. Use it for safety-sensitive current conditions: closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other live ATC/NWS checks. For weather, call it; it can use explicit coordinates, the workspace profile current AT mile, or useDadLocation when the question is about Dad and the public Garmin fix is relevant.'
       : officialSourcesEnabled
         ? 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.'
         : 'Official Trail Sources skill is disabled for this workspace; do not call or imply official live-source retrieval unless the user asks to enable that skill.',
-    'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied; name the source that should be checked.',
+    'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied. Do not say “fetched just now,” “NWS says,” or similar unless check_official_trail_sources or preloaded official-source context returned that exact source this turn. If the tool/source is missing, say what is missing instead of filling the gap.',
     'For route planning, distinguish route shape from confirmed facts. It is fine to give a useful corridor, start/end options, and approximate mileages, but label exact mileages, legal camping, parking, shuttles, water, and service hours as verify-against-current-guide/direct-source items until the hiker supplies or fetches that source.',
     'Before giving day-by-day route logistics, do a quiet route validation pass and then summarize the result plainly: route order, rough mileage split, practical access point confidence, legal overnight status, water, parking/shuttle, and weather. If that pass is incomplete, say the itinerary is a draft shape and name the missing checks before commitment.',
     'For Harpers Ferry / Maryland / DC-family logistics, wrong mileage is the dangerous failure mode. Do not repeat old or suspicious mileage splits; call out corrected rough splits and require current guide/direct-source verification before Dad/family/shuttle decisions.',
@@ -1280,7 +1340,7 @@ export async function replyInWorkspaceClaw(
       : [
           buildScoutSourceCatalogTool(record),
           buildScoutSourceSearchTool(record, dadPilotSummary),
-          skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(dadPilotSummary) : null
+          skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(record, dadPilotSummary) : null
         ].filter((tool): tool is AgentTool<any, any> => tool !== null);
     const agent = new Agent({
       initialState: {

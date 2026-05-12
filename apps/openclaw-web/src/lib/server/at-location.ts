@@ -132,3 +132,29 @@ export async function nearestAtMilepost(latitude: number, longitude: number): Pr
 
   return nearest;
 }
+
+export async function atMilepostNearMile(mile: number): Promise<NearestAtMilepost> {
+  if (typeof mile !== 'number' || !Number.isFinite(mile)) {
+    throw new Error('A valid AT mile is required.');
+  }
+
+  milepostsPromise ??= loadMileposts();
+  const mileposts = await milepostsPromise;
+  let nearest: NearestAtMilepost | null = null;
+
+  for (const milepost of mileposts) {
+    const distance = Math.abs(milepost.mile - mile);
+    if (!nearest || distance < Math.abs(nearest.mile - mile)) {
+      nearest = {
+        ...milepost,
+        distanceMiles: distance
+      };
+    }
+  }
+
+  if (!nearest) {
+    throw new Error('Could not match that AT mile to the milepost data.');
+  }
+
+  return nearest;
+}

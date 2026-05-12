@@ -609,7 +609,8 @@ export function renderOfficialTrailSourceResult(details: OfficialTrailSourceChec
     if (details.weather.periods.length > 0) {
       lines.push('Forecast periods:');
       details.weather.periods.forEach((period, index) => {
-        lines.push(`${index + 1}. ${period.name}: ${period.temperature}, ${period.wind}, ${period.shortForecast}. ${excerpt(period.detailedForecast, 260)}`);
+        const timing = [period.startTime ? `starts ${period.startTime}` : null, period.endTime ? `ends ${period.endTime}` : null].filter(Boolean).join('; ');
+        lines.push(`${index + 1}. ${period.name}${timing ? ` (${timing})` : ''}: ${period.temperature}, ${period.wind}, ${period.shortForecast}. ${excerpt(period.detailedForecast, 260)}`);
       });
     }
 
