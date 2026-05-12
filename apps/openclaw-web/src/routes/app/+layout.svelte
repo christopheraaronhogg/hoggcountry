@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { page } from '$app/state';
   import type { LayoutData } from './$types';
 
   const { data, children } = $props<{ data: LayoutData; children: import('svelte').Snippet }>();
+  let isOffline = $state(false);
 
   const appTabs = [
     {
@@ -34,6 +36,21 @@
     if (href === '/app/profile') return path.startsWith('/app/profile') || path.startsWith('/app/setup');
     return path.startsWith(href);
   }
+
+  function updateOnlineState() {
+    isOffline = !navigator.onLine;
+  }
+
+  onMount(() => {
+    updateOnlineState();
+    window.addEventListener('online', updateOnlineState);
+    window.addEventListener('offline', updateOnlineState);
+
+    return () => {
+      window.removeEventListener('online', updateOnlineState);
+      window.removeEventListener('offline', updateOnlineState);
+    };
+  });
 </script>
 
 <svelte:head>
@@ -48,6 +65,15 @@
       <strong>{data.betaProfile?.trailName || data.betaProfile?.name || 'Scout'}</strong>
     </span>
   </a>
+
+  <span
+    class="app-network-badge"
+    class:is-online={!isOffline}
+    class:is-offline={isOffline}
+    title={isOffline ? 'No network detected. Cloud Scout replies and live weather/source checks will not work until service returns.' : 'Network detected. Cloud Scout and live source checks can run.'}
+  >
+    {isOffline ? 'Offline' : 'Online'}
+  </span>
 
   <nav class="app-nav" aria-label="App">
     {#each appTabs as tab}
@@ -138,6 +164,31 @@
     flex-wrap: wrap;
     gap: 0.4rem;
     justify-content: flex-end;
+  }
+
+  .app-network-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.15rem;
+    margin-left: auto;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0 0.72rem;
+    font-size: 0.74rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .app-network-badge.is-online {
+    color: #22573e;
+    background: rgba(65, 130, 87, 0.12);
+    border-color: rgba(65, 130, 87, 0.24);
+  }
+
+  .app-network-badge.is-offline {
+    color: #8a2f2f;
+    background: rgba(176, 62, 62, 0.12);
+    border-color: rgba(176, 62, 62, 0.24);
   }
 
   .app-nav a {

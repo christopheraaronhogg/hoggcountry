@@ -244,6 +244,7 @@
   let recoveredRealtimeTurn = $state(false);
   let thinkingEffort = $state<ScoutThinkingEffort>('low');
   let thinkingActivityChars = $state(0);
+  let isOffline = $state(false);
   let newThreadBusy = $state(false);
   let connectBusy = $state(false);
   let disconnectBusy = $state(false);
@@ -277,6 +278,7 @@
   let activeRealtimeTurnId = '';
   let activeRealtimeEventCursor = 0;
   let activeRealtimeEventHandler: ((event: ScoutTurnEventEnvelope) => void | Promise<void>) | null = null;
+  let onlineStateCleanup: (() => void) | null = null;
   let componentDestroyed = false;
   let streamingAppendBuffer = '';
   let streamingAppendFrame = 0;
@@ -1923,6 +1925,10 @@
     }
   }
 
+  function updateOnlineState() {
+    isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  }
+
   onMount(() => {
     try {
       const storedLastSeenAssistantId = window.localStorage.getItem('scout:last-seen-assistant-message-id');
@@ -1940,6 +1946,14 @@
     if (savedThinkingEffort === 'off' || savedThinkingEffort === 'minimal' || savedThinkingEffort === 'low' || savedThinkingEffort === 'medium' || savedThinkingEffort === 'high') {
       thinkingEffort = savedThinkingEffort;
     }
+
+    updateOnlineState();
+    window.addEventListener('online', updateOnlineState);
+    window.addEventListener('offline', updateOnlineState);
+    onlineStateCleanup = () => {
+      window.removeEventListener('online', updateOnlineState);
+      window.removeEventListener('offline', updateOnlineState);
+    };
 
     const shouldRefreshState = consumeConnectQueryState();
     const idle = window.requestIdleCallback ?? ((callback: IdleRequestCallback) => window.setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 1));
@@ -1975,6 +1989,7 @@
     scoutRealtimeEventCleanup?.();
     scoutRealtimeTurnCleanup?.();
     scoutRealtimeSubscription?.unsubscribe();
+    onlineStateCleanup?.();
     if (streamingAppendFrame) window.cancelAnimationFrame(streamingAppendFrame);
     if (streamingScrollFrame) window.cancelAnimationFrame(streamingScrollFrame);
   });
@@ -1998,8 +2013,16 @@
     </button>
 
     <div class="scout-title" class:scout-title--warn={!connection} aria-live="polite">
-      <span aria-hidden="true"></span>
+      <span class="status-dot" aria-hidden="true"></span>
       <strong>Scout</strong>
+      <small
+        class="network-pill"
+        class:is-online={!isOffline}
+        class:is-offline={isOffline}
+        title={isOffline ? 'No network detected. Cloud Scout replies and live weather/source checks will not work until service returns.' : 'Network detected. Cloud Scout and live source checks can run.'}
+      >
+        {isOffline ? 'Offline' : 'Online'}
+      </small>
     </div>
 
     <button
@@ -2602,7 +2625,7 @@
     text-transform: uppercase;
   }
 
-  .scout-title span {
+  .scout-title .status-dot {
     width: 0.52rem;
     height: 0.52rem;
     border-radius: 999px;
@@ -2610,9 +2633,37 @@
     box-shadow: 0 0 0 5px rgba(114, 230, 162, 0.12);
   }
 
-  .scout-title--warn span {
+  .scout-title--warn .status-dot {
     background: #d97706;
     box-shadow: 0 0 0 5px rgba(217, 119, 6, 0.13);
+  }
+
+  .network-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.35rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0 0.45rem;
+    font-family: Lato, system-ui, sans-serif;
+    font-size: 0.64rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    line-height: 1;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .network-pill.is-online {
+    color: #22573e;
+    background: rgba(65, 130, 87, 0.12);
+    border-color: rgba(65, 130, 87, 0.24);
+  }
+
+  .network-pill.is-offline {
+    color: #8a2f2f;
+    background: rgba(176, 62, 62, 0.12);
+    border-color: rgba(176, 62, 62, 0.24);
   }
 
   .rail-toggle,

@@ -64,14 +64,6 @@
             <span class="brand-tag">Private Scout workspace</span>
           </span>
         </a>
-        <span
-          class="connection-badge"
-          class:is-offline={isOffline}
-          class:is-online={!isOffline}
-          title={isOffline ? 'No network detected. Cloud Scout replies and live weather/source checks will not work until service returns.' : 'Network detected. Cloud Scout and live source checks can run.'}
-        >
-          {isOffline ? 'Offline' : 'Online'}
-        </span>
       </div>
     </header>
 
@@ -559,12 +551,6 @@
     letter-spacing: 0.02em;
     white-space: nowrap;
     border: 1px solid transparent;
-  }
-
-  .connection-badge.is-online {
-    color: #22573e;
-    background: rgba(65, 130, 87, 0.12);
-    border-color: rgba(65, 130, 87, 0.24);
   }
 
   .connection-badge.is-offline {
