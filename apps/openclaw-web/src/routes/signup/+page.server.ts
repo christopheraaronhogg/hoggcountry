@@ -1,16 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { BETA_COOKIE, encodeBetaProfile } from '$lib/beta';
+import { betaCookieOptions } from '$lib/server/beta-cookie';
 import { resolveScoutQuickLogin } from '$lib/server/scout-beta-logins';
 
 const SCOUT_BETA_PASSCODE = '3184';
-const BETA_COOKIE_OPTIONS = {
-  path: '/',
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  secure: false,
-  maxAge: 60 * 60 * 24 * 30
-};
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (locals.betaProfile) {
@@ -21,7 +15,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-  default: async ({ cookies, request }) => {
+  default: async ({ cookies, request, url }) => {
     const formData = await request.formData();
     const quickUsername = String(formData.get('quickUsername') ?? '').trim();
     const quickPassword = String(formData.get('quickPassword') ?? '').trim();
@@ -42,7 +36,7 @@ export const actions: Actions = {
         });
       }
 
-      cookies.set(BETA_COOKIE, encodeBetaProfile(profile), BETA_COOKIE_OPTIONS);
+      cookies.set(BETA_COOKIE, encodeBetaProfile(profile), betaCookieOptions(url));
       throw redirect(303, '/app/claw');
     }
 
@@ -70,7 +64,7 @@ export const actions: Actions = {
         email,
         trailName
       }),
-      BETA_COOKIE_OPTIONS
+      betaCookieOptions(url)
     );
 
     throw redirect(303, '/app/claw');
