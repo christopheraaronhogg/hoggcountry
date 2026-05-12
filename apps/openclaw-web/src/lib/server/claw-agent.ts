@@ -60,8 +60,16 @@ import {
 } from './claw-connection';
 import { SCOUT_VOICE_EXAMPLES } from './scout-voice-examples';
 import { atMilepostNearMile } from './at-location';
+import {
+  SCOUT_DATE_TIMEZONE,
+  buildCurrentDateAuthority,
+  buildCurrentDatetimeDetails,
+  renderCurrentDatetime,
+  type CurrentDatetimeDetails
+} from './scout-date-authority';
 
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
+export { buildCurrentDateAuthority, buildCurrentDatetimeDetails } from './scout-date-authority';
 
 const OPENCODE_GO_REPLY_MAX_TOKENS = 4000;
 export type ScoutThinkingEffort = Extract<ThinkingLevel, 'off' | 'minimal' | 'low' | 'medium' | 'high'>;
@@ -74,7 +82,6 @@ const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
 const SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS = 3200;
-const SCOUT_DATE_TIMEZONE = 'America/New_York';
 
 interface ClawRuntime {
   readonly providerId: ClawProviderId;
@@ -149,6 +156,34 @@ interface ScoutSourceCatalogDetails {
   readonly sources: readonly ScoutSourceManifest[];
 }
 
+interface ScoutResolvedLocation {
+  readonly label: string;
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly mile: number | null;
+  readonly source: 'explicit-coordinates' | 'known-location' | 'at-mile' | 'profile-current-mile' | 'latest-gps-fix' | 'dad-garmin';
+  readonly fetchedAt: string;
+  readonly confidence: 'high' | 'medium' | 'low';
+  readonly note: string | null;
+}
+
+interface ScoutWeatherForecastDetails {
+  readonly location: ScoutResolvedLocation | null;
+  readonly official: OfficialTrailSourceCheckDetails;
+}
+
+interface ScoutWeatherAlertsDetails {
+  readonly location: ScoutResolvedLocation | null;
+  readonly official: OfficialTrailSourceCheckDetails;
+}
+
+interface ScoutSegmentPlanDetails {
+  readonly query: string;
+  readonly grounding: AtRouteGrounding | null;
+  readonly fetchedAt: string;
+  readonly missingChecks: readonly string[];
+}
+
 const SCOUT_SOURCE_CATALOG_PARAMETERS = Type.Object({
   query: Type.String({
     minLength: 2,
@@ -196,6 +231,62 @@ const OFFICIAL_TRAIL_SOURCE_PARAMETERS = Type.Object({
   }))
 });
 
+const CURRENT_DATETIME_PARAMETERS = Type.Object({
+  timezone: Type.Optional(Type.String({
+    minLength: 1,
+    maxLength: 80,
+    description: 'IANA timezone to use for today/tomorrow labels. Defaults to the hiker workspace timezone.'
+  }))
+});
+
+const RESOLVE_LOCATION_PARAMETERS = Type.Object({
+  query: Type.Optional(Type.String({
+    minLength: 1,
+    maxLength: 240,
+    description: 'Named place, AT mile, or location phrase to resolve, such as Harpers Ferry, AT mile 1024.6, or current profile location.'
+  })),
+  latitude: Type.Optional(Type.Number({ minimum: -90, maximum: 90, description: 'Explicit latitude when the user supplied coordinates.' })),
+  longitude: Type.Optional(Type.Number({ minimum: -180, maximum: 180, description: 'Explicit longitude when the user supplied coordinates.' })),
+  useProfileLocation: Type.Optional(Type.Boolean({
+    description: 'Resolve to the workspace profile current AT mile when no explicit location is supplied. Defaults to true.'
+  })),
+  useLatestGps: Type.Optional(Type.Boolean({
+    description: 'Resolve to the latest private GPS fix in the workspace when available.'
+  })),
+  useDadLocation: Type.Optional(Type.Boolean({
+    description: 'Resolve to Dad public Garmin snapped trail location when the question is about Dad/public pilot context.'
+  }))
+});
+
+const WEATHER_FORECAST_PARAMETERS = Type.Object({
+  query: Type.Optional(Type.String({
+    minLength: 1,
+    maxLength: 240,
+    description: 'Weather question or location phrase. Use this to preserve the user intent in the NWS query.'
+  })),
+  latitude: Type.Optional(Type.Number({ minimum: -90, maximum: 90, description: 'Explicit latitude for the NWS point forecast.' })),
+  longitude: Type.Optional(Type.Number({ minimum: -180, maximum: 180, description: 'Explicit longitude for the NWS point forecast.' })),
+  useProfileLocation: Type.Optional(Type.Boolean({
+    description: 'Use the workspace profile current AT mile as the forecast point when coordinates are not supplied. Defaults to true.'
+  })),
+  useLatestGps: Type.Optional(Type.Boolean({
+    description: 'Use latest private GPS fix when available.'
+  })),
+  useDadLocation: Type.Optional(Type.Boolean({
+    description: 'Use Dad public Garmin snapped trail location when relevant.'
+  }))
+});
+
+const WEATHER_ALERTS_PARAMETERS = WEATHER_FORECAST_PARAMETERS;
+
+const PLAN_SEGMENT_PARAMETERS = Type.Object({
+  query: Type.String({
+    minLength: 4,
+    maxLength: 800,
+    description: 'The route, segment, or itinerary request to ground against the AT route resource.'
+  })
+});
+
 const QUERY_STOPWORDS = new Set([
   'about', 'after', 'again', 'ahead', 'could', 'current', 'doing', 'from', 'have', 'help', 'into', 'like', 'make', 'need', 'next',
   'plan', 'please', 'scout', 'should', 'that', 'their', 'there', 'this', 'trail', 'what', 'when', 'where', 'with', 'would', 'your'
@@ -219,38 +310,6 @@ function containsAny(input: string, needles: readonly string[]): boolean {
   return needles.some((needle) => input.includes(needle));
 }
 
-function datePartsInTimezone(value: Date, timezone: string): { iso: string; weekday: string; label: string } {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    weekday: 'long',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).formatToParts(value);
-  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? '';
-  const iso = `${part('year')}-${part('month')}-${part('day')}`;
-  const weekday = part('weekday');
-  return {
-    iso,
-    weekday,
-    label: `${weekday}, ${iso}`
-  };
-}
-
-function buildCurrentDateAuthority(): string {
-  const now = new Date();
-  const today = datePartsInTimezone(now, SCOUT_DATE_TIMEZONE);
-  const tomorrowAnchor = new Date(Date.parse(`${today.iso}T12:00:00Z`) + 24 * 60 * 60 * 1000);
-  const tomorrow = datePartsInTimezone(tomorrowAnchor, SCOUT_DATE_TIMEZONE);
-
-  return [
-    `Current date authority: server clock fetched this turn at ${now.toISOString()} (${SCOUT_DATE_TIMEZONE}).`,
-    `Today is ${today.label}. Tomorrow is ${tomorrow.label}.`,
-    'Resolve “today,” “tomorrow,” “tonight,” and weekday references from this date authority only.',
-    'Never derive the current date from profile.updatedAt, saved documents, training plans, previous messages, or weather/source timestamps; those are data freshness signals only.'
-  ].join(' ');
-}
-
 async function profileCoordinates(record: WorkspaceRecord): Promise<{ readonly latitude: number; readonly longitude: number; readonly mile: number } | null> {
   const mile = record.profile?.currentMile;
   if (typeof mile !== 'number' || !Number.isFinite(mile) || mile <= 0) return null;
@@ -265,6 +324,150 @@ async function profileCoordinates(record: WorkspaceRecord): Promise<{ readonly l
   } catch {
     return null;
   }
+}
+
+function latestGpsLocation(record: WorkspaceRecord): ScoutResolvedLocation | null {
+  const latest = record.locationHistory?.at(-1);
+  if (!latest) return null;
+  return {
+    label: `Latest private GPS fix near AT mile ${latest.nearestMile.toFixed(1)}`,
+    latitude: latest.trailLatitude,
+    longitude: latest.trailLongitude,
+    mile: latest.nearestMile,
+    source: 'latest-gps-fix',
+    fetchedAt: new Date().toISOString(),
+    confidence: latest.distanceToTrailMiles <= 0.25 ? 'high' : latest.distanceToTrailMiles <= 1 ? 'medium' : 'low',
+    note: `${latest.recordedAt}; ${latest.distanceToTrailMiles.toFixed(2)} mi from trail; accuracy ${latest.accuracyMeters !== null ? `${Math.round(latest.accuracyMeters)}m` : 'unknown'}`
+  };
+}
+
+function dadGarminLocation(dadPilotSummary: DadPilotSummary | null): ScoutResolvedLocation | null {
+  const location = dadPilotSummary?.latestTrailLocation;
+  if (!location) return null;
+  return {
+    label: `Dad Garmin snapped location, ${location.label}`,
+    latitude: location.trailLatitude,
+    longitude: location.trailLongitude,
+    mile: location.nearestMile,
+    source: 'dad-garmin',
+    fetchedAt: new Date().toISOString(),
+    confidence: location.distanceToTrailMiles <= 0.5 ? 'high' : 'medium',
+    note: `${dadPilotSummary.latestFixAt ? `Garmin fix ${dadPilotSummary.latestFixAt}; ` : ''}${location.distanceToTrailMiles.toFixed(2)} mi from raw fix${dadPilotSummary.latestFixIsPreview ? '; preview/fallback fix' : ''}`
+  };
+}
+
+function knownTrailLocation(query: string): { readonly label: string; readonly latitude: number; readonly longitude: number; readonly mile: number | null } | null {
+  const lowered = query.toLowerCase();
+  if (/\bharper'?s?\s+ferry\b/u.test(lowered) || /\bharpers\s+ferry\b/u.test(lowered)) {
+    return {
+      label: 'Harpers Ferry, WV',
+      latitude: 39.3245,
+      longitude: -77.7398,
+      mile: 1024.6
+    };
+  }
+  return null;
+}
+
+async function resolveScoutLocation(
+  record: WorkspaceRecord,
+  dadPilotSummary: DadPilotSummary | null,
+  input: {
+    readonly query?: string | null;
+    readonly latitude?: number | null;
+    readonly longitude?: number | null;
+    readonly useProfileLocation?: boolean | null;
+    readonly useLatestGps?: boolean | null;
+    readonly useDadLocation?: boolean | null;
+  }
+): Promise<ScoutResolvedLocation | null> {
+  const fetchedAt = new Date().toISOString();
+  if (typeof input.latitude === 'number' && Number.isFinite(input.latitude) && typeof input.longitude === 'number' && Number.isFinite(input.longitude)) {
+    return {
+      label: 'Provided coordinates',
+      latitude: input.latitude,
+      longitude: input.longitude,
+      mile: null,
+      source: 'explicit-coordinates',
+      fetchedAt,
+      confidence: 'high',
+      note: null
+    };
+  }
+
+  if (input.useDadLocation) {
+    const dadLocation = dadGarminLocation(dadPilotSummary);
+    if (dadLocation) return dadLocation;
+  }
+
+  if (input.useLatestGps) {
+    const latest = latestGpsLocation(record);
+    if (latest) return latest;
+  }
+
+  const query = input.query?.trim() ?? '';
+  if (query) {
+    const mileMatch = query.match(/\b(?:at\s*)?mile\s*(\d+(?:\.\d+)?)\b/iu) ?? query.match(/\b(\d{3,4}(?:\.\d+)?)\s*(?:nobo|sobo|at)?\s*mile\b/iu);
+    if (mileMatch?.[1]) {
+      const mile = Number(mileMatch[1]);
+      if (Number.isFinite(mile)) {
+        const milepost = await atMilepostNearMile(mile);
+        return {
+          label: `AT mile ${milepost.mile.toFixed(1)}`,
+          latitude: milepost.latitude,
+          longitude: milepost.longitude,
+          mile: milepost.mile,
+          source: 'at-mile',
+          fetchedAt,
+          confidence: 'high',
+          note: `Resolved from requested mile ${mile.toFixed(1)}.`
+        };
+      }
+    }
+
+    const known = knownTrailLocation(query);
+    if (known) {
+      return {
+        ...known,
+        source: 'known-location',
+        fetchedAt,
+        confidence: 'high',
+        note: 'Built-in AT landmark coordinate used for tool routing.'
+      };
+    }
+  }
+
+  if (input.useProfileLocation !== false) {
+    const profilePoint = await profileCoordinates(record);
+    if (profilePoint) {
+      return {
+        label: `Profile current AT mile ${profilePoint.mile.toFixed(1)}`,
+        latitude: profilePoint.latitude,
+        longitude: profilePoint.longitude,
+        mile: profilePoint.mile,
+        source: 'profile-current-mile',
+        fetchedAt,
+        confidence: 'medium',
+        note: record.profile?.updatedAt ? `Profile updated ${record.profile.updatedAt}.` : null
+      };
+    }
+  }
+
+  return null;
+}
+
+function renderResolvedLocation(location: ScoutResolvedLocation | null): string {
+  if (!location) {
+    return 'Location resolution failed: no explicit coordinates, usable named AT landmark, latest GPS fix, Dad Garmin fix, or profile current mile was available.';
+  }
+
+  return [
+    `Resolved location: ${location.label}.`,
+    `Coordinates: ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}.`,
+    location.mile !== null ? `AT mile: ${location.mile.toFixed(1)}.` : null,
+    `Source: ${location.source}; confidence ${location.confidence}; resolved at ${location.fetchedAt}.`,
+    location.note
+  ].filter((line): line is string => Boolean(line)).join('\n');
 }
 
 function promptAsksForDadPilotContext(prompt: string): boolean {
@@ -621,6 +824,198 @@ function buildOfficialTrailSourceTool(record: WorkspaceRecord, dadPilotSummary: 
   };
 }
 
+function buildCurrentDatetimeTool(): AgentTool<typeof CURRENT_DATETIME_PARAMETERS, CurrentDatetimeDetails> {
+  return {
+    name: 'get_current_datetime',
+    label: 'Get current date/time',
+    description: 'Returns the authoritative server-clock current datetime plus today/tomorrow labels. Use whenever the user asks about today, tomorrow, tonight, weekday labels, or freshness.',
+    parameters: CURRENT_DATETIME_PARAMETERS,
+    executionMode: 'parallel',
+    async execute(_toolCallId, params) {
+      const details = buildCurrentDatetimeDetails(new Date(), params.timezone?.trim() || SCOUT_DATE_TIMEZONE);
+      return {
+        content: [{ type: 'text', text: renderCurrentDatetime(details) }],
+        details
+      };
+    }
+  };
+}
+
+function buildResolveLocationTool(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): AgentTool<typeof RESOLVE_LOCATION_PARAMETERS, ScoutResolvedLocation | null> {
+  return {
+    name: 'resolve_location',
+    label: 'Resolve trail location',
+    description: 'Resolves explicit coordinates, AT mile references, known AT landmarks, latest private GPS fix, Dad Garmin snapped location, or the workspace profile current AT mile into coordinates for route/weather tools.',
+    parameters: RESOLVE_LOCATION_PARAMETERS,
+    executionMode: 'parallel',
+    async execute(_toolCallId, params) {
+      const details = await resolveScoutLocation(record, dadPilotSummary, {
+        query: params.query ?? null,
+        latitude: params.latitude ?? null,
+        longitude: params.longitude ?? null,
+        useProfileLocation: params.useProfileLocation ?? true,
+        useLatestGps: params.useLatestGps ?? false,
+        useDadLocation: params.useDadLocation ?? false
+      });
+      return {
+        content: [{ type: 'text', text: renderResolvedLocation(details) }],
+        details
+      };
+    }
+  };
+}
+
+function renderWeatherForecast(details: ScoutWeatherForecastDetails): string {
+  const locationText = renderResolvedLocation(details.location);
+  const officialText = renderOfficialTrailSourceResult(details.official);
+  return [
+    'Weather forecast tool result:',
+    locationText,
+    officialText,
+    'Forecast answer rule: use only the NWS periods returned above for forecast specifics. If periods are missing, say the NWS fetch failed or was skipped.'
+  ].join('\n');
+}
+
+function renderWeatherAlerts(details: ScoutWeatherAlertsDetails): string {
+  const alerts = details.official.weather?.alerts ?? [];
+  const lines = [
+    'Weather alerts tool result:',
+    renderResolvedLocation(details.location),
+    `Fetched at ${details.official.fetchedAt}. Provider: NWS.`,
+    details.official.weather ? `NWS alerts URL: ${details.official.weather.alertsUrl}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  if (alerts.length === 0) {
+    lines.push(details.official.weather ? 'Active NWS alerts: none returned for this point.' : 'Active NWS alerts: unavailable because NWS weather did not return.');
+  } else {
+    lines.push('Active NWS alerts:');
+    alerts.forEach((alert, index) => {
+      lines.push(`${index + 1}. ${alert.event}${alert.severity ? ` (${alert.severity})` : ''}: ${alert.headline}${alert.expires ? ` Expires ${alert.expires}.` : ''}`);
+      if (alert.instruction) lines.push(`   Instruction: ${excerpt(alert.instruction, 260)}`);
+    });
+  }
+
+  if (details.official.skipped.length > 0) lines.push(`Skipped: ${details.official.skipped.join(' ')}`);
+  if (details.official.errors.length > 0) lines.push(`Errors: ${details.official.errors.join(' ')}`);
+  lines.push('Alert answer rule: do not invent alerts beyond the NWS alert list returned above.');
+  return lines.join('\n');
+}
+
+async function buildWeatherDetails(
+  record: WorkspaceRecord,
+  dadPilotSummary: DadPilotSummary | null,
+  params: {
+    readonly query?: string | null;
+    readonly latitude?: number | null;
+    readonly longitude?: number | null;
+    readonly useProfileLocation?: boolean | null;
+    readonly useLatestGps?: boolean | null;
+    readonly useDadLocation?: boolean | null;
+  }
+): Promise<ScoutWeatherForecastDetails> {
+  const location = await resolveScoutLocation(record, dadPilotSummary, {
+    query: params.query ?? null,
+    latitude: params.latitude ?? null,
+    longitude: params.longitude ?? null,
+    useProfileLocation: params.useProfileLocation ?? true,
+    useLatestGps: params.useLatestGps ?? false,
+    useDadLocation: params.useDadLocation ?? false
+  });
+  const query = params.query?.trim() || 'weather forecast';
+  const official = await checkOfficialTrailSources(
+    {
+      query,
+      source: 'nws',
+      state: record.profile ? approximateAtStateForMile(record.profile.currentMile) : null,
+      latitude: location?.latitude ?? null,
+      longitude: location?.longitude ?? null,
+      useDadLocation: false
+    },
+    dadPilotSummary
+  );
+
+  return { location, official };
+}
+
+function buildWeatherForecastTool(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): AgentTool<typeof WEATHER_FORECAST_PARAMETERS, ScoutWeatherForecastDetails> {
+  return {
+    name: 'get_weather_forecast',
+    label: 'Get NWS weather forecast',
+    description: 'Fetches a current NWS point forecast and active alerts for a resolved trail location. Use for all current/future weather questions before giving forecast specifics.',
+    parameters: WEATHER_FORECAST_PARAMETERS,
+    executionMode: 'parallel',
+    async execute(_toolCallId, params) {
+      const details = await buildWeatherDetails(record, dadPilotSummary, params);
+      const text = renderWeatherForecast(details);
+      return {
+        content: [{ type: 'text', text: text.length > 7000 ? `${text.slice(0, 6999).trimEnd()}…` : text }],
+        details
+      };
+    }
+  };
+}
+
+function buildWeatherAlertsTool(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): AgentTool<typeof WEATHER_ALERTS_PARAMETERS, ScoutWeatherAlertsDetails> {
+  return {
+    name: 'get_weather_alerts',
+    label: 'Get NWS weather alerts',
+    description: 'Fetches active NWS alerts for a resolved trail location. Use before making claims about watches, warnings, advisories, storm/flood/heat/cold alerts, or no active alerts.',
+    parameters: WEATHER_ALERTS_PARAMETERS,
+    executionMode: 'parallel',
+    async execute(_toolCallId, params) {
+      const details = await buildWeatherDetails(record, dadPilotSummary, params);
+      const alertDetails: ScoutWeatherAlertsDetails = details;
+      const text = renderWeatherAlerts(alertDetails);
+      return {
+        content: [{ type: 'text', text: text.length > 5000 ? `${text.slice(0, 4999).trimEnd()}…` : text }],
+        details: alertDetails
+      };
+    }
+  };
+}
+
+function buildPlanSegmentTool(record: WorkspaceRecord): AgentTool<typeof PLAN_SEGMENT_PARAMETERS, ScoutSegmentPlanDetails> {
+  return {
+    name: 'plan_segment',
+    label: 'Plan AT segment',
+    description: 'Runs deterministic AT route grounding for itinerary, segment, day-by-day, and access-point planning. Use before route logistics so the answer keeps landmarks and mileage in plausible order.',
+    parameters: PLAN_SEGMENT_PARAMETERS,
+    executionMode: 'parallel',
+    async execute(_toolCallId, params) {
+      const grounding = skillEnabled(record, 'at-mile-marker-reference') ? buildAtRouteGrounding({ prompt: params.query }) : null;
+      const missingChecks = [
+        'current guide/FarOut or user-owned guide for exact campsite/water/service details',
+        'official closures/detours when safety-sensitive',
+        'NWS forecast/alerts for the actual day and trail point',
+        'parking/shuttle/legal overnight confirmation for road-access logistics'
+      ];
+      const details: ScoutSegmentPlanDetails = {
+        query: params.query,
+        grounding,
+        fetchedAt: new Date().toISOString(),
+        missingChecks
+      };
+      const text = grounding
+        ? [
+            'Segment planning tool result:',
+            `Fetched at ${details.fetchedAt}.`,
+            renderAtRouteResourceContext(grounding),
+            `Missing current checks before commitment: ${missingChecks.join('; ')}.`
+          ].join('\n')
+        : [
+            'Segment planning tool result:',
+            `Fetched at ${details.fetchedAt}.`,
+            'No deterministic AT route grounding matched this query, or AT mile marker reference is disabled.',
+            `Missing current checks before commitment: ${missingChecks.join('; ')}.`
+          ].join('\n');
+      return {
+        content: [{ type: 'text', text: text.length > 7000 ? `${text.slice(0, 6999).trimEnd()}…` : text }],
+        details
+      };
+    }
+  };
+}
+
 function buildScoutSourceSearchTool(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): AgentTool<typeof SCOUT_SOURCE_SEARCH_PARAMETERS, ScoutSourceSearchDetails> {
   return {
     name: 'search_scout_sources',
@@ -739,7 +1134,12 @@ function buildPreloadedRouteResourceContext(prompt: string, record: WorkspaceRec
     : context;
 }
 
-async function buildPreloadedOfficialSourceContext(prompt: string, record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): Promise<string | null> {
+interface PreloadedOfficialSourcePayload {
+  readonly context: string;
+  readonly details: OfficialTrailSourceCheckDetails;
+}
+
+async function buildPreloadedOfficialSourcePayload(prompt: string, record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): Promise<PreloadedOfficialSourcePayload | null> {
   if (!skillEnabled(record, 'official-trail-sources')) return null;
   if (!shouldPreloadOfficialTrailSources(prompt)) return null;
 
@@ -774,8 +1174,38 @@ async function buildPreloadedOfficialSourceContext(prompt: string, record: Works
   ].join('\n');
 
   return context.length > SCOUT_PRELOADED_OFFICIAL_MAX_CHARS
-    ? `${context.slice(0, SCOUT_PRELOADED_OFFICIAL_MAX_CHARS - 1).trimEnd()}…`
-    : context;
+    ? { context: `${context.slice(0, SCOUT_PRELOADED_OFFICIAL_MAX_CHARS - 1).trimEnd()}…`, details }
+    : { context, details };
+}
+
+function buildOfficialSourceReceipts(details: OfficialTrailSourceCheckDetails): WorkspaceClawSourceReceipt[] {
+  const receipts: WorkspaceClawSourceReceipt[] = [];
+
+  if (details.weather) {
+    receipts.push({
+      label: 'NWS forecast and alerts',
+      status: `fetched ${details.fetchedAt}; ${details.weather.label}; ${details.weather.forecastUrl ?? details.weather.pointUrl}`,
+      kind: 'weather'
+    });
+  }
+
+  if (details.atcUpdates.length > 0 || details.source === 'atc' || details.source === 'auto') {
+    receipts.push({
+      label: 'ATC Trail Updates',
+      status: `fetched ${details.fetchedAt}; ${details.atcUpdates.length} match${details.atcUpdates.length === 1 ? '' : 'es'}`,
+      kind: 'official'
+    });
+  }
+
+  if (details.skipped.length > 0 || details.errors.length > 0) {
+    receipts.push({
+      label: 'Official source gaps',
+      status: [...details.skipped, ...details.errors].join(' ').slice(0, 220),
+      kind: 'official'
+    });
+  }
+
+  return receipts;
 }
 
 function excerpt(value: string, maxLength: number): string {
@@ -1009,6 +1439,9 @@ function buildSystemPrompt(
       ? 'You also have a catalog_scout_sources tool. Use it first when you need to decide which source lane applies, what Scout can use now, and what source must be imported or live-checked before a factual answer.'
       : 'This runtime may provide preloaded source-catalog context instead of live tool calls; use the context you have and clearly name missing source lanes.',
     liveToolsAvailable
+      ? 'You also have get_current_datetime, resolve_location, get_weather_forecast, get_weather_alerts, and plan_segment tools. Use get_current_datetime for date disputes or relative-date labels, resolve_location before location-dependent fetches, get_weather_forecast for all current/future forecast details, get_weather_alerts for alert claims, and plan_segment for route/day logistics.'
+      : 'This runtime may provide preloaded date, source, official-weather, and route context instead of live tool calls; use only that context for current facts and clearly name missing fetches.',
+    liveToolsAvailable
       ? 'You also have a search_scout_sources tool. Use it when the user asks a research/planning question and the provided context is too thin, too broad, or needs a narrower location/topic search.'
       : 'This runtime may provide preloaded source-search context instead of live tool calls; use the context you have and clearly name missing searches.',
     liveToolsAvailable && officialSourcesEnabled
@@ -1016,7 +1449,8 @@ function buildSystemPrompt(
       : officialSourcesEnabled
         ? 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.'
         : 'Official Trail Sources skill is disabled for this workspace; do not call or imply official live-source retrieval unless the user asks to enable that skill.',
-    'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied. Do not say “fetched just now,” “NWS says,” or similar unless check_official_trail_sources or preloaded official-source context returned that exact source this turn. If the tool/source is missing, say what is missing instead of filling the gap.',
+    'Claim gating: current datetime/date labels must come from the injected Current date authority or get_current_datetime only. Current/future weather, active alerts, and “no alerts” claims must come from get_weather_forecast, get_weather_alerts, check_official_trail_sources, or preloaded official-source context from this turn. If that evidence is missing, answer with the missing-source caveat and no forecast specifics.',
+    'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied. Do not say “fetched just now,” “NWS says,” or similar unless get_weather_forecast, get_weather_alerts, check_official_trail_sources, or preloaded official-source context returned that exact source this turn. If the tool/source is missing, say what is missing instead of filling the gap.',
     'For route planning, distinguish route shape from confirmed facts. It is fine to give a useful corridor, start/end options, and approximate mileages, but label exact mileages, legal camping, parking, shuttles, water, and service hours as verify-against-current-guide/direct-source items until the hiker supplies or fetches that source.',
     'Before giving day-by-day route logistics, do a quiet route validation pass and then summarize the result plainly: route order, rough mileage split, practical access point confidence, legal overnight status, water, parking/shuttle, and weather. If that pass is incomplete, say the itinerary is a draft shape and name the missing checks before commitment.',
     'For Harpers Ferry / Maryland / DC-family logistics, wrong mileage is the dangerous failure mode. Do not repeat old or suspicious mileage splits; call out corrected rough splits and require current guide/direct-source verification before Dad/family/shuttle decisions.',
@@ -1309,20 +1743,25 @@ export async function replyInWorkspaceClaw(
   const runtime = await resolveClawRuntime(record);
   const thinkingEffort = normalizeScoutThinkingEffort(options?.thinkingEffort);
   const dadPilotSummary = shouldIncludeDadPilotContext(record, trimmedPrompt) ? await loadDadPilotSummary().catch(() => null) : null;
+  const dateAuthority = buildCurrentDatetimeDetails();
   await options?.onPhase?.({ phase: 'sources', label: 'Checking source lanes', detail: 'Looking for private notes, route guardrails, and official-source opportunities.' });
+  const preloadedOfficial = runtime.providerId === OPENCODE_GO_PROVIDER_ID
+    ? await buildPreloadedOfficialSourcePayload(trimmedPrompt, record, dadPilotSummary)
+    : null;
   const sourceContexts = [
     buildScoutSourcePlanContext(record, trimmedPrompt),
     buildScoutSourceContext(record, dadPilotSummary, trimmedPrompt),
     buildPreloadedRouteResourceContext(trimmedPrompt, record),
-    runtime.providerId === OPENCODE_GO_PROVIDER_ID ? await buildPreloadedOfficialSourceContext(trimmedPrompt, record, dadPilotSummary) : null
+    preloadedOfficial?.context ?? null
   ].filter((context): context is string => Boolean(context));
 
   const sourceReceipts = [
+    { label: 'Current datetime', status: `${dateAuthority.today.label}; fetched ${dateAuthority.fetchedAt}; ${dateAuthority.timezone}`, kind: 'time' },
     record.documents.length > 0 ? { label: 'Private Docs', status: `${record.documents.length} saved`, kind: 'workspace' } : null,
     record.resources.length > 0 ? { label: 'Private Resources', status: `${record.resources.length} available`, kind: 'workspace' } : null,
     sourceContexts.some((context) => context.includes('Scout route resource')) ? { label: 'AT route guardrails', status: 'loaded for validation', kind: 'route' } : null,
     sourceContexts.some((context) => context.includes('Scout source catalog')) ? { label: 'Scout source catalog', status: 'planned', kind: 'catalog' } : null,
-    sourceContexts.some((context) => context.includes('Official trail source check')) ? { label: 'Official trail sources', status: 'preloaded', kind: 'official' } : null
+    ...(preloadedOfficial ? buildOfficialSourceReceipts(preloadedOfficial.details) : [])
   ].filter((receipt): receipt is WorkspaceClawSourceReceipt => receipt !== null);
   if (sourceReceipts.length > 0) {
     await options?.onSourceReceipts?.(sourceReceipts);
@@ -1338,6 +1777,11 @@ export async function replyInWorkspaceClaw(
     const agentTools = runtime.providerId === OPENCODE_GO_PROVIDER_ID
       ? []
       : [
+          buildCurrentDatetimeTool(),
+          buildResolveLocationTool(record, dadPilotSummary),
+          skillEnabled(record, 'official-trail-sources') ? buildWeatherForecastTool(record, dadPilotSummary) : null,
+          skillEnabled(record, 'official-trail-sources') ? buildWeatherAlertsTool(record, dadPilotSummary) : null,
+          skillEnabled(record, 'at-mile-marker-reference') ? buildPlanSegmentTool(record) : null,
           buildScoutSourceCatalogTool(record),
           buildScoutSourceSearchTool(record, dadPilotSummary),
           skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(record, dadPilotSummary) : null
@@ -1349,7 +1793,7 @@ export async function replyInWorkspaceClaw(
           activeDocument,
           dadPilotSummary,
           sourceContext,
-          true,
+          runtime.providerId !== OPENCODE_GO_PROVIDER_ID,
           activeResource
         ),
         model: runtime.model,
