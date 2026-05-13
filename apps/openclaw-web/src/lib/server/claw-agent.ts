@@ -2433,9 +2433,12 @@ export async function replyInWorkspaceClaw(
   if (toolSourceReceipts.length > 0) {
     await options?.onSourceReceipts?.(finalSourceReceipts);
   }
+  const replyWithReceipts = finalSourceReceipts.length > 0
+    ? { ...reply, sourceReceipts: finalSourceReceipts }
+    : reply;
   const messagesWithReceipts = finalSourceReceipts.length > 0
     ? persistedMessages.map((message) => message.id === reply.id && message.role === 'assistant'
-        ? { ...message, sourceReceipts: finalSourceReceipts }
+        ? replyWithReceipts
         : message)
     : persistedMessages;
   let workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, messagesWithReceipts);
@@ -2464,7 +2467,7 @@ export async function replyInWorkspaceClaw(
 
   return {
     workspace,
-    reply,
+    reply: replyWithReceipts,
     revisedDocument
   };
 }
