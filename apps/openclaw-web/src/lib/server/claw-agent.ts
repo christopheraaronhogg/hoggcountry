@@ -251,6 +251,9 @@ const OFFICIAL_TRAIL_SOURCE_PARAMETERS = Type.Object({
   useDadLocation: Type.Optional(Type.Boolean({
     description: 'Use the latest public Dad Garmin fix for NWS when the question is about Dad/current pilot context.'
   })),
+  useLatestGps: Type.Optional(Type.Boolean({
+    description: 'Use the latest private browser GPS fix for NWS when the question is about the current area.'
+  })),
   useProfileLocation: Type.Optional(Type.Boolean({
     description: 'Use the workspace profile current AT mile as the NWS point forecast location when explicit coordinates are not provided. Defaults to true for weather questions with a usable current mile.'
   }))
@@ -465,7 +468,7 @@ async function recentConversationLocation(record: WorkspaceRecord, fetchedAt: st
   return null;
 }
 
-async function resolveScoutLocation(
+export async function resolveScoutLocation(
   record: WorkspaceRecord,
   dadPilotSummary: DadPilotSummary | null,
   input: {
@@ -933,21 +936,31 @@ function buildOfficialTrailSourceTool(record: WorkspaceRecord, dadPilotSummary: 
   return {
     name: 'check_official_trail_sources',
     label: 'Check official trail sources',
-    description: 'Fetches live official source context from ATC Trail Updates and NWS point forecast/alerts. Use for closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other safety-sensitive current conditions. For weather, this tool will use explicit coordinates first, then the workspace profile current AT mile when available, then Dad Garmin if requested.',
+    description: 'Fetches live official source context from ATC Trail Updates and NWS point forecast/alerts. Use for closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other safety-sensitive current conditions. For weather, this tool will resolve explicit coordinates, latest GPS, named AT landmarks, profile current AT mile, recent conversation location, or Dad Garmin when requested.',
     parameters: OFFICIAL_TRAIL_SOURCE_PARAMETERS,
     executionMode: 'parallel',
     async execute(_toolCallId, params) {
-      const profilePoint = params.latitude === undefined || params.longitude === undefined
-        ? await profileCoordinates(record)
-        : null;
+      const weatherIntent = promptAsksForWeather(params.query);
+      const explicitCoordinates = typeof params.latitude === 'number' && typeof params.longitude === 'number';
+      const location = explicitCoordinates
+        ? null
+        : await resolveScoutLocation(record, dadPilotSummary, {
+            query: params.query,
+            latitude: params.latitude ?? null,
+            longitude: params.longitude ?? null,
+            useProfileLocation: params.useProfileLocation ?? true,
+            useLatestGps: params.useLatestGps ?? weatherIntent,
+            useDadLocation: params.useDadLocation ?? false
+          });
+      const requestedSource = params.source ?? 'auto';
       const details = await checkOfficialTrailSources(
         {
           query: params.query,
-          source: params.source ?? 'auto',
-          state: params.state ?? null,
-          latitude: params.latitude ?? (params.useProfileLocation === false ? null : profilePoint?.latitude ?? null),
-          longitude: params.longitude ?? (params.useProfileLocation === false ? null : profilePoint?.longitude ?? null),
-          useDadLocation: params.useDadLocation ?? false
+          source: requestedSource === 'auto' && weatherIntent ? 'nws' : requestedSource,
+          state: params.state ?? (location?.mile !== null && location?.mile !== undefined ? approximateAtStateForMile(location.mile) : null),
+          latitude: params.latitude ?? location?.latitude ?? null,
+          longitude: params.longitude ?? location?.longitude ?? null,
+          useDadLocation: (params.useDadLocation ?? false) && !location
         },
         dadPilotSummary
       );
@@ -1038,7 +1051,7 @@ function renderWeatherAlerts(details: ScoutWeatherAlertsDetails): string {
   return lines.join('\n');
 }
 
-async function buildWeatherDetails(
+export async function buildWeatherDetails(
   record: WorkspaceRecord,
   dadPilotSummary: DadPilotSummary | null,
   params: {
@@ -1055,7 +1068,7 @@ async function buildWeatherDetails(
     latitude: params.latitude ?? null,
     longitude: params.longitude ?? null,
     useProfileLocation: params.useProfileLocation ?? true,
-    useLatestGps: params.useLatestGps ?? false,
+    useLatestGps: params.useLatestGps ?? true,
     useDadLocation: params.useDadLocation ?? false
   });
   const query = params.query?.trim() || 'weather forecast';
@@ -1224,8 +1237,12 @@ function buildScoutSourceContext(record: WorkspaceRecord, dadPilotSummary: DadPi
     : context;
 }
 
+function promptAsksForWeather(prompt: string): boolean {
+  return /\b(weather(?:\s+report)?|forecast|rain|showers?|storm|thunder|lightning|temperature|temps?|wind|snow|ice|cold|heat|humid|humidity|flood)\b/iu.test(prompt);
+}
+
 function shouldPreloadOfficialTrailSources(prompt: string): boolean {
-  return /\b(weather|forecast|alert|closure|closed|detour|reroute|burn ban|bear|storm|thunder|heat|cold|wind|flood|snow|ice|24 hours|daily trail brief|go\/no-go)\b/iu.test(prompt);
+  return promptAsksForWeather(prompt) || /\b(alert|closure|closed|detour|reroute|burn ban|bear|24 hours|daily trail brief|go\/no-go)\b/iu.test(prompt);
 }
 
 function renderAtRouteResourceContext(grounding: AtRouteGrounding): string {
@@ -1274,6 +1291,7 @@ function buildPreloadedRouteResourceContext(prompt: string, record: WorkspaceRec
 interface PreloadedOfficialSourcePayload {
   readonly context: string;
   readonly details: OfficialTrailSourceCheckDetails;
+  readonly location: ScoutResolvedLocation | null;
 }
 
 interface PreloadedWebResearchPayload {
@@ -1286,21 +1304,32 @@ async function buildPreloadedOfficialSourcePayload(prompt: string, record: Works
   if (!shouldPreloadOfficialTrailSources(prompt)) return null;
 
   const useDadLocation = promptAsksForDadPilotContext(prompt);
-  const profilePoint = useDadLocation ? null : await profileCoordinates(record);
+  const weatherIntent = promptAsksForWeather(prompt);
+  const location = weatherIntent
+    ? await resolveScoutLocation(record, dadPilotSummary, {
+        query: prompt,
+        useProfileLocation: true,
+        useLatestGps: true,
+        useDadLocation
+      })
+    : null;
+  const profilePoint = weatherIntent || useDadLocation ? null : await profileCoordinates(record);
 
   const details = await checkOfficialTrailSources(
     {
       query: prompt,
-      source: 'auto',
-      state: record.profile ? approximateAtStateForMile(record.profile.currentMile) : null,
-      latitude: profilePoint?.latitude ?? null,
-      longitude: profilePoint?.longitude ?? null,
-      useDadLocation
+      source: weatherIntent ? 'nws' : 'auto',
+      state: location?.mile !== null && location?.mile !== undefined
+        ? approximateAtStateForMile(location.mile)
+        : record.profile ? approximateAtStateForMile(record.profile.currentMile) : null,
+      latitude: location?.latitude ?? profilePoint?.latitude ?? null,
+      longitude: location?.longitude ?? profilePoint?.longitude ?? null,
+      useDadLocation: useDadLocation && !location
     },
     dadPilotSummary
   ).catch((error) => ({
     query: prompt,
-    source: 'auto' as const,
+    source: (weatherIntent ? 'nws' : 'auto') as const,
     fetchedAt: new Date().toISOString(),
     atcUpdates: [],
     weather: null,
@@ -1311,13 +1340,16 @@ async function buildPreloadedOfficialSourcePayload(prompt: string, record: Works
   const rendered = renderOfficialTrailSourceResult(details);
   const context = [
     'Preloaded official source check for this turn:',
+    weatherIntent ? renderResolvedLocation(location) : null,
     rendered,
-    'Grounding rule: use this as current official context only for the sources named above. If coordinates were unavailable or a source was skipped, say so instead of filling the gap.'
-  ].join('\n');
+    weatherIntent
+      ? 'Weather grounding rule: this was the server-side NWS weather attempt for this turn. If NWS forecast periods are present, use them; do not say a fresh weather tool was unavailable. If location resolution failed or NWS was skipped, ask for GPS/current mile or a named AT landmark instead of inventing forecast details.'
+      : 'Grounding rule: use this as current official context only for the sources named above. If coordinates were unavailable or a source was skipped, say so instead of filling the gap.'
+  ].filter((line): line is string => Boolean(line)).join('\n');
 
   return context.length > SCOUT_PRELOADED_OFFICIAL_MAX_CHARS
-    ? { context: `${context.slice(0, SCOUT_PRELOADED_OFFICIAL_MAX_CHARS - 1).trimEnd()}…`, details }
-    : { context, details };
+    ? { context: `${context.slice(0, SCOUT_PRELOADED_OFFICIAL_MAX_CHARS - 1).trimEnd()}…`, details, location }
+    : { context, details, location };
 }
 
 async function buildPreloadedWebResearchPayload(prompt: string, record: WorkspaceRecord): Promise<PreloadedWebResearchPayload | null> {
@@ -1351,8 +1383,16 @@ async function buildPreloadedWebResearchPayload(prompt: string, record: Workspac
     : { context, details };
 }
 
-function buildOfficialSourceReceipts(details: OfficialTrailSourceCheckDetails): WorkspaceClawSourceReceipt[] {
+function buildOfficialSourceReceipts(details: OfficialTrailSourceCheckDetails, location: ScoutResolvedLocation | null = null): WorkspaceClawSourceReceipt[] {
   const receipts: WorkspaceClawSourceReceipt[] = [];
+
+  if (location) {
+    receipts.push({
+      label: 'Location resolver',
+      status: `${location.label}; source ${location.source}; fetched ${location.fetchedAt}`,
+      kind: 'location'
+    });
+  }
 
   if (details.weather) {
     receipts.push({
@@ -1641,7 +1681,7 @@ function fallbackOpenCodeGoToolPlan(prompt: string, tools: readonly AgentTool<an
     if (calls.length >= SCOUT_OPENCODE_TOOL_MAX_CALLS) break;
   }
 
-  const asksForWeather = /\b(weather(?:\s+report)?|forecast|rain|showers?|storm|thunder|temperature|temps?|wind|snow|ice|cold|heat)\b/iu.test(prompt);
+  const asksForWeather = promptAsksForWeather(prompt);
   const asksForWeatherAlerts = /\b(alerts?|warnings?|watches|advisories|advisory)\b/iu.test(prompt);
   if (asksForWeather && calls.length < SCOUT_OPENCODE_TOOL_MAX_CALLS) {
     pushCall(
@@ -2446,7 +2486,7 @@ export async function replyInWorkspaceClaw(
     sourceContexts.some((context) => context.includes('Scout route resource')) ? { label: 'AT route guardrails', status: 'loaded for validation', kind: 'route' } : null,
     sourceContexts.some((context) => context.includes('Scout source catalog')) ? { label: 'Scout source catalog', status: 'planned', kind: 'catalog' } : null,
     skillEnabled(record, 'web-research') ? { label: 'Web research', status: 'available when online', kind: 'web' } : null,
-    ...(preloadedOfficial ? buildOfficialSourceReceipts(preloadedOfficial.details) : []),
+    ...(preloadedOfficial ? buildOfficialSourceReceipts(preloadedOfficial.details, preloadedOfficial.location) : []),
     ...(preloadedWebResearch ? buildWebResearchReceipts(preloadedWebResearch.details) : []),
     ...toolSourceReceipts
   ].filter((receipt): receipt is WorkspaceClawSourceReceipt => receipt !== null);
