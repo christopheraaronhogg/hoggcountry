@@ -191,6 +191,18 @@
     readonly data: Record<string, unknown>;
   }
 
+  interface ScoutReplyTurnSnapshot {
+    readonly status?: unknown;
+    readonly result?: unknown;
+    readonly error?: unknown;
+  }
+
+  interface StoredActiveReplyTurn {
+    readonly workspaceId: string;
+    readonly turnId: string;
+    readonly storedAt: string;
+  }
+
   type ScoutThinkingEffort = 'off' | 'minimal' | 'low' | 'medium' | 'high';
 
   interface SpacetimeRuntime {
@@ -290,10 +302,15 @@
   let activeRealtimeEventCursor = 0;
   let activeRealtimeEventHandler: ((event: ScoutTurnEventEnvelope) => void | Promise<void>) | null = null;
   let onlineStateCleanup: (() => void) | null = null;
+  let resumeRecoveryCleanup: (() => void) | null = null;
+  let resumeRecoveryBusy = false;
+  let lastResumeRecoveryAt = 0;
+  let storedTurnPollId = '';
   let componentDestroyed = false;
   let streamingAppendBuffer = '';
   let streamingAppendFrame = 0;
   let streamingScrollFrame = 0;
+  const ACTIVE_REPLY_TURN_STORAGE_KEY = 'hoggcountry.scout.activeReplyTurn';
   const messageBlockCache = new Map<string, { text: string; blocks: MessageBlock[] }>();
   const messageViews = $derived.by(() => messages.map((message) => ({
     message,
@@ -1011,6 +1028,91 @@
     factCandidates = Array.isArray(cached.factCandidates) ? cached.factCandidates as FactCandidate[] : [];
   }
 
+  function parseStoredActiveReplyTurn(value: string | null): StoredActiveReplyTurn | null {
+    if (!value) return null;
+
+    try {
+      const parsed = JSON.parse(value) as Record<string, unknown>;
+      const workspaceId = typeof parsed.workspaceId === 'string' ? parsed.workspaceId.trim() : '';
+      const turnId = typeof parsed.turnId === 'string' ? parsed.turnId.trim() : '';
+      const storedAt = typeof parsed.storedAt === 'string' ? parsed.storedAt.trim() : '';
+      return workspaceId && turnId ? { workspaceId, turnId, storedAt } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function readStoredActiveReplyTurn(): StoredActiveReplyTurn | null {
+    try {
+      const stored = parseStoredActiveReplyTurn(window.localStorage.getItem(ACTIVE_REPLY_TURN_STORAGE_KEY));
+      if (!stored) return null;
+      if (currentWorkspaceId && stored.workspaceId !== currentWorkspaceId) {
+        window.localStorage.removeItem(ACTIVE_REPLY_TURN_STORAGE_KEY);
+        return null;
+      }
+      return stored;
+    } catch {
+      return null;
+    }
+  }
+
+  function rememberActiveReplyTurn(turnId: string) {
+    if (!turnId || !currentWorkspaceId) return;
+
+    try {
+      window.localStorage.setItem(
+        ACTIVE_REPLY_TURN_STORAGE_KEY,
+        JSON.stringify({
+          workspaceId: currentWorkspaceId,
+          turnId,
+          storedAt: new Date().toISOString()
+        } satisfies StoredActiveReplyTurn)
+      );
+    } catch {
+      // Storage may be unavailable in private mode; realtime/polling still works while the tab stays alive.
+    }
+  }
+
+  function forgetStoredActiveReplyTurn(turnId?: string) {
+    try {
+      if (turnId) {
+        const stored = parseStoredActiveReplyTurn(window.localStorage.getItem(ACTIVE_REPLY_TURN_STORAGE_KEY));
+        if (stored && stored.turnId !== turnId) return;
+      }
+      window.localStorage.removeItem(ACTIVE_REPLY_TURN_STORAGE_KEY);
+    } catch {
+      // Ignore storage cleanup failures; the next successful read will validate workspace/turn ownership.
+    }
+  }
+
+  function prepareRecoveredTurnUi(turnId: string, detail: string) {
+    activeRealtimeTurnId = turnId;
+    activeRealtimeEventCursor = 0;
+    activeRealtimeEventHandler = applyRealtimeTurnEvent;
+    sendBusy = true;
+    recoveredRealtimeTurn = true;
+    streamingReplyVisible = false;
+    streamingAssistantText = '';
+    streamStatus = 'working';
+    turnPhase = { phase: 'recovering', label: 'Rejoining Scout turn', detail };
+    turnSourceReceipts = [];
+  }
+
+  function clearRecoveredTurnUi(turnId?: string) {
+    if (turnId && activeRealtimeTurnId && activeRealtimeTurnId !== turnId) return;
+    activeRealtimeTurnId = '';
+    activeRealtimeEventCursor = 0;
+    activeRealtimeEventHandler = null;
+    sendBusy = false;
+    recoveredRealtimeTurn = false;
+    streamingReplyVisible = false;
+    streamingAssistantText = '';
+    streamStatus = '';
+    turnPhase = null;
+    turnSourceReceipts = [];
+    thinkingActivityChars = 0;
+  }
+
   function formatLocationDistance(miles: number): string {
     if (!Number.isFinite(miles)) return 'unknown distance';
     if (miles < 0.1) return 'on the AT corridor';
@@ -1366,6 +1468,7 @@
     if (activeRealtimeTurnId || sendBusy) return;
 
     activeRealtimeTurnId = row.turnId;
+    rememberActiveReplyTurn(row.turnId);
     activeRealtimeEventCursor = 0;
     activeRealtimeEventHandler = applyRealtimeTurnEvent;
     sendBusy = true;
@@ -1440,8 +1543,8 @@
     }
   }
 
-  async function loadState() {
-    loading = true;
+  async function loadState(options: { readonly quiet?: boolean } = {}) {
+    if (!options.quiet) loading = true;
     error = '';
     offlineNotice = '';
 
@@ -1472,7 +1575,7 @@
         error = caught instanceof Error ? caught.message : 'Could not load the Scout console.';
       }
     } finally {
-      loading = false;
+      if (!options.quiet) loading = false;
     }
   }
 
@@ -1646,13 +1749,17 @@
     return payload.turnId;
   }
 
+  async function fetchScoutReplyTurnSnapshot(turnId: string): Promise<ScoutReplyTurnSnapshot> {
+    return jsonOrThrow(
+      await fetch(`/app-api/claw/reply/turn?turnId=${encodeURIComponent(turnId)}`, { cache: 'no-store' })
+    ) as Promise<ScoutReplyTurnSnapshot>;
+  }
+
   async function pollScoutReplyTurn(turnId: string) {
     const started = Date.now();
 
     while (Date.now() - started < 16 * 60 * 1000) {
-      const snapshot = await jsonOrThrow(
-        await fetch(`/app-api/claw/reply/turn?turnId=${encodeURIComponent(turnId)}`)
-      ) as { status?: unknown; result?: unknown; error?: unknown };
+      const snapshot = await fetchScoutReplyTurnSnapshot(turnId);
 
       if (snapshot.status === 'done' && snapshot.result && typeof snapshot.result === 'object') {
         return snapshot.result as Record<string, unknown>;
@@ -1670,6 +1777,105 @@
     }
 
     throw new Error('Scout is still working on that reply. Try opening this thread again in a minute.');
+  }
+
+  function isScoutTurnNotFound(caught: unknown): boolean {
+    return caught instanceof Error && /Scout turn not found|not found/i.test(caught.message);
+  }
+
+  async function applyRecoveredReplyPayload(turnId: string, payload: Record<string, unknown>) {
+    flushStreamingText();
+    await applyScoutReplyPayload(payload);
+    forgetStoredActiveReplyTurn(turnId);
+    clearRecoveredTurnUi(turnId);
+    await scrollCloudThreadToLatest();
+  }
+
+  async function pollStoredActiveReplyTurn(turnId: string, showRecoveredUi: boolean) {
+    if (!turnId || storedTurnPollId === turnId) return;
+    storedTurnPollId = turnId;
+
+    if (showRecoveredUi) {
+      prepareRecoveredTurnUi(turnId, 'Polling the server for the reply that was active when this tab was suspended.');
+    }
+
+    try {
+      const payload = await pollScoutReplyTurn(turnId);
+      await applyRecoveredReplyPayload(turnId, payload);
+      error = '';
+    } catch (caught) {
+      console.warn('Scout turn recovery poll failed:', caught);
+      if (isScoutTurnNotFound(caught)) {
+        forgetStoredActiveReplyTurn(turnId);
+      }
+      await loadState({ quiet: true }).catch(() => undefined);
+      if (!isScoutTurnNotFound(caught)) {
+        error = caught instanceof Error ? caught.message : 'Could not recover the Scout reply.';
+      }
+    } finally {
+      storedTurnPollId = '';
+      if (showRecoveredUi) clearRecoveredTurnUi(turnId);
+    }
+  }
+
+  async function recoverStoredActiveReplyTurn(stored: StoredActiveReplyTurn) {
+    try {
+      const snapshot = await fetchScoutReplyTurnSnapshot(stored.turnId);
+
+      if (snapshot.status === 'done' && snapshot.result && typeof snapshot.result === 'object') {
+        await applyRecoveredReplyPayload(stored.turnId, snapshot.result as Record<string, unknown>);
+        error = '';
+        return;
+      }
+
+      if (snapshot.status === 'error') {
+        const errorPayload = snapshot.error && typeof snapshot.error === 'object'
+          ? snapshot.error as { message?: unknown }
+          : null;
+        forgetStoredActiveReplyTurn(stored.turnId);
+        clearRecoveredTurnUi(stored.turnId);
+        await loadState({ quiet: true }).catch(() => undefined);
+        error = typeof errorPayload?.message === 'string' ? errorPayload.message : 'Scout could not finish that reply.';
+        return;
+      }
+
+      if (snapshot.status === 'running') {
+        void pollStoredActiveReplyTurn(stored.turnId, !(sendBusy && activeRealtimeTurnId === stored.turnId));
+      }
+    } catch (caught) {
+      console.warn('Scout turn recovery snapshot failed:', caught);
+      if (isScoutTurnNotFound(caught)) {
+        forgetStoredActiveReplyTurn(stored.turnId);
+        clearRecoveredTurnUi(stored.turnId);
+      }
+      await loadState({ quiet: true }).catch(() => undefined);
+    }
+  }
+
+  async function recoverScoutReplyAfterResume(reason: string) {
+    if (componentDestroyed || resumeRecoveryBusy) return;
+    updateOnlineState();
+    if (isOffline) return;
+
+    resumeRecoveryBusy = true;
+    try {
+      await loadState({ quiet: true });
+      const stored = readStoredActiveReplyTurn();
+      if (stored) {
+        await recoverStoredActiveReplyTurn(stored);
+      }
+    } catch (caught) {
+      console.warn(`Scout resume recovery skipped after ${reason}:`, caught);
+    } finally {
+      resumeRecoveryBusy = false;
+    }
+  }
+
+  function triggerScoutResumeRecovery(reason: string, force = false) {
+    const now = Date.now();
+    if (!force && now - lastResumeRecoveryAt < 1200) return;
+    lastResumeRecoveryAt = now;
+    void recoverScoutReplyAfterResume(reason);
   }
 
   function updateThinkingEffort(value: string) {
@@ -1744,8 +1950,10 @@
     }
 
     if (turnEvent.event === 'done') {
+      const completedTurnId = activeRealtimeTurnId;
       flushStreamingText();
       await applyScoutReplyPayload(turnEvent.data);
+      forgetStoredActiveReplyTurn(completedTurnId);
       activeRealtimeTurnId = '';
       activeRealtimeEventHandler = null;
       sendBusy = false;
@@ -1775,10 +1983,12 @@
     }
 
     if (turnEvent.event === 'error') {
+      const failedTurnId = activeRealtimeTurnId;
       activeRealtimeTurnId = '';
       activeRealtimeEventHandler = null;
       sendBusy = false;
       recoveredRealtimeTurn = false;
+      forgetStoredActiveReplyTurn(failedTurnId);
       const message = typeof turnEvent.data.message === 'string' && turnEvent.data.message.trim()
         ? turnEvent.data.message.trim()
         : 'Could not send the cloud prompt.';
@@ -1836,6 +2046,7 @@
         turnCompleted = true;
         flushStreamingText();
         await applyScoutReplyPayload(turnEvent.data);
+        forgetStoredActiveReplyTurn(turnId);
         streamAbortController.abort();
         return;
       }
@@ -1858,6 +2069,7 @@
 
       if (turnEvent.event === 'error') {
         turnCompleted = true;
+        forgetStoredActiveReplyTurn(turnId);
         streamAbortController.abort();
         const message = typeof turnEvent.data.message === 'string' && turnEvent.data.message.trim()
           ? turnEvent.data.message.trim()
@@ -1914,6 +2126,7 @@
     try {
       turnId = await startScoutReplyTurn(message);
       activeRealtimeTurnId = turnId;
+      rememberActiveReplyTurn(turnId);
       void loadSpacetimeRuntime().then(({ getSpacetimeConnection }) => {
         const realtimeConnection = getSpacetimeConnection();
         if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
@@ -1930,6 +2143,7 @@
         try {
           const payload = await pollScoutReplyTurn(turnId);
           await applyScoutReplyPayload(payload);
+          forgetStoredActiveReplyTurn(turnId);
           error = '';
         } catch (fallbackCaught) {
           console.error(fallbackCaught);
@@ -2065,11 +2279,36 @@
 
     cacheCurrentClawConsolePayload();
     updateOnlineState();
-    window.addEventListener('online', updateOnlineState);
-    window.addEventListener('offline', updateOnlineState);
+    const handleReconnect = () => {
+      updateOnlineState();
+      triggerScoutResumeRecovery('reconnect', true);
+    };
+    const handleOffline = () => {
+      updateOnlineState();
+    };
+    const handlePageShow = () => {
+      triggerScoutResumeRecovery('pageshow');
+    };
+    const handleFocus = () => {
+      triggerScoutResumeRecovery('focus');
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') triggerScoutResumeRecovery('visibilitychange');
+    };
+
+    window.addEventListener('online', handleReconnect);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     onlineStateCleanup = () => {
-      window.removeEventListener('online', updateOnlineState);
-      window.removeEventListener('offline', updateOnlineState);
+      window.removeEventListener('online', handleReconnect);
+      window.removeEventListener('offline', handleOffline);
+    };
+    resumeRecoveryCleanup = () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
 
     const shouldRefreshState = consumeConnectQueryState();
@@ -2093,6 +2332,7 @@
         await consumeDocumentQueryState();
         await consumeResourceQueryState();
         await consumePromptQueryState();
+        triggerScoutResumeRecovery('mount', true);
       })
       .catch(() => undefined);
   });
@@ -2107,6 +2347,7 @@
     scoutRealtimeTurnCleanup?.();
     scoutRealtimeSubscription?.unsubscribe();
     onlineStateCleanup?.();
+    resumeRecoveryCleanup?.();
     if (streamingAppendFrame) window.cancelAnimationFrame(streamingAppendFrame);
     if (streamingScrollFrame) window.cancelAnimationFrame(streamingScrollFrame);
   });
