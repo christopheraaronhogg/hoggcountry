@@ -122,7 +122,7 @@
   }
 
   function askHref(text = prompt): string {
-    const url = new URL('/app/claw', 'https://hoggcountry.local');
+    const url = new URL('/app/scout', 'https://hoggcountry.local');
     if (text.trim()) url.searchParams.set('prompt', text.trim());
     return `${url.pathname}${url.search}`;
   }
@@ -135,7 +135,7 @@
     <p class="route-chip">{routeLabel()}</p>
   </header>
 
-  <form class="ask-card" action="/app/claw" method="get" aria-label="Ask Scout">
+  <form class="ask-card" action="/app/scout" method="get" aria-label="Ask Scout">
     <label class="sr-only" for="home-prompt">Ask Scout</label>
     <input id="home-prompt" name="prompt" bind:value={prompt} placeholder="Ask about miles, water, weather, or resupply" autocomplete="off" />
     <button type="submit" aria-label="Send to Scout" disabled={!prompt.trim()}>

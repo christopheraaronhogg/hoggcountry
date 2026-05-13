@@ -273,6 +273,7 @@
   let disconnectBusy = $state(false);
   let seedBusy = $state(false);
   let savingMessageId = $state<string | null>(null);
+  let copiedMessageId = $state<string | null>(null);
   let savedMessageIds = $state.raw<string[]>([]);
   let saveNotice = $state('');
   let saveError = $state('');
@@ -1379,7 +1380,7 @@
     dailyBriefError = '';
 
     try {
-      dailyBrief = await jsonOrThrow(await fetch('/app-api/claw/daily-brief', { cache: 'no-store' })) as ScoutDailyBrief;
+      dailyBrief = await jsonOrThrow(await fetch('/app-api/scout/daily-brief', { cache: 'no-store' })) as ScoutDailyBrief;
       cacheDailyBrief(dailyBrief);
     } catch (caught) {
       console.error(caught);
@@ -1549,7 +1550,7 @@
     offlineNotice = '';
 
     try {
-      const clawPayload = await jsonOrThrow(await fetch('/app-api/claw', { cache: 'no-store' }));
+      const clawPayload = await jsonOrThrow(await fetch('/app-api/scout', { cache: 'no-store' }));
       const workspacePayload = (clawPayload.workspace ?? null) as WorkspaceSnapshot | null;
 
       if (workspacePayload) applyWorkspaceSnapshot(workspacePayload);
@@ -1586,7 +1587,7 @@
 
     try {
       const payload = await jsonOrThrow(
-        await fetch('/app-api/claw/connect/openai-codex/start', {
+        await fetch('/app-api/scout/connect/openai-codex/start', {
           method: 'POST'
         })
       );
@@ -1614,7 +1615,7 @@
 
     try {
       await jsonOrThrow(
-        await fetch('/app-api/claw/connect/openai-codex/complete', {
+        await fetch('/app-api/scout/connect/openai-codex/complete', {
           method: 'POST',
           headers: {
             'content-type': 'application/json'
@@ -1647,7 +1648,7 @@
 
     try {
       await jsonOrThrow(
-        await fetch('/app-api/claw/connect/openai-codex/disconnect', {
+        await fetch('/app-api/scout/connect/openai-codex/disconnect', {
           method: 'POST'
         })
       );
@@ -1677,7 +1678,7 @@
 
     try {
       const payload = await jsonOrThrow(
-        await fetch('/app-api/claw/thread', {
+        await fetch('/app-api/scout/thread', {
           method: 'DELETE'
         })
       );
@@ -1711,7 +1712,7 @@
 
   async function fetchJsonScoutReply(message: string) {
     return jsonOrThrow(
-      await fetch('/app-api/claw/reply', {
+      await fetch('/app-api/scout/reply', {
         method: 'POST',
         headers: {
           'content-type': 'application/json'
@@ -1728,7 +1729,7 @@
 
   async function startScoutReplyTurn(message: string) {
     const payload = await jsonOrThrow(
-      await fetch('/app-api/claw/reply/turn', {
+      await fetch('/app-api/scout/reply/turn', {
         method: 'POST',
         headers: {
           'content-type': 'application/json'
@@ -1751,7 +1752,7 @@
 
   async function fetchScoutReplyTurnSnapshot(turnId: string): Promise<ScoutReplyTurnSnapshot> {
     return jsonOrThrow(
-      await fetch(`/app-api/claw/reply/turn?turnId=${encodeURIComponent(turnId)}`, { cache: 'no-store' })
+      await fetch(`/app-api/scout/reply/turn?turnId=${encodeURIComponent(turnId)}`, { cache: 'no-store' })
     ) as Promise<ScoutReplyTurnSnapshot>;
   }
 
@@ -2131,7 +2132,7 @@
         const realtimeConnection = getSpacetimeConnection();
         if (realtimeConnection) void syncScoutRealtime(realtimeConnection);
       });
-      const response = await fetch(`/app-api/claw/reply/turn/${encodeURIComponent(turnId)}/events`, { signal: streamAbortController.signal });
+      const response = await fetch(`/app-api/scout/reply/turn/${encodeURIComponent(turnId)}/events`, { signal: streamAbortController.signal });
 
       await readScoutReplyStream(response, {
         onEvent: applyTurnEvent
@@ -2227,7 +2228,7 @@
 
     try {
       const payload = await jsonOrThrow(
-        await fetch('/app-api/claw/save-document', {
+        await fetch('/app-api/scout/save-document', {
           method: 'POST',
           headers: {
             'content-type': 'application/json'
@@ -2252,6 +2253,35 @@
       saveError = caught instanceof Error ? caught.message : 'Could not save that Scout reply.';
     } finally {
       savingMessageId = null;
+    }
+  }
+
+  async function copyAssistantReply(message: ClawMessage) {
+    const text = messageDisplayText(message).trim();
+    if (!text) return;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.append(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+      }
+
+      copiedMessageId = message.id;
+      window.setTimeout(() => {
+        if (copiedMessageId === message.id) copiedMessageId = null;
+      }, 1600);
+    } catch (caught) {
+      console.error(caught);
+      saveError = caught instanceof Error ? caught.message : 'Could not copy that Scout reply.';
     }
   }
 
@@ -2559,6 +2589,9 @@
                   {#if message.model}<span>{message.model}</span>{/if}
                   {#if message.error}<span>error</span>{/if}
                   {#if message.role === 'assistant' && !message.error}
+                    <button type="button" onclick={() => copyAssistantReply(message)} aria-label="Copy Scout reply">
+                      {copiedMessageId === message.id ? 'Copied' : 'Copy'}
+                    </button>
                     {#if selectedTargetStandardSlot}
                       <button type="button" onclick={() => saveReplyAsDocument(message.id, targetStandardSlotKey || null)} disabled={savingMessageId === message.id || savedMessageIds.includes(message.id)}>
                         {savingMessageId === message.id ? 'Saving…' : savedMessageIds.includes(message.id) ? 'Saved' : `Save to ${selectedTargetStandardSlot.shortTitle}`}
@@ -2573,7 +2606,7 @@
                 </div>
                 {#if message.role === 'assistant' && !message.error && message.sourceReceipts?.length}
                   <div class="turn-source-chips message-source-chips" aria-label="Scout answer receipts">
-                    {#each message.sourceReceipts.slice(0, 6) as receipt (`message-${message.id}-${receipt.kind}-${receipt.label}`)}
+                    {#each message.sourceReceipts.slice(0, 6) as receipt, receiptIndex (`message-${message.id}-${receipt.kind}-${receipt.label}-${receiptIndex}`)}
                       <span>{receipt.label}: {receipt.status}</span>
                     {/each}
                   </div>
@@ -2595,7 +2628,7 @@
                     {#if turnPhase?.detail}<span>{turnPhase.detail}</span>{/if}
                     {#if activeTurnSourceReceipts.length > 0}
                       <div class="turn-source-chips" aria-label="Scout source receipts">
-                        {#each activeTurnSourceReceipts as receipt (`${receipt.kind}-${receipt.label}`)}
+                        {#each activeTurnSourceReceipts as receipt, receiptIndex (`${receipt.kind}-${receipt.label}-${receiptIndex}`)}
                           <span>{receipt.label}: {receipt.status}</span>
                         {/each}
                       </div>
@@ -2616,7 +2649,7 @@
                   {#if turnPhase?.detail}<small>{turnPhase.detail}</small>{/if}
                   {#if activeTurnSourceReceipts.length > 0}
                     <div class="turn-source-chips" aria-label="Scout source receipts">
-                      {#each activeTurnSourceReceipts as receipt (`checking-${receipt.kind}-${receipt.label}`)}
+                      {#each activeTurnSourceReceipts as receipt, receiptIndex (`checking-${receipt.kind}-${receipt.label}-${receiptIndex}`)}
                         <span>{receipt.label}: {receipt.status}</span>
                       {/each}
                     </div>
@@ -2798,7 +2831,7 @@
           <p class="brief-summary">{dailyBrief.summary}</p>
           {#if dailyBrief.sourceReceipts.length > 0}
             <div class="turn-source-chips brief-source-chips" aria-label="Daily brief source receipts">
-              {#each dailyBrief.sourceReceipts.slice(0, 3) as receipt (`brief-${receipt.label}`)}
+              {#each dailyBrief.sourceReceipts.slice(0, 3) as receipt, receiptIndex (`brief-${receipt.label}-${receiptIndex}`)}
                 <span>{receipt.label}: {receipt.status}</span>
               {/each}
             </div>

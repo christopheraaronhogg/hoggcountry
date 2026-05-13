@@ -12,7 +12,7 @@ import {
 } from '$lib/server/workspace-store';
 
 function clawRedirect(event: Parameters<RequestHandler>[0], params: Record<string, string>): never {
-  const nextUrl = new URL('/app/claw', event.url);
+  const nextUrl = new URL('/app/scout', event.url);
   for (const [key, value] of Object.entries(params)) {
     nextUrl.searchParams.set(key, value);
   }

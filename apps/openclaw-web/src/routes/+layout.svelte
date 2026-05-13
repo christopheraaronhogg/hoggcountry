@@ -62,7 +62,7 @@
   <div class="site-shell">
     <header class="site-header">
       <div class="container site-header-inner">
-        <a class="brand-lockup" href="/app/claw">
+        <a class="brand-lockup" href="/app/scout">
           <span class="brand-badge">HC</span>
           <span class="brand-copy">
             <span class="brand-title">Hogg Country</span>

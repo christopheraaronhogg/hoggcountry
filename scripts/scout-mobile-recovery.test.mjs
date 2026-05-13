@@ -7,15 +7,15 @@ const pageSource = readFileSync(
   'utf8'
 );
 
-test('Claw mobile resume recovery keeps active Scout turns recoverable', () => {
+test('Scout mobile resume recovery keeps active Scout turns recoverable', () => {
   assert.match(pageSource, /ACTIVE_REPLY_TURN_STORAGE_KEY = 'hoggcountry\.scout\.activeReplyTurn'/u);
   assert.match(pageSource, /rememberActiveReplyTurn\(turnId\);/u);
   assert.match(pageSource, /forgetStoredActiveReplyTurn\(turnId\);/u);
   assert.match(pageSource, /fetchScoutReplyTurnSnapshot\(turnId: string\)/u);
-  assert.match(pageSource, /\/app-api\/claw\/reply\/turn\?turnId=/u);
+  assert.match(pageSource, /\/app-api\/scout\/reply\/turn\?turnId=/u);
 });
 
-test('Claw mobile resume recovery listens for browser resume and reconnect signals', () => {
+test('Scout mobile resume recovery listens for browser resume and reconnect signals', () => {
   assert.match(pageSource, /window\.addEventListener\('pageshow', handlePageShow\)/u);
   assert.match(pageSource, /window\.addEventListener\('focus', handleFocus\)/u);
   assert.match(pageSource, /document\.addEventListener\('visibilitychange', handleVisibilityChange\)/u);

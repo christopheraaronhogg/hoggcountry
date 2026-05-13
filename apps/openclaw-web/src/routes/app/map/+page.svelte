@@ -116,7 +116,7 @@
         <span><strong>Sleep</strong><small>Pick conservative target</small></span>
         <span><strong>Bailout</strong><small>Road/town options</small></span>
       </div>
-      <form class="scout-handoff" action={resolve('/app/claw')} method="GET">
+      <form class="scout-handoff" action={resolve('/app/scout')} method="GET">
         <input type="hidden" name="prompt" value={corridorPrompt()} />
         <button class="primary-link" type="submit">Ask Scout about this stretch</button>
       </form>

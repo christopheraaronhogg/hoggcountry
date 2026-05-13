@@ -47,7 +47,7 @@
     </p>
   </div>
   <div class="subtle-actions">
-    <a class="btn btn-primary" href="/app/claw">Skip and ask Scout</a>
+    <a class="btn btn-primary" href="/app/scout">Skip and ask Scout</a>
     <a class="btn btn-ghost" href="/guide">Read Dad's guide</a>
   </div>
 </section>
@@ -161,6 +161,6 @@
     <button class="btn btn-secondary" type="submit" disabled={saving}>
       {saving ? 'Saving…' : 'Save what I know'}
     </button>
-    <a class="btn btn-ghost" href="/app/claw">Skip for now</a>
+    <a class="btn btn-ghost" href="/app/scout">Skip for now</a>
   </div>
 </form>

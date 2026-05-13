@@ -13,7 +13,7 @@
       icon: 'home'
     },
     {
-      href: '/app/claw',
+      href: '/app/scout',
       label: 'Plan',
       icon: 'plan'
     },
@@ -32,7 +32,7 @@
   function tabActive(href: string): boolean {
     const path = page.url.pathname;
     if (href === '/app') return path === '/app';
-    if (href === '/app/claw') return path.startsWith('/app/claw') || path.startsWith('/app/plan');
+    if (href === '/app/scout') return path === '/app/scout' || path.startsWith('/app/scout/') || path.startsWith('/app/claw') || path.startsWith('/app/plan');
     if (href === '/app/profile') return path.startsWith('/app/profile') || path.startsWith('/app/setup');
     return path.startsWith(href);
   }

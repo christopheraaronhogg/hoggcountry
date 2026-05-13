@@ -1276,6 +1276,25 @@ export async function createWorkspaceResource(
   readonly workspace: WorkspaceSnapshot;
   readonly resource: WorkspaceResource;
 }> {
+  return createWorkspaceResourceForActor(workspaceId, betaProfile, input, 'user');
+}
+
+async function createWorkspaceResourceForActor(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    kind: 'url' | 'note' | 'official-source';
+    title?: string | null;
+    sourceUri?: string | null;
+    text?: string | null;
+    sensitivity?: WorkspaceResourceSensitivity | null;
+    searchable?: boolean | null;
+  },
+  addedBy: WorkspaceResource['addedBy']
+): Promise<{
+  readonly workspace: WorkspaceSnapshot;
+  readonly resource: WorkspaceResource;
+}> {
   const record = await getWorkspaceRecord(workspaceId, betaProfile);
   const createdAt = nowIso();
   const kind = input.kind === 'official-source' || input.kind === 'url' ? input.kind : 'note';
@@ -1305,7 +1324,7 @@ export async function createWorkspaceResource(
     searchable: input.searchable !== false,
     extractedText: extractedText || null,
     summary: resourceSummary(extractedText || title),
-    addedBy: 'user',
+    addedBy,
     createdAt,
     updatedAt: createdAt
   };
@@ -1318,6 +1337,28 @@ export async function createWorkspaceResource(
   );
 
   return { workspace, resource };
+}
+
+export async function recordWorkspaceScoutResource(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    kind: 'url' | 'note' | 'official-source';
+    title?: string | null;
+    sourceUri?: string | null;
+    text?: string | null;
+    sensitivity?: WorkspaceResourceSensitivity | null;
+    searchable?: boolean | null;
+  }
+): Promise<{
+  readonly workspace: WorkspaceSnapshot;
+  readonly resource: WorkspaceResource;
+}> {
+  return createWorkspaceResourceForActor(workspaceId, betaProfile, {
+    ...input,
+    sensitivity: input.sensitivity ?? 'normal',
+    searchable: input.searchable ?? true
+  }, 'scout');
 }
 
 export async function deleteWorkspaceResource(

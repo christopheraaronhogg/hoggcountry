@@ -21,7 +21,7 @@ const OFFLINE_FALLBACK = `<!doctype html>
   <body>
     <main>
       <h1>Scout is offline</h1>
-      <p>Open /app or /app/claw after saving a field pack to use cached trail context. Live weather, web research, and cloud replies need service.</p>
+      <p>Open /app or /app/scout after saving a field pack to use cached trail context. Live weather, web research, and cloud replies need service.</p>
     </main>
   </body>
 </html>`;
@@ -30,6 +30,7 @@ const STATIC_ASSETS = [...build, ...files];
 const APP_RUNTIME_PATHS = [
   '/',
   '/app',
+  '/app/scout',
   '/app/claw',
   '/app/profile',
   '/app/resources',
@@ -38,6 +39,8 @@ const APP_RUNTIME_PATHS = [
   '/at-map',
   '/videos',
   '/app-api/workspace',
+  '/app-api/scout',
+  '/app-api/scout/daily-brief',
   '/app-api/claw',
   '/app-api/claw/daily-brief',
   '/app-api/offline-pack'

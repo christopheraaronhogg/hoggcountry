@@ -6,7 +6,7 @@ Hogg Country has three architecture tracks sharing one repository:
 
 1. **Content platform**
    - Astro static site for timeline, guide, tools, and marketing surfaces
-2. **OpenClaw web frontend**
+2. **Scout web frontend**
    - SvelteKit + SpacetimeDB patterns for Dad updates, Dad's guide, and the gated hiker workspace
 3. **Trail Assistant product**
    - Laravel-backed operational system for hiker support, safety, and future mobile experiences
@@ -21,7 +21,7 @@ The current shape is a content-rich public site, a new product-grade SvelteKit f
 - **Interactive client layer**
   - Svelte islands for targeted interactivity
   - future phone-first shell for Today / Plan / Coach / Town / Safety / Account
-- **OpenClaw web app layer**
+- **Scout web app layer**
   - SvelteKit layouts and routes in `apps/openclaw-web`
   - public Dad, guide, and marketing surfaces
   - gated `/app/*` workspace for setup, Today, manual, docs, and Scout
@@ -85,11 +85,11 @@ See `docs/plans/2026-05-12-scout-local-first-phone-ai.md` for the current end-go
 - guide chapters are generated from the master guide document
 - static pages are built by Astro and enhanced with Svelte only where needed
 
-### OpenClaw web app architecture
+### Scout web app architecture
 
 #### Primary app routes
 - `/`
-  - Dad updates + OpenClaw pitch
+  - Dad updates + Scout pitch
 - `/dad`
   - Dad overview and update cards
 - `/dad/map`
@@ -100,8 +100,10 @@ See `docs/plans/2026-05-12-scout-local-first-phone-ai.md` for the current end-go
   - Dad's field guide inside the SvelteKit app
 - `/guide/[slug]`
   - chapter routes
-- `/openclaw`
+- `/scout`
   - product pitch for the hiker workspace
+- `/openclaw`
+  - compatibility pitch route during the naming transition
 - `/signup`
   - lightweight beta gate
 - `/app/*`
@@ -110,11 +112,11 @@ See `docs/plans/2026-05-12-scout-local-first-phone-ai.md` for the current end-go
 #### State and data flow
 - public Dad/video/guide data is loaded through SvelteKit server utilities
 - product state is structured around SpacetimeDB tables/reducers and generated TypeScript bindings
-- user-facing assistant name is now `Scout`, but the working route and some internal code still remain on temporary `claw` names like `/app/claw` during the transition
-- `/app/claw` now persists cloud conversation state and pending fact candidates per workspace so strong turns can feed a reviewable trail-intelligence queue
+- user-facing assistant name is now `Scout`; `/app/scout` is the primary route while `/app/claw` and internal `claw*` names remain compatibility/migration debt
+- `/app/scout` persists cloud conversation state and pending fact candidates per workspace so strong turns can feed a reviewable trail-intelligence queue
 - the long-term Scout runtime should preserve this per-user state locally on the phone first, then sync when service returns, because AT usage often happens outside cell coverage
-- Scout can now save strong assistant replies into the workspace Docs locker as searchable markdown plan artifacts, and can revise those saved plans in place from the Scout screen, giving the product its first real chat-to-artifact-to-revision loop
-- `/app/claw` now also exposes a Dad field-pilot block that pulls the latest public Garmin fix and dispatch title into one-click Scout prompts, so plan quality can be pressure-tested against live trail context instead of only synthetic prompts
+- Resources are agent-collectable source material; Documents are user-controlled maintained artifacts that Scout drafts or revises only when the user explicitly asks or confirms
+- `/app/scout` also exposes a Dad field-pilot block that pulls the latest public Garmin fix and dispatch title into one-click Scout prompts, so plan quality can be pressure-tested against live trail context instead of only synthetic prompts
 - local device persistence still exists where offline manual/doc access matters
 - Dad's field guide remains authored from `MASTER_NOBO_FIELD_GUIDE.md` and is reused by Astro and SvelteKit
 

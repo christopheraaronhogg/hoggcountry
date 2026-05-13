@@ -37,7 +37,7 @@ export const actions: Actions = {
       }
 
       cookies.set(BETA_COOKIE, encodeBetaProfile(profile), betaCookieOptions(url));
-      throw redirect(303, '/app/claw');
+      throw redirect(303, '/app/scout');
     }
 
     if (passcode !== SCOUT_BETA_PASSCODE) {
@@ -67,6 +67,6 @@ export const actions: Actions = {
       betaCookieOptions(url)
     );
 
-    throw redirect(303, '/app/claw');
+    throw redirect(303, '/app/scout');
   }
 };

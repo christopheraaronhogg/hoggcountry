@@ -234,7 +234,7 @@
     try {
       const [workspacePayload, clawPayload, dadPayload] = await Promise.all([
         jsonOrThrow(await fetch('/app-api/workspace', { cache: 'no-store' })),
-        jsonOrThrow(await fetch('/app-api/claw', { cache: 'no-store' })),
+        jsonOrThrow(await fetch('/app-api/scout', { cache: 'no-store' })),
         fetch('/app-api/dad', { cache: 'no-store' })
           .then((response) => (response.ok ? response.json() : null))
           .catch(() => null)
@@ -263,7 +263,7 @@
 
     try {
       const payload = await jsonOrThrow(
-        await fetch('/app-api/claw/connect/openai-codex/start', {
+        await fetch('/app-api/scout/connect/openai-codex/start', {
           method: 'POST'
         })
       );
@@ -291,7 +291,7 @@
 
     try {
       await jsonOrThrow(
-        await fetch('/app-api/claw/connect/openai-codex/complete', {
+        await fetch('/app-api/scout/connect/openai-codex/complete', {
           method: 'POST',
           headers: {
             'content-type': 'application/json'
@@ -324,7 +324,7 @@
 
     try {
       await jsonOrThrow(
-        await fetch('/app-api/claw/connect/openai-codex/disconnect', {
+        await fetch('/app-api/scout/connect/openai-codex/disconnect', {
           method: 'POST'
         })
       );
@@ -370,7 +370,7 @@
 
     try {
       const payload = await jsonOrThrow(
-        await fetch('/app-api/claw/reply', {
+        await fetch('/app-api/scout/reply', {
           method: 'POST',
           headers: {
             'content-type': 'application/json'
@@ -414,7 +414,7 @@
 
     try {
       const payload = await jsonOrThrow(
-        await fetch('/app-api/claw/save-document', {
+        await fetch('/app-api/scout/save-document', {
           method: 'POST',
           headers: {
             'content-type': 'application/json'
@@ -465,7 +465,7 @@
     <h1>{variant.title}</h1>
     <p class="lede">{variant.summary}</p>
     <div class="subtle-actions" style="margin-top:0.9rem;">
-      <a class="btn btn-ghost" href="/app/claw">Back to current Scout</a>
+      <a class="btn btn-ghost" href="/app/scout">Back to current Scout</a>
       <a class="btn btn-secondary" href="/app/docs">Open Docs locker</a>
     </div>
   </div>

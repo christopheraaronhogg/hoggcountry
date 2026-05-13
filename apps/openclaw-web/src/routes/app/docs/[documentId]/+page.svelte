@@ -152,7 +152,7 @@
     <nav class="artifact-toolbar" aria-label="Document actions">
       <a class="toolbar-back" href="/app/docs">← Docs</a>
       <strong>{document.title}</strong>
-      <a class="btn btn-secondary" href={`/app/claw?documentId=${encodeURIComponent(document.id)}&documentAction=review`}>Ask Scout</a>
+      <a class="btn btn-secondary" href={`/app/scout?documentId=${encodeURIComponent(document.id)}&documentAction=review`}>Ask Scout</a>
     </nav>
 
     <section class="document-hero">
@@ -208,7 +208,7 @@
           <p class="eyebrow">Scout workflow</p>
           <h2>{slotForDocument(document) ? 'Keep the standard doc current.' : document.rights === 'assistant-generated' ? 'Revise without losing history.' : 'Use as private context.'}</h2>
           <p class="muted">{workflowCopy(document)}</p>
-          <a class="btn btn-secondary" href={`/app/claw?documentId=${encodeURIComponent(document.id)}&documentAction=review`}>
+          <a class="btn btn-secondary" href={`/app/scout?documentId=${encodeURIComponent(document.id)}&documentAction=review`}>
             {document.rights === 'assistant-generated' ? 'Revise with Scout' : 'Ask Scout about this'}
           </a>
         </section>

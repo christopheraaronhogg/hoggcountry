@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") svelte-kit dev --host",
+    "dev": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") vite dev --host 0.0.0.0",
     "build": "svelte-kit sync && vite build",
     "build:node": "OPENCLAW_WEB_ADAPTER=node svelte-kit sync && vite build",
     "preview": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") vite preview --host",

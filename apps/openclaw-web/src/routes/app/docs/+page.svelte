@@ -180,7 +180,7 @@
     <div class="hero-actions">
       <button class="btn btn-secondary" type="button" onclick={handleNewExtraDocument}>New doc</button>
       <a class="btn btn-ghost" href="/app/resources">Add resource</a>
-      <a class="btn btn-ghost" href="/app/claw">Ask Scout</a>
+      <a class="btn btn-ghost" href="/app/scout">Ask Scout</a>
     </div>
   </div>
 
@@ -280,9 +280,9 @@
         <div class="artifact-actions">
           {#if doc}
             <a class="btn btn-secondary" href={`/app/docs/${encodeURIComponent(doc.id)}`}>Review</a>
-            <a class="btn btn-ghost" href={`/app/claw?documentId=${encodeURIComponent(doc.id)}&documentAction=review`}>Revise</a>
+            <a class="btn btn-ghost" href={`/app/scout?documentId=${encodeURIComponent(doc.id)}&documentAction=review`}>Revise</a>
           {:else}
-            <a class="btn btn-secondary" href={`/app/claw?standardDocSlot=${encodeURIComponent(slot.key)}&documentAction=draft`}>{slot.emptyCta}</a>
+            <a class="btn btn-secondary" href={`/app/scout?standardDocSlot=${encodeURIComponent(slot.key)}&documentAction=draft`}>{slot.emptyCta}</a>
           {/if}
         </div>
       </article>
@@ -357,7 +357,7 @@
 
           <div class="artifact-actions">
             <a class="btn btn-secondary" href={`/app/docs/${encodeURIComponent(doc.id)}`}>Review</a>
-            <a class="btn btn-ghost" href={`/app/claw?documentId=${encodeURIComponent(doc.id)}&documentAction=review`}>Ask Scout</a>
+            <a class="btn btn-ghost" href={`/app/scout?documentId=${encodeURIComponent(doc.id)}&documentAction=review`}>Ask Scout</a>
             <button class="btn btn-ghost danger-button" type="button" onclick={() => handleDelete(doc)}>Delete</button>
           </div>
         </article>

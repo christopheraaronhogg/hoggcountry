@@ -45,7 +45,7 @@ async function request(path, init = {}) {
     redirect: 'manual',
     ...init,
     headers: {
-      'user-agent': 'hoggcountry-openclaw-field-verify/1.0',
+      'user-agent': 'hoggcountry-scout-field-verify/1.0',
       ...(init.headers ?? {})
     }
   });
@@ -90,7 +90,7 @@ const chrisLogin = await postLogin('chris', '0721');
 const chrisCookie = cookiePair(chrisLogin.setCookies);
 const chrisAttrs = cookieAttributes(chrisLogin.setCookies);
 if (chrisLogin.status !== 303) problems.push(`Chris login expected 303, got ${chrisLogin.status}`);
-if (chrisLogin.headers.location !== '/app/claw') problems.push(`Chris login expected /app/claw redirect, got ${chrisLogin.headers.location ?? 'none'}`);
+if (chrisLogin.headers.location !== '/app/scout') problems.push(`Chris login expected /app/scout redirect, got ${chrisLogin.headers.location ?? 'none'}`);
 if (!chrisCookie) problems.push('Chris login did not set hogg_beta_profile cookie');
 if (!chrisAttrs.includes('httponly')) problems.push('Chris login cookie missing HttpOnly');
 if (!chrisAttrs.includes('samesite=lax')) problems.push('Chris login cookie missing SameSite=Lax');
@@ -103,14 +103,21 @@ if (!dadCookie) problems.push('Dad login did not set hogg_beta_profile cookie');
 if (chrisCookie && dadCookie && chrisCookie === dadCookie) problems.push('Chris and Dad resolved to the same beta cookie');
 
 if (chrisCookie) {
-  const app = await request('/app/claw', {
+  const app = await request('/app/scout', {
     headers: {
       cookie: chrisCookie
     }
   });
-  if (app.status !== 200) problems.push(`Chris /app/claw expected 200, got ${app.status}`);
-  if (!/Scout beta/u.test(app.text)) problems.push('Chris /app/claw missing Scout beta app marker');
-  if (!/Chris/u.test(app.text)) problems.push('Chris /app/claw missing Chris workspace marker');
+  if (app.status !== 200) problems.push(`Chris /app/scout expected 200, got ${app.status}`);
+  if (!/Scout beta/u.test(app.text)) problems.push('Chris /app/scout missing Scout beta app marker');
+  if (!/Chris/u.test(app.text)) problems.push('Chris /app/scout missing Chris workspace marker');
+
+  const legacyApp = await request('/app/claw', {
+    headers: {
+      cookie: chrisCookie
+    }
+  });
+  if (legacyApp.status !== 200) problems.push(`Legacy /app/claw expected 200, got ${legacyApp.status}`);
 
   const logout = await request('/app/logout', {
     headers: {
@@ -140,9 +147,9 @@ const summary = {
 if (options.json) {
   console.log(JSON.stringify(summary, null, 2));
 } else if (summary.ok) {
-  console.log(`OpenClaw field readiness OK for ${baseUrl}`);
+  console.log(`Scout field readiness OK for ${baseUrl}`);
 } else {
-  console.error(`OpenClaw field readiness failed for ${baseUrl}`);
+  console.error(`Scout field readiness failed for ${baseUrl}`);
   for (const problem of problems) console.error(`- ${problem}`);
 }
 

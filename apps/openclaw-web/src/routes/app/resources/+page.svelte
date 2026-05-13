@@ -142,7 +142,7 @@
     </p>
     <div class="hero-actions">
       <a class="btn btn-secondary" href={resolve('/app/docs')}>Open Docs</a>
-      <a class="btn btn-ghost" href={resolve('/app/claw')}>Ask Scout</a>
+      <a class="btn btn-ghost" href={resolve('/app/scout')}>Ask Scout</a>
       <a class="btn btn-ghost" href={resolve('/app/settings/skills')}>Scout Skills</a>
     </div>
   </div>
@@ -183,7 +183,7 @@
     <a class="btn btn-secondary" href={resolve('/guide/manual-builder/?tab=scripture')}>Search Field Manual</a>
     <a class="btn btn-ghost" href={resolve('/kjv-pce.md')}>Open Markdown</a>
     <a class="btn btn-ghost" href={resolve('/app/settings/skills')}>Skill settings</a>
-    <a class="btn btn-ghost" href={resolve('/app/claw')}>Ask Scout</a>
+    <a class="btn btn-ghost" href={resolve('/app/scout')}>Ask Scout</a>
   </div>
 </section>
 
@@ -285,8 +285,8 @@
           {/if}
           <p class="meta-line">Updated {updatedAt(resource)}</p>
           <div class="artifact-actions">
-            <a class="btn btn-secondary" href={resolve(`/app/claw?resourceId=${encodeURIComponent(resource.id)}`)}>Ask Scout</a>
-            <a class="btn btn-ghost" href={resolve(`/app/claw?resourceId=${encodeURIComponent(resource.id)}&resourceAction=document`)}>Draft Doc</a>
+            <a class="btn btn-secondary" href={resolve(`/app/scout?resourceId=${encodeURIComponent(resource.id)}`)}>Ask Scout</a>
+            <a class="btn btn-ghost" href={resolve(`/app/scout?resourceId=${encodeURIComponent(resource.id)}&resourceAction=document`)}>Draft Doc</a>
             <button class="btn btn-ghost danger-button" type="button" onclick={() => handleDelete(resource)}>Delete</button>
           </div>
         </article>

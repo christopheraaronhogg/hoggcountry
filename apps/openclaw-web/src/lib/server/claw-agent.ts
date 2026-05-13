@@ -6,7 +6,8 @@ import {
   searchWorkspaceTools,
   type ImportedDocument,
   type SearchHit,
-  type WorkspaceResource
+  type WorkspaceResource,
+  type WorkspaceResourceSensitivity
 } from '@hoggcountry/manual-core';
 import { publicCorpus, searchPublicCorpus } from '@hoggcountry/corpus';
 import { searchKjvPce } from '@hoggcountry/corpus/kjv-pce';
@@ -39,6 +40,7 @@ import {
 import {
   appendWorkspaceFactCandidates,
   getWorkspaceRecord,
+  recordWorkspaceScoutResource,
   replaceWorkspaceClawMessages,
   reviseWorkspaceScoutDocument,
   saveWorkspaceOpenAICodexConnection,
@@ -67,7 +69,7 @@ import {
   renderCurrentDatetime,
   type CurrentDatetimeDetails
 } from './scout-date-authority';
-import { renderWebResearchResult, researchWeb, shouldPreloadWebResearchForPrompt, type WebResearchDetails } from './scout-web-research';
+import { assertPublicResearchUrl, renderWebResearchResult, researchWeb, shouldPreloadWebResearchForPrompt, type WebResearchDetails } from './scout-web-research';
 
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
 export { buildCurrentDateAuthority, buildCurrentDatetimeDetails } from './scout-date-authority';
@@ -193,6 +195,28 @@ interface ScoutSegmentPlanDetails {
 
 interface ScoutWebResearchToolDetails extends WebResearchDetails {}
 
+interface ScoutRecordedResourceDetails {
+  readonly resourceId: string;
+  readonly title: string;
+  readonly kind: WorkspaceResource['kind'];
+  readonly sourceUri: string | null;
+  readonly addedBy: WorkspaceResource['addedBy'];
+  readonly createdAt: string;
+}
+
+interface ScoutResourceRecordInput {
+  readonly kind: 'url' | 'note' | 'official-source';
+  readonly title: string;
+  readonly sourceUri?: string | null;
+  readonly text: string;
+  readonly sensitivity?: WorkspaceResourceSensitivity | null;
+}
+
+interface RecordedScoutResourceReceipt {
+  readonly receipt: WorkspaceClawSourceReceipt;
+  readonly resource: ScoutRecordedResourceDetails;
+}
+
 const SCOUT_SOURCE_CATALOG_PARAMETERS = Type.Object({
   query: Type.String({
     minLength: 2,
@@ -231,6 +255,43 @@ const WEB_RESEARCH_PARAMETERS = Type.Object({
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 5, description: 'Maximum web results to return.' })),
   fetchPages: Type.Optional(Type.Boolean({
     description: 'Fetch readable page excerpts for returned search results. Defaults to true.'
+  }))
+});
+
+const RECORD_RESOURCE_PARAMETERS = Type.Object({
+  title: Type.String({
+    minLength: 2,
+    maxLength: 180,
+    description: 'Short title for the source material to save in Scout Resources.'
+  }),
+  kind: Type.Optional(Type.Union([Type.Literal('url'), Type.Literal('note'), Type.Literal('official-source')], {
+    description: 'Resource kind. Use official-source for NWS, ATC, NPS, land-manager, permit, or other official source material.'
+  })),
+  sourceUri: Type.Optional(Type.String({
+    maxLength: 600,
+    description: 'Public URL for the source, when one exists.'
+  })),
+  excerpt: Type.String({
+    minLength: 1,
+    maxLength: 2400,
+    description: 'Short excerpt, summary, or metadata to preserve. Do not include full page dumps.'
+  }),
+  fetchedAt: Type.Optional(Type.String({
+    maxLength: 80,
+    description: 'ISO timestamp or source freshness label for when this information was fetched or observed.'
+  })),
+  reason: Type.Optional(Type.String({
+    maxLength: 240,
+    description: 'Brief reason this source will help Scout assist this hiker later.'
+  })),
+  sensitivity: Type.Optional(Type.Union([
+    Type.Literal('normal'),
+    Type.Literal('private'),
+    Type.Literal('sensitive'),
+    Type.Literal('financial'),
+    Type.Literal('medical')
+  ], {
+    description: 'Sensitivity for the saved resource. Public web and official sources should usually be normal.'
   }))
 });
 
@@ -918,7 +979,86 @@ function buildWebResearchTool(): AgentTool<typeof WEB_RESEARCH_PARAMETERS, Scout
   };
 }
 
-function buildScoutAgentTools(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): AgentTool<any, any>[] {
+function normalizeScoutResourceKind(value: unknown, sourceUri: string | null): ScoutResourceRecordInput['kind'] {
+  if (value === 'official-source' || value === 'url' || value === 'note') return value;
+  return sourceUri ? 'url' : 'note';
+}
+
+function normalizeScoutResourceSensitivity(value: unknown): WorkspaceResourceSensitivity {
+  return value === 'normal' || value === 'private' || value === 'sensitive' || value === 'financial' || value === 'medical'
+    ? value
+    : 'normal';
+}
+
+function buildRecordedResourceText(input: {
+  readonly excerpt: string;
+  readonly sourceUri: string | null;
+  readonly fetchedAt?: string | null;
+  readonly reason?: string | null;
+}): string {
+  return [
+    input.sourceUri ? `Source URL: ${input.sourceUri}` : null,
+    input.fetchedAt ? `Fetched/observed: ${input.fetchedAt}` : null,
+    input.reason ? `Why Scout saved this: ${input.reason}` : null,
+    '',
+    input.excerpt.trim()
+  ].filter((line): line is string => line !== null).join('\n').trim();
+}
+
+function buildRecordResourceTool(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): AgentTool<typeof RECORD_RESOURCE_PARAMETERS, ScoutRecordedResourceDetails> {
+  return {
+    name: 'record_resource',
+    label: 'Record Scout resource',
+    description: 'Saves useful source material into the current user Resources locker for long-term Scout assistance. Use for public web, weather, official-source, hostel, shuttle, town-service, or hiker-provided source notes worth retaining. Do not use this for maintained Docs; for Docs, draft the proposed update and ask the user to save or confirm.',
+    parameters: RECORD_RESOURCE_PARAMETERS,
+    executionMode: 'parallel',
+    async execute(_toolCallId, params) {
+      const rawSourceUri = typeof params.sourceUri === 'string' && params.sourceUri.trim() ? params.sourceUri.trim() : null;
+      const sourceUri = rawSourceUri ? assertPublicResearchUrl(rawSourceUri).toString() : null;
+      const kind = sourceUri ? normalizeScoutResourceKind(params.kind, sourceUri) : 'note';
+      const text = buildRecordedResourceText({
+        excerpt: params.excerpt,
+        sourceUri,
+        fetchedAt: params.fetchedAt ?? null,
+        reason: params.reason ?? null
+      });
+      const { resource } = await recordWorkspaceScoutResource(workspaceId, betaProfile, {
+        kind,
+        title: params.title,
+        sourceUri,
+        text,
+        sensitivity: normalizeScoutResourceSensitivity(params.sensitivity),
+        searchable: true
+      });
+      const details: ScoutRecordedResourceDetails = {
+        resourceId: resource.id,
+        title: resource.title,
+        kind: resource.kind,
+        sourceUri: resource.sourceUri ?? null,
+        addedBy: resource.addedBy,
+        createdAt: resource.createdAt
+      };
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Recorded Scout resource "${resource.title}" in Resources. Resource id: ${resource.id}.`
+        }],
+        details
+      };
+    }
+  };
+}
+
+function buildScoutAgentTools(
+  record: WorkspaceRecord,
+  dadPilotSummary: DadPilotSummary | null,
+  workspaceId: string,
+  betaProfile: BetaProfileCookie
+): AgentTool<any, any>[] {
   return [
     buildCurrentDatetimeTool(),
     buildResolveLocationTool(record, dadPilotSummary),
@@ -928,7 +1068,8 @@ function buildScoutAgentTools(record: WorkspaceRecord, dadPilotSummary: DadPilot
     buildScoutSourceCatalogTool(record),
     buildScoutSourceSearchTool(record, dadPilotSummary),
     skillEnabled(record, 'web-research') ? buildWebResearchTool() : null,
-    skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(record, dadPilotSummary) : null
+    skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(record, dadPilotSummary) : null,
+    buildRecordResourceTool(workspaceId, betaProfile)
   ].filter((tool): tool is AgentTool<any, any> => tool !== null);
 }
 
@@ -1241,6 +1382,11 @@ function promptAsksForWeather(prompt: string): boolean {
   return /\b(weather(?:\s+report)?|forecast|rain|showers?|storm|thunder|lightning|temperature|temps?|wind|snow|ice|cold|heat|humid|humidity|flood)\b/iu.test(prompt);
 }
 
+function promptExplicitlyRequestsDocumentRevision(prompt: string): boolean {
+  return /\b(update|revise|rewrite|edit|refresh|keep|save|add|put|write)\b[\s\S]{0,120}\b(doc|docs|document|plan|brief|profile|notes?|resupply|loadout)\b/iu.test(prompt)
+    || /\b(doc|docs|document|plan|brief|profile|notes?|resupply|loadout)\b[\s\S]{0,120}\b(update|revise|rewrite|edit|refresh|save|add|put|write)\b/iu.test(prompt);
+}
+
 function shouldPreloadOfficialTrailSources(prompt: string): boolean {
   return promptAsksForWeather(prompt) || /\b(alert|closure|closed|detour|reroute|burn ban|bear|24 hours|daily trail brief|go\/no-go)\b/iu.test(prompt);
 }
@@ -1444,6 +1590,141 @@ function buildWebResearchReceipts(details: WebResearchDetails): WorkspaceClawSou
   return receipts;
 }
 
+function resourceInputsFromWebResearch(details: WebResearchDetails): ScoutResourceRecordInput[] {
+  return details.results.slice(0, 3).map((result) => ({
+    kind: 'url',
+    title: `Web research: ${result.title}`,
+    sourceUri: result.url,
+    sensitivity: 'normal',
+    text: [
+      `Provider: ${details.provider}`,
+      `Query: ${details.query}`,
+      `Fetched: ${details.fetchedAt}`,
+      `Domain: ${result.domain}`,
+      result.snippet ? `Snippet: ${result.snippet}` : null,
+      result.page?.excerpt ? `Page excerpt: ${excerpt(result.page.excerpt, 900)}` : null,
+      result.page?.error ? `Page fetch error: ${result.page.error}` : null
+    ].filter((line): line is string => Boolean(line)).join('\n')
+  }));
+}
+
+function resourceInputsFromOfficialSources(details: OfficialTrailSourceCheckDetails): ScoutResourceRecordInput[] {
+  const resources: ScoutResourceRecordInput[] = [];
+
+  if (details.weather) {
+    const weather = details.weather;
+    resources.push({
+      kind: 'official-source',
+      title: `NWS weather: ${weather.label}`,
+      sourceUri: weather.forecastUrl ?? weather.pointUrl,
+      sensitivity: 'normal',
+      text: [
+        `Provider: National Weather Service`,
+        `Query: ${details.query}`,
+        `Fetched: ${details.fetchedAt}`,
+        `Point: ${weather.latitude.toFixed(4)}, ${weather.longitude.toFixed(4)}`,
+        weather.forecastUpdatedAt ? `Forecast updated: ${weather.forecastUpdatedAt}` : null,
+        weather.periods.length > 0
+          ? `Forecast periods:\n${weather.periods.slice(0, 5).map((period) => `- ${period.name}: ${period.temperature}; ${period.wind}; ${period.shortForecast}. ${excerpt(period.detailedForecast, 220)}`).join('\n')}`
+          : 'Forecast periods: none returned.',
+        weather.alerts.length > 0
+          ? `Active alerts:\n${weather.alerts.slice(0, 4).map((alert) => `- ${alert.event}${alert.severity ? ` (${alert.severity})` : ''}: ${alert.headline}`).join('\n')}`
+          : 'Active alerts: none returned for this point.'
+      ].filter((line): line is string => Boolean(line)).join('\n')
+    });
+  }
+
+  for (const update of details.atcUpdates.slice(0, 3)) {
+    resources.push({
+      kind: 'official-source',
+      title: `ATC Trail Update: ${update.title}`,
+      sourceUri: update.href,
+      sensitivity: 'normal',
+      text: [
+        'Provider: Appalachian Trail Conservancy Trail Updates',
+        `Query: ${details.query}`,
+        `Fetched: ${details.fetchedAt}`,
+        update.publishedAt ? `Published: ${update.publishedAt}` : null,
+        update.modifiedAt ? `Modified: ${update.modifiedAt}` : null,
+        update.meta ? `Meta: ${update.meta}` : null,
+        update.excerpt ? `Excerpt: ${excerpt(update.excerpt, 900)}` : null
+      ].filter((line): line is string => Boolean(line)).join('\n')
+    });
+  }
+
+  return resources;
+}
+
+function resourceInputsFromToolResult(toolName: string, result: unknown, isError: boolean): ScoutResourceRecordInput[] {
+  if (isError) return [];
+  const details = detailRecord(result);
+  if (!details) return [];
+
+  if (toolName === 'research_web') {
+    return resourceInputsFromWebResearch(details as unknown as WebResearchDetails);
+  }
+
+  if (toolName === 'check_official_trail_sources') {
+    return resourceInputsFromOfficialSources(details as unknown as OfficialTrailSourceCheckDetails);
+  }
+
+  if ((toolName === 'get_weather_forecast' || toolName === 'get_weather_alerts') && details.official && typeof details.official === 'object') {
+    return resourceInputsFromOfficialSources(details.official as OfficialTrailSourceCheckDetails);
+  }
+
+  return [];
+}
+
+function addUniqueScoutResourceInputs(target: ScoutResourceRecordInput[], inputs: readonly ScoutResourceRecordInput[]) {
+  for (const input of inputs) {
+    const key = `${input.kind}:${input.sourceUri ?? ''}:${input.title}`;
+    if (target.some((existing) => `${existing.kind}:${existing.sourceUri ?? ''}:${existing.title}` === key)) continue;
+    target.push(input);
+  }
+}
+
+async function recordScoutResourceInputs(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  inputs: readonly ScoutResourceRecordInput[]
+): Promise<RecordedScoutResourceReceipt[]> {
+  const uniqueInputs: ScoutResourceRecordInput[] = [];
+  addUniqueScoutResourceInputs(uniqueInputs, inputs);
+  const recorded: RecordedScoutResourceReceipt[] = [];
+
+  for (const input of uniqueInputs.slice(0, 4)) {
+    try {
+      const { resource } = await recordWorkspaceScoutResource(workspaceId, betaProfile, {
+        kind: input.kind,
+        title: input.title,
+        sourceUri: input.sourceUri ?? null,
+        text: input.text,
+        sensitivity: input.sensitivity ?? 'normal',
+        searchable: true
+      });
+      recorded.push({
+        resource: {
+          resourceId: resource.id,
+          title: resource.title,
+          kind: resource.kind,
+          sourceUri: resource.sourceUri ?? null,
+          addedBy: resource.addedBy,
+          createdAt: resource.createdAt
+        },
+        receipt: {
+          label: 'Resource recorded',
+          status: `${resource.title}; ${resource.id}; added by Scout`,
+          kind: 'resource'
+        }
+      });
+    } catch (error) {
+      console.error('Failed to record Scout resource', error);
+    }
+  }
+
+  return recorded;
+}
+
 function textFromToolResult(result: unknown): string {
   if (!result || typeof result !== 'object') return '';
   const content = (result as { content?: unknown }).content;
@@ -1518,6 +1799,14 @@ function buildToolExecutionReceipts(toolName: string, result: unknown, isError: 
     }];
   }
 
+  if (toolName === 'record_resource' && details) {
+    return [{
+      label: 'Resource recorded',
+      status: `${typeof details.title === 'string' ? details.title : 'Scout resource'}; ${typeof details.resourceId === 'string' ? details.resourceId : 'saved'}; added by Scout`,
+      kind: 'resource'
+    }];
+  }
+
   if (toolName === 'plan_segment' && details) {
     const grounding = details.grounding && typeof details.grounding === 'object' ? details.grounding as { source?: { label?: unknown }, corridor?: unknown[] } : null;
     return [{
@@ -1574,10 +1863,11 @@ interface ExecutedOpenCodeGoToolCall extends PlannedOpenCodeGoToolCall {
 interface OpenCodeGoToolRunPayload {
   readonly context: string;
   readonly receipts: readonly WorkspaceClawSourceReceipt[];
+  readonly resourceInputs: readonly ScoutResourceRecordInput[];
 }
 
 function shouldRunOpenCodeGoToolPlanner(prompt: string): boolean {
-  return /\b(use .*tool|get_current_datetime|resolve_location|get_weather|weather|forecast|alerts?|plan|segment|route|mile|location|where am i|today|tomorrow|tonight|current|latest|source|sources|search|research|web|internet|look\s+up|closure|closed|detour|reroute|permit|camping|water|hostel|shuttle|hours?)\b/iu.test(prompt);
+  return /\b(use .*tool|get_current_datetime|resolve_location|get_weather|weather|forecast|alerts?|plan|segment|route|mile|location|where am i|today|tomorrow|tonight|current|latest|source|sources|search|research|web|internet|look\s+up|closure|closed|detour|reroute|permit|camping|water|hostel|shuttle|hours?|record|remember|save|resource)\b/iu.test(prompt);
 }
 
 function renderToolParametersForPrompt(tool: AgentTool<any, any>): string {
@@ -1673,6 +1963,14 @@ function fallbackOpenCodeGoToolPlan(prompt: string, tools: readonly AgentTool<an
       args = { query: prompt, limit: 3, fetchPages: true };
     } else if (tool.name === 'check_official_trail_sources') {
       args = { query: prompt, source: 'auto', useProfileLocation: true };
+    } else if (tool.name === 'record_resource') {
+      args = {
+        title: 'Scout note from conversation',
+        kind: 'note',
+        excerpt: prompt,
+        reason: 'The hiker explicitly asked Scout to record or remember this information.',
+        sensitivity: 'private'
+      };
     } else {
       args = {};
     }
@@ -1832,6 +2130,7 @@ async function buildOpenCodeGoToolRunPayload(
         '- Route shape, segment mileage, or day logistics: use plan_segment.',
         '- Source availability, private docs, or Scout evidence lane questions: use catalog_scout_sources and/or search_scout_sources.',
         '- General current public web facts not covered by weather/trail official tools: use research_web.',
+        '- Durable source material worth keeping: use record_resource. Never use it to update maintained Docs.',
         'Use profile/default location only when the user asks about the hiker\'s current area and no explicit place is present.',
         'JSON schema: {"toolCalls":[{"name":"tool_name","arguments":{},"reason":"short reason"}]}',
         'Return {"toolCalls":[]} when no tool is needed.'
@@ -1876,13 +2175,16 @@ async function buildOpenCodeGoToolRunPayload(
   if (executedCalls.length === 0) return null;
 
   const receipts: WorkspaceClawSourceReceipt[] = [];
+  const resourceInputs: ScoutResourceRecordInput[] = [];
   for (const call of executedCalls) {
     addUniqueSourceReceipts(receipts, buildToolExecutionReceipts(call.name, call.result, call.isError));
+    addUniqueScoutResourceInputs(resourceInputs, resourceInputsFromToolResult(call.name, call.result, call.isError));
   }
 
   return {
     context: renderOpenCodeGoToolRunContext(executedCalls),
-    receipts
+    receipts,
+    resourceInputs
   };
 }
 
@@ -2141,6 +2443,10 @@ function buildSystemPrompt(
       : officialSourcesEnabled
         ? 'This runtime may provide preloaded official-source context instead of live tool calls; never imply live certainty beyond the named preloaded sources.'
         : 'Official Trail Sources skill is disabled for this workspace; do not call or imply official live-source retrieval unless the user asks to enable that skill.',
+    liveToolsAvailable
+      ? 'You also have a record_resource tool. Use it to save source material, links, excerpts, weather/official receipts, or useful hiker-provided notes into Resources for long-term assistance. Resources are source material and may be deleted by the user.'
+      : 'This runtime may auto-save fetched source metadata into Resources. Treat Resources as source material, not maintained Docs.',
+    'Documents are user-controlled maintained artifacts. Do not silently create, replace, or revise Docs. If a Doc should change, draft the proposed update in the reply and ask the user to save or confirm, unless the user explicitly asked Scout to update/revise that document in this turn.',
     'Claim gating: current datetime/date labels must come from the injected Current date authority or get_current_datetime only. Current/future weather, active alerts, and “no alerts” claims must come from get_weather_forecast, get_weather_alerts, check_official_trail_sources, or preloaded official-source context from this turn. If that evidence is missing, answer with the missing-source caveat and no forecast specifics.',
     'General current internet claims must come from research_web, a supplied user source, private workspace context, or preloaded source context. Cite source title, URL, and fetchedAt when using web research. For weather and safety-sensitive AT conditions, prefer get_weather_forecast/get_weather_alerts/check_official_trail_sources over general web search.',
     'For weather, closures, water reliability, and same-day town logistics, do not pretend to have live certainty unless a source was actually supplied. Do not say “fetched just now,” “NWS says,” or similar unless get_weather_forecast, get_weather_alerts, check_official_trail_sources, or preloaded official-source context returned that exact source this turn. If the tool/source is missing, say what is missing instead of filling the gap.',
@@ -2157,6 +2463,7 @@ function buildSystemPrompt(
     'For current-position questions, use the hiker profile current mile and its updatedAt timestamp as the first location signal. If the mile is 0/unset, stale, or does not match the question, ask the hiker to tap the current-location/GPS button or send the road crossing/AT mile; do not guess where they are.',
     scoutSourceContext,
     'Treat saved assistant-generated documents as living Scout documents, not one-off files. The user wants Scout to keep them current through conversation.',
+    'When the user has not explicitly requested a Doc write, present document-ready content and use language like “save this to Docs if it looks right” rather than implying it has already been written.',
     'When asked for a plan, prefer a compact artifact with current snapshot, assumptions, day-by-day or category breakdown, concrete next actions, and missing intel that would tighten the answer.',
     'For real-world AT planning, keep the tone natural. Use the dependable safety skeleton as coverage, not rigid headings: recommendation, route/day shape, mileage targets, logistics/parking/shuttle, water, weather, legal overnight/camping when relevant, bailout, final checklist, and source receipts or missing-source caveats.',
     'When revising a saved document, preserve useful existing structure, update stale facts, add a brief change-history note, and return the full revised document body.',
@@ -2171,8 +2478,8 @@ function buildSystemPrompt(
         : activeDocument.rights === 'assistant-generated'
         ? [
             `Active saved plan title: ${activeDocument.title}`,
-            'The user is asking you to revise that saved plan in place.',
-            'Return the full revised plan, not commentary about what changed.',
+            'The user is asking with this saved plan attached as context.',
+            'If the user explicitly asked to update or revise this saved plan, return the full revised plan. Otherwise, answer using it as context and ask the user to save or confirm before treating your draft as a Docs update.',
             `Current saved plan:\n${activeDocument.textContent}`
           ].join('\n')
         : [
@@ -2453,7 +2760,7 @@ export async function replyInWorkspaceClaw(
   const dateAuthority = buildCurrentDatetimeDetails();
   const turnDeadline = Date.now() + SCOUT_AGENT_TURN_TIMEOUT_MS;
   const toolSourceReceipts: WorkspaceClawSourceReceipt[] = [];
-  const agentTools = buildScoutAgentTools(record, dadPilotSummary);
+  const agentTools = buildScoutAgentTools(record, dadPilotSummary, workspaceId, betaProfile);
   await options?.onPhase?.({ phase: 'sources', label: 'Checking source lanes', detail: 'Looking for private notes, route guardrails, and official-source opportunities.' });
   const [preloadedOfficial, preloadedWebResearch] = runtime.providerId === OPENCODE_GO_PROVIDER_ID
     ? await Promise.all([
@@ -2469,6 +2776,14 @@ export async function replyInWorkspaceClaw(
     : null;
   if (manualToolRun) {
     addUniqueSourceReceipts(toolSourceReceipts, manualToolRun.receipts);
+  }
+  const scoutResourceInputs: ScoutResourceRecordInput[] = [];
+  if (preloadedOfficial) addUniqueScoutResourceInputs(scoutResourceInputs, resourceInputsFromOfficialSources(preloadedOfficial.details));
+  if (preloadedWebResearch) addUniqueScoutResourceInputs(scoutResourceInputs, resourceInputsFromWebResearch(preloadedWebResearch.details));
+  if (manualToolRun) addUniqueScoutResourceInputs(scoutResourceInputs, manualToolRun.resourceInputs);
+  const recordedScoutResources = await recordScoutResourceInputs(workspaceId, betaProfile, scoutResourceInputs);
+  if (recordedScoutResources.length > 0) {
+    addUniqueSourceReceipts(toolSourceReceipts, recordedScoutResources.map((item) => item.receipt));
   }
   const sourceContexts = [
     buildScoutSourcePlanContext(record, trimmedPrompt),
@@ -2614,7 +2929,7 @@ export async function replyInWorkspaceClaw(
   let workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, messagesWithReceipts);
   let revisedDocument: ImportedDocument | null = null;
 
-  if (activeDocument?.rights === 'assistant-generated') {
+  if (activeDocument?.rights === 'assistant-generated' && promptExplicitlyRequestsDocumentRevision(trimmedPrompt)) {
     const revised = await reviseWorkspaceScoutDocument(workspaceId, betaProfile, {
       documentId: activeDocument.id,
       prompt: trimmedPrompt,

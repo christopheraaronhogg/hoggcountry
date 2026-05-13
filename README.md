@@ -9,11 +9,11 @@ Built for a February 2026 Appalachian Trail NOBO thru-hike, this site serves as 
 This monorepo now carries four distinct app layers:
 
 - `apps/public` - the Astro public site and current `hoggcountry.com` experience
-- `apps/openclaw-web` - the new SvelteKit frontend for Dad updates, Dad's guide, and the gated OpenClaw-for-hikers product
+- `apps/openclaw-web` - the SvelteKit frontend for Dad updates, Dad's guide, and the gated Scout hiker workspace
 - `apps/workspace` - the earlier workspace prototype, kept while the new frontend takes over
 - `backend/` - the Laravel operational backend and legacy Trail Assistant APIs
 
-## OpenClaw web frontend
+## Scout web frontend
 
 The new frontend preserves the Hogg Country visual language while shifting the product around three clearer surfaces:
 
@@ -21,7 +21,7 @@ The new frontend preserves the Hogg Country visual language while shifting the p
    - public Dad overview
    - public map tracking
    - public YouTube dispatch feed
-2. **OpenClaw for hikers**
+2. **Scout for hikers**
    - public product pitch and onboarding path
    - Dad's field guide as the canonical example manual
 3. **Gated app**
@@ -34,7 +34,8 @@ The new frontend preserves the Hogg Country visual language while shifting the p
    - `/app/manual`
    - `/app/tools`
    - `/app/docs`
-   - `/app/claw`
+   - `/app/scout`
+   - `/app/claw` remains a compatibility route
 
 The new app lives in `apps/openclaw-web/` and is intended for `app.hoggcountry.com`.
 

@@ -5,11 +5,11 @@
 
 <section class="card hero-panel">
   <div>
-    <p class="eyebrow">OpenClaw for hikers</p>
-    <h1>Sell the manual, not the model.</h1>
+    <p class="eyebrow">Scout for hikers</p>
+    <h1>A field concierge, not a generic chatbot.</h1>
     <p class="lede">
-      The pitch is simple: Dad’s guide shows what a strong field manual looks like. The gated app helps each hiker
-      build their own from source documents, trail judgment, and personal notes that still work when the signal is bad.
+      Scout is the private trail agent for recording what matters, researching current sources, checking weather, and
+      turning source material into practical decisions that still respect offline trail reality.
     </p>
     <p class="meta-line" style="margin-top:1rem;">
       Private beta access is direct-link only while Scout is being hardened.
@@ -21,7 +21,7 @@
     <ul class="list-clean">
       <li>Dad updates stay public and real.</li>
       <li>Dad’s guide stays readable and complete.</li>
-      <li>The gated app becomes a manual steward, not a generic chatbot.</li>
+      <li>The gated app becomes a recorder, researcher, and concierge for each hiker.</li>
     </ul>
   </article>
 </section>

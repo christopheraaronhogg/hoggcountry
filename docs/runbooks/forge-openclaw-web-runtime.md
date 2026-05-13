@@ -1,10 +1,10 @@
-# Forge OpenClaw Web Runtime Runbook
+# Forge Scout Web Runtime Runbook
 
 Last verified: 2026-05-02
 
 ## Purpose
 
-Run `apps/openclaw-web` on the Forge box without changing the existing Nginx site root.
+Run the Scout SvelteKit app from `apps/openclaw-web` on the Forge box without changing the existing Nginx site root. The package, PM2 app name, and storage path still use `openclaw` as deployment plumbing.
 
 The active production shape is:
 
@@ -209,9 +209,10 @@ Gated app workspace checks should also work through the Laravel bridge, not only
 - `/app/tools`
 - `/app/docs`
 - `/app/resources`
-- `/app/claw`
-- `/app/claw?resourceId=<resource-id>`
-- `/app/claw?resourceId=<resource-id>&resourceAction=document`
+- `/app/scout`
+- `/app/scout?resourceId=<resource-id>`
+- `/app/scout?resourceId=<resource-id>&resourceAction=document`
+- `/app/claw` compatibility route
 - `POST /app-api/workspace/initialize`
 - `POST /app-api/workspace/profile/current-mile`
 - `POST /app-api/workspace/tools/checklist`
