@@ -140,7 +140,7 @@ export function startScoutReplyTurn(input: {
         payload = { message: caught.message, status: 404 };
       } else if (caught instanceof Error && caught.message.includes('Pi agent did not return an assistant reply')) {
         payload = {
-          message: 'Scout did not return a usable reply. Try again, or ask for a shorter first pass and then continue.',
+          message: caught.message,
           status: 502
         };
       } else {
