@@ -1765,7 +1765,15 @@ function applyOpenCodeGoPayloadCompat(payload: unknown, thinkingEffort: ScoutThi
     reasoning_effort?: string;
     max_tokens?: number;
     max_completion_tokens?: number;
+    tools?: unknown;
+    tool_choice?: unknown;
   };
+
+  // OpenCode Go's DeepSeek lane currently does not tolerate OpenAI-style tool
+  // payload fields, even when the agent runtime serializes an empty tools array.
+  // Scout uses the server-side JSON tool router above for this provider instead.
+  delete params.tools;
+  delete params.tool_choice;
 
   // Use OpenCode Go's native model thinking instead of a simulated scratchpad when requested.
   // Do not expose raw reasoning text to hikers; stream only activity/status signals.
