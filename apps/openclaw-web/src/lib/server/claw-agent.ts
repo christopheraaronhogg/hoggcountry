@@ -1782,7 +1782,7 @@ function applyOpenCodeGoPayloadCompat(payload: unknown, thinkingEffort: ScoutThi
     delete params.reasoning_effort;
   } else {
     params.thinking = { type: 'enabled' };
-    params.reasoning_effort = thinkingEffort;
+    params.reasoning_effort = thinkingEffort === 'minimal' ? 'low' : thinkingEffort;
   }
 
   // The OpenAI-compatible DeepSeek lane honors max_tokens. Keep an explicit
