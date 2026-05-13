@@ -1556,6 +1556,30 @@ function fallbackOpenCodeGoToolPlan(prompt: string, tools: readonly AgentTool<an
   return calls;
 }
 
+function mergeOpenCodeGoToolPlans(
+  plannedCalls: readonly PlannedOpenCodeGoToolCall[],
+  explicitlyNamedCalls: readonly PlannedOpenCodeGoToolCall[]
+): PlannedOpenCodeGoToolCall[] {
+  const plannedByName = new Map(plannedCalls.map((call) => [call.name, call]));
+  const merged: PlannedOpenCodeGoToolCall[] = [];
+  const seen = new Set<string>();
+
+  for (const explicitCall of explicitlyNamedCalls) {
+    const call = plannedByName.get(explicitCall.name) ?? explicitCall;
+    merged.push(call);
+    seen.add(call.name);
+  }
+
+  for (const plannedCall of plannedCalls) {
+    if (seen.has(plannedCall.name)) continue;
+    merged.push(plannedCall);
+    seen.add(plannedCall.name);
+    if (merged.length >= SCOUT_OPENCODE_TOOL_MAX_CALLS) break;
+  }
+
+  return merged.slice(0, SCOUT_OPENCODE_TOOL_MAX_CALLS);
+}
+
 function createErrorToolResult(message: string): { readonly content: readonly [{ readonly type: 'text'; readonly text: string }]; readonly details: Record<string, unknown> } {
   return {
     content: [{ type: 'text', text: message }],
@@ -1700,8 +1724,9 @@ async function buildOpenCodeGoToolRunPayload(
     console.error('DeepSeek tool router failed', error);
   }
 
-  const fallbackCalls = plannedCalls.length === 0 ? fallbackOpenCodeGoToolPlan(prompt, tools) : [];
-  const executedCalls = await executeOpenCodeGoPlannedToolCalls(plannedCalls.length > 0 ? plannedCalls : fallbackCalls, tools);
+  const explicitlyNamedCalls = fallbackOpenCodeGoToolPlan(prompt, tools);
+  const callsToExecute = mergeOpenCodeGoToolPlans(plannedCalls, explicitlyNamedCalls);
+  const executedCalls = await executeOpenCodeGoPlannedToolCalls(callsToExecute, tools);
 
   if (executedCalls.length === 0) return null;
 
