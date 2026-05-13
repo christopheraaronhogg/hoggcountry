@@ -2329,7 +2329,7 @@ export async function replyInWorkspaceClaw(
   const runAgentPrompt = async (
     history: readonly WorkspaceClawMessage[],
     extraSystemInstruction: string | null = null
-  ): Promise<{ nextMessages: WorkspaceClawMessage[]; reply: WorkspaceClawMessage | undefined }> => {
+  ): Promise<{ nextMessages: WorkspaceClawMessage[]; reply: WorkspaceClawMessage | undefined; errorMessage: string | null }> => {
     const sourceContext = [baseSourceContext, extraSystemInstruction].filter(Boolean).join('\n\n') || null;
     const agent = new Agent({
       initialState: {
@@ -2391,13 +2391,17 @@ export async function replyInWorkspaceClaw(
 
     const nextMessages = simplifyMessages(agent.state.messages as Message[]);
     const reply = nextMessages.at(-1);
-    return { nextMessages, reply };
+    return { nextMessages, reply, errorMessage: agent.state.errorMessage ?? null };
   };
 
   const history = runtime.providerId === OPENCODE_GO_PROVIDER_ID ? record.clawMessages.slice(-SCOUT_MODEL_HISTORY_MESSAGES) : record.clawMessages;
   let nextMessages: WorkspaceClawMessage[];
   let reply: WorkspaceClawMessage | undefined;
-  ({ nextMessages, reply } = await runAgentPrompt(history));
+  let modelErrorMessage: string | null = null;
+  const firstRun = await runAgentPrompt(history);
+  nextMessages = firstRun.nextMessages;
+  reply = firstRun.reply;
+  modelErrorMessage = firstRun.errorMessage;
 
   if ((!reply || reply.role !== 'assistant' || reply.error) && runtime.providerId === OPENCODE_GO_PROVIDER_ID) {
     const retry = await runAgentPrompt(
@@ -2406,10 +2410,11 @@ export async function replyInWorkspaceClaw(
     );
     nextMessages = mergeClawMessageHistory(record.clawMessages, retry.nextMessages);
     reply = retry.reply;
+    modelErrorMessage = retry.errorMessage ?? modelErrorMessage;
   }
 
   if (!reply || reply.role !== 'assistant') {
-    throw new Error('Pi agent did not return an assistant reply.');
+    throw new Error(modelErrorMessage ? `Pi agent did not return an assistant reply: ${modelErrorMessage}` : 'Pi agent did not return an assistant reply.');
   }
 
   if (runtime.credentials) {
