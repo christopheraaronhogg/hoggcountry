@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { assertPublicResearchUrl, extractDuckDuckGoResults } from '../apps/openclaw-web/src/lib/server/scout-web-research.ts';
+import {
+  assertPublicResearchUrl,
+  extractDuckDuckGoResults,
+  shouldPreloadWebResearchForPrompt
+} from '../apps/openclaw-web/src/lib/server/scout-web-research.ts';
 
 const fixture = `
   <html>
@@ -32,4 +36,12 @@ test('blocks local and private research URLs', () => {
   assert.throws(() => assertPublicResearchUrl('file:///etc/passwd'), /http\/https/u);
   assert.equal(assertPublicResearchUrl('https://appalachiantrail.org/trail-updates/').hostname, 'appalachiantrail.org');
   assert.equal(assertPublicResearchUrl('https://fdic.gov/').hostname, 'fdic.gov');
+});
+
+test('identifies DeepSeek preloaded web-research prompts without stealing weather and official-source questions', () => {
+  assert.equal(shouldPreloadWebResearchForPrompt('look up hostel hours in Harpers Ferry'), true);
+  assert.equal(shouldPreloadWebResearchForPrompt('search the web for current trail runner reviews'), true);
+  assert.equal(shouldPreloadWebResearchForPrompt('what is the weather tomorrow?'), false);
+  assert.equal(shouldPreloadWebResearchForPrompt('are there closures near Harpers Ferry?'), false);
+  assert.equal(shouldPreloadWebResearchForPrompt('search the web for official closure sources near Harpers Ferry'), true);
 });

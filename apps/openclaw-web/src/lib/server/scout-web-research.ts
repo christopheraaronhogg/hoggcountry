@@ -35,6 +35,9 @@ const WEB_RESEARCH_TIMEOUT_MS = 8000;
 const WEB_RESEARCH_MAX_RESULTS = 5;
 const PAGE_EXCERPT_CHARS = 1400;
 const USER_AGENT = 'Mozilla/5.0 (compatible; HoggCountryScout/1.0; +https://hoggcountry.com)';
+const WEB_RESEARCH_INTENT_PATTERN = /\b(?:internet|web|search|research|latest|current|today|news|website|online|look\s+up|google|source|sources|product|gear\s+review|hostel|shuttle|hours?|phone|address|reservation|menu|prices?|open\s+now|nearby|store|outfitter|laundry|laundromat|resupply)\b/iu;
+const OFFICIAL_TRAIL_SOURCE_PATTERN = /\b(?:weather|forecast|alerts?|closure|closed|detour|reroute|burn\s+ban|bear|storm|thunder|lightning|heat|cold|wind|flood|snow|ice|go\/no-go)\b/iu;
+const EXPLICIT_PUBLIC_WEB_PATTERN = /\b(?:internet|web|search|research|google|look\s+up|website|online|source|sources)\b/iu;
 
 const COMMON_HTML_ENTITIES: Record<string, string> = {
   amp: '&',
@@ -103,6 +106,20 @@ function parseAllowedDomains(input: string | null | undefined): string[] {
       .map(normalizeDomain)
       .filter((domain) => /^[a-z0-9.-]+\.[a-z]{2,}$/u.test(domain))
   )].slice(0, 8);
+}
+
+export function shouldPreloadWebResearchForPrompt(prompt: string): boolean {
+  const trimmed = prompt.trim();
+  if (!WEB_RESEARCH_INTENT_PATTERN.test(trimmed)) return false;
+
+  // Safety-sensitive AT condition questions should use the official-source
+  // preloader first. Only preload general web research for these if the user
+  // explicitly asks for public web/source research.
+  if (OFFICIAL_TRAIL_SOURCE_PATTERN.test(trimmed) && !EXPLICIT_PUBLIC_WEB_PATTERN.test(trimmed)) {
+    return false;
+  }
+
+  return true;
 }
 
 function domainMatches(hostname: string, allowedDomains: readonly string[]): boolean {

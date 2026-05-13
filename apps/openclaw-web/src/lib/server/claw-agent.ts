@@ -67,7 +67,7 @@ import {
   renderCurrentDatetime,
   type CurrentDatetimeDetails
 } from './scout-date-authority';
-import { renderWebResearchResult, researchWeb, type WebResearchDetails } from './scout-web-research';
+import { renderWebResearchResult, researchWeb, shouldPreloadWebResearchForPrompt, type WebResearchDetails } from './scout-web-research';
 
 export { getConfiguredClawConnection, type WorkspaceClawConnectionPayload } from './claw-connection';
 export { buildCurrentDateAuthority, buildCurrentDatetimeDetails } from './scout-date-authority';
@@ -82,6 +82,7 @@ const SCOUT_AGENT_TURN_TIMEOUT_MS = 900_000;
 const SCOUT_PRELOADED_SOURCE_MAX_CHARS = 2600;
 const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
+const SCOUT_PRELOADED_WEB_RESEARCH_MAX_CHARS = 3600;
 const SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS = 3200;
 const SCOUT_MODEL_HISTORY_MESSAGES = 8;
 const SCOUT_STORED_HISTORY_MESSAGES = 200;
@@ -1184,6 +1185,11 @@ interface PreloadedOfficialSourcePayload {
   readonly details: OfficialTrailSourceCheckDetails;
 }
 
+interface PreloadedWebResearchPayload {
+  readonly context: string;
+  readonly details: WebResearchDetails;
+}
+
 async function buildPreloadedOfficialSourcePayload(prompt: string, record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): Promise<PreloadedOfficialSourcePayload | null> {
   if (!skillEnabled(record, 'official-trail-sources')) return null;
   if (!shouldPreloadOfficialTrailSources(prompt)) return null;
@@ -1223,6 +1229,37 @@ async function buildPreloadedOfficialSourcePayload(prompt: string, record: Works
     : { context, details };
 }
 
+async function buildPreloadedWebResearchPayload(prompt: string, record: WorkspaceRecord): Promise<PreloadedWebResearchPayload | null> {
+  if (!skillEnabled(record, 'web-research')) return null;
+  if (!shouldPreloadWebResearchForPrompt(prompt)) return null;
+
+  const details = await researchWeb({
+    query: prompt,
+    allowedDomains: null,
+    limit: 3,
+    fetchPages: true
+  }).catch((error) => ({
+    query: prompt,
+    fetchedAt: new Date().toISOString(),
+    provider: 'DuckDuckGo HTML' as const,
+    allowedDomains: [],
+    results: [],
+    skipped: [],
+    errors: [`Web research preload failed: ${error instanceof Error ? error.message : 'unknown error'}`]
+  } satisfies WebResearchDetails));
+
+  const rendered = renderWebResearchResult(details);
+  const context = [
+    'Preloaded public web research for this turn:',
+    rendered,
+    'Grounding rule: use this as current public-web evidence only for the URLs named above. If no result was returned or a page fetch failed, say the web research was unavailable or thin instead of inventing current facts.'
+  ].join('\n');
+
+  return context.length > SCOUT_PRELOADED_WEB_RESEARCH_MAX_CHARS
+    ? { context: `${context.slice(0, SCOUT_PRELOADED_WEB_RESEARCH_MAX_CHARS - 1).trimEnd()}…`, details }
+    : { context, details };
+}
+
 function buildOfficialSourceReceipts(details: OfficialTrailSourceCheckDetails): WorkspaceClawSourceReceipt[] {
   const receipts: WorkspaceClawSourceReceipt[] = [];
 
@@ -1247,6 +1284,29 @@ function buildOfficialSourceReceipts(details: OfficialTrailSourceCheckDetails): 
       label: 'Official source gaps',
       status: [...details.skipped, ...details.errors].join(' ').slice(0, 220),
       kind: 'official'
+    });
+  }
+
+  return receipts;
+}
+
+function buildWebResearchReceipts(details: WebResearchDetails): WorkspaceClawSourceReceipt[] {
+  const receipts: WorkspaceClawSourceReceipt[] = [];
+
+  if (details.results.length > 0) {
+    receipts.push({
+      label: 'Web research',
+      status: `fetched ${details.fetchedAt}; ${details.results.length} result${details.results.length === 1 ? '' : 's'}; ${details.results[0]?.url ?? 'public web'}`,
+      kind: 'web'
+    });
+  }
+
+  if (details.skipped.length > 0 || details.errors.length > 0 || details.results.length === 0) {
+    const status = [...details.skipped, ...details.errors].join(' ').trim() || `no public web results returned for "${details.query}"`;
+    receipts.push({
+      label: 'Web research gaps',
+      status: status.slice(0, 220),
+      kind: 'web'
     });
   }
 
@@ -1493,7 +1553,7 @@ function buildSystemPrompt(
     liveToolsAvailable && webResearchEnabled
       ? 'You also have a research_web tool. Use it for current public web research that is not covered by private workspace search, route validation, or dedicated official trail/weather tools. Prefer allowedDomains for source-sensitive questions. Do not use it for private, local, loopback, intranet, or user-secret URLs.'
       : webResearchEnabled
-        ? 'This runtime does not expose live web research tools; if general web evidence is needed, say that web research requires service connectivity.'
+        ? 'This runtime may provide preloaded public web research context instead of live web tool calls; use only that context for fresh web-derived claims. If it is absent, say web research was not fetched for this turn or requires service connectivity.'
         : 'Web Research skill is disabled for this workspace; do not claim general internet research or cite fresh public web pages unless the user asks to enable that skill.',
     liveToolsAvailable && officialSourcesEnabled
       ? 'You also have a check_official_trail_sources tool. Use it for safety-sensitive current conditions: closures, detours, burn bans, bear warnings, storms, heat/cold, wind, flood risk, snow/ice, and other live ATC/NWS checks. For weather, call it; it can use explicit coordinates, the workspace profile current AT mile, or useDadLocation when the question is about Dad and the public Garmin fix is relevant.'
@@ -1811,14 +1871,18 @@ export async function replyInWorkspaceClaw(
   const dadPilotSummary = shouldIncludeDadPilotContext(record, trimmedPrompt) ? await loadDadPilotSummary().catch(() => null) : null;
   const dateAuthority = buildCurrentDatetimeDetails();
   await options?.onPhase?.({ phase: 'sources', label: 'Checking source lanes', detail: 'Looking for private notes, route guardrails, and official-source opportunities.' });
-  const preloadedOfficial = runtime.providerId === OPENCODE_GO_PROVIDER_ID
-    ? await buildPreloadedOfficialSourcePayload(trimmedPrompt, record, dadPilotSummary)
-    : null;
+  const [preloadedOfficial, preloadedWebResearch] = runtime.providerId === OPENCODE_GO_PROVIDER_ID
+    ? await Promise.all([
+        buildPreloadedOfficialSourcePayload(trimmedPrompt, record, dadPilotSummary),
+        buildPreloadedWebResearchPayload(trimmedPrompt, record)
+      ])
+    : [null, null] as const;
   const sourceContexts = [
     buildScoutSourcePlanContext(record, trimmedPrompt),
     buildScoutSourceContext(record, dadPilotSummary, trimmedPrompt),
     buildPreloadedRouteResourceContext(trimmedPrompt, record),
-    preloadedOfficial?.context ?? null
+    preloadedOfficial?.context ?? null,
+    preloadedWebResearch?.context ?? null
   ].filter((context): context is string => Boolean(context));
 
   const sourceReceipts = [
@@ -1827,8 +1891,9 @@ export async function replyInWorkspaceClaw(
     record.resources.length > 0 ? { label: 'Private Resources', status: `${record.resources.length} available`, kind: 'workspace' } : null,
     sourceContexts.some((context) => context.includes('Scout route resource')) ? { label: 'AT route guardrails', status: 'loaded for validation', kind: 'route' } : null,
     sourceContexts.some((context) => context.includes('Scout source catalog')) ? { label: 'Scout source catalog', status: 'planned', kind: 'catalog' } : null,
-    skillEnabled(record, 'web-research') ? { label: 'Web research', status: 'available when online', kind: 'web' } : null,
-    ...(preloadedOfficial ? buildOfficialSourceReceipts(preloadedOfficial.details) : [])
+    runtime.providerId !== OPENCODE_GO_PROVIDER_ID && skillEnabled(record, 'web-research') ? { label: 'Web research', status: 'available when online', kind: 'web' } : null,
+    ...(preloadedOfficial ? buildOfficialSourceReceipts(preloadedOfficial.details) : []),
+    ...(preloadedWebResearch ? buildWebResearchReceipts(preloadedWebResearch.details) : [])
   ].filter((receipt): receipt is WorkspaceClawSourceReceipt => receipt !== null);
   if (sourceReceipts.length > 0) {
     await options?.onSourceReceipts?.(sourceReceipts);
