@@ -25,7 +25,7 @@ import {
   disabledScoutSkillOwnsSourceManifest,
   scoutSkillEnabled
 } from '@hoggcountry/scout-skills';
-import { getModel, Type, type AssistantMessage, type Message, type Model, type ToolResultMessage, type UserMessage } from '@mariozechner/pi-ai';
+import { getModel, Type, validateToolArguments, type AssistantMessage, type Message, type Model, type ToolCall, type ToolResultMessage, type UserMessage } from '@mariozechner/pi-ai';
 import type { BetaProfileCookie } from '$lib/beta';
 import { resolveOpenAICodexApiKey, type OpenAICodexCredentials } from '$lib/server/claw-openai-codex';
 import { decryptProviderJson, encryptProviderJson } from '$lib/server/provider-crypto';
@@ -84,6 +84,9 @@ const SCOUT_PRELOADED_SOURCE_PLAN_MAX_CHARS = 1800;
 const SCOUT_PRELOADED_OFFICIAL_MAX_CHARS = 2400;
 const SCOUT_PRELOADED_WEB_RESEARCH_MAX_CHARS = 3600;
 const SCOUT_PRELOADED_ROUTE_RESOURCE_MAX_CHARS = 3200;
+const SCOUT_OPENCODE_TOOL_SCHEMA_MAX_CHARS = 1400;
+const SCOUT_OPENCODE_TOOL_CONTEXT_MAX_CHARS = 9000;
+const SCOUT_OPENCODE_TOOL_MAX_CALLS = 4;
 const SCOUT_MODEL_HISTORY_MESSAGES = 8;
 const SCOUT_STORED_HISTORY_MESSAGES = 200;
 
@@ -1434,6 +1437,285 @@ function addUniqueSourceReceipts(target: WorkspaceClawSourceReceipt[], receipts:
   }
 }
 
+interface PlannedOpenCodeGoToolCall {
+  readonly name: string;
+  readonly arguments: Record<string, unknown>;
+  readonly reason?: string;
+}
+
+interface ExecutedOpenCodeGoToolCall extends PlannedOpenCodeGoToolCall {
+  readonly result: unknown;
+  readonly isError: boolean;
+}
+
+interface OpenCodeGoToolRunPayload {
+  readonly context: string;
+  readonly receipts: readonly WorkspaceClawSourceReceipt[];
+}
+
+function shouldRunOpenCodeGoToolPlanner(prompt: string): boolean {
+  return /\b(use .*tool|get_current_datetime|resolve_location|get_weather|weather|forecast|alerts?|plan|segment|route|mile|location|where am i|today|tomorrow|tonight|current|latest|source|sources|search|research|web|internet|look\s+up|closure|closed|detour|reroute|permit|camping|water|hostel|shuttle|hours?)\b/iu.test(prompt);
+}
+
+function renderToolParametersForPrompt(tool: AgentTool<any, any>): string {
+  const schema = JSON.stringify(tool.parameters);
+  if (!schema) return '{}';
+  return schema.length > SCOUT_OPENCODE_TOOL_SCHEMA_MAX_CHARS
+    ? `${schema.slice(0, SCOUT_OPENCODE_TOOL_SCHEMA_MAX_CHARS - 3).trimEnd()}...`
+    : schema;
+}
+
+function renderOpenCodeGoToolCatalog(tools: readonly AgentTool<any, any>[]): string {
+  return tools.map((tool, index) => [
+    `${index + 1}. ${tool.name}`,
+    `Description: ${tool.description}`,
+    `Parameters JSON schema: ${renderToolParametersForPrompt(tool)}`
+  ].join('\n')).join('\n\n');
+}
+
+function normalizeToolArguments(value: unknown): Record<string, unknown> {
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return normalizeToolArguments(parsed);
+    } catch {
+      return {};
+    }
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function extractJsonObjectText(value: string): string {
+  const stripped = stripJsonFence(value);
+  if (stripped.startsWith('{')) return stripped;
+
+  const start = stripped.indexOf('{');
+  const end = stripped.lastIndexOf('}');
+  if (start === -1 || end <= start) return stripped;
+  return stripped.slice(start, end + 1).trim();
+}
+
+function parseOpenCodeGoToolPlan(text: string, tools: readonly AgentTool<any, any>[]): PlannedOpenCodeGoToolCall[] {
+  const toolNames = new Set(tools.map((tool) => tool.name));
+
+  try {
+    const parsed = JSON.parse(extractJsonObjectText(text)) as unknown;
+    const rawCalls = parsed && typeof parsed === 'object' && Array.isArray((parsed as { toolCalls?: unknown }).toolCalls)
+      ? (parsed as { toolCalls: unknown[] }).toolCalls
+      : [];
+
+    const calls: PlannedOpenCodeGoToolCall[] = [];
+    for (const rawCall of rawCalls) {
+      if (!rawCall || typeof rawCall !== 'object') continue;
+      const call = rawCall as { name?: unknown; arguments?: unknown; args?: unknown; parameters?: unknown; reason?: unknown };
+      if (typeof call.name !== 'string' || !toolNames.has(call.name)) continue;
+      calls.push({
+        name: call.name,
+        arguments: normalizeToolArguments(call.arguments ?? call.args ?? call.parameters),
+        reason: typeof call.reason === 'string' ? call.reason : undefined
+      });
+      if (calls.length >= SCOUT_OPENCODE_TOOL_MAX_CALLS) break;
+    }
+    return calls;
+  } catch {
+    return [];
+  }
+}
+
+function fallbackOpenCodeGoToolPlan(prompt: string, tools: readonly AgentTool<any, any>[]): PlannedOpenCodeGoToolCall[] {
+  const calls: PlannedOpenCodeGoToolCall[] = [];
+
+  for (const tool of tools) {
+    const namedToolPattern = new RegExp(`\\b${tool.name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\b`, 'iu');
+    if (!namedToolPattern.test(prompt)) continue;
+
+    let args: Record<string, unknown>;
+    if (tool.name === 'get_current_datetime') {
+      args = { timezone: SCOUT_DATE_TIMEZONE };
+    } else if (tool.name === 'resolve_location') {
+      args = { query: prompt, useProfileLocation: true };
+    } else if (tool.name === 'get_weather_forecast' || tool.name === 'get_weather_alerts') {
+      args = { query: prompt, useProfileLocation: true, useLatestGps: true };
+    } else if (tool.name === 'plan_segment') {
+      args = { query: prompt };
+    } else if (tool.name === 'catalog_scout_sources' || tool.name === 'search_scout_sources') {
+      args = { query: prompt, limit: 5 };
+    } else if (tool.name === 'research_web') {
+      args = { query: prompt, limit: 3, fetchPages: true };
+    } else if (tool.name === 'check_official_trail_sources') {
+      args = { query: prompt, source: 'auto', useProfileLocation: true };
+    } else {
+      args = {};
+    }
+
+    calls.push({ name: tool.name, arguments: args, reason: 'The user explicitly named this tool.' });
+    if (calls.length >= SCOUT_OPENCODE_TOOL_MAX_CALLS) break;
+  }
+
+  return calls;
+}
+
+function createErrorToolResult(message: string): { readonly content: readonly [{ readonly type: 'text'; readonly text: string }]; readonly details: Record<string, unknown> } {
+  return {
+    content: [{ type: 'text', text: message }],
+    details: { error: message }
+  };
+}
+
+async function executeOpenCodeGoPlannedToolCalls(
+  plannedCalls: readonly PlannedOpenCodeGoToolCall[],
+  tools: readonly AgentTool<any, any>[]
+): Promise<readonly ExecutedOpenCodeGoToolCall[]> {
+  const toolByName = new Map(tools.map((tool) => [tool.name, tool]));
+  const executed: ExecutedOpenCodeGoToolCall[] = [];
+
+  for (const [index, plannedCall] of plannedCalls.entries()) {
+    const tool = toolByName.get(plannedCall.name);
+    if (!tool) {
+      executed.push({
+        ...plannedCall,
+        result: createErrorToolResult(`Tool ${plannedCall.name} not found.`),
+        isError: true
+      });
+      continue;
+    }
+
+    const toolCall: ToolCall = {
+      type: 'toolCall',
+      id: `opencode-go-tool-${Date.now()}-${index}-${tool.name}`,
+      name: tool.name,
+      arguments: plannedCall.arguments
+    };
+
+    try {
+      const preparedToolCall = tool.prepareArguments
+        ? { ...toolCall, arguments: tool.prepareArguments(toolCall.arguments) }
+        : toolCall;
+      const validatedArgs = validateToolArguments(tool, preparedToolCall);
+      const result = await tool.execute(toolCall.id, validatedArgs);
+      executed.push({ ...plannedCall, result, isError: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      executed.push({
+        ...plannedCall,
+        result: createErrorToolResult(message),
+        isError: true
+      });
+    }
+  }
+
+  return executed;
+}
+
+function renderOpenCodeGoToolRunContext(executedCalls: readonly ExecutedOpenCodeGoToolCall[]): string {
+  if (executedCalls.length === 0) return '';
+
+  const lines = [
+    'DeepSeek tool runner results for this turn:',
+    'The DeepSeek/OpenCode-Go runtime selected these Scout tools in a JSON routing pass. The server executed them before this final answer.'
+  ];
+
+  for (const [index, call] of executedCalls.entries()) {
+    const resultText = textFromToolResult(call.result);
+    const details = detailRecord(call.result);
+    const fallbackDetails = details ? JSON.stringify(details) : '';
+    lines.push(
+      `Tool ${index + 1}: ${call.name}`,
+      call.reason ? `Reason: ${excerpt(call.reason, 240)}` : 'Reason: selected by DeepSeek tool router.',
+      `Arguments: ${excerpt(JSON.stringify(call.arguments), 900)}`,
+      `Status: ${call.isError ? 'error' : 'success'}`,
+      `Result:\n${excerpt(resultText || fallbackDetails || 'No text result returned.', 2600)}`
+    );
+  }
+
+  lines.push('Grounding rule: treat these as live Scout tool outputs from this turn. Use successful results as evidence. If a tool errored, name the missing check instead of inventing that fact.');
+  const context = lines.join('\n');
+  return context.length > SCOUT_OPENCODE_TOOL_CONTEXT_MAX_CHARS
+    ? `${context.slice(0, SCOUT_OPENCODE_TOOL_CONTEXT_MAX_CHARS - 3).trimEnd()}...`
+    : context;
+}
+
+async function buildOpenCodeGoToolRunPayload(
+  runtime: ClawRuntime,
+  record: WorkspaceRecord,
+  dadPilotSummary: DadPilotSummary | null,
+  prompt: string,
+  tools: readonly AgentTool<any, any>[],
+  remainingMs: number
+): Promise<OpenCodeGoToolRunPayload | null> {
+  if (tools.length === 0 || !shouldRunOpenCodeGoToolPlanner(prompt)) return null;
+
+  const planner = new Agent({
+    initialState: {
+      systemPrompt: [
+        'You are Scout\'s server-side tool router for the DeepSeek/OpenCode-Go runtime.',
+        'Return JSON only. Do not answer the hiker.',
+        `Choose zero to ${SCOUT_OPENCODE_TOOL_MAX_CALLS} tool calls needed before Scout answers.`,
+        'Available tools:',
+        renderOpenCodeGoToolCatalog(tools),
+        '',
+        'Routing rules:',
+        '- Date, today, tomorrow, tonight, weekday, freshness, or date disputes: use get_current_datetime.',
+        '- Location, coordinates, AT mile, current position, or named trail town/landmark: use resolve_location before other location-dependent tools.',
+        '- Current/future weather forecast: use get_weather_forecast. Active/no-alert claims: use get_weather_alerts.',
+        '- Closures, detours, live AT safety conditions, and official weather/trail checks: use check_official_trail_sources.',
+        '- Route shape, segment mileage, or day logistics: use plan_segment.',
+        '- Source availability, private docs, or Scout evidence lane questions: use catalog_scout_sources and/or search_scout_sources.',
+        '- General current public web facts not covered by weather/trail official tools: use research_web.',
+        'Use profile/default location only when the user asks about the hiker\'s current area and no explicit place is present.',
+        'JSON schema: {"toolCalls":[{"name":"tool_name","arguments":{},"reason":"short reason"}]}',
+        'Return {"toolCalls":[]} when no tool is needed.'
+      ].join('\n'),
+      model: runtime.model,
+      thinkingLevel: 'off',
+      tools: [],
+      messages: []
+    },
+    sessionId: `workspace:${record.workspaceId}:claw-opencode-tool-router`,
+    transport: 'sse',
+    getApiKey: async () => runtime.apiKey,
+    onPayload: (payload) => applyOpenCodeGoPayloadCompat(payload, 'off')
+  });
+
+  const routerPrompt = [
+    buildCurrentDateAuthority(),
+    `Hiker name: ${record.betaProfile.name || 'Unknown'}`,
+    `Trail name: ${record.betaProfile.trailName || 'Unknown'}`,
+    record.profile
+      ? `Profile current mile: ${Number.isFinite(record.profile.currentMile) ? record.profile.currentMile.toFixed(1) : 'unknown'}; updatedAt: ${record.profile.updatedAt || 'unknown'}; direction: ${record.profile.direction || 'unknown'}.`
+      : 'Profile: not initialized.',
+    dadPilotSummary ? buildDadPilotSystemContext(dadPilotSummary) : null,
+    `User prompt:\n${prompt}`
+  ].filter((line): line is string => Boolean(line)).join('\n\n');
+
+  let plannedCalls: PlannedOpenCodeGoToolCall[] = [];
+  try {
+    await withScoutAgentTimeout(planner.prompt(routerPrompt), Math.min(120_000, remainingMs));
+    const plannerReply = simplifyMessages(planner.state.messages as Message[]).at(-1);
+    plannedCalls = plannerReply?.role === 'assistant'
+      ? parseOpenCodeGoToolPlan(plannerReply.text, tools)
+      : [];
+  } catch (error) {
+    console.error('DeepSeek tool router failed', error);
+  }
+
+  const fallbackCalls = plannedCalls.length === 0 ? fallbackOpenCodeGoToolPlan(prompt, tools) : [];
+  const executedCalls = await executeOpenCodeGoPlannedToolCalls(plannedCalls.length > 0 ? plannedCalls : fallbackCalls, tools);
+
+  if (executedCalls.length === 0) return null;
+
+  const receipts: WorkspaceClawSourceReceipt[] = [];
+  for (const call of executedCalls) {
+    addUniqueSourceReceipts(receipts, buildToolExecutionReceipts(call.name, call.result, call.isError));
+  }
+
+  return {
+    context: renderOpenCodeGoToolRunContext(executedCalls),
+    receipts
+  };
+}
+
 function excerpt(value: string, maxLength: number): string {
   const normalized = value.replace(/\s+/gu, ' ').trim();
   if (normalized.length <= maxLength) return normalized;
@@ -1991,6 +2273,9 @@ export async function replyInWorkspaceClaw(
   const thinkingEffort = normalizeScoutThinkingEffort(options?.thinkingEffort);
   const dadPilotSummary = shouldIncludeDadPilotContext(record, trimmedPrompt) ? await loadDadPilotSummary().catch(() => null) : null;
   const dateAuthority = buildCurrentDatetimeDetails();
+  const turnDeadline = Date.now() + SCOUT_AGENT_TURN_TIMEOUT_MS;
+  const toolSourceReceipts: WorkspaceClawSourceReceipt[] = [];
+  const agentTools = buildScoutAgentTools(record, dadPilotSummary);
   await options?.onPhase?.({ phase: 'sources', label: 'Checking source lanes', detail: 'Looking for private notes, route guardrails, and official-source opportunities.' });
   const [preloadedOfficial, preloadedWebResearch] = runtime.providerId === OPENCODE_GO_PROVIDER_ID
     ? await Promise.all([
@@ -1998,10 +2283,20 @@ export async function replyInWorkspaceClaw(
         buildPreloadedWebResearchPayload(trimmedPrompt, record)
       ])
     : [null, null] as const;
+  const manualToolRun = runtime.providerId === OPENCODE_GO_PROVIDER_ID
+    ? await (async () => {
+        await options?.onPhase?.({ phase: 'tools', label: 'Routing DeepSeek tools', detail: 'Letting DeepSeek choose Scout tools, then executing them server-side.' });
+        return buildOpenCodeGoToolRunPayload(runtime, record, dadPilotSummary, trimmedPrompt, agentTools, turnDeadline - Date.now());
+      })()
+    : null;
+  if (manualToolRun) {
+    addUniqueSourceReceipts(toolSourceReceipts, manualToolRun.receipts);
+  }
   const sourceContexts = [
     buildScoutSourcePlanContext(record, trimmedPrompt),
     buildScoutSourceContext(record, dadPilotSummary, trimmedPrompt),
     buildPreloadedRouteResourceContext(trimmedPrompt, record),
+    manualToolRun?.context ?? null,
     preloadedOfficial?.context ?? null,
     preloadedWebResearch?.context ?? null
   ].filter((context): context is string => Boolean(context));
@@ -2014,16 +2309,15 @@ export async function replyInWorkspaceClaw(
     sourceContexts.some((context) => context.includes('Scout source catalog')) ? { label: 'Scout source catalog', status: 'planned', kind: 'catalog' } : null,
     skillEnabled(record, 'web-research') ? { label: 'Web research', status: 'available when online', kind: 'web' } : null,
     ...(preloadedOfficial ? buildOfficialSourceReceipts(preloadedOfficial.details) : []),
-    ...(preloadedWebResearch ? buildWebResearchReceipts(preloadedWebResearch.details) : [])
+    ...(preloadedWebResearch ? buildWebResearchReceipts(preloadedWebResearch.details) : []),
+    ...toolSourceReceipts
   ].filter((receipt): receipt is WorkspaceClawSourceReceipt => receipt !== null);
   if (sourceReceipts.length > 0) {
     await options?.onSourceReceipts?.(sourceReceipts);
   }
 
-  const toolSourceReceipts: WorkspaceClawSourceReceipt[] = [];
-  const agentTools = buildScoutAgentTools(record, dadPilotSummary);
+  const nativeAgentTools = runtime.providerId === OPENCODE_GO_PROVIDER_ID ? [] : agentTools;
   const baseSourceContext = sourceContexts.length > 0 ? sourceContexts.join('\n\n') : null;
-  const turnDeadline = Date.now() + SCOUT_AGENT_TURN_TIMEOUT_MS;
   const runAgentPrompt = async (
     history: readonly WorkspaceClawMessage[],
     extraSystemInstruction: string | null = null
@@ -2036,12 +2330,12 @@ export async function replyInWorkspaceClaw(
           activeDocument,
           dadPilotSummary,
           sourceContext,
-          agentTools.length > 0,
+          nativeAgentTools.length > 0,
           activeResource
         ),
         model: runtime.model,
         thinkingLevel: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? thinkingEffort : 'medium',
-        tools: agentTools,
+        tools: nativeAgentTools,
         messages: history.map(toPiMessage)
       },
       sessionId: `workspace:${workspaceId}:claw`,
