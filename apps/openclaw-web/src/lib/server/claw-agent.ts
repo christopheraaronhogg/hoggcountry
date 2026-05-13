@@ -168,7 +168,7 @@ interface ScoutResolvedLocation {
   readonly latitude: number;
   readonly longitude: number;
   readonly mile: number | null;
-  readonly source: 'explicit-coordinates' | 'known-location' | 'at-mile' | 'profile-current-mile' | 'latest-gps-fix' | 'dad-garmin';
+  readonly source: 'explicit-coordinates' | 'known-location' | 'at-mile' | 'profile-current-mile' | 'latest-gps-fix' | 'dad-garmin' | 'conversation-location';
   readonly fetchedAt: string;
   readonly confidence: 'high' | 'medium' | 'low';
   readonly note: string | null;
@@ -394,6 +394,77 @@ function knownTrailLocation(query: string): { readonly label: string; readonly l
   return null;
 }
 
+async function resolveConversationLocationText(
+  text: string,
+  fetchedAt: string,
+  note: string,
+  confidence: ScoutResolvedLocation['confidence'] = 'medium'
+): Promise<ScoutResolvedLocation | null> {
+  const query = text.trim();
+  if (!query) return null;
+
+  const mileMatch = query.match(/\b(?:at\s*)?mile\s*(\d+(?:\.\d+)?)\b/iu) ?? query.match(/\b(\d{3,4}(?:\.\d+)?)\s*(?:nobo|sobo|at)?\s*mile\b/iu);
+  if (mileMatch?.[1]) {
+    const mile = Number(mileMatch[1]);
+    if (Number.isFinite(mile)) {
+      const milepost = await atMilepostNearMile(mile);
+      return {
+        label: `AT mile ${milepost.mile.toFixed(1)}`,
+        latitude: milepost.latitude,
+        longitude: milepost.longitude,
+        mile: milepost.mile,
+        source: 'conversation-location',
+        fetchedAt,
+        confidence,
+        note: `${note}; resolved from recent conversation mile ${mile.toFixed(1)}.`
+      };
+    }
+  }
+
+  const known = knownTrailLocation(query);
+  if (!known) return null;
+
+  return {
+    ...known,
+    source: 'conversation-location',
+    fetchedAt,
+    confidence,
+    note: `${note}; resolved from recent conversation mention.`
+  };
+}
+
+async function recentConversationLocation(record: WorkspaceRecord, fetchedAt: string): Promise<ScoutResolvedLocation | null> {
+  const recentMessages = record.clawMessages.slice(-16).reverse();
+  const receiptCandidates = recentMessages.flatMap((message) =>
+    (message.sourceReceipts ?? [])
+      .filter((receipt) => /^(Location resolver|NWS forecast and alerts)$/iu.test(receipt.label))
+      .map((receipt) => receipt.status)
+  );
+  const userCandidates = recentMessages
+    .filter((message) => message.role === 'user')
+    .map((message) => message.text);
+  const assistantCandidates = recentMessages
+    .filter((message) => message.role === 'assistant')
+    .map((message) => message.text);
+
+  for (const candidate of receiptCandidates) {
+    const location = await resolveConversationLocationText(candidate, fetchedAt, 'Recent Scout source receipt', 'high');
+    if (location) return location;
+  }
+
+  for (const candidate of userCandidates) {
+    const location = await resolveConversationLocationText(candidate, fetchedAt, 'Recent hiker message', 'medium');
+    if (location) return location;
+  }
+
+  for (const candidate of assistantCandidates) {
+    const location = await resolveConversationLocationText(candidate, fetchedAt, 'Recent Scout reply', 'low');
+    if (location) return location;
+  }
+
+  return null;
+}
+
 async function resolveScoutLocation(
   record: WorkspaceRecord,
   dadPilotSummary: DadPilotSummary | null,
@@ -478,12 +549,15 @@ async function resolveScoutLocation(
     }
   }
 
+  const conversationLocation = await recentConversationLocation(record, fetchedAt);
+  if (conversationLocation) return conversationLocation;
+
   return null;
 }
 
 function renderResolvedLocation(location: ScoutResolvedLocation | null): string {
   if (!location) {
-    return 'Location resolution failed: no explicit coordinates, usable named AT landmark, latest GPS fix, Dad Garmin fix, or profile current mile was available.';
+    return 'Location resolution failed: no explicit coordinates, usable named AT landmark, recent conversation location, latest GPS fix, Dad Garmin fix, or profile current mile was available.';
   }
 
   return [
@@ -1375,7 +1449,16 @@ function buildToolExecutionReceipts(toolName: string, result: unknown, isError: 
   }
 
   if ((toolName === 'get_weather_forecast' || toolName === 'get_weather_alerts') && details && details.official && typeof details.official === 'object') {
-    return buildOfficialSourceReceipts(details.official as OfficialTrailSourceCheckDetails);
+    const receipts: WorkspaceClawSourceReceipt[] = [];
+    const location = details.location && typeof details.location === 'object' ? details.location as Record<string, unknown> : null;
+    if (location) {
+      receipts.push({
+        label: 'Location resolver',
+        status: `${typeof location.label === 'string' ? location.label : 'resolved'}; source ${typeof location.source === 'string' ? location.source : 'unknown'}; fetched ${typeof location.fetchedAt === 'string' ? location.fetchedAt : 'this turn'}`,
+        kind: 'location'
+      });
+    }
+    return [...receipts, ...buildOfficialSourceReceipts(details.official as OfficialTrailSourceCheckDetails)];
   }
 
   if (toolName === 'get_current_datetime' && details) {
@@ -1525,6 +1608,11 @@ function parseOpenCodeGoToolPlan(text: string, tools: readonly AgentTool<any, an
 
 function fallbackOpenCodeGoToolPlan(prompt: string, tools: readonly AgentTool<any, any>[]): PlannedOpenCodeGoToolCall[] {
   const calls: PlannedOpenCodeGoToolCall[] = [];
+  const toolNames = new Set(tools.map((tool) => tool.name));
+  const pushCall = (name: string, args: Record<string, unknown>, reason: string) => {
+    if (!toolNames.has(name) || calls.some((call) => call.name === name)) return;
+    calls.push({ name, arguments: args, reason });
+  };
 
   for (const tool of tools) {
     const namedToolPattern = new RegExp(`\\b${tool.name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\b`, 'iu');
@@ -1549,8 +1637,25 @@ function fallbackOpenCodeGoToolPlan(prompt: string, tools: readonly AgentTool<an
       args = {};
     }
 
-    calls.push({ name: tool.name, arguments: args, reason: 'The user explicitly named this tool.' });
+    pushCall(tool.name, args, 'The user explicitly named this tool.');
     if (calls.length >= SCOUT_OPENCODE_TOOL_MAX_CALLS) break;
+  }
+
+  const asksForWeather = /\b(weather(?:\s+report)?|forecast|rain|showers?|storm|thunder|temperature|temps?|wind|snow|ice|cold|heat)\b/iu.test(prompt);
+  const asksForWeatherAlerts = /\b(alerts?|warnings?|watches|advisories|advisory)\b/iu.test(prompt);
+  if (asksForWeather && calls.length < SCOUT_OPENCODE_TOOL_MAX_CALLS) {
+    pushCall(
+      'get_weather_forecast',
+      { query: prompt, useProfileLocation: true, useLatestGps: true, useDadLocation: promptAsksForDadPilotContext(prompt) },
+      'The user asked for current or future weather.'
+    );
+  }
+  if (asksForWeatherAlerts && calls.length < SCOUT_OPENCODE_TOOL_MAX_CALLS) {
+    pushCall(
+      'get_weather_alerts',
+      { query: prompt, useProfileLocation: true, useLatestGps: true, useDadLocation: promptAsksForDadPilotContext(prompt) },
+      'The user asked about active weather alerts.'
+    );
   }
 
   return calls;
