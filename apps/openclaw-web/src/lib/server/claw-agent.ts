@@ -838,6 +838,20 @@ function buildWebResearchTool(): AgentTool<typeof WEB_RESEARCH_PARAMETERS, Scout
   };
 }
 
+function buildScoutAgentTools(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): AgentTool<any, any>[] {
+  return [
+    buildCurrentDatetimeTool(),
+    buildResolveLocationTool(record, dadPilotSummary),
+    skillEnabled(record, 'official-trail-sources') ? buildWeatherForecastTool(record, dadPilotSummary) : null,
+    skillEnabled(record, 'official-trail-sources') ? buildWeatherAlertsTool(record, dadPilotSummary) : null,
+    skillEnabled(record, 'at-mile-marker-reference') ? buildPlanSegmentTool(record) : null,
+    buildScoutSourceCatalogTool(record),
+    buildScoutSourceSearchTool(record, dadPilotSummary),
+    skillEnabled(record, 'web-research') ? buildWebResearchTool() : null,
+    skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(record, dadPilotSummary) : null
+  ].filter((tool): tool is AgentTool<any, any> => tool !== null);
+}
+
 function buildOfficialTrailSourceTool(record: WorkspaceRecord, dadPilotSummary: DadPilotSummary | null): AgentTool<typeof OFFICIAL_TRAIL_SOURCE_PARAMETERS, OfficialTrailSourceCheckDetails> {
   return {
     name: 'check_official_trail_sources',
@@ -1311,6 +1325,113 @@ function buildWebResearchReceipts(details: WebResearchDetails): WorkspaceClawSou
   }
 
   return receipts;
+}
+
+function textFromToolResult(result: unknown): string {
+  if (!result || typeof result !== 'object') return '';
+  const content = (result as { content?: unknown }).content;
+  if (!Array.isArray(content)) return '';
+
+  return content
+    .filter((item): item is { type: string; text: string } => (
+      Boolean(item) &&
+      typeof item === 'object' &&
+      (item as { type?: unknown }).type === 'text' &&
+      typeof (item as { text?: unknown }).text === 'string'
+    ))
+    .map((item) => item.text)
+    .join('\n')
+    .trim();
+}
+
+function detailRecord(result: unknown): Record<string, unknown> | null {
+  if (!result || typeof result !== 'object') return null;
+  const details = (result as { details?: unknown }).details;
+  return details && typeof details === 'object' ? details as Record<string, unknown> : null;
+}
+
+function buildToolExecutionReceipts(toolName: string, result: unknown, isError: boolean): WorkspaceClawSourceReceipt[] {
+  const details = detailRecord(result);
+  const toolText = textFromToolResult(result);
+  const failedStatus = `failed: ${excerpt(toolText || 'tool execution error', 180)}`;
+
+  if (isError) {
+    return [{
+      label: `Tool: ${toolName}`,
+      status: failedStatus,
+      kind: 'tool'
+    }];
+  }
+
+  if (toolName === 'research_web' && details) {
+    return buildWebResearchReceipts(details as unknown as WebResearchDetails);
+  }
+
+  if (toolName === 'check_official_trail_sources' && details) {
+    return buildOfficialSourceReceipts(details as unknown as OfficialTrailSourceCheckDetails);
+  }
+
+  if ((toolName === 'get_weather_forecast' || toolName === 'get_weather_alerts') && details && details.official && typeof details.official === 'object') {
+    return buildOfficialSourceReceipts(details.official as OfficialTrailSourceCheckDetails);
+  }
+
+  if (toolName === 'get_current_datetime' && details) {
+    const today = details.today && typeof details.today === 'object' ? details.today as { label?: unknown } : null;
+    return [{
+      label: 'Current datetime',
+      status: `${typeof today?.label === 'string' ? today.label : 'server clock'}; fetched ${typeof details.fetchedAt === 'string' ? details.fetchedAt : 'this turn'}`,
+      kind: 'time'
+    }];
+  }
+
+  if (toolName === 'resolve_location' && details) {
+    return [{
+      label: 'Location resolver',
+      status: `${typeof details.label === 'string' ? details.label : 'resolved'}; source ${typeof details.source === 'string' ? details.source : 'unknown'}; fetched ${typeof details.fetchedAt === 'string' ? details.fetchedAt : 'this turn'}`,
+      kind: 'location'
+    }];
+  }
+
+  if (toolName === 'plan_segment' && details) {
+    const grounding = details.grounding && typeof details.grounding === 'object' ? details.grounding as { source?: { label?: unknown }, corridor?: unknown[] } : null;
+    return [{
+      label: 'AT route planner',
+      status: grounding
+        ? `loaded ${Array.isArray(grounding.corridor) ? grounding.corridor.length : 'route'} anchors from ${typeof grounding.source?.label === 'string' ? grounding.source.label : 'route data'}`
+        : 'no route grounding returned',
+      kind: 'route'
+    }];
+  }
+
+  if (toolName === 'catalog_scout_sources' && details) {
+    return [{
+      label: 'Scout source catalog',
+      status: `${Array.isArray(details.sources) ? details.sources.length : 0} source lane${Array.isArray(details.sources) && details.sources.length === 1 ? '' : 's'} returned`,
+      kind: 'catalog'
+    }];
+  }
+
+  if (toolName === 'search_scout_sources' && details) {
+    return [{
+      label: 'Scout source search',
+      status: `${Array.isArray(details.hits) ? details.hits.length : 0} hit${Array.isArray(details.hits) && details.hits.length === 1 ? '' : 's'}; ${Array.isArray(details.recommendations) ? details.recommendations.length : 0} recommendation${Array.isArray(details.recommendations) && details.recommendations.length === 1 ? '' : 's'}`,
+      kind: 'search'
+    }];
+  }
+
+  return [{
+    label: `Tool: ${toolName}`,
+    status: 'executed this turn',
+    kind: 'tool'
+  }];
+}
+
+function addUniqueSourceReceipts(target: WorkspaceClawSourceReceipt[], receipts: readonly WorkspaceClawSourceReceipt[]) {
+  for (const receipt of receipts) {
+    const key = `${receipt.kind}:${receipt.label}:${receipt.status}`;
+    if (target.some((existing) => `${existing.kind}:${existing.label}:${existing.status}` === key)) continue;
+    target.push(receipt);
+  }
 }
 
 function excerpt(value: string, maxLength: number): string {
@@ -1891,7 +2012,7 @@ export async function replyInWorkspaceClaw(
     record.resources.length > 0 ? { label: 'Private Resources', status: `${record.resources.length} available`, kind: 'workspace' } : null,
     sourceContexts.some((context) => context.includes('Scout route resource')) ? { label: 'AT route guardrails', status: 'loaded for validation', kind: 'route' } : null,
     sourceContexts.some((context) => context.includes('Scout source catalog')) ? { label: 'Scout source catalog', status: 'planned', kind: 'catalog' } : null,
-    runtime.providerId !== OPENCODE_GO_PROVIDER_ID && skillEnabled(record, 'web-research') ? { label: 'Web research', status: 'available when online', kind: 'web' } : null,
+    skillEnabled(record, 'web-research') ? { label: 'Web research', status: 'available when online', kind: 'web' } : null,
     ...(preloadedOfficial ? buildOfficialSourceReceipts(preloadedOfficial.details) : []),
     ...(preloadedWebResearch ? buildWebResearchReceipts(preloadedWebResearch.details) : [])
   ].filter((receipt): receipt is WorkspaceClawSourceReceipt => receipt !== null);
@@ -1899,6 +2020,8 @@ export async function replyInWorkspaceClaw(
     await options?.onSourceReceipts?.(sourceReceipts);
   }
 
+  const toolSourceReceipts: WorkspaceClawSourceReceipt[] = [];
+  const agentTools = buildScoutAgentTools(record, dadPilotSummary);
   const baseSourceContext = sourceContexts.length > 0 ? sourceContexts.join('\n\n') : null;
   const turnDeadline = Date.now() + SCOUT_AGENT_TURN_TIMEOUT_MS;
   const runAgentPrompt = async (
@@ -1906,19 +2029,6 @@ export async function replyInWorkspaceClaw(
     extraSystemInstruction: string | null = null
   ): Promise<{ nextMessages: WorkspaceClawMessage[]; reply: WorkspaceClawMessage | undefined }> => {
     const sourceContext = [baseSourceContext, extraSystemInstruction].filter(Boolean).join('\n\n') || null;
-    const agentTools = runtime.providerId === OPENCODE_GO_PROVIDER_ID
-      ? []
-      : [
-          buildCurrentDatetimeTool(),
-          buildResolveLocationTool(record, dadPilotSummary),
-          skillEnabled(record, 'official-trail-sources') ? buildWeatherForecastTool(record, dadPilotSummary) : null,
-          skillEnabled(record, 'official-trail-sources') ? buildWeatherAlertsTool(record, dadPilotSummary) : null,
-          skillEnabled(record, 'at-mile-marker-reference') ? buildPlanSegmentTool(record) : null,
-          buildScoutSourceCatalogTool(record),
-          buildScoutSourceSearchTool(record, dadPilotSummary),
-          skillEnabled(record, 'web-research') ? buildWebResearchTool() : null,
-          skillEnabled(record, 'official-trail-sources') ? buildOfficialTrailSourceTool(record, dadPilotSummary) : null
-        ].filter((tool): tool is AgentTool<any, any> => tool !== null);
     const agent = new Agent({
       initialState: {
         systemPrompt: buildSystemPrompt(
@@ -1926,7 +2036,7 @@ export async function replyInWorkspaceClaw(
           activeDocument,
           dadPilotSummary,
           sourceContext,
-          runtime.providerId !== OPENCODE_GO_PROVIDER_ID,
+          agentTools.length > 0,
           activeResource
         ),
         model: runtime.model,
@@ -1937,6 +2047,11 @@ export async function replyInWorkspaceClaw(
       sessionId: `workspace:${workspaceId}:claw`,
       transport: 'sse',
       getApiKey: async () => runtime.apiKey,
+      afterToolCall: async ({ toolCall, result, isError }) => {
+        const receipts = buildToolExecutionReceipts(toolCall.name, result, isError);
+        addUniqueSourceReceipts(toolSourceReceipts, receipts);
+        return undefined;
+      },
       onPayload: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? (payload) => applyOpenCodeGoPayloadCompat(payload, thinkingEffort) : undefined
     });
 
@@ -2006,9 +2121,14 @@ export async function replyInWorkspaceClaw(
 
   await options?.onPhase?.({ phase: 'saving', label: 'Saving answer', detail: 'Persisting the turn into the private workspace.' });
   const persistedMessages = mergeClawMessageHistory(record.clawMessages, nextMessages);
-  const messagesWithReceipts = sourceReceipts.length > 0
+  const finalSourceReceipts: WorkspaceClawSourceReceipt[] = [...sourceReceipts];
+  addUniqueSourceReceipts(finalSourceReceipts, toolSourceReceipts);
+  if (toolSourceReceipts.length > 0) {
+    await options?.onSourceReceipts?.(finalSourceReceipts);
+  }
+  const messagesWithReceipts = finalSourceReceipts.length > 0
     ? persistedMessages.map((message) => message.id === reply.id && message.role === 'assistant'
-        ? { ...message, sourceReceipts }
+        ? { ...message, sourceReceipts: finalSourceReceipts }
         : message)
     : persistedMessages;
   let workspace = await replaceWorkspaceClawMessages(workspaceId, betaProfile, messagesWithReceipts);
