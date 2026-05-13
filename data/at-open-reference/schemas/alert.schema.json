@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["alert_id", "source_id", "source_url", "fetched_at", "severity", "summary", "live_source"],
+  "properties": {
+    "alert_id": { "type": "string" },
+    "source_id": { "type": "string" },
+    "source_url": { "type": "string" },
+    "fetched_at": { "type": "string" },
+    "severity": { "type": "string" },
+    "summary": { "type": "string" },
+    "live_source": { "const": true }
+  }
+}

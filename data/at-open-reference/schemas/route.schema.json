@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["route_id", "geometry_source", "license_status", "measured_length_miles", "official", "provenance"],
+  "properties": {
+    "route_id": { "type": "string" },
+    "geometry_source": { "type": "string" },
+    "license_status": { "type": "string" },
+    "measured_length_miles": { "type": "number" },
+    "official": { "const": false },
+    "provenance": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "notes": { "type": "string" }
+  }
+}

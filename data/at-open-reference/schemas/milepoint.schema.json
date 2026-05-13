@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["trail", "mile_nobo", "mile_sobo", "lat", "lon", "source_route_id", "milepoint_type", "official", "confidence", "license_source"],
+  "properties": {
+    "trail": { "const": "Appalachian Trail" },
+    "mile_nobo": { "type": "number" },
+    "mile_sobo": { "type": "number" },
+    "lat": { "type": "number" },
+    "lon": { "type": "number" },
+    "source_route_id": { "type": "string" },
+    "milepoint_type": { "const": "generated" },
+    "official": { "const": false },
+    "confidence": { "type": "string" },
+    "license_source": { "type": "string" }
+  }
+}

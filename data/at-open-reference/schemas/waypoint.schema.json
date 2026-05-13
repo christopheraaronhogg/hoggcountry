@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["waypoint_id", "type", "mile_nobo", "lat", "lon", "source_id", "source_license", "confidence", "last_verified"],
+  "properties": {
+    "waypoint_id": { "type": "string" },
+    "type": { "type": "string" },
+    "name": { "type": ["string", "null"] },
+    "mile_nobo": { "type": "number" },
+    "mile_sobo": { "type": ["number", "null"] },
+    "lat": { "type": "number" },
+    "lon": { "type": "number" },
+    "distance_from_route_ft": { "type": ["number", "null"] },
+    "state": { "type": ["string", "null"] },
+    "source_id": { "type": "string" },
+    "source_license": { "type": "string" },
+    "confidence": { "type": "string" },
+    "last_verified": { "type": ["string", "null"] }
+  }
+}

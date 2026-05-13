@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["rule_id", "jurisdiction", "source_id", "source_url", "last_checked", "confidence", "ai_answer_rule"],
+  "properties": {
+    "rule_id": { "type": "string" },
+    "jurisdiction": { "type": "string" },
+    "state": { "type": "array", "items": { "type": "string" } },
+    "mile_range_nobo": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+    "camping_policy": { "type": "string" },
+    "fee_required": { "type": "string" },
+    "permit_required": { "type": "string" },
+    "food_storage_rule": { "type": "string" },
+    "dogs_allowed": { "type": "string" },
+    "source_id": { "type": "string" },
+    "source_url": { "type": "string" },
+    "last_checked": { "type": "string" },
+    "confidence": { "type": "string" },
+    "ai_answer_rule": { "type": "string" }
+  }
+}

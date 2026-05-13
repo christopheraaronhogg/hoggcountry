@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["water_id", "mile_nobo", "type", "lat", "lon", "source_id", "source_license", "confidence", "reliability", "potable", "ai_answer_rule"],
+  "properties": {
+    "water_id": { "type": "string" },
+    "mile_nobo": { "type": "number" },
+    "type": { "type": "string" },
+    "name": { "type": ["string", "null"] },
+    "lat": { "type": "number" },
+    "lon": { "type": "number" },
+    "distance_from_trail_ft": { "type": ["number", "null"] },
+    "source_id": { "type": "string" },
+    "source_license": { "type": "string" },
+    "confidence": { "type": "string" },
+    "reliability": { "enum": ["unknown", "recent_user_reported", "officially_managed", "licensed_recent_evidence"] },
+    "potable": { "enum": ["unknown", "officially_potable", "licensed_recent_evidence"] },
+    "last_human_verified": { "type": ["string", "null"] },
+    "ai_answer_rule": { "type": "string" }
+  }
+}
