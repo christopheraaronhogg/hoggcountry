@@ -1,0 +1,2220 @@
+[
+  {
+    "tread_id": "mvp1-tread-5-0001",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 0,
+    "end_mile_nobo": 5,
+    "mile_nobo": 0,
+    "mile_sobo": 234.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 3.7,
+    "local_relief_ft_proxy": 1158,
+    "osm_signal_count": 39,
+    "osm_tags": {
+      "surface": {
+        "gravel": 23,
+        "unpaved": 16
+      }
+    },
+    "osm_source_ids": [
+      "way/9242804",
+      "way/31275790",
+      "way/364677487",
+      "way/448058244",
+      "way/437394445"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0002",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 5,
+    "end_mile_nobo": 10,
+    "mile_nobo": 5,
+    "mile_sobo": 229.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 0,
+    "local_relief_ft_proxy": 712,
+    "osm_signal_count": 24,
+    "osm_tags": {
+      "surface": {
+        "dirt": 8,
+        "gravel": 8,
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/506818682",
+      "way/9507677",
+      "way/427921485"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0003",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 10,
+    "end_mile_nobo": 15,
+    "mile_nobo": 10,
+    "mile_sobo": 224.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 0.1,
+    "local_relief_ft_proxy": 671,
+    "osm_signal_count": 22,
+    "osm_tags": {
+      "surface": {
+        "ground": 8,
+        "gravel": 14
+      }
+    },
+    "osm_source_ids": [
+      "way/427921485",
+      "way/9510514",
+      "way/417112603"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0004",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 15,
+    "end_mile_nobo": 20,
+    "mile_nobo": 15,
+    "mile_sobo": 219.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 1.7,
+    "local_relief_ft_proxy": 1027,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0005",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 20,
+    "end_mile_nobo": 25,
+    "mile_nobo": 20,
+    "mile_sobo": 214.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 0.9,
+    "local_relief_ft_proxy": 824,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0006",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 25,
+    "end_mile_nobo": 30,
+    "mile_nobo": 25,
+    "mile_sobo": 209.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 0.6,
+    "local_relief_ft_proxy": 1467,
+    "osm_signal_count": 38,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 32,
+        "unpaved": 6
+      }
+    },
+    "osm_source_ids": [
+      "way/9502710",
+      "way/9506612",
+      "way/143512816",
+      "way/386580810",
+      "way/1346026443"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0007",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 30,
+    "end_mile_nobo": 35,
+    "mile_nobo": 30,
+    "mile_sobo": 204.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 2.1,
+    "local_relief_ft_proxy": 1230,
+    "osm_signal_count": 38,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 32,
+        "unpaved": 6
+      }
+    },
+    "osm_source_ids": [
+      "way/9502710",
+      "way/9506612",
+      "way/143512816",
+      "way/386580810",
+      "way/1346026443"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0008",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 35,
+    "end_mile_nobo": 40,
+    "mile_nobo": 35,
+    "mile_sobo": 199.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 1.5,
+    "local_relief_ft_proxy": 658,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0009",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 40,
+    "end_mile_nobo": 45,
+    "mile_nobo": 40,
+    "mile_sobo": 194.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 0.2,
+    "local_relief_ft_proxy": 369,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0010",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 45,
+    "end_mile_nobo": 50,
+    "mile_nobo": 45,
+    "mile_sobo": 189.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 0.1,
+    "local_relief_ft_proxy": 684,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0011",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 50,
+    "end_mile_nobo": 55,
+    "mile_nobo": 50,
+    "mile_sobo": 184.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 2.2,
+    "local_relief_ft_proxy": 941,
+    "osm_signal_count": 16,
+    "osm_tags": {
+      "surface": {
+        "unpaved": 8,
+        "dirt": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/9493568",
+      "way/402565579"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0012",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 55,
+    "end_mile_nobo": 60,
+    "mile_nobo": 55,
+    "mile_sobo": 179.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 1.1,
+    "local_relief_ft_proxy": 941,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0013",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 60,
+    "end_mile_nobo": 65,
+    "mile_nobo": 60,
+    "mile_sobo": 174.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 0.9,
+    "local_relief_ft_proxy": 902,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0014",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 65,
+    "end_mile_nobo": 70,
+    "mile_nobo": 65,
+    "mile_sobo": 169.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 0.7,
+    "local_relief_ft_proxy": 902,
+    "osm_signal_count": 26,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 18,
+        "unpaved": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/988829056",
+      "way/1346398426",
+      "way/1346398427",
+      "way/1346398428"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0015",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 70,
+    "end_mile_nobo": 75,
+    "mile_nobo": 70,
+    "mile_sobo": 164.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 0.2,
+    "local_relief_ft_proxy": 1346,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0016",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 75,
+    "end_mile_nobo": 80,
+    "mile_nobo": 75,
+    "mile_sobo": 159.7,
+    "interval_miles": 5,
+    "score": 2,
+    "score_label": "moderate_rocks_roots",
+    "pace_penalty_multiplier": 1.08,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 2.8,
+    "local_relief_ft_proxy": 1441,
+    "osm_signal_count": 8,
+    "osm_tags": {
+      "surface": {
+        "ground": 8
+      },
+      "trail_visibility": {
+        "bad": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/974494148"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0017",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 80,
+    "end_mile_nobo": 85,
+    "mile_nobo": 80,
+    "mile_sobo": 154.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 3,
+    "local_relief_ft_proxy": 894,
+    "osm_signal_count": 29,
+    "osm_tags": {
+      "surface": {
+        "unpaved": 16,
+        "ground": 13
+      }
+    },
+    "osm_source_ids": [
+      "way/16476852",
+      "way/415619286",
+      "way/690006191",
+      "way/958833033"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0018",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 85,
+    "end_mile_nobo": 90,
+    "mile_nobo": 85,
+    "mile_sobo": 149.7,
+    "interval_miles": 5,
+    "score": 2,
+    "score_label": "moderate_rocks_roots",
+    "pace_penalty_multiplier": 1.08,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 2.4,
+    "local_relief_ft_proxy": 975,
+    "osm_signal_count": 20,
+    "osm_tags": {
+      "surface": {
+        "ground": 20
+      },
+      "trail_visibility": {
+        "bad": 4
+      }
+    },
+    "osm_source_ids": [
+      "way/974473174",
+      "way/958835228",
+      "way/959055094"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0019",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 90,
+    "end_mile_nobo": 95,
+    "mile_nobo": 90,
+    "mile_sobo": 144.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 0.2,
+    "local_relief_ft_proxy": 662,
+    "osm_signal_count": 10,
+    "osm_tags": {
+      "surface": {
+        "ground": 8,
+        "gravel": 2
+      }
+    },
+    "osm_source_ids": [
+      "way/958820598",
+      "way/974172672"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0020",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 95,
+    "end_mile_nobo": 100,
+    "mile_nobo": 95,
+    "mile_sobo": 139.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 1.8,
+    "local_relief_ft_proxy": 1099,
+    "osm_signal_count": 16,
+    "osm_tags": {
+      "surface": {
+        "ground": 16
+      }
+    },
+    "osm_source_ids": [
+      "way/958822096",
+      "way/690027740"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0021",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 100,
+    "end_mile_nobo": 105,
+    "mile_nobo": 100,
+    "mile_sobo": 134.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 0.4,
+    "local_relief_ft_proxy": 1090,
+    "osm_signal_count": 27,
+    "osm_tags": {
+      "surface": {
+        "ground": 8,
+        "asphalt": 19
+      }
+    },
+    "osm_source_ids": [
+      "way/690041146",
+      "way/963667438",
+      "way/963667441",
+      "way/330602718"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0022",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 105,
+    "end_mile_nobo": 110,
+    "mile_nobo": 105,
+    "mile_sobo": 129.7,
+    "interval_miles": 5,
+    "score": 2,
+    "score_label": "moderate_rocks_roots",
+    "pace_penalty_multiplier": 1.08,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 3.3,
+    "local_relief_ft_proxy": 1211,
+    "osm_signal_count": 27,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 3,
+        "ground": 24
+      },
+      "trail_visibility": {
+        "excellent": 8,
+        "good": 16
+      },
+      "sac_scale": {
+        "mountain_hiking": 24
+      }
+    },
+    "osm_source_ids": [
+      "way/330602718",
+      "way/27535678",
+      "way/791985559",
+      "way/791985560"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0023",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 110,
+    "end_mile_nobo": 115,
+    "mile_nobo": 110,
+    "mile_sobo": 124.7,
+    "interval_miles": 5,
+    "score": 2,
+    "score_label": "moderate_rocks_roots",
+    "pace_penalty_multiplier": 1.08,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 0.1,
+    "local_relief_ft_proxy": 987,
+    "osm_signal_count": 139,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 48,
+        "gravel": 59,
+        "ground": 32
+      },
+      "trail_visibility": {
+        "excellent": 32
+      },
+      "sac_scale": {
+        "mountain_hiking": 32
+      }
+    },
+    "osm_source_ids": [
+      "way/16654450",
+      "way/16657892",
+      "way/690045510",
+      "way/729095537",
+      "way/791985552",
+      "way/791985553",
+      "way/791985555",
+      "way/791985556",
+      "way/974429198",
+      "way/974429197",
+      "way/789993739",
+      "way/789993740",
+      "way/789993741",
+      "way/789993749",
+      "way/789993750",
+      "way/789993751",
+      "way/789993752",
+      "way/789993753",
+      "way/789993755"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0024",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 115,
+    "end_mile_nobo": 120,
+    "mile_nobo": 115,
+    "mile_sobo": 119.7,
+    "interval_miles": 5,
+    "score": 2,
+    "score_label": "moderate_rocks_roots",
+    "pace_penalty_multiplier": 1.08,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 2.8,
+    "local_relief_ft_proxy": 1057,
+    "osm_signal_count": 88,
+    "osm_tags": {
+      "surface": {
+        "gravel": 40,
+        "asphalt": 32,
+        "unpaved": 16
+      },
+      "trail_visibility": {
+        "excellent": 32
+      },
+      "sac_scale": {
+        "mountain_hiking": 32
+      }
+    },
+    "osm_source_ids": [
+      "way/789993739",
+      "way/789993740",
+      "way/789993741",
+      "way/789993749",
+      "way/789993750",
+      "way/789993751",
+      "way/789993752",
+      "way/789993753",
+      "way/789993755",
+      "way/16656425",
+      "way/1224436760",
+      "way/1224436764"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0025",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 120,
+    "end_mile_nobo": 125,
+    "mile_nobo": 120,
+    "mile_sobo": 114.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 1.5,
+    "local_relief_ft_proxy": 1257,
+    "osm_signal_count": 32,
+    "osm_tags": {
+      "surface": {
+        "gravel": 16,
+        "unpaved": 16
+      }
+    },
+    "osm_source_ids": [
+      "way/16656425",
+      "way/1224436760",
+      "way/1224436764",
+      "way/16657594"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0026",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 125,
+    "end_mile_nobo": 130,
+    "mile_nobo": 125,
+    "mile_sobo": 109.7,
+    "interval_miles": 5,
+    "score": 4,
+    "score_label": "very_rocky",
+    "pace_penalty_multiplier": 1.25,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 2.7,
+    "local_relief_ft_proxy": 2895,
+    "osm_signal_count": 8,
+    "osm_tags": {
+      "surface": {
+        "gravel": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/16657594"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0027",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 130,
+    "end_mile_nobo": 135,
+    "mile_nobo": 130,
+    "mile_sobo": 104.7,
+    "interval_miles": 5,
+    "score": 3,
+    "score_label": "rocky_uneven",
+    "pace_penalty_multiplier": 1.15,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 1,
+    "local_relief_ft_proxy": 2315,
+    "osm_signal_count": 104,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 44,
+        "gravel": 28,
+        "unpaved": 32
+      },
+      "trail_visibility": {
+        "excellent": 12
+      },
+      "sac_scale": {
+        "hiking": 12
+      }
+    },
+    "osm_source_ids": [
+      "way/274587202",
+      "way/274587203",
+      "way/274587206",
+      "way/274587213",
+      "way/390885341",
+      "way/717248600",
+      "way/717248601",
+      "way/717248629",
+      "way/717248633",
+      "way/717248634",
+      "way/717248635",
+      "way/717248636",
+      "way/717248637",
+      "way/717248639",
+      "way/16777180",
+      "way/1410905431",
+      "way/1467100289",
+      "way/1467291592"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0028",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 135,
+    "end_mile_nobo": 140,
+    "mile_nobo": 135,
+    "mile_sobo": 99.7,
+    "interval_miles": 5,
+    "score": 4,
+    "score_label": "very_rocky",
+    "pace_penalty_multiplier": 1.25,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 6.4,
+    "local_relief_ft_proxy": 3166,
+    "osm_signal_count": 8,
+    "osm_tags": {
+      "surface": {
+        "unpaved": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/1467291592"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0029",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 140,
+    "end_mile_nobo": 145,
+    "mile_nobo": 140,
+    "mile_sobo": 94.7,
+    "interval_miles": 5,
+    "score": 3,
+    "score_label": "rocky_uneven",
+    "pace_penalty_multiplier": 1.15,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 3.2,
+    "local_relief_ft_proxy": 1549,
+    "osm_signal_count": 8,
+    "osm_tags": {
+      "surface": {
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/1468521850"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0030",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 145,
+    "end_mile_nobo": 150,
+    "mile_nobo": 145,
+    "mile_sobo": 89.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 0.3,
+    "local_relief_ft_proxy": 547,
+    "osm_signal_count": 22,
+    "osm_tags": {
+      "surface": {
+        "ground": 14,
+        "unpaved": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/1468521850",
+      "way/1468466294",
+      "way/1468521849"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0031",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 150,
+    "end_mile_nobo": 155,
+    "mile_nobo": 150,
+    "mile_sobo": 84.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 2.1,
+    "local_relief_ft_proxy": 923,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0032",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 155,
+    "end_mile_nobo": 160,
+    "mile_nobo": 155,
+    "mile_sobo": 79.7,
+    "interval_miles": 5,
+    "score": 3,
+    "score_label": "rocky_uneven",
+    "pace_penalty_multiplier": 1.15,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 5.3,
+    "local_relief_ft_proxy": 1996,
+    "osm_signal_count": 96,
+    "osm_tags": {
+      "surface": {
+        "ground": 16,
+        "gravel": 22,
+        "asphalt": 58
+      }
+    },
+    "osm_source_ids": [
+      "way/843762143",
+      "way/843762147",
+      "way/843762149",
+      "way/843762159",
+      "way/16562680",
+      "way/16564941",
+      "way/986526366",
+      "way/986526367",
+      "way/986526368",
+      "way/986526369",
+      "way/986526371",
+      "way/986526372",
+      "way/986526373",
+      "way/986526374",
+      "way/986526375"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0033",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 160,
+    "end_mile_nobo": 165,
+    "mile_nobo": 160,
+    "mile_sobo": 74.7,
+    "interval_miles": 5,
+    "score": 3,
+    "score_label": "rocky_uneven",
+    "pace_penalty_multiplier": 1.15,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 6,
+    "local_relief_ft_proxy": 2134,
+    "osm_signal_count": 299,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 238,
+        "gravel": 37,
+        "paved": 16,
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/16562680",
+      "way/16564941",
+      "way/986526366",
+      "way/986526367",
+      "way/986526368",
+      "way/986526369",
+      "way/986526371",
+      "way/986526372",
+      "way/986526373",
+      "way/986526374",
+      "way/986526375",
+      "way/16561758",
+      "way/16561847",
+      "way/16561912",
+      "way/16561914",
+      "way/16562988",
+      "way/16572096",
+      "way/120335564",
+      "way/120335578",
+      "way/120335606"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0034",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 165,
+    "end_mile_nobo": 170,
+    "mile_nobo": 165,
+    "mile_sobo": 69.7,
+    "interval_miles": 5,
+    "score": 4,
+    "score_label": "very_rocky",
+    "pace_penalty_multiplier": 1.25,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 4.5,
+    "local_relief_ft_proxy": 2621,
+    "osm_signal_count": 16,
+    "osm_tags": {
+      "surface": {
+        "dirt": 8,
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/1287751334",
+      "way/1211027983"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0035",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 170,
+    "end_mile_nobo": 175,
+    "mile_nobo": 170,
+    "mile_sobo": 64.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 1.4,
+    "local_relief_ft_proxy": 740,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0036",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 175,
+    "end_mile_nobo": 180,
+    "mile_nobo": 175,
+    "mile_sobo": 59.7,
+    "interval_miles": 5,
+    "score": 2,
+    "score_label": "moderate_rocks_roots",
+    "pace_penalty_multiplier": 1.08,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 4.8,
+    "local_relief_ft_proxy": 1264,
+    "osm_signal_count": 8,
+    "osm_tags": {
+      "surface": {
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/167432370"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0037",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 180,
+    "end_mile_nobo": 185,
+    "mile_nobo": 180,
+    "mile_sobo": 54.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 2.3,
+    "local_relief_ft_proxy": 870,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0038",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 185,
+    "end_mile_nobo": 190,
+    "mile_nobo": 185,
+    "mile_sobo": 49.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 1.5,
+    "local_relief_ft_proxy": 1014,
+    "osm_signal_count": 8,
+    "osm_tags": {
+      "surface": {
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/167434439"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0039",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 190,
+    "end_mile_nobo": 195,
+    "mile_nobo": 190,
+    "mile_sobo": 44.7,
+    "interval_miles": 5,
+    "score": 2,
+    "score_label": "moderate_rocks_roots",
+    "pace_penalty_multiplier": 1.08,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 5,
+    "local_relief_ft_proxy": 1499,
+    "osm_signal_count": 24,
+    "osm_tags": {
+      "surface": {
+        "ground": 11,
+        "asphalt": 8,
+        "concrete": 5
+      },
+      "trail_visibility": {
+        "excellent": 5
+      }
+    },
+    "osm_source_ids": [
+      "way/167434439",
+      "way/167431848",
+      "way/586710267",
+      "way/586782501"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0040",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 195,
+    "end_mile_nobo": 200,
+    "mile_nobo": 195,
+    "mile_sobo": 39.7,
+    "interval_miles": 5,
+    "score": 3,
+    "score_label": "rocky_uneven",
+    "pace_penalty_multiplier": 1.15,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 3.8,
+    "local_relief_ft_proxy": 1537,
+    "osm_signal_count": 49,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 5,
+        "paved": 36,
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/167457336",
+      "way/237614276",
+      "way/167432151",
+      "way/237614261",
+      "way/237614258",
+      "way/237614828",
+      "way/237614411"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0041",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 200,
+    "end_mile_nobo": 205,
+    "mile_nobo": 200,
+    "mile_sobo": 34.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 1.9,
+    "local_relief_ft_proxy": 1044,
+    "osm_signal_count": 120,
+    "osm_tags": {
+      "surface": {
+        "paved": 91,
+        "asphalt": 13,
+        "ground": 16
+      }
+    },
+    "osm_source_ids": [
+      "way/237614411",
+      "way/19607229",
+      "way/237614259",
+      "way/372357435",
+      "way/372357444",
+      "way/16777675",
+      "way/290422704",
+      "way/167457735",
+      "way/237614519",
+      "way/237614540",
+      "way/237614545",
+      "way/981204953",
+      "way/167457732",
+      "way/167457736",
+      "way/277441872",
+      "way/167431761",
+      "way/590837928"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0042",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 205,
+    "end_mile_nobo": 210,
+    "mile_nobo": 205,
+    "mile_sobo": 29.7,
+    "interval_miles": 5,
+    "score": 1,
+    "score_label": "mostly_smooth",
+    "pace_penalty_multiplier": 1.03,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 1,
+    "local_relief_ft_proxy": 663,
+    "osm_signal_count": 16,
+    "osm_tags": {
+      "surface": {
+        "ground": 16
+      }
+    },
+    "osm_source_ids": [
+      "way/167431761",
+      "way/590837928"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0043",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 210,
+    "end_mile_nobo": 215,
+    "mile_nobo": 210,
+    "mile_sobo": 24.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 0.7,
+    "local_relief_ft_proxy": 704,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0044",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 215,
+    "end_mile_nobo": 220,
+    "mile_nobo": 215,
+    "mile_sobo": 19.7,
+    "interval_miles": 5,
+    "score": 0,
+    "score_label": "smooth",
+    "pace_penalty_multiplier": 1,
+    "field_verified": false,
+    "confidence": "low_model_from_3dep_slope_proxy_only",
+    "grade_percent_proxy": 1.2,
+    "local_relief_ft_proxy": 934,
+    "osm_signal_count": 0,
+    "osm_tags": {},
+    "osm_source_ids": [],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "no_nearby_osm_tread_tags_matched_for_interval",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0045",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 220,
+    "end_mile_nobo": 225,
+    "mile_nobo": 220,
+    "mile_sobo": 14.7,
+    "interval_miles": 5,
+    "score": 3,
+    "score_label": "rocky_uneven",
+    "pace_penalty_multiplier": 1.15,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 5.2,
+    "local_relief_ft_proxy": 1999,
+    "osm_signal_count": 8,
+    "osm_tags": {
+      "surface": {
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/167434315"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0046",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 225,
+    "end_mile_nobo": 230,
+    "mile_nobo": 225,
+    "mile_sobo": 9.7,
+    "interval_miles": 5,
+    "score": 3,
+    "score_label": "rocky_uneven",
+    "pace_penalty_multiplier": 1.15,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 4.9,
+    "local_relief_ft_proxy": 2264,
+    "osm_signal_count": 8,
+    "osm_tags": {
+      "surface": {
+        "ground": 8
+      }
+    },
+    "osm_source_ids": [
+      "way/167432868"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  },
+  {
+    "tread_id": "mvp1-tread-5-0047",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 230,
+    "end_mile_nobo": 234.7,
+    "mile_nobo": 230,
+    "mile_sobo": 4.7,
+    "interval_miles": 5,
+    "score": 4,
+    "score_label": "very_rocky",
+    "pace_penalty_multiplier": 1.25,
+    "field_verified": false,
+    "confidence": "medium_model_with_osm_and_3dep_signals",
+    "grade_percent_proxy": 7.7,
+    "local_relief_ft_proxy": 3238,
+    "osm_signal_count": 88,
+    "osm_tags": {
+      "surface": {
+        "asphalt": 57,
+        "gravel": 9,
+        "paved": 18,
+        "concrete": 4
+      }
+    },
+    "osm_source_ids": [
+      "way/156988067",
+      "way/760250128",
+      "way/843762175",
+      "way/19438821",
+      "way/115154913",
+      "way/115154915",
+      "way/115154980",
+      "way/115159612",
+      "way/156988028",
+      "way/156988064",
+      "way/431545200",
+      "way/431545204",
+      "way/998587796",
+      "way/1366646892",
+      "way/1366646893",
+      "way/1366646894"
+    ],
+    "model_inputs": {
+      "osm_surface_smoothness_visibility_sac_scale": "matched_near_open_route_geometry",
+      "usgs_3dep_slope_local_relief": "derived_from_1mi_USGS_3DEP_samples",
+      "ssurgo_gssurgo": "not_ingested_for_mvp1; source gap documented",
+      "geology": "not_ingested_for_mvp1; weak signal deferred",
+      "user_reports": "none_available_in_open_mvp1_pack"
+    },
+    "source_id": "mvp1_tread_model",
+    "source_url": "internal:data/at-open-reference/scripts/build-mvp1-reference-pack.mjs",
+    "input_source_ids": [
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "source_license": "ODbL-derived plus USGS public domain",
+    "attribution": "OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Rockiness/tread score is a model estimate, not field verified. State confidence and use as pacing guidance only."
+  }
+]

@@ -48,6 +48,8 @@ node data/at-open-reference/scripts/build-camping-rules.mjs
 node data/at-open-reference/scripts/build-state-rag-docs.mjs
 node data/at-open-reference/scripts/build-scout-offline-summary.mjs
 node data/at-open-reference/scripts/build-scout-resource-explorer.mjs
+node data/at-open-reference/scripts/build-mvp1-reference-pack.mjs
+python3 data/at-open-reference/mvp1/run_mvp1_validation.py
 ```
 
 The current OSM-derived route candidate is useful as a legally separable open
@@ -66,6 +68,11 @@ same summary is bundled into the Forge SvelteKit server build.
 admin explorer bundle for `/app/admin/resources`. It packages table metadata,
 sample rows, and RAG document excerpts so admins can inspect what Scout can see
 without loading every raw source into the phone UI.
+
+`mvp1/` is the source-aware Springer/Amicalola-to-Davenport Gap pack for early
+Scout planning. It is generated from the reviewed open corpus plus MVP1-specific
+route notes, tread/rockiness model outputs, behavior tests, and a Python
+validator. Generated MVP1 miles are not official ATC miles.
 
 OSM corridor POIs, road crossings, settlements, and named side-trail candidates
 are filtered and compacted after fetch. The packaged raw file contains only

@@ -1,0 +1,726 @@
+[
+  {
+    "segment_id": "mvp1-000-010-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 0,
+    "end_mile_nobo": 10,
+    "start_mile_sobo": 234.7,
+    "end_mile_sobo": 224.7,
+    "distance_miles": 10,
+    "state": [
+      "GA"
+    ],
+    "land_managers": [
+      "Chattahoochee-Oconee National Forests / Georgia AT corridor"
+    ],
+    "elevation_gain_ft": 650,
+    "elevation_loss_ft": 1634,
+    "highest_point_ft": 3760,
+    "lowest_point_ft": 2602,
+    "max_grade_percent": 7.6,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-010-020-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 10,
+    "end_mile_nobo": 20,
+    "start_mile_sobo": 224.7,
+    "end_mile_sobo": 214.7,
+    "distance_miles": 10,
+    "state": [
+      "GA"
+    ],
+    "land_managers": [
+      "Chattahoochee-Oconee National Forests / Georgia AT corridor"
+    ],
+    "elevation_gain_ft": 1139,
+    "elevation_loss_ft": 726,
+    "highest_point_ft": 3314,
+    "lowest_point_ft": 2643,
+    "max_grade_percent": 10.2,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-020-030-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 20,
+    "end_mile_nobo": 30,
+    "start_mile_sobo": 214.7,
+    "end_mile_sobo": 204.7,
+    "distance_miles": 10,
+    "state": [
+      "GA"
+    ],
+    "land_managers": [
+      "Chattahoochee-Oconee National Forests / Georgia AT corridor"
+    ],
+    "elevation_gain_ft": 1948,
+    "elevation_loss_ft": 1882,
+    "highest_point_ft": 4373,
+    "lowest_point_ft": 2906,
+    "max_grade_percent": 12.2,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-030-040-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 30,
+    "end_mile_nobo": 40,
+    "start_mile_sobo": 204.7,
+    "end_mile_sobo": 194.7,
+    "distance_miles": 10,
+    "state": [
+      "GA"
+    ],
+    "land_managers": [
+      "Chattahoochee-Oconee National Forests / Georgia AT corridor"
+    ],
+    "elevation_gain_ft": 1413,
+    "elevation_loss_ft": 1268,
+    "highest_point_ft": 3845,
+    "lowest_point_ft": 3142,
+    "max_grade_percent": 12.5,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-040-050-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 40,
+    "end_mile_nobo": 50,
+    "start_mile_sobo": 194.7,
+    "end_mile_sobo": 184.7,
+    "distance_miles": 10,
+    "state": [
+      "GA"
+    ],
+    "land_managers": [
+      "Chattahoochee-Oconee National Forests / Georgia AT corridor"
+    ],
+    "elevation_gain_ft": 813,
+    "elevation_loss_ft": 796,
+    "highest_point_ft": 3926,
+    "lowest_point_ft": 3219,
+    "max_grade_percent": 9.6,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-050-060-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 50,
+    "end_mile_nobo": 60,
+    "start_mile_sobo": 184.7,
+    "end_mile_sobo": 174.7,
+    "distance_miles": 10,
+    "state": [
+      "GA"
+    ],
+    "land_managers": [
+      "Chattahoochee-Oconee National Forests / Georgia AT corridor"
+    ],
+    "elevation_gain_ft": 1825,
+    "elevation_loss_ft": 1549,
+    "highest_point_ft": 4139,
+    "lowest_point_ft": 3198,
+    "max_grade_percent": 14.8,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-060-070-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 60,
+    "end_mile_nobo": 70,
+    "start_mile_sobo": 174.7,
+    "end_mile_sobo": 164.7,
+    "distance_miles": 10,
+    "state": [
+      "GA"
+    ],
+    "land_managers": [
+      "Chattahoochee-Oconee National Forests / Georgia AT corridor"
+    ],
+    "elevation_gain_ft": 1069,
+    "elevation_loss_ft": 1102,
+    "highest_point_ft": 3833,
+    "lowest_point_ft": 2931,
+    "max_grade_percent": 9.5,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-070-080-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 70,
+    "end_mile_nobo": 80,
+    "start_mile_sobo": 164.7,
+    "end_mile_sobo": 154.7,
+    "distance_miles": 10,
+    "state": [
+      "GA",
+      "NC"
+    ],
+    "land_managers": [
+      "Chattahoochee-Oconee National Forests / Georgia AT corridor",
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 1529,
+    "elevation_loss_ft": 727,
+    "highest_point_ft": 4663,
+    "lowest_point_ft": 3134,
+    "max_grade_percent": 10,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-080-090-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 80,
+    "end_mile_nobo": 90,
+    "start_mile_sobo": 154.7,
+    "end_mile_sobo": 144.7,
+    "distance_miles": 10,
+    "state": [
+      "NC"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 1616,
+    "elevation_loss_ft": 1454,
+    "highest_point_ft": 5256,
+    "lowest_point_ft": 4281,
+    "max_grade_percent": 9.6,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-090-100-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 90,
+    "end_mile_nobo": 100,
+    "start_mile_sobo": 144.7,
+    "end_mile_sobo": 134.7,
+    "distance_miles": 10,
+    "state": [
+      "NC"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 844,
+    "elevation_loss_ft": 1263,
+    "highest_point_ft": 4943,
+    "lowest_point_ft": 4205,
+    "max_grade_percent": 9.1,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-100-110-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 100,
+    "end_mile_nobo": 110,
+    "start_mile_sobo": 134.7,
+    "end_mile_sobo": 124.7,
+    "distance_miles": 10,
+    "state": [
+      "NC"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 1897,
+    "elevation_loss_ft": 1128,
+    "highest_point_ft": 4974,
+    "lowest_point_ft": 3763,
+    "max_grade_percent": 10.6,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-110-120-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 110,
+    "end_mile_nobo": 120,
+    "start_mile_sobo": 124.7,
+    "end_mile_sobo": 114.7,
+    "distance_miles": 10,
+    "state": [
+      "NC"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 1258,
+    "elevation_loss_ft": 1965,
+    "highest_point_ft": 5324,
+    "lowest_point_ft": 4268,
+    "max_grade_percent": 11.5,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-120-130-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 120,
+    "end_mile_nobo": 130,
+    "start_mile_sobo": 114.7,
+    "end_mile_sobo": 104.7,
+    "distance_miles": 10,
+    "state": [
+      "NC"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 1299,
+    "elevation_loss_ft": 2417,
+    "highest_point_ft": 5128,
+    "lowest_point_ft": 3149,
+    "max_grade_percent": 15,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-130-140-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 130,
+    "end_mile_nobo": 140,
+    "start_mile_sobo": 104.7,
+    "end_mile_sobo": 94.7,
+    "distance_miles": 10,
+    "state": [
+      "NC"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 2849,
+    "elevation_loss_ft": 1409,
+    "highest_point_ft": 4607,
+    "lowest_point_ft": 1758,
+    "max_grade_percent": 13.3,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-140-150-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 140,
+    "end_mile_nobo": 150,
+    "start_mile_sobo": 94.7,
+    "end_mile_sobo": 84.7,
+    "distance_miles": 10,
+    "state": [
+      "NC"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 1025,
+    "elevation_loss_ft": 1942,
+    "highest_point_ft": 4923,
+    "lowest_point_ft": 3374,
+    "max_grade_percent": 12.8,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-150-160-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 150,
+    "end_mile_nobo": 160,
+    "start_mile_sobo": 84.7,
+    "end_mile_sobo": 74.7,
+    "distance_miles": 10,
+    "state": [
+      "NC"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor"
+    ],
+    "elevation_gain_ft": 881,
+    "elevation_loss_ft": 2826,
+    "highest_point_ft": 3707,
+    "lowest_point_ft": 1728,
+    "max_grade_percent": 13.8,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-160-170-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 160,
+    "end_mile_nobo": 170,
+    "start_mile_sobo": 74.7,
+    "end_mile_sobo": 64.7,
+    "distance_miles": 10,
+    "state": [
+      "NC",
+      "NC/TN"
+    ],
+    "land_managers": [
+      "Nantahala National Forest / NC AT corridor",
+      "Great Smoky Mountains National Park"
+    ],
+    "elevation_gain_ft": 2862,
+    "elevation_loss_ft": 93,
+    "highest_point_ft": 4497,
+    "lowest_point_ft": 1671,
+    "max_grade_percent": 14.8,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-170-180-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 170,
+    "end_mile_nobo": 180,
+    "start_mile_sobo": 64.7,
+    "end_mile_sobo": 54.7,
+    "distance_miles": 10,
+    "state": [
+      "NC/TN"
+    ],
+    "land_managers": [
+      "Great Smoky Mountains National Park"
+    ],
+    "elevation_gain_ft": 2045,
+    "elevation_loss_ft": 1142,
+    "highest_point_ft": 5400,
+    "lowest_point_ft": 3932,
+    "max_grade_percent": 10.7,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-180-190-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 180,
+    "end_mile_nobo": 190,
+    "start_mile_sobo": 54.7,
+    "end_mile_sobo": 44.7,
+    "distance_miles": 10,
+    "state": [
+      "NC/TN"
+    ],
+    "land_managers": [
+      "Great Smoky Mountains National Park"
+    ],
+    "elevation_gain_ft": 798,
+    "elevation_loss_ft": 1007,
+    "highest_point_ft": 5400,
+    "lowest_point_ft": 4530,
+    "max_grade_percent": 8,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-190-200-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 190,
+    "end_mile_nobo": 200,
+    "start_mile_sobo": 44.7,
+    "end_mile_sobo": 34.7,
+    "distance_miles": 10,
+    "state": [
+      "NC/TN"
+    ],
+    "land_managers": [
+      "Great Smoky Mountains National Park"
+    ],
+    "elevation_gain_ft": 1323,
+    "elevation_loss_ft": 1007,
+    "highest_point_ft": 6514,
+    "lowest_point_ft": 5191,
+    "max_grade_percent": 8.6,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-200-210-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 200,
+    "end_mile_nobo": 210,
+    "start_mile_sobo": 34.7,
+    "end_mile_sobo": 24.7,
+    "distance_miles": 10,
+    "state": [
+      "NC/TN"
+    ],
+    "land_managers": [
+      "Great Smoky Mountains National Park"
+    ],
+    "elevation_gain_ft": 1441,
+    "elevation_loss_ft": 1199,
+    "highest_point_ft": 6022,
+    "lowest_point_ft": 4977,
+    "max_grade_percent": 9.5,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-210-220-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 210,
+    "end_mile_nobo": 220,
+    "start_mile_sobo": 24.7,
+    "end_mile_sobo": 14.7,
+    "distance_miles": 10,
+    "state": [
+      "NC/TN"
+    ],
+    "land_managers": [
+      "Great Smoky Mountains National Park"
+    ],
+    "elevation_gain_ft": 1127,
+    "elevation_loss_ft": 640,
+    "highest_point_ft": 6307,
+    "lowest_point_ft": 5376,
+    "max_grade_percent": 6.6,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-220-230-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 220,
+    "end_mile_nobo": 230,
+    "start_mile_sobo": 14.7,
+    "end_mile_sobo": 4.7,
+    "distance_miles": 10,
+    "state": [
+      "NC/TN"
+    ],
+    "land_managers": [
+      "Great Smoky Mountains National Park"
+    ],
+    "elevation_gain_ft": 634,
+    "elevation_loss_ft": 3293,
+    "highest_point_ft": 6236,
+    "lowest_point_ft": 3577,
+    "max_grade_percent": 14,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  },
+  {
+    "segment_id": "mvp1-230-235-10mi",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "start_mile_nobo": 230,
+    "end_mile_nobo": 234.7,
+    "start_mile_sobo": 4.7,
+    "end_mile_sobo": 0,
+    "distance_miles": 4.7,
+    "state": [
+      "NC/TN"
+    ],
+    "land_managers": [
+      "Great Smoky Mountains National Park"
+    ],
+    "elevation_gain_ft": 0,
+    "elevation_loss_ft": 1918,
+    "highest_point_ft": 3577,
+    "lowest_point_ft": 1659,
+    "max_grade_percent": 12.8,
+    "sample_interval_miles": 1,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "source_license": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived terrain screening from USGS 3DEP. Do not present as surveyed elevation or guidebook profile."
+  }
+]

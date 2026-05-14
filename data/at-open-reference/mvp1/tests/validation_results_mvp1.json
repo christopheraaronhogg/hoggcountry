@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "failures": [],
+  "sources": 16,
+  "mvp1_miles": 234.7,
+  "behavior_questions": 42,
+  "rag_docs": 17,
+  "water_candidates": 159,
+  "tread_1mi_records": 235,
+  "validated_at": "2026-05-14T00:00:00.000Z"
+}

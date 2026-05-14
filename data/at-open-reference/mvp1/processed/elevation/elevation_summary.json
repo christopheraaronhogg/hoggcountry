@@ -1,0 +1,18 @@
+{
+  "route_id": "at-mvp1-springer-davenport-open-2026",
+  "start_mile_nobo": 0,
+  "end_mile_nobo": 234.7,
+  "total_gain_ft": 32288,
+  "total_loss_ft": 34388,
+  "highest_point_ft": 6514.1,
+  "lowest_point_ft": 1659.4,
+  "sample_interval_miles": 1,
+  "source_id": "usgs_3dep",
+  "source_url": "https://epqs.nationalmap.gov/v1/json",
+  "license_status": "public_domain",
+  "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+  "confidence": "model_derived_topographic_estimate",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Elevation totals are model-derived from 1-mile USGS 3DEP samples and should be treated as planning estimates."
+}

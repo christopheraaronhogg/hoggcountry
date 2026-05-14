@@ -1,0 +1,214 @@
+[
+  {
+    "state": [
+      "GA"
+    ],
+    "rule_id": "mvp1-amicalola-approach-source-gap",
+    "jurisdiction": "Amicalola Falls State Park and Appalachian Approach Trail",
+    "mile_range_nobo": [
+      -8.8,
+      0
+    ],
+    "applies_to": "approach_trail_separate_from_mvp1_main_at_geometry",
+    "camping_policy": "source_gap_for_backcountry_approach_trail_rules; use official park sources before itinerary commitment",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "source_id": "state_land_manager_official_pages",
+    "source_url": "https://gastateparks.org/AmicalolaFalls",
+    "source_summary": "State park source pointer for Amicalola Falls State Park. MVP1 does not package copied park guide text.",
+    "license_status": "open_license_attribution",
+    "source_license": "state_official_page_reviewed_pointer",
+    "attribution": "Georgia State Parks & Historic Sites",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "confidence": "official_source_pointer_with_rule_detail_gap",
+    "ai_answer_rule": "Use this as a source-aware rule summary only. Verify current permit, fee, closure, food-storage, and dog rules with the land manager before itinerary commitment.",
+    "route_id": "at-mvp1-springer-davenport-open-2026"
+  },
+  {
+    "state": [
+      "GA"
+    ],
+    "rule_id": "camping-chattahoochee-oconee-nf",
+    "jurisdiction": "Chattahoochee-Oconee National Forests",
+    "land_manager_type": "national_forest",
+    "source_id": "usfs_official_land_manager_pages",
+    "source_url": "https://www.fs.usda.gov/r08/chattahoochee-oconee/about-area/faqs",
+    "source_title": "Chattahoochee-Oconee National Forest FAQ",
+    "license_status": "public_domain",
+    "camping_policy": "dispersed_allowed_in_most_forest_boundary_areas_unless_restricted",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "secure_food_and_keep_safe_from_bears",
+    "dogs_allowed": "verify_current_rule",
+    "stay_limit": "14 days for developed and dispersed camping; 30-day reset before re-establishing",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "source_summary": "USFS describes developed and dispersed camping, says dispersed camping is allowed in most places within the forest boundary, and lists a 14-day camping limit.",
+    "ai_answer_rule": "Use this as a source-aware rule summary only. Verify current permit, fee, closure, food-storage, and dog rules with the land manager before itinerary commitment.",
+    "attribution": "U.S. Forest Service",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "mile_range_nobo": [
+      0,
+      76
+    ],
+    "source_license": "public_domain",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "state": [
+      "NC"
+    ],
+    "rule_id": "camping-nantahala-at-cheoah-district",
+    "jurisdiction": "Nantahala National Forest Appalachian Trail, Cheoah District",
+    "land_manager_type": "national_forest",
+    "source_id": "usfs_official_land_manager_pages",
+    "source_url": "https://www.fs.usda.gov/r08/northcarolina/recreation/trails/appalachian-trail-1-02",
+    "source_title": "National Forests in North Carolina - Appalachian Trail #1-02",
+    "license_status": "public_domain",
+    "camping_policy": "site_specific_at_camping_notes_with_gap_restrictions; verify_general_dispersed_rules_by_district",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "stay_limit": "verify_current_rule",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "source_summary": "USFS identifies Nantahala AT section details including Cheoah Bald camping with no water, shelter distances, and no camping at Stecoah Gap.",
+    "ai_answer_rule": "Use this as a source-aware rule summary only. Verify current permit, fee, closure, food-storage, and dog rules with the land manager before itinerary commitment.",
+    "attribution": "U.S. Forest Service",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "mile_range_nobo": [
+      76,
+      164
+    ],
+    "source_license": "public_domain",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "state": [
+      "NC",
+      "TN"
+    ],
+    "rule_id": "camping-grsm-backcountry",
+    "jurisdiction": "Great Smoky Mountains National Park",
+    "land_manager_type": "national_park",
+    "source_id": "nps_official_land_manager_pages",
+    "source_url": "https://home.nps.gov/grsm/planyourvisit/backcountry-camping.htm",
+    "source_title": "Backcountry Camping - Great Smoky Mountains National Park",
+    "license_status": "public_domain",
+    "camping_policy": "permit_required_designated_backcountry_campsites_and_shelters_only",
+    "permit_required": "yes",
+    "fee_required": "yes",
+    "food_storage_rule": "all odorous items must use the bear cable system at each campsite or shelter",
+    "dogs_allowed": "no_on_backcountry_trails_except_specific_frontcountry_trails",
+    "stay_limit": "3 consecutive nights at most backcountry campsites; no consecutive nights at shelters or campsite 113",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "source_summary": "NPS states that all backcountry camping requires permits and advance reservations, camping is only at designated sites/shelters, and food/trash must use bear cables.",
+    "ai_answer_rule": "Use this as a source-aware rule summary only. Verify current permit, fee, closure, food-storage, and dog rules with the land manager before itinerary commitment.",
+    "attribution": "National Park Service",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "mile_range_nobo": [
+      164,
+      234.7
+    ],
+    "source_license": "public_domain",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "state": [
+      "NC",
+      "TN"
+    ],
+    "rule_id": "camping-grsm-backcountry",
+    "jurisdiction": "Great Smoky Mountains National Park",
+    "land_manager_type": "national_park",
+    "source_id": "nps_official_land_manager_pages",
+    "source_url": "https://home.nps.gov/grsm/planyourvisit/backcountry-camping.htm",
+    "source_title": "Backcountry Camping - Great Smoky Mountains National Park",
+    "license_status": "public_domain",
+    "camping_policy": "permit_required_designated_backcountry_campsites_and_shelters_only",
+    "permit_required": "yes",
+    "fee_required": "yes",
+    "food_storage_rule": "all odorous items must use the bear cable system at each campsite or shelter",
+    "dogs_allowed": "no_on_backcountry_trails_except_specific_frontcountry_trails",
+    "stay_limit": "3 consecutive nights at most backcountry campsites; no consecutive nights at shelters or campsite 113",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "source_summary": "NPS states that all backcountry camping requires permits and advance reservations, camping is only at designated sites/shelters, and food/trash must use bear cables.",
+    "ai_answer_rule": "Use this as a source-aware rule summary only. Verify current permit, fee, closure, food-storage, and dog rules with the land manager before itinerary commitment.",
+    "attribution": "National Park Service",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "mile_range_nobo": [
+      164,
+      234.7
+    ],
+    "source_license": "public_domain",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "state": [
+      "TN",
+      "NC"
+    ],
+    "rule_id": "camping-cherokee-nf-at",
+    "jurisdiction": "Cherokee National Forest Appalachian Trail",
+    "land_manager_type": "national_forest",
+    "source_id": "usfs_official_land_manager_pages",
+    "source_url": "https://www.fs.usda.gov/generalinfo/cherokee/recreation/generalinfo/?groupid=69284&recid=34868",
+    "source_title": "Cherokee National Forest - Appalachian National Scenic Trail",
+    "license_status": "public_domain",
+    "camping_policy": "at_shelter_and_named_overnight_site_stay_limits; verify_dispersed_rules_by_district",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "dogs_and_pets_must_be_leashed",
+    "stay_limit": "3 days within a 30-day period at southern region AT shelters and listed overnight sites",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "source_summary": "USFS states that pets must be leashed and southern-region AT shelters plus listed overnight sites are limited to three days within a 30-day period.",
+    "ai_answer_rule": "Use this as a source-aware rule summary only. Verify current permit, fee, closure, food-storage, and dog rules with the land manager before itinerary commitment.",
+    "attribution": "U.S. Forest Service",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "mile_range_nobo": [
+      234.7,
+      234.7
+    ],
+    "source_license": "public_domain",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "state": [
+      "TN",
+      "NC"
+    ],
+    "rule_id": "camping-cherokee-nf-at",
+    "jurisdiction": "Cherokee National Forest Appalachian Trail",
+    "land_manager_type": "national_forest",
+    "source_id": "usfs_official_land_manager_pages",
+    "source_url": "https://www.fs.usda.gov/generalinfo/cherokee/recreation/generalinfo/?groupid=69284&recid=34868",
+    "source_title": "Cherokee National Forest - Appalachian National Scenic Trail",
+    "license_status": "public_domain",
+    "camping_policy": "at_shelter_and_named_overnight_site_stay_limits; verify_dispersed_rules_by_district",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "dogs_and_pets_must_be_leashed",
+    "stay_limit": "3 days within a 30-day period at southern region AT shelters and listed overnight sites",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "source_summary": "USFS states that pets must be leashed and southern-region AT shelters plus listed overnight sites are limited to three days within a 30-day period.",
+    "ai_answer_rule": "Use this as a source-aware rule summary only. Verify current permit, fee, closure, food-storage, and dog rules with the land manager before itinerary commitment.",
+    "attribution": "U.S. Forest Service",
+    "route_id": "at-mvp1-springer-davenport-open-2026",
+    "mile_range_nobo": [
+      234.7,
+      234.7
+    ],
+    "source_license": "public_domain",
+    "last_generated": "2026-05-14"
+  }
+]

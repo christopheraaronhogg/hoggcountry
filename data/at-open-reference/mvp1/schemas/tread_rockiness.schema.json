@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "tread_id",
+    "route_id",
+    "start_mile_nobo",
+    "end_mile_nobo",
+    "score",
+    "pace_penalty_multiplier",
+    "field_verified",
+    "confidence",
+    "source_id",
+    "source_url",
+    "license_status",
+    "last_checked",
+    "last_generated",
+    "ai_answer_rule"
+  ]
+}

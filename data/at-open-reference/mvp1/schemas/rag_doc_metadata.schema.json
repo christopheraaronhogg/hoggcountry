@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "path",
+    "title",
+    "kind",
+    "source_ids",
+    "license_status",
+    "confidence",
+    "last_checked",
+    "last_generated",
+    "ai_answer_rule"
+  ]
+}

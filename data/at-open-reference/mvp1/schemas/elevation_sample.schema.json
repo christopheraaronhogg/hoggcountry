@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "sample_id",
+    "route_id",
+    "mile_nobo",
+    "mile_sobo",
+    "lat",
+    "lon",
+    "elevation_ft",
+    "source_id",
+    "source_url",
+    "license_status",
+    "confidence",
+    "last_checked",
+    "ai_answer_rule"
+  ]
+}

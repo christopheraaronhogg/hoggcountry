@@ -1,0 +1,35 @@
+[
+  {
+    "source_id": "state_land_manager_official_pages",
+    "name": "Georgia State Parks official pages for Amicalola Falls",
+    "source_url": "https://gastateparks.org/AmicalolaFalls",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_pointer",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "attribution": "Georgia State Parks & Historic Sites",
+    "ai_answer_rule": "Check official current park notices before answering Amicalola conditions, closures, fees, or reservations."
+  },
+  {
+    "source_id": "usfs_official_land_manager_pages",
+    "name": "USFS forest alert pages for Chattahoochee-Oconee, Nantahala, and Cherokee",
+    "source_url": "https://www.fs.usda.gov/about-agency/contact-us/regional-offices",
+    "license_status": "public_domain",
+    "confidence": "official_source_directory",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "attribution": "U.S. Forest Service",
+    "ai_answer_rule": "Check the relevant forest alerts/orders page for closures, fire, roads, and storm damage before advice."
+  },
+  {
+    "source_id": "nps_api",
+    "name": "NPS live alerts for Great Smoky Mountains National Park",
+    "source_url": "https://www.nps.gov/subjects/digital/nps-data-api.htm",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "attribution": "National Park Service",
+    "ai_answer_rule": "Use live NPS API and park pages for GRSM closures, bear activity, permits, and road status; disclose API lag/source gaps."
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "source_id": "nps_api",
+  "source_url": "https://www.nps.gov/subjects/digital/nps-data-api.htm",
+  "license_status": "api_access_allowed",
+  "attribution": "National Park Service",
+  "confidence": "official_live_api_cache_placeholder",
+  "fetched_at": null,
+  "last_checked": "2026-05-13",
+  "records": [],
+  "ai_answer_rule": "This cache is empty until a live NPS API retrieval runs. Scout must say live retrieval failed or was not run when no fetched_at timestamp is present.",
+  "last_generated": "2026-05-14"
+}

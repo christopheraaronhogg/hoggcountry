@@ -1,0 +1,268 @@
+[
+  {
+    "path": "rag_docs/state_guides/GA.md",
+    "title": "MVP1 Georgia Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "usfs_official_land_manager_pages",
+      "state_land_manager_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/state_guides/NC_TN.md",
+    "title": "MVP1 North Carolina / Tennessee Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "nps_official_land_manager_pages",
+      "usfs_official_land_manager_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/water.md",
+    "title": "MVP1 Water Policy",
+    "kind": "policy",
+    "source_ids": [
+      "usgs_3dhp_nhd"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/navigation.md",
+    "title": "MVP1 Navigation Policy",
+    "kind": "policy",
+    "source_ids": [
+      "osm",
+      "waymarked_trails_api"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/weather_live_conditions.md",
+    "title": "MVP1 Live Conditions Policy",
+    "kind": "policy",
+    "source_ids": [
+      "noaa_nws_api",
+      "nps_api",
+      "usfs_official_land_manager_pages"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/tread_rockiness.md",
+    "title": "MVP1 Tread Rockiness Policy",
+    "kind": "policy",
+    "source_ids": [
+      "mvp1_tread_model",
+      "osm",
+      "usgs_3dep"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "model_estimate_not_field_verified",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/rules/camping_permit_fee_mvp1.md",
+    "title": "MVP1 Camping Permit Fee Rules",
+    "kind": "rules",
+    "source_ids": [
+      "state_land_manager_official_pages",
+      "usfs_official_land_manager_pages",
+      "nps_official_land_manager_pages"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_000_025.md",
+    "title": "MVP1 Segment 0-25",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_025_050.md",
+    "title": "MVP1 Segment 25-50",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_050_075.md",
+    "title": "MVP1 Segment 50-75",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_075_100.md",
+    "title": "MVP1 Segment 75-100",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_100_125.md",
+    "title": "MVP1 Segment 100-125",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_125_150.md",
+    "title": "MVP1 Segment 125-150",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_150_175.md",
+    "title": "MVP1 Segment 150-175",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_175_200.md",
+    "title": "MVP1 Segment 175-200",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_200_225.md",
+    "title": "MVP1 Segment 200-225",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp1_225_235.md",
+    "title": "MVP1 Segment 225-234.7",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp1_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP1 records; preserve generated-mile, water, live-condition, and model-confidence cautions."
+  }
+]

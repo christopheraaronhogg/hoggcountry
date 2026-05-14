@@ -1,0 +1,55 @@
+[
+  {
+    "source_id": "noaa_nws_api",
+    "source_url": "https://www.weather.gov/documentation/services-web-api",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "National Weather Service API",
+    "categories": [
+      "forecast",
+      "alerts",
+      "observations"
+    ],
+    "last_checked": "2026-05-13",
+    "update_cadence": "live; cache per endpoint and include fetched timestamp",
+    "attribution": "National Weather Service",
+    "ai_answer_rule": "Use live NWS point forecasts and alerts for current/future weather. If coordinates or live retrieval are unavailable, state the source gap.",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "source_id": "nps_api",
+    "source_url": "https://www.nps.gov/subjects/digital/nps-data-api.htm",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "National Park Service API",
+    "categories": [
+      "park_alerts",
+      "campgrounds",
+      "facilities",
+      "news"
+    ],
+    "last_checked": "2026-05-13",
+    "update_cadence": "live; cache with fetched timestamp and disclose possible API lag",
+    "attribution": "National Park Service",
+    "ai_answer_rule": "Use live NPS API alerts for NPS-managed areas. For high-risk decisions, tell users to verify directly with the park or land manager.",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "source_id": "usfs_geodata",
+    "source_url": "https://www.fs.usda.gov/about-agency/contact-us/regional-offices",
+    "license_status": "public_domain",
+    "confidence": "official_source_directory",
+    "name": "USFS regional and forest alert pages",
+    "categories": [
+      "closures",
+      "fire",
+      "roads",
+      "alerts"
+    ],
+    "last_checked": "2026-05-13",
+    "update_cadence": "live check by forest/region before advice",
+    "attribution": "U.S. Forest Service",
+    "ai_answer_rule": "Use official USFS/forest alert pages for closures, fire, smoke, roads, and forest orders. If live retrieval fails, provide timestamped source gap.",
+    "last_generated": "2026-05-14"
+  }
+]

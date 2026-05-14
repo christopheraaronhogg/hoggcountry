@@ -1,0 +1,18 @@
+{
+  "pack_id": "scout-at-mvp1-springer-davenport",
+  "route_id": "at-mvp1-springer-davenport-open-2026",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "scope": {
+    "start": "Springer Mountain open-route candidate",
+    "amicalola": "separate source gap / approach lane not included in main AT geometry",
+    "end": "Davenport Gap / I-40 corridor open-route candidate",
+    "generated_mile_range_nobo": [
+      0,
+      234.7
+    ]
+  },
+  "prompt_artifact_checklist": "prompt_artifact_checklist.md",
+  "source_manifest": "source_manifest.yaml",
+  "production_safe_export": "processed/export/scout_at_mvp1_production_safe.json",
+  "validation": "run_mvp1_validation.py"
+}

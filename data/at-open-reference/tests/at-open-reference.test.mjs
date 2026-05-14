@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import test from 'node:test';
 
@@ -166,4 +167,34 @@ test('camping, permit, and fee rules stay official-source and conservative', () 
   const ruleDoc = readFileSync(new URL('../rag_docs/rules/camping_permit_fee_initial.md', import.meta.url), 'utf8');
   assert.match(ruleDoc, /not a complete Appalachian Trail legal camping guide/);
   assert.match(ruleDoc, /verify with the land manager/);
+});
+
+test('Scout AT MVP1 Springer to Davenport reference pack validates source-aware planning rules', () => {
+  const result = spawnSync('python3', ['data/at-open-reference/mvp1/run_mvp1_validation.py', '--json'], {
+    cwd: new URL('../../..', import.meta.url),
+    encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+
+  const validation = JSON.parse(result.stdout);
+  assert.equal(validation.ok, true);
+  assert.equal(validation.failures.length, 0);
+  assert.equal(validation.mvp1_miles, 234.7);
+  assert.ok(validation.behavior_questions >= 40);
+  assert.ok(validation.rag_docs >= 15);
+  assert.ok(validation.water_candidates >= 100);
+  assert.ok(validation.tread_1mi_records >= 200);
+
+  const routeNotes = readFileSync(new URL('../mvp1/processed/route/route_notes.md', import.meta.url), 'utf8');
+  assert.match(routeNotes, /Amicalola/i);
+  assert.match(routeNotes, /Davenport Gap/i);
+  assert.match(routeNotes, /not official ATC miles/i);
+
+  const treadNotes = readFileSync(new URL('../mvp1/processed/tread_rockiness/model_notes.md', import.meta.url), 'utf8');
+  assert.match(treadNotes, /SSURGO\/gSSURGO/i);
+  assert.match(treadNotes, /not field_verified/i);
+
+  const behaviorQuestions = JSON.parse(readFileSync(new URL('../mvp1/tests/mvp1_behavior_questions.json', import.meta.url), 'utf8'));
+  assert.ok(behaviorQuestions.some((question) => /reliable water/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /live retrieval/i.test(question.expected_behavior)));
 });

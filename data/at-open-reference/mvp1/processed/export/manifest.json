@@ -1,0 +1,9 @@
+{
+  "pack": "scout-at-mvp1",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "route_id": "at-mvp1-springer-davenport-open-2026",
+  "end_mile_nobo": 234.7,
+  "production_safe_export": "processed/export/scout_at_mvp1_production_safe.json",
+  "source_manifest": "source_manifest.yaml",
+  "validation": "run_mvp1_validation.py"
+}
