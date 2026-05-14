@@ -3,7 +3,7 @@
 export const scoutAtOpenReferenceBundledSummary = {
   "version": 1,
   "summaryId": "scout-at-open-reference-offline-summary",
-  "generatedAt": "2026-05-14T02:33:47.556Z",
+  "generatedAt": "2026-05-14T02:36:59.332Z",
   "available": true,
   "sourceManifest": {
     "path": "source_manifest.yaml",

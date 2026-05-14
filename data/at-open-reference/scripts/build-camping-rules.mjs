@@ -10,6 +10,24 @@ const lastChecked = '2026-05-14';
 const baseAnswerRule =
   'Use as an official-source summary only. Show the source URL and last_checked date, and tell users to verify current rules with the land manager before itinerary commitment.';
 
+const attributionBySourceId = {
+  nps_official_land_manager_pages: 'National Park Service',
+  usfs_official_land_manager_pages: 'U.S. Forest Service',
+  state_land_manager_official_pages: 'State land manager named in the record source URL',
+  baxter_state_park_authority_pages: 'Baxter State Park Authority',
+};
+
+function attributionFor(sourceId) {
+  return attributionBySourceId[sourceId] ?? 'Source owner named in source_id';
+}
+
+function withAttribution(record) {
+  return {
+    ...record,
+    attribution: record.attribution ?? attributionFor(record.source_id),
+  };
+}
+
 const rules = [
   {
     rule_id: 'camping-grsm-backcountry',
@@ -378,7 +396,7 @@ function buildRulesByState() {
   return unique(rules.flatMap((rule) => rule.state)).flatMap((state) =>
     rules
       .filter((rule) => rule.state.includes(state))
-      .map((rule) => ({
+      .map((rule) => withAttribution({
         state,
         rule_id: rule.rule_id,
         jurisdiction: rule.jurisdiction,
@@ -396,7 +414,7 @@ function buildRulesByState() {
 }
 
 function buildLandManagers() {
-  return rules.map((rule) => ({
+  return rules.map((rule) => withAttribution({
     manager_id: rule.rule_id.replace(/^camping-/, 'manager-'),
     jurisdiction: rule.jurisdiction,
     land_manager_type: rule.land_manager_type,
@@ -412,7 +430,7 @@ function buildLandManagers() {
 function buildPermitRecords() {
   return rules
     .filter((rule) => !/^unknown$/u.test(rule.permit_required))
-    .map((rule) => ({
+    .map((rule) => withAttribution({
       rule_id: rule.rule_id,
       jurisdiction: rule.jurisdiction,
       state: rule.state,
@@ -429,7 +447,7 @@ function buildPermitRecords() {
 function buildFeeRecords() {
   return rules
     .filter((rule) => !/^unknown$/u.test(rule.fee_required))
-    .map((rule) => ({
+    .map((rule) => withAttribution({
       rule_id: rule.rule_id,
       jurisdiction: rule.jurisdiction,
       state: rule.state,
@@ -483,7 +501,7 @@ function main() {
   const managersDir = path.join(packRoot, 'processed', 'land_managers');
   const ragDir = path.join(packRoot, 'rag_docs', 'rules');
 
-  writeJson(path.join(campingDir, 'rules_by_land_manager.json'), rules);
+  writeJson(path.join(campingDir, 'rules_by_land_manager.json'), rules.map(withAttribution));
   writeJson(path.join(campingDir, 'rules_by_state.json'), buildRulesByState());
   writeJson(path.join(campingDir, 'permit_required_sections.json'), buildPermitRecords());
   writeJson(path.join(campingDir, 'fee_required_sections.json'), buildFeeRecords());

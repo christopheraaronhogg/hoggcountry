@@ -204,10 +204,14 @@ export function validateAtOpenReferencePack() {
     for (const [index, record] of records.entries()) {
       const prefix = `${rel}[${index}]`;
       const sourceId = record.source_id ?? record.source ?? record.source_route_id;
+      const sourceUrl = record.source_url ?? record.source_access_url ?? record.source_citation;
       const licenseStatus = record.license_status ?? record.source_license ?? record.license_source;
       assert(sourceId, `${prefix} missing source provenance`, failures);
+      assert(sourceUrl, `${prefix} missing source URL/citation`, failures);
       assert(licenseStatus, `${prefix} missing license status`, failures);
+      assert(record.attribution, `${prefix} missing attribution`, failures);
       assert(record.confidence, `${prefix} missing confidence`, failures);
+      assert(record.last_checked, `${prefix} missing last_checked timestamp`, failures);
       assert(licenseStatus !== 'unknown_review_required', `${prefix} uses unknown_review_required in processed data`, failures);
       assert(licenseStatus !== 'blocked', `${prefix} uses blocked source in processed data`, failures);
       assert(!blockedSourceIds.has(sourceId), `${prefix} uses blocked source_id ${sourceId}`, failures);
