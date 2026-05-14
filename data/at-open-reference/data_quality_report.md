@@ -9,7 +9,8 @@ review notes, schemas, validation gates, an OSM-derived route candidate,
 generated milepoints, mapped hydrography water candidates, and OSM shelter
 waypoint candidates. It now includes coarse elevation summaries and filtered
 OSM corridor candidates for campsites, privies/toilets, vistas, parking,
-trailheads, and nearby towns. It does not yet contain a camping-rule corpus.
+trailheads, and nearby towns. It also includes an initial official-source
+camping, permit, fee, and land-manager rules corpus.
 
 ## Completeness
 
@@ -25,7 +26,8 @@ trailheads, and nearby towns. It does not yet contain a camping-rule corpus.
 - Access/towns: OSM parking, trailhead, and settlement candidates generated;
   road crossings, side trails, services, and private business records remain
   empty placeholders.
-- Rules/permits/fees: not generated.
+- Rules/permits/fees: initial official-source records generated for 14 major
+  NPS, USFS, state, and Baxter land-manager rule lanes.
 - Live connectors: app runtime has NWS/official-source lanes; this pack has not
   exported connector metadata yet.
 - RAG docs: generated-mile, water, current-condition, and coarse elevation docs.
@@ -47,6 +49,8 @@ trailheads, and nearby towns. It does not yet contain a camping-rule corpus.
   miles. They intentionally do not include guidebook town notes or confirmed
   hiker services.
 - Road crossings and side trails are not generated yet.
+- Camping, permit, and fee records are not exhaustive. They cover the first
+  official-source pass and must be refreshed before current itinerary advice.
 - PASDA/NPS candidate datasets need metadata/license review before use.
 - Legacy repo scripts outside this pack may reference guidebook-derived data;
   they are not approved inputs for this open reference pack.

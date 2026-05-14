@@ -77,7 +77,15 @@ const requiredGeneratedPaths = [
   'processed/elevation/climbs_descents_by_25mi_segment_5_0mi.json',
   'processed/elevation/high_low_points_5_0mi.json',
   'processed/elevation/grade_risk_sections_5_0mi.json',
-  'rag_docs/segment_guides/elevation_5mi'
+  'processed/camping_rules/rules_by_land_manager.json',
+  'processed/camping_rules/rules_by_state.json',
+  'processed/camping_rules/permit_required_sections.json',
+  'processed/camping_rules/fee_required_sections.json',
+  'processed/permits_fees/permit_required_sections.json',
+  'processed/permits_fees/fee_required_sections.json',
+  'processed/land_managers/land_managers.json',
+  'rag_docs/segment_guides/elevation_5mi',
+  'rag_docs/rules/camping_permit_fee_initial.md'
 ];
 
 function readJsonLikeYaml(path) {
@@ -151,6 +159,10 @@ export function validateAtOpenReferencePack() {
 
   assert(sourceById.get('osm')?.license_status === 'open_license_share_alike', 'OSM must be marked open_license_share_alike.', failures);
   assert(sourceById.get('waymarked_trails_api')?.license_status === 'open_license_share_alike', 'Waymarked Trails route ordering must stay OSM/ODbL separated.', failures);
+  assert(sourceById.get('nps_official_land_manager_pages')?.license_status === 'public_domain', 'NPS official pages must be present for rules.', failures);
+  assert(sourceById.get('usfs_official_land_manager_pages')?.license_status === 'public_domain', 'USFS official pages must be present for rules.', failures);
+  assert(sourceById.get('state_land_manager_official_pages')?.license_status === 'open_license_attribution', 'State official pages must be present for rules.', failures);
+  assert(sourceById.get('baxter_state_park_authority_pages')?.license_status === 'open_license_attribution', 'Baxter official pages must be present for rules.', failures);
 
   const blockedText = readFileSync(join(packRoot, 'blocked_sources.md'), 'utf8').toLowerCase();
   for (const term of ['farout', 'a.t. guide', 'alltrails', 'gaia', 'hiking project', 'atc']) {
@@ -222,6 +234,22 @@ export function validateAtOpenReferencePack() {
       if (/elevation/u.test(rel)) {
         assert(record.source_id === 'usgs_3dep', `${prefix} elevation records must use USGS 3DEP source_id`, failures);
         assert(/model-derived|3DEP|coarse|grade-risk/iu.test(record.ai_answer_rule ?? record.limitation ?? ''), `${prefix} missing elevation caution`, failures);
+      }
+
+      if (/camping_rules|permits_fees/u.test(rel)) {
+        assert(record.source_url, `${prefix} camping/permit record missing source_url`, failures);
+        assert(record.last_checked, `${prefix} camping/permit record missing last_checked`, failures);
+        assert(record.ai_answer_rule, `${prefix} camping/permit record missing ai_answer_rule`, failures);
+        assert(/verify|source gap|last_checked|current rules/iu.test(record.ai_answer_rule), `${prefix} camping/permit answer rule must require verification`, failures);
+        if (/rules_by_land_manager|rules_by_state/u.test(rel)) {
+          assert(record.permit_required, `${prefix} camping rule missing permit_required`, failures);
+          assert(record.fee_required, `${prefix} camping rule missing fee_required`, failures);
+        }
+      }
+
+      if (/land_managers/u.test(rel)) {
+        assert(record.source_url, `${prefix} land manager record missing source_url`, failures);
+        assert(record.last_checked, `${prefix} land manager record missing last_checked`, failures);
       }
     }
   }

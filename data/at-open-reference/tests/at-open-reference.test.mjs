@@ -72,3 +72,31 @@ test('generated open route and candidate datasets keep safety labels', () => {
   const elevationDocs = readdirSync(new URL('../rag_docs/segment_guides/elevation_5mi', import.meta.url));
   assert.ok(elevationDocs.length > 80, 'expected elevation RAG segment docs');
 });
+
+test('camping, permit, and fee rules stay official-source and conservative', () => {
+  const rules = JSON.parse(readFileSync(new URL('../processed/camping_rules/rules_by_land_manager.json', import.meta.url), 'utf8'));
+  assert.ok(rules.length >= 14, 'expected initial official-source land-manager rules');
+
+  const grsm = rules.find((rule) => rule.rule_id === 'camping-grsm-backcountry');
+  assert.equal(grsm.source_id, 'nps_official_land_manager_pages');
+  assert.equal(grsm.permit_required, 'yes');
+  assert.equal(grsm.camping_policy, 'permit_required_designated_backcountry_campsites_and_shelters_only');
+  assert.match(grsm.ai_answer_rule, /verify current rules/);
+
+  const baxter = rules.find((rule) => rule.rule_id === 'camping-baxter-at-katahdin');
+  assert.equal(baxter.source_id, 'baxter_state_park_authority_pages');
+  assert.match(baxter.permit_required, /yes/);
+  assert.match(baxter.source_summary, /LD hiker permits/);
+
+  const permitSections = JSON.parse(readFileSync(new URL('../processed/permits_fees/permit_required_sections.json', import.meta.url), 'utf8'));
+  assert.ok(permitSections.some((record) => record.rule_id === 'camping-shenandoah-backcountry'));
+  assert.ok(permitSections.every((record) => record.source_url && record.last_checked));
+
+  const stateRules = JSON.parse(readFileSync(new URL('../processed/camping_rules/rules_by_state.json', import.meta.url), 'utf8'));
+  assert.ok(stateRules.some((record) => record.state === 'MD' && record.rule_id === 'camping-md-south-mountain-at'));
+  assert.ok(stateRules.every((record) => record.ai_answer_rule));
+
+  const ruleDoc = readFileSync(new URL('../rag_docs/rules/camping_permit_fee_initial.md', import.meta.url), 'utf8');
+  assert.match(ruleDoc, /not a complete Appalachian Trail legal camping guide/);
+  assert.match(ruleDoc, /verify with the land manager/);
+});

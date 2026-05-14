@@ -1,0 +1,452 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packRoot = path.resolve(__dirname, '..');
+const lastChecked = '2026-05-13';
+
+const baseAnswerRule =
+  'Use as an official-source summary only. Show the source URL and last_checked date, and tell users to verify current rules with the land manager before itinerary commitment.';
+
+const rules = [
+  {
+    rule_id: 'camping-grsm-backcountry',
+    jurisdiction: 'Great Smoky Mountains National Park',
+    land_manager_type: 'national_park',
+    state: ['NC', 'TN'],
+    source_id: 'nps_official_land_manager_pages',
+    source_url: 'https://home.nps.gov/grsm/planyourvisit/backcountry-camping.htm',
+    source_title: 'Backcountry Camping - Great Smoky Mountains National Park',
+    license_status: 'public_domain',
+    camping_policy: 'permit_required_designated_backcountry_campsites_and_shelters_only',
+    permit_required: 'yes',
+    fee_required: 'yes',
+    food_storage_rule: 'all odorous items must use the bear cable system at each campsite or shelter',
+    dogs_allowed: 'no_on_backcountry_trails_except_specific_frontcountry_trails',
+    stay_limit: '3 consecutive nights at most backcountry campsites; no consecutive nights at shelters or campsite 113',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'NPS states that all backcountry camping requires permits and advance reservations, camping is only at designated sites/shelters, and food/trash must use bear cables.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-shenandoah-backcountry',
+    jurisdiction: 'Shenandoah National Park',
+    land_manager_type: 'national_park',
+    state: ['VA'],
+    source_id: 'nps_official_land_manager_pages',
+    source_url: 'https://www.nps.gov/shen/planyourvisit/backcountry-regulations.htm',
+    source_title: 'Backcountry Permit & Regulations - Shenandoah National Park',
+    license_status: 'public_domain',
+    camping_policy: 'permit_required_dispersed_backcountry_with_distance_and_closure_rules',
+    permit_required: 'yes',
+    fee_required: 'yes',
+    food_storage_rule: 'store food properly per park guidance; verify current bear-food-storage requirements',
+    dogs_allowed: 'verify_current_rule',
+    stay_limit: '2 nights in one campsite location or 14 consecutive nights in the backcountry',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'NPS states that a backcountry permit is required, camping must follow distance and closure rules, AT huts/campsites also require permits, and permit fees apply.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-co-canal-nhp',
+    jurisdiction: 'Chesapeake & Ohio Canal National Historical Park',
+    land_manager_type: 'national_historical_park',
+    state: ['DC', 'MD', 'WV'],
+    source_id: 'nps_official_land_manager_pages',
+    source_url: 'https://www.nps.gov/choh/planyourvisit/camping.htm',
+    source_title: 'Camping - Chesapeake & Ohio Canal National Historical Park',
+    license_status: 'public_domain',
+    camping_policy: 'designated_sites_only',
+    permit_required: 'reservations_required_for_reservable_campgrounds; no_reservation_for_hiker_biker_sites',
+    fee_required: 'no_fee_for_hiker_biker_sites; fees_for_drive_in_and_group_campgrounds',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'leashed_pets_allowed',
+    stay_limit: 'hiker-biker campsites limited to one night per site per trip',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'NPS identifies hiker-biker and reservable campground options, designated-site camping rules, non-potable hiker-biker well water, and overnight parking guidance.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-harpers-ferry-nhp-at',
+    jurisdiction: 'Harpers Ferry National Historical Park',
+    land_manager_type: 'national_historical_park',
+    state: ['WV', 'VA', 'MD'],
+    source_id: 'nps_official_land_manager_pages',
+    source_url: 'https://home.nps.gov/hafe/planyourvisit/camp-hill-and-appalachian-trail.htm',
+    source_title: 'Camp Hill and Appalachian Trail - Harpers Ferry National Historical Park',
+    license_status: 'public_domain',
+    camping_policy: 'no_processed_backcountry_camping_rule_from_this_source',
+    permit_required: 'unknown',
+    fee_required: 'unknown',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'verify_current_rule',
+    confidence: 'official_source_gap',
+    last_checked: lastChecked,
+    source_summary:
+      'NPS states the AT is always open through this park while park trails are daylight-only, but this source does not establish an overnight camping rule.',
+    ai_answer_rule:
+      'Do not infer camping permission in Harpers Ferry from this page. Use it as a source gap and verify nearby land-manager rules before giving overnight advice.',
+  },
+  {
+    rule_id: 'camping-chattahoochee-oconee-nf',
+    jurisdiction: 'Chattahoochee-Oconee National Forests',
+    land_manager_type: 'national_forest',
+    state: ['GA'],
+    source_id: 'usfs_official_land_manager_pages',
+    source_url: 'https://www.fs.usda.gov/r08/chattahoochee-oconee/about-area/faqs',
+    source_title: 'Chattahoochee-Oconee National Forest FAQ',
+    license_status: 'public_domain',
+    camping_policy: 'dispersed_allowed_in_most_forest_boundary_areas_unless_restricted',
+    permit_required: 'unknown_for_general_dispersed; reservations_may_be_required_for_some_developed_or_group_sites',
+    fee_required: 'unknown_for_general_dispersed; developed_or_group_sites_may_have_fees',
+    food_storage_rule: 'secure_food_and_keep_safe_from_bears',
+    dogs_allowed: 'verify_current_rule',
+    stay_limit: '14 days for developed and dispersed camping; 30-day reset before re-establishing',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'USFS describes developed and dispersed camping, says dispersed camping is allowed in most places within the forest boundary, and lists a 14-day camping limit.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-cherokee-nf-at',
+    jurisdiction: 'Cherokee National Forest Appalachian Trail',
+    land_manager_type: 'national_forest',
+    state: ['TN', 'NC'],
+    source_id: 'usfs_official_land_manager_pages',
+    source_url: 'https://www.fs.usda.gov/generalinfo/cherokee/recreation/generalinfo/?groupid=69284&recid=34868',
+    source_title: 'Cherokee National Forest - Appalachian National Scenic Trail',
+    license_status: 'public_domain',
+    camping_policy: 'at_shelter_and_named_overnight_site_stay_limits; verify_dispersed_rules_by_district',
+    permit_required: 'unknown',
+    fee_required: 'unknown',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'dogs_and_pets_must_be_leashed',
+    stay_limit: '3 days within a 30-day period at southern region AT shelters and listed overnight sites',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'USFS states that pets must be leashed and southern-region AT shelters plus listed overnight sites are limited to three days within a 30-day period.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-gwj-nf-at',
+    jurisdiction: 'George Washington and Jefferson National Forests Appalachian Trail',
+    land_manager_type: 'national_forest',
+    state: ['VA', 'WV'],
+    source_id: 'usfs_official_land_manager_pages',
+    source_url: 'https://www.fs.usda.gov/r08/gwj/recreation/trails/appalachian-trail',
+    source_title: 'George Washington and Jefferson National Forests - Appalachian Trail',
+    license_status: 'public_domain',
+    camping_policy: 'at_shelter_stay_limit; verify_dispersed_rules_by_district_and_forest_order',
+    permit_required: 'no_for_hiking; verify_for_camping_or_groups',
+    fee_required: 'no_fee_for_at_page; verify_developed_sites',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'verify_current_rule',
+    stay_limit: '3 days within a 30-day period at a single shelter',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'USFS states the AT page has no fee, no drinking water, and a three-days-in-30-days limit at a single shelter.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-green-mountain-nf',
+    jurisdiction: 'Green Mountain National Forest',
+    land_manager_type: 'national_forest',
+    state: ['VT'],
+    source_id: 'usfs_official_land_manager_pages',
+    source_url: 'https://www.fs.usda.gov/r09/gmfl/recreation/camping-cabins',
+    source_title: 'Green Mountain and Finger Lakes National Forests - Camping & Cabins',
+    license_status: 'public_domain',
+    camping_policy: 'developed_and_backcountry_dispersed_camping_available; verify_at_long_trail_shelter_rules',
+    permit_required: 'unknown',
+    fee_required: 'developed_sites_may_require_reservation_or_scan_and_pay; backcountry_fee_unknown',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'verify_current_rule',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'USFS describes Green Mountain camping options from developed campgrounds to backcountry dispersed camping and notes reservation/scan-and-pay systems for developed sites.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-white-mountain-nf',
+    jurisdiction: 'White Mountain National Forest',
+    land_manager_type: 'national_forest',
+    state: ['NH', 'ME'],
+    source_id: 'usfs_official_land_manager_pages',
+    source_url: 'https://www.fs.usda.gov/r09/whitemountain/recreation/camping-cabins',
+    source_title: 'White Mountain National Forest - Camping & Cabins',
+    license_status: 'public_domain',
+    camping_policy: 'backcountry_camping_allowed_with_forest_protection_area_and_distance_restrictions',
+    permit_required: 'unknown',
+    fee_required: 'developed_sites_may_require_reservation_or_fees; backcountry_fee_unknown',
+    food_storage_rule: 'bring_bear_proof_canister_for_backcountry_food_storage_per_source',
+    dogs_allowed: 'verify_current_rule',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'USFS says backcountry campers should know Forest backcountry rules, and camping/fires are prohibited near certain trails, water bodies, facilities, roads, and alpine zones.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-baxter-at-katahdin',
+    jurisdiction: 'Baxter State Park Appalachian Trail and Katahdin',
+    land_manager_type: 'state_park_authority',
+    state: ['ME'],
+    source_id: 'baxter_state_park_authority_pages',
+    source_url: 'https://baxterstatepark.org/general-info/the-at/',
+    source_title: 'The AT - Baxter State Park',
+    license_status: 'open_license_attribution',
+    camping_policy: 'long_distance_hiker_permit_required; general_park_camping_policies_and_fees_apply',
+    permit_required: 'yes_for_long_distance_hikers_before_summit_attempt',
+    fee_required: 'long_distance_hiker_permit_no_fee; camping_fees_apply_where_used',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'verify_current_rule',
+    stay_limit: 'Birches limited to 12 persons per night when available; LD hiker permit valid 7 days',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'Baxter requires LD hiker permits in person before summit attempts, applies normal entrance/camping policies and fees, limits Birches use, and warns of seasonal/weather closures.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-md-south-mountain-at',
+    jurisdiction: 'South Mountain State Park Appalachian Trail',
+    land_manager_type: 'state_park',
+    state: ['MD'],
+    source_id: 'state_land_manager_official_pages',
+    source_url: 'https://dnr.maryland.gov/publiclands/Pages/western/southmountain.aspx',
+    source_title: 'South Mountain State Park',
+    license_status: 'open_license_attribution',
+    camping_policy: 'designated_camping_areas_and_shelters_for_backpackers_and_thru_hikers',
+    permit_required: 'unknown',
+    fee_required: 'unknown',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'verify_current_rule',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'Maryland DNR states designated camping areas and shelters are available on a first-come basis for backpackers and thru-hikers.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-pa-state-forest-and-parks',
+    jurisdiction: 'Pennsylvania DCNR State Forests and Parks',
+    land_manager_type: 'state_forest_state_park',
+    state: ['PA'],
+    source_id: 'state_land_manager_official_pages',
+    source_url: 'https://www.pa.gov/agencies/dcnr/recreation/what-to-do/stay-overnight/backpacking-and-primitive-camping',
+    source_title: 'Primitive Camping in State Forests and Parks',
+    license_status: 'open_license_attribution',
+    camping_policy: 'state_forests_allow_primitive_camping_with_restrictions; state_parks_designated_sites_only',
+    permit_required: 'state_forest_permit_required_if_staying_more_than_one_night_at_one_site_or_other_listed_conditions; state_park_reservation_required',
+    fee_required: 'state_forest_primitive_permit_no_fee; state_park_reservation_fees_possible',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'verify_current_rule',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'Pennsylvania DCNR states primitive state forest camping is often allowed with distance limits, permits are needed for listed conditions, and state park camping must be in designated areas.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-nj-stokes-at',
+    jurisdiction: 'Stokes State Forest Appalachian Trail',
+    land_manager_type: 'state_forest',
+    state: ['NJ'],
+    source_id: 'state_land_manager_official_pages',
+    source_url: 'https://dep.nj.gov/parksandforests/state-park/stokes-state-forest/',
+    source_title: 'Stokes State Forest',
+    license_status: 'open_license_attribution',
+    camping_policy: 'designated_at_shelters_only_for_overnight_trail_stays',
+    permit_required: 'overnight_parking_permit_required_at_designated_at_parking',
+    fee_required: 'park_and_camping_fees_possible; verify_current_fee_schedule',
+    food_storage_rule: 'bear_box_at_each_at_shelter; verify_current_condition',
+    dogs_allowed: 'pets_must_be_leashed',
+    stay_limit: '1 night per shelter; 10 people maximum per shelter',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'NJDEP states Stokes AT overnight stays are limited to Brink Road and Gren Anderson shelters, with one-night shelter limits, no fires, leashed pets, and bear boxes.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-ny-harriman-bear-mountain-shelters',
+    jurisdiction: 'Harriman and Bear Mountain State Parks trail shelters',
+    land_manager_type: 'state_park',
+    state: ['NY'],
+    source_id: 'state_land_manager_official_pages',
+    source_url: 'https://parks.ny.gov/sites/default/files/HarrimanCampingatTrailShelters.pdf',
+    source_title: 'Shelters - Palisades Region',
+    license_status: 'open_license_attribution',
+    camping_policy: 'trail_shelters_first_come_first_served; overflow_allowed_near_shelter_when_occupied',
+    permit_required: 'unknown',
+    fee_required: 'unknown',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'dogs_leashed_no_more_than_6_feet',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'NYS Parks Palisades Region shelter guidance states shelters are first-come, overflow camping is near occupied shelters, fires are only in fireplaces, and water is not reliable.',
+    ai_answer_rule: baseAnswerRule,
+  },
+];
+
+function writeJson(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(value)}\n`, 'utf8');
+}
+
+function unique(values) {
+  return [...new Set(values)].sort();
+}
+
+function buildRulesByState() {
+  return unique(rules.flatMap((rule) => rule.state)).flatMap((state) =>
+    rules
+      .filter((rule) => rule.state.includes(state))
+      .map((rule) => ({
+        state,
+        rule_id: rule.rule_id,
+        jurisdiction: rule.jurisdiction,
+        camping_policy: rule.camping_policy,
+        permit_required: rule.permit_required,
+        fee_required: rule.fee_required,
+        source_id: rule.source_id,
+        source_url: rule.source_url,
+        license_status: rule.license_status,
+        confidence: rule.confidence,
+        last_checked: rule.last_checked,
+        ai_answer_rule: rule.ai_answer_rule,
+      })),
+  );
+}
+
+function buildLandManagers() {
+  return rules.map((rule) => ({
+    manager_id: rule.rule_id.replace(/^camping-/, 'manager-'),
+    jurisdiction: rule.jurisdiction,
+    land_manager_type: rule.land_manager_type,
+    state: rule.state,
+    source_id: rule.source_id,
+    source_url: rule.source_url,
+    license_status: rule.license_status,
+    confidence: rule.confidence,
+    last_checked: rule.last_checked,
+  }));
+}
+
+function buildPermitRecords() {
+  return rules
+    .filter((rule) => !/^unknown$/u.test(rule.permit_required))
+    .map((rule) => ({
+      rule_id: rule.rule_id,
+      jurisdiction: rule.jurisdiction,
+      state: rule.state,
+      permit_required: rule.permit_required,
+      source_id: rule.source_id,
+      source_url: rule.source_url,
+      license_status: rule.license_status,
+      confidence: rule.confidence,
+      last_checked: rule.last_checked,
+      ai_answer_rule: rule.ai_answer_rule,
+    }));
+}
+
+function buildFeeRecords() {
+  return rules
+    .filter((rule) => !/^unknown$/u.test(rule.fee_required))
+    .map((rule) => ({
+      rule_id: rule.rule_id,
+      jurisdiction: rule.jurisdiction,
+      state: rule.state,
+      fee_required: rule.fee_required,
+      source_id: rule.source_id,
+      source_url: rule.source_url,
+      license_status: rule.license_status,
+      confidence: rule.confidence,
+      last_checked: rule.last_checked,
+      ai_answer_rule: rule.ai_answer_rule,
+    }));
+}
+
+function buildRagDoc() {
+  const rows = rules
+    .map(
+      (rule) =>
+        `- ${rule.jurisdiction}: ${rule.camping_policy}; permit=${rule.permit_required}; fee=${rule.fee_required}. Source: ${rule.source_url} (last checked ${rule.last_checked}).`,
+    )
+    .join('\n');
+
+  return `# Initial Camping, Permit, And Fee Rules
+
+This is a Scout open reference summary of official land-manager rule pages. It
+is not a complete Appalachian Trail legal camping guide.
+
+Scout must show the source URL and last-checked date before relying on any rule.
+For permits, fees, closures, bear activity, fire bans, seasonal gates, or
+Katahdin access, Scout must retrieve current land-manager sources when online.
+If live retrieval fails, say that clearly and provide the stale timestamp.
+
+Generated miles in this pack are based on Scout's open route geometry, not an
+official ATC mile.
+
+## Current Records
+
+${rows}
+
+## Answer Caution
+
+Rules vary by exact land manager, corridor parcel, closure order, season, group
+size, fire danger, parking location, and current maintenance status. When any
+detail is uncertain, tell hikers to verify with the land manager before
+committing to an itinerary.
+`;
+}
+
+function main() {
+  const campingDir = path.join(packRoot, 'processed', 'camping_rules');
+  const permitsDir = path.join(packRoot, 'processed', 'permits_fees');
+  const managersDir = path.join(packRoot, 'processed', 'land_managers');
+  const ragDir = path.join(packRoot, 'rag_docs', 'rules');
+
+  writeJson(path.join(campingDir, 'rules_by_land_manager.json'), rules);
+  writeJson(path.join(campingDir, 'rules_by_state.json'), buildRulesByState());
+  writeJson(path.join(campingDir, 'permit_required_sections.json'), buildPermitRecords());
+  writeJson(path.join(campingDir, 'fee_required_sections.json'), buildFeeRecords());
+
+  writeJson(path.join(permitsDir, 'permit_required_sections.json'), buildPermitRecords());
+  writeJson(path.join(permitsDir, 'fee_required_sections.json'), buildFeeRecords());
+  writeJson(path.join(managersDir, 'land_managers.json'), buildLandManagers());
+
+  fs.mkdirSync(permitsDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(permitsDir, 'README.md'),
+    '# Permits And Fees\n\nDerived permit and fee records from official land-manager rule pages belong here. Verify current rules before itinerary commitment.\n',
+    'utf8',
+  );
+
+  fs.mkdirSync(managersDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(managersDir, 'README.md'),
+    '# Land Managers\n\nOfficial land-manager records and source URLs for the AT open reference pack belong here.\n',
+    'utf8',
+  );
+
+  fs.mkdirSync(ragDir, { recursive: true });
+  fs.writeFileSync(path.join(ragDir, 'camping_permit_fee_initial.md'), buildRagDoc(), 'utf8');
+
+  console.log(`Built ${rules.length} camping/permit/fee rule records`);
+}
+
+main();

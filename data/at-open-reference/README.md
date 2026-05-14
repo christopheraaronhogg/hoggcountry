@@ -42,6 +42,7 @@ node data/at-open-reference/scripts/build-elevation-samples.mjs
 node data/at-open-reference/scripts/build-elevation-rag-docs.mjs
 node data/at-open-reference/scripts/fetch-osm-corridor-features.mjs
 node data/at-open-reference/scripts/build-osm-corridor-candidates.mjs
+node data/at-open-reference/scripts/build-camping-rules.mjs
 ```
 
 The current OSM-derived route candidate is useful as a legally separable open
