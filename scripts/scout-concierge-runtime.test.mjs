@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { loadScoutAtOpenReferenceOfflineSummary } from '../apps/openclaw-web/src/lib/server/at-open-reference.ts';
+
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 
@@ -50,4 +52,30 @@ test('Scout chat keeps source receipt rendering stable and replies copyable', ()
   assert.match(page, /copiedMessageId === message\.id \? 'Copied' : 'Copy'/u);
   assert.match(page, /receipt, receiptIndex/u);
   assert.doesNotMatch(page, /\{#each\s+(?:message\.sourceReceipts|activeTurnSourceReceipts|dailyBrief\.sourceReceipts)[^`]+`[^`]*\$\{receipt\.kind\}-\$\{receipt\.label\}`/u);
+});
+
+test('Scout offline pack exposes compact AT reference context', async () => {
+  const offlinePackEndpoint = read('apps/openclaw-web/src/routes/app-api/offline-pack/+server.ts');
+  const offlinePackClient = read('apps/openclaw-web/src/lib/offline-field-pack.ts');
+  const scoutChat = read('apps/openclaw-web/src/routes/app/claw/+page.svelte');
+
+  assert.equal(existsSync(new URL('apps/openclaw-web/src/lib/server/generated/at-open-reference-summary.ts', root)), true);
+  assert.match(offlinePackEndpoint, /loadScoutAtOpenReferenceOfflineSummary/u);
+  assert.match(offlinePackEndpoint, /atReference/u);
+  assert.match(offlinePackClient, /OfflineAtReferenceSummary/u);
+  assert.match(offlinePackClient, /AT ref/u);
+  assert.match(scoutChat, /Cached AT reference/u);
+
+  const summary = await loadScoutAtOpenReferenceOfflineSummary(new Date('2026-05-14T00:00:00.000Z'));
+  assert.equal(summary.available, true);
+  assert.equal(summary.loadedAt, '2026-05-14T00:00:00.000Z');
+
+  if (!summary.available) throw new Error(summary.reason);
+
+  assert.equal(summary.route.official, false);
+  assert.equal(summary.route.candidateStatus, 'not_production_final');
+  assert.ok(summary.totals.records > 25_000);
+  assert.ok(summary.datasets.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000));
+  assert.match(summary.policies.generatedMileDisclosure, /not official ATC miles|not an official ATC mile/u);
+  assert.match(summary.policies.liveConditionsDisclosure, /live checks|Offline answers/u);
 });

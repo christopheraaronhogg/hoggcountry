@@ -1899,6 +1899,8 @@
     const cachedDocs = pack?.workspace?.documents.length ?? documents.length;
     const cachedResources = pack?.workspace?.resources.length ?? resources.length;
     const cachedBrief = pack?.dailyBrief ?? dailyBrief;
+    const cachedAtReference = pack?.atReference?.available ? pack.atReference : null;
+    const cachedAtReferenceRecords = cachedAtReference?.totals?.records ?? 0;
     const lastAssistant = [...(pack?.claw?.messages ?? messages)]
       .reverse()
       .find((message) => message.role === 'assistant' && !message.error);
@@ -1909,6 +1911,9 @@
         : 'Cached profile: not saved yet.',
       `Cached sources: ${cachedDocs} docs and ${cachedResources} resources.`,
       cachedBrief ? `Cached daily brief (${dailyBriefTime(cachedBrief.generatedAt)}): ${cachedBrief.summary}` : 'Cached daily brief: not saved yet.',
+      cachedAtReference
+        ? `Cached AT reference: ${cachedAtReference.totals?.datasets ?? 0} compact datasets / ${cachedAtReferenceRecords.toLocaleString()} summarized records, route ${cachedAtReference.route?.measuredLengthMiles?.toFixed(1) ?? 'unknown'} generated miles, last loaded ${dailyBriefTime(cachedAtReference.loadedAt)}. ${cachedAtReference.policies?.generatedMileDisclosure ?? ''} ${cachedAtReference.policies?.waterDisclosure ?? ''}`
+        : 'Cached AT reference: not saved yet.',
       lastAssistant ? `Last cached Scout reply: ${threadPreview(lastAssistant)}` : null,
       `Your offline ask: ${userMessage}`,
       'Field answer: use saved profile/docs for route shape and conservative planning only. For anything involving tomorrow/today weather, active alerts, closures, legal camping, water reliability, town hours, or web research, treat the answer as unverified until this phone is back online and Scout can run the live tools.'

@@ -1,0 +1,380 @@
+{
+  "version": 1,
+  "summaryId": "scout-at-open-reference-offline-summary",
+  "generatedAt": "2026-05-14T01:38:12.209Z",
+  "available": true,
+  "sourceManifest": {
+    "path": "source_manifest.yaml",
+    "totalSources": 19,
+    "licenseStatusCounts": {
+      "public_domain": 6,
+      "api_access_allowed": 2,
+      "unknown_review_required": 2,
+      "open_license_attribution": 2,
+      "open_license_share_alike": 2,
+      "blocked": 5
+    },
+    "blockedSourceIds": [
+      "alltrails_gaia_hiking_project",
+      "at_data_book",
+      "atc_website",
+      "awol_at_guide",
+      "farout"
+    ],
+    "shareAlikeSourceIds": [
+      "osm",
+      "waymarked_trails_api"
+    ],
+    "liveApiSourceIds": [
+      "noaa_nws_api",
+      "nps_api"
+    ],
+    "lastCheckedDates": [
+      "2026-05-13"
+    ]
+  },
+  "route": {
+    "routeId": "at-main-osm-2026-open",
+    "name": "Appalachian Trail main route candidate",
+    "path": "processed/route/at_route_selected.geojson",
+    "sourceId": "osm",
+    "sourceUrl": "https://www.openstreetmap.org/relation/156553",
+    "sourceAccessUrl": "https://hiking.waymarkedtrails.org/api/v1/details/relation/156553",
+    "geometrySource": "OpenStreetMap relation 156553",
+    "licenseStatus": "open_license_share_alike",
+    "attribution": "OpenStreetMap contributors",
+    "confidence": "open_route_candidate_with_known_length_gap",
+    "lastChecked": "2026-05-13",
+    "measuredLengthMiles": 2106.2,
+    "officialReferenceLengthMiles": 2197.9,
+    "officialReferenceDate": "2026",
+    "officialReferenceSource": "https://www.nationalparkstraveler.org/2025/12/appalachian-trail-will-gain-half-mile-2026",
+    "lengthDeltaMiles": -91.7,
+    "official": false,
+    "candidateStatus": "not_production_final",
+    "knownQualityFlags": [
+      "measured_length_is_materially_shorter_than_2026_official_reference",
+      "generated_milepoints_are_for_open-corpus_testing_not_field_navigation"
+    ],
+    "aiAnswerRule": "Use as Scout's open route geometry candidate only. Do not describe generated mileage as official ATC mileage or production-final field navigation."
+  },
+  "datasets": [
+    {
+      "id": "generated-milepoints-0-1",
+      "label": "Generated 0.1-mile NOBO/SOBO milepoints",
+      "category": "route",
+      "path": "processed/milepoints/at_milepoints_0_1mi.geojson",
+      "recordCount": 21062,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "estimated_from_open_route_geometry_with_known_length_gap",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "generated mile based on Scout's open route geometry, not an official ATC mile; route candidate has a known length gap and is not production-final"
+    },
+    {
+      "id": "generated-milepoints-1-0",
+      "label": "Generated 1.0-mile NOBO/SOBO milepoints",
+      "category": "route",
+      "path": "processed/milepoints/at_milepoints_1_0mi.geojson",
+      "recordCount": 2107,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "estimated_from_open_route_geometry_with_known_length_gap",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "generated mile based on Scout's open route geometry, not an official ATC mile; route candidate has a known length gap and is not production-final"
+    },
+    {
+      "id": "water-candidates",
+      "label": "Mapped water candidates",
+      "category": "water",
+      "path": "processed/water/water_candidates.json",
+      "recordCount": 1765,
+      "sourceIds": [
+        "usgs_3dhp_nhd"
+      ],
+      "licenseStatuses": [
+        "public_domain"
+      ],
+      "confidence": "mapped_hydrography",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water."
+    },
+    {
+      "id": "shelters",
+      "label": "Shelter candidates",
+      "category": "waypoints",
+      "path": "processed/waypoints/shelters.json",
+      "recordCount": 180,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "mapped_poi",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an OSM-mapped shelter candidate. Do not claim capacity, water, fee, or privy status unless explicitly present in licensed current data."
+    },
+    {
+      "id": "campsites",
+      "label": "Campsite candidates",
+      "category": "waypoints",
+      "path": "processed/waypoints/campsites.json",
+      "recordCount": 521,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "mapped_osm_candidate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an OSM-mapped candidate. Verify current status, access rights, fees, and land-manager rules before relying on it."
+    },
+    {
+      "id": "privies",
+      "label": "Privy/toilet candidates",
+      "category": "waypoints",
+      "path": "processed/waypoints/privies.json",
+      "recordCount": 290,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "mapped_osm_candidate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an OSM-mapped candidate. Verify current status, access rights, fees, and land-manager rules before relying on it."
+    },
+    {
+      "id": "vistas",
+      "label": "Vista candidates",
+      "category": "waypoints",
+      "path": "processed/waypoints/vistas.json",
+      "recordCount": 592,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "mapped_osm_candidate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an OSM-mapped candidate. Verify current status, access rights, fees, and land-manager rules before relying on it."
+    },
+    {
+      "id": "parking",
+      "label": "Parking/access candidates",
+      "category": "access",
+      "path": "processed/access/parking.json",
+      "recordCount": 1421,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "mapped_osm_candidate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an OSM-mapped candidate. Verify current status, access rights, fees, and land-manager rules before relying on it."
+    },
+    {
+      "id": "trailheads",
+      "label": "Trailhead candidates",
+      "category": "access",
+      "path": "processed/access/trailheads.json",
+      "recordCount": 69,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "mapped_osm_candidate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an OSM-mapped candidate. Verify current status, access rights, fees, and land-manager rules before relying on it."
+    },
+    {
+      "id": "road-crossings",
+      "label": "Road-crossing candidates",
+      "category": "access",
+      "path": "processed/access/road_crossings.json",
+      "recordCount": 2511,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "mapped_osm_road_crossing_candidate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an OSM-mapped road crossing/access candidate. Verify road name, access, parking, traffic exposure, and current conditions before relying on it."
+    },
+    {
+      "id": "towns-resupply",
+      "label": "Town/resupply candidates",
+      "category": "towns_resupply",
+      "path": "processed/towns_resupply/towns_within_15mi.json",
+      "recordCount": 893,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "open_data_settlement_candidate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an open-data town/resupply candidate only; do not copy guidebook town notes or imply confirmed hiker services."
+    },
+    {
+      "id": "elevation-segments",
+      "label": "Coarse 5-mile elevation and climb/descent segments",
+      "category": "elevation",
+      "path": "processed/elevation/climbs_descents_by_25mi_segment_5_0mi.json",
+      "recordCount": 85,
+      "sourceIds": [
+        "usgs_3dep"
+      ],
+      "licenseStatuses": [
+        "public_domain"
+      ],
+      "confidence": "model_derived_topographic_estimate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as model-derived USGS 3DEP elevation sampled along Scout open route geometry; values may differ from guidebook profiles or surveyed summits."
+    },
+    {
+      "id": "camping-rules",
+      "label": "Official-source camping, permit, and fee rules",
+      "category": "rules",
+      "path": "processed/camping_rules/rules_by_land_manager.json",
+      "recordCount": 14,
+      "sourceIds": [
+        "baxter_state_park_authority_pages",
+        "nps_official_land_manager_pages",
+        "state_land_manager_official_pages",
+        "usfs_official_land_manager_pages"
+      ],
+      "licenseStatuses": [
+        "open_license_attribution",
+        "public_domain"
+      ],
+      "confidence": "official_source",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Use as an official-source summary only. Show the source URL and last_checked date, and tell users to verify current rules with the land manager before itinerary commitment."
+    },
+    {
+      "id": "live-condition-sources",
+      "label": "Live weather, alert, and current-condition source connectors",
+      "category": "live_conditions",
+      "path": "processed/live_alerts/live_condition_sources.json",
+      "recordCount": 3,
+      "sourceIds": [
+        "noaa_nws_api",
+        "nps_api",
+        "usfs_geodata"
+      ],
+      "licenseStatuses": [
+        "api_access_allowed",
+        "public_domain"
+      ],
+      "confidence": "official_live_api",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Use live NWS point forecasts and alerts for current/future weather. If coordinates or live retrieval are unavailable, state the source gap."
+    }
+  ],
+  "totals": {
+    "datasets": 14,
+    "records": 31513
+  },
+  "liveConditionSources": [
+    {
+      "source_id": "noaa_nws_api",
+      "source_url": "https://www.weather.gov/documentation/services-web-api",
+      "license_status": "api_access_allowed",
+      "confidence": "official_live_api",
+      "name": "National Weather Service API",
+      "categories": [
+        "forecast",
+        "alerts",
+        "observations"
+      ],
+      "last_checked": "2026-05-13",
+      "update_cadence": "live; cache per endpoint and include fetched timestamp",
+      "attribution": "National Weather Service",
+      "ai_answer_rule": "Use live NWS point forecasts and alerts for current/future weather. If coordinates or live retrieval are unavailable, state the source gap."
+    },
+    {
+      "source_id": "nps_api",
+      "source_url": "https://www.nps.gov/subjects/digital/nps-data-api.htm",
+      "license_status": "api_access_allowed",
+      "confidence": "official_live_api",
+      "name": "National Park Service API",
+      "categories": [
+        "park_alerts",
+        "campgrounds",
+        "facilities",
+        "news"
+      ],
+      "last_checked": "2026-05-13",
+      "update_cadence": "live; cache with fetched timestamp and disclose possible API lag",
+      "attribution": "National Park Service",
+      "ai_answer_rule": "Use live NPS API alerts for NPS-managed areas. For high-risk decisions, tell users to verify directly with the park or land manager."
+    },
+    {
+      "source_id": "usfs_geodata",
+      "source_url": "https://www.fs.usda.gov/about-agency/contact-us/regional-offices",
+      "license_status": "public_domain",
+      "confidence": "official_source_directory",
+      "name": "USFS regional and forest alert pages",
+      "categories": [
+        "closures",
+        "fire",
+        "roads",
+        "alerts"
+      ],
+      "last_checked": "2026-05-13",
+      "update_cadence": "live check by forest/region before advice",
+      "attribution": "U.S. Forest Service",
+      "ai_answer_rule": "Use official USFS/forest alert pages for closures, fire, smoke, roads, and forest orders. If live retrieval fails, provide timestamped source gap."
+    }
+  ],
+  "policies": {
+    "generatedMileDisclosure": "Generated miles are based on Scout's open route geometry, not official ATC miles.",
+    "routeQualityDisclosure": "The current open route is a non-production candidate with a known measured-length gap; use it for corpus testing and conservative planning, not exact field navigation.",
+    "waterDisclosure": "Mapped water candidates do not prove reliability, seasonality, or potability. Reliability and potability remain unknown unless a recent licensed source or official managed-drinking-water record says otherwise.",
+    "liveConditionsDisclosure": "Weather, closures, detours, flooding, fire/smoke, bear activity, permits, and other current conditions require live checks when online. Offline answers must disclose cache age and source gaps.",
+    "blockedSourcesDisclosure": "FarOut, The A.T. Guide/AWOL, A.T. Data Book, Thru-Hikers Companion, AllTrails, Gaia, Hiking Project, ATC website resources, and private guide PDFs remain blocked unless explicit permission or compatible licensing exists.",
+    "offlineUseDisclosure": "Use this compact summary as an offline citation and safety policy index. Do not treat it as a complete offline guidebook."
+  },
+  "sourceNotes": [
+    {
+      "path": "blocked_sources.md",
+      "excerpt": "# Blocked Sources These sources must not be copied, scraped, summarized into a reusable corpus, or packaged into Scout unless Hogg Country obtains written permission or finds a specific compatible license. - FarOut waypoint data, water reports, user comments, photos, and metadata. - The A.T. Guide / AWOL guide mileage, town, resupply, and waypoint data. - A.T. Data Book mileage tables and waypoint tables. - Thru-Hikers' Companion content. - AllTrails, Gaia GPS, and Hiking Project data or user content. - ATC website text, maps, tables, downloads, and resources by default. - Copyrighted/private guide PDFs and copied guidebook notes. - Random blogs when the page appears to reproduce guidebook tables or comments. Allowed handling: Scout may point a user to these sources as places to check, but"
+    },
+    {
+      "path": "data_quality_report.md",
+      "excerpt": "# Data Quality Report Last updated: 2026-05-13 ## Current Status This is an early generated reference pack. It contains source policy, license review notes, schemas, validation gates, an OSM-derived route candidate, generated milepoints, mapped hydrography water candidates, and OSM shelter waypoint candidates. It now includes coarse elevation summaries and filtered OSM corridor candidates for campsites, privies/toilets, vistas, parking, trailheads, road crossings, and nearby towns. It also includes an initial official-source camping, permit, fee, and land-manager rules corpus. ## Completeness - Source manifest: started. - Blocked-source policy: started. - Route baseline: generated from OSM relation 156553 via Waymarked Trails route ordering. - Milepoints: generated at 0.1, 0.5, 1.0, and 5."
+    },
+    {
+      "path": "processed/water/water_confidence_notes.md",
+      "excerpt": "# Water Confidence Notes This dataset contains mapped hydrography candidates derived from USGS/NHD flowlines and remapped to Scout's generated open route milepoints. These records do not prove water reliability, seasonal availability, safety, or potability. Scout must describe them as mapped water candidates unless a separate, licensed, timestamped report or official managed drinking-water source supports stronger wording. Allowed answer labels: - Mapped water candidate - Unknown reliability - Unknown potability Source: https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query License status: public_domain Attribution: Data available from U.S. Geological Survey. Last checked: 2026-05-13 Records: 1765"
+    },
+    {
+      "path": "rag_docs/safety/current_conditions_policy.md",
+      "excerpt": "# Current Conditions Policy Scout must use live sources for weather, closures, detours, flooding, fire or smoke, bear activity, permit changes, Baxter/Katahdin access, and other current conditions. Preferred live sources include NWS, NPS API alerts, USFS/state alerts, and official land-manager pages. ATC Trail Updates may be linked or checked, but not blindly packaged into this corpus. If live retrieval fails, Scout must say that clearly and provide any available last-checked timestamp."
+    }
+  ],
+  "generatedFrom": {
+    "script": "scripts/build-scout-offline-summary.mjs",
+    "packRoot": "data/at-open-reference"
+  }
+}

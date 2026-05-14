@@ -43,11 +43,20 @@ node data/at-open-reference/scripts/build-elevation-rag-docs.mjs
 node data/at-open-reference/scripts/fetch-osm-corridor-features.mjs
 node data/at-open-reference/scripts/build-osm-corridor-candidates.mjs
 node data/at-open-reference/scripts/build-camping-rules.mjs
+node data/at-open-reference/scripts/build-scout-offline-summary.mjs
 ```
 
 The current OSM-derived route candidate is useful as a legally separable open
 baseline, but its measured length is materially shorter than the 2026 official
 calibration reference. Scout must keep the generated-mile caution visible.
+
+`processed/summary/scout_offline_reference_summary.json` is the compact app
+bridge for Scout's phone field pack. It carries counts, source/license lanes,
+route caveats, water caveats, live-source policy, and short source excerpts
+without bundling full route geometry or full source snapshots into local storage.
+The generator also writes
+`apps/openclaw-web/src/lib/server/generated/at-open-reference-summary.ts` so the
+same summary is bundled into the Forge SvelteKit server build.
 
 OSM corridor POIs are filtered and compacted after fetch. The packaged raw file
 contains only accepted source elements plus provenance metadata, not a full

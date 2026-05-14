@@ -84,6 +84,7 @@ const requiredGeneratedPaths = [
   'processed/permits_fees/permit_required_sections.json',
   'processed/permits_fees/fee_required_sections.json',
   'processed/land_managers/land_managers.json',
+  'processed/summary/scout_offline_reference_summary.json',
   'rag_docs/segment_guides/elevation_5mi',
   'rag_docs/rules/camping_permit_fee_initial.md'
 ];
@@ -170,7 +171,8 @@ export function validateAtOpenReferencePack() {
   }
 
   const processedFiles = walkFiles(join(packRoot, 'processed'))
-    .filter((path) => /\.(json|geojson)$/u.test(path));
+    .filter((path) => /\.(json|geojson)$/u.test(path))
+    .filter((path) => !relative(packRoot, path).startsWith('processed/summary/'));
 
   for (const file of processedFiles) {
     const rel = relative(repoRoot, file);
@@ -216,10 +218,10 @@ export function validateAtOpenReferencePack() {
         assert(record.water_nearby === 'unknown', `${prefix} shelter water_nearby must default to unknown`, failures);
       }
 
-      if (/waypoints\/(campsites|privies|vistas)/u.test(rel) || /access\/(parking|trailheads)/u.test(rel)) {
+      if (/waypoints\/(campsites|privies|vistas)/u.test(rel) || /access\/(parking|trailheads|road_crossings)/u.test(rel)) {
         assert(record.source_id === 'osm', `${prefix} corridor candidate must remain OSM-derived`, failures);
         assert(record.license_status === 'open_license_share_alike', `${prefix} corridor candidate must keep ODbL lane`, failures);
-        assert(/verify current status|mapped candidate/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing cautious OSM candidate answer rule`, failures);
+        assert(/verify current status|mapped candidate|road crossing\/access candidate/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing cautious OSM candidate answer rule`, failures);
       }
 
       if (/towns_resupply\/(towns_within_15mi|resupply_candidates)/u.test(rel)) {
@@ -261,6 +263,18 @@ export function validateAtOpenReferencePack() {
   assert(/not an official ATC mile/iu.test(ragText), 'RAG docs must include generated-mile caution.', failures);
   assert(/reliability unknown|potability unknown|not prove reliability/iu.test(ragText), 'RAG docs must include conservative water language.', failures);
   assert(/live retrieval fails|last-checked|last checked/iu.test(ragText), 'RAG docs must include current-condition timestamp/source-gap rule.', failures);
+
+  const offlineSummary = readJsonLikeYaml(join(packRoot, 'processed/summary/scout_offline_reference_summary.json'));
+  assert(offlineSummary.available === true, 'Scout offline summary must be available.', failures);
+  assert(offlineSummary.route?.official === false, 'Scout offline summary route must not be official.', failures);
+  assert(offlineSummary.route?.candidateStatus === 'not_production_final', 'Scout offline summary route must expose candidate status.', failures);
+  assert(!JSON.stringify(offlineSummary.route ?? {}).includes('coordinates'), 'Scout offline summary must not embed full route geometry.', failures);
+  assert(/not official ATC miles|not an official ATC mile/iu.test(offlineSummary.policies?.generatedMileDisclosure ?? ''), 'Scout offline summary must disclose generated-mile status.', failures);
+  assert(/potability|reliability/iu.test(offlineSummary.policies?.waterDisclosure ?? ''), 'Scout offline summary must disclose water uncertainty.', failures);
+  assert(/live checks|Offline answers/iu.test(offlineSummary.policies?.liveConditionsDisclosure ?? ''), 'Scout offline summary must disclose live-condition requirements.', failures);
+  assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000), 'Scout offline summary must include water candidate counts.', failures);
+  assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'road-crossings' && dataset.recordCount > 1000), 'Scout offline summary must include road-crossing candidate counts.', failures);
+  assert(offlineSummary.liveConditionSources?.some((source) => source.source_id === 'noaa_nws_api'), 'Scout offline summary must include NWS live connector metadata.', failures);
 
   return {
     ok: failures.length === 0,

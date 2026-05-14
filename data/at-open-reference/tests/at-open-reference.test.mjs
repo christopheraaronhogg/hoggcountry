@@ -49,10 +49,14 @@ test('generated open route and candidate datasets keep safety labels', () => {
 
   const parking = JSON.parse(readFileSync(new URL('../processed/access/parking.json', import.meta.url), 'utf8'));
   const trailheads = JSON.parse(readFileSync(new URL('../processed/access/trailheads.json', import.meta.url), 'utf8'));
+  const roadCrossings = JSON.parse(readFileSync(new URL('../processed/access/road_crossings.json', import.meta.url), 'utf8'));
   assert.ok(parking.length > 500 && parking.length < 5000, 'parking candidates should be filtered to the trail corridor');
   assert.ok(trailheads.length > 25 && trailheads.length < 500, 'expected filtered OSM trailhead candidates');
+  assert.ok(roadCrossings.length > 1000 && roadCrossings.length < 5000, 'expected filtered OSM road-crossing candidates');
   assert.equal(parking[0].license_status, 'open_license_share_alike');
   assert.match(parking[0].ai_answer_rule, /OSM-mapped candidate/);
+  assert.equal(roadCrossings[0].license_status, 'open_license_share_alike');
+  assert.match(roadCrossings[0].ai_answer_rule, /road crossing\/access candidate/);
 
   const towns = JSON.parse(readFileSync(new URL('../processed/towns_resupply/towns_within_15mi.json', import.meta.url), 'utf8'));
   assert.ok(towns.length > 100 && towns.length < 1500, 'expected filtered open-data town candidates');
@@ -62,7 +66,7 @@ test('generated open route and candidate datasets keep safety labels', () => {
 
   const corridorRaw = JSON.parse(readFileSync(new URL('../raw/osm/osm_corridor_features_relation_156553.json', import.meta.url), 'utf8'));
   assert.ok(corridorRaw.elements.length < 10000, 'raw OSM corridor package should be compacted to accepted source elements');
-  assert.ok(statSync(new URL('../raw/osm/osm_corridor_features_relation_156553.json', import.meta.url)).size < 2_000_000, 'raw OSM corridor package should avoid full Overpass dumps');
+  assert.ok(statSync(new URL('../raw/osm/osm_corridor_features_relation_156553.json', import.meta.url)).size < 10_000_000, 'raw OSM corridor package should avoid full Overpass dumps');
 
   const elevation = JSON.parse(readFileSync(new URL('../processed/elevation/elevation_samples_5_0mi.json', import.meta.url), 'utf8'));
   assert.ok(elevation.length > 400, 'expected coarse 5-mile elevation samples');
@@ -71,6 +75,19 @@ test('generated open route and candidate datasets keep safety labels', () => {
 
   const elevationDocs = readdirSync(new URL('../rag_docs/segment_guides/elevation_5mi', import.meta.url));
   assert.ok(elevationDocs.length > 80, 'expected elevation RAG segment docs');
+
+  const offlineSummaryText = readFileSync(new URL('../processed/summary/scout_offline_reference_summary.json', import.meta.url), 'utf8');
+  const offlineSummary = JSON.parse(offlineSummaryText);
+  assert.equal(offlineSummary.available, true);
+  assert.equal(offlineSummary.route.official, false);
+  assert.equal(offlineSummary.route.candidateStatus, 'not_production_final');
+  assert.doesNotMatch(JSON.stringify(offlineSummary.route), /coordinates/u, 'offline summary should not embed full route geometry');
+  assert.match(offlineSummary.policies.generatedMileDisclosure, /not official ATC miles|not an official ATC mile/u);
+  assert.match(offlineSummary.policies.waterDisclosure, /reliability|potability/u);
+  assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000));
+  assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'road-crossings' && dataset.recordCount > 1000));
+  assert.ok(offlineSummary.liveConditionSources.some((source) => source.source_id === 'noaa_nws_api'));
+  assert.ok(offlineSummaryText.length < 50_000, 'offline summary should remain compact enough for phone caching');
 });
 
 test('camping, permit, and fee rules stay official-source and conservative', () => {

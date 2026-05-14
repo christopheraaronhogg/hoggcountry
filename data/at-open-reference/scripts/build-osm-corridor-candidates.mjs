@@ -8,6 +8,7 @@ const packRoot = path.resolve(__dirname, '..');
 
 const rawPath = path.join(packRoot, 'raw', 'osm', 'osm_corridor_features_relation_156553.json');
 const milepointsPath = path.join(packRoot, 'processed', 'milepoints', 'at_milepoints_1_0mi.geojson');
+const fineMilepointsPath = path.join(packRoot, 'processed', 'milepoints', 'at_milepoints_0_1mi.geojson');
 const osmRelationUrl = 'https://www.openstreetmap.org/relation/156553';
 
 const sourceBase = {
@@ -42,6 +43,8 @@ const keptTagNames = new Set([
   'parking',
   'place',
   'ref',
+  'surface',
+  'tracktype',
   'tourism',
   'website',
 ]);
@@ -62,8 +65,8 @@ function haversineMiles(lat1, lon1, lat2, lon2) {
   return 2 * r * Math.asin(Math.sqrt(a));
 }
 
-function loadMilepoints() {
-  const data = JSON.parse(fs.readFileSync(milepointsPath, 'utf8'));
+function loadMilepoints(filePath = milepointsPath) {
+  const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   return data.features.map((feature) => {
     const [lon, lat] = feature.geometry.coordinates;
     return {
@@ -77,7 +80,9 @@ function loadMilepoints() {
 
 function nearestMilepoint(point, milepoints) {
   let best = null;
-  for (const mp of milepoints) {
+  const nearby = milepoints.filter((mp) => Math.abs(mp.lat - point.lat) <= 0.025 && Math.abs(mp.lon - point.lon) <= 0.035);
+  const candidates = nearby.length ? nearby : milepoints;
+  for (const mp of candidates) {
     const d = haversineMiles(point.lat, point.lon, mp.lat, mp.lon);
     if (!best || d < best.distanceMiles) best = { ...mp, distanceMiles: d };
   }
@@ -192,7 +197,9 @@ function dedupe(records) {
   for (const record of records) {
     const roundedLat = round(record.lat, 4);
     const roundedLon = round(record.lon, 4);
-    const key = record.name.startsWith('Unnamed ')
+    const key = record.type === 'road_crossing'
+      ? `${record.type}:${record.name.toLowerCase()}:${round(record.mile_nobo ?? 0, 1)}`
+      : record.name.startsWith('Unnamed ')
       ? `${record.osm_type}:${record.osm_id}:${record.type}`
       : `${record.type}:${record.name.toLowerCase()}:${roundedLat}:${roundedLon}`;
     if (seen.has(key)) continue;
@@ -241,6 +248,14 @@ function compactRawElement(element) {
       lon: round(element.center.lon, 7),
     };
   }
+  if (Array.isArray(element.geometry)) {
+    compact.geometry = element.geometry
+      .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon))
+      .map((point) => ({
+        lat: round(point.lat, 7),
+        lon: round(point.lon, 7),
+      }));
+  }
   return compact;
 }
 
@@ -267,9 +282,11 @@ function compactAcceptedRaw(raw, acceptedElements, counts) {
 function main() {
   if (!fs.existsSync(rawPath)) throw new Error(`Missing raw OSM corridor features: ${rawPath}`);
   if (!fs.existsSync(milepointsPath)) throw new Error(`Missing generated milepoints: ${milepointsPath}`);
+  if (!fs.existsSync(fineMilepointsPath)) throw new Error(`Missing fine generated milepoints: ${fineMilepointsPath}`);
 
   const raw = JSON.parse(fs.readFileSync(rawPath, 'utf8'));
   const milepoints = loadMilepoints();
+  const fineMilepoints = loadMilepoints(fineMilepointsPath);
   const acceptedElements = new Map();
   const buckets = {
     campsites: [],
@@ -284,9 +301,10 @@ function main() {
   for (const element of raw.elements || []) {
     const type = classify(element);
     if (!type) continue;
-    const point = pointFromElement(element, milepoints, type === 'road_crossing');
+    const matchingMilepoints = type === 'road_crossing' ? fineMilepoints : milepoints;
+    const point = pointFromElement(element, matchingMilepoints, type === 'road_crossing');
     if (!point) continue;
-    const nearest = nearestMilepoint(point, milepoints);
+    const nearest = nearestMilepoint(point, matchingMilepoints);
     if (!nearest || nearest.distanceMiles > maxDistanceMiles[type]) continue;
 
     const tags = element.tags || {};
@@ -303,7 +321,13 @@ function main() {
 
     const idField = type === 'town_candidate' ? 'town_id' : type === 'road_crossing' || type === 'parking' || type === 'trailhead' ? 'access_id' : 'waypoint_id';
     const extra =
-      type === 'town_candidate'
+      type === 'road_crossing'
+        ? {
+            confidence: 'mapped_osm_road_crossing_candidate',
+            ai_answer_rule:
+              'Describe as an OSM-mapped road crossing/access candidate. Verify road name, access, parking, traffic exposure, and current conditions before relying on it.',
+          }
+        : type === 'town_candidate'
         ? {
             access_type: nearest.distanceMiles <= 0.25 ? 'trail_town_candidate' : 'nearby_settlement_candidate',
             distance_from_trail_miles: round(nearest.distanceMiles, 1),

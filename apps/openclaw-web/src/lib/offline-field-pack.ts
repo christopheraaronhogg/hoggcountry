@@ -91,6 +91,63 @@ export interface OfflineScoutDailyBrief {
   readonly scoutPrompt: string;
 }
 
+export interface OfflineAtReferenceDatasetSummary {
+  readonly id: string;
+  readonly label: string;
+  readonly category: string;
+  readonly path: string;
+  readonly recordCount: number;
+  readonly sourceIds: readonly string[];
+  readonly licenseStatuses: readonly string[];
+  readonly confidence: string;
+  readonly lastChecked: string;
+  readonly aiAnswerRule: string | null;
+}
+
+export interface OfflineAtReferenceSummary {
+  readonly version: 1;
+  readonly summaryId: string;
+  readonly loadedAt: string;
+  readonly available: boolean;
+  readonly generatedAt?: string;
+  readonly reason?: string;
+  readonly sourceManifest?: {
+    readonly totalSources: number;
+    readonly licenseStatusCounts: Record<string, number>;
+    readonly blockedSourceIds: readonly string[];
+    readonly shareAlikeSourceIds: readonly string[];
+    readonly liveApiSourceIds: readonly string[];
+    readonly lastCheckedDates: readonly string[];
+  };
+  readonly route?: {
+    readonly routeId: string;
+    readonly sourceId: string;
+    readonly licenseStatus: string;
+    readonly confidence: string;
+    readonly lastChecked: string;
+    readonly measuredLengthMiles: number;
+    readonly officialReferenceLengthMiles: number;
+    readonly lengthDeltaMiles: number;
+    readonly official: false;
+    readonly candidateStatus: string;
+    readonly knownQualityFlags: readonly string[];
+    readonly aiAnswerRule: string;
+  };
+  readonly datasets?: readonly OfflineAtReferenceDatasetSummary[];
+  readonly totals?: {
+    readonly datasets: number;
+    readonly records: number;
+  };
+  readonly policies?: {
+    readonly generatedMileDisclosure: string;
+    readonly routeQualityDisclosure: string;
+    readonly waterDisclosure: string;
+    readonly liveConditionsDisclosure: string;
+    readonly blockedSourcesDisclosure: string;
+    readonly offlineUseDisclosure: string;
+  };
+}
+
 export interface OfflineFieldPack {
   readonly version: 1;
   readonly cachedAt: string;
@@ -98,6 +155,7 @@ export interface OfflineFieldPack {
   readonly workspace: OfflineWorkspaceSnapshot | null;
   readonly claw: OfflineClawConsolePayload | null;
   readonly dailyBrief: OfflineScoutDailyBrief | null;
+  readonly atReference: OfflineAtReferenceSummary | null;
 }
 
 const FIELD_PACK_STORAGE_KEY = 'hoggcountry.scout.offlineFieldPack.v1';
@@ -121,7 +179,8 @@ function normalizePack(input: unknown): OfflineFieldPack | null {
     workspaceId: input.workspaceId,
     workspace: isObject(input.workspace) ? input.workspace as unknown as OfflineWorkspaceSnapshot : null,
     claw: isObject(input.claw) ? input.claw as unknown as OfflineClawConsolePayload : null,
-    dailyBrief: isObject(input.dailyBrief) ? input.dailyBrief as unknown as OfflineScoutDailyBrief : null
+    dailyBrief: isObject(input.dailyBrief) ? input.dailyBrief as unknown as OfflineScoutDailyBrief : null,
+    atReference: isObject(input.atReference) ? input.atReference as unknown as OfflineAtReferenceSummary : null
   };
 }
 
@@ -157,7 +216,8 @@ function updatePack(update: Partial<OfflineFieldPack> & { readonly workspaceId?:
     workspaceId,
     workspace: update.workspace ?? existing?.workspace ?? null,
     claw: update.claw ?? existing?.claw ?? null,
-    dailyBrief: update.dailyBrief ?? existing?.dailyBrief ?? null
+    dailyBrief: update.dailyBrief ?? existing?.dailyBrief ?? null,
+    atReference: update.atReference ?? existing?.atReference ?? null
   });
 }
 
@@ -212,5 +272,6 @@ export function offlineFieldPackSummary(pack: OfflineFieldPack | null = readOffl
   const docs = pack.workspace?.documents.length ?? pack.claw?.workspace.documents.length ?? 0;
   const resources = pack.workspace?.resources.length ?? pack.claw?.workspace.resources.length ?? 0;
   const messages = pack.claw?.messages.length ?? pack.workspace?.clawMessages?.length ?? 0;
-  return `${offlineFieldPackLabel(pack)} · ${docs} docs · ${resources} sources · ${messages} messages`;
+  const atReference = pack.atReference?.available ? ` · AT ref ${pack.atReference.totals?.datasets ?? 0} sets` : '';
+  return `${offlineFieldPackLabel(pack)} · ${docs} docs · ${resources} sources · ${messages} messages${atReference}`;
 }
