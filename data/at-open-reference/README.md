@@ -58,6 +58,6 @@ The generator also writes
 `apps/openclaw-web/src/lib/server/generated/at-open-reference-summary.ts` so the
 same summary is bundled into the Forge SvelteKit server build.
 
-OSM corridor POIs are filtered and compacted after fetch. The packaged raw file
-contains only accepted source elements plus provenance metadata, not a full
-Overpass snapshot.
+OSM corridor POIs, road crossings, settlements, and named side-trail candidates
+are filtered and compacted after fetch. The packaged raw file contains only
+accepted source elements plus provenance metadata, not a full Overpass snapshot.

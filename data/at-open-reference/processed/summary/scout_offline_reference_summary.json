@@ -1,7 +1,7 @@
 {
   "version": 1,
   "summaryId": "scout-at-open-reference-offline-summary",
-  "generatedAt": "2026-05-14T01:38:12.209Z",
+  "generatedAt": "2026-05-14T02:08:19.525Z",
   "available": true,
   "sourceManifest": {
     "path": "source_manifest.yaml",
@@ -172,6 +172,22 @@
       "aiAnswerRule": "Describe as an OSM-mapped candidate. Verify current status, access rights, fees, and land-manager rules before relying on it."
     },
     {
+      "id": "side-trails",
+      "label": "Side-trail candidates",
+      "category": "waypoints",
+      "path": "processed/waypoints/side_trails.json",
+      "recordCount": 954,
+      "sourceIds": [
+        "osm"
+      ],
+      "licenseStatuses": [
+        "open_license_share_alike"
+      ],
+      "confidence": "mapped_osm_side_trail_candidate",
+      "lastChecked": "2026-05-13",
+      "aiAnswerRule": "Describe as an OSM-mapped side-trail candidate. Verify name, junction, blaze/access, land-manager legality, and current conditions before relying on it."
+    },
+    {
       "id": "parking",
       "label": "Parking/access candidates",
       "category": "access",
@@ -208,7 +224,7 @@
       "label": "Road-crossing candidates",
       "category": "access",
       "path": "processed/access/road_crossings.json",
-      "recordCount": 2511,
+      "recordCount": 2509,
       "sourceIds": [
         "osm"
       ],
@@ -292,8 +308,8 @@
     }
   ],
   "totals": {
-    "datasets": 14,
-    "records": 31513
+    "datasets": 15,
+    "records": 32465
   },
   "liveConditionSources": [
     {
@@ -362,7 +378,7 @@
     },
     {
       "path": "data_quality_report.md",
-      "excerpt": "# Data Quality Report Last updated: 2026-05-13 ## Current Status This is an early generated reference pack. It contains source policy, license review notes, schemas, validation gates, an OSM-derived route candidate, generated milepoints, mapped hydrography water candidates, and OSM shelter waypoint candidates. It now includes coarse elevation summaries and filtered OSM corridor candidates for campsites, privies/toilets, vistas, parking, trailheads, road crossings, and nearby towns. It also includes an initial official-source camping, permit, fee, and land-manager rules corpus. ## Completeness - Source manifest: started. - Blocked-source policy: started. - Route baseline: generated from OSM relation 156553 via Waymarked Trails route ordering. - Milepoints: generated at 0.1, 0.5, 1.0, and 5."
+      "excerpt": "# Data Quality Report Last updated: 2026-05-13 ## Current Status This is an early generated reference pack. It contains source policy, license review notes, schemas, validation gates, an OSM-derived route candidate, generated milepoints, mapped hydrography water candidates, and OSM shelter waypoint candidates. It now includes coarse elevation summaries and filtered OSM corridor candidates for campsites, privies/toilets, vistas, side trails, parking, trailheads, road crossings, and nearby towns. It also includes an initial official-source camping, permit, fee, and land-manager rules corpus. ## Completeness - Source manifest: started. - Blocked-source policy: started. - Route baseline: generated from OSM relation 156553 via Waymarked Trails route ordering. - Milepoints: generated at 0.1, 0.5"
     },
     {
       "path": "processed/water/water_confidence_notes.md",

@@ -26,6 +26,7 @@ const maxDistanceMiles = {
   campsite: 1.25,
   privy_or_toilet: 1,
   vista: 1.25,
+  side_trail: 0.2,
   parking: 1,
   trailhead: 1.25,
   road_crossing: 0.075,
@@ -36,15 +37,23 @@ const keptTagNames = new Set([
   'access',
   'amenity',
   'capacity',
+  'description',
   'fee',
+  'foot',
   'highway',
+  'horse',
+  'informal',
+  'network',
   'name',
   'operator',
   'parking',
   'place',
   'ref',
+  'route',
+  'sac_scale',
   'surface',
   'tracktype',
+  'trail_visibility',
   'tourism',
   'website',
 ]);
@@ -166,6 +175,25 @@ function isRoad(element) {
   return Boolean(highway && !/^(path|footway|steps|cycleway|bridleway|pedestrian|platform|corridor|construction|proposed)$/u.test(highway));
 }
 
+function trailLikeName(name) {
+  if (typeof name !== 'string') return false;
+  const raw = name.trim();
+  const normalized = raw.toLowerCase();
+  if (!normalized) return false;
+  if (/\bappalachian national scenic trail\b/u.test(normalized)) return false;
+  if (/\bA\.?T\.?\b/u.test(raw)) return false;
+  if (/\bappalachian\b/u.test(normalized) && /\btrail\b/u.test(normalized) && !/\bapproach\b/u.test(normalized)) return false;
+  if (/\b(bridge|footbridge|sidewalk|crosswalk|stairs|steps|ramp|walkway|driveway|connector road)\b/u.test(normalized)) return false;
+  return /\b(trail|path|loop|spur|approach|blue|blazed|greenway|walk|way)\b/u.test(normalized);
+}
+
+function isSideTrail(element) {
+  const tags = element.tags || {};
+  if (!/^(path|footway|bridleway)$/u.test(tags.highway || '')) return false;
+  if (tags.access && /^(private|no)$/u.test(tags.access)) return false;
+  return trailLikeName(tags.name);
+}
+
 function classify(element) {
   const tags = element.tags || {};
   if (tags.tourism === 'camp_site') return 'campsite';
@@ -174,6 +202,7 @@ function classify(element) {
   if (tags.highway === 'trailhead') return 'trailhead';
   if (tags.tourism === 'viewpoint') return 'vista';
   if (tags.place && /^(city|town|village)$/u.test(tags.place)) return 'town_candidate';
+  if (isSideTrail(element)) return 'side_trail';
   if (isRoad(element)) return 'road_crossing';
   return null;
 }
@@ -183,6 +212,7 @@ function pushRecord(buckets, record) {
     campsite: 'campsites',
     privy_or_toilet: 'privies',
     vista: 'vistas',
+    side_trail: 'side_trails',
     parking: 'parking',
     trailhead: 'trailheads',
     road_crossing: 'road_crossings',
@@ -197,7 +227,7 @@ function dedupe(records) {
   for (const record of records) {
     const roundedLat = round(record.lat, 4);
     const roundedLon = round(record.lon, 4);
-    const key = record.type === 'road_crossing'
+    const key = record.type === 'road_crossing' || record.type === 'side_trail'
       ? `${record.type}:${record.name.toLowerCase()}:${round(record.mile_nobo ?? 0, 1)}`
       : record.name.startsWith('Unnamed ')
       ? `${record.osm_type}:${record.osm_id}:${record.type}`
@@ -252,8 +282,8 @@ function compactRawElement(element) {
     compact.geometry = element.geometry
       .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon))
       .map((point) => ({
-        lat: round(point.lat, 7),
-        lon: round(point.lon, 7),
+        lat: round(point.lat, 5),
+        lon: round(point.lon, 5),
       }));
   }
   return compact;
@@ -292,6 +322,7 @@ function main() {
     campsites: [],
     privies: [],
     vistas: [],
+    side_trails: [],
     parking: [],
     trailheads: [],
     road_crossings: [],
@@ -301,8 +332,8 @@ function main() {
   for (const element of raw.elements || []) {
     const type = classify(element);
     if (!type) continue;
-    const matchingMilepoints = type === 'road_crossing' ? fineMilepoints : milepoints;
-    const point = pointFromElement(element, matchingMilepoints, type === 'road_crossing');
+    const matchingMilepoints = type === 'road_crossing' || type === 'side_trail' ? fineMilepoints : milepoints;
+    const point = pointFromElement(element, matchingMilepoints, type === 'road_crossing' || type === 'side_trail');
     if (!point) continue;
     const nearest = nearestMilepoint(point, matchingMilepoints);
     if (!nearest || nearest.distanceMiles > maxDistanceMiles[type]) continue;
@@ -313,6 +344,7 @@ function main() {
       campsite: 'campsite-open',
       privy_or_toilet: 'privy-open',
       vista: 'vista-open',
+      side_trail: 'side-trail-open',
       parking: 'parking-open',
       trailhead: 'trailhead-open',
       road_crossing: 'road-open',
@@ -342,6 +374,14 @@ function main() {
             ai_answer_rule:
               'Describe as an open-data town/resupply candidate only; do not copy guidebook town notes or imply confirmed hiker services.',
           }
+        : type === 'side_trail'
+        ? {
+            candidate_status: 'osm_side_trail_candidate',
+            access: tags.access || 'unknown',
+            confidence: 'mapped_osm_side_trail_candidate',
+            ai_answer_rule:
+              'Describe as an OSM-mapped side-trail candidate. Verify name, junction, blaze/access, land-manager legality, and current conditions before relying on it.',
+          }
         : {
             ai_answer_rule:
               'Describe as an OSM-mapped candidate. Verify current status, access rights, fees, and land-manager rules before relying on it.',
@@ -363,7 +403,8 @@ function main() {
   writeGeoJson(path.join(waypointDir, 'privies.geojson'), buckets.privies);
   writeJson(path.join(waypointDir, 'vistas.json'), buckets.vistas);
   writeGeoJson(path.join(waypointDir, 'vistas.geojson'), buckets.vistas);
-  writeJson(path.join(waypointDir, 'side_trails.json'), []);
+  writeJson(path.join(waypointDir, 'side_trails.json'), buckets.side_trails);
+  writeGeoJson(path.join(waypointDir, 'side_trails.geojson'), buckets.side_trails);
 
   const accessDir = path.join(packRoot, 'processed', 'access');
   writeJson(path.join(accessDir, 'parking.json'), buckets.parking);
@@ -383,6 +424,7 @@ function main() {
     campsites: buckets.campsites.length,
     privies: buckets.privies.length,
     vistas: buckets.vistas.length,
+    side_trails: buckets.side_trails.length,
     parking: buckets.parking.length,
     trailheads: buckets.trailheads.length,
     road_crossings: buckets.road_crossings.length,

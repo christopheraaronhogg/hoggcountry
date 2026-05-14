@@ -55,7 +55,27 @@ function isRoadElement(element) {
   return Boolean(highway && /^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|track|living_street|road)$/u.test(highway));
 }
 
-function nearestRoadGeometryPoint(element, milepoints) {
+function trailLikeName(name) {
+  if (typeof name !== 'string') return false;
+  const raw = name.trim();
+  const normalized = raw.toLowerCase();
+  if (!normalized) return false;
+  if (/\bappalachian national scenic trail\b/u.test(normalized)) return false;
+  if (/\bA\.?T\.?\b/u.test(raw)) return false;
+  if (/\bappalachian\b/u.test(normalized) && /\btrail\b/u.test(normalized) && !/\bapproach\b/u.test(normalized)) return false;
+  if (/\b(bridge|footbridge|sidewalk|crosswalk|stairs|steps|ramp|walkway|driveway|connector road)\b/u.test(normalized)) return false;
+  return /\b(trail|path|loop|spur|approach|blue|blazed|greenway|walk|way)\b/u.test(normalized);
+}
+
+function isSideTrailElement(element) {
+  const tags = element.tags || {};
+  const highway = tags.highway;
+  if (!/^(path|footway|bridleway)$/u.test(highway || '')) return false;
+  if (tags.access && /^(private|no)$/u.test(tags.access)) return false;
+  return trailLikeName(tags.name);
+}
+
+function nearestGeometryPoint(element, milepoints) {
   const geometry = Array.isArray(element.geometry)
     ? element.geometry.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon))
     : [];
@@ -76,22 +96,36 @@ function filterChunkElements(elements, milepoints) {
   const filtered = [];
   let roadElements = 0;
   let acceptedRoadElements = 0;
+  let sideTrailElements = 0;
+  let acceptedSideTrailElements = 0;
 
   for (const element of elements) {
-    if (!isRoadElement(element)) {
-      filtered.push(element);
+    if (isRoadElement(element)) {
+      roadElements += 1;
+      const nearest = nearestGeometryPoint(element, milepoints);
+      if (nearest && nearest.distanceMiles <= 0.075) {
+        filtered.push(element);
+        acceptedRoadElements += 1;
+      }
       continue;
     }
 
-    roadElements += 1;
-    const nearest = nearestRoadGeometryPoint(element, milepoints);
-    if (nearest && nearest.distanceMiles <= 0.075) {
+    if (isSideTrailElement(element)) {
+      sideTrailElements += 1;
+      const nearest = nearestGeometryPoint(element, milepoints);
+      if (nearest && nearest.distanceMiles <= 0.2) {
+        filtered.push(element);
+        acceptedSideTrailElements += 1;
+      }
+      continue;
+    }
+
+    if (!element.tags?.highway || !/^(path|footway|bridleway)$/u.test(element.tags.highway)) {
       filtered.push(element);
-      acceptedRoadElements += 1;
     }
   }
 
-  return { elements: filtered, roadElements, acceptedRoadElements };
+  return { elements: filtered, roadElements, acceptedRoadElements, sideTrailElements, acceptedSideTrailElements };
 }
 
 function bboxForPoints(points, padMiles = 16) {
@@ -132,10 +166,11 @@ function bboxString(bbox) {
   return `${bbox.south.toFixed(6)},${bbox.west.toFixed(6)},${bbox.north.toFixed(6)},${bbox.east.toFixed(6)}`;
 }
 
-function queryForBboxes(featureBbox, townBbox, roadBbox) {
+function queryForBboxes(featureBbox, townBbox, roadBbox, sideTrailBbox) {
   const f = bboxString(featureBbox);
   const t = bboxString(townBbox);
   const r = bboxString(roadBbox);
+  const s = bboxString(sideTrailBbox);
   return `[out:json][timeout:180];
 (
   node(${f})[tourism=camp_site];
@@ -155,12 +190,13 @@ function queryForBboxes(featureBbox, townBbox, roadBbox) {
   relation(${f})[tourism=viewpoint];
   node(${t})[place~"^(city|town|village)$"];
   way(${r})[highway~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|track|living_street|road)$"];
+  way(${s})[highway~"^(path|footway|bridleway)$"][name];
 );
 out body center geom;`;
 }
 
 async function fetchChunk(chunk, attempt = 1) {
-  const query = queryForBboxes(chunk.featureBbox, chunk.townBbox, chunk.roadBbox);
+  const query = queryForBboxes(chunk.featureBbox, chunk.townBbox, chunk.roadBbox, chunk.sideTrailBbox);
   const response = await fetch(overpassUrl, {
     method: 'POST',
     headers: {
@@ -194,6 +230,7 @@ async function main() {
     featureBbox: bboxForPoints(milepoints.filter((p) => p.mile >= chunk.start && p.mile <= chunk.end), 2),
     townBbox: bboxForPoints(milepoints.filter((p) => p.mile >= chunk.start && p.mile <= chunk.end), 15),
     roadBbox: bboxForPoints(milepoints.filter((p) => p.mile >= chunk.start && p.mile <= chunk.end), 0.35),
+    sideTrailBbox: bboxForPoints(milepoints.filter((p) => p.mile >= chunk.start && p.mile <= chunk.end), 0.35),
   }));
   const byKey = new Map();
   const chunkSummaries = [];
@@ -210,10 +247,13 @@ async function main() {
       feature_bbox: chunk.featureBbox,
       town_bbox: chunk.townBbox,
       road_bbox: chunk.roadBbox,
+      side_trail_bbox: chunk.sideTrailBbox,
       fetched_elements: elements.length,
       accepted_elements: filtered.elements.length,
       road_elements: filtered.roadElements,
       accepted_road_elements: filtered.acceptedRoadElements,
+      side_trail_elements: filtered.sideTrailElements,
+      accepted_side_trail_elements: filtered.acceptedSideTrailElements,
     });
     for (const element of filtered.elements) {
       byKey.set(`${element.type}:${element.id}`, element);
@@ -223,7 +263,7 @@ async function main() {
   process.stdout.write('\n');
 
   const data = {
-    version: 0.6,
+    version: 0.7,
     generator: 'Scout AT Open Reference Pack chunked Overpass fetch',
     osm3s: null,
     elements: [...byKey.values()],
@@ -241,6 +281,7 @@ async function main() {
       feature_bbox_pad_miles: 2,
       town_bbox_pad_miles: 15,
       road_bbox_pad_miles: 0.35,
+      side_trail_bbox_pad_miles: 0.35,
       chunks: chunkSummaries,
     },
   };

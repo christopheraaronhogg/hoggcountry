@@ -50,6 +50,12 @@ const datasetSpecs = [
     category: 'waypoints'
   },
   {
+    id: 'side-trails',
+    label: 'Side-trail candidates',
+    path: 'processed/waypoints/side_trails.json',
+    category: 'waypoints'
+  },
+  {
     id: 'parking',
     label: 'Parking/access candidates',
     path: 'processed/access/parking.json',

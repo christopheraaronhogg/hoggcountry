@@ -41,11 +41,15 @@ test('generated open route and candidate datasets keep safety labels', () => {
   const campsites = JSON.parse(readFileSync(new URL('../processed/waypoints/campsites.json', import.meta.url), 'utf8'));
   const privies = JSON.parse(readFileSync(new URL('../processed/waypoints/privies.json', import.meta.url), 'utf8'));
   const vistas = JSON.parse(readFileSync(new URL('../processed/waypoints/vistas.json', import.meta.url), 'utf8'));
+  const sideTrails = JSON.parse(readFileSync(new URL('../processed/waypoints/side_trails.json', import.meta.url), 'utf8'));
   assert.ok(campsites.length > 250 && campsites.length < 1500, 'expected filtered OSM campsite candidates');
   assert.ok(privies.length > 100 && privies.length < 1000, 'expected filtered OSM privy candidates');
   assert.ok(vistas.length > 250 && vistas.length < 1500, 'expected filtered OSM vista candidates');
+  assert.ok(sideTrails.length > 50 && sideTrails.length < 5000, 'expected filtered OSM side-trail candidates');
   assert.equal(campsites[0].license_status, 'open_license_share_alike');
   assert.match(campsites[0].ai_answer_rule, /verify current status/i);
+  assert.equal(sideTrails[0].license_status, 'open_license_share_alike');
+  assert.match(sideTrails[0].ai_answer_rule, /side-trail candidate/i);
 
   const parking = JSON.parse(readFileSync(new URL('../processed/access/parking.json', import.meta.url), 'utf8'));
   const trailheads = JSON.parse(readFileSync(new URL('../processed/access/trailheads.json', import.meta.url), 'utf8'));
@@ -85,6 +89,7 @@ test('generated open route and candidate datasets keep safety labels', () => {
   assert.match(offlineSummary.policies.generatedMileDisclosure, /not official ATC miles|not an official ATC mile/u);
   assert.match(offlineSummary.policies.waterDisclosure, /reliability|potability/u);
   assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000));
+  assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'side-trails' && dataset.recordCount > 50));
   assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'road-crossings' && dataset.recordCount > 1000));
   assert.ok(offlineSummary.liveConditionSources.some((source) => source.source_id === 'noaa_nws_api'));
   assert.ok(offlineSummaryText.length < 50_000, 'offline summary should remain compact enough for phone caching');

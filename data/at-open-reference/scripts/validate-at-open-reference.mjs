@@ -59,6 +59,7 @@ const requiredGeneratedPaths = [
   'processed/waypoints/vistas.json',
   'processed/waypoints/vistas.geojson',
   'processed/waypoints/side_trails.json',
+  'processed/waypoints/side_trails.geojson',
   'processed/access/parking.json',
   'processed/access/parking.geojson',
   'processed/access/trailheads.json',
@@ -218,10 +219,10 @@ export function validateAtOpenReferencePack() {
         assert(record.water_nearby === 'unknown', `${prefix} shelter water_nearby must default to unknown`, failures);
       }
 
-      if (/waypoints\/(campsites|privies|vistas)/u.test(rel) || /access\/(parking|trailheads|road_crossings)/u.test(rel)) {
+      if (/waypoints\/(campsites|privies|vistas|side_trails)/u.test(rel) || /access\/(parking|trailheads|road_crossings)/u.test(rel)) {
         assert(record.source_id === 'osm', `${prefix} corridor candidate must remain OSM-derived`, failures);
         assert(record.license_status === 'open_license_share_alike', `${prefix} corridor candidate must keep ODbL lane`, failures);
-        assert(/verify current status|mapped candidate|road crossing\/access candidate/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing cautious OSM candidate answer rule`, failures);
+        assert(/verify current status|mapped candidate|road crossing\/access candidate|side-trail candidate/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing cautious OSM candidate answer rule`, failures);
       }
 
       if (/towns_resupply\/(towns_within_15mi|resupply_candidates)/u.test(rel)) {
@@ -273,6 +274,7 @@ export function validateAtOpenReferencePack() {
   assert(/potability|reliability/iu.test(offlineSummary.policies?.waterDisclosure ?? ''), 'Scout offline summary must disclose water uncertainty.', failures);
   assert(/live checks|Offline answers/iu.test(offlineSummary.policies?.liveConditionsDisclosure ?? ''), 'Scout offline summary must disclose live-condition requirements.', failures);
   assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000), 'Scout offline summary must include water candidate counts.', failures);
+  assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'side-trails' && dataset.recordCount > 50), 'Scout offline summary must include side-trail candidate counts.', failures);
   assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'road-crossings' && dataset.recordCount > 1000), 'Scout offline summary must include road-crossing candidate counts.', failures);
   assert(offlineSummary.liveConditionSources?.some((source) => source.source_id === 'noaa_nws_api'), 'Scout offline summary must include NWS live connector metadata.', failures);
 
