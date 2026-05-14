@@ -9,6 +9,11 @@ test('Scout AT Open Reference Pack source and safety gates pass', () => {
   assert.deepEqual(result.failures, []);
   assert.equal(result.ok, true);
   assert.ok(result.sources >= 10, 'expected a meaningful initial source manifest');
+
+  const segmentSchema = JSON.parse(readFileSync(new URL('../schemas/segment.schema.json', import.meta.url), 'utf8'));
+  assert.ok(segmentSchema.required.includes('segment_id'));
+  assert.ok(segmentSchema.required.includes('source_url'));
+  assert.ok(segmentSchema.required.includes('ai_answer_rule'));
 });
 
 test('generated open route and candidate datasets keep safety labels', () => {

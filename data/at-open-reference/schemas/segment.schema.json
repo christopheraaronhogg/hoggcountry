@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "segment_id",
+    "route_id",
+    "start_mile_nobo",
+    "end_mile_nobo",
+    "distance_miles",
+    "source_id",
+    "source_url",
+    "license_status",
+    "confidence",
+    "last_checked",
+    "ai_answer_rule"
+  ],
+  "properties": {
+    "segment_id": { "type": "string" },
+    "route_id": { "type": "string" },
+    "start_mile_nobo": { "type": "number" },
+    "end_mile_nobo": { "type": "number" },
+    "distance_miles": { "type": "number" },
+    "state": { "type": "array", "items": { "type": "string" } },
+    "land_managers": { "type": "array", "items": { "type": "string" } },
+    "elevation_gain_ft": { "type": "number" },
+    "elevation_loss_ft": { "type": "number" },
+    "highest_point_ft": { "type": "number" },
+    "lowest_point_ft": { "type": "number" },
+    "sample_interval_miles": { "type": "number" },
+    "source_id": { "type": "string" },
+    "source_url": { "type": "string" },
+    "license_status": { "type": "string" },
+    "confidence": { "type": "string" },
+    "last_checked": { "type": "string" },
+    "limitation": { "type": "string" },
+    "ai_answer_rule": { "type": "string" }
+  }
+}

@@ -38,6 +38,7 @@ const requiredPaths = [
 ];
 
 const requiredGeneratedPaths = [
+  'schemas/segment.schema.json',
   'raw/osm/waymarked_relation_156553.json',
   'raw/osm/osm_corridor_features_relation_156553.json',
   'processed/route/at_route_candidate_osm.geojson',
