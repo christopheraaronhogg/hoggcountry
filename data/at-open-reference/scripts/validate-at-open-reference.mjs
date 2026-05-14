@@ -155,6 +155,7 @@ export function validateAtOpenReferencePack() {
       if (/milepoints/u.test(rel)) {
         assert(record.official === false, `${prefix} generated milepoint must have official: false`, failures);
         assert(/not an official ATC mile/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing generated-mile answer rule`, failures);
+        assert(record.candidate_status === 'not_production_final', `${prefix} generated milepoint must expose candidate_status`, failures);
       }
 
       if (/water/u.test(rel)) {
@@ -169,6 +170,8 @@ export function validateAtOpenReferencePack() {
         assert(record.official === false, `${prefix} selected open route must not be official`, failures);
         assert(typeof record.measured_length_miles === 'number', `${prefix} missing measured_length_miles`, failures);
         assert(typeof record.length_delta_miles === 'number', `${prefix} missing length_delta_miles calibration note`, failures);
+        assert(record.candidate_status === 'not_production_final', `${prefix} route must expose candidate_status`, failures);
+        assert(Array.isArray(record.known_quality_flags) && record.known_quality_flags.length > 0, `${prefix} route must expose quality flags`, failures);
       }
 
       if (/waypoints\/shelters/u.test(rel)) {

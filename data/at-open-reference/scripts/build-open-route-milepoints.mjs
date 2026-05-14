@@ -394,6 +394,7 @@ function interpolateAtMile(polyline, cum, mile) {
 function makeMilepoints(polyline, cum, totalMiles, interval) {
   const features = [];
   const steps = Math.floor(totalMiles / interval);
+  const routeLengthDelta = round(totalMiles - OFFICIAL_REFERENCE_2026_MILES, 1);
 
   for (let idx = 0; idx <= steps; idx++) {
     const mile = round(idx * interval, 1);
@@ -409,7 +410,9 @@ function makeMilepoints(polyline, cum, totalMiles, interval) {
         mile_sobo: mileSobo,
         milepoint_type: 'generated',
         official: false,
-        confidence: 'estimated_from_open_route_geometry',
+        confidence: 'estimated_from_open_route_geometry_with_known_length_gap',
+        candidate_status: 'not_production_final',
+        route_length_delta_miles_vs_2026_reference: routeLengthDelta,
         source_id: SOURCE_ID,
         source_url: SOURCE_URL,
         license_status: LICENSE_STATUS,
@@ -417,7 +420,7 @@ function makeMilepoints(polyline, cum, totalMiles, interval) {
         attribution: 'OpenStreetMap contributors',
         last_checked: '2026-05-13',
         ai_answer_rule:
-          "generated mile based on Scout's open route geometry, not an official ATC mile",
+          "generated mile based on Scout's open route geometry, not an official ATC mile; route candidate has a known length gap and is not production-final",
       },
       geometry: {
         type: 'Point',
@@ -436,8 +439,11 @@ function makeMilepoints(polyline, cum, totalMiles, interval) {
       source_id: SOURCE_ID,
       source_url: SOURCE_URL,
       license_status: LICENSE_STATUS,
-      confidence: 'estimated_from_open_route_geometry',
-      ai_answer_rule: "generated mile based on Scout's open route geometry, not an official ATC mile",
+      confidence: 'estimated_from_open_route_geometry_with_known_length_gap',
+      candidate_status: 'not_production_final',
+      route_length_delta_miles_vs_2026_reference: routeLengthDelta,
+      ai_answer_rule:
+        "generated mile based on Scout's open route geometry, not an official ATC mile; route candidate has a known length gap and is not production-final",
     },
   };
 }
@@ -479,7 +485,7 @@ function buildRouteFeature(polyline, sourceData, graphStats, inputPath) {
           license_status: LICENSE_STATUS,
           source_license: 'ODbL',
           attribution: 'OpenStreetMap contributors',
-          confidence: 'open_route_candidate',
+          confidence: 'open_route_candidate_with_known_length_gap',
           last_checked: '2026-05-13',
           measured_length_miles: round(measuredLengthMiles, 1),
           official_reference_length_miles: OFFICIAL_REFERENCE_2026_MILES,
@@ -487,12 +493,17 @@ function buildRouteFeature(polyline, sourceData, graphStats, inputPath) {
           official_reference_source: OFFICIAL_REFERENCE_SOURCE,
           length_delta_miles: round(measuredLengthMiles - OFFICIAL_REFERENCE_2026_MILES, 1),
           official: false,
+          candidate_status: 'not_production_final',
+          known_quality_flags: [
+            'measured_length_is_materially_shorter_than_2026_official_reference',
+            'generated_milepoints_are_for_open-corpus_testing_not_field_navigation',
+          ],
           generated_from: path.relative(repoRoot, inputPath),
           source_fetched_at: sourceData.scout_provenance?.fetched_at || sourceData.features?.[0]?.properties?.fetched_at || null,
           bbox: bboxForLine(polyline),
           graph: graphStats,
           ai_answer_rule:
-            "Use as Scout's open route geometry. Do not describe generated mileage as official ATC mileage.",
+            "Use as Scout's open route geometry candidate only. Do not describe generated mileage as official ATC mileage or production-final field navigation.",
         },
         geometry: {
           type: 'LineString',
