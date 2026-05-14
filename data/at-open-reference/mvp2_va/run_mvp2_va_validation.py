@@ -63,6 +63,7 @@ REQUIRED_PATHS = [
     "processed/rules/rules_by_state.json",
     "processed/live_conditions/live_condition_sources.json",
     "processed/live_conditions/nps_alerts_cache.json",
+    "processed/live_conditions/shenandoah_alerts_cache.json",
     "processed/live_conditions/nws_alerts_cache.json",
     "processed/live_conditions/usfs_gwj_alerts_cache.json",
     "processed/live_conditions/va_state_local_alert_sources.json",
@@ -142,7 +143,7 @@ def validate_pack() -> dict[str, Any]:
         if blocked in sources:
             fail_if(sources[blocked].get("license_status") != "blocked", failures, f"blocked source {blocked} not blocked")
     fail_if(sources.get("osm", {}).get("license_status") != "open_license_share_alike", failures, "OSM not ODbL/share-alike")
-    for required_source in ["nps_shenandoah_official_pages", "nps_blri_official_pages", "usfs_gwj_official_pages", "virginia_dcr_state_parks", "usda_ssurgo_gssurgo", "mvp2_va_tread_model"]:
+    for required_source in ["nps_shenandoah_official_pages", "shenandoah_official_alerts", "nps_blri_official_pages", "usfs_gwj_official_pages", "virginia_dcr_state_parks", "usda_ssurgo_gssurgo", "mvp2_va_tread_model"]:
         fail_if(required_source not in sources, failures, f"source manifest missing {required_source}")
 
     blocked_text = t("blocked_sources.md").lower()
@@ -244,6 +245,9 @@ def validate_pack() -> dict[str, Any]:
     for term in ["closures", "detours", "fire", "flooding", "storm damage", "bear activity", "snow/ice", "permit changes", "dangerous weather", "atc trail updates", "verification pointer", "live retrieval fails"]:
         fail_if(term not in live_policy, failures, f"live policy missing {term}")
     live_sources = j("processed/live_conditions/live_condition_sources.json")
+    live_source_ids = {record.get("source_id") for record in live_sources}
+    for required_live_source in ["noaa_nws_api", "nps_api", "shenandoah_official_alerts", "usfs_gwj_official_pages", "virginia_dcr_state_parks", "atc_trail_updates_pointer"]:
+        fail_if(required_live_source not in live_source_ids, failures, f"live source missing {required_live_source}")
     for record in live_sources:
         common(record, failures, "live source", allow_blocked_pointer=True)
     atc_pointer = next((record for record in live_sources if record.get("source_id") == "atc_trail_updates_pointer"), None)
@@ -277,14 +281,18 @@ def validate_pack() -> dict[str, Any]:
     fail_if(len(segment_docs) < 22, failures, "segment docs too few")
     fail_if(not any("000_025" in doc.name for doc in segment_docs), failures, "first 25-mile segment doc missing")
     fail_if(not any("525_547" in doc.name for doc in segment_docs), failures, "terminal segment doc missing")
-    required_sections = ["## identity", "## terrain", "## tread / rockiness", "## water candidates", "## waypoints / access", "## resupply / town candidates", "## camping / permit summary", "## source / confidence notes"]
-    sample_doc = (ROOT / "rag_docs/segment_guides/mvp2_va_000_025.md").read_text().lower()
-    for section in required_sections:
-        fail_if(section not in sample_doc, failures, f"segment doc missing section {section}")
+    required_sections = ["## identity", "## terrain", "## tread / rockiness", "## water candidates", "## waypoints / access", "## resupply / town candidates", "## camping / permit summary", "## ai cautions", "## source / confidence notes"]
+    for doc in segment_docs:
+        doc_text = doc.read_text().lower()
+        for section in required_sections:
+            fail_if(section not in doc_text, failures, f"segment doc {doc.name} missing section {section}")
+    state_guide = t("rag_docs/state_guides/VA.md").lower()
+    for term in ["shenandoah", "george washington", "jefferson", "blue ridge parkway", "grayson", "mount rogers"]:
+        fail_if(term not in state_guide, failures, f"VA state guide missing {term}")
 
     questions = j("tests/mvp2_va_behavior_questions.json")
     fail_if(len(questions) < 50, failures, "behavior questions below 50")
-    blob = "\n".join(q.get("expected_behavior", "") for q in questions).lower()
+    blob = "\n".join(f"{q.get('question', '')} {q.get('expected_behavior', '')}" for q in questions).lower()
     for term in ["not official", "reliability unknown", "live retrieval", "not field verified", "blocked", "potability unknown", "verify current", "shenandoah", "blue ridge parkway", "grayson"]:
         fail_if(term not in blob, failures, f"behavior questions missing {term}")
 
@@ -304,6 +312,12 @@ def validate_pack() -> dict[str, Any]:
     status = t("MVP2_STATUS.md").lower()
     for lane in ["route", "elevation", "water", "waypoints", "rules", "live connectors", "tread", "rag docs", "validation", "licensing"]:
         fail_if(lane not in status, failures, f"status missing {lane}")
+    top_manifest = j("manifest.json")
+    fail_if(top_manifest.get("prompt_artifact_checklist") != "prompt_artifact_checklist.md", failures, "manifest missing checklist pointer")
+    fail_if(top_manifest.get("production_safe_zip") != "processed/export/scout_at_mvp2_va_production_safe.zip", failures, "manifest missing production zip pointer")
+    checklist = t("prompt_artifact_checklist.md").lower()
+    for command in ["build-mvp2-va-reference-pack.mjs", "run_mvp2_va_validation.py --json", "npm test", "npm run build:openclaw:forge"]:
+        fail_if(command not in checklist, failures, f"checklist missing command {command}")
 
     result = {
         "ok": not failures,

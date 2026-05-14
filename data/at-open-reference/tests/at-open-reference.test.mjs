@@ -226,6 +226,8 @@ test('Scout AT MVP2 Virginia reference pack validates source-aware planning rule
   assert.match(livePolicy, /ATC Trail Updates/i);
   assert.match(livePolicy, /verification pointer only/i);
   assert.match(livePolicy, /live retrieval fails/i);
+  const liveSources = JSON.parse(readFileSync(new URL('../mvp2_va/processed/live_conditions/live_condition_sources.json', import.meta.url), 'utf8'));
+  assert.ok(liveSources.some((source) => source.source_id === 'shenandoah_official_alerts'));
 
   const treadNotes = readFileSync(new URL('../mvp2_va/processed/tread_rockiness/model_notes.md', import.meta.url), 'utf8');
   assert.match(treadNotes, /SSURGO\/gSSURGO/i);
@@ -235,7 +237,13 @@ test('Scout AT MVP2 Virginia reference pack validates source-aware planning rule
   assert.match(segmentGuide, /## Terrain/);
   assert.match(segmentGuide, /## Water Candidates/);
   assert.match(segmentGuide, /## Camping \/ Permit Summary/);
+  assert.match(segmentGuide, /## AI Cautions/);
   assert.match(segmentGuide, /Generated miles are not official ATC mileage/);
+
+  const checklist = readFileSync(new URL('../mvp2_va/prompt_artifact_checklist.md', import.meta.url), 'utf8');
+  assert.match(checklist, /npm test/);
+  assert.match(checklist, /npm run build:openclaw:forge/);
+  assert.match(checklist, /Shenandoah\/VA state-local\/ATC pointer-only policy/i);
 
   const behaviorQuestions = JSON.parse(readFileSync(new URL('../mvp2_va/tests/mvp2_va_behavior_questions.json', import.meta.url), 'utf8'));
   assert.ok(behaviorQuestions.some((question) => /Shenandoah/i.test(question.question + question.expected_behavior)));

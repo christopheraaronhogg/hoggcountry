@@ -295,6 +295,30 @@
       "notes": "MVP2 uses as an official source lane, not as copied page content."
     },
     {
+      "source_id": "shenandoah_official_alerts",
+      "name": "Shenandoah National Park official alerts and conditions",
+      "owner": "National Park Service",
+      "source_url": "https://developer.nps.gov/api/v1/alerts?parkCode=shen",
+      "source_type": "live alert connector",
+      "access_method": "NPS API / official live page",
+      "license_status": "api_access_allowed",
+      "allowed_use": "live connector; cache fetched timestamp and disclose current-source gaps",
+      "attribution_required": "National Park Service",
+      "data_categories": [
+        "closures",
+        "detours",
+        "bear_activity",
+        "fire",
+        "storm_damage",
+        "road_access",
+        "permit_changes"
+      ],
+      "update_cadence": "live check before advice",
+      "confidence": "official_live_api",
+      "last_checked": "2026-05-14",
+      "notes": "Explicit Shenandoah live-alert lane; static MVP2 docs cannot answer current Shenandoah conditions."
+    },
+    {
       "source_id": "nps_blri_official_pages",
       "name": "Blue Ridge Parkway official pages",
       "owner": "National Park Service",

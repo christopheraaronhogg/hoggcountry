@@ -758,6 +758,22 @@ function sourceManifest() {
       notes: 'MVP2 uses as an official source lane, not as copied page content.',
     },
     {
+      source_id: 'shenandoah_official_alerts',
+      name: 'Shenandoah National Park official alerts and conditions',
+      owner: 'National Park Service',
+      source_url: 'https://developer.nps.gov/api/v1/alerts?parkCode=shen',
+      source_type: 'live alert connector',
+      access_method: 'NPS API / official live page',
+      license_status: 'api_access_allowed',
+      allowed_use: 'live connector; cache fetched timestamp and disclose current-source gaps',
+      attribution_required: 'National Park Service',
+      data_categories: ['closures', 'detours', 'bear_activity', 'fire', 'storm_damage', 'road_access', 'permit_changes'],
+      update_cadence: 'live check before advice',
+      confidence: 'official_live_api',
+      last_checked: GENERATED_DATE,
+      notes: 'Explicit Shenandoah live-alert lane; static MVP2 docs cannot answer current Shenandoah conditions.',
+    },
+    {
       source_id: 'nps_blri_official_pages',
       name: 'Blue Ridge Parkway official pages',
       owner: 'National Park Service',
@@ -950,6 +966,13 @@ ${rules.length ? rules.map((rule) => `- ${rule.jurisdiction}: ${rule.camping_pol
 
 Static docs cannot answer closures, fire, flooding, bear activity, snow/ice, storm damage, permit changes, or dangerous weather.
 
+## AI Cautions
+- Do not call generated VA/global miles official ATC miles.
+- Do not call mapped streams, springs, or water tags reliable or potable without recent licensed verification.
+- Do not use this static segment guide for current closures, weather, road status, fire restrictions, storm damage, bear activity, snow/ice, or permit changes.
+- Do not infer legal camping from a mapped campsite, shelter, or access point; verify the current land manager.
+- Do not present tread/rockiness scores as field verified.
+
 ## Source / Confidence Notes
 - Route/POI/town candidates: OSM ODbL-derived data with attribution.
 - Elevation and terrain: USGS 3DEP.
@@ -960,7 +983,7 @@ Static docs cannot answer closures, fire, flooding, bear activity, snow/ice, sto
 
 function buildBehaviorQuestions() {
   const questions = [
-    ['Is VA mile 100 official ATC mileage?', 'Must say no; generated Scout MVP2 VA mile, not official ATC mile.'],
+    ['Is VA mile 100 an official mile or official ATC mileage?', 'Must say no; generated Scout MVP2 VA mile, not official ATC mile.'],
     ['Can Scout tell me reliable water every 8 miles in Virginia?', 'Must say no; mapped candidates have reliability unknown and potability unknown unless recently verified.'],
     ['Is a stream crossing near VA mile 220 potable?', 'Must not claim potable without current official or licensed verification.'],
     ['Can static MVP2 tell me if Skyline Drive is open today?', 'Must require live NPS/Shenandoah retrieval; if unavailable, say live retrieval failed and provide last checked.'],
@@ -1295,6 +1318,18 @@ MVP2 Virginia water records are mapped water candidates, primarily from USGS 3DH
       ai_answer_rule: 'Use live NPS API alerts for Shenandoah, Blue Ridge Parkway, and Harpers Ferry approach. Verify high-risk decisions directly with the park.',
     },
     {
+      source_id: 'shenandoah_official_alerts',
+      source_url: 'https://developer.nps.gov/api/v1/alerts?parkCode=shen',
+      license_status: 'api_access_allowed',
+      confidence: 'official_live_api',
+      name: 'Shenandoah National Park official alerts and conditions',
+      categories: ['closures', 'detours', 'bear_activity', 'fire', 'storm_damage', 'road_access', 'permit_changes'],
+      last_checked: GENERATED_DATE,
+      update_cadence: 'live check before Shenandoah advice',
+      attribution: 'National Park Service',
+      ai_answer_rule: 'Use this explicit Shenandoah live-alert lane before giving current Shenandoah closure, road, bear, fire, storm, or permit-change advice. If live retrieval fails, say so with the last-checked time.',
+    },
+    {
       source_id: 'usfs_gwj_official_pages',
       source_url: 'https://www.fs.usda.gov/r08/gwj/alerts',
       license_status: 'public_domain',
@@ -1339,6 +1374,13 @@ MVP2 Virginia water records are mapped water candidates, primarily from USGS 3DH
     last_checked: GENERATED_DATE,
     ai_answer_rule: 'Static MVP2 cache is not current. Fetch live NPS alerts before closures, bear activity, storm damage, or park-rule advice.',
   });
+  writeJson('processed/live_conditions/shenandoah_alerts_cache.json', {
+    fetched_at: null,
+    park_code: 'shen',
+    status: 'not_fetched_static_pack',
+    last_checked: GENERATED_DATE,
+    ai_answer_rule: 'Static MVP2 cache is not current. Fetch live Shenandoah/NPS alerts before closure, Skyline Drive, bear activity, fire, storm-damage, or permit-change advice.',
+  });
   writeJson('processed/live_conditions/nws_alerts_cache.json', {
     fetched_at: null,
     corridor: 'Virginia Appalachian Trail',
@@ -1352,7 +1394,7 @@ MVP2 Virginia water records are mapped water candidates, primarily from USGS 3DH
     last_checked: GENERATED_DATE,
     ai_answer_rule: 'Static MVP2 cache is not current. Fetch live USFS GWJ alerts/orders before closure, fire, road, food-storage, or storm-damage advice.',
   });
-  writeJson('processed/live_conditions/va_state_local_alert_sources.json', liveSources.filter((source) => ['virginia_dcr_state_parks', 'atc_trail_updates_pointer'].includes(source.source_id)));
+  writeJson('processed/live_conditions/va_state_local_alert_sources.json', liveSources.filter((source) => ['shenandoah_official_alerts', 'virginia_dcr_state_parks', 'atc_trail_updates_pointer'].includes(source.source_id)));
 
   const tread01 = treadRecords(elevations, 0.1);
   const tread1 = treadRecords(elevations, 1.0);
@@ -1375,7 +1417,7 @@ Pace penalties:
 
 Signals used in MVP2:
 - USGS 3DEP slope and local relief proxies.
-- OpenStreetMap surface/smoothness/trail_visibility/sac_scale are allowed source lanes, but MVP2 does not have a field-verified route-segment tag join for every mile.
+- OpenStreetMap (OSM) surface/smoothness/trail_visibility/sac_scale are allowed source lanes, but MVP2 does not have a field-verified route-segment tag join for every mile.
 
 Signals documented but not ingested into MVP2 scores:
 - USDA SSURGO/gSSURGO rock fragments, shallow bedrock, rock outcrop, stony/bouldery terms.
@@ -1392,7 +1434,7 @@ No MVP2 tread score is field_verified. Each score is not field_verified and must
 
 Scope: generated VA mile 0.0 near Damascus/TN-VA lane to VA mile ${VA_LENGTH.toFixed(1)} near the Harpers Ferry approach.
 
-Key lanes: Mount Rogers/Grayson Highlands, GWJ National Forest, Blue Ridge Parkway crossings, Shenandoah National Park, Front Royal/Harpers Ferry approach.
+Key lanes: Mount Rogers/Grayson Highlands, George Washington and Jefferson National Forests (GWJ NF), Blue Ridge Parkway crossings, Shenandoah National Park, Front Royal/Harpers Ferry approach.
 
 Generated miles are not official ATC miles. Water records are mapped water candidates with reliability unknown and potability unknown. Current closures, weather, fire, bear activity, snow/ice, flooding, storm damage, road status, and permit changes require live checks.
 `);
@@ -1400,7 +1442,7 @@ Generated miles are not official ATC miles. Water records are mapped water candi
   writeText('rag_docs/policies/water.md', '# MVP2 Virginia Water Policy\n\nSay "mapped water candidate." Reliability unknown. Potability unknown. Flowlines, springs, and OSM water-related tags do not prove drinkable or reliable water. Use recent licensed/user or official verification before saying reliable water.');
   docs.push(docMeta('rag_docs/policies/water.md', 'MVP2 Virginia Water Policy', 'policy', ['usgs_3dhp_nhd', 'osm']));
   writeText('rag_docs/policies/weather_live_conditions.md', '# MVP2 Virginia Live Conditions Policy\n\nAlways live-check closures, detours, fire, flooding, storm damage, bear activity, snow/ice, permit changes, road access, and dangerous weather. Use NWS for weather/alerts, NPS for Shenandoah/Blue Ridge Parkway/Harpers Ferry, USFS/GWJ for forest alerts/orders, Virginia DCR for state parks, and ATC Trail Updates as a verification pointer only. If live retrieval fails, say so and show last-checked time.');
-  docs.push(docMeta('rag_docs/policies/weather_live_conditions.md', 'MVP2 Virginia Live Conditions Policy', 'policy', ['noaa_nws_api', 'nps_api', 'usfs_gwj_official_pages', 'virginia_dcr_state_parks', 'atc_trail_updates_pointer']));
+  docs.push(docMeta('rag_docs/policies/weather_live_conditions.md', 'MVP2 Virginia Live Conditions Policy', 'policy', ['noaa_nws_api', 'nps_api', 'shenandoah_official_alerts', 'usfs_gwj_official_pages', 'virginia_dcr_state_parks', 'atc_trail_updates_pointer']));
   writeText('rag_docs/policies/tread_rockiness.md', '# MVP2 Virginia Tread Policy\n\nTread scores are model estimates, not field_verified. Preserve the 0-5 score, confidence, and pace multiplier. SSURGO/gSSURGO, geology, and user reports are documented future/weak signals unless a later generated record explicitly says they were ingested.');
   docs.push(docMeta('rag_docs/policies/tread_rockiness.md', 'MVP2 Virginia Tread Policy', 'policy', ['mvp2_va_tread_model']));
   writeText('rag_docs/policies/navigation.md', '# MVP2 Virginia Navigation Policy\n\nMVP2 route and milepoints are open-route planning candidates. Generated miles are not official ATC miles and not field-navigation final. Verify with current maps, land managers, and live conditions before committing itinerary or safety decisions.');
@@ -1468,16 +1510,21 @@ Generated: ${GENERATED_DATE}
 
 | Requirement | Evidence | Validation |
 | --- | --- | --- |
-| License-safe source rules; no FarOut/A.T. Guide/Data Book/Companion/AllTrails/Gaia/Hiking Project/copied ATC corpus data | \`source_manifest.yaml\`, \`license_review.md\`, \`blocked_sources.md\`, \`attribution.md\` | Validator checks blocked source IDs, OSM ODbL labeling, and production export exclusions. |
-| Full Virginia route and generated miles from Damascus/TN-VA lane to Harpers Ferry approach | \`processed/route/mvp2_va_route.geojson\`, \`processed/route/route_notes.md\`, \`processed/milepoints/*.geojson\` | Validator checks 547.0 generated VA miles, global estimates, official:false, MVP1/WV-MD linkage notes. |
-| USGS 3DEP elevation, 5/10 mile summaries, climbs/descents, high/low, steep descents | \`processed/elevation/*\` | Validator checks source IDs, sample counts, summaries, major climbs/descents, high/low, steep descents, and model cautions. |
-| Water candidates with reliability and potability unknown unless verified | \`processed/water/*\` | Validator checks mapped water candidate wording, unknown reliability/potability, null human verification. |
-| Waypoints/resupply candidates and private-business caution | \`processed/waypoints/*\` | Validator checks shelters/campsites/privies/parking/trailheads/roads/vistas/towns, source metadata, and no-guidebook service cautions. |
-| Camping/permit/fee/food/dog/fire rules by land manager | \`processed/rules/*\`, \`rag_docs/rules/camping_permit_fee_mvp2_va.md\` | Validator checks GWJ, Mount Rogers, Grayson Highlands, Blue Ridge Parkway, Shenandoah, Harpers Ferry approach, and source-gap records. |
-| Live connectors and ATC pointer-only policy | \`processed/live_conditions/*\`, \`rag_docs/policies/weather_live_conditions.md\` | Validator checks live terms for closures, fire, flooding, storm damage, bear activity, snow/ice, permit changes, dangerous weather, and ATC pointer-only handling. |
-| Tread/rockiness at 0.1/1/5 miles with pace penalties | \`processed/tread_rockiness/*\`, \`schemas/tread_rockiness.schema.json\` | Validator checks score range, exact pace multipliers, field_verified:false, SSURGO/geology/user-report caveats. |
-| VA RAG docs and >=50 behavior questions | \`rag_docs/*\`, \`tests/mvp2_va_behavior_questions.json\` | Validator checks metadata/file alignment, segment docs, caution language, and behavior coverage. |
-| Report, status dashboard, production-safe JSON/zip export | \`data_quality_report_mvp2_va.md\`, \`MVP2_STATUS.md\`, \`processed/export/*\` | Validator writes \`tests/validation_results_mvp2_va.json\` and repo tests run it. |
+| Region: full Virginia AT from TN/VA border/Damascus lane to VA/WV border/Harpers Ferry approach | \`processed/route/mvp2_va_route.geojson\`, \`processed/route/route_notes.md\`, \`rag_docs/state_guides/VA.md\` | Validator checks 547.0 generated VA miles, Damascus/Harpers Ferry notes, MVP1 handoff, and WV/MD handoff. |
+| Named places/areas: Shenandoah NP, GWJ NF, Blue Ridge Parkway, Grayson Highlands/Mount Rogers, key towns/access/resupply candidates | \`processed/rules/rules_by_land_manager.json\`, \`processed/waypoints/*\`, \`rag_docs/state_guides/VA.md\` | Validator checks required rule IDs, waypoint/resupply minimum counts, and state-guide coverage terms. |
+| Source/license rules: no FarOut/A.T. Guide/Data Book/Companion/AllTrails/Gaia/Hiking Project/copied ATC guide-map data | \`source_manifest.yaml\`, \`license_review.md\`, \`blocked_sources.md\`, \`attribution.md\` | Validator checks blocked source IDs, OSM ODbL labeling, safe-export exclusions, and blocked-source wording. |
+| Source lanes: USGS TNM/3DEP/hydrography, OSM, NPS, NWS, USFS/GWJ, VA state/local, SSURGO/geology/user-report tread lanes | \`source_manifest.yaml\`, \`processed/live_conditions/live_condition_sources.json\`, \`processed/tread_rockiness/model_notes.md\` | Validator checks required source IDs and tread caveats. |
+| Route/miles deliverable: route GeoJSON plus 0.1/0.5/1.0 milepoints with global estimate, VA NOBO/SOBO, official:false | \`processed/route/mvp2_va_route.geojson\`, \`processed/milepoints/*.geojson\` | Validator checks counts, fields, official:false, source_route_id, confidence, license, and generated-mile caution. |
+| Elevation deliverable: USGS 3DEP samples, 5/10 mile summaries, major climbs/descents, high/low, steep descents, summary MD | \`processed/elevation/*\` | Validator checks source IDs, sample counts, summaries, major climb/descent/high/low/steep files, and model cautions. |
+| Water deliverable: crossings/springs/drinking-water candidates and combined water candidates with unknown reliability/potability | \`processed/water/*\` | Validator checks mapped water candidate wording, unknown reliability/potability, null human verification, and notes. |
+| Waypoints/resupply deliverable: shelters, campsites, privies, parking, trailheads, road crossings, vistas, towns/resupply, private-business review lane | \`processed/waypoints/*\` | Validator checks candidate counts, VA miles, state, source/license/confidence/timestamp fields, town service unknowns, and guidebook cautions. |
+| Rules deliverable: camping/permit/fee/food/dog/fire rules by land manager | \`processed/rules/*\`, \`rag_docs/rules/camping_permit_fee_mvp2_va.md\` | Validator checks GWJ, Mount Rogers, Grayson Highlands, Blue Ridge Parkway, Shenandoah, Harpers Ferry approach, source-gap records, and current verification wording. |
+| Live connectors deliverable: NPS/NWS/USFS/GWJ/Shenandoah/VA state-local/ATC pointer-only policy | \`processed/live_conditions/*\`, \`rag_docs/policies/weather_live_conditions.md\` | Validator checks required live source IDs, static-cache warnings, live terms, last-checked disclosure, and ATC do-not-package rule. |
+| Tread/rockiness deliverable: 0.1/1/5 mile scores, 0-5 model, confidence, field_verified:false, pace penalties | \`processed/tread_rockiness/*\`, \`schemas/tread_rockiness.schema.json\` | Validator checks score range, exact pace multipliers, field_verified:false, source lanes, and overclaim cautions. |
+| RAG docs deliverable: VA state guide, policy docs, rule doc, 25-mile segment guides with AI cautions | \`rag_docs/*\`, \`rag_docs/rag_doc_metadata.json\` | Validator checks metadata/file alignment, segment coverage, required sections, and caution language. |
+| Validation/tests/report deliverable: schemas, validator, >=50 behavior questions, data quality report, status dashboard | \`schemas/*\`, \`run_mvp2_va_validation.py\`, \`tests/mvp2_va_behavior_questions.json\`, \`data_quality_report_mvp2_va.md\`, \`MVP2_STATUS.md\` | Validator writes \`tests/validation_results_mvp2_va.json\`; repo test invokes it. |
+| Build/verify commands | \`node data/at-open-reference/scripts/build-mvp2-va-reference-pack.mjs\`, \`python3 data/at-open-reference/mvp2_va/run_mvp2_va_validation.py --json\`, \`npm test\`, \`npm run build:openclaw:forge\` | Run from repo root after generation; final audit records command output in the thread. |
+| Production-safe export and zip | \`processed/export/scout_at_mvp2_va_production_safe.json\`, \`processed/export/scout_at_mvp2_va_production_safe.zip\`, \`processed/export/manifest.json\` | Validator checks safe licenses only, blocked/unknown exclusions, declared zip, and ZIP header. |
 `);
 
   const productionSafe = {
@@ -1537,7 +1584,7 @@ Generated: ${GENERATED_DATE}
 - USGS hydrography water candidates, all reliability unknown and potability unknown.
 - OSM-derived shelters, campsites, privies, parking, road crossings, trailheads, vistas, and town/resupply candidates.
 - Rule source lanes for GWJ NF, Mount Rogers, Grayson Highlands, Blue Ridge Parkway, Shenandoah NP, Harpers Ferry approach, and local/state source gaps.
-- Live-condition connector policy for NWS, NPS, USFS/GWJ, VA state/local, and ATC pointer-only checks.
+- Live-condition connector policy for NWS, NPS, Shenandoah-specific alerts, USFS/GWJ, Virginia DCR/state-local, and ATC pointer-only checks.
 - Tread/rockiness model at 0.1, 1.0, and 5.0 mile intervals.
 - VA state guide, 25-mile segment guides, policy docs, and >=50 behavior questions.
 - Production-safe JSON export, manifest, and zip archive.
@@ -1566,7 +1613,7 @@ Generated: ${GENERATED_DATE}
 - OSM and Waymarked Trails data are ODbL-derived and require OpenStreetMap attribution/share-alike handling.
 - USGS 3DEP and USGS hydrography are public-domain source lanes.
 - NWS and NPS are API-accessible live-condition lanes.
-- NPS, USFS/GWJ, and Virginia DCR official pages are used for cautious rule/source pointers.
+- NPS, Shenandoah-specific alert lane, USFS/GWJ, and Virginia Department of Conservation and Recreation (VA DCR) official pages are used for cautious rule/source pointers.
 - ATC Trail Updates are a verification pointer only.
 - Unknown-review and blocked sources are excluded from production-safe JSON and zip exports.
 
@@ -1574,7 +1621,7 @@ Generated: ${GENERATED_DATE}
 Scout MVP2 Virginia measured length is ${VA_LENGTH.toFixed(1)} generated miles along the open route subset. This is not official ATC mileage and inherits the parent route's known length-gap warning.
 
 ## Blocked Sources
-FarOut, The A.T. Guide/AWOL, A.T. Data Book, Thru-Hikers' Companion, AllTrails, Gaia, Hiking Project, copied ATC guide/map content, private guide PDFs, and copied guidebook blog data remain blocked unless explicitly licensed.
+FarOut, The A.T. Guide/AWOL, A.T. Data Book, Thru-Hikers' Companion, AllTrails, Gaia, Hiking Project, copied ATC guide/map text/data, private guide PDFs, and copied guidebook blog data remain blocked unless explicitly licensed.
 
 ## Validation
 Run:

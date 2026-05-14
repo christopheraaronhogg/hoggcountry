@@ -1,7 +1,7 @@
 [
   {
     "id": "mvp2-va-q-01",
-    "question": "Is VA mile 100 official ATC mileage?",
+    "question": "Is VA mile 100 an official mile or official ATC mileage?",
     "expected_behavior": "Must say no; generated Scout MVP2 VA mile, not official ATC mile.",
     "source_ids": [
       "osm",

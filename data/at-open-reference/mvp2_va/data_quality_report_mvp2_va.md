@@ -9,7 +9,7 @@ Generated: 2026-05-14
 - USGS hydrography water candidates, all reliability unknown and potability unknown.
 - OSM-derived shelters, campsites, privies, parking, road crossings, trailheads, vistas, and town/resupply candidates.
 - Rule source lanes for GWJ NF, Mount Rogers, Grayson Highlands, Blue Ridge Parkway, Shenandoah NP, Harpers Ferry approach, and local/state source gaps.
-- Live-condition connector policy for NWS, NPS, USFS/GWJ, VA state/local, and ATC pointer-only checks.
+- Live-condition connector policy for NWS, NPS, Shenandoah-specific alerts, USFS/GWJ, Virginia DCR/state-local, and ATC pointer-only checks.
 - Tread/rockiness model at 0.1, 1.0, and 5.0 mile intervals.
 - VA state guide, 25-mile segment guides, policy docs, and >=50 behavior questions.
 - Production-safe JSON export, manifest, and zip archive.
@@ -38,7 +38,7 @@ Generated: 2026-05-14
 - OSM and Waymarked Trails data are ODbL-derived and require OpenStreetMap attribution/share-alike handling.
 - USGS 3DEP and USGS hydrography are public-domain source lanes.
 - NWS and NPS are API-accessible live-condition lanes.
-- NPS, USFS/GWJ, and Virginia DCR official pages are used for cautious rule/source pointers.
+- NPS, Shenandoah-specific alert lane, USFS/GWJ, and Virginia Department of Conservation and Recreation (VA DCR) official pages are used for cautious rule/source pointers.
 - ATC Trail Updates are a verification pointer only.
 - Unknown-review and blocked sources are excluded from production-safe JSON and zip exports.
 
@@ -46,7 +46,7 @@ Generated: 2026-05-14
 Scout MVP2 Virginia measured length is 547.0 generated miles along the open route subset. This is not official ATC mileage and inherits the parent route's known length-gap warning.
 
 ## Blocked Sources
-FarOut, The A.T. Guide/AWOL, A.T. Data Book, Thru-Hikers' Companion, AllTrails, Gaia, Hiking Project, copied ATC guide/map content, private guide PDFs, and copied guidebook blog data remain blocked unless explicitly licensed.
+FarOut, The A.T. Guide/AWOL, A.T. Data Book, Thru-Hikers' Companion, AllTrails, Gaia, Hiking Project, copied ATC guide/map text/data, private guide PDFs, and copied guidebook blog data remain blocked unless explicitly licensed.
 
 ## Validation
 Run:

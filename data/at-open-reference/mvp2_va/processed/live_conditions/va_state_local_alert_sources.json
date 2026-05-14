@@ -1,5 +1,25 @@
 [
   {
+    "source_id": "shenandoah_official_alerts",
+    "source_url": "https://developer.nps.gov/api/v1/alerts?parkCode=shen",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "Shenandoah National Park official alerts and conditions",
+    "categories": [
+      "closures",
+      "detours",
+      "bear_activity",
+      "fire",
+      "storm_damage",
+      "road_access",
+      "permit_changes"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Shenandoah advice",
+    "attribution": "National Park Service",
+    "ai_answer_rule": "Use this explicit Shenandoah live-alert lane before giving current Shenandoah closure, road, bear, fire, storm, or permit-change advice. If live retrieval fails, say so with the last-checked time."
+  },
+  {
     "source_id": "virginia_dcr_state_parks",
     "source_url": "https://www.dcr.virginia.gov/state-parks/alerts",
     "license_status": "open_license_attribution",

@@ -13,7 +13,7 @@ Pace penalties:
 
 Signals used in MVP2:
 - USGS 3DEP slope and local relief proxies.
-- OpenStreetMap surface/smoothness/trail_visibility/sac_scale are allowed source lanes, but MVP2 does not have a field-verified route-segment tag join for every mile.
+- OpenStreetMap (OSM) surface/smoothness/trail_visibility/sac_scale are allowed source lanes, but MVP2 does not have a field-verified route-segment tag join for every mile.
 
 Signals documented but not ingested into MVP2 scores:
 - USDA SSURGO/gSSURGO rock fragments, shallow bedrock, rock outcrop, stony/bouldery terms.

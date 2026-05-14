@@ -37,6 +37,7 @@
     "source_ids": [
       "noaa_nws_api",
       "nps_api",
+      "shenandoah_official_alerts",
       "usfs_gwj_official_pages",
       "virginia_dcr_state_parks",
       "atc_trail_updates_pointer"
