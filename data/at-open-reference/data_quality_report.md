@@ -16,7 +16,7 @@ datasets, or a camping-rule corpus.
 - Blocked-source policy: started.
 - Route baseline: generated from OSM relation 156553 via Waymarked Trails route ordering.
 - Milepoints: generated at 0.1, 0.5, 1.0, and 5.0 mile intervals.
-- Elevation: not generated.
+- Elevation: coarse 5-mile USGS EPQS/3DEP samples generated with 25-mile segment summaries and RAG docs.
 - Water candidates: generated from USGS/NHD mapped hydrography and remapped to Scout's generated open milepoints.
 - Shelter waypoints: generated from OSM shelter candidates and remapped to Scout's generated open milepoints.
 - Access/towns: not generated.
@@ -32,6 +32,9 @@ datasets, or a camping-rule corpus.
   miles shorter than the 2026 official calibration reference. Treat generated
   mileage as an open candidate baseline, not production-grade official route
   mileage.
+- Elevation samples are currently coarse 5-mile point samples. They undercount
+  short climbs/descents and must not be used for fine grade-risk advice until
+  finer 0.1-mile or DEM-based sampling is generated.
 - PASDA/NPS candidate datasets need metadata/license review before use.
 - Legacy repo scripts outside this pack may reference guidebook-derived data;
   they are not approved inputs for this open reference pack.

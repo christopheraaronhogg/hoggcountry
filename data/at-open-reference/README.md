@@ -38,6 +38,8 @@ node data/at-open-reference/scripts/fetch-waymarked-at-route.mjs
 node data/at-open-reference/scripts/build-open-route-milepoints.mjs --input data/at-open-reference/raw/osm/waymarked_relation_156553.json
 node data/at-open-reference/scripts/build-water-candidates.mjs
 node data/at-open-reference/scripts/build-waypoint-candidates.mjs
+node data/at-open-reference/scripts/build-elevation-samples.mjs
+node data/at-open-reference/scripts/build-elevation-rag-docs.mjs
 ```
 
 The current OSM-derived route candidate is useful as a legally separable open

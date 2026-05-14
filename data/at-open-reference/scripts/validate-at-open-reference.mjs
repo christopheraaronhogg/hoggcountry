@@ -53,7 +53,13 @@ const requiredGeneratedPaths = [
   'processed/waypoints/shelters.geojson',
   'processed/live_alerts/live_condition_sources.json',
   'processed/live_alerts/nps_alerts_cache.json',
-  'processed/live_alerts/nws_alerts_cache.json'
+  'processed/live_alerts/nws_alerts_cache.json',
+  'processed/elevation/elevation_samples_5_0mi.json',
+  'processed/elevation/elevation_profile_5_0mi.geojson',
+  'processed/elevation/climbs_descents_by_25mi_segment_5_0mi.json',
+  'processed/elevation/high_low_points_5_0mi.json',
+  'processed/elevation/grade_risk_sections_5_0mi.json',
+  'rag_docs/segment_guides/elevation_5mi'
 ];
 
 function readJsonLikeYaml(path) {
@@ -178,6 +184,11 @@ export function validateAtOpenReferencePack() {
         assert(record.source_id === 'osm', `${prefix} shelter candidates must remain OSM-derived`, failures);
         assert(record.license_status === 'open_license_share_alike', `${prefix} shelter candidates must keep ODbL lane`, failures);
         assert(record.water_nearby === 'unknown', `${prefix} shelter water_nearby must default to unknown`, failures);
+      }
+
+      if (/elevation/u.test(rel)) {
+        assert(record.source_id === 'usgs_3dep', `${prefix} elevation records must use USGS 3DEP source_id`, failures);
+        assert(/model-derived|3DEP|coarse|grade-risk/iu.test(record.ai_answer_rule ?? record.limitation ?? ''), `${prefix} missing elevation caution`, failures);
       }
     }
   }

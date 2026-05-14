@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { validateAtOpenReferencePack } from '../scripts/validate-at-open-reference.mjs';
@@ -37,4 +37,12 @@ test('generated open route and candidate datasets keep safety labels', () => {
   assert.ok(shelters.length > 100, 'expected OSM shelter candidates');
   assert.equal(shelters[0].license_status, 'open_license_share_alike');
   assert.equal(shelters[0].water_nearby, 'unknown');
+
+  const elevation = JSON.parse(readFileSync(new URL('../processed/elevation/elevation_samples_5_0mi.json', import.meta.url), 'utf8'));
+  assert.ok(elevation.length > 400, 'expected coarse 5-mile elevation samples');
+  assert.equal(elevation[0].source_id, 'usgs_3dep');
+  assert.match(elevation[0].ai_answer_rule, /model-derived USGS 3DEP/);
+
+  const elevationDocs = readdirSync(new URL('../rag_docs/segment_guides/elevation_5mi', import.meta.url));
+  assert.ok(elevationDocs.length > 80, 'expected elevation RAG segment docs');
 });
