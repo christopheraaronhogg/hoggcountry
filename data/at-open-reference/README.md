@@ -43,6 +43,7 @@ node data/at-open-reference/scripts/build-elevation-rag-docs.mjs
 node data/at-open-reference/scripts/fetch-osm-corridor-features.mjs
 node data/at-open-reference/scripts/build-osm-corridor-candidates.mjs
 node data/at-open-reference/scripts/build-camping-rules.mjs
+node data/at-open-reference/scripts/build-state-rag-docs.mjs
 node data/at-open-reference/scripts/build-scout-offline-summary.mjs
 ```
 

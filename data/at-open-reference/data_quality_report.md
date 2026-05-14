@@ -30,7 +30,8 @@ initial official-source camping, permit, fee, and land-manager rules corpus.
   NPS, USFS, state, and Baxter land-manager rule lanes.
 - Live connectors: app runtime has NWS/official-source lanes; this pack exports
   compact live-source connector metadata and current-condition answer policy.
-- RAG docs: generated-mile, water, current-condition, and coarse elevation docs.
+- RAG docs: generated-mile, water, current-condition, state guide, and coarse
+  elevation docs.
 
 ## Known Risks
 

@@ -87,6 +87,20 @@ const requiredGeneratedPaths = [
   'processed/land_managers/land_managers.json',
   'processed/summary/scout_offline_reference_summary.json',
   'rag_docs/segment_guides/elevation_5mi',
+  'rag_docs/state_guides/GA.md',
+  'rag_docs/state_guides/NC.md',
+  'rag_docs/state_guides/TN.md',
+  'rag_docs/state_guides/VA.md',
+  'rag_docs/state_guides/WV.md',
+  'rag_docs/state_guides/MD.md',
+  'rag_docs/state_guides/PA.md',
+  'rag_docs/state_guides/NJ.md',
+  'rag_docs/state_guides/NY.md',
+  'rag_docs/state_guides/CT.md',
+  'rag_docs/state_guides/MA.md',
+  'rag_docs/state_guides/VT.md',
+  'rag_docs/state_guides/NH.md',
+  'rag_docs/state_guides/ME.md',
   'rag_docs/rules/camping_permit_fee_initial.md'
 ];
 

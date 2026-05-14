@@ -131,6 +131,13 @@ test('camping, permit, and fee rules stay official-source and conservative', () 
   assert.ok(stateRules.some((record) => record.state === 'MD' && record.rule_id === 'camping-md-south-mountain-at'));
   assert.ok(stateRules.every((record) => record.ai_answer_rule));
 
+  const stateGuides = readdirSync(new URL('../rag_docs/state_guides', import.meta.url)).filter((file) => /^[A-Z]{2}\.md$/u.test(file));
+  assert.equal(stateGuides.length, 14, 'expected generated state RAG guides for every AT state');
+  const connecticutGuide = readFileSync(new URL('../rag_docs/state_guides/CT.md', import.meta.url), 'utf8');
+  assert.match(connecticutGuide, /designated_backpack_sites_only_no_dispersed_camping/);
+  assert.match(connecticutGuide, /not an official ATC mile/);
+  assert.match(connecticutGuide, /live retrieval failed/);
+
   const ruleDoc = readFileSync(new URL('../rag_docs/rules/camping_permit_fee_initial.md', import.meta.url), 'utf8');
   assert.match(ruleDoc, /not a complete Appalachian Trail legal camping guide/);
   assert.match(ruleDoc, /verify with the land manager/);
