@@ -28,3 +28,18 @@ involved.
 Generated milepoints are never official ATC miles. Water candidates from open GIS
 are never reliable or potable by default. Live/current condition claims must come
 from live connectors or include a clear source gap.
+
+## Generation
+
+Current generated lanes:
+
+```bash
+node data/at-open-reference/scripts/fetch-waymarked-at-route.mjs
+node data/at-open-reference/scripts/build-open-route-milepoints.mjs --input data/at-open-reference/raw/osm/waymarked_relation_156553.json
+node data/at-open-reference/scripts/build-water-candidates.mjs
+node data/at-open-reference/scripts/build-waypoint-candidates.mjs
+```
+
+The current OSM-derived route candidate is useful as a legally separable open
+baseline, but its measured length is materially shorter than the 2026 official
+calibration reference. Scout must keep the generated-mile caution visible.

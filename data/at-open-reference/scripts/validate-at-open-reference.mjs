@@ -37,6 +37,25 @@ const requiredPaths = [
   'tests'
 ];
 
+const requiredGeneratedPaths = [
+  'raw/osm/waymarked_relation_156553.json',
+  'processed/route/at_route_candidate_osm.geojson',
+  'processed/route/at_route_selected.geojson',
+  'processed/route/route_selection_notes.md',
+  'processed/milepoints/at_milepoints_0_1mi.geojson',
+  'processed/milepoints/at_milepoints_0_5mi.geojson',
+  'processed/milepoints/at_milepoints_1_0mi.geojson',
+  'processed/milepoints/at_milepoints_5_0mi.geojson',
+  'processed/water/water_candidates.json',
+  'processed/water/water_crossings.geojson',
+  'processed/water/water_confidence_notes.md',
+  'processed/waypoints/shelters.json',
+  'processed/waypoints/shelters.geojson',
+  'processed/live_alerts/live_condition_sources.json',
+  'processed/live_alerts/nps_alerts_cache.json',
+  'processed/live_alerts/nws_alerts_cache.json'
+];
+
 function readJsonLikeYaml(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -59,6 +78,9 @@ export function validateAtOpenReferencePack() {
 
   for (const requiredPath of requiredPaths) {
     assert(existsSync(join(packRoot, requiredPath)), `Missing required path: ${requiredPath}`, failures);
+  }
+  for (const requiredPath of requiredGeneratedPaths) {
+    assert(existsSync(join(packRoot, requiredPath)), `Missing generated artifact: ${requiredPath}`, failures);
   }
 
   const manifestPath = join(packRoot, 'source_manifest.yaml');
@@ -104,6 +126,7 @@ export function validateAtOpenReferencePack() {
   }
 
   assert(sourceById.get('osm')?.license_status === 'open_license_share_alike', 'OSM must be marked open_license_share_alike.', failures);
+  assert(sourceById.get('waymarked_trails_api')?.license_status === 'open_license_share_alike', 'Waymarked Trails route ordering must stay OSM/ODbL separated.', failures);
 
   const blockedText = readFileSync(join(packRoot, 'blocked_sources.md'), 'utf8').toLowerCase();
   for (const term of ['farout', 'a.t. guide', 'alltrails', 'gaia', 'hiking project', 'atc']) {
@@ -131,12 +154,27 @@ export function validateAtOpenReferencePack() {
 
       if (/milepoints/u.test(rel)) {
         assert(record.official === false, `${prefix} generated milepoint must have official: false`, failures);
+        assert(/not an official ATC mile/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing generated-mile answer rule`, failures);
       }
 
       if (/water/u.test(rel)) {
         assert(record.reliability !== 'reliable', `${prefix} uses forbidden water reliability wording`, failures);
+        assert(record.reliability === 'unknown', `${prefix} water reliability must default to unknown`, failures);
         assert(record.potable !== true, `${prefix} marks water potable without controlled vocabulary`, failures);
+        assert(record.potable === 'unknown', `${prefix} water potability must default to unknown`, failures);
         assert(/unknown|candidate|timestamp|official|recent|licensed/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing conservative water ai_answer_rule`, failures);
+      }
+
+      if (/route\/at_route_selected/u.test(rel)) {
+        assert(record.official === false, `${prefix} selected open route must not be official`, failures);
+        assert(typeof record.measured_length_miles === 'number', `${prefix} missing measured_length_miles`, failures);
+        assert(typeof record.length_delta_miles === 'number', `${prefix} missing length_delta_miles calibration note`, failures);
+      }
+
+      if (/waypoints\/shelters/u.test(rel)) {
+        assert(record.source_id === 'osm', `${prefix} shelter candidates must remain OSM-derived`, failures);
+        assert(record.license_status === 'open_license_share_alike', `${prefix} shelter candidates must keep ODbL lane`, failures);
+        assert(record.water_nearby === 'unknown', `${prefix} shelter water_nearby must default to unknown`, failures);
       }
     }
   }

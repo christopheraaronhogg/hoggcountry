@@ -9,6 +9,7 @@ the reference pack.
 - NPS: "Data from the National Park Service API."
 - USFS: "Data from the U.S. Forest Service."
 - OSM: "Contains information from OpenStreetMap contributors, licensed under the Open Database License."
+- Waymarked Trails: "Route ordering access via Waymarked Trails; underlying data from OpenStreetMap contributors under the Open Database License."
 
 When multiple sources contribute to one answer, Scout should cite the specific
 record-level provenance rather than only this page.

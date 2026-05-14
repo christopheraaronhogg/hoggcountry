@@ -128,6 +128,22 @@
     "notes": "Keep OSM-derived data separated until product/legal exposure is decided."
   },
   {
+    "source_id": "waymarked_trails_api",
+    "name": "Waymarked Trails API route ordering for OSM relation 156553",
+    "owner": "Waymarked Trails Map Project / OpenStreetMap contributors",
+    "source_url": "https://hiking.waymarkedtrails.org/api/v1/details/relation/156553",
+    "source_type": "OSM-derived route API",
+    "access_method": "API",
+    "license_status": "open_license_share_alike",
+    "allowed_use": "route-ordering helper for OSM-derived geometry with ODbL attribution/share-alike obligations",
+    "attribution_required": "OpenStreetMap contributors; Waymarked Trails route ordering access",
+    "data_categories": ["route_candidate", "milepoint_generation"],
+    "update_cadence": "check before each generated release",
+    "confidence": "medium",
+    "last_checked": "2026-05-13",
+    "notes": "Used as an access path to ordered OSM-derived relation geometry. Treat exposed data as ODbL/OSM-derived."
+  },
+  {
     "source_id": "pasda_nps_at_shelters",
     "name": "PASDA/NPS Appalachian Trail shelter candidates",
     "owner": "National Park Service / PASDA",
