@@ -1,0 +1,171 @@
+[
+  {
+    "source_id": "nps_dewa_official_pages",
+    "source_url": "https://developer.nps.gov/api/v1/alerts?parkCode=dewa",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "Delaware Water Gap official alerts and conditions",
+    "categories": [
+      "closures",
+      "detours",
+      "bear_activity",
+      "fire",
+      "storm_damage",
+      "road_access",
+      "permit_changes",
+      "dangerous_weather"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Delaware Water Gap advice",
+    "attribution": "National Park Service",
+    "ai_answer_rule": "Use this explicit Delaware Water Gap live-alert lane before giving current DWG closure, road, bear, fire, storm, water, parking, or permit-change advice. If live retrieval fails, say so with the last-checked time."
+  },
+  {
+    "source_id": "njdep_official_pages",
+    "source_url": "https://dep.nj.gov/parksandforests/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "New Jersey DEP parks and forests official pages",
+    "categories": [
+      "closures",
+      "fire",
+      "hunting_safety",
+      "camping_rules",
+      "parking",
+      "storm_damage"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before advice",
+    "attribution": "New Jersey Department of Environmental Protection",
+    "ai_answer_rule": "Use official NJDEP pages for New Jersey closures, fire bans, hunting-season safety, parking, and camping status. If live retrieval fails, provide timestamped source gap."
+  },
+  {
+    "source_id": "nys_parks_dec_official_pages",
+    "source_url": "https://parks.ny.gov/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "New York State Parks and DEC official pages",
+    "categories": [
+      "closures",
+      "fees",
+      "state_forest_rules",
+      "state_park_rules",
+      "fire",
+      "hunting_safety",
+      "storm_damage",
+      "permit_changes"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before New York park/forest advice",
+    "attribution": "New York State Parks / Department of Environmental Conservation",
+    "ai_answer_rule": "Use official NYS Parks/DEC pages for New York closures, fire rules, hunting-season safety, camping constraints, and current conditions."
+  },
+  {
+    "source_id": "nys_palisades_official_pages",
+    "source_url": "https://parks.ny.gov/parks/harriman",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Harriman/Bear Mountain/Palisades official pages",
+    "categories": [
+      "closures",
+      "camping_rules",
+      "group_rules",
+      "fire",
+      "parking",
+      "road_access",
+      "storm_damage"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Harriman or Bear Mountain advice",
+    "attribution": "New York State Parks / Palisades Interstate Park Commission",
+    "ai_answer_rule": "Use official Palisades/Harriman/Bear Mountain pages for closures, shelter/site status, fire, parking, group rules, and current restrictions."
+  },
+  {
+    "source_id": "ct_deep_official_pages",
+    "source_url": "https://portal.ct.gov/deep/state-parks/camping/backpack-camping---ct-state-parks-and-forests",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Connecticut DEEP backpack camping and state lands pages",
+    "categories": [
+      "closures",
+      "fees",
+      "permits",
+      "camping_rules",
+      "fire",
+      "hunting_safety",
+      "storm_damage",
+      "permit_changes"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Connecticut AT corridor advice",
+    "attribution": "Connecticut Department of Energy and Environmental Protection",
+    "ai_answer_rule": "Use official CT DEEP pages for Connecticut camping permits/reservations, closures, fire rules, and current restrictions."
+  },
+  {
+    "source_id": "njnyct_state_local_alerts",
+    "source_url": "https://dep.nj.gov/parksandforests/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "name": "NJ/NY/CT state and local alert source lane",
+    "categories": [
+      "closures",
+      "fire",
+      "storm_damage",
+      "road_access",
+      "hunting_safety",
+      "permit_changes"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before advice",
+    "attribution": "State and local land managers",
+    "ai_answer_rule": "Use precise NJ/NY/CT land-manager sources when available; otherwise disclose this source gap and verify before safety/legal advice."
+  },
+  {
+    "source_id": "ny_nj_trail_conference_pointer",
+    "source_url": "https://www.nynjtc.org/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "NY-NJ Trail Conference pointer only",
+    "categories": [
+      "trail_conditions",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "New York-New Jersey Trail Conference",
+    "ai_answer_rule": "Use as a link/check target only. Do not package NY-NJ Trail Conference text, maps, or data unless licensed."
+  },
+  {
+    "source_id": "ct_amc_pointer",
+    "source_url": "https://ct-amc.org/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "CT AMC pointer only",
+    "categories": [
+      "trail_conditions",
+      "corridor_rules",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Appalachian Mountain Club Connecticut Chapter",
+    "ai_answer_rule": "Use as a link/check target only. Do not package CT AMC text or data unless licensed."
+  },
+  {
+    "source_id": "atc_trail_updates_pointer",
+    "source_url": "https://appalachiantrail.org/trail-updates/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "ATC Trail Updates pointer only",
+    "categories": [
+      "closures",
+      "detours",
+      "storm_damage",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Appalachian Trail Conservancy",
+    "ai_answer_rule": "Use as a link/check target only. Do not package ATC update text or data unless licensed."
+  }
+]

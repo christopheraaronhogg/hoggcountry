@@ -316,3 +316,70 @@ test('Scout AT MVP3 Mid-Atlantic reference pack validates source-aware planning 
   assert.ok(behaviorQuestions.some((question) => /hunting-season/i.test(question.question + question.expected_behavior)));
   assert.ok(behaviorQuestions.some((question) => /reliable water/i.test(question.question + question.expected_behavior)));
 });
+
+test('Scout AT MVP4 NJ/NY/CT reference pack validates source-aware planning rules', () => {
+  const result = spawnSync('python3', ['data/at-open-reference/mvp4_nj_ny_ct/run_mvp4_nj_ny_ct_validation.py', '--json'], {
+    cwd: new URL('../../..', import.meta.url),
+    encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+
+  const validation = JSON.parse(result.stdout);
+  assert.equal(validation.ok, true);
+  assert.equal(validation.failures.length, 0);
+  assert.equal(validation.mvp4_nj_ny_ct_miles, 206.0);
+  assert.ok(validation.behavior_questions >= 60);
+  assert.ok(validation.rag_docs >= 17);
+  assert.ok(validation.water_candidates >= 100);
+  assert.ok(validation.tread_1mi_records >= 200);
+
+  const routeNotes = readFileSync(new URL('../mvp4_nj_ny_ct/processed/route/route_notes.md', import.meta.url), 'utf8');
+  assert.match(routeNotes, /Delaware Water Gap/i);
+  assert.match(routeNotes, /Sages Ravine/i);
+  assert.match(routeNotes, /MVP3/i);
+  assert.match(routeNotes, /MVP5/i);
+  assert.match(routeNotes, /not official ATC miles/i);
+
+  const livePolicy = readFileSync(new URL('../mvp4_nj_ny_ct/rag_docs/policies/weather_live_conditions.md', import.meta.url), 'utf8');
+  assert.match(livePolicy, /NJDEP/i);
+  assert.match(livePolicy, /Palisades/i);
+  assert.match(livePolicy, /CT DEEP/i);
+  assert.match(livePolicy, /verification pointers only/i);
+  assert.match(livePolicy, /live retrieval fails/i);
+  const liveSources = JSON.parse(readFileSync(new URL('../mvp4_nj_ny_ct/processed/live_conditions/live_condition_sources.json', import.meta.url), 'utf8'));
+  assert.ok(liveSources.some((source) => source.source_id === 'njdep_official_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'nys_palisades_official_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'ct_deep_official_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'ny_nj_trail_conference_pointer'));
+
+  const nyGuide = readFileSync(new URL('../mvp4_nj_ny_ct/rag_docs/state_guides/NY.md', import.meta.url), 'utf8');
+  assert.match(nyGuide, /Harriman/i);
+  assert.match(nyGuide, /Bear Mountain/i);
+  assert.match(nyGuide, /designated camping/i);
+
+  const treadNotes = readFileSync(new URL('../mvp4_nj_ny_ct/processed/tread_rockiness/model_notes.md', import.meta.url), 'utf8');
+  assert.match(treadNotes, /SSURGO\/gSSURGO/i);
+  assert.match(treadNotes, /not field_verified/i);
+  const calibration = readFileSync(new URL('../mvp4_nj_ny_ct/processed/tread_rockiness/mvp4_vs_mvp3_pa_calibration_report.md', import.meta.url), 'utf8');
+  assert.match(calibration, /MVP3 PA/i);
+  assert.match(calibration, /NJ sample/i);
+  assert.match(calibration, /not field_verified/i);
+
+  const waterNotes = readFileSync(new URL('../mvp4_nj_ny_ct/processed/water/water_confidence_notes.md', import.meta.url), 'utf8');
+  assert.match(waterNotes, /not proof that water is absent/i);
+  const sparseWater = JSON.parse(readFileSync(new URL('../mvp4_nj_ny_ct/processed/water/sparse_uncertain_water_stretches.json', import.meta.url), 'utf8'));
+  assert.ok(sparseWater.length >= 1);
+
+  const segmentGuide = readFileSync(new URL('../mvp4_nj_ny_ct/rag_docs/segment_guides/mvp4_nj_ny_ct_000_025.md', import.meta.url), 'utf8');
+  assert.match(segmentGuide, /## Terrain/);
+  assert.match(segmentGuide, /## Water Candidates/);
+  assert.match(segmentGuide, /## Camping \/ Permit Summary/);
+  assert.match(segmentGuide, /## AI Cautions/);
+  assert.match(segmentGuide, /Generated miles are not official ATC mileage/);
+
+  const behaviorQuestions = JSON.parse(readFileSync(new URL('../mvp4_nj_ny_ct/tests/mvp4_nj_ny_ct_behavior_questions.json', import.meta.url), 'utf8'));
+  assert.ok(behaviorQuestions.some((question) => /Delaware Water Gap/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /Harriman/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /illegal dispersed camping/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /reliability unknown/i.test(question.question + question.expected_behavior)));
+});

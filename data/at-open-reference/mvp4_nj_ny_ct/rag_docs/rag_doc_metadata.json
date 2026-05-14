@@ -1,0 +1,277 @@
+[
+  {
+    "path": "rag_docs/state_guides/NJ.md",
+    "title": "MVP4 New Jersey State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "nps_dewa_official_pages",
+      "njdep_official_pages",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/state_guides/NY.md",
+    "title": "MVP4 New York State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "nys_parks_dec_official_pages",
+      "nys_palisades_official_pages",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/state_guides/CT.md",
+    "title": "MVP4 Connecticut State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "ct_deep_official_pages",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/water.md",
+    "title": "MVP4 NJ/NY/CT Water Policy",
+    "kind": "policy",
+    "source_ids": [
+      "usgs_3dhp_nhd",
+      "osm"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/weather_live_conditions.md",
+    "title": "MVP4 NJ/NY/CT Live Conditions Policy",
+    "kind": "policy",
+    "source_ids": [
+      "noaa_nws_api",
+      "nps_api",
+      "nps_dewa_official_pages",
+      "njdep_official_pages",
+      "nys_parks_dec_official_pages",
+      "nys_palisades_official_pages",
+      "ct_deep_official_pages",
+      "atc_trail_updates_pointer"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/tread_rockiness.md",
+    "title": "MVP4 NJ/NY/CT Tread Policy",
+    "kind": "policy",
+    "source_ids": [
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/navigation.md",
+    "title": "MVP4 NJ/NY/CT Navigation Policy",
+    "kind": "policy",
+    "source_ids": [
+      "osm",
+      "waymarked_trails_api"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/rules/camping_permit_fee_mvp4_nj_ny_ct.md",
+    "title": "MVP4 NJ/NY/CT Camping Rules",
+    "kind": "rules",
+    "source_ids": [
+      "nps_dewa_official_pages",
+      "njdep_official_pages",
+      "nys_parks_dec_official_pages",
+      "nys_palisades_official_pages",
+      "ct_deep_official_pages"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_000_025.md",
+    "title": "MVP4 NJ/NY/CT Segment 0-25",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_025_050.md",
+    "title": "MVP4 NJ/NY/CT Segment 25-50",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_050_075.md",
+    "title": "MVP4 NJ/NY/CT Segment 50-75",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_075_100.md",
+    "title": "MVP4 NJ/NY/CT Segment 75-100",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_100_125.md",
+    "title": "MVP4 NJ/NY/CT Segment 100-125",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_125_150.md",
+    "title": "MVP4 NJ/NY/CT Segment 125-150",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_150_175.md",
+    "title": "MVP4 NJ/NY/CT Segment 150-175",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_175_200.md",
+    "title": "MVP4 NJ/NY/CT Segment 175-200",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp4_nj_ny_ct_200_206.md",
+    "title": "MVP4 NJ/NY/CT Segment 200-206",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp4_nj_ny_ct_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP4 NJ/NY/CT records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "pack": "scout-at-mvp4-njnyct",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+  "mvp4_miles": 206,
+  "production_safe_export": "processed/export/scout_at_mvp4_nj_ny_ct_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp4_nj_ny_ct_production_safe.zip",
+  "source_manifest": "source_manifest.yaml",
+  "validation": "run_mvp4_nj_ny_ct_validation.py"
+}

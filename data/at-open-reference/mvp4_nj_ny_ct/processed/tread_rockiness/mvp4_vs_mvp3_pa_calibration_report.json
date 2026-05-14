@@ -1,0 +1,35 @@
+{
+  "calibration_id": "mvp4-njnyct-vs-mvp3-pa-rockiness-calibration",
+  "nj_mile_range_mvp4": [
+    0,
+    66
+  ],
+  "ny_mile_range_mvp4": [
+    66,
+    153
+  ],
+  "ct_mile_range_mvp4": [
+    153,
+    206
+  ],
+  "nj_average_score": 2.45,
+  "ny_average_score": 2.16,
+  "ct_average_score": 2.53,
+  "nj_average_pace_penalty": 1.113,
+  "ny_average_pace_penalty": 1.097,
+  "ct_average_pace_penalty": 1.126,
+  "mvp3_pa_reference": {
+    "calibration_id": "mvp3-midatlantic-pa-rockiness-calibration",
+    "south_pa_average_score": 1.79,
+    "north_pa_average_score": 1.74,
+    "south_pa_average_pace_penalty": 1.076,
+    "north_pa_average_pace_penalty": 1.079
+  },
+  "source_id": "mvp4_nj_ny_ct_tread_model",
+  "source_url": "internal:data/at-open-reference/scripts/build-mvp4-nj-ny-ct-reference-pack.mjs",
+  "license_status": "open_license_share_alike",
+  "confidence": "model_calibration_screen_not_field_verified",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Use only as an MVP4-vs-MVP3 PA model comparison screen. Do not call it field verified or use it as proof of exact footing."
+}

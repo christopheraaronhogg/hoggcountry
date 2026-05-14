@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "failures": [],
+  "sources": 28,
+  "mvp4_nj_ny_ct_miles": 206.0,
+  "behavior_questions": 63,
+  "rag_docs": 17,
+  "water_candidates": 152,
+  "tread_1mi_records": 206,
+  "validated_at": "2026-05-14T00:00:00.000Z"
+}

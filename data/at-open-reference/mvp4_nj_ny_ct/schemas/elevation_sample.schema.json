@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": [
+    "mile_nobo_global_est",
+    "mile_nobo_mvp4",
+    "elevation_ft",
+    "source_id",
+    "license_status",
+    "confidence",
+    "last_checked"
+  ]
+}

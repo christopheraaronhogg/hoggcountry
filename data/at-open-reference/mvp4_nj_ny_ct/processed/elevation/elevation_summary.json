@@ -1,0 +1,15 @@
+{
+  "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+  "total_gain_ft": 19258,
+  "total_loss_ft": 18154,
+  "highest_point_ft": 2295,
+  "lowest_point_ft": -3,
+  "sample_count": 207,
+  "source_id": "usgs_3dep",
+  "source_url": "https://epqs.nationalmap.gov/v1/json",
+  "license_status": "public_domain",
+  "confidence": "model_derived_topographic_estimate",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Use as model-derived terrain summary. Do not present as surveyed gain/loss or official guidebook profile."
+}

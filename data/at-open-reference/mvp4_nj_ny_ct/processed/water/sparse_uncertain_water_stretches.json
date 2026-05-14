@@ -1,0 +1,75 @@
+[
+  {
+    "stretch_id": "mvp4-njnyct-water-sparse-01",
+    "start_mile_nobo_mvp4": 10,
+    "end_mile_nobo_mvp4": 20,
+    "start_mile_nobo_global_est": 1280,
+    "end_mile_nobo_global_est": 1290,
+    "states": [
+      "NJ"
+    ],
+    "mapped_water_candidate_count": 2,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp4-njnyct-water-sparse-02",
+    "start_mile_nobo_mvp4": 70,
+    "end_mile_nobo_mvp4": 80,
+    "start_mile_nobo_global_est": 1340,
+    "end_mile_nobo_global_est": 1350,
+    "states": [
+      "NY"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp4-njnyct-water-sparse-03",
+    "start_mile_nobo_mvp4": 100,
+    "end_mile_nobo_mvp4": 110,
+    "start_mile_nobo_global_est": 1370,
+    "end_mile_nobo_global_est": 1380,
+    "states": [
+      "NY"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp4-njnyct-water-sparse-04",
+    "start_mile_nobo_mvp4": 150,
+    "end_mile_nobo_mvp4": 160,
+    "start_mile_nobo_global_est": 1420,
+    "end_mile_nobo_global_est": 1430,
+    "states": [
+      "NY",
+      "CT"
+    ],
+    "mapped_water_candidate_count": 2,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  }
+]

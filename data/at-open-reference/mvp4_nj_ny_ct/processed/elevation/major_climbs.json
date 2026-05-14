@@ -1,0 +1,140 @@
+[
+  {
+    "climb_id": "mvp4-njnyct-climb-01",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1271,
+    "end_mile_nobo_global_est": 1275,
+    "start_mile_nobo_mvp4": 1,
+    "end_mile_nobo_mvp4": 5,
+    "distance_miles": 4,
+    "elevation_gain_ft": 1107,
+    "start_elevation_ft": 311.8,
+    "end_elevation_ft": 1419,
+    "state": [
+      "NJ"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived climb screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "climb_id": "mvp4-njnyct-climb-02",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1330,
+    "end_mile_nobo_global_est": 1332,
+    "start_mile_nobo_mvp4": 60,
+    "end_mile_nobo_mvp4": 62,
+    "distance_miles": 2,
+    "elevation_gain_ft": 701,
+    "start_elevation_ft": 417.4,
+    "end_elevation_ft": 1118.5,
+    "state": [
+      "NJ"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived climb screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "climb_id": "mvp4-njnyct-climb-03",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1375,
+    "end_mile_nobo_global_est": 1376,
+    "start_mile_nobo_mvp4": 105,
+    "end_mile_nobo_mvp4": 106,
+    "distance_miles": 1,
+    "elevation_gain_ft": 753,
+    "start_elevation_ft": -2.8,
+    "end_elevation_ft": 749.9,
+    "state": [
+      "NY"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived climb screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "climb_id": "mvp4-njnyct-climb-04",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1428,
+    "end_mile_nobo_global_est": 1430,
+    "start_mile_nobo_mvp4": 158,
+    "end_mile_nobo_mvp4": 160,
+    "distance_miles": 2,
+    "elevation_gain_ft": 775,
+    "start_elevation_ft": 382.5,
+    "end_elevation_ft": 1157.5,
+    "state": [
+      "CT"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived climb screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "climb_id": "mvp4-njnyct-climb-05",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1461,
+    "end_mile_nobo_global_est": 1464,
+    "start_mile_nobo_mvp4": 191,
+    "end_mile_nobo_mvp4": 194,
+    "distance_miles": 3,
+    "elevation_gain_ft": 815,
+    "start_elevation_ft": 543.8,
+    "end_elevation_ft": 1358.4,
+    "state": [
+      "CT"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived climb screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "climb_id": "mvp4-njnyct-climb-06",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1468,
+    "end_mile_nobo_global_est": 1471,
+    "start_mile_nobo_mvp4": 198,
+    "end_mile_nobo_mvp4": 201,
+    "distance_miles": 3,
+    "elevation_gain_ft": 1012,
+    "start_elevation_ft": 676.5,
+    "end_elevation_ft": 1688.5,
+    "state": [
+      "CT"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived climb screening. Verify with current maps and field conditions before pacing or safety decisions."
+  }
+]

@@ -1,0 +1,146 @@
+[
+  {
+    "state": [
+      "NJ",
+      "PA"
+    ],
+    "rule_id": "mvp4-njnyct-dwg-nps",
+    "jurisdiction": "Delaware Water Gap National Recreation Area / New Jersey transition",
+    "mile_range_nobo_mvp4": [
+      0,
+      15
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "nps_dewa_official_pages",
+    "source_url": "https://www.nps.gov/dewa/planyourvisit/backcountry-camping.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current Delaware Water Gap restrictions, parking, fire rules, water cautions, and closures before itinerary commitment."
+  },
+  {
+    "state": [
+      "NJ"
+    ],
+    "rule_id": "mvp4-njnyct-nj-parks-forests",
+    "jurisdiction": "New Jersey parks and forests Appalachian Trail corridor",
+    "mile_range_nobo_mvp4": [
+      0,
+      66
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "njdep_official_pages",
+    "source_url": "https://dep.nj.gov/parksandforests/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Treat New Jersey camping as designated-site/shelter constrained unless a current NJDEP or land-manager source proves otherwise. Verify current rules and do not advise dispersed camping from static data."
+  },
+  {
+    "state": [
+      "NY"
+    ],
+    "rule_id": "mvp4-njnyct-ny-parks-forests",
+    "jurisdiction": "New York parks and forests Appalachian Trail corridor",
+    "mile_range_nobo_mvp4": [
+      66,
+      153
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "nys_parks_dec_official_pages",
+    "source_url": "https://parks.ny.gov/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Treat New York camping as designated-site/shelter constrained unless a current NYS/Palisades land-manager source proves otherwise. Verify current rules and do not advise dispersed camping from static data."
+  },
+  {
+    "state": [
+      "NY"
+    ],
+    "rule_id": "mvp4-njnyct-harriman-bear-mountain",
+    "jurisdiction": "Harriman and Bear Mountain State Parks / Palisades Interstate Park corridor",
+    "mile_range_nobo_mvp4": [
+      80,
+      120
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "nys_palisades_official_pages",
+    "source_url": "https://parks.ny.gov/parks/harriman",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer legal dispersed camping in Harriman or Bear Mountain from static waypoints. Verify current park rules, shelter/site status, group limits, and fire restrictions."
+  },
+  {
+    "state": [
+      "CT"
+    ],
+    "rule_id": "mvp4-njnyct-ct-at-corridor",
+    "jurisdiction": "Connecticut Appalachian Trail corridor / CT DEEP backpack camping areas",
+    "mile_range_nobo_mvp4": [
+      153,
+      206
+    ],
+    "permit_required": "yes",
+    "fee_required": "unknown",
+    "source_id": "ct_deep_official_pages",
+    "source_url": "https://portal.ct.gov/deep/state-parks/camping/backpack-camping---ct-state-parks-and-forests",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Treat Connecticut camping as designated backpack-site constrained and permit/reservation dependent unless a current CT DEEP or corridor source proves otherwise. Verify current rules before camping advice."
+  },
+  {
+    "state": [
+      "CT",
+      "MA"
+    ],
+    "rule_id": "mvp4-njnyct-sages-ravine-ct-ma-handoff",
+    "jurisdiction": "Sages Ravine / CT-MA handoff source lane",
+    "mile_range_nobo_mvp4": [
+      198,
+      206
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "ct_deep_official_pages",
+    "source_url": "https://portal.ct.gov/deep/state-parks/camping/backpack-camping---ct-state-parks-and-forests",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer camping or group permission near the CT/MA handoff. Verify current CT/MA corridor rules before advice."
+  },
+  {
+    "state": [
+      "NJ",
+      "NY",
+      "CT"
+    ],
+    "rule_id": "mvp4-njnyct-local-municipal-private-easement-source-gap",
+    "jurisdiction": "Other NJ/NY/CT local, municipal, private-easement, and corridor lands",
+    "mile_range_nobo_mvp4": [
+      0,
+      206
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "njnyct_state_local_alerts",
+    "source_url": "https://dep.nj.gov/parksandforests/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "When the exact jurisdiction is uncertain, say so and verify current rules with the land manager before camping, fire, dog, fee, or permit advice."
+  }
+]

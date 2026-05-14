@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "required": [
+    "jurisdiction",
+    "mile_range_nobo_mvp4",
+    "camping_policy",
+    "permit_required",
+    "fee_required",
+    "source_id",
+    "license_status",
+    "last_checked",
+    "confidence",
+    "ai_answer_rule"
+  ]
+}

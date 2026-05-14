@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "required": [
+    "type",
+    "mile_nobo_mvp4",
+    "mile_nobo_global_est",
+    "lat",
+    "lon",
+    "distance_from_route_ft",
+    "state",
+    "source_id",
+    "license_status",
+    "confidence",
+    "last_generated"
+  ]
+}

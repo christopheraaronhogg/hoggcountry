@@ -1,0 +1,117 @@
+[
+  {
+    "descent_id": "mvp4-njnyct-descent-01",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1312,
+    "end_mile_nobo_global_est": 1317,
+    "start_mile_nobo_mvp4": 42,
+    "end_mile_nobo_mvp4": 47,
+    "distance_miles": 5,
+    "elevation_loss_ft": 951,
+    "start_elevation_ft": 1570.6,
+    "end_elevation_ft": 620,
+    "state": [
+      "NJ"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp4-njnyct-descent-02",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1372,
+    "end_mile_nobo_global_est": 1375,
+    "start_mile_nobo_mvp4": 102,
+    "end_mile_nobo_mvp4": 105,
+    "distance_miles": 3,
+    "elevation_loss_ft": 1269,
+    "start_elevation_ft": 1266.3,
+    "end_elevation_ft": -2.8,
+    "state": [
+      "NY"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp4-njnyct-descent-03",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1396,
+    "end_mile_nobo_global_est": 1399,
+    "start_mile_nobo_mvp4": 126,
+    "end_mile_nobo_mvp4": 129,
+    "distance_miles": 3,
+    "elevation_loss_ft": 737,
+    "start_elevation_ft": 1280.5,
+    "end_elevation_ft": 544,
+    "state": [
+      "NY"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp4-njnyct-descent-04",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1434,
+    "end_mile_nobo_global_est": 1436,
+    "start_mile_nobo_mvp4": 164,
+    "end_mile_nobo_mvp4": 166,
+    "distance_miles": 2,
+    "elevation_loss_ft": 941,
+    "start_elevation_ft": 1306,
+    "end_elevation_ft": 365.1,
+    "state": [
+      "CT"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp4-njnyct-descent-05",
+    "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+    "start_mile_nobo_global_est": 1474,
+    "end_mile_nobo_global_est": 1475,
+    "start_mile_nobo_mvp4": 204,
+    "end_mile_nobo_mvp4": 205,
+    "distance_miles": 1,
+    "elevation_loss_ft": 801,
+    "start_elevation_ft": 2294.5,
+    "end_elevation_ft": 1493.3,
+    "state": [
+      "CT"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  }
+]

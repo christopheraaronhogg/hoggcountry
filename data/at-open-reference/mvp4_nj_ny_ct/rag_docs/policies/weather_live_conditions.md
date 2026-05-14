@@ -1,0 +1,3 @@
+# MVP4 NJ/NY/CT Live Conditions Policy
+
+Always live-check closures, detours, fire bans, flooding, storm damage, bear activity, snow/ice, hunting-season safety, permit changes, road/parking access, group rules, and dangerous weather. Static docs cannot answer current closures/weather. Use NWS for weather/alerts, NPS/APPA/DEWA for national park lanes, NJDEP for New Jersey, NYS Parks/DEC and Palisades for New York and Harriman/Bear Mountain, CT DEEP for Connecticut, and ATC/NY-NJ Trail Conference/CT AMC as verification pointers only unless licensed. If live retrieval fails, say so and show last-checked time.

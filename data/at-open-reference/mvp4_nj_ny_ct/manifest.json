@@ -1,0 +1,22 @@
+{
+  "pack_id": "scout-at-mvp4-njnyct-delaware-water-gap-ct-ma",
+  "route_id": "at-mvp4-nj-ny-ct-delaware-water-gap-ct-ma-open-2026",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "scope": {
+    "start": "PA/NJ transition / Delaware Water Gap open-route candidate",
+    "end": "CT/MA transition / Sages Ravine open-route handoff",
+    "generated_mile_range_mvp4": [
+      0,
+      206
+    ],
+    "generated_mile_range_global_est": [
+      1270,
+      1476
+    ]
+  },
+  "prompt_artifact_checklist": "prompt_artifact_checklist.md",
+  "source_manifest": "source_manifest.yaml",
+  "production_safe_export": "processed/export/scout_at_mvp4_nj_ny_ct_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp4_nj_ny_ct_production_safe.zip",
+  "validation": "run_mvp4_nj_ny_ct_validation.py"
+}
