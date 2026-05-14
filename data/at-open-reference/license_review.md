@@ -17,6 +17,9 @@ Last reviewed: 2026-05-13
 
 - OpenStreetMap is ODbL. Keep OSM-derived data separated and labeled
   `open_license_share_alike`.
+- OSM-derived route, shelter, corridor POI, access, and settlement candidates
+  must stay in the ODbL/share-alike lane until downstream product exposure is
+  reviewed.
 - PASDA/NPS shelter and centerline candidates need exact dataset metadata review
   before they can enter `processed/`.
 

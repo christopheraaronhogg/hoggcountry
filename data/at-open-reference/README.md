@@ -40,8 +40,14 @@ node data/at-open-reference/scripts/build-water-candidates.mjs
 node data/at-open-reference/scripts/build-waypoint-candidates.mjs
 node data/at-open-reference/scripts/build-elevation-samples.mjs
 node data/at-open-reference/scripts/build-elevation-rag-docs.mjs
+node data/at-open-reference/scripts/fetch-osm-corridor-features.mjs
+node data/at-open-reference/scripts/build-osm-corridor-candidates.mjs
 ```
 
 The current OSM-derived route candidate is useful as a legally separable open
 baseline, but its measured length is materially shorter than the 2026 official
 calibration reference. Scout must keep the generated-mile caution visible.
+
+OSM corridor POIs are filtered and compacted after fetch. The packaged raw file
+contains only accepted source elements plus provenance metadata, not a full
+Overpass snapshot.

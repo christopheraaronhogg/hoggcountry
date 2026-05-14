@@ -1,0 +1,18 @@
+# OSM Corridor Candidates
+
+Scout's campsite, privy/toilet, vista, parking, trailhead, and nearby-town
+records in this pack are OpenStreetMap-derived candidate records.
+
+Use them as mapped leads, not as confirmed hiker logistics. A mapped candidate
+does not prove current access, legality, fees, capacity, water, privy condition,
+shuttle availability, business hours, or land-manager permission.
+
+Town and resupply records are open-data settlement candidates within 15
+generated miles of Scout's current open route geometry. They do not contain
+guidebook town notes, FarOut comments, A.T. Guide tables, or confirmed hiker
+service intelligence. When Scout answers from these records, it must say what is
+known from open data and what remains unknown.
+
+Source: OpenStreetMap contributors, ODbL, fetched through Overpass and filtered
+for Scout's open AT reference pack. Generated miles are based on Scout's open
+route geometry, not an official ATC mile.

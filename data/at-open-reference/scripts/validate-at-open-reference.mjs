@@ -39,6 +39,7 @@ const requiredPaths = [
 
 const requiredGeneratedPaths = [
   'raw/osm/waymarked_relation_156553.json',
+  'raw/osm/osm_corridor_features_relation_156553.json',
   'processed/route/at_route_candidate_osm.geojson',
   'processed/route/at_route_selected.geojson',
   'processed/route/route_selection_notes.md',
@@ -51,6 +52,23 @@ const requiredGeneratedPaths = [
   'processed/water/water_confidence_notes.md',
   'processed/waypoints/shelters.json',
   'processed/waypoints/shelters.geojson',
+  'processed/waypoints/campsites.json',
+  'processed/waypoints/campsites.geojson',
+  'processed/waypoints/privies.json',
+  'processed/waypoints/privies.geojson',
+  'processed/waypoints/vistas.json',
+  'processed/waypoints/vistas.geojson',
+  'processed/waypoints/side_trails.json',
+  'processed/access/parking.json',
+  'processed/access/parking.geojson',
+  'processed/access/trailheads.json',
+  'processed/access/trailheads.geojson',
+  'processed/access/road_crossings.json',
+  'processed/access/road_crossings.geojson',
+  'processed/towns_resupply/towns_within_15mi.json',
+  'processed/towns_resupply/resupply_candidates.json',
+  'processed/towns_resupply/road_access_to_towns.json',
+  'processed/towns_resupply/private_businesses_review_required.json',
   'processed/live_alerts/live_condition_sources.json',
   'processed/live_alerts/nps_alerts_cache.json',
   'processed/live_alerts/nws_alerts_cache.json',
@@ -184,6 +202,21 @@ export function validateAtOpenReferencePack() {
         assert(record.source_id === 'osm', `${prefix} shelter candidates must remain OSM-derived`, failures);
         assert(record.license_status === 'open_license_share_alike', `${prefix} shelter candidates must keep ODbL lane`, failures);
         assert(record.water_nearby === 'unknown', `${prefix} shelter water_nearby must default to unknown`, failures);
+      }
+
+      if (/waypoints\/(campsites|privies|vistas)/u.test(rel) || /access\/(parking|trailheads)/u.test(rel)) {
+        assert(record.source_id === 'osm', `${prefix} corridor candidate must remain OSM-derived`, failures);
+        assert(record.license_status === 'open_license_share_alike', `${prefix} corridor candidate must keep ODbL lane`, failures);
+        assert(/verify current status|mapped candidate/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing cautious OSM candidate answer rule`, failures);
+      }
+
+      if (/towns_resupply\/(towns_within_15mi|resupply_candidates)/u.test(rel)) {
+        assert(record.source_id === 'osm', `${prefix} town candidate must remain OSM-derived`, failures);
+        assert(record.license_status === 'open_license_share_alike', `${prefix} town candidate must keep ODbL lane`, failures);
+        assert(record.confidence === 'open_data_settlement_candidate', `${prefix} town candidate must use settlement-candidate confidence`, failures);
+        assert(record.candidate_services?.lodging === 'unknown', `${prefix} town lodging must default to unknown`, failures);
+        assert(record.candidate_services?.grocery === 'unknown', `${prefix} town grocery must default to unknown`, failures);
+        assert(/do not copy guidebook town notes|do not .*imply confirmed hiker services/iu.test(record.ai_answer_rule ?? ''), `${prefix} missing guidebook-safe town answer rule`, failures);
       }
 
       if (/elevation/u.test(rel)) {

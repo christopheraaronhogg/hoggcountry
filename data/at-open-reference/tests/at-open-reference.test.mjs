@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import test from 'node:test';
 
 import { validateAtOpenReferencePack } from '../scripts/validate-at-open-reference.mjs';
@@ -37,6 +37,32 @@ test('generated open route and candidate datasets keep safety labels', () => {
   assert.ok(shelters.length > 100, 'expected OSM shelter candidates');
   assert.equal(shelters[0].license_status, 'open_license_share_alike');
   assert.equal(shelters[0].water_nearby, 'unknown');
+
+  const campsites = JSON.parse(readFileSync(new URL('../processed/waypoints/campsites.json', import.meta.url), 'utf8'));
+  const privies = JSON.parse(readFileSync(new URL('../processed/waypoints/privies.json', import.meta.url), 'utf8'));
+  const vistas = JSON.parse(readFileSync(new URL('../processed/waypoints/vistas.json', import.meta.url), 'utf8'));
+  assert.ok(campsites.length > 250 && campsites.length < 1500, 'expected filtered OSM campsite candidates');
+  assert.ok(privies.length > 100 && privies.length < 1000, 'expected filtered OSM privy candidates');
+  assert.ok(vistas.length > 250 && vistas.length < 1500, 'expected filtered OSM vista candidates');
+  assert.equal(campsites[0].license_status, 'open_license_share_alike');
+  assert.match(campsites[0].ai_answer_rule, /verify current status/i);
+
+  const parking = JSON.parse(readFileSync(new URL('../processed/access/parking.json', import.meta.url), 'utf8'));
+  const trailheads = JSON.parse(readFileSync(new URL('../processed/access/trailheads.json', import.meta.url), 'utf8'));
+  assert.ok(parking.length > 500 && parking.length < 5000, 'parking candidates should be filtered to the trail corridor');
+  assert.ok(trailheads.length > 25 && trailheads.length < 500, 'expected filtered OSM trailhead candidates');
+  assert.equal(parking[0].license_status, 'open_license_share_alike');
+  assert.match(parking[0].ai_answer_rule, /OSM-mapped candidate/);
+
+  const towns = JSON.parse(readFileSync(new URL('../processed/towns_resupply/towns_within_15mi.json', import.meta.url), 'utf8'));
+  assert.ok(towns.length > 100 && towns.length < 1500, 'expected filtered open-data town candidates');
+  assert.equal(towns[0].confidence, 'open_data_settlement_candidate');
+  assert.equal(towns[0].candidate_services.grocery, 'unknown');
+  assert.match(towns[0].ai_answer_rule, /do not copy guidebook town notes/);
+
+  const corridorRaw = JSON.parse(readFileSync(new URL('../raw/osm/osm_corridor_features_relation_156553.json', import.meta.url), 'utf8'));
+  assert.ok(corridorRaw.elements.length < 10000, 'raw OSM corridor package should be compacted to accepted source elements');
+  assert.ok(statSync(new URL('../raw/osm/osm_corridor_features_relation_156553.json', import.meta.url)).size < 2_000_000, 'raw OSM corridor package should avoid full Overpass dumps');
 
   const elevation = JSON.parse(readFileSync(new URL('../processed/elevation/elevation_samples_5_0mi.json', import.meta.url), 'utf8'));
   assert.ok(elevation.length > 400, 'expected coarse 5-mile elevation samples');
