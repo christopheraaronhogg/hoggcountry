@@ -1,6 +1,6 @@
 # Data Quality Report
 
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 ## Current Status
 
@@ -26,7 +26,7 @@ initial official-source camping, permit, fee, and land-manager rules corpus.
 - Access/towns: OSM parking, trailhead, road-crossing, side-trail, and
   settlement candidates generated; services and private business records remain
   empty placeholders.
-- Rules/permits/fees: initial official-source records generated for 14 major
+- Rules/permits/fees: initial official-source records generated for 17 major
   NPS, USFS, state, and Baxter land-manager rule lanes.
 - Live connectors: app runtime has NWS/official-source lanes; this pack exports
   compact live-source connector metadata and current-condition answer policy.

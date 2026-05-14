@@ -3,7 +3,7 @@
 export const scoutAtOpenReferenceBundledSummary = {
   "version": 1,
   "summaryId": "scout-at-open-reference-offline-summary",
-  "generatedAt": "2026-05-14T02:08:19.525Z",
+  "generatedAt": "2026-05-14T02:12:46.517Z",
   "available": true,
   "sourceManifest": {
     "path": "source_manifest.yaml",
@@ -274,7 +274,7 @@ export const scoutAtOpenReferenceBundledSummary = {
       "label": "Official-source camping, permit, and fee rules",
       "category": "rules",
       "path": "processed/camping_rules/rules_by_land_manager.json",
-      "recordCount": 14,
+      "recordCount": 17,
       "sourceIds": [
         "baxter_state_park_authority_pages",
         "nps_official_land_manager_pages",
@@ -286,7 +286,7 @@ export const scoutAtOpenReferenceBundledSummary = {
         "public_domain"
       ],
       "confidence": "official_source",
-      "lastChecked": "2026-05-13",
+      "lastChecked": "2026-05-14",
       "aiAnswerRule": "Use as an official-source summary only. Show the source URL and last_checked date, and tell users to verify current rules with the land manager before itinerary commitment."
     },
     {
@@ -311,7 +311,7 @@ export const scoutAtOpenReferenceBundledSummary = {
   ],
   "totals": {
     "datasets": 15,
-    "records": 32465
+    "records": 32468
   },
   "liveConditionSources": [
     {
@@ -380,7 +380,7 @@ export const scoutAtOpenReferenceBundledSummary = {
     },
     {
       "path": "data_quality_report.md",
-      "excerpt": "# Data Quality Report Last updated: 2026-05-13 ## Current Status This is an early generated reference pack. It contains source policy, license review notes, schemas, validation gates, an OSM-derived route candidate, generated milepoints, mapped hydrography water candidates, and OSM shelter waypoint candidates. It now includes coarse elevation summaries and filtered OSM corridor candidates for campsites, privies/toilets, vistas, side trails, parking, trailheads, road crossings, and nearby towns. It also includes an initial official-source camping, permit, fee, and land-manager rules corpus. ## Completeness - Source manifest: started. - Blocked-source policy: started. - Route baseline: generated from OSM relation 156553 via Waymarked Trails route ordering. - Milepoints: generated at 0.1, 0.5"
+      "excerpt": "# Data Quality Report Last updated: 2026-05-14 ## Current Status This is an early generated reference pack. It contains source policy, license review notes, schemas, validation gates, an OSM-derived route candidate, generated milepoints, mapped hydrography water candidates, and OSM shelter waypoint candidates. It now includes coarse elevation summaries and filtered OSM corridor candidates for campsites, privies/toilets, vistas, side trails, parking, trailheads, road crossings, and nearby towns. It also includes an initial official-source camping, permit, fee, and land-manager rules corpus. ## Completeness - Source manifest: started. - Blocked-source policy: started. - Route baseline: generated from OSM relation 156553 via Waymarked Trails route ordering. - Milepoints: generated at 0.1, 0.5"
     },
     {
       "path": "processed/water/water_confidence_notes.md",

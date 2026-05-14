@@ -97,7 +97,7 @@ test('generated open route and candidate datasets keep safety labels', () => {
 
 test('camping, permit, and fee rules stay official-source and conservative', () => {
   const rules = JSON.parse(readFileSync(new URL('../processed/camping_rules/rules_by_land_manager.json', import.meta.url), 'utf8'));
-  assert.ok(rules.length >= 14, 'expected initial official-source land-manager rules');
+  assert.ok(rules.length >= 17, 'expected expanded initial official-source land-manager rules');
 
   const grsm = rules.find((rule) => rule.rule_id === 'camping-grsm-backcountry');
   assert.equal(grsm.source_id, 'nps_official_land_manager_pages');
@@ -109,6 +109,19 @@ test('camping, permit, and fee rules stay official-source and conservative', () 
   assert.equal(baxter.source_id, 'baxter_state_park_authority_pages');
   assert.match(baxter.permit_required, /yes/);
   assert.match(baxter.source_summary, /LD hiker permits/);
+
+  const connecticut = rules.find((rule) => rule.rule_id === 'camping-ct-backpack-sites');
+  assert.equal(connecticut.source_id, 'state_land_manager_official_pages');
+  assert.equal(connecticut.camping_policy, 'designated_backpack_sites_only_no_dispersed_camping');
+  assert.match(connecticut.permit_required, /reservation/);
+
+  const massachusetts = rules.find((rule) => rule.rule_id === 'camping-ma-at-designated-sites');
+  assert.equal(massachusetts.source_id, 'state_land_manager_official_pages');
+  assert.match(massachusetts.camping_policy, /designated/);
+
+  const nantahala = rules.find((rule) => rule.rule_id === 'camping-nantahala-at-cheoah-district');
+  assert.equal(nantahala.source_id, 'usfs_official_land_manager_pages');
+  assert.match(nantahala.source_summary, /Stecoah Gap/);
 
   const permitSections = JSON.parse(readFileSync(new URL('../processed/permits_fees/permit_required_sections.json', import.meta.url), 'utf8'));
   assert.ok(permitSections.some((record) => record.rule_id === 'camping-shenandoah-backcountry'));

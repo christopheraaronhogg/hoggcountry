@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const packRoot = path.resolve(__dirname, '..');
-const lastChecked = '2026-05-13';
+const lastChecked = '2026-05-14';
 
 const baseAnswerRule =
   'Use as an official-source summary only. Show the source URL and last_checked date, and tell users to verify current rules with the land manager before itinerary commitment.';
@@ -138,6 +138,27 @@ const rules = [
     ai_answer_rule: baseAnswerRule,
   },
   {
+    rule_id: 'camping-nantahala-at-cheoah-district',
+    jurisdiction: 'Nantahala National Forest Appalachian Trail, Cheoah District',
+    land_manager_type: 'national_forest',
+    state: ['NC'],
+    source_id: 'usfs_official_land_manager_pages',
+    source_url: 'https://www.fs.usda.gov/r08/northcarolina/recreation/trails/appalachian-trail-1-02',
+    source_title: 'National Forests in North Carolina - Appalachian Trail #1-02',
+    license_status: 'public_domain',
+    camping_policy: 'site_specific_at_camping_notes_with_gap_restrictions; verify_general_dispersed_rules_by_district',
+    permit_required: 'unknown',
+    fee_required: 'unknown',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'verify_current_rule',
+    stay_limit: 'verify_current_rule',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'USFS identifies Nantahala AT section details including Cheoah Bald camping with no water, shelter distances, and no camping at Stecoah Gap.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
     rule_id: 'camping-gwj-nf-at',
     jurisdiction: 'George Washington and Jefferson National Forests Appalachian Trail',
     land_manager_type: 'national_forest',
@@ -156,6 +177,48 @@ const rules = [
     last_checked: lastChecked,
     source_summary:
       'USFS states the AT page has no fee, no drinking water, and a three-days-in-30-days limit at a single shelter.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-ct-backpack-sites',
+    jurisdiction: 'Connecticut DEEP backpack camping areas',
+    land_manager_type: 'state_park_state_forest',
+    state: ['CT'],
+    source_id: 'state_land_manager_official_pages',
+    source_url: 'https://portal.ct.gov/deep/state-parks/camping/backpack-camping---ct-state-parks-and-forests',
+    source_title: 'Backpack Camping - CT State Parks and Forests',
+    license_status: 'open_license_attribution',
+    camping_policy: 'designated_backpack_sites_only_no_dispersed_camping',
+    permit_required: 'yes_by_reservation_application',
+    fee_required: 'unknown',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'no_at_backpack_camping_sites',
+    stay_limit: '1 night at any one location',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'CT DEEP states backpack camping is only allowed at listed sites, dispersed camping is not permitted, permits are by reservation, and stays are limited to one night at one location.',
+    ai_answer_rule: baseAnswerRule,
+  },
+  {
+    rule_id: 'camping-ma-at-designated-sites',
+    jurisdiction: 'Massachusetts DCR Appalachian Trail',
+    land_manager_type: 'state_park_state_forest',
+    state: ['MA'],
+    source_id: 'state_land_manager_official_pages',
+    source_url: 'https://www.mass.gov/locations/appalachian-trail',
+    source_title: 'Appalachian Trail - Mass.gov',
+    license_status: 'open_license_attribution',
+    camping_policy: 'designated_shelter_and_campsite_locations_only',
+    permit_required: 'unknown',
+    fee_required: 'parking_or_camping_fees_possible; verify_current_site_rules',
+    food_storage_rule: 'verify_current_rule',
+    dogs_allowed: 'verify_current_rule',
+    stay_limit: 'verify_current_rule',
+    confidence: 'official_source',
+    last_checked: lastChecked,
+    source_summary:
+      'Mass.gov states the Massachusetts AT has overnight camping at designated shelter and campsite locations and lists state-park visitor/parking context.',
     ai_answer_rule: baseAnswerRule,
   },
   {
