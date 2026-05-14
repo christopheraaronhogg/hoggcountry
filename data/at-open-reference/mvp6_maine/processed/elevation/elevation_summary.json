@@ -1,0 +1,15 @@
+{
+  "route_id": "at-mvp6-maine-nh-me-katahdin-open-2026",
+  "total_gain_ft": 39454,
+  "total_loss_ft": 37304,
+  "highest_point_ft": 5136,
+  "lowest_point_ft": 495,
+  "sample_count": 254,
+  "source_id": "usgs_3dep",
+  "source_url": "https://epqs.nationalmap.gov/v1/json",
+  "license_status": "public_domain",
+  "confidence": "model_derived_topographic_estimate",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Use as model-derived terrain summary. Do not present as surveyed gain/loss or official guidebook profile."
+}

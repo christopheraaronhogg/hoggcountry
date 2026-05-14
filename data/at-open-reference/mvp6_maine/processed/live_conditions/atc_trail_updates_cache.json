@@ -1,0 +1,7 @@
+{
+  "fetched_at": null,
+  "source_id": "atc_trail_updates_pointer",
+  "status": "not_fetched_static_pack_pointer_only",
+  "last_checked": "2026-05-14",
+  "ai_answer_rule": "Static MVP6 cache is not current and ATC is pointer-only unless licensed. Fetch/check current updates without packaging copied text."
+}

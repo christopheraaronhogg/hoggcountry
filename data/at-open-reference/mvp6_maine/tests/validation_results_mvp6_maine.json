@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "failures": [],
+  "mvp6_maine_miles": 253.2,
+  "behavior_questions": 80,
+  "rag_docs": 18,
+  "water_candidates": 169,
+  "major_ford_candidates": 169,
+  "tread_1mi_records": 254,
+  "difficulty_segments": 26
+}

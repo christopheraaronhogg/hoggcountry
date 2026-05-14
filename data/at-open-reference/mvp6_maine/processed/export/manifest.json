@@ -1,0 +1,10 @@
+{
+  "pack": "scout-at-mvp6-maine",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "route_id": "at-mvp6-maine-nh-me-katahdin-open-2026",
+  "mvp6_miles": 253.2,
+  "production_safe_export": "processed/export/scout_at_mvp6_maine_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp6_maine_production_safe.zip",
+  "source_manifest": "source_manifest.yaml",
+  "validation": "run_mvp6_maine_validation.py"
+}

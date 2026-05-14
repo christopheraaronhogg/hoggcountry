@@ -1,0 +1,240 @@
+[
+  {
+    "rule_id": "mvp6-maine-nh-me-mahoosuc-handoff-source-gap",
+    "jurisdiction": "NH/ME handoff and Mahoosuc corridor source lane",
+    "land_manager_type": "state_private_federal_corridor_source_gap",
+    "state": [
+      "ME"
+    ],
+    "mile_range_nobo_mvp6": [
+      0,
+      18
+    ],
+    "mile_range_nobo_global_est": [
+      1853,
+      1871
+    ],
+    "camping_policy": "mapped shelter/campsite candidates only; no dispersed camping permission inferred; verify current land manager",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "group_rule": "verify_current_rule",
+    "alpine_rule": "mahoosuc_weather_and_exposure_require_live_verification",
+    "fire_rule": "verify_current_fire_restrictions",
+    "ford_rule": "verify_current_water_crossing_conditions",
+    "source_id": "maine_state_official_pages",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "MVP6 does not encode parcel-level rules for the NH/ME handoff and Mahoosuc corridor.",
+    "ai_answer_rule": "Do not infer camping, fire, dog, group, fee, permit, or water-crossing permission from static waypoints. Verify the current land manager before advice.",
+    "attribution": "Maine Bureau of Parks and Lands / local land managers"
+  },
+  {
+    "rule_id": "mvp6-maine-western-maine-corridor-source-gap",
+    "jurisdiction": "Western Maine public/private AT corridor",
+    "land_manager_type": "state_local_private_corridor_source_gap",
+    "state": [
+      "ME"
+    ],
+    "mile_range_nobo_mvp6": [
+      0,
+      122
+    ],
+    "mile_range_nobo_global_est": [
+      1853,
+      1975
+    ],
+    "camping_policy": "mapped shelter/campsite candidates only; corridor rules vary; verify current land manager",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "group_rule": "verify_current_rule",
+    "alpine_rule": "exposed_high_peak_weather_requires_live_verification",
+    "fire_rule": "verify_current_fire_restrictions",
+    "ford_rule": "verify_current_water_crossing_conditions",
+    "source_id": "maine_state_official_pages",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Western Maine contains mixed public/private corridor land; MVP6 records a cautious source lane, not parcel-level legal permission.",
+    "ai_answer_rule": "Do not infer legal camping, fires, dog rules, group rules, fees, or permit status from static data. Verify current corridor/land-manager rules.",
+    "attribution": "Maine Bureau of Parks and Lands / local land managers"
+  },
+  {
+    "rule_id": "mvp6-maine-monson-logistics-pointer",
+    "jurisdiction": "Monson logistics and access source lane",
+    "land_manager_type": "town_logistics_pointer",
+    "state": [
+      "ME"
+    ],
+    "mile_range_nobo_mvp6": [
+      70,
+      145
+    ],
+    "mile_range_nobo_global_est": [
+      1923,
+      1998
+    ],
+    "camping_policy": "town/private services and access require current verification; no service availability inferred",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "group_rule": "verify_current_rule",
+    "alpine_rule": "not_applicable_but_weather_and_access_require_live_checks",
+    "fire_rule": "verify_current_rule",
+    "ford_rule": "verify_current_water_crossing_conditions",
+    "source_id": "monson_pointer",
+    "source_url": "https://monsonmaine.org/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Monson logistics are pointer-only unless a compatible source or user-submitted data is available.",
+    "ai_answer_rule": "Describe Monson as an open-data/logistics candidate. Do not package local service details or imply availability without current allowed-source verification.",
+    "attribution": "Town/local sources require permission or current verification before reuse"
+  },
+  {
+    "rule_id": "mvp6-maine-100-mile-wilderness-source-gap",
+    "jurisdiction": "100-Mile Wilderness source lane",
+    "land_manager_type": "remote_private_public_corridor_source_gap",
+    "state": [
+      "ME"
+    ],
+    "mile_range_nobo_mvp6": [
+      145,
+      238
+    ],
+    "mile_range_nobo_global_est": [
+      1998,
+      2091
+    ],
+    "camping_policy": "remote corridor; mapped sites are candidates only; no broad dispersed-camping permission inferred",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "group_rule": "verify_current_rule",
+    "alpine_rule": "remote_weather_and_access_conditions_require_live_verification",
+    "fire_rule": "verify_current_fire_restrictions",
+    "ford_rule": "live_verify_river_and_ford_conditions_before_crossing_advice",
+    "source_id": "maine_state_local_alerts",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "100-Mile Wilderness rules and access are modeled as a source gap requiring live/local verification.",
+    "ai_answer_rule": "Do not infer legal camping, ford safety, access, fire permission, or water reliability from static data. Live-check current conditions and land-manager rules.",
+    "attribution": "Maine state/local/private land managers"
+  },
+  {
+    "rule_id": "mvp6-maine-baxter-state-park",
+    "jurisdiction": "Baxter State Park AT approach and camping source lane",
+    "land_manager_type": "state_park_authority",
+    "state": [
+      "ME"
+    ],
+    "mile_range_nobo_mvp6": [
+      238,
+      253.2
+    ],
+    "mile_range_nobo_global_est": [
+      2091,
+      2106.2
+    ],
+    "camping_policy": "baxter_specific_camping_and_long_distance_hiker_rules_require_current_verification",
+    "permit_required": "yes_or_verify_current_baxter_long_distance_hiker_process",
+    "fee_required": "yes_or_verify_current_baxter_fees",
+    "food_storage_rule": "verify_current_baxter_rule",
+    "dogs_allowed": "verify_current_baxter_rule",
+    "group_rule": "verify_current_baxter_rule",
+    "alpine_rule": "katahdin_and_above_treeline_rules_require_live_baxter_verification",
+    "fire_rule": "verify_current_baxter_fire_rule",
+    "ford_rule": "verify_current_stream_crossing_conditions",
+    "source_id": "baxter_state_park_authority_pages",
+    "source_url": "https://baxterstatepark.org/general-info/the-at/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_summary_requires_current_check",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Baxter has park-specific AT, camping, permit/registration, access, and Katahdin rules. MVP6 stores only a cautious source summary.",
+    "ai_answer_rule": "Always live-check Baxter current rules, camping/permit status, fees, access, and trail openings before Baxter or Katahdin advice.",
+    "attribution": "Baxter State Park Authority"
+  },
+  {
+    "rule_id": "mvp6-maine-katahdin-hunt-trail-status",
+    "jurisdiction": "Katahdin / Hunt Trail summit status source lane",
+    "land_manager_type": "summit_trail_live_status",
+    "state": [
+      "ME"
+    ],
+    "mile_range_nobo_mvp6": [
+      248,
+      253.2
+    ],
+    "mile_range_nobo_global_est": [
+      2101,
+      2106.2
+    ],
+    "camping_policy": "no_summit_or_above_treeline_camping_inferred; verify_baxter_rules",
+    "permit_required": "verify_current_baxter_rule",
+    "fee_required": "verify_current_baxter_rule",
+    "food_storage_rule": "verify_current_baxter_rule",
+    "dogs_allowed": "verify_current_baxter_rule",
+    "group_rule": "verify_current_baxter_rule",
+    "alpine_rule": "live_baxter_trail_status_weather_daylight_and_closure_check_required",
+    "fire_rule": "verify_current_baxter_rule",
+    "ford_rule": "not_primary_issue_but_verify_current_approach_conditions",
+    "source_id": "baxter_current_conditions",
+    "source_url": "https://baxterstatepark.org/conditions/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page_required",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Katahdin/Hunt Trail opening, closures, alpine weather, daylight, access, and summit status must be checked live.",
+    "ai_answer_rule": "Never answer current Katahdin/Hunt Trail status from static docs. Require live Baxter conditions plus NWS mountain/weather checks.",
+    "attribution": "Baxter State Park Authority"
+  },
+  {
+    "rule_id": "mvp6-maine-local-private-easement-source-gap",
+    "jurisdiction": "Other Maine local, municipal, private-easement, timber, and corridor lands",
+    "land_manager_type": "source_gap",
+    "state": [
+      "ME"
+    ],
+    "mile_range_nobo_mvp6": [
+      0,
+      253.2
+    ],
+    "mile_range_nobo_global_est": [
+      1853,
+      2106.2
+    ],
+    "camping_policy": "unknown_verify_current_land_manager",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "group_rule": "verify_current_rule",
+    "alpine_rule": "verify_current_rule",
+    "fire_rule": "verify_current_rule",
+    "ford_rule": "verify_current_water_crossing_conditions",
+    "source_id": "maine_state_local_alerts",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "MVP6 does not fully map every local, municipal, private-easement, timber, road, or parcel-level rule across Maine.",
+    "ai_answer_rule": "When the exact jurisdiction is uncertain, say so and verify current rules with the land manager before camping, fire, dog, fee, permit, road/access, or ford advice.",
+    "attribution": "Maine state, local, private, and corridor land managers"
+  }
+]

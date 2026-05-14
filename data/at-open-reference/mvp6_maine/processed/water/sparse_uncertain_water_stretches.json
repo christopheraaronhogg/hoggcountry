@@ -1,0 +1,56 @@
+[
+  {
+    "stretch_id": "mvp6-maine-water-sparse-01",
+    "start_mile_nobo_mvp6": 10,
+    "end_mile_nobo_mvp6": 20,
+    "start_mile_nobo_global_est": 1863,
+    "end_mile_nobo_global_est": 1873,
+    "states": [
+      "ME"
+    ],
+    "mapped_water_candidate_count": 2,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp6-maine-water-sparse-02",
+    "start_mile_nobo_mvp6": 30,
+    "end_mile_nobo_mvp6": 40,
+    "start_mile_nobo_global_est": 1883,
+    "end_mile_nobo_global_est": 1893,
+    "states": [
+      "ME"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp6-maine-water-sparse-03",
+    "start_mile_nobo_mvp6": 250,
+    "end_mile_nobo_mvp6": 253.2,
+    "start_mile_nobo_global_est": 2103,
+    "end_mile_nobo_global_est": 2106.2,
+    "states": [
+      "ME"
+    ],
+    "mapped_water_candidate_count": 2,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  }
+]

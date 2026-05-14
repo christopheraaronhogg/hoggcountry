@@ -1,0 +1,142 @@
+[
+  {
+    "state": [
+      "ME"
+    ],
+    "rule_id": "mvp6-maine-nh-me-mahoosuc-handoff-source-gap",
+    "jurisdiction": "NH/ME handoff and Mahoosuc corridor source lane",
+    "mile_range_nobo_mvp6": [
+      0,
+      18
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "maine_state_official_pages",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer camping, fire, dog, group, fee, permit, or water-crossing permission from static waypoints. Verify the current land manager before advice."
+  },
+  {
+    "state": [
+      "ME"
+    ],
+    "rule_id": "mvp6-maine-western-maine-corridor-source-gap",
+    "jurisdiction": "Western Maine public/private AT corridor",
+    "mile_range_nobo_mvp6": [
+      0,
+      122
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "maine_state_official_pages",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer legal camping, fires, dog rules, group rules, fees, or permit status from static data. Verify current corridor/land-manager rules."
+  },
+  {
+    "state": [
+      "ME"
+    ],
+    "rule_id": "mvp6-maine-monson-logistics-pointer",
+    "jurisdiction": "Monson logistics and access source lane",
+    "mile_range_nobo_mvp6": [
+      70,
+      145
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "monson_pointer",
+    "source_url": "https://monsonmaine.org/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe Monson as an open-data/logistics candidate. Do not package local service details or imply availability without current allowed-source verification."
+  },
+  {
+    "state": [
+      "ME"
+    ],
+    "rule_id": "mvp6-maine-100-mile-wilderness-source-gap",
+    "jurisdiction": "100-Mile Wilderness source lane",
+    "mile_range_nobo_mvp6": [
+      145,
+      238
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "maine_state_local_alerts",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer legal camping, ford safety, access, fire permission, or water reliability from static data. Live-check current conditions and land-manager rules."
+  },
+  {
+    "state": [
+      "ME"
+    ],
+    "rule_id": "mvp6-maine-baxter-state-park",
+    "jurisdiction": "Baxter State Park AT approach and camping source lane",
+    "mile_range_nobo_mvp6": [
+      238,
+      253.2
+    ],
+    "permit_required": "yes_or_verify_current_baxter_long_distance_hiker_process",
+    "fee_required": "yes_or_verify_current_baxter_fees",
+    "source_id": "baxter_state_park_authority_pages",
+    "source_url": "https://baxterstatepark.org/general-info/the-at/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_summary_requires_current_check",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Always live-check Baxter current rules, camping/permit status, fees, access, and trail openings before Baxter or Katahdin advice."
+  },
+  {
+    "state": [
+      "ME"
+    ],
+    "rule_id": "mvp6-maine-katahdin-hunt-trail-status",
+    "jurisdiction": "Katahdin / Hunt Trail summit status source lane",
+    "mile_range_nobo_mvp6": [
+      248,
+      253.2
+    ],
+    "permit_required": "verify_current_baxter_rule",
+    "fee_required": "verify_current_baxter_rule",
+    "source_id": "baxter_current_conditions",
+    "source_url": "https://baxterstatepark.org/conditions/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page_required",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Never answer current Katahdin/Hunt Trail status from static docs. Require live Baxter conditions plus NWS mountain/weather checks."
+  },
+  {
+    "state": [
+      "ME"
+    ],
+    "rule_id": "mvp6-maine-local-private-easement-source-gap",
+    "jurisdiction": "Other Maine local, municipal, private-easement, timber, and corridor lands",
+    "mile_range_nobo_mvp6": [
+      0,
+      253.2
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "maine_state_local_alerts",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "When the exact jurisdiction is uncertain, say so and verify current rules with the land manager before camping, fire, dog, fee, permit, road/access, or ford advice."
+  }
+]

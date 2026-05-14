@@ -1,0 +1,20 @@
+{
+  "route_id": "at-mvp6-maine-nh-me-katahdin-open-2026",
+  "start_mile_nobo_mvp6": 248,
+  "end_mile_nobo_mvp6": 253.2,
+  "start_mile_nobo_global_est": 2101,
+  "end_mile_nobo_global_est": 2106.2,
+  "distance_miles": 5.2,
+  "elevation_gain_ft": 4096,
+  "elevation_loss_ft": 0,
+  "highest_point_ft": 5136,
+  "lowest_point_ft": 1040,
+  "max_grade_percent": 26.5,
+  "source_id": "usgs_3dep",
+  "source_url": "https://epqs.nationalmap.gov/v1/json",
+  "license_status": "public_domain",
+  "confidence": "model_derived_topographic_screening",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Use as a model-derived Katahdin/Hunt Trail climb screen only. Always live-check Baxter/Katahdin trail status, permits, closures, weather, snow/ice, wind, lightning, and daylight before summit advice."
+}

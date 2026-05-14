@@ -456,3 +456,70 @@ test('Scout AT MVP5 MA/VT/NH reference pack validates source-aware mountain plan
   assert.ok(behaviorQuestions.some((question) => /AMC/i.test(question.question + question.expected_behavior)));
   assert.ok(behaviorQuestions.some((question) => /reliability unknown/i.test(question.question + question.expected_behavior)));
 });
+
+test('Scout AT MVP6 Maine reference pack validates Baxter, ford, and remoteness planning rules', () => {
+  const result = spawnSync('python3', ['data/at-open-reference/mvp6_maine/run_mvp6_maine_validation.py', '--json'], {
+    cwd: new URL('../../..', import.meta.url),
+    encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+
+  const validation = JSON.parse(result.stdout);
+  assert.equal(validation.ok, true);
+  assert.equal(validation.failures.length, 0);
+  assert.equal(validation.mvp6_maine_miles, 253.2);
+  assert.ok(validation.behavior_questions >= 80);
+  assert.ok(validation.rag_docs >= 15);
+  assert.ok(validation.water_candidates >= 100);
+  assert.ok(validation.major_ford_candidates >= 50);
+  assert.ok(validation.tread_1mi_records >= 250);
+  assert.ok(validation.difficulty_segments >= 25);
+
+  const routeNotes = readFileSync(new URL('../mvp6_maine/processed/route/route_notes.md', import.meta.url), 'utf8');
+  assert.match(routeNotes, /Mahoosuc/i);
+  assert.match(routeNotes, /Monson/i);
+  assert.match(routeNotes, /100-Mile Wilderness/i);
+  assert.match(routeNotes, /Baxter/i);
+  assert.match(routeNotes, /Katahdin/i);
+  assert.match(routeNotes, /not official ATC miles/i);
+
+  const waterPolicy = readFileSync(new URL('../mvp6_maine/rag_docs/policies/water.md', import.meta.url), 'utf8');
+  assert.match(waterPolicy, /mapped ford candidate/i);
+  assert.match(waterPolicy, /Ford safety unknown/i);
+  assert.match(waterPolicy, /safe fordability/i);
+
+  const livePolicy = readFileSync(new URL('../mvp6_maine/rag_docs/policies/weather_live_conditions.md', import.meta.url), 'utf8');
+  assert.match(livePolicy, /Baxter\/Katahdin/i);
+  assert.match(livePolicy, /river\/fords/i);
+  assert.match(livePolicy, /live retrieval fails/i);
+  assert.match(livePolicy, /verification pointer/i);
+
+  const liveSources = JSON.parse(readFileSync(new URL('../mvp6_maine/processed/live_conditions/live_condition_sources.json', import.meta.url), 'utf8'));
+  assert.ok(liveSources.some((source) => source.source_id === 'baxter_current_conditions'));
+  assert.ok(liveSources.some((source) => source.source_id === 'baxter_state_park_authority_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'maine_state_local_alerts'));
+  assert.ok(liveSources.some((source) => source.source_id === 'monson_pointer'));
+
+  const meGuide = readFileSync(new URL('../mvp6_maine/rag_docs/state_guides/ME.md', import.meta.url), 'utf8');
+  assert.match(meGuide, /Mahoosuc/i);
+  assert.match(meGuide, /100-Mile Wilderness/i);
+  assert.match(meGuide, /Katahdin/i);
+  assert.match(meGuide, /ford safety unknown/i);
+
+  const calibration = readFileSync(new URL('../mvp6_maine/processed/tread_rockiness/mvp6_maine_tread_remoteness_calibration_report.md', import.meta.url), 'utf8');
+  assert.match(calibration, /Mahoosuc/i);
+  assert.match(calibration, /100-Mile Wilderness/i);
+  assert.match(calibration, /Katahdin/i);
+  assert.match(calibration, /not field_verified/i);
+
+  const difficulty = JSON.parse(readFileSync(new URL('../mvp6_maine/processed/difficulty/difficulty_by_10mi_segment.json', import.meta.url), 'utf8'));
+  assert.ok(difficulty.some((record) => record.ford_uncertainty_factor > 0));
+  assert.ok(difficulty.some((record) => record.remoteness_bailout_scarcity_factor > 0));
+  assert.ok(difficulty.every((record) => /planning difficulty screen/i.test(record.ai_answer_rule)));
+
+  const behaviorQuestions = JSON.parse(readFileSync(new URL('../mvp6_maine/tests/mvp6_maine_behavior_questions.json', import.meta.url), 'utf8'));
+  assert.ok(behaviorQuestions.some((question) => /Baxter/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /Katahdin/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /ford/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /Monson/i.test(question.question + question.expected_behavior)));
+});

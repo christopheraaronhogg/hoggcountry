@@ -1,0 +1,3 @@
+# MVP6 Maine Live Conditions Policy
+
+Always live-check closures, detours, fire bans, flooding, river/fords, storm damage, bear activity, snow/ice, mud, Baxter/Katahdin trail status, alpine weather, campsite status, hunting-season safety, permit changes, road/parking access, group rules, and dangerous weather. Static docs cannot answer current closures/weather/Katahdin status. Use NWS for weather/alerts, NPS/APPA for national trail lanes, Baxter for Katahdin and park status, Maine state/local/private corridor sources for rules/access/fords, and ATC Trail Updates as a verification pointer only unless licensed. If live retrieval fails, say so and show last-checked time.

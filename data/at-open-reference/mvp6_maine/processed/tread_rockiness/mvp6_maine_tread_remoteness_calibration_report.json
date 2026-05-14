@@ -1,0 +1,46 @@
+{
+  "calibration_id": "mvp6-maine-tread-remoteness-calibration",
+  "mahoosuc_range_mvp6": [
+    0,
+    18
+  ],
+  "western_maine_range_mvp6": [
+    18,
+    122
+  ],
+  "monson_approach_range_mvp6": [
+    70,
+    145
+  ],
+  "hundred_mile_wilderness_range_mvp6": [
+    145,
+    238
+  ],
+  "baxter_range_mvp6": [
+    238,
+    253.2
+  ],
+  "katahdin_climb_range_mvp6": [
+    248,
+    253.2
+  ],
+  "mahoosuc_average_score": 4.56,
+  "western_maine_average_score": 3.26,
+  "monson_approach_average_score": 2.97,
+  "hundred_mile_wilderness_average_score": 2.82,
+  "baxter_average_score": 2.44,
+  "katahdin_average_score": 4.5,
+  "mahoosuc_average_pace_penalty": 1.333,
+  "western_maine_average_pace_penalty": 1.195,
+  "monson_approach_average_pace_penalty": 1.171,
+  "hundred_mile_wilderness_average_pace_penalty": 1.148,
+  "baxter_average_pace_penalty": 1.15,
+  "katahdin_average_pace_penalty": 1.333,
+  "source_id": "mvp6_maine_tread_model",
+  "source_url": "internal:data/at-open-reference/scripts/build-mvp6-maine-reference-pack.mjs",
+  "license_status": "open_license_share_alike",
+  "confidence": "model_calibration_screen_not_field_verified",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Use only as an MVP6 Maine tread/mud/rootiness/fording/remoteness model screen. Do not call it field verified or use it as proof of exact footing, ford safety, or access."
+}

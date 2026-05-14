@@ -1,0 +1,303 @@
+[
+  {
+    "path": "rag_docs/state_guides/ME.md",
+    "title": "MVP6 Maine State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "maine_state_official_pages",
+      "maine_state_local_alerts",
+      "baxter_state_park_authority_pages",
+      "baxter_current_conditions",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/water.md",
+    "title": "MVP6 Maine Water Policy",
+    "kind": "policy",
+    "source_ids": [
+      "usgs_3dhp_nhd",
+      "osm"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/weather_live_conditions.md",
+    "title": "MVP6 Maine Live Conditions Policy",
+    "kind": "policy",
+    "source_ids": [
+      "noaa_nws_api",
+      "nps_api",
+      "maine_state_official_pages",
+      "maine_state_local_alerts",
+      "baxter_state_park_authority_pages",
+      "baxter_current_conditions",
+      "atc_trail_updates_pointer"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/tread_rockiness.md",
+    "title": "MVP6 Maine Tread Policy",
+    "kind": "policy",
+    "source_ids": [
+      "mvp6_maine_tread_model"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "processed/difficulty/difficulty_policy.md",
+    "title": "MVP6 Maine Difficulty Policy",
+    "kind": "policy",
+    "source_ids": [
+      "mvp6_maine_difficulty_model",
+      "mvp6_maine_tread_model",
+      "usgs_3dep"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/navigation.md",
+    "title": "MVP6 Maine Navigation Policy",
+    "kind": "policy",
+    "source_ids": [
+      "osm",
+      "waymarked_trails_api"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/rules/camping_permit_fee_mvp6_maine.md",
+    "title": "MVP6 Maine Camping Rules",
+    "kind": "rules",
+    "source_ids": [
+      "maine_state_official_pages",
+      "maine_state_local_alerts",
+      "baxter_state_park_authority_pages",
+      "baxter_current_conditions",
+      "monson_pointer",
+      "atc_trail_updates_pointer"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_000_025.md",
+    "title": "MVP6 Maine Segment 0-25",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_025_050.md",
+    "title": "MVP6 Maine Segment 25-50",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_050_075.md",
+    "title": "MVP6 Maine Segment 50-75",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_075_100.md",
+    "title": "MVP6 Maine Segment 75-100",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_100_125.md",
+    "title": "MVP6 Maine Segment 100-125",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_125_150.md",
+    "title": "MVP6 Maine Segment 125-150",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_150_175.md",
+    "title": "MVP6 Maine Segment 150-175",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_175_200.md",
+    "title": "MVP6 Maine Segment 175-200",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_200_225.md",
+    "title": "MVP6 Maine Segment 200-225",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_225_250.md",
+    "title": "MVP6 Maine Segment 225-250",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp6_maine_250_253.md",
+    "title": "MVP6 Maine Segment 250-253.2",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp6_maine_tread_model",
+      "mvp6_maine_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP6 Maine records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  }
+]

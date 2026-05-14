@@ -1,0 +1,115 @@
+[
+  {
+    "source_id": "maine_state_official_pages",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "name": "Maine state land-manager official pages",
+    "categories": [
+      "closures",
+      "fire",
+      "camping_rules",
+      "parking",
+      "storm_damage",
+      "road_access",
+      "hunting_safety"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Maine land-manager advice",
+    "attribution": "Maine Bureau of Parks and Lands / Maine DACF",
+    "ai_answer_rule": "Use precise Maine land-manager sources when available; otherwise disclose the source gap."
+  },
+  {
+    "source_id": "maine_state_local_alerts",
+    "source_url": "https://www.maine.gov/dacf/parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "name": "Maine state/local/private corridor alert source lane",
+    "categories": [
+      "closures",
+      "fire",
+      "storm_damage",
+      "road_access",
+      "hunting_safety",
+      "mud",
+      "fording",
+      "permit_changes"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before advice",
+    "attribution": "Maine state/local/private corridor land managers",
+    "ai_answer_rule": "Use precise Maine land-manager/local sources when available; otherwise disclose this source gap and verify before safety/legal/access advice."
+  },
+  {
+    "source_id": "baxter_state_park_authority_pages",
+    "source_url": "https://baxterstatepark.org/general-info/the-at/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_summary_requires_current_check",
+    "name": "Baxter State Park AT official pages",
+    "categories": [
+      "baxter_rules",
+      "camping",
+      "long_distance_hiker_process",
+      "fees",
+      "access"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Baxter advice",
+    "attribution": "Baxter State Park Authority",
+    "ai_answer_rule": "Use current Baxter pages before Baxter camping, access, permit, fee, long-distance hiker, or park-rule advice."
+  },
+  {
+    "source_id": "baxter_current_conditions",
+    "source_url": "https://baxterstatepark.org/conditions/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page_required",
+    "name": "Baxter current conditions and Katahdin trail status",
+    "categories": [
+      "katahdin_status",
+      "trail_opening",
+      "closures",
+      "road_access",
+      "camping_status",
+      "alpine_weather"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Katahdin or Baxter current-status advice",
+    "attribution": "Baxter State Park Authority",
+    "ai_answer_rule": "Never answer current Katahdin/Hunt Trail opening, closing, access, or status from static docs. Fetch live Baxter conditions plus NWS weather."
+  },
+  {
+    "source_id": "monson_pointer",
+    "source_url": "https://monsonmaine.org/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "Monson logistics pointer only",
+    "categories": [
+      "town_logistics",
+      "resupply",
+      "shuttle",
+      "lodging",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package private service details unless licensed",
+    "attribution": "Town/local/private sources",
+    "ai_answer_rule": "Use as a link/check target only. Do not package private service text, availability, hours, fees, shuttle, or lodging details unless licensed or user-submitted."
+  },
+  {
+    "source_id": "atc_trail_updates_pointer",
+    "source_url": "https://appalachiantrail.org/trail-updates/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "ATC Trail Updates pointer only",
+    "categories": [
+      "closures",
+      "detours",
+      "storm_damage",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Appalachian Trail Conservancy",
+    "ai_answer_rule": "Use as a link/check target only. Do not package ATC update text or data unless licensed."
+  }
+]

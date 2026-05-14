@@ -1,0 +1,22 @@
+{
+  "pack_id": "scout-at-mvp6-maine-nh-me-katahdin",
+  "route_id": "at-mvp6-maine-nh-me-katahdin-open-2026",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "scope": {
+    "start": "NH/ME transition / Carlo Col-Full Goose open-route handoff estimate",
+    "end": "Katahdin / Baxter northern terminus open-route endpoint",
+    "generated_mile_range_mvp6": [
+      0,
+      253.2
+    ],
+    "generated_mile_range_global_est": [
+      1853,
+      2106.2
+    ]
+  },
+  "prompt_artifact_checklist": "prompt_artifact_checklist.md",
+  "source_manifest": "source_manifest.yaml",
+  "production_safe_export": "processed/export/scout_at_mvp6_maine_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp6_maine_production_safe.zip",
+  "validation": "run_mvp6_maine_validation.py"
+}

@@ -1,0 +1,9 @@
+{
+  "fetched_at": null,
+  "parks": [
+    "appa"
+  ],
+  "status": "not_fetched_static_pack",
+  "last_checked": "2026-05-14",
+  "ai_answer_rule": "Static MVP6 cache is not current. Fetch live NPS alerts before closures, bear activity, storm damage, or park-rule advice."
+}
