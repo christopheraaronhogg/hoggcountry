@@ -1,0 +1,201 @@
+[
+  {
+    "source_id": "noaa_nws_api",
+    "source_url": "https://www.weather.gov/documentation/services-web-api",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "National Weather Service API",
+    "categories": [
+      "forecast",
+      "alerts",
+      "observations",
+      "dangerous_weather",
+      "alpine_weather"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live; cache per endpoint and include fetched timestamp",
+    "attribution": "National Weather Service",
+    "ai_answer_rule": "Use live NWS point forecasts and alerts for current/future weather. For the Whites and exposed ridges, fetch point forecasts and alerts before safety advice."
+  },
+  {
+    "source_id": "nps_api",
+    "source_url": "https://www.nps.gov/subjects/digital/nps-data-api.htm",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "National Park Service API for APPA",
+    "categories": [
+      "closures",
+      "trail_alerts",
+      "park_alerts",
+      "news"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live; cache with fetched timestamp and disclose possible API lag",
+    "attribution": "National Park Service",
+    "ai_answer_rule": "Use live NPS API alerts for Appalachian National Scenic Trail lanes and disclose possible API lag for high-risk decisions."
+  },
+  {
+    "source_id": "ma_dcr_official_pages",
+    "source_url": "https://www.mass.gov/orgs/department-of-conservation-recreation",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Massachusetts DCR official pages",
+    "categories": [
+      "closures",
+      "fire",
+      "camping_rules",
+      "parking",
+      "storm_damage"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Massachusetts/Berkshires advice",
+    "attribution": "Massachusetts Department of Conservation and Recreation",
+    "ai_answer_rule": "Use MA DCR/current land-manager pages before Massachusetts camping, fire, closure, fee, or parking advice."
+  },
+  {
+    "source_id": "vt_state_official_pages",
+    "source_url": "https://fpr.vermont.gov/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Vermont state lands official pages",
+    "categories": [
+      "closures",
+      "fire",
+      "mud_closures",
+      "camping_rules",
+      "storm_damage"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Vermont advice",
+    "attribution": "Vermont Department of Forests, Parks and Recreation",
+    "ai_answer_rule": "Use Vermont FPR/current land-manager pages before Vermont camping, fire, mud-season, road/access, or closure advice."
+  },
+  {
+    "source_id": "usfs_gmnf_official_pages",
+    "source_url": "https://www.fs.usda.gov/r09/gmfl",
+    "license_status": "public_domain",
+    "confidence": "official_live_page",
+    "name": "Green Mountain National Forest official pages",
+    "categories": [
+      "closures",
+      "camping_rules",
+      "food_storage",
+      "fire",
+      "roads",
+      "storm_damage"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before GMNF/Long Trail overlap advice",
+    "attribution": "U.S. Forest Service",
+    "ai_answer_rule": "Use current USFS GMNF pages before Green Mountain NF/Long Trail camping, fire, food-storage, road, or closure advice."
+  },
+  {
+    "source_id": "nh_state_local_official_pages",
+    "source_url": "https://www.nhstateparks.org/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "New Hampshire state/local official pages",
+    "categories": [
+      "closures",
+      "fire",
+      "camping_rules",
+      "parking",
+      "storm_damage"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before NH state/local advice",
+    "attribution": "New Hampshire State Parks / local land managers",
+    "ai_answer_rule": "Use precise NH state/local land-manager sources when available; otherwise disclose the source gap."
+  },
+  {
+    "source_id": "usfs_wmnf_official_pages",
+    "source_url": "https://www.fs.usda.gov/r09/whitemountain",
+    "license_status": "public_domain",
+    "confidence": "official_live_page",
+    "name": "White Mountain National Forest official pages",
+    "categories": [
+      "closures",
+      "camping_rules",
+      "food_storage",
+      "fire",
+      "roads",
+      "storm_damage",
+      "alpine_zones",
+      "forest_protection_areas"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before White Mountain advice",
+    "attribution": "U.S. Forest Service",
+    "ai_answer_rule": "Use current USFS WMNF pages before White Mountain camping, fire, FPA/alpine, road, storm-damage, or closure advice."
+  },
+  {
+    "source_id": "mavtnh_state_local_alerts",
+    "source_url": "https://www.nhstateparks.org/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "name": "MA/VT/NH state and local alert source lane",
+    "categories": [
+      "closures",
+      "fire",
+      "storm_damage",
+      "road_access",
+      "hunting_safety",
+      "mud_closures",
+      "permit_changes"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before advice",
+    "attribution": "State and local land managers",
+    "ai_answer_rule": "Use precise MA/VT/NH land-manager sources when available; otherwise disclose this source gap and verify before safety/legal advice."
+  },
+  {
+    "source_id": "amc_pointer",
+    "source_url": "https://www.outdoors.org/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "AMC hut/campsite pointer only",
+    "categories": [
+      "hut_status",
+      "campsites",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Appalachian Mountain Club",
+    "ai_answer_rule": "Use as a link/check target only. Do not package AMC hut/campsite text, status, maps, or data unless licensed."
+  },
+  {
+    "source_id": "gmc_pointer",
+    "source_url": "https://www.greenmountainclub.org/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "Green Mountain Club pointer only",
+    "categories": [
+      "long_trail",
+      "mud_closures",
+      "trail_conditions",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Green Mountain Club",
+    "ai_answer_rule": "Use as a link/check target only. Do not package GMC guide/trail-condition text or data unless licensed."
+  },
+  {
+    "source_id": "atc_trail_updates_pointer",
+    "source_url": "https://appalachiantrail.org/trail-updates/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "ATC Trail Updates pointer only",
+    "categories": [
+      "closures",
+      "detours",
+      "storm_damage",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Appalachian Trail Conservancy",
+    "ai_answer_rule": "Use as a link/check target only. Do not package ATC update text or data unless licensed."
+  }
+]

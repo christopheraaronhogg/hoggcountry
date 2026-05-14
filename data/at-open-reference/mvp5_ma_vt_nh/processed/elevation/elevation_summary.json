@@ -1,0 +1,15 @@
+{
+  "route_id": "at-mvp5-ma-vt-nh-ct-ma-nh-me-open-2026",
+  "total_gain_ft": 63385,
+  "total_loss_ft": 61876,
+  "highest_point_ft": 5858,
+  "lowest_point_ft": 477,
+  "sample_count": 378,
+  "source_id": "usgs_3dep",
+  "source_url": "https://epqs.nationalmap.gov/v1/json",
+  "license_status": "public_domain",
+  "confidence": "model_derived_topographic_estimate",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Use as model-derived terrain summary. Do not present as surveyed gain/loss or official guidebook profile."
+}

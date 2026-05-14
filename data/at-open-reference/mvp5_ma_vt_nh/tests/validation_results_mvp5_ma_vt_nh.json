@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "failures": [],
+  "mvp5_ma_vt_nh_miles": 377,
+  "behavior_questions": 83,
+  "rag_docs": 25,
+  "water_candidates": 377,
+  "tread_1mi_records": 377,
+  "difficulty_segments": 38,
+  "waypoint_counts": {
+    "shelters": 39,
+    "campsites": 30,
+    "huts": 1,
+    "tent_sites": 35,
+    "alpine_exposure_points": 34,
+    "towns_resupply_candidates": 163
+  }
+}

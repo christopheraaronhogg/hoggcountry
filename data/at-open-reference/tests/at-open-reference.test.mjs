@@ -383,3 +383,76 @@ test('Scout AT MVP4 NJ/NY/CT reference pack validates source-aware planning rule
   assert.ok(behaviorQuestions.some((question) => /illegal dispersed camping/i.test(question.question + question.expected_behavior)));
   assert.ok(behaviorQuestions.some((question) => /reliability unknown/i.test(question.question + question.expected_behavior)));
 });
+
+test('Scout AT MVP5 MA/VT/NH reference pack validates source-aware mountain planning rules', () => {
+  const result = spawnSync('python3', ['data/at-open-reference/mvp5_ma_vt_nh/run_mvp5_ma_vt_nh_validation.py', '--json'], {
+    cwd: new URL('../../..', import.meta.url),
+    encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+
+  const validation = JSON.parse(result.stdout);
+  assert.equal(validation.ok, true);
+  assert.equal(validation.failures.length, 0);
+  assert.equal(validation.mvp5_ma_vt_nh_miles, 377.0);
+  assert.ok(validation.behavior_questions >= 70);
+  assert.ok(validation.rag_docs >= 24);
+  assert.ok(validation.water_candidates >= 300);
+  assert.ok(validation.tread_1mi_records >= 370);
+  assert.ok(validation.difficulty_segments >= 37);
+
+  const routeNotes = readFileSync(new URL('../mvp5_ma_vt_nh/processed/route/route_notes.md', import.meta.url), 'utf8');
+  assert.match(routeNotes, /Sages Ravine/i);
+  assert.match(routeNotes, /NH\/ME/i);
+  assert.match(routeNotes, /MVP4/i);
+  assert.match(routeNotes, /MVP6/i);
+  assert.match(routeNotes, /not official ATC miles/i);
+
+  const livePolicy = readFileSync(new URL('../mvp5_ma_vt_nh/rag_docs/policies/weather_live_conditions.md', import.meta.url), 'utf8');
+  assert.match(livePolicy, /alpine weather/i);
+  assert.match(livePolicy, /mud closures/i);
+  assert.match(livePolicy, /AMC/i);
+  assert.match(livePolicy, /Green Mountain Club/i);
+  assert.match(livePolicy, /verification pointers only/i);
+  assert.match(livePolicy, /live retrieval fails/i);
+
+  const liveSources = JSON.parse(readFileSync(new URL('../mvp5_ma_vt_nh/processed/live_conditions/live_condition_sources.json', import.meta.url), 'utf8'));
+  assert.ok(liveSources.some((source) => source.source_id === 'ma_dcr_official_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'usfs_gmnf_official_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'usfs_wmnf_official_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'amc_pointer'));
+  assert.ok(liveSources.some((source) => source.source_id === 'gmc_pointer'));
+
+  const nhGuide = readFileSync(new URL('../mvp5_ma_vt_nh/rag_docs/state_guides/NH.md', import.meta.url), 'utf8');
+  assert.match(nhGuide, /White Mountain/i);
+  assert.match(nhGuide, /Presidential/i);
+  assert.match(nhGuide, /alpine/i);
+  assert.match(nhGuide, /AMC/i);
+
+  const treadNotes = readFileSync(new URL('../mvp5_ma_vt_nh/processed/tread_rockiness/model_notes.md', import.meta.url), 'utf8');
+  assert.match(treadNotes, /SSURGO\/gSSURGO/i);
+  assert.match(treadNotes, /mud/i);
+  assert.match(treadNotes, /not field_verified/i);
+  const calibration = readFileSync(new URL('../mvp5_ma_vt_nh/processed/tread_rockiness/mvp5_mountain_tread_mud_calibration_report.md', import.meta.url), 'utf8');
+  assert.match(calibration, /White Mountain/i);
+  assert.match(calibration, /Presidential/i);
+  assert.match(calibration, /not field_verified/i);
+
+  const difficulty = JSON.parse(readFileSync(new URL('../mvp5_ma_vt_nh/processed/difficulty/difficulty_by_10mi_segment.json', import.meta.url), 'utf8'));
+  assert.ok(difficulty.some((record) => record.alpine_exposure_factor > 0));
+  assert.ok(difficulty.every((record) => /planning difficulty screen/i.test(record.ai_answer_rule)));
+
+  const segmentGuide = readFileSync(new URL('../mvp5_ma_vt_nh/rag_docs/segment_guides/mvp5_ma_vt_nh_000_025.md', import.meta.url), 'utf8');
+  assert.match(segmentGuide, /## Terrain/);
+  assert.match(segmentGuide, /## Water Candidates/);
+  assert.match(segmentGuide, /## Difficulty/);
+  assert.match(segmentGuide, /## Camping \/ Permit Summary/);
+  assert.match(segmentGuide, /## AI Cautions/);
+  assert.match(segmentGuide, /Generated miles are not official ATC mileage/);
+
+  const behaviorQuestions = JSON.parse(readFileSync(new URL('../mvp5_ma_vt_nh/tests/mvp5_ma_vt_nh_behavior_questions.json', import.meta.url), 'utf8'));
+  assert.ok(behaviorQuestions.some((question) => /Presidential/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /Franconia/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /AMC/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /reliability unknown/i.test(question.question + question.expected_behavior)));
+});

@@ -1,0 +1,7 @@
+{
+  "fetched_at": null,
+  "corridor": "MA/VT/NH Appalachian Trail",
+  "status": "not_fetched_static_pack",
+  "last_checked": "2026-05-14",
+  "ai_answer_rule": "Static MVP5 cache is not current. Fetch live NWS alerts and point forecasts before weather advice."
+}

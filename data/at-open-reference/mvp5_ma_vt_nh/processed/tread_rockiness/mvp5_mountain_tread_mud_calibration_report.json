@@ -1,0 +1,40 @@
+{
+  "calibration_id": "mvp5-mavtnh-mountain-tread-mud-calibration",
+  "ma_mile_range_mvp5": [
+    0,
+    91
+  ],
+  "vt_mile_range_mvp5": [
+    91,
+    228
+  ],
+  "nh_mile_range_mvp5": [
+    228,
+    377
+  ],
+  "white_mountain_screen_range_mvp5": [
+    260,
+    377
+  ],
+  "presidential_screen_range_mvp5": [
+    318,
+    342
+  ],
+  "ma_average_score": 2.51,
+  "vt_average_score": 2.74,
+  "nh_average_score": 3.88,
+  "white_mountain_average_score": 4.06,
+  "presidential_average_score": 4.21,
+  "ma_average_pace_penalty": 1.132,
+  "vt_average_pace_penalty": 1.144,
+  "nh_average_pace_penalty": 1.254,
+  "white_mountain_average_pace_penalty": 1.269,
+  "presidential_average_pace_penalty": 1.283,
+  "source_id": "mvp5_ma_vt_nh_tread_model",
+  "source_url": "internal:data/at-open-reference/scripts/build-mvp5-ma-vt-nh-reference-pack.mjs",
+  "license_status": "open_license_share_alike",
+  "confidence": "model_calibration_screen_not_field_verified",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Use only as an MVP5 MA/VT/NH mountain tread/mud model screen. Do not call it field verified or use it as proof of exact footing."
+}

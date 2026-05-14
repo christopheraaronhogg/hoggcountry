@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "required": [
+    "score",
+    "confidence",
+    "field_verified",
+    "pace_penalty_multiplier",
+    "wet_mud_flag",
+    "rootiness_flag",
+    "source_id",
+    "license_status",
+    "last_generated",
+    "ai_answer_rule"
+  ]
+}

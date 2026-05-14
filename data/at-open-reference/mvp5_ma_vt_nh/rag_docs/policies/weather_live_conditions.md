@@ -1,0 +1,3 @@
+# MVP5 MA/VT/NH Live Conditions Policy
+
+Always live-check closures, detours, fire bans, flooding, storm damage, bear activity, snow/ice, mud closures, alpine weather, hut/campsite status, hunting-season safety, permit changes, road/parking access, group rules, and dangerous weather. Static docs cannot answer current closures/weather. Use NWS for weather/alerts, NPS/APPA for national trail lanes, MA DCR for Massachusetts, Vermont FPR and USFS GMNF for Vermont/Long Trail overlap, USFS WMNF and NH state/local sources for New Hampshire/Whites, and ATC, AMC, and Green Mountain Club as verification pointers only unless licensed. If live retrieval fails, say so and show last-checked time.

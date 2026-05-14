@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "required": [
+    "type",
+    "mile_nobo_mvp5",
+    "mile_nobo_global_est",
+    "lat",
+    "lon",
+    "source_id",
+    "license_status",
+    "confidence",
+    "reliability",
+    "potable",
+    "last_human_verified",
+    "ai_answer_rule"
+  ]
+}

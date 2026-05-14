@@ -1,0 +1,10 @@
+{
+  "pack": "scout-at-mvp5-mavtnh",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "route_id": "at-mvp5-ma-vt-nh-ct-ma-nh-me-open-2026",
+  "mvp5_miles": 377,
+  "production_safe_export": "processed/export/scout_at_mvp5_ma_vt_nh_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp5_ma_vt_nh_production_safe.zip",
+  "source_manifest": "source_manifest.yaml",
+  "validation": "run_mvp5_ma_vt_nh_validation.py"
+}

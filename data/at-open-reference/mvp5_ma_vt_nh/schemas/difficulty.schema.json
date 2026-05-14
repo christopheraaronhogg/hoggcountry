@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "required": [
+    "difficulty_score_0_10",
+    "difficulty_label",
+    "distance_miles",
+    "elevation_gain_ft",
+    "elevation_loss_ft",
+    "tread_score_avg",
+    "mud_factor",
+    "alpine_exposure_factor",
+    "bailout_scarcity_factor",
+    "weather_severity_factor",
+    "water_uncertainty_factor",
+    "source_id",
+    "license_status",
+    "confidence",
+    "last_generated",
+    "ai_answer_rule"
+  ]
+}

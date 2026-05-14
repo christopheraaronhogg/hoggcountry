@@ -1,0 +1,429 @@
+[
+  {
+    "path": "rag_docs/state_guides/MA.md",
+    "title": "MVP5 Massachusetts State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "ma_dcr_official_pages",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/state_guides/VT.md",
+    "title": "MVP5 Vermont State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "vt_state_official_pages",
+      "usfs_gmnf_official_pages",
+      "gmc_pointer",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/state_guides/NH.md",
+    "title": "MVP5 New Hampshire State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "nh_state_local_official_pages",
+      "usfs_wmnf_official_pages",
+      "amc_pointer",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/water.md",
+    "title": "MVP5 MA/VT/NH Water Policy",
+    "kind": "policy",
+    "source_ids": [
+      "usgs_3dhp_nhd",
+      "osm"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/weather_live_conditions.md",
+    "title": "MVP5 MA/VT/NH Live Conditions Policy",
+    "kind": "policy",
+    "source_ids": [
+      "noaa_nws_api",
+      "nps_api",
+      "ma_dcr_official_pages",
+      "vt_state_official_pages",
+      "usfs_gmnf_official_pages",
+      "usfs_wmnf_official_pages",
+      "nh_state_local_official_pages",
+      "amc_pointer",
+      "gmc_pointer",
+      "atc_trail_updates_pointer"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/tread_rockiness.md",
+    "title": "MVP5 MA/VT/NH Tread Policy",
+    "kind": "policy",
+    "source_ids": [
+      "mvp5_ma_vt_nh_tread_model"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "processed/difficulty/difficulty_policy.md",
+    "title": "MVP5 MA/VT/NH Difficulty Policy",
+    "kind": "policy",
+    "source_ids": [
+      "mvp5_ma_vt_nh_difficulty_model",
+      "mvp5_ma_vt_nh_tread_model",
+      "usgs_3dep"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/navigation.md",
+    "title": "MVP5 MA/VT/NH Navigation Policy",
+    "kind": "policy",
+    "source_ids": [
+      "osm",
+      "waymarked_trails_api"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/rules/camping_permit_fee_mvp5_ma_vt_nh.md",
+    "title": "MVP5 MA/VT/NH Camping Rules",
+    "kind": "rules",
+    "source_ids": [
+      "ma_dcr_official_pages",
+      "vt_state_official_pages",
+      "usfs_gmnf_official_pages",
+      "nh_state_local_official_pages",
+      "usfs_wmnf_official_pages",
+      "amc_pointer",
+      "gmc_pointer"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_000_025.md",
+    "title": "MVP5 MA/VT/NH Segment 0-25",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_025_050.md",
+    "title": "MVP5 MA/VT/NH Segment 25-50",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_050_075.md",
+    "title": "MVP5 MA/VT/NH Segment 50-75",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_075_100.md",
+    "title": "MVP5 MA/VT/NH Segment 75-100",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_100_125.md",
+    "title": "MVP5 MA/VT/NH Segment 100-125",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_125_150.md",
+    "title": "MVP5 MA/VT/NH Segment 125-150",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_150_175.md",
+    "title": "MVP5 MA/VT/NH Segment 150-175",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_175_200.md",
+    "title": "MVP5 MA/VT/NH Segment 175-200",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_200_225.md",
+    "title": "MVP5 MA/VT/NH Segment 200-225",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_225_250.md",
+    "title": "MVP5 MA/VT/NH Segment 225-250",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_250_275.md",
+    "title": "MVP5 MA/VT/NH Segment 250-275",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_275_300.md",
+    "title": "MVP5 MA/VT/NH Segment 275-300",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_300_325.md",
+    "title": "MVP5 MA/VT/NH Segment 300-325",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_325_350.md",
+    "title": "MVP5 MA/VT/NH Segment 325-350",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_350_375.md",
+    "title": "MVP5 MA/VT/NH Segment 350-375",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp5_ma_vt_nh_375_377.md",
+    "title": "MVP5 MA/VT/NH Segment 375-377",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp5_ma_vt_nh_tread_model",
+      "mvp5_ma_vt_nh_difficulty_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP5 MA/VT/NH records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "pack_id": "scout-at-mvp5-mavtnh-ct-ma-nh-me",
+  "route_id": "at-mvp5-ma-vt-nh-ct-ma-nh-me-open-2026",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "scope": {
+    "start": "CT/MA transition / Sages Ravine open-route handoff",
+    "end": "NH/ME transition / Carlo Col-Full Goose open-route handoff estimate",
+    "generated_mile_range_mvp5": [
+      0,
+      377
+    ],
+    "generated_mile_range_global_est": [
+      1476,
+      1853
+    ]
+  },
+  "prompt_artifact_checklist": "prompt_artifact_checklist.md",
+  "source_manifest": "source_manifest.yaml",
+  "production_safe_export": "processed/export/scout_at_mvp5_ma_vt_nh_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp5_ma_vt_nh_production_safe.zip",
+  "validation": "run_mvp5_ma_vt_nh_validation.py"
+}

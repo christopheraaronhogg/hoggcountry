@@ -1,0 +1,165 @@
+[
+  {
+    "state": [
+      "MA"
+    ],
+    "rule_id": "mvp5-mavtnh-ma-at-designated-sites",
+    "jurisdiction": "Massachusetts AT corridor / designated site source lane",
+    "mile_range_nobo_mvp5": [
+      0,
+      91
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "ma_dcr_official_pages",
+    "source_url": "https://www.mass.gov/orgs/department-of-conservation-recreation",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Treat Massachusetts camping as designated-site/shelter constrained unless current official land-manager sources prove otherwise. Verify current rules before camping, fire, dog, group, fee, or permit advice."
+  },
+  {
+    "state": [
+      "VT"
+    ],
+    "rule_id": "mvp5-mavtnh-green-mountain-nf-long-trail",
+    "jurisdiction": "Green Mountain National Forest / Long Trail overlap",
+    "mile_range_nobo_mvp5": [
+      91,
+      228
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "usfs_gmnf_official_pages",
+    "source_url": "https://www.fs.usda.gov/r09/gmfl/recreation/camping-cabins",
+    "license_status": "public_domain",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as an official-source lane only. Verify current GMNF, Long Trail, mud closure, shelter/site, fire, fee, and group rules before itinerary advice."
+  },
+  {
+    "state": [
+      "VT"
+    ],
+    "rule_id": "mvp5-mavtnh-vt-state-local-lands",
+    "jurisdiction": "Vermont state/local/private corridor lands",
+    "mile_range_nobo_mvp5": [
+      120,
+      228
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "vt_state_official_pages",
+    "source_url": "https://fpr.vermont.gov/",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer camping, fire, dog, fee, permit, or mud-season permission on Vermont state/local/private lands. Verify current rules with the land manager."
+  },
+  {
+    "state": [
+      "NH",
+      "VT"
+    ],
+    "rule_id": "mvp5-mavtnh-hanover-local-lands",
+    "jurisdiction": "Hanover and Upper Valley local lands source lane",
+    "mile_range_nobo_mvp5": [
+      226,
+      238
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "nh_state_local_official_pages",
+    "source_url": "https://www.nhstateparks.org/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer camping or overnight permission around Hanover/local lands. Verify current local and land-manager rules before advice."
+  },
+  {
+    "state": [
+      "NH"
+    ],
+    "rule_id": "mvp5-mavtnh-white-mountain-nf",
+    "jurisdiction": "White Mountain National Forest",
+    "mile_range_nobo_mvp5": [
+      228,
+      377
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "usfs_wmnf_official_pages",
+    "source_url": "https://www.fs.usda.gov/r09/whitemountain/recreation/camping-cabins",
+    "license_status": "public_domain",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current WMNF Forest Protection Area, alpine zone, fire, group, fee, dog, and campsite rules before itinerary advice."
+  },
+  {
+    "state": [
+      "NH"
+    ],
+    "rule_id": "mvp5-mavtnh-amc-huts-campsites-pointer",
+    "jurisdiction": "AMC huts, campsites, and high hut system status pointer",
+    "mile_range_nobo_mvp5": [
+      288,
+      377
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "amc_pointer",
+    "source_url": "https://www.outdoors.org/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use AMC as a live verification pointer only unless licensed. Do not package hut/campsite status text or imply availability without current allowed-source verification."
+  },
+  {
+    "state": [
+      "NH"
+    ],
+    "rule_id": "mvp5-mavtnh-alpine-fpa-restrictions",
+    "jurisdiction": "White Mountain alpine zones and Forest Protection Areas",
+    "mile_range_nobo_mvp5": [
+      288,
+      377
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "usfs_wmnf_official_pages",
+    "source_url": "https://www.fs.usda.gov/r09/whitemountain",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Never advise camping in alpine zones or Forest Protection Areas from static data. Verify current WMNF/FPA/alpine restrictions and weather before safety or camping advice."
+  },
+  {
+    "state": [
+      "MA",
+      "VT",
+      "NH"
+    ],
+    "rule_id": "mvp5-mavtnh-local-municipal-private-easement-source-gap",
+    "jurisdiction": "Other MA/VT/NH local, municipal, private-easement, and corridor lands",
+    "mile_range_nobo_mvp5": [
+      0,
+      377
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "mavtnh_state_local_alerts",
+    "source_url": "https://www.nhstateparks.org/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "When the exact jurisdiction is uncertain, say so and verify current rules with the land manager before camping, fire, dog, fee, or permit advice."
+  }
+]
