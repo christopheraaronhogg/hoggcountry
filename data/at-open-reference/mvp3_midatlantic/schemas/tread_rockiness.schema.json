@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": [
+    "score",
+    "confidence",
+    "field_verified",
+    "pace_penalty_multiplier",
+    "source_id",
+    "license_status",
+    "last_generated",
+    "ai_answer_rule"
+  ]
+}

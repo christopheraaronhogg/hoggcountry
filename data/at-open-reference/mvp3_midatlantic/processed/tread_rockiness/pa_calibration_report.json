@@ -1,0 +1,22 @@
+{
+  "calibration_id": "mvp3-midatlantic-pa-rockiness-calibration",
+  "south_pa_mile_range_mvp3": [
+    40,
+    130
+  ],
+  "north_pa_mile_range_mvp3": [
+    180,
+    264
+  ],
+  "south_pa_average_score": 1.79,
+  "north_pa_average_score": 1.74,
+  "south_pa_average_pace_penalty": 1.076,
+  "north_pa_average_pace_penalty": 1.079,
+  "source_id": "mvp3_midatlantic_tread_model",
+  "source_url": "internal:data/at-open-reference/scripts/build-mvp3-midatlantic-reference-pack.mjs",
+  "license_status": "open_license_share_alike",
+  "confidence": "model_calibration_screen_not_field_verified",
+  "last_checked": "2026-05-14",
+  "last_generated": "2026-05-14",
+  "ai_answer_rule": "Use only as a PA rockiness calibration screen comparing open-signal model buckets. Do not call it field verified or use it as proof of exact footing."
+}

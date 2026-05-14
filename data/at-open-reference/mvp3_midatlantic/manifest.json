@@ -1,0 +1,22 @@
+{
+  "pack_id": "scout-at-mvp3-midatlantic-harpers-ferry-delaware-water-gap",
+  "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "scope": {
+    "start": "VA/WV/MD transition / Harpers Ferry open-route candidate",
+    "end": "PA/NJ transition / Delaware Water Gap open-route candidate",
+    "generated_mile_range_mvp3": [
+      0,
+      264
+    ],
+    "generated_mile_range_global_est": [
+      1006,
+      1270
+    ]
+  },
+  "prompt_artifact_checklist": "prompt_artifact_checklist.md",
+  "source_manifest": "source_manifest.yaml",
+  "production_safe_export": "processed/export/scout_at_mvp3_midatlantic_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp3_midatlantic_production_safe.zip",
+  "validation": "run_mvp3_midatlantic_validation.py"
+}

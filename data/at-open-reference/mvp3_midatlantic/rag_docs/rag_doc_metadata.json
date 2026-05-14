@@ -1,0 +1,306 @@
+[
+  {
+    "path": "rag_docs/state_guides/WV.md",
+    "title": "MVP3 West Virginia State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "nps_official_land_manager_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/state_guides/MD.md",
+    "title": "MVP3 Maryland State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "maryland_dnr_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/state_guides/PA.md",
+    "title": "MVP3 Pennsylvania State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages",
+      "nps_dewa_official_pages",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/water.md",
+    "title": "MVP3 Mid-Atlantic Water Policy",
+    "kind": "policy",
+    "source_ids": [
+      "usgs_3dhp_nhd",
+      "osm"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/weather_live_conditions.md",
+    "title": "MVP3 Mid-Atlantic Live Conditions Policy",
+    "kind": "policy",
+    "source_ids": [
+      "noaa_nws_api",
+      "nps_api",
+      "nps_dewa_official_pages",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages",
+      "atc_trail_updates_pointer"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/tread_rockiness.md",
+    "title": "MVP3 Mid-Atlantic Tread Policy",
+    "kind": "policy",
+    "source_ids": [
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/navigation.md",
+    "title": "MVP3 Mid-Atlantic Navigation Policy",
+    "kind": "policy",
+    "source_ids": [
+      "osm",
+      "waymarked_trails_api"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/rules/camping_permit_fee_mvp3_midatlantic.md",
+    "title": "MVP3 Mid-Atlantic Camping Rules",
+    "kind": "rules",
+    "source_ids": [
+      "nps_official_land_manager_pages",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages",
+      "nps_dewa_official_pages"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_000_025.md",
+    "title": "MVP3 Mid-Atlantic Segment 0-25",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_025_050.md",
+    "title": "MVP3 Mid-Atlantic Segment 25-50",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_050_075.md",
+    "title": "MVP3 Mid-Atlantic Segment 50-75",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_075_100.md",
+    "title": "MVP3 Mid-Atlantic Segment 75-100",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_100_125.md",
+    "title": "MVP3 Mid-Atlantic Segment 100-125",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_125_150.md",
+    "title": "MVP3 Mid-Atlantic Segment 125-150",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_150_175.md",
+    "title": "MVP3 Mid-Atlantic Segment 150-175",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_175_200.md",
+    "title": "MVP3 Mid-Atlantic Segment 175-200",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_200_225.md",
+    "title": "MVP3 Mid-Atlantic Segment 200-225",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_225_250.md",
+    "title": "MVP3 Mid-Atlantic Segment 225-250",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp3_midatlantic_250_264.md",
+    "title": "MVP3 Mid-Atlantic Segment 250-264",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp3_midatlantic_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP3 Mid-Atlantic records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  }
+]

@@ -52,6 +52,8 @@ node data/at-open-reference/scripts/build-mvp1-reference-pack.mjs
 python3 data/at-open-reference/mvp1/run_mvp1_validation.py
 node data/at-open-reference/scripts/build-mvp2-va-reference-pack.mjs
 python3 data/at-open-reference/mvp2_va/run_mvp2_va_validation.py
+node data/at-open-reference/scripts/build-mvp3-midatlantic-reference-pack.mjs
+python3 data/at-open-reference/mvp3_midatlantic/run_mvp3_midatlantic_validation.py
 ```
 
 The current OSM-derived route candidate is useful as a legally separable open
@@ -83,6 +85,14 @@ candidates, land-manager rule summaries, live-condition source pointers,
 tread/rockiness model outputs, RAG docs, behavior tests, a production-safe
 export, and a Python validator. Generated MVP2 Virginia miles are not official
 ATC miles.
+
+`mvp3_midatlantic/` is the source-aware WV/MD/PA pack from Harpers Ferry to
+Delaware Water Gap. It includes Mid-Atlantic route and milepoint estimates,
+USGS elevation/water lanes, sparse/uncertain water flags, OSM waypoint/resupply
+candidates, land-manager rule summaries, live-condition source pointers,
+Pennsylvania rockiness calibration, WV/MD/PA RAG docs, behavior tests, a
+production-safe export, and a Python validator. Generated MVP3 Mid-Atlantic
+miles are not official ATC miles.
 
 OSM corridor POIs, road crossings, settlements, and named side-trail candidates
 are filtered and compacted after fetch. The packaged raw file contains only

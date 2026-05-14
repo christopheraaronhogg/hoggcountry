@@ -1,0 +1,4305 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00983",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1007.6,
+        "mile_sobo": 1098.6,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.32619,
+        "lon": -77.70544,
+        "distance_from_trail_ft": 192,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51749477",
+        "nhd": {
+          "permanentId": "51749477",
+          "reachcode": "02070008001926",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1007.6,
+        "mile_nobo_mvp3": 1.6,
+        "mile_sobo_mvp3": 262.4,
+        "state": "WV",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.70544,
+          39.32619
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00984",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1008.1,
+        "mile_sobo": 1098.1,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.32502,
+        "lon": -77.69657,
+        "distance_from_trail_ft": 372,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51749491",
+        "nhd": {
+          "permanentId": "51749491",
+          "reachcode": "02070008001928",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1008.1,
+        "mile_nobo_mvp3": 2.1,
+        "mile_sobo_mvp3": 261.9,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.69657,
+          39.32502
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00985",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1008.8,
+        "mile_sobo": 1097.4,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.32739,
+        "lon": -77.68521,
+        "distance_from_trail_ft": 86,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51749399",
+        "nhd": {
+          "permanentId": "51749399",
+          "reachcode": "02070008001914",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1008.8,
+        "mile_nobo_mvp3": 2.8,
+        "mile_sobo_mvp3": 261.2,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.68521,
+          39.32739
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00986",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1008.9,
+        "mile_sobo": 1097.3,
+        "type": "stream_crossing",
+        "name": "Israel Creek",
+        "lat": 39.32872,
+        "lon": -77.68335,
+        "distance_from_trail_ft": 136,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51749355",
+        "nhd": {
+          "permanentId": "51749355",
+          "reachcode": "02070008004592",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1008.9,
+        "mile_nobo_mvp3": 2.9,
+        "mile_sobo_mvp3": 261.1,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.68335,
+          39.32872
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00987",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1008.9,
+        "mile_sobo": 1097.3,
+        "type": "stream_crossing",
+        "name": "Israel Creek",
+        "lat": 39.32906,
+        "lon": -77.68365,
+        "distance_from_trail_ft": 257,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51749353",
+        "nhd": {
+          "permanentId": "51749353",
+          "reachcode": "02070008004592",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1008.9,
+        "mile_nobo_mvp3": 2.9,
+        "mile_sobo_mvp3": 261.1,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.68365,
+          39.32906
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00988",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1020.6,
+        "mile_sobo": 1085.6,
+        "type": "stream_crossing",
+        "name": "Bolivar Branch",
+        "lat": 39.45642,
+        "lon": -77.62378,
+        "distance_from_trail_ft": 477,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51748041",
+        "nhd": {
+          "permanentId": "51748041",
+          "reachcode": "02070008001124",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1020.6,
+        "mile_nobo_mvp3": 14.6,
+        "mile_sobo_mvp3": 249.4,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.62378,
+          39.45642
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00989",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1021.7,
+        "mile_sobo": 1084.5,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.46801,
+        "lon": -77.62275,
+        "distance_from_trail_ft": 218,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49491084",
+        "nhd": {
+          "permanentId": "49491084",
+          "reachcode": "02070004005013",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1021.7,
+        "mile_nobo_mvp3": 15.7,
+        "mile_sobo_mvp3": 248.3,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.62275,
+          39.46801
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00990",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1021.9,
+        "mile_sobo": 1084.3,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.47085,
+        "lon": -77.62126,
+        "distance_from_trail_ft": 672,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49491040",
+        "nhd": {
+          "permanentId": "49491040",
+          "reachcode": "02070004005001",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1021.9,
+        "mile_nobo_mvp3": 15.9,
+        "mile_sobo_mvp3": 248.1,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.62126,
+          39.47085
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00991",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1022.9,
+        "mile_sobo": 1083.3,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.4807,
+        "lon": -77.61695,
+        "distance_from_trail_ft": 625,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51747935",
+        "nhd": {
+          "permanentId": "51747935",
+          "reachcode": "02070008001125",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1022.9,
+        "mile_nobo_mvp3": 16.9,
+        "mile_sobo_mvp3": 247.1,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.61695,
+          39.4807
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00992",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1023,
+        "mile_sobo": 1083.2,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.48196,
+        "lon": -77.61717,
+        "distance_from_trail_ft": 600,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51747889",
+        "nhd": {
+          "permanentId": "51747889",
+          "reachcode": "02070008001125",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1023,
+        "mile_nobo_mvp3": 17,
+        "mile_sobo_mvp3": 247,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.61717,
+          39.48196
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00993",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1024.6,
+        "mile_sobo": 1081.6,
+        "type": "stream_crossing",
+        "name": "Grindstone Run",
+        "lat": 39.49977,
+        "lon": -77.61792,
+        "distance_from_trail_ft": 571,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51747781",
+        "nhd": {
+          "permanentId": "51747781",
+          "reachcode": "02070008001398",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1024.6,
+        "mile_nobo_mvp3": 18.6,
+        "mile_sobo_mvp3": 245.4,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.61792,
+          39.49977
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00994",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1024.6,
+        "mile_sobo": 1081.6,
+        "type": "stream_crossing",
+        "name": "Grindstone Run",
+        "lat": 39.4996,
+        "lon": -77.6179,
+        "distance_from_trail_ft": 518,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "51747799",
+        "nhd": {
+          "permanentId": "51747799",
+          "reachcode": "02070008001398",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1024.6,
+        "mile_nobo_mvp3": 18.6,
+        "mile_sobo_mvp3": 245.4,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.6179,
+          39.4996
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00995",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1031.9,
+        "mile_sobo": 1074.3,
+        "type": "stream_crossing",
+        "name": "Black Rock Creek",
+        "lat": 39.57756,
+        "lon": -77.5915,
+        "distance_from_trail_ft": 774,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49471770",
+        "nhd": {
+          "permanentId": "49471770",
+          "reachcode": "02070004000497",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1031.9,
+        "mile_nobo_mvp3": 25.9,
+        "mile_sobo_mvp3": 238.1,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.5915,
+          39.57756
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00996",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1036.5,
+        "mile_sobo": 1069.7,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.63088,
+        "lon": -77.55841,
+        "distance_from_trail_ft": 228,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49482492",
+        "nhd": {
+          "permanentId": "49482492",
+          "reachcode": "02070004002418",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1036.5,
+        "mile_nobo_mvp3": 30.5,
+        "mile_sobo_mvp3": 233.5,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.55841,
+          39.63088
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00997",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1037.3,
+        "mile_sobo": 1068.9,
+        "type": "stream_crossing",
+        "name": "Beaver Creek",
+        "lat": 39.63487,
+        "lon": -77.54612,
+        "distance_from_trail_ft": 1091,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49489480",
+        "nhd": {
+          "permanentId": "49489480",
+          "reachcode": "02070004004565",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1037.3,
+        "mile_nobo_mvp3": 31.3,
+        "mile_sobo_mvp3": 232.7,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.54612,
+          39.63487
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00998",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1039.4,
+        "mile_sobo": 1066.8,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.65313,
+        "lon": -77.53859,
+        "distance_from_trail_ft": 768,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49489292",
+        "nhd": {
+          "permanentId": "49489292",
+          "reachcode": "02070004004501",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1039.4,
+        "mile_nobo_mvp3": 33.4,
+        "mile_sobo_mvp3": 230.6,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.53859,
+          39.65313
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-00999",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1039.5,
+        "mile_sobo": 1066.7,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.65406,
+        "lon": -77.53702,
+        "distance_from_trail_ft": 713,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49483020",
+        "nhd": {
+          "permanentId": "49483020",
+          "reachcode": "02070004002571",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1039.5,
+        "mile_nobo_mvp3": 33.5,
+        "mile_sobo_mvp3": 230.5,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.53702,
+          39.65406
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01000",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1039.5,
+        "mile_sobo": 1066.7,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.65536,
+        "lon": -77.538,
+        "distance_from_trail_ft": 179,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49483024",
+        "nhd": {
+          "permanentId": "49483024",
+          "reachcode": "02070004002574",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1039.5,
+        "mile_nobo_mvp3": 33.5,
+        "mile_sobo_mvp3": 230.5,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.538,
+          39.65536
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01001",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1040.2,
+        "mile_sobo": 1066,
+        "type": "stream_crossing",
+        "name": "Little Antietam Creek",
+        "lat": 39.66377,
+        "lon": -77.53488,
+        "distance_from_trail_ft": 184,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49481150",
+        "nhd": {
+          "permanentId": "49481150",
+          "reachcode": "02070004002049",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1040.2,
+        "mile_nobo_mvp3": 34.2,
+        "mile_sobo_mvp3": 229.8,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.53488,
+          39.66377
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01002",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1042.5,
+        "mile_sobo": 1063.7,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.68882,
+        "lon": -77.52058,
+        "distance_from_trail_ft": 153,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49471844",
+        "nhd": {
+          "permanentId": "49471844",
+          "reachcode": "02070004000517",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1042.5,
+        "mile_nobo_mvp3": 36.5,
+        "mile_sobo_mvp3": 227.5,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.52058,
+          39.68882
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01003",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1044.1,
+        "mile_sobo": 1062.1,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.69846,
+        "lon": -77.52448,
+        "distance_from_trail_ft": 81,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49481204",
+        "nhd": {
+          "permanentId": "49481204",
+          "reachcode": "02070004002061",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1044.1,
+        "mile_nobo_mvp3": 38.1,
+        "mile_sobo_mvp3": 225.9,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.52448,
+          39.69846
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01004",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1044.5,
+        "mile_sobo": 1061.7,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.70307,
+        "lon": -77.52071,
+        "distance_from_trail_ft": 225,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49488612",
+        "nhd": {
+          "permanentId": "49488612",
+          "reachcode": "02070004004271",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1044.5,
+        "mile_nobo_mvp3": 38.5,
+        "mile_sobo_mvp3": 225.5,
+        "state": "MD",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.52071,
+          39.70307
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01005",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1046.6,
+        "mile_sobo": 1059.6,
+        "type": "stream_crossing",
+        "name": "Falls Creek",
+        "lat": 39.72319,
+        "lon": -77.50172,
+        "distance_from_trail_ft": 179,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49483040",
+        "nhd": {
+          "permanentId": "49483040",
+          "reachcode": "02070004002579",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1046.6,
+        "mile_nobo_mvp3": 40.6,
+        "mile_sobo_mvp3": 223.4,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.50172,
+          39.72319
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01006",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1048.3,
+        "mile_sobo": 1057.9,
+        "type": "stream_crossing",
+        "name": "Red Run",
+        "lat": 39.74037,
+        "lon": -77.48962,
+        "distance_from_trail_ft": 79,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49472766",
+        "nhd": {
+          "permanentId": "49472766",
+          "reachcode": "02070004000645",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1048.3,
+        "mile_nobo_mvp3": 42.3,
+        "mile_sobo_mvp3": 221.7,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48962,
+          39.74037
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01007",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1048.5,
+        "mile_sobo": 1057.7,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.74325,
+        "lon": -77.48979,
+        "distance_from_trail_ft": 209,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49481224",
+        "nhd": {
+          "permanentId": "49481224",
+          "reachcode": "02070004002065",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1048.5,
+        "mile_nobo_mvp3": 42.5,
+        "mile_sobo_mvp3": 221.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48979,
+          39.74325
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01008",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1049.2,
+        "mile_sobo": 1057,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.75109,
+        "lon": -77.49213,
+        "distance_from_trail_ft": 134,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49481228",
+        "nhd": {
+          "permanentId": "49481228",
+          "reachcode": "02070004002067",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1049.2,
+        "mile_nobo_mvp3": 43.2,
+        "mile_sobo_mvp3": 220.8,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.49213,
+          39.75109
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01009",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1049.9,
+        "mile_sobo": 1056.3,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.75952,
+        "lon": -77.48979,
+        "distance_from_trail_ft": 145,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "134369514",
+        "nhd": {
+          "permanentId": "134369514",
+          "reachcode": "02070004017488",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1049.9,
+        "mile_nobo_mvp3": 43.9,
+        "mile_sobo_mvp3": 220.1,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48979,
+          39.75952
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01010",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1050.4,
+        "mile_sobo": 1055.8,
+        "type": "stream_crossing",
+        "name": "Deer Lick Run",
+        "lat": 39.76645,
+        "lon": -77.48501,
+        "distance_from_trail_ft": 241,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49481244",
+        "nhd": {
+          "permanentId": "49481244",
+          "reachcode": "02070004002068",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1050.4,
+        "mile_nobo_mvp3": 44.4,
+        "mile_sobo_mvp3": 219.6,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48501,
+          39.76645
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01011",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1051.5,
+        "mile_sobo": 1054.7,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.77994,
+        "lon": -77.48283,
+        "distance_from_trail_ft": 132,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "134369384",
+        "nhd": {
+          "permanentId": "134369384",
+          "reachcode": "02070004017485",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1051.5,
+        "mile_nobo_mvp3": 45.5,
+        "mile_sobo_mvp3": 218.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48283,
+          39.77994
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01012",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1052.7,
+        "mile_sobo": 1053.5,
+        "type": "stream_crossing",
+        "name": "East Branch Antietam Creek",
+        "lat": 39.79417,
+        "lon": -77.48131,
+        "distance_from_trail_ft": 394,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49469140",
+        "nhd": {
+          "permanentId": "49469140",
+          "reachcode": "02070004000056",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1052.7,
+        "mile_nobo_mvp3": 46.7,
+        "mile_sobo_mvp3": 217.3,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48131,
+          39.79417
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01013",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1052.7,
+        "mile_sobo": 1053.5,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.79425,
+        "lon": -77.48132,
+        "distance_from_trail_ft": 393,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49481274",
+        "nhd": {
+          "permanentId": "49481274",
+          "reachcode": "02070004002074",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1052.7,
+        "mile_nobo_mvp3": 46.7,
+        "mile_sobo_mvp3": 217.3,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48132,
+          39.79425
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01014",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1052.9,
+        "mile_sobo": 1053.3,
+        "type": "stream_crossing",
+        "name": "East Branch Antietam Creek",
+        "lat": 39.79494,
+        "lon": -77.47973,
+        "distance_from_trail_ft": 774,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49469142",
+        "nhd": {
+          "permanentId": "49469142",
+          "reachcode": "02070004000057",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1052.9,
+        "mile_nobo_mvp3": 46.9,
+        "mile_sobo_mvp3": 217.1,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.47973,
+          39.79494
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01015",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1053,
+        "mile_sobo": 1053.2,
+        "type": "stream_crossing",
+        "name": "Rattlesnake Run",
+        "lat": 39.79486,
+        "lon": -77.4792,
+        "distance_from_trail_ft": 879,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49481252",
+        "nhd": {
+          "permanentId": "49481252",
+          "reachcode": "02070004002069",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1053,
+        "mile_nobo_mvp3": 47,
+        "mile_sobo_mvp3": 217,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.4792,
+          39.79486
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01016",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1053.5,
+        "mile_sobo": 1052.7,
+        "type": "stream_crossing",
+        "name": "Tumbling Run",
+        "lat": 39.80192,
+        "lon": -77.47693,
+        "distance_from_trail_ft": 76,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49481270",
+        "nhd": {
+          "permanentId": "49481270",
+          "reachcode": "02070004002073",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1053.5,
+        "mile_nobo_mvp3": 47.5,
+        "mile_sobo_mvp3": 216.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.47693,
+          39.80192
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01017",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1054.8,
+        "mile_sobo": 1051.4,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.81905,
+        "lon": -77.47653,
+        "distance_from_trail_ft": 933,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49486930",
+        "nhd": {
+          "permanentId": "49486930",
+          "reachcode": "02070004003755",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1054.8,
+        "mile_nobo_mvp3": 48.8,
+        "mile_sobo_mvp3": 215.2,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.47653,
+          39.81905
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01018",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1056,
+        "mile_sobo": 1050.2,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.82998,
+        "lon": -77.48128,
+        "distance_from_trail_ft": 685,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "134369172",
+        "nhd": {
+          "permanentId": "134369172",
+          "reachcode": "02070004017479",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1056,
+        "mile_nobo_mvp3": 50,
+        "mile_sobo_mvp3": 214,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48128,
+          39.82998
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01019",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1058.1,
+        "mile_sobo": 1048.1,
+        "type": "stream_crossing",
+        "name": "Rocky Mountain Creek",
+        "lat": 39.84609,
+        "lon": -77.50617,
+        "distance_from_trail_ft": 71,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49472774",
+        "nhd": {
+          "permanentId": "49472774",
+          "reachcode": "02070004000648",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1058.1,
+        "mile_nobo_mvp3": 52.1,
+        "mile_sobo_mvp3": 211.9,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.50617,
+          39.84609
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01020",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1060.9,
+        "mile_sobo": 1045.3,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.8796,
+        "lon": -77.49698,
+        "distance_from_trail_ft": 325,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "134367758",
+        "nhd": {
+          "permanentId": "134367758",
+          "reachcode": "02070004017407",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1060.9,
+        "mile_nobo_mvp3": 54.9,
+        "mile_sobo_mvp3": 209.1,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.49698,
+          39.8796
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01021",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1061.2,
+        "mile_sobo": 1045,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.88244,
+        "lon": -77.49572,
+        "distance_from_trail_ft": 323,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "134367747",
+        "nhd": {
+          "permanentId": "134367747",
+          "reachcode": "02070004017406",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1061.2,
+        "mile_nobo_mvp3": 55.2,
+        "mile_sobo_mvp3": 208.8,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.49572,
+          39.88244
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01022",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1061.4,
+        "mile_sobo": 1044.8,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.88636,
+        "lon": -77.49381,
+        "distance_from_trail_ft": 244,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "134367699",
+        "nhd": {
+          "permanentId": "134367699",
+          "reachcode": "02070004017405",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1061.4,
+        "mile_nobo_mvp3": 55.4,
+        "mile_sobo_mvp3": 208.6,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.49381,
+          39.88636
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01023",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1062.3,
+        "mile_sobo": 1043.9,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.89704,
+        "lon": -77.49142,
+        "distance_from_trail_ft": 196,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49485756",
+        "nhd": {
+          "permanentId": "49485756",
+          "reachcode": "02070004003425",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1062.3,
+        "mile_nobo_mvp3": 56.3,
+        "mile_sobo_mvp3": 207.7,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.49142,
+          39.89704
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01024",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1063.2,
+        "mile_sobo": 1043,
+        "type": "stream_crossing",
+        "name": "Conococheague Creek",
+        "lat": 39.90707,
+        "lon": -77.48579,
+        "distance_from_trail_ft": 102,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49469600",
+        "nhd": {
+          "permanentId": "49469600",
+          "reachcode": "02070004000145",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1063.2,
+        "mile_nobo_mvp3": 57.2,
+        "mile_sobo_mvp3": 206.8,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48579,
+          39.90707
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01025",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1065.2,
+        "mile_sobo": 1041,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 39.93012,
+        "lon": -77.48381,
+        "distance_from_trail_ft": 218,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49479596",
+        "nhd": {
+          "permanentId": "49479596",
+          "reachcode": "02070004001763",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1065.2,
+        "mile_nobo_mvp3": 59.2,
+        "mile_sobo_mvp3": 204.8,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.48381,
+          39.93012
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01026",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1070.2,
+        "mile_sobo": 1036,
+        "type": "stream_crossing",
+        "name": "Burd Run",
+        "lat": 39.97645,
+        "lon": -77.45328,
+        "distance_from_trail_ft": 387,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56410851",
+        "nhd": {
+          "permanentId": "56410851",
+          "reachcode": "02050305000285",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1070.2,
+        "mile_nobo_mvp3": 64.2,
+        "mile_sobo_mvp3": 199.8,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.45328,
+          39.97645
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01027",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1072.9,
+        "mile_sobo": 1033.3,
+        "type": "stream_crossing",
+        "name": "Birch Run",
+        "lat": 39.98834,
+        "lon": -77.41605,
+        "distance_from_trail_ft": 415,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "49479580",
+        "nhd": {
+          "permanentId": "49479580",
+          "reachcode": "02070004001759",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1072.9,
+        "mile_nobo_mvp3": 66.9,
+        "mile_sobo_mvp3": 197.1,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.41605,
+          39.98834
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01028",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1078.6,
+        "mile_sobo": 1027.6,
+        "type": "stream_crossing",
+        "name": "Toms Run",
+        "lat": 40.03449,
+        "lon": -77.35646,
+        "distance_from_trail_ft": 293,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56409913",
+        "nhd": {
+          "permanentId": "56409913",
+          "reachcode": "02050305000488",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1078.6,
+        "mile_nobo_mvp3": 72.6,
+        "mile_sobo_mvp3": 191.4,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.35646,
+          40.03449
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01030",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1082,
+        "mile_sobo": 1024.2,
+        "type": "stream_crossing",
+        "name": "Mountain Creek",
+        "lat": 40.03086,
+        "lon": -77.30874,
+        "distance_from_trail_ft": 335,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56409715",
+        "nhd": {
+          "permanentId": "56409715",
+          "reachcode": "02050305000628",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1082,
+        "mile_nobo_mvp3": 76,
+        "mile_sobo_mvp3": 188,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.30874,
+          40.03086
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01029",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1082,
+        "mile_sobo": 1024.2,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.03137,
+        "lon": -77.30958,
+        "distance_from_trail_ft": 231,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56409709",
+        "nhd": {
+          "permanentId": "56409709",
+          "reachcode": "02050305000342",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1082,
+        "mile_nobo_mvp3": 76,
+        "mile_sobo_mvp3": 188,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.30958,
+          40.03137
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01031",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1082.3,
+        "mile_sobo": 1023.9,
+        "type": "stream_crossing",
+        "name": "Mountain Creek",
+        "lat": 40.03079,
+        "lon": -77.30517,
+        "distance_from_trail_ft": 268,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56409689",
+        "nhd": {
+          "permanentId": "56409689",
+          "reachcode": "02050305000341",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1082.3,
+        "mile_nobo_mvp3": 76.3,
+        "mile_sobo_mvp3": 187.7,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.30517,
+          40.03079
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01032",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1082.8,
+        "mile_sobo": 1023.4,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.03043,
+        "lon": -77.29708,
+        "distance_from_trail_ft": 120,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56409667",
+        "nhd": {
+          "permanentId": "56409667",
+          "reachcode": "02050305000629",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1082.8,
+        "mile_nobo_mvp3": 76.8,
+        "mile_sobo_mvp3": 187.2,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.29708,
+          40.03043
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01033",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1082.9,
+        "mile_sobo": 1023.3,
+        "type": "stream_crossing",
+        "name": "Mountain Creek",
+        "lat": 40.03004,
+        "lon": -77.29548,
+        "distance_from_trail_ft": 261,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56409669",
+        "nhd": {
+          "permanentId": "56409669",
+          "reachcode": "02050305000340",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1082.9,
+        "mile_nobo_mvp3": 76.9,
+        "mile_sobo_mvp3": 187.1,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.29548,
+          40.03004
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01034",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1083,
+        "mile_sobo": 1023.2,
+        "type": "stream_crossing",
+        "name": "Mountain Creek",
+        "lat": 40.02943,
+        "lon": -77.29298,
+        "distance_from_trail_ft": 267,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56409679",
+        "nhd": {
+          "permanentId": "56409679",
+          "reachcode": "02050305000339",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1083,
+        "mile_nobo_mvp3": 77,
+        "mile_sobo_mvp3": 187,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.29298,
+          40.02943
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01035",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1089.3,
+        "mile_sobo": 1016.9,
+        "type": "stream_crossing",
+        "name": "Tagg Run",
+        "lat": 40.06692,
+        "lon": -77.20881,
+        "distance_from_trail_ft": 351,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56408909",
+        "nhd": {
+          "permanentId": "56408909",
+          "reachcode": "02050305000480",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1089.3,
+        "mile_nobo_mvp3": 83.3,
+        "mile_sobo_mvp3": 180.7,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.20881,
+          40.06692
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01036",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1090.6,
+        "mile_sobo": 1015.6,
+        "type": "stream_crossing",
+        "name": "Hunters Run",
+        "lat": 40.07864,
+        "lon": -77.19368,
+        "distance_from_trail_ft": 213,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56408685",
+        "nhd": {
+          "permanentId": "56408685",
+          "reachcode": "02050305000406",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1090.6,
+        "mile_nobo_mvp3": 84.6,
+        "mile_sobo_mvp3": 179.4,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.19368,
+          40.07864
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01037",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1090.7,
+        "mile_sobo": 1015.5,
+        "type": "stream_crossing",
+        "name": "Hunters Run",
+        "lat": 40.08023,
+        "lon": -77.19364,
+        "distance_from_trail_ft": 275,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56408619",
+        "nhd": {
+          "permanentId": "56408619",
+          "reachcode": "02050305000405",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1090.7,
+        "mile_nobo_mvp3": 84.7,
+        "mile_sobo_mvp3": 179.3,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.19364,
+          40.08023
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01038",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1090.7,
+        "mile_sobo": 1015.5,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.08023,
+        "lon": -77.19364,
+        "distance_from_trail_ft": 275,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56408695",
+        "nhd": {
+          "permanentId": "56408695",
+          "reachcode": "02050305000632",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1090.7,
+        "mile_nobo_mvp3": 84.7,
+        "mile_sobo_mvp3": 179.3,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.19364,
+          40.08023
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01039",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1093.6,
+        "mile_sobo": 1012.6,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.09299,
+        "lon": -77.1549,
+        "distance_from_trail_ft": 310,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56408497",
+        "nhd": {
+          "permanentId": "56408497",
+          "reachcode": "02050305000645",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1093.6,
+        "mile_nobo_mvp3": 87.6,
+        "mile_sobo_mvp3": 176.4,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.1549,
+          40.09299
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01040",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1093.7,
+        "mile_sobo": 1012.5,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.09326,
+        "lon": -77.15351,
+        "distance_from_trail_ft": 99,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56408421",
+        "nhd": {
+          "permanentId": "56408421",
+          "reachcode": "02050305000644",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1093.7,
+        "mile_nobo_mvp3": 87.7,
+        "mile_sobo_mvp3": 176.3,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.15351,
+          40.09326
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01041",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1095.4,
+        "mile_sobo": 1010.8,
+        "type": "stream_crossing",
+        "name": "Old Town Run",
+        "lat": 40.09831,
+        "lon": -77.12846,
+        "distance_from_trail_ft": 1,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56408167",
+        "nhd": {
+          "permanentId": "56408167",
+          "reachcode": "02050305003833",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1095.4,
+        "mile_nobo_mvp3": 89.4,
+        "mile_sobo_mvp3": 174.6,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.12846,
+          40.09831
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01042",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1097.3,
+        "mile_sobo": 1008.9,
+        "type": "stream_crossing",
+        "name": "Little Dogwood Run",
+        "lat": 40.11242,
+        "lon": -77.10589,
+        "distance_from_trail_ft": 174,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56408037",
+        "nhd": {
+          "permanentId": "56408037",
+          "reachcode": "02050305000646",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1097.3,
+        "mile_nobo_mvp3": 91.3,
+        "mile_sobo_mvp3": 172.7,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.10589,
+          40.11242
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01043",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1101,
+        "mile_sobo": 1005.2,
+        "type": "stream_crossing",
+        "name": "Yellow Breeches Creek",
+        "lat": 40.14753,
+        "lon": -77.1233,
+        "distance_from_trail_ft": 93,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56407447",
+        "nhd": {
+          "permanentId": "56407447",
+          "reachcode": "02050305003769",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1101,
+        "mile_nobo_mvp3": 95,
+        "mile_sobo_mvp3": 169,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.1233,
+          40.14753
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01044",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1104.9,
+        "mile_sobo": 1001.3,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.19135,
+        "lon": -77.10783,
+        "distance_from_trail_ft": 292,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56406589",
+        "nhd": {
+          "permanentId": "56406589",
+          "reachcode": "02050305000668",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1104.9,
+        "mile_nobo_mvp3": 98.9,
+        "mile_sobo_mvp3": 165.1,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.10783,
+          40.19135
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01045",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1106.3,
+        "mile_sobo": 999.9,
+        "type": "stream_crossing",
+        "name": "Hogestown Run",
+        "lat": 40.20813,
+        "lon": -77.11227,
+        "distance_from_trail_ft": 345,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56406177",
+        "nhd": {
+          "permanentId": "56406177",
+          "reachcode": "02050305000404",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1106.3,
+        "mile_nobo_mvp3": 100.3,
+        "mile_sobo_mvp3": 163.7,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.11227,
+          40.20813
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01046",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1106.8,
+        "mile_sobo": 999.4,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.21158,
+        "lon": -77.10853,
+        "distance_from_trail_ft": 248,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56405967",
+        "nhd": {
+          "permanentId": "56405967",
+          "reachcode": "02050305003499",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1106.8,
+        "mile_nobo_mvp3": 100.8,
+        "mile_sobo_mvp3": 163.2,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.10853,
+          40.21158
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01047",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1112,
+        "mile_sobo": 994.2,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.27026,
+        "lon": -77.09948,
+        "distance_from_trail_ft": 311,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56403893",
+        "nhd": {
+          "permanentId": "56403893",
+          "reachcode": "02050305000672",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1112,
+        "mile_nobo_mvp3": 106,
+        "mile_sobo_mvp3": 158,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.09948,
+          40.27026
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01048",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1113,
+        "mile_sobo": 993.2,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.28253,
+        "lon": -77.09609,
+        "distance_from_trail_ft": 186,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56403551",
+        "nhd": {
+          "permanentId": "56403551",
+          "reachcode": "02050305003088",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1113,
+        "mile_nobo_mvp3": 107,
+        "mile_sobo_mvp3": 157,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.09609,
+          40.28253
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01049",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1113.5,
+        "mile_sobo": 992.7,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.28842,
+        "lon": -77.09203,
+        "distance_from_trail_ft": 265,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56403457",
+        "nhd": {
+          "permanentId": "56403457",
+          "reachcode": "02050305003088",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1113.5,
+        "mile_nobo_mvp3": 107.5,
+        "mile_sobo_mvp3": 156.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.09203,
+          40.28842
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01050",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1118.1,
+        "mile_sobo": 988.1,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.33462,
+        "lon": -77.08637,
+        "distance_from_trail_ft": 770,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56401585",
+        "nhd": {
+          "permanentId": "56401585",
+          "reachcode": "02050305001009",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1118.1,
+        "mile_nobo_mvp3": 112.1,
+        "mile_sobo_mvp3": 151.9,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.08637,
+          40.33462
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01051",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1126,
+        "mile_sobo": 980.2,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.39644,
+        "lon": -77.02554,
+        "distance_from_trail_ft": 254,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56399053",
+        "nhd": {
+          "permanentId": "56399053",
+          "reachcode": "02050305001031",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1126,
+        "mile_nobo_mvp3": 120,
+        "mile_sobo_mvp3": 144,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.02554,
+          40.39644
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01052",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1143.6,
+        "mile_sobo": 962.6,
+        "type": "stream_crossing",
+        "name": "Clark Creek",
+        "lat": 40.45102,
+        "lon": -76.77626,
+        "distance_from_trail_ft": 185,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56397807",
+        "nhd": {
+          "permanentId": "56397807",
+          "reachcode": "02050305000117",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1143.6,
+        "mile_nobo_mvp3": 137.6,
+        "mile_sobo_mvp3": 126.4,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.77626,
+          40.45102
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01053",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1147.4,
+        "mile_sobo": 958.8,
+        "type": "stream_crossing",
+        "name": "Rattling Run",
+        "lat": 40.45403,
+        "lon": -76.71275,
+        "distance_from_trail_ft": 499,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56396531",
+        "nhd": {
+          "permanentId": "56396531",
+          "reachcode": "02050305001050",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1147.4,
+        "mile_nobo_mvp3": 141.4,
+        "mile_sobo_mvp3": 122.6,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.71275,
+          40.45403
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01054",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1147.4,
+        "mile_sobo": 958.8,
+        "type": "stream_crossing",
+        "name": "Rattling Run",
+        "lat": 40.45454,
+        "lon": -76.71148,
+        "distance_from_trail_ft": 180,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56396395",
+        "nhd": {
+          "permanentId": "56396395",
+          "reachcode": "02050305001050",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1147.4,
+        "mile_nobo_mvp3": 141.4,
+        "mile_sobo_mvp3": 122.6,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.71148,
+          40.45454
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01055",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1151,
+        "mile_sobo": 955.2,
+        "type": "stream_crossing",
+        "name": "Rausch Creek",
+        "lat": 40.47906,
+        "lon": -76.65535,
+        "distance_from_trail_ft": 311,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395975",
+        "nhd": {
+          "permanentId": "56395975",
+          "reachcode": "02050305001045",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1151,
+        "mile_nobo_mvp3": 145,
+        "mile_sobo_mvp3": 119,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.65535,
+          40.47906
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01056",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1154.5,
+        "mile_sobo": 951.7,
+        "type": "stream_crossing",
+        "name": "East Branch Rausch Creek",
+        "lat": 40.50312,
+        "lon": -76.60056,
+        "distance_from_trail_ft": 177,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395557",
+        "nhd": {
+          "permanentId": "56395557",
+          "reachcode": "02050305001046",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1154.5,
+        "mile_nobo_mvp3": 148.5,
+        "mile_sobo_mvp3": 115.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.60056,
+          40.50312
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01057",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1154.5,
+        "mile_sobo": 951.7,
+        "type": "stream_crossing",
+        "name": "Rausch Creek",
+        "lat": 40.50312,
+        "lon": -76.60056,
+        "distance_from_trail_ft": 177,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395587",
+        "nhd": {
+          "permanentId": "56395587",
+          "reachcode": "02050305001045",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1154.5,
+        "mile_nobo_mvp3": 148.5,
+        "mile_sobo_mvp3": 115.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.60056,
+          40.50312
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01058",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1154.6,
+        "mile_sobo": 951.6,
+        "type": "stream_crossing",
+        "name": "Rausch Creek",
+        "lat": 40.50163,
+        "lon": -76.59966,
+        "distance_from_trail_ft": 155,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395589",
+        "nhd": {
+          "permanentId": "56395589",
+          "reachcode": "02050305001044",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1154.6,
+        "mile_nobo_mvp3": 148.6,
+        "mile_sobo_mvp3": 115.4,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.59966,
+          40.50163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01059",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1155.1,
+        "mile_sobo": 951.1,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.49787,
+        "lon": -76.59536,
+        "distance_from_trail_ft": 120,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395605",
+        "nhd": {
+          "permanentId": "56395605",
+          "reachcode": "02050305001043",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1155.1,
+        "mile_nobo_mvp3": 149.1,
+        "mile_sobo_mvp3": 114.9,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.59536,
+          40.49787
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01060",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1155.5,
+        "mile_sobo": 950.7,
+        "type": "stream_crossing",
+        "name": "Stony Creek",
+        "lat": 40.49588,
+        "lon": -76.58895,
+        "distance_from_trail_ft": 312,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown",
+        "flow": "intermittent",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395625",
+        "nhd": {
+          "permanentId": "56395625",
+          "reachcode": "02050305001041",
+          "ftype": 460,
+          "fcode": 46003
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1155.5,
+        "mile_nobo_mvp3": 149.5,
+        "mile_sobo_mvp3": 114.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.58895,
+          40.49588
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01061",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1159,
+        "mile_sobo": 947.2,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.48406,
+        "lon": -76.55069,
+        "distance_from_trail_ft": 336,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395665",
+        "nhd": {
+          "permanentId": "56395665",
+          "reachcode": "02050305001293",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1159,
+        "mile_nobo_mvp3": 153,
+        "mile_sobo_mvp3": 111,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.55069,
+          40.48406
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01062",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1159.1,
+        "mile_sobo": 947.1,
+        "type": "stream_crossing",
+        "name": "Trout Run",
+        "lat": 40.48313,
+        "lon": -76.5505,
+        "distance_from_trail_ft": 100,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395695",
+        "nhd": {
+          "permanentId": "56395695",
+          "reachcode": "02050305000492",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1159.1,
+        "mile_nobo_mvp3": 153.1,
+        "mile_sobo_mvp3": 110.9,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.5505,
+          40.48313
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01063",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1177.3,
+        "mile_sobo": 928.9,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.50957,
+        "lon": -76.27552,
+        "distance_from_trail_ft": 412,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "56395123",
+        "nhd": {
+          "permanentId": "56395123",
+          "reachcode": "02050305001854",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1177.3,
+        "mile_nobo_mvp3": 171.3,
+        "mile_sobo_mvp3": 92.7,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.27552,
+          40.50957
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01064",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1188.5,
+        "mile_sobo": 917.7,
+        "type": "stream_crossing",
+        "name": "Stony Creek",
+        "lat": 40.55773,
+        "lon": -76.11089,
+        "distance_from_trail_ft": 231,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "25960850",
+        "nhd": {
+          "permanentId": "25960850",
+          "reachcode": "02040203000470",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1188.5,
+        "mile_nobo_mvp3": 182.5,
+        "mile_sobo_mvp3": 81.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.11089,
+          40.55773
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01065",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1200.7,
+        "mile_sobo": 905.5,
+        "type": "stream_crossing",
+        "name": "Furnace Creek",
+        "lat": 40.58872,
+        "lon": -75.94328,
+        "distance_from_trail_ft": 229,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "25975370",
+        "nhd": {
+          "permanentId": "25975370",
+          "reachcode": "02040203000312",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1200.7,
+        "mile_nobo_mvp3": 194.7,
+        "mile_sobo_mvp3": 69.3,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -75.94328,
+          40.58872
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01066",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1210.2,
+        "mile_sobo": 896,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.63842,
+        "lon": -75.95896,
+        "distance_from_trail_ft": 207,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "25984222",
+        "nhd": {
+          "permanentId": "25984222",
+          "reachcode": "02040203001090",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1210.2,
+        "mile_nobo_mvp3": 204.2,
+        "mile_sobo_mvp3": 59.8,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -75.95896,
+          40.63842
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01067",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1268.9,
+        "mile_sobo": 837.3,
+        "type": "stream_crossing",
+        "name": "Unnamed stream",
+        "lat": 40.97041,
+        "lon": -75.13608,
+        "distance_from_trail_ft": 354,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "26174970",
+        "nhd": {
+          "permanentId": "26174970",
+          "reachcode": "02040104004565",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1268.9,
+        "mile_nobo_mvp3": 262.9,
+        "mile_sobo_mvp3": 1.1,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -75.13608,
+          40.97041
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "water_id": "water-open-01068",
+        "trail": "Appalachian Trail",
+        "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+        "mile_nobo": 1269.5,
+        "mile_sobo": 836.7,
+        "type": "stream_crossing",
+        "name": "Caledonia Creek",
+        "lat": 40.97857,
+        "lon": -75.13932,
+        "distance_from_trail_ft": 256,
+        "source_id": "usgs_3dhp_nhd",
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+        "source": "USGS National Hydrography Dataset flowline service",
+        "source_license": "public_domain",
+        "license_status": "public_domain",
+        "attribution": "Data available from U.S. Geological Survey.",
+        "confidence": "mapped_hydrography",
+        "reliability": "unknown",
+        "potable": "unknown",
+        "seasonal": "unknown_perennial_mapped_flowline",
+        "flow": "perennial",
+        "last_human_verified": null,
+        "last_checked": "2026-05-13",
+        "source_feature_id": "26174922",
+        "nhd": {
+          "permanentId": "26174922",
+          "reachcode": "02040104004559",
+          "ftype": 460,
+          "fcode": 46006
+        },
+        "ai_answer_rule": "Describe as a mapped water candidate with unknown reliability and unknown potability, not reliable drinking water.",
+        "source_route_id": "at-main-osm-2026-open",
+        "last_generated": "2026-05-14",
+        "mile_nobo_global_est": 1269.5,
+        "mile_nobo_mvp3": 263.5,
+        "mile_sobo_mvp3": 0.5,
+        "state": "PA",
+        "notes": "MVP3 Mid-Atlantic generated candidate. Generated miles are not official ATC mileage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -75.13932,
+          40.97857
+        ]
+      }
+    }
+  ]
+}

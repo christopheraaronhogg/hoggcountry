@@ -1,0 +1,308 @@
+[
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-01",
+    "start_mile_nobo_mvp3": 20,
+    "end_mile_nobo_mvp3": 30,
+    "start_mile_nobo_global_est": 1026,
+    "end_mile_nobo_global_est": 1036,
+    "states": [
+      "MD"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-02",
+    "start_mile_nobo_mvp3": 60,
+    "end_mile_nobo_mvp3": 70,
+    "start_mile_nobo_global_est": 1066,
+    "end_mile_nobo_global_est": 1076,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 2,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-03",
+    "start_mile_nobo_mvp3": 110,
+    "end_mile_nobo_mvp3": 120,
+    "start_mile_nobo_global_est": 1116,
+    "end_mile_nobo_global_est": 1126,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-04",
+    "start_mile_nobo_mvp3": 120,
+    "end_mile_nobo_mvp3": 130,
+    "start_mile_nobo_global_est": 1126,
+    "end_mile_nobo_global_est": 1136,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-05",
+    "start_mile_nobo_mvp3": 130,
+    "end_mile_nobo_mvp3": 140,
+    "start_mile_nobo_global_est": 1136,
+    "end_mile_nobo_global_est": 1146,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-06",
+    "start_mile_nobo_mvp3": 150,
+    "end_mile_nobo_mvp3": 160,
+    "start_mile_nobo_global_est": 1156,
+    "end_mile_nobo_global_est": 1166,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 2,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-07",
+    "start_mile_nobo_mvp3": 160,
+    "end_mile_nobo_mvp3": 170,
+    "start_mile_nobo_global_est": 1166,
+    "end_mile_nobo_global_est": 1176,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 0,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-08",
+    "start_mile_nobo_mvp3": 170,
+    "end_mile_nobo_mvp3": 180,
+    "start_mile_nobo_global_est": 1176,
+    "end_mile_nobo_global_est": 1186,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-09",
+    "start_mile_nobo_mvp3": 180,
+    "end_mile_nobo_mvp3": 190,
+    "start_mile_nobo_global_est": 1186,
+    "end_mile_nobo_global_est": 1196,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-10",
+    "start_mile_nobo_mvp3": 190,
+    "end_mile_nobo_mvp3": 200,
+    "start_mile_nobo_global_est": 1196,
+    "end_mile_nobo_global_est": 1206,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-11",
+    "start_mile_nobo_mvp3": 200,
+    "end_mile_nobo_mvp3": 210,
+    "start_mile_nobo_global_est": 1206,
+    "end_mile_nobo_global_est": 1216,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 1,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-12",
+    "start_mile_nobo_mvp3": 210,
+    "end_mile_nobo_mvp3": 220,
+    "start_mile_nobo_global_est": 1216,
+    "end_mile_nobo_global_est": 1226,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 0,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-13",
+    "start_mile_nobo_mvp3": 220,
+    "end_mile_nobo_mvp3": 230,
+    "start_mile_nobo_global_est": 1226,
+    "end_mile_nobo_global_est": 1236,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 0,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-14",
+    "start_mile_nobo_mvp3": 230,
+    "end_mile_nobo_mvp3": 240,
+    "start_mile_nobo_global_est": 1236,
+    "end_mile_nobo_global_est": 1246,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 0,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-15",
+    "start_mile_nobo_mvp3": 240,
+    "end_mile_nobo_mvp3": 250,
+    "start_mile_nobo_global_est": 1246,
+    "end_mile_nobo_global_est": 1256,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 0,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-16",
+    "start_mile_nobo_mvp3": 250,
+    "end_mile_nobo_mvp3": 260,
+    "start_mile_nobo_global_est": 1256,
+    "end_mile_nobo_global_est": 1266,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 0,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  },
+  {
+    "stretch_id": "mvp3-midatlantic-water-sparse-17",
+    "start_mile_nobo_mvp3": 260,
+    "end_mile_nobo_mvp3": 264,
+    "start_mile_nobo_global_est": 1266,
+    "end_mile_nobo_global_est": 1270,
+    "states": [
+      "PA"
+    ],
+    "mapped_water_candidate_count": 2,
+    "source_id": "usgs_3dhp_nhd",
+    "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+    "license_status": "public_domain",
+    "confidence": "planning_attention_flag_not_absence_proof",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Describe as a sparse mapped-water-candidate stretch only. This is not proof that water is absent. Do not claim water is absent, unreliable, reliable, or potable without current licensed verification."
+  }
+]

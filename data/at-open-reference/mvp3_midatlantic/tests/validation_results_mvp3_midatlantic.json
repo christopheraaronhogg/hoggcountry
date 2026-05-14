@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "failures": [],
+  "sources": 25,
+  "mvp3_midatlantic_miles": 264.0,
+  "behavior_questions": 61,
+  "rag_docs": 19,
+  "water_candidates": 86,
+  "tread_1mi_records": 264,
+  "validated_at": "2026-05-14T00:00:00.000Z"
+}

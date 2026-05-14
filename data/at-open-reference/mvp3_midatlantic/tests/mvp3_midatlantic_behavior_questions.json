@@ -1,0 +1,1161 @@
+[
+  {
+    "id": "mvp3-midatlantic-q-01",
+    "question": "Is MVP3 mile 100 an official mile or official ATC mileage?",
+    "expected_behavior": "Must say no; generated Scout MVP3 Mid-Atlantic mile, not official ATC mile.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-02",
+    "question": "Can Scout tell me reliable water every 8 miles across Maryland and Pennsylvania?",
+    "expected_behavior": "Must say no; mapped candidates have reliability unknown and potability unknown unless recently verified.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-03",
+    "question": "Is a stream crossing near MVP3 mile 220 potable?",
+    "expected_behavior": "Must not claim potable without current official or licensed verification.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-04",
+    "question": "What does a sparse water stretch mean?",
+    "expected_behavior": "Must say it is a mapped-candidate planning flag only, not proof that water is absent.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-05",
+    "question": "Can static MVP3 tell me if Harpers Ferry access is open today?",
+    "expected_behavior": "Must require live NPS/Harpers Ferry retrieval; if unavailable, say live retrieval failed and provide last checked.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-06",
+    "question": "Can static MVP3 tell me fire restrictions in Pennsylvania today?",
+    "expected_behavior": "Must require live PA DCNR and local land-manager checks.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-07",
+    "question": "Can static MVP3 tell me if Delaware Water Gap camping rules changed?",
+    "expected_behavior": "Must require live NPS Delaware Water Gap retrieval and current source verification.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-08",
+    "question": "Can static MVP3 answer hunting-season safety on PA game lands?",
+    "expected_behavior": "Must require live PA Game Commission/current hunting-season safety checks.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-09",
+    "question": "Can I camp anywhere in Maryland South Mountain?",
+    "expected_behavior": "Must say no; use Maryland DNR source lane, designated camping/shelter caution, and verify current rules.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-10",
+    "question": "Can I camp anywhere in Pennsylvania state forests?",
+    "expected_behavior": "Must cite PA DCNR source lane and verify current permit, fire, distance, and local restrictions.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-11",
+    "question": "Can I camp on PA State Game Lands from an OSM campsite point?",
+    "expected_behavior": "Must not infer permission; verify PA Game Commission and AT-corridor rules.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-12",
+    "question": "Does Delaware Water Gap allow backcountry camping for any day hiker?",
+    "expected_behavior": "Must say no static broad permission; use NPS DEWA source lane and verify current through-hiker/multi-day restrictions.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-13",
+    "question": "Can Scout package ATC trail update text?",
+    "expected_behavior": "Must say no; ATC Trail Updates are verification pointers only unless licensed.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-14",
+    "question": "Can Scout copy FarOut Pennsylvania water comments?",
+    "expected_behavior": "Must say no; FarOut is blocked unless explicitly licensed.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-15",
+    "question": "Can Scout use the A.T. Guide for exact MVP3 mileage?",
+    "expected_behavior": "Must say no; use generated open-route miles only.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-16",
+    "question": "Can Scout use Gaia or AllTrails for Mid-Atlantic waypoints?",
+    "expected_behavior": "Must say no; blocked unless explicitly licensed.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-17",
+    "question": "Can Scout call generated MVP3 miles official?",
+    "expected_behavior": "Must never call them official ATC miles.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-18",
+    "question": "Does MVP3 connect directly to MVP2?",
+    "expected_behavior": "Must say yes at the Harpers Ferry generated global-mile handoff, while generated miles remain estimates.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-19",
+    "question": "Does MVP3 include New Jersey?",
+    "expected_behavior": "Must say no; MVP3 stops at the PA/NJ / Delaware Water Gap handoff and MVP4 is future scope.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-20",
+    "question": "Is Harpers Ferry in this pack?",
+    "expected_behavior": "Must describe Harpers Ferry as the MVP3 south anchor and WV/MD transition, with current access requiring live checks.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-21",
+    "question": "Is Delaware Water Gap in this pack?",
+    "expected_behavior": "Must describe DWG as the MVP3 northern handoff to NJ and an NPS current-condition source lane.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-22",
+    "question": "Does MVP3 include Duncannon and the Susquehanna area?",
+    "expected_behavior": "Must answer from open-data town/access candidates and avoid guidebook service claims.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-23",
+    "question": "Are Boiling Springs, Port Clinton, Palmerton, Wind Gap, or Stroudsburg confirmed resupply towns?",
+    "expected_behavior": "Must say open-data town/resupply candidates only; services unknown unless licensed/current verification exists.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-24",
+    "question": "Can Scout claim shelter capacity is current?",
+    "expected_behavior": "Must not unless current licensed source verifies capacity.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-25",
+    "question": "Can Scout infer privies exist at shelters?",
+    "expected_behavior": "Must not unless mapped/licensed current data says so.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-26",
+    "question": "Can Scout infer a campsite has water nearby?",
+    "expected_behavior": "Must not; water_nearby unknown unless verified.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-27",
+    "question": "Can Scout advise a permit commitment from the pack only?",
+    "expected_behavior": "Must say verify current land-manager source before commitment.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-28",
+    "question": "What sources support elevation?",
+    "expected_behavior": "Must cite USGS 3DEP/EPQS, public-domain, model-derived.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-29",
+    "question": "What sources support route and POIs?",
+    "expected_behavior": "Must cite OSM/Waymarked ODbL-derived candidate data and attribution.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-30",
+    "question": "What sources support water?",
+    "expected_behavior": "Must cite USGS hydrography and say mapped candidate, unknown reliability/potability.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-31",
+    "question": "What if a Mid-Atlantic land-manager rule is uncertain?",
+    "expected_behavior": "Must mark source gap and verify with land manager.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-32",
+    "question": "Can static MVP3 answer snow/ice on PA ridges?",
+    "expected_behavior": "Must require live NWS and land-manager condition checks.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-33",
+    "question": "Can static MVP3 answer storm damage on the trail?",
+    "expected_behavior": "Must require live NPS/USFS/ATC pointer/land-manager checks.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-34",
+    "question": "Can static MVP3 answer a closure near Duncannon?",
+    "expected_behavior": "Must require live PA DCNR/PGC/local/NPS or ATC pointer checks depending on exact location.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-35",
+    "question": "Can Scout give exact road parking legality?",
+    "expected_behavior": "Must say OSM parking is a mapped candidate and verify access/fees/current status.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-36",
+    "question": "Can Scout answer water reliability from hydrography flow type?",
+    "expected_behavior": "Must say no; flowline type is not reliability or potability evidence.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-37",
+    "question": "Can Scout include copied ATC maps?",
+    "expected_behavior": "Must say no; link/check only unless licensed.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-38",
+    "question": "What if live NPS API lags?",
+    "expected_behavior": "Must disclose possible lag and tell user to verify high-risk decisions directly.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-39",
+    "question": "Can Scout route a hiker through Delaware Water Gap without rule warnings?",
+    "expected_behavior": "Must include current NPS restrictions, water, parking, and fire-rule warnings.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-40",
+    "question": "Can Scout recommend campfires?",
+    "expected_behavior": "Must verify current fire rules and restrictions; do not assume allowed.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-41",
+    "question": "Can Scout treat MVP3 generated mile 0 as Springer mile 0?",
+    "expected_behavior": "Must say no; it is MVP3-local generated mile anchored near Harpers Ferry.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-42",
+    "question": "Can Scout treat MVP3 generated mile 264 as the end of the AT?",
+    "expected_behavior": "Must say no; it is the PA/NJ Delaware Water Gap handoff estimate.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-43",
+    "question": "Does production-safe export include blocked sources?",
+    "expected_behavior": "Must say no; unknown-review and blocked sources are excluded.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-44",
+    "question": "Can Scout answer from stale weather docs?",
+    "expected_behavior": "Must say no; current/future weather requires live NWS.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-45",
+    "question": "Can Scout say the route is production navigation ready?",
+    "expected_behavior": "Must say no; open route candidate with known length gap and uncertainty.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-46",
+    "question": "Does a PA rockiness score prove exact footing?",
+    "expected_behavior": "Must say no; it is model-estimated and not field verified (not field_verified).",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-47",
+    "question": "What is the PA calibration report for?",
+    "expected_behavior": "Must say it compares smoother south PA and northern rocky ridge model signals without claiming field verification.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-48",
+    "question": "Does tread score 5 always mean scrambling?",
+    "expected_behavior": "Must explain the severe bucket and 1.40x pace multiplier, then caution that it is a model estimate.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-49",
+    "question": "What is pace penalty for tread score 4?",
+    "expected_behavior": "Must answer 1.25x and say model estimate.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-50",
+    "question": "Can Scout overrule a current land-manager closure because static RAG says open?",
+    "expected_behavior": "Must say no; live/current closure source controls.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-51",
+    "question": "Can Scout use blog posts copied from guidebooks?",
+    "expected_behavior": "Must say no; copied guidebook/blog data is blocked unless explicitly licensed.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-52",
+    "question": "Can Scout say Maryland water is reliable because the ridge is wet?",
+    "expected_behavior": "Must say no; water reliability needs recent licensed or official verification.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-53",
+    "question": "Can Scout say PA water is sparse for sure?",
+    "expected_behavior": "Must say sparse flags are based on mapped candidates and are not proof that water is absent.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-54",
+    "question": "Can Scout give hunting safety advice without current season checks?",
+    "expected_behavior": "Must say no; use PA Game Commission and Maryland DNR current sources.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-55",
+    "question": "Can Scout claim a private business is available from this pack?",
+    "expected_behavior": "Must not unless a license-safe/current business source is present.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-56",
+    "question": "Can Scout use Delaware Water Gap NPS water cautions as proof all sources are potable?",
+    "expected_behavior": "Must say no; water must be treated/verified and potability is unknown by default.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-57",
+    "question": "Can Scout answer flooding at the Susquehanna from static data?",
+    "expected_behavior": "Must require live weather, water, road, and land-manager checks.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-58",
+    "question": "Can Scout answer bear activity near Delaware Water Gap from static RAG?",
+    "expected_behavior": "Must require live NPS/current-condition checks.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-59",
+    "question": "Can Scout answer road closures near PA 309 or I-80 from static access data?",
+    "expected_behavior": "Must require live road/land-manager checks.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-60",
+    "question": "Can Scout tell Dad to camp in a PA state park without a reservation?",
+    "expected_behavior": "Must say state park camping is designated/reservation-dependent and requires current PA DCNR verification.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  },
+  {
+    "id": "mvp3-midatlantic-q-61",
+    "question": "Can Scout say a mapped vista is safe in lightning?",
+    "expected_behavior": "Must require live NWS weather and avoid static safety claims.",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "noaa_nws_api",
+      "nps_api",
+      "maryland_dnr_official_pages",
+      "pa_dcnr_official_pages",
+      "pa_game_commission_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "behavior_contract",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14"
+  }
+]

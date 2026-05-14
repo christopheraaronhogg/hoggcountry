@@ -1,0 +1,224 @@
+[
+  {
+    "rule_id": "mvp3-midatlantic-harpers-ferry-nhp",
+    "jurisdiction": "Harpers Ferry National Historical Park and WV/MD transition",
+    "land_manager_type": "national_historical_park",
+    "state": [
+      "WV",
+      "MD"
+    ],
+    "mile_range_nobo_mvp3": [
+      0,
+      3
+    ],
+    "mile_range_nobo_global_est": [
+      1006,
+      1009
+    ],
+    "camping_policy": "source_gap_no_backcountry_camping_permission_inferred",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_rule",
+    "source_id": "nps_official_land_manager_pages",
+    "source_url": "https://www.nps.gov/hafe/planyourvisit/camp-hill-and-appalachian-trail.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Harpers Ferry NHP is the official source lane for the park transition and current access checks. This static pack does not infer overnight permission.",
+    "ai_answer_rule": "Do not infer camping or overnight permission near Harpers Ferry from this pack. Verify current NPS and adjacent land-manager rules live.",
+    "attribution": "National Park Service"
+  },
+  {
+    "rule_id": "mvp3-midatlantic-co-canal-potomac",
+    "jurisdiction": "Chesapeake and Ohio Canal National Historical Park / Potomac crossing source lane",
+    "land_manager_type": "national_historical_park",
+    "state": [
+      "MD",
+      "WV"
+    ],
+    "mile_range_nobo_mvp3": [
+      0,
+      8
+    ],
+    "mile_range_nobo_global_est": [
+      1006,
+      1014
+    ],
+    "camping_policy": "designated_sites_only_where_applicable; no_static_at_corridor_camping_permission_inferred",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_rule",
+    "source_id": "nps_official_land_manager_pages",
+    "source_url": "https://www.nps.gov/choh/planyourvisit/camping.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "C&O Canal source lane is relevant around the Potomac/Harpers Ferry transition; verify exact jurisdiction and current rules before advice.",
+    "ai_answer_rule": "Use as an official-source pointer only. Verify current C&O/NPS rules before camping, water, parking, dog, or fire advice.",
+    "attribution": "National Park Service"
+  },
+  {
+    "rule_id": "mvp3-midatlantic-md-south-mountain",
+    "jurisdiction": "Maryland South Mountain State Park Appalachian Trail corridor",
+    "land_manager_type": "state_park",
+    "state": [
+      "MD"
+    ],
+    "mile_range_nobo_mvp3": [
+      2,
+      40
+    ],
+    "mile_range_nobo_global_est": [
+      1008,
+      1046
+    ],
+    "camping_policy": "designated_camping_areas_and_shelters_for_backpackers_and_thru_hikers; verify_current_rules",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_maryland_fire_and_park_rules",
+    "source_id": "maryland_dnr_official_pages",
+    "source_url": "https://dnr.maryland.gov/publiclands/Pages/western/southmountain.aspx",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Maryland DNR South Mountain official page identifies the AT ridge, designated camping/shelter source lane, parking, and hunting-area caution.",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current Maryland DNR rules, shelter/camping status, hunting seasons, fire rules, and access before itinerary commitment.",
+    "attribution": "Maryland Department of Natural Resources"
+  },
+  {
+    "rule_id": "mvp3-midatlantic-pa-dcnr-forests-parks",
+    "jurisdiction": "Pennsylvania DCNR State Forests and State Parks",
+    "land_manager_type": "state_forest_state_park",
+    "state": [
+      "PA"
+    ],
+    "mile_range_nobo_mvp3": [
+      40,
+      264
+    ],
+    "mile_range_nobo_global_est": [
+      1046,
+      1270
+    ],
+    "camping_policy": "state_forests_allow_primitive_camping_with_restrictions; state_parks_designated_sites_only; verify_exact_land_manager",
+    "permit_required": "yes",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_pa_dcnr_fire_restrictions_and_seasonal_rules",
+    "source_id": "pa_dcnr_official_pages",
+    "source_url": "https://www.pa.gov/agencies/dcnr/recreation/what-to-do/stay-overnight/backpacking-and-primitive-camping.html",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "PA DCNR official backpacking and primitive camping source lane for state forests and parks; state forest permits/reservations can be conditionally required and exact AT land manager still requires live/current verification.",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current exact PA land manager, permits, fire rules, state-park reservations, and any local restrictions before itinerary commitment.",
+    "attribution": "Pennsylvania Department of Conservation and Natural Resources"
+  },
+  {
+    "rule_id": "mvp3-midatlantic-pa-game-lands",
+    "jurisdiction": "Pennsylvania State Game Lands crossed or approached by the AT corridor",
+    "land_manager_type": "state_game_lands",
+    "state": [
+      "PA"
+    ],
+    "mile_range_nobo_mvp3": [
+      40,
+      264
+    ],
+    "mile_range_nobo_global_est": [
+      1046,
+      1270
+    ],
+    "camping_policy": "verify_current_state_game_lands_appalachian_trail_exception_or_restriction; do_not_infer_camping_permission",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_game_commission_and_wildfire_rules",
+    "source_id": "pa_game_commission_official_pages",
+    "source_url": "https://www.pa.gov/agencies/pgc/huntingandtrapping/where-to-hunt/state-game-lands.html",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "PA Game Commission official State Game Lands source lane. The static pack does not encode parcel-level AT camping permissions.",
+    "ai_answer_rule": "Do not infer camping permission on PA State Game Lands. Verify current PA Game Commission rules, hunting-season safety, and AT-corridor exceptions before advising.",
+    "attribution": "Pennsylvania Game Commission"
+  },
+  {
+    "rule_id": "mvp3-midatlantic-dwg-nps",
+    "jurisdiction": "Delaware Water Gap National Recreation Area / PA-NJ transition",
+    "land_manager_type": "national_recreation_area",
+    "state": [
+      "PA",
+      "NJ"
+    ],
+    "mile_range_nobo_mvp3": [
+      250,
+      264
+    ],
+    "mile_range_nobo_global_est": [
+      1256,
+      1270
+    ],
+    "camping_policy": "backcountry_camping_limited_to_appalachian_trail_multi_day_through_hikers_with_restrictions; verify_current_rules",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "ground_fires_prohibited_per_source_lane; verify_current_fire_rules",
+    "source_id": "nps_dewa_official_pages",
+    "source_url": "https://www.nps.gov/dewa/planyourvisit/backcountry-camping.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "NPS Delaware Water Gap source lane for AT backcountry camping, restrictions, and current park conditions.",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current Delaware Water Gap restrictions, parking, fire rules, water cautions, and closures before itinerary commitment.",
+    "attribution": "National Park Service"
+  },
+  {
+    "rule_id": "mvp3-midatlantic-local-municipal-private-easement-source-gap",
+    "jurisdiction": "Other Mid-Atlantic local, municipal, private-easement, and corridor lands",
+    "land_manager_type": "source_gap",
+    "state": [
+      "WV",
+      "MD",
+      "PA"
+    ],
+    "mile_range_nobo_mvp3": [
+      0,
+      264
+    ],
+    "mile_range_nobo_global_est": [
+      1006,
+      1270
+    ],
+    "camping_policy": "unknown_verify_current_land_manager",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_rule",
+    "source_id": "state_land_manager_official_pages",
+    "source_url": "https://www.pa.gov/agencies/dcnr.html",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "MVP3 does not fully map every local, municipal, private-easement, or parcel-level rule across WV/MD/PA.",
+    "ai_answer_rule": "When the exact jurisdiction is uncertain, say so and verify current rules with the land manager before camping, fire, dog, fee, or permit advice.",
+    "attribution": "State and local land managers"
+  }
+]

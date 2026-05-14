@@ -1,0 +1,163 @@
+[
+  {
+    "descent_id": "mvp3-midatlantic-descent-01",
+    "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+    "start_mile_nobo_global_est": 1086,
+    "end_mile_nobo_global_est": 1090,
+    "start_mile_nobo_mvp3": 80,
+    "end_mile_nobo_mvp3": 84,
+    "distance_miles": 4,
+    "elevation_loss_ft": 811,
+    "start_elevation_ft": 1450.4,
+    "end_elevation_ft": 639.8,
+    "state": [
+      "PA"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp3-midatlantic-descent-02",
+    "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+    "start_mile_nobo_global_est": 1122,
+    "end_mile_nobo_global_est": 1125,
+    "start_mile_nobo_mvp3": 116,
+    "end_mile_nobo_mvp3": 119,
+    "distance_miles": 3,
+    "elevation_loss_ft": 909,
+    "start_elevation_ft": 1264.1,
+    "end_elevation_ft": 355.2,
+    "state": [
+      "PA"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp3-midatlantic-descent-03",
+    "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+    "start_mile_nobo_global_est": 1157,
+    "end_mile_nobo_global_est": 1159,
+    "start_mile_nobo_mvp3": 151,
+    "end_mile_nobo_mvp3": 153,
+    "distance_miles": 2,
+    "elevation_loss_ft": 828,
+    "start_elevation_ft": 1315.4,
+    "end_elevation_ft": 487.3,
+    "state": [
+      "PA"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp3-midatlantic-descent-04",
+    "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+    "start_mile_nobo_global_est": 1193,
+    "end_mile_nobo_global_est": 1195,
+    "start_mile_nobo_mvp3": 187,
+    "end_mile_nobo_mvp3": 189,
+    "distance_miles": 2,
+    "elevation_loss_ft": 997,
+    "start_elevation_ft": 1402.7,
+    "end_elevation_ft": 405.9,
+    "state": [
+      "PA"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp3-midatlantic-descent-05",
+    "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+    "start_mile_nobo_global_est": 1207,
+    "end_mile_nobo_global_est": 1210,
+    "start_mile_nobo_mvp3": 201,
+    "end_mile_nobo_mvp3": 204,
+    "distance_miles": 3,
+    "elevation_loss_ft": 863,
+    "start_elevation_ft": 1440.2,
+    "end_elevation_ft": 577.6,
+    "state": [
+      "PA"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp3-midatlantic-descent-06",
+    "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+    "start_mile_nobo_global_est": 1232,
+    "end_mile_nobo_global_est": 1235,
+    "start_mile_nobo_mvp3": 226,
+    "end_mile_nobo_mvp3": 229,
+    "distance_miles": 3,
+    "elevation_loss_ft": 1068,
+    "start_elevation_ft": 1533.9,
+    "end_elevation_ft": 466.3,
+    "state": [
+      "PA"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  },
+  {
+    "descent_id": "mvp3-midatlantic-descent-07",
+    "route_id": "at-mvp3-midatlantic-harpers-ferry-delaware-water-gap-open-2026",
+    "start_mile_nobo_global_est": 1267,
+    "end_mile_nobo_global_est": 1270,
+    "start_mile_nobo_mvp3": 261,
+    "end_mile_nobo_mvp3": 264,
+    "distance_miles": 3,
+    "elevation_loss_ft": 1075,
+    "start_elevation_ft": 1450.3,
+    "end_elevation_ft": 375.1,
+    "state": [
+      "PA"
+    ],
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "attribution": "Data available from U.S. Geological Survey, 3D Elevation Program.",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as model-derived descent screening. Verify with current maps and field conditions before pacing or safety decisions."
+  }
+]

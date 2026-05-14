@@ -251,3 +251,68 @@ test('Scout AT MVP2 Virginia reference pack validates source-aware planning rule
   assert.ok(behaviorQuestions.some((question) => /Blue Ridge Parkway/i.test(question.question + question.expected_behavior)));
   assert.ok(behaviorQuestions.some((question) => /reliable water/i.test(question.question + question.expected_behavior)));
 });
+
+test('Scout AT MVP3 Mid-Atlantic reference pack validates source-aware planning rules', () => {
+  const result = spawnSync('python3', ['data/at-open-reference/mvp3_midatlantic/run_mvp3_midatlantic_validation.py', '--json'], {
+    cwd: new URL('../../..', import.meta.url),
+    encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+
+  const validation = JSON.parse(result.stdout);
+  assert.equal(validation.ok, true);
+  assert.equal(validation.failures.length, 0);
+  assert.equal(validation.mvp3_midatlantic_miles, 264.0);
+  assert.ok(validation.behavior_questions >= 60);
+  assert.ok(validation.rag_docs >= 19);
+  assert.ok(validation.water_candidates >= 80);
+  assert.ok(validation.tread_1mi_records >= 260);
+
+  const routeNotes = readFileSync(new URL('../mvp3_midatlantic/processed/route/route_notes.md', import.meta.url), 'utf8');
+  assert.match(routeNotes, /Harpers Ferry/i);
+  assert.match(routeNotes, /Delaware Water Gap/i);
+  assert.match(routeNotes, /MVP2/i);
+  assert.match(routeNotes, /MVP4/i);
+  assert.match(routeNotes, /not official ATC miles/i);
+
+  const livePolicy = readFileSync(new URL('../mvp3_midatlantic/rag_docs/policies/weather_live_conditions.md', import.meta.url), 'utf8');
+  assert.match(livePolicy, /hunting-season safety/i);
+  assert.match(livePolicy, /ATC Trail Updates/i);
+  assert.match(livePolicy, /verification pointer only/i);
+  assert.match(livePolicy, /live retrieval fails/i);
+  const liveSources = JSON.parse(readFileSync(new URL('../mvp3_midatlantic/processed/live_conditions/live_condition_sources.json', import.meta.url), 'utf8'));
+  assert.ok(liveSources.some((source) => source.source_id === 'pa_dcnr_official_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'pa_game_commission_official_pages'));
+  assert.ok(liveSources.some((source) => source.source_id === 'nps_dewa_official_pages'));
+
+  const paGuide = readFileSync(new URL('../mvp3_midatlantic/rag_docs/state_guides/PA.md', import.meta.url), 'utf8');
+  assert.match(paGuide, /Susquehanna/i);
+  assert.match(paGuide, /rocky ridges/i);
+  assert.match(paGuide, /Delaware Water Gap/i);
+
+  const treadNotes = readFileSync(new URL('../mvp3_midatlantic/processed/tread_rockiness/model_notes.md', import.meta.url), 'utf8');
+  assert.match(treadNotes, /SSURGO\/gSSURGO/i);
+  assert.match(treadNotes, /not field_verified/i);
+  const calibration = readFileSync(new URL('../mvp3_midatlantic/processed/tread_rockiness/pa_calibration_report.md', import.meta.url), 'utf8');
+  assert.match(calibration, /South PA/i);
+  assert.match(calibration, /North PA/i);
+  assert.match(calibration, /not field_verified/i);
+
+  const waterNotes = readFileSync(new URL('../mvp3_midatlantic/processed/water/water_confidence_notes.md', import.meta.url), 'utf8');
+  assert.match(waterNotes, /not proof that water is absent/i);
+  const sparseWater = JSON.parse(readFileSync(new URL('../mvp3_midatlantic/processed/water/sparse_uncertain_water_stretches.json', import.meta.url), 'utf8'));
+  assert.ok(sparseWater.length >= 5);
+
+  const segmentGuide = readFileSync(new URL('../mvp3_midatlantic/rag_docs/segment_guides/mvp3_midatlantic_000_025.md', import.meta.url), 'utf8');
+  assert.match(segmentGuide, /## Terrain/);
+  assert.match(segmentGuide, /## Water Candidates/);
+  assert.match(segmentGuide, /## Camping \/ Permit Summary/);
+  assert.match(segmentGuide, /## AI Cautions/);
+  assert.match(segmentGuide, /Generated miles are not official ATC mileage/);
+
+  const behaviorQuestions = JSON.parse(readFileSync(new URL('../mvp3_midatlantic/tests/mvp3_midatlantic_behavior_questions.json', import.meta.url), 'utf8'));
+  assert.ok(behaviorQuestions.some((question) => /Harpers Ferry/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /Delaware Water Gap/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /hunting-season/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /reliable water/i.test(question.question + question.expected_behavior)));
+});

@@ -1,0 +1,95 @@
+[
+  {
+    "source_id": "nps_dewa_official_pages",
+    "source_url": "https://developer.nps.gov/api/v1/alerts?parkCode=dewa",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "Delaware Water Gap official alerts and conditions",
+    "categories": [
+      "closures",
+      "detours",
+      "bear_activity",
+      "fire",
+      "storm_damage",
+      "road_access",
+      "permit_changes",
+      "dangerous_weather"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before Delaware Water Gap advice",
+    "attribution": "National Park Service",
+    "ai_answer_rule": "Use this explicit Delaware Water Gap live-alert lane before giving current DWG closure, road, bear, fire, storm, water, parking, or permit-change advice. If live retrieval fails, say so with the last-checked time."
+  },
+  {
+    "source_id": "maryland_dnr_official_pages",
+    "source_url": "https://dnr.maryland.gov/publiclands/Pages/western/southmountain.aspx",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Maryland DNR South Mountain alerts and official pages",
+    "categories": [
+      "closures",
+      "fire",
+      "hunting_safety",
+      "shelter_status",
+      "storm_damage"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before advice",
+    "attribution": "Maryland Department of Natural Resources",
+    "ai_answer_rule": "Use official Maryland DNR pages for South Mountain closures, hunting-season safety, fire rules, and shelter/camping status. If live retrieval fails, provide timestamped source gap."
+  },
+  {
+    "source_id": "pa_dcnr_official_pages",
+    "source_url": "https://www.pa.gov/agencies/dcnr.html",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Pennsylvania DCNR alerts and official pages",
+    "categories": [
+      "closures",
+      "fees",
+      "state_forest_rules",
+      "state_park_rules",
+      "fire",
+      "storm_damage",
+      "permit_changes"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before PA state forest/park advice",
+    "attribution": "Pennsylvania Department of Conservation and Natural Resources",
+    "ai_answer_rule": "Use official PA DCNR pages for PA state forest/park closures, fire, camping permits, and current conditions."
+  },
+  {
+    "source_id": "pa_game_commission_official_pages",
+    "source_url": "https://www.pa.gov/agencies/pgc/huntingandtrapping/where-to-hunt/state-game-lands.html",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Pennsylvania Game Commission State Game Lands source lane",
+    "categories": [
+      "state_game_lands",
+      "hunting_safety",
+      "access_rules",
+      "closures"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before PA State Game Lands advice",
+    "attribution": "Pennsylvania Game Commission",
+    "ai_answer_rule": "Use official PA Game Commission pages for State Game Lands access, hunting-season safety, and current rule checks. Do not infer camping permission."
+  },
+  {
+    "source_id": "atc_trail_updates_pointer",
+    "source_url": "https://appalachiantrail.org/trail-updates/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "ATC Trail Updates pointer only",
+    "categories": [
+      "closures",
+      "detours",
+      "storm_damage",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Appalachian Trail Conservancy",
+    "ai_answer_rule": "Use as a link/check target only. Do not package ATC update text or data unless licensed."
+  }
+]
