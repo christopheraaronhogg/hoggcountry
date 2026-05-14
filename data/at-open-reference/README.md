@@ -38,8 +38,10 @@ node data/at-open-reference/scripts/fetch-waymarked-at-route.mjs
 node data/at-open-reference/scripts/build-open-route-milepoints.mjs --input data/at-open-reference/raw/osm/waymarked_relation_156553.json
 node data/at-open-reference/scripts/build-water-candidates.mjs
 node data/at-open-reference/scripts/build-waypoint-candidates.mjs
-node data/at-open-reference/scripts/build-elevation-samples.mjs
-node data/at-open-reference/scripts/build-elevation-rag-docs.mjs
+node data/at-open-reference/scripts/build-elevation-samples.mjs --interval 5.0
+node data/at-open-reference/scripts/build-elevation-samples.mjs --interval 1.0
+node data/at-open-reference/scripts/build-elevation-rag-docs.mjs --interval 5.0
+node data/at-open-reference/scripts/build-elevation-rag-docs.mjs --interval 1.0
 node data/at-open-reference/scripts/fetch-osm-corridor-features.mjs
 node data/at-open-reference/scripts/build-osm-corridor-candidates.mjs
 node data/at-open-reference/scripts/build-camping-rules.mjs
@@ -62,3 +64,8 @@ same summary is bundled into the Forge SvelteKit server build.
 OSM corridor POIs, road crossings, settlements, and named side-trail candidates
 are filtered and compacted after fetch. The packaged raw file contains only
 accepted source elements plus provenance metadata, not a full Overpass snapshot.
+
+Elevation is generated from USGS EPQS/3DEP at both 5-mile and 1-mile intervals.
+The 1-mile lane improves climb/descent and grade-screening coverage, but Scout
+must still describe it as model-derived screening data, not precise field-grade
+slope analysis.

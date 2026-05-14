@@ -18,7 +18,7 @@ initial official-source camping, permit, fee, and land-manager rules corpus.
 - Blocked-source policy: started.
 - Route baseline: generated from OSM relation 156553 via Waymarked Trails route ordering.
 - Milepoints: generated at 0.1, 0.5, 1.0, and 5.0 mile intervals.
-- Elevation: coarse 5-mile USGS EPQS/3DEP samples generated with 25-mile segment summaries and RAG docs.
+- Elevation: USGS EPQS/3DEP samples generated at 5-mile and 1-mile intervals with 25-mile segment summaries, RAG docs, high/low summaries, and conservative 1-mile grade-screening candidates.
 - Water candidates: generated from USGS/NHD mapped hydrography and remapped to Scout's generated open milepoints.
 - Shelter waypoints: generated from OSM shelter candidates and remapped to Scout's generated open milepoints.
 - OSM corridor candidates: generated from a filtered Overpass corridor and
@@ -30,8 +30,8 @@ initial official-source camping, permit, fee, and land-manager rules corpus.
   NPS, USFS, state, and Baxter land-manager rule lanes.
 - Live connectors: app runtime has NWS/official-source lanes; this pack exports
   compact live-source connector metadata and current-condition answer policy.
-- RAG docs: generated-mile, water, current-condition, state guide, and coarse
-  elevation docs.
+- RAG docs: generated-mile, water, current-condition, state guide, and 5-mile
+  plus 1-mile elevation docs.
 
 ## Known Risks
 
@@ -40,9 +40,11 @@ initial official-source camping, permit, fee, and land-manager rules corpus.
   miles shorter than the 2026 official calibration reference. Treat generated
   mileage as an open candidate baseline, not production-grade official route
   mileage.
-- Elevation samples are currently coarse 5-mile point samples. They undercount
-  short climbs/descents and must not be used for fine grade-risk advice until
-  finer 0.1-mile or DEM-based sampling is generated.
+- Elevation samples are still model-derived point samples. The 1-mile lane
+  improves climb/descent screening over the 5-mile lane, but it can still miss
+  short steep pitches, switchbacks, and tread-specific grade. Do not use it for
+  precise grade-risk advice until finer 0.1-mile or DEM-based slope sampling is
+  generated.
 - OSM campsite, privy, vista, side-trail, parking, trailhead, road-crossing, and
   town records are mapped candidates only. They do not prove current access,
   fees, capacity, services, blaze/junction accuracy, traffic safety, or

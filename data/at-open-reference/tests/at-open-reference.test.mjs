@@ -82,8 +82,26 @@ test('generated open route and candidate datasets keep safety labels', () => {
   assert.equal(elevation[0].source_id, 'usgs_3dep');
   assert.match(elevation[0].ai_answer_rule, /model-derived USGS 3DEP/);
 
+  const elevationOneMile = JSON.parse(readFileSync(new URL('../processed/elevation/elevation_samples_1_0mi.json', import.meta.url), 'utf8'));
+  assert.ok(elevationOneMile.length > 2000, 'expected 1-mile elevation samples');
+  assert.equal(elevationOneMile[0].source_id, 'usgs_3dep');
+  assert.equal(elevationOneMile[0].interval_miles, 1);
+  assert.match(elevationOneMile[0].ai_answer_rule, /model-derived USGS 3DEP/);
+
+  const elevationOneMileSegments = JSON.parse(readFileSync(new URL('../processed/elevation/climbs_descents_by_25mi_segment_1_0mi.json', import.meta.url), 'utf8'));
+  assert.ok(elevationOneMileSegments.length > 80, 'expected 1-mile elevation segment summaries');
+  assert.equal(elevationOneMileSegments[0].sample_interval_miles, 1);
+  assert.match(elevationOneMileSegments[0].limitation, /1-mile samples improve climb\/descent screening/);
+
+  const gradeScreening = JSON.parse(readFileSync(new URL('../processed/elevation/grade_risk_sections_1_0mi.json', import.meta.url), 'utf8'));
+  assert.ok(gradeScreening.length > 100, 'expected conservative 1-mile grade-screening candidates');
+  assert.equal(gradeScreening[0].source_id, 'usgs_3dep');
+  assert.match(gradeScreening[0].ai_answer_rule, /screening candidate/);
+
   const elevationDocs = readdirSync(new URL('../rag_docs/segment_guides/elevation_5mi', import.meta.url));
   assert.ok(elevationDocs.length > 80, 'expected elevation RAG segment docs');
+  const elevationOneMileDocs = readdirSync(new URL('../rag_docs/segment_guides/elevation_1mi', import.meta.url));
+  assert.ok(elevationOneMileDocs.length > 80, 'expected 1-mile elevation RAG segment docs');
 
   const offlineSummaryText = readFileSync(new URL('../processed/summary/scout_offline_reference_summary.json', import.meta.url), 'utf8');
   const offlineSummary = JSON.parse(offlineSummaryText);
@@ -96,6 +114,8 @@ test('generated open route and candidate datasets keep safety labels', () => {
   assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000));
   assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'side-trails' && dataset.recordCount > 50));
   assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'road-crossings' && dataset.recordCount > 1000));
+  assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'elevation-samples-1-0' && dataset.recordCount > 2000));
+  assert.ok(offlineSummary.datasets.some((dataset) => dataset.id === 'elevation-grade-screening-1-0' && dataset.recordCount > 100));
   assert.ok(offlineSummary.liveConditionSources.some((source) => source.source_id === 'noaa_nws_api'));
   assert.ok(offlineSummaryText.length < 50_000, 'offline summary should remain compact enough for phone caching');
 });

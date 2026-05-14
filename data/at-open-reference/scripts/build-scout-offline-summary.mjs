@@ -80,9 +80,27 @@ const datasetSpecs = [
     category: 'towns_resupply'
   },
   {
-    id: 'elevation-segments',
+    id: 'elevation-segments-5-0',
     label: 'Coarse 5-mile elevation and climb/descent segments',
     path: 'processed/elevation/climbs_descents_by_25mi_segment_5_0mi.json',
+    category: 'elevation'
+  },
+  {
+    id: 'elevation-samples-1-0',
+    label: 'USGS 3DEP 1-mile elevation samples',
+    path: 'processed/elevation/elevation_samples_1_0mi.json',
+    category: 'elevation'
+  },
+  {
+    id: 'elevation-segments-1-0',
+    label: '1-mile elevation and climb/descent segments',
+    path: 'processed/elevation/climbs_descents_by_25mi_segment_1_0mi.json',
+    category: 'elevation'
+  },
+  {
+    id: 'elevation-grade-screening-1-0',
+    label: '1-mile grade-screening candidates',
+    path: 'processed/elevation/grade_risk_sections_1_0mi.json',
     category: 'elevation'
   },
   {

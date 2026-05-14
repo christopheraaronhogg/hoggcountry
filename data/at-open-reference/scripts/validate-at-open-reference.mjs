@@ -79,6 +79,11 @@ const requiredGeneratedPaths = [
   'processed/elevation/climbs_descents_by_25mi_segment_5_0mi.json',
   'processed/elevation/high_low_points_5_0mi.json',
   'processed/elevation/grade_risk_sections_5_0mi.json',
+  'processed/elevation/elevation_samples_1_0mi.json',
+  'processed/elevation/elevation_profile_1_0mi.geojson',
+  'processed/elevation/climbs_descents_by_25mi_segment_1_0mi.json',
+  'processed/elevation/high_low_points_1_0mi.json',
+  'processed/elevation/grade_risk_sections_1_0mi.json',
   'processed/camping_rules/rules_by_land_manager.json',
   'processed/camping_rules/rules_by_state.json',
   'processed/camping_rules/permit_required_sections.json',
@@ -88,6 +93,7 @@ const requiredGeneratedPaths = [
   'processed/land_managers/land_managers.json',
   'processed/summary/scout_offline_reference_summary.json',
   'rag_docs/segment_guides/elevation_5mi',
+  'rag_docs/segment_guides/elevation_1mi',
   'rag_docs/state_guides/GA.md',
   'rag_docs/state_guides/NC.md',
   'rag_docs/state_guides/TN.md',
@@ -291,6 +297,8 @@ export function validateAtOpenReferencePack() {
   assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000), 'Scout offline summary must include water candidate counts.', failures);
   assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'side-trails' && dataset.recordCount > 50), 'Scout offline summary must include side-trail candidate counts.', failures);
   assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'road-crossings' && dataset.recordCount > 1000), 'Scout offline summary must include road-crossing candidate counts.', failures);
+  assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'elevation-samples-1-0' && dataset.recordCount > 2000), 'Scout offline summary must include 1-mile elevation sample counts.', failures);
+  assert(offlineSummary.datasets?.some((dataset) => dataset.id === 'elevation-grade-screening-1-0' && dataset.recordCount > 100), 'Scout offline summary must include 1-mile grade-screening counts.', failures);
   assert(offlineSummary.liveConditionSources?.some((source) => source.source_id === 'noaa_nws_api'), 'Scout offline summary must include NWS live connector metadata.', failures);
 
   return {

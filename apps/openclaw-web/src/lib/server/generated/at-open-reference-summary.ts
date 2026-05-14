@@ -3,7 +3,7 @@
 export const scoutAtOpenReferenceBundledSummary = {
   "version": 1,
   "summaryId": "scout-at-open-reference-offline-summary",
-  "generatedAt": "2026-05-14T02:15:48.196Z",
+  "generatedAt": "2026-05-14T02:33:47.556Z",
   "available": true,
   "sourceManifest": {
     "path": "source_manifest.yaml",
@@ -254,7 +254,7 @@ export const scoutAtOpenReferenceBundledSummary = {
       "aiAnswerRule": "Describe as an open-data town/resupply candidate only; do not copy guidebook town notes or imply confirmed hiker services."
     },
     {
-      "id": "elevation-segments",
+      "id": "elevation-segments-5-0",
       "label": "Coarse 5-mile elevation and climb/descent segments",
       "category": "elevation",
       "path": "processed/elevation/climbs_descents_by_25mi_segment_5_0mi.json",
@@ -266,8 +266,56 @@ export const scoutAtOpenReferenceBundledSummary = {
         "public_domain"
       ],
       "confidence": "model_derived_topographic_estimate",
-      "lastChecked": "2026-05-13",
+      "lastChecked": "2026-05-14",
       "aiAnswerRule": "Describe as model-derived USGS 3DEP elevation sampled along Scout open route geometry; values may differ from guidebook profiles or surveyed summits."
+    },
+    {
+      "id": "elevation-samples-1-0",
+      "label": "USGS 3DEP 1-mile elevation samples",
+      "category": "elevation",
+      "path": "processed/elevation/elevation_samples_1_0mi.json",
+      "recordCount": 2107,
+      "sourceIds": [
+        "usgs_3dep"
+      ],
+      "licenseStatuses": [
+        "public_domain"
+      ],
+      "confidence": "model_derived_topographic_estimate",
+      "lastChecked": "2026-05-14",
+      "aiAnswerRule": "Describe as model-derived USGS 3DEP elevation sampled along Scout open route geometry; values may differ from guidebook profiles or surveyed summits."
+    },
+    {
+      "id": "elevation-segments-1-0",
+      "label": "1-mile elevation and climb/descent segments",
+      "category": "elevation",
+      "path": "processed/elevation/climbs_descents_by_25mi_segment_1_0mi.json",
+      "recordCount": 85,
+      "sourceIds": [
+        "usgs_3dep"
+      ],
+      "licenseStatuses": [
+        "public_domain"
+      ],
+      "confidence": "model_derived_topographic_estimate",
+      "lastChecked": "2026-05-14",
+      "aiAnswerRule": "Describe as model-derived USGS 3DEP elevation sampled along Scout open route geometry; values may differ from guidebook profiles or surveyed summits."
+    },
+    {
+      "id": "elevation-grade-screening-1-0",
+      "label": "1-mile grade-screening candidates",
+      "category": "elevation",
+      "path": "processed/elevation/grade_risk_sections_1_0mi.json",
+      "recordCount": 455,
+      "sourceIds": [
+        "usgs_3dep"
+      ],
+      "licenseStatuses": [
+        "public_domain"
+      ],
+      "confidence": "one_mile_grade_screening_candidate",
+      "lastChecked": "2026-05-14",
+      "aiAnswerRule": "Describe as a 1-mile USGS 3DEP grade-screening candidate only; do not call it a precise grade-risk section without finer DEM or 0.1-mile sampling."
     },
     {
       "id": "camping-rules",
@@ -310,8 +358,8 @@ export const scoutAtOpenReferenceBundledSummary = {
     }
   ],
   "totals": {
-    "datasets": 15,
-    "records": 32468
+    "datasets": 18,
+    "records": 35115
   },
   "liveConditionSources": [
     {
