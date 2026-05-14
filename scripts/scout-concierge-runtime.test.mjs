@@ -3,6 +3,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { loadScoutAtOpenReferenceOfflineSummary } from '../apps/openclaw-web/src/lib/server/at-open-reference.ts';
+import { isScoutAdminProfile } from '../apps/openclaw-web/src/lib/server/scout-admin.ts';
+import { readScoutReferenceTablePage } from '../apps/openclaw-web/src/lib/server/scout-resource-explorer.ts';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
@@ -78,4 +80,39 @@ test('Scout offline pack exposes compact AT reference context', async () => {
   assert.ok(summary.datasets.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000));
   assert.match(summary.policies.generatedMileDisclosure, /not official ATC miles|not an official ATC mile/u);
   assert.match(summary.policies.liveConditionsDisclosure, /live checks|Offline answers/u);
+});
+
+test('Scout admin resource explorer exposes agent-accessible tables and docs', () => {
+  assert.equal(existsSync(new URL('apps/openclaw-web/src/routes/app/admin/resources/+page.svelte', root)), true);
+  assert.equal(existsSync(new URL('apps/openclaw-web/src/routes/app/admin/resources/+page.server.ts', root)), true);
+  assert.equal(existsSync(new URL('apps/openclaw-web/src/routes/app-api/admin/resources/table/+server.ts', root)), true);
+  assert.equal(existsSync(new URL('apps/openclaw-web/src/lib/server/generated/resource-explorer.ts', root)), true);
+
+  const page = read('apps/openclaw-web/src/routes/app/admin/resources/+page.svelte');
+  const server = read('apps/openclaw-web/src/routes/app/admin/resources/+page.server.ts');
+  const tableEndpoint = read('apps/openclaw-web/src/routes/app-api/admin/resources/table/+server.ts');
+  const layout = read('apps/openclaw-web/src/routes/app/+layout.svelte');
+
+  assert.match(page, /Resource Explorer/u);
+  assert.match(page, /Bundled reference tables, RAG docs, and private workspace material/u);
+  assert.match(page, /loadTablePage/u);
+  assert.match(page, /panel === 'tables'/u);
+  assert.match(page, /panel === 'workspace'/u);
+  assert.match(server, /isScoutAdminProfile/u);
+  assert.match(tableEndpoint, /readScoutReferenceTablePage/u);
+  assert.match(layout, /href: '\/app\/admin\/resources'/u);
+
+  assert.equal(isScoutAdminProfile({ name: 'Chris', email: 'chris@hoggcountry.local', trailName: 'Chris' }), true);
+  assert.equal(isScoutAdminProfile({ name: 'Dad', email: 'dad@hoggcountry.local', trailName: 'Dad' }), false);
+
+  const pageResult = readScoutReferenceTablePage({
+    path: 'processed/water/water_candidates.json',
+    offset: 0,
+    limit: 5
+  });
+  assert.equal(pageResult.path, 'processed/water/water_candidates.json');
+  assert.ok(pageResult.total > 1000);
+  assert.equal(pageResult.rows.length, 5);
+  assert.ok(pageResult.columns.includes('water_id'));
+  assert.equal(pageResult.rows[0].source_id, 'usgs_3dhp_nhd');
 });

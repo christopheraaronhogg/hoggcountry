@@ -29,11 +29,23 @@
     }
   ];
 
+  const visibleAppTabs = $derived(data.isAdmin
+    ? [
+        ...appTabs,
+        {
+          href: '/app/admin/resources',
+          label: 'Admin',
+          icon: 'admin'
+        }
+      ]
+    : appTabs);
+
   function tabActive(href: string): boolean {
     const path = page.url.pathname;
     if (href === '/app') return path === '/app';
     if (href === '/app/scout') return path === '/app/scout' || path.startsWith('/app/scout/') || path.startsWith('/app/claw') || path.startsWith('/app/plan');
     if (href === '/app/profile') return path.startsWith('/app/profile') || path.startsWith('/app/setup');
+    if (href === '/app/admin/resources') return path.startsWith('/app/admin');
     return path.startsWith(href);
   }
 
@@ -76,7 +88,7 @@
   </span>
 
   <nav class="app-nav" aria-label="App">
-    {#each appTabs as tab}
+    {#each visibleAppTabs as tab}
       <a href={tab.href} class:is-active={tabActive(tab.href)}>{tab.label}</a>
     {/each}
     <a href="/app/logout">Switch</a>
@@ -86,7 +98,7 @@
 {@render children()}
 
 <nav class="app-bottom-nav" aria-label="Primary app navigation">
-  {#each appTabs as tab}
+  {#each visibleAppTabs.slice(0, 4) as tab}
     <a href={tab.href} class:is-active={tabActive(tab.href)}>
       <span class="nav-icon" aria-hidden="true">
         {#if tab.icon === 'home'}

@@ -47,6 +47,7 @@ node data/at-open-reference/scripts/build-osm-corridor-candidates.mjs
 node data/at-open-reference/scripts/build-camping-rules.mjs
 node data/at-open-reference/scripts/build-state-rag-docs.mjs
 node data/at-open-reference/scripts/build-scout-offline-summary.mjs
+node data/at-open-reference/scripts/build-scout-resource-explorer.mjs
 ```
 
 The current OSM-derived route candidate is useful as a legally separable open
@@ -60,6 +61,11 @@ without bundling full route geometry or full source snapshots into local storage
 The generator also writes
 `apps/openclaw-web/src/lib/server/generated/at-open-reference-summary.ts` so the
 same summary is bundled into the Forge SvelteKit server build.
+
+`apps/openclaw-web/src/lib/server/generated/resource-explorer.ts` is the compact
+admin explorer bundle for `/app/admin/resources`. It packages table metadata,
+sample rows, and RAG document excerpts so admins can inspect what Scout can see
+without loading every raw source into the phone UI.
 
 OSM corridor POIs, road crossings, settlements, and named side-trail candidates
 are filtered and compacted after fetch. The packaged raw file contains only

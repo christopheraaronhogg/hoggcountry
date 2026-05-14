@@ -11,6 +11,7 @@ declare global {
 
     interface PageData {
       betaProfile?: App.Locals['betaProfile'];
+      isAdmin?: boolean;
     }
   }
 }
