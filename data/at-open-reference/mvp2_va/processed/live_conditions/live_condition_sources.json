@@ -1,0 +1,91 @@
+[
+  {
+    "source_id": "noaa_nws_api",
+    "source_url": "https://www.weather.gov/documentation/services-web-api",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "National Weather Service API",
+    "categories": [
+      "forecast",
+      "alerts",
+      "observations",
+      "dangerous_weather"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live; cache per endpoint and include fetched timestamp",
+    "attribution": "National Weather Service",
+    "ai_answer_rule": "Use live NWS point forecasts and alerts for current/future weather. If coordinates or live retrieval are unavailable, state the source gap."
+  },
+  {
+    "source_id": "nps_api",
+    "source_url": "https://www.nps.gov/subjects/digital/nps-data-api.htm",
+    "license_status": "api_access_allowed",
+    "confidence": "official_live_api",
+    "name": "National Park Service API for SHEN/BLRI/HAFE",
+    "categories": [
+      "closures",
+      "trail_alerts",
+      "park_alerts",
+      "campgrounds",
+      "news"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live; cache with fetched timestamp and disclose possible API lag",
+    "attribution": "National Park Service",
+    "ai_answer_rule": "Use live NPS API alerts for Shenandoah, Blue Ridge Parkway, and Harpers Ferry approach. Verify high-risk decisions directly with the park."
+  },
+  {
+    "source_id": "usfs_gwj_official_pages",
+    "source_url": "https://www.fs.usda.gov/r08/gwj/alerts",
+    "license_status": "public_domain",
+    "confidence": "official_live_page",
+    "name": "GWJ National Forest alerts and forest orders",
+    "categories": [
+      "closures",
+      "fire",
+      "roads",
+      "bear_activity",
+      "food_storage",
+      "storm_damage"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before advice",
+    "attribution": "U.S. Forest Service",
+    "ai_answer_rule": "Use official GWJ alert/order pages for closures, fire, roads, food storage, and forest orders. If live retrieval fails, provide timestamped source gap."
+  },
+  {
+    "source_id": "virginia_dcr_state_parks",
+    "source_url": "https://www.dcr.virginia.gov/state-parks/alerts",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Virginia State Parks alerts",
+    "categories": [
+      "closures",
+      "fees",
+      "state_park_rules",
+      "fire",
+      "events"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before state-park advice",
+    "attribution": "Virginia Department of Conservation and Recreation",
+    "ai_answer_rule": "Use official Virginia State Parks pages for Grayson Highlands/state-park current conditions and rules."
+  },
+  {
+    "source_id": "atc_trail_updates_pointer",
+    "source_url": "https://appalachiantrail.org/trail-updates/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "ATC Trail Updates pointer only",
+    "categories": [
+      "closures",
+      "detours",
+      "storm_damage",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Appalachian Trail Conservancy",
+    "ai_answer_rule": "Use as a link/check target only. Do not package ATC update text or data unless licensed."
+  }
+]

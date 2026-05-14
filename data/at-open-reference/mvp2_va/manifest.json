@@ -1,0 +1,22 @@
+{
+  "pack_id": "scout-at-mvp2-va-damascus-harpers-ferry",
+  "route_id": "at-mvp2-va-damascus-harpers-ferry-open-2026",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "scope": {
+    "start": "TN/VA border / Damascus area open-route candidate",
+    "end": "VA/WV border / Harpers Ferry approach open-route candidate",
+    "generated_mile_range_va": [
+      0,
+      547
+    ],
+    "generated_mile_range_global_est": [
+      459,
+      1006
+    ]
+  },
+  "prompt_artifact_checklist": "prompt_artifact_checklist.md",
+  "source_manifest": "source_manifest.yaml",
+  "production_safe_export": "processed/export/scout_at_mvp2_va_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp2_va_production_safe.zip",
+  "validation": "run_mvp2_va_validation.py"
+}

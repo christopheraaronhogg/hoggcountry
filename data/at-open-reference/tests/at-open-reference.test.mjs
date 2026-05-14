@@ -198,3 +198,48 @@ test('Scout AT MVP1 Springer to Davenport reference pack validates source-aware 
   assert.ok(behaviorQuestions.some((question) => /reliable water/i.test(question.question + question.expected_behavior)));
   assert.ok(behaviorQuestions.some((question) => /live retrieval/i.test(question.expected_behavior)));
 });
+
+test('Scout AT MVP2 Virginia reference pack validates source-aware planning rules', () => {
+  const result = spawnSync('python3', ['data/at-open-reference/mvp2_va/run_mvp2_va_validation.py', '--json'], {
+    cwd: new URL('../../..', import.meta.url),
+    encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+
+  const validation = JSON.parse(result.stdout);
+  assert.equal(validation.ok, true);
+  assert.equal(validation.failures.length, 0);
+  assert.equal(validation.mvp2_va_miles, 547.0);
+  assert.ok(validation.behavior_questions >= 50);
+  assert.ok(validation.rag_docs >= 28);
+  assert.ok(validation.water_candidates >= 300);
+  assert.ok(validation.tread_1mi_records >= 540);
+
+  const routeNotes = readFileSync(new URL('../mvp2_va/processed/route/route_notes.md', import.meta.url), 'utf8');
+  assert.match(routeNotes, /Damascus/i);
+  assert.match(routeNotes, /Harpers Ferry/i);
+  assert.match(routeNotes, /MVP1/i);
+  assert.match(routeNotes, /WV\/MD/i);
+  assert.match(routeNotes, /not official ATC miles/i);
+
+  const livePolicy = readFileSync(new URL('../mvp2_va/rag_docs/policies/weather_live_conditions.md', import.meta.url), 'utf8');
+  assert.match(livePolicy, /ATC Trail Updates/i);
+  assert.match(livePolicy, /verification pointer only/i);
+  assert.match(livePolicy, /live retrieval fails/i);
+
+  const treadNotes = readFileSync(new URL('../mvp2_va/processed/tread_rockiness/model_notes.md', import.meta.url), 'utf8');
+  assert.match(treadNotes, /SSURGO\/gSSURGO/i);
+  assert.match(treadNotes, /not field_verified/i);
+
+  const segmentGuide = readFileSync(new URL('../mvp2_va/rag_docs/segment_guides/mvp2_va_000_025.md', import.meta.url), 'utf8');
+  assert.match(segmentGuide, /## Terrain/);
+  assert.match(segmentGuide, /## Water Candidates/);
+  assert.match(segmentGuide, /## Camping \/ Permit Summary/);
+  assert.match(segmentGuide, /Generated miles are not official ATC mileage/);
+
+  const behaviorQuestions = JSON.parse(readFileSync(new URL('../mvp2_va/tests/mvp2_va_behavior_questions.json', import.meta.url), 'utf8'));
+  assert.ok(behaviorQuestions.some((question) => /Shenandoah/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /Grayson Highlands/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /Blue Ridge Parkway/i.test(question.question + question.expected_behavior)));
+  assert.ok(behaviorQuestions.some((question) => /reliable water/i.test(question.question + question.expected_behavior)));
+});

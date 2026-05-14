@@ -1,0 +1,37 @@
+[
+  {
+    "source_id": "virginia_dcr_state_parks",
+    "source_url": "https://www.dcr.virginia.gov/state-parks/alerts",
+    "license_status": "open_license_attribution",
+    "confidence": "official_live_page",
+    "name": "Virginia State Parks alerts",
+    "categories": [
+      "closures",
+      "fees",
+      "state_park_rules",
+      "fire",
+      "events"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check before state-park advice",
+    "attribution": "Virginia Department of Conservation and Recreation",
+    "ai_answer_rule": "Use official Virginia State Parks pages for Grayson Highlands/state-park current conditions and rules."
+  },
+  {
+    "source_id": "atc_trail_updates_pointer",
+    "source_url": "https://appalachiantrail.org/trail-updates/",
+    "license_status": "blocked",
+    "confidence": "verification_pointer_only",
+    "name": "ATC Trail Updates pointer only",
+    "categories": [
+      "closures",
+      "detours",
+      "storm_damage",
+      "verification_pointer"
+    ],
+    "last_checked": "2026-05-14",
+    "update_cadence": "live check only; do not package text/data",
+    "attribution": "Appalachian Trail Conservancy",
+    "ai_answer_rule": "Use as a link/check target only. Do not package ATC update text or data unless licensed."
+  }
+]

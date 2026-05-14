@@ -50,6 +50,8 @@ node data/at-open-reference/scripts/build-scout-offline-summary.mjs
 node data/at-open-reference/scripts/build-scout-resource-explorer.mjs
 node data/at-open-reference/scripts/build-mvp1-reference-pack.mjs
 python3 data/at-open-reference/mvp1/run_mvp1_validation.py
+node data/at-open-reference/scripts/build-mvp2-va-reference-pack.mjs
+python3 data/at-open-reference/mvp2_va/run_mvp2_va_validation.py
 ```
 
 The current OSM-derived route candidate is useful as a legally separable open
@@ -73,6 +75,14 @@ without loading every raw source into the phone UI.
 Scout planning. It is generated from the reviewed open corpus plus MVP1-specific
 route notes, tread/rockiness model outputs, behavior tests, and a Python
 validator. Generated MVP1 miles are not official ATC miles.
+
+`mvp2_va/` is the source-aware Virginia pack from the TN/VA border / Damascus
+area to the VA/WV border / Harpers Ferry approach. It includes Virginia route
+and milepoint estimates, USGS elevation/water lanes, OSM waypoint/resupply
+candidates, land-manager rule summaries, live-condition source pointers,
+tread/rockiness model outputs, RAG docs, behavior tests, a production-safe
+export, and a Python validator. Generated MVP2 Virginia miles are not official
+ATC miles.
 
 OSM corridor POIs, road crossings, settlements, and named side-trail candidates
 are filtered and compacted after fetch. The packaged raw file contains only

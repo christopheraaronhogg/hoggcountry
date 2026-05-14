@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": [
+    "route_id",
+    "measured_length_miles",
+    "official",
+    "source_id",
+    "license_status",
+    "confidence",
+    "last_generated",
+    "ai_answer_rule"
+  ]
+}

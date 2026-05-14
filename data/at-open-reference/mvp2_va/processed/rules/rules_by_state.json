@@ -1,0 +1,128 @@
+[
+  {
+    "state": "VA",
+    "rule_id": "mvp2-va-gwj-nf-at",
+    "jurisdiction": "George Washington and Jefferson National Forests Appalachian Trail",
+    "mile_range_nobo_va": [
+      0,
+      547
+    ],
+    "permit_required": "no",
+    "fee_required": "no",
+    "source_id": "usfs_gwj_official_pages",
+    "source_url": "https://www.fs.usda.gov/r08/gwj/recreation/trails/appalachian-trail",
+    "license_status": "public_domain",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current forest orders, fire restrictions, food-storage orders, and district rules before itinerary commitment."
+  },
+  {
+    "state": "VA",
+    "rule_id": "mvp2-va-mount-rogers-nra",
+    "jurisdiction": "Mount Rogers National Recreation Area / Jefferson National Forest",
+    "mile_range_nobo_va": [
+      0,
+      75
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "usfs_gwj_official_pages",
+    "source_url": "https://www.fs.usda.gov/recarea/gwj/recarea/?recid=73949",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer exact camping permission from static MVP2. Verify current Mount Rogers/GWJ orders and area rules before advising."
+  },
+  {
+    "state": "VA",
+    "rule_id": "mvp2-va-grayson-highlands-state-park",
+    "jurisdiction": "Grayson Highlands State Park",
+    "mile_range_nobo_va": [
+      25,
+      45
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "virginia_dcr_state_parks",
+    "source_url": "https://www.dcr.virginia.gov/state-parks/grayson-highlands",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Verify current Grayson Highlands camping, fees, dogs, and fire rules. Do not infer legal camping from nearby OSM campsite points."
+  },
+  {
+    "state": "VA",
+    "rule_id": "mvp2-va-blue-ridge-parkway-crossings",
+    "jurisdiction": "Blue Ridge Parkway / Appalachian Trail crossing corridor",
+    "mile_range_nobo_va": [
+      269,
+      388
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "nps_blri_official_pages",
+    "source_url": "https://www.nps.gov/blri/planyourvisit/camping.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a crossing/current-condition source lane only. Verify current Blue Ridge Parkway closures, road status, fire rules, and camping rules live."
+  },
+  {
+    "state": "VA",
+    "rule_id": "mvp2-va-shenandoah-backcountry",
+    "jurisdiction": "Shenandoah National Park",
+    "mile_range_nobo_va": [
+      387,
+      494
+    ],
+    "permit_required": "yes",
+    "fee_required": "yes",
+    "source_id": "nps_shenandoah_official_pages",
+    "source_url": "https://www.nps.gov/shen/planyourvisit/backcountry-regulations.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current Shenandoah permit, fee, closure, food-storage, dog, and fire rules before itinerary commitment."
+  },
+  {
+    "state": "VA",
+    "rule_id": "mvp2-va-harpers-ferry-approach",
+    "jurisdiction": "Harpers Ferry National Historical Park approach / VA-WV-MD transition",
+    "mile_range_nobo_va": [
+      544,
+      547
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "nps_official_land_manager_pages",
+    "source_url": "https://home.nps.gov/hafe/planyourvisit/camp-hill-and-appalachian-trail.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Do not infer overnight permission near Harpers Ferry from this pack. Verify current park and adjacent land-manager rules live."
+  },
+  {
+    "state": "VA",
+    "rule_id": "mvp2-va-local-state-lands-source-gap",
+    "jurisdiction": "Other Virginia state/local lands and easement corridors along the AT",
+    "mile_range_nobo_va": [
+      0,
+      547
+    ],
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "source_id": "state_land_manager_official_pages",
+    "source_url": "https://www.dcr.virginia.gov/state-parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "When the exact jurisdiction is uncertain, say so and verify current rules with the land manager before camping, fire, dog, fee, or permit advice."
+  }
+]

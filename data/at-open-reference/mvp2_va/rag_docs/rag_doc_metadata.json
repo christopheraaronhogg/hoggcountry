@@ -1,0 +1,445 @@
+[
+  {
+    "path": "rag_docs/state_guides/VA.md",
+    "title": "MVP2 Virginia State Guide",
+    "kind": "state_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "nps_shenandoah_official_pages",
+      "usfs_gwj_official_pages"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/water.md",
+    "title": "MVP2 Virginia Water Policy",
+    "kind": "policy",
+    "source_ids": [
+      "usgs_3dhp_nhd",
+      "osm"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/weather_live_conditions.md",
+    "title": "MVP2 Virginia Live Conditions Policy",
+    "kind": "policy",
+    "source_ids": [
+      "noaa_nws_api",
+      "nps_api",
+      "usfs_gwj_official_pages",
+      "virginia_dcr_state_parks",
+      "atc_trail_updates_pointer"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/tread_rockiness.md",
+    "title": "MVP2 Virginia Tread Policy",
+    "kind": "policy",
+    "source_ids": [
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/policies/navigation.md",
+    "title": "MVP2 Virginia Navigation Policy",
+    "kind": "policy",
+    "source_ids": [
+      "osm",
+      "waymarked_trails_api"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/rules/camping_permit_fee_mvp2_va.md",
+    "title": "MVP2 Virginia Camping Rules",
+    "kind": "rules",
+    "source_ids": [
+      "usfs_gwj_official_pages",
+      "nps_shenandoah_official_pages",
+      "nps_blri_official_pages",
+      "virginia_dcr_state_parks"
+    ],
+    "license_status": "public_domain",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_000_025.md",
+    "title": "MVP2 Virginia Segment 0-25",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_025_050.md",
+    "title": "MVP2 Virginia Segment 25-50",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_050_075.md",
+    "title": "MVP2 Virginia Segment 50-75",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_075_100.md",
+    "title": "MVP2 Virginia Segment 75-100",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_100_125.md",
+    "title": "MVP2 Virginia Segment 100-125",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_125_150.md",
+    "title": "MVP2 Virginia Segment 125-150",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_150_175.md",
+    "title": "MVP2 Virginia Segment 150-175",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_175_200.md",
+    "title": "MVP2 Virginia Segment 175-200",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_200_225.md",
+    "title": "MVP2 Virginia Segment 200-225",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_225_250.md",
+    "title": "MVP2 Virginia Segment 225-250",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_250_275.md",
+    "title": "MVP2 Virginia Segment 250-275",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_275_300.md",
+    "title": "MVP2 Virginia Segment 275-300",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_300_325.md",
+    "title": "MVP2 Virginia Segment 300-325",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_325_350.md",
+    "title": "MVP2 Virginia Segment 325-350",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_350_375.md",
+    "title": "MVP2 Virginia Segment 350-375",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_375_400.md",
+    "title": "MVP2 Virginia Segment 375-400",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_400_425.md",
+    "title": "MVP2 Virginia Segment 400-425",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_425_450.md",
+    "title": "MVP2 Virginia Segment 425-450",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_450_475.md",
+    "title": "MVP2 Virginia Segment 450-475",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_475_500.md",
+    "title": "MVP2 Virginia Segment 475-500",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_500_525.md",
+    "title": "MVP2 Virginia Segment 500-525",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  },
+  {
+    "path": "rag_docs/segment_guides/mvp2_va_525_547.md",
+    "title": "MVP2 Virginia Segment 525-547",
+    "kind": "segment_guide",
+    "source_ids": [
+      "osm",
+      "usgs_3dep",
+      "usgs_3dhp_nhd",
+      "mvp2_va_tread_model"
+    ],
+    "license_status": "open_license_share_alike",
+    "confidence": "source_aware_generated_summary",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "RAG doc summarizes source-aware MVP2 Virginia records; preserve generated-mile, water, live-condition, legal-rule, and model-confidence cautions."
+  }
+]

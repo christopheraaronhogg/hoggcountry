@@ -1,0 +1,221 @@
+[
+  {
+    "rule_id": "mvp2-va-gwj-nf-at",
+    "jurisdiction": "George Washington and Jefferson National Forests Appalachian Trail",
+    "land_manager_type": "national_forest",
+    "state": [
+      "VA"
+    ],
+    "mile_range_nobo_va": [
+      0,
+      547
+    ],
+    "mile_range_nobo_global_est": [
+      459,
+      1006
+    ],
+    "camping_policy": "at_shelter_stay_limit; verify_dispersed_rules_by_district_and_current_forest_orders",
+    "permit_required": "no",
+    "fee_required": "no",
+    "food_storage_rule": "verify_current_order; bear-resistant storage may be required by forest order in affected areas",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_fire_restrictions_and_forest_orders",
+    "source_id": "usfs_gwj_official_pages",
+    "source_url": "https://www.fs.usda.gov/r08/gwj/recreation/trails/appalachian-trail",
+    "license_status": "public_domain",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "USFS GWJ Appalachian Trail page is the source lane for general AT access, shelter stay limits, fees, and forest-order cautions.",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current forest orders, fire restrictions, food-storage orders, and district rules before itinerary commitment.",
+    "attribution": "U.S. Forest Service"
+  },
+  {
+    "rule_id": "mvp2-va-mount-rogers-nra",
+    "jurisdiction": "Mount Rogers National Recreation Area / Jefferson National Forest",
+    "land_manager_type": "national_recreation_area",
+    "state": [
+      "VA"
+    ],
+    "mile_range_nobo_va": [
+      0,
+      75
+    ],
+    "mile_range_nobo_global_est": [
+      459,
+      534
+    ],
+    "camping_policy": "national_forest_backcountry_rules_with_area_specific_orders; verify_current_designated_and_closure_rules",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_bear_food_storage_order",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_fire_restrictions_and_forest_orders",
+    "source_id": "usfs_gwj_official_pages",
+    "source_url": "https://www.fs.usda.gov/recarea/gwj/recarea/?recid=73949",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Mount Rogers/Jefferson NF source lane needs live district/order checks before camping, fire, group, and food-storage advice.",
+    "ai_answer_rule": "Do not infer exact camping permission from static MVP2. Verify current Mount Rogers/GWJ orders and area rules before advising.",
+    "attribution": "U.S. Forest Service"
+  },
+  {
+    "rule_id": "mvp2-va-grayson-highlands-state-park",
+    "jurisdiction": "Grayson Highlands State Park",
+    "land_manager_type": "state_park",
+    "state": [
+      "VA"
+    ],
+    "mile_range_nobo_va": [
+      25,
+      45
+    ],
+    "mile_range_nobo_global_est": [
+      484,
+      504
+    ],
+    "camping_policy": "state_park_camping_and_backpacker_rules_verify_current_reservation_and_boundary_requirements",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_state_park_fire_rules",
+    "source_id": "virginia_dcr_state_parks",
+    "source_url": "https://www.dcr.virginia.gov/state-parks/grayson-highlands",
+    "license_status": "open_license_attribution",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Virginia State Parks official source lane for Grayson Highlands. Static MVP2 does not package detailed reservation or camping text.",
+    "ai_answer_rule": "Verify current Grayson Highlands camping, fees, dogs, and fire rules. Do not infer legal camping from nearby OSM campsite points.",
+    "attribution": "Virginia Department of Conservation and Recreation"
+  },
+  {
+    "rule_id": "mvp2-va-blue-ridge-parkway-crossings",
+    "jurisdiction": "Blue Ridge Parkway / Appalachian Trail crossing corridor",
+    "land_manager_type": "national_parkway",
+    "state": [
+      "VA"
+    ],
+    "mile_range_nobo_va": [
+      269,
+      388
+    ],
+    "mile_range_nobo_global_est": [
+      728,
+      847
+    ],
+    "camping_policy": "parkway_crossing_and_camping_rules_verify_current_site_specific_rules",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_parkway_fire_and_closure_rules",
+    "source_id": "nps_blri_official_pages",
+    "source_url": "https://www.nps.gov/blri/planyourvisit/camping.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "NPS Blue Ridge Parkway source lane for crossings, closures, camping, and restrictions. MVP2 does not infer overnight rules from road crossings.",
+    "ai_answer_rule": "Use as a crossing/current-condition source lane only. Verify current Blue Ridge Parkway closures, road status, fire rules, and camping rules live.",
+    "attribution": "National Park Service"
+  },
+  {
+    "rule_id": "mvp2-va-shenandoah-backcountry",
+    "jurisdiction": "Shenandoah National Park",
+    "land_manager_type": "national_park",
+    "state": [
+      "VA"
+    ],
+    "mile_range_nobo_va": [
+      387,
+      494
+    ],
+    "mile_range_nobo_global_est": [
+      846,
+      953
+    ],
+    "camping_policy": "permit_required_backcountry_with_distance_and_closure_rules",
+    "permit_required": "yes",
+    "fee_required": "yes",
+    "food_storage_rule": "store food properly per current park guidance; verify current bear-food-storage requirements",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_park_fire_rules_and_closures",
+    "source_id": "nps_shenandoah_official_pages",
+    "source_url": "https://www.nps.gov/shen/planyourvisit/backcountry-regulations.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "NPS Shenandoah backcountry regulations are the official source lane for permit, fee, camping, closure, and food-storage checks.",
+    "ai_answer_rule": "Use as an official-source summary only. Verify current Shenandoah permit, fee, closure, food-storage, dog, and fire rules before itinerary commitment.",
+    "attribution": "National Park Service"
+  },
+  {
+    "rule_id": "mvp2-va-harpers-ferry-approach",
+    "jurisdiction": "Harpers Ferry National Historical Park approach / VA-WV-MD transition",
+    "land_manager_type": "national_historical_park",
+    "state": [
+      "VA",
+      "WV",
+      "MD"
+    ],
+    "mile_range_nobo_va": [
+      544,
+      547
+    ],
+    "mile_range_nobo_global_est": [
+      1003,
+      1006
+    ],
+    "camping_policy": "source_gap_no_backcountry_camping_permission_inferred",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_rule",
+    "source_id": "nps_official_land_manager_pages",
+    "source_url": "https://home.nps.gov/hafe/planyourvisit/camp-hill-and-appalachian-trail.htm",
+    "license_status": "public_domain",
+    "confidence": "official_source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "Harpers Ferry source lane is a transition/current-access check, not a static camping permission record.",
+    "ai_answer_rule": "Do not infer overnight permission near Harpers Ferry from this pack. Verify current park and adjacent land-manager rules live.",
+    "attribution": "National Park Service"
+  },
+  {
+    "rule_id": "mvp2-va-local-state-lands-source-gap",
+    "jurisdiction": "Other Virginia state/local lands and easement corridors along the AT",
+    "land_manager_type": "state_local_source_gap",
+    "state": [
+      "VA"
+    ],
+    "mile_range_nobo_va": [
+      0,
+      547
+    ],
+    "mile_range_nobo_global_est": [
+      459,
+      1006
+    ],
+    "camping_policy": "unknown_verify_current_land_manager",
+    "permit_required": "unknown",
+    "fee_required": "unknown",
+    "food_storage_rule": "verify_current_rule",
+    "dogs_allowed": "verify_current_rule",
+    "fire_rule": "verify_current_rule",
+    "source_id": "state_land_manager_official_pages",
+    "source_url": "https://www.dcr.virginia.gov/state-parks/",
+    "license_status": "open_license_attribution",
+    "confidence": "source_gap",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "source_summary": "MVP2 does not fully map every Virginia local/state/easement rule. Treat as a gap for current official verification.",
+    "ai_answer_rule": "When the exact jurisdiction is uncertain, say so and verify current rules with the land manager before camping, fire, dog, fee, or permit advice.",
+    "attribution": "Virginia Department of Conservation and Recreation"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "pack": "scout-at-mvp2-va",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "route_id": "at-mvp2-va-damascus-harpers-ferry-open-2026",
+  "va_miles": 547,
+  "production_safe_export": "processed/export/scout_at_mvp2_va_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp2_va_production_safe.zip",
+  "source_manifest": "source_manifest.yaml",
+  "validation": "run_mvp2_va_validation.py"
+}
