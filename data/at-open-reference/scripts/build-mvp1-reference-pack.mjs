@@ -54,6 +54,90 @@ function writeText(relativePath, text) {
   fs.writeFileSync(target, text.trimEnd() + '\n', 'utf8');
 }
 
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function dosTimestamp(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return {
+    time: 0,
+    date: ((year - 1980) << 9) | (month << 5) | day,
+  };
+}
+
+function writeZip(relativePath, entries) {
+  const target = path.join(mvpRoot, relativePath);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+
+  const timestamp = dosTimestamp(GENERATED_DATE);
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+
+  for (const entry of entries) {
+    const name = Buffer.from(entry.name, 'utf8');
+    const data = Buffer.isBuffer(entry.data) ? entry.data : Buffer.from(entry.data, 'utf8');
+    const crc = crc32(data);
+
+    const localHeader = Buffer.alloc(30);
+    localHeader.writeUInt32LE(0x04034b50, 0);
+    localHeader.writeUInt16LE(20, 4);
+    localHeader.writeUInt16LE(0, 6);
+    localHeader.writeUInt16LE(0, 8);
+    localHeader.writeUInt16LE(timestamp.time, 10);
+    localHeader.writeUInt16LE(timestamp.date, 12);
+    localHeader.writeUInt32LE(crc, 14);
+    localHeader.writeUInt32LE(data.length, 18);
+    localHeader.writeUInt32LE(data.length, 22);
+    localHeader.writeUInt16LE(name.length, 26);
+    localHeader.writeUInt16LE(0, 28);
+    localParts.push(localHeader, name, data);
+
+    const centralHeader = Buffer.alloc(46);
+    centralHeader.writeUInt32LE(0x02014b50, 0);
+    centralHeader.writeUInt16LE(20, 4);
+    centralHeader.writeUInt16LE(20, 6);
+    centralHeader.writeUInt16LE(0, 8);
+    centralHeader.writeUInt16LE(0, 10);
+    centralHeader.writeUInt16LE(timestamp.time, 12);
+    centralHeader.writeUInt16LE(timestamp.date, 14);
+    centralHeader.writeUInt32LE(crc, 16);
+    centralHeader.writeUInt32LE(data.length, 20);
+    centralHeader.writeUInt32LE(data.length, 24);
+    centralHeader.writeUInt16LE(name.length, 28);
+    centralHeader.writeUInt16LE(0, 30);
+    centralHeader.writeUInt16LE(0, 32);
+    centralHeader.writeUInt16LE(0, 34);
+    centralHeader.writeUInt16LE(0, 36);
+    centralHeader.writeUInt32LE(0, 38);
+    centralHeader.writeUInt32LE(offset, 42);
+    centralParts.push(centralHeader, name);
+
+    offset += localHeader.length + name.length + data.length;
+  }
+
+  const centralDirectory = Buffer.concat(centralParts);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(0, 4);
+  end.writeUInt16LE(0, 6);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(centralDirectory.length, 12);
+  end.writeUInt32LE(offset, 16);
+  end.writeUInt16LE(0, 20);
+
+  fs.writeFileSync(target, Buffer.concat([...localParts, centralDirectory, end]));
+}
+
 function round(value, digits = 1) {
   const multiplier = 10 ** digits;
   return Math.round(value * multiplier) / multiplier;
@@ -1126,7 +1210,7 @@ Generated: ${GENERATED_DATE}
 | Live conditions policy for closures, detours, fire, flooding, storm damage, bear activity, snow/ice, permit changes, dangerous weather | \`processed/live_conditions/*.json\`, \`rag_docs/policies/weather_live_conditions.md\` | Validator checks required live-condition terms and source metadata. |
 | Tread/rockiness model at 0.1/1/5 miles with 0-5 scores and pace penalties | \`processed/tread_rockiness/*.json\`, \`processed/tread_rockiness/model_notes.md\`, \`schemas/tread_rockiness.schema.json\` | Validator checks score range, exact pace multipliers, field_verified:false, and not-field-verified cautions. |
 | RAG docs for GA, NC/TN, 25-mile segments, water/navigation/weather/tread policies | \`rag_docs/state_guides/*.md\`, \`rag_docs/segment_guides/*.md\`, \`rag_docs/policies/*.md\`, \`rag_docs/rag_doc_metadata.json\` | Validator checks >=15 docs, metadata/file alignment, caution language, and terminal 225-235 segment. |
-| Schemas, validators, behavior questions, report, production-safe export, status dashboard | \`schemas/*.schema.json\`, \`run_mvp1_validation.py\`, \`tests/mvp1_behavior_questions.json\`, \`data_quality_report_mvp1.md\`, \`processed/export/*\`, \`MVP1_STATUS.md\` | Validator writes \`tests/validation_results_mvp1.json\` and the repo test suite runs it. |
+| Schemas, validators, behavior questions, report, production-safe JSON/zip export, status dashboard | \`schemas/*.schema.json\`, \`run_mvp1_validation.py\`, \`tests/mvp1_behavior_questions.json\`, \`data_quality_report_mvp1.md\`, \`processed/export/*\`, \`MVP1_STATUS.md\` | Validator writes \`tests/validation_results_mvp1.json\` and the repo test suite runs it. |
 
 Done standard: validation passes or failures are explicitly documented, and Scout answers MVP1 questions with source, license, confidence, generated-mile, water, live-condition, and model-confidence cautions.
 `);
@@ -1158,16 +1242,24 @@ Done standard: validation passes or failures are explicitly documented, and Scou
     excluded_license_statuses: ['unknown_review_required', 'blocked'],
     ai_answer_rule: 'Production-safe MVP1 export still requires generated-mile, water, live-condition, and model-confidence cautions.',
   };
-  writeJson('processed/export/scout_at_mvp1_production_safe.json', productionSafe);
-  writeJson('processed/export/manifest.json', {
+  const exportManifest = {
     pack: 'scout-at-mvp1',
     generated_at: GENERATED_AT,
     route_id: ROUTE_ID,
     end_mile_nobo: END_MILE,
     production_safe_export: 'processed/export/scout_at_mvp1_production_safe.json',
+    production_safe_zip: 'processed/export/scout_at_mvp1_production_safe.zip',
     source_manifest: 'source_manifest.yaml',
     validation: 'run_mvp1_validation.py',
-  });
+  };
+  writeJson('processed/export/scout_at_mvp1_production_safe.json', productionSafe);
+  writeJson('processed/export/manifest.json', exportManifest);
+  writeZip('processed/export/scout_at_mvp1_production_safe.zip', [
+    { name: 'scout_at_mvp1_production_safe.json', data: `${JSON.stringify(productionSafe, null, 2)}\n` },
+    { name: 'manifest.json', data: `${JSON.stringify(exportManifest, null, 2)}\n` },
+    { name: 'source_manifest.yaml', data: `${JSON.stringify(manifest, null, 2)}\n` },
+    { name: 'README.md', data: `Scout AT MVP1 production-safe export generated ${GENERATED_DATE}.\nGenerated miles are not official. Water reliability/potability is unknown unless verified. Current conditions require live checks.\n` },
+  ]);
 
   writeText('data_quality_report_mvp1.md', `# MVP1 Data Quality Report
 
@@ -1183,6 +1275,7 @@ Generated: ${GENERATED_DATE}
 - Live-condition source policy for NWS, NPS, USFS, and land-manager pages.
 - Tread/rockiness model at 0.1, 1.0, and 5.0 mile intervals.
 - RAG docs and >=40 behavior questions.
+- Production-safe JSON export, manifest, and zip archive.
 
 ## Counts
 - Water candidates: ${water.length}
@@ -1208,6 +1301,7 @@ Generated: ${GENERATED_DATE}
 - NWS and NPS are API-accessible live-condition lanes.
 - NPS, USFS, and reviewed state official pages are used for cautious rule/source pointers.
 - Unknown-review and blocked sources are excluded from production-safe exports.
+- Production-safe JSON and zip exports exclude unknown-review and blocked source records.
 
 ## Measured Length
 Scout MVP1 measured length is ${END_MILE.toFixed(1)} generated miles along the open route subset. This is not official ATC mileage and inherits the parent route's known length-gap warning.
@@ -1236,6 +1330,7 @@ Status: generated; latest validation result is tracked in \`tests/validation_res
 - Current route length: ${END_MILE.toFixed(1)} generated miles.
 - Sources: ${manifest.length} MVP1 source records.
 - Production-safe export: \`processed/export/scout_at_mvp1_production_safe.json\`.
+- Production-safe zip: \`processed/export/scout_at_mvp1_production_safe.zip\`.
 - Validator: \`python3 data/at-open-reference/mvp1/run_mvp1_validation.py\`.
 - Cautions: generated miles are not official; water is not reliable/potable by default; tread is not field verified; current conditions require live checks.
 `);

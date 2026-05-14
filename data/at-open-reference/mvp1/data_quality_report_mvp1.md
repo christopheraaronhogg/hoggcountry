@@ -12,6 +12,7 @@ Generated: 2026-05-14
 - Live-condition source policy for NWS, NPS, USFS, and land-manager pages.
 - Tread/rockiness model at 0.1, 1.0, and 5.0 mile intervals.
 - RAG docs and >=40 behavior questions.
+- Production-safe JSON export, manifest, and zip archive.
 
 ## Counts
 - Water candidates: 159
@@ -37,6 +38,7 @@ Generated: 2026-05-14
 - NWS and NPS are API-accessible live-condition lanes.
 - NPS, USFS, and reviewed state official pages are used for cautious rule/source pointers.
 - Unknown-review and blocked sources are excluded from production-safe exports.
+- Production-safe JSON and zip exports exclude unknown-review and blocked source records.
 
 ## Measured Length
 Scout MVP1 measured length is 234.7 generated miles along the open route subset. This is not official ATC mileage and inherits the parent route's known length-gap warning.

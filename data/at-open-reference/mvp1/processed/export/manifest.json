@@ -4,6 +4,7 @@
   "route_id": "at-mvp1-springer-davenport-open-2026",
   "end_mile_nobo": 234.7,
   "production_safe_export": "processed/export/scout_at_mvp1_production_safe.json",
+  "production_safe_zip": "processed/export/scout_at_mvp1_production_safe.zip",
   "source_manifest": "source_manifest.yaml",
   "validation": "run_mvp1_validation.py"
 }

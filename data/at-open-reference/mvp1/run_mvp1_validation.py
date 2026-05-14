@@ -60,6 +60,7 @@ REQUIRED_PATHS = [
     "processed/tread_rockiness/model_notes.md",
     "processed/export/manifest.json",
     "processed/export/scout_at_mvp1_production_safe.json",
+    "processed/export/scout_at_mvp1_production_safe.zip",
     "rag_docs/state_guides/GA.md",
     "rag_docs/state_guides/NC_TN.md",
     "rag_docs/rules/camping_permit_fee_mvp1.md",
@@ -244,6 +245,10 @@ def validate_pack() -> dict[str, Any]:
         fail_if(source.get("source_id") in BLOCKED_SOURCE_IDS, failures, "safe export includes blocked source")
     fail_if("unknown_review_required" not in safe_export.get("excluded_license_statuses", []), failures, "safe export missing unknown exclusion")
     fail_if("blocked" not in safe_export.get("excluded_license_statuses", []), failures, "safe export missing blocked exclusion")
+    export_manifest = j("processed/export/manifest.json")
+    fail_if(export_manifest.get("production_safe_zip") != "processed/export/scout_at_mvp1_production_safe.zip", failures, "zip export not declared")
+    zip_path = ROOT / "processed/export/scout_at_mvp1_production_safe.zip"
+    fail_if(not zip_path.read_bytes().startswith(b"PK\x03\x04"), failures, "zip export missing ZIP header")
 
     report = t("data_quality_report_mvp1.md").lower()
     for term in ["work completed", "sources", "licenses", "measured", "gaps", "blocked sources", "validation"]:
