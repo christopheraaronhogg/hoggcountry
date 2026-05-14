@@ -1,0 +1,67 @@
+[
+  {
+    "path": "processed/route/full_at_route_rc1.geojson",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/milepoints/full_at_milepoints_0_1mi.geojson",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/milepoints/full_at_milepoints_0_5mi.geojson",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/milepoints/full_at_milepoints_1_0mi.geojson",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/elevation/full_trail_elevation_samples_1_0mi.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/water/full_trail_water_candidates.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/water/full_trail_major_ford_candidates.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/rules/full_trail_rules_by_land_manager.json",
+    "production_safe": false,
+    "reason": "mixed pointer/test/rules content; filtered from production-safe export"
+  },
+  {
+    "path": "processed/live_conditions/full_trail_live_condition_sources.json",
+    "production_safe": false,
+    "reason": "mixed pointer/test/rules content; filtered from production-safe export"
+  },
+  {
+    "path": "processed/tread/full_trail_tread_rockiness_1_0mi.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/difficulty/full_trail_difficulty_by_10mi_segment.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "rag_docs/rag_doc_metadata.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "tests/full_trail_rc1_behavior_questions.json",
+    "production_safe": false,
+    "reason": "mixed pointer/test/rules content; filtered from production-safe export"
+  }
+]

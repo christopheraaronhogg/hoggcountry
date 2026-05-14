@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""Validate Scout Full Trail RC1 source-aware reference pack."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+from zipfile import ZipFile
+
+ROOT = Path(__file__).resolve().parent
+VALID_LICENSES = {"public_domain", "open_license_attribution", "open_license_share_alike", "api_access_allowed"}
+BLOCKED_LICENSES = {"blocked", "unknown_review_required", "permission_required"}
+
+REQUIRED_PATHS = [
+    "README.md",
+    "manifest.json",
+    "FULL_TRAIL_RC1_STATUS.md",
+    "data_quality_report_full_trail_rc1.md",
+    "full_trail_source_manifest.yaml",
+    "full_trail_license_review.md",
+    "blocked_sources.md",
+    "attribution.md",
+    "processed/route/full_at_route_rc1.geojson",
+    "processed/route/route_integration_notes.md",
+    "processed/milepoints/full_at_milepoints_0_1mi.geojson",
+    "processed/milepoints/full_at_milepoints_0_5mi.geojson",
+    "processed/milepoints/full_at_milepoints_1_0mi.geojson",
+    "processed/milepoints/global_mile_alignment_report.md",
+    "processed/elevation/full_trail_elevation_samples_1_0mi.json",
+    "processed/elevation/full_trail_elevation_by_5mi_segment.json",
+    "processed/elevation/full_trail_elevation_by_10mi_segment.json",
+    "processed/water/full_trail_water_candidates.json",
+    "processed/water/full_trail_major_ford_candidates.json",
+    "processed/waypoints/full_trail_shelters.json",
+    "processed/waypoints/full_trail_campsites.json",
+    "processed/waypoints/full_trail_privies.json",
+    "processed/waypoints/full_trail_parking.json",
+    "processed/waypoints/full_trail_trailheads.json",
+    "processed/waypoints/full_trail_road_crossings.json",
+    "processed/waypoints/full_trail_towns_resupply_candidates.json",
+    "processed/rules/full_trail_rules_by_land_manager.json",
+    "processed/live_conditions/full_trail_live_condition_sources.json",
+    "processed/tread/full_trail_tread_rockiness_1_0mi.json",
+    "processed/difficulty/full_trail_daily_difficulty_model.md",
+    "processed/difficulty/full_trail_daily_difficulty_model.json",
+    "processed/difficulty/full_trail_difficulty_by_10mi_segment.json",
+    "processed/index/full_trail_dataset_index.json",
+    "processed/index/full_trail_file_manifest.json",
+    "rag_docs/overview/full_trail_overview.md",
+    "rag_docs/state_guides/state_guide_index.md",
+    "rag_docs/segment_guides/segment_index_25mi.md",
+    "rag_docs/rules/land_manager_rules_index.md",
+    "rag_docs/policies/water.md",
+    "rag_docs/policies/weather_live_conditions.md",
+    "rag_docs/policies/closures.md",
+    "rag_docs/policies/navigation.md",
+    "rag_docs/policies/tread.md",
+    "rag_docs/policies/difficulty.md",
+    "rag_docs/policies/license_attribution.md",
+    "rag_docs/rag_doc_metadata.json",
+    "tests/full_trail_rc1_behavior_questions.json",
+    "exports/full_trail_reference_pack_rc1.zip",
+    "exports/manifest.json",
+]
+
+
+def j(path: str) -> Any:
+    return json.loads((ROOT / path).read_text())
+
+
+def t(path: str) -> str:
+    return (ROOT / path).read_text()
+
+
+def rows(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, list):
+        return [row for row in value if isinstance(row, dict)]
+    if isinstance(value, dict) and isinstance(value.get("features"), list):
+        return [feature.get("properties", feature) for feature in value["features"] if isinstance(feature, dict)]
+    return []
+
+
+def fail_if(condition: bool, failures: list[str], message: str) -> None:
+    if condition:
+        failures.append(message)
+
+
+def common(record: dict[str, Any], failures: list[str], label: str) -> None:
+    fail_if(not (record.get("source_id") or record.get("source_ids") or record.get("source_route_id")), failures, f"{label} missing source")
+    fail_if(record.get("license_status") in BLOCKED_LICENSES, failures, f"{label} blocked/review license")
+    fail_if(not record.get("confidence"), failures, f"{label} missing confidence")
+    fail_if(not (record.get("last_checked") or record.get("last_generated")), failures, f"{label} missing timestamp")
+    fail_if(not record.get("ai_answer_rule"), failures, f"{label} missing ai_answer_rule")
+
+
+def validate() -> dict[str, Any]:
+    failures: list[str] = []
+    for path in REQUIRED_PATHS:
+        fail_if(not (ROOT / path).exists(), failures, f"missing {path}")
+
+    manifest = j("full_trail_source_manifest.yaml")
+    fail_if(len(manifest) < 20, failures, "source manifest too small")
+    source_map = {source.get("source_id"): source for source in manifest}
+    for source in manifest:
+        for field in ["source_id", "name", "owner", "source_url", "license_status", "allowed_use", "confidence", "last_checked"]:
+            fail_if(not source.get(field), failures, f"source {source.get('source_id')} missing {field}")
+        if source.get("production_safe"):
+            fail_if(source.get("license_status") not in VALID_LICENSES, failures, f"production-safe source {source.get('source_id')} has unsafe license")
+    for blocked in ["farout", "awol_at_guide", "at_data_book", "alltrails_gaia_hiking_project", "atc_website"]:
+        fail_if(source_map.get(blocked, {}).get("license_status") != "blocked", failures, f"{blocked} not blocked")
+
+    route = rows(j("processed/route/full_at_route_rc1.geojson"))[0]
+    common(route, failures, "route")
+    fail_if(route.get("official") is not False, failures, "route official must be false")
+    fail_if(route.get("measured_length_miles") != 2106.2, failures, "route measured length mismatch")
+    fail_if(route.get("length_delta_miles") != -91.7, failures, "route length delta missing")
+    fail_if("coverage_gaps" not in route or not route["coverage_gaps"], failures, "route missing coverage gaps")
+    notes = t("processed/route/route_integration_notes.md").lower()
+    for term in ["davenport gap", "damascus", "amicalola", "baxter", "katahdin", "not official", "openstreetmap"]:
+        fail_if(term not in notes, failures, f"route notes missing {term}")
+
+    for interval, minimum in [("0_1", 21000), ("0_5", 4200), ("1_0", 2100)]:
+        milepoints = rows(j(f"processed/milepoints/full_at_milepoints_{interval}mi.geojson"))
+        fail_if(len(milepoints) < minimum, failures, f"{interval} milepoints too few")
+        previous = -1
+        for record in milepoints[:25] + milepoints[-25:]:
+            common(record, failures, f"milepoint {interval}")
+            fail_if(record.get("official") is not False, failures, "milepoint official not false")
+            fail_if("not an official atc mile" not in record.get("ai_answer_rule", "").lower(), failures, "milepoint lacks official caution")
+        for record in milepoints:
+            mile = record.get("mile_nobo_global_est")
+            fail_if(mile is None or mile < previous, failures, f"{interval} milepoints not monotonic")
+            previous = mile
+
+    water = j("processed/water/full_trail_water_candidates.json")
+    fail_if(len(water) < 1700, failures, "water candidates too few")
+    for record in water[:50] + water[-50:]:
+        common(record, failures, "water")
+        fail_if(record.get("reliability") != "unknown", failures, "water reliability overclaimed")
+        fail_if(record.get("potable") != "unknown", failures, "water potability overclaimed")
+        fail_if(record.get("last_human_verified") is not None, failures, "water human verified without proof")
+        fail_if("mapped water candidate" not in record.get("ai_answer_rule", "").lower(), failures, "water answer rule missing mapped candidate")
+    for record in j("processed/water/full_trail_major_ford_candidates.json")[:50]:
+        common(record, failures, "ford")
+        fail_if(record.get("ford_safety") != "unknown", failures, "ford safety overclaimed")
+        fail_if("never call" not in record.get("ai_answer_rule", "").lower(), failures, "ford safety caution missing")
+
+    for dataset in ["full_trail_shelters", "full_trail_campsites", "full_trail_parking", "full_trail_road_crossings", "full_trail_towns_resupply_candidates"]:
+        records = j(f"processed/waypoints/{dataset}.json")
+        fail_if(len(records) < 20, failures, f"{dataset} too small")
+        for record in records[:20]:
+            common(record, failures, dataset)
+            fail_if(record.get("production_safe") is not True, failures, f"{dataset} unsafe record in candidate output")
+
+    rules = j("processed/rules/full_trail_rules_by_land_manager.json")
+    fail_if(len(rules) < 20, failures, "rules too few")
+    rules_text = json.dumps(rules).lower()
+    for term in ["shenandoah", "baxter", "katahdin", "white mountain", "connecticut", "new jersey", "smok", "permit"]:
+        fail_if(term not in rules_text, failures, f"rules missing {term}")
+    fail_if("dispersed camping is allowed everywhere" in rules_text, failures, "illegal camping advice present")
+
+    live_policy = t("processed/live_conditions/full_trail_live_condition_policy.md").lower()
+    for term in ["nws", "nps", "usfs", "state", "baxter", "katahdin", "atc trail updates", "live retrieval fails"]:
+        fail_if(term not in live_policy, failures, f"live policy missing {term}")
+
+    tread = j("processed/tread/full_trail_tread_rockiness_1_0mi.json")
+    fail_if(len(tread) < 2000, failures, "tread records too few")
+    fail_if(not any(record.get("confidence") == "low" and record.get("region_id") == "coverage_gap_davenport_damascus" for record in tread), failures, "gap tread low confidence missing")
+    for record in tread[:25] + tread[-25:]:
+        common(record, failures, "tread")
+        fail_if(record.get("field_verified") is not False, failures, "tread unexpectedly field verified")
+        fail_if(record.get("score") not in [0, 1, 2, 3, 4, 5], failures, "tread score outside range")
+
+    difficulty = j("processed/difficulty/full_trail_difficulty_by_10mi_segment.json")
+    fail_if(len(difficulty) < 210, failures, "difficulty segments too few")
+    fail_if(not any(record["factors"].get("ford_uncertainty_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks ford factor")
+    fail_if(not any(record["factors"].get("regional_gap_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks regional gap factor")
+    fail_if(not any(record["factors"].get("permit_rule_friction_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks permit/rule friction")
+    for record in difficulty[:10]:
+        common(record, failures, "difficulty")
+        fail_if(record.get("difficulty_score_0_10") is None, failures, "difficulty missing score")
+
+    rag_metadata = j("rag_docs/rag_doc_metadata.json")
+    fail_if(len(rag_metadata) < 84, failures, "RAG segment metadata too few")
+    for record in rag_metadata[:10]:
+        common(record, failures, "rag metadata")
+    segment_index = t("rag_docs/segment_guides/segment_index_25mi.md").lower()
+    fail_if("2106" not in segment_index, failures, "segment index missing end")
+
+    qa = j("tests/full_trail_rc1_behavior_questions.json")
+    fail_if(len(qa) < 200, failures, "QA questions below 200")
+    qa_text = json.dumps(qa).lower()
+    for term in ["itinerary", "shelter", "water", "permit", "camping", "weather", "closures", "rockiness", "ford", "baxter", "katahdin", "smokies", "shenandoah", "white mountains", "nj/ct", "pa rockiness", "resupply", "davenport"]:
+        fail_if(term not in qa_text, failures, f"QA missing {term}")
+
+    dataset_index = j("processed/index/full_trail_dataset_index.json")
+    safe_files = {entry["path"] for entry in dataset_index if entry.get("production_safe")}
+    with ZipFile(ROOT / "exports/full_trail_reference_pack_rc1.zip") as zf:
+        names = set(zf.namelist())
+    for required in ["attribution.md", "manifest.json"]:
+        fail_if(required not in names, failures, f"export missing {required}")
+    for safe in safe_files:
+        fail_if(safe not in names, failures, f"export missing safe file {safe}")
+    for entry in dataset_index:
+        if not entry.get("production_safe"):
+            fail_if(entry["path"] in names, failures, f"export included unsafe file {entry['path']}")
+
+    return {
+        "ok": not failures,
+        "failures": failures,
+        "route_miles": route.get("measured_length_miles"),
+        "milepoints_0_1mi": len(rows(j("processed/milepoints/full_at_milepoints_0_1mi.geojson"))),
+        "water_candidates": len(water),
+        "rules": len(rules),
+        "tread_1mi_records": len(tread),
+        "difficulty_segments": len(difficulty),
+        "rag_docs": len(rag_metadata),
+        "behavior_questions": len(qa),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args()
+    result = validate()
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print("ok" if result["ok"] else "failed")
+        for failure in result["failures"]:
+            print(f"- {failure}")
+    raise SystemExit(0 if result["ok"] else 1)
+
+
+if __name__ == "__main__":
+    main()

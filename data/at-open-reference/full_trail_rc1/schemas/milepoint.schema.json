@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": [
+    "mile_nobo_global_est",
+    "mile_nobo_mvp6",
+    "mile_sobo_mvp6",
+    "official",
+    "source_route_id",
+    "confidence",
+    "license_status",
+    "last_generated"
+  ]
+}

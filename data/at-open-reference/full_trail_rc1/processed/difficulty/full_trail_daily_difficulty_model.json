@@ -1,0 +1,28 @@
+{
+  "model_id": "full_trail_daily_difficulty_model_v1",
+  "route_id": "at-full-trail-rc1-open-2026",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "score_range": [
+    0,
+    10
+  ],
+  "classes": [
+    "easier",
+    "moderate",
+    "hard",
+    "severe"
+  ],
+  "inputs": [
+    "distance",
+    "gain_loss",
+    "descents",
+    "tread",
+    "mud_rootiness",
+    "ford_uncertainty",
+    "remoteness_bailout_scarcity",
+    "water_uncertainty",
+    "weather_severity",
+    "permit_rule_friction"
+  ],
+  "ai_answer_rule": "Use for cautious itinerary screening only with uncertainty and live-check requirements."
+}

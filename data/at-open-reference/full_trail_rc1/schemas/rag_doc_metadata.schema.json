@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": [
+    "path",
+    "title",
+    "kind",
+    "source_ids",
+    "license_status",
+    "confidence",
+    "last_generated",
+    "ai_answer_rule"
+  ]
+}

@@ -1,0 +1,5295 @@
+[
+  {
+    "segment_id": "full-rc1-elevation-10mi-001",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 0,
+    "end_mile_nobo_global_est": 10,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 650,
+    "elevation_loss_ft": 1634,
+    "highest_point_ft": 3760,
+    "lowest_point_ft": 2602,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-002",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 10,
+    "end_mile_nobo_global_est": 20,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1139,
+    "elevation_loss_ft": 726,
+    "highest_point_ft": 3314,
+    "lowest_point_ft": 2643,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-003",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 20,
+    "end_mile_nobo_global_est": 30,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1948,
+    "elevation_loss_ft": 1882,
+    "highest_point_ft": 4373,
+    "lowest_point_ft": 2906,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-004",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 30,
+    "end_mile_nobo_global_est": 40,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1413,
+    "elevation_loss_ft": 1268,
+    "highest_point_ft": 3845,
+    "lowest_point_ft": 3142,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-005",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 40,
+    "end_mile_nobo_global_est": 50,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 813,
+    "elevation_loss_ft": 796,
+    "highest_point_ft": 3926,
+    "lowest_point_ft": 3219,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-006",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 50,
+    "end_mile_nobo_global_est": 60,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1825,
+    "elevation_loss_ft": 1549,
+    "highest_point_ft": 4139,
+    "lowest_point_ft": 3198,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-007",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 60,
+    "end_mile_nobo_global_est": 70,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1069,
+    "elevation_loss_ft": 1102,
+    "highest_point_ft": 3833,
+    "lowest_point_ft": 2931,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-008",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 70,
+    "end_mile_nobo_global_est": 80,
+    "states": [
+      "GA",
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1529,
+    "elevation_loss_ft": 727,
+    "highest_point_ft": 4663,
+    "lowest_point_ft": 3134,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-009",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 80,
+    "end_mile_nobo_global_est": 90,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1616,
+    "elevation_loss_ft": 1454,
+    "highest_point_ft": 5256,
+    "lowest_point_ft": 4281,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-010",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 90,
+    "end_mile_nobo_global_est": 100,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 844,
+    "elevation_loss_ft": 1263,
+    "highest_point_ft": 4943,
+    "lowest_point_ft": 4205,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-011",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 100,
+    "end_mile_nobo_global_est": 110,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1897,
+    "elevation_loss_ft": 1128,
+    "highest_point_ft": 4974,
+    "lowest_point_ft": 3763,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-012",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 110,
+    "end_mile_nobo_global_est": 120,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1258,
+    "elevation_loss_ft": 1965,
+    "highest_point_ft": 5324,
+    "lowest_point_ft": 4268,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-013",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 120,
+    "end_mile_nobo_global_est": 130,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1299,
+    "elevation_loss_ft": 2417,
+    "highest_point_ft": 5128,
+    "lowest_point_ft": 3149,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-014",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 130,
+    "end_mile_nobo_global_est": 140,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2849,
+    "elevation_loss_ft": 1409,
+    "highest_point_ft": 4607,
+    "lowest_point_ft": 1758,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-015",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 140,
+    "end_mile_nobo_global_est": 150,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1025,
+    "elevation_loss_ft": 1942,
+    "highest_point_ft": 4923,
+    "lowest_point_ft": 3374,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-016",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 150,
+    "end_mile_nobo_global_est": 160,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 881,
+    "elevation_loss_ft": 2826,
+    "highest_point_ft": 3707,
+    "lowest_point_ft": 1728,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-017",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 160,
+    "end_mile_nobo_global_est": 170,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2862,
+    "elevation_loss_ft": 93,
+    "highest_point_ft": 4497,
+    "lowest_point_ft": 1671,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-018",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 170,
+    "end_mile_nobo_global_est": 180,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2045,
+    "elevation_loss_ft": 1142,
+    "highest_point_ft": 5400,
+    "lowest_point_ft": 3932,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-019",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 180,
+    "end_mile_nobo_global_est": 190,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 798,
+    "elevation_loss_ft": 1007,
+    "highest_point_ft": 5400,
+    "lowest_point_ft": 4530,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-020",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 190,
+    "end_mile_nobo_global_est": 200,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1323,
+    "elevation_loss_ft": 1007,
+    "highest_point_ft": 6514,
+    "lowest_point_ft": 5191,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-021",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 200,
+    "end_mile_nobo_global_est": 210,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1441,
+    "elevation_loss_ft": 1199,
+    "highest_point_ft": 6022,
+    "lowest_point_ft": 4977,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-022",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 210,
+    "end_mile_nobo_global_est": 220,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1127,
+    "elevation_loss_ft": 640,
+    "highest_point_ft": 6307,
+    "lowest_point_ft": 5376,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-023",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 220,
+    "end_mile_nobo_global_est": 230,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 634,
+    "elevation_loss_ft": 3293,
+    "highest_point_ft": 6236,
+    "lowest_point_ft": 3577,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-024",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 230,
+    "end_mile_nobo_global_est": 240,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport",
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2581,
+    "elevation_loss_ft": 1918,
+    "highest_point_ft": 4241,
+    "lowest_point_ft": 1659,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-025",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 240,
+    "end_mile_nobo_global_est": 250,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1471,
+    "elevation_loss_ft": 1563,
+    "highest_point_ft": 4495,
+    "lowest_point_ft": 3128,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-026",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 250,
+    "end_mile_nobo_global_est": 260,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1376,
+    "elevation_loss_ft": 2327,
+    "highest_point_ft": 4375,
+    "lowest_point_ft": 3197,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-027",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 260,
+    "end_mile_nobo_global_est": 270,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1329,
+    "elevation_loss_ft": 2391,
+    "highest_point_ft": 3197,
+    "lowest_point_ft": 1321,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-028",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 270,
+    "end_mile_nobo_global_est": 280,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1731,
+    "elevation_loss_ft": 439,
+    "highest_point_ft": 3576,
+    "lowest_point_ft": 2136,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-029",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 280,
+    "end_mile_nobo_global_est": 290,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2268,
+    "elevation_loss_ft": 1297,
+    "highest_point_ft": 4614,
+    "lowest_point_ft": 2346,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-030",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 290,
+    "end_mile_nobo_global_est": 300,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 616,
+    "elevation_loss_ft": 1348,
+    "highest_point_ft": 4700,
+    "lowest_point_ft": 3667,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-031",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 300,
+    "end_mile_nobo_global_est": 310,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1806,
+    "elevation_loss_ft": 1245,
+    "highest_point_ft": 4491,
+    "lowest_point_ft": 3053,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-032",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 310,
+    "end_mile_nobo_global_est": 320,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1628,
+    "elevation_loss_ft": 746,
+    "highest_point_ft": 5462,
+    "lowest_point_ft": 3910,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-033",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 320,
+    "end_mile_nobo_global_est": 330,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 448,
+    "elevation_loss_ft": 2643,
+    "highest_point_ft": 5110,
+    "lowest_point_ft": 2915,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-034",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 330,
+    "end_mile_nobo_global_est": 340,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1626,
+    "elevation_loss_ft": 1672,
+    "highest_point_ft": 3263,
+    "lowest_point_ft": 1778,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-035",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 340,
+    "end_mile_nobo_global_est": 350,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2187,
+    "elevation_loss_ft": 84,
+    "highest_point_ft": 4972,
+    "lowest_point_ft": 2869,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-036",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 350,
+    "end_mile_nobo_global_est": 360,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 858,
+    "elevation_loss_ft": 1754,
+    "highest_point_ft": 4972,
+    "lowest_point_ft": 3796,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-037",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 360,
+    "end_mile_nobo_global_est": 370,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2821,
+    "elevation_loss_ft": 992,
+    "highest_point_ft": 6073,
+    "lowest_point_ft": 4060,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-038",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 370,
+    "end_mile_nobo_global_est": 380,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1179,
+    "elevation_loss_ft": 1660,
+    "highest_point_ft": 5905,
+    "lowest_point_ft": 4786,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-039",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 380,
+    "end_mile_nobo_global_est": 390,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 737,
+    "elevation_loss_ft": 2885,
+    "highest_point_ft": 5423,
+    "lowest_point_ft": 2866,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-040",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 390,
+    "end_mile_nobo_global_est": 400,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 800,
+    "elevation_loss_ft": 694,
+    "highest_point_ft": 3506,
+    "lowest_point_ft": 2752,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-041",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 400,
+    "end_mile_nobo_global_est": 410,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1001,
+    "elevation_loss_ft": 1919,
+    "highest_point_ft": 4179,
+    "lowest_point_ft": 2464,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-042",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 410,
+    "end_mile_nobo_global_est": 420,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1808,
+    "elevation_loss_ft": 2126,
+    "highest_point_ft": 3681,
+    "lowest_point_ft": 1958,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-043",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 420,
+    "end_mile_nobo_global_est": 430,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2044,
+    "elevation_loss_ft": 177,
+    "highest_point_ft": 4014,
+    "lowest_point_ft": 2072,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-044",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 430,
+    "end_mile_nobo_global_est": 440,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 666,
+    "elevation_loss_ft": 808,
+    "highest_point_ft": 4082,
+    "lowest_point_ft": 3512,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-045",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 440,
+    "end_mile_nobo_global_est": 450,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 614,
+    "elevation_loss_ft": 828,
+    "highest_point_ft": 4076,
+    "lowest_point_ft": 3478,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-046",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 450,
+    "end_mile_nobo_global_est": 460,
+    "states": [
+      "NC/TN",
+      "VA"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus",
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 228,
+    "elevation_loss_ft": 1916,
+    "highest_point_ft": 3711,
+    "lowest_point_ft": 1922,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-047",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 460,
+    "end_mile_nobo_global_est": 470,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2055,
+    "elevation_loss_ft": 807,
+    "highest_point_ft": 3414,
+    "lowest_point_ft": 1970,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-048",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 470,
+    "end_mile_nobo_global_est": 480,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2473,
+    "elevation_loss_ft": 670,
+    "highest_point_ft": 5020,
+    "lowest_point_ft": 2702,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-049",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 480,
+    "end_mile_nobo_global_est": 490,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1041,
+    "elevation_loss_ft": 1196,
+    "highest_point_ft": 5469,
+    "lowest_point_ft": 4550,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-050",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 490,
+    "end_mile_nobo_global_est": 500,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 975,
+    "elevation_loss_ft": 2004,
+    "highest_point_ft": 4948,
+    "lowest_point_ft": 3566,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-051",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 500,
+    "end_mile_nobo_global_est": 510,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1077,
+    "elevation_loss_ft": 1255,
+    "highest_point_ft": 4245,
+    "lowest_point_ft": 3039,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-052",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 510,
+    "end_mile_nobo_global_est": 520,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 721,
+    "elevation_loss_ft": 1350,
+    "highest_point_ft": 3657,
+    "lowest_point_ft": 2664,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-053",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 520,
+    "end_mile_nobo_global_est": 530,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 986,
+    "elevation_loss_ft": 1408,
+    "highest_point_ft": 4013,
+    "lowest_point_ft": 2605,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-054",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 530,
+    "end_mile_nobo_global_est": 540,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1281,
+    "elevation_loss_ft": 880,
+    "highest_point_ft": 3275,
+    "lowest_point_ft": 2442,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-055",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 540,
+    "end_mile_nobo_global_est": 550,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1490,
+    "elevation_loss_ft": 1988,
+    "highest_point_ft": 3378,
+    "lowest_point_ft": 2427,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-056",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 550,
+    "end_mile_nobo_global_est": 560,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2351,
+    "elevation_loss_ft": 844,
+    "highest_point_ft": 4338,
+    "lowest_point_ft": 2370,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-057",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 560,
+    "end_mile_nobo_global_est": 570,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 692,
+    "elevation_loss_ft": 1675,
+    "highest_point_ft": 4015,
+    "lowest_point_ft": 2517,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-058",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 570,
+    "end_mile_nobo_global_est": 580,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1544,
+    "elevation_loss_ft": 1418,
+    "highest_point_ft": 3159,
+    "lowest_point_ft": 2490,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-059",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 580,
+    "end_mile_nobo_global_est": 590,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 557,
+    "elevation_loss_ft": 1130,
+    "highest_point_ft": 3159,
+    "lowest_point_ft": 2586,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-060",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 590,
+    "end_mile_nobo_global_est": 600,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1123,
+    "elevation_loss_ft": 1277,
+    "highest_point_ft": 2907,
+    "lowest_point_ft": 2045,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-061",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 600,
+    "end_mile_nobo_global_est": 610,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1640,
+    "elevation_loss_ft": 371,
+    "highest_point_ft": 3952,
+    "lowest_point_ft": 2431,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-062",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 610,
+    "end_mile_nobo_global_est": 620,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 968,
+    "elevation_loss_ft": 1705,
+    "highest_point_ft": 3790,
+    "lowest_point_ft": 2963,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-063",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 620,
+    "end_mile_nobo_global_est": 630,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1919,
+    "elevation_loss_ft": 1523,
+    "highest_point_ft": 3359,
+    "lowest_point_ft": 1604,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-064",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 630,
+    "end_mile_nobo_global_est": 640,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 656,
+    "elevation_loss_ft": 702,
+    "highest_point_ft": 3844,
+    "lowest_point_ft": 3313,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-065",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 640,
+    "end_mile_nobo_global_est": 650,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1626,
+    "elevation_loss_ft": 875,
+    "highest_point_ft": 4067,
+    "lowest_point_ft": 2461,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-066",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 650,
+    "end_mile_nobo_global_est": 660,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1529,
+    "elevation_loss_ft": 2782,
+    "highest_point_ft": 4064,
+    "lowest_point_ft": 2195,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-067",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 660,
+    "end_mile_nobo_global_est": 670,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1205,
+    "elevation_loss_ft": 696,
+    "highest_point_ft": 3411,
+    "lowest_point_ft": 2295,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-068",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 670,
+    "end_mile_nobo_global_est": 680,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1453,
+    "elevation_loss_ft": 2264,
+    "highest_point_ft": 3319,
+    "lowest_point_ft": 1522,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-069",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 680,
+    "end_mile_nobo_global_est": 690,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1116,
+    "elevation_loss_ft": 1813,
+    "highest_point_ft": 2867,
+    "lowest_point_ft": 1789,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-070",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 690,
+    "end_mile_nobo_global_est": 700,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1548,
+    "elevation_loss_ft": 953,
+    "highest_point_ft": 2996,
+    "lowest_point_ft": 1754,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-071",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 700,
+    "end_mile_nobo_global_est": 710,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 848,
+    "elevation_loss_ft": 1519,
+    "highest_point_ft": 2960,
+    "lowest_point_ft": 1735,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-072",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 710,
+    "end_mile_nobo_global_est": 720,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1561,
+    "elevation_loss_ft": 762,
+    "highest_point_ft": 2534,
+    "lowest_point_ft": 1247,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-073",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 720,
+    "end_mile_nobo_global_est": 730,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1065,
+    "elevation_loss_ft": 1213,
+    "highest_point_ft": 2534,
+    "lowest_point_ft": 1536,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-074",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 730,
+    "end_mile_nobo_global_est": 740,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 660,
+    "elevation_loss_ft": 1038,
+    "highest_point_ft": 2667,
+    "lowest_point_ft": 2008,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-075",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 740,
+    "end_mile_nobo_global_est": 750,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2651,
+    "elevation_loss_ft": 1506,
+    "highest_point_ft": 3153,
+    "lowest_point_ft": 1072,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-076",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 750,
+    "end_mile_nobo_global_est": 760,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1160,
+    "elevation_loss_ft": 1176,
+    "highest_point_ft": 4018,
+    "lowest_point_ft": 3137,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-077",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 760,
+    "end_mile_nobo_global_est": 770,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 413,
+    "elevation_loss_ft": 2880,
+    "highest_point_ft": 3137,
+    "lowest_point_ft": 670,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-078",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 770,
+    "end_mile_nobo_global_est": 780,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2826,
+    "elevation_loss_ft": 251,
+    "highest_point_ft": 3245,
+    "lowest_point_ft": 663,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-079",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 780,
+    "end_mile_nobo_global_est": 790,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 358,
+    "elevation_loss_ft": 2386,
+    "highest_point_ft": 3245,
+    "lowest_point_ft": 1056,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-080",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 790,
+    "end_mile_nobo_global_est": 800,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 3238,
+    "elevation_loss_ft": 881,
+    "highest_point_ft": 3987,
+    "lowest_point_ft": 1216,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-081",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 800,
+    "end_mile_nobo_global_est": 810,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 981,
+    "elevation_loss_ft": 930,
+    "highest_point_ft": 3840,
+    "lowest_point_ft": 3466,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-082",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 810,
+    "end_mile_nobo_global_est": 820,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1527,
+    "elevation_loss_ft": 3282,
+    "highest_point_ft": 4057,
+    "lowest_point_ft": 1140,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-083",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 820,
+    "end_mile_nobo_global_est": 830,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2222,
+    "elevation_loss_ft": 1400,
+    "highest_point_ft": 3843,
+    "lowest_point_ft": 1870,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-084",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 830,
+    "end_mile_nobo_global_est": 840,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 933,
+    "elevation_loss_ft": 1414,
+    "highest_point_ft": 3624,
+    "lowest_point_ft": 2210,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-085",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 840,
+    "end_mile_nobo_global_est": 850,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1198,
+    "elevation_loss_ft": 697,
+    "highest_point_ft": 2712,
+    "lowest_point_ft": 1736,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-086",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 850,
+    "end_mile_nobo_global_est": 860,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1316,
+    "elevation_loss_ft": 1040,
+    "highest_point_ft": 2988,
+    "lowest_point_ft": 1989,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-087",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 860,
+    "end_mile_nobo_global_est": 870,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 728,
+    "elevation_loss_ft": 913,
+    "highest_point_ft": 3077,
+    "lowest_point_ft": 2402,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-088",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 870,
+    "end_mile_nobo_global_est": 880,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 798,
+    "elevation_loss_ft": 947,
+    "highest_point_ft": 3317,
+    "lowest_point_ft": 2653,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-089",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 880,
+    "end_mile_nobo_global_est": 890,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1648,
+    "elevation_loss_ft": 1558,
+    "highest_point_ft": 3392,
+    "lowest_point_ft": 2319,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-090",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 890,
+    "end_mile_nobo_global_est": 900,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1709,
+    "elevation_loss_ft": 1227,
+    "highest_point_ft": 3567,
+    "lowest_point_ft": 2372,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-091",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 900,
+    "end_mile_nobo_global_est": 910,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1006,
+    "elevation_loss_ft": 1185,
+    "highest_point_ft": 3651,
+    "lowest_point_ft": 3046,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-092",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 910,
+    "end_mile_nobo_global_est": 920,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1192,
+    "elevation_loss_ft": 857,
+    "highest_point_ft": 3704,
+    "lowest_point_ft": 3046,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-093",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 920,
+    "end_mile_nobo_global_est": 930,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 540,
+    "elevation_loss_ft": 1498,
+    "highest_point_ft": 3567,
+    "lowest_point_ft": 2424,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-094",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 930,
+    "end_mile_nobo_global_est": 940,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1414,
+    "elevation_loss_ft": 1127,
+    "highest_point_ft": 3404,
+    "lowest_point_ft": 2364,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-095",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 940,
+    "end_mile_nobo_global_est": 950,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 781,
+    "elevation_loss_ft": 1606,
+    "highest_point_ft": 3334,
+    "lowest_point_ft": 1886,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-096",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 950,
+    "end_mile_nobo_global_est": 960,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1175,
+    "elevation_loss_ft": 1710,
+    "highest_point_ft": 1886,
+    "lowest_point_ft": 974,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-097",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 960,
+    "end_mile_nobo_global_est": 970,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1503,
+    "elevation_loss_ft": 1063,
+    "highest_point_ft": 1967,
+    "lowest_point_ft": 812,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-098",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 970,
+    "end_mile_nobo_global_est": 980,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 697,
+    "elevation_loss_ft": 1385,
+    "highest_point_ft": 1792,
+    "lowest_point_ft": 857,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-099",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 980,
+    "end_mile_nobo_global_est": 990,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1232,
+    "elevation_loss_ft": 756,
+    "highest_point_ft": 1580,
+    "lowest_point_ft": 810,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-100",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 990,
+    "end_mile_nobo_global_est": 1000,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 304,
+    "elevation_loss_ft": 964,
+    "highest_point_ft": 1634,
+    "lowest_point_ft": 920,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-101",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1000,
+    "end_mile_nobo_global_est": 1010,
+    "states": [
+      "VA",
+      "WV"
+    ],
+    "region_ids": [
+      "mvp2_virginia",
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 775,
+    "elevation_loss_ft": 1104,
+    "highest_point_ft": 1145,
+    "lowest_point_ft": 251,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-102",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1010,
+    "end_mile_nobo_global_est": 1020,
+    "states": [
+      "WV"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1326,
+    "elevation_loss_ft": 309,
+    "highest_point_ft": 1607,
+    "lowest_point_ft": 591,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-103",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1020,
+    "end_mile_nobo_global_est": 1030,
+    "states": [
+      "WV",
+      "MD"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 999,
+    "elevation_loss_ft": 880,
+    "highest_point_ft": 1726,
+    "lowest_point_ft": 991,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-104",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1030,
+    "end_mile_nobo_global_est": 1040,
+    "states": [
+      "MD"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 317,
+    "elevation_loss_ft": 766,
+    "highest_point_ft": 1840,
+    "lowest_point_ft": 1277,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-105",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1040,
+    "end_mile_nobo_global_est": 1050,
+    "states": [
+      "MD"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 717,
+    "elevation_loss_ft": 630,
+    "highest_point_ft": 1819,
+    "lowest_point_ft": 1247,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-106",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1050,
+    "end_mile_nobo_global_est": 1060,
+    "states": [
+      "MD"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1366,
+    "elevation_loss_ft": 1026,
+    "highest_point_ft": 1968,
+    "lowest_point_ft": 923,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-107",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1060,
+    "end_mile_nobo_global_est": 1070,
+    "states": [
+      "MD",
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1103,
+    "elevation_loss_ft": 915,
+    "highest_point_ft": 2001,
+    "lowest_point_ft": 910,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-108",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1070,
+    "end_mile_nobo_global_est": 1080,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 242,
+    "elevation_loss_ft": 803,
+    "highest_point_ft": 2028,
+    "lowest_point_ft": 1260,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-109",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1080,
+    "end_mile_nobo_global_est": 1090,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 619,
+    "elevation_loss_ft": 1308,
+    "highest_point_ft": 1450,
+    "lowest_point_ft": 640,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-110",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1090,
+    "end_mile_nobo_global_est": 1100,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 851,
+    "elevation_loss_ft": 962,
+    "highest_point_ft": 1190,
+    "lowest_point_ft": 529,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-111",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1100,
+    "end_mile_nobo_global_est": 1110,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 148,
+    "elevation_loss_ft": 239,
+    "highest_point_ft": 584,
+    "lowest_point_ft": 438,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-112",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1110,
+    "end_mile_nobo_global_est": 1120,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1506,
+    "elevation_loss_ft": 609,
+    "highest_point_ft": 1335,
+    "lowest_point_ft": 386,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-113",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1120,
+    "end_mile_nobo_global_est": 1130,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 835,
+    "elevation_loss_ft": 991,
+    "highest_point_ft": 1335,
+    "lowest_point_ft": 355,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-114",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1130,
+    "end_mile_nobo_global_est": 1140,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 446,
+    "elevation_loss_ft": 381,
+    "highest_point_ft": 1372,
+    "lowest_point_ft": 1167,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-115",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1140,
+    "end_mile_nobo_global_est": 1150,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1154,
+    "elevation_loss_ft": 993,
+    "highest_point_ft": 1658,
+    "lowest_point_ft": 682,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-116",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1150,
+    "end_mile_nobo_global_est": 1160,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 589,
+    "elevation_loss_ft": 1320,
+    "highest_point_ft": 1404,
+    "lowest_point_ft": 487,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-117",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1160,
+    "end_mile_nobo_global_est": 1170,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1013,
+    "elevation_loss_ft": 467,
+    "highest_point_ft": 1471,
+    "lowest_point_ft": 556,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-118",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1170,
+    "end_mile_nobo_global_est": 1180,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 623,
+    "elevation_loss_ft": 342,
+    "highest_point_ft": 1668,
+    "lowest_point_ft": 1220,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-119",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1180,
+    "end_mile_nobo_global_est": 1190,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 344,
+    "elevation_loss_ft": 354,
+    "highest_point_ft": 1596,
+    "lowest_point_ft": 1267,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-120",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1190,
+    "end_mile_nobo_global_est": 1200,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 969,
+    "elevation_loss_ft": 1479,
+    "highest_point_ft": 1496,
+    "lowest_point_ft": 406,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-121",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1200,
+    "end_mile_nobo_global_est": 1210,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 698,
+    "elevation_loss_ft": 1102,
+    "highest_point_ft": 1589,
+    "lowest_point_ft": 578,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-122",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1210,
+    "end_mile_nobo_global_est": 1220,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1094,
+    "elevation_loss_ft": 270,
+    "highest_point_ft": 1613,
+    "lowest_point_ft": 578,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-123",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1220,
+    "end_mile_nobo_global_est": 1230,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 485,
+    "elevation_loss_ft": 325,
+    "highest_point_ft": 1562,
+    "lowest_point_ft": 1329,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-124",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1230,
+    "end_mile_nobo_global_est": 1240,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1023,
+    "elevation_loss_ft": 1363,
+    "highest_point_ft": 1574,
+    "lowest_point_ft": 466,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-125",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1240,
+    "end_mile_nobo_global_est": 1250,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 460,
+    "elevation_loss_ft": 159,
+    "highest_point_ft": 1592,
+    "lowest_point_ft": 1222,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-126",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1250,
+    "end_mile_nobo_global_est": 1260,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 668,
+    "elevation_loss_ft": 575,
+    "highest_point_ft": 1658,
+    "lowest_point_ft": 1032,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-127",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1260,
+    "end_mile_nobo_global_est": 1270,
+    "states": [
+      "PA",
+      "NJ"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic",
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 130,
+    "elevation_loss_ft": 1371,
+    "highest_point_ft": 1616,
+    "lowest_point_ft": 375,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-128",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1270,
+    "end_mile_nobo_global_est": 1280,
+    "states": [
+      "NJ"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1262,
+    "elevation_loss_ft": 489,
+    "highest_point_ft": 1532,
+    "lowest_point_ft": 312,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-129",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1280,
+    "end_mile_nobo_global_est": 1290,
+    "states": [
+      "NJ"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 805,
+    "elevation_loss_ft": 402,
+    "highest_point_ft": 1551,
+    "lowest_point_ft": 1148,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-130",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1290,
+    "end_mile_nobo_global_est": 1300,
+    "states": [
+      "NJ"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 684,
+    "elevation_loss_ft": 889,
+    "highest_point_ft": 1551,
+    "lowest_point_ft": 1008,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-131",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1300,
+    "end_mile_nobo_global_est": 1310,
+    "states": [
+      "NJ"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 631,
+    "elevation_loss_ft": 389,
+    "highest_point_ft": 1588,
+    "lowest_point_ft": 1236,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-132",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1310,
+    "end_mile_nobo_global_est": 1320,
+    "states": [
+      "NJ",
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 36,
+    "elevation_loss_ft": 1143,
+    "highest_point_ft": 1588,
+    "lowest_point_ft": 482,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-133",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1320,
+    "end_mile_nobo_global_est": 1330,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 718,
+    "elevation_loss_ft": 782,
+    "highest_point_ft": 1053,
+    "lowest_point_ft": 389,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-134",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1330,
+    "end_mile_nobo_global_est": 1340,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1075,
+    "elevation_loss_ft": 298,
+    "highest_point_ft": 1423,
+    "lowest_point_ft": 417,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-135",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1340,
+    "end_mile_nobo_global_est": 1350,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 547,
+    "elevation_loss_ft": 831,
+    "highest_point_ft": 1260,
+    "lowest_point_ft": 840,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-136",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1350,
+    "end_mile_nobo_global_est": 1360,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1311,
+    "elevation_loss_ft": 917,
+    "highest_point_ft": 1304,
+    "lowest_point_ft": 556,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-137",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1360,
+    "end_mile_nobo_global_est": 1370,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 641,
+    "elevation_loss_ft": 1258,
+    "highest_point_ft": 1304,
+    "lowest_point_ft": 519,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-138",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1370,
+    "end_mile_nobo_global_est": 1380,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1773,
+    "elevation_loss_ft": 1988,
+    "highest_point_ft": 1266,
+    "lowest_point_ft": -3,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-139",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1380,
+    "end_mile_nobo_global_est": 1390,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 813,
+    "elevation_loss_ft": 506,
+    "highest_point_ft": 967,
+    "lowest_point_ft": 455,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-140",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1390,
+    "end_mile_nobo_global_est": 1400,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1049,
+    "elevation_loss_ft": 831,
+    "highest_point_ft": 1281,
+    "lowest_point_ft": 544,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-141",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1400,
+    "end_mile_nobo_global_est": 1410,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 724,
+    "elevation_loss_ft": 1010,
+    "highest_point_ft": 1301,
+    "lowest_point_ft": 631,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-142",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1410,
+    "end_mile_nobo_global_est": 1420,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1153,
+    "elevation_loss_ft": 924,
+    "highest_point_ft": 1167,
+    "lowest_point_ft": 468,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-143",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1420,
+    "end_mile_nobo_global_est": 1430,
+    "states": [
+      "NY",
+      "CT"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1253,
+    "elevation_loss_ft": 1034,
+    "highest_point_ft": 1158,
+    "lowest_point_ft": 328,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-144",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1430,
+    "end_mile_nobo_global_est": 1440,
+    "states": [
+      "CT"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1014,
+    "elevation_loss_ft": 1276,
+    "highest_point_ft": 1306,
+    "lowest_point_ft": 365,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-145",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1440,
+    "end_mile_nobo_global_est": 1450,
+    "states": [
+      "CT"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 818,
+    "elevation_loss_ft": 674,
+    "highest_point_ft": 1153,
+    "lowest_point_ft": 382,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-146",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1450,
+    "end_mile_nobo_global_est": 1460,
+    "states": [
+      "CT"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 397,
+    "elevation_loss_ft": 879,
+    "highest_point_ft": 1230,
+    "lowest_point_ft": 543,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-147",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1460,
+    "end_mile_nobo_global_est": 1470,
+    "states": [
+      "CT"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1363,
+    "elevation_loss_ft": 821,
+    "highest_point_ft": 1358,
+    "lowest_point_ft": 544,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-148",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1470,
+    "end_mile_nobo_global_est": 1480,
+    "states": [
+      "CT",
+      "MA"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct",
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2628,
+    "elevation_loss_ft": 1193,
+    "highest_point_ft": 2535,
+    "lowest_point_ft": 1100,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-149",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1480,
+    "end_mile_nobo_global_est": 1490,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 86,
+    "elevation_loss_ft": 1931,
+    "highest_point_ft": 2535,
+    "lowest_point_ft": 661,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-150",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1490,
+    "end_mile_nobo_global_est": 1500,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1912,
+    "elevation_loss_ft": 750,
+    "highest_point_ft": 1852,
+    "lowest_point_ft": 690,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-151",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1500,
+    "end_mile_nobo_global_est": 1510,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1472,
+    "elevation_loss_ft": 1568,
+    "highest_point_ft": 2030,
+    "lowest_point_ft": 877,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-152",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1510,
+    "end_mile_nobo_global_est": 1520,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1170,
+    "elevation_loss_ft": 992,
+    "highest_point_ft": 2122,
+    "lowest_point_ft": 1393,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-153",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1520,
+    "end_mile_nobo_global_est": 1530,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 379,
+    "elevation_loss_ft": 411,
+    "highest_point_ft": 2051,
+    "lowest_point_ft": 1837,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-154",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1530,
+    "end_mile_nobo_global_est": 1540,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1025,
+    "elevation_loss_ft": 909,
+    "highest_point_ft": 2052,
+    "lowest_point_ft": 1143,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-155",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1540,
+    "end_mile_nobo_global_est": 1550,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2219,
+    "elevation_loss_ft": 1039,
+    "highest_point_ft": 3207,
+    "lowest_point_ft": 988,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-156",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1550,
+    "end_mile_nobo_global_est": 1560,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1085,
+    "elevation_loss_ft": 2555,
+    "highest_point_ft": 3198,
+    "lowest_point_ft": 643,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-157",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1560,
+    "end_mile_nobo_global_est": 1570,
+    "states": [
+      "MA",
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1617,
+    "elevation_loss_ft": 1171,
+    "highest_point_ft": 3046,
+    "lowest_point_ft": 1728,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-158",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1570,
+    "end_mile_nobo_global_est": 1580,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2179,
+    "elevation_loss_ft": 1317,
+    "highest_point_ft": 3035,
+    "lowest_point_ft": 1416,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-159",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1580,
+    "end_mile_nobo_global_est": 1590,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1078,
+    "elevation_loss_ft": 913,
+    "highest_point_ft": 3548,
+    "lowest_point_ft": 2947,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-160",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1590,
+    "end_mile_nobo_global_est": 1600,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1800,
+    "elevation_loss_ft": 1326,
+    "highest_point_ft": 3675,
+    "lowest_point_ft": 2216,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-161",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1600,
+    "end_mile_nobo_global_est": 1610,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 334,
+    "elevation_loss_ft": 1869,
+    "highest_point_ft": 3675,
+    "lowest_point_ft": 2141,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-162",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1610,
+    "end_mile_nobo_global_est": 1620,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1985,
+    "elevation_loss_ft": 910,
+    "highest_point_ft": 3342,
+    "lowest_point_ft": 1782,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-163",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1620,
+    "end_mile_nobo_global_est": 1630,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 386,
+    "elevation_loss_ft": 1872,
+    "highest_point_ft": 3216,
+    "lowest_point_ft": 1507,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-164",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1630,
+    "end_mile_nobo_global_est": 1640,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1761,
+    "elevation_loss_ft": 1847,
+    "highest_point_ft": 2461,
+    "lowest_point_ft": 1126,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-165",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1640,
+    "end_mile_nobo_global_est": 1650,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1438,
+    "elevation_loss_ft": 1100,
+    "highest_point_ft": 1981,
+    "lowest_point_ft": 893,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-166",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1650,
+    "end_mile_nobo_global_est": 1660,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1866,
+    "elevation_loss_ft": 1842,
+    "highest_point_ft": 3769,
+    "lowest_point_ft": 1981,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-167",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1660,
+    "end_mile_nobo_global_est": 1670,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1770,
+    "elevation_loss_ft": 2022,
+    "highest_point_ft": 2598,
+    "lowest_point_ft": 1246,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-168",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1670,
+    "end_mile_nobo_global_est": 1680,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 830,
+    "elevation_loss_ft": 1416,
+    "highest_point_ft": 2380,
+    "lowest_point_ft": 1168,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-169",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1680,
+    "end_mile_nobo_global_est": 1690,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1276,
+    "elevation_loss_ft": 890,
+    "highest_point_ft": 1798,
+    "lowest_point_ft": 942,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-170",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1690,
+    "end_mile_nobo_global_est": 1700,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1071,
+    "elevation_loss_ft": 1467,
+    "highest_point_ft": 1554,
+    "lowest_point_ft": 482,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-171",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1700,
+    "end_mile_nobo_global_est": 1710,
+    "states": [
+      "VT",
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 669,
+    "elevation_loss_ft": 800,
+    "highest_point_ft": 1167,
+    "lowest_point_ft": 477,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-172",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1710,
+    "end_mile_nobo_global_est": 1720,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2400,
+    "elevation_loss_ft": 2040,
+    "highest_point_ft": 2294,
+    "lowest_point_ft": 978,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-173",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1720,
+    "end_mile_nobo_global_est": 1730,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2432,
+    "elevation_loss_ft": 1881,
+    "highest_point_ft": 3219,
+    "lowest_point_ft": 1009,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-174",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1730,
+    "end_mile_nobo_global_est": 1740,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1702,
+    "elevation_loss_ft": 2100,
+    "highest_point_ft": 2820,
+    "lowest_point_ft": 958,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-175",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1740,
+    "end_mile_nobo_global_est": 1750,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 4078,
+    "elevation_loss_ft": 918,
+    "highest_point_ft": 4700,
+    "lowest_point_ft": 1168,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-176",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1750,
+    "end_mile_nobo_global_est": 1760,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1727,
+    "elevation_loss_ft": 3821,
+    "highest_point_ft": 4700,
+    "lowest_point_ft": 1865,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-177",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1760,
+    "end_mile_nobo_global_est": 1770,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 4074,
+    "elevation_loss_ft": 2504,
+    "highest_point_ft": 4177,
+    "lowest_point_ft": 1521,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-178",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1770,
+    "end_mile_nobo_global_est": 1780,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2432,
+    "elevation_loss_ft": 2081,
+    "highest_point_ft": 5081,
+    "lowest_point_ft": 3465,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-179",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1780,
+    "end_mile_nobo_global_est": 1790,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 462,
+    "elevation_loss_ft": 2082,
+    "highest_point_ft": 4528,
+    "lowest_point_ft": 2447,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-180",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1790,
+    "end_mile_nobo_global_est": 1800,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2904,
+    "elevation_loss_ft": 1363,
+    "highest_point_ft": 4450,
+    "lowest_point_ft": 1590,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-181",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1800,
+    "end_mile_nobo_global_est": 1810,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1933,
+    "elevation_loss_ft": 1835,
+    "highest_point_ft": 5858,
+    "lowest_point_ft": 4450,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-182",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1810,
+    "end_mile_nobo_global_est": 1820,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2710,
+    "elevation_loss_ft": 2965,
+    "highest_point_ft": 4547,
+    "lowest_point_ft": 2007,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-183",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1820,
+    "end_mile_nobo_global_est": 1830,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1689,
+    "elevation_loss_ft": 2641,
+    "highest_point_ft": 4611,
+    "lowest_point_ft": 3330,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-184",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1830,
+    "end_mile_nobo_global_est": 1840,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1687,
+    "elevation_loss_ft": 2558,
+    "highest_point_ft": 3340,
+    "lowest_point_ft": 781,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-185",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1840,
+    "end_mile_nobo_global_est": 1850,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1685,
+    "elevation_loss_ft": 1009,
+    "highest_point_ft": 3581,
+    "lowest_point_ft": 2180,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-186",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1850,
+    "end_mile_nobo_global_est": 1860,
+    "states": [
+      "NH",
+      "ME"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh",
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2526,
+    "elevation_loss_ft": 3138,
+    "highest_point_ft": 4057,
+    "lowest_point_ft": 2156,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-187",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1860,
+    "end_mile_nobo_global_est": 1870,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2316,
+    "elevation_loss_ft": 3501,
+    "highest_point_ft": 3583,
+    "lowest_point_ft": 1346,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-188",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1870,
+    "end_mile_nobo_global_est": 1880,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 3418,
+    "elevation_loss_ft": 2332,
+    "highest_point_ft": 2845,
+    "lowest_point_ft": 1109,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-189",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1880,
+    "end_mile_nobo_global_est": 1890,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1204,
+    "elevation_loss_ft": 1888,
+    "highest_point_ft": 3320,
+    "lowest_point_ft": 1749,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-190",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1890,
+    "end_mile_nobo_global_est": 1900,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1173,
+    "elevation_loss_ft": 705,
+    "highest_point_ft": 2784,
+    "lowest_point_ft": 1749,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-191",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1900,
+    "end_mile_nobo_global_est": 1910,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2464,
+    "elevation_loss_ft": 1084,
+    "highest_point_ft": 4096,
+    "lowest_point_ft": 1728,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-192",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1910,
+    "end_mile_nobo_global_est": 1920,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1698,
+    "elevation_loss_ft": 2080,
+    "highest_point_ft": 3597,
+    "lowest_point_ft": 1575,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-193",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1920,
+    "end_mile_nobo_global_est": 1930,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1968,
+    "elevation_loss_ft": 2635,
+    "highest_point_ft": 3995,
+    "lowest_point_ft": 2459,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-194",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1930,
+    "end_mile_nobo_global_est": 1940,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 3173,
+    "elevation_loss_ft": 2218,
+    "highest_point_ft": 4002,
+    "lowest_point_ft": 1276,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-195",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1940,
+    "end_mile_nobo_global_est": 1950,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 782,
+    "elevation_loss_ft": 3039,
+    "highest_point_ft": 3503,
+    "lowest_point_ft": 1154,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-196",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1950,
+    "end_mile_nobo_global_est": 1960,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 703,
+    "elevation_loss_ft": 709,
+    "highest_point_ft": 1736,
+    "lowest_point_ft": 1190,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-197",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1960,
+    "end_mile_nobo_global_est": 1970,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1025,
+    "elevation_loss_ft": 1033,
+    "highest_point_ft": 1482,
+    "lowest_point_ft": 505,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-198",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1970,
+    "end_mile_nobo_global_est": 1980,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1520,
+    "elevation_loss_ft": 1381,
+    "highest_point_ft": 2404,
+    "lowest_point_ft": 1024,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-199",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1980,
+    "end_mile_nobo_global_est": 1990,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1001,
+    "elevation_loss_ft": 1416,
+    "highest_point_ft": 2373,
+    "lowest_point_ft": 957,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-200",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1990,
+    "end_mile_nobo_global_est": 2000,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 878,
+    "elevation_loss_ft": 459,
+    "highest_point_ft": 1376,
+    "lowest_point_ft": 626,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-201",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2000,
+    "end_mile_nobo_global_est": 2010,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 796,
+    "elevation_loss_ft": 1254,
+    "highest_point_ft": 1376,
+    "lowest_point_ft": 641,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-202",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2010,
+    "end_mile_nobo_global_est": 2020,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2117,
+    "elevation_loss_ft": 882,
+    "highest_point_ft": 2479,
+    "lowest_point_ft": 625,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-203",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2020,
+    "end_mile_nobo_global_est": 2030,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 989,
+    "elevation_loss_ft": 2195,
+    "highest_point_ft": 2262,
+    "lowest_point_ft": 722,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-204",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2030,
+    "end_mile_nobo_global_est": 2040,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 2837,
+    "elevation_loss_ft": 1093,
+    "highest_point_ft": 3634,
+    "lowest_point_ft": 948,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-205",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2040,
+    "end_mile_nobo_global_est": 2050,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 855,
+    "elevation_loss_ft": 2416,
+    "highest_point_ft": 2692,
+    "lowest_point_ft": 1131,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-206",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2050,
+    "end_mile_nobo_global_est": 2060,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 17,
+    "elevation_loss_ft": 653,
+    "highest_point_ft": 1131,
+    "lowest_point_ft": 495,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-207",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2060,
+    "end_mile_nobo_global_est": 2070,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 372,
+    "elevation_loss_ft": 211,
+    "highest_point_ft": 702,
+    "lowest_point_ft": 495,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-208",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2070,
+    "end_mile_nobo_global_est": 2080,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 1160,
+    "elevation_loss_ft": 779,
+    "highest_point_ft": 1483,
+    "lowest_point_ft": 656,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-209",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2080,
+    "end_mile_nobo_global_est": 2090,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 475,
+    "elevation_loss_ft": 721,
+    "highest_point_ft": 1411,
+    "lowest_point_ft": 732,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-210",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2090,
+    "end_mile_nobo_global_est": 2100,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 10,
+    "elevation_gain_ft": 514,
+    "elevation_loss_ft": 216,
+    "highest_point_ft": 1089,
+    "lowest_point_ft": 577,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  },
+  {
+    "segment_id": "full-rc1-elevation-10mi-211",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2100,
+    "end_mile_nobo_global_est": 2106.2,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "distance_miles": 6.2,
+    "elevation_gain_ft": 4096,
+    "elevation_loss_ft": 49,
+    "highest_point_ft": 5136,
+    "lowest_point_ft": 1040,
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "license_status": "public_domain",
+    "confidence": "model_derived_topographic_estimate",
+    "last_checked": "2026-05-14",
+    "last_generated": "2026-05-14",
+    "production_safe": true,
+    "ai_answer_rule": "Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety."
+  }
+]

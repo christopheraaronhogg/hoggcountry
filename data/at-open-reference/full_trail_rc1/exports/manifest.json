@@ -1,0 +1,118 @@
+{
+  "export_id": "full_trail_reference_pack_rc1_production_safe",
+  "route_id": "at-full-trail-rc1-open-2026",
+  "generated_from": "data/at-open-reference/full_trail_rc1",
+  "production_safe": true,
+  "policy": "Only datasets marked production_safe:true are included. Unknown, review-required, blocked, pointer-only, and test datasets are excluded.",
+  "source_count": 50,
+  "dataset_count": 10,
+  "datasets": [
+    {
+      "dataset_id": "route",
+      "path": "processed/route/full_at_route_rc1.geojson",
+      "record_count": 1,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "milepoints_0_1mi",
+      "path": "processed/milepoints/full_at_milepoints_0_1mi.geojson",
+      "record_count": 21062,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "milepoints_0_5mi",
+      "path": "processed/milepoints/full_at_milepoints_0_5mi.geojson",
+      "record_count": 4213,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "milepoints_1_0mi",
+      "path": "processed/milepoints/full_at_milepoints_1_0mi.geojson",
+      "record_count": 2107,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "elevation_samples",
+      "path": "processed/elevation/full_trail_elevation_samples_1_0mi.json",
+      "record_count": 2107,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "water_candidates",
+      "path": "processed/water/full_trail_water_candidates.json",
+      "record_count": 1765,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "major_ford_candidates",
+      "path": "processed/water/full_trail_major_ford_candidates.json",
+      "record_count": 259,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "tread",
+      "path": "processed/tread/full_trail_tread_rockiness_1_0mi.json",
+      "record_count": 2108,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "difficulty",
+      "path": "processed/difficulty/full_trail_difficulty_by_10mi_segment.json",
+      "record_count": 211,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "rag_metadata",
+      "path": "rag_docs/rag_doc_metadata.json",
+      "record_count": 85,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    }
+  ],
+  "attribution_files": [
+    "attribution.md",
+    "rag_docs/policies/license_attribution.md"
+  ],
+  "odbl_notice": "OSM-derived route/POI/access data requires OpenStreetMap contributor attribution and ODbL/share-alike handling.",
+  "live_condition_notice": "Static export cannot answer current closures, weather, permits, fords, or Baxter/Katahdin status.",
+  "generated_mile_notice": "Generated miles are not official ATC mileage."
+}

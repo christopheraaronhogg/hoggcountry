@@ -1,0 +1,1548 @@
+[
+  {
+    "doc_id": "full-trail-rc1-0000-0025",
+    "path": "rag_docs/segment_guides/full_trail_0000_0025.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 0,
+    "end_mile_nobo_global_est": 25,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0025-0050",
+    "path": "rag_docs/segment_guides/full_trail_0025_0050.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 25,
+    "end_mile_nobo_global_est": 50,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0050-0075",
+    "path": "rag_docs/segment_guides/full_trail_0050_0075.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 50,
+    "end_mile_nobo_global_est": 75,
+    "states": [
+      "GA"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0075-0100",
+    "path": "rag_docs/segment_guides/full_trail_0075_0100.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 75,
+    "end_mile_nobo_global_est": 100,
+    "states": [
+      "GA",
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0100-0125",
+    "path": "rag_docs/segment_guides/full_trail_0100_0125.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 100,
+    "end_mile_nobo_global_est": 125,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0125-0150",
+    "path": "rag_docs/segment_guides/full_trail_0125_0150.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 125,
+    "end_mile_nobo_global_est": 150,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0150-0175",
+    "path": "rag_docs/segment_guides/full_trail_0150_0175.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 150,
+    "end_mile_nobo_global_est": 175,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0175-0200",
+    "path": "rag_docs/segment_guides/full_trail_0175_0200.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 175,
+    "end_mile_nobo_global_est": 200,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0200-0225",
+    "path": "rag_docs/segment_guides/full_trail_0200_0225.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 200,
+    "end_mile_nobo_global_est": 225,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0225-0250",
+    "path": "rag_docs/segment_guides/full_trail_0225_0250.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 225,
+    "end_mile_nobo_global_est": 250,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "mvp1_springer_davenport",
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0250-0275",
+    "path": "rag_docs/segment_guides/full_trail_0250_0275.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 250,
+    "end_mile_nobo_global_est": 275,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0275-0300",
+    "path": "rag_docs/segment_guides/full_trail_0275_0300.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 275,
+    "end_mile_nobo_global_est": 300,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0300-0325",
+    "path": "rag_docs/segment_guides/full_trail_0300_0325.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 300,
+    "end_mile_nobo_global_est": 325,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0325-0350",
+    "path": "rag_docs/segment_guides/full_trail_0325_0350.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 325,
+    "end_mile_nobo_global_est": 350,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0350-0375",
+    "path": "rag_docs/segment_guides/full_trail_0350_0375.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 350,
+    "end_mile_nobo_global_est": 375,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0375-0400",
+    "path": "rag_docs/segment_guides/full_trail_0375_0400.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 375,
+    "end_mile_nobo_global_est": 400,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0400-0425",
+    "path": "rag_docs/segment_guides/full_trail_0400_0425.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 400,
+    "end_mile_nobo_global_est": 425,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0425-0450",
+    "path": "rag_docs/segment_guides/full_trail_0425_0450.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 425,
+    "end_mile_nobo_global_est": 450,
+    "states": [
+      "NC/TN"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0450-0475",
+    "path": "rag_docs/segment_guides/full_trail_0450_0475.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 450,
+    "end_mile_nobo_global_est": 475,
+    "states": [
+      "NC/TN",
+      "VA"
+    ],
+    "region_ids": [
+      "coverage_gap_davenport_damascus",
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "low_due_to_regional_mvp_gap",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0475-0500",
+    "path": "rag_docs/segment_guides/full_trail_0475_0500.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 475,
+    "end_mile_nobo_global_est": 500,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0500-0525",
+    "path": "rag_docs/segment_guides/full_trail_0500_0525.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 500,
+    "end_mile_nobo_global_est": 525,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0525-0550",
+    "path": "rag_docs/segment_guides/full_trail_0525_0550.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 525,
+    "end_mile_nobo_global_est": 550,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0550-0575",
+    "path": "rag_docs/segment_guides/full_trail_0550_0575.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 550,
+    "end_mile_nobo_global_est": 575,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0575-0600",
+    "path": "rag_docs/segment_guides/full_trail_0575_0600.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 575,
+    "end_mile_nobo_global_est": 600,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0600-0625",
+    "path": "rag_docs/segment_guides/full_trail_0600_0625.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 600,
+    "end_mile_nobo_global_est": 625,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0625-0650",
+    "path": "rag_docs/segment_guides/full_trail_0625_0650.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 625,
+    "end_mile_nobo_global_est": 650,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0650-0675",
+    "path": "rag_docs/segment_guides/full_trail_0650_0675.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 650,
+    "end_mile_nobo_global_est": 675,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0675-0700",
+    "path": "rag_docs/segment_guides/full_trail_0675_0700.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 675,
+    "end_mile_nobo_global_est": 700,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0700-0725",
+    "path": "rag_docs/segment_guides/full_trail_0700_0725.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 700,
+    "end_mile_nobo_global_est": 725,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0725-0750",
+    "path": "rag_docs/segment_guides/full_trail_0725_0750.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 725,
+    "end_mile_nobo_global_est": 750,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0750-0775",
+    "path": "rag_docs/segment_guides/full_trail_0750_0775.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 750,
+    "end_mile_nobo_global_est": 775,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0775-0800",
+    "path": "rag_docs/segment_guides/full_trail_0775_0800.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 775,
+    "end_mile_nobo_global_est": 800,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0800-0825",
+    "path": "rag_docs/segment_guides/full_trail_0800_0825.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 800,
+    "end_mile_nobo_global_est": 825,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0825-0850",
+    "path": "rag_docs/segment_guides/full_trail_0825_0850.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 825,
+    "end_mile_nobo_global_est": 850,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0850-0875",
+    "path": "rag_docs/segment_guides/full_trail_0850_0875.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 850,
+    "end_mile_nobo_global_est": 875,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0875-0900",
+    "path": "rag_docs/segment_guides/full_trail_0875_0900.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 875,
+    "end_mile_nobo_global_est": 900,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0900-0925",
+    "path": "rag_docs/segment_guides/full_trail_0900_0925.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 900,
+    "end_mile_nobo_global_est": 925,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0925-0950",
+    "path": "rag_docs/segment_guides/full_trail_0925_0950.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 925,
+    "end_mile_nobo_global_est": 950,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0950-0975",
+    "path": "rag_docs/segment_guides/full_trail_0950_0975.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 950,
+    "end_mile_nobo_global_est": 975,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-0975-1000",
+    "path": "rag_docs/segment_guides/full_trail_0975_1000.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 975,
+    "end_mile_nobo_global_est": 1000,
+    "states": [
+      "VA"
+    ],
+    "region_ids": [
+      "mvp2_virginia"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1000-1025",
+    "path": "rag_docs/segment_guides/full_trail_1000_1025.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1000,
+    "end_mile_nobo_global_est": 1025,
+    "states": [
+      "VA",
+      "WV"
+    ],
+    "region_ids": [
+      "mvp2_virginia",
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1025-1050",
+    "path": "rag_docs/segment_guides/full_trail_1025_1050.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1025,
+    "end_mile_nobo_global_est": 1050,
+    "states": [
+      "MD"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1050-1075",
+    "path": "rag_docs/segment_guides/full_trail_1050_1075.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1050,
+    "end_mile_nobo_global_est": 1075,
+    "states": [
+      "MD",
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1075-1100",
+    "path": "rag_docs/segment_guides/full_trail_1075_1100.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1075,
+    "end_mile_nobo_global_est": 1100,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1100-1125",
+    "path": "rag_docs/segment_guides/full_trail_1100_1125.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1100,
+    "end_mile_nobo_global_est": 1125,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1125-1150",
+    "path": "rag_docs/segment_guides/full_trail_1125_1150.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1125,
+    "end_mile_nobo_global_est": 1150,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1150-1175",
+    "path": "rag_docs/segment_guides/full_trail_1150_1175.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1150,
+    "end_mile_nobo_global_est": 1175,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1175-1200",
+    "path": "rag_docs/segment_guides/full_trail_1175_1200.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1175,
+    "end_mile_nobo_global_est": 1200,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1200-1225",
+    "path": "rag_docs/segment_guides/full_trail_1200_1225.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1200,
+    "end_mile_nobo_global_est": 1225,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1225-1250",
+    "path": "rag_docs/segment_guides/full_trail_1225_1250.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1225,
+    "end_mile_nobo_global_est": 1250,
+    "states": [
+      "PA"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1250-1275",
+    "path": "rag_docs/segment_guides/full_trail_1250_1275.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1250,
+    "end_mile_nobo_global_est": 1275,
+    "states": [
+      "PA",
+      "NJ"
+    ],
+    "region_ids": [
+      "mvp3_midatlantic",
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1275-1300",
+    "path": "rag_docs/segment_guides/full_trail_1275_1300.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1275,
+    "end_mile_nobo_global_est": 1300,
+    "states": [
+      "NJ"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1300-1325",
+    "path": "rag_docs/segment_guides/full_trail_1300_1325.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1300,
+    "end_mile_nobo_global_est": 1325,
+    "states": [
+      "NJ",
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1325-1350",
+    "path": "rag_docs/segment_guides/full_trail_1325_1350.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1325,
+    "end_mile_nobo_global_est": 1350,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1350-1375",
+    "path": "rag_docs/segment_guides/full_trail_1350_1375.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1350,
+    "end_mile_nobo_global_est": 1375,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1375-1400",
+    "path": "rag_docs/segment_guides/full_trail_1375_1400.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1375,
+    "end_mile_nobo_global_est": 1400,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1400-1425",
+    "path": "rag_docs/segment_guides/full_trail_1400_1425.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1400,
+    "end_mile_nobo_global_est": 1425,
+    "states": [
+      "NY"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1425-1450",
+    "path": "rag_docs/segment_guides/full_trail_1425_1450.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1425,
+    "end_mile_nobo_global_est": 1450,
+    "states": [
+      "CT"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1450-1475",
+    "path": "rag_docs/segment_guides/full_trail_1450_1475.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1450,
+    "end_mile_nobo_global_est": 1475,
+    "states": [
+      "CT"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1475-1500",
+    "path": "rag_docs/segment_guides/full_trail_1475_1500.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1475,
+    "end_mile_nobo_global_est": 1500,
+    "states": [
+      "CT",
+      "MA"
+    ],
+    "region_ids": [
+      "mvp4_nj_ny_ct",
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1500-1525",
+    "path": "rag_docs/segment_guides/full_trail_1500_1525.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1500,
+    "end_mile_nobo_global_est": 1525,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1525-1550",
+    "path": "rag_docs/segment_guides/full_trail_1525_1550.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1525,
+    "end_mile_nobo_global_est": 1550,
+    "states": [
+      "MA"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1550-1575",
+    "path": "rag_docs/segment_guides/full_trail_1550_1575.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1550,
+    "end_mile_nobo_global_est": 1575,
+    "states": [
+      "MA",
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1575-1600",
+    "path": "rag_docs/segment_guides/full_trail_1575_1600.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1575,
+    "end_mile_nobo_global_est": 1600,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1600-1625",
+    "path": "rag_docs/segment_guides/full_trail_1600_1625.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1600,
+    "end_mile_nobo_global_est": 1625,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1625-1650",
+    "path": "rag_docs/segment_guides/full_trail_1625_1650.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1625,
+    "end_mile_nobo_global_est": 1650,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1650-1675",
+    "path": "rag_docs/segment_guides/full_trail_1650_1675.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1650,
+    "end_mile_nobo_global_est": 1675,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1675-1700",
+    "path": "rag_docs/segment_guides/full_trail_1675_1700.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1675,
+    "end_mile_nobo_global_est": 1700,
+    "states": [
+      "VT"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1700-1725",
+    "path": "rag_docs/segment_guides/full_trail_1700_1725.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1700,
+    "end_mile_nobo_global_est": 1725,
+    "states": [
+      "VT",
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1725-1750",
+    "path": "rag_docs/segment_guides/full_trail_1725_1750.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1725,
+    "end_mile_nobo_global_est": 1750,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1750-1775",
+    "path": "rag_docs/segment_guides/full_trail_1750_1775.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1750,
+    "end_mile_nobo_global_est": 1775,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1775-1800",
+    "path": "rag_docs/segment_guides/full_trail_1775_1800.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1775,
+    "end_mile_nobo_global_est": 1800,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1800-1825",
+    "path": "rag_docs/segment_guides/full_trail_1800_1825.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1800,
+    "end_mile_nobo_global_est": 1825,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1825-1850",
+    "path": "rag_docs/segment_guides/full_trail_1825_1850.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1825,
+    "end_mile_nobo_global_est": 1850,
+    "states": [
+      "NH"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1850-1875",
+    "path": "rag_docs/segment_guides/full_trail_1850_1875.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1850,
+    "end_mile_nobo_global_est": 1875,
+    "states": [
+      "NH",
+      "ME"
+    ],
+    "region_ids": [
+      "mvp5_ma_vt_nh",
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1875-1900",
+    "path": "rag_docs/segment_guides/full_trail_1875_1900.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1875,
+    "end_mile_nobo_global_est": 1900,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1900-1925",
+    "path": "rag_docs/segment_guides/full_trail_1900_1925.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1900,
+    "end_mile_nobo_global_est": 1925,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1925-1950",
+    "path": "rag_docs/segment_guides/full_trail_1925_1950.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1925,
+    "end_mile_nobo_global_est": 1950,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1950-1975",
+    "path": "rag_docs/segment_guides/full_trail_1950_1975.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1950,
+    "end_mile_nobo_global_est": 1975,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-1975-2000",
+    "path": "rag_docs/segment_guides/full_trail_1975_2000.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 1975,
+    "end_mile_nobo_global_est": 2000,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-2000-2025",
+    "path": "rag_docs/segment_guides/full_trail_2000_2025.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2000,
+    "end_mile_nobo_global_est": 2025,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-2025-2050",
+    "path": "rag_docs/segment_guides/full_trail_2025_2050.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2025,
+    "end_mile_nobo_global_est": 2050,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-2050-2075",
+    "path": "rag_docs/segment_guides/full_trail_2050_2075.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2050,
+    "end_mile_nobo_global_est": 2075,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-2075-2100",
+    "path": "rag_docs/segment_guides/full_trail_2075_2100.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2075,
+    "end_mile_nobo_global_est": 2100,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  },
+  {
+    "doc_id": "full-trail-rc1-2100-2106",
+    "path": "rag_docs/segment_guides/full_trail_2100_2106.md",
+    "route_id": "at-full-trail-rc1-open-2026",
+    "start_mile_nobo_global_est": 2100,
+    "end_mile_nobo_global_est": 2106.2,
+    "states": [
+      "ME"
+    ],
+    "region_ids": [
+      "mvp6_maine"
+    ],
+    "source_id": "full_trail_rc1_integration_model",
+    "license_status": "open_license_share_alike",
+    "confidence": "mixed_open_source_candidate",
+    "last_generated": "2026-05-14",
+    "ai_answer_rule": "Use as a cautious RAG segment summary; live-check current conditions and disclose generated-mile/source limits."
+  }
+]

@@ -523,3 +523,52 @@ test('Scout AT MVP6 Maine reference pack validates Baxter, ford, and remoteness 
   assert.ok(behaviorQuestions.some((question) => /ford/i.test(question.question + question.expected_behavior)));
   assert.ok(behaviorQuestions.some((question) => /Monson/i.test(question.question + question.expected_behavior)));
 });
+
+test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware planning rules', () => {
+  const result = spawnSync('python3', ['data/at-open-reference/full_trail_rc1/run_full_trail_validation.py', '--json'], {
+    cwd: new URL('../../..', import.meta.url),
+    encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+
+  const validation = JSON.parse(result.stdout);
+  assert.equal(validation.ok, true);
+  assert.equal(validation.failures.length, 0);
+  assert.equal(validation.route_miles, 2106.2);
+  assert.ok(validation.milepoints_0_1mi >= 21000);
+  assert.ok(validation.water_candidates >= 1700);
+  assert.ok(validation.tread_1mi_records >= 2000);
+  assert.ok(validation.difficulty_segments >= 210);
+  assert.ok(validation.rag_docs >= 84);
+  assert.ok(validation.behavior_questions >= 200);
+
+  const routeNotes = readFileSync(new URL('../full_trail_rc1/processed/route/route_integration_notes.md', import.meta.url), 'utf8');
+  assert.match(routeNotes, /Davenport Gap/i);
+  assert.match(routeNotes, /Damascus/i);
+  assert.match(routeNotes, /Amicalola/i);
+  assert.match(routeNotes, /Baxter/i);
+  assert.match(routeNotes, /Katahdin/i);
+  assert.match(routeNotes, /not official ATC mileage/i);
+
+  const livePolicy = readFileSync(new URL('../full_trail_rc1/processed/live_conditions/full_trail_live_condition_policy.md', import.meta.url), 'utf8');
+  assert.match(livePolicy, /NWS/i);
+  assert.match(livePolicy, /NPS/i);
+  assert.match(livePolicy, /USFS/i);
+  assert.match(livePolicy, /Baxter/i);
+  assert.match(livePolicy, /ATC Trail Updates/i);
+  assert.match(livePolicy, /live retrieval fails/i);
+
+  const waterPolicy = readFileSync(new URL('../full_trail_rc1/processed/water/full_trail_water_policy.md', import.meta.url), 'utf8');
+  assert.match(waterPolicy, /reliability unknown/i);
+  assert.match(waterPolicy, /potability unknown/i);
+  assert.match(waterPolicy, /safe fordability/i);
+
+  const difficultyPolicy = readFileSync(new URL('../full_trail_rc1/processed/difficulty/full_trail_daily_difficulty_model.md', import.meta.url), 'utf8');
+  assert.match(difficultyPolicy, /ford uncertainty/i);
+  assert.match(difficultyPolicy, /remoteness/i);
+  assert.match(difficultyPolicy, /permit/i);
+
+  const exportManifest = JSON.parse(readFileSync(new URL('../full_trail_rc1/exports/manifest.json', import.meta.url), 'utf8'));
+  assert.equal(exportManifest.production_safe, true);
+  assert.ok(exportManifest.datasets.every((dataset) => dataset.production_safe));
+});

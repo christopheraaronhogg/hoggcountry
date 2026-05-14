@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "required": [
+    "type",
+    "mile_nobo_mvp6",
+    "mile_nobo_global_est",
+    "lat",
+    "lon",
+    "source_id",
+    "license_status",
+    "confidence",
+    "reliability",
+    "potable",
+    "ford_safety",
+    "last_human_verified",
+    "ai_answer_rule"
+  ]
+}
