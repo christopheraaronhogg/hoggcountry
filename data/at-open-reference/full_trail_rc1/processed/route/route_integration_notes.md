@@ -1,7 +1,7 @@
 
 # Full AT Route RC1 Integration Notes
 
-Generated: 2026-05-14T00:00:00.000Z
+Generated: 2026-05-15T00:00:00.000Z
 
 Scout RC1 stitches MVP1-MVP6 into one full-trail open reference layer using the base OpenStreetMap relation 156553 route geometry as the continuity spine.
 

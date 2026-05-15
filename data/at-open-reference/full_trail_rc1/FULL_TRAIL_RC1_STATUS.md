@@ -1,7 +1,7 @@
 
 # Full Trail RC1 Status
 
-Generated: 2026-05-14T00:00:00.000Z
+Generated: 2026-05-15T00:00:00.000Z
 
 | Area | Status | Notes |
 | --- | --- | --- |
@@ -9,7 +9,7 @@ Generated: 2026-05-14T00:00:00.000Z
 | Route Alignment | Yellow | route_alignment_diagnostics.json documents OSM/Waymarked, geodesic measurement, continuity, endpoint/Approach handling, and unresolved causes. |
 | Miles | Green | 0.1/0.5/1.0 generated/open-route global milepoints with official:false. |
 | Regional Stitch | Yellow | Davenport Gap to Damascus uses base open data because regional MVP detail is missing. |
-| Elevation | Green | USGS 3DEP-derived samples and 5/10 mile summaries. |
+| Elevation | Green | Direct 100-meter USGS 3DEP/EPQS samples, compatibility 1-mile samples, 1/5/10 mile summaries, major climb/descent candidates, and steep-grade sections. |
 | Water/Fords | Green | Mapped candidates only; reliability/potability/ford safety unknown. |
 | Waypoints | Green | Regional MVPs plus base gap filler, deduplicated with provenance. |
 | Landmark Anchors | Green | Water and waypoint records are coordinate-first with route_snap derived from the selected open route spine. |

@@ -59,6 +59,9 @@ export interface ReferenceProgressData {
     readonly geodesicRouteMiles: number | null;
     readonly waymarkedRouteMiles: number | null;
     readonly threeDEstimateMiles: number | null;
+    readonly elevation100mSampleCount: number;
+    readonly elevation100mComplete: boolean;
+    readonly elevation100mStatusPath: string;
     readonly maxContinuityGapMiles: number | null;
     readonly unresolvedCauses: readonly string[];
     readonly suspectedCauses: readonly string[];
@@ -251,6 +254,9 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
         geodesicRouteMiles: null,
         waymarkedRouteMiles: null,
         threeDEstimateMiles: null,
+        elevation100mSampleCount: 0,
+        elevation100mComplete: false,
+        elevation100mStatusPath: 'data/at-open-reference/full_trail_rc1/processed/elevation/full_trail_elevation_100m_status.json',
         maxContinuityGapMiles: null,
         unresolvedCauses: [],
         suspectedCauses: [],
@@ -290,6 +296,7 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       waymarked_reported_miles?: number;
       three_d_estimate?: {
         estimated_3d_length_miles?: number;
+        sample_spacing_meters?: number;
       };
     };
     unresolved_causes?: string[];
@@ -298,6 +305,10 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
   const continuity = readJson<{
     max_consecutive_vertex_gap_miles?: number;
   }>(packRoot, 'full_trail_rc1/processed/route/route_continuity_diagnostics.json');
+  const elevation100mStatus = readJson<{
+    sample_count?: number;
+    complete?: boolean;
+  }>(packRoot, 'full_trail_rc1/processed/elevation/full_trail_elevation_100m_status.json');
   const datasetIndex = readJson<{
     dataset_id: string;
     path: string;
@@ -332,6 +343,9 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       geodesicRouteMiles: routeAlignment?.route_length_measurements?.local_geodesic_miles ?? null,
       waymarkedRouteMiles: routeAlignment?.route_length_measurements?.waymarked_reported_miles ?? null,
       threeDEstimateMiles: routeAlignment?.route_length_measurements?.three_d_estimate?.estimated_3d_length_miles ?? null,
+      elevation100mSampleCount: elevation100mStatus?.sample_count ?? datasetIndex.find((dataset) => dataset.dataset_id === 'elevation_samples_100m')?.record_count ?? 0,
+      elevation100mComplete: elevation100mStatus?.complete === true,
+      elevation100mStatusPath: 'data/at-open-reference/full_trail_rc1/processed/elevation/full_trail_elevation_100m_status.json',
       maxContinuityGapMiles: continuity?.max_consecutive_vertex_gap_miles ?? null,
       unresolvedCauses: routeAlignment?.unresolved_causes ?? [],
       suspectedCauses: routeAlignment?.suspected_causes ?? [],
@@ -359,6 +373,10 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       aiAnswerRule: dataset.ai_answer_rule,
     })),
     commands: [
+      {
+        label: 'Refresh 100m elevation',
+        command: 'node data/at-open-reference/scripts/build-full-trail-100m-elevation.mjs --concurrency 10',
+      },
       {
         label: 'Regenerate RC1',
         command: 'node data/at-open-reference/scripts/build-full-trail-rc1-reference-pack.mjs',

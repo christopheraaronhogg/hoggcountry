@@ -5,7 +5,7 @@
     "record_count": 1,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -15,7 +15,7 @@
     "record_count": 1,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -25,7 +25,7 @@
     "record_count": 1,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -35,7 +35,7 @@
     "record_count": 7,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -45,7 +45,7 @@
     "record_count": 21062,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -55,7 +55,7 @@
     "record_count": 4213,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -65,17 +65,87 @@
     "record_count": 2107,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
   {
-    "dataset_id": "elevation_samples",
+    "dataset_id": "elevation_samples_1_0mi",
     "path": "processed/elevation/full_trail_elevation_samples_1_0mi.json",
     "record_count": 2107,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
+    "dataset_id": "elevation_samples_100m",
+    "path": "processed/elevation/full_trail_elevation_samples_100m.json",
+    "record_count": 33897,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-15",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
+    "dataset_id": "elevation_100m_status",
+    "path": "processed/elevation/full_trail_elevation_100m_status.json",
+    "record_count": 1,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-15",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
+    "dataset_id": "elevation_by_1mi_segment_100m",
+    "path": "processed/elevation/full_trail_elevation_by_1mi_segment_100m.json",
+    "record_count": 2107,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-15",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
+    "dataset_id": "elevation_by_5mi_segment_100m",
+    "path": "processed/elevation/full_trail_elevation_by_5mi_segment_100m.json",
+    "record_count": 422,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-15",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
+    "dataset_id": "elevation_by_10mi_segment_100m",
+    "path": "processed/elevation/full_trail_elevation_by_10mi_segment_100m.json",
+    "record_count": 211,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-15",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
+    "dataset_id": "elevation_major_climbs_descents_100m",
+    "path": "processed/elevation/full_trail_major_climbs_descents_100m.json",
+    "record_count": 606,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-15",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
+    "dataset_id": "elevation_steep_grade_sections_100m",
+    "path": "processed/elevation/full_trail_steep_grade_sections_100m.json",
+    "record_count": 3941,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -85,7 +155,7 @@
     "record_count": 1765,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -95,7 +165,7 @@
     "record_count": 259,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -105,7 +175,7 @@
     "record_count": 54,
     "production_safe": false,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "mixed_contains_pointer_or_test_data",
     "ai_answer_rule": "Do not include in production-safe data export unless filtered; may contain pointer or validation/test content."
   },
@@ -115,7 +185,7 @@
     "record_count": 35,
     "production_safe": false,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "mixed_contains_pointer_or_test_data",
     "ai_answer_rule": "Do not include in production-safe data export unless filtered; may contain pointer or validation/test content."
   },
@@ -125,7 +195,7 @@
     "record_count": 2108,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -135,7 +205,7 @@
     "record_count": 211,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -145,7 +215,7 @@
     "record_count": 85,
     "production_safe": true,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "open_license_share_alike_or_public_domain",
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
@@ -155,7 +225,7 @@
     "record_count": 484,
     "production_safe": false,
     "route_id": "at-full-trail-rc1-open-2026",
-    "last_generated": "2026-05-14",
+    "last_generated": "2026-05-15",
     "license_status": "mixed_contains_pointer_or_test_data",
     "ai_answer_rule": "Do not include in production-safe data export unless filtered; may contain pointer or validation/test content."
   }

@@ -40,6 +40,41 @@
     "reason": "safe license statuses or generated integration metadata"
   },
   {
+    "path": "processed/elevation/full_trail_elevation_samples_100m.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/elevation/full_trail_elevation_100m_status.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/elevation/full_trail_elevation_by_1mi_segment_100m.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/elevation/full_trail_elevation_by_5mi_segment_100m.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/elevation/full_trail_elevation_by_10mi_segment_100m.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/elevation/full_trail_major_climbs_descents_100m.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/elevation/full_trail_steep_grade_sections_100m.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
     "path": "processed/water/full_trail_water_candidates.json",
     "production_safe": true,
     "reason": "safe license statuses or generated integration metadata"

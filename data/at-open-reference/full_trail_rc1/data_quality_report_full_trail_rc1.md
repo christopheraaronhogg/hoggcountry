@@ -6,6 +6,7 @@
 - Created global full-trail generated milepoints and alignment notes.
 - Added coordinate-first landmark anchors for water and waypoint datasets, with route_snap stored as a derived generated/open-route mile view.
 - Merged elevation, water, waypoints, rules, live-source, tread, difficulty, and RAG metadata indexes.
+- Added direct 100-meter USGS 3DEP/EPQS elevation samples with 1/5/10-mile detailed summaries, major climb/descent candidates, and steep-grade screening sections.
 - Created license/provenance audit docs and production-safe export tooling.
 - Created 484 full-trail behavior QA questions.
 
@@ -33,7 +34,14 @@ See processed/route/route_alignment_report.md and processed/route/route_alignmen
 - milepoints_0_1mi: 21062
 - milepoints_0_5mi: 4213
 - milepoints_1_0mi: 2107
-- elevation_samples: 2107
+- elevation_samples_1_0mi: 2107
+- elevation_samples_100m: 33897
+- elevation_100m_status: 1
+- elevation_by_1mi_segment_100m: 2107
+- elevation_by_5mi_segment_100m: 422
+- elevation_by_10mi_segment_100m: 211
+- elevation_major_climbs_descents_100m: 606
+- elevation_steep_grade_sections_100m: 3941
 - water_candidates: 1765
 - major_ford_candidates: 259
 - rules: 54
@@ -47,6 +55,7 @@ See processed/route/route_alignment_report.md and processed/route/route_alignmen
 - Generated miles are not official and should not be used as exact field navigation.
 - Davenport Gap to Damascus lacks regional MVP depth.
 - Tread/difficulty are model screens, not field verified.
+- Elevation is model-derived from USGS 3DEP/EPQS at 100-meter spacing; it is detailed enough for planning screens but not surveyed tread grade.
 - Water/fords remain candidate-only unless verified.
 - Current closures/weather/permits/fords/Katahdin status require live checks.
 

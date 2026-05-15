@@ -7,7 +7,7 @@ end_mile_nobo_global_est: 275
 official_miles: false
 states: NC/TN
 region_ids: coverage_gap_davenport_damascus
-last_generated: 2026-05-14
+last_generated: 2026-05-15
 license_status: open_license_share_alike
 confidence: low_due_to_regional_mvp_gap
 ---
@@ -22,9 +22,9 @@ Generated miles are not official ATC mileage.
 - Source route: at-main-osm-2026-open
 
 ## Terrain And Difficulty
-- Difficulty labels in this span: severe, hard
+- Difficulty labels in this span: severe
 - Tread score average: 2.4
-- Use USGS 3DEP-derived gain/loss and tread model outputs as planning screens, not field verification.
+- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, and tread model outputs as planning screens, not field verification.
 
 ## Water Candidates
 - Mapped water/fording candidates in span: 123

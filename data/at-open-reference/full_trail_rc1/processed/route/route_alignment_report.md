@@ -1,7 +1,7 @@
 
 # Route Alignment Report
 
-Generated: 2026-05-14T00:00:00.000Z
+Generated: 2026-05-15T00:00:00.000Z
 
 ## Status
 - Alignment status: yellow_unresolved_open_route_delta
@@ -18,7 +18,7 @@ The official length is used only as a single reference value. Scout generated mi
 - Local geodesic measurement: 2106.163 miles over 191,541 vertices.
 - Waymarked route reported length: 2106.762 miles.
 - Source graph measured length: 2106.183 miles.
-- Coarse 1-mile 3D estimate: 2110.5 miles, adding about 4.3 miles.
+- 100-meter 3D estimate: 2118.7 miles, adding about 12.5 miles.
 - Maximum consecutive route-vertex gap: 0.529 miles.
 - Consecutive route-vertex gaps over 1.0 mile: 0.
 
@@ -34,7 +34,7 @@ Conclusion: the measurement method is not the primary cause. Local geodesic, Way
 ## Explicit Comparisons
 - OSM/Waymarked route geometry: primary_open_route_baseline_is_shorter_than_official_reference. Waymarked reports about 2106.762 miles and Scout local geodesic measurement reports 2106.163 miles, both near the current 2106.2-mile generated route.
 - projection/measurement method: not_primary_cause. Geodesic measurement differs from the rounded RC1 length by -0.037 miles and from Waymarked by -0.599 miles.
-- vertical/slope length: not_enough_to_close_delta. Coarse 1-mile 3D estimate is 2110.5 miles, adding about 4.3 miles.
+- vertical/slope length: not_enough_to_close_delta. 100-meter 3D estimate is 2118.7 miles, adding about 12.5 miles.
 - Approach Trail: excluded_by_design_not_delta_solution. Amicalola/Approach Trail remains contextual and excluded from main AT generated mileage by design.
 - Baxter/Katahdin endpoint handling: open_route_candidate_requires_live_status_for_conditions. MVP6 endpoint follows the selected open main-route candidate; current Baxter/Katahdin status remains a live-check problem, not a static mileage correction.
 - side routes, blue blazes, shelter spurs, alternates, and temporary detours: possible_contributor_but_not_force_matched. These are not folded into main-route generated miles unless present in the selected open AT main-route geometry.

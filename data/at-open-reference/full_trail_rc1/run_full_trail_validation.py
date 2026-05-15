@@ -33,8 +33,16 @@ REQUIRED_PATHS = [
     "processed/milepoints/full_at_milepoints_1_0mi.geojson",
     "processed/milepoints/global_mile_alignment_report.md",
     "processed/elevation/full_trail_elevation_samples_1_0mi.json",
+    "processed/elevation/full_trail_elevation_samples_100m.json",
+    "processed/elevation/full_trail_elevation_100m_status.json",
+    "processed/elevation/full_trail_elevation_by_1mi_segment_100m.json",
+    "processed/elevation/full_trail_elevation_by_5mi_segment_100m.json",
+    "processed/elevation/full_trail_elevation_by_10mi_segment_100m.json",
     "processed/elevation/full_trail_elevation_by_5mi_segment.json",
     "processed/elevation/full_trail_elevation_by_10mi_segment.json",
+    "processed/elevation/full_trail_major_climbs_descents_100m.json",
+    "processed/elevation/full_trail_steep_grade_sections_100m.json",
+    "processed/elevation/full_trail_elevation_summary.md",
     "processed/water/full_trail_water_candidates.json",
     "processed/water/full_trail_major_ford_candidates.json",
     "processed/waypoints/full_trail_shelters.json",
@@ -184,6 +192,50 @@ def validate() -> dict[str, Any]:
             fail_if(mile is None or mile < previous, failures, f"{interval} milepoints not monotonic")
             previous = mile
 
+    elevation_100m = j("processed/elevation/full_trail_elevation_samples_100m.json")
+    elevation_status = j("processed/elevation/full_trail_elevation_100m_status.json")
+    fail_if(len(elevation_100m) < 33000, failures, "100m elevation samples too few")
+    fail_if(elevation_status.get("complete") is not True, failures, "100m elevation status incomplete")
+    fail_if(elevation_status.get("sample_spacing_meters") != 100, failures, "100m elevation status wrong spacing")
+    fail_if(elevation_status.get("sample_count") != len(elevation_100m), failures, "100m elevation status count mismatch")
+    previous_distance = -1
+    for record in elevation_100m[:25] + elevation_100m[-25:]:
+        common(record, failures, "elevation 100m")
+        fail_if(record.get("official") is not False, failures, "100m elevation official not false")
+        fail_if(record.get("sample_spacing_meters") != 100, failures, "100m elevation wrong spacing")
+        fail_if(record.get("source_id") != "usgs_3dep", failures, "100m elevation wrong source")
+        fail_if(record.get("license_status") != "public_domain", failures, "100m elevation wrong license")
+        fail_if(not isinstance(record.get("epqs"), dict), failures, "100m elevation missing EPQS metadata")
+        fail_if("100-meter" not in record.get("ai_answer_rule", ""), failures, "100m elevation answer rule missing spacing")
+    for record in elevation_100m:
+        distance = record.get("distance_meters")
+        fail_if(distance is None or distance < previous_distance, failures, "100m elevation distance not monotonic")
+        previous_distance = distance
+        fail_if(record.get("elevation_ft") is None, failures, "100m elevation missing elevation_ft")
+    for relative, minimum in [
+        ("processed/elevation/full_trail_elevation_by_1mi_segment_100m.json", 2000),
+        ("processed/elevation/full_trail_elevation_by_5mi_segment_100m.json", 420),
+        ("processed/elevation/full_trail_elevation_by_10mi_segment_100m.json", 210),
+        ("processed/elevation/full_trail_elevation_by_5mi_segment.json", 420),
+        ("processed/elevation/full_trail_elevation_by_10mi_segment.json", 210),
+    ]:
+        summaries = j(relative)
+        fail_if(len(summaries) < minimum, failures, f"{relative} too few")
+        for record in summaries[:10]:
+            common(record, failures, relative)
+            fail_if(record.get("sample_spacing_meters") != 100, failures, f"{relative} not derived from 100m samples")
+            fail_if(record.get("sample_count", 0) < 2, failures, f"{relative} missing sample_count")
+            fail_if(record.get("max_grade_percent") is None, failures, f"{relative} missing max grade")
+            fail_if("100-meter" not in record.get("ai_answer_rule", ""), failures, f"{relative} answer rule missing high-res caution")
+    major_climbs = j("processed/elevation/full_trail_major_climbs_descents_100m.json")
+    steep_sections = j("processed/elevation/full_trail_steep_grade_sections_100m.json")
+    fail_if(len(major_climbs) < 50, failures, "major climb/descent candidates too few")
+    fail_if(len(steep_sections) < 100, failures, "steep-grade sections too few")
+    for record in major_climbs[:10] + steep_sections[:10]:
+        common(record, failures, "100m terrain derived feature")
+        fail_if(record.get("sample_spacing_meters") != 100, failures, "100m terrain feature wrong spacing")
+        fail_if("100-meter" not in record.get("ai_answer_rule", ""), failures, "100m terrain feature missing answer rule")
+
     water = j("processed/water/full_trail_water_candidates.json")
     fail_if(len(water) < 1700, failures, "water candidates too few")
     for record in water[:50] + water[-50:]:
@@ -231,9 +283,12 @@ def validate() -> dict[str, Any]:
     fail_if(not any(record["factors"].get("ford_uncertainty_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks ford factor")
     fail_if(not any(record["factors"].get("regional_gap_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks regional gap factor")
     fail_if(not any(record["factors"].get("permit_rule_friction_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks permit/rule friction")
+    fail_if(not any(record["factors"].get("steep_grade_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks steep-grade factor")
     for record in difficulty[:10]:
         common(record, failures, "difficulty")
         fail_if(record.get("difficulty_score_0_10") is None, failures, "difficulty missing score")
+        fail_if(record.get("inputs", {}).get("elevation_sample_spacing_meters") != 100, failures, "difficulty not using 100m elevation")
+        fail_if(record.get("inputs", {}).get("max_grade_percent") is None, failures, "difficulty missing max-grade input")
 
     rag_metadata = j("rag_docs/rag_doc_metadata.json")
     fail_if(len(rag_metadata) < 84, failures, "RAG segment metadata too few")
@@ -268,6 +323,9 @@ def validate() -> dict[str, Any]:
         "length_delta_miles": route.get("length_delta_miles"),
         "alignment_status": route.get("alignment_status"),
         "milepoints_0_1mi": len(rows(j("processed/milepoints/full_at_milepoints_0_1mi.geojson"))),
+        "elevation_100m_samples": len(elevation_100m),
+        "major_climbs_descents_100m": len(major_climbs),
+        "steep_grade_sections_100m": len(steep_sections),
         "water_candidates": len(water),
         "rules": len(rules),
         "tread_1mi_records": len(tread),

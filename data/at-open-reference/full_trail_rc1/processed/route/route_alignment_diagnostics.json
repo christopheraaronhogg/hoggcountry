@@ -1,7 +1,7 @@
 {
   "route_id": "at-full-trail-rc1-open-2026",
   "source_route_id": "at-main-osm-2026-open",
-  "generated_at": "2026-05-14T00:00:00.000Z",
+  "generated_at": "2026-05-15T00:00:00.000Z",
   "alignment_status": "yellow_unresolved_open_route_delta",
   "source_id": "route_alignment_diagnostics",
   "source_url": "internal:data/at-open-reference/scripts/build-full-trail-rc1-reference-pack.mjs",
@@ -10,7 +10,7 @@
   "official_reference_source_url": "https://appalachiantrail.org/experience/hike-the-trail/at-basics/",
   "license_status": "open_license_share_alike",
   "confidence": "measurement_diagnostic_not_official_route",
-  "last_generated": "2026-05-14",
+  "last_generated": "2026-05-15",
   "production_safe": true,
   "official": false,
   "official_reference_length_miles": 2197.9,
@@ -27,12 +27,14 @@
     "local_vs_waymarked_delta_miles": -0.599,
     "local_vs_official_delta_miles": -91.737,
     "three_d_estimate": {
-      "method": "coarse 3D estimate from 1-mile USGS 3DEP elevation samples",
-      "estimated_3d_length_miles": 2110.5,
-      "added_miles_vs_2d_route": 4.3,
-      "limitation": "Coarse 1-mile elevation samples only; this screens whether vertical component could explain the 91.7-mile delta, not exact surveyed trail length."
+      "method": "3D estimate from direct 100-meter USGS 3DEP/EPQS elevation samples",
+      "sample_spacing_meters": 100,
+      "sample_count": 33897,
+      "estimated_3d_length_miles": 2118.7,
+      "added_miles_vs_2d_route": 12.5,
+      "limitation": "100-meter model-derived USGS 3DEP samples improve vertical-length screening but still do not make generated/open-route miles official or survey-grade."
     },
-    "conclusion": "Local geodesic, Waymarked reported length, and source graph measured length are close. The 91.7-mile official-reference delta is not explained by projection alone; 1-mile 3D elevation screening only adds a few miles."
+    "conclusion": "Local geodesic, Waymarked reported length, and source graph measured length are close. The 91.7-mile official-reference delta is not explained by projection alone; 100-meter 3D elevation screening only adds a few miles."
   },
   "compared_factors": [
     {
@@ -47,7 +49,7 @@
     },
     {
       "factor": "vertical/slope length",
-      "finding": "Coarse 1-mile 3D estimate is 2110.5 miles, adding about 4.3 miles.",
+      "finding": "100-meter 3D estimate is 2118.7 miles, adding about 12.5 miles.",
       "status": "not_enough_to_close_delta"
     },
     {

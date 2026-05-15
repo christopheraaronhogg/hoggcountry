@@ -7,9 +7,14 @@ const __dirname = path.dirname(__filename);
 const packRoot = path.resolve(__dirname, '..');
 const rcRoot = path.join(packRoot, 'full_trail_rc1');
 
-const GENERATED_DATE = process.env.FULL_TRAIL_RC1_GENERATED_DATE ?? '2026-05-14';
+const GENERATED_DATE = process.env.FULL_TRAIL_RC1_GENERATED_DATE ?? '2026-05-15';
 const GENERATED_AT = `${GENERATED_DATE}T00:00:00.000Z`;
 const FULL_LENGTH = 2106.2;
+const METERS_PER_MILE = 1609.344;
+const FEET_PER_MILE = 5280;
+const ELEVATION_SAMPLE_SPACING_METERS = 100;
+const EPQS_URL = 'https://epqs.nationalmap.gov/v1/json';
+const HIGH_RES_ELEVATION_CACHE_PATH = 'raw/usgs/full_trail_epqs_100m_cache.json';
 const OFFICIAL_REFERENCE_LENGTH = 2197.9;
 const OFFICIAL_REFERENCE_SOURCE_URL = 'https://appalachiantrail.org/experience/hike-the-trail/at-basics/';
 const LENGTH_DELTA = Math.round((FULL_LENGTH - OFFICIAL_REFERENCE_LENGTH) * 10) / 10;
@@ -219,16 +224,23 @@ function estimateThreeDLength(elevationSamples) {
   for (let index = 1; index < elevationSamples.length; index += 1) {
     const previous = elevationSamples[index - 1];
     const current = elevationSamples[index];
-    const horizontalFeet = ((current.mile_nobo_global_est ?? current.mile_nobo) - (previous.mile_nobo_global_est ?? previous.mile_nobo)) * 5280;
+    const horizontalFeet = ((current.mile_nobo_global_est ?? current.mile_nobo) - (previous.mile_nobo_global_est ?? previous.mile_nobo)) * FEET_PER_MILE;
     const verticalFeet = (current.elevation_ft ?? 0) - (previous.elevation_ft ?? 0);
-    if (horizontalFeet > 0) total += Math.sqrt(horizontalFeet ** 2 + verticalFeet ** 2) / 5280;
+    if (horizontalFeet > 0) total += Math.sqrt(horizontalFeet ** 2 + verticalFeet ** 2) / FEET_PER_MILE;
   }
+  const sampleSpacingMeters = elevationSamples.find((sample) => typeof sample.sample_spacing_meters === 'number')?.sample_spacing_meters ?? null;
 
   return {
-    method: 'coarse 3D estimate from 1-mile USGS 3DEP elevation samples',
+    method: sampleSpacingMeters === ELEVATION_SAMPLE_SPACING_METERS
+      ? '3D estimate from direct 100-meter USGS 3DEP/EPQS elevation samples'
+      : 'coarse 3D estimate from 1-mile USGS 3DEP elevation samples',
+    sample_spacing_meters: sampleSpacingMeters,
+    sample_count: elevationSamples.length,
     estimated_3d_length_miles: round(total, 1),
     added_miles_vs_2d_route: round(total - FULL_LENGTH, 1),
-    limitation: 'Coarse 1-mile elevation samples only; this screens whether vertical component could explain the 91.7-mile delta, not exact surveyed trail length.',
+    limitation: sampleSpacingMeters === ELEVATION_SAMPLE_SPACING_METERS
+      ? '100-meter model-derived USGS 3DEP samples improve vertical-length screening but still do not make generated/open-route miles official or survey-grade.'
+      : 'Coarse 1-mile elevation samples only; this screens whether vertical component could explain the 91.7-mile delta, not exact surveyed trail length.',
   };
 }
 
@@ -702,53 +714,308 @@ All milepoints have official:false. Generated miles are not official ATC mileage
 `);
 }
 
-function summarizeElevation(samples, interval = 10) {
+function elevationMile(sample) {
+  return sample.mile_nobo_global_est ?? sample.mile_nobo;
+}
+
+function elevationStep(previous, current) {
+  const previousMile = elevationMile(previous);
+  const currentMile = elevationMile(current);
+  const distanceMiles = currentMile - previousMile;
+  if (distanceMiles <= 0 || typeof previous.elevation_ft !== 'number' || typeof current.elevation_ft !== 'number') return null;
+  const deltaFt = current.elevation_ft - previous.elevation_ft;
+  const averageGradePercent = Math.abs(deltaFt) / (distanceMiles * FEET_PER_MILE) * 100;
+  return {
+    start_mile_nobo_global_est: previousMile,
+    end_mile_nobo_global_est: currentMile,
+    distance_miles: distanceMiles,
+    elevation_delta_ft: deltaFt,
+    average_grade_percent: averageGradePercent,
+    direction: deltaFt >= 0 ? 'climb' : 'descent',
+  };
+}
+
+function summarizeElevation(samples, interval = 10, options = {}) {
+  const validSamples = samples.filter((sample) => typeof elevationMile(sample) === 'number' && typeof sample.elevation_ft === 'number');
   const summaries = [];
   for (let start = 0; start < FULL_LENGTH; start += interval) {
     const end = Math.min(FULL_LENGTH, start + interval);
-    const segment = samples.filter((sample) => sample.mile_nobo_global_est >= start && sample.mile_nobo_global_est <= end);
+    const segment = validSamples.filter((sample) => elevationMile(sample) >= start && elevationMile(sample) <= end);
     if (segment.length < 2) continue;
     let gain = 0;
     let loss = 0;
+    let maxGrade = 0;
+    let steepestClimb = null;
+    let steepestDescent = null;
     for (let index = 1; index < segment.length; index += 1) {
-      const delta = segment[index].elevation_ft - segment[index - 1].elevation_ft;
-      if (delta > 0) gain += delta;
-      else loss += Math.abs(delta);
+      const step = elevationStep(segment[index - 1], segment[index]);
+      if (!step) continue;
+      if (step.elevation_delta_ft > 0) gain += step.elevation_delta_ft;
+      else loss += Math.abs(step.elevation_delta_ft);
+      maxGrade = Math.max(maxGrade, step.average_grade_percent);
+      if (step.elevation_delta_ft > 0 && (!steepestClimb || step.average_grade_percent > steepestClimb.average_grade_percent)) {
+        steepestClimb = step;
+      }
+      if (step.elevation_delta_ft < 0 && (!steepestDescent || step.average_grade_percent > steepestDescent.average_grade_percent)) {
+        steepestDescent = step;
+      }
     }
     const elevations = segment.map((sample) => sample.elevation_ft);
     summaries.push({
-      segment_id: `full-rc1-elevation-${String(interval).padStart(2, '0')}mi-${String(summaries.length + 1).padStart(3, '0')}`,
+      segment_id: `full-rc1-elevation-${intervalName(interval)}mi-${String(summaries.length + 1).padStart(4, '0')}`,
       route_id: ROUTE_ID,
       start_mile_nobo_global_est: round(start, 1),
       end_mile_nobo_global_est: round(end, 1),
       states: [...new Set(segment.map((sample) => sample.state))],
       region_ids: [...new Set(segment.map((sample) => sample.region_id))],
       distance_miles: round(end - start, 1),
+      sample_count: segment.length,
+      sample_spacing_meters: options.sampleSpacingMeters ?? segment[0].sample_spacing_meters ?? null,
+      source_sample_file: options.sourceSampleFile ?? null,
+      summary_interval_miles: interval,
       elevation_gain_ft: Math.round(gain),
       elevation_loss_ft: Math.round(loss),
       highest_point_ft: Math.round(Math.max(...elevations)),
       lowest_point_ft: Math.round(Math.min(...elevations)),
+      max_grade_percent: round(maxGrade, 1),
+      steepest_climb: steepestClimb
+        ? {
+            start_mile_nobo_global_est: round(steepestClimb.start_mile_nobo_global_est, 3),
+            end_mile_nobo_global_est: round(steepestClimb.end_mile_nobo_global_est, 3),
+            distance_miles: round(steepestClimb.distance_miles, 3),
+            elevation_delta_ft: round(steepestClimb.elevation_delta_ft, 1),
+            average_grade_percent: round(steepestClimb.average_grade_percent, 1),
+          }
+        : null,
+      steepest_descent: steepestDescent
+        ? {
+            start_mile_nobo_global_est: round(steepestDescent.start_mile_nobo_global_est, 3),
+            end_mile_nobo_global_est: round(steepestDescent.end_mile_nobo_global_est, 3),
+            distance_miles: round(steepestDescent.distance_miles, 3),
+            elevation_delta_ft: round(steepestDescent.elevation_delta_ft, 1),
+            average_grade_percent: round(steepestDescent.average_grade_percent, 1),
+          }
+        : null,
       source_id: 'usgs_3dep',
-      source_url: 'https://epqs.nationalmap.gov/v1/json',
+      source_url: EPQS_URL,
       license_status: 'public_domain',
       confidence: 'model_derived_topographic_estimate',
       last_checked: GENERATED_DATE,
       last_generated: GENERATED_DATE,
       production_safe: true,
-      ai_answer_rule: 'Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety.',
+      ai_answer_rule: options.sampleSpacingMeters === ELEVATION_SAMPLE_SPACING_METERS
+        ? 'Use as a model-derived USGS 3DEP/EPQS 100-meter terrain screen. It is not a guidebook profile, surveyed grade, or current-condition source.'
+        : 'Use as model-derived USGS 3DEP terrain screening. It is not a guidebook profile and does not answer current weather, closures, or safety.',
     });
   }
   return summaries;
 }
 
+function elevationSourceProps() {
+  return {
+    source_id: 'usgs_3dep',
+    source_url: EPQS_URL,
+    source: 'USGS Elevation Point Query Service, interpolated from 3DEP dynamic elevation service',
+    source_license: 'public_domain',
+    license_status: 'public_domain',
+    attribution: 'Data available from U.S. Geological Survey, 3D Elevation Program.',
+    confidence: 'model_derived_topographic_estimate',
+    last_checked: GENERATED_DATE,
+    last_generated: GENERATED_DATE,
+    production_safe: true,
+  };
+}
+
+function readHighResolutionElevationCache() {
+  const cache = maybeReadJson(HIGH_RES_ELEVATION_CACHE_PATH);
+  if (!cache) {
+    throw new Error(`Missing ${HIGH_RES_ELEVATION_CACHE_PATH}. Run node data/at-open-reference/scripts/build-full-trail-100m-elevation.mjs first.`);
+  }
+  if (cache.complete !== true || !Array.isArray(cache.samples) || cache.samples.length < 33000) {
+    throw new Error(`${HIGH_RES_ELEVATION_CACHE_PATH} is incomplete; rerun the 100m elevation fetcher.`);
+  }
+  const samples = cache.samples.map((record, index) => {
+    const mile = round(record.mile_nobo_global_est, 3);
+    return {
+      sample_id: `full-rc1-elevation-100m-${String(index + 1).padStart(5, '0')}`,
+      full_trail_record_id: `full-rc1-elevation-100m-${String(index + 1).padStart(5, '0')}`,
+      trail: 'Appalachian Trail',
+      route_id: ROUTE_ID,
+      source_route_id: SOURCE_ROUTE_ID,
+      official: false,
+      sample_index: record.sample_index ?? index,
+      sample_spacing_meters: ELEVATION_SAMPLE_SPACING_METERS,
+      distance_meters: record.distance_meters,
+      mile_nobo_global_est: mile,
+      mile_sobo_global_est: round(FULL_LENGTH - mile, 3),
+      ...regionalFields(mile),
+      state: stateForMile(mile),
+      lat: record.lat,
+      lon: record.lon,
+      elevation_ft: record.elevation_ft,
+      epqs: record.epqs ?? null,
+      terminal_partial_segment: record.terminal_partial_segment === true,
+      ...elevationSourceProps(),
+      last_checked: record.last_checked ?? cache.last_checked ?? GENERATED_DATE,
+      ai_answer_rule: 'Describe as a direct 100-meter USGS 3DEP/EPQS elevation sample along Scout full-trail RC1 open route geometry. Generated/open-route miles are not official ATC mileage; this is not a surveyed guidebook profile or current-condition source.',
+    };
+  });
+  const validSamples = samples.filter((sample) => typeof sample.elevation_ft === 'number');
+  const status = {
+    status_id: 'full-rc1-elevation-100m-status',
+    route_id: ROUTE_ID,
+    source_route_id: SOURCE_ROUTE_ID,
+    cache_path: HIGH_RES_ELEVATION_CACHE_PATH,
+    generated_at: GENERATED_AT,
+    sample_spacing_meters: ELEVATION_SAMPLE_SPACING_METERS,
+    sample_count: samples.length,
+    valid_elevation_count: validSamples.length,
+    expected_sample_count: cache.expected_sample_count,
+    route_length_meters_measured: cache.route_length_meters_measured,
+    target_length_meters: cache.target_length_meters,
+    complete: cache.complete === true && validSamples.length === samples.length,
+    generation_mode: 'direct_epqs_cache',
+    ...elevationSourceProps(),
+    ai_answer_rule: 'Use this status to verify Scout has direct 100-meter USGS 3DEP/EPQS elevation coverage. If complete:false, do not claim high-resolution elevation statistics are complete.',
+  };
+  return { samples, status };
+}
+
+function buildMajorClimbDescentCandidates(samples) {
+  const candidates = [];
+  let current = null;
+  const closeCurrent = () => {
+    if (!current) return;
+    const vertical = Math.abs(current.elevation_delta_ft);
+    if (vertical >= 400 && current.distance_miles >= 0.4) {
+      candidates.push({
+        feature_id: `full-rc1-major-${current.feature_type}-${String(candidates.length + 1).padStart(4, '0')}`,
+        route_id: ROUTE_ID,
+        feature_type: current.feature_type,
+        start_mile_nobo_global_est: round(current.start_mile_nobo_global_est, 3),
+        end_mile_nobo_global_est: round(current.end_mile_nobo_global_est, 3),
+        states: [...new Set(current.states)],
+        region_ids: [...new Set(current.region_ids)],
+        distance_miles: round(current.distance_miles, 2),
+        elevation_delta_ft: Math.round(current.elevation_delta_ft),
+        vertical_change_ft: Math.round(vertical),
+        average_grade_percent: round(vertical / (current.distance_miles * FEET_PER_MILE) * 100, 1),
+        max_step_grade_percent: round(current.max_step_grade_percent, 1),
+        sample_spacing_meters: ELEVATION_SAMPLE_SPACING_METERS,
+        source_sample_file: 'processed/elevation/full_trail_elevation_samples_100m.json',
+        ...elevationSourceProps(),
+        ai_answer_rule: 'Use as a 100-meter USGS 3DEP/EPQS major climb/descent candidate, not a field-verified guidebook climb. State source, generated-mile, and confidence limits.',
+      });
+    }
+    current = null;
+  };
+
+  for (let index = 1; index < samples.length; index += 1) {
+    const previous = samples[index - 1];
+    const currentSample = samples[index];
+    const step = elevationStep(previous, currentSample);
+    if (!step) continue;
+    if (Math.abs(step.elevation_delta_ft) < 3) {
+      if (current) {
+        current.end_mile_nobo_global_est = step.end_mile_nobo_global_est;
+        current.distance_miles += step.distance_miles;
+        current.states.push(currentSample.state);
+        current.region_ids.push(currentSample.region_id);
+      }
+      continue;
+    }
+    const featureType = step.elevation_delta_ft >= 0 ? 'major_climb' : 'major_descent';
+    if (!current || current.feature_type !== featureType) {
+      closeCurrent();
+      current = {
+        feature_type: featureType,
+        start_mile_nobo_global_est: step.start_mile_nobo_global_est,
+        end_mile_nobo_global_est: step.end_mile_nobo_global_est,
+        distance_miles: step.distance_miles,
+        elevation_delta_ft: step.elevation_delta_ft,
+        max_step_grade_percent: step.average_grade_percent,
+        states: [previous.state, currentSample.state].filter(Boolean),
+        region_ids: [previous.region_id, currentSample.region_id].filter(Boolean),
+      };
+      continue;
+    }
+    current.end_mile_nobo_global_est = step.end_mile_nobo_global_est;
+    current.distance_miles += step.distance_miles;
+    current.elevation_delta_ft += step.elevation_delta_ft;
+    current.max_step_grade_percent = Math.max(current.max_step_grade_percent, step.average_grade_percent);
+    current.states.push(currentSample.state);
+    current.region_ids.push(currentSample.region_id);
+  }
+  closeCurrent();
+  return candidates;
+}
+
+function buildSteepGradeSections(samples) {
+  const sections = [];
+  let current = null;
+  const closeCurrent = () => {
+    if (!current) return;
+    sections.push({
+      section_id: `full-rc1-steep-grade-100m-${String(sections.length + 1).padStart(5, '0')}`,
+      route_id: ROUTE_ID,
+      start_mile_nobo_global_est: round(current.start_mile_nobo_global_est, 3),
+      end_mile_nobo_global_est: round(current.end_mile_nobo_global_est, 3),
+      states: [...new Set(current.states)],
+      region_ids: [...new Set(current.region_ids)],
+      distance_miles: round(current.distance_miles, 3),
+      elevation_delta_ft: round(current.elevation_delta_ft, 1),
+      grade_direction: current.direction,
+      average_grade_percent: round(Math.abs(current.elevation_delta_ft) / (current.distance_miles * FEET_PER_MILE) * 100, 1),
+      max_step_grade_percent: round(current.max_step_grade_percent, 1),
+      sample_spacing_meters: ELEVATION_SAMPLE_SPACING_METERS,
+      source_sample_file: 'processed/elevation/full_trail_elevation_samples_100m.json',
+      ...elevationSourceProps(),
+      ai_answer_rule: 'Use as a 100-meter USGS 3DEP/EPQS steep-grade screening section. It can miss local tread hazards and is not a surveyed or field-verified slope.',
+    });
+    current = null;
+  };
+  for (let index = 1; index < samples.length; index += 1) {
+    const previous = samples[index - 1];
+    const currentSample = samples[index];
+    const step = elevationStep(previous, currentSample);
+    if (!step || step.average_grade_percent < 12) {
+      closeCurrent();
+      continue;
+    }
+    if (!current || current.direction !== step.direction) {
+      closeCurrent();
+      current = {
+        start_mile_nobo_global_est: step.start_mile_nobo_global_est,
+        end_mile_nobo_global_est: step.end_mile_nobo_global_est,
+        distance_miles: step.distance_miles,
+        elevation_delta_ft: step.elevation_delta_ft,
+        direction: step.direction,
+        max_step_grade_percent: step.average_grade_percent,
+        states: [previous.state, currentSample.state].filter(Boolean),
+        region_ids: [previous.region_id, currentSample.region_id].filter(Boolean),
+      };
+      continue;
+    }
+    current.end_mile_nobo_global_est = step.end_mile_nobo_global_est;
+    current.distance_miles += step.distance_miles;
+    current.elevation_delta_ft += step.elevation_delta_ft;
+    current.max_step_grade_percent = Math.max(current.max_step_grade_percent, step.average_grade_percent);
+    current.states.push(currentSample.state);
+    current.region_ids.push(currentSample.region_id);
+  }
+  closeCurrent();
+  return sections;
+}
+
 function buildElevation() {
-  const samples = readJson('processed/elevation/elevation_samples_1_0mi.json').map((record, index) => {
+  const oneMileSamples = readJson('processed/elevation/elevation_samples_1_0mi.json').map((record, index) => {
     const mile = round(record.mile_nobo, 1);
     return {
       ...record,
       full_trail_record_id: `full-rc1-elevation-${String(index + 1).padStart(5, '0')}`,
       route_id: ROUTE_ID,
       source_route_id: SOURCE_ROUTE_ID,
+      official: false,
       mile_nobo_global_est: mile,
       mile_sobo_global_est: round(FULL_LENGTH - mile, 1),
       ...regionalFields(mile),
@@ -758,19 +1025,53 @@ function buildElevation() {
       ai_answer_rule: 'Describe as model-derived USGS 3DEP elevation sampled along Scout full-trail RC1 open route geometry; values may differ from guidebook profiles or surveyed summits.',
     };
   });
-  writeJson('processed/elevation/full_trail_elevation_samples_1_0mi.json', samples);
-  writeJson('processed/elevation/full_trail_elevation_by_5mi_segment.json', summarizeElevation(samples, 5));
-  writeJson('processed/elevation/full_trail_elevation_by_10mi_segment.json', summarizeElevation(samples, 10));
+  const highResolution = readHighResolutionElevationCache();
+  const oneMileSummaries100m = summarizeElevation(highResolution.samples, 1, {
+    sampleSpacingMeters: ELEVATION_SAMPLE_SPACING_METERS,
+    sourceSampleFile: 'processed/elevation/full_trail_elevation_samples_100m.json',
+  });
+  const fiveMileSummaries100m = summarizeElevation(highResolution.samples, 5, {
+    sampleSpacingMeters: ELEVATION_SAMPLE_SPACING_METERS,
+    sourceSampleFile: 'processed/elevation/full_trail_elevation_samples_100m.json',
+  });
+  const tenMileSummaries100m = summarizeElevation(highResolution.samples, 10, {
+    sampleSpacingMeters: ELEVATION_SAMPLE_SPACING_METERS,
+    sourceSampleFile: 'processed/elevation/full_trail_elevation_samples_100m.json',
+  });
+  const majorClimbsDescents = buildMajorClimbDescentCandidates(highResolution.samples);
+  const steepGradeSections = buildSteepGradeSections(highResolution.samples);
+
+  writeJson('processed/elevation/full_trail_elevation_samples_1_0mi.json', oneMileSamples);
+  writeJson('processed/elevation/full_trail_elevation_samples_100m.json', highResolution.samples);
+  writeJson('processed/elevation/full_trail_elevation_100m_status.json', highResolution.status);
+  writeJson('processed/elevation/full_trail_elevation_by_1mi_segment_100m.json', oneMileSummaries100m);
+  writeJson('processed/elevation/full_trail_elevation_by_5mi_segment_100m.json', fiveMileSummaries100m);
+  writeJson('processed/elevation/full_trail_elevation_by_10mi_segment_100m.json', tenMileSummaries100m);
+  writeJson('processed/elevation/full_trail_elevation_by_5mi_segment.json', fiveMileSummaries100m);
+  writeJson('processed/elevation/full_trail_elevation_by_10mi_segment.json', tenMileSummaries100m);
+  writeJson('processed/elevation/full_trail_major_climbs_descents_100m.json', majorClimbsDescents);
+  writeJson('processed/elevation/full_trail_steep_grade_sections_100m.json', steepGradeSections);
   writeText('processed/elevation/full_trail_elevation_summary.md', `
 # Full Trail RC1 Elevation Summary
 
-Elevation is model-derived from USGS 3DEP through the existing Scout open-reference samples. It supports terrain screening, climb/descent estimates, and difficulty modeling, but not exact guidebook profiles or field navigation.
+Elevation is model-derived from USGS 3DEP through the USGS Elevation Point Query Service. It supports terrain screening, climb/descent estimates, grade-risk screening, and difficulty modeling, but not exact guidebook profiles, surveyed grades, current conditions, or field navigation.
 
-RC1 includes 1-mile samples and 5-mile/10-mile summaries across ${FULL_LENGTH} generated miles. Short mileage in the Smokies, Shenandoah, Pennsylvania ridges, New England, the White Mountains, Maine, and Katahdin can still be difficult when gain/loss, tread, weather, remoteness, permits, and water uncertainty stack.
+RC1 includes ${highResolution.samples.length} direct 100-meter samples, compatibility 1-mile samples, 1-mile/5-mile/10-mile summaries derived from the 100-meter samples, ${majorClimbsDescents.length} major climb/descent candidates, and ${steepGradeSections.length} steep-grade screening sections across ${FULL_LENGTH} generated miles.
+
+The 100-meter layer is the preferred elevation source for Scout difficulty and terrain answers. The 1-mile sample file is retained for compatibility and quick inspection only. Short mileage in the Smokies, Shenandoah, Pennsylvania ridges, New England, the White Mountains, Maine, and Katahdin can still be difficult when gain/loss, steep descents, tread, weather, remoteness, permits, and water uncertainty stack.
 
 Generated miles are not official ATC mileage.
 `);
-  return samples;
+  return {
+    oneMileSamples,
+    highResolutionSamples: highResolution.samples,
+    highResolutionStatus: highResolution.status,
+    oneMileSummaries100m,
+    fiveMileSummaries100m,
+    tenMileSummaries100m,
+    majorClimbsDescents,
+    steepGradeSections,
+  };
 }
 
 function buildRouteAlignment(elevationSamples) {
@@ -857,7 +1158,7 @@ function buildRouteAlignment(elevationSamples) {
       local_vs_waymarked_delta_miles: typeof waymarkedMiles === 'number' ? round(measurement.measured_length_miles - waymarkedMiles, 3) : null,
       local_vs_official_delta_miles: round(measurement.measured_length_miles - OFFICIAL_REFERENCE_LENGTH, 3),
       three_d_estimate: threeD,
-      conclusion: 'Local geodesic, Waymarked reported length, and source graph measured length are close. The 91.7-mile official-reference delta is not explained by projection alone; 1-mile 3D elevation screening only adds a few miles.',
+      conclusion: 'Local geodesic, Waymarked reported length, and source graph measured length are close. The 91.7-mile official-reference delta is not explained by projection alone; 100-meter 3D elevation screening only adds a few miles.',
     },
     compared_factors: [
       {
@@ -872,7 +1173,7 @@ function buildRouteAlignment(elevationSamples) {
       },
       {
         factor: 'vertical/slope length',
-        finding: `Coarse 1-mile 3D estimate is ${threeD.estimated_3d_length_miles} miles, adding about ${threeD.added_miles_vs_2d_route} miles.`,
+        finding: `${threeD.sample_spacing_meters ?? 'coarse'}-meter 3D estimate is ${threeD.estimated_3d_length_miles} miles, adding about ${threeD.added_miles_vs_2d_route} miles.`,
         status: 'not_enough_to_close_delta',
       },
       {
@@ -948,7 +1249,7 @@ The official length is used only as a single reference value. Scout generated mi
 - Local geodesic measurement: ${measurement.measured_length_miles} miles over ${measurement.vertex_count.toLocaleString()} vertices.
 - Waymarked route reported length: ${waymarkedMiles} miles.
 - Source graph measured length: ${typeof graph.measuredLengthMiles === 'number' ? round(graph.measuredLengthMiles, 3) : 'unknown'} miles.
-- Coarse 1-mile 3D estimate: ${threeD.estimated_3d_length_miles} miles, adding about ${threeD.added_miles_vs_2d_route} miles.
+- ${threeD.sample_spacing_meters ?? 'Coarse'}-meter 3D estimate: ${threeD.estimated_3d_length_miles} miles, adding about ${threeD.added_miles_vs_2d_route} miles.
 - Maximum consecutive route-vertex gap: ${measurement.max_consecutive_vertex_gap_miles} miles.
 - Consecutive route-vertex gaps over 1.0 mile: ${measurement.segments_over_1_0_miles}.
 
@@ -1214,6 +1515,7 @@ function buildDifficulty(elevationSummaries, tread, water, waypoints, rules) {
     });
     const gainFactor = Math.min(3, Math.round((elevation.elevation_gain_ft ?? 0) / 1800));
     const lossFactor = Math.min(2, Math.round((elevation.elevation_loss_ft ?? 0) / 2200));
+    const steepGradeFactor = (elevation.max_grade_percent ?? 0) >= 25 ? 2 : (elevation.max_grade_percent ?? 0) >= 12 ? 1 : 0;
     const treadFactor = Math.min(3, Math.round(avgTread / 1.5));
     const fordFactor = fordCount > 6 ? 2 : fordCount > 0 ? 1 : 0;
     const remotenessFactor = region.region_id === 'mvp6_maine' || region.region_id === 'mvp5_ma_vt_nh' ? (bailoutCount === 0 ? 2 : 1) : 0;
@@ -1222,7 +1524,7 @@ function buildDifficulty(elevationSummaries, tread, water, waypoints, rules) {
     const regionRuleFriction = ['mvp1_springer_davenport', 'mvp2_virginia', 'mvp4_nj_ny_ct', 'mvp5_ma_vt_nh', 'mvp6_maine'].includes(region.region_id) ? 1 : 0;
     const permitRuleFriction = permitRules.length ? 1 : regionRuleFriction;
     const gapFactor = region.gap ? 2 : 0;
-    const score = Math.min(10, Math.round(1 + gainFactor + lossFactor + treadFactor + fordFactor + remotenessFactor + weatherFactor + waterUncertaintyFactor + permitRuleFriction + gapFactor));
+    const score = Math.min(10, Math.round(1 + gainFactor + lossFactor + steepGradeFactor + treadFactor + fordFactor + remotenessFactor + weatherFactor + waterUncertaintyFactor + permitRuleFriction + gapFactor));
     difficulty.push({
       difficulty_id: `full-rc1-difficulty-10mi-${String(difficulty.length + 1).padStart(3, '0')}`,
       route_id: ROUTE_ID,
@@ -1232,8 +1534,14 @@ function buildDifficulty(elevationSummaries, tread, water, waypoints, rules) {
       region_ids: [region.region_id],
       distance_miles: round(end - start, 1),
       inputs: {
+        elevation_sample_source: elevation.source_sample_file ?? 'processed/elevation/full_trail_elevation_by_10mi_segment.json',
+        elevation_sample_spacing_meters: elevation.sample_spacing_meters ?? null,
+        elevation_sample_count: elevation.sample_count ?? null,
         elevation_gain_ft: elevation.elevation_gain_ft ?? null,
         elevation_loss_ft: elevation.elevation_loss_ft ?? null,
+        max_grade_percent: elevation.max_grade_percent ?? null,
+        steepest_climb: elevation.steepest_climb ?? null,
+        steepest_descent: elevation.steepest_descent ?? null,
         tread_score_avg: round(avgTread, 2),
         ford_candidate_count: fordCount,
         bailout_access_count: bailoutCount,
@@ -1245,6 +1553,7 @@ function buildDifficulty(elevationSummaries, tread, water, waypoints, rules) {
       factors: {
         gain_factor: gainFactor,
         loss_descent_factor: lossFactor,
+        steep_grade_factor: steepGradeFactor,
         tread_factor: treadFactor,
         ford_uncertainty_factor: fordFactor,
         remoteness_bailout_scarcity_factor: remotenessFactor,
@@ -1255,7 +1564,7 @@ function buildDifficulty(elevationSummaries, tread, water, waypoints, rules) {
       },
       difficulty_score_0_10: score,
       difficulty_label: score >= 8 ? 'severe' : score >= 6 ? 'hard' : score >= 4 ? 'moderate' : 'easier',
-      explanation: 'Screening score from distance, gain/loss, descents, tread, ford uncertainty, remoteness, water uncertainty, weather severity, permit/rule friction, and known regional data gaps.',
+      explanation: 'Screening score from distance, 100-meter USGS 3DEP gain/loss and steep-grade screens, descents, tread, ford uncertainty, remoteness, water uncertainty, weather severity, permit/rule friction, and known regional data gaps.',
       confidence: region.gap ? 'low_due_to_regional_mvp_gap' : 'model_screening_not_field_verified',
       source_id: 'full_trail_rc1_difficulty_model',
       source_url: 'internal:data/at-open-reference/scripts/build-full-trail-rc1-reference-pack.mjs',
@@ -1263,7 +1572,7 @@ function buildDifficulty(elevationSummaries, tread, water, waypoints, rules) {
       last_checked: GENERATED_DATE,
       last_generated: GENERATED_DATE,
       production_safe: true,
-      ai_answer_rule: 'Use as a cautious planning difficulty screen only. Require live checks for weather, closures, permits, fords, water, Baxter/Katahdin, and land-manager rules.',
+      ai_answer_rule: 'Use as a cautious planning difficulty screen only. It uses 100-meter USGS 3DEP/EPQS elevation statistics where available, but still requires live checks for weather, closures, permits, fords, water, Baxter/Katahdin, and land-manager rules.',
     });
   }
   writeJson('processed/difficulty/full_trail_difficulty_by_10mi_segment.json', difficulty);
@@ -1274,7 +1583,7 @@ The RC1 difficulty model is a planning screen, not a field-verified rating.
 
 Inputs:
 - distance
-- gain/loss and steep descents from USGS 3DEP-derived summaries
+- gain/loss, steep descents, and max-grade screens from 100-meter USGS 3DEP/EPQS summaries
 - tread/rockiness/rootiness/mud model score
 - ford uncertainty
 - remoteness and bailout scarcity
@@ -1291,6 +1600,7 @@ Outputs:
 
 Rules:
 - Short mileage may still be hard in the Smokies, White Mountains, Maine, Katahdin, and rugged New England.
+- Prefer processed/elevation/full_trail_elevation_samples_100m.json for detailed terrain; the 1-mile elevation file is retained for compatibility.
 - Static difficulty cannot answer current weather, closures, fords, snow/ice, fire bans, permits, campsite/hut status, or Baxter/Katahdin conditions.
 - The Davenport Gap to Damascus corridor receives an explicit regional-gap factor until MVP detail exists.
 `);
@@ -1300,8 +1610,10 @@ Rules:
     generated_at: GENERATED_AT,
     score_range: [0, 10],
     classes: ['easier', 'moderate', 'hard', 'severe'],
-    inputs: ['distance', 'gain_loss', 'descents', 'tread', 'mud_rootiness', 'ford_uncertainty', 'remoteness_bailout_scarcity', 'water_uncertainty', 'weather_severity', 'permit_rule_friction'],
-    ai_answer_rule: 'Use for cautious itinerary screening only with uncertainty and live-check requirements.',
+    preferred_elevation_source: 'processed/elevation/full_trail_elevation_samples_100m.json',
+    elevation_sample_spacing_meters: ELEVATION_SAMPLE_SPACING_METERS,
+    inputs: ['distance', 'gain_loss', 'descents', 'max_grade_100m', 'tread', 'mud_rootiness', 'ford_uncertainty', 'remoteness_bailout_scarcity', 'water_uncertainty', 'weather_severity', 'permit_rule_friction'],
+    ai_answer_rule: 'Use for cautious itinerary screening only with uncertainty and live-check requirements. The 100-meter elevation layer improves terrain detail but is still model-derived.',
   });
   return difficulty;
 }
@@ -1366,7 +1678,7 @@ Generated miles are not official ATC mileage.
 ## Terrain And Difficulty
 - Difficulty labels in this span: ${summary.difficulty_labels.join(', ') || 'not computed'}
 - Tread score average: ${summary.tread_avg ?? 'unknown'}
-- Use USGS 3DEP-derived gain/loss and tread model outputs as planning screens, not field verification.
+- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, and tread model outputs as planning screens, not field verification.
 
 ## Water Candidates
 - Mapped water/fording candidates in span: ${summary.water_count}
@@ -1443,7 +1755,7 @@ Use it as a conservative pointer layer. Unknowns stay unknown. Current closures,
     'closures.md': 'Closures, detours, fire, flooding, storm damage, snow/ice, bear activity, road closures, permit changes, and Katahdin status require live checks.',
     'navigation.md': `RC1 is a planning corpus, not field navigation. Landmark identity is coordinate-first: use coordinate_anchor lat/lon as the stable location and route_snap as a derived generated/open-route mile view. Generated/open-route miles are not official and route length has a known ${LENGTH_DELTA}-mile delta versus the ${OFFICIAL_REFERENCE_LENGTH}-mile 2026 official reference.`,
     'tread.md': 'Tread/rockiness/rootiness/mud scores are model screens. State confidence and avoid field-verified language unless the record explicitly proves it.',
-    'difficulty.md': 'Difficulty combines distance, terrain, tread, remoteness, weather, water, fords, permits, and data gaps. Use as a cautious screen.',
+    'difficulty.md': 'Difficulty combines distance, 100-meter USGS 3DEP/EPQS gain/loss and steep-grade screens, tread, remoteness, weather, water, fords, permits, and data gaps. Use as a cautious screen.',
     'license_attribution.md': 'Use only public-domain, open-license, API-accessible, or license-reviewed sources. Attribute OpenStreetMap contributors for ODbL-derived data.',
   };
   for (const [file, body] of Object.entries(policies)) {
@@ -1505,7 +1817,14 @@ function buildDatasetIndex(datasets) {
     ['milepoints_0_1mi', 'processed/milepoints/full_at_milepoints_0_1mi.geojson', readJson('processed/milepoints/full_at_milepoints_0_1mi.geojson', rcRoot).features.length, true],
     ['milepoints_0_5mi', 'processed/milepoints/full_at_milepoints_0_5mi.geojson', readJson('processed/milepoints/full_at_milepoints_0_5mi.geojson', rcRoot).features.length, true],
     ['milepoints_1_0mi', 'processed/milepoints/full_at_milepoints_1_0mi.geojson', readJson('processed/milepoints/full_at_milepoints_1_0mi.geojson', rcRoot).features.length, true],
-    ['elevation_samples', 'processed/elevation/full_trail_elevation_samples_1_0mi.json', datasets.elevation.length, true],
+    ['elevation_samples_1_0mi', 'processed/elevation/full_trail_elevation_samples_1_0mi.json', datasets.elevation.length, true],
+    ['elevation_samples_100m', 'processed/elevation/full_trail_elevation_samples_100m.json', datasets.elevation100m.length, true],
+    ['elevation_100m_status', 'processed/elevation/full_trail_elevation_100m_status.json', 1, true],
+    ['elevation_by_1mi_segment_100m', 'processed/elevation/full_trail_elevation_by_1mi_segment_100m.json', datasets.elevationSummaries1mi100m.length, true],
+    ['elevation_by_5mi_segment_100m', 'processed/elevation/full_trail_elevation_by_5mi_segment_100m.json', datasets.elevationSummaries5mi100m.length, true],
+    ['elevation_by_10mi_segment_100m', 'processed/elevation/full_trail_elevation_by_10mi_segment_100m.json', datasets.elevationSummaries10mi100m.length, true],
+    ['elevation_major_climbs_descents_100m', 'processed/elevation/full_trail_major_climbs_descents_100m.json', datasets.majorClimbsDescents100m.length, true],
+    ['elevation_steep_grade_sections_100m', 'processed/elevation/full_trail_steep_grade_sections_100m.json', datasets.steepGradeSections100m.length, true],
     ['water_candidates', 'processed/water/full_trail_water_candidates.json', datasets.water.length, true],
     ['major_ford_candidates', 'processed/water/full_trail_major_ford_candidates.json', readJson('processed/water/full_trail_major_ford_candidates.json', rcRoot).length, true],
     ['rules', 'processed/rules/full_trail_rules_by_land_manager.json', datasets.rules.length, false],
@@ -1593,7 +1912,7 @@ Generated: ${GENERATED_AT}
 | Route Alignment | Yellow | route_alignment_diagnostics.json documents OSM/Waymarked, geodesic measurement, continuity, endpoint/Approach handling, and unresolved causes. |
 | Miles | Green | 0.1/0.5/1.0 generated/open-route global milepoints with official:false. |
 | Regional Stitch | Yellow | Davenport Gap to Damascus uses base open data because regional MVP detail is missing. |
-| Elevation | Green | USGS 3DEP-derived samples and 5/10 mile summaries. |
+| Elevation | Green | Direct 100-meter USGS 3DEP/EPQS samples, compatibility 1-mile samples, 1/5/10 mile summaries, major climb/descent candidates, and steep-grade sections. |
 | Water/Fords | Green | Mapped candidates only; reliability/potability/ford safety unknown. |
 | Waypoints | Green | Regional MVPs plus base gap filler, deduplicated with provenance. |
 | Landmark Anchors | Green | Water and waypoint records are coordinate-first with route_snap derived from the selected open route spine. |
@@ -1615,6 +1934,7 @@ Generated: ${GENERATED_AT}
 - Created global full-trail generated milepoints and alignment notes.
 - Added coordinate-first landmark anchors for water and waypoint datasets, with route_snap stored as a derived generated/open-route mile view.
 - Merged elevation, water, waypoints, rules, live-source, tread, difficulty, and RAG metadata indexes.
+- Added direct 100-meter USGS 3DEP/EPQS elevation samples with 1/5/10-mile detailed summaries, major climb/descent candidates, and steep-grade screening sections.
 - Created license/provenance audit docs and production-safe export tooling.
 - Created ${datasets.qa.length} full-trail behavior QA questions.
 
@@ -1641,6 +1961,7 @@ ${datasetIndex.map((dataset) => `- ${dataset.dataset_id}: ${dataset.record_count
 - Generated miles are not official and should not be used as exact field navigation.
 - Davenport Gap to Damascus lacks regional MVP depth.
 - Tread/difficulty are model screens, not field verified.
+- Elevation is model-derived from USGS 3DEP/EPQS at 100-meter spacing; it is detailed enough for planning screens but not surveyed tread grade.
 - Water/fords remain candidate-only unless verified.
 - Current closures/weather/permits/fords/Katahdin status require live checks.
 
@@ -1709,8 +2030,16 @@ REQUIRED_PATHS = [
     "processed/milepoints/full_at_milepoints_1_0mi.geojson",
     "processed/milepoints/global_mile_alignment_report.md",
     "processed/elevation/full_trail_elevation_samples_1_0mi.json",
+    "processed/elevation/full_trail_elevation_samples_100m.json",
+    "processed/elevation/full_trail_elevation_100m_status.json",
+    "processed/elevation/full_trail_elevation_by_1mi_segment_100m.json",
+    "processed/elevation/full_trail_elevation_by_5mi_segment_100m.json",
+    "processed/elevation/full_trail_elevation_by_10mi_segment_100m.json",
     "processed/elevation/full_trail_elevation_by_5mi_segment.json",
     "processed/elevation/full_trail_elevation_by_10mi_segment.json",
+    "processed/elevation/full_trail_major_climbs_descents_100m.json",
+    "processed/elevation/full_trail_steep_grade_sections_100m.json",
+    "processed/elevation/full_trail_elevation_summary.md",
     "processed/water/full_trail_water_candidates.json",
     "processed/water/full_trail_major_ford_candidates.json",
     "processed/waypoints/full_trail_shelters.json",
@@ -1860,6 +2189,50 @@ def validate() -> dict[str, Any]:
             fail_if(mile is None or mile < previous, failures, f"{interval} milepoints not monotonic")
             previous = mile
 
+    elevation_100m = j("processed/elevation/full_trail_elevation_samples_100m.json")
+    elevation_status = j("processed/elevation/full_trail_elevation_100m_status.json")
+    fail_if(len(elevation_100m) < 33000, failures, "100m elevation samples too few")
+    fail_if(elevation_status.get("complete") is not True, failures, "100m elevation status incomplete")
+    fail_if(elevation_status.get("sample_spacing_meters") != 100, failures, "100m elevation status wrong spacing")
+    fail_if(elevation_status.get("sample_count") != len(elevation_100m), failures, "100m elevation status count mismatch")
+    previous_distance = -1
+    for record in elevation_100m[:25] + elevation_100m[-25:]:
+        common(record, failures, "elevation 100m")
+        fail_if(record.get("official") is not False, failures, "100m elevation official not false")
+        fail_if(record.get("sample_spacing_meters") != 100, failures, "100m elevation wrong spacing")
+        fail_if(record.get("source_id") != "usgs_3dep", failures, "100m elevation wrong source")
+        fail_if(record.get("license_status") != "public_domain", failures, "100m elevation wrong license")
+        fail_if(not isinstance(record.get("epqs"), dict), failures, "100m elevation missing EPQS metadata")
+        fail_if("100-meter" not in record.get("ai_answer_rule", ""), failures, "100m elevation answer rule missing spacing")
+    for record in elevation_100m:
+        distance = record.get("distance_meters")
+        fail_if(distance is None or distance < previous_distance, failures, "100m elevation distance not monotonic")
+        previous_distance = distance
+        fail_if(record.get("elevation_ft") is None, failures, "100m elevation missing elevation_ft")
+    for relative, minimum in [
+        ("processed/elevation/full_trail_elevation_by_1mi_segment_100m.json", 2000),
+        ("processed/elevation/full_trail_elevation_by_5mi_segment_100m.json", 420),
+        ("processed/elevation/full_trail_elevation_by_10mi_segment_100m.json", 210),
+        ("processed/elevation/full_trail_elevation_by_5mi_segment.json", 420),
+        ("processed/elevation/full_trail_elevation_by_10mi_segment.json", 210),
+    ]:
+        summaries = j(relative)
+        fail_if(len(summaries) < minimum, failures, f"{relative} too few")
+        for record in summaries[:10]:
+            common(record, failures, relative)
+            fail_if(record.get("sample_spacing_meters") != 100, failures, f"{relative} not derived from 100m samples")
+            fail_if(record.get("sample_count", 0) < 2, failures, f"{relative} missing sample_count")
+            fail_if(record.get("max_grade_percent") is None, failures, f"{relative} missing max grade")
+            fail_if("100-meter" not in record.get("ai_answer_rule", ""), failures, f"{relative} answer rule missing high-res caution")
+    major_climbs = j("processed/elevation/full_trail_major_climbs_descents_100m.json")
+    steep_sections = j("processed/elevation/full_trail_steep_grade_sections_100m.json")
+    fail_if(len(major_climbs) < 50, failures, "major climb/descent candidates too few")
+    fail_if(len(steep_sections) < 100, failures, "steep-grade sections too few")
+    for record in major_climbs[:10] + steep_sections[:10]:
+        common(record, failures, "100m terrain derived feature")
+        fail_if(record.get("sample_spacing_meters") != 100, failures, "100m terrain feature wrong spacing")
+        fail_if("100-meter" not in record.get("ai_answer_rule", ""), failures, "100m terrain feature missing answer rule")
+
     water = j("processed/water/full_trail_water_candidates.json")
     fail_if(len(water) < 1700, failures, "water candidates too few")
     for record in water[:50] + water[-50:]:
@@ -1907,9 +2280,12 @@ def validate() -> dict[str, Any]:
     fail_if(not any(record["factors"].get("ford_uncertainty_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks ford factor")
     fail_if(not any(record["factors"].get("regional_gap_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks regional gap factor")
     fail_if(not any(record["factors"].get("permit_rule_friction_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks permit/rule friction")
+    fail_if(not any(record["factors"].get("steep_grade_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks steep-grade factor")
     for record in difficulty[:10]:
         common(record, failures, "difficulty")
         fail_if(record.get("difficulty_score_0_10") is None, failures, "difficulty missing score")
+        fail_if(record.get("inputs", {}).get("elevation_sample_spacing_meters") != 100, failures, "difficulty not using 100m elevation")
+        fail_if(record.get("inputs", {}).get("max_grade_percent") is None, failures, "difficulty missing max-grade input")
 
     rag_metadata = j("rag_docs/rag_doc_metadata.json")
     fail_if(len(rag_metadata) < 84, failures, "RAG segment metadata too few")
@@ -1944,6 +2320,9 @@ def validate() -> dict[str, Any]:
         "length_delta_miles": route.get("length_delta_miles"),
         "alignment_status": route.get("alignment_status"),
         "milepoints_0_1mi": len(rows(j("processed/milepoints/full_at_milepoints_0_1mi.geojson"))),
+        "elevation_100m_samples": len(elevation_100m),
+        "major_climbs_descents_100m": len(major_climbs),
+        "steep_grade_sections_100m": len(steep_sections),
         "water_candidates": len(water),
         "rules": len(rules),
         "tread_1mi_records": len(tread),
@@ -1992,15 +2371,31 @@ function main() {
   buildRoute();
   buildMilepoints();
   const elevation = buildElevation();
-  const alignment = buildRouteAlignment(elevation);
+  const alignment = buildRouteAlignment(elevation.highResolutionSamples);
   const water = buildWater();
   const waypoints = buildWaypoints();
   const rules = buildRules();
   const liveSources = buildLiveSources();
-  const tread = buildTread(elevation);
+  const tread = buildTread(elevation.oneMileSamples);
   const elevation10 = readJson('processed/elevation/full_trail_elevation_by_10mi_segment.json', rcRoot);
   const difficulty = buildDifficulty(elevation10, tread, water, waypoints, rules);
-  const datasets = { elevation, alignment, water, waypoints, rules, liveSources, tread, difficulty };
+  const datasets = {
+    elevation: elevation.oneMileSamples,
+    elevation100m: elevation.highResolutionSamples,
+    elevationStatus100m: elevation.highResolutionStatus,
+    elevationSummaries1mi100m: elevation.oneMileSummaries100m,
+    elevationSummaries5mi100m: elevation.fiveMileSummaries100m,
+    elevationSummaries10mi100m: elevation.tenMileSummaries100m,
+    majorClimbsDescents100m: elevation.majorClimbsDescents,
+    steepGradeSections100m: elevation.steepGradeSections,
+    alignment,
+    water,
+    waypoints,
+    rules,
+    liveSources,
+    tread,
+    difficulty,
+  };
   buildRagDocs(datasets);
   const qa = buildQaTests();
   datasets.qa = qa;

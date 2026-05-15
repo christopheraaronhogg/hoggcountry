@@ -7,7 +7,7 @@ end_mile_nobo_global_est: 1800
 official_miles: false
 states: NH
 region_ids: mvp5_ma_vt_nh
-last_generated: 2026-05-14
+last_generated: 2026-05-15
 license_status: open_license_share_alike
 confidence: mixed_open_source_candidate
 ---
@@ -24,7 +24,7 @@ Generated miles are not official ATC mileage.
 ## Terrain And Difficulty
 - Difficulty labels in this span: severe
 - Tread score average: 4.08
-- Use USGS 3DEP-derived gain/loss and tread model outputs as planning screens, not field verification.
+- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, and tread model outputs as planning screens, not field verification.
 
 ## Water Candidates
 - Mapped water/fording candidates in span: 10

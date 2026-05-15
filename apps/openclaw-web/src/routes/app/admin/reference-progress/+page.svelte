@@ -94,7 +94,7 @@
       <article>
         <span>3D screen</span>
         <strong>{formatNumber(data.rc1.threeDEstimateMiles)}</strong>
-        <small>coarse elevation estimate</small>
+        <small>{formatNumber(data.rc1.elevation100mSampleCount)} samples · 100m {data.rc1.elevation100mComplete ? 'complete' : 'incomplete'}</small>
       </article>
       <article>
         <span>Max continuity gap</span>

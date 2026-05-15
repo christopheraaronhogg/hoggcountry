@@ -1,7 +1,7 @@
 {
   "model_id": "full_trail_daily_difficulty_model_v1",
   "route_id": "at-full-trail-rc1-open-2026",
-  "generated_at": "2026-05-14T00:00:00.000Z",
+  "generated_at": "2026-05-15T00:00:00.000Z",
   "score_range": [
     0,
     10
@@ -12,10 +12,13 @@
     "hard",
     "severe"
   ],
+  "preferred_elevation_source": "processed/elevation/full_trail_elevation_samples_100m.json",
+  "elevation_sample_spacing_meters": 100,
   "inputs": [
     "distance",
     "gain_loss",
     "descents",
+    "max_grade_100m",
     "tread",
     "mud_rootiness",
     "ford_uncertainty",
@@ -24,5 +27,5 @@
     "weather_severity",
     "permit_rule_friction"
   ],
-  "ai_answer_rule": "Use for cautious itinerary screening only with uncertainty and live-check requirements."
+  "ai_answer_rule": "Use for cautious itinerary screening only with uncertainty and live-check requirements. The 100-meter elevation layer improves terrain detail but is still model-derived."
 }

@@ -145,7 +145,9 @@ test('Scout admin reference progress dashboard exposes RC1 progress without load
   assert.equal(progress.rc1.alignmentStatus, 'yellow_unresolved_open_route_delta');
   assert.ok(progress.rc1.geodesicRouteMiles > 2106 && progress.rc1.geodesicRouteMiles < 2107);
   assert.ok(progress.rc1.waymarkedRouteMiles > 2106 && progress.rc1.waymarkedRouteMiles < 2107);
-  assert.ok(progress.rc1.threeDEstimateMiles > 2110 && progress.rc1.threeDEstimateMiles < 2111);
+  assert.ok(progress.rc1.threeDEstimateMiles > 2118 && progress.rc1.threeDEstimateMiles < 2119);
+  assert.equal(progress.rc1.elevation100mComplete, true);
+  assert.ok(progress.rc1.elevation100mSampleCount >= 33_000);
   assert.equal(typeof progress.rc1.maxContinuityGapMiles, 'number');
   assert.equal(progress.rc1.maxContinuityGapMiles < 1, true);
   assert.ok(progress.rc1.unresolvedCauses.some((cause) => /licensed official/i.test(cause)));
@@ -155,9 +157,11 @@ test('Scout admin reference progress dashboard exposes RC1 progress without load
   assert.ok(progress.rc1.zipSizeBytes > 1_000_000);
   assert.ok(progress.packs.length >= 6);
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'water_candidates' && dataset.recordCount > 1700));
+  assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'elevation_samples_100m' && dataset.recordCount >= 33_000));
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'route_alignment_diagnostics' && dataset.recordCount === 1));
   assert.ok(progress.rc1.statusRows.some((row) => row.area === 'Landmark Anchors' && /coordinate-first/i.test(row.notes)));
   assert.ok(progress.rc1.yellowFlags.some((flag) => /Davenport Gap to Damascus/i.test(flag.notes)));
   assert.ok(progress.rc1.yellowFlags.some((flag) => /official reference/i.test(flag.notes)));
+  assert.ok(progress.commands.some((command) => /build-full-trail-100m-elevation\.mjs/.test(command.command)));
   assert.ok(progress.commands.some((command) => /run_full_trail_validation.py/.test(command.command)));
 });

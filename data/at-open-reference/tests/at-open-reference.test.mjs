@@ -539,6 +539,9 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
   assert.equal(validation.length_delta_miles, -91.7);
   assert.equal(validation.alignment_status, 'yellow_unresolved_open_route_delta');
   assert.ok(validation.milepoints_0_1mi >= 21000);
+  assert.ok(validation.elevation_100m_samples >= 33000);
+  assert.ok(validation.major_climbs_descents_100m >= 50);
+  assert.ok(validation.steep_grade_sections_100m >= 100);
   assert.ok(validation.water_candidates >= 1700);
   assert.ok(validation.tread_1mi_records >= 2000);
   assert.ok(validation.difficulty_segments >= 210);
@@ -565,6 +568,7 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
   assert.ok(alignment.route_length_measurements.local_geodesic_miles > 2106);
   assert.ok(alignment.route_length_measurements.waymarked_reported_miles > 2106);
   assert.ok(alignment.route_length_measurements.three_d_estimate.estimated_3d_length_miles > 2110);
+  assert.equal(alignment.route_length_measurements.three_d_estimate.sample_spacing_meters, 100);
   assert.match(alignment.ai_answer_rule, /generated\/open-route mile/i);
 
   const alignmentReport = readFileSync(new URL('../full_trail_rc1/processed/route/route_alignment_report.md', import.meta.url), 'utf8');
@@ -572,6 +576,7 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
   assert.match(alignmentReport, /Scout generated open-route length: 2106\.2 miles/i);
   assert.match(alignmentReport, /Delta: -91\.7 miles/i);
   assert.match(alignmentReport, /Waymarked/i);
+  assert.match(alignmentReport, /100-meter 3D estimate/i);
   assert.match(alignmentReport, /geodesic/i);
   assert.match(alignmentReport, /Approach Trail/i);
   assert.match(alignmentReport, /unresolved/i);
@@ -618,9 +623,35 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
   assert.match(navigationPolicy, /route_snap as a derived generated\/open-route mile view/i);
 
   const difficultyPolicy = readFileSync(new URL('../full_trail_rc1/processed/difficulty/full_trail_daily_difficulty_model.md', import.meta.url), 'utf8');
+  assert.match(difficultyPolicy, /100-meter USGS 3DEP\/EPQS/i);
   assert.match(difficultyPolicy, /ford uncertainty/i);
   assert.match(difficultyPolicy, /remoteness/i);
   assert.match(difficultyPolicy, /permit/i);
+
+  const elevationStatus = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/elevation/full_trail_elevation_100m_status.json', import.meta.url), 'utf8'));
+  assert.equal(elevationStatus.complete, true);
+  assert.equal(elevationStatus.sample_spacing_meters, 100);
+  assert.ok(elevationStatus.sample_count >= 33000);
+
+  const elevation100m = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/elevation/full_trail_elevation_samples_100m.json', import.meta.url), 'utf8'));
+  assert.ok(elevation100m.length >= 33000);
+  assert.equal(elevation100m[0].sample_spacing_meters, 100);
+  assert.equal(elevation100m[0].source_id, 'usgs_3dep');
+  assert.equal(elevation100m[0].license_status, 'public_domain');
+  assert.match(elevation100m[0].ai_answer_rule, /100-meter/);
+
+  const elevation10m = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/elevation/full_trail_elevation_by_10mi_segment.json', import.meta.url), 'utf8'));
+  assert.equal(elevation10m[0].sample_spacing_meters, 100);
+  assert.ok(elevation10m[0].sample_count > 100);
+  assert.ok(typeof elevation10m[0].max_grade_percent === 'number');
+
+  const terrainCandidates = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/elevation/full_trail_major_climbs_descents_100m.json', import.meta.url), 'utf8'));
+  assert.ok(terrainCandidates.length >= 50);
+  assert.ok(terrainCandidates.every((record) => record.sample_spacing_meters === 100));
+
+  const difficulty = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/difficulty/full_trail_difficulty_by_10mi_segment.json', import.meta.url), 'utf8'));
+  assert.ok(difficulty.every((record) => record.inputs.elevation_sample_spacing_meters === 100));
+  assert.ok(difficulty.some((record) => record.factors.steep_grade_factor > 0));
 
   const exportManifest = JSON.parse(readFileSync(new URL('../full_trail_rc1/exports/manifest.json', import.meta.url), 'utf8'));
   assert.equal(exportManifest.production_safe, true);

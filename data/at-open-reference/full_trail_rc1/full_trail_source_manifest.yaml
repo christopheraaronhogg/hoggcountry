@@ -78,7 +78,7 @@
     "allowed_use": "reference the single official 2026 total length value and link users to ATC; do not package copied ATC guide/map/text/table content",
     "attribution_required": "Reference Appalachian Trail Conservancy as the official source.",
     "confidence": "official_reference_value",
-    "last_checked": "2026-05-14",
+    "last_checked": "2026-05-15",
     "production_safe": false,
     "data_categories": [
       "official_length_reference"
@@ -213,7 +213,7 @@
     "allowed_use": "disclose regional MVP coverage gap",
     "attribution_required": "None beyond upstream data attribution.",
     "confidence": "high",
-    "last_checked": "2026-05-14",
+    "last_checked": "2026-05-15",
     "production_safe": true,
     "data_categories": [
       "data_quality"
@@ -301,7 +301,7 @@
     "allowed_use": "planning screen with source/confidence cautions",
     "attribution_required": "Preserve upstream source attribution.",
     "confidence": "model_screening_not_field_verified",
-    "last_checked": "2026-05-14",
+    "last_checked": "2026-05-15",
     "production_safe": true,
     "data_categories": [
       "difficulty"
@@ -319,7 +319,7 @@
     "allowed_use": "package generated indexes with source attribution and ODbL notes",
     "attribution_required": "Preserve upstream source attribution, especially OpenStreetMap contributors.",
     "confidence": "derived_from_existing_open_reference_packs",
-    "last_checked": "2026-05-14",
+    "last_checked": "2026-05-15",
     "production_safe": true,
     "data_categories": [
       "route_integration",
@@ -1160,7 +1160,7 @@
     "allowed_use": "package generated diagnostics with upstream OSM attribution and official-reference caution",
     "attribution_required": "Preserve OpenStreetMap attribution and ATC official-reference URL as a pointer only.",
     "confidence": "measurement_diagnostic_not_official_route",
-    "last_checked": "2026-05-14",
+    "last_checked": "2026-05-15",
     "production_safe": true,
     "data_categories": [
       "route_alignment",
