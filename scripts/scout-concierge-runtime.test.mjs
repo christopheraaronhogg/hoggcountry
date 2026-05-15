@@ -5,6 +5,7 @@ import test from 'node:test';
 import { loadScoutAtOpenReferenceOfflineSummary } from '../apps/openclaw-web/src/lib/server/at-open-reference.ts';
 import { isScoutAdminProfile } from '../apps/openclaw-web/src/lib/server/scout-admin.ts';
 import { readScoutReferenceTablePage } from '../apps/openclaw-web/src/lib/server/scout-resource-explorer.ts';
+import { loadScoutReferenceProgressData } from '../apps/openclaw-web/src/lib/server/scout-reference-progress.ts';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
@@ -115,4 +116,31 @@ test('Scout admin resource explorer exposes agent-accessible tables and docs', (
   assert.equal(pageResult.rows.length, 5);
   assert.ok(pageResult.columns.includes('water_id'));
   assert.equal(pageResult.rows[0].source_id, 'usgs_3dhp_nhd');
+});
+
+test('Scout admin reference progress dashboard exposes RC1 progress without loading huge tables', () => {
+  assert.equal(existsSync(new URL('apps/openclaw-web/src/routes/app/admin/reference-progress/+page.svelte', root)), true);
+  assert.equal(existsSync(new URL('apps/openclaw-web/src/routes/app/admin/reference-progress/+page.server.ts', root)), true);
+  assert.equal(existsSync(new URL('apps/openclaw-web/src/lib/server/scout-reference-progress.ts', root)), true);
+
+  const page = read('apps/openclaw-web/src/routes/app/admin/reference-progress/+page.svelte');
+  const server = read('apps/openclaw-web/src/routes/app/admin/reference-progress/+page.server.ts');
+  const resourcesPage = read('apps/openclaw-web/src/routes/app/admin/resources/+page.svelte');
+
+  assert.match(page, /Reference Progress/u);
+  assert.match(page, /MVP coverage/u);
+  assert.match(page, /Davenport Gap to Damascus|yellow flags/u);
+  assert.match(page, /Regenerate and verify/u);
+  assert.match(server, /loadScoutReferenceProgressData/u);
+  assert.match(resourcesPage, /\/app\/admin\/reference-progress/u);
+
+  const progress = loadScoutReferenceProgressData();
+  assert.equal(progress.rc1.routeMiles, 2106.2);
+  assert.equal(progress.rc1.qaQuestionCount, 440);
+  assert.ok(progress.rc1.totalDatasetRecords > 25_000);
+  assert.ok(progress.rc1.zipSizeBytes > 1_000_000);
+  assert.ok(progress.packs.length >= 6);
+  assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'water_candidates' && dataset.recordCount > 1700));
+  assert.ok(progress.rc1.yellowFlags.some((flag) => /Davenport Gap to Damascus/i.test(flag.notes)));
+  assert.ok(progress.commands.some((command) => /run_full_trail_validation.py/.test(command.command)));
 });

@@ -159,6 +159,7 @@
   <button class:active={panel === 'tables'} type="button" onclick={() => (panel = 'tables')}>Tables</button>
   <button class:active={panel === 'docs'} type="button" onclick={() => (panel = 'docs')}>Docs</button>
   <button class:active={panel === 'workspace'} type="button" onclick={() => (panel = 'workspace')}>Workspace</button>
+  <a href={resolve('/app/admin/reference-progress')}>Progress</a>
 </div>
 
 {#if panel === 'tables'}
@@ -439,7 +440,11 @@
   }
 
   .panel-tabs button,
+  .panel-tabs a,
   .table-pager button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 2.45rem;
     border: 1px solid rgba(77, 89, 74, 0.18);
     border-radius: 999px;
@@ -448,9 +453,11 @@
     padding: 0 0.95rem;
     font-weight: 900;
     cursor: pointer;
+    text-decoration: none;
   }
 
   .panel-tabs button.active,
+  .panel-tabs a:hover,
   .table-pager button:not(:disabled):hover {
     border-color: var(--pine);
     background: var(--pine);
