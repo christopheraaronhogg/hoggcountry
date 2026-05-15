@@ -1,0 +1,25 @@
+{
+  "name": "@hoggcountry/scout-chatgpt-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts",
+    "check": "tsc --noEmit",
+    "inspect": "npx @modelcontextprotocol/inspector@latest --server-url http://localhost:${PORT:-8787}/mcp --transport http"
+  },
+  "dependencies": {
+    "@hoggcountry/corpus": "file:../../packages/corpus",
+    "@hoggcountry/manual-core": "file:../../packages/manual-core",
+    "@hoggcountry/trail-data": "file:../../packages/trail-data",
+    "@modelcontextprotocol/ext-apps": "^1.7.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "24.2.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
