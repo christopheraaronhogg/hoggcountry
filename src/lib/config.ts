@@ -47,7 +47,14 @@ export const YT_PLAYLIST_FEED_URL = YT_PLAYLIST_ID
 // otherwise "latest uploads" will appear stale even though the channel has newer videos.
 export const YT_FEED_URL = YT_PLAYLIST_FEED_URL ?? YT_CHANNEL_FEED_URL;
 
-const workspaceBase = import.meta.env.PUBLIC_WORKSPACE_URL
-  || (import.meta.env.DEV ? 'http://localhost:5173' : 'https://app.hoggcountry.com');
+const viteEnv = (import.meta as ImportMeta & {
+  env?: {
+    DEV?: boolean;
+    PUBLIC_WORKSPACE_URL?: string;
+  };
+}).env ?? {};
+
+const workspaceBase = viteEnv.PUBLIC_WORKSPACE_URL
+  || (viteEnv.DEV ? 'http://localhost:5173' : 'https://app.hoggcountry.com');
 
 export const WORKSPACE_URL = workspaceBase.replace(/\/+$/, '');

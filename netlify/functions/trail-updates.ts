@@ -6,7 +6,7 @@ import {
   readUpdates,
   type TrailUpdate,
 } from './_trail-updates';
-import { YT_UPLOADS_FEED_URL } from '../../src/lib/config';
+import { YT_SHORTS_FEED_URL, YT_UPLOADS_FEED_URL } from '../../src/lib/config';
 import { fetchYouTubeRSS, type YtVideo } from '../../src/lib/youtube';
 
 const API_ORIGIN = String(process.env.TRAIL_UPDATES_API_ORIGIN || 'https://hoggcountry.on-forge.com').replace(/\/$/u, '');
@@ -28,9 +28,9 @@ function clipText(value: string, max = 240): string {
   return `${cleaned.slice(0, max).trimEnd()}...`;
 }
 
-function youtubeUpdate(video: YtVideo): TrailUpdate {
+function youtubeUpdate(video: YtVideo, kindOverride?: YtVideo['kind']): TrailUpdate {
   const published = video.published || new Date().toISOString();
-  const isShort = video.kind === 'short';
+  const isShort = (kindOverride ?? video.kind) === 'short';
 
   return {
     id: `youtube-${video.id}`,
@@ -96,9 +96,25 @@ async function fetchLaravelUpdates(limit: number): Promise<TrailUpdate[]> {
 }
 
 async function fetchYouTubeUpdates(limit: number): Promise<TrailUpdate[]> {
-  const items = await fetchYouTubeRSS(YT_UPLOADS_FEED_URL);
+  const [uploads, shorts] = await Promise.all([
+    fetchYouTubeRSS(YT_UPLOADS_FEED_URL).catch(() => []),
+    fetchYouTubeRSS(YT_SHORTS_FEED_URL).catch(() => []),
+  ]);
 
-  return items.slice(0, limit).map(youtubeUpdate);
+  const merged = new Map<string, TrailUpdate>();
+  for (const short of shorts) {
+    merged.set(short.id, youtubeUpdate(short, 'short'));
+  }
+
+  for (const upload of uploads) {
+    if (!merged.has(upload.id)) {
+      merged.set(upload.id, youtubeUpdate(upload));
+    }
+  }
+
+  return Array.from(merged.values())
+    .sort((a, b) => sortStamp(b).localeCompare(sortStamp(a)))
+    .slice(0, limit);
 }
 
 const handler: Handler = async (event) => {
