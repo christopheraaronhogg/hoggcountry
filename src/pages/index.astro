@@ -4,12 +4,12 @@ import TrailUpdatesFeed from '../components/TrailUpdatesFeed.astro';
 import YouTubeThumbnail from '../components/YouTubeThumbnail.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { facts, getMeta } from '../data/trailFacts';
-import { WORKSPACE_URL, YT_CHANNEL_FEED_URL } from '../lib/config';
+import { WORKSPACE_URL, YT_UPLOADS_FEED_URL } from '../lib/config';
 import { isEnabled } from '../lib/features';
 import { fetchYouTubeRSS } from '../lib/youtube';
 
 const showVideos = isEnabled('YOUTUBE_RSS');
-const videos = showVideos ? (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 3) : [];
+const videos = showVideos ? (await fetchYouTubeRSS(YT_UPLOADS_FEED_URL)).slice(0, 3) : [];
 const meta = getMeta();
 
 function formatDate(value: string) {
@@ -28,6 +28,10 @@ function clipText(value: string, max = 130) {
   if (!cleaned) return '';
   if (cleaned.length <= max) return cleaned;
   return `${cleaned.slice(0, max).trimEnd()}...`;
+}
+
+function youtubeLabel(video: (typeof videos)[number]) {
+  return video.kind === 'short' ? 'YouTube Short' : 'Video Dispatch';
 }
 
 ---
@@ -123,9 +127,9 @@ function clipText(value: string, max = 130) {
       <div class="section-head">
         <div>
           <p class="eyebrow">Latest From Dad</p>
-          <h2>Video dispatches stay in the mix.</h2>
+          <h2>Video dispatches and Shorts stay in the mix.</h2>
         </div>
-        <a href="/videos/" class="section-link">See all videos</a>
+        <a href="/videos/" class="section-link">See all videos and Shorts</a>
       </div>
 
       <div class="video-grid">
@@ -135,10 +139,12 @@ function clipText(value: string, max = 130) {
               <YouTubeThumbnail id={video.id} alt={video.title} loading="lazy" provided={video.thumbnail} />
             </a>
             <div class="video-copy">
-              <p class="video-meta">{formatDate(video.published) || 'Recent upload'}</p>
+              <p class="video-meta">{youtubeLabel(video)} • {formatDate(video.published) || 'Recent upload'}</p>
               <h3>{video.title}</h3>
               {clipText(video.description) && <p>{clipText(video.description)}</p>}
-              <a href={video.link} target="_blank" rel="noopener noreferrer">Watch on YouTube</a>
+              <a href={video.link} target="_blank" rel="noopener noreferrer">
+                {video.kind === 'short' ? 'Watch Short on YouTube' : 'Watch on YouTube'}
+              </a>
             </div>
           </article>
         ))}

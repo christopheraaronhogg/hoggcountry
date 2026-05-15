@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import { YT_CHANNEL_FEED_URL } from '../lib/config';
+import { YT_UPLOADS_FEED_URL } from '../lib/config';
 import { fetchYouTubeRSS } from '../lib/youtube';
 import { getCollection } from 'astro:content';
 
@@ -20,12 +20,12 @@ const trips = (await getCollection('trips')).map(t => ({
   },
 }));
 
-const vids = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).map(v => ({
-  kind: 'video' as const,
+const vids = (await fetchYouTubeRSS(YT_UPLOADS_FEED_URL)).map(v => ({
+  kind: v.kind,
   id: v.id,
   title: v.title,
   date: v.published,
-  url: `https://www.youtube.com/watch?v=${v.id}`,
+  url: v.link || `https://www.youtube.com/watch?v=${v.id}`,
 }));
 
 const combined = [...trips, ...vids]
@@ -124,6 +124,10 @@ const entries = combined.map((e, index) => {
             <span class="tab-icon">▶</span>
             <span>Videos</span>
           </button>
+          <button class="filter-tab" data-filter="short" aria-pressed="false">
+            <span class="tab-icon">▥</span>
+            <span>Shorts</span>
+          </button>
         </nav>
       </header>
 
@@ -139,7 +143,7 @@ const entries = combined.map((e, index) => {
                 <span class="date-year">{e.year}</span>
               </div>
               <div class="entry-type-badge" data-type={e.kind}>
-                {e.kind === 'trip' ? '⛰' : '▶'}
+                {e.kind === 'trip' ? '⛰' : e.kind === 'short' ? '▥' : '▶'}
               </div>
             </div>
 
@@ -163,7 +167,7 @@ const entries = combined.map((e, index) => {
                   <div class="video-info">
                     <h3 class="entry-title">{e.title}</h3>
                     <a href={e.url} target="_blank" rel="noopener" class="entry-cta">
-                      Watch on YouTube →
+                      {e.kind === 'short' ? 'Watch Short on YouTube →' : 'Watch on YouTube →'}
                     </a>
                   </div>
                 </div>
@@ -547,6 +551,11 @@ const entries = combined.map((e, index) => {
     .entry-type-badge[data-type="video"] {
       background: rgba(240, 224, 0, 0.15);
       border-color: var(--marker);
+    }
+
+    .entry-type-badge[data-type="short"] {
+      background: rgba(155, 90, 46, 0.13);
+      border-color: var(--terra);
     }
 
     /* Entry content */

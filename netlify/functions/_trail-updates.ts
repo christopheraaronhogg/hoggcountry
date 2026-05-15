@@ -23,6 +23,9 @@ export type TrailUpdate = {
     height: number;
     size: number;
   }>;
+  externalUrl?: string | null;
+  sourceLabel?: string | null;
+  sourceType?: 'trail_update' | 'youtube_video' | 'youtube_short' | 'post';
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;

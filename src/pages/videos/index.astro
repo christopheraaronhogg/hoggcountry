@@ -4,14 +4,14 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
 import YouTubeThumbnail from '../../components/YouTubeThumbnail.astro';
-import { YT_CHANNEL_FEED_URL } from '../../lib/config';
+import { YT_UPLOADS_FEED_URL } from '../../lib/config';
 import { fetchYouTubeRSS } from '../../lib/youtube';
 
 const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
 const channelUrl = 'https://www.youtube.com/@hoggcountry7483';
 
 // Build-time fallback only. Runtime script below refreshes from Laravel API.
-const videos = (await fetchYouTubeRSS(YT_CHANNEL_FEED_URL)).slice(0, 12);
+const videos = (await fetchYouTubeRSS(YT_UPLOADS_FEED_URL)).slice(0, 12);
 const featuredVideo = videos[0] ?? null;
 const libraryVideos = featuredVideo ? videos.slice(1) : videos;
 
@@ -33,10 +33,14 @@ function clipText(value: string, max = 160) {
   return `${cleaned.slice(0, max).trimEnd()}…`;
 }
 
+function youtubeLabel(video: (typeof videos)[number]) {
+  return video.kind === 'short' ? 'YouTube Short' : 'YouTube Video';
+}
+
 ---
 <html lang="en">
   <head>
-    <BaseHead title="Videos • Hogg Country" description="Trail dispatches, daily Appalachian Trail updates, and latest uploads from Hogg Country." />
+    <BaseHead title="Videos • Hogg Country" description="Trail dispatches, Shorts, daily Appalachian Trail updates, and latest uploads from Hogg Country." />
   </head>
   <body>
     <Header />
@@ -50,10 +54,10 @@ function clipText(value: string, max = 160) {
               <p id="videos-status" class="videos-status" aria-live="polite">Loading latest videos…</p>
             </div>
             <h1 class="videos-title">Hogg Country on the Appalachian Trail.</h1>
-            <p class="videos-lede">Latest trail videos, newest first.</p>
+            <p class="videos-lede">Latest trail videos and Shorts, newest first.</p>
             <div class="videos-hero__actions">
               {featuredVideo && (
-                <a href={`#video-${featuredVideo.id}`} class="hero-button hero-button--primary">Latest video</a>
+                <a href={`#video-${featuredVideo.id}`} class="hero-button hero-button--primary">Latest upload</a>
               )}
               <a href={channelUrl} target="_blank" rel="noopener noreferrer" class="hero-button hero-button--secondary">YouTube channel</a>
             </div>
@@ -66,8 +70,8 @@ function clipText(value: string, max = 160) {
           <div class="container">
             <div class="section-heading section-heading--simple">
               <div>
-                <p class="section-kicker">Latest video</p>
-                <h2>Most recent upload.</h2>
+                <p class="section-kicker">Latest upload</p>
+                <h2>Most recent video or Short.</h2>
               </div>
             </div>
 
@@ -76,7 +80,7 @@ function clipText(value: string, max = 160) {
                 <YouTubeEmbed id={featuredVideo.id} title={featuredVideo.title} />
               </div>
               <div class="featured-card__copy" id="featured-copy-slot">
-                <p class="featured-meta">Newest upload {formatDate(featuredVideo.published) ? `• ${formatDate(featuredVideo.published)}` : ''}</p>
+                <p class="featured-meta">{youtubeLabel(featuredVideo)} {formatDate(featuredVideo.published) ? `• ${formatDate(featuredVideo.published)}` : ''}</p>
                 <h3>{featuredVideo.title}</h3>
                 {clipText(featuredVideo.description, 280) && (
                   <p class="featured-description">{clipText(featuredVideo.description, 280)}</p>
@@ -96,7 +100,7 @@ function clipText(value: string, max = 160) {
           <div class="section-heading section-heading--simple section-heading--library">
             <div>
               <p class="section-kicker">Archive</p>
-              <h2>Recent videos.</h2>
+              <h2>Recent videos and Shorts.</h2>
             </div>
           </div>
 
@@ -116,7 +120,7 @@ function clipText(value: string, max = 160) {
                 </a>
 
                 <div class="video-card__copy">
-                  <p class="video-card__meta">{formatDate(video.published) || 'Recent upload'}</p>
+                  <p class="video-card__meta">{youtubeLabel(video)} • {formatDate(video.published) || 'Recent upload'}</p>
                   <h3>{video.title}</h3>
                   {clipText(video.description, 140) && <p class="video-card__desc">{clipText(video.description, 140)}</p>}
                   <a class="video-card__link" href={video.link} target="_blank" rel="noopener noreferrer">Open on YouTube</a>
@@ -137,7 +141,7 @@ function clipText(value: string, max = 160) {
         const featuredCard = document.querySelector('.featured-card');
         const featuredFrame = document.getElementById('featured-video-slot');
         const featuredCopy = document.getElementById('featured-copy-slot');
-        const endpoint = `${apiBase}/videos/latest?limit=12&source=channel`;
+        const endpoint = `${apiBase}/videos/latest?limit=12&source=uploads`;
 
         if (!(grid instanceof HTMLElement) || !(status instanceof HTMLElement)) {
           return;
@@ -167,6 +171,10 @@ function clipText(value: string, max = 160) {
           if (!cleaned) return '';
           if (cleaned.length <= max) return cleaned;
           return `${cleaned.slice(0, max).trimEnd()}…`;
+        }
+
+        function youtubeLabel(video) {
+          return video?.kind === 'short' ? 'YouTube Short' : 'YouTube Video';
         }
 
         function thumbnailFor(video) {
@@ -201,7 +209,7 @@ function clipText(value: string, max = 160) {
           const link = escapeHtml(video.link || `https://www.youtube.com/watch?v=${id}`);
           const date = formatDate(video.published);
           const description = clipText(video.description, 280);
-          const dateLine = date ? `Newest upload • ${escapeHtml(date)}` : 'Newest upload';
+          const dateLine = date ? `${youtubeLabel(video)} • ${escapeHtml(date)}` : youtubeLabel(video);
 
           featuredFrame.innerHTML = `
             <iframe
@@ -242,7 +250,7 @@ function clipText(value: string, max = 160) {
             const title = escapeHtml(video.title || 'Untitled');
             const link = escapeHtml(video.link || `https://www.youtube.com/watch?v=${id}`);
             const published = formatDate(video.published);
-            const dateLine = published ? escapeHtml(published) : 'Recent upload';
+            const dateLine = published ? `${youtubeLabel(video)} • ${escapeHtml(published)}` : youtubeLabel(video);
             const description = clipText(video.description, 140);
             const thumb = renderThumbnail(video, title);
             const order = String(index + 1).padStart(2, '0');

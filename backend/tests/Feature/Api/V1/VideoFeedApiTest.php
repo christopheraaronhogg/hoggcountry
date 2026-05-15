@@ -76,6 +76,44 @@ XML;
         $response->assertJsonPath('error.code', 'video_feed_unavailable');
     }
 
+    public function test_latest_videos_endpoint_can_return_uploads_playlist_shorts(): void
+    {
+        putenv('YOUTUBE_CHANNEL_ID=UCtestchannel123');
+        $_ENV['YOUTUBE_CHANNEL_ID'] = 'UCtestchannel123';
+        $_SERVER['YOUTUBE_CHANNEL_ID'] = 'UCtestchannel123';
+
+        $xml = <<<'XML'
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">
+  <entry>
+    <id>yt:video:abc123xyz89</id>
+    <yt:videoId>abc123xyz89</yt:videoId>
+    <title>May 15, 2026</title>
+    <published>2026-05-15T22:54:17+00:00</published>
+    <link rel="alternate" href="https://www.youtube.com/shorts/abc123xyz89" />
+    <media:group>
+      <media:description>Quick trail short.</media:description>
+      <media:thumbnail url="https://i.ytimg.com/vi/abc123xyz89/hqdefault.jpg" />
+    </media:group>
+  </entry>
+</feed>
+XML;
+
+        Http::fake([
+            'https://www.youtube.com/feeds/videos.xml?playlist_id=UUtestchannel123' => Http::response($xml, 200, [
+                'Content-Type' => 'application/atom+xml',
+            ]),
+        ]);
+
+        $response = $this->getJson('/api/v1/videos/latest?limit=1&source=uploads');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.source', 'uploads');
+        $response->assertJsonPath('data.feed_url', 'https://www.youtube.com/feeds/videos.xml?playlist_id=UUtestchannel123');
+        $response->assertJsonPath('data.items.0.id', 'abc123xyz89');
+        $response->assertJsonPath('data.items.0.kind', 'short');
+        $response->assertJsonPath('data.items.0.link', 'https://www.youtube.com/shorts/abc123xyz89');
+    }
+
     public function test_latest_videos_endpoint_falls_back_to_channel_page_when_rss_fails(): void
     {
         putenv('YOUTUBE_CHANNEL_ID=UCtestchannel123');

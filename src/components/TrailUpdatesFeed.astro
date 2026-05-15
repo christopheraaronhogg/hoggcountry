@@ -134,6 +134,11 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
     white-space: pre-wrap;
   }
 
+  .update-action {
+    display: inline-flex;
+    margin-top: 0.2rem;
+  }
+
   .is-compact .updates-grid {
     grid-template-columns: 1fr;
   }
@@ -192,7 +197,16 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
     const cardHtml = (update) => {
       const title = escapeHtml(update.title || 'Trail update');
       const body = escapeHtml(update.body || '');
+      const sourceLabel = escapeHtml(update.sourceLabel || '');
+      const externalUrl = String(update.externalUrl || '');
+      const hasExternalUrl = /^https?:\/\//i.test(externalUrl);
+      const actionLabel = update.sourceType === 'youtube_short'
+        ? 'Watch Short on YouTube'
+        : update.sourceType === 'youtube_video'
+          ? 'Watch on YouTube'
+          : 'Open update';
       const bits = [formatDate(update.publishedAt || update.createdAt)];
+      if (sourceLabel) bits.unshift(sourceLabel);
       if (update.location) bits.push(escapeHtml(update.location));
       if (update.trailMile) bits.push(`Mile ${escapeHtml(update.trailMile)}`);
       return `
@@ -202,6 +216,7 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
             <div class="update-meta">${bits.map((bit) => `<span>${bit}</span>`).join('<span>•</span>')}</div>
             <h3>${title}</h3>
             ${body ? `<p>${body}</p>` : ''}
+            ${hasExternalUrl ? `<a class="update-action" href="${escapeHtml(externalUrl)}" target="_blank" rel="noopener noreferrer">${actionLabel}</a>` : ''}
           </div>
         </article>
       `;

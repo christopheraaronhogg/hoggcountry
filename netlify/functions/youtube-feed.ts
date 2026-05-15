@@ -1,7 +1,13 @@
 import type { Handler, HandlerEvent } from '@netlify/functions';
 
 import { fetchYouTubeRSS } from '../../src/lib/youtube';
-import { YT_CHANNEL_FEED_URL, YT_PLAYLIST_FEED_URL } from '../../src/lib/config';
+import {
+  YT_CHANNEL_FEED_URL,
+  YT_LONGFORM_FEED_URL,
+  YT_PLAYLIST_FEED_URL,
+  YT_SHORTS_FEED_URL,
+  YT_UPLOADS_FEED_URL,
+} from '../../src/lib/config';
 
 function jsonHeaders(extra: Record<string, string> = {}): Record<string, string> {
   return { 'Content-Type': 'application/json; charset=utf-8', ...extra };
@@ -18,14 +24,20 @@ const handler: Handler = async (event: HandlerEvent) => {
     return { statusCode: 405, headers: jsonHeaders(), body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const mode = (event.queryStringParameters?.mode || 'channel').toLowerCase();
+  const mode = (event.queryStringParameters?.mode || 'uploads').toLowerCase();
 
   // Allow optional overrides for testing/preview without redeploy.
   const channelId = (event.queryStringParameters?.channel_id || '').trim();
   const playlistId = (event.queryStringParameters?.playlist_id || '').trim();
 
   let feedUrl: string | null = null;
-  if (mode === 'playlist') {
+  if (mode === 'uploads') {
+    feedUrl = YT_UPLOADS_FEED_URL;
+  } else if (mode === 'shorts') {
+    feedUrl = YT_SHORTS_FEED_URL;
+  } else if (mode === 'longform') {
+    feedUrl = YT_LONGFORM_FEED_URL;
+  } else if (mode === 'playlist') {
     if (playlistId && !isSafeId(playlistId)) {
       return { statusCode: 400, headers: jsonHeaders(), body: JSON.stringify({ error: 'Invalid playlist_id' }) };
     }

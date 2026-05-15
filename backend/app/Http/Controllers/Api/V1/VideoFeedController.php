@@ -15,7 +15,7 @@ class VideoFeedController extends ApiController
     {
         $validated = $request->validate([
             'limit' => ['nullable', 'integer', 'min:1', 'max:20'],
-            'source' => ['nullable', 'string', 'in:channel,playlist,auto'],
+            'source' => ['nullable', 'string', 'in:channel,playlist,uploads,shorts,longform,auto'],
         ]);
 
         $limit = (int) ($validated['limit'] ?? 8);
@@ -109,33 +109,37 @@ class VideoFeedController extends ApiController
      */
     private function resolveFeed(string $source): array
     {
-        $channelId = trim((string) env('YOUTUBE_CHANNEL_ID', 'UCtlUsN3UpR-Vmb-XbgAuNHg'));
-        $playlistId = trim((string) env('YOUTUBE_PLAYLIST_ID', 'PLfcu9P1xhBSXb6ZtDe4fmSlfQliywdGoD'));
-
-        $channelUrl = $channelId !== ''
-            ? sprintf('https://www.youtube.com/feeds/videos.xml?channel_id=%s', rawurlencode($channelId))
-            : null;
-        $playlistUrl = $playlistId !== ''
-            ? sprintf('https://www.youtube.com/feeds/videos.xml?playlist_id=%s', rawurlencode($playlistId))
-            : null;
+        $feeds = $this->configuredFeedUrls();
 
         if ($source === 'playlist') {
-            return ['playlist', $playlistUrl];
+            return ['playlist', $feeds['playlist']];
+        }
+
+        if ($source === 'uploads') {
+            return ['uploads', $feeds['uploads']];
+        }
+
+        if ($source === 'shorts') {
+            return ['shorts', $feeds['shorts']];
+        }
+
+        if ($source === 'longform') {
+            return ['longform', $feeds['longform']];
         }
 
         if ($source === 'auto') {
-            if ($channelUrl) {
-                return ['channel', $channelUrl];
+            if ($feeds['uploads']) {
+                return ['uploads', $feeds['uploads']];
             }
 
-            return ['playlist', $playlistUrl];
+            return ['playlist', $feeds['playlist']];
         }
 
-        if ($channelUrl) {
-            return ['channel', $channelUrl];
+        if ($feeds['channel']) {
+            return ['channel', $feeds['channel']];
         }
 
-        return ['playlist', $playlistUrl];
+        return ['playlist', $feeds['playlist']];
     }
 
     /**
@@ -143,8 +147,27 @@ class VideoFeedController extends ApiController
      */
     private function resolveAlternateFeed(string $primarySource): array
     {
+        $feeds = $this->configuredFeedUrls();
+
+        if ($primarySource === 'channel') {
+            return ['uploads', $feeds['uploads']];
+        }
+
+        if ($primarySource === 'playlist') {
+            return ['uploads', $feeds['uploads']];
+        }
+
+        return ['channel', $feeds['channel']];
+    }
+
+    /**
+     * @return array{channel:?string,playlist:?string,uploads:?string,shorts:?string,longform:?string}
+     */
+    private function configuredFeedUrls(): array
+    {
         $channelId = trim((string) env('YOUTUBE_CHANNEL_ID', 'UCtlUsN3UpR-Vmb-XbgAuNHg'));
         $playlistId = trim((string) env('YOUTUBE_PLAYLIST_ID', 'PLfcu9P1xhBSXb6ZtDe4fmSlfQliywdGoD'));
+        $channelSuffix = Str::startsWith($channelId, 'UC') ? Str::substr($channelId, 2) : '';
 
         $channelUrl = $channelId !== ''
             ? sprintf('https://www.youtube.com/feeds/videos.xml?channel_id=%s', rawurlencode($channelId))
@@ -152,12 +175,23 @@ class VideoFeedController extends ApiController
         $playlistUrl = $playlistId !== ''
             ? sprintf('https://www.youtube.com/feeds/videos.xml?playlist_id=%s', rawurlencode($playlistId))
             : null;
+        $uploadsUrl = $channelSuffix !== ''
+            ? sprintf('https://www.youtube.com/feeds/videos.xml?playlist_id=UU%s', rawurlencode($channelSuffix))
+            : $channelUrl;
+        $shortsUrl = $channelSuffix !== ''
+            ? sprintf('https://www.youtube.com/feeds/videos.xml?playlist_id=UUSH%s', rawurlencode($channelSuffix))
+            : $channelUrl;
+        $longformUrl = $channelSuffix !== ''
+            ? sprintf('https://www.youtube.com/feeds/videos.xml?playlist_id=UULF%s', rawurlencode($channelSuffix))
+            : $channelUrl;
 
-        if ($primarySource === 'channel') {
-            return ['playlist', $playlistUrl];
-        }
-
-        return ['channel', $channelUrl];
+        return [
+            'channel' => $channelUrl,
+            'playlist' => $playlistUrl,
+            'uploads' => $uploadsUrl,
+            'shorts' => $shortsUrl,
+            'longform' => $longformUrl,
+        ];
     }
 
     private function downloadFeed(string $feedUrl): string
@@ -276,6 +310,7 @@ class VideoFeedController extends ApiController
                 'published' => trim((string) ($entry->published ?? '')),
                 'link' => $link,
                 'thumbnail' => $thumbnail,
+                'kind' => $this->isShortLink($link) ? 'short' : 'video',
             ];
 
             if (count($items) >= $limit) {
@@ -323,6 +358,7 @@ class VideoFeedController extends ApiController
                 'published' => '',
                 'link' => sprintf('https://www.youtube.com/watch?v=%s', $videoId),
                 'thumbnail' => $thumbnail,
+                'kind' => 'video',
             ];
 
             if (count($items) >= $limit) {
@@ -507,9 +543,25 @@ class VideoFeedController extends ApiController
             return '';
         }
 
+        if (Str::startsWith($path, 'shorts/')) {
+            $candidate = explode('/', Str::after($path, 'shorts/'))[0] ?? '';
+
+            return preg_match('/^[A-Za-z0-9_-]{11}$/', $candidate) === 1 ? $candidate : '';
+        }
+
         parse_str((string) ($parts['query'] ?? ''), $query);
         $candidate = trim((string) ($query['v'] ?? ''));
 
         return preg_match('/^[A-Za-z0-9_-]{11}$/', $candidate) === 1 ? $candidate : '';
+    }
+
+    private function isShortLink(string $url): bool
+    {
+        $parts = @parse_url($url);
+        if (! is_array($parts)) {
+            return str_contains($url, '/shorts/');
+        }
+
+        return Str::startsWith(trim((string) ($parts['path'] ?? ''), '/'), 'shorts/');
     }
 }

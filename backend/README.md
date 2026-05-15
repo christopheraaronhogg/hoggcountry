@@ -114,7 +114,7 @@ tail -f storage/logs/laravel.log
 - VideoHogg YouTube ideas allowlist: `VIDEOHOGG_YOUTUBE_IDEA_EMAILS` (comma-separated emails allowed to trigger YouTube title/description generation).
 - VideoHogg storage disk: `VIDEOHOGG_STORAGE_DISK` (`public` default, set to `s3` for Cloudflare R2/S3-backed storage).
 - YouTube feed settings for live video lists: `YOUTUBE_CHANNEL_ID` (recommended), optional `YOUTUBE_PLAYLIST_ID` fallback.
-- Public live videos API: `GET /api/v1/videos/latest?limit=12&source=channel` (returns latest feed entries with no-cache headers for always-fresh UI polling).
+- Public live videos API: `GET /api/v1/videos/latest?limit=12&source=uploads` returns latest long-form videos and Shorts with no-cache headers. Use `source=channel`, `source=longform`, or `source=shorts` for narrower feeds.
 - R2/S3 endpoint settings use standard Laravel AWS vars (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, `AWS_ENDPOINT`, `AWS_URL`, `AWS_DEFAULT_REGION`, `AWS_USE_PATH_STYLE_ENDPOINT`).
 - VideoHogg queue statuses: `queued`, `processing`, `done`, `failed`.
 - VideoHogg service lifecycle statuses: `submitted`, `in_hands`, `in_progress`, `packaging`, `delivered`, `revision_requested`, `completed`, `blocked`.

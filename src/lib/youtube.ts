@@ -7,6 +7,7 @@ export type YtVideo = {
   published: string; // ISO
   link: string;
   thumbnail: string;
+  kind: 'video' | 'short';
 };
 
 const cacheByFeedUrl = new Map<string, { items: YtVideo[]; ts: number }>();
@@ -46,6 +47,40 @@ export function getYouTubeThumbnailSources(videoId: string, provided?: string): 
   }
 
   return [...new Set(sources.filter(Boolean))];
+}
+
+function extractYouTubeIdFromLink(link: string): string {
+  if (!link) return '';
+
+  try {
+    const url = new URL(link);
+    const host = url.hostname.toLowerCase();
+
+    if (host === 'youtu.be') {
+      return url.pathname.replace(/^\/+/, '').split('/')[0] || '';
+    }
+
+    if (host.includes('youtube.com')) {
+      if (url.pathname.startsWith('/shorts/')) {
+        return url.pathname.replace('/shorts/', '').split('/')[0] || '';
+      }
+
+      return url.searchParams.get('v') || '';
+    }
+  } catch {
+    return '';
+  }
+
+  return '';
+}
+
+function getYouTubeKind(link: string): YtVideo['kind'] {
+  try {
+    const url = new URL(link);
+    return url.pathname.startsWith('/shorts/') ? 'short' : 'video';
+  } catch {
+    return link.includes('/shorts/') ? 'short' : 'video';
+  }
 }
 
 export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
@@ -95,7 +130,8 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
           link = e.link.href || '';
         }
         const published = e.published || '';
-        const videoId = e['yt:videoId'] || (link ? new URL(link).searchParams.get('v') : '') || '';
+        const videoId = e['yt:videoId'] || extractYouTubeIdFromLink(link);
+        const kind = getYouTubeKind(link);
         const mg = e['media:group'];
         const description =
           pickText(mg?.['media:description']) ||
@@ -110,7 +146,7 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
         } else if (videoId) {
           thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
         }
-        return { id: videoId, title, description, published, link, thumbnail } as YtVideo;
+        return { id: videoId, title, description, published, link, thumbnail, kind } as YtVideo;
       })
       .filter((v: YtVideo) => v.id);
 

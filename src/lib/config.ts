@@ -16,7 +16,28 @@ export const LIVE_TRACKING_URL = 'https://share.garmin.com/hoggcountry';
 // Appalachian Trail playlist
 export const YT_PLAYLIST_ID = 'PLfcu9P1xhBSXb6ZtDe4fmSlfQliywdGoD';
 
+const YT_CHANNEL_UPLOADS_SUFFIX = YT_CHANNEL_ID.startsWith('UC') ? YT_CHANNEL_ID.slice(2) : '';
+
+export const YT_UPLOADS_PLAYLIST_ID = YT_CHANNEL_UPLOADS_SUFFIX
+  ? `UU${YT_CHANNEL_UPLOADS_SUFFIX}`
+  : '';
+export const YT_LONGFORM_PLAYLIST_ID = YT_CHANNEL_UPLOADS_SUFFIX
+  ? `UULF${YT_CHANNEL_UPLOADS_SUFFIX}`
+  : '';
+export const YT_SHORTS_PLAYLIST_ID = YT_CHANNEL_UPLOADS_SUFFIX
+  ? `UUSH${YT_CHANNEL_UPLOADS_SUFFIX}`
+  : '';
+
 export const YT_CHANNEL_FEED_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YT_CHANNEL_ID}`;
+export const YT_UPLOADS_FEED_URL = YT_UPLOADS_PLAYLIST_ID
+  ? `https://www.youtube.com/feeds/videos.xml?playlist_id=${YT_UPLOADS_PLAYLIST_ID}`
+  : YT_CHANNEL_FEED_URL;
+export const YT_LONGFORM_FEED_URL = YT_LONGFORM_PLAYLIST_ID
+  ? `https://www.youtube.com/feeds/videos.xml?playlist_id=${YT_LONGFORM_PLAYLIST_ID}`
+  : YT_CHANNEL_FEED_URL;
+export const YT_SHORTS_FEED_URL = YT_SHORTS_PLAYLIST_ID
+  ? `https://www.youtube.com/feeds/videos.xml?playlist_id=${YT_SHORTS_PLAYLIST_ID}`
+  : YT_CHANNEL_FEED_URL;
 export const YT_PLAYLIST_FEED_URL = YT_PLAYLIST_ID
   ? `https://www.youtube.com/feeds/videos.xml?playlist_id=${YT_PLAYLIST_ID}`
   : null;

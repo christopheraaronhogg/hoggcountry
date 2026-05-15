@@ -3,7 +3,7 @@ import { connectLambda, getStore } from '@netlify/blobs';
 import { jsonHeaders, readUpdates } from './_trail-updates';
 
 const handler: Handler = async (event) => {
-  connectLambda(event);
+  connectLambda(event as unknown as Parameters<typeof connectLambda>[0]);
 
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, headers: jsonHeaders(), body: JSON.stringify({ error: 'Method not allowed' }) };
