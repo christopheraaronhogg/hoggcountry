@@ -65,12 +65,12 @@
       });
 
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.message || 'Could not update current mile from GPS.');
+      if (!response.ok) throw new Error(payload?.message || payload?.profileUpdateReason || 'Could not update current mile from GPS.');
 
       profile = payload.workspace?.profile ?? profile;
-      locationNotice = payload.updated
-        ? `Updated to AT mile ${payload.nearest?.mile?.toFixed?.(1) ?? profile?.currentMile?.toFixed?.(1) ?? 'nearby'}.`
-        : payload.reason || 'GPS checked, but profile mile was not changed.';
+      locationNotice = payload.profileUpdated
+        ? `Updated to AT mile ${payload.location?.nearestMile?.toFixed?.(1) ?? profile?.currentMile?.toFixed?.(1) ?? 'nearby'}.`
+        : payload.profileUpdateReason || 'GPS checked, but profile mile was not changed.';
     } catch (error) {
       locationError = error instanceof Error ? error.message : 'Could not read GPS location.';
     } finally {

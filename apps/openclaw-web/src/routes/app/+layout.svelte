@@ -9,7 +9,7 @@
   const appTabs = [
     {
       href: '/app',
-      label: 'Home',
+      label: 'Today',
       icon: 'home'
     },
     {

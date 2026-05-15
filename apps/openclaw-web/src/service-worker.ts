@@ -30,6 +30,7 @@ const STATIC_ASSETS = [...build, ...files];
 const APP_RUNTIME_PATHS = [
   '/',
   '/app',
+  '/app/today',
   '/app/scout',
   '/app/claw',
   '/app/profile',
