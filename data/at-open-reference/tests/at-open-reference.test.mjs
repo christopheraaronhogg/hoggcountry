@@ -607,6 +607,7 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
 test('APPA official centerline review stays quarantined while showing alignment signal', () => {
   assert.equal(existsSync(new URL('../scripts/probe-appa-centerline.mjs', import.meta.url)), true);
   assert.equal(existsSync(new URL('../scripts/compare-appa-osm-alignment.mjs', import.meta.url)), true);
+  assert.equal(existsSync(new URL('../scripts/build-appa-review-route-candidate.mjs', import.meta.url)), true);
 
   const probe = JSON.parse(readFileSync(new URL('../review/appa_centerline/appa_centerline_probe.json', import.meta.url), 'utf8'));
   assert.equal(probe.license_status, 'unknown_review_required');
@@ -630,4 +631,50 @@ test('APPA official centerline review stays quarantined while showing alignment 
   const report = readFileSync(new URL('../review/appa_centerline/appa_osm_segment_comparison.md', import.meta.url), 'utf8');
   assert.match(report, /APPA Length_Ft vs Scout OSM: \+74\.148 mi/);
   assert.match(report, /Keep APPA quarantined/);
+
+  const routeCandidate = JSON.parse(readFileSync(new URL('../review/appa_centerline/appa_route_candidate_review.geojson', import.meta.url), 'utf8'));
+  const routeProps = routeCandidate.features[0].properties;
+  assert.equal(routeCandidate.features[0].geometry.type, 'MultiLineString');
+  assert.equal(routeCandidate.features[0].geometry.coordinates.length, 3027);
+  assert.equal(routeProps.license_status, 'unknown_review_required');
+  assert.equal(routeProps.production_safe, false);
+  assert.equal(routeProps.official, false);
+  assert.equal(routeProps.candidate_status, 'review_only_not_production_safe');
+  assert.equal(routeProps.appa_length_ft_miles, 2180.348);
+  assert.equal(routeProps.length_delta_miles_vs_official_reference, -17.552);
+  assert.equal(routeProps.length_delta_miles_vs_scout_osm_rc1, 74.148);
+  assert.match(routeProps.ai_answer_rule, /quarantined APPA centerline review candidate/);
+
+  const continuity = JSON.parse(readFileSync(new URL('../review/appa_centerline/appa_route_candidate_continuity.json', import.meta.url), 'utf8'));
+  assert.equal(continuity.production_safe, false);
+  assert.equal(continuity.official, false);
+  assert.equal(continuity.totals.appa_length_ft_miles, 2180.348);
+  assert.equal(continuity.totals.part_count, 3027);
+  assert.equal(continuity.continuity.max_gap_miles, 0.867);
+  assert.equal(continuity.continuity.gap_count_over_0_1_miles, 906);
+  assert.equal(continuity.endpoints.appa_start.nearest_scout_mile_nobo_global_est, 0);
+  assert.equal(continuity.endpoints.appa_end.nearest_scout_mile_nobo_global_est, 2106);
+  assert.ok(continuity.endpoints.appa_start.distance_to_scout_start_miles < 0.2);
+  assert.ok(continuity.endpoints.appa_end.distance_to_scout_end_miles < 0.2);
+  assert.match(continuity.method.stationing, /Cumulative APPA Length_Ft/);
+
+  const appaHalfMilepoints = JSON.parse(readFileSync(new URL('../review/appa_centerline/appa_review_milepoints_0_5mi.geojson', import.meta.url), 'utf8'));
+  assert.equal(appaHalfMilepoints.features.length, 4362);
+  assert.equal(appaHalfMilepoints.features[0].properties.official, false);
+  assert.equal(appaHalfMilepoints.features[0].properties.production_safe, false);
+  assert.equal(appaHalfMilepoints.features[0].properties.license_status, 'unknown_review_required');
+  assert.equal(appaHalfMilepoints.features.at(-1).properties.mile_nobo_appa_length_ft_est, 2180.348);
+  assert.match(appaHalfMilepoints.features[0].properties.ai_answer_rule, /Do not call these official ATC milepoints/);
+
+  const appaWholeMilepoints = JSON.parse(readFileSync(new URL('../review/appa_centerline/appa_review_milepoints_1_0mi.geojson', import.meta.url), 'utf8'));
+  assert.equal(appaWholeMilepoints.features.length, 2182);
+  assert.equal(appaWholeMilepoints.features.at(-1).properties.mile_nobo_appa_length_ft_est, 2180.348);
+
+  const candidateNotes = readFileSync(new URL('../review/appa_centerline/appa_route_candidate_notes.md', import.meta.url), 'utf8');
+  assert.match(candidateNotes, /review_only_not_production_safe/);
+  assert.match(candidateNotes, /APPA Length_Ft vs official reference: -17\.552 mi/);
+  assert.match(candidateNotes, /must not be used in production-safe exports/);
+
+  const exportManifestText = readFileSync(new URL('../full_trail_rc1/exports/manifest.json', import.meta.url), 'utf8');
+  assert.doesNotMatch(exportManifestText, /appa_centerline|APPA/u);
 });

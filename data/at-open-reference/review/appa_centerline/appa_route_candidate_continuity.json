@@ -1,0 +1,701 @@
+{
+  "report_id": "appa_route_candidate_continuity_review",
+  "generated_at": "2026-05-15T00:00:00.000Z",
+  "source": {
+    "appa_item_url": "https://www.arcgis.com/home/item.html?id=71975f7fc14347c7a6c1059fdb593f91",
+    "appa_service_url": "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services/ANST_Centerline/FeatureServer",
+    "appa_license_status": "unknown_review_required",
+    "scout_reference_route": "data/at-open-reference/full_trail_rc1/processed/route/full_at_route_rc1.geojson",
+    "scout_reference_milepoints": "data/at-open-reference/full_trail_rc1/processed/milepoints/full_at_milepoints_0_5mi.geojson"
+  },
+  "production_safe": false,
+  "official": false,
+  "candidate_status": "review_only_not_production_safe",
+  "method": {
+    "ordering": "APPA parts were oriented from lower to higher nearest Scout station, then sorted by midpoint nearest Scout station.",
+    "stationing": "Cumulative APPA Length_Ft is used as the review station length. Returned geometry is used only to place coordinates.",
+    "limitation": "Sorting by Scout station is a practical review method, not proof that APPA stationing matches official annual ATC mile methodology."
+  },
+  "totals": {
+    "official_reference_miles": 2197.9,
+    "scout_osm_rc1_miles": 2106.2,
+    "appa_length_ft_miles": 2180.348,
+    "appa_geodesic_miles": 2161.638,
+    "appa_length_ft_minus_official_reference_miles": -17.552,
+    "appa_length_ft_minus_scout_osm_miles": 74.148,
+    "appa_geodesic_minus_official_reference_miles": -36.262,
+    "appa_geodesic_minus_scout_osm_miles": 55.438,
+    "feature_count": 3025,
+    "part_count": 3027,
+    "vertex_count": 690117,
+    "max_segment_miles": 0.3741
+  },
+  "continuity": {
+    "connection_count": 3026,
+    "total_gap_miles_if_artificially_connected": 291.836,
+    "max_gap_miles": 0.867,
+    "gap_count_over_0_02_miles": 1287,
+    "gap_count_over_0_1_miles": 906,
+    "gap_count_over_0_5_miles": 114,
+    "station_overlap_count": 235,
+    "station_regression_count": 0,
+    "top_gaps": [
+      {
+        "from_review_order_index": 2109,
+        "to_review_order_index": 2110,
+        "from_object_id": 2082,
+        "to_object_id": 1234,
+        "gap_miles": 0.867,
+        "from_end_scout_mile": 1293,
+        "to_start_scout_mile": 1293.5,
+        "from_region_id": "mvp4_nj_ny_ct",
+        "to_region_id": "mvp4_nj_ny_ct"
+      },
+      {
+        "from_review_order_index": 2032,
+        "to_review_order_index": 2033,
+        "from_object_id": 2177,
+        "to_object_id": 2178,
+        "gap_miles": 0.8662,
+        "from_end_scout_mile": 1267.5,
+        "to_start_scout_mile": 1266.5,
+        "from_region_id": "mvp3_midatlantic",
+        "to_region_id": "mvp3_midatlantic"
+      },
+      {
+        "from_review_order_index": 1935,
+        "to_review_order_index": 1936,
+        "from_object_id": 3045,
+        "to_object_id": 3025,
+        "gap_miles": 0.8409,
+        "from_end_scout_mile": 1239,
+        "to_start_scout_mile": 1240,
+        "from_region_id": "mvp3_midatlantic",
+        "to_region_id": "mvp3_midatlantic"
+      },
+      {
+        "from_review_order_index": 2775,
+        "to_review_order_index": 2776,
+        "from_object_id": 2547,
+        "to_object_id": 2870,
+        "gap_miles": 0.7931,
+        "from_end_scout_mile": 1816.5,
+        "to_start_scout_mile": 1815.5,
+        "from_region_id": "mvp5_ma_vt_nh",
+        "to_region_id": "mvp5_ma_vt_nh"
+      },
+      {
+        "from_review_order_index": 2128,
+        "to_review_order_index": 2129,
+        "from_object_id": 1348,
+        "to_object_id": 1349,
+        "gap_miles": 0.7892,
+        "from_end_scout_mile": 1300.5,
+        "to_start_scout_mile": 1299.5,
+        "from_region_id": "mvp4_nj_ny_ct",
+        "to_region_id": "mvp4_nj_ny_ct"
+      },
+      {
+        "from_review_order_index": 2092,
+        "to_review_order_index": 2093,
+        "from_object_id": 1627,
+        "to_object_id": 1628,
+        "gap_miles": 0.771,
+        "from_end_scout_mile": 1289.5,
+        "to_start_scout_mile": 1289,
+        "from_region_id": "mvp4_nj_ny_ct",
+        "to_region_id": "mvp4_nj_ny_ct"
+      },
+      {
+        "from_review_order_index": 950,
+        "to_review_order_index": 951,
+        "from_object_id": 683,
+        "to_object_id": 684,
+        "gap_miles": 0.7586,
+        "from_end_scout_mile": 666,
+        "to_start_scout_mile": 665,
+        "from_region_id": "mvp2_virginia",
+        "to_region_id": "mvp2_virginia"
+      },
+      {
+        "from_review_order_index": 2087,
+        "to_review_order_index": 2088,
+        "from_object_id": 1228,
+        "to_object_id": 1229,
+        "gap_miles": 0.7552,
+        "from_end_scout_mile": 1288,
+        "to_start_scout_mile": 1288.5,
+        "from_region_id": "mvp4_nj_ny_ct",
+        "to_region_id": "mvp4_nj_ny_ct"
+      },
+      {
+        "from_review_order_index": 1652,
+        "to_review_order_index": 1653,
+        "from_object_id": 1532,
+        "to_object_id": 1596,
+        "gap_miles": 0.7533,
+        "from_end_scout_mile": 1110.5,
+        "to_start_scout_mile": 1111,
+        "from_region_id": "mvp3_midatlantic",
+        "to_region_id": "mvp3_midatlantic"
+      },
+      {
+        "from_review_order_index": 448,
+        "to_review_order_index": 449,
+        "from_object_id": 41,
+        "to_object_id": 81,
+        "gap_miles": 0.7464,
+        "from_end_scout_mile": 363,
+        "to_start_scout_mile": 361.5,
+        "from_region_id": "coverage_gap_davenport_damascus",
+        "to_region_id": "coverage_gap_davenport_damascus"
+      },
+      {
+        "from_review_order_index": 2531,
+        "to_review_order_index": 2532,
+        "from_object_id": 2395,
+        "to_object_id": 2454,
+        "gap_miles": 0.7443,
+        "from_end_scout_mile": 1540,
+        "to_start_scout_mile": 1539,
+        "from_region_id": "mvp5_ma_vt_nh",
+        "to_region_id": "mvp5_ma_vt_nh"
+      },
+      {
+        "from_review_order_index": 2776,
+        "to_review_order_index": 2777,
+        "from_object_id": 2870,
+        "to_object_id": 2599,
+        "gap_miles": 0.7424,
+        "from_end_scout_mile": 1816,
+        "to_start_scout_mile": 1816.5,
+        "from_region_id": "mvp5_ma_vt_nh",
+        "to_region_id": "mvp5_ma_vt_nh"
+      },
+      {
+        "from_review_order_index": 1797,
+        "to_review_order_index": 1798,
+        "from_object_id": 1421,
+        "to_object_id": 1199,
+        "gap_miles": 0.7365,
+        "from_end_scout_mile": 1165.5,
+        "to_start_scout_mile": 1166,
+        "from_region_id": "mvp3_midatlantic",
+        "to_region_id": "mvp3_midatlantic"
+      },
+      {
+        "from_review_order_index": 2086,
+        "to_review_order_index": 2087,
+        "from_object_id": 1510,
+        "to_object_id": 1228,
+        "gap_miles": 0.7273,
+        "from_end_scout_mile": 1287.5,
+        "to_start_scout_mile": 1288,
+        "from_region_id": "mvp4_nj_ny_ct",
+        "to_region_id": "mvp4_nj_ny_ct"
+      },
+      {
+        "from_review_order_index": 1518,
+        "to_review_order_index": 1519,
+        "from_object_id": 2215,
+        "to_object_id": 1154,
+        "gap_miles": 0.7205,
+        "from_end_scout_mile": 1067,
+        "to_start_scout_mile": 1067.5,
+        "from_region_id": "mvp3_midatlantic",
+        "to_region_id": "mvp3_midatlantic"
+      },
+      {
+        "from_review_order_index": 1265,
+        "to_review_order_index": 1266,
+        "from_object_id": 2025,
+        "to_object_id": 2026,
+        "gap_miles": 0.7203,
+        "from_end_scout_mile": 926.5,
+        "to_start_scout_mile": 926,
+        "from_region_id": "mvp2_virginia",
+        "to_region_id": "mvp2_virginia"
+      },
+      {
+        "from_review_order_index": 2091,
+        "to_review_order_index": 2092,
+        "from_object_id": 1623,
+        "to_object_id": 1627,
+        "gap_miles": 0.7139,
+        "from_end_scout_mile": 1289,
+        "to_start_scout_mile": 1289.5,
+        "from_region_id": "mvp4_nj_ny_ct",
+        "to_region_id": "mvp4_nj_ny_ct"
+      },
+      {
+        "from_review_order_index": 2803,
+        "to_review_order_index": 2804,
+        "from_object_id": 2904,
+        "to_object_id": 2905,
+        "gap_miles": 0.7071,
+        "from_end_scout_mile": 1854,
+        "to_start_scout_mile": 1853,
+        "from_region_id": "mvp6_maine",
+        "to_region_id": "mvp6_maine"
+      },
+      {
+        "from_review_order_index": 651,
+        "to_review_order_index": 652,
+        "from_object_id": 857,
+        "to_object_id": 847,
+        "gap_miles": 0.701,
+        "from_end_scout_mile": 491.5,
+        "to_start_scout_mile": 492,
+        "from_region_id": "mvp2_virginia",
+        "to_region_id": "mvp2_virginia"
+      },
+      {
+        "from_review_order_index": 1376,
+        "to_review_order_index": 1377,
+        "from_object_id": 2211,
+        "to_object_id": 1687,
+        "gap_miles": 0.7001,
+        "from_end_scout_mile": 1005.5,
+        "to_start_scout_mile": 1006,
+        "from_region_id": "mvp2_virginia",
+        "to_region_id": "mvp3_midatlantic"
+      },
+      {
+        "from_review_order_index": 1433,
+        "to_review_order_index": 1434,
+        "from_object_id": 2970,
+        "to_object_id": 1717,
+        "gap_miles": 0.6954,
+        "from_end_scout_mile": 1038.5,
+        "to_start_scout_mile": 1039,
+        "from_region_id": "mvp3_midatlantic",
+        "to_region_id": "mvp3_midatlantic"
+      },
+      {
+        "from_review_order_index": 1435,
+        "to_review_order_index": 1436,
+        "from_object_id": 2023,
+        "to_object_id": 2024,
+        "gap_miles": 0.6954,
+        "from_end_scout_mile": 1039,
+        "to_start_scout_mile": 1038.5,
+        "from_region_id": "mvp3_midatlantic",
+        "to_region_id": "mvp3_midatlantic"
+      },
+      {
+        "from_review_order_index": 1047,
+        "to_review_order_index": 1048,
+        "from_object_id": 2971,
+        "to_object_id": 913,
+        "gap_miles": 0.6934,
+        "from_end_scout_mile": 728.5,
+        "to_start_scout_mile": 729,
+        "from_region_id": "mvp2_virginia",
+        "to_region_id": "mvp2_virginia"
+      },
+      {
+        "from_review_order_index": 949,
+        "to_review_order_index": 950,
+        "from_object_id": 2958,
+        "to_object_id": 683,
+        "gap_miles": 0.6932,
+        "from_end_scout_mile": 665,
+        "to_start_scout_mile": 665.5,
+        "from_region_id": "mvp2_virginia",
+        "to_region_id": "mvp2_virginia"
+      },
+      {
+        "from_review_order_index": 1266,
+        "to_review_order_index": 1267,
+        "from_object_id": 2026,
+        "to_object_id": 1896,
+        "gap_miles": 0.6922,
+        "from_end_scout_mile": 926,
+        "to_start_scout_mile": 926.5,
+        "from_region_id": "mvp2_virginia",
+        "to_region_id": "mvp2_virginia"
+      }
+    ]
+  },
+  "endpoints": {
+    "appa_start": {
+      "coordinates": [
+        -84.194491,
+        34.629886
+      ],
+      "object_id": 537,
+      "nearest_scout_mile_nobo_global_est": 0,
+      "nearest_scout_distance_miles": 0.1784,
+      "distance_to_scout_start_miles": 0.1784,
+      "distance_to_scout_end_miles": 1116.519,
+      "region_id": "mvp1_springer_davenport",
+      "state": "GA"
+    },
+    "appa_end": {
+      "coordinates": [
+        -68.921491,
+        45.90447
+      ],
+      "object_id": 2936,
+      "nearest_scout_mile_nobo_global_est": 2106,
+      "nearest_scout_distance_miles": 0.1812,
+      "distance_to_scout_start_miles": 1116.7951,
+      "distance_to_scout_end_miles": 0.1812,
+      "region_id": "mvp6_maine",
+      "state": "ME"
+    },
+    "interpretation": "Endpoint distances are measured against Scout RC1 generated 0.5-mile endpoints. They are a review signal only, not official endpoint validation."
+  },
+  "regional_summary": [
+    {
+      "region_id": "mvp2_virginia",
+      "appa_feature_count": 778,
+      "appa_length_ft_miles": 559.867,
+      "appa_geodesic_miles": 553.865
+    },
+    {
+      "region_id": "mvp5_ma_vt_nh",
+      "appa_feature_count": 335,
+      "appa_length_ft_miles": 401.351,
+      "appa_geodesic_miles": 396.513
+    },
+    {
+      "region_id": "mvp6_maine",
+      "appa_feature_count": 224,
+      "appa_length_ft_miles": 272.073,
+      "appa_geodesic_miles": 266.942
+    },
+    {
+      "region_id": "mvp3_midatlantic",
+      "appa_feature_count": 663,
+      "appa_length_ft_miles": 268.647,
+      "appa_geodesic_miles": 267.709
+    },
+    {
+      "region_id": "mvp1_springer_davenport",
+      "appa_feature_count": 280,
+      "appa_length_ft_miles": 239.974,
+      "appa_geodesic_miles": 240.27
+    },
+    {
+      "region_id": "coverage_gap_davenport_damascus",
+      "appa_feature_count": 319,
+      "appa_length_ft_miles": 228.697,
+      "appa_geodesic_miles": 228.045
+    },
+    {
+      "region_id": "mvp4_nj_ny_ct",
+      "appa_feature_count": 428,
+      "appa_length_ft_miles": 209.738,
+      "appa_geodesic_miles": 208.294
+    }
+  ],
+  "top_parts_by_length_ft": [
+    {
+      "review_order_index": 1109,
+      "object_id": 921,
+      "length_ft_miles": 9.118,
+      "geodesic_miles": 9.139,
+      "start_nearest_mile_nobo_global_est": 773,
+      "end_nearest_mile_nobo_global_est": 781.5,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 2829,
+      "object_id": 2699,
+      "length_ft_miles": 8.264,
+      "geodesic_miles": 8.261,
+      "start_nearest_mile_nobo_global_est": 1879.5,
+      "end_nearest_mile_nobo_global_est": 1887,
+      "region_id": "mvp6_maine",
+      "state": "ME",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 811,
+      "object_id": 874,
+      "length_ft_miles": 7.869,
+      "geodesic_miles": 7.873,
+      "start_nearest_mile_nobo_global_est": 579,
+      "end_nearest_mile_nobo_global_est": 586.5,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 2571,
+      "object_id": 2734,
+      "length_ft_miles": 7.741,
+      "geodesic_miles": 7.747,
+      "start_nearest_mile_nobo_global_est": 1577,
+      "end_nearest_mile_nobo_global_est": 1584.5,
+      "region_id": "mvp5_ma_vt_nh",
+      "state": "VT",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 2978,
+      "object_id": 2849,
+      "length_ft_miles": 7.567,
+      "geodesic_miles": 7.22,
+      "start_nearest_mile_nobo_global_est": 2059,
+      "end_nearest_mile_nobo_global_est": 2066,
+      "region_id": "mvp6_maine",
+      "state": "ME",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 980,
+      "object_id": 621,
+      "length_ft_miles": 7.507,
+      "geodesic_miles": 7.302,
+      "start_nearest_mile_nobo_global_est": 682,
+      "end_nearest_mile_nobo_global_est": 689,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 953,
+      "object_id": 796,
+      "length_ft_miles": 7.231,
+      "geodesic_miles": 7.248,
+      "start_nearest_mile_nobo_global_est": 666.5,
+      "end_nearest_mile_nobo_global_est": 674,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 267,
+      "object_id": 545,
+      "length_ft_miles": 6.451,
+      "geodesic_miles": 6.463,
+      "start_nearest_mile_nobo_global_est": 206,
+      "end_nearest_mile_nobo_global_est": 212.5,
+      "region_id": "mvp1_springer_davenport",
+      "state": "NC/TN",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 896,
+      "object_id": 698,
+      "length_ft_miles": 6.238,
+      "geodesic_miles": 6.252,
+      "start_nearest_mile_nobo_global_est": 635,
+      "end_nearest_mile_nobo_global_est": 641,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 868,
+      "object_id": 700,
+      "length_ft_miles": 6.147,
+      "geodesic_miles": 6.105,
+      "start_nearest_mile_nobo_global_est": 611,
+      "end_nearest_mile_nobo_global_est": 617,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 1150,
+      "object_id": 694,
+      "length_ft_miles": 6.073,
+      "geodesic_miles": 5.965,
+      "start_nearest_mile_nobo_global_est": 820,
+      "end_nearest_mile_nobo_global_est": 826,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 1044,
+      "object_id": 991,
+      "length_ft_miles": 6.061,
+      "geodesic_miles": 6.072,
+      "start_nearest_mile_nobo_global_est": 717,
+      "end_nearest_mile_nobo_global_est": 723,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 791,
+      "object_id": 573,
+      "length_ft_miles": 5.955,
+      "geodesic_miles": 5.953,
+      "start_nearest_mile_nobo_global_est": 552,
+      "end_nearest_mile_nobo_global_est": 558,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 2927,
+      "object_id": 2877,
+      "length_ft_miles": 5.853,
+      "geodesic_miles": 5.842,
+      "start_nearest_mile_nobo_global_est": 1989,
+      "end_nearest_mile_nobo_global_est": 1994.5,
+      "region_id": "mvp6_maine",
+      "state": "ME",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 2791,
+      "object_id": 2531,
+      "length_ft_miles": 5.831,
+      "geodesic_miles": 5.828,
+      "start_nearest_mile_nobo_global_est": 1835,
+      "end_nearest_mile_nobo_global_est": 1840.5,
+      "region_id": "mvp5_ma_vt_nh",
+      "state": "NH",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 251,
+      "object_id": 563,
+      "length_ft_miles": 5.695,
+      "geodesic_miles": 5.705,
+      "start_nearest_mile_nobo_global_est": 184.5,
+      "end_nearest_mile_nobo_global_est": 190.5,
+      "region_id": "mvp1_springer_davenport",
+      "state": "NC/TN",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 1143,
+      "object_id": 975,
+      "length_ft_miles": 5.651,
+      "geodesic_miles": 5.664,
+      "start_nearest_mile_nobo_global_est": 811.5,
+      "end_nearest_mile_nobo_global_est": 817.5,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 750,
+      "object_id": 1092,
+      "length_ft_miles": 5.624,
+      "geodesic_miles": 5.624,
+      "start_nearest_mile_nobo_global_est": 535.5,
+      "end_nearest_mile_nobo_global_est": 541,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 2611,
+      "object_id": 2534,
+      "length_ft_miles": 5.551,
+      "geodesic_miles": 5.532,
+      "start_nearest_mile_nobo_global_est": 1631,
+      "end_nearest_mile_nobo_global_est": 1636.5,
+      "region_id": "mvp5_ma_vt_nh",
+      "state": "VT",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 205,
+      "object_id": 416,
+      "length_ft_miles": 5.524,
+      "geodesic_miles": 5.509,
+      "start_nearest_mile_nobo_global_est": 134.5,
+      "end_nearest_mile_nobo_global_est": 139.5,
+      "region_id": "mvp1_springer_davenport",
+      "state": "NC/TN",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 1046,
+      "object_id": 989,
+      "length_ft_miles": 5.439,
+      "geodesic_miles": 5.452,
+      "start_nearest_mile_nobo_global_est": 723,
+      "end_nearest_mile_nobo_global_est": 728.5,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 863,
+      "object_id": 737,
+      "length_ft_miles": 5.42,
+      "geodesic_miles": 5.419,
+      "start_nearest_mile_nobo_global_est": 604,
+      "end_nearest_mile_nobo_global_est": 609.5,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 2995,
+      "object_id": 2364,
+      "length_ft_miles": 5.37,
+      "geodesic_miles": 5.131,
+      "start_nearest_mile_nobo_global_est": 2087,
+      "end_nearest_mile_nobo_global_est": 2092,
+      "region_id": "mvp6_maine",
+      "state": "ME",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    },
+    {
+      "review_order_index": 270,
+      "object_id": 549,
+      "length_ft_miles": 5.35,
+      "geodesic_miles": 5.359,
+      "start_nearest_mile_nobo_global_est": 220,
+      "end_nearest_mile_nobo_global_est": 225,
+      "region_id": "mvp1_springer_davenport",
+      "state": "NC/TN",
+      "publish": "Yes",
+      "shared_use": "Other"
+    },
+    {
+      "review_order_index": 2352,
+      "object_id": 1328,
+      "length_ft_miles": 5.342,
+      "geodesic_miles": 5.35,
+      "start_nearest_mile_nobo_global_est": 1392,
+      "end_nearest_mile_nobo_global_est": 1397.5,
+      "region_id": "mvp4_nj_ny_ct",
+      "state": "NY",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only"
+    }
+  ],
+  "review_read": [
+    "APPA Length_Ft stationing produces a 2,180.348-mile review candidate, materially closer to the 2,197.9-mile reference than Scout OSM RC1.",
+    "The candidate remains 17.552 miles short of the 2026 reference and is not a solved official-mile system.",
+    "Continuity gaps and overlaps should be inspected before any replacement of the Scout route spine.",
+    "APPA remains quarantined until license/use terms are resolved."
+  ]
+}
