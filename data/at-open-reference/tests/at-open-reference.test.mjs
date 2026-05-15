@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import test from 'node:test';
 
 import { validateAtOpenReferencePack } from '../scripts/validate-at-open-reference.mjs';
@@ -602,4 +602,32 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
   const exportManifest = JSON.parse(readFileSync(new URL('../full_trail_rc1/exports/manifest.json', import.meta.url), 'utf8'));
   assert.equal(exportManifest.production_safe, true);
   assert.ok(exportManifest.datasets.every((dataset) => dataset.production_safe));
+});
+
+test('APPA official centerline review stays quarantined while showing alignment signal', () => {
+  assert.equal(existsSync(new URL('../scripts/probe-appa-centerline.mjs', import.meta.url)), true);
+  assert.equal(existsSync(new URL('../scripts/compare-appa-osm-alignment.mjs', import.meta.url)), true);
+
+  const probe = JSON.parse(readFileSync(new URL('../review/appa_centerline/appa_centerline_probe.json', import.meta.url), 'utf8'));
+  assert.equal(probe.license_status, 'unknown_review_required');
+  assert.equal(probe.production_safe, false);
+  assert.equal(probe.official_reference_miles, 2197.9);
+  assert.equal(probe.scout_osm_rc1_generated_miles, 2106.2);
+  assert.equal(probe.source_attribute_lengths.length_ft_miles, 2180.348);
+  assert.equal(probe.deltas.length_ft_minus_scout_osm_rc1_miles, 74.148);
+  assert.equal(probe.deltas.length_ft_minus_official_reference_miles, -17.552);
+
+  const comparison = JSON.parse(readFileSync(new URL('../review/appa_centerline/appa_osm_segment_comparison.json', import.meta.url), 'utf8'));
+  assert.equal(comparison.production_safe, false);
+  assert.equal(comparison.source.appa_license_status, 'unknown_review_required');
+  assert.equal(comparison.totals.appa_length_ft_miles, 2180.348);
+  assert.equal(comparison.totals.appa_length_ft_minus_scout_osm_miles, 74.148);
+  assert.equal(comparison.totals.appa_length_ft_minus_official_reference_miles, -17.552);
+  assert.equal(comparison.totals.offroute_feature_count_over_1mi, 0);
+  assert.equal(comparison.top_appa_additions_vs_scout_osm[0].bin_id, 'generated-0650-0675');
+  assert.ok(comparison.regional_summary.some((region) => region.region_id === 'mvp5_ma_vt_nh' && region.appa_length_ft_minus_scout_osm_miles > 20));
+
+  const report = readFileSync(new URL('../review/appa_centerline/appa_osm_segment_comparison.md', import.meta.url), 'utf8');
+  assert.match(report, /APPA Length_Ft vs Scout OSM: \+74\.148 mi/);
+  assert.match(report, /Keep APPA quarantined/);
 });

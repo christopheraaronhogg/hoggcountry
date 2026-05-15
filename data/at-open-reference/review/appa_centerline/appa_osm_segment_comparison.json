@@ -1,0 +1,3470 @@
+{
+  "comparison_id": "appa_centerline_vs_scout_osm_25mi_bins",
+  "generated_at": "2026-05-15T00:00:00.000Z",
+  "source": {
+    "appa_item_url": "https://www.arcgis.com/home/item.html?id=71975f7fc14347c7a6c1059fdb593f91",
+    "appa_service_url": "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services/ANST_Centerline/FeatureServer",
+    "appa_license_status": "unknown_review_required",
+    "scout_osm_route": "data/at-open-reference/full_trail_rc1/processed/route/full_at_route_rc1.geojson",
+    "scout_milepoints": "data/at-open-reference/full_trail_rc1/processed/milepoints/full_at_milepoints_0_5mi.geojson"
+  },
+  "production_safe": false,
+  "method": {
+    "bin_miles": 25,
+    "snapping": "Each APPA feature is measured, assigned a midpoint along its returned geometry, snapped to the nearest Scout 0.5-mile generated milepoint, then aggregated into 25-mile Scout bins.",
+    "limitation": "This is a diagnostic alignment screen. Whole APPA features are assigned to one bin by midpoint, so bin-level deltas are approximate and should be refined with geometry splitting before route replacement."
+  },
+  "totals": {
+    "official_reference_miles": 2197.9,
+    "scout_osm_rc1_miles": 2106.2,
+    "appa_length_ft_miles": 2180.348,
+    "appa_geodesic_miles": 2161.638,
+    "appa_length_ft_minus_scout_osm_miles": 74.148,
+    "appa_length_ft_minus_official_reference_miles": -17.552,
+    "appa_geodesic_minus_scout_osm_miles": 55.438,
+    "appa_geodesic_minus_official_reference_miles": -36.262,
+    "appa_feature_count": 3025,
+    "appa_vertices": 690117,
+    "max_appa_segment_miles": 0.374,
+    "offroute_feature_count_over_1mi": 0
+  },
+  "top_appa_additions_vs_scout_osm": [
+    {
+      "bin_id": "generated-0650-0675",
+      "start_mile_nobo_global_est": 650,
+      "end_mile_nobo_global_est": 675,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 55,
+      "appa_length_ft_miles": 31.814,
+      "appa_geodesic_miles": 27.096,
+      "nearest_distance_max_miles": 0.393,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 52,
+        "null": 3
+      },
+      "shared_use_counts": {
+        "0": 3,
+        "Road/Sidewalk": 4,
+        "Single Trail Only": 42,
+        "Utility ROW": 6
+      },
+      "regions": {
+        "mvp2_virginia": 55
+      },
+      "appa_length_ft_minus_scout_osm_miles": 6.814,
+      "appa_geodesic_minus_scout_osm_miles": 2.096,
+      "avg_nearest_distance_miles": 0.113
+    },
+    {
+      "bin_id": "generated-1850-1875",
+      "start_mile_nobo_global_est": 1850,
+      "end_mile_nobo_global_est": 1875,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 26,
+      "appa_length_ft_miles": 30.171,
+      "appa_geodesic_miles": 29.719,
+      "nearest_distance_max_miles": 0.186,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 26
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 25,
+        "Road/Sidewalk": 1
+      },
+      "regions": {
+        "mvp6_maine": 21,
+        "mvp5_ma_vt_nh": 5
+      },
+      "appa_length_ft_minus_scout_osm_miles": 5.171,
+      "appa_geodesic_minus_scout_osm_miles": 4.719,
+      "avg_nearest_distance_miles": 0.106
+    },
+    {
+      "bin_id": "generated-0400-0425",
+      "start_mile_nobo_global_est": 400,
+      "end_mile_nobo_global_est": 425,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 41,
+      "appa_length_ft_miles": 28.777,
+      "appa_geodesic_miles": 28.854,
+      "nearest_distance_max_miles": 0.188,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 40
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 35,
+        "Road/Sidewalk": 4,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 41
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.777,
+      "appa_geodesic_minus_scout_osm_miles": 3.854,
+      "avg_nearest_distance_miles": 0.09
+    },
+    {
+      "bin_id": "generated-2025-2050",
+      "start_mile_nobo_global_est": 2025,
+      "end_mile_nobo_global_est": 2050,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 15,
+      "appa_length_ft_miles": 28.441,
+      "appa_geodesic_miles": 26.728,
+      "nearest_distance_max_miles": 0.191,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 15
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 3,
+        "Single Trail Only": 12
+      },
+      "regions": {
+        "mvp6_maine": 15
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.441,
+      "appa_geodesic_minus_scout_osm_miles": 1.728,
+      "avg_nearest_distance_miles": 0.116
+    },
+    {
+      "bin_id": "generated-1950-1975",
+      "start_mile_nobo_global_est": 1950,
+      "end_mile_nobo_global_est": 1975,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 23,
+      "appa_length_ft_miles": 28.234,
+      "appa_geodesic_miles": 28.032,
+      "nearest_distance_max_miles": 0.231,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 23
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 14,
+        "Road/Sidewalk": 8,
+        "Other": 1
+      },
+      "regions": {
+        "mvp6_maine": 23
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.234,
+      "appa_geodesic_minus_scout_osm_miles": 3.032,
+      "avg_nearest_distance_miles": 0.117
+    },
+    {
+      "bin_id": "generated-1775-1800",
+      "start_mile_nobo_global_est": 1775,
+      "end_mile_nobo_global_est": 1800,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 17,
+      "appa_length_ft_miles": 28.218,
+      "appa_geodesic_miles": 27.609,
+      "nearest_distance_max_miles": 0.228,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 17
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 17
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 17
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.218,
+      "appa_geodesic_minus_scout_osm_miles": 2.609,
+      "avg_nearest_distance_miles": 0.101
+    },
+    {
+      "bin_id": "generated-0775-0800",
+      "start_mile_nobo_global_est": 775,
+      "end_mile_nobo_global_est": 800,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 24,
+      "appa_length_ft_miles": 28.117,
+      "appa_geodesic_miles": 28.329,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 24
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 6,
+        "Single Trail Only": 17,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp2_virginia": 24
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.117,
+      "appa_geodesic_minus_scout_osm_miles": 3.329,
+      "avg_nearest_distance_miles": 0.114
+    },
+    {
+      "bin_id": "generated-1925-1950",
+      "start_mile_nobo_global_est": 1925,
+      "end_mile_nobo_global_est": 1950,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 30,
+      "appa_length_ft_miles": 28.039,
+      "appa_geodesic_miles": 28.003,
+      "nearest_distance_max_miles": 0.225,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 30
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 28,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp6_maine": 30
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.039,
+      "appa_geodesic_minus_scout_osm_miles": 3.003,
+      "avg_nearest_distance_miles": 0.119
+    },
+    {
+      "bin_id": "generated-1650-1675",
+      "start_mile_nobo_global_est": 1650,
+      "end_mile_nobo_global_est": 1675,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 21,
+      "appa_length_ft_miles": 28.037,
+      "appa_geodesic_miles": 27.365,
+      "nearest_distance_max_miles": 0.219,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 18,
+        "Utility ROW": 1,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 21
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.037,
+      "appa_geodesic_minus_scout_osm_miles": 2.365,
+      "avg_nearest_distance_miles": 0.135
+    },
+    {
+      "bin_id": "generated-1600-1625",
+      "start_mile_nobo_global_est": 1600,
+      "end_mile_nobo_global_est": 1625,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 29,
+      "appa_length_ft_miles": 27.93,
+      "appa_geodesic_miles": 27.948,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 29
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 23,
+        "Utility ROW": 3,
+        "Road/Sidewalk": 1,
+        "Shared w/Another Tr": 2
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 29
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.93,
+      "appa_geodesic_minus_scout_osm_miles": 2.948,
+      "avg_nearest_distance_miles": 0.109
+    },
+    {
+      "bin_id": "generated-0150-0175",
+      "start_mile_nobo_global_est": 150,
+      "end_mile_nobo_global_est": 175,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 34,
+      "appa_length_ft_miles": 27.749,
+      "appa_geodesic_miles": 27.786,
+      "nearest_distance_max_miles": 0.231,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 34
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 11,
+        "Single Trail Only": 21,
+        "Shared w/Another Tr": 2
+      },
+      "regions": {
+        "mvp1_springer_davenport": 34
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.749,
+      "appa_geodesic_minus_scout_osm_miles": 2.786,
+      "avg_nearest_distance_miles": 0.092
+    },
+    {
+      "bin_id": "generated-2000-2025",
+      "start_mile_nobo_global_est": 2000,
+      "end_mile_nobo_global_est": 2025,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 27,
+      "appa_length_ft_miles": 27.547,
+      "appa_geodesic_miles": 26.889,
+      "nearest_distance_max_miles": 0.211,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 3,
+        "Yes": 24
+      },
+      "shared_use_counts": {
+        "0": 3,
+        "Single Trail Only": 20,
+        "Shared w/Another Tr": 1,
+        "Road/Sidewalk": 2,
+        "Railgrade/Towpath": 1
+      },
+      "regions": {
+        "mvp6_maine": 27
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.547,
+      "appa_geodesic_minus_scout_osm_miles": 1.889,
+      "avg_nearest_distance_miles": 0.098
+    },
+    {
+      "bin_id": "generated-1675-1700",
+      "start_mile_nobo_global_est": 1675,
+      "end_mile_nobo_global_est": 1700,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 21,
+      "appa_length_ft_miles": 27.472,
+      "appa_geodesic_miles": 27.476,
+      "nearest_distance_max_miles": 0.235,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 15,
+        "Road/Sidewalk": 3,
+        "Shared w/Another Tr": 1,
+        "Utility ROW": 2
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 21
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.472,
+      "appa_geodesic_minus_scout_osm_miles": 2.476,
+      "avg_nearest_distance_miles": 0.116
+    },
+    {
+      "bin_id": "generated-1900-1925",
+      "start_mile_nobo_global_est": 1900,
+      "end_mile_nobo_global_est": 1925,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 20,
+      "appa_length_ft_miles": 27.446,
+      "appa_geodesic_miles": 27.417,
+      "nearest_distance_max_miles": 0.21,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 20
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 15,
+        "Road/Sidewalk": 4,
+        "Railgrade/Towpath": 1
+      },
+      "regions": {
+        "mvp6_maine": 20
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.446,
+      "appa_geodesic_minus_scout_osm_miles": 2.417,
+      "avg_nearest_distance_miles": 0.122
+    },
+    {
+      "bin_id": "generated-1550-1575",
+      "start_mile_nobo_global_est": 1550,
+      "end_mile_nobo_global_est": 1575,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 22,
+      "appa_length_ft_miles": 27.402,
+      "appa_geodesic_miles": 26.577,
+      "nearest_distance_max_miles": 0.229,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 14,
+        "Utility ROW": 3,
+        "Road/Sidewalk": 4
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 22
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.402,
+      "appa_geodesic_minus_scout_osm_miles": 1.577,
+      "avg_nearest_distance_miles": 0.118
+    }
+  ],
+  "top_appa_losses_vs_scout_osm": [
+    {
+      "bin_id": "generated-0425-0450",
+      "start_mile_nobo_global_est": 425,
+      "end_mile_nobo_global_est": 450,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 38,
+      "appa_length_ft_miles": 22.649,
+      "appa_geodesic_miles": 22.695,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 2,
+        "Yes": 36
+      },
+      "shared_use_counts": {
+        "0": 2,
+        "Single Trail Only": 32,
+        "Road/Sidewalk": 3,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 38
+      },
+      "appa_length_ft_minus_scout_osm_miles": -2.351,
+      "appa_geodesic_minus_scout_osm_miles": -2.305,
+      "avg_nearest_distance_miles": 0.114
+    },
+    {
+      "bin_id": "generated-0750-0775",
+      "start_mile_nobo_global_est": 750,
+      "end_mile_nobo_global_est": 775,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 36,
+      "appa_length_ft_miles": 23.529,
+      "appa_geodesic_miles": 23.584,
+      "nearest_distance_max_miles": 0.203,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 36
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 30,
+        "Road/Sidewalk": 6
+      },
+      "regions": {
+        "mvp2_virginia": 36
+      },
+      "appa_length_ft_minus_scout_osm_miles": -1.471,
+      "appa_geodesic_minus_scout_osm_miles": -1.416,
+      "avg_nearest_distance_miles": 0.081
+    },
+    {
+      "bin_id": "generated-0975-1000",
+      "start_mile_nobo_global_est": 975,
+      "end_mile_nobo_global_est": 1000,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 30,
+      "appa_length_ft_miles": 23.597,
+      "appa_geodesic_miles": 23.646,
+      "nearest_distance_max_miles": 0.216,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 30
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 23,
+        "Abandoned Road": 7
+      },
+      "regions": {
+        "mvp2_virginia": 30
+      },
+      "appa_length_ft_minus_scout_osm_miles": -1.403,
+      "appa_geodesic_minus_scout_osm_miles": -1.354,
+      "avg_nearest_distance_miles": 0.105
+    },
+    {
+      "bin_id": "generated-0700-0725",
+      "start_mile_nobo_global_est": 700,
+      "end_mile_nobo_global_est": 725,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 44,
+      "appa_length_ft_miles": 23.844,
+      "appa_geodesic_miles": 23.91,
+      "nearest_distance_max_miles": 0.205,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 44
+      },
+      "shared_use_counts": {
+        "Utility ROW": 7,
+        "Road/Sidewalk": 5,
+        "Single Trail Only": 29,
+        "Railgrade/Towpath": 2,
+        "Other": 1
+      },
+      "regions": {
+        "mvp2_virginia": 44
+      },
+      "appa_length_ft_minus_scout_osm_miles": -1.156,
+      "appa_geodesic_minus_scout_osm_miles": -1.09,
+      "avg_nearest_distance_miles": 0.093
+    },
+    {
+      "bin_id": "generated-1975-2000",
+      "start_mile_nobo_global_est": 1975,
+      "end_mile_nobo_global_est": 2000,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 20,
+      "appa_length_ft_miles": 23.958,
+      "appa_geodesic_miles": 23.91,
+      "nearest_distance_max_miles": 0.182,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 20
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 17,
+        "Road/Sidewalk": 2,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp6_maine": 20
+      },
+      "appa_length_ft_minus_scout_osm_miles": -1.042,
+      "appa_geodesic_minus_scout_osm_miles": -1.09,
+      "avg_nearest_distance_miles": 0.117
+    },
+    {
+      "bin_id": "generated-0125-0150",
+      "start_mile_nobo_global_est": 125,
+      "end_mile_nobo_global_est": 150,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 24,
+      "appa_length_ft_miles": 24.101,
+      "appa_geodesic_miles": 24.117,
+      "nearest_distance_max_miles": 0.192,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 24
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 4,
+        "Utility ROW": 5,
+        "Single Trail Only": 13,
+        "Railgrade/Towpath": 1,
+        "Other": 1
+      },
+      "regions": {
+        "mvp1_springer_davenport": 24
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.899,
+      "appa_geodesic_minus_scout_osm_miles": -0.883,
+      "avg_nearest_distance_miles": 0.099
+    },
+    {
+      "bin_id": "generated-2050-2075",
+      "start_mile_nobo_global_est": 2050,
+      "end_mile_nobo_global_est": 2075,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 10,
+      "appa_length_ft_miles": 24.116,
+      "appa_geodesic_miles": 23.271,
+      "nearest_distance_max_miles": 0.192,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 10
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 3,
+        "Single Trail Only": 7
+      },
+      "regions": {
+        "mvp6_maine": 10
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.884,
+      "appa_geodesic_minus_scout_osm_miles": -1.729,
+      "avg_nearest_distance_miles": 0.096
+    },
+    {
+      "bin_id": "generated-1375-1400",
+      "start_mile_nobo_global_est": 1375,
+      "end_mile_nobo_global_est": 1400,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 29,
+      "appa_length_ft_miles": 24.245,
+      "appa_geodesic_miles": 24.287,
+      "nearest_distance_max_miles": 0.22,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 29
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 26,
+        "Abandoned Road": 1,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 29
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.755,
+      "appa_geodesic_minus_scout_osm_miles": -0.713,
+      "avg_nearest_distance_miles": 0.085
+    },
+    {
+      "bin_id": "generated-0375-0400",
+      "start_mile_nobo_global_est": 375,
+      "end_mile_nobo_global_est": 400,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 41,
+      "appa_length_ft_miles": 24.264,
+      "appa_geodesic_miles": 24.28,
+      "nearest_distance_max_miles": 0.188,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 41
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 5,
+        "Single Trail Only": 30,
+        "Utility ROW": 6
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 41
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.736,
+      "appa_geodesic_minus_scout_osm_miles": -0.72,
+      "avg_nearest_distance_miles": 0.087
+    },
+    {
+      "bin_id": "generated-0825-0850",
+      "start_mile_nobo_global_est": 825,
+      "end_mile_nobo_global_est": 850,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 23,
+      "appa_length_ft_miles": 24.309,
+      "appa_geodesic_miles": 24.018,
+      "nearest_distance_max_miles": 0.228,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 23
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 14,
+        "Road/Sidewalk": 7,
+        "Abandoned Road": 2
+      },
+      "regions": {
+        "mvp2_virginia": 23
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.691,
+      "appa_geodesic_minus_scout_osm_miles": -0.982,
+      "avg_nearest_distance_miles": 0.151
+    },
+    {
+      "bin_id": "generated-0250-0275",
+      "start_mile_nobo_global_est": 250,
+      "end_mile_nobo_global_est": 275,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 37,
+      "appa_length_ft_miles": 24.33,
+      "appa_geodesic_miles": 24.193,
+      "nearest_distance_max_miles": 0.209,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 37
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 25,
+        "Road/Sidewalk": 11,
+        "Other": 1
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 37
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.67,
+      "appa_geodesic_minus_scout_osm_miles": -0.807,
+      "avg_nearest_distance_miles": 0.103
+    },
+    {
+      "bin_id": "generated-1525-1550",
+      "start_mile_nobo_global_est": 1525,
+      "end_mile_nobo_global_est": 1550,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 26,
+      "appa_length_ft_miles": 24.361,
+      "appa_geodesic_miles": 23.172,
+      "nearest_distance_max_miles": 0.22,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 25
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 17,
+        "Road/Sidewalk": 4,
+        "Utility ROW": 3,
+        "Other": 1
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 26
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.639,
+      "appa_geodesic_minus_scout_osm_miles": -1.828,
+      "avg_nearest_distance_miles": 0.119
+    },
+    {
+      "bin_id": "generated-0300-0325",
+      "start_mile_nobo_global_est": 300,
+      "end_mile_nobo_global_est": 325,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 31,
+      "appa_length_ft_miles": 24.377,
+      "appa_geodesic_miles": 24.367,
+      "nearest_distance_max_miles": 0.22,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 3,
+        "Yes": 28
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 21,
+        "Road/Sidewalk": 7,
+        "Utility ROW": 3
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 31
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.623,
+      "appa_geodesic_minus_scout_osm_miles": -0.633,
+      "avg_nearest_distance_miles": 0.1
+    },
+    {
+      "bin_id": "generated-0050-0075",
+      "start_mile_nobo_global_est": 50,
+      "end_mile_nobo_global_est": 75,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 31,
+      "appa_length_ft_miles": 24.396,
+      "appa_geodesic_miles": 24.433,
+      "nearest_distance_max_miles": 0.227,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 31
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 5,
+        "Single Trail Only": 26
+      },
+      "regions": {
+        "mvp1_springer_davenport": 31
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.604,
+      "appa_geodesic_minus_scout_osm_miles": -0.567,
+      "avg_nearest_distance_miles": 0.099
+    },
+    {
+      "bin_id": "generated-0875-0900",
+      "start_mile_nobo_global_est": 875,
+      "end_mile_nobo_global_est": 900,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 39,
+      "appa_length_ft_miles": 24.445,
+      "appa_geodesic_miles": 24.448,
+      "nearest_distance_max_miles": 0.23,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 39
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 28,
+        "Abandoned Road": 10,
+        "Road/Sidewalk": 1
+      },
+      "regions": {
+        "mvp2_virginia": 39
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.555,
+      "appa_geodesic_minus_scout_osm_miles": -0.552,
+      "avg_nearest_distance_miles": 0.09
+    }
+  ],
+  "regional_summary": [
+    {
+      "region_id": "mvp5_ma_vt_nh",
+      "scout_osm_miles": 377,
+      "appa_feature_count": 335,
+      "appa_length_ft_miles": 401.351,
+      "appa_geodesic_miles": 396.513,
+      "nearest_distance_max_miles": 0.239,
+      "offroute_feature_count_over_1mi": 0,
+      "appa_length_ft_minus_scout_osm_miles": 24.351,
+      "appa_geodesic_minus_scout_osm_miles": 19.513
+    },
+    {
+      "region_id": "mvp6_maine",
+      "scout_osm_miles": 253.2,
+      "appa_feature_count": 224,
+      "appa_length_ft_miles": 272.073,
+      "appa_geodesic_miles": 266.942,
+      "nearest_distance_max_miles": 0.235,
+      "offroute_feature_count_over_1mi": 0,
+      "appa_length_ft_minus_scout_osm_miles": 18.873,
+      "appa_geodesic_minus_scout_osm_miles": 13.742
+    },
+    {
+      "region_id": "mvp2_virginia",
+      "scout_osm_miles": 547,
+      "appa_feature_count": 778,
+      "appa_length_ft_miles": 559.867,
+      "appa_geodesic_miles": 553.865,
+      "nearest_distance_max_miles": 0.393,
+      "offroute_feature_count_over_1mi": 0,
+      "appa_length_ft_minus_scout_osm_miles": 12.867,
+      "appa_geodesic_minus_scout_osm_miles": 6.865
+    },
+    {
+      "region_id": "mvp1_springer_davenport",
+      "scout_osm_miles": 234.7,
+      "appa_feature_count": 280,
+      "appa_length_ft_miles": 239.974,
+      "appa_geodesic_miles": 240.27,
+      "nearest_distance_max_miles": 0.231,
+      "offroute_feature_count_over_1mi": 0,
+      "appa_length_ft_minus_scout_osm_miles": 5.274,
+      "appa_geodesic_minus_scout_osm_miles": 5.57
+    },
+    {
+      "region_id": "mvp3_midatlantic",
+      "scout_osm_miles": 264,
+      "appa_feature_count": 661,
+      "appa_length_ft_miles": 268.647,
+      "appa_geodesic_miles": 267.709,
+      "nearest_distance_max_miles": 0.246,
+      "offroute_feature_count_over_1mi": 0,
+      "appa_length_ft_minus_scout_osm_miles": 4.647,
+      "appa_geodesic_minus_scout_osm_miles": 3.709
+    },
+    {
+      "region_id": "coverage_gap_davenport_damascus",
+      "scout_osm_miles": 224.3,
+      "appa_feature_count": 319,
+      "appa_length_ft_miles": 228.697,
+      "appa_geodesic_miles": 228.045,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "appa_length_ft_minus_scout_osm_miles": 4.397,
+      "appa_geodesic_minus_scout_osm_miles": 3.745
+    },
+    {
+      "region_id": "mvp4_nj_ny_ct",
+      "scout_osm_miles": 206,
+      "appa_feature_count": 428,
+      "appa_length_ft_miles": 209.738,
+      "appa_geodesic_miles": 208.294,
+      "nearest_distance_max_miles": 0.24,
+      "offroute_feature_count_over_1mi": 0,
+      "appa_length_ft_minus_scout_osm_miles": 3.738,
+      "appa_geodesic_minus_scout_osm_miles": 2.294
+    }
+  ],
+  "offroute_outliers": [
+    {
+      "object_id": 3052,
+      "length_ft_miles": 0,
+      "geodesic_miles": 1.035,
+      "nearest_mile_nobo_global_est": 651.5,
+      "nearest_distance_miles": 0.393,
+      "bin_start_mile_nobo_global_est": 650,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": null,
+      "shared_use": "0",
+      "appa_region": "2"
+    },
+    {
+      "object_id": 1381,
+      "length_ft_miles": 0.338,
+      "geodesic_miles": 0.339,
+      "nearest_mile_nobo_global_est": 1265,
+      "nearest_distance_miles": 0.246,
+      "bin_start_mile_nobo_global_est": 1250,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 668,
+      "length_ft_miles": 5.081,
+      "geodesic_miles": 5.093,
+      "nearest_mile_nobo_global_est": 632.5,
+      "nearest_distance_miles": 0.245,
+      "bin_start_mile_nobo_global_est": 625,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Virginia"
+    },
+    {
+      "object_id": 683,
+      "length_ft_miles": 0.066,
+      "geodesic_miles": 0.067,
+      "nearest_mile_nobo_global_est": 665.5,
+      "nearest_distance_miles": 0.241,
+      "bin_start_mile_nobo_global_est": 650,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Utility ROW",
+      "appa_region": "Virginia"
+    },
+    {
+      "object_id": 2197,
+      "length_ft_miles": 0.231,
+      "geodesic_miles": 0.232,
+      "nearest_mile_nobo_global_est": 1200,
+      "nearest_distance_miles": 0.241,
+      "bin_start_mile_nobo_global_est": 1200,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Abandoned Road",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1110,
+      "length_ft_miles": 0.719,
+      "geodesic_miles": 0.721,
+      "nearest_mile_nobo_global_est": 522,
+      "nearest_distance_miles": 0.24,
+      "bin_start_mile_nobo_global_est": 500,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Virginia"
+    },
+    {
+      "object_id": 2479,
+      "length_ft_miles": 0.952,
+      "geodesic_miles": 0.94,
+      "nearest_mile_nobo_global_est": 1441,
+      "nearest_distance_miles": 0.24,
+      "bin_start_mile_nobo_global_est": 1425,
+      "region_id": "mvp4_nj_ny_ct",
+      "state": "CT",
+      "publish": "Yes",
+      "shared_use": "Road/Sidewalk",
+      "appa_region": "New England"
+    },
+    {
+      "object_id": 796,
+      "length_ft_miles": 7.231,
+      "geodesic_miles": 7.248,
+      "nearest_mile_nobo_global_est": 670.5,
+      "nearest_distance_miles": 0.239,
+      "bin_start_mile_nobo_global_est": 650,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Virginia"
+    },
+    {
+      "object_id": 1438,
+      "length_ft_miles": 0.921,
+      "geodesic_miles": 0.923,
+      "nearest_mile_nobo_global_est": 1129,
+      "nearest_distance_miles": 0.239,
+      "bin_start_mile_nobo_global_est": 1125,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 2762,
+      "length_ft_miles": 0.71,
+      "geodesic_miles": 0.71,
+      "nearest_mile_nobo_global_est": 1720,
+      "nearest_distance_miles": 0.239,
+      "bin_start_mile_nobo_global_est": 1700,
+      "region_id": "mvp5_ma_vt_nh",
+      "state": "NH",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "New England"
+    },
+    {
+      "object_id": 680,
+      "length_ft_miles": 0.98,
+      "geodesic_miles": 0.983,
+      "nearest_mile_nobo_global_est": 666.5,
+      "nearest_distance_miles": 0.238,
+      "bin_start_mile_nobo_global_est": 650,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Virginia"
+    },
+    {
+      "object_id": 1906,
+      "length_ft_miles": 2.496,
+      "geodesic_miles": 2.5,
+      "nearest_mile_nobo_global_est": 901.5,
+      "nearest_distance_miles": 0.238,
+      "bin_start_mile_nobo_global_est": 900,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 2190,
+      "length_ft_miles": 1.06,
+      "geodesic_miles": 1.062,
+      "nearest_mile_nobo_global_est": 1225,
+      "nearest_distance_miles": 0.238,
+      "bin_start_mile_nobo_global_est": 1225,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Road/Sidewalk",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1209,
+      "length_ft_miles": 0.003,
+      "geodesic_miles": 0.003,
+      "nearest_mile_nobo_global_est": 1220.5,
+      "nearest_distance_miles": 0.237,
+      "bin_start_mile_nobo_global_est": 1200,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1363,
+      "length_ft_miles": 0.148,
+      "geodesic_miles": 0.148,
+      "nearest_mile_nobo_global_est": 1287.5,
+      "nearest_distance_miles": 0.237,
+      "bin_start_mile_nobo_global_est": 1275,
+      "region_id": "mvp4_nj_ny_ct",
+      "state": "NJ",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1563,
+      "length_ft_miles": 0.129,
+      "geodesic_miles": 0.129,
+      "nearest_mile_nobo_global_est": 1062.5,
+      "nearest_distance_miles": 0.236,
+      "bin_start_mile_nobo_global_est": 1050,
+      "region_id": "mvp3_midatlantic",
+      "state": "MD",
+      "publish": "Yes",
+      "shared_use": "Abandoned Road",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1952,
+      "length_ft_miles": 0.023,
+      "geodesic_miles": 0.024,
+      "nearest_mile_nobo_global_est": 952.5,
+      "nearest_distance_miles": 0.236,
+      "bin_start_mile_nobo_global_est": 950,
+      "region_id": "mvp2_virginia",
+      "state": "VA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1854,
+      "length_ft_miles": 0.972,
+      "geodesic_miles": 0.974,
+      "nearest_mile_nobo_global_est": 1226,
+      "nearest_distance_miles": 0.235,
+      "bin_start_mile_nobo_global_est": 1225,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1883,
+      "length_ft_miles": 0.465,
+      "geodesic_miles": 0.466,
+      "nearest_mile_nobo_global_est": 1262.5,
+      "nearest_distance_miles": 0.235,
+      "bin_start_mile_nobo_global_est": 1250,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Abandoned Road",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 2402,
+      "length_ft_miles": 2.455,
+      "geodesic_miles": 2.423,
+      "nearest_mile_nobo_global_est": 1773,
+      "nearest_distance_miles": 0.235,
+      "bin_start_mile_nobo_global_est": 1750,
+      "region_id": "mvp5_ma_vt_nh",
+      "state": "NH",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "New England"
+    },
+    {
+      "object_id": 2625,
+      "length_ft_miles": 0.784,
+      "geodesic_miles": 0.784,
+      "nearest_mile_nobo_global_est": 1695,
+      "nearest_distance_miles": 0.235,
+      "bin_start_mile_nobo_global_est": 1675,
+      "region_id": "mvp5_ma_vt_nh",
+      "state": "VT",
+      "publish": "Yes",
+      "shared_use": "Road/Sidewalk",
+      "appa_region": "New England"
+    },
+    {
+      "object_id": 2923,
+      "length_ft_miles": 0.004,
+      "geodesic_miles": 0.004,
+      "nearest_mile_nobo_global_est": 2093.5,
+      "nearest_distance_miles": 0.235,
+      "bin_start_mile_nobo_global_est": 2075,
+      "region_id": "mvp6_maine",
+      "state": "ME",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "New England"
+    },
+    {
+      "object_id": 1237,
+      "length_ft_miles": 1.014,
+      "geodesic_miles": 1.016,
+      "nearest_mile_nobo_global_est": 1295,
+      "nearest_distance_miles": 0.234,
+      "bin_start_mile_nobo_global_est": 1275,
+      "region_id": "mvp4_nj_ny_ct",
+      "state": "NJ",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 2316,
+      "length_ft_miles": 0.032,
+      "geodesic_miles": 0.032,
+      "nearest_mile_nobo_global_est": 1251,
+      "nearest_distance_miles": 0.234,
+      "bin_start_mile_nobo_global_est": 1250,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Utility ROW",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 2658,
+      "length_ft_miles": 1.846,
+      "geodesic_miles": 1.845,
+      "nearest_mile_nobo_global_est": 1763.5,
+      "nearest_distance_miles": 0.234,
+      "bin_start_mile_nobo_global_est": 1750,
+      "region_id": "mvp5_ma_vt_nh",
+      "state": "NH",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "New England"
+    },
+    {
+      "object_id": 1473,
+      "length_ft_miles": 0.395,
+      "geodesic_miles": 0.396,
+      "nearest_mile_nobo_global_est": 1062,
+      "nearest_distance_miles": 0.233,
+      "bin_start_mile_nobo_global_est": 1050,
+      "region_id": "mvp3_midatlantic",
+      "state": "MD",
+      "publish": "Yes",
+      "shared_use": "Abandoned Road",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1631,
+      "length_ft_miles": 0.422,
+      "geodesic_miles": 0.423,
+      "nearest_mile_nobo_global_est": 1317.5,
+      "nearest_distance_miles": 0.233,
+      "bin_start_mile_nobo_global_est": 1300,
+      "region_id": "mvp4_nj_ny_ct",
+      "state": "NJ",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 1828,
+      "length_ft_miles": 0.65,
+      "geodesic_miles": 0.652,
+      "nearest_mile_nobo_global_est": 1199,
+      "nearest_distance_miles": 0.233,
+      "bin_start_mile_nobo_global_est": 1175,
+      "region_id": "mvp3_midatlantic",
+      "state": "PA",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Mid-Atlantic"
+    },
+    {
+      "object_id": 2709,
+      "length_ft_miles": 0.083,
+      "geodesic_miles": 0.083,
+      "nearest_mile_nobo_global_est": 1640,
+      "nearest_distance_miles": 0.233,
+      "bin_start_mile_nobo_global_est": 1625,
+      "region_id": "mvp5_ma_vt_nh",
+      "state": "VT",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "New England"
+    },
+    {
+      "object_id": 52,
+      "length_ft_miles": 3.422,
+      "geodesic_miles": 3.429,
+      "nearest_mile_nobo_global_est": 443,
+      "nearest_distance_miles": 0.232,
+      "bin_start_mile_nobo_global_est": 425,
+      "region_id": "coverage_gap_davenport_damascus",
+      "state": "NC/TN",
+      "publish": "Yes",
+      "shared_use": "Single Trail Only",
+      "appa_region": "Southern"
+    }
+  ],
+  "all_bins": [
+    {
+      "bin_id": "generated-0000-0025",
+      "start_mile_nobo_global_est": 0,
+      "end_mile_nobo_global_est": 25,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 55,
+      "appa_length_ft_miles": 25.945,
+      "appa_geodesic_miles": 25.979,
+      "nearest_distance_max_miles": 0.206,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 55
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 8,
+        "Single Trail Only": 45,
+        "Shared w/Another Tr": 2
+      },
+      "regions": {
+        "mvp1_springer_davenport": 55
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.945,
+      "appa_geodesic_minus_scout_osm_miles": 0.979,
+      "avg_nearest_distance_miles": 0.108
+    },
+    {
+      "bin_id": "generated-0025-0050",
+      "start_mile_nobo_global_est": 25,
+      "end_mile_nobo_global_est": 50,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 22,
+      "appa_length_ft_miles": 26.178,
+      "appa_geodesic_miles": 26.201,
+      "nearest_distance_max_miles": 0.226,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 19,
+        "Road/Sidewalk": 1,
+        "Other": 1
+      },
+      "regions": {
+        "mvp1_springer_davenport": 22
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.178,
+      "appa_geodesic_minus_scout_osm_miles": 1.201,
+      "avg_nearest_distance_miles": 0.11
+    },
+    {
+      "bin_id": "generated-0050-0075",
+      "start_mile_nobo_global_est": 50,
+      "end_mile_nobo_global_est": 75,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 31,
+      "appa_length_ft_miles": 24.396,
+      "appa_geodesic_miles": 24.433,
+      "nearest_distance_max_miles": 0.227,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 31
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 5,
+        "Single Trail Only": 26
+      },
+      "regions": {
+        "mvp1_springer_davenport": 31
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.604,
+      "appa_geodesic_minus_scout_osm_miles": -0.567,
+      "avg_nearest_distance_miles": 0.099
+    },
+    {
+      "bin_id": "generated-0075-0100",
+      "start_mile_nobo_global_est": 75,
+      "end_mile_nobo_global_est": 100,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 26,
+      "appa_length_ft_miles": 24.924,
+      "appa_geodesic_miles": 24.931,
+      "nearest_distance_max_miles": 0.222,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 26
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 25,
+        "Road/Sidewalk": 1
+      },
+      "regions": {
+        "mvp1_springer_davenport": 26
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.076,
+      "appa_geodesic_minus_scout_osm_miles": -0.069,
+      "avg_nearest_distance_miles": 0.116
+    },
+    {
+      "bin_id": "generated-0100-0125",
+      "start_mile_nobo_global_est": 100,
+      "end_mile_nobo_global_est": 125,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 55,
+      "appa_length_ft_miles": 26.801,
+      "appa_geodesic_miles": 26.842,
+      "nearest_distance_max_miles": 0.21,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 55
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 34,
+        "Utility ROW": 1,
+        "Road/Sidewalk": 12,
+        "Shared w/Another Tr": 8
+      },
+      "regions": {
+        "mvp1_springer_davenport": 55
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.801,
+      "appa_geodesic_minus_scout_osm_miles": 1.842,
+      "avg_nearest_distance_miles": 0.098
+    },
+    {
+      "bin_id": "generated-0125-0150",
+      "start_mile_nobo_global_est": 125,
+      "end_mile_nobo_global_est": 150,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 24,
+      "appa_length_ft_miles": 24.101,
+      "appa_geodesic_miles": 24.117,
+      "nearest_distance_max_miles": 0.192,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 24
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 4,
+        "Utility ROW": 5,
+        "Single Trail Only": 13,
+        "Railgrade/Towpath": 1,
+        "Other": 1
+      },
+      "regions": {
+        "mvp1_springer_davenport": 24
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.899,
+      "appa_geodesic_minus_scout_osm_miles": -0.883,
+      "avg_nearest_distance_miles": 0.099
+    },
+    {
+      "bin_id": "generated-0150-0175",
+      "start_mile_nobo_global_est": 150,
+      "end_mile_nobo_global_est": 175,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 34,
+      "appa_length_ft_miles": 27.749,
+      "appa_geodesic_miles": 27.786,
+      "nearest_distance_max_miles": 0.231,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 34
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 11,
+        "Single Trail Only": 21,
+        "Shared w/Another Tr": 2
+      },
+      "regions": {
+        "mvp1_springer_davenport": 34
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.749,
+      "appa_geodesic_minus_scout_osm_miles": 2.786,
+      "avg_nearest_distance_miles": 0.092
+    },
+    {
+      "bin_id": "generated-0175-0200",
+      "start_mile_nobo_global_est": 175,
+      "end_mile_nobo_global_est": 200,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 14,
+      "appa_length_ft_miles": 25.142,
+      "appa_geodesic_miles": 25.183,
+      "nearest_distance_max_miles": 0.194,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 14
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 12,
+        "Shared w/Another Tr": 2
+      },
+      "regions": {
+        "mvp1_springer_davenport": 14
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.142,
+      "appa_geodesic_minus_scout_osm_miles": 0.183,
+      "avg_nearest_distance_miles": 0.103
+    },
+    {
+      "bin_id": "generated-0200-0225",
+      "start_mile_nobo_global_est": 200,
+      "end_mile_nobo_global_est": 225,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 10,
+      "appa_length_ft_miles": 25.023,
+      "appa_geodesic_miles": 25.066,
+      "nearest_distance_max_miles": 0.212,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 10
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 7,
+        "Other": 1,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp1_springer_davenport": 10
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.023,
+      "appa_geodesic_minus_scout_osm_miles": 0.066,
+      "avg_nearest_distance_miles": 0.134
+    },
+    {
+      "bin_id": "generated-0225-0250",
+      "start_mile_nobo_global_est": 225,
+      "end_mile_nobo_global_est": 250,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 28,
+      "appa_length_ft_miles": 25.137,
+      "appa_geodesic_miles": 25.116,
+      "nearest_distance_max_miles": 0.21,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 28
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 17,
+        "Road/Sidewalk": 5,
+        "Other": 4,
+        "Utility ROW": 2
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 19,
+        "mvp1_springer_davenport": 9
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.137,
+      "appa_geodesic_minus_scout_osm_miles": 0.116,
+      "avg_nearest_distance_miles": 0.087
+    },
+    {
+      "bin_id": "generated-0250-0275",
+      "start_mile_nobo_global_est": 250,
+      "end_mile_nobo_global_est": 275,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 37,
+      "appa_length_ft_miles": 24.33,
+      "appa_geodesic_miles": 24.193,
+      "nearest_distance_max_miles": 0.209,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 37
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 25,
+        "Road/Sidewalk": 11,
+        "Other": 1
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 37
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.67,
+      "appa_geodesic_minus_scout_osm_miles": -0.807,
+      "avg_nearest_distance_miles": 0.103
+    },
+    {
+      "bin_id": "generated-0275-0300",
+      "start_mile_nobo_global_est": 275,
+      "end_mile_nobo_global_est": 300,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 33,
+      "appa_length_ft_miles": 26.133,
+      "appa_geodesic_miles": 26.157,
+      "nearest_distance_max_miles": 0.208,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 4,
+        "Yes": 29
+      },
+      "shared_use_counts": {
+        "3": 1,
+        "Single Trail Only": 25,
+        "Road/Sidewalk": 7
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 33
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.133,
+      "appa_geodesic_minus_scout_osm_miles": 1.157,
+      "avg_nearest_distance_miles": 0.113
+    },
+    {
+      "bin_id": "generated-0300-0325",
+      "start_mile_nobo_global_est": 300,
+      "end_mile_nobo_global_est": 325,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 31,
+      "appa_length_ft_miles": 24.377,
+      "appa_geodesic_miles": 24.367,
+      "nearest_distance_max_miles": 0.22,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 3,
+        "Yes": 28
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 21,
+        "Road/Sidewalk": 7,
+        "Utility ROW": 3
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 31
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.623,
+      "appa_geodesic_minus_scout_osm_miles": -0.633,
+      "avg_nearest_distance_miles": 0.1
+    },
+    {
+      "bin_id": "generated-0325-0350",
+      "start_mile_nobo_global_est": 325,
+      "end_mile_nobo_global_est": 350,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 39,
+      "appa_length_ft_miles": 25.68,
+      "appa_geodesic_miles": 25.133,
+      "nearest_distance_max_miles": 0.224,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 39
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 25,
+        "Road/Sidewalk": 11,
+        "Railgrade/Towpath": 1,
+        "Utility ROW": 2
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 39
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.68,
+      "appa_geodesic_minus_scout_osm_miles": 0.133,
+      "avg_nearest_distance_miles": 0.115
+    },
+    {
+      "bin_id": "generated-0350-0375",
+      "start_mile_nobo_global_est": 350,
+      "end_mile_nobo_global_est": 375,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 35,
+      "appa_length_ft_miles": 27.397,
+      "appa_geodesic_miles": 27.324,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 35
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 29,
+        "Road/Sidewalk": 6
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 35
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.397,
+      "appa_geodesic_minus_scout_osm_miles": 2.324,
+      "avg_nearest_distance_miles": 0.093
+    },
+    {
+      "bin_id": "generated-0375-0400",
+      "start_mile_nobo_global_est": 375,
+      "end_mile_nobo_global_est": 400,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 41,
+      "appa_length_ft_miles": 24.264,
+      "appa_geodesic_miles": 24.28,
+      "nearest_distance_max_miles": 0.188,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 41
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 5,
+        "Single Trail Only": 30,
+        "Utility ROW": 6
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 41
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.736,
+      "appa_geodesic_minus_scout_osm_miles": -0.72,
+      "avg_nearest_distance_miles": 0.087
+    },
+    {
+      "bin_id": "generated-0400-0425",
+      "start_mile_nobo_global_est": 400,
+      "end_mile_nobo_global_est": 425,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 41,
+      "appa_length_ft_miles": 28.777,
+      "appa_geodesic_miles": 28.854,
+      "nearest_distance_max_miles": 0.188,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 40
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 35,
+        "Road/Sidewalk": 4,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 41
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.777,
+      "appa_geodesic_minus_scout_osm_miles": 3.854,
+      "avg_nearest_distance_miles": 0.09
+    },
+    {
+      "bin_id": "generated-0425-0450",
+      "start_mile_nobo_global_est": 425,
+      "end_mile_nobo_global_est": 450,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 38,
+      "appa_length_ft_miles": 22.649,
+      "appa_geodesic_miles": 22.695,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 2,
+        "Yes": 36
+      },
+      "shared_use_counts": {
+        "0": 2,
+        "Single Trail Only": 32,
+        "Road/Sidewalk": 3,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 38
+      },
+      "appa_length_ft_minus_scout_osm_miles": -2.351,
+      "appa_geodesic_minus_scout_osm_miles": -2.305,
+      "avg_nearest_distance_miles": 0.114
+    },
+    {
+      "bin_id": "generated-0450-0475",
+      "start_mile_nobo_global_est": 450,
+      "end_mile_nobo_global_est": 475,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 35,
+      "appa_length_ft_miles": 26.43,
+      "appa_geodesic_miles": 26.14,
+      "nearest_distance_max_miles": 0.177,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 35
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 15,
+        "Shared w/Another Tr": 5,
+        "Road/Sidewalk": 15
+      },
+      "regions": {
+        "coverage_gap_davenport_damascus": 5,
+        "mvp2_virginia": 30
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.43,
+      "appa_geodesic_minus_scout_osm_miles": 1.14,
+      "avg_nearest_distance_miles": 0.08
+    },
+    {
+      "bin_id": "generated-0475-0500",
+      "start_mile_nobo_global_est": 475,
+      "end_mile_nobo_global_est": 500,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 45,
+      "appa_length_ft_miles": 25.891,
+      "appa_geodesic_miles": 25.478,
+      "nearest_distance_max_miles": 0.215,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 45
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 38,
+        "Road/Sidewalk": 6,
+        "Shared w/Another Tr": 1
+      },
+      "regions": {
+        "mvp2_virginia": 45
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.891,
+      "appa_geodesic_minus_scout_osm_miles": 0.478,
+      "avg_nearest_distance_miles": 0.106
+    },
+    {
+      "bin_id": "generated-0500-0525",
+      "start_mile_nobo_global_est": 500,
+      "end_mile_nobo_global_est": 525,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 33,
+      "appa_length_ft_miles": 25.493,
+      "appa_geodesic_miles": 25.414,
+      "nearest_distance_max_miles": 0.24,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 33
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 26,
+        "Utility ROW": 2,
+        "Road/Sidewalk": 5
+      },
+      "regions": {
+        "mvp2_virginia": 33
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.493,
+      "appa_geodesic_minus_scout_osm_miles": 0.414,
+      "avg_nearest_distance_miles": 0.103
+    },
+    {
+      "bin_id": "generated-0525-0550",
+      "start_mile_nobo_global_est": 525,
+      "end_mile_nobo_global_est": 550,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 65,
+      "appa_length_ft_miles": 25.365,
+      "appa_geodesic_miles": 25.235,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 65
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 47,
+        "Road/Sidewalk": 12,
+        "Utility ROW": 5,
+        "Railgrade/Towpath": 1
+      },
+      "regions": {
+        "mvp2_virginia": 65
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.365,
+      "appa_geodesic_minus_scout_osm_miles": 0.235,
+      "avg_nearest_distance_miles": 0.103
+    },
+    {
+      "bin_id": "generated-0550-0575",
+      "start_mile_nobo_global_est": 550,
+      "end_mile_nobo_global_est": 575,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 35,
+      "appa_length_ft_miles": 24.511,
+      "appa_geodesic_miles": 24.363,
+      "nearest_distance_max_miles": 0.219,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 35
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 31,
+        "Road/Sidewalk": 4
+      },
+      "regions": {
+        "mvp2_virginia": 35
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.489,
+      "appa_geodesic_minus_scout_osm_miles": -0.637,
+      "avg_nearest_distance_miles": 0.1
+    },
+    {
+      "bin_id": "generated-0575-0600",
+      "start_mile_nobo_global_est": 575,
+      "end_mile_nobo_global_est": 600,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 24,
+      "appa_length_ft_miles": 25.618,
+      "appa_geodesic_miles": 25.471,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 24
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 7,
+        "Single Trail Only": 16,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp2_virginia": 24
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.618,
+      "appa_geodesic_minus_scout_osm_miles": 0.471,
+      "avg_nearest_distance_miles": 0.086
+    },
+    {
+      "bin_id": "generated-0600-0625",
+      "start_mile_nobo_global_est": 600,
+      "end_mile_nobo_global_est": 625,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 56,
+      "appa_length_ft_miles": 25.117,
+      "appa_geodesic_miles": 24.953,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 56
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 10,
+        "Single Trail Only": 43,
+        "Utility ROW": 3
+      },
+      "regions": {
+        "mvp2_virginia": 56
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.117,
+      "appa_geodesic_minus_scout_osm_miles": -0.047,
+      "avg_nearest_distance_miles": 0.099
+    },
+    {
+      "bin_id": "generated-0625-0650",
+      "start_mile_nobo_global_est": 625,
+      "end_mile_nobo_global_est": 650,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 28,
+      "appa_length_ft_miles": 25.168,
+      "appa_geodesic_miles": 25.219,
+      "nearest_distance_max_miles": 0.245,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 28
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 22,
+        "Road/Sidewalk": 5,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp2_virginia": 28
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.168,
+      "appa_geodesic_minus_scout_osm_miles": 0.219,
+      "avg_nearest_distance_miles": 0.096
+    },
+    {
+      "bin_id": "generated-0650-0675",
+      "start_mile_nobo_global_est": 650,
+      "end_mile_nobo_global_est": 675,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 55,
+      "appa_length_ft_miles": 31.814,
+      "appa_geodesic_miles": 27.096,
+      "nearest_distance_max_miles": 0.393,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 52,
+        "null": 3
+      },
+      "shared_use_counts": {
+        "0": 3,
+        "Road/Sidewalk": 4,
+        "Single Trail Only": 42,
+        "Utility ROW": 6
+      },
+      "regions": {
+        "mvp2_virginia": 55
+      },
+      "appa_length_ft_minus_scout_osm_miles": 6.814,
+      "appa_geodesic_minus_scout_osm_miles": 2.096,
+      "avg_nearest_distance_miles": 0.113
+    },
+    {
+      "bin_id": "generated-0675-0700",
+      "start_mile_nobo_global_est": 675,
+      "end_mile_nobo_global_est": 700,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 32,
+      "appa_length_ft_miles": 25.407,
+      "appa_geodesic_miles": 25.231,
+      "nearest_distance_max_miles": 0.2,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "null": 3,
+        "Yes": 29
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "null": 2,
+        "Single Trail Only": 20,
+        "Utility ROW": 5,
+        "Road/Sidewalk": 4
+      },
+      "regions": {
+        "mvp2_virginia": 32
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.407,
+      "appa_geodesic_minus_scout_osm_miles": 0.231,
+      "avg_nearest_distance_miles": 0.093
+    },
+    {
+      "bin_id": "generated-0700-0725",
+      "start_mile_nobo_global_est": 700,
+      "end_mile_nobo_global_est": 725,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 44,
+      "appa_length_ft_miles": 23.844,
+      "appa_geodesic_miles": 23.91,
+      "nearest_distance_max_miles": 0.205,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 44
+      },
+      "shared_use_counts": {
+        "Utility ROW": 7,
+        "Road/Sidewalk": 5,
+        "Single Trail Only": 29,
+        "Railgrade/Towpath": 2,
+        "Other": 1
+      },
+      "regions": {
+        "mvp2_virginia": 44
+      },
+      "appa_length_ft_minus_scout_osm_miles": -1.156,
+      "appa_geodesic_minus_scout_osm_miles": -1.09,
+      "avg_nearest_distance_miles": 0.093
+    },
+    {
+      "bin_id": "generated-0725-0750",
+      "start_mile_nobo_global_est": 725,
+      "end_mile_nobo_global_est": 750,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 27,
+      "appa_length_ft_miles": 26.968,
+      "appa_geodesic_miles": 27.03,
+      "nearest_distance_max_miles": 0.214,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 27
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 16,
+        "Road/Sidewalk": 10,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp2_virginia": 27
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.968,
+      "appa_geodesic_minus_scout_osm_miles": 2.03,
+      "avg_nearest_distance_miles": 0.11
+    },
+    {
+      "bin_id": "generated-0750-0775",
+      "start_mile_nobo_global_est": 750,
+      "end_mile_nobo_global_est": 775,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 36,
+      "appa_length_ft_miles": 23.529,
+      "appa_geodesic_miles": 23.584,
+      "nearest_distance_max_miles": 0.203,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 36
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 30,
+        "Road/Sidewalk": 6
+      },
+      "regions": {
+        "mvp2_virginia": 36
+      },
+      "appa_length_ft_minus_scout_osm_miles": -1.471,
+      "appa_geodesic_minus_scout_osm_miles": -1.416,
+      "avg_nearest_distance_miles": 0.081
+    },
+    {
+      "bin_id": "generated-0775-0800",
+      "start_mile_nobo_global_est": 775,
+      "end_mile_nobo_global_est": 800,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 24,
+      "appa_length_ft_miles": 28.117,
+      "appa_geodesic_miles": 28.329,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 24
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 6,
+        "Single Trail Only": 17,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp2_virginia": 24
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.117,
+      "appa_geodesic_minus_scout_osm_miles": 3.329,
+      "avg_nearest_distance_miles": 0.114
+    },
+    {
+      "bin_id": "generated-0800-0825",
+      "start_mile_nobo_global_est": 800,
+      "end_mile_nobo_global_est": 825,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 18,
+      "appa_length_ft_miles": 25.767,
+      "appa_geodesic_miles": 25.706,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 18
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 14,
+        "Utility ROW": 1,
+        "Road/Sidewalk": 3
+      },
+      "regions": {
+        "mvp2_virginia": 18
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.767,
+      "appa_geodesic_minus_scout_osm_miles": 0.706,
+      "avg_nearest_distance_miles": 0.089
+    },
+    {
+      "bin_id": "generated-0825-0850",
+      "start_mile_nobo_global_est": 825,
+      "end_mile_nobo_global_est": 850,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 23,
+      "appa_length_ft_miles": 24.309,
+      "appa_geodesic_miles": 24.018,
+      "nearest_distance_max_miles": 0.228,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 23
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 14,
+        "Road/Sidewalk": 7,
+        "Abandoned Road": 2
+      },
+      "regions": {
+        "mvp2_virginia": 23
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.691,
+      "appa_geodesic_minus_scout_osm_miles": -0.982,
+      "avg_nearest_distance_miles": 0.151
+    },
+    {
+      "bin_id": "generated-0850-0875",
+      "start_mile_nobo_global_est": 850,
+      "end_mile_nobo_global_est": 875,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 29,
+      "appa_length_ft_miles": 25.648,
+      "appa_geodesic_miles": 25.706,
+      "nearest_distance_max_miles": 0.215,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 29
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 20,
+        "Abandoned Road": 7,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp2_virginia": 29
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.648,
+      "appa_geodesic_minus_scout_osm_miles": 0.706,
+      "avg_nearest_distance_miles": 0.134
+    },
+    {
+      "bin_id": "generated-0875-0900",
+      "start_mile_nobo_global_est": 875,
+      "end_mile_nobo_global_est": 900,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 39,
+      "appa_length_ft_miles": 24.445,
+      "appa_geodesic_miles": 24.448,
+      "nearest_distance_max_miles": 0.23,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 39
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 28,
+        "Abandoned Road": 10,
+        "Road/Sidewalk": 1
+      },
+      "regions": {
+        "mvp2_virginia": 39
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.555,
+      "appa_geodesic_minus_scout_osm_miles": -0.552,
+      "avg_nearest_distance_miles": 0.09
+    },
+    {
+      "bin_id": "generated-0900-0925",
+      "start_mile_nobo_global_est": 900,
+      "end_mile_nobo_global_est": 925,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 20,
+      "appa_length_ft_miles": 25.371,
+      "appa_geodesic_miles": 25.391,
+      "nearest_distance_max_miles": 0.238,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 20
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 17,
+        "Other": 1,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp2_virginia": 20
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.371,
+      "appa_geodesic_minus_scout_osm_miles": 0.391,
+      "avg_nearest_distance_miles": 0.134
+    },
+    {
+      "bin_id": "generated-0925-0950",
+      "start_mile_nobo_global_est": 925,
+      "end_mile_nobo_global_est": 950,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 28,
+      "appa_length_ft_miles": 24.976,
+      "appa_geodesic_miles": 24.982,
+      "nearest_distance_max_miles": 0.207,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 28
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 21,
+        "Road/Sidewalk": 4,
+        "Shared w/Another Tr": 2,
+        "Abandoned Road": 1
+      },
+      "regions": {
+        "mvp2_virginia": 28
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.024,
+      "appa_geodesic_minus_scout_osm_miles": -0.018,
+      "avg_nearest_distance_miles": 0.111
+    },
+    {
+      "bin_id": "generated-0950-0975",
+      "start_mile_nobo_global_est": 950,
+      "end_mile_nobo_global_est": 975,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 39,
+      "appa_length_ft_miles": 25.728,
+      "appa_geodesic_miles": 25.77,
+      "nearest_distance_max_miles": 0.236,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 39
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 30,
+        "Road/Sidewalk": 2,
+        "Abandoned Road": 7
+      },
+      "regions": {
+        "mvp2_virginia": 39
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.728,
+      "appa_geodesic_minus_scout_osm_miles": 0.77,
+      "avg_nearest_distance_miles": 0.111
+    },
+    {
+      "bin_id": "generated-0975-1000",
+      "start_mile_nobo_global_est": 975,
+      "end_mile_nobo_global_est": 1000,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 30,
+      "appa_length_ft_miles": 23.597,
+      "appa_geodesic_miles": 23.646,
+      "nearest_distance_max_miles": 0.216,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 30
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 23,
+        "Abandoned Road": 7
+      },
+      "regions": {
+        "mvp2_virginia": 30
+      },
+      "appa_length_ft_minus_scout_osm_miles": -1.403,
+      "appa_geodesic_minus_scout_osm_miles": -1.354,
+      "avg_nearest_distance_miles": 0.105
+    },
+    {
+      "bin_id": "generated-1000-1025",
+      "start_mile_nobo_global_est": 1000,
+      "end_mile_nobo_global_est": 1025,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 47,
+      "appa_length_ft_miles": 25.384,
+      "appa_geodesic_miles": 25.398,
+      "nearest_distance_max_miles": 0.226,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 46
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 25,
+        "Abandoned Road": 6,
+        "Other": 1,
+        "Shared w/Another Tr": 3,
+        "Road/Sidewalk": 10,
+        "Railgrade/Towpath": 2
+      },
+      "regions": {
+        "mvp3_midatlantic": 29,
+        "mvp2_virginia": 18
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.384,
+      "appa_geodesic_minus_scout_osm_miles": 0.398,
+      "avg_nearest_distance_miles": 0.103
+    },
+    {
+      "bin_id": "generated-1025-1050",
+      "start_mile_nobo_global_est": 1025,
+      "end_mile_nobo_global_est": 1050,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 66,
+      "appa_length_ft_miles": 24.924,
+      "appa_geodesic_miles": 25.004,
+      "nearest_distance_max_miles": 0.219,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 64,
+        "null": 1
+      },
+      "shared_use_counts": {
+        "0": 2,
+        "Single Trail Only": 35,
+        "Abandoned Road": 21,
+        "Road/Sidewalk": 2,
+        "Shared w/Another Tr": 2,
+        "Railgrade/Towpath": 4
+      },
+      "regions": {
+        "mvp3_midatlantic": 66
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.076,
+      "appa_geodesic_minus_scout_osm_miles": 0.004,
+      "avg_nearest_distance_miles": 0.113
+    },
+    {
+      "bin_id": "generated-1050-1075",
+      "start_mile_nobo_global_est": 1050,
+      "end_mile_nobo_global_est": 1075,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 70,
+      "appa_length_ft_miles": 25.647,
+      "appa_geodesic_miles": 25.692,
+      "nearest_distance_max_miles": 0.236,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 70
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 38,
+        "Abandoned Road": 19,
+        "Road/Sidewalk": 3,
+        "Utility ROW": 10
+      },
+      "regions": {
+        "mvp3_midatlantic": 70
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.647,
+      "appa_geodesic_minus_scout_osm_miles": 0.692,
+      "avg_nearest_distance_miles": 0.115
+    },
+    {
+      "bin_id": "generated-1075-1100",
+      "start_mile_nobo_global_est": 1075,
+      "end_mile_nobo_global_est": 1100,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 49,
+      "appa_length_ft_miles": 24.741,
+      "appa_geodesic_miles": 24.803,
+      "nearest_distance_max_miles": 0.214,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 49
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 33,
+        "Road/Sidewalk": 8,
+        "Other": 2,
+        "Abandoned Road": 5,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp3_midatlantic": 49
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.259,
+      "appa_geodesic_minus_scout_osm_miles": -0.197,
+      "avg_nearest_distance_miles": 0.117
+    },
+    {
+      "bin_id": "generated-1100-1125",
+      "start_mile_nobo_global_est": 1100,
+      "end_mile_nobo_global_est": 1125,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 101,
+      "appa_length_ft_miles": 25.586,
+      "appa_geodesic_miles": 25.636,
+      "nearest_distance_max_miles": 0.225,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 100
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 83,
+        "Road/Sidewalk": 7,
+        "Abandoned Road": 4,
+        "Other": 2,
+        "Utility ROW": 5
+      },
+      "regions": {
+        "mvp3_midatlantic": 101
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.586,
+      "appa_geodesic_minus_scout_osm_miles": 0.636,
+      "avg_nearest_distance_miles": 0.106
+    },
+    {
+      "bin_id": "generated-1125-1150",
+      "start_mile_nobo_global_est": 1125,
+      "end_mile_nobo_global_est": 1150,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 52,
+      "appa_length_ft_miles": 24.773,
+      "appa_geodesic_miles": 24.81,
+      "nearest_distance_max_miles": 0.239,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 3,
+        "Yes": 49
+      },
+      "shared_use_counts": {
+        "4": 1,
+        "Abandoned Road": 10,
+        "Single Trail Only": 33,
+        "Road/Sidewalk": 4,
+        "Utility ROW": 3,
+        "Other": 1
+      },
+      "regions": {
+        "mvp3_midatlantic": 52
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.227,
+      "appa_geodesic_minus_scout_osm_miles": -0.19,
+      "avg_nearest_distance_miles": 0.111
+    },
+    {
+      "bin_id": "generated-1150-1175",
+      "start_mile_nobo_global_est": 1150,
+      "end_mile_nobo_global_est": 1175,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 77,
+      "appa_length_ft_miles": 25.412,
+      "appa_geodesic_miles": 25.47,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 77
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 37,
+        "Abandoned Road": 34,
+        "Road/Sidewalk": 3,
+        "Utility ROW": 3
+      },
+      "regions": {
+        "mvp3_midatlantic": 77
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.412,
+      "appa_geodesic_minus_scout_osm_miles": 0.47,
+      "avg_nearest_distance_miles": 0.107
+    },
+    {
+      "bin_id": "generated-1175-1200",
+      "start_mile_nobo_global_est": 1175,
+      "end_mile_nobo_global_est": 1200,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 37,
+      "appa_length_ft_miles": 25.943,
+      "appa_geodesic_miles": 26,
+      "nearest_distance_max_miles": 0.233,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 36
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 24,
+        "Abandoned Road": 7,
+        "Railgrade/Towpath": 1,
+        "Road/Sidewalk": 2,
+        "Utility ROW": 3
+      },
+      "regions": {
+        "mvp3_midatlantic": 37
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.943,
+      "appa_geodesic_minus_scout_osm_miles": 1,
+      "avg_nearest_distance_miles": 0.111
+    },
+    {
+      "bin_id": "generated-1200-1225",
+      "start_mile_nobo_global_est": 1200,
+      "end_mile_nobo_global_est": 1225,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 39,
+      "appa_length_ft_miles": 25.355,
+      "appa_geodesic_miles": 25.41,
+      "nearest_distance_max_miles": 0.241,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 39
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 18,
+        "Road/Sidewalk": 4,
+        "Abandoned Road": 17
+      },
+      "regions": {
+        "mvp3_midatlantic": 39
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.355,
+      "appa_geodesic_minus_scout_osm_miles": 0.41,
+      "avg_nearest_distance_miles": 0.133
+    },
+    {
+      "bin_id": "generated-1225-1250",
+      "start_mile_nobo_global_est": 1225,
+      "end_mile_nobo_global_est": 1250,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 66,
+      "appa_length_ft_miles": 27.039,
+      "appa_geodesic_miles": 25.585,
+      "nearest_distance_max_miles": 0.238,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 12,
+        "Yes": 49,
+        "null": 5
+      },
+      "shared_use_counts": {
+        "0": 14,
+        "4": 1,
+        "Single Trail Only": 32,
+        "Abandoned Road": 12,
+        "Road/Sidewalk": 4,
+        "Utility ROW": 3
+      },
+      "regions": {
+        "mvp3_midatlantic": 66
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.039,
+      "appa_geodesic_minus_scout_osm_miles": 0.585,
+      "avg_nearest_distance_miles": 0.115
+    },
+    {
+      "bin_id": "generated-1250-1275",
+      "start_mile_nobo_global_est": 1250,
+      "end_mile_nobo_global_est": 1275,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 83,
+      "appa_length_ft_miles": 25.07,
+      "appa_geodesic_miles": 25.119,
+      "nearest_distance_max_miles": 0.246,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 83
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 58,
+        "Road/Sidewalk": 11,
+        "Abandoned Road": 5,
+        "Utility ROW": 9
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 8,
+        "mvp3_midatlantic": 75
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.07,
+      "appa_geodesic_minus_scout_osm_miles": 0.119,
+      "avg_nearest_distance_miles": 0.112
+    },
+    {
+      "bin_id": "generated-1275-1300",
+      "start_mile_nobo_global_est": 1275,
+      "end_mile_nobo_global_est": 1300,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 80,
+      "appa_length_ft_miles": 24.909,
+      "appa_geodesic_miles": 24.966,
+      "nearest_distance_max_miles": 0.237,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 80
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 50,
+        "Abandoned Road": 19,
+        "Utility ROW": 4,
+        "Road/Sidewalk": 7
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 80
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.091,
+      "appa_geodesic_minus_scout_osm_miles": -0.034,
+      "avg_nearest_distance_miles": 0.118
+    },
+    {
+      "bin_id": "generated-1300-1325",
+      "start_mile_nobo_global_est": 1300,
+      "end_mile_nobo_global_est": 1325,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 75,
+      "appa_length_ft_miles": 25.559,
+      "appa_geodesic_miles": 25.595,
+      "nearest_distance_max_miles": 0.233,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 75
+      },
+      "shared_use_counts": {
+        "Abandoned Road": 8,
+        "Single Trail Only": 61,
+        "Railgrade/Towpath": 3,
+        "Road/Sidewalk": 2,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 75
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.559,
+      "appa_geodesic_minus_scout_osm_miles": 0.595,
+      "avg_nearest_distance_miles": 0.103
+    },
+    {
+      "bin_id": "generated-1325-1350",
+      "start_mile_nobo_global_est": 1325,
+      "end_mile_nobo_global_est": 1350,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 79,
+      "appa_length_ft_miles": 26.201,
+      "appa_geodesic_miles": 26.271,
+      "nearest_distance_max_miles": 0.214,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 79
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 60,
+        "Abandoned Road": 12,
+        "Road/Sidewalk": 2,
+        "Utility ROW": 5
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 79
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.201,
+      "appa_geodesic_minus_scout_osm_miles": 1.271,
+      "avg_nearest_distance_miles": 0.097
+    },
+    {
+      "bin_id": "generated-1350-1375",
+      "start_mile_nobo_global_est": 1350,
+      "end_mile_nobo_global_est": 1375,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 44,
+      "appa_length_ft_miles": 25.018,
+      "appa_geodesic_miles": 25.085,
+      "nearest_distance_max_miles": 0.214,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 43
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 38,
+        "Shared w/Another Tr": 2,
+        "Road/Sidewalk": 2,
+        "Other": 1
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 44
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.018,
+      "appa_geodesic_minus_scout_osm_miles": 0.085,
+      "avg_nearest_distance_miles": 0.113
+    },
+    {
+      "bin_id": "generated-1375-1400",
+      "start_mile_nobo_global_est": 1375,
+      "end_mile_nobo_global_est": 1400,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 29,
+      "appa_length_ft_miles": 24.245,
+      "appa_geodesic_miles": 24.287,
+      "nearest_distance_max_miles": 0.22,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 29
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 26,
+        "Abandoned Road": 1,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 29
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.755,
+      "appa_geodesic_minus_scout_osm_miles": -0.713,
+      "avg_nearest_distance_miles": 0.085
+    },
+    {
+      "bin_id": "generated-1400-1425",
+      "start_mile_nobo_global_est": 1400,
+      "end_mile_nobo_global_est": 1425,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 56,
+      "appa_length_ft_miles": 25.529,
+      "appa_geodesic_miles": 25.573,
+      "nearest_distance_max_miles": 0.231,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 56
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 54,
+        "Abandoned Road": 1,
+        "Road/Sidewalk": 1
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 56
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.529,
+      "appa_geodesic_minus_scout_osm_miles": 0.573,
+      "avg_nearest_distance_miles": 0.112
+    },
+    {
+      "bin_id": "generated-1425-1450",
+      "start_mile_nobo_global_est": 1425,
+      "end_mile_nobo_global_est": 1450,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 23,
+      "appa_length_ft_miles": 25.984,
+      "appa_geodesic_miles": 25.077,
+      "nearest_distance_max_miles": 0.24,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 2,
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "0": 2,
+        "Single Trail Only": 16,
+        "Road/Sidewalk": 3,
+        "Utility ROW": 2
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 23
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.984,
+      "appa_geodesic_minus_scout_osm_miles": 0.077,
+      "avg_nearest_distance_miles": 0.1
+    },
+    {
+      "bin_id": "generated-1450-1475",
+      "start_mile_nobo_global_est": 1450,
+      "end_mile_nobo_global_est": 1475,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 33,
+      "appa_length_ft_miles": 25.942,
+      "appa_geodesic_miles": 25.172,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 3,
+        "Yes": 30
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 24,
+        "Utility ROW": 1,
+        "Shared w/Another Tr": 2,
+        "Road/Sidewalk": 5
+      },
+      "regions": {
+        "mvp4_nj_ny_ct": 33
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.942,
+      "appa_geodesic_minus_scout_osm_miles": 0.172,
+      "avg_nearest_distance_miles": 0.098
+    },
+    {
+      "bin_id": "generated-1475-1500",
+      "start_mile_nobo_global_est": 1475,
+      "end_mile_nobo_global_est": 1500,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 27,
+      "appa_length_ft_miles": 25.842,
+      "appa_geodesic_miles": 24.667,
+      "nearest_distance_max_miles": 0.184,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 27
+      },
+      "shared_use_counts": {
+        "Utility ROW": 2,
+        "Other": 1,
+        "Single Trail Only": 21,
+        "Road/Sidewalk": 3
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 26,
+        "mvp4_nj_ny_ct": 1
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.842,
+      "appa_geodesic_minus_scout_osm_miles": -0.333,
+      "avg_nearest_distance_miles": 0.112
+    },
+    {
+      "bin_id": "generated-1500-1525",
+      "start_mile_nobo_global_est": 1500,
+      "end_mile_nobo_global_est": 1525,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 23,
+      "appa_length_ft_miles": 26.898,
+      "appa_geodesic_miles": 26.952,
+      "nearest_distance_max_miles": 0.212,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 23
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 2,
+        "Single Trail Only": 16,
+        "Utility ROW": 1,
+        "Shared w/Another Tr": 4
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 23
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.898,
+      "appa_geodesic_minus_scout_osm_miles": 1.952,
+      "avg_nearest_distance_miles": 0.114
+    },
+    {
+      "bin_id": "generated-1525-1550",
+      "start_mile_nobo_global_est": 1525,
+      "end_mile_nobo_global_est": 1550,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 26,
+      "appa_length_ft_miles": 24.361,
+      "appa_geodesic_miles": 23.172,
+      "nearest_distance_max_miles": 0.22,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 25
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 17,
+        "Road/Sidewalk": 4,
+        "Utility ROW": 3,
+        "Other": 1
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 26
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.639,
+      "appa_geodesic_minus_scout_osm_miles": -1.828,
+      "avg_nearest_distance_miles": 0.119
+    },
+    {
+      "bin_id": "generated-1550-1575",
+      "start_mile_nobo_global_est": 1550,
+      "end_mile_nobo_global_est": 1575,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 22,
+      "appa_length_ft_miles": 27.402,
+      "appa_geodesic_miles": 26.577,
+      "nearest_distance_max_miles": 0.229,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 1,
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "0": 1,
+        "Single Trail Only": 14,
+        "Utility ROW": 3,
+        "Road/Sidewalk": 4
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 22
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.402,
+      "appa_geodesic_minus_scout_osm_miles": 1.577,
+      "avg_nearest_distance_miles": 0.118
+    },
+    {
+      "bin_id": "generated-1575-1600",
+      "start_mile_nobo_global_est": 1575,
+      "end_mile_nobo_global_est": 1600,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 12,
+      "appa_length_ft_miles": 25.964,
+      "appa_geodesic_miles": 25.931,
+      "nearest_distance_max_miles": 0.212,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 12
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 1,
+        "Single Trail Only": 10,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 12
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.964,
+      "appa_geodesic_minus_scout_osm_miles": 0.931,
+      "avg_nearest_distance_miles": 0.115
+    },
+    {
+      "bin_id": "generated-1600-1625",
+      "start_mile_nobo_global_est": 1600,
+      "end_mile_nobo_global_est": 1625,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 29,
+      "appa_length_ft_miles": 27.93,
+      "appa_geodesic_miles": 27.948,
+      "nearest_distance_max_miles": 0.232,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 29
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 23,
+        "Utility ROW": 3,
+        "Road/Sidewalk": 1,
+        "Shared w/Another Tr": 2
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 29
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.93,
+      "appa_geodesic_minus_scout_osm_miles": 2.948,
+      "avg_nearest_distance_miles": 0.109
+    },
+    {
+      "bin_id": "generated-1625-1650",
+      "start_mile_nobo_global_est": 1625,
+      "end_mile_nobo_global_est": 1650,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 22,
+      "appa_length_ft_miles": 25.063,
+      "appa_geodesic_miles": 25.048,
+      "nearest_distance_max_miles": 0.233,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 22
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 4,
+        "Shared w/Another Tr": 1,
+        "Single Trail Only": 16,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 22
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.063,
+      "appa_geodesic_minus_scout_osm_miles": 0.048,
+      "avg_nearest_distance_miles": 0.115
+    },
+    {
+      "bin_id": "generated-1650-1675",
+      "start_mile_nobo_global_est": 1650,
+      "end_mile_nobo_global_est": 1675,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 21,
+      "appa_length_ft_miles": 28.037,
+      "appa_geodesic_miles": 27.365,
+      "nearest_distance_max_miles": 0.219,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 18,
+        "Utility ROW": 1,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 21
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.037,
+      "appa_geodesic_minus_scout_osm_miles": 2.365,
+      "avg_nearest_distance_miles": 0.135
+    },
+    {
+      "bin_id": "generated-1675-1700",
+      "start_mile_nobo_global_est": 1675,
+      "end_mile_nobo_global_est": 1700,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 21,
+      "appa_length_ft_miles": 27.472,
+      "appa_geodesic_miles": 27.476,
+      "nearest_distance_max_miles": 0.235,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 15,
+        "Road/Sidewalk": 3,
+        "Shared w/Another Tr": 1,
+        "Utility ROW": 2
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 21
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.472,
+      "appa_geodesic_minus_scout_osm_miles": 2.476,
+      "avg_nearest_distance_miles": 0.116
+    },
+    {
+      "bin_id": "generated-1700-1725",
+      "start_mile_nobo_global_est": 1700,
+      "end_mile_nobo_global_est": 1725,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 32,
+      "appa_length_ft_miles": 26.493,
+      "appa_geodesic_miles": 26.494,
+      "nearest_distance_max_miles": 0.239,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 32
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 21,
+        "Road/Sidewalk": 5,
+        "Utility ROW": 2,
+        "Other": 4
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 32
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.493,
+      "appa_geodesic_minus_scout_osm_miles": 1.494,
+      "avg_nearest_distance_miles": 0.1
+    },
+    {
+      "bin_id": "generated-1725-1750",
+      "start_mile_nobo_global_est": 1725,
+      "end_mile_nobo_global_est": 1750,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 21,
+      "appa_length_ft_miles": 25.399,
+      "appa_geodesic_miles": 25.401,
+      "nearest_distance_max_miles": 0.212,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 21
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 14,
+        "Road/Sidewalk": 6,
+        "Shared w/Another Tr": 1
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 21
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.399,
+      "appa_geodesic_minus_scout_osm_miles": 0.401,
+      "avg_nearest_distance_miles": 0.126
+    },
+    {
+      "bin_id": "generated-1750-1775",
+      "start_mile_nobo_global_est": 1750,
+      "end_mile_nobo_global_est": 1775,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 16,
+      "appa_length_ft_miles": 26.333,
+      "appa_geodesic_miles": 26.298,
+      "nearest_distance_max_miles": 0.235,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 16
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 14,
+        "Utility ROW": 1,
+        "Shared w/Another Tr": 1
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 16
+      },
+      "appa_length_ft_minus_scout_osm_miles": 1.333,
+      "appa_geodesic_minus_scout_osm_miles": 1.298,
+      "avg_nearest_distance_miles": 0.121
+    },
+    {
+      "bin_id": "generated-1775-1800",
+      "start_mile_nobo_global_est": 1775,
+      "end_mile_nobo_global_est": 1800,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 17,
+      "appa_length_ft_miles": 28.218,
+      "appa_geodesic_miles": 27.609,
+      "nearest_distance_max_miles": 0.228,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 17
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 17
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 17
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.218,
+      "appa_geodesic_minus_scout_osm_miles": 2.609,
+      "avg_nearest_distance_miles": 0.101
+    },
+    {
+      "bin_id": "generated-1800-1825",
+      "start_mile_nobo_global_est": 1800,
+      "end_mile_nobo_global_est": 1825,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 26,
+      "appa_length_ft_miles": 27.233,
+      "appa_geodesic_miles": 26.899,
+      "nearest_distance_max_miles": 0.229,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 26
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 24,
+        "Railgrade/Towpath": 1,
+        "Road/Sidewalk": 1
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 26
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.233,
+      "appa_geodesic_minus_scout_osm_miles": 1.899,
+      "avg_nearest_distance_miles": 0.136
+    },
+    {
+      "bin_id": "generated-1825-1850",
+      "start_mile_nobo_global_est": 1825,
+      "end_mile_nobo_global_est": 1850,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 16,
+      "appa_length_ft_miles": 25.865,
+      "appa_geodesic_miles": 25.747,
+      "nearest_distance_max_miles": 0.205,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 16
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 13,
+        "Road/Sidewalk": 3
+      },
+      "regions": {
+        "mvp5_ma_vt_nh": 16
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.865,
+      "appa_geodesic_minus_scout_osm_miles": 0.747,
+      "avg_nearest_distance_miles": 0.138
+    },
+    {
+      "bin_id": "generated-1850-1875",
+      "start_mile_nobo_global_est": 1850,
+      "end_mile_nobo_global_est": 1875,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 26,
+      "appa_length_ft_miles": 30.171,
+      "appa_geodesic_miles": 29.719,
+      "nearest_distance_max_miles": 0.186,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 26
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 25,
+        "Road/Sidewalk": 1
+      },
+      "regions": {
+        "mvp6_maine": 21,
+        "mvp5_ma_vt_nh": 5
+      },
+      "appa_length_ft_minus_scout_osm_miles": 5.171,
+      "appa_geodesic_minus_scout_osm_miles": 4.719,
+      "avg_nearest_distance_miles": 0.106
+    },
+    {
+      "bin_id": "generated-1875-1900",
+      "start_mile_nobo_global_est": 1875,
+      "end_mile_nobo_global_est": 1900,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 16,
+      "appa_length_ft_miles": 24.946,
+      "appa_geodesic_miles": 24.923,
+      "nearest_distance_max_miles": 0.214,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 16
+      },
+      "shared_use_counts": {
+        "Utility ROW": 1,
+        "Single Trail Only": 14,
+        "Railgrade/Towpath": 1
+      },
+      "regions": {
+        "mvp6_maine": 16
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.054,
+      "appa_geodesic_minus_scout_osm_miles": -0.077,
+      "avg_nearest_distance_miles": 0.121
+    },
+    {
+      "bin_id": "generated-1900-1925",
+      "start_mile_nobo_global_est": 1900,
+      "end_mile_nobo_global_est": 1925,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 20,
+      "appa_length_ft_miles": 27.446,
+      "appa_geodesic_miles": 27.417,
+      "nearest_distance_max_miles": 0.21,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 20
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 15,
+        "Road/Sidewalk": 4,
+        "Railgrade/Towpath": 1
+      },
+      "regions": {
+        "mvp6_maine": 20
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.446,
+      "appa_geodesic_minus_scout_osm_miles": 2.417,
+      "avg_nearest_distance_miles": 0.122
+    },
+    {
+      "bin_id": "generated-1925-1950",
+      "start_mile_nobo_global_est": 1925,
+      "end_mile_nobo_global_est": 1950,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 30,
+      "appa_length_ft_miles": 28.039,
+      "appa_geodesic_miles": 28.003,
+      "nearest_distance_max_miles": 0.225,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 30
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 28,
+        "Road/Sidewalk": 2
+      },
+      "regions": {
+        "mvp6_maine": 30
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.039,
+      "appa_geodesic_minus_scout_osm_miles": 3.003,
+      "avg_nearest_distance_miles": 0.119
+    },
+    {
+      "bin_id": "generated-1950-1975",
+      "start_mile_nobo_global_est": 1950,
+      "end_mile_nobo_global_est": 1975,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 23,
+      "appa_length_ft_miles": 28.234,
+      "appa_geodesic_miles": 28.032,
+      "nearest_distance_max_miles": 0.231,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 23
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 14,
+        "Road/Sidewalk": 8,
+        "Other": 1
+      },
+      "regions": {
+        "mvp6_maine": 23
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.234,
+      "appa_geodesic_minus_scout_osm_miles": 3.032,
+      "avg_nearest_distance_miles": 0.117
+    },
+    {
+      "bin_id": "generated-1975-2000",
+      "start_mile_nobo_global_est": 1975,
+      "end_mile_nobo_global_est": 2000,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 20,
+      "appa_length_ft_miles": 23.958,
+      "appa_geodesic_miles": 23.91,
+      "nearest_distance_max_miles": 0.182,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 20
+      },
+      "shared_use_counts": {
+        "Single Trail Only": 17,
+        "Road/Sidewalk": 2,
+        "Utility ROW": 1
+      },
+      "regions": {
+        "mvp6_maine": 20
+      },
+      "appa_length_ft_minus_scout_osm_miles": -1.042,
+      "appa_geodesic_minus_scout_osm_miles": -1.09,
+      "avg_nearest_distance_miles": 0.117
+    },
+    {
+      "bin_id": "generated-2000-2025",
+      "start_mile_nobo_global_est": 2000,
+      "end_mile_nobo_global_est": 2025,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 27,
+      "appa_length_ft_miles": 27.547,
+      "appa_geodesic_miles": 26.889,
+      "nearest_distance_max_miles": 0.211,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "0": 3,
+        "Yes": 24
+      },
+      "shared_use_counts": {
+        "0": 3,
+        "Single Trail Only": 20,
+        "Shared w/Another Tr": 1,
+        "Road/Sidewalk": 2,
+        "Railgrade/Towpath": 1
+      },
+      "regions": {
+        "mvp6_maine": 27
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.547,
+      "appa_geodesic_minus_scout_osm_miles": 1.889,
+      "avg_nearest_distance_miles": 0.098
+    },
+    {
+      "bin_id": "generated-2025-2050",
+      "start_mile_nobo_global_est": 2025,
+      "end_mile_nobo_global_est": 2050,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 15,
+      "appa_length_ft_miles": 28.441,
+      "appa_geodesic_miles": 26.728,
+      "nearest_distance_max_miles": 0.191,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 15
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 3,
+        "Single Trail Only": 12
+      },
+      "regions": {
+        "mvp6_maine": 15
+      },
+      "appa_length_ft_minus_scout_osm_miles": 3.441,
+      "appa_geodesic_minus_scout_osm_miles": 1.728,
+      "avg_nearest_distance_miles": 0.116
+    },
+    {
+      "bin_id": "generated-2050-2075",
+      "start_mile_nobo_global_est": 2050,
+      "end_mile_nobo_global_est": 2075,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 10,
+      "appa_length_ft_miles": 24.116,
+      "appa_geodesic_miles": 23.271,
+      "nearest_distance_max_miles": 0.192,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 10
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 3,
+        "Single Trail Only": 7
+      },
+      "regions": {
+        "mvp6_maine": 10
+      },
+      "appa_length_ft_minus_scout_osm_miles": -0.884,
+      "appa_geodesic_minus_scout_osm_miles": -1.729,
+      "avg_nearest_distance_miles": 0.096
+    },
+    {
+      "bin_id": "generated-2075-2100",
+      "start_mile_nobo_global_est": 2075,
+      "end_mile_nobo_global_est": 2100,
+      "scout_osm_bin_miles": 25,
+      "appa_feature_count": 34,
+      "appa_length_ft_miles": 27.048,
+      "appa_geodesic_miles": 26.045,
+      "nearest_distance_max_miles": 0.235,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 34
+      },
+      "shared_use_counts": {
+        "3": 2,
+        "Single Trail Only": 24,
+        "Road/Sidewalk": 8
+      },
+      "regions": {
+        "mvp6_maine": 34
+      },
+      "appa_length_ft_minus_scout_osm_miles": 2.048,
+      "appa_geodesic_minus_scout_osm_miles": 1.045,
+      "avg_nearest_distance_miles": 0.117
+    },
+    {
+      "bin_id": "generated-2100-2106",
+      "start_mile_nobo_global_est": 2100,
+      "end_mile_nobo_global_est": 2106.2,
+      "scout_osm_bin_miles": 6.2,
+      "appa_feature_count": 8,
+      "appa_length_ft_miles": 6.511,
+      "appa_geodesic_miles": 6.388,
+      "nearest_distance_max_miles": 0.202,
+      "offroute_feature_count_over_1mi": 0,
+      "publish_counts": {
+        "Yes": 8
+      },
+      "shared_use_counts": {
+        "Road/Sidewalk": 2,
+        "Single Trail Only": 6
+      },
+      "regions": {
+        "mvp6_maine": 8
+      },
+      "appa_length_ft_minus_scout_osm_miles": 0.311,
+      "appa_geodesic_minus_scout_osm_miles": 0.188,
+      "avg_nearest_distance_miles": 0.156
+    }
+  ],
+  "initial_read": [
+    "APPA Length_Ft adds about 74.1 miles versus the Scout OSM/Waymarked spine.",
+    "The largest positive APPA-vs-OSM bins are the first places to inspect for route simplification, missing road/abandoned-road tread, or source-order differences.",
+    "The remaining 17.6-mile gap versus the 2026 official reference still needs methodology and license review.",
+    "This diagnostic does not produce official milepoints and does not make APPA production-safe."
+  ]
+}
