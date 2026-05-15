@@ -61,7 +61,7 @@ class TrailUpdateControllerTest extends TestCase
         $this->withToken($token)
             ->getJson('/api/v1/trail-updates?admin=1&limit=50')
             ->assertOk()
-            ->assertJsonPath('data.max_media_mb', 100)
+            ->assertJsonPath('data.max_media_mb', 500)
             ->assertJsonPath('data.updates.0.id', $id)
             ->assertJsonPath('data.updates.0.status', 'draft');
 

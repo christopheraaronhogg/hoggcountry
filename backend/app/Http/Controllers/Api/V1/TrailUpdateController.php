@@ -26,7 +26,7 @@ class TrailUpdateController extends ApiController
 
     private const UPLOAD_TTL_SECONDS = 60 * 60 * 24;
 
-    private const DEFAULT_MAX_MEDIA_MB = 100;
+    private const DEFAULT_MAX_MEDIA_MB = 500;
 
     private const CHUNK_BYTES = 768 * 1024;
 

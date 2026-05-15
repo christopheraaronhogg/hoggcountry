@@ -218,7 +218,7 @@
             Photo or video
             <span class="upload-dropzone" id="upload-dropzone">
               <strong id="upload-picker-title">Tap to choose a photo or video</strong>
-              <small id="media-limit-hint" class="hint">Temporary max: 100 MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.</small>
+              <small id="media-limit-hint" class="hint">Temporary max: 500 MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.</small>
               <input id="media-input" name="media" type="file" accept="image/*,video/*" />
             </span>
           </label>
@@ -320,7 +320,7 @@
       const API_BASE = `${API_ORIGIN}/api/v1/trail-updates`;
       const SESSION_KEY = 'hcTrailUpdatesAdminSession';
       let adminSession = loadSession();
-      let maxMediaMb = 100;
+      let maxMediaMb = 500;
       let uploadInFlight = false;
       let previewUrl = null;
 
