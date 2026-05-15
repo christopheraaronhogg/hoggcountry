@@ -13,8 +13,11 @@ class TrailUpdateControllerTest extends TestCase
         parent::setUp();
 
         Storage::fake('local');
-        Storage::fake('public');
+        Storage::fake('r2');
         config()->set('app.url', 'https://hoggcountry.test');
+        config()->set('trail_updates.storage_disk', 'r2');
+        config()->set('trail_updates.scratch_disk', 'local');
+        config()->set('trail_updates.max_media_mb', 500);
     }
 
     public function test_admin_session_issues_bearer_token_for_correct_passcode(): void
@@ -53,6 +56,7 @@ class TrailUpdateControllerTest extends TestCase
         $create->assertCreated();
         $id = $create->json('data.update.id');
         $this->assertNotEmpty($id);
+        Storage::disk('r2')->assertExists('trail-updates/updates.json');
 
         $this->getJson('/api/v1/trail-updates?limit=50')
             ->assertOk()
@@ -96,7 +100,7 @@ class TrailUpdateControllerTest extends TestCase
         $this->assertStringContainsString('/media/preview', $previewPath);
         $response->assertJsonPath('data.update.mediaVariants.thumbnail.type', 'image/webp');
         $response->assertJsonPath('data.update.mediaVariants.preview.type', 'image/webp');
-        Storage::disk('public')->assertExists('trail-updates/media/'.$response->json('data.update.mediaKey'));
+        Storage::disk('r2')->assertExists('trail-updates/media/'.$response->json('data.update.mediaKey'));
 
         $media = $this->get($path);
         $media->assertOk();
@@ -122,9 +126,9 @@ class TrailUpdateControllerTest extends TestCase
         $uploadId = $start->json('data.upload.uploadId');
 
         $this->call('PUT', '/api/v1/trail-updates/media-uploads/'.$uploadId.'/chunks/0', [], [], [], [
-                'CONTENT_TYPE' => 'application/octet-stream',
-                'HTTP_AUTHORIZATION' => 'Bearer '.$token,
-            ], 'hello world')
+            'CONTENT_TYPE' => 'application/octet-stream',
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
+        ], 'hello world')
             ->assertOk()
             ->assertJsonPath('data.received', 1);
 
@@ -149,7 +153,7 @@ class TrailUpdateControllerTest extends TestCase
         $create->assertJsonPath('data.update.mediaVariants.thumbnail.type', 'image/png');
         $thumbnailPath = $create->json('data.update.thumbnailUrl');
         $this->assertStringContainsString('/media/thumbnail', $thumbnailPath);
-        Storage::disk('public')->assertExists('trail-updates/media/'.$create->json('data.update.mediaKey'));
+        Storage::disk('r2')->assertExists('trail-updates/media/'.$create->json('data.update.mediaKey'));
 
         $thumbnail = $this->get($thumbnailPath);
         $thumbnail->assertOk();

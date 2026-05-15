@@ -218,7 +218,7 @@
             Photo or video
             <span class="upload-dropzone" id="upload-dropzone">
               <strong id="upload-picker-title">Tap to choose a photo or video</strong>
-              <small id="media-limit-hint" class="hint">Temporary max: 500 MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.</small>
+              <small id="media-limit-hint" class="hint">Max: 500 MB per file. Photos and short videos are stored in Hogg Country R2 storage. Keep this tab open while uploading.</small>
               <input id="media-input" name="media" type="file" accept="image/*,video/*" />
             </span>
           </label>
@@ -290,7 +290,7 @@
       </section>
     </main>
 
-    <script>
+    <script is:inline>
       const loginPanel = document.getElementById('login-panel');
       const adminPanel = document.getElementById('admin-panel');
       const loginForm = document.getElementById('login-form');
@@ -350,7 +350,7 @@
       };
 
       function updateMediaLimitHint() {
-        mediaLimitHint.textContent = `Temporary max: ${maxMediaMb} MB per file. Photos and short videos are stored on Hogg Country for now. Keep this tab open while uploading.`;
+        mediaLimitHint.textContent = `Max: ${maxMediaMb} MB per file. Photos and short videos are stored in Hogg Country R2 storage. Keep this tab open while uploading.`;
       }
 
       function fileLimitBytes() {
@@ -675,7 +675,7 @@
       async function uploadMedia(file) {
         if (!file || file.size <= 0) return null;
         if (file.size > fileLimitBytes()) {
-          throw new Error(`That file is ${formatBytes(file.size)}. Current temporary limit is ${maxMediaMb} MB until R2 is wired.`);
+          throw new Error(`That file is ${formatBytes(file.size)}. Current limit is ${maxMediaMb} MB.`);
         }
 
         uploadInFlight = true;
