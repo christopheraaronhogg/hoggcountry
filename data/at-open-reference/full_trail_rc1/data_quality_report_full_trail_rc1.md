@@ -4,9 +4,10 @@
 ## Work Completed
 - Integrated MVP1-MVP6 with the base open full-route geometry.
 - Created global full-trail generated milepoints and alignment notes.
+- Added coordinate-first landmark anchors for water and waypoint datasets, with route_snap stored as a derived generated/open-route mile view.
 - Merged elevation, water, waypoints, rules, live-source, tread, difficulty, and RAG metadata indexes.
 - Created license/provenance audit docs and production-safe export tooling.
-- Created 462 full-trail behavior QA questions.
+- Created 484 full-trail behavior QA questions.
 
 ## Source / License Summary
 - OSM-derived data: open_license_share_alike / ODbL with attribution.
@@ -40,7 +41,7 @@ See processed/route/route_alignment_report.md and processed/route/route_alignmen
 - tread: 2108
 - difficulty: 211
 - rag_metadata: 85
-- qa_questions: 462
+- qa_questions: 484
 
 ## Weak Points
 - Generated miles are not official and should not be used as exact field navigation.

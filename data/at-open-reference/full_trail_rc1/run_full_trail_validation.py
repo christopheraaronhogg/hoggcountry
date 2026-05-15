@@ -99,6 +99,23 @@ def common(record: dict[str, Any], failures: list[str], label: str) -> None:
     fail_if(not record.get("ai_answer_rule"), failures, f"{label} missing ai_answer_rule")
 
 
+def coordinate_first_landmark(record: dict[str, Any], failures: list[str], label: str) -> None:
+    anchor = record.get("coordinate_anchor")
+    snap = record.get("route_snap")
+    fail_if(not isinstance(anchor, dict), failures, f"{label} missing coordinate_anchor")
+    fail_if(not isinstance(snap, dict), failures, f"{label} missing route_snap")
+    if isinstance(anchor, dict):
+        fail_if(anchor.get("anchor_role") != "canonical_landmark_location", failures, f"{label} coordinate anchor not canonical")
+        fail_if(round(float(anchor.get("lat")), 6) != round(float(record.get("lat")), 6) or round(float(anchor.get("lon")), 6) != round(float(record.get("lon")), 6), failures, f"{label} coordinate anchor differs from record coordinates")
+        fail_if("route miles are derived snaps" not in anchor.get("identity_rule", "").lower(), failures, f"{label} coordinate anchor lacks derived-mile rule")
+    if isinstance(snap, dict):
+        fail_if(snap.get("official") is not False, failures, f"{label} route_snap official not false")
+        fail_if(snap.get("generated") is not True, failures, f"{label} route_snap not generated")
+        fail_if(snap.get("route_alignment_status") != "yellow_unresolved_open_route_delta", failures, f"{label} route_snap missing alignment status")
+        fail_if(snap.get("mile_nobo_global_est") != record.get("mile_nobo_global_est"), failures, f"{label} route_snap mile mismatch")
+        fail_if("coordinate_anchor is the landmark identity" not in snap.get("ai_answer_rule", ""), failures, f"{label} route_snap lacks coordinate-first rule")
+
+
 def validate() -> dict[str, Any]:
     failures: list[str] = []
     for path in REQUIRED_PATHS:
@@ -171,12 +188,14 @@ def validate() -> dict[str, Any]:
     fail_if(len(water) < 1700, failures, "water candidates too few")
     for record in water[:50] + water[-50:]:
         common(record, failures, "water")
+        coordinate_first_landmark(record, failures, "water")
         fail_if(record.get("reliability") != "unknown", failures, "water reliability overclaimed")
         fail_if(record.get("potable") != "unknown", failures, "water potability overclaimed")
         fail_if(record.get("last_human_verified") is not None, failures, "water human verified without proof")
         fail_if("mapped water candidate" not in record.get("ai_answer_rule", "").lower(), failures, "water answer rule missing mapped candidate")
     for record in j("processed/water/full_trail_major_ford_candidates.json")[:50]:
         common(record, failures, "ford")
+        coordinate_first_landmark(record, failures, "ford")
         fail_if(record.get("ford_safety") != "unknown", failures, "ford safety overclaimed")
         fail_if("never call" not in record.get("ai_answer_rule", "").lower(), failures, "ford safety caution missing")
 
@@ -185,6 +204,7 @@ def validate() -> dict[str, Any]:
         fail_if(len(records) < 20, failures, f"{dataset} too small")
         for record in records[:20]:
             common(record, failures, dataset)
+            coordinate_first_landmark(record, failures, dataset)
             fail_if(record.get("production_safe") is not True, failures, f"{dataset} unsafe record in candidate output")
 
     rules = j("processed/rules/full_trail_rules_by_land_manager.json")

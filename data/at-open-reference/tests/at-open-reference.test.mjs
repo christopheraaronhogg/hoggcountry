@@ -593,6 +593,29 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
   assert.match(waterPolicy, /reliability unknown/i);
   assert.match(waterPolicy, /potability unknown/i);
   assert.match(waterPolicy, /safe fordability/i);
+  assert.match(waterPolicy, /coordinate-first landmarks/i);
+
+  const fullTrailWater = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/water/full_trail_water_candidates.json', import.meta.url), 'utf8'));
+  const waterAnchor = fullTrailWater[0].coordinate_anchor;
+  const waterSnap = fullTrailWater[0].route_snap;
+  assert.equal(waterAnchor.anchor_role, 'canonical_landmark_location');
+  assert.equal(waterAnchor.lat, fullTrailWater[0].lat);
+  assert.equal(waterAnchor.lon, fullTrailWater[0].lon);
+  assert.match(waterAnchor.identity_rule, /Route miles are derived snaps/);
+  assert.equal(waterSnap.official, false);
+  assert.equal(waterSnap.generated, true);
+  assert.equal(waterSnap.mile_nobo_global_est, fullTrailWater[0].mile_nobo_global_est);
+  assert.equal(waterSnap.route_alignment_status, 'yellow_unresolved_open_route_delta');
+  assert.match(waterSnap.ai_answer_rule, /coordinate_anchor is the landmark identity/);
+
+  const fullTrailShelters = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/waypoints/full_trail_shelters.json', import.meta.url), 'utf8'));
+  assert.equal(fullTrailShelters[0].coordinate_anchor.anchor_role, 'canonical_landmark_location');
+  assert.equal(fullTrailShelters[0].route_snap.official, false);
+  assert.equal(fullTrailShelters[0].route_snap.mile_nobo_global_est, fullTrailShelters[0].mile_nobo_global_est);
+
+  const navigationPolicy = readFileSync(new URL('../full_trail_rc1/rag_docs/policies/navigation.md', import.meta.url), 'utf8');
+  assert.match(navigationPolicy, /Landmark identity is coordinate-first/i);
+  assert.match(navigationPolicy, /route_snap as a derived generated\/open-route mile view/i);
 
   const difficultyPolicy = readFileSync(new URL('../full_trail_rc1/processed/difficulty/full_trail_daily_difficulty_model.md', import.meta.url), 'utf8');
   assert.match(difficultyPolicy, /ford uncertainty/i);

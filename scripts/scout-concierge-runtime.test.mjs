@@ -150,12 +150,13 @@ test('Scout admin reference progress dashboard exposes RC1 progress without load
   assert.equal(progress.rc1.maxContinuityGapMiles < 1, true);
   assert.ok(progress.rc1.unresolvedCauses.some((cause) => /licensed official/i.test(cause)));
   assert.ok(progress.rc1.suspectedCauses.some((cause) => /OpenStreetMap|Waymarked/i.test(cause)));
-  assert.equal(progress.rc1.qaQuestionCount, 462);
+  assert.equal(progress.rc1.qaQuestionCount, 484);
   assert.ok(progress.rc1.totalDatasetRecords > 25_000);
   assert.ok(progress.rc1.zipSizeBytes > 1_000_000);
   assert.ok(progress.packs.length >= 6);
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'water_candidates' && dataset.recordCount > 1700));
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'route_alignment_diagnostics' && dataset.recordCount === 1));
+  assert.ok(progress.rc1.statusRows.some((row) => row.area === 'Landmark Anchors' && /coordinate-first/i.test(row.notes)));
   assert.ok(progress.rc1.yellowFlags.some((flag) => /Davenport Gap to Damascus/i.test(flag.notes)));
   assert.ok(progress.rc1.yellowFlags.some((flag) => /official reference/i.test(flag.notes)));
   assert.ok(progress.commands.some((command) => /run_full_trail_validation.py/.test(command.command)));

@@ -6733,6 +6733,380 @@
   },
   {
     "id": "full-rc1-qa-397",
+    "category": "landmark coordinates",
+    "question": "For Springer/Amicalola, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-398",
+    "category": "landmark coordinates",
+    "question": "For Davenport Gap, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-399",
+    "category": "landmark coordinates",
+    "question": "For Damascus, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-400",
+    "category": "landmark coordinates",
+    "question": "For Grayson Highlands, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-401",
+    "category": "landmark coordinates",
+    "question": "For McAfee Knob, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-402",
+    "category": "landmark coordinates",
+    "question": "For Shenandoah, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-403",
+    "category": "landmark coordinates",
+    "question": "For Harpers Ferry, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-404",
+    "category": "landmark coordinates",
+    "question": "For Maryland ridges, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-405",
+    "category": "landmark coordinates",
+    "question": "For Cumberland Valley, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-406",
+    "category": "landmark coordinates",
+    "question": "For northern Pennsylvania, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-407",
+    "category": "landmark coordinates",
+    "question": "For Delaware Water Gap, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-408",
+    "category": "landmark coordinates",
+    "question": "For Harriman/Bear Mountain, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-409",
+    "category": "landmark coordinates",
+    "question": "For Connecticut, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-410",
+    "category": "landmark coordinates",
+    "question": "For Berkshires, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-411",
+    "category": "landmark coordinates",
+    "question": "For Green Mountain NF, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-412",
+    "category": "landmark coordinates",
+    "question": "For Hanover, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-413",
+    "category": "landmark coordinates",
+    "question": "For Franconia, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-414",
+    "category": "landmark coordinates",
+    "question": "For Presidential Range, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-415",
+    "category": "landmark coordinates",
+    "question": "For Mahoosucs, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-416",
+    "category": "landmark coordinates",
+    "question": "For Monson, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-417",
+    "category": "landmark coordinates",
+    "question": "For 100-Mile Wilderness, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-418",
+    "category": "landmark coordinates",
+    "question": "For Baxter/Katahdin, answer a hiker asking about landmark coordinates.",
+    "expected_behavior": "Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.",
+    "must_include": [
+      "source/confidence",
+      "generated miles not official",
+      "cautious uncertainty"
+    ],
+    "must_not_include": [
+      "official ATC mile claim",
+      "reliable water without verification",
+      "safe ford from static data",
+      "copyrighted guide/app data"
+    ]
+  },
+  {
+    "id": "full-rc1-qa-419",
     "category": "official length alignment",
     "question": "For Springer/Amicalola, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6749,7 +7123,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-398",
+    "id": "full-rc1-qa-420",
     "category": "official length alignment",
     "question": "For Davenport Gap, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6766,7 +7140,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-399",
+    "id": "full-rc1-qa-421",
     "category": "official length alignment",
     "question": "For Damascus, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6783,7 +7157,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-400",
+    "id": "full-rc1-qa-422",
     "category": "official length alignment",
     "question": "For Grayson Highlands, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6800,7 +7174,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-401",
+    "id": "full-rc1-qa-423",
     "category": "official length alignment",
     "question": "For McAfee Knob, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6817,7 +7191,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-402",
+    "id": "full-rc1-qa-424",
     "category": "official length alignment",
     "question": "For Shenandoah, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6834,7 +7208,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-403",
+    "id": "full-rc1-qa-425",
     "category": "official length alignment",
     "question": "For Harpers Ferry, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6851,7 +7225,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-404",
+    "id": "full-rc1-qa-426",
     "category": "official length alignment",
     "question": "For Maryland ridges, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6868,7 +7242,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-405",
+    "id": "full-rc1-qa-427",
     "category": "official length alignment",
     "question": "For Cumberland Valley, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6885,7 +7259,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-406",
+    "id": "full-rc1-qa-428",
     "category": "official length alignment",
     "question": "For northern Pennsylvania, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6902,7 +7276,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-407",
+    "id": "full-rc1-qa-429",
     "category": "official length alignment",
     "question": "For Delaware Water Gap, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6919,7 +7293,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-408",
+    "id": "full-rc1-qa-430",
     "category": "official length alignment",
     "question": "For Harriman/Bear Mountain, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6936,7 +7310,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-409",
+    "id": "full-rc1-qa-431",
     "category": "official length alignment",
     "question": "For Connecticut, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6953,7 +7327,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-410",
+    "id": "full-rc1-qa-432",
     "category": "official length alignment",
     "question": "For Berkshires, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6970,7 +7344,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-411",
+    "id": "full-rc1-qa-433",
     "category": "official length alignment",
     "question": "For Green Mountain NF, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -6987,7 +7361,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-412",
+    "id": "full-rc1-qa-434",
     "category": "official length alignment",
     "question": "For Hanover, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -7004,7 +7378,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-413",
+    "id": "full-rc1-qa-435",
     "category": "official length alignment",
     "question": "For Franconia, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -7021,7 +7395,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-414",
+    "id": "full-rc1-qa-436",
     "category": "official length alignment",
     "question": "For Presidential Range, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -7038,7 +7412,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-415",
+    "id": "full-rc1-qa-437",
     "category": "official length alignment",
     "question": "For Mahoosucs, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -7055,7 +7429,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-416",
+    "id": "full-rc1-qa-438",
     "category": "official length alignment",
     "question": "For Monson, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -7072,7 +7446,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-417",
+    "id": "full-rc1-qa-439",
     "category": "official length alignment",
     "question": "For 100-Mile Wilderness, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -7089,7 +7463,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-418",
+    "id": "full-rc1-qa-440",
     "category": "official length alignment",
     "question": "For Baxter/Katahdin, answer a hiker asking about official length alignment.",
     "expected_behavior": "State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.",
@@ -7106,7 +7480,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-419",
+    "id": "full-rc1-qa-441",
     "category": "license",
     "question": "For Springer/Amicalola, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7123,7 +7497,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-420",
+    "id": "full-rc1-qa-442",
     "category": "license",
     "question": "For Davenport Gap, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7140,7 +7514,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-421",
+    "id": "full-rc1-qa-443",
     "category": "license",
     "question": "For Damascus, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7157,7 +7531,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-422",
+    "id": "full-rc1-qa-444",
     "category": "license",
     "question": "For Grayson Highlands, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7174,7 +7548,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-423",
+    "id": "full-rc1-qa-445",
     "category": "license",
     "question": "For McAfee Knob, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7191,7 +7565,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-424",
+    "id": "full-rc1-qa-446",
     "category": "license",
     "question": "For Shenandoah, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7208,7 +7582,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-425",
+    "id": "full-rc1-qa-447",
     "category": "license",
     "question": "For Harpers Ferry, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7225,7 +7599,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-426",
+    "id": "full-rc1-qa-448",
     "category": "license",
     "question": "For Maryland ridges, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7242,7 +7616,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-427",
+    "id": "full-rc1-qa-449",
     "category": "license",
     "question": "For Cumberland Valley, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7259,7 +7633,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-428",
+    "id": "full-rc1-qa-450",
     "category": "license",
     "question": "For northern Pennsylvania, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7276,7 +7650,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-429",
+    "id": "full-rc1-qa-451",
     "category": "license",
     "question": "For Delaware Water Gap, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7293,7 +7667,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-430",
+    "id": "full-rc1-qa-452",
     "category": "license",
     "question": "For Harriman/Bear Mountain, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7310,7 +7684,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-431",
+    "id": "full-rc1-qa-453",
     "category": "license",
     "question": "For Connecticut, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7327,7 +7701,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-432",
+    "id": "full-rc1-qa-454",
     "category": "license",
     "question": "For Berkshires, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7344,7 +7718,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-433",
+    "id": "full-rc1-qa-455",
     "category": "license",
     "question": "For Green Mountain NF, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7361,7 +7735,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-434",
+    "id": "full-rc1-qa-456",
     "category": "license",
     "question": "For Hanover, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7378,7 +7752,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-435",
+    "id": "full-rc1-qa-457",
     "category": "license",
     "question": "For Franconia, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7395,7 +7769,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-436",
+    "id": "full-rc1-qa-458",
     "category": "license",
     "question": "For Presidential Range, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7412,7 +7786,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-437",
+    "id": "full-rc1-qa-459",
     "category": "license",
     "question": "For Mahoosucs, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7429,7 +7803,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-438",
+    "id": "full-rc1-qa-460",
     "category": "license",
     "question": "For Monson, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7446,7 +7820,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-439",
+    "id": "full-rc1-qa-461",
     "category": "license",
     "question": "For 100-Mile Wilderness, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7463,7 +7837,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-440",
+    "id": "full-rc1-qa-462",
     "category": "license",
     "question": "For Baxter/Katahdin, answer a hiker asking about license.",
     "expected_behavior": "Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.",
@@ -7480,7 +7854,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-441",
+    "id": "full-rc1-qa-463",
     "category": "offline app",
     "question": "For Springer/Amicalola, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7497,7 +7871,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-442",
+    "id": "full-rc1-qa-464",
     "category": "offline app",
     "question": "For Davenport Gap, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7514,7 +7888,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-443",
+    "id": "full-rc1-qa-465",
     "category": "offline app",
     "question": "For Damascus, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7531,7 +7905,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-444",
+    "id": "full-rc1-qa-466",
     "category": "offline app",
     "question": "For Grayson Highlands, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7548,7 +7922,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-445",
+    "id": "full-rc1-qa-467",
     "category": "offline app",
     "question": "For McAfee Knob, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7565,7 +7939,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-446",
+    "id": "full-rc1-qa-468",
     "category": "offline app",
     "question": "For Shenandoah, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7582,7 +7956,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-447",
+    "id": "full-rc1-qa-469",
     "category": "offline app",
     "question": "For Harpers Ferry, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7599,7 +7973,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-448",
+    "id": "full-rc1-qa-470",
     "category": "offline app",
     "question": "For Maryland ridges, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7616,7 +7990,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-449",
+    "id": "full-rc1-qa-471",
     "category": "offline app",
     "question": "For Cumberland Valley, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7633,7 +8007,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-450",
+    "id": "full-rc1-qa-472",
     "category": "offline app",
     "question": "For northern Pennsylvania, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7650,7 +8024,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-451",
+    "id": "full-rc1-qa-473",
     "category": "offline app",
     "question": "For Delaware Water Gap, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7667,7 +8041,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-452",
+    "id": "full-rc1-qa-474",
     "category": "offline app",
     "question": "For Harriman/Bear Mountain, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7684,7 +8058,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-453",
+    "id": "full-rc1-qa-475",
     "category": "offline app",
     "question": "For Connecticut, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7701,7 +8075,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-454",
+    "id": "full-rc1-qa-476",
     "category": "offline app",
     "question": "For Berkshires, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7718,7 +8092,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-455",
+    "id": "full-rc1-qa-477",
     "category": "offline app",
     "question": "For Green Mountain NF, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7735,7 +8109,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-456",
+    "id": "full-rc1-qa-478",
     "category": "offline app",
     "question": "For Hanover, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7752,7 +8126,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-457",
+    "id": "full-rc1-qa-479",
     "category": "offline app",
     "question": "For Franconia, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7769,7 +8143,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-458",
+    "id": "full-rc1-qa-480",
     "category": "offline app",
     "question": "For Presidential Range, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7786,7 +8160,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-459",
+    "id": "full-rc1-qa-481",
     "category": "offline app",
     "question": "For Mahoosucs, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7803,7 +8177,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-460",
+    "id": "full-rc1-qa-482",
     "category": "offline app",
     "question": "For Monson, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7820,7 +8194,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-461",
+    "id": "full-rc1-qa-483",
     "category": "offline app",
     "question": "For 100-Mile Wilderness, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",
@@ -7837,7 +8211,7 @@
     ]
   },
   {
-    "id": "full-rc1-qa-462",
+    "id": "full-rc1-qa-484",
     "category": "offline app",
     "question": "For Baxter/Katahdin, answer a hiker asking about offline app.",
     "expected_behavior": "Use packaged static corpus for non-current planning and say live conditions need network.",

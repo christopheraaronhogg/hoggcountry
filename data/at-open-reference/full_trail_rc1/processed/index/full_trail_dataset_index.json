@@ -152,7 +152,7 @@
   {
     "dataset_id": "qa_questions",
     "path": "tests/full_trail_rc1_behavior_questions.json",
-    "record_count": 462,
+    "record_count": 484,
     "production_safe": false,
     "route_id": "at-full-trail-rc1-open-2026",
     "last_generated": "2026-05-14",

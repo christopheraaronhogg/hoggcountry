@@ -12,6 +12,7 @@ Generated: 2026-05-14T00:00:00.000Z
 | Elevation | Green | USGS 3DEP-derived samples and 5/10 mile summaries. |
 | Water/Fords | Green | Mapped candidates only; reliability/potability/ford safety unknown. |
 | Waypoints | Green | Regional MVPs plus base gap filler, deduplicated with provenance. |
+| Landmark Anchors | Green | Water and waypoint records are coordinate-first with route_snap derived from the selected open route spine. |
 | Rules | Yellow | Conservative official-source/pointer layer; live verification required. |
 | Live Connectors | Green | NWS/NPS/USFS/state/Baxter/ATC-pointer policy centralized. |
 | Tread | Yellow | Model-estimated, not field verified; gap tread low confidence. |
@@ -20,4 +21,4 @@ Generated: 2026-05-14T00:00:00.000Z
 | Licensing | Green | Blocked sources excluded from production-safe export. |
 | Export | Green | Export script writes filtered production-safe zip/manifest. |
 | Validation | Green | run_full_trail_validation.py enforces source-aware rules. |
-| QA Tests | Green | 462 expected-behavior questions. |
+| QA Tests | Green | 484 expected-behavior questions. |

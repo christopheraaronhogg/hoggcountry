@@ -115,6 +115,26 @@ const REGIONS = [
 
 const REGIONAL_PACKS = REGIONS.filter((region) => !region.gap);
 const PACE_PENALTY = new Map([[0, 1], [1, 1.03], [2, 1.08], [3, 1.15], [4, 1.25], [5, 1.4]]);
+const LANDMARK_KINDS = new Set([
+  'water',
+  'water-gap',
+  'ford',
+  'shelters',
+  'campsites',
+  'privies',
+  'parking',
+  'trailheads',
+  'road_crossings',
+  'vistas',
+  'towns_resupply_candidates',
+  'huts',
+  'tent_sites',
+  'summits',
+  'alpine_exposure_points',
+  'river_crossings',
+  'bailout_access_points',
+  'monson_logistics_candidates',
+]);
 
 function readJson(relativePath, root = packRoot) {
   return JSON.parse(fs.readFileSync(path.join(root, relativePath), 'utf8'));
@@ -274,6 +294,53 @@ function regionalFields(mile) {
   };
 }
 
+function routeDistanceFeet(record) {
+  const distance = record.distance_from_route_ft ?? record.distance_from_trail_ft ?? record.distance_from_route_feet ?? record.distance_from_trail_feet;
+  return typeof distance === 'number' ? Math.round(distance) : null;
+}
+
+function coordinateAnchor(record) {
+  if (typeof record.lat !== 'number' || typeof record.lon !== 'number') return undefined;
+  return {
+    lat: record.lat,
+    lon: record.lon,
+    coordinate_order: 'lat_lon',
+    anchor_role: 'canonical_landmark_location',
+    source_id: record.source_id ?? record.source_route_id ?? 'unknown',
+    source_feature_id: record.source_feature_id ?? record.osm_id ?? record.waypoint_id ?? record.water_id ?? record.access_id ?? record.full_trail_record_id ?? null,
+    source_url: record.source_url ?? null,
+    license_status: record.license_status ?? record.source_license_status ?? 'open_license_share_alike',
+    confidence: record.confidence ?? 'open_source_candidate',
+    last_checked: record.last_checked ?? GENERATED_DATE,
+    identity_rule: 'Treat this coordinate as the stable landmark anchor. Route miles are derived snaps and may change when the selected route spine changes.',
+  };
+}
+
+function routeSnap(record, normalized, mile) {
+  if (typeof mile !== 'number') return undefined;
+  const region = regionForMile(mile);
+  return {
+    route_id: ROUTE_ID,
+    source_route_id: normalized.source_route_id ?? SOURCE_ROUTE_ID,
+    route_source_id: 'osm',
+    route_license_status: 'open_license_share_alike',
+    route_alignment_status: ALIGNMENT_STATUS,
+    official: false,
+    generated: true,
+    mile_nobo_global_est: round(mile, 1),
+    mile_sobo_global_est: round(FULL_LENGTH - mile, 1),
+    region_id: region.region_id,
+    region_name: region.label,
+    regional_coverage_status: region.status,
+    distance_from_route_ft: routeDistanceFeet(record),
+    snap_method: 'derived_from_selected_open_route_geometry',
+    route_length_miles: FULL_LENGTH,
+    official_reference_length_miles: OFFICIAL_REFERENCE_LENGTH,
+    route_length_delta_miles_vs_2026_reference: LENGTH_DELTA,
+    ai_answer_rule: 'Use this as a derived route snap only. The coordinate_anchor is the landmark identity; generated/open-route miles are not official ATC miles.',
+  };
+}
+
 function commonize(record, region, kind, index) {
   const mile = globalMile(record, region);
   const normalized = {
@@ -294,6 +361,12 @@ function commonize(record, region, kind, index) {
     last_checked: record.last_checked ?? GENERATED_DATE,
     ai_answer_rule: record.ai_answer_rule ?? 'Use as an open-source candidate with source, license, confidence, and timestamp. Generated miles are not official ATC mileage.',
   };
+  if (LANDMARK_KINDS.has(kind)) {
+    const anchor = coordinateAnchor(normalized);
+    if (anchor) normalized.coordinate_anchor = anchor;
+    const snap = routeSnap(record, normalized, mile);
+    if (snap) normalized.route_snap = snap;
+  }
   if (typeof mile === 'number') Object.assign(normalized, regionalFields(mile));
   return normalized;
 }
@@ -935,6 +1008,8 @@ function buildWater() {
 
 Mapped water is a candidate, not reliable water. Unless a record has timestamped licensed verification, answer with reliability unknown, potability unknown, and last human verification unknown.
 
+Water and ford records are coordinate-first landmarks. Treat lat/lon in coordinate_anchor as the stable mapped location. Treat route_snap miles as derived generated/open-route positions that can change when Scout changes route spines.
+
 For Maine, New Hampshire, the Smokies, and all river/fording contexts, static data cannot determine safe fordability. Scout must live-check weather, river/flood context, land-manager warnings, and recent verified reports when available. If live retrieval fails, say so with the last checked time.
 `);
   return water;
@@ -1363,10 +1438,10 @@ The full rules dataset is in processed/rules/full_trail_rules_by_land_manager.js
 Use it as a conservative pointer layer. Unknowns stay unknown. Current closures, permits, fees, camping availability, food storage, fires, dog rules, group size, Baxter/Katahdin access, and hut/campsite status require live official-source verification.
 `);
   const policies = {
-    'water.md': 'Water candidates are mapped candidates only. Reliability, potability, and ford safety are unknown unless verified by timestamped licensed data.',
+    'water.md': 'Water candidates are coordinate-first mapped candidates only. Reliability, potability, and ford safety are unknown unless verified by timestamped licensed data. Use coordinate_anchor as the stable landmark and route_snap as a derived generated-mile view.',
     'weather_live_conditions.md': 'Use NWS, NPS, USFS, state, Baxter, and other official sources for current conditions. Static docs cannot answer current weather or closures.',
     'closures.md': 'Closures, detours, fire, flooding, storm damage, snow/ice, bear activity, road closures, permit changes, and Katahdin status require live checks.',
-    'navigation.md': `RC1 is a planning corpus, not field navigation. Generated/open-route miles are not official and route length has a known ${LENGTH_DELTA}-mile delta versus the ${OFFICIAL_REFERENCE_LENGTH}-mile 2026 official reference.`,
+    'navigation.md': `RC1 is a planning corpus, not field navigation. Landmark identity is coordinate-first: use coordinate_anchor lat/lon as the stable location and route_snap as a derived generated/open-route mile view. Generated/open-route miles are not official and route length has a known ${LENGTH_DELTA}-mile delta versus the ${OFFICIAL_REFERENCE_LENGTH}-mile 2026 official reference.`,
     'tread.md': 'Tread/rockiness/rootiness/mud scores are model screens. State confidence and avoid field-verified language unless the record explicitly proves it.',
     'difficulty.md': 'Difficulty combines distance, terrain, tread, remoteness, weather, water, fords, permits, and data gaps. Use as a cautious screen.',
     'license_attribution.md': 'Use only public-domain, open-license, API-accessible, or license-reviewed sources. Attribute OpenStreetMap contributors for ODbL-derived data.',
@@ -1396,6 +1471,7 @@ function buildQaTests() {
     ['resupply uncertainty', 'Separate open map candidates from guidebook-style business intelligence and avoid copied guide data.'],
     ['Davenport-Damascus gap', 'Disclose yellow regional MVP gap and use base open data with lower confidence.'],
     ['generated miles', 'State generated miles are not official ATC mileage.'],
+    ['landmark coordinates', 'Treat lat/lon coordinate_anchor as the stable landmark identity and route_snap miles as derived generated/open-route positions.'],
     ['official length alignment', 'State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.'],
     ['license', 'Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.'],
     ['offline app', 'Use packaged static corpus for non-current planning and say live conditions need network.'],
@@ -1520,6 +1596,7 @@ Generated: ${GENERATED_AT}
 | Elevation | Green | USGS 3DEP-derived samples and 5/10 mile summaries. |
 | Water/Fords | Green | Mapped candidates only; reliability/potability/ford safety unknown. |
 | Waypoints | Green | Regional MVPs plus base gap filler, deduplicated with provenance. |
+| Landmark Anchors | Green | Water and waypoint records are coordinate-first with route_snap derived from the selected open route spine. |
 | Rules | Yellow | Conservative official-source/pointer layer; live verification required. |
 | Live Connectors | Green | NWS/NPS/USFS/state/Baxter/ATC-pointer policy centralized. |
 | Tread | Yellow | Model-estimated, not field verified; gap tread low confidence. |
@@ -1536,6 +1613,7 @@ Generated: ${GENERATED_AT}
 ## Work Completed
 - Integrated MVP1-MVP6 with the base open full-route geometry.
 - Created global full-trail generated milepoints and alignment notes.
+- Added coordinate-first landmark anchors for water and waypoint datasets, with route_snap stored as a derived generated/open-route mile view.
 - Merged elevation, water, waypoints, rules, live-source, tread, difficulty, and RAG metadata indexes.
 - Created license/provenance audit docs and production-safe export tooling.
 - Created ${datasets.qa.length} full-trail behavior QA questions.
@@ -1697,6 +1775,23 @@ def common(record: dict[str, Any], failures: list[str], label: str) -> None:
     fail_if(not record.get("ai_answer_rule"), failures, f"{label} missing ai_answer_rule")
 
 
+def coordinate_first_landmark(record: dict[str, Any], failures: list[str], label: str) -> None:
+    anchor = record.get("coordinate_anchor")
+    snap = record.get("route_snap")
+    fail_if(not isinstance(anchor, dict), failures, f"{label} missing coordinate_anchor")
+    fail_if(not isinstance(snap, dict), failures, f"{label} missing route_snap")
+    if isinstance(anchor, dict):
+        fail_if(anchor.get("anchor_role") != "canonical_landmark_location", failures, f"{label} coordinate anchor not canonical")
+        fail_if(round(float(anchor.get("lat")), 6) != round(float(record.get("lat")), 6) or round(float(anchor.get("lon")), 6) != round(float(record.get("lon")), 6), failures, f"{label} coordinate anchor differs from record coordinates")
+        fail_if("route miles are derived snaps" not in anchor.get("identity_rule", "").lower(), failures, f"{label} coordinate anchor lacks derived-mile rule")
+    if isinstance(snap, dict):
+        fail_if(snap.get("official") is not False, failures, f"{label} route_snap official not false")
+        fail_if(snap.get("generated") is not True, failures, f"{label} route_snap not generated")
+        fail_if(snap.get("route_alignment_status") != "yellow_unresolved_open_route_delta", failures, f"{label} route_snap missing alignment status")
+        fail_if(snap.get("mile_nobo_global_est") != record.get("mile_nobo_global_est"), failures, f"{label} route_snap mile mismatch")
+        fail_if("coordinate_anchor is the landmark identity" not in snap.get("ai_answer_rule", ""), failures, f"{label} route_snap lacks coordinate-first rule")
+
+
 def validate() -> dict[str, Any]:
     failures: list[str] = []
     for path in REQUIRED_PATHS:
@@ -1769,12 +1864,14 @@ def validate() -> dict[str, Any]:
     fail_if(len(water) < 1700, failures, "water candidates too few")
     for record in water[:50] + water[-50:]:
         common(record, failures, "water")
+        coordinate_first_landmark(record, failures, "water")
         fail_if(record.get("reliability") != "unknown", failures, "water reliability overclaimed")
         fail_if(record.get("potable") != "unknown", failures, "water potability overclaimed")
         fail_if(record.get("last_human_verified") is not None, failures, "water human verified without proof")
         fail_if("mapped water candidate" not in record.get("ai_answer_rule", "").lower(), failures, "water answer rule missing mapped candidate")
     for record in j("processed/water/full_trail_major_ford_candidates.json")[:50]:
         common(record, failures, "ford")
+        coordinate_first_landmark(record, failures, "ford")
         fail_if(record.get("ford_safety") != "unknown", failures, "ford safety overclaimed")
         fail_if("never call" not in record.get("ai_answer_rule", "").lower(), failures, "ford safety caution missing")
 
@@ -1783,6 +1880,7 @@ def validate() -> dict[str, Any]:
         fail_if(len(records) < 20, failures, f"{dataset} too small")
         for record in records[:20]:
             common(record, failures, dataset)
+            coordinate_first_landmark(record, failures, dataset)
             fail_if(record.get("production_safe") is not True, failures, f"{dataset} unsafe record in candidate output")
 
     rules = j("processed/rules/full_trail_rules_by_land_manager.json")
