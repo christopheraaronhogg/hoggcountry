@@ -11,6 +11,10 @@ const GENERATED_DATE = process.env.FULL_TRAIL_RC1_GENERATED_DATE ?? '2026-05-14'
 const GENERATED_AT = `${GENERATED_DATE}T00:00:00.000Z`;
 const FULL_LENGTH = 2106.2;
 const OFFICIAL_REFERENCE_LENGTH = 2197.9;
+const OFFICIAL_REFERENCE_SOURCE_URL = 'https://appalachiantrail.org/experience/hike-the-trail/at-basics/';
+const LENGTH_DELTA = Math.round((FULL_LENGTH - OFFICIAL_REFERENCE_LENGTH) * 10) / 10;
+const LENGTH_DELTA_PERCENT = Math.round(((FULL_LENGTH - OFFICIAL_REFERENCE_LENGTH) / OFFICIAL_REFERENCE_LENGTH) * 1000) / 10;
+const ALIGNMENT_STATUS = 'yellow_unresolved_open_route_delta';
 const ROUTE_ID = 'at-full-trail-rc1-open-2026';
 const SOURCE_ROUTE_ID = 'at-main-osm-2026-open';
 
@@ -137,6 +141,80 @@ function round(value, digits = 1) {
   if (typeof value !== 'number' || Number.isNaN(value)) return value;
   const multiplier = 10 ** digits;
   return Math.round(value * multiplier) / multiplier;
+}
+
+function toRadians(value) {
+  return value * (Math.PI / 180);
+}
+
+function haversineMiles(a, b) {
+  const earthRadiusMiles = 3958.7613;
+  const lat1 = toRadians(a[1]);
+  const lat2 = toRadians(b[1]);
+  const deltaLat = toRadians(b[1] - a[1]);
+  const deltaLon = toRadians(b[0] - a[0]);
+  const value = Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
+  return 2 * earthRadiusMiles * Math.asin(Math.sqrt(value));
+}
+
+function flattenCoordinates(geometry) {
+  if (!geometry) return [];
+  if (geometry.type === 'LineString') return geometry.coordinates ?? [];
+  if (geometry.type === 'MultiLineString') return (geometry.coordinates ?? []).flat();
+  return [];
+}
+
+function measureGeometry(geometry) {
+  const coordinates = flattenCoordinates(geometry);
+  let total = 0;
+  let maxSegment = 0;
+  let segmentsOverTwoHundredths = 0;
+  let segmentsOverHalfMile = 0;
+  let segmentsOverOneMile = 0;
+
+  for (let index = 1; index < coordinates.length; index += 1) {
+    const distance = haversineMiles(coordinates[index - 1], coordinates[index]);
+    total += distance;
+    maxSegment = Math.max(maxSegment, distance);
+    if (distance > 0.02) segmentsOverTwoHundredths += 1;
+    if (distance > 0.5) segmentsOverHalfMile += 1;
+    if (distance > 1) segmentsOverOneMile += 1;
+  }
+
+  return {
+    method: 'WGS84 haversine geodesic over route vertices',
+    vertex_count: coordinates.length,
+    segment_count: Math.max(0, coordinates.length - 1),
+    measured_length_miles: round(total, 3),
+    measured_length_miles_rounded_for_ui: round(total, 1),
+    max_consecutive_vertex_gap_miles: round(maxSegment, 3),
+    segments_over_0_02_miles: segmentsOverTwoHundredths,
+    segments_over_0_5_miles: segmentsOverHalfMile,
+    segments_over_1_0_miles: segmentsOverOneMile,
+  };
+}
+
+function estimateThreeDLength(elevationSamples) {
+  let total = 0;
+  for (let index = 1; index < elevationSamples.length; index += 1) {
+    const previous = elevationSamples[index - 1];
+    const current = elevationSamples[index];
+    const horizontalFeet = ((current.mile_nobo_global_est ?? current.mile_nobo) - (previous.mile_nobo_global_est ?? previous.mile_nobo)) * 5280;
+    const verticalFeet = (current.elevation_ft ?? 0) - (previous.elevation_ft ?? 0);
+    if (horizontalFeet > 0) total += Math.sqrt(horizontalFeet ** 2 + verticalFeet ** 2) / 5280;
+  }
+
+  return {
+    method: 'coarse 3D estimate from 1-mile USGS 3DEP elevation samples',
+    estimated_3d_length_miles: round(total, 1),
+    added_miles_vs_2d_route: round(total - FULL_LENGTH, 1),
+    limitation: 'Coarse 1-mile elevation samples only; this screens whether vertical component could explain the 91.7-mile delta, not exact surveyed trail length.',
+  };
+}
+
+function waymarkedReportedMiles(feature) {
+  const meters = feature.properties?.graph?.route_reported_length_meters;
+  return typeof meters === 'number' ? round(meters / 1609.344, 3) : null;
 }
 
 function intervalName(interval) {
@@ -334,6 +412,38 @@ function sourceManifest() {
       data_categories: ['data_quality'],
       notes: 'MVP1 ends at Davenport Gap; MVP2 begins near Damascus/TN-VA. RC1 uses base open-route data for continuity in between.',
     },
+    {
+      source_id: 'route_alignment_diagnostics',
+      name: 'Scout RC1 route alignment diagnostics',
+      owner: 'Hogg Country',
+      source_type: 'derived data quality report',
+      source_url: 'internal:data/at-open-reference/full_trail_rc1/processed/route/route_alignment_diagnostics.json',
+      access_method: 'local generated artifact',
+      license_status: 'open_license_share_alike',
+      allowed_use: 'package generated diagnostics with upstream OSM attribution and official-reference caution',
+      attribution_required: 'Preserve OpenStreetMap attribution and ATC official-reference URL as a pointer only.',
+      confidence: 'measurement_diagnostic_not_official_route',
+      last_checked: GENERATED_DATE,
+      production_safe: true,
+      data_categories: ['route_alignment', 'data_quality', 'validation'],
+      notes: 'Geodesic measurements, continuity diagnostics, segment length checks, and unresolved-cause notes. Does not copy official ATC mile tables.',
+    },
+    {
+      source_id: 'atc_official_2026_length_reference',
+      name: 'ATC 2026 official A.T. length reference',
+      owner: 'Appalachian Trail Conservancy',
+      source_type: 'official reference pointer',
+      source_url: OFFICIAL_REFERENCE_SOURCE_URL,
+      access_method: 'website pointer',
+      license_status: 'permission_required',
+      allowed_use: 'reference the single official 2026 total length value and link users to ATC; do not package copied ATC guide/map/text/table content',
+      attribution_required: 'Reference Appalachian Trail Conservancy as the official source.',
+      confidence: 'official_reference_value',
+      last_checked: GENERATED_DATE,
+      production_safe: false,
+      data_categories: ['official_length_reference'],
+      notes: 'Used only to compare Scout generated open-route mileage against the official 2026 total length. It is not a source for generated milepoints or route geometry.',
+    },
   ];
   for (const source of additions) merged.set(source.source_id, source);
 
@@ -362,6 +472,8 @@ function sourceManifest() {
 function buildRoute() {
   const source = readJson('processed/route/at_route_selected.geojson');
   const feature = source.features[0];
+  const geometryMeasurement = measureGeometry(feature.geometry);
+  const waymarkedMiles = waymarkedReportedMiles(feature);
   const regionalRoutes = REGIONAL_PACKS.map((region) => {
     const route = readJson(region.route_file, path.join(packRoot, region.source_pack)).features[0].properties;
     return {
@@ -386,13 +498,31 @@ function buildRoute() {
         source_route_id: SOURCE_ROUTE_ID,
         name: 'Scout Appalachian Trail full-trail RC1 open route',
         measured_length_miles: FULL_LENGTH,
+        generated_route_length_miles: FULL_LENGTH,
         official_reference_length_miles: OFFICIAL_REFERENCE_LENGTH,
-        length_delta_miles: round(FULL_LENGTH - OFFICIAL_REFERENCE_LENGTH, 1),
+        official_reference_date: '2026',
+        official_reference_source: OFFICIAL_REFERENCE_SOURCE_URL,
+        official_reference_usage: 'single total-length reference value only; not a copied official mile table or official route geometry',
+        length_delta_miles: LENGTH_DELTA,
+        length_delta_percent: LENGTH_DELTA_PERCENT,
+        alignment_status: ALIGNMENT_STATUS,
         official: false,
         candidate_status: 'release_candidate_not_field_navigation',
         license_status: 'open_license_share_alike',
         source_id: 'osm',
         integration_source_id: 'full_trail_rc1_integration_model',
+        route_alignment_diagnostics_path: 'processed/route/route_alignment_diagnostics.json',
+        route_alignment_report_path: 'processed/route/route_alignment_report.md',
+        route_continuity_diagnostics_path: 'processed/route/route_continuity_diagnostics.json',
+        route_segment_length_checks_path: 'processed/route/route_segment_length_checks.json',
+        measurement_diagnostics_summary: {
+          geodesic_method: geometryMeasurement.method,
+          geodesic_length_miles: geometryMeasurement.measured_length_miles,
+          waymarked_reported_length_miles: waymarkedMiles,
+          max_consecutive_vertex_gap_miles: geometryMeasurement.max_consecutive_vertex_gap_miles,
+          segments_over_1_0_miles: geometryMeasurement.segments_over_1_0_miles,
+          conclusion: 'Scout geodesic measurement and Waymarked reported length agree closely; projection/measurement method is not the primary 91.7-mile delta cause.',
+        },
         last_generated: GENERATED_DATE,
         production_safe: true,
         regional_routes: regionalRoutes,
@@ -405,8 +535,9 @@ function buildRoute() {
           ai_answer_rule: 'State that this corridor has lower regional-pack confidence and should be live/source checked before detailed planning.',
         }],
         approach_trail_treatment: 'Amicalola/Approach Trail is contextual in MVP1 docs and is not part of the full main AT route geometry.',
+        side_route_detour_treatment: 'Blue-blaze side trails, shelter access trails, optional alternates, temporary detours, and the Approach Trail are not folded into generated main-route miles unless represented in the selected open AT main-route geometry.',
         baxter_katahdin_treatment: 'Katahdin/Hunt Trail/Baxter endpoint is an open-route candidate. Current opening, permits, parking, summit, and camping status require live Baxter verification.',
-        ai_answer_rule: "Use as Scout's full-trail RC1 open route candidate. Generated miles are not official ATC miles; disclose the route length delta and the Davenport-to-Damascus regional coverage gap.",
+        ai_answer_rule: "Use as Scout's full-trail RC1 open route candidate. Say generated/open-route mile unless an explicitly licensed official source is being used. Generated miles are not official ATC miles; disclose the 2026 official-reference length, route length delta, alignment status, and Davenport-to-Damascus regional coverage gap.",
       },
     }],
   };
@@ -424,7 +555,9 @@ Scout RC1 stitches MVP1-MVP6 into one full-trail open reference layer using the 
 - Official status: false. Generated miles are not official ATC mileage.
 - Measured RC1 length: ${FULL_LENGTH} generated miles.
 - 2026 official reference length used for comparison only: ${OFFICIAL_REFERENCE_LENGTH} miles.
-- Length delta: ${round(FULL_LENGTH - OFFICIAL_REFERENCE_LENGTH, 1)} miles.
+- Official reference source: ${OFFICIAL_REFERENCE_SOURCE_URL}
+- Length delta: ${LENGTH_DELTA} miles (${LENGTH_DELTA_PERCENT}%).
+- Alignment status: ${ALIGNMENT_STATUS}.
 
 ## Regional Stitch
 ${REGIONS.map((region) => `- ${region.region_id}: ${region.start}-${region.end} generated miles, status ${region.status}, ${region.label}.`).join('\n')}
@@ -440,6 +573,7 @@ Baxter/Katahdin/Hunt Trail handling comes from MVP6 as an open-route endpoint tr
 ## AI Cautions
 - Generated miles are estimated from open route geometry and are not official ATC miles.
 - The full-route open geometry is materially shorter than the 2026 official reference and remains a planning corpus, not field navigation.
+- Scout must say "generated/open-route mile" unless an explicitly licensed official source is being used.
 - Static docs cannot answer current closures, weather, permits, ford safety, or Katahdin status.
 - Water/fords from maps are candidates only; reliability, potability, and safe fordability remain unknown unless timestamped verified data exists.
 `);
@@ -464,7 +598,7 @@ function buildMilepoints() {
           official: false,
           production_safe: true,
           last_generated: GENERATED_DATE,
-          ai_answer_rule: 'Generated mile based on Scout full-trail RC1 open route geometry, not an official ATC mile. Preserve regional field names where available and disclose source/confidence.',
+          ai_answer_rule: 'Generated/open-route mile based on Scout full-trail RC1 open route geometry, not an official ATC mile. Preserve regional field names where available and disclose source/confidence.',
         },
       };
     });
@@ -476,6 +610,13 @@ function buildMilepoints() {
 Generated: ${GENERATED_AT}
 
 Global RC1 mileage is derived from the base open-route milepoints. It preserves local regional fields where a mile falls inside a regional MVP pack.
+
+## Official Reference Comparison
+- Official 2026 reference length: ${OFFICIAL_REFERENCE_LENGTH} miles.
+- Scout generated open-route length: ${FULL_LENGTH} miles.
+- Delta: ${LENGTH_DELTA} miles (${LENGTH_DELTA_PERCENT}%).
+- Alignment status: ${ALIGNMENT_STATUS}.
+- All global miles are generated/open-route estimates, not official ATC miles.
 
 ## Transitions
 ${REGIONS.map((region) => `- ${region.region_id}: ${region.start}-${region.end} generated global miles; ${region.status}; local fields ${region.localField}/${region.soboField}.`).join('\n')}
@@ -557,6 +698,208 @@ RC1 includes 1-mile samples and 5-mile/10-mile summaries across ${FULL_LENGTH} g
 Generated miles are not official ATC mileage.
 `);
   return samples;
+}
+
+function buildRouteAlignment(elevationSamples) {
+  const source = readJson('processed/route/at_route_selected.geojson');
+  const feature = source.features[0];
+  const measurement = measureGeometry(feature.geometry);
+  const waymarkedMiles = waymarkedReportedMiles(feature);
+  const threeD = estimateThreeDLength(elevationSamples);
+  const graph = feature.properties.graph ?? {};
+  const continuity = {
+    route_id: ROUTE_ID,
+    source_route_id: SOURCE_ROUTE_ID,
+    generated_at: GENERATED_AT,
+    source_id: 'route_alignment_diagnostics',
+    source_url: 'internal:data/at-open-reference/scripts/build-full-trail-rc1-reference-pack.mjs',
+    license_status: 'open_license_share_alike',
+    confidence: 'measurement_diagnostic_not_official_route',
+    production_safe: true,
+    last_generated: GENERATED_DATE,
+    geometry_type: feature.geometry.type,
+    vertex_count: measurement.vertex_count,
+    segment_count: measurement.segment_count,
+    max_consecutive_vertex_gap_miles: measurement.max_consecutive_vertex_gap_miles,
+    consecutive_segments_over_0_02_miles: measurement.segments_over_0_02_miles,
+    consecutive_segments_over_0_5_miles: measurement.segments_over_0_5_miles,
+    consecutive_segments_over_1_0_miles: measurement.segments_over_1_0_miles,
+    graph_join_gap_count_over_0_02_miles: graph.join_gap_count_over_0_02_miles ?? null,
+    graph_join_gap_total_miles_over_0_02_miles: graph.join_gap_total_miles_over_0_02_miles ?? null,
+    graph_max_join_gap_miles: graph.max_join_gap_miles ?? null,
+    graph_stitch_edges: graph.stitchEdges ?? null,
+    graph_max_stitch_miles: typeof graph.maxStitchMiles === 'number' ? round(graph.maxStitchMiles, 3) : null,
+    ai_answer_rule: 'Use as route continuity QA only. It does not make Scout generated miles official and does not prove field navigation safety.',
+  };
+  const segmentChecks = REGIONS.map((region) => {
+    const length = round(region.end - region.start, 1);
+    return {
+      segment_check_id: `route-check-${region.region_id}`,
+      route_id: ROUTE_ID,
+      region_id: region.region_id,
+      source_pack: region.source_pack,
+      label: region.label,
+      start_mile_nobo_global_est: region.start,
+      end_mile_nobo_global_est: region.end,
+      generated_length_miles: length,
+      generated_share_of_route_percent: round((length / FULL_LENGTH) * 100, 2),
+      route_file: region.route_file,
+      status: region.status,
+      gap: region.gap === true,
+      license_status: 'open_license_share_alike',
+      confidence: region.gap ? 'low_due_to_regional_mvp_gap' : 'regional_mvp_integrated',
+      last_generated: GENERATED_DATE,
+      production_safe: true,
+      ai_answer_rule: region.gap
+        ? 'Disclose this as the Davenport Gap to Damascus yellow regional detail gap; use generated/open-route miles only.'
+        : 'Use as regional length/provenance QA only; generated/open-route miles are not official ATC miles.',
+    };
+  });
+  const diagnostics = {
+    route_id: ROUTE_ID,
+    source_route_id: SOURCE_ROUTE_ID,
+    generated_at: GENERATED_AT,
+    alignment_status: ALIGNMENT_STATUS,
+    source_id: 'route_alignment_diagnostics',
+    source_url: 'internal:data/at-open-reference/scripts/build-full-trail-rc1-reference-pack.mjs',
+    source_geometry_url: feature.properties.source_url,
+    source_access_url: feature.properties.source_access_url,
+    official_reference_source_url: OFFICIAL_REFERENCE_SOURCE_URL,
+    license_status: 'open_license_share_alike',
+    confidence: 'measurement_diagnostic_not_official_route',
+    last_generated: GENERATED_DATE,
+    production_safe: true,
+    official: false,
+    official_reference_length_miles: OFFICIAL_REFERENCE_LENGTH,
+    generated_route_length_miles: FULL_LENGTH,
+    length_delta_miles: LENGTH_DELTA,
+    length_delta_percent: LENGTH_DELTA_PERCENT,
+    route_length_measurements: {
+      scout_constant_miles: FULL_LENGTH,
+      local_geodesic_miles: measurement.measured_length_miles,
+      local_geodesic_rounded_miles: measurement.measured_length_miles_rounded_for_ui,
+      waymarked_reported_miles: waymarkedMiles,
+      source_graph_measured_miles: typeof graph.measuredLengthMiles === 'number' ? round(graph.measuredLengthMiles, 3) : null,
+      source_graph_reported_length_meters: graph.route_reported_length_meters ?? null,
+      local_vs_waymarked_delta_miles: typeof waymarkedMiles === 'number' ? round(measurement.measured_length_miles - waymarkedMiles, 3) : null,
+      local_vs_official_delta_miles: round(measurement.measured_length_miles - OFFICIAL_REFERENCE_LENGTH, 3),
+      three_d_estimate: threeD,
+      conclusion: 'Local geodesic, Waymarked reported length, and source graph measured length are close. The 91.7-mile official-reference delta is not explained by projection alone; 1-mile 3D elevation screening only adds a few miles.',
+    },
+    compared_factors: [
+      {
+        factor: 'OSM/Waymarked route geometry',
+        finding: `Waymarked reports about ${waymarkedMiles} miles and Scout local geodesic measurement reports ${measurement.measured_length_miles} miles, both near the current ${FULL_LENGTH}-mile generated route.`,
+        status: 'primary_open_route_baseline_is_shorter_than_official_reference',
+      },
+      {
+        factor: 'projection/measurement method',
+        finding: `Geodesic measurement differs from the rounded RC1 length by ${round(measurement.measured_length_miles - FULL_LENGTH, 3)} miles and from Waymarked by ${typeof waymarkedMiles === 'number' ? round(measurement.measured_length_miles - waymarkedMiles, 3) : 'unknown'} miles.`,
+        status: 'not_primary_cause',
+      },
+      {
+        factor: 'vertical/slope length',
+        finding: `Coarse 1-mile 3D estimate is ${threeD.estimated_3d_length_miles} miles, adding about ${threeD.added_miles_vs_2d_route} miles.`,
+        status: 'not_enough_to_close_delta',
+      },
+      {
+        factor: 'Approach Trail',
+        finding: 'Amicalola/Approach Trail remains contextual and excluded from main AT generated mileage by design.',
+        status: 'excluded_by_design_not_delta_solution',
+      },
+      {
+        factor: 'Baxter/Katahdin endpoint handling',
+        finding: 'MVP6 endpoint follows the selected open main-route candidate; current Baxter/Katahdin status remains a live-check problem, not a static mileage correction.',
+        status: 'open_route_candidate_requires_live_status_for_conditions',
+      },
+      {
+        factor: 'side routes, blue blazes, shelter spurs, alternates, and temporary detours',
+        finding: 'These are not folded into main-route generated miles unless present in the selected open AT main-route geometry.',
+        status: 'possible_contributor_but_not_force_matched',
+      },
+      {
+        factor: 'Davenport Gap to Damascus regional MVP gap',
+        finding: 'RC1 has route continuity through this corridor but only base open-reference detail; this is a data-depth gap and must be disclosed separately from the official-length delta.',
+        status: 'documented_yellow_data_depth_gap',
+      },
+      {
+        factor: 'official ATC annual mileage process',
+        finding: 'The 2026 official length is used as a single reference value only. Scout does not copy official ATC mile tables or force-match generated milepoints to official mileage.',
+        status: 'reference_only',
+      },
+    ],
+    suspected_causes: [
+      'Selected OpenStreetMap/Waymarked main-route geometry currently measures materially shorter than ATC 2026 official total length.',
+      'Official ATC length uses the maintained annual official mileage baseline; Scout has no licensed official mile table or official centerline in this pack.',
+      'Projection/geodesic method and vertical component do not explain most of the 91.7-mile delta.',
+      'Open route source treatment may omit, simplify, or handle relocations, road walks, side-route roles, or endpoint details differently than the official measurement baseline.',
+      'Davenport Gap to Damascus remains a regional detail gap even though the open route spine is continuous there.',
+    ],
+    unresolved_causes: [
+      'No license-reviewed NPS/APPA or ATC official centerline has been integrated for route correction.',
+      'No licensed official ATC mile table has been ingested, and generated milepoints remain open-route estimates.',
+      'Known annual relocations/detours have not been reconciled segment-by-segment against a licensed official source.',
+    ],
+    next_work: [
+      'Compare against license-reviewed NPS/APPA centerline or other public-domain state/federal centerlines where terms permit packaging.',
+      'Run segment-by-segment OSM relation QA against public source geometry and identify where the open route diverges from known termini/corridors.',
+      'Keep dashboard yellow until generated open-route length and official reference delta are both explained or corrected with license-safe data.',
+      'If official-grade miles are required, obtain explicit license/permission for official ATC route/mile data instead of copying public guide tables.',
+    ],
+    continuity_diagnostics_path: 'processed/route/route_continuity_diagnostics.json',
+    segment_length_checks_path: 'processed/route/route_segment_length_checks.json',
+    route_alignment_report_path: 'processed/route/route_alignment_report.md',
+    ai_answer_rule: 'When asked about trail miles, say generated/open-route mile unless an explicitly licensed official source is being used. Always disclose the 2,197.9-mile 2026 official reference, 2,106.2-mile generated route, -91.7-mile delta, and yellow alignment status when full-trail precision matters.',
+  };
+
+  writeJson('processed/route/route_alignment_diagnostics.json', diagnostics);
+  writeJson('processed/route/route_continuity_diagnostics.json', continuity);
+  writeJson('processed/route/route_segment_length_checks.json', segmentChecks);
+  writeText('processed/route/route_alignment_report.md', `
+# Route Alignment Report
+
+Generated: ${GENERATED_AT}
+
+## Status
+- Alignment status: ${ALIGNMENT_STATUS}
+- Official 2026 reference length: ${OFFICIAL_REFERENCE_LENGTH} miles
+- Official reference source: ${OFFICIAL_REFERENCE_SOURCE_URL}
+- Scout generated open-route length: ${FULL_LENGTH} miles
+- Delta: ${LENGTH_DELTA} miles (${LENGTH_DELTA_PERCENT}%)
+- Route official flag: false
+- Generated Scout miles are not official ATC miles.
+
+The official length is used only as a single reference value. Scout generated miles are not official ATC miles. Scout does not copy ATC mile tables, FarOut data, The A.T. Guide, A.T. Data Book, Thru-Hikers' Companion, AllTrails, Gaia, Hiking Project, or copied ATC guide/map content.
+
+## Measurement Audit
+- Local geodesic measurement: ${measurement.measured_length_miles} miles over ${measurement.vertex_count.toLocaleString()} vertices.
+- Waymarked route reported length: ${waymarkedMiles} miles.
+- Source graph measured length: ${typeof graph.measuredLengthMiles === 'number' ? round(graph.measuredLengthMiles, 3) : 'unknown'} miles.
+- Coarse 1-mile 3D estimate: ${threeD.estimated_3d_length_miles} miles, adding about ${threeD.added_miles_vs_2d_route} miles.
+- Maximum consecutive route-vertex gap: ${measurement.max_consecutive_vertex_gap_miles} miles.
+- Consecutive route-vertex gaps over 1.0 mile: ${measurement.segments_over_1_0_miles}.
+
+Conclusion: the measurement method is not the primary cause. Local geodesic, Waymarked reported length, and source graph length all cluster near the Scout generated length. The open geometry baseline itself is short relative to the official 2026 reference.
+
+## Suspected Causes
+${diagnostics.suspected_causes.map((cause) => `- ${cause}`).join('\n')}
+
+## Explicit Comparisons
+${diagnostics.compared_factors.map((factor) => `- ${factor.factor}: ${factor.status}. ${factor.finding}`).join('\n')}
+
+## Regional Segment Checks
+${segmentChecks.map((check) => `- ${check.region_id}: ${check.start_mile_nobo_global_est}-${check.end_mile_nobo_global_est} generated miles (${check.generated_length_miles} mi), status ${check.status}${check.gap ? ', regional detail gap' : ''}.`).join('\n')}
+
+## Unresolved
+${diagnostics.unresolved_causes.map((cause) => `- ${cause}`).join('\n')}
+
+## AI Policy
+- Say "generated/open-route mile" unless using an explicitly licensed official source.
+- Do not present generated milepoints as official ATC miles.
+- Surface the official reference, generated length, delta, and yellow alignment status when full-trail precision matters.
+- Keep Davenport Gap to Damascus as a separate yellow regional-detail gap.
+`);
+  return { diagnostics, continuity, segmentChecks };
 }
 
 function buildWater() {
@@ -994,6 +1337,7 @@ It covers Springer/Amicalola context through Katahdin/Baxter, with generated ful
 Important limits:
 - Generated miles are not official ATC mileage.
 - Open route length is ${FULL_LENGTH} generated miles versus a ${OFFICIAL_REFERENCE_LENGTH} mile 2026 official reference.
+- Alignment status is ${ALIGNMENT_STATUS}; the open-route spine is ${Math.abs(LENGTH_DELTA)} miles short of the official reference and must be described as generated/open-route mileage.
 - Davenport Gap to Damascus is a yellow regional MVP coverage gap.
 - Static docs cannot answer current closures, weather, permits, fords, or Katahdin/Baxter status.
 `);
@@ -1022,7 +1366,7 @@ Use it as a conservative pointer layer. Unknowns stay unknown. Current closures,
     'water.md': 'Water candidates are mapped candidates only. Reliability, potability, and ford safety are unknown unless verified by timestamped licensed data.',
     'weather_live_conditions.md': 'Use NWS, NPS, USFS, state, Baxter, and other official sources for current conditions. Static docs cannot answer current weather or closures.',
     'closures.md': 'Closures, detours, fire, flooding, storm damage, snow/ice, bear activity, road closures, permit changes, and Katahdin status require live checks.',
-    'navigation.md': 'RC1 is a planning corpus, not field navigation. Generated miles are not official and route length has a known delta.',
+    'navigation.md': `RC1 is a planning corpus, not field navigation. Generated/open-route miles are not official and route length has a known ${LENGTH_DELTA}-mile delta versus the ${OFFICIAL_REFERENCE_LENGTH}-mile 2026 official reference.`,
     'tread.md': 'Tread/rockiness/rootiness/mud scores are model screens. State confidence and avoid field-verified language unless the record explicitly proves it.',
     'difficulty.md': 'Difficulty combines distance, terrain, tread, remoteness, weather, water, fords, permits, and data gaps. Use as a cautious screen.',
     'license_attribution.md': 'Use only public-domain, open-license, API-accessible, or license-reviewed sources. Attribute OpenStreetMap contributors for ODbL-derived data.',
@@ -1052,6 +1396,7 @@ function buildQaTests() {
     ['resupply uncertainty', 'Separate open map candidates from guidebook-style business intelligence and avoid copied guide data.'],
     ['Davenport-Damascus gap', 'Disclose yellow regional MVP gap and use base open data with lower confidence.'],
     ['generated miles', 'State generated miles are not official ATC mileage.'],
+    ['official length alignment', 'State the 2026 official reference is 2,197.9 miles (2197.9), Scout generated open-route length is 2,106.2 miles (2106.2), the delta is -91.7 miles, and generated/open-route miles are not official.'],
     ['license', 'Do not use FarOut, AT Guide/Data Book/Companion, AllTrails, Gaia, Hiking Project, or copied ATC content.'],
     ['offline app', 'Use packaged static corpus for non-current planning and say live conditions need network.'],
   ];
@@ -1078,6 +1423,9 @@ function buildQaTests() {
 function buildDatasetIndex(datasets) {
   const datasetIndex = [
     ['route', 'processed/route/full_at_route_rc1.geojson', 1, true],
+    ['route_alignment_diagnostics', 'processed/route/route_alignment_diagnostics.json', 1, true],
+    ['route_continuity_diagnostics', 'processed/route/route_continuity_diagnostics.json', 1, true],
+    ['route_segment_length_checks', 'processed/route/route_segment_length_checks.json', datasets.alignment.segmentChecks.length, true],
     ['milepoints_0_1mi', 'processed/milepoints/full_at_milepoints_0_1mi.geojson', readJson('processed/milepoints/full_at_milepoints_0_1mi.geojson', rcRoot).features.length, true],
     ['milepoints_0_5mi', 'processed/milepoints/full_at_milepoints_0_5mi.geojson', readJson('processed/milepoints/full_at_milepoints_0_5mi.geojson', rcRoot).features.length, true],
     ['milepoints_1_0mi', 'processed/milepoints/full_at_milepoints_1_0mi.geojson', readJson('processed/milepoints/full_at_milepoints_1_0mi.geojson', rcRoot).features.length, true],
@@ -1117,6 +1465,8 @@ Production-safe: ${manifest.filter((source) => source.production_safe).length} s
 Not production-safe / pointer / blocked: ${manifest.filter((source) => !source.production_safe).length} sources.
 
 OSM-derived data is tagged open_license_share_alike / ODbL and requires OpenStreetMap contributor attribution. Public-domain USGS/NOAA/NWS style data is retained with attribution notes. ATC Trail Updates and similar restricted sources are pointer-only unless licensed.
+
+ATC's 2026 total length is stored as a single official reference value with source URL. Scout does not package copied ATC mile tables, official route tables, or guide/map content. Generated milepoints remain OSM/open-route estimates with official:false.
 
 Every production dataset has source/license/confidence/timestamp expectations enforced by run_full_trail_validation.py.
 `);
@@ -1163,8 +1513,9 @@ Generated: ${GENERATED_AT}
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Route | Green | Base open full-route geometry integrated into full_at_route_rc1.geojson. |
-| Miles | Green | 0.1/0.5/1.0 generated global milepoints with official:false. |
+| Route | Yellow | Base open full-route geometry integrated, but ${FULL_LENGTH} generated miles remains ${Math.abs(LENGTH_DELTA)} miles short of the ${OFFICIAL_REFERENCE_LENGTH}-mile 2026 official reference. |
+| Route Alignment | Yellow | route_alignment_diagnostics.json documents OSM/Waymarked, geodesic measurement, continuity, endpoint/Approach handling, and unresolved causes. |
+| Miles | Green | 0.1/0.5/1.0 generated/open-route global milepoints with official:false. |
 | Regional Stitch | Yellow | Davenport Gap to Damascus uses base open data because regional MVP detail is missing. |
 | Elevation | Green | USGS 3DEP-derived samples and 5/10 mile summaries. |
 | Water/Fords | Green | Mapped candidates only; reliability/potability/ford safety unknown. |
@@ -1198,8 +1549,12 @@ Generated: ${GENERATED_AT}
 ## Measured Length And Gaps
 - RC1 generated open-route length: ${FULL_LENGTH} miles.
 - 2026 official reference length for comparison: ${OFFICIAL_REFERENCE_LENGTH} miles.
-- Known material delta: ${round(FULL_LENGTH - OFFICIAL_REFERENCE_LENGTH, 1)} miles.
+- Official reference source: ${OFFICIAL_REFERENCE_SOURCE_URL}
+- Known material delta: ${LENGTH_DELTA} miles (${LENGTH_DELTA_PERCENT}%).
+- Alignment status: ${ALIGNMENT_STATUS}.
 - Davenport Gap to Damascus/TN-VA regional coverage gap: yellow.
+
+See processed/route/route_alignment_report.md and processed/route/route_alignment_diagnostics.json for the route measurement audit. Current evidence says the open OSM/Waymarked spine itself is short relative to the official 2026 reference; projection and coarse 3D slope length do not explain most of the gap.
 
 ## Record Counts
 ${datasetIndex.map((dataset) => `- ${dataset.dataset_id}: ${dataset.record_count}`).join('\n')}
@@ -1223,6 +1578,10 @@ ${datasetIndex.map((dataset) => `- ${dataset.dataset_id}: ${dataset.record_count
     route_id: ROUTE_ID,
     full_trail_generated_miles: FULL_LENGTH,
     official_reference_length_miles: OFFICIAL_REFERENCE_LENGTH,
+    official_reference_source_url: OFFICIAL_REFERENCE_SOURCE_URL,
+    length_delta_miles: LENGTH_DELTA,
+    length_delta_percent: LENGTH_DELTA_PERCENT,
+    alignment_status: ALIGNMENT_STATUS,
     production_safe_export_script: '../scripts/export/export_full_trail_production_safe.py',
     production_safe_zip: 'exports/full_trail_reference_pack_rc1.zip',
     validation: 'run_full_trail_validation.py',
@@ -1263,6 +1622,10 @@ REQUIRED_PATHS = [
     "attribution.md",
     "processed/route/full_at_route_rc1.geojson",
     "processed/route/route_integration_notes.md",
+    "processed/route/route_alignment_diagnostics.json",
+    "processed/route/route_alignment_report.md",
+    "processed/route/route_continuity_diagnostics.json",
+    "processed/route/route_segment_length_checks.json",
     "processed/milepoints/full_at_milepoints_0_1mi.geojson",
     "processed/milepoints/full_at_milepoints_0_5mi.geojson",
     "processed/milepoints/full_at_milepoints_1_0mi.geojson",
@@ -1354,11 +1717,39 @@ def validate() -> dict[str, Any]:
     common(route, failures, "route")
     fail_if(route.get("official") is not False, failures, "route official must be false")
     fail_if(route.get("measured_length_miles") != 2106.2, failures, "route measured length mismatch")
+    fail_if(route.get("official_reference_length_miles") != 2197.9, failures, "official reference length hidden or wrong")
     fail_if(route.get("length_delta_miles") != -91.7, failures, "route length delta missing")
+    fail_if(route.get("alignment_status") != "yellow_unresolved_open_route_delta", failures, "route alignment status missing")
+    fail_if("generated/open-route mile" not in route.get("ai_answer_rule", "").lower(), failures, "route answer rule missing generated/open-route policy")
     fail_if("coverage_gaps" not in route or not route["coverage_gaps"], failures, "route missing coverage gaps")
     notes = t("processed/route/route_integration_notes.md").lower()
-    for term in ["davenport gap", "damascus", "amicalola", "baxter", "katahdin", "not official", "openstreetmap"]:
+    for term in ["davenport gap", "damascus", "amicalola", "baxter", "katahdin", "not official", "openstreetmap", "2197.9", "-91.7", "alignment status"]:
         fail_if(term not in notes, failures, f"route notes missing {term}")
+
+    alignment = j("processed/route/route_alignment_diagnostics.json")
+    fail_if(alignment.get("official") is not False, failures, "alignment official must be false")
+    fail_if(alignment.get("official_reference_length_miles") != 2197.9, failures, "alignment official reference missing")
+    fail_if(alignment.get("generated_route_length_miles") != 2106.2, failures, "alignment generated route length missing")
+    fail_if(alignment.get("length_delta_miles") != -91.7, failures, "alignment delta missing")
+    fail_if(alignment.get("alignment_status") != "yellow_unresolved_open_route_delta", failures, "alignment status missing")
+    measurements = alignment.get("route_length_measurements", {})
+    fail_if(measurements.get("local_geodesic_miles") is None, failures, "alignment missing geodesic measurement")
+    fail_if(measurements.get("waymarked_reported_miles") is None, failures, "alignment missing Waymarked comparison")
+    fail_if(measurements.get("three_d_estimate", {}).get("estimated_3d_length_miles") is None, failures, "alignment missing 3D estimate")
+    compared = json.dumps(alignment.get("compared_factors", [])).lower()
+    for term in ["osm/waymarked", "projection", "approach trail", "baxter", "detours", "official atc"]:
+        fail_if(term not in compared, failures, f"alignment comparison missing {term}")
+    fail_if(len(alignment.get("suspected_causes", [])) < 4, failures, "alignment suspected causes too thin")
+    fail_if(len(alignment.get("unresolved_causes", [])) < 3, failures, "alignment unresolved causes too thin")
+    report = t("processed/route/route_alignment_report.md").lower()
+    for term in ["2197.9", "2106.2", "-91.7", "generated/open-route", "not official", "waymarked", "geodesic", "unresolved", "davenport gap"]:
+        fail_if(term not in report, failures, f"route alignment report missing {term}")
+    continuity = j("processed/route/route_continuity_diagnostics.json")
+    fail_if(continuity.get("vertex_count", 0) < 100000, failures, "continuity vertex count too low")
+    fail_if(continuity.get("consecutive_segments_over_1_0_miles", 1) != 0, failures, "continuity has undocumented >1 mile route vertex gap")
+    segment_checks = j("processed/route/route_segment_length_checks.json")
+    fail_if(len(segment_checks) < 7, failures, "segment length checks missing regional rows")
+    fail_if(not any(check.get("region_id") == "coverage_gap_davenport_damascus" and check.get("gap") is True for check in segment_checks), failures, "Davenport-Damascus gap not documented in segment checks")
 
     for interval, minimum in [("0_1", 21000), ("0_5", 4200), ("1_0", 2100)]:
         milepoints = rows(j(f"processed/milepoints/full_at_milepoints_{interval}mi.geojson"))
@@ -1368,6 +1759,7 @@ def validate() -> dict[str, Any]:
             common(record, failures, f"milepoint {interval}")
             fail_if(record.get("official") is not False, failures, "milepoint official not false")
             fail_if("not an official atc mile" not in record.get("ai_answer_rule", "").lower(), failures, "milepoint lacks official caution")
+            fail_if("generated/open-route mile" not in record.get("ai_answer_rule", "").lower(), failures, "milepoint lacks generated/open-route label")
         for record in milepoints:
             mile = record.get("mile_nobo_global_est")
             fail_if(mile is None or mile < previous, failures, f"{interval} milepoints not monotonic")
@@ -1431,7 +1823,7 @@ def validate() -> dict[str, Any]:
     qa = j("tests/full_trail_rc1_behavior_questions.json")
     fail_if(len(qa) < 200, failures, "QA questions below 200")
     qa_text = json.dumps(qa).lower()
-    for term in ["itinerary", "shelter", "water", "permit", "camping", "weather", "closures", "rockiness", "ford", "baxter", "katahdin", "smokies", "shenandoah", "white mountains", "nj/ct", "pa rockiness", "resupply", "davenport"]:
+    for term in ["itinerary", "shelter", "water", "permit", "camping", "weather", "closures", "rockiness", "ford", "baxter", "katahdin", "smokies", "shenandoah", "white mountains", "nj/ct", "pa rockiness", "resupply", "davenport", "official length alignment", "2197.9", "2106.2", "-91.7"]:
         fail_if(term not in qa_text, failures, f"QA missing {term}")
 
     dataset_index = j("processed/index/full_trail_dataset_index.json")
@@ -1450,6 +1842,9 @@ def validate() -> dict[str, Any]:
         "ok": not failures,
         "failures": failures,
         "route_miles": route.get("measured_length_miles"),
+        "official_reference_miles": route.get("official_reference_length_miles"),
+        "length_delta_miles": route.get("length_delta_miles"),
+        "alignment_status": route.get("alignment_status"),
         "milepoints_0_1mi": len(rows(j("processed/milepoints/full_at_milepoints_0_1mi.geojson"))),
         "water_candidates": len(water),
         "rules": len(rules),
@@ -1499,6 +1894,7 @@ function main() {
   buildRoute();
   buildMilepoints();
   const elevation = buildElevation();
+  const alignment = buildRouteAlignment(elevation);
   const water = buildWater();
   const waypoints = buildWaypoints();
   const rules = buildRules();
@@ -1506,7 +1902,7 @@ function main() {
   const tread = buildTread(elevation);
   const elevation10 = readJson('processed/elevation/full_trail_elevation_by_10mi_segment.json', rcRoot);
   const difficulty = buildDifficulty(elevation10, tread, water, waypoints, rules);
-  const datasets = { elevation, water, waypoints, rules, liveSources, tread, difficulty };
+  const datasets = { elevation, alignment, water, waypoints, rules, liveSources, tread, difficulty };
   buildRagDocs(datasets);
   const qa = buildQaTests();
   datasets.qa = qa;

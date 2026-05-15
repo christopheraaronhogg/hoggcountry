@@ -5,6 +5,13 @@ Generated: 2026-05-14T00:00:00.000Z
 
 Global RC1 mileage is derived from the base open-route milepoints. It preserves local regional fields where a mile falls inside a regional MVP pack.
 
+## Official Reference Comparison
+- Official 2026 reference length: 2197.9 miles.
+- Scout generated open-route length: 2106.2 miles.
+- Delta: -91.7 miles (-4.2%).
+- Alignment status: yellow_unresolved_open_route_delta.
+- All global miles are generated/open-route estimates, not official ATC miles.
+
 ## Transitions
 - mvp1_springer_davenport: 0-234.7 generated global miles; green; local fields mile_nobo_mvp1/mile_sobo_mvp1.
 - coverage_gap_davenport_damascus: 234.7-459 generated global miles; yellow; local fields mile_nobo_gap_davenport_damascus/mile_sobo_gap_davenport_damascus.

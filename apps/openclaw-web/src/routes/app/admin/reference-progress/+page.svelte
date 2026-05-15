@@ -18,16 +18,9 @@
     return typeof value === 'number' ? value.toLocaleString() : 'n/a';
   }
 
-  function formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    const units = ['KB', 'MB', 'GB'];
-    let value = bytes / 1024;
-    let unit = units[0];
-    for (let index = 1; index < units.length && value >= 1024; index += 1) {
-      value /= 1024;
-      unit = units[index];
-    }
-    return `${value.toFixed(value >= 10 ? 1 : 2)} ${unit}`;
+  function formatSigned(value: number | null | undefined): string {
+    if (typeof value !== 'number') return 'n/a';
+    return `${value > 0 ? '+' : ''}${value.toLocaleString()}`;
   }
 
   function tone(status: string): string {
@@ -58,25 +51,76 @@
 
   <section class="metric-grid" aria-label="Full trail RC1 summary">
     <article class="metric-tile route">
-      <span>Route</span>
+      <span>Generated open-route</span>
       <strong>{formatNumber(data.rc1.routeMiles)}</strong>
       <small>generated miles · official:false</small>
+    </article>
+    <article class="metric-tile official">
+      <span>Official 2026 reference</span>
+      <strong>{formatNumber(data.rc1.officialReferenceMiles)}</strong>
+      <small>ATC total-length reference only</small>
+    </article>
+    <article class="metric-tile delta">
+      <span>Length delta</span>
+      <strong>{formatSigned(data.rc1.routeLengthDeltaMiles)}</strong>
+      <small>{formatSigned(data.rc1.routeLengthDeltaPercent)}% · {data.rc1.alignmentStatus.replaceAll('_', ' ')}</small>
     </article>
     <article class="metric-tile">
       <span>Datasets</span>
       <strong>{formatNumber(data.rc1.datasetCount)}</strong>
       <small>{safeShare}% production-safe export coverage</small>
     </article>
-    <article class="metric-tile">
-      <span>Records</span>
-      <strong>{formatNumber(data.rc1.totalDatasetRecords)}</strong>
-      <small>{formatNumber(data.rc1.qaQuestionCount)} QA questions</small>
-    </article>
-    <article class="metric-tile">
-      <span>Export</span>
-      <strong>{formatBytes(data.rc1.zipSizeBytes)}</strong>
-      <small>{data.rc1.zipPath}</small>
-    </article>
+  </section>
+
+  <section class="alignment-panel" aria-label="Route alignment diagnostics">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Route alignment</p>
+        <h2>Open Geometry Vs Official Reference</h2>
+      </div>
+      <span class="status-pill {tone(data.rc1.alignmentStatus)}">{data.rc1.alignmentStatus.replaceAll('_', ' ')}</span>
+    </div>
+    <div class="alignment-grid">
+      <article>
+        <span>Local geodesic</span>
+        <strong>{formatNumber(data.rc1.geodesicRouteMiles)}</strong>
+        <small>miles from route vertices</small>
+      </article>
+      <article>
+        <span>Waymarked</span>
+        <strong>{formatNumber(data.rc1.waymarkedRouteMiles)}</strong>
+        <small>reported source length</small>
+      </article>
+      <article>
+        <span>3D screen</span>
+        <strong>{formatNumber(data.rc1.threeDEstimateMiles)}</strong>
+        <small>coarse elevation estimate</small>
+      </article>
+      <article>
+        <span>Max continuity gap</span>
+        <strong>{formatNumber(data.rc1.maxContinuityGapMiles)}</strong>
+        <small>miles between route vertices</small>
+      </article>
+    </div>
+    <div class="cause-grid">
+      <div>
+        <h3>Suspected causes</h3>
+        {#each data.rc1.suspectedCauses as cause}
+          <p>{cause}</p>
+        {:else}
+          <p class="muted">No suspected causes loaded.</p>
+        {/each}
+      </div>
+      <div>
+        <h3>Unresolved</h3>
+        {#each data.rc1.unresolvedCauses as cause}
+          <p>{cause}</p>
+        {:else}
+          <p class="muted">No unresolved causes loaded.</p>
+        {/each}
+      </div>
+    </div>
+    <p class="answer-rule">Report: {data.rc1.alignmentReportPath}. Scout should say "generated/open-route mile" unless an explicitly licensed official source is in use.</p>
   </section>
 
   <section class="release-board" aria-label="RC1 status board">
@@ -185,7 +229,7 @@
           <strong>{formatNumber(data.rc1.officialReferenceMiles)}</strong>
         </div>
       </div>
-      <p class="answer-rule">Generated miles are not official ATC mileage. Static resources cannot answer current closures, weather, permits, fords, or Baxter/Katahdin status.</p>
+      <p class="answer-rule">Generated/open-route miles are not official ATC mileage. Static resources cannot answer current closures, weather, permits, fords, or Baxter/Katahdin status.</p>
     </aside>
   </section>
 
@@ -292,6 +336,7 @@
   }
 
   .metric-tile,
+  .alignment-panel,
   .board-main,
   .yellow-flags,
   .regional-strip,
@@ -321,7 +366,17 @@
     color: rgba(255, 255, 255, 0.78);
   }
 
+  .metric-tile.official {
+    background: rgba(239, 244, 234, 0.92);
+  }
+
+  .metric-tile.delta {
+    border-color: rgba(188, 122, 38, 0.34);
+    background: rgba(255, 248, 235, 0.92);
+  }
+
   .metric-tile span,
+  .alignment-grid span,
   .command-grid span,
   .source-bars span,
   .dataset-panel label span {
@@ -348,12 +403,65 @@
   }
 
   .board-main,
+  .alignment-panel,
   .yellow-flags,
   .regional-strip,
   .dataset-panel,
   .source-panel,
   .command-band {
     padding: 1rem;
+  }
+
+  .alignment-panel {
+    margin-bottom: 0.9rem;
+  }
+
+  .alignment-grid,
+  .cause-grid {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 0.85rem;
+  }
+
+  .alignment-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .cause-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .alignment-grid article,
+  .cause-grid > div {
+    border: 1px solid rgba(77, 89, 74, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.72);
+    padding: 0.75rem;
+  }
+
+  .alignment-grid strong {
+    display: block;
+    margin-top: 0.1rem;
+    color: var(--pine);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1.55rem;
+  }
+
+  .alignment-grid small {
+    color: #596658;
+  }
+
+  .cause-grid h3 {
+    margin: 0 0 0.45rem;
+    color: var(--ink);
+    font-size: 0.92rem;
+    text-transform: uppercase;
+  }
+
+  .cause-grid p {
+    margin: 0.45rem 0 0;
+    color: #596658;
+    line-height: 1.4;
   }
 
   .status-grid {
@@ -588,6 +696,7 @@
 
   @media (max-width: 980px) {
     .metric-grid,
+    .alignment-grid,
     .pack-grid,
     .command-grid,
     .status-grid {
@@ -609,6 +718,8 @@
     }
 
     .metric-grid,
+    .alignment-grid,
+    .cause-grid,
     .pack-grid,
     .command-grid,
     .status-grid {

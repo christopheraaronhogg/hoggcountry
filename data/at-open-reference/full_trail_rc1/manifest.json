@@ -4,6 +4,10 @@
   "route_id": "at-full-trail-rc1-open-2026",
   "full_trail_generated_miles": 2106.2,
   "official_reference_length_miles": 2197.9,
+  "official_reference_source_url": "https://appalachiantrail.org/experience/hike-the-trail/at-basics/",
+  "length_delta_miles": -91.7,
+  "length_delta_percent": -4.2,
+  "alignment_status": "yellow_unresolved_open_route_delta",
   "production_safe_export_script": "../scripts/export/export_full_trail_production_safe.py",
   "production_safe_zip": "exports/full_trail_reference_pack_rc1.zip",
   "validation": "run_full_trail_validation.py"

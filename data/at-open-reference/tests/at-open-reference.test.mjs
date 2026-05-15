@@ -535,12 +535,15 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
   assert.equal(validation.ok, true);
   assert.equal(validation.failures.length, 0);
   assert.equal(validation.route_miles, 2106.2);
+  assert.equal(validation.official_reference_miles, 2197.9);
+  assert.equal(validation.length_delta_miles, -91.7);
+  assert.equal(validation.alignment_status, 'yellow_unresolved_open_route_delta');
   assert.ok(validation.milepoints_0_1mi >= 21000);
   assert.ok(validation.water_candidates >= 1700);
   assert.ok(validation.tread_1mi_records >= 2000);
   assert.ok(validation.difficulty_segments >= 210);
   assert.ok(validation.rag_docs >= 84);
-  assert.ok(validation.behavior_questions >= 200);
+  assert.ok(validation.behavior_questions >= 462);
 
   const routeNotes = readFileSync(new URL('../full_trail_rc1/processed/route/route_integration_notes.md', import.meta.url), 'utf8');
   assert.match(routeNotes, /Davenport Gap/i);
@@ -549,6 +552,34 @@ test('Scout AT Full Trail RC1 reference pack validates end-to-end source-aware p
   assert.match(routeNotes, /Baxter/i);
   assert.match(routeNotes, /Katahdin/i);
   assert.match(routeNotes, /not official ATC mileage/i);
+  assert.match(routeNotes, /2197\.9/i);
+  assert.match(routeNotes, /-91\.7/i);
+  assert.match(routeNotes, /generated\/open-route/i);
+
+  const alignment = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/route/route_alignment_diagnostics.json', import.meta.url), 'utf8'));
+  assert.equal(alignment.official, false);
+  assert.equal(alignment.official_reference_length_miles, 2197.9);
+  assert.equal(alignment.generated_route_length_miles, 2106.2);
+  assert.equal(alignment.length_delta_miles, -91.7);
+  assert.equal(alignment.alignment_status, 'yellow_unresolved_open_route_delta');
+  assert.ok(alignment.route_length_measurements.local_geodesic_miles > 2106);
+  assert.ok(alignment.route_length_measurements.waymarked_reported_miles > 2106);
+  assert.ok(alignment.route_length_measurements.three_d_estimate.estimated_3d_length_miles > 2110);
+  assert.match(alignment.ai_answer_rule, /generated\/open-route mile/i);
+
+  const alignmentReport = readFileSync(new URL('../full_trail_rc1/processed/route/route_alignment_report.md', import.meta.url), 'utf8');
+  assert.match(alignmentReport, /Official 2026 reference length: 2197\.9 miles/i);
+  assert.match(alignmentReport, /Scout generated open-route length: 2106\.2 miles/i);
+  assert.match(alignmentReport, /Delta: -91\.7 miles/i);
+  assert.match(alignmentReport, /Waymarked/i);
+  assert.match(alignmentReport, /geodesic/i);
+  assert.match(alignmentReport, /Approach Trail/i);
+  assert.match(alignmentReport, /unresolved/i);
+  assert.match(alignmentReport, /generated\/open-route/i);
+
+  const segmentChecks = JSON.parse(readFileSync(new URL('../full_trail_rc1/processed/route/route_segment_length_checks.json', import.meta.url), 'utf8'));
+  assert.ok(segmentChecks.some((check) => check.region_id === 'coverage_gap_davenport_damascus' && check.gap === true));
+  assert.ok(segmentChecks.every((check) => /generated\/open-route|Davenport Gap/.test(check.ai_answer_rule)));
 
   const livePolicy = readFileSync(new URL('../full_trail_rc1/processed/live_conditions/full_trail_live_condition_policy.md', import.meta.url), 'utf8');
   assert.match(livePolicy, /NWS/i);

@@ -11,7 +11,9 @@ Scout RC1 stitches MVP1-MVP6 into one full-trail open reference layer using the 
 - Official status: false. Generated miles are not official ATC mileage.
 - Measured RC1 length: 2106.2 generated miles.
 - 2026 official reference length used for comparison only: 2197.9 miles.
-- Length delta: -91.7 miles.
+- Official reference source: https://appalachiantrail.org/experience/hike-the-trail/at-basics/
+- Length delta: -91.7 miles (-4.2%).
+- Alignment status: yellow_unresolved_open_route_delta.
 
 ## Regional Stitch
 - mvp1_springer_davenport: 0-234.7 generated miles, status green, MVP1 Springer/Amicalola context to Davenport Gap.
@@ -33,5 +35,6 @@ Baxter/Katahdin/Hunt Trail handling comes from MVP6 as an open-route endpoint tr
 ## AI Cautions
 - Generated miles are estimated from open route geometry and are not official ATC miles.
 - The full-route open geometry is materially shorter than the 2026 official reference and remains a planning corpus, not field navigation.
+- Scout must say "generated/open-route mile" unless an explicitly licensed official source is being used.
 - Static docs cannot answer current closures, weather, permits, ford safety, or Katahdin status.
 - Water/fords from maps are candidates only; reliability, potability, and safe fordability remain unknown unless timestamped verified data exists.

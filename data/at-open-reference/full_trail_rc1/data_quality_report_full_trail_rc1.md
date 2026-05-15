@@ -6,7 +6,7 @@
 - Created global full-trail generated milepoints and alignment notes.
 - Merged elevation, water, waypoints, rules, live-source, tread, difficulty, and RAG metadata indexes.
 - Created license/provenance audit docs and production-safe export tooling.
-- Created 440 full-trail behavior QA questions.
+- Created 462 full-trail behavior QA questions.
 
 ## Source / License Summary
 - OSM-derived data: open_license_share_alike / ODbL with attribution.
@@ -17,11 +17,18 @@
 ## Measured Length And Gaps
 - RC1 generated open-route length: 2106.2 miles.
 - 2026 official reference length for comparison: 2197.9 miles.
-- Known material delta: -91.7 miles.
+- Official reference source: https://appalachiantrail.org/experience/hike-the-trail/at-basics/
+- Known material delta: -91.7 miles (-4.2%).
+- Alignment status: yellow_unresolved_open_route_delta.
 - Davenport Gap to Damascus/TN-VA regional coverage gap: yellow.
+
+See processed/route/route_alignment_report.md and processed/route/route_alignment_diagnostics.json for the route measurement audit. Current evidence says the open OSM/Waymarked spine itself is short relative to the official 2026 reference; projection and coarse 3D slope length do not explain most of the gap.
 
 ## Record Counts
 - route: 1
+- route_alignment_diagnostics: 1
+- route_continuity_diagnostics: 1
+- route_segment_length_checks: 7
 - milepoints_0_1mi: 21062
 - milepoints_0_5mi: 4213
 - milepoints_1_0mi: 2107
@@ -33,7 +40,7 @@
 - tread: 2108
 - difficulty: 211
 - rag_metadata: 85
-- qa_questions: 440
+- qa_questions: 462
 
 ## Weak Points
 - Generated miles are not official and should not be used as exact field navigation.

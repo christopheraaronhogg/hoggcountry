@@ -52,6 +52,16 @@ export interface ReferenceProgressData {
     readonly routeId: string;
     readonly routeMiles: number;
     readonly officialReferenceMiles: number;
+    readonly routeLengthDeltaMiles: number;
+    readonly routeLengthDeltaPercent: number;
+    readonly alignmentStatus: string;
+    readonly alignmentReportPath: string;
+    readonly geodesicRouteMiles: number | null;
+    readonly waymarkedRouteMiles: number | null;
+    readonly threeDEstimateMiles: number | null;
+    readonly maxContinuityGapMiles: number | null;
+    readonly unresolvedCauses: readonly string[];
+    readonly suspectedCauses: readonly string[];
     readonly zipPath: string;
     readonly zipSizeBytes: number;
     readonly datasetCount: number;
@@ -234,6 +244,16 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
         routeId: 'missing',
         routeMiles: 0,
         officialReferenceMiles: 0,
+        routeLengthDeltaMiles: 0,
+        routeLengthDeltaPercent: 0,
+        alignmentStatus: 'missing',
+        alignmentReportPath: 'data/at-open-reference/full_trail_rc1/processed/route/route_alignment_report.md',
+        geodesicRouteMiles: null,
+        waymarkedRouteMiles: null,
+        threeDEstimateMiles: null,
+        maxContinuityGapMiles: null,
+        unresolvedCauses: [],
+        suspectedCauses: [],
         zipPath: 'data/at-open-reference/full_trail_rc1/exports/full_trail_reference_pack_rc1.zip',
         zipSizeBytes: 0,
         datasetCount: 0,
@@ -257,7 +277,27 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
     route_id: string;
     full_trail_generated_miles: number;
     official_reference_length_miles: number;
+    length_delta_miles?: number;
+    length_delta_percent?: number;
+    alignment_status?: string;
   }>(packRoot, 'full_trail_rc1/manifest.json');
+  const routeAlignment = readJson<{
+    alignment_status?: string;
+    length_delta_miles?: number;
+    length_delta_percent?: number;
+    route_length_measurements?: {
+      local_geodesic_miles?: number;
+      waymarked_reported_miles?: number;
+      three_d_estimate?: {
+        estimated_3d_length_miles?: number;
+      };
+    };
+    unresolved_causes?: string[];
+    suspected_causes?: string[];
+  }>(packRoot, 'full_trail_rc1/processed/route/route_alignment_diagnostics.json');
+  const continuity = readJson<{
+    max_consecutive_vertex_gap_miles?: number;
+  }>(packRoot, 'full_trail_rc1/processed/route/route_continuity_diagnostics.json');
   const datasetIndex = readJson<{
     dataset_id: string;
     path: string;
@@ -285,6 +325,16 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       routeId: manifest?.route_id ?? 'missing',
       routeMiles: manifest?.full_trail_generated_miles ?? 0,
       officialReferenceMiles: manifest?.official_reference_length_miles ?? 0,
+      routeLengthDeltaMiles: routeAlignment?.length_delta_miles ?? manifest?.length_delta_miles ?? 0,
+      routeLengthDeltaPercent: routeAlignment?.length_delta_percent ?? manifest?.length_delta_percent ?? 0,
+      alignmentStatus: routeAlignment?.alignment_status ?? manifest?.alignment_status ?? 'missing',
+      alignmentReportPath: 'data/at-open-reference/full_trail_rc1/processed/route/route_alignment_report.md',
+      geodesicRouteMiles: routeAlignment?.route_length_measurements?.local_geodesic_miles ?? null,
+      waymarkedRouteMiles: routeAlignment?.route_length_measurements?.waymarked_reported_miles ?? null,
+      threeDEstimateMiles: routeAlignment?.route_length_measurements?.three_d_estimate?.estimated_3d_length_miles ?? null,
+      maxContinuityGapMiles: continuity?.max_consecutive_vertex_gap_miles ?? null,
+      unresolvedCauses: routeAlignment?.unresolved_causes ?? [],
+      suspectedCauses: routeAlignment?.suspected_causes ?? [],
       zipPath: 'data/at-open-reference/full_trail_rc1/exports/full_trail_reference_pack_rc1.zip',
       zipSizeBytes: fileSize(packRoot, 'full_trail_rc1/exports/full_trail_reference_pack_rc1.zip'),
       datasetCount: datasetIndex.length,

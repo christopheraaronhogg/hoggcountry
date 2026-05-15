@@ -1,0 +1,101 @@
+{
+  "route_id": "at-full-trail-rc1-open-2026",
+  "source_route_id": "at-main-osm-2026-open",
+  "generated_at": "2026-05-14T00:00:00.000Z",
+  "alignment_status": "yellow_unresolved_open_route_delta",
+  "source_id": "route_alignment_diagnostics",
+  "source_url": "internal:data/at-open-reference/scripts/build-full-trail-rc1-reference-pack.mjs",
+  "source_geometry_url": "https://www.openstreetmap.org/relation/156553",
+  "source_access_url": "https://hiking.waymarkedtrails.org/api/v1/details/relation/156553",
+  "official_reference_source_url": "https://appalachiantrail.org/experience/hike-the-trail/at-basics/",
+  "license_status": "open_license_share_alike",
+  "confidence": "measurement_diagnostic_not_official_route",
+  "last_generated": "2026-05-14",
+  "production_safe": true,
+  "official": false,
+  "official_reference_length_miles": 2197.9,
+  "generated_route_length_miles": 2106.2,
+  "length_delta_miles": -91.7,
+  "length_delta_percent": -4.2,
+  "route_length_measurements": {
+    "scout_constant_miles": 2106.2,
+    "local_geodesic_miles": 2106.163,
+    "local_geodesic_rounded_miles": 2106.2,
+    "waymarked_reported_miles": 2106.762,
+    "source_graph_measured_miles": 2106.183,
+    "source_graph_reported_length_meters": 3390505,
+    "local_vs_waymarked_delta_miles": -0.599,
+    "local_vs_official_delta_miles": -91.737,
+    "three_d_estimate": {
+      "method": "coarse 3D estimate from 1-mile USGS 3DEP elevation samples",
+      "estimated_3d_length_miles": 2110.5,
+      "added_miles_vs_2d_route": 4.3,
+      "limitation": "Coarse 1-mile elevation samples only; this screens whether vertical component could explain the 91.7-mile delta, not exact surveyed trail length."
+    },
+    "conclusion": "Local geodesic, Waymarked reported length, and source graph measured length are close. The 91.7-mile official-reference delta is not explained by projection alone; 1-mile 3D elevation screening only adds a few miles."
+  },
+  "compared_factors": [
+    {
+      "factor": "OSM/Waymarked route geometry",
+      "finding": "Waymarked reports about 2106.762 miles and Scout local geodesic measurement reports 2106.163 miles, both near the current 2106.2-mile generated route.",
+      "status": "primary_open_route_baseline_is_shorter_than_official_reference"
+    },
+    {
+      "factor": "projection/measurement method",
+      "finding": "Geodesic measurement differs from the rounded RC1 length by -0.037 miles and from Waymarked by -0.599 miles.",
+      "status": "not_primary_cause"
+    },
+    {
+      "factor": "vertical/slope length",
+      "finding": "Coarse 1-mile 3D estimate is 2110.5 miles, adding about 4.3 miles.",
+      "status": "not_enough_to_close_delta"
+    },
+    {
+      "factor": "Approach Trail",
+      "finding": "Amicalola/Approach Trail remains contextual and excluded from main AT generated mileage by design.",
+      "status": "excluded_by_design_not_delta_solution"
+    },
+    {
+      "factor": "Baxter/Katahdin endpoint handling",
+      "finding": "MVP6 endpoint follows the selected open main-route candidate; current Baxter/Katahdin status remains a live-check problem, not a static mileage correction.",
+      "status": "open_route_candidate_requires_live_status_for_conditions"
+    },
+    {
+      "factor": "side routes, blue blazes, shelter spurs, alternates, and temporary detours",
+      "finding": "These are not folded into main-route generated miles unless present in the selected open AT main-route geometry.",
+      "status": "possible_contributor_but_not_force_matched"
+    },
+    {
+      "factor": "Davenport Gap to Damascus regional MVP gap",
+      "finding": "RC1 has route continuity through this corridor but only base open-reference detail; this is a data-depth gap and must be disclosed separately from the official-length delta.",
+      "status": "documented_yellow_data_depth_gap"
+    },
+    {
+      "factor": "official ATC annual mileage process",
+      "finding": "The 2026 official length is used as a single reference value only. Scout does not copy official ATC mile tables or force-match generated milepoints to official mileage.",
+      "status": "reference_only"
+    }
+  ],
+  "suspected_causes": [
+    "Selected OpenStreetMap/Waymarked main-route geometry currently measures materially shorter than ATC 2026 official total length.",
+    "Official ATC length uses the maintained annual official mileage baseline; Scout has no licensed official mile table or official centerline in this pack.",
+    "Projection/geodesic method and vertical component do not explain most of the 91.7-mile delta.",
+    "Open route source treatment may omit, simplify, or handle relocations, road walks, side-route roles, or endpoint details differently than the official measurement baseline.",
+    "Davenport Gap to Damascus remains a regional detail gap even though the open route spine is continuous there."
+  ],
+  "unresolved_causes": [
+    "No license-reviewed NPS/APPA or ATC official centerline has been integrated for route correction.",
+    "No licensed official ATC mile table has been ingested, and generated milepoints remain open-route estimates.",
+    "Known annual relocations/detours have not been reconciled segment-by-segment against a licensed official source."
+  ],
+  "next_work": [
+    "Compare against license-reviewed NPS/APPA centerline or other public-domain state/federal centerlines where terms permit packaging.",
+    "Run segment-by-segment OSM relation QA against public source geometry and identify where the open route diverges from known termini/corridors.",
+    "Keep dashboard yellow until generated open-route length and official reference delta are both explained or corrected with license-safe data.",
+    "If official-grade miles are required, obtain explicit license/permission for official ATC route/mile data instead of copying public guide tables."
+  ],
+  "continuity_diagnostics_path": "processed/route/route_continuity_diagnostics.json",
+  "segment_length_checks_path": "processed/route/route_segment_length_checks.json",
+  "route_alignment_report_path": "processed/route/route_alignment_report.md",
+  "ai_answer_rule": "When asked about trail miles, say generated/open-route mile unless an explicitly licensed official source is being used. Always disclose the 2,197.9-mile 2026 official reference, 2,106.2-mile generated route, -91.7-mile delta, and yellow alignment status when full-trail precision matters."
+}

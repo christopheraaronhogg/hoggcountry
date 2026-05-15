@@ -24,6 +24,10 @@ REQUIRED_PATHS = [
     "attribution.md",
     "processed/route/full_at_route_rc1.geojson",
     "processed/route/route_integration_notes.md",
+    "processed/route/route_alignment_diagnostics.json",
+    "processed/route/route_alignment_report.md",
+    "processed/route/route_continuity_diagnostics.json",
+    "processed/route/route_segment_length_checks.json",
     "processed/milepoints/full_at_milepoints_0_1mi.geojson",
     "processed/milepoints/full_at_milepoints_0_5mi.geojson",
     "processed/milepoints/full_at_milepoints_1_0mi.geojson",
@@ -115,11 +119,39 @@ def validate() -> dict[str, Any]:
     common(route, failures, "route")
     fail_if(route.get("official") is not False, failures, "route official must be false")
     fail_if(route.get("measured_length_miles") != 2106.2, failures, "route measured length mismatch")
+    fail_if(route.get("official_reference_length_miles") != 2197.9, failures, "official reference length hidden or wrong")
     fail_if(route.get("length_delta_miles") != -91.7, failures, "route length delta missing")
+    fail_if(route.get("alignment_status") != "yellow_unresolved_open_route_delta", failures, "route alignment status missing")
+    fail_if("generated/open-route mile" not in route.get("ai_answer_rule", "").lower(), failures, "route answer rule missing generated/open-route policy")
     fail_if("coverage_gaps" not in route or not route["coverage_gaps"], failures, "route missing coverage gaps")
     notes = t("processed/route/route_integration_notes.md").lower()
-    for term in ["davenport gap", "damascus", "amicalola", "baxter", "katahdin", "not official", "openstreetmap"]:
+    for term in ["davenport gap", "damascus", "amicalola", "baxter", "katahdin", "not official", "openstreetmap", "2197.9", "-91.7", "alignment status"]:
         fail_if(term not in notes, failures, f"route notes missing {term}")
+
+    alignment = j("processed/route/route_alignment_diagnostics.json")
+    fail_if(alignment.get("official") is not False, failures, "alignment official must be false")
+    fail_if(alignment.get("official_reference_length_miles") != 2197.9, failures, "alignment official reference missing")
+    fail_if(alignment.get("generated_route_length_miles") != 2106.2, failures, "alignment generated route length missing")
+    fail_if(alignment.get("length_delta_miles") != -91.7, failures, "alignment delta missing")
+    fail_if(alignment.get("alignment_status") != "yellow_unresolved_open_route_delta", failures, "alignment status missing")
+    measurements = alignment.get("route_length_measurements", {})
+    fail_if(measurements.get("local_geodesic_miles") is None, failures, "alignment missing geodesic measurement")
+    fail_if(measurements.get("waymarked_reported_miles") is None, failures, "alignment missing Waymarked comparison")
+    fail_if(measurements.get("three_d_estimate", {}).get("estimated_3d_length_miles") is None, failures, "alignment missing 3D estimate")
+    compared = json.dumps(alignment.get("compared_factors", [])).lower()
+    for term in ["osm/waymarked", "projection", "approach trail", "baxter", "detours", "official atc"]:
+        fail_if(term not in compared, failures, f"alignment comparison missing {term}")
+    fail_if(len(alignment.get("suspected_causes", [])) < 4, failures, "alignment suspected causes too thin")
+    fail_if(len(alignment.get("unresolved_causes", [])) < 3, failures, "alignment unresolved causes too thin")
+    report = t("processed/route/route_alignment_report.md").lower()
+    for term in ["2197.9", "2106.2", "-91.7", "generated/open-route", "not official", "waymarked", "geodesic", "unresolved", "davenport gap"]:
+        fail_if(term not in report, failures, f"route alignment report missing {term}")
+    continuity = j("processed/route/route_continuity_diagnostics.json")
+    fail_if(continuity.get("vertex_count", 0) < 100000, failures, "continuity vertex count too low")
+    fail_if(continuity.get("consecutive_segments_over_1_0_miles", 1) != 0, failures, "continuity has undocumented >1 mile route vertex gap")
+    segment_checks = j("processed/route/route_segment_length_checks.json")
+    fail_if(len(segment_checks) < 7, failures, "segment length checks missing regional rows")
+    fail_if(not any(check.get("region_id") == "coverage_gap_davenport_damascus" and check.get("gap") is True for check in segment_checks), failures, "Davenport-Damascus gap not documented in segment checks")
 
     for interval, minimum in [("0_1", 21000), ("0_5", 4200), ("1_0", 2100)]:
         milepoints = rows(j(f"processed/milepoints/full_at_milepoints_{interval}mi.geojson"))
@@ -129,6 +161,7 @@ def validate() -> dict[str, Any]:
             common(record, failures, f"milepoint {interval}")
             fail_if(record.get("official") is not False, failures, "milepoint official not false")
             fail_if("not an official atc mile" not in record.get("ai_answer_rule", "").lower(), failures, "milepoint lacks official caution")
+            fail_if("generated/open-route mile" not in record.get("ai_answer_rule", "").lower(), failures, "milepoint lacks generated/open-route label")
         for record in milepoints:
             mile = record.get("mile_nobo_global_est")
             fail_if(mile is None or mile < previous, failures, f"{interval} milepoints not monotonic")
@@ -192,7 +225,7 @@ def validate() -> dict[str, Any]:
     qa = j("tests/full_trail_rc1_behavior_questions.json")
     fail_if(len(qa) < 200, failures, "QA questions below 200")
     qa_text = json.dumps(qa).lower()
-    for term in ["itinerary", "shelter", "water", "permit", "camping", "weather", "closures", "rockiness", "ford", "baxter", "katahdin", "smokies", "shenandoah", "white mountains", "nj/ct", "pa rockiness", "resupply", "davenport"]:
+    for term in ["itinerary", "shelter", "water", "permit", "camping", "weather", "closures", "rockiness", "ford", "baxter", "katahdin", "smokies", "shenandoah", "white mountains", "nj/ct", "pa rockiness", "resupply", "davenport", "official length alignment", "2197.9", "2106.2", "-91.7"]:
         fail_if(term not in qa_text, failures, f"QA missing {term}")
 
     dataset_index = j("processed/index/full_trail_dataset_index.json")
@@ -211,6 +244,9 @@ def validate() -> dict[str, Any]:
         "ok": not failures,
         "failures": failures,
         "route_miles": route.get("measured_length_miles"),
+        "official_reference_miles": route.get("official_reference_length_miles"),
+        "length_delta_miles": route.get("length_delta_miles"),
+        "alignment_status": route.get("alignment_status"),
         "milepoints_0_1mi": len(rows(j("processed/milepoints/full_at_milepoints_0_1mi.geojson"))),
         "water_candidates": len(water),
         "rules": len(rules),

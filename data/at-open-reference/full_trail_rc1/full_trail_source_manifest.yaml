@@ -68,6 +68,24 @@
     "rc1_usage": "source/provenance inherited from base or regional MVP pack"
   },
   {
+    "source_id": "atc_official_2026_length_reference",
+    "name": "ATC 2026 official A.T. length reference",
+    "owner": "Appalachian Trail Conservancy",
+    "source_type": "official reference pointer",
+    "source_url": "https://appalachiantrail.org/experience/hike-the-trail/at-basics/",
+    "access_method": "website pointer",
+    "license_status": "permission_required",
+    "allowed_use": "reference the single official 2026 total length value and link users to ATC; do not package copied ATC guide/map/text/table content",
+    "attribution_required": "Reference Appalachian Trail Conservancy as the official source.",
+    "confidence": "official_reference_value",
+    "last_checked": "2026-05-14",
+    "production_safe": false,
+    "data_categories": [
+      "official_length_reference"
+    ],
+    "notes": "Used only to compare Scout generated open-route mileage against the official 2026 total length. It is not a source for generated milepoints or route geometry."
+  },
+  {
     "source_id": "atc_trail_updates_pointer",
     "name": "ATC Trail Updates pointer",
     "owner": "Appalachian Trail Conservancy",
@@ -1130,6 +1148,26 @@
     "notes": "Promising candidate. Must verify exact dataset metadata and terms before packaging.",
     "production_safe": false,
     "rc1_usage": "source/provenance inherited from base or regional MVP pack"
+  },
+  {
+    "source_id": "route_alignment_diagnostics",
+    "name": "Scout RC1 route alignment diagnostics",
+    "owner": "Hogg Country",
+    "source_type": "derived data quality report",
+    "source_url": "internal:data/at-open-reference/full_trail_rc1/processed/route/route_alignment_diagnostics.json",
+    "access_method": "local generated artifact",
+    "license_status": "open_license_share_alike",
+    "allowed_use": "package generated diagnostics with upstream OSM attribution and official-reference caution",
+    "attribution_required": "Preserve OpenStreetMap attribution and ATC official-reference URL as a pointer only.",
+    "confidence": "measurement_diagnostic_not_official_route",
+    "last_checked": "2026-05-14",
+    "production_safe": true,
+    "data_categories": [
+      "route_alignment",
+      "data_quality",
+      "validation"
+    ],
+    "notes": "Geodesic measurements, continuity diagnostics, segment length checks, and unresolved-cause notes. Does not copy official ATC mile tables."
   },
   {
     "source_id": "shenandoah_official_alerts",

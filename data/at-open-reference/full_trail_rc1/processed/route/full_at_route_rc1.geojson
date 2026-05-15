@@ -19,7 +19,7 @@
         "measured_length_miles": 2106.2,
         "official_reference_length_miles": 2197.9,
         "official_reference_date": "2026",
-        "official_reference_source": "https://www.nationalparkstraveler.org/2025/12/appalachian-trail-will-gain-half-mile-2026",
+        "official_reference_source": "https://appalachiantrail.org/experience/hike-the-trail/at-basics/",
         "length_delta_miles": -91.7,
         "official": false,
         "candidate_status": "release_candidate_not_field_navigation",
@@ -52,9 +52,25 @@
           "endAnchorDistanceMiles": 0.025886130568849832,
           "measuredLengthMiles": 2106.183345043019
         },
-        "ai_answer_rule": "Use as Scout's full-trail RC1 open route candidate. Generated miles are not official ATC miles; disclose the route length delta and the Davenport-to-Damascus regional coverage gap.",
+        "ai_answer_rule": "Use as Scout's full-trail RC1 open route candidate. Say generated/open-route mile unless an explicitly licensed official source is being used. Generated miles are not official ATC miles; disclose the 2026 official-reference length, route length delta, alignment status, and Davenport-to-Damascus regional coverage gap.",
         "source_route_id": "at-main-osm-2026-open",
+        "generated_route_length_miles": 2106.2,
+        "official_reference_usage": "single total-length reference value only; not a copied official mile table or official route geometry",
+        "length_delta_percent": -4.2,
+        "alignment_status": "yellow_unresolved_open_route_delta",
         "integration_source_id": "full_trail_rc1_integration_model",
+        "route_alignment_diagnostics_path": "processed/route/route_alignment_diagnostics.json",
+        "route_alignment_report_path": "processed/route/route_alignment_report.md",
+        "route_continuity_diagnostics_path": "processed/route/route_continuity_diagnostics.json",
+        "route_segment_length_checks_path": "processed/route/route_segment_length_checks.json",
+        "measurement_diagnostics_summary": {
+          "geodesic_method": "WGS84 haversine geodesic over route vertices",
+          "geodesic_length_miles": 2106.163,
+          "waymarked_reported_length_miles": 2106.762,
+          "max_consecutive_vertex_gap_miles": 0.529,
+          "segments_over_1_0_miles": 0,
+          "conclusion": "Scout geodesic measurement and Waymarked reported length agree closely; projection/measurement method is not the primary 91.7-mile delta cause."
+        },
         "last_generated": "2026-05-14",
         "production_safe": true,
         "regional_routes": [
@@ -136,6 +152,7 @@
           }
         ],
         "approach_trail_treatment": "Amicalola/Approach Trail is contextual in MVP1 docs and is not part of the full main AT route geometry.",
+        "side_route_detour_treatment": "Blue-blaze side trails, shelter access trails, optional alternates, temporary detours, and the Approach Trail are not folded into generated main-route miles unless represented in the selected open AT main-route geometry.",
         "baxter_katahdin_treatment": "Katahdin/Hunt Trail/Baxter endpoint is an open-route candidate. Current opening, permits, parking, summit, and camping status require live Baxter verification."
       },
       "geometry": {

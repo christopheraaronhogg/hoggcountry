@@ -4,13 +4,43 @@
   "generated_from": "data/at-open-reference/full_trail_rc1",
   "production_safe": true,
   "policy": "Only datasets marked production_safe:true are included. Unknown, review-required, blocked, pointer-only, and test datasets are excluded.",
-  "source_count": 50,
-  "dataset_count": 10,
+  "source_count": 51,
+  "dataset_count": 13,
   "datasets": [
     {
       "dataset_id": "route",
       "path": "processed/route/full_at_route_rc1.geojson",
       "record_count": 1,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "route_alignment_diagnostics",
+      "path": "processed/route/route_alignment_diagnostics.json",
+      "record_count": 1,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "route_continuity_diagnostics",
+      "path": "processed/route/route_continuity_diagnostics.json",
+      "record_count": 1,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-14",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "route_segment_length_checks",
+      "path": "processed/route/route_segment_length_checks.json",
+      "record_count": 7,
       "production_safe": true,
       "route_id": "at-full-trail-rc1-open-2026",
       "last_generated": "2026-05-14",
