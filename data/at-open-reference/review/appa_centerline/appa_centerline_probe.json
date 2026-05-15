@@ -1,0 +1,192 @@
+{
+  "probe_id": "appa_official_centerline_public_probe",
+  "generated_at": "2026-05-15T00:00:00.000Z",
+  "source": {
+    "item_id": "71975f7fc14347c7a6c1059fdb593f91",
+    "item_url": "https://www.arcgis.com/home/item.html?id=71975f7fc14347c7a6c1059fdb593f91",
+    "service_url": "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services/ANST_Centerline/FeatureServer",
+    "layer_url": "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services/ANST_Centerline/FeatureServer/0",
+    "title": "APPA Official Centerline",
+    "snippet": "Appalachian National Scenic Trail - Official Centerline - 080224",
+    "access": "public",
+    "type": "Feature Service",
+    "service_capabilities": "Query,Extract,Sync",
+    "service_supported_query_formats": "JSON, geoJSON, PBF",
+    "access_information": "National Park Service Appalachian National Scenic Trail & Appalachian Trail Conservancy, 2023",
+    "license_info": "This information is for general reference purposes only. The data presented here are not legal documents and should not be treated as such. The National Park Service, USDA Forest Service, Appalachian Trail Conservancy, and all associated partners provide no warranty, expressed or implied, as to the accuracy, reliability, or completeness of this data. Please reach out to the appropriate land manager for more information or if you are planning work near any of these features. Also please be aware that some of the features depicted may be on private land and showing them does not authorize, expressed or implied, the right to cross private land."
+  },
+  "license_status": "unknown_review_required",
+  "production_safe": false,
+  "feature_count": 3025,
+  "official_reference_miles": 2197.9,
+  "scout_osm_rc1_generated_miles": 2106.2,
+  "source_attribute_lengths": {
+    "length_ft_miles": 2180.348,
+    "gnss_lengt_miles": 2375.325,
+    "gnss_3dlen_miles": 2698.766,
+    "notes": [
+      "Length_Ft is the most plausible service-provided route length field from this first pass.",
+      "GNSS_Lengt and GNSS_3DLen are retained for review but do not align with the official 2026 reference in this raw sum."
+    ]
+  },
+  "geometry_measurement": {
+    "method": "WGS84 haversine over GeoJSON feature vertices returned by the ArcGIS layer",
+    "geodesic_miles": 2161.638,
+    "vertices": 690117,
+    "parts": 3027,
+    "max_segment_miles": 0.374,
+    "limitation": "This measures returned service geometry and may differ from service attribute length fields or official annual ATC mileage methodology."
+  },
+  "deltas": {
+    "length_ft_minus_official_reference_miles": -17.552,
+    "geodesic_minus_official_reference_miles": -36.262,
+    "length_ft_minus_scout_osm_rc1_miles": 74.148,
+    "geodesic_minus_scout_osm_rc1_miles": 55.438
+  },
+  "grouped_lengths": {
+    "publish": [
+      {
+        "key": "Yes",
+        "count": 2972,
+        "length_ft_miles": 2136.766,
+        "geodesic_miles": 2124.403
+      },
+      {
+        "key": "0",
+        "count": 41,
+        "length_ft_miles": 25.886,
+        "geodesic_miles": 25.476
+      },
+      {
+        "key": "null",
+        "count": 12,
+        "length_ft_miles": 17.696,
+        "geodesic_miles": 11.759
+      }
+    ],
+    "shared_use": [
+      {
+        "key": "Single Trail Only",
+        "count": 2180,
+        "length_ft_miles": 1971.013,
+        "geodesic_miles": 1958.142
+      },
+      {
+        "key": "Abandoned Road",
+        "count": 215,
+        "length_ft_miles": 94.134,
+        "geodesic_miles": 94.356
+      },
+      {
+        "key": "Road/Sidewalk",
+        "count": 379,
+        "length_ft_miles": 49.712,
+        "geodesic_miles": 49.93
+      },
+      {
+        "key": "0",
+        "count": 33,
+        "length_ft_miles": 25.147,
+        "geodesic_miles": 19.417
+      },
+      {
+        "key": "Other",
+        "count": 24,
+        "length_ft_miles": 15.661,
+        "geodesic_miles": 15.689
+      },
+      {
+        "key": "Shared w/Another Tr",
+        "count": 42,
+        "length_ft_miles": 12.892,
+        "geodesic_miles": 12.921
+      },
+      {
+        "key": "null",
+        "count": 2,
+        "length_ft_miles": 3.995,
+        "geodesic_miles": 3.832
+      },
+      {
+        "key": "Railgrade/Towpath",
+        "count": 19,
+        "length_ft_miles": 3.683,
+        "geodesic_miles": 3.689
+      },
+      {
+        "key": "Utility ROW",
+        "count": 126,
+        "length_ft_miles": 3.412,
+        "geodesic_miles": 3.421
+      },
+      {
+        "key": "4",
+        "count": 2,
+        "length_ft_miles": 0.575,
+        "geodesic_miles": 0.119
+      },
+      {
+        "key": "3",
+        "count": 3,
+        "length_ft_miles": 0.123,
+        "geodesic_miles": 0.123
+      }
+    ],
+    "region": [
+      {
+        "key": "New England",
+        "count": 606,
+        "length_ft_miles": 723.244,
+        "geodesic_miles": 711.752
+      },
+      {
+        "key": "Mid-Atlantic",
+        "count": 1230,
+        "length_ft_miles": 568.894,
+        "geodesic_miles": 569.738
+      },
+      {
+        "key": "Southern",
+        "count": 572,
+        "length_ft_miles": 455.619,
+        "geodesic_miles": 455.286
+      },
+      {
+        "key": "Virginia",
+        "count": 565,
+        "length_ft_miles": 389.181,
+        "geodesic_miles": 387.799
+      },
+      {
+        "key": "1",
+        "count": 26,
+        "length_ft_miles": 15.864,
+        "geodesic_miles": 14.524
+      },
+      {
+        "key": "2",
+        "count": 6,
+        "length_ft_miles": 14.469,
+        "geodesic_miles": 9.709
+      },
+      {
+        "key": "3",
+        "count": 10,
+        "length_ft_miles": 9.426,
+        "geodesic_miles": 9.426
+      },
+      {
+        "key": "0",
+        "count": 10,
+        "length_ft_miles": 3.65,
+        "geodesic_miles": 3.404
+      }
+    ]
+  },
+  "initial_assessment": [
+    "APPA Official Centerline is public and official-labeled, but its license/use terms need review before packaging.",
+    "The Length_Ft sum is 2180.348 miles, about -17.552 miles from the 2026 official reference and 74.148 miles longer than Scout RC1 OSM.",
+    "The returned GeoJSON geodesic measurement is 2161.638 miles, closer than Scout RC1 OSM but still -36.262 miles from the official reference.",
+    "This source looks materially better than the current OSM spine for official-alignment research, but it still does not directly solve official milepoint licensing."
+  ]
+}
