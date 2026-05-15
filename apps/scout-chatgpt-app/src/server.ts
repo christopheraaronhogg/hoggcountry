@@ -18,6 +18,11 @@ const PORT = Number(process.env.PORT ?? 8787);
 const SITE_ORIGIN = process.env.PUBLIC_SITE_ORIGIN ?? 'https://hoggcountry.com';
 const WIDGET_URI = 'ui://scout/today.html';
 const WIDGET_HTML_URL = new URL('../public/scout-widget.html', import.meta.url);
+const READ_ONLY_LOCAL_ANNOTATIONS = {
+  readOnlyHint: true,
+  idempotentHint: true,
+  openWorldHint: false,
+} as const;
 
 const directionSchema = z.enum(['NOBO', 'SOBO']);
 const shelterPreferenceSchema = z.enum(['tent-first', 'shelter-first', 'mixed']);
@@ -267,11 +272,11 @@ async function createScoutServer(): Promise<McpServer> {
     {
       title: 'Search Hogg Country Scout knowledge',
       description:
-        'Search public Hogg Country guide and Scout planning documents. Use before fetch when the user asks for source-backed trail guidance.',
+        'Use this when the user needs source-backed Hogg Country Scout context. Searches public guide and planning documents; call fetch next for full document text.',
       inputSchema: {
         query: z.string().min(1).describe('Search query for Scout guide, planning, resupply, gear, safety, or trail context.'),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async ({ query }: { query: string }) => {
       const structuredContent = {
@@ -290,11 +295,12 @@ async function createScoutServer(): Promise<McpServer> {
     'fetch',
     {
       title: 'Fetch Hogg Country Scout document',
-      description: 'Fetch a full public Hogg Country guide or Scout planning document by id after search returns a relevant result.',
+      description:
+        'Use this when search returns a relevant Hogg Country Scout document id and the model needs the full public source text before answering.',
       inputSchema: {
         id: z.string().min(1).describe('Document id returned by search.'),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async ({ id }: { id: string }) => {
       const entry = publicCorpus.find((candidate) => candidate.id === id);
@@ -319,9 +325,9 @@ async function createScoutServer(): Promise<McpServer> {
     {
       title: 'Show Scout Today',
       description:
-        'Render a compact Scout heads-up display for the current Appalachian Trail context. This is deterministic planning context, not live conditions.',
+        'Use this when the user wants a compact trail companion heads-up display for the current AT context. Shows deterministic planning cues, not live conditions.',
       inputSchema: trailContextInput,
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
       _meta: {
         ui: {
           resourceUri: WIDGET_URI,
@@ -353,12 +359,12 @@ async function createScoutServer(): Promise<McpServer> {
     {
       title: 'Plan next trail day',
       description:
-        'Create a conservative next-day AT planning scaffold from current mile, direction, pace, water carry, and sleep preference.',
+        'Use this when the user wants a next-day AT plan scaffold from current mile, direction, pace, water carry, and sleep preference. Does not confirm live conditions.',
       inputSchema: {
         ...trailContextInput,
         effort: z.enum(['conservative', 'standard', 'push']).default('standard'),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async (context: DayPlanContext) => {
       const profile = makeProfile(context);
@@ -408,9 +414,9 @@ async function createScoutServer(): Promise<McpServer> {
     {
       title: 'Plan next trail week',
       description:
-        'Create a 7-day rolling AT planning scaffold with mileage targets, zero/nero pressure, and source checks.',
+        'Use this when the user wants a 7-day rolling AT plan scaffold with mileage targets, zero/nero pressure, and source checks. Does not confirm live conditions.',
       inputSchema: trailContextInput,
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async (context: TrailContext) => {
       const profile = makeProfile(context);
@@ -467,12 +473,12 @@ async function createScoutServer(): Promise<McpServer> {
     {
       title: 'Find next resupply leads',
       description:
-        'Search Hogg Country public Scout knowledge for resupply-related guide leads near the user context. This does not confirm live hours or inventory.',
+        'Use this when the user asks about next resupply options or town-planning leads. Returns public Hogg Country source leads, not live hours or inventory.',
       inputSchema: {
         ...trailContextInput,
         query: z.string().min(1).default('resupply').describe('Optional resupply search query.'),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async (context: ResupplyContext) => {
       const profile = makeProfile(context);

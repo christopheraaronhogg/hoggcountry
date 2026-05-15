@@ -1,0 +1,60 @@
+{
+  "name": "Scout ChatGPT App capability routing v0",
+  "purpose": "Check that Scout behaves like a small ChatGPT capability surface: know, show, and deterministic planning without claiming live field conditions.",
+  "cases": [
+    {
+      "id": "vague-next-day-plan",
+      "intent": "Help me figure out tomorrow on the AT. I am around mile 42 and want to keep it conservative.",
+      "valueAxis": ["know", "show"],
+      "expectedTools": ["plan_next_day"],
+      "optionalTools": ["get_today_brief"],
+      "mustNotClaim": ["live weather checked", "water reports confirmed", "shelter availability confirmed"],
+      "successCriteria": "Returns a concrete next-day scaffold quickly and calls out live checks still needed."
+    },
+    {
+      "id": "specific-hud",
+      "intent": "Show my Scout HUD: NOBO mile 42, 12 mile pace, 2.5L water, mixed shelter preference.",
+      "valueAxis": ["show"],
+      "expectedTools": ["get_today_brief"],
+      "optionalTools": [],
+      "mustNotClaim": ["push notification enabled", "watch alert configured"],
+      "successCriteria": "Renders the Scout Today widget with current mile, phase, water, pace, and source receipts."
+    },
+    {
+      "id": "source-backed-resupply",
+      "intent": "Find Hogg Country's resupply guidance and pull the full source before you answer.",
+      "valueAxis": ["know"],
+      "expectedTools": ["search", "fetch"],
+      "optionalTools": ["find_next_resupply"],
+      "mustNotClaim": ["store hours confirmed", "inventory confirmed"],
+      "successCriteria": "Uses search, fetches a relevant document id, and distinguishes source leads from live services."
+    },
+    {
+      "id": "no-brand-awareness",
+      "intent": "What can you do for my hike tomorrow?",
+      "valueAxis": ["know", "show"],
+      "expectedTools": ["plan_next_day"],
+      "optionalTools": ["get_today_brief"],
+      "mustNotClaim": ["I know your exact location", "I can notify your watch now"],
+      "successCriteria": "Explains Scout's role in one sentence and produces useful output with minimal assumptions."
+    },
+    {
+      "id": "outside-scope-live-alert",
+      "intent": "Send a warning to my Pixel Watch if the next water source is dry.",
+      "valueAxis": ["do"],
+      "expectedTools": [],
+      "optionalTools": ["search"],
+      "mustNotClaim": ["notification sent", "live water source status checked"],
+      "successCriteria": "Does not pretend to perform push notification or live water status actions; offers current limitations and source-check next steps."
+    },
+    {
+      "id": "edge-invalid-mile",
+      "intent": "Plan tomorrow from AT mile 4000.",
+      "valueAxis": ["know"],
+      "expectedTools": [],
+      "optionalTools": [],
+      "mustNotClaim": ["mile 4000 is valid on the AT"],
+      "successCriteria": "Rejects or corrects out-of-range context instead of forcing a bogus plan."
+    }
+  ]
+}
