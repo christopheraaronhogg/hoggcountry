@@ -60,6 +60,54 @@
     return bits.join(' • ');
   }
 
+  function isYouTubeUpdate(update) {
+    const sourceType = String(update?.sourceType || '');
+    const externalUrl = String(update?.externalUrl || '');
+    return sourceType.startsWith('youtube_') || /(?:youtube\.com|youtu\.be)/i.test(externalUrl);
+  }
+
+  function getYouTubeId(update) {
+    const externalUrl = String(update?.externalUrl || '');
+    const mediaUrl = String(update?.mediaUrl || '');
+    const source = externalUrl || mediaUrl;
+    const shortMatch = source.match(/\/shorts\/([^/?#]+)/i);
+    if (shortMatch?.[1]) return shortMatch[1];
+    const watchMatch = source.match(/[?&]v=([^&#]+)/i);
+    if (watchMatch?.[1]) return watchMatch[1];
+    const shortHostMatch = source.match(/youtu\.be\/([^/?#]+)/i);
+    if (shortHostMatch?.[1]) return shortHostMatch[1];
+    const thumbnailMatch = mediaUrl.match(/\/vi\/([^/]+)\//i);
+    return thumbnailMatch?.[1] || '';
+  }
+
+  function getYouTubeEmbedUrl(update) {
+    const id = getYouTubeId(update);
+    if (!id) return '';
+    return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
+  }
+
+  function storyMediaUrl(update) {
+    return update?.mediaUrl || update?.previewUrl || update?.thumbnailUrl || '';
+  }
+
+  function storyThumbnailUrl(update) {
+    const id = getYouTubeId(update);
+    const sourceType = String(update?.sourceType || '');
+    if (id && sourceType === 'youtube_short') return `https://i.ytimg.com/vi/${id}/oardefault.jpg`;
+    if (id && sourceType === 'youtube_video') return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    return update?.thumbnailUrl || update?.previewUrl || update?.mediaUrl || '';
+  }
+
+  function storyOriginalUrl(update) {
+    return update?.externalUrl || storyMediaUrl(update);
+  }
+
+  function storyActionLabel(update) {
+    if (update?.sourceType === 'youtube_short') return 'Watch Short on YouTube';
+    if (update?.sourceType === 'youtube_video') return 'Watch Video on YouTube';
+    return 'Original full quality';
+  }
+
   function openStoryModal(index = heroStoryIndex) {
     storyModalIndex = index;
   }
@@ -122,6 +170,20 @@
     const fallback = getFallbackThumbnail(videoId, currentSrc);
     if (fallback) img.src = fallback;
     else img.style.display = 'none';
+  }
+
+  function handleStoryImageError(event, update) {
+    const img = event.target;
+    const videoId = getYouTubeId(update);
+    const fallback = videoId ? getFallbackThumbnail(videoId, img.src) : '';
+
+    if (fallback) {
+      img.src = fallback;
+      return;
+    }
+
+    img.style.display = 'none';
+    img.closest('.hero-story-media, .story-modal-media')?.classList.add('has-media-error');
   }
 
   // This page is statically generated; keep videos live by polling the Laravel API.
@@ -306,14 +368,21 @@
         {:else if heroStoryUpdate}
           <div class="hero-story-stage" style={`--story-progress: ${((heroStoryIndex + 1) / storyUpdates.length) * 100}%`}>
             <article class="hero-story-card" data-story-index={heroStoryIndex}>
-              {#if heroStoryUpdate.mediaUrl}
-                <button class="hero-story-media" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label="Open trail update image full screen">
+              {#if storyMediaUrl(heroStoryUpdate)}
+                <button class="hero-story-media" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label={isYouTubeUpdate(heroStoryUpdate) ? 'Play trail update video' : 'Open trail update image full screen'}>
                   {#if String(heroStoryUpdate.mediaType || '').startsWith('video/')}
-                    <video src={heroStoryUpdate.mediaUrl} playsinline preload="metadata"></video>
+                    <video src={storyMediaUrl(heroStoryUpdate)} playsinline preload="metadata"></video>
                   {:else}
-                    <img src={heroStoryUpdate.mediaUrl} alt={heroStoryUpdate.title || 'Trail update'} loading="lazy" />
+                    <img src={storyThumbnailUrl(heroStoryUpdate)} alt={heroStoryUpdate.title || 'Trail update'} loading="lazy" onerror={(e) => handleStoryImageError(e, heroStoryUpdate)} />
                   {/if}
-                  <span class="story-expand-hint">Tap to enlarge</span>
+                  {#if isYouTubeUpdate(heroStoryUpdate)}
+                    <span class="story-play-button" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"></path>
+                      </svg>
+                    </span>
+                  {/if}
+                  <span class="story-expand-hint">{isYouTubeUpdate(heroStoryUpdate) ? 'Tap to watch' : 'Tap to enlarge'}</span>
                 </button>
               {/if}
               <button class="hero-story-overlay" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label="Open trail update story">
@@ -346,10 +415,17 @@
       <div class="story-modal-panel" onclick={(event) => event.stopPropagation()}>
         <button class="story-modal-close" type="button" onclick={closeStoryModal} aria-label="Close full screen trail update">×</button>
         <div class="story-modal-media">
-          {#if String(storyModalUpdate.mediaType || '').startsWith('video/')}
-            <video src={storyModalUpdate.mediaUrl} controls playsinline autoplay></video>
+          {#if isYouTubeUpdate(storyModalUpdate) && getYouTubeEmbedUrl(storyModalUpdate)}
+            <iframe
+              src={getYouTubeEmbedUrl(storyModalUpdate)}
+              title={storyModalUpdate.title || 'YouTube trail update'}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+            ></iframe>
+          {:else if String(storyModalUpdate.mediaType || '').startsWith('video/')}
+            <video src={storyMediaUrl(storyModalUpdate)} controls playsinline autoplay></video>
           {:else}
-            <img src={storyModalUpdate.mediaUrl} alt={storyModalUpdate.title || 'Trail update'} />
+            <img src={storyMediaUrl(storyModalUpdate)} alt={storyModalUpdate.title || 'Trail update'} onerror={(e) => handleStoryImageError(e, storyModalUpdate)} />
           {/if}
         </div>
         <div class="story-modal-copy">
@@ -358,7 +434,9 @@
           {#if storyModalUpdate.body}
             <p>{storyModalUpdate.body}</p>
           {/if}
-          <a class="story-modal-original" href={storyModalUpdate.mediaUrl} target="_blank" rel="noopener">Original full quality</a>
+          {#if storyOriginalUrl(storyModalUpdate)}
+            <a class="story-modal-original" href={storyOriginalUrl(storyModalUpdate)} target="_blank" rel="noopener">{storyActionLabel(storyModalUpdate)}</a>
+          {/if}
         </div>
         {#if trailUpdates.length > 1}
           <div class="story-modal-controls">
@@ -1417,6 +1495,13 @@
     object-fit: contain;
   }
 
+  .hero-story-media.has-media-error {
+    min-height: clamp(300px, 58vh, 560px);
+    background:
+      linear-gradient(135deg, rgba(74, 91, 66, 0.84), rgba(149, 78, 50, 0.72)),
+      var(--trail-forest);
+  }
+
   .hero-story-overlay {
     position: absolute;
     z-index: 2;
@@ -1467,6 +1552,28 @@
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+
+  .story-play-button {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: 44%;
+    display: grid;
+    width: 64px;
+    height: 64px;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(169, 77, 48, 0.92);
+    color: white;
+    box-shadow: 0 18px 44px rgba(5, 8, 7, 0.42);
+    transform: translate(-50%, -50%);
+  }
+
+  .story-play-button svg {
+    width: 30px;
+    height: 30px;
+    margin-left: 0.2rem;
   }
 
   .hero-story-rail {
@@ -1609,6 +1716,23 @@
     border-radius: 10px;
     background: #050807;
     overflow: hidden;
+  }
+
+  .story-modal-media.has-media-error {
+    min-height: min(72vh, 34rem);
+    background:
+      linear-gradient(135deg, rgba(74, 91, 66, 0.84), rgba(149, 78, 50, 0.72)),
+      var(--trail-forest);
+  }
+
+  .story-modal-media iframe {
+    display: block;
+    width: min(100%, calc((98vh - 1.5rem) * 9 / 16));
+    height: min(calc(98vh - 1.5rem), calc(100vw * 16 / 9));
+    max-width: 100%;
+    max-height: calc(98vh - 1.5rem);
+    border: 0;
+    background: #050807;
   }
 
   .story-modal-media img,

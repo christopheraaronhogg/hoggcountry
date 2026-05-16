@@ -10,7 +10,7 @@
  * static assets, background revalidation for cached assets.
  */
 
-const CACHE_NAME = 'hogg-country-v20';
+const CACHE_NAME = 'hogg-country-v21';
 
 // Core pages to precache on install — scoped to the v1 IA.
 // Today and Plan will be added here as they come online.
