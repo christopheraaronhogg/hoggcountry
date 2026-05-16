@@ -210,9 +210,12 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
       return thumbMatch?.[1] || '';
     };
     const thumbnailMediaUrl = (update) => {
+      const id = youtubeId(update);
       if (update.sourceType === 'youtube_short') {
-        const id = youtubeId(update);
         if (id) return `https://i.ytimg.com/vi/${encodeURIComponent(id)}/oardefault.jpg`;
+      }
+      if (update.sourceType === 'youtube_video') {
+        if (id) return `https://img.youtube.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
       }
       return update.thumbnailUrl || update.previewUrl || originalMediaUrl(update);
     };
