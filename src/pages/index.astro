@@ -4,13 +4,35 @@ import TrailUpdatesFeed from '../components/TrailUpdatesFeed.astro';
 import YouTubeThumbnail from '../components/YouTubeThumbnail.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { facts, getMeta } from '../data/trailFacts';
-import { WORKSPACE_URL, YT_UPLOADS_FEED_URL } from '../lib/config';
+import { WORKSPACE_URL, YT_SHORTS_FEED_URL, YT_UPLOADS_FEED_URL } from '../lib/config';
 import { isEnabled } from '../lib/features';
-import { fetchYouTubeRSS } from '../lib/youtube';
+import { fetchYouTubeRSS, type YtVideo } from '../lib/youtube';
 
 const showVideos = isEnabled('YOUTUBE_RSS');
-const videos = showVideos ? (await fetchYouTubeRSS(YT_UPLOADS_FEED_URL)).slice(0, 3) : [];
+const videos = showVideos ? await fetchLatestVideos(3) : [];
 const meta = getMeta();
+
+async function fetchLatestVideos(limit: number): Promise<YtVideo[]> {
+  const [uploads, shorts] = await Promise.all([
+    fetchYouTubeRSS(YT_UPLOADS_FEED_URL).catch(() => []),
+    fetchYouTubeRSS(YT_SHORTS_FEED_URL).catch(() => []),
+  ]);
+  const merged = new Map<string, YtVideo>();
+
+  for (const short of shorts) {
+    merged.set(short.id, { ...short, kind: 'short' });
+  }
+
+  for (const upload of uploads) {
+    if (!merged.has(upload.id)) {
+      merged.set(upload.id, upload);
+    }
+  }
+
+  return Array.from(merged.values())
+    .sort((a, b) => String(b.published || '').localeCompare(String(a.published || '')))
+    .slice(0, limit);
+}
 
 function formatDate(value: string) {
   if (!value) return '';
@@ -134,9 +156,9 @@ function youtubeLabel(video: (typeof videos)[number]) {
 
       <div class="video-grid">
         {videos.map((video) => (
-          <article class="card video-card">
+          <article class:list={['card', 'video-card', video.kind === 'short' && 'is-short']}>
             <a href={video.link} class="video-media" target="_blank" rel="noopener noreferrer">
-              <YouTubeThumbnail id={video.id} alt={video.title} loading="lazy" provided={video.thumbnail} />
+              <YouTubeThumbnail id={video.id} alt={video.title} loading="lazy" provided={video.thumbnail} portrait={video.kind === 'short'} />
             </a>
             <div class="video-copy">
               <p class="video-meta">{youtubeLabel(video)} • {formatDate(video.published) || 'Recent upload'}</p>
@@ -336,6 +358,10 @@ function youtubeLabel(video: (typeof videos)[number]) {
     display: block;
     aspect-ratio: 16 / 9;
     background: #17201a;
+  }
+
+  .video-card.is-short .video-media {
+    aspect-ratio: 9 / 16;
   }
 
   .video-media img {

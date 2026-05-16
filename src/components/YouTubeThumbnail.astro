@@ -8,6 +8,7 @@ type Props = {
   loading?: 'lazy' | 'eager';
   sizes?: string;
   provided?: string;
+  portrait?: boolean;
 };
 
 const {
@@ -17,9 +18,10 @@ const {
   loading = 'lazy',
   sizes,
   provided,
+  portrait = false,
 } = Astro.props as Props;
 
-const [primarySrc = '', ...fallbacks] = getYouTubeThumbnailSources(id, provided);
+const [primarySrc = '', ...fallbacks] = getYouTubeThumbnailSources(id, provided, portrait);
 ---
 
 <img

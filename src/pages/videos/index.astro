@@ -4,16 +4,38 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import YouTubeEmbed from '../../components/YouTubeEmbed.astro';
 import YouTubeThumbnail from '../../components/YouTubeThumbnail.astro';
-import { YT_UPLOADS_FEED_URL } from '../../lib/config';
-import { fetchYouTubeRSS } from '../../lib/youtube';
+import { YT_SHORTS_FEED_URL, YT_UPLOADS_FEED_URL } from '../../lib/config';
+import { fetchYouTubeRSS, type YtVideo } from '../../lib/youtube';
 
 const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
 const channelUrl = 'https://www.youtube.com/@hoggcountry7483';
 
 // Build-time fallback only. Runtime script below refreshes from Laravel API.
-const videos = (await fetchYouTubeRSS(YT_UPLOADS_FEED_URL)).slice(0, 12);
+const videos = await fetchLatestVideos(12);
 const featuredVideo = videos[0] ?? null;
 const libraryVideos = featuredVideo ? videos.slice(1) : videos;
+
+async function fetchLatestVideos(limit: number): Promise<YtVideo[]> {
+  const [uploads, shorts] = await Promise.all([
+    fetchYouTubeRSS(YT_UPLOADS_FEED_URL).catch(() => []),
+    fetchYouTubeRSS(YT_SHORTS_FEED_URL).catch(() => []),
+  ]);
+  const merged = new Map<string, YtVideo>();
+
+  for (const short of shorts) {
+    merged.set(short.id, { ...short, kind: 'short' });
+  }
+
+  for (const upload of uploads) {
+    if (!merged.has(upload.id)) {
+      merged.set(upload.id, upload);
+    }
+  }
+
+  return Array.from(merged.values())
+    .sort((a, b) => String(b.published || '').localeCompare(String(a.published || '')))
+    .slice(0, limit);
+}
 
 function formatDate(value: string) {
   if (!value) return '';
@@ -75,9 +97,9 @@ function youtubeLabel(video: (typeof videos)[number]) {
               </div>
             </div>
 
-            <article id={`video-${featuredVideo.id}`} class="featured-card" data-first-id={featuredVideo.id}>
+            <article id={`video-${featuredVideo.id}`} class:list={['featured-card', featuredVideo.kind === 'short' && 'is-short']} data-first-id={featuredVideo.id}>
               <div class="featured-card__frame" id="featured-video-slot">
-                <YouTubeEmbed id={featuredVideo.id} title={featuredVideo.title} />
+                <YouTubeEmbed id={featuredVideo.id} title={featuredVideo.title} aspect={featuredVideo.kind === 'short' ? '9-16' : '16-9'} />
               </div>
               <div class="featured-card__copy" id="featured-copy-slot">
                 <p class="featured-meta">{youtubeLabel(featuredVideo)} {formatDate(featuredVideo.published) ? `• ${formatDate(featuredVideo.published)}` : ''}</p>
@@ -106,7 +128,7 @@ function youtubeLabel(video: (typeof videos)[number]) {
 
           <div id="videos-grid" class="videos-grid">
             {libraryVideos.map((video, index) => (
-              <article class="video-card">
+              <article class:list={['video-card', video.kind === 'short' && 'is-short']}>
                 <a
                   class="video-card__media"
                   href={video.link}
@@ -114,7 +136,7 @@ function youtubeLabel(video: (typeof videos)[number]) {
                   rel="noopener noreferrer"
                   aria-label={`Watch ${video.title} on YouTube`}
                 >
-                  <YouTubeThumbnail id={video.id} alt={video.title} loading="lazy" provided={video.thumbnail} />
+                  <YouTubeThumbnail id={video.id} alt={video.title} loading="lazy" provided={video.thumbnail} portrait={video.kind === 'short'} />
                   <span class="video-card__play">▶ Watch</span>
                   <span class="video-card__index">{String(index + 1).padStart(2, '0')}</span>
                 </a>
@@ -179,13 +201,24 @@ function youtubeLabel(video: (typeof videos)[number]) {
 
         function thumbnailFor(video) {
           const id = escapeHtml(video.id || '');
-          const candidates = [
-            `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
-            `https://i.ytimg.com/vi/${id}/sddefault.jpg`,
-            `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
-            `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-            `https://i.ytimg.com/vi/${id}/default.jpg`,
-          ];
+          const candidates = video?.kind === 'short'
+            ? [
+              `https://i.ytimg.com/vi/${id}/oardefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/oar2.jpg`,
+              `https://i.ytimg.com/vi/${id}/oar3.jpg`,
+              `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/sddefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/default.jpg`,
+            ]
+            : [
+              `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/sddefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+              `https://i.ytimg.com/vi/${id}/default.jpg`,
+            ];
 
           if (typeof video.thumbnail === 'string' && video.thumbnail.trim()) {
             candidates.push(escapeHtml(video.thumbnail.trim()));
@@ -236,6 +269,7 @@ function youtubeLabel(video: (typeof videos)[number]) {
           if (featuredCard instanceof HTMLElement) {
             featuredCard.dataset.firstId = id;
             featuredCard.id = `video-${id}`;
+            featuredCard.classList.toggle('is-short', video?.kind === 'short');
           }
         }
 
@@ -256,7 +290,7 @@ function youtubeLabel(video: (typeof videos)[number]) {
             const order = String(index + 1).padStart(2, '0');
 
             return `
-              <article class="video-card">
+              <article class="video-card ${video?.kind === 'short' ? 'is-short' : ''}">
                 <a class="video-card__media" href="${link}" target="_blank" rel="noopener noreferrer" aria-label="Watch ${title} on YouTube">
                   ${thumb}
                   <span class="video-card__play">▶ Watch</span>
@@ -533,6 +567,12 @@ function youtubeLabel(video: (typeof videos)[number]) {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
+  .featured-card.is-short .featured-card__frame {
+    width: min(100%, 390px);
+    min-height: 620px;
+    justify-self: center;
+  }
+
   .featured-card__copy {
     display: flex;
     flex-direction: column;
@@ -613,6 +653,10 @@ function youtubeLabel(video: (typeof videos)[number]) {
     aspect-ratio: 16 / 9;
     overflow: hidden;
     background: #17201a;
+  }
+
+  .video-card.is-short .video-card__media {
+    aspect-ratio: 9 / 16;
   }
 
   .video-card__media img {
@@ -728,6 +772,10 @@ function youtubeLabel(video: (typeof videos)[number]) {
 
     .featured-card__frame {
       min-height: 220px;
+    }
+
+    .featured-card.is-short .featured-card__frame {
+      min-height: min(78vh, 620px);
     }
 
     .videos-grid {

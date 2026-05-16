@@ -19,6 +19,12 @@ const YOUTUBE_THUMBNAIL_VARIANTS = [
   'hqdefault',
   'default',
 ] as const;
+const YOUTUBE_SHORT_THUMBNAIL_VARIANTS = [
+  'oardefault',
+  'oar2',
+  'oar3',
+  ...YOUTUBE_THUMBNAIL_VARIANTS,
+] as const;
 
 function pickText(value: unknown): string {
   if (typeof value === 'string') return value.trim();
@@ -37,10 +43,11 @@ function buildYouTubeThumbnailUrl(
   return `https://i.ytimg.com/vi/${videoId}/${variant}.jpg`;
 }
 
-export function getYouTubeThumbnailSources(videoId: string, provided?: string): string[] {
+export function getYouTubeThumbnailSources(videoId: string, provided?: string, portrait = false): string[] {
   if (!videoId) return provided ? [provided] : [];
 
-  const sources = YOUTUBE_THUMBNAIL_VARIANTS.map((variant) => buildYouTubeThumbnailUrl(videoId, variant));
+  const variants = portrait ? YOUTUBE_SHORT_THUMBNAIL_VARIANTS : YOUTUBE_THUMBNAIL_VARIANTS;
+  const sources = variants.map((variant) => buildYouTubeThumbnailUrl(videoId, variant));
 
   if (provided) {
     sources.push(provided);
@@ -139,7 +146,9 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
           pickText(e.content) ||
           '';
         let thumbnail = '';
-        if (mg && mg['media:thumbnail'] && mg['media:thumbnail'].url) {
+        if (kind === 'short' && videoId) {
+          thumbnail = buildYouTubeThumbnailUrl(videoId, 'oardefault');
+        } else if (mg && mg['media:thumbnail'] && mg['media:thumbnail'].url) {
           thumbnail = mg['media:thumbnail'].url;
         } else if (e['media:thumbnail'] && e['media:thumbnail'].url) {
           thumbnail = e['media:thumbnail'].url;

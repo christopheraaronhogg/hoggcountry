@@ -95,9 +95,7 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
   }
 
   :global(.update-card.is-youtube-short) {
-    display: grid;
-    grid-template-columns: minmax(92px, 0.42fr) minmax(0, 0.58fr);
-    align-items: stretch;
+    display: block;
   }
 
   :global(.update-media) {
@@ -109,9 +107,9 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
   }
 
   :global(.update-media--short) {
-    height: 100%;
-    min-height: 168px;
-    aspect-ratio: auto;
+    aspect-ratio: 9 / 16;
+    height: auto;
+    min-height: 0;
     object-position: center;
   }
 
@@ -124,8 +122,7 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
   }
 
   :global(.is-youtube-short .update-copy) {
-    align-self: center;
-    padding: 0.9rem;
+    padding: 1rem;
   }
 
   :global(.update-meta) {
@@ -176,15 +173,6 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
     }
   }
 
-  @media (max-width: 420px) {
-    :global(.update-card.is-youtube-short) {
-      grid-template-columns: minmax(84px, 0.36fr) minmax(0, 0.64fr);
-    }
-
-    :global(.update-media--short) {
-      min-height: 150px;
-    }
-  }
 </style>
 
 <script define:vars={{ uid }}>
@@ -211,7 +199,23 @@ const uid = `trail-updates-${Math.random().toString(36).slice(2)}`;
     };
 
     const originalMediaUrl = (update) => update.mediaUrl || update.previewUrl || update.thumbnailUrl || '';
-    const thumbnailMediaUrl = (update) => update.thumbnailUrl || update.previewUrl || originalMediaUrl(update);
+    const youtubeId = (update) => {
+      const externalUrl = String(update.externalUrl || '');
+      const thumbnailUrl = String(update.thumbnailUrl || update.mediaUrl || '');
+      const shortMatch = externalUrl.match(/\/shorts\/([^/?#]+)/i);
+      if (shortMatch?.[1]) return shortMatch[1];
+      const videoMatch = externalUrl.match(/[?&]v=([^&#]+)/i);
+      if (videoMatch?.[1]) return videoMatch[1];
+      const thumbMatch = thumbnailUrl.match(/\/vi\/([^/]+)\//i);
+      return thumbMatch?.[1] || '';
+    };
+    const thumbnailMediaUrl = (update) => {
+      if (update.sourceType === 'youtube_short') {
+        const id = youtubeId(update);
+        if (id) return `https://i.ytimg.com/vi/${encodeURIComponent(id)}/oardefault.jpg`;
+      }
+      return update.thumbnailUrl || update.previewUrl || originalMediaUrl(update);
+    };
 
     const mediaHtml = (update) => {
       const originalUrl = originalMediaUrl(update);
