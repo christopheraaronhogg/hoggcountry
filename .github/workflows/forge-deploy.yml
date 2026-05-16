@@ -23,8 +23,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build OpenClaw web for Forge
-        run: OPENCLAW_WEB_ADAPTER=node npm run build -w @hoggcountry/openclaw-web
+      - name: Build Scout web for Forge
+        run: SCOUT_WEB_ADAPTER=node npm run build -w @hoggcountry/scout-web
 
       - name: Set up SSH
         env:
@@ -169,7 +169,8 @@ jobs:
           ln -nfs "$REL" "$APP/current"
           cd "$APP/current"
           pm2 delete hoggcountry-openclaw || true
-          npm run forge:openclaw:pm2
+          pm2 delete hoggcountry-scout || true
+          npm run forge:scout:pm2
           pm2 save
 
           cd "$APP/current/backend"
