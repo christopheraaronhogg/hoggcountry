@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { upcomingStops, waterSources, weatherSnapshot } from '$lib/mockTrailData';
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import TrailPulsePanel from './TrailPulsePanel.svelte';
 
 	function recommendationLabel() {
 		const labels = {
@@ -79,6 +80,8 @@
 			<span class="metric-note">{progress} of the day logged</span>
 		</div>
 	</section>
+
+	<TrailPulsePanel />
 
 	<section class="card section-card">
 		<div class="section-heading">

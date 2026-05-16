@@ -39,6 +39,7 @@ import JoinScoutWorkspaceReducer from "./join_scout_workspace_reducer";
 import MirrorScoutTurnReducer from "./mirror_scout_turn_reducer";
 import MirrorScoutTurnEventReducer from "./mirror_scout_turn_event_reducer";
 import RegisterBetaProfileReducer from "./register_beta_profile_reducer";
+import SubmitTrailConditionReportReducer from "./submit_trail_condition_report_reducer";
 
 // Import all procedure arg schemas
 
@@ -47,6 +48,7 @@ import DadUpdateRow from "./dad_update_table";
 import MyScoutTurnEventsRow from "./my_scout_turn_events_table";
 import MyScoutTurnsRow from "./my_scout_turns_table";
 import PublicAnnouncementRow from "./public_announcement_table";
+import TrailConditionReportRow from "./trail_condition_report_table";
 import VideoDispatchRow from "./video_dispatch_table";
 
 /** Type-only namespace exports for generated type groups. */
@@ -75,6 +77,23 @@ const tablesSchema = __schema({
       { name: 'public_announcement_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, PublicAnnouncementRow),
+  trailConditionReport: __table({
+    name: 'trail_condition_report',
+    indexes: [
+      { accessor: 'id', name: 'trail_condition_report_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'trailId', name: 'trail_condition_report_trail_id_idx', algorithm: 'btree', columns: [
+        'trailId',
+      ] },
+      { accessor: 'snappedMile', name: 'trail_condition_report_snapped_mile_idx', algorithm: 'btree', columns: [
+        'snappedMile',
+      ] },
+    ],
+    constraints: [
+      { name: 'trail_condition_report_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, TrailConditionReportRow),
   videoDispatch: __table({
     name: 'video_dispatch',
     indexes: [
@@ -109,6 +128,7 @@ const reducersSchema = __reducers(
   __reducerSchema("mirror_scout_turn", MirrorScoutTurnReducer),
   __reducerSchema("mirror_scout_turn_event", MirrorScoutTurnEventReducer),
   __reducerSchema("register_beta_profile", RegisterBetaProfileReducer),
+  __reducerSchema("submit_trail_condition_report", SubmitTrailConditionReportReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
@@ -167,4 +187,3 @@ export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
     return new SubscriptionBuilder(this);
   };
 }
-

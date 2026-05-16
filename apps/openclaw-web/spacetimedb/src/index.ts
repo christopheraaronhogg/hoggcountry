@@ -34,6 +34,39 @@ const publicAnnouncement = table(
   }
 );
 
+const trailConditionReport = table(
+  {
+    name: 'trail_condition_report',
+    public: true,
+    indexes: [
+      {
+        accessor: 'trailId',
+        name: 'trail_condition_report_trail_id_idx',
+        algorithm: 'btree',
+        columns: ['trailId']
+      },
+      {
+        accessor: 'snappedMile',
+        name: 'trail_condition_report_snapped_mile_idx',
+        algorithm: 'btree',
+        columns: ['snappedMile']
+      }
+    ]
+  },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    trailId: t.string(),
+    source: t.string(),
+    chipText: t.string().optional(),
+    noteText: t.string(),
+    reporterTrailName: t.string().optional(),
+    snappedMile: t.f64(),
+    observedAt: t.string(),
+    status: t.string(),
+    createdAt: t.string()
+  }
+);
+
 const betaProfile = table(
   { name: 'beta_profile' },
   {
@@ -115,6 +148,7 @@ const openclawDb = schema({
   dadUpdate,
   videoDispatch,
   publicAnnouncement,
+  trailConditionReport,
   betaProfile,
   manualNote,
   scoutWorkspaceAccess,
@@ -194,6 +228,42 @@ export const appendManualNote = openclawDb.reducer(
       sectionId: payload.sectionId,
       title: payload.title,
       body: payload.body,
+      createdAt: new Date().toISOString()
+    });
+  }
+);
+
+export const submitTrailConditionReport = openclawDb.reducer(
+  {
+    trailId: t.string(),
+    source: t.string(),
+    chipText: t.string().optional(),
+    noteText: t.string(),
+    reporterTrailName: t.string().optional(),
+    snappedMile: t.f64(),
+    observedAt: t.string().optional()
+  },
+  (ctx, payload) => {
+    const trailId = payload.trailId.trim() || 'appalachian-trail';
+    const chipText = payload.chipText?.trim() || undefined;
+    const noteText = (payload.noteText.trim() || chipText || '').trim();
+    if (!noteText) return;
+
+    const snappedMile = Math.round(payload.snappedMile * 10) / 10;
+    if (!Number.isFinite(snappedMile) || snappedMile < 0) return;
+
+    const observedAt = payload.observedAt?.trim() || new Date().toISOString();
+
+    ctx.db.trailConditionReport.insert({
+      id: 0n,
+      trailId,
+      source: payload.source.trim() || 'chip',
+      chipText,
+      noteText,
+      reporterTrailName: payload.reporterTrailName?.trim() || undefined,
+      snappedMile,
+      observedAt,
+      status: 'active',
       createdAt: new Date().toISOString()
     });
   }

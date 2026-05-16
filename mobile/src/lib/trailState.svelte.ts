@@ -8,12 +8,18 @@ import type {
 	ReadinessRecommendation,
 	SyncState,
 	Tab,
+	TrailConditionReport,
+	TrailPulseChip,
+	TrailPulseSource,
 	TrailLogSettings,
 	TrailSettings,
 	TrailState
 } from './types';
+import { publishTrailPulseReport } from './trailPulseSpacetime';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
+const TRAIL_PULSE_RANGE_MILES = 0.1;
+const TRAIL_ID = 'appalachian-trail';
 
 function isoHoursFromNow(hours: number): string {
 	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -39,6 +45,43 @@ function makeCheckIn(status: CheckInStatus, note: string): CheckInRecord {
 	};
 }
 
+function makeTrailPulseReport(input: {
+	source: TrailPulseSource;
+	chipText?: TrailPulseChip;
+	noteText: string;
+	reporterTrailName?: string;
+	snappedMile: number;
+	rawLatitude?: number;
+	rawLongitude?: number;
+	observedAt?: string;
+	syncState?: SyncState;
+}): TrailConditionReport {
+	const observedAt = input.observedAt ?? new Date().toISOString();
+
+	return {
+		id: crypto.randomUUID(),
+		trailId: TRAIL_ID,
+		source: input.source,
+		chipText: input.chipText,
+		noteText: input.noteText,
+		reporterTrailName: input.reporterTrailName?.trim() || undefined,
+		rawLatitude: input.rawLatitude,
+		rawLongitude: input.rawLongitude,
+		snappedMile: Number(input.snappedMile.toFixed(1)),
+		observedAt,
+		status: 'active',
+		createdAt: observedAt,
+		syncState: input.syncState ?? 'synced'
+	};
+}
+
+function trailPulseDisplayText(report: TrailConditionReport): string {
+	const base = report.noteText.trim() || report.chipText || 'Trail note';
+	const trailName = report.reporterTrailName?.trim();
+
+	return trailName ? `${base} -${trailName}` : base;
+}
+
 const defaultState: TrailState = {
 	activeTab: 'Today',
 	coachMessages: [
@@ -56,6 +99,24 @@ const defaultState: TrailState = {
 		note: 'Left camp on time and moving well.'
 	},
 	checkInHistory: [],
+	trailPulseReports: [
+		makeTrailPulseReport({
+			source: 'chip',
+			chipText: 'Rocks',
+			noteText: 'Rocks',
+			reporterTrailName: 'Backtrack',
+			snappedMile: 582.4,
+			observedAt: new Date(Date.now() - 34 * 60 * 1000).toISOString()
+		}),
+		makeTrailPulseReport({
+			source: 'text',
+			chipText: 'Water',
+			noteText: 'spring running slow',
+			snappedMile: 586.6,
+			observedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+		})
+	],
+	seenTrailPulseReportIds: [],
 	privacySettings: {
 		stealthMode: true,
 		sharePreciseLocation: false,
@@ -116,6 +177,13 @@ class TrailAssistantStore {
 		window.addEventListener('online', () => {
 			this.#state.onlineStatus = true;
 			if (this.#state.syncState === 'queued-offline') {
+				const queuedReports = this.#state.trailPulseReports.filter((report) => report.syncState === 'queued-offline');
+				this.#state.trailPulseReports = this.#state.trailPulseReports.map((report) =>
+					report.syncState === 'queued-offline' ? { ...report, syncState: 'syncing' } : report
+				);
+				for (const report of queuedReports) {
+					void this.#syncTrailPulseReport(report);
+				}
 				this.#finishSync('syncing');
 			}
 		});
@@ -152,6 +220,8 @@ class TrailAssistantStore {
 			coachMessages: [...this.#state.coachMessages],
 			lastCheckIn: { ...this.#state.lastCheckIn },
 			checkInHistory: [...this.#state.checkInHistory],
+			trailPulseReports: [...this.#state.trailPulseReports],
+			seenTrailPulseReportIds: [...this.#state.seenTrailPulseReportIds],
 			privacySettings: { ...this.#state.privacySettings },
 			trailSettings: { ...this.#state.trailSettings },
 			trailLogSettings: { ...this.#state.trailLogSettings },
@@ -173,6 +243,9 @@ class TrailAssistantStore {
 
 		this.#syncTimer = setTimeout(() => {
 			this.#state.syncState = this.#state.onlineStatus ? 'synced' : 'queued-offline';
+			this.#state.trailPulseReports = this.#state.trailPulseReports.map((report) =>
+				report.syncState === 'syncing' ? { ...report, syncState: this.#state.syncState } : report
+			);
 			this.#state.lastSyncAt = new Date().toISOString();
 		}, nextState === 'syncing' ? 1300 : 0);
 	}
@@ -204,6 +277,37 @@ class TrailAssistantStore {
 		return 'I can help with mileage, water, town timing, resupply, gear triage, or safety. Give me the hard constraint and I will turn it into the next best move.';
 	}
 
+	#getCurrentPosition(): Promise<GeolocationPosition | null> {
+		if (!browser || !navigator.geolocation) return Promise.resolve(null);
+
+		return new Promise((resolve) => {
+			navigator.geolocation.getCurrentPosition(
+				(position) => resolve(position),
+				() => resolve(null),
+				{ enableHighAccuracy: true, maximumAge: 60_000, timeout: 4_000 }
+			);
+		});
+	}
+
+	#snapPositionToTrailMile(_position: GeolocationPosition | null): number {
+		return this.#state.currentMile;
+	}
+
+	async #syncTrailPulseReport(report: TrailConditionReport) {
+		const result = await publishTrailPulseReport(report).catch(() => 'failed' as const);
+		const syncState: SyncState = result === 'failed' ? 'queued-offline' : 'synced';
+
+		this.#state.trailPulseReports = this.#state.trailPulseReports.map((candidate) =>
+			candidate.id === report.id ? { ...candidate, syncState } : candidate
+		);
+
+		if (result !== 'failed') {
+			this.#finishSync('syncing');
+		} else {
+			this.#state.syncState = 'queued-offline';
+		}
+	}
+
 	get activeTab() {
 		return this.#state.activeTab;
 	}
@@ -222,6 +326,27 @@ class TrailAssistantStore {
 
 	get checkInHistory() {
 		return this.#state.checkInHistory;
+	}
+
+	get trailPulseReports() {
+		return this.#state.trailPulseReports;
+	}
+
+	get nearbyTrailPulseReports() {
+		return this.#state.trailPulseReports
+			.filter((report) => report.status === 'active' && Math.abs(this.#state.currentMile - report.snappedMile) <= TRAIL_PULSE_RANGE_MILES)
+			.sort((a, b) => new Date(b.observedAt).getTime() - new Date(a.observedAt).getTime());
+	}
+
+	get pendingTrailPulseAlert() {
+		return (
+			this.nearbyTrailPulseReports.find((report) => !this.#state.seenTrailPulseReportIds.includes(report.id)) ??
+			null
+		);
+	}
+
+	get trailPulseRangeMiles() {
+		return TRAIL_PULSE_RANGE_MILES;
 	}
 
 	get privacySettings() {
@@ -342,6 +467,49 @@ class TrailAssistantStore {
 		} else {
 			this.#state.syncState = 'queued-offline';
 		}
+	}
+
+	async submitTrailPulseReport(input: {
+		source: TrailPulseSource;
+		chipText?: TrailPulseChip;
+		noteText?: string;
+		reporterTrailName?: string;
+	}): Promise<TrailConditionReport | null> {
+		const chipText = input.chipText;
+		const noteText = (input.noteText?.trim() || chipText || '').trim();
+		if (!noteText) return null;
+
+		const position = await this.#getCurrentPosition();
+		const report = makeTrailPulseReport({
+			source: input.source,
+			chipText,
+			noteText,
+			reporterTrailName: input.reporterTrailName,
+			rawLatitude: position?.coords.latitude,
+			rawLongitude: position?.coords.longitude,
+			snappedMile: this.#snapPositionToTrailMile(position),
+			syncState: this.#state.onlineStatus ? 'syncing' : 'queued-offline'
+		});
+
+		this.#state.trailPulseReports = [report, ...this.#state.trailPulseReports];
+
+		if (this.#state.onlineStatus) {
+			void this.#syncTrailPulseReport(report);
+			this.#finishSync('syncing');
+		} else {
+			this.#state.syncState = 'queued-offline';
+		}
+
+		return report;
+	}
+
+	formatTrailPulseReport(report: TrailConditionReport): string {
+		return trailPulseDisplayText(report);
+	}
+
+	markTrailPulseAlertSeen(reportId: string) {
+		if (this.#state.seenTrailPulseReportIds.includes(reportId)) return;
+		this.#state.seenTrailPulseReportIds = [reportId, ...this.#state.seenTrailPulseReportIds].slice(0, 120);
 	}
 
 	updatePrivacy(patch: Partial<PrivacySettings>) {

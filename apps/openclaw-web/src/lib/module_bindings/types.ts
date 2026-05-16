@@ -54,6 +54,20 @@ export const PublicAnnouncement = __t.object("PublicAnnouncement", {
 });
 export type PublicAnnouncement = __Infer<typeof PublicAnnouncement>;
 
+export const TrailConditionReport = __t.object("TrailConditionReport", {
+  id: __t.u64(),
+  trailId: __t.string(),
+  source: __t.string(),
+  chipText: __t.string().optional(),
+  noteText: __t.string(),
+  reporterTrailName: __t.string().optional(),
+  snappedMile: __t.f64(),
+  observedAt: __t.string(),
+  status: __t.string(),
+  createdAt: __t.string(),
+});
+export type TrailConditionReport = __Infer<typeof TrailConditionReport>;
+
 export const ScoutTurn = __t.object("ScoutTurn", {
   id: __t.u64(),
   workspaceId: __t.string(),
@@ -92,4 +106,3 @@ export const VideoDispatch = __t.object("VideoDispatch", {
   publishedAt: __t.string(),
 });
 export type VideoDispatch = __Infer<typeof VideoDispatch>;
-

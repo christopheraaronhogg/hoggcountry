@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { itinerary } from '$lib/mockTrailData';
+	import TrailPulsePanel from './TrailPulsePanel.svelte';
 </script>
 
 <div class="section-stack">
@@ -10,6 +11,8 @@
 			<p>The plan is designed to protect recovery now so you can spend the next push window instead of borrowing against it.</p>
 		</div>
 	</section>
+
+	<TrailPulsePanel />
 
 	<section class="stack-tight">
 		{#each itinerary as day}

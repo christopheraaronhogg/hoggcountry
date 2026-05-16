@@ -4,6 +4,9 @@ export type ReadinessRecommendation = 'push' | 'steady' | 'hold' | 'nero' | 'zer
 export type SyncState = 'synced' | 'syncing' | 'queued-offline';
 export type CheckInStatus = 'safe' | 'delayed' | 'need-help';
 export type ServiceCategory = 'hostel' | 'shuttle' | 'resupply' | 'gear' | 'food' | 'laundry';
+export type TrailPulseChip = 'Rocks' | 'Mud' | 'Blowdown' | 'Water' | 'Crowded' | 'Sketchy' | 'View' | 'Other';
+export type TrailPulseSource = 'chip' | 'text' | 'voice';
+export type TrailPulseStatus = 'active';
 
 export interface ChatMessage {
 	id: string;
@@ -19,6 +22,22 @@ export interface CheckInRecord {
 	mile: number;
 	status: CheckInStatus;
 	note: string;
+}
+
+export interface TrailConditionReport {
+	id: string;
+	trailId: string;
+	source: TrailPulseSource;
+	chipText?: TrailPulseChip;
+	noteText: string;
+	reporterTrailName?: string;
+	rawLatitude?: number;
+	rawLongitude?: number;
+	snappedMile: number;
+	observedAt: string;
+	status: TrailPulseStatus;
+	createdAt: string;
+	syncState: SyncState;
 }
 
 export interface PrivacySettings {
@@ -113,6 +132,8 @@ export interface TrailState {
 	coachMessages: ChatMessage[];
 	lastCheckIn: CheckInRecord;
 	checkInHistory: CheckInRecord[];
+	trailPulseReports: TrailConditionReport[];
+	seenTrailPulseReportIds: string[];
 	privacySettings: PrivacySettings;
 	trailSettings: TrailSettings;
 	trailLogSettings: TrailLogSettings;
