@@ -1,0 +1,50 @@
+[
+  {
+    "coverage_id": "rockiness-v2-100m-epqs-baseline",
+    "source_id": "usgs_3dep",
+    "source_url": "https://epqs.nationalmap.gov/v1/json",
+    "coverage_status": "complete_current_baseline",
+    "dem_resolution_m": 100,
+    "sample_count": 33897,
+    "production_safe": true,
+    "license_status": "public_domain",
+    "confidence": "high_for_elevation_low_for_actual_tread_surface",
+    "last_checked": "2026-05-16",
+    "last_generated": "2026-05-16",
+    "ai_answer_rule": "Use as model-derived elevation roughness only; not a field-verified tread surface record."
+  },
+  {
+    "coverage_id": "rockiness-v2-3dep-seamless-10m-30m-discovery",
+    "source_id": "usgs_3dep_seamless_dem",
+    "source_url": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/3dep-seamless",
+    "coverage_status": "reviewed_for_bounded_stac_discovery_not_downloaded",
+    "dem_resolution_m": [
+      10,
+      30
+    ],
+    "production_safe": true,
+    "license_status": "public_domain",
+    "confidence": "source_review_complete_extraction_pending",
+    "last_checked": "2026-05-16",
+    "last_generated": "2026-05-16",
+    "ai_answer_rule": "Use as a reviewed future DEM lane. Do not claim 10m/30m terrain ruggedness until extraction records exist."
+  },
+  {
+    "coverage_id": "rockiness-v2-lidar-calibration-discovery",
+    "source_id": "usgs_3dep_lidar",
+    "source_url": "https://registry.opendata.aws/usgs-lidar/",
+    "coverage_status": "reviewed_for_bounded_ept_calibration_not_streamed",
+    "calibration_sections": [
+      "northern_pennsylvania_rocky_ridges",
+      "white_mountains_nh",
+      "western_maine_mahoosucs_and_100_mile_wilderness"
+    ],
+    "lidar_available_in_records": false,
+    "production_safe": true,
+    "license_status": "public_domain",
+    "confidence": "source_review_complete_extraction_pending",
+    "last_checked": "2026-05-16",
+    "last_generated": "2026-05-16",
+    "ai_answer_rule": "Use as a reviewed future LiDAR calibration lane. Do not mark records lidar_available:true without extraction evidence."
+  }
+]

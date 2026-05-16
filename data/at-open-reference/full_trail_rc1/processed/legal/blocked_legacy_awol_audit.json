@@ -1,0 +1,48 @@
+{
+  "audit_id": "blocked_legacy_awol_audit",
+  "status": "quarantined_by_policy_and_validation",
+  "production_safe": false,
+  "license_status": "blocked",
+  "source_id": "awol_at_guide",
+  "source_url": "blocked",
+  "last_checked": "2026-05-16",
+  "last_generated": "2026-05-16",
+  "awol_scripts": [
+    {
+      "name": "import:awol-water",
+      "command": "node scripts/import-awol-water-sources.js"
+    },
+    {
+      "name": "ref:awol-water",
+      "command": "node scripts/generate-awol-water-reference.js"
+    },
+    {
+      "name": "awol:pdf-to-text",
+      "command": "node scripts/awol-pdf-to-text.js"
+    },
+    {
+      "name": "awol:raw-to-csv",
+      "command": "node scripts/awol-water-raw-to-csv.js"
+    },
+    {
+      "name": "awol:extract-water",
+      "command": "node scripts/extract-awol-water-sources.js"
+    },
+    {
+      "name": "awol:build-water",
+      "command": "npm run awol:pdf-to-text && npm run awol:extract-water && npm run import:awol-water && npm run ref:awol-water"
+    }
+  ],
+  "legacy_files": [
+    "scripts/awol-pdf-to-text.js",
+    "scripts/awol-water-raw-to-csv.js",
+    "scripts/extract-awol-water-sources.js",
+    "scripts/generate-awol-water-reference.js",
+    "scripts/import-awol-water-sources.js"
+  ],
+  "private_paths_allowed_only_for_user_owned_local_extraction": [
+    "private/awol/"
+  ],
+  "production_export_rule": "No AWOL/A.T. Guide derived record, source, dataset, or path may be marked production_safe or included in the RC1 production-safe export.",
+  "ai_answer_rule": "Treat AWOL/A.T. Guide material as blocked unless Hogg Country obtains written permission or a compatible license. It may not be used in Scout packaged reference data."
+}

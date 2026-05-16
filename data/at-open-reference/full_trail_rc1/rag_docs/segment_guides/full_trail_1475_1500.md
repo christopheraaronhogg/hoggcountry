@@ -7,7 +7,7 @@ end_mile_nobo_global_est: 1500
 official_miles: false
 states: CT, MA
 region_ids: mvp4_nj_ny_ct, mvp5_ma_vt_nh
-last_generated: 2026-05-15
+last_generated: 2026-05-16
 license_status: open_license_share_alike
 confidence: mixed_open_source_candidate
 ---
@@ -23,8 +23,9 @@ Generated miles are not official ATC mileage.
 
 ## Terrain And Difficulty
 - Difficulty labels in this span: severe
+- Rockiness V2 average: 5.51 (medium_model_with_100m_dem_and_osm)
 - Tread score average: 2.52
-- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, and tread model outputs as planning screens, not field verification.
+- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, Rockiness V2, and tread model outputs as planning screens, not field verification.
 
 ## Water Candidates
 - Mapped water/fording candidates in span: 15

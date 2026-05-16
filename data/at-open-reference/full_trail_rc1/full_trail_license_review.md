@@ -3,8 +3,8 @@
 
 RC1 uses public-domain, open-license, API-accessible, or license-reviewed data from existing Scout MVP packs and base open route assets.
 
-Production-safe: 51 sources.
-Not production-safe / pointer / blocked: 14 sources.
+Production-safe: 55 sources.
+Not production-safe / pointer / blocked: 16 sources.
 
 OSM-derived data is tagged open_license_share_alike / ODbL and requires OpenStreetMap contributor attribution. Public-domain USGS/NOAA/NWS style data is retained with attribution notes. ATC Trail Updates and similar restricted sources are pointer-only unless licensed.
 

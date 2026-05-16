@@ -133,6 +133,7 @@ test('Scout admin reference progress dashboard exposes RC1 progress without load
   assert.match(page, /Official 2026 reference/u);
   assert.match(page, /Length delta/u);
   assert.match(page, /Open Geometry Vs Official Reference/u);
+  assert.match(page, /Rockiness V2/u);
   assert.match(page, /generated\/open-route mile/u);
   assert.match(page, /Regenerate and verify/u);
   assert.match(server, /loadScoutReferenceProgressData/u);
@@ -152,12 +153,17 @@ test('Scout admin reference progress dashboard exposes RC1 progress without load
   assert.equal(progress.rc1.maxContinuityGapMiles < 1, true);
   assert.ok(progress.rc1.unresolvedCauses.some((cause) => /licensed official/i.test(cause)));
   assert.ok(progress.rc1.suspectedCauses.some((cause) => /OpenStreetMap|Waymarked/i.test(cause)));
-  assert.equal(progress.rc1.qaQuestionCount, 484);
+  assert.equal(progress.rc1.qaQuestionCount, 638);
+  assert.ok(progress.rc1.rockinessV2PointOneMileCount >= 21_000);
+  assert.ok(progress.rc1.rockinessV2OneMileCount >= 2_100);
+  assert.match(progress.rc1.rockinessV2Path, /tread_rockiness_v2/u);
   assert.ok(progress.rc1.totalDatasetRecords > 25_000);
   assert.ok(progress.rc1.zipSizeBytes > 1_000_000);
   assert.ok(progress.packs.length >= 6);
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'water_candidates' && dataset.recordCount > 1700));
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'elevation_samples_100m' && dataset.recordCount >= 33_000));
+  assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'rockiness_v2_0_1mi' && dataset.recordCount >= 21_000 && dataset.productionSafe));
+  assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'rockiness_v2_1mi' && dataset.recordCount >= 2_100 && dataset.productionSafe));
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'route_alignment_diagnostics' && dataset.recordCount === 1));
   assert.ok(progress.rc1.statusRows.some((row) => row.area === 'Landmark Anchors' && /coordinate-first/i.test(row.notes)));
   assert.ok(progress.rc1.yellowFlags.some((flag) => /Davenport Gap to Damascus/i.test(flag.notes)));

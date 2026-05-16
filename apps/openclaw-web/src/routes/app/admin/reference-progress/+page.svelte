@@ -70,6 +70,11 @@
       <strong>{formatNumber(data.rc1.datasetCount)}</strong>
       <small>{safeShare}% production-safe export coverage</small>
     </article>
+    <article class="metric-tile">
+      <span>Rockiness V2</span>
+      <strong>{formatNumber(data.rc1.rockinessV2PointOneMileCount)}</strong>
+      <small>0.1mi records · {formatNumber(data.rc1.rockinessV2OneMileCount)} 1mi records</small>
+    </article>
   </section>
 
   <section class="alignment-panel" aria-label="Route alignment diagnostics">
@@ -95,6 +100,11 @@
         <span>3D screen</span>
         <strong>{formatNumber(data.rc1.threeDEstimateMiles)}</strong>
         <small>{formatNumber(data.rc1.elevation100mSampleCount)} samples · 100m {data.rc1.elevation100mComplete ? 'complete' : 'incomplete'}</small>
+      </article>
+      <article>
+        <span>Rockiness V2</span>
+        <strong>{formatNumber(data.rc1.rockinessV2OneMileCount)}</strong>
+        <small>preferred difficulty input · not field verified</small>
       </article>
       <article>
         <span>Max continuity gap</span>

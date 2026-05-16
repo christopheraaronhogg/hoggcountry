@@ -14,7 +14,7 @@
     "gap": false,
     "license_status": "open_license_share_alike",
     "confidence": "regional_mvp_integrated",
-    "last_generated": "2026-05-15",
+    "last_generated": "2026-05-16",
     "production_safe": true,
     "ai_answer_rule": "Use as regional length/provenance QA only; generated/open-route miles are not official ATC miles."
   },
@@ -33,7 +33,7 @@
     "gap": true,
     "license_status": "open_license_share_alike",
     "confidence": "low_due_to_regional_mvp_gap",
-    "last_generated": "2026-05-15",
+    "last_generated": "2026-05-16",
     "production_safe": true,
     "ai_answer_rule": "Disclose this as the Davenport Gap to Damascus yellow regional detail gap; use generated/open-route miles only."
   },
@@ -52,7 +52,7 @@
     "gap": false,
     "license_status": "open_license_share_alike",
     "confidence": "regional_mvp_integrated",
-    "last_generated": "2026-05-15",
+    "last_generated": "2026-05-16",
     "production_safe": true,
     "ai_answer_rule": "Use as regional length/provenance QA only; generated/open-route miles are not official ATC miles."
   },
@@ -71,7 +71,7 @@
     "gap": false,
     "license_status": "open_license_share_alike",
     "confidence": "regional_mvp_integrated",
-    "last_generated": "2026-05-15",
+    "last_generated": "2026-05-16",
     "production_safe": true,
     "ai_answer_rule": "Use as regional length/provenance QA only; generated/open-route miles are not official ATC miles."
   },
@@ -90,7 +90,7 @@
     "gap": false,
     "license_status": "open_license_share_alike",
     "confidence": "regional_mvp_integrated",
-    "last_generated": "2026-05-15",
+    "last_generated": "2026-05-16",
     "production_safe": true,
     "ai_answer_rule": "Use as regional length/provenance QA only; generated/open-route miles are not official ATC miles."
   },
@@ -109,7 +109,7 @@
     "gap": false,
     "license_status": "open_license_share_alike",
     "confidence": "regional_mvp_integrated",
-    "last_generated": "2026-05-15",
+    "last_generated": "2026-05-16",
     "production_safe": true,
     "ai_answer_rule": "Use as regional length/provenance QA only; generated/open-route miles are not official ATC miles."
   },
@@ -128,7 +128,7 @@
     "gap": false,
     "license_status": "open_license_share_alike",
     "confidence": "regional_mvp_integrated",
-    "last_generated": "2026-05-15",
+    "last_generated": "2026-05-16",
     "production_safe": true,
     "ai_answer_rule": "Use as regional length/provenance QA only; generated/open-route miles are not official ATC miles."
   }

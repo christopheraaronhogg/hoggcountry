@@ -1,7 +1,7 @@
 
 # Global Mile Alignment Report
 
-Generated: 2026-05-15T00:00:00.000Z
+Generated: 2026-05-16T00:00:00.000Z
 
 Global RC1 mileage is derived from the base open-route milepoints. It preserves local regional fields where a mile falls inside a regional MVP pack.
 

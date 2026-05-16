@@ -100,6 +100,31 @@
     "reason": "safe license statuses or generated integration metadata"
   },
   {
+    "path": "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_0_1mi.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/tread_rockiness_v2/full_trail_micro_roughness_coverage.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/tread_rockiness_v2/full_trail_soil_stoniness.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/tread_rockiness_v2/full_trail_osm_surface_tags.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
     "path": "processed/difficulty/full_trail_difficulty_by_10mi_segment.json",
     "production_safe": true,
     "reason": "safe license statuses or generated integration metadata"
@@ -111,6 +136,26 @@
   },
   {
     "path": "tests/full_trail_rc1_behavior_questions.json",
+    "production_safe": false,
+    "reason": "mixed pointer/test/rules content; filtered from production-safe export"
+  },
+  {
+    "path": "sources/opentrail_review.json",
+    "production_safe": false,
+    "reason": "mixed pointer/test/rules content; filtered from production-safe export"
+  },
+  {
+    "path": "sources/openlongtrails_review.json",
+    "production_safe": false,
+    "reason": "mixed pointer/test/rules content; filtered from production-safe export"
+  },
+  {
+    "path": "sources/open_dem_review.json",
+    "production_safe": false,
+    "reason": "mixed pointer/test/rules content; filtered from production-safe export"
+  },
+  {
+    "path": "processed/legal/blocked_legacy_awol_audit.json",
     "production_safe": false,
     "reason": "mixed pointer/test/rules content; filtered from production-safe export"
   }

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Scout Full Trail Rockiness V2 Record",
+  "type": "object",
+  "required": [
+    "mile_nobo_global_est",
+    "mile_sobo_global_est",
+    "official",
+    "rockiness_v2_score_0_10",
+    "rockiness_class",
+    "confidence",
+    "field_verified",
+    "lidar_available",
+    "dem_resolution_m",
+    "micro_roughness_score",
+    "soil_stoniness_score",
+    "osm_surface_signal",
+    "user_report_signal",
+    "pace_penalty_factor",
+    "source_id",
+    "source_url",
+    "license_status",
+    "last_checked",
+    "last_generated",
+    "ai_answer_rule"
+  ],
+  "properties": {
+    "official": {
+      "const": false
+    },
+    "field_verified": {
+      "const": false
+    },
+    "rockiness_v2_score_0_10": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "license_status": {
+      "enum": [
+        "open_license_share_alike"
+      ]
+    }
+  }
+}

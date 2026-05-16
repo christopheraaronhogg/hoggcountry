@@ -62,6 +62,9 @@ export interface ReferenceProgressData {
     readonly elevation100mSampleCount: number;
     readonly elevation100mComplete: boolean;
     readonly elevation100mStatusPath: string;
+    readonly rockinessV2PointOneMileCount: number;
+    readonly rockinessV2OneMileCount: number;
+    readonly rockinessV2Path: string;
     readonly maxContinuityGapMiles: number | null;
     readonly unresolvedCauses: readonly string[];
     readonly suspectedCauses: readonly string[];
@@ -328,6 +331,8 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
   const statusRows = parseStatusRows(statusMarkdown);
   const qa = datasetIndex.find((dataset) => dataset.dataset_id === 'qa_questions')?.record_count ?? 0;
   const rag = datasetIndex.find((dataset) => dataset.dataset_id === 'rag_metadata')?.record_count ?? countFiles(packRoot, 'full_trail_rc1/rag_docs/segment_guides');
+  const rockinessV2PointOneMile = datasetIndex.find((dataset) => dataset.dataset_id === 'rockiness_v2_0_1mi');
+  const rockinessV2OneMile = datasetIndex.find((dataset) => dataset.dataset_id === 'rockiness_v2_1mi');
 
   return {
     generatedAt: new Date().toISOString(),
@@ -346,6 +351,9 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       elevation100mSampleCount: elevation100mStatus?.sample_count ?? datasetIndex.find((dataset) => dataset.dataset_id === 'elevation_samples_100m')?.record_count ?? 0,
       elevation100mComplete: elevation100mStatus?.complete === true,
       elevation100mStatusPath: 'data/at-open-reference/full_trail_rc1/processed/elevation/full_trail_elevation_100m_status.json',
+      rockinessV2PointOneMileCount: rockinessV2PointOneMile?.record_count ?? 0,
+      rockinessV2OneMileCount: rockinessV2OneMile?.record_count ?? 0,
+      rockinessV2Path: 'data/at-open-reference/full_trail_rc1/processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json',
       maxContinuityGapMiles: continuity?.max_consecutive_vertex_gap_miles ?? null,
       unresolvedCauses: routeAlignment?.unresolved_causes ?? [],
       suspectedCauses: routeAlignment?.suspected_causes ?? [],
@@ -388,6 +396,10 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       {
         label: 'Validate RC1',
         command: 'python3 data/at-open-reference/full_trail_rc1/run_full_trail_validation.py --json',
+      },
+      {
+        label: 'Validate Rockiness V2',
+        command: 'python3 data/at-open-reference/scripts/validate-rockiness-v2.py --json',
       },
       {
         label: 'Run full tests',

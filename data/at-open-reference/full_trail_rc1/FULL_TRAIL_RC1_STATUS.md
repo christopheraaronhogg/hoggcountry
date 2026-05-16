@@ -1,7 +1,7 @@
 
 # Full Trail RC1 Status
 
-Generated: 2026-05-15T00:00:00.000Z
+Generated: 2026-05-16T00:00:00.000Z
 
 | Area | Status | Notes |
 | --- | --- | --- |
@@ -15,10 +15,12 @@ Generated: 2026-05-15T00:00:00.000Z
 | Landmark Anchors | Green | Water and waypoint records are coordinate-first with route_snap derived from the selected open route spine. |
 | Rules | Yellow | Conservative official-source/pointer layer; live verification required. |
 | Live Connectors | Green | NWS/NPS/USFS/state/Baxter/ATC-pointer policy centralized. |
-| Tread | Yellow | Model-estimated, not field verified; gap tread low confidence. |
-| Difficulty | Yellow | Planning screen only; not field verified. |
+| Tread | Yellow | Tread v1 retained for compatibility; model-estimated, not field verified; gap tread low confidence. |
+| Rockiness V2 | Yellow | 21062 0.1-mile records and 2107 1-mile records. Uses 100m DEM/OSM signals now; LiDAR/gSSURGO are reviewed future lanes, not populated evidence. |
+| Difficulty | Yellow | Planning screen prefers Rockiness V2 when present; not field verified. |
 | RAG Docs | Green | Full overview, policies, 25-mile segments, indexes, metadata. |
-| Licensing | Green | Blocked sources excluded from production-safe export. |
+| Source Reviews | Yellow | OpenTrail/OpenLongTrails held as unknown_review_required; USGS 3DEP Seamless, USGS LiDAR, and gSSURGO/SSURGO reviewed as production-safe source lanes. |
+| Licensing | Green | Blocked sources and review-only sources excluded from production-safe export. |
 | Export | Green | Export script writes filtered production-safe zip/manifest. |
 | Validation | Green | run_full_trail_validation.py enforces source-aware rules. |
-| QA Tests | Green | 484 expected-behavior questions. |
+| QA Tests | Green | 638 expected-behavior questions. |

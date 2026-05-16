@@ -1,0 +1,27 @@
+{
+  "source_id": "openlongtrails_review",
+  "name": "OpenLongTrails/Grit source review",
+  "owner": "OpenLongTrails.org",
+  "source_type": "candidate long-trail app/wiki/source",
+  "source_url": "https://www.openlongtrails.org/blog/posts/Introducing_Grit/",
+  "access_method": "public web/blog/app review only",
+  "license_status": "unknown_review_required",
+  "allowed_use": "pointer/review only; do not ingest Grit, wiki, comments, GPX, GeoJSON, or user submissions until the exact dataset and license are reviewed",
+  "attribution_required": "To be determined if permission/license is obtained.",
+  "confidence": "license_not_verified_for_at_packaging",
+  "last_checked": "2026-05-16",
+  "production_safe": false,
+  "blocked_until": "specific Appalachian Trail dataset URL plus compatible license/API or written permission",
+  "candidate_use": [
+    "route alignment comparison",
+    "gap detection",
+    "future OSM/user-report comparison after license review"
+  ],
+  "recommendation": "Keep review-only. Revisit only when a specific AT dataset URL and compatible license/API are available.",
+  "data_categories": [
+    "source_review",
+    "candidate_route_alignment",
+    "candidate_waypoint_comparison"
+  ],
+  "notes": "OpenLongTrails describes downloadable Grit data for PCT and future OSM/user-contribution lanes, but this review does not establish a production-safe AT corpus license."
+}

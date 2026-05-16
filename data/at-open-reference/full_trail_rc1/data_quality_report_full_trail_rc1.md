@@ -7,8 +7,10 @@
 - Added coordinate-first landmark anchors for water and waypoint datasets, with route_snap stored as a derived generated/open-route mile view.
 - Merged elevation, water, waypoints, rules, live-source, tread, difficulty, and RAG metadata indexes.
 - Added direct 100-meter USGS 3DEP/EPQS elevation samples with 1/5/10-mile detailed summaries, major climb/descent candidates, and steep-grade screening sections.
+- Added Rockiness V2 source reviews, 0.1-mile and 1-mile model records, micro-roughness coverage metadata, OSM surface-signal records, and a conservative gSSURGO/SSURGO lane that stays null until bounded extraction exists.
+- Added blocked legacy AWOL audit metadata and validation gates to keep AWOL/A.T. Guide-derived data out of production-safe exports.
 - Created license/provenance audit docs and production-safe export tooling.
-- Created 484 full-trail behavior QA questions.
+- Created 638 full-trail behavior QA questions.
 
 ## Source / License Summary
 - OSM-derived data: open_license_share_alike / ODbL with attribution.
@@ -47,14 +49,24 @@ See processed/route/route_alignment_report.md and processed/route/route_alignmen
 - rules: 54
 - live_sources: 35
 - tread: 2108
+- rockiness_v2_0_1mi: 21062
+- rockiness_v2_1mi: 2107
+- micro_roughness_coverage: 3
+- soil_stoniness: 2108
+- osm_surface_tags: 2108
 - difficulty: 211
 - rag_metadata: 85
-- qa_questions: 484
+- qa_questions: 638
+- source_review_opentrail: 1
+- source_review_openlongtrails: 1
+- source_review_open_dem: 3
+- blocked_legacy_awol_audit: 1
 
 ## Weak Points
 - Generated miles are not official and should not be used as exact field navigation.
 - Davenport Gap to Damascus lacks regional MVP depth.
 - Tread/difficulty are model screens, not field verified.
+- Rockiness V2 improves roughness screening, but LiDAR and gSSURGO are reviewed future lanes in RC1; they are not record-level extracted evidence yet.
 - Elevation is model-derived from USGS 3DEP/EPQS at 100-meter spacing; it is detailed enough for planning screens but not surveyed tread grade.
 - Water/fords remain candidate-only unless verified.
 - Current closures/weather/permits/fords/Katahdin status require live checks.

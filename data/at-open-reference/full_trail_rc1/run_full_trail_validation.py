@@ -55,6 +55,14 @@ REQUIRED_PATHS = [
     "processed/rules/full_trail_rules_by_land_manager.json",
     "processed/live_conditions/full_trail_live_condition_sources.json",
     "processed/tread/full_trail_tread_rockiness_1_0mi.json",
+    "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_0_1mi.json",
+    "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json",
+    "processed/tread_rockiness_v2/full_trail_micro_roughness_coverage.json",
+    "processed/tread_rockiness_v2/full_trail_soil_stoniness.json",
+    "processed/tread_rockiness_v2/full_trail_osm_surface_tags.json",
+    "processed/tread_rockiness_v2/rockiness_v2_model_notes.md",
+    "processed/tread_rockiness_v2/rockiness_v2_source_limitations.md",
+    "processed/legal/blocked_legacy_awol_audit.json",
     "processed/difficulty/full_trail_daily_difficulty_model.md",
     "processed/difficulty/full_trail_daily_difficulty_model.json",
     "processed/difficulty/full_trail_difficulty_by_10mi_segment.json",
@@ -72,6 +80,10 @@ REQUIRED_PATHS = [
     "rag_docs/policies/difficulty.md",
     "rag_docs/policies/license_attribution.md",
     "rag_docs/rag_doc_metadata.json",
+    "schemas/rockiness_v2.schema.json",
+    "sources/opentrail_review.json",
+    "sources/openlongtrails_review.json",
+    "sources/open_dem_review.json",
     "tests/full_trail_rc1_behavior_questions.json",
     "exports/full_trail_reference_pack_rc1.zip",
     "exports/manifest.json",
@@ -139,6 +151,27 @@ def validate() -> dict[str, Any]:
             fail_if(source.get("license_status") not in VALID_LICENSES, failures, f"production-safe source {source.get('source_id')} has unsafe license")
     for blocked in ["farout", "awol_at_guide", "at_data_book", "alltrails_gaia_hiking_project", "atc_website"]:
         fail_if(source_map.get(blocked, {}).get("license_status") != "blocked", failures, f"{blocked} not blocked")
+    for review_only in ["opentrail_review", "openlongtrails_review"]:
+        source = source_map.get(review_only, {})
+        fail_if(source.get("license_status") != "unknown_review_required", failures, f"{review_only} should remain review-only")
+        fail_if(source.get("production_safe") is not False, failures, f"{review_only} leaked into production-safe sources")
+        fail_if(not source.get("blocked_until"), failures, f"{review_only} missing blocked_until")
+    for safe_source in ["usgs_3dep_seamless_dem", "usgs_3dep_lidar", "nrcs_gssurgo_ssurgo", "full_trail_rockiness_v2_model"]:
+        source = source_map.get(safe_source, {})
+        fail_if(source.get("production_safe") is not True, failures, f"{safe_source} not production safe")
+        fail_if(source.get("license_status") not in VALID_LICENSES, failures, f"{safe_source} unsafe license")
+    opentrail_review = j("sources/opentrail_review.json")
+    openlongtrails_review = j("sources/openlongtrails_review.json")
+    open_dem_review = j("sources/open_dem_review.json")
+    for review in [opentrail_review, openlongtrails_review, *open_dem_review]:
+        for field in ["source_id", "owner", "source_url", "access_method", "license_status", "production_safe", "allowed_use", "candidate_use", "confidence", "last_checked", "recommendation"]:
+            if field == "recommendation" and review.get(field) is None:
+                # Older manifest rows call this notes; the generated review files below must normalize it.
+                pass
+            else:
+                fail_if(field not in review or review.get(field) in (None, ""), failures, f"source review {review.get('source_id')} missing {field}")
+    fail_if(opentrail_review.get("production_safe") is not False, failures, "OpenTrail review production_safe not false")
+    fail_if(openlongtrails_review.get("production_safe") is not False, failures, "OpenLongTrails review production_safe not false")
 
     route = rows(j("processed/route/full_at_route_rc1.geojson"))[0]
     common(route, failures, "route")
@@ -278,17 +311,89 @@ def validate() -> dict[str, Any]:
         fail_if(record.get("field_verified") is not False, failures, "tread unexpectedly field verified")
         fail_if(record.get("score") not in [0, 1, 2, 3, 4, 5], failures, "tread score outside range")
 
+    rockiness01 = j("processed/tread_rockiness_v2/full_trail_rockiness_v2_by_0_1mi.json")
+    rockiness1 = j("processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json")
+    micro_coverage = j("processed/tread_rockiness_v2/full_trail_micro_roughness_coverage.json")
+    soil = j("processed/tread_rockiness_v2/full_trail_soil_stoniness.json")
+    osm_surface = j("processed/tread_rockiness_v2/full_trail_osm_surface_tags.json")
+    fail_if(len(rockiness01) < 21000, failures, "Rockiness V2 0.1mi records too few")
+    fail_if(len(rockiness1) < 2100, failures, "Rockiness V2 1mi records too few")
+    fail_if(len(micro_coverage) < 3, failures, "micro roughness coverage missing reviewed lanes")
+    coverage_text = json.dumps(micro_coverage).lower()
+    for term in ["100m", "3dep", "lidar", "not_downloaded", "not_streamed"]:
+        fail_if(term not in coverage_text, failures, f"micro coverage missing {term}")
+    fail_if(len(soil) < 2000, failures, "soil stoniness lane too small")
+    fail_if(len(osm_surface) < 2000, failures, "OSM surface lane too small")
+    fail_if(not all(record.get("license_status") == "public_domain" for record in soil[:50]), failures, "soil lane not public domain")
+    fail_if(not all(record.get("soil_stoniness_score") is None for record in soil[:50]), failures, "soil lane should stay null until extraction")
+    fail_if(not all(record.get("license_status") == "open_license_share_alike" for record in osm_surface[:50]), failures, "OSM surface lane not ODbL/open_license_share_alike")
+    fail_if(not any(record.get("osm_surface_signal") is not None for record in osm_surface), failures, "OSM surface signals never populated")
+    rockiness_required = [
+        "mile_nobo_global_est",
+        "mile_sobo_global_est",
+        "official",
+        "rockiness_v2_score_0_10",
+        "rockiness_class",
+        "confidence",
+        "field_verified",
+        "lidar_available",
+        "dem_resolution_m",
+        "micro_roughness_score",
+        "soil_stoniness_score",
+        "osm_surface_signal",
+        "user_report_signal",
+        "pace_penalty_factor",
+        "source_id",
+        "source_url",
+        "license_status",
+        "last_checked",
+        "last_generated",
+        "ai_answer_rule",
+    ]
+    for dataset_name, records in [("rockiness01", rockiness01), ("rockiness1", rockiness1)]:
+        fail_if(any(record.get("field_verified") is True for record in records), failures, f"{dataset_name} has field_verified true")
+        fail_if(any(record.get("official") is not False for record in records[:50] + records[-50:]), failures, f"{dataset_name} official not false")
+        fail_if(any(record.get("lidar_available") is True for record in records), failures, f"{dataset_name} marks lidar available without extraction evidence")
+        fail_if(any(record.get("license_status") != "open_license_share_alike" for record in records[:50] + records[-50:]), failures, f"{dataset_name} license is not ODbL/open share alike")
+        for record in records[:50] + records[-50:]:
+            common(record, failures, dataset_name)
+            for field in rockiness_required:
+                fail_if(field not in record, failures, f"{dataset_name} missing {field}")
+            fail_if(not 0 <= record.get("rockiness_v2_score_0_10", -1) <= 10, failures, f"{dataset_name} score outside 0-10")
+            fail_if(record.get("dem_resolution_m") != 100, failures, f"{dataset_name} should use current 100m baseline")
+            fail_if("not field verified" not in record.get("ai_answer_rule", "").lower(), failures, f"{dataset_name} missing not-field-verified rule")
+            fail_if("not official atc" not in record.get("ai_answer_rule", "").lower() and dataset_name == "rockiness01", failures, f"{dataset_name} missing generated-mile caution")
+    fail_if(not any(record.get("confidence") == "low_due_to_regional_mvp_gap" for record in rockiness1), failures, "Rockiness V2 gap low confidence missing")
+    fail_if(not any(record.get("confidence", "").startswith("medium") for record in rockiness1), failures, "Rockiness V2 lacks medium confidence records where OSM/100m signals exist")
+    notes_text = t("processed/tread_rockiness_v2/rockiness_v2_model_notes.md").lower()
+    limitations_text = t("processed/tread_rockiness_v2/rockiness_v2_source_limitations.md").lower()
+    for term in ["opentrail", "openlongtrails", "not field verified", "100-meter", "osm", "gssurgo", "lidar", "user reports"]:
+        fail_if(term not in limitations_text and term not in notes_text, failures, f"Rockiness V2 docs missing {term}")
+
+    awol_audit = j("processed/legal/blocked_legacy_awol_audit.json")
+    fail_if(awol_audit.get("production_safe") is not False, failures, "AWOL audit should not be production safe")
+    fail_if(awol_audit.get("license_status") != "blocked", failures, "AWOL audit should be blocked")
+    fail_if(len(awol_audit.get("awol_scripts", [])) < 1, failures, "AWOL audit did not find legacy scripts")
+    fail_if("production_safe" not in awol_audit.get("production_export_rule", ""), failures, "AWOL audit missing production-safe export rule")
+
     difficulty = j("processed/difficulty/full_trail_difficulty_by_10mi_segment.json")
     fail_if(len(difficulty) < 210, failures, "difficulty segments too few")
     fail_if(not any(record["factors"].get("ford_uncertainty_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks ford factor")
     fail_if(not any(record["factors"].get("regional_gap_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks regional gap factor")
     fail_if(not any(record["factors"].get("permit_rule_friction_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks permit/rule friction")
     fail_if(not any(record["factors"].get("steep_grade_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks steep-grade factor")
+    fail_if(not any(record["factors"].get("rockiness_v2_factor", 0) > 0 for record in difficulty), failures, "difficulty lacks Rockiness V2 factor")
     for record in difficulty[:10]:
         common(record, failures, "difficulty")
         fail_if(record.get("difficulty_score_0_10") is None, failures, "difficulty missing score")
         fail_if(record.get("inputs", {}).get("elevation_sample_spacing_meters") != 100, failures, "difficulty not using 100m elevation")
         fail_if(record.get("inputs", {}).get("max_grade_percent") is None, failures, "difficulty missing max-grade input")
+        fail_if("rockiness_v2_score_avg" not in record.get("inputs", {}), failures, "difficulty missing Rockiness V2 input")
+        fail_if("rockiness_v2_factor" not in record.get("factors", {}), failures, "difficulty missing Rockiness V2 factor")
+    difficulty_model = j("processed/difficulty/full_trail_daily_difficulty_model.json")
+    fail_if(difficulty_model.get("preferred_tread_source") != "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json", failures, "difficulty model does not prefer Rockiness V2")
+    difficulty_doc = t("processed/difficulty/full_trail_daily_difficulty_model.md").lower()
+    fail_if("rockiness v2" not in difficulty_doc or ("not field verified" not in difficulty_doc and "not field-verified" not in difficulty_doc), failures, "difficulty doc missing Rockiness V2 caveat")
 
     rag_metadata = j("rag_docs/rag_doc_metadata.json")
     fail_if(len(rag_metadata) < 84, failures, "RAG segment metadata too few")
@@ -300,7 +405,7 @@ def validate() -> dict[str, Any]:
     qa = j("tests/full_trail_rc1_behavior_questions.json")
     fail_if(len(qa) < 200, failures, "QA questions below 200")
     qa_text = json.dumps(qa).lower()
-    for term in ["itinerary", "shelter", "water", "permit", "camping", "weather", "closures", "rockiness", "ford", "baxter", "katahdin", "smokies", "shenandoah", "white mountains", "nj/ct", "pa rockiness", "resupply", "davenport", "official length alignment", "2197.9", "2106.2", "-91.7"]:
+    for term in ["itinerary", "shelter", "water", "permit", "camping", "weather", "closures", "rockiness", "rockiness v2", "rocky-but-flat", "user report override", "blocked source leakage", "ford", "baxter", "katahdin", "smokies", "shenandoah", "white mountains", "nj/ct", "pa rockiness", "resupply", "davenport", "official length alignment", "2197.9", "2106.2", "-91.7"]:
         fail_if(term not in qa_text, failures, f"QA missing {term}")
 
     dataset_index = j("processed/index/full_trail_dataset_index.json")
@@ -314,6 +419,11 @@ def validate() -> dict[str, Any]:
     for entry in dataset_index:
         if not entry.get("production_safe"):
             fail_if(entry["path"] in names, failures, f"export included unsafe file {entry['path']}")
+        if entry.get("production_safe"):
+            fail_if("awol" in entry["path"].lower() or "awol" in entry["dataset_id"].lower(), failures, f"AWOL path marked production safe: {entry['path']}")
+    for unsafe_review_path in ["sources/opentrail_review.json", "sources/openlongtrails_review.json", "sources/open_dem_review.json", "processed/legal/blocked_legacy_awol_audit.json"]:
+        fail_if(unsafe_review_path in names, failures, f"export included review/blocked file {unsafe_review_path}")
+    fail_if(any("awol" in name.lower() for name in names), failures, "export zip contains AWOL path")
 
     return {
         "ok": not failures,
@@ -329,6 +439,8 @@ def validate() -> dict[str, Any]:
         "water_candidates": len(water),
         "rules": len(rules),
         "tread_1mi_records": len(tread),
+        "rockiness_v2_0_1mi_records": len(rockiness01),
+        "rockiness_v2_1mi_records": len(rockiness1),
         "difficulty_segments": len(difficulty),
         "rag_docs": len(rag_metadata),
         "behavior_questions": len(qa),

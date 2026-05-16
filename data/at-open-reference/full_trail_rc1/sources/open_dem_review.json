@@ -1,0 +1,84 @@
+[
+  {
+    "source_id": "usgs_3dep_seamless_dem",
+    "name": "USGS 3DEP Seamless DEMs via Microsoft Planetary Computer STAC",
+    "owner": "U.S. Geological Survey; hosted by Microsoft Planetary Computer",
+    "source_type": "DEM/STAC collection",
+    "source_url": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/3dep-seamless",
+    "access_method": "bounded STAC discovery and Cloud Optimized GeoTIFF reads near the AT corridor",
+    "license_status": "public_domain",
+    "allowed_use": "discover/query corridor DEM coverage and derive terrain roughness without bulk downloading unrelated rasters",
+    "attribution_required": "Data available from U.S. Geological Survey, 3D Elevation Program. Preserve Planetary Computer hosting reference when used.",
+    "confidence": "high_for_dem_coverage_not_tread_truth",
+    "last_checked": "2026-05-16",
+    "production_safe": true,
+    "blocked_until": null,
+    "candidate_use": [
+      "10m/30m DEM coverage discovery",
+      "future terrain ruggedness index",
+      "future local relief and slope variance refinement"
+    ],
+    "recommendation": "Use for bounded corridor discovery and future COG reads; keep existing 100m EPQS baseline until extraction is implemented.",
+    "data_categories": [
+      "dem",
+      "micro_roughness",
+      "terrain_ruggedness"
+    ],
+    "notes": "Used as a reviewed source lane. Current RC1 Rockiness V2 records still use the existing 100m EPQS baseline until bounded COG reads are implemented."
+  },
+  {
+    "source_id": "usgs_3dep_lidar",
+    "name": "USGS 3DEP LiDAR Point Clouds on AWS",
+    "owner": "U.S. Geological Survey; hosted in AWS Open Data Registry",
+    "source_type": "LiDAR point cloud/EPT catalog",
+    "source_url": "https://registry.opendata.aws/usgs-lidar/",
+    "access_method": "bounded EPT/STAC discovery for calibration sections; no bulk LAZ downloads",
+    "license_status": "public_domain",
+    "allowed_use": "discover LiDAR/EPT coverage and derive calibration-section micro-roughness where corridor queries are bounded",
+    "attribution_required": "Data available from U.S. Geological Survey, 3D Elevation Program; cite AWS Open Data Registry access date where used.",
+    "confidence": "high_for_lidar_source_not_currently_extracted",
+    "last_checked": "2026-05-16",
+    "production_safe": true,
+    "blocked_until": null,
+    "candidate_use": [
+      "PA rockiness calibration",
+      "White Mountains calibration",
+      "Maine roots/rocks/remoteness calibration"
+    ],
+    "recommendation": "Use for bounded EPT/LiDAR calibration sections only; do not mark record-level lidar_available until extracted evidence exists.",
+    "data_categories": [
+      "lidar",
+      "micro_roughness",
+      "calibration"
+    ],
+    "notes": "Reviewed as production-safe source lane. Current RC1 does not stream point clouds yet; lidar_available remains false in model records unless a future extraction writes evidence."
+  },
+  {
+    "source_id": "nrcs_gssurgo_ssurgo",
+    "name": "NRCS gSSURGO/SSURGO soil survey data",
+    "owner": "USDA Natural Resources Conservation Service",
+    "source_type": "soil survey database/raster and tables",
+    "source_url": "https://www.nrcs.usda.gov/resources/data-and-reports/gridded-soil-survey-geographic-gssurgo-database",
+    "access_method": "bounded corridor extraction of soil map units and attributes",
+    "license_status": "public_domain",
+    "allowed_use": "derive low-to-medium confidence stoniness, shallow-bedrock, rock-outcrop, and wetness proxies with source caveats",
+    "attribution_required": "Credit USDA Natural Resources Conservation Service / National Cooperative Soil Survey where soil attributes are used.",
+    "confidence": "high_for_soil_attributes_low_for_actual_tread_without_field_reports",
+    "last_checked": "2026-05-16",
+    "production_safe": true,
+    "blocked_until": null,
+    "candidate_use": [
+      "soil stoniness lane",
+      "shallow bedrock/outcrop proxy",
+      "wetness/mud proxy"
+    ],
+    "recommendation": "Use for bounded corridor soil attribute extraction; keep soil_stoniness_score null until attribute extraction is implemented.",
+    "data_categories": [
+      "soil",
+      "stoniness_proxy",
+      "shallow_bedrock",
+      "wetness_proxy"
+    ],
+    "notes": "Reviewed as production-safe source lane. Current RC1 V2 records keep soil_stoniness_score null until bounded SSURGO attribute extraction is implemented."
+  }
+]

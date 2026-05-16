@@ -1,0 +1,27 @@
+{
+  "source_id": "opentrail_review",
+  "name": "OpenTrail source review",
+  "owner": "OpenTrail.org",
+  "source_type": "candidate community trail app/source",
+  "source_url": "https://opentrail.org/",
+  "access_method": "public web/app review only",
+  "license_status": "unknown_review_required",
+  "allowed_use": "pointer/review only; do not scrape, ingest, redistribute, or package trail/community data until a compatible public license/API or written permission exists",
+  "attribution_required": "To be determined if permission/license is obtained.",
+  "confidence": "license_not_verified",
+  "last_checked": "2026-05-16",
+  "production_safe": false,
+  "blocked_until": "public bulk/API license or written permission that covers commercial app packaging and derived datasets",
+  "candidate_use": [
+    "route alignment comparison",
+    "POI comparison",
+    "future user-report/tread comparison after license review"
+  ],
+  "recommendation": "Keep review-only. Do not ingest until OpenTrail publishes a compatible bulk/API license or gives written permission.",
+  "data_categories": [
+    "source_review",
+    "candidate_route_alignment",
+    "candidate_poi_comparison"
+  ],
+  "notes": "Visible page presents a trail-info community/installable offline map app, but this review found no production-safe bulk license/API to ingest."
+}

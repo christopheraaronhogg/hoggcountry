@@ -85,7 +85,7 @@
     "region_id": "mvp2_virginia",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0004",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "shenandoah_official_alerts",
@@ -110,7 +110,7 @@
     "region_id": "mvp2_virginia",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0005",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "usfs_gwj_official_pages",
@@ -134,7 +134,7 @@
     "region_id": "mvp2_virginia",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0006",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "virginia_dcr_state_parks",
@@ -157,7 +157,7 @@
     "region_id": "mvp2_virginia",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0007",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "atc_trail_updates_pointer",
@@ -179,7 +179,7 @@
     "region_id": "mvp2_virginia",
     "production_safe": false,
     "full_trail_record_id": "full-rc1-live-source-0008",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "nps_api",
@@ -202,7 +202,7 @@
     "region_id": "mvp3_midatlantic",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0009",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "nps_dewa_official_pages",
@@ -228,7 +228,7 @@
     "region_id": "mvp3_midatlantic",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0010",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "maryland_dnr_official_pages",
@@ -251,7 +251,7 @@
     "region_id": "mvp3_midatlantic",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0011",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "pa_dcnr_official_pages",
@@ -276,7 +276,7 @@
     "region_id": "mvp3_midatlantic",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0012",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "pa_game_commission_official_pages",
@@ -298,7 +298,7 @@
     "region_id": "mvp3_midatlantic",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0013",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "nps_api",
@@ -321,7 +321,7 @@
     "region_id": "mvp4_nj_ny_ct",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0014",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "njdep_official_pages",
@@ -345,7 +345,7 @@
     "region_id": "mvp4_nj_ny_ct",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0015",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "nys_parks_dec_official_pages",
@@ -371,7 +371,7 @@
     "region_id": "mvp4_nj_ny_ct",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0016",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "nys_palisades_official_pages",
@@ -396,7 +396,7 @@
     "region_id": "mvp4_nj_ny_ct",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0017",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "ct_deep_official_pages",
@@ -422,7 +422,7 @@
     "region_id": "mvp4_nj_ny_ct",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0018",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "njnyct_state_local_alerts",
@@ -446,7 +446,7 @@
     "region_id": "mvp4_nj_ny_ct",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0019",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "ny_nj_trail_conference_pointer",
@@ -466,7 +466,7 @@
     "region_id": "mvp4_nj_ny_ct",
     "production_safe": false,
     "full_trail_record_id": "full-rc1-live-source-0020",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "ct_amc_pointer",
@@ -487,7 +487,7 @@
     "region_id": "mvp4_nj_ny_ct",
     "production_safe": false,
     "full_trail_record_id": "full-rc1-live-source-0021",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "nps_api",
@@ -509,7 +509,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0022",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "ma_dcr_official_pages",
@@ -532,7 +532,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0023",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "vt_state_official_pages",
@@ -555,7 +555,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0024",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "usfs_gmnf_official_pages",
@@ -579,7 +579,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0025",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "nh_state_local_official_pages",
@@ -602,7 +602,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0026",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "usfs_wmnf_official_pages",
@@ -628,7 +628,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0027",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "mavtnh_state_local_alerts",
@@ -653,7 +653,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0028",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "amc_pointer",
@@ -674,7 +674,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": false,
     "full_trail_record_id": "full-rc1-live-source-0029",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "gmc_pointer",
@@ -696,7 +696,7 @@
     "region_id": "mvp5_ma_vt_nh",
     "production_safe": false,
     "full_trail_record_id": "full-rc1-live-source-0030",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "maine_state_official_pages",
@@ -721,7 +721,7 @@
     "region_id": "mvp6_maine",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0031",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "maine_state_local_alerts",
@@ -747,7 +747,7 @@
     "region_id": "mvp6_maine",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0032",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "baxter_state_park_authority_pages",
@@ -770,7 +770,7 @@
     "region_id": "mvp6_maine",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0033",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "baxter_current_conditions",
@@ -794,7 +794,7 @@
     "region_id": "mvp6_maine",
     "production_safe": true,
     "full_trail_record_id": "full-rc1-live-source-0034",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   },
   {
     "source_id": "monson_pointer",
@@ -817,6 +817,6 @@
     "region_id": "mvp6_maine",
     "production_safe": false,
     "full_trail_record_id": "full-rc1-live-source-0035",
-    "last_generated": "2026-05-15"
+    "last_generated": "2026-05-16"
   }
 ]
