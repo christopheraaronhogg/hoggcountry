@@ -1,4 +1,4 @@
-import { YT_FEED_URL, LIVE_TRACKING_URL } from '../../../../../src/lib/config';
+import { LIVE_TRACKING_URL, YT_SHORTS_FEED_URL, YT_UPLOADS_FEED_URL } from '../../../../../src/lib/config';
 import { nearestAtMilepost } from './at-location';
 import { fetchGarminTrack, type GarminFeatureCollection } from './garmin';
 import { fetchYouTubeRSS, type YtVideo } from './youtube';
@@ -69,8 +69,25 @@ let cachedTrailUpdates: { readonly items: DadTrailUpdateSummary[]; readonly ts: 
 let cachedTrack: { readonly track: GarminFeatureCollection; readonly ts: number } | null = null;
 
 export async function loadDadVideos(limit = 8): Promise<YtVideo[]> {
-  const items = await fetchYouTubeRSS(YT_FEED_URL);
-  return items.slice(0, limit);
+  const [uploads, shorts] = await Promise.all([
+    fetchYouTubeRSS(YT_UPLOADS_FEED_URL).catch(() => []),
+    fetchYouTubeRSS(YT_SHORTS_FEED_URL).catch(() => [])
+  ]);
+  const merged = new Map<string, YtVideo>();
+
+  for (const short of shorts) {
+    merged.set(short.id, { ...short, kind: 'short' });
+  }
+
+  for (const upload of uploads) {
+    if (!merged.has(upload.id)) {
+      merged.set(upload.id, upload);
+    }
+  }
+
+  return Array.from(merged.values())
+    .sort((a, b) => String(b.published || '').localeCompare(String(a.published || '')))
+    .slice(0, limit);
 }
 
 function previewTrack(): GarminFeatureCollection {

@@ -7,10 +7,34 @@ export interface YtVideo {
   readonly published: string;
   readonly link: string;
   readonly thumbnail: string;
+  readonly kind: 'video' | 'short';
 }
 
 const cacheByFeedUrl = new Map<string, { items: YtVideo[]; ts: number }>();
 const TTL_MS = 5 * 60 * 1000;
+
+function youtubeKind(link: string): YtVideo['kind'] {
+  try {
+    return new URL(link).pathname.startsWith('/shorts/') ? 'short' : 'video';
+  } catch {
+    return link.includes('/shorts/') ? 'short' : 'video';
+  }
+}
+
+function youtubeVideoId(link: string, kind: YtVideo['kind']): string {
+  try {
+    const url = new URL(link);
+    return kind === 'short'
+      ? url.pathname.split('/').filter(Boolean).at(1) ?? ''
+      : url.searchParams.get('v') ?? '';
+  } catch {
+    const shortMatch = link.match(/\/shorts\/([^/?#]+)/);
+    if (shortMatch?.[1]) return shortMatch[1];
+
+    const watchMatch = link.match(/[?&]v=([^&#]+)/);
+    return watchMatch?.[1] ?? '';
+  }
+}
 
 function pickText(value: unknown): string {
   if (typeof value === 'string') return value.trim();
@@ -59,7 +83,8 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
         const link = Array.isArray(record.link)
           ? record.link.find((candidate: { href?: string }) => candidate.href)?.href ?? record.link[0]?.href ?? ''
           : record.link?.href ?? '';
-        const videoId = record['yt:videoId'] || (link ? new URL(link).searchParams.get('v') : '') || '';
+        const kind = youtubeKind(link);
+        const videoId = record['yt:videoId'] || youtubeVideoId(link, kind);
         if (!videoId) return null;
 
         const mediaGroup = record['media:group'];
@@ -69,10 +94,11 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
           pickText(record.content) ||
           '';
 
-        const thumbnail =
-          mediaGroup?.['media:thumbnail']?.url ||
-          record['media:thumbnail']?.url ||
-          `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+        const thumbnail = kind === 'short'
+          ? `https://i.ytimg.com/vi/${videoId}/oardefault.jpg`
+          : mediaGroup?.['media:thumbnail']?.url ||
+            record['media:thumbnail']?.url ||
+            `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
         return {
           id: videoId,
@@ -80,7 +106,8 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
           description,
           published,
           link,
-          thumbnail
+          thumbnail,
+          kind
         } satisfies YtVideo;
       })
       .filter((entry): entry is YtVideo => entry !== null);

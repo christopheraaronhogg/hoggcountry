@@ -3,6 +3,10 @@
   import type { PageData } from './$types';
 
   const { data } = $props<{ data: PageData }>();
+
+  function isShort(video: PageData['videos'][number]) {
+    return video.kind === 'short' || video.link.includes('/shorts/');
+  }
 </script>
 
 <section class="card hero-panel">
@@ -42,7 +46,11 @@
       <div class="stack">
         {#each data.videos.slice(0, 3) as video}
           <a href={video.link} target="_blank" rel="noreferrer" style="display:grid; gap:0.55rem; text-decoration:none;">
-            <img src={video.thumbnail} alt={video.title} style="width:100%; aspect-ratio:16 / 9; object-fit:cover; border-radius:16px;" />
+            <img
+              src={isShort(video) ? `https://i.ytimg.com/vi/${video.id}/oardefault.jpg` : video.thumbnail}
+              alt={video.title}
+              style={`width:100%; aspect-ratio:${isShort(video) ? '9 / 16' : '16 / 9'}; object-fit:cover; border-radius:16px;`}
+            />
             <strong style="color:var(--pine);">{video.title}</strong>
           </a>
         {/each}

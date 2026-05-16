@@ -2,6 +2,10 @@
   import type { PageData } from './$types';
 
   const { data } = $props<{ data: PageData }>();
+
+  function isShort(video: PageData['videos'][number]) {
+    return video.kind === 'short' || video.link.includes('/shorts/');
+  }
 </script>
 
 <section class="page-intro">
@@ -24,16 +28,16 @@
       <article class="card">
         <a href={video.link} target="_blank" rel="noreferrer" style="display:block; text-decoration:none;">
           <img
-            src={video.thumbnail}
+            src={isShort(video) ? `https://i.ytimg.com/vi/${video.id}/oardefault.jpg` : video.thumbnail}
             alt={video.title}
-            style="display:block; width:100%; aspect-ratio:16 / 9; object-fit:cover; border-radius:20px 20px 0 0;"
+            style={`display:block; width:100%; aspect-ratio:${isShort(video) ? '9 / 16' : '16 / 9'}; object-fit:cover; border-radius:20px 20px 0 0;`}
           />
         </a>
         <div class="panel-copy">
           <p class="eyebrow">{new Date(video.published).toLocaleDateString()}</p>
           <h3>{video.title}</h3>
           <p class="muted">{video.description.slice(0, 150)}{video.description.length > 150 ? '...' : ''}</p>
-          <a class="btn btn-ghost" href={video.link} target="_blank" rel="noreferrer">Watch on YouTube</a>
+          <a class="btn btn-ghost" href={video.link} target="_blank" rel="noreferrer">{isShort(video) ? 'Watch Short on YouTube' : 'Watch on YouTube'}</a>
         </div>
       </article>
     {/each}

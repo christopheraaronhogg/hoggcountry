@@ -11,8 +11,8 @@
   let videos = $state(initialVideos);
   let _liveLoadError = $state("");
 
-  // Get first 3 videos for the dispatches section
-  const displayVideos = $derived(videos.slice(0, 3));
+  // Show the full recent dispatch set; the page grid handles wrapping.
+  const displayVideos = $derived(videos);
 
   // Format date for display
   function formatDate(isoDate) {
@@ -32,8 +32,27 @@
   // Get reliable thumbnail URL - YouTube has multiple CDN hosts
   function getThumbnail(video) {
     if (!video?.id) return '';
-    // Use maxresdefault with fallback chain: maxres -> hq -> mq -> default
-    return `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+    return isShort(video)
+      ? `https://i.ytimg.com/vi/${video.id}/oardefault.jpg`
+      : `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+  }
+
+  function getFallbackThumbnail(videoId, currentSrc = '') {
+    if (currentSrc.includes('oardefault')) return `https://i.ytimg.com/vi/${videoId}/oar2.jpg`;
+    if (currentSrc.includes('oar2')) return `https://i.ytimg.com/vi/${videoId}/oar3.jpg`;
+    if (currentSrc.includes('oar3')) return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    if (currentSrc.includes('maxresdefault')) return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    if (currentSrc.includes('hqdefault')) return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+    if (currentSrc.includes('mqdefault')) return `https://img.youtube.com/vi/${videoId}/default.jpg`;
+    return '';
+  }
+
+  function isShort(video) {
+    return video?.kind === 'short' || String(video?.link || '').includes('/shorts/');
+  }
+
+  function actionLabel(video) {
+    return isShort(video) ? 'Watch Short' : 'Watch Video';
   }
 
   // Handle image load errors - try alternative URL
@@ -41,17 +60,9 @@
     const img = event.target;
     const currentSrc = img.src;
 
-    // Try different quality levels
-    if (currentSrc.includes('maxresdefault')) {
-      img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-    } else if (currentSrc.includes('hqdefault')) {
-      img.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-    } else if (currentSrc.includes('mqdefault')) {
-      img.src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
-    } else {
-      // Final fallback - hide the broken image
-      img.style.display = 'none';
-    }
+    const fallback = getFallbackThumbnail(videoId, currentSrc);
+    if (fallback) img.src = fallback;
+    else img.style.display = 'none';
   }
 
   // This page is statically generated; keep videos live by polling the Laravel API.
@@ -60,7 +71,7 @@
 
     async function refreshVideos() {
       try {
-        const url = `${API_BASE}/videos/latest?limit=8&source=channel`;
+        const url = `${API_BASE}/videos/latest?limit=18&source=channel`;
         const res = await fetch(url, { headers: { Accept: "application/json" } });
         if (!res.ok) throw new Error(`videos/latest failed: ${res.status}`);
 
@@ -227,8 +238,8 @@
       <div class="dispatches-grid">
         {#if displayVideos.length > 0}
           <!-- Featured (first) video -->
-          <a href={displayVideos[0].link} target="_blank" rel="noopener" class="dispatch-card dispatch-featured">
-            <div class="dispatch-media">
+          <a href={displayVideos[0].link} target="_blank" rel="noopener" class={`dispatch-card dispatch-featured ${isShort(displayVideos[0]) ? 'is-short' : ''}`}>
+            <div class={`dispatch-media ${isShort(displayVideos[0]) ? 'is-short' : ''}`}>
               <img
                 src={getThumbnail(displayVideos[0])}
                 alt={displayVideos[0].title}
@@ -247,14 +258,14 @@
               <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
               <h3 class="dispatch-title" title={displayVideos[0].title}>{displayVideos[0].title}</h3>
               <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], 420)}</p>
-              <span class="dispatch-cta">Watch Video</span>
+              <span class="dispatch-cta">{actionLabel(displayVideos[0])}</span>
             </div>
           </a>
 
           <!-- Secondary videos -->
           {#each displayVideos.slice(1) as video}
-            <a href={video.link} target="_blank" rel="noopener" class="dispatch-card">
-              <div class="dispatch-media small">
+            <a href={video.link} target="_blank" rel="noopener" class={`dispatch-card ${isShort(video) ? 'is-short' : ''}`}>
+              <div class={`dispatch-media ${isShort(video) ? 'is-short' : 'small'}`}>
                 <img
                   src={getThumbnail(video)}
                   alt={video.title}
@@ -272,7 +283,7 @@
                 <time class="dispatch-date">{formatDate(video.published)}</time>
                 <h3 class="dispatch-title" title={video.title}>{video.title}</h3>
                 <p class="dispatch-desc">{getVideoExcerpt(video, 110)}</p>
-                <span class="dispatch-cta">Watch Video</span>
+                <span class="dispatch-cta">{actionLabel(video)}</span>
               </div>
             </a>
           {/each}
@@ -2008,6 +2019,15 @@
 
   .dispatch-media.small {
     height: 100px;
+  }
+
+  .dispatch-media.is-short {
+    height: auto;
+    aspect-ratio: 9 / 16;
+  }
+
+  .dispatch-card.is-short:not(.dispatch-featured) {
+    align-self: start;
   }
 
   .dispatch-media .media-placeholder {

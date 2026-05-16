@@ -6,6 +6,6 @@ export const load: PageServerLoad = async () => {
   const showVideos = isEnabled('YOUTUBE_RSS');
 
   return {
-    videos: showVideos ? await loadDadVideos(8) : []
+    videos: showVideos ? await loadDadVideos(18) : []
   };
 };
