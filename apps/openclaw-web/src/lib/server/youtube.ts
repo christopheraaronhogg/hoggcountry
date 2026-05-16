@@ -56,7 +56,7 @@ export async function fetchYouTubeRSS(feedUrl: string): Promise<YtVideo[]> {
     const response = await fetch(feedUrl, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; HoggCountryOpenClaw/1.0)'
+        'User-Agent': 'Mozilla/5.0 (compatible; HoggCountryScout/1.0)'
       }
     });
     clearTimeout(timeoutId);

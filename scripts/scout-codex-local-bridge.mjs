@@ -7,11 +7,20 @@ import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
-const HOST = process.env.OPENCLAW_CODEX_BRIDGE_HOST || '127.0.0.1';
-const PORT = Number.parseInt(process.env.OPENCLAW_CODEX_BRIDGE_PORT || process.env.PORT || '4318', 10);
-const DEFAULT_MODEL = process.env.OPENCLAW_CODEX_MODEL || 'openai-codex/gpt-5.4';
-const TIMEOUT_MS = Number.parseInt(process.env.OPENCLAW_CODEX_TIMEOUT_MS || '120000', 10);
-const MAX_BODY_BYTES = Number.parseInt(process.env.OPENCLAW_CODEX_MAX_BODY_BYTES || '262144', 10);
+const HOST = process.env.SCOUT_CODEX_BRIDGE_HOST || process.env.OPENCLAW_CODEX_BRIDGE_HOST || '127.0.0.1';
+const PORT = Number.parseInt(
+  process.env.SCOUT_CODEX_BRIDGE_PORT || process.env.OPENCLAW_CODEX_BRIDGE_PORT || process.env.PORT || '4318',
+  10,
+);
+const DEFAULT_MODEL = process.env.SCOUT_CODEX_MODEL || process.env.OPENCLAW_CODEX_MODEL || 'openai-codex/gpt-5.4';
+const TIMEOUT_MS = Number.parseInt(
+  process.env.SCOUT_CODEX_TIMEOUT_MS || process.env.OPENCLAW_CODEX_TIMEOUT_MS || '120000',
+  10,
+);
+const MAX_BODY_BYTES = Number.parseInt(
+  process.env.SCOUT_CODEX_MAX_BODY_BYTES || process.env.OPENCLAW_CODEX_MAX_BODY_BYTES || '262144',
+  10,
+);
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://hoggcountry.com',
   'https://www.hoggcountry.com',
@@ -25,7 +34,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
 ];
 
 const allowedOrigins = (() => {
-  const configured = (process.env.OPENCLAW_CODEX_BRIDGE_ALLOWED_ORIGINS || '')
+  const configured = (process.env.SCOUT_CODEX_BRIDGE_ALLOWED_ORIGINS || process.env.OPENCLAW_CODEX_BRIDGE_ALLOWED_ORIGINS || '')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
@@ -121,7 +130,7 @@ async function runPrompt({ prompt, model }) {
   const text = collectOutputText(parsed);
 
   if (!text) {
-    throw new Error(`OpenClaw returned no text output.${stderr ? ` stderr: ${stderr}` : ''}`);
+    throw new Error(`Scout Codex bridge returned no text output.${stderr ? ` stderr: ${stderr}` : ''}`);
   }
 
   return {
@@ -148,7 +157,7 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && req.url === '/health') {
       sendJson(req, res, 200, {
         ok: true,
-        bridge: 'openclaw-codex-local',
+        bridge: 'scout-codex-local',
         provider: 'openai-codex',
         defaultModel: DEFAULT_MODEL,
         allowedOrigins,
@@ -197,6 +206,6 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   process.stdout.write(
-    `OpenClaw Codex local bridge listening on http://${HOST}:${PORT} using ${DEFAULT_MODEL}\n`,
+    `Scout Codex local bridge listening on http://${HOST}:${PORT} using ${DEFAULT_MODEL}\n`,
   );
 });

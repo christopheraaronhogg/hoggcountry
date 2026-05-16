@@ -107,7 +107,7 @@ When service is unavailable, paid users still fall back to the local model and l
 
 ### Phase 1: Harden the web beta
 
-Keep using the SvelteKit/OpenClaw beta to prove the Scout interaction loop:
+Keep using the SvelteKit/Scout beta to prove the Scout interaction loop:
 
 - per-user workspace history
 - profile and current-mile updates

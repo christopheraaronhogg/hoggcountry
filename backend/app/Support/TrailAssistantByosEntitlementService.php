@@ -39,7 +39,7 @@ final class TrailAssistantByosEntitlementService
 
         return match ($authMode) {
             'api_key' => $this->evaluateApiKeyProvider($provider, $credentials),
-            'openclaw_local_bridge' => $this->evaluateOpenClawLocalBridgeProvider($provider, $credentials),
+            'scout_local_bridge', 'openclaw_local_bridge' => $this->evaluateScoutLocalBridgeProvider($provider, $credentials),
             'oauth' => new TrailAssistantByosEntitlement(
                 provider: $provider['id'],
                 status: 'pending_provider_integration',
@@ -114,7 +114,7 @@ final class TrailAssistantByosEntitlementService
      * @param array<string, mixed> $provider
      * @param array<string, mixed> $credentials
      */
-    private function evaluateOpenClawLocalBridgeProvider(array $provider, array $credentials): TrailAssistantByosEntitlement
+    private function evaluateScoutLocalBridgeProvider(array $provider, array $credentials): TrailAssistantByosEntitlement
     {
         $bridgeUrl = is_string($credentials['bridge_url'] ?? null)
             ? trim((string) $credentials['bridge_url'])

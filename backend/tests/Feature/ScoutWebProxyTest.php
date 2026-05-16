@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\OpenClawWebProxyController;
+use App\Http\Controllers\ScoutWebProxyController;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use ReflectionMethod;
 use Tests\TestCase;
 
-class OpenClawWebProxyTest extends TestCase
+class ScoutWebProxyTest extends TestCase
 {
     public function test_root_returns_api_status_when_proxy_is_disabled(): void
     {
-        config()->set('services.openclaw_web.enabled', false);
+        config()->set('services.scout_web.enabled', false);
 
         $response = $this->getJson('/');
 
@@ -21,10 +21,10 @@ class OpenClawWebProxyTest extends TestCase
         $response->assertJsonPath('data.health', '/api/v1/health');
     }
 
-    public function test_root_proxies_to_openclaw_web_when_enabled(): void
+    public function test_root_proxies_to_scout_web_when_enabled(): void
     {
-        config()->set('services.openclaw_web.enabled', true);
-        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+        config()->set('services.scout_web.enabled', true);
+        config()->set('services.scout_web.origin', 'http://127.0.0.1:3000');
 
         Http::fake([
             'http://127.0.0.1:3000/' => Http::response('<!doctype html><html><body>Hogg Country</body></html>', 200, [
@@ -48,8 +48,8 @@ class OpenClawWebProxyTest extends TestCase
 
     public function test_static_asset_cache_headers_are_preserved_without_laravel_no_cache_defaults(): void
     {
-        config()->set('services.openclaw_web.enabled', true);
-        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+        config()->set('services.scout_web.enabled', true);
+        config()->set('services.scout_web.origin', 'http://127.0.0.1:3000');
 
         Http::fake([
             'http://127.0.0.1:3000/_app/immutable/chunks/app.js' => Http::response('console.log("ok")', 200, [
@@ -71,8 +71,8 @@ class OpenClawWebProxyTest extends TestCase
 
     public function test_redirect_responses_are_passed_through_without_following_them(): void
     {
-        config()->set('services.openclaw_web.enabled', true);
-        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+        config()->set('services.scout_web.enabled', true);
+        config()->set('services.scout_web.origin', 'http://127.0.0.1:3000');
 
         Http::fake([
             'http://127.0.0.1:3000/track' => Http::response('', 307, [
@@ -86,10 +86,10 @@ class OpenClawWebProxyTest extends TestCase
         $response->assertHeader('Location', '/dad/map');
     }
 
-    public function test_post_requests_are_proxied_to_openclaw_web_when_enabled(): void
+    public function test_post_requests_are_proxied_to_scout_web_when_enabled(): void
     {
-        config()->set('services.openclaw_web.enabled', true);
-        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+        config()->set('services.scout_web.enabled', true);
+        config()->set('services.scout_web.origin', 'http://127.0.0.1:3000');
 
         Http::fake([
             'http://127.0.0.1:3000/app-api/workspace/initialize' => Http::response('{"ok":true}', 200, [
@@ -116,10 +116,10 @@ class OpenClawWebProxyTest extends TestCase
         });
     }
 
-    public function test_multipart_requests_are_proxied_to_openclaw_web_when_enabled(): void
+    public function test_multipart_requests_are_proxied_to_scout_web_when_enabled(): void
     {
-        config()->set('services.openclaw_web.enabled', true);
-        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+        config()->set('services.scout_web.enabled', true);
+        config()->set('services.scout_web.origin', 'http://127.0.0.1:3000');
 
         Http::fake([
             'http://127.0.0.1:3000/app-api/workspace/documents' => Http::response('{"ok":true}', 200, [
@@ -143,8 +143,8 @@ class OpenClawWebProxyTest extends TestCase
 
     public function test_api_routes_stay_on_laravel_when_proxy_is_enabled(): void
     {
-        config()->set('services.openclaw_web.enabled', true);
-        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+        config()->set('services.scout_web.enabled', true);
+        config()->set('services.scout_web.origin', 'http://127.0.0.1:3000');
 
         Http::fake();
 
@@ -158,8 +158,8 @@ class OpenClawWebProxyTest extends TestCase
 
     public function test_app_api_proxy_failures_return_json_instead_of_laravel_error_html(): void
     {
-        config()->set('services.openclaw_web.enabled', true);
-        config()->set('services.openclaw_web.origin', 'http://127.0.0.1:9');
+        config()->set('services.scout_web.enabled', true);
+        config()->set('services.scout_web.origin', 'http://127.0.0.1:9');
 
         $response = $this->withHeaders([
             'Accept' => '*/*',
@@ -175,9 +175,9 @@ class OpenClawWebProxyTest extends TestCase
 
     public function test_turn_event_routes_are_treated_as_streams(): void
     {
-        $method = new ReflectionMethod(OpenClawWebProxyController::class, 'shouldProxyAsStream');
+        $method = new ReflectionMethod(ScoutWebProxyController::class, 'shouldProxyAsStream');
         $method->setAccessible(true);
-        $controller = new OpenClawWebProxyController();
+        $controller = new ScoutWebProxyController();
 
         $this->assertTrue($method->invoke($controller, 'app-api/claw/reply/stream'));
         $this->assertTrue($method->invoke($controller, 'app-api/claw/reply/turn/abc123/events'));

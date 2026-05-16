@@ -1,6 +1,6 @@
 # build output
 dist/
-.openclaw-artifacts/
+.scout-artifacts/
 apps/public/.astro/
 apps/public/.netlify/
 apps/workspace/.svelte-kit/

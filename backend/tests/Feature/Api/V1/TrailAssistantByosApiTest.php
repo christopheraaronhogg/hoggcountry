@@ -39,7 +39,7 @@ class TrailAssistantByosApiTest extends TestCase
 
         $this->assertTrue($providers->has('openai_codex_local_bridge'));
         $this->assertTrue((bool) ($providers['openai_codex_local_bridge']['enabled'] ?? false));
-        $this->assertSame('openclaw_local_bridge', $providers['openai_codex_local_bridge']['auth_mode'] ?? null);
+        $this->assertSame('scout_local_bridge', $providers['openai_codex_local_bridge']['auth_mode'] ?? null);
 
         $this->assertTrue($providers->has('openai_api_key'));
         $this->assertTrue((bool) ($providers['openai_api_key']['enabled'] ?? false));

@@ -144,7 +144,7 @@ const scoutTurnEvent = table(
   }
 );
 
-const openclawDb = schema({
+const scoutDb = schema({
   dadUpdate,
   videoDispatch,
   publicAnnouncement,
@@ -156,7 +156,7 @@ const openclawDb = schema({
   scoutTurnEvent
 });
 
-export const myScoutTurns = openclawDb.view({ name: 'my_scout_turns', public: true }, t.array(scoutTurn.rowType), (ctx) => {
+export const myScoutTurns = scoutDb.view({ name: 'my_scout_turns', public: true }, t.array(scoutTurn.rowType), (ctx) => {
   return ctx.from.scoutTurn
     .leftSemijoin(ctx.from.scoutWorkspaceAccess.where((access) => access.identity.eq(ctx.sender)), (turn, access) =>
       turn.workspaceId.eq(access.workspaceId)
@@ -164,7 +164,7 @@ export const myScoutTurns = openclawDb.view({ name: 'my_scout_turns', public: tr
     .build();
 });
 
-export const myScoutTurnEvents = openclawDb.view(
+export const myScoutTurnEvents = scoutDb.view(
   { name: 'my_scout_turn_events', public: true },
   t.array(scoutTurnEvent.rowType),
   (ctx) => {
@@ -176,9 +176,9 @@ export const myScoutTurnEvents = openclawDb.view(
   }
 );
 
-export default openclawDb;
+export default scoutDb;
 
-export const init = openclawDb.init((ctx) => {
+export const init = scoutDb.init((ctx) => {
   if (ctx.db.publicAnnouncement.count() === 0) {
     ctx.db.publicAnnouncement.insert({
       id: 0n,
@@ -197,7 +197,7 @@ function hasScoutWorkspaceAccess(ctx: { db: any; sender: unknown }, workspaceId:
   return false;
 }
 
-export const registerBetaProfile = openclawDb.reducer(
+export const registerBetaProfile = scoutDb.reducer(
   {
     email: t.string(),
     name: t.string(),
@@ -214,7 +214,7 @@ export const registerBetaProfile = openclawDb.reducer(
   }
 );
 
-export const appendManualNote = openclawDb.reducer(
+export const appendManualNote = scoutDb.reducer(
   {
     trailName: t.string(),
     sectionId: t.string(),
@@ -233,7 +233,7 @@ export const appendManualNote = openclawDb.reducer(
   }
 );
 
-export const submitTrailConditionReport = openclawDb.reducer(
+export const submitTrailConditionReport = scoutDb.reducer(
   {
     trailId: t.string(),
     source: t.string(),
@@ -269,7 +269,7 @@ export const submitTrailConditionReport = openclawDb.reducer(
   }
 );
 
-export const joinScoutWorkspace = openclawDb.reducer(
+export const joinScoutWorkspace = scoutDb.reducer(
   {
     workspaceId: t.string()
   },
@@ -288,7 +288,7 @@ export const joinScoutWorkspace = openclawDb.reducer(
   }
 );
 
-export const mirrorScoutTurn = openclawDb.reducer(
+export const mirrorScoutTurn = scoutDb.reducer(
   {
     workspaceId: t.string(),
     turnId: t.string(),
@@ -326,7 +326,7 @@ export const mirrorScoutTurn = openclawDb.reducer(
   }
 );
 
-export const mirrorScoutTurnEvent = openclawDb.reducer(
+export const mirrorScoutTurnEvent = scoutDb.reducer(
   {
     workspaceId: t.string(),
     turnId: t.string(),

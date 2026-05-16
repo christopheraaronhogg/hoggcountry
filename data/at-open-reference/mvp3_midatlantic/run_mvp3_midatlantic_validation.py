@@ -338,7 +338,7 @@ def validate_pack() -> dict[str, Any]:
     fail_if(top_manifest.get("prompt_artifact_checklist") != "prompt_artifact_checklist.md", failures, "manifest missing checklist pointer")
     fail_if(top_manifest.get("production_safe_zip") != "processed/export/scout_at_mvp3_midatlantic_production_safe.zip", failures, "manifest missing production zip pointer")
     checklist = t("prompt_artifact_checklist.md").lower()
-    for command in ["build-mvp3-midatlantic-reference-pack.mjs", "run_mvp3_midatlantic_validation.py --json", "npm test", "npm run build:openclaw:forge"]:
+    for command in ["build-mvp3-midatlantic-reference-pack.mjs", "run_mvp3_midatlantic_validation.py --json", "npm test", "npm run build:scout:forge"]:
         fail_if(command not in checklist, failures, f"checklist missing command {command}")
 
     result = {

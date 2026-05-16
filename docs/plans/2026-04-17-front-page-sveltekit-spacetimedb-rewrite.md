@@ -48,7 +48,7 @@ Short version: **server-rendered first, realtime second**.
 The front page should feel like:
 - a live front porch for Dad's hike
 - a clear entry into Dad's guide
-- the first convincing proof that OpenClaw for hikers is a real product, not vague AI wallpaper
+- the first convincing proof that Scout for hikers is a real product, not vague AI wallpaper
 
 The public homepage should answer three questions fast:
 1. What is happening on trail right now?
@@ -61,7 +61,7 @@ The public homepage should answer three questions fast:
 These should be SSR-first and should still render correctly if realtime is down:
 - hero copy and positioning
 - guide CTA and proof blocks
-- product framing for OpenClaw for hikers
+- product framing for Scout for hikers
 - core navigation
 - canonical CTA stack
 

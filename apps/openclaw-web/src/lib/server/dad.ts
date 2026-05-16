@@ -228,7 +228,7 @@ export async function loadDadTrailUpdates(limit = 3): Promise<DadTrailUpdateSumm
       signal: controller.signal,
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; HoggCountryOpenClaw/1.0)'
+        'User-Agent': 'Mozilla/5.0 (compatible; HoggCountryScout/1.0)'
       }
     });
 

@@ -90,7 +90,7 @@ class TrailAssistantByosEntitlementServiceTest extends TestCase
             'openai_codex_local_bridge' => [
                 'label' => 'ChatGPT/Codex local companion',
                 'enabled' => true,
-                'auth_mode' => 'openclaw_local_bridge',
+                'auth_mode' => 'scout_local_bridge',
                 'funding_model' => 'user_subscription_local_companion',
                 'available_models' => ['openai-codex/gpt-5.4'],
             ],

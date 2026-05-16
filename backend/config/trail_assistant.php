@@ -110,7 +110,7 @@ return [
                 [
                     'id' => 'openai_codex_local_bridge',
                     'label' => 'ChatGPT/Codex local companion',
-                    'notes' => 'User signs into ChatGPT/Codex locally through OpenClaw, then Hogg Country talks to a loopback bridge for live responses.',
+                    'notes' => 'User signs into ChatGPT/Codex locally through Scout, then Hogg Country talks to a loopback bridge for live responses.',
                 ],
                 [
                     'id' => 'openai_api_key',
@@ -180,10 +180,10 @@ return [
             'openai_codex_local_bridge' => [
                 'label' => 'ChatGPT/Codex local companion',
                 'enabled' => true,
-                'auth_mode' => 'openclaw_local_bridge',
+                'auth_mode' => 'scout_local_bridge',
                 'funding_model' => 'user_subscription_local_companion',
                 'available_models' => ['openai-codex/gpt-5.4'],
-                'notes' => 'Supported as the first practical connector lane. Requires a local OpenClaw companion logged into ChatGPT/Codex and a loopback bridge process.',
+                'notes' => 'Supported as the first practical connector lane. Requires a local Scout companion logged into ChatGPT/Codex and a loopback bridge process.',
             ],
             'openai_api_key' => [
                 'label' => 'OpenAI API key (user-provided)',

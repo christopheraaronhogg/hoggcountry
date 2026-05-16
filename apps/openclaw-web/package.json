@@ -1,14 +1,14 @@
 {
-  "name": "@hoggcountry/openclaw-web",
+  "name": "@hoggcountry/scout-web",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") vite dev --host 0.0.0.0",
+    "dev": "SCOUT_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/scout-workspaces')\") vite dev --host 0.0.0.0",
     "build": "svelte-kit sync && vite build",
-    "build:node": "OPENCLAW_WEB_ADAPTER=node svelte-kit sync && vite build",
-    "preview": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") vite preview --host",
+    "build:node": "SCOUT_WEB_ADAPTER=node svelte-kit sync && vite build",
+    "preview": "SCOUT_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/scout-workspaces')\") vite preview --host",
     "check": "svelte-kit sync",
-    "start:node": "OPENCLAW_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/openclaw-workspaces')\") HOST=${HOST:-127.0.0.1} PORT=${PORT:-3000} node build",
+    "start:node": "SCOUT_WORKSPACE_DATA_DIR=$(node -p \"require('path').resolve(require('path').dirname(process.env.npm_package_json), '../../backend/storage/app/scout-workspaces')\") HOST=${HOST:-127.0.0.1} PORT=${PORT:-3000} node build",
     "spacetime:generate": "spacetime generate --lang typescript --out-dir src/lib/module_bindings --module-path spacetimedb"
   },
   "dependencies": {

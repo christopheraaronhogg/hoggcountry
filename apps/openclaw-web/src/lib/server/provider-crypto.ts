@@ -4,14 +4,17 @@ import type { WorkspaceEncryptedSecret } from '$lib/server/workspace-store';
 const DEV_SECRET = 'hoggcountry-dev-provider-secret-change-me';
 
 function providerSecretKey(): Buffer {
-  const configured = process.env.OPENCLAW_PROVIDER_SECRET || process.env.HOGGCOUNTRY_PROVIDER_SECRET;
+  const configured =
+    process.env.SCOUT_PROVIDER_SECRET ||
+    process.env.OPENCLAW_PROVIDER_SECRET ||
+    process.env.HOGGCOUNTRY_PROVIDER_SECRET;
 
   if (configured && configured.trim().length >= 16) {
     return createHash('sha256').update(configured).digest();
   }
 
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('OPENCLAW_PROVIDER_SECRET is required in production.');
+    throw new Error('SCOUT_PROVIDER_SECRET is required in production.');
   }
 
   return createHash('sha256').update(DEV_SECRET).digest();

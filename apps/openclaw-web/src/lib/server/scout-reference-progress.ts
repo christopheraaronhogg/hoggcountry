@@ -395,7 +395,7 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       },
       {
         label: 'Forge build',
-        command: 'npm run build:openclaw:forge',
+        command: 'npm run build:scout:forge',
       },
     ],
   };

@@ -5,7 +5,7 @@ Hogg Country is now a multi-surface monorepo, not a single Astro site.
 
 Current stack shape:
 - **`apps/public`**: Astro 5 public site for `hoggcountry.com`
-- **`apps/openclaw-web`**: newer SvelteKit frontend for Dad updates, Dad's guide, product pitch, and gated `/app/*` flows
+- **`apps/openclaw-web`**: Scout SvelteKit frontend for Dad updates, Dad's guide, product pitch, and gated `/app/*` flows
 - **`apps/workspace`**: earlier SvelteKit workspace prototype still kept in-repo
 - **`backend/`**: Laravel 12 API, auth, moderation, ops, and legacy/native proof surfaces
 - **`mobile/`**: SvelteKit + Capacitor shell for native packaging work
@@ -34,12 +34,12 @@ This repo mixes content publishing, product web apps, and Laravel-backed operati
 - content, guide, video, and public product pages
 - still shares the repo-level Astro config and build pipeline
 
-#### New web app: `apps/openclaw-web`
+#### Scout web app: `apps/openclaw-web`
 - SvelteKit app for:
   - Dad overview and update flows
   - public map and video surfaces
   - guide rendering
-  - OpenClaw-for-hikers pitch
+  - Scout-for-hikers pitch
   - gated `/app`, `/app/setup`, `/app/today`, `/app/manual`, `/app/docs`, `/app/claw`
 - uses shared packages like `@hoggcountry/brand`, `@hoggcountry/corpus`, `@hoggcountry/manual-core`, and `@hoggcountry/trail-data`
 - includes SpacetimeDB module/binding scaffolding
@@ -101,11 +101,11 @@ Video handling is now split across static and live paths:
 The root workspace coordinates the monorepo:
 - `dev:public`
 - `dev:workspace`
-- `dev:openclaw`
+- `dev:scout`
 - `dev:all`
 - `build:public`
 - `build:workspace`
-- `build:openclaw`
+- `build:scout`
 - `backend:*` commands for Laravel install, dev, migrate, frontend build, and tests
 - `monorepo:check` for combined frontend/backend verification
 

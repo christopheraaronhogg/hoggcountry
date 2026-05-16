@@ -1,4 +1,4 @@
-# 2026-04-10: OpenClaw Web Frontend
+# 2026-04-10: Scout Web Frontend
 
 ## Decision
 
@@ -14,7 +14,7 @@ Add a new frontend in the monorepo:
 The product needs a frontend that can do more than static marketing pages:
 
 - public Dad updates with a map and video feed
-- a public pitch for the new OpenClaw-for-hikers product
+- a public pitch for the new Scout-for-hikers product
 - a gated app flow for setup, manual, docs, Today, and Claw
 
 At the same time, Dad's field guide remains a staple of the codebase and should stay portable across surfaces.

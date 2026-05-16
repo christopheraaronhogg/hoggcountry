@@ -148,6 +148,10 @@ export interface WorkspaceRecord extends WorkspaceSnapshot {
 }
 
 function workspaceRoot(): string {
+  if (process.env.SCOUT_WORKSPACE_DATA_DIR) {
+    return resolve(process.cwd(), process.env.SCOUT_WORKSPACE_DATA_DIR);
+  }
+
   if (process.env.OPENCLAW_WORKSPACE_DATA_DIR) {
     return resolve(process.cwd(), process.env.OPENCLAW_WORKSPACE_DATA_DIR);
   }
@@ -162,7 +166,7 @@ function workspaceRoot(): string {
         existsSync(join(cursor, 'apps/openclaw-web/package.json')) &&
         existsSync(join(cursor, 'backend/composer.json'))
       ) {
-        return join(cursor, 'backend/storage/app/openclaw-workspaces');
+        return join(cursor, 'backend/storage/app/scout-workspaces');
       }
 
       const parent = dirname(cursor);
@@ -171,7 +175,7 @@ function workspaceRoot(): string {
     }
   }
 
-  return join(resolve(process.cwd(), 'backend'), 'storage/app/openclaw-workspaces');
+  return join(resolve(process.cwd(), 'backend'), 'storage/app/scout-workspaces');
 }
 
 function workspacePath(workspaceId: string): string {

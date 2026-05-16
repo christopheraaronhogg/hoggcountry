@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\OpenClawWebProxyController;
+use App\Http\Controllers\ScoutWebProxyController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [OpenClawWebProxyController::class, 'root'])->withoutMiddleware([
+Route::get('/', [ScoutWebProxyController::class, 'root'])->withoutMiddleware([
     \Illuminate\Cookie\Middleware\EncryptCookies::class,
     \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
     \Illuminate\Session\Middleware\StartSession::class,
@@ -23,7 +23,7 @@ Route::get('/native', function () {
     ]);
 });
 
-Route::match(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/{path}', [OpenClawWebProxyController::class, 'show'])
+Route::match(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/{path}', [ScoutWebProxyController::class, 'show'])
     ->where('path', '^(?!api(?:/|$)|up(?:/|$)|native(?:/|$)).+')
     ->withoutMiddleware([
         \Illuminate\Cookie\Middleware\EncryptCookies::class,

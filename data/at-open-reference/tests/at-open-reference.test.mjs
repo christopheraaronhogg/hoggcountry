@@ -242,7 +242,7 @@ test('Scout AT MVP2 Virginia reference pack validates source-aware planning rule
 
   const checklist = readFileSync(new URL('../mvp2_va/prompt_artifact_checklist.md', import.meta.url), 'utf8');
   assert.match(checklist, /npm test/);
-  assert.match(checklist, /npm run build:openclaw:forge/);
+  assert.match(checklist, /npm run build:scout:forge/);
   assert.match(checklist, /Shenandoah\/VA state-local\/ATC pointer-only policy/i);
 
   const behaviorQuestions = JSON.parse(readFileSync(new URL('../mvp2_va/tests/mvp2_va_behavior_questions.json', import.meta.url), 'utf8'));

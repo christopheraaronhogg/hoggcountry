@@ -7,8 +7,8 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const defaultPrompt = 'Reply with exactly: Hogg Country ChatGPT subscription proof.';
 const prompt = process.argv.slice(2).join(' ').trim() || defaultPrompt;
-const model = process.env.OPENCLAW_CODEX_MODEL || 'openai-codex/gpt-5.4';
-const timeoutMs = Number.parseInt(process.env.OPENCLAW_CODEX_TIMEOUT_MS || '120000', 10);
+const model = process.env.SCOUT_CODEX_MODEL || process.env.OPENCLAW_CODEX_MODEL || 'openai-codex/gpt-5.4';
+const timeoutMs = Number.parseInt(process.env.SCOUT_CODEX_TIMEOUT_MS || process.env.OPENCLAW_CODEX_TIMEOUT_MS || '120000', 10);
 
 function collectText(result) {
   if (!result || typeof result !== 'object') {
@@ -39,12 +39,12 @@ try {
   const text = collectText(parsed);
 
   if (!text) {
-    throw new Error(`OpenClaw returned no text output.${stderr ? ` stderr: ${stderr}` : ''}`);
+    throw new Error(`Scout Codex proof returned no text output.${stderr ? ` stderr: ${stderr}` : ''}`);
   }
 
   process.stdout.write(`${text}\n`);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`openclaw-codex-proof failed: ${message}\n`);
+  process.stderr.write(`scout-codex-proof failed: ${message}\n`);
   process.exitCode = 1;
 }

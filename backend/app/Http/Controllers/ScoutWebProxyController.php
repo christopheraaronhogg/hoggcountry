@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-class OpenClawWebProxyController extends Controller
+class ScoutWebProxyController extends Controller
 {
     public function root(Request $request): Response
     {
@@ -44,12 +44,12 @@ class OpenClawWebProxyController extends Controller
 
     private function proxyEnabled(): bool
     {
-        return (bool) config('services.openclaw_web.enabled', false);
+        return (bool) config('services.scout_web.enabled', false);
     }
 
     private function proxy(Request $request, string $path): Response
     {
-        $origin = (string) config('services.openclaw_web.origin', 'http://127.0.0.1:3000');
+        $origin = (string) config('services.scout_web.origin', 'http://127.0.0.1:3000');
         $target = $origin.'/'.ltrim($path, '/');
 
         if ($request->getQueryString()) {
@@ -179,7 +179,7 @@ class OpenClawWebProxyController extends Controller
             ], 503);
         }
 
-        throw new HttpException(503, 'OpenClaw web frontend is unavailable.');
+        throw new HttpException(503, 'Scout web frontend is unavailable.');
     }
 
     private function proxyTimeout(string $path): int

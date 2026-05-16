@@ -15,7 +15,7 @@ This checklist assumes:
 ## Do not cut over until these are true
 
 - `npm run verify:forge` passes against `https://hoggcountry.on-forge.com`
-- `pm2 show hoggcountry-openclaw` reports `online`
+- `pm2 show hoggcountry-scout` reports `online`
 - `/`, `/guide`, and `/guide/quick/layering` work on the Forge domain
 - `/api/v1/health`, `/api/v1/trail-assistant/plans`, and `/api/v1/trail-assistant/byos/providers` work on the Forge domain
 - alias redirects still behave:
@@ -53,7 +53,7 @@ Record these before switching traffic:
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
 npm run verify:forge
-pm2 show hoggcountry-openclaw
+pm2 show hoggcountry-scout
 ```
 
 3. Verify the live custom domain is still on Netlify.
@@ -94,7 +94,7 @@ npm run verify:forge --base-url https://hoggcountry.com
 
 For the first hour, re-check:
 
-- `pm2 logs hoggcountry-openclaw --lines 100`
+- `pm2 logs hoggcountry-scout --lines 100`
 - Laravel logs if needed
 - `https://hoggcountry.com/api/v1/health`
 - `https://hoggcountry.com/guide`
@@ -117,7 +117,7 @@ If the cutover is bad, do this in order:
 3. If needed, keep the Forge backend healthy by disabling only the public bridge:
 
 ```env
-OPENCLAW_WEB_PROXY_ENABLED=false
+SCOUT_WEB_PROXY_ENABLED=false
 ```
 
 Then clear Laravel caches:

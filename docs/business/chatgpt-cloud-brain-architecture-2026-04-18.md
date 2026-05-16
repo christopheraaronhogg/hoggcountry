@@ -13,16 +13,16 @@ That means the intended shape is:
 
 This is different from the earlier local-companion-first interpretation.
 
-## What the OpenClaw research proves
+## What the Scout research proves
 
-OpenClaw already demonstrates four important pieces:
+Scout already demonstrates four important pieces:
 
 1. **ChatGPT/Codex OAuth is real** via `openai-codex/*`
 2. **OAuth credentials are refreshable** and include access token, refresh token, expiry, and account id
 3. **Auth profiles are isolateable per agent**
 4. **Multiple profiles can coexist** and be selected deterministically
 
-Relevant OpenClaw facts:
+Relevant Scout facts:
 
 - OAuth docs: auth profiles are stored per agent in `auth-profiles.json`
 - multi-agent docs: each agent has its own `agentDir`, workspace, sessions, and auth profiles

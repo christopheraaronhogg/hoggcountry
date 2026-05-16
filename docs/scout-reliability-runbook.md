@@ -103,8 +103,8 @@ npm run eval:scout-grounding
 npm run eval:scout-sources
 npm run eval:scout-reliability -- --difficulty-max 3
 npm test
-npm run check -w @hoggcountry/openclaw-web
-OPENCLAW_WEB_ADAPTER=node npm run build -w @hoggcountry/openclaw-web
+npm run check -w @hoggcountry/scout-web
+SCOUT_WEB_ADAPTER=node npm run build -w @hoggcountry/scout-web
 git diff --check
 ```
 

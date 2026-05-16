@@ -1,5 +1,5 @@
 {
-  "name": "@hoggcountry/openclaw-web-spacetimedb",
+  "name": "@hoggcountry/scout-web-spacetimedb",
   "private": true,
   "type": "module",
   "dependencies": {

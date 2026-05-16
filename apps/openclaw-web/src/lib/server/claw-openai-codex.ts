@@ -46,6 +46,7 @@ function createState(): string {
 
 export function resolveOpenAICodexRedirectUri(requestOrigin?: string | null): string {
   const configured =
+    process.env.SCOUT_OPENAI_CODEX_REDIRECT_URI?.trim() ||
     process.env.OPENCLAW_OPENAI_CODEX_REDIRECT_URI?.trim() ||
     process.env.HOGGCOUNTRY_OPENAI_CODEX_REDIRECT_URI?.trim();
 

@@ -6,7 +6,7 @@ Get Hogg Country talking through the user's own ChatGPT account before building 
 
 ## Hard proof
 
-A real ChatGPT/Codex OAuth-backed response was verified locally through OpenClaw:
+A real ChatGPT/Codex OAuth-backed response was verified locally through Scout:
 
 ```bash
 openclaw infer model run --gateway --json --model openai-codex/gpt-5.4 \
@@ -37,7 +37,7 @@ It is a proof that a **user-authenticated local companion** can make ChatGPT/Cod
 
 The first connector should live on the user's machine:
 
-- OpenClaw handles ChatGPT/Codex OAuth
+- Scout handles ChatGPT/Codex OAuth
 - Hogg Country talks to a local loopback bridge
 - the bridge shells into `openclaw infer model run --gateway ...`
 

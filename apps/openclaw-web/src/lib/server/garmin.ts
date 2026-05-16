@@ -124,7 +124,7 @@ export async function fetchGarminTrack(shareId: string, options?: { readonly sig
   const response = await fetch(sourceUrl, {
     signal: options?.signal,
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; HoggCountryOpenClaw/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; HoggCountryScout/1.0)',
       Accept: 'application/vnd.google-earth.kml+xml, application/xml, text/xml;q=0.9, */*;q=0.8'
     }
   });

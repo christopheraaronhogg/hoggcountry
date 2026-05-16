@@ -9,7 +9,7 @@
 ### Install and run
 - Install: `npm install`
 - Dev server: `npm run dev` (default `http://localhost:4321`)
-- OpenClaw web frontend: `npm run dev:openclaw`
+- Scout web frontend: `npm run dev:scout`
 - All frontend apps together: `npm run dev:all`
 - Build: `npm run build` (outputs to `dist/`)
 - Preview production build: `npm run preview`
@@ -51,12 +51,12 @@
 
 ### Project scripts
 - `dev`: Astro dev server
-- `dev:openclaw`: new SvelteKit frontend dev server
-- `dev:all`: run Astro public app, legacy workspace, and the new openclaw frontend together
+- `dev:scout`: new SvelteKit frontend dev server
+- `dev:all`: run Astro public app, legacy workspace, and the new Scout frontend together
 - `build`: Astro build
-- `build:openclaw`: build the new SvelteKit frontend
+- `build:scout`: build the new SvelteKit frontend
 - `preview`: Astro preview
-- `preview:openclaw`: preview the new SvelteKit frontend
+- `preview:scout`: preview the new SvelteKit frontend
 - `astro`: Run Astro CLI (e.g., `npm run astro -- check`)
 - `backend:install`: Install PHP deps and bootstrap Laravel env/migrations
 - `backend:dev`: Run Laravel dev stack (server/queue/logs/vite)
@@ -72,8 +72,8 @@
 - `svelte.config.js`: `vitePreprocess()` for Svelte islands.
 - `tsconfig.json`: strict TypeScript settings (extends Astro’s strict config).
 
-### OpenClaw web frontend
-- App path: `apps/openclaw-web/`
+### Scout web frontend
+- App path: legacy directory `apps/openclaw-web/`
 - Shared theme path: `packages/brand/src/theme.css`
 - Shared packages:
   - `packages/trail-data/`
@@ -84,7 +84,7 @@
 - SpacetimeDB module schema:
   - `apps/openclaw-web/spacetimedb/src/index.ts`
 - Generate/update SpacetimeDB bindings:
-  - `npm run spacetime:generate -w @hoggcountry/openclaw-web`
+  - `npm run spacetime:generate -w @hoggcountry/scout-web`
 
 ### Styling
 - Tailwind CSS v4 is enabled via `@tailwindcss/vite`. No `tailwind.config.*` file is required to get started.

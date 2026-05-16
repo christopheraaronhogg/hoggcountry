@@ -3,7 +3,7 @@
   "reviewedAt": "2026-05-07T22:50:00Z",
   "runId": "scout-rel-2026-05-07T22-27-40-763Z",
   "runPath": "data/scout-reliability/runs/scout-rel-2026-05-07T22-27-40-763Z.json",
-  "reviewer": "OpenClaw assistant / Chris-directed human-style review, no paid judge API",
+  "reviewer": "Scout assistant / Chris-directed human-style review, no paid judge API",
   "leaderboardEligible": false,
   "leaderboardEligibilityReason": "The deployed architecture is valid for model comparison and had zero deterministic rows, but the live run produced repeated 504 timeouts. Complete model-authored rows are useful for qualitative review; the full run is not a clean leaderboard comparison until timeout behavior is fixed or a complete no-timeout run is captured.",
   "summary": {

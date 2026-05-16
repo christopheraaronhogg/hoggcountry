@@ -4,7 +4,7 @@ Last verified: 2026-05-02
 
 ## Purpose
 
-Run the Scout SvelteKit app from `apps/openclaw-web` on the Forge box without changing the existing Nginx site root. The package, PM2 app name, and storage path still use `openclaw` as deployment plumbing.
+Run the Scout SvelteKit app from the legacy filesystem path `apps/openclaw-web` on the Forge box without changing the existing Nginx site root. The package, PM2 app name, and storage path use Scout naming.
 
 The active production shape is:
 
@@ -17,9 +17,9 @@ The active production shape is:
 
 - site root: `/home/forge/hoggcountry.on-forge.com/current`
 - app root: `/home/forge/hoggcountry.on-forge.com/current/apps/openclaw-web`
-- PM2 app name: `hoggcountry-openclaw`
+- PM2 app name: `hoggcountry-scout`
 - Node bind: `127.0.0.1:3000`
-- private workspace data root: `/home/forge/hoggcountry.on-forge.com/storage/app/openclaw-workspaces`
+- private workspace data root: `/home/forge/hoggcountry.on-forge.com/storage/app/scout-workspaces`
 - public Trail Updates data/media root: `/home/forge/hoggcountry.on-forge.com/storage/app/{private,public}/trail-updates`
 - shared Node dependency cache: `/home/forge/hoggcountry.on-forge.com/shared/node_modules`
 - current release pruning policy: keep active release plus one known-good rollback release; as of 2026-05-02 the active release is `1777743519`, with `1777740505` retained as the known-good rollback. Older retained releases `1777668594` and `1777667921` can be pruned after the new standard-documents release has baked.
@@ -29,8 +29,8 @@ The active production shape is:
 In `/home/forge/hoggcountry.on-forge.com/.env`:
 
 ```env
-OPENCLAW_WEB_PROXY_ENABLED=true
-OPENCLAW_WEB_PROXY_ORIGIN=http://127.0.0.1:3000
+SCOUT_WEB_PROXY_ENABLED=true
+SCOUT_WEB_PROXY_ORIGIN=http://127.0.0.1:3000
 ```
 
 After changing those values:
@@ -46,7 +46,7 @@ php artisan route:clear
 
 The repo-owned PM2 config is:
 
-- it also pins `OPENCLAW_WORKSPACE_DATA_DIR` to the shared Forge storage path so private manuals, tools, and imported docs survive release swaps
+- it also pins `SCOUT_WORKSPACE_DATA_DIR` to the shared Forge storage path so private manuals, tools, and imported docs survive release swaps
 
 - `apps/openclaw-web/ecosystem.config.cjs`
 
@@ -58,24 +58,24 @@ Start or reload it from the repo root on the server:
 
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
-npm run forge:openclaw:pm2
+npm run forge:scout:pm2
 ```
 
 Check status:
 
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
-npm run forge:openclaw:pm2:status
-pm2 show hoggcountry-openclaw | grep 'exec cwd'
-pm2 logs hoggcountry-openclaw --lines 50
+npm run forge:scout:pm2:status
+pm2 show hoggcountry-scout | grep 'exec cwd'
+pm2 logs hoggcountry-scout --lines 50
 ```
 
 If `exec cwd` still points at a numbered `releases/...` path, rebind PM2 once:
 
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
-pm2 delete hoggcountry-openclaw || true
-npm run forge:openclaw:pm2
+pm2 delete hoggcountry-scout || true
+npm run forge:scout:pm2
 pm2 save
 ```
 
@@ -137,7 +137,7 @@ for (const base of ['apps', 'packages']) {
 }
 NODE
 
-npm run build:openclaw:forge
+npm run build:scout:forge
 
 # Optional after a dependency-changing successful build: refresh the stable cache,
 # but leave the active release using its release-local hardlinked node_modules tree.
@@ -153,16 +153,16 @@ mv "$APP/shared/node_modules.next" "$APP/shared/node_modules"
 
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
-npm run forge:openclaw:pm2
-pm2 show hoggcountry-openclaw | grep 'exec cwd'
+npm run forge:scout:pm2
+pm2 show hoggcountry-scout | grep 'exec cwd'
 ```
 
 If that still shows a numbered `releases/...` path, delete and recreate the app once so PM2 rebinds to `current`:
 
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
-pm2 delete hoggcountry-openclaw || true
-npm run forge:openclaw:pm2
+pm2 delete hoggcountry-scout || true
+npm run forge:scout:pm2
 pm2 save
 ```
 
@@ -225,7 +225,7 @@ Gated app workspace checks should also work through the Laravel bridge, not only
 
 Likely causes:
 
-- `OPENCLAW_WEB_PROXY_ENABLED` is false
+- `SCOUT_WEB_PROXY_ENABLED` is false
 - Laravel config cache is stale
 - PM2 app is down or not listening on `127.0.0.1:3000`
 
@@ -233,7 +233,7 @@ Check:
 
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
-npm run forge:openclaw:pm2:status
+npm run forge:scout:pm2:status
 curl -I http://127.0.0.1:3000/
 cd backend
 php artisan optimize:clear
@@ -251,9 +251,9 @@ Check:
 
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
-npm run build:openclaw:forge
-npm run forge:openclaw:pm2
-pm2 show hoggcountry-openclaw | grep 'exec cwd'
+npm run build:scout:forge
+npm run forge:scout:pm2
+pm2 show hoggcountry-scout | grep 'exec cwd'
 npm run verify:forge
 ```
 
@@ -261,8 +261,8 @@ If `exec cwd` is still a numbered release path, rebind PM2:
 
 ```bash
 cd /home/forge/hoggcountry.on-forge.com/current
-pm2 delete hoggcountry-openclaw || true
-npm run forge:openclaw:pm2
+pm2 delete hoggcountry-scout || true
+npm run forge:scout:pm2
 pm2 save
 ```
 

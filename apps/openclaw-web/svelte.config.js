@@ -1,6 +1,7 @@
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
-const adapterTarget = process.env.OPENCLAW_WEB_ADAPTER === 'node' ? 'node' : 'netlify';
+const adapterTarget =
+  process.env.SCOUT_WEB_ADAPTER === 'node' || process.env.OPENCLAW_WEB_ADAPTER === 'node' ? 'node' : 'netlify';
 
 const adapterModule = adapterTarget === 'node'
   ? await import('@sveltejs/adapter-node')

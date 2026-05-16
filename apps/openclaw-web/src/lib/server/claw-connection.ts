@@ -17,7 +17,12 @@ export interface WorkspaceClawConnectionPayload {
 }
 
 export function configuredHouseProviderId(): ClawProviderId | null {
-  const provider = (process.env.OPENCLAW_CLAW_PROVIDER || process.env.OPENCLAW_SCOUT_PROVIDER || '').trim();
+  const provider = (
+    process.env.SCOUT_PROVIDER ||
+    process.env.OPENCLAW_CLAW_PROVIDER ||
+    process.env.OPENCLAW_SCOUT_PROVIDER ||
+    ''
+  ).trim();
   if (provider === OPENCODE_GO_PROVIDER_ID) return OPENCODE_GO_PROVIDER_ID;
   if (provider === OPENAI_CODEX_PROVIDER_ID) return null;
   return process.env.OPENCODE_API_KEY ? OPENCODE_GO_PROVIDER_ID : null;
@@ -25,7 +30,12 @@ export function configuredHouseProviderId(): ClawProviderId | null {
 
 export function configuredHouseModelId(providerId: ClawProviderId): string {
   if (providerId === OPENCODE_GO_PROVIDER_ID) {
-    return (process.env.OPENCLAW_CLAW_MODEL || process.env.OPENCLAW_SCOUT_MODEL || DEFAULT_OPENCODE_GO_MODEL).trim();
+    return (
+      process.env.SCOUT_MODEL ||
+      process.env.OPENCLAW_CLAW_MODEL ||
+      process.env.OPENCLAW_SCOUT_MODEL ||
+      DEFAULT_OPENCODE_GO_MODEL
+    ).trim();
   }
 
   return OPENAI_CODEX_MODEL;
