@@ -66,6 +66,10 @@
     return sourceType.startsWith('youtube_') || /(?:youtube\.com|youtu\.be)/i.test(externalUrl);
   }
 
+  function isYouTubeShortUpdate(update) {
+    return update?.sourceType === 'youtube_short' || String(update?.externalUrl || '').includes('/shorts/');
+  }
+
   function getYouTubeId(update) {
     const externalUrl = String(update?.externalUrl || '');
     const mediaUrl = String(update?.mediaUrl || '');
@@ -414,7 +418,7 @@
     <div class="story-modal" role="dialog" aria-modal="true" aria-label="Trail update gallery" onclick={closeStoryModal}>
       <div class="story-modal-panel" onclick={(event) => event.stopPropagation()}>
         <button class="story-modal-close" type="button" onclick={closeStoryModal} aria-label="Close full screen trail update">×</button>
-        <div class="story-modal-media">
+        <div class={`story-modal-media ${isYouTubeUpdate(storyModalUpdate) ? 'is-youtube' : ''} ${isYouTubeShortUpdate(storyModalUpdate) ? 'is-short' : ''}`}>
           {#if isYouTubeUpdate(storyModalUpdate) && getYouTubeEmbedUrl(storyModalUpdate)}
             <iframe
               src={getYouTubeEmbedUrl(storyModalUpdate)}
@@ -1727,12 +1731,17 @@
 
   .story-modal-media iframe {
     display: block;
-    width: min(100%, calc((98vh - 1.5rem) * 9 / 16));
-    height: min(calc(98vh - 1.5rem), calc(100vw * 16 / 9));
+    width: min(100%, calc((98vh - 1.5rem) * 16 / 9));
+    height: min(calc(98vh - 1.5rem), calc(100vw * 9 / 16));
     max-width: 100%;
     max-height: calc(98vh - 1.5rem);
     border: 0;
     background: #050807;
+  }
+
+  .story-modal-media.is-short iframe {
+    width: min(100%, calc((98vh - 1.5rem) * 9 / 16));
+    height: min(calc(98vh - 1.5rem), calc(100vw * 16 / 9));
   }
 
   .story-modal-media img,
