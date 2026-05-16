@@ -25,6 +25,7 @@ const YOUTUBE_SHORT_THUMBNAIL_VARIANTS = [
   'oar3',
   ...YOUTUBE_THUMBNAIL_VARIANTS,
 ] as const;
+type YouTubeThumbnailVariant = (typeof YOUTUBE_SHORT_THUMBNAIL_VARIANTS)[number];
 
 function pickText(value: unknown): string {
   if (typeof value === 'string') return value.trim();
@@ -38,7 +39,7 @@ function pickText(value: unknown): string {
 
 function buildYouTubeThumbnailUrl(
   videoId: string,
-  variant: (typeof YOUTUBE_THUMBNAIL_VARIANTS)[number],
+  variant: YouTubeThumbnailVariant,
 ): string {
   return `https://i.ytimg.com/vi/${videoId}/${variant}.jpg`;
 }
