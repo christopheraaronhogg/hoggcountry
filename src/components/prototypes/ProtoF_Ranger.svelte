@@ -10,9 +10,14 @@
   let { videos: initialVideos = [], cutoverSafe = false } = $props();
   let videos = $state(initialVideos);
   let _liveLoadError = $state("");
+  let trailUpdates = $state([]);
+  let trailUpdatesLoading = $state(true);
+  let trailUpdatesError = $state("");
+  let storyModalIndex = $state(null);
+  let heroStoryIndex = $state(0);
 
-  // Show the full recent dispatch set; the page grid handles wrapping.
-  const displayVideos = $derived(videos);
+  // Get first 3 videos for the dispatches section
+  const displayVideos = $derived(videos.slice(0, 3));
 
   // Format date for display
   function formatDate(isoDate) {
@@ -27,6 +32,60 @@
     if (!normalized) return 'Latest trail dispatch from HoggCountry.';
     if (normalized.length <= limit) return normalized;
     return `${normalized.slice(0, limit).trimEnd()}...`;
+  }
+
+  const storyUpdates = $derived(trailUpdates);
+  const heroStoryUpdate = $derived(storyUpdates.length ? storyUpdates[heroStoryIndex % storyUpdates.length] : null);
+  const storyModalUpdate = $derived(storyModalIndex === null ? null : trailUpdates[storyModalIndex]);
+
+  function formatUpdateDate(value) {
+    if (!value) return 'Trail story';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Trail story';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function updateExcerpt(update, limit = 170) {
+    const raw = typeof update?.body === 'string' ? update.body : '';
+    const normalized = raw.replace(/\s+/g, ' ').trim();
+    if (!normalized) return 'A quick field note from the Appalachian Trail.';
+    if (normalized.length <= limit) return normalized;
+    return `${normalized.slice(0, limit).trimEnd()}...`;
+  }
+
+  function updateMeta(update) {
+    const bits = [formatUpdateDate(update?.publishedAt || update?.createdAt)];
+    if (update?.location) bits.push(update.location);
+    if (update?.trailMile) bits.push(`Mile ${update.trailMile}`);
+    return bits.join(' • ');
+  }
+
+  function openStoryModal(index = heroStoryIndex) {
+    storyModalIndex = index;
+  }
+
+  function previousHeroStory() {
+    if (!storyUpdates.length) return;
+    heroStoryIndex = (heroStoryIndex - 1 + storyUpdates.length) % storyUpdates.length;
+  }
+
+  function nextHeroStory() {
+    if (!storyUpdates.length) return;
+    heroStoryIndex = (heroStoryIndex + 1) % storyUpdates.length;
+  }
+
+  function closeStoryModal() {
+    storyModalIndex = null;
+  }
+
+  function previousStoryUpdate() {
+    if (!trailUpdates.length || storyModalIndex === null) return;
+    storyModalIndex = (storyModalIndex - 1 + trailUpdates.length) % trailUpdates.length;
+  }
+
+  function nextStoryUpdate() {
+    if (!trailUpdates.length || storyModalIndex === null) return;
+    storyModalIndex = (storyModalIndex + 1) % trailUpdates.length;
   }
 
   // Get reliable thumbnail URL - YouTube has multiple CDN hosts
@@ -90,7 +149,24 @@
       }
     }
 
+    async function refreshTrailUpdates() {
+      trailUpdatesLoading = true;
+      trailUpdatesError = '';
+      try {
+        const res = await fetch('/.netlify/functions/trail-updates?limit=50', { headers: { Accept: 'application/json' } });
+        if (!res.ok) throw new Error(`trail-updates failed: ${res.status}`);
+        const payload = await res.json();
+        trailUpdates = Array.isArray(payload?.updates) ? payload.updates : [];
+        if (heroStoryIndex >= trailUpdates.length) heroStoryIndex = 0;
+      } catch (e) {
+        trailUpdatesError = e?.message || String(e);
+      } finally {
+        trailUpdatesLoading = false;
+      }
+    }
+
     refreshVideos();
+    refreshTrailUpdates();
     timer = window.setInterval(refreshVideos, 20000);
 
     return () => {
@@ -149,8 +225,18 @@
       </svg>
     </div>
 
-    <!-- Hero content -->
-    <div class="hero-content">
+    <div class="hero-waypoints" aria-hidden="true">
+      <svg viewBox="0 0 92 160" fill="none">
+        <path d="M48 14 C18 42 79 64 42 92 C20 109 34 135 70 146" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 9" />
+        <circle cx="48" cy="14" r="8" />
+        <circle cx="42" cy="92" r="6" />
+        <circle cx="70" cy="146" r="8" />
+      </svg>
+    </div>
+
+    <div class="hero-layout">
+      <!-- Hero content -->
+      <div class="hero-content">
       <div class="hero-stamp">
         <span class="stamp-text">OFFICIAL EXPEDITION</span>
         <span class="stamp-year">FEBRUARY 2026</span>
@@ -210,14 +296,80 @@
           </a>
         {/if}
       </div>
+      </div>
+
+      <aside class="hero-story" aria-labelledby="hero-story-title">
+        <p class="hero-story-kicker">STORY</p>
+        <h2 id="hero-story-title">Latest from the trail</h2>
+        {#if trailUpdatesLoading}
+          <p class="hero-story-empty">Loading the latest trail story…</p>
+        {:else if heroStoryUpdate}
+          <div class="hero-story-stage" style={`--story-progress: ${((heroStoryIndex + 1) / storyUpdates.length) * 100}%`}>
+            <article class="hero-story-card" data-story-index={heroStoryIndex}>
+              {#if heroStoryUpdate.mediaUrl}
+                <button class="hero-story-media" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label="Open trail update image full screen">
+                  {#if String(heroStoryUpdate.mediaType || '').startsWith('video/')}
+                    <video src={heroStoryUpdate.mediaUrl} playsinline preload="metadata"></video>
+                  {:else}
+                    <img src={heroStoryUpdate.mediaUrl} alt={heroStoryUpdate.title || 'Trail update'} loading="lazy" />
+                  {/if}
+                  <span class="story-expand-hint">Tap to enlarge</span>
+                </button>
+              {/if}
+              <button class="hero-story-overlay" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label="Open trail update story">
+                <span class="hero-story-meta">{updateMeta(heroStoryUpdate)}</span>
+                <span class="hero-story-card-title">{heroStoryUpdate.title || 'Trail update'}</span>
+                <span class="hero-story-card-copy">{updateExcerpt(heroStoryUpdate, 90)}</span>
+              </button>
+            </article>
+            <div class="hero-story-rail" aria-label="Trail story carousel controls">
+              <button type="button" onclick={previousHeroStory} disabled={storyUpdates.length <= 1} aria-label="Show newer trail update">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" /></svg>
+              </button>
+              <span>{heroStoryIndex + 1}<small>/ {storyUpdates.length}</small></span>
+              <button type="button" onclick={nextHeroStory} disabled={storyUpdates.length <= 1} aria-label="Show older trail update">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" /></svg>
+              </button>
+            </div>
+          </div>
+        {:else}
+          <p class="hero-story-empty">Story feed is live. New updates will appear here as soon as they are posted.</p>
+        {/if}
+        <a href="/updates/" class="hero-story-link">View all</a>
+      </aside>
     </div>
 
-    <!-- Decorative blaze marks -->
-    <div class="hero-blazes">
-      <div class="blaze blaze-1"></div>
-      <div class="blaze blaze-2"></div>
-    </div>
   </section>
+
+  {#if storyModalUpdate}
+    <div class="story-modal" role="dialog" aria-modal="true" aria-label="Trail update gallery" onclick={closeStoryModal}>
+      <div class="story-modal-panel" onclick={(event) => event.stopPropagation()}>
+        <button class="story-modal-close" type="button" onclick={closeStoryModal} aria-label="Close full screen trail update">×</button>
+        <div class="story-modal-media">
+          {#if String(storyModalUpdate.mediaType || '').startsWith('video/')}
+            <video src={storyModalUpdate.mediaUrl} controls playsinline autoplay></video>
+          {:else}
+            <img src={storyModalUpdate.mediaUrl} alt={storyModalUpdate.title || 'Trail update'} />
+          {/if}
+        </div>
+        <div class="story-modal-copy">
+          <p class="hero-story-meta">{updateMeta(storyModalUpdate)}</p>
+          <h3>{storyModalUpdate.title || 'Trail update'}</h3>
+          {#if storyModalUpdate.body}
+            <p>{storyModalUpdate.body}</p>
+          {/if}
+          <a class="story-modal-original" href={storyModalUpdate.mediaUrl} target="_blank" rel="noopener">Original full quality</a>
+        </div>
+        {#if trailUpdates.length > 1}
+          <div class="story-modal-controls">
+            <button type="button" onclick={previousStoryUpdate}>Previous</button>
+            <span>{storyModalIndex + 1} / {trailUpdates.length}</span>
+            <button type="button" onclick={nextStoryUpdate}>Next</button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
 
   <section class="ranger-dispatches">
     <div class="dispatches-container">
@@ -256,7 +408,7 @@
             </div>
             <div class="dispatch-content">
               <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
-              <h3 class="dispatch-title" title={displayVideos[0].title}>{displayVideos[0].title}</h3>
+              <h3 class="dispatch-title">{displayVideos[0].title}</h3>
               <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], 420)}</p>
               <span class="dispatch-cta">{actionLabel(displayVideos[0])}</span>
             </div>
@@ -281,7 +433,7 @@
               </div>
               <div class="dispatch-content">
                 <time class="dispatch-date">{formatDate(video.published)}</time>
-                <h3 class="dispatch-title" title={video.title}>{video.title}</h3>
+                <h3 class="dispatch-title">{video.title}</h3>
                 <p class="dispatch-desc">{getVideoExcerpt(video, 110)}</p>
                 <span class="dispatch-cta">{actionLabel(video)}</span>
               </div>
@@ -750,9 +902,10 @@
           </div>
           <div class="panel-wood-edge"></div>
         </a>
+      {/if}
 
-        <!-- Panel 3: The Journey -->
-        <a href="/trips" class="panel panel-journey">
+      <!-- Panel 3: The Journey -->
+      <a href="/trips" class="panel panel-journey">
         <div class="panel-frame">
           <div class="panel-number">III</div>
           <div class="panel-icon">
@@ -787,7 +940,6 @@
         </div>
         <div class="panel-wood-edge"></div>
       </a>
-      {/if}
     </div>
   </section>
 
@@ -1000,12 +1152,10 @@
 
       <div class="footer-nav">
         <a href="/guide">Field Guide</a>
-        {#if !cutoverSafe}
-          <span class="footer-dot"></span>
-          <a href="/tools">Trail Tools</a>
-          <span class="footer-dot"></span>
-          <a href="/trips">Trip Reports</a>
-        {/if}
+        <span class="footer-dot"></span>
+        <a href="/tools">Trail Tools</a>
+        <span class="footer-dot"></span>
+        <a href="/trips">Trip Reports</a>
         <span class="footer-dot"></span>
         <a href="/videos">Videos</a>
       </div>
@@ -1119,12 +1269,446 @@
     height: 100%;
   }
 
-  .hero-content {
+  .hero-waypoints {
+    position: absolute;
+    z-index: 1;
+    top: clamp(5.5rem, 14vw, 8.5rem);
+    left: calc(50% + 135px);
+    width: clamp(52px, 5vw, 68px);
+    color: var(--marker);
+    opacity: 0.92;
+    pointer-events: none;
+    filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.22));
+  }
+
+  .hero-waypoints svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .hero-waypoints circle {
+    fill: currentColor;
+    stroke: rgba(245, 242, 232, 0.82);
+    stroke-width: 3;
+  }
+
+  .hero-layout {
     position: relative;
     z-index: 2;
-    max-width: 800px;
+    display: grid;
+    gap: 2.5rem;
+    max-width: 1120px;
     margin: 0 auto;
+    align-items: center;
+  }
+
+  .hero-content {
+    min-width: 0;
     text-align: center;
+  }
+
+  .hero-story {
+    position: relative;
+    padding: 0.9rem;
+    border: 3px solid rgba(240, 224, 0, 0.86);
+    border-radius: 8px;
+    background: rgba(245, 242, 232, 0.96);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
+    color: var(--ink);
+  }
+
+  .hero-story::before {
+    content: '';
+    position: absolute;
+    inset: 0.45rem;
+    border: 1px solid rgba(77, 89, 74, 0.15);
+    pointer-events: none;
+  }
+
+  .hero-story-kicker,
+  .hero-story-meta {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--terra);
+  }
+
+  .hero-story h2 {
+    margin: 0.28rem 0 0.8rem;
+    color: var(--pine-dark);
+    font-family: Oswald, sans-serif;
+    font-size: clamp(1.16rem, 1.7vw, 1.55rem);
+    line-height: 0.94;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .hero-story-stage {
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  .hero-story-stage::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.42rem;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--terra) var(--story-progress, 0%), rgba(77, 89, 74, 0.16) var(--story-progress, 0%));
+  }
+
+  .hero-story-card {
+    position: relative;
+    display: grid;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 4px;
+    background: rgba(77, 89, 74, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(77, 89, 74, 0.12);
+  }
+
+  .hero-story-card[data-story-index] {
+    animation: story-card-in 180ms ease-out;
+  }
+
+  @keyframes story-card-in {
+    from { opacity: 0.45; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-story-media {
+    position: relative;
+    display: grid;
+    width: 100%;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    max-height: clamp(300px, 58vh, 560px);
+    overflow: hidden;
+    border: 0;
+    background: rgba(77, 89, 74, 0.12);
+    cursor: zoom-in;
+  }
+
+  .hero-story-media::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 46%;
+    background: linear-gradient(180deg, transparent 0%, rgba(18, 29, 22, 0.82) 72%, rgba(18, 29, 22, 0.94) 100%);
+    pointer-events: none;
+  }
+
+  .hero-story-media img,
+  .hero-story-media video {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: clamp(300px, 58vh, 560px);
+    object-fit: contain;
+  }
+
+  .hero-story-overlay {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    gap: 0.18rem;
+    padding: 3.4rem 0.85rem 0.8rem;
+    border: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(18, 29, 22, 0.86) 52%, rgba(18, 29, 22, 0.97) 100%);
+    color: var(--cream);
+    text-align: left;
+    cursor: zoom-in;
+  }
+
+  .hero-story-overlay .hero-story-meta {
+    color: var(--marker);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  }
+
+  .hero-story-card-title {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .hero-story-card-copy {
+    color: rgba(245, 242, 232, 0.86);
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .story-expand-hint {
+    position: absolute;
+    z-index: 3;
+    right: 0.55rem;
+    top: 0.55rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(43, 48, 41, 0.78);
+    color: var(--cream);
+    font-family: Oswald, sans-serif;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hero-story-rail {
+    display: grid;
+    grid-template-columns: 42px auto 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    margin-top: 0.75rem;
+  }
+
+  .hero-story-rail button {
+    display: inline-grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(77, 89, 74, 0.97), rgba(47, 63, 51, 0.97));
+    color: var(--cream);
+    box-shadow: 0 12px 24px rgba(47, 63, 51, 0.22);
+  }
+
+  .hero-story-rail button:hover:not(:disabled) {
+    background: var(--terra);
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .hero-story-rail button:disabled {
+    cursor: default;
+    opacity: 0.48;
+    box-shadow: none;
+  }
+
+  .hero-story-rail svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .hero-story-rail span {
+    min-width: 3.6rem;
+    color: var(--pine-dark);
+    font-family: Oswald, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  .hero-story-rail small {
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+  }
+
+  .hero-story-empty {
+    margin: 0.45rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .hero-story-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-top: 0.72rem;
+    color: var(--pine-dark);
+    font-family: Oswald, sans-serif;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-decoration: underline;
+    text-decoration-color: rgba(77, 89, 74, 0.35);
+    text-underline-offset: 0.28em;
+    text-transform: uppercase;
+  }
+
+  .hero-story-link::after {
+    content: '→';
+    margin-left: 0.35rem;
+    color: var(--terra);
+  }
+
+  .hero-story-link:hover {
+    color: var(--terra);
+    text-decoration-color: currentColor;
+  }
+
+  .story-modal {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: clamp(0.35rem, 1vw, 0.8rem);
+    background: rgba(6, 10, 8, 0.96);
+  }
+
+  .story-modal-panel {
+    position: relative;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0.55rem;
+    width: min(100%, 1600px);
+    height: min(100%, 98vh);
+    max-height: 98vh;
+    overflow: hidden;
+    padding: clamp(0.45rem, 1vw, 0.8rem);
+    border-radius: 14px;
+    background: #050807;
+    color: var(--cream);
+  }
+
+  .story-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 4;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(245, 242, 232, 0.25);
+    border-radius: 999px;
+    background: rgba(5, 8, 7, 0.78);
+    color: var(--cream);
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+
+  .story-modal-media {
+    display: grid;
+    min-height: 0;
+    place-items: center;
+    border-radius: 10px;
+    background: #050807;
+    overflow: hidden;
+  }
+
+  .story-modal-media img,
+  .story-modal-media video {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: calc(98vh - 1.5rem);
+    object-fit: contain;
+  }
+
+  .story-modal-copy {
+    position: absolute;
+    left: 0.8rem;
+    top: 0.8rem;
+    z-index: 3;
+    display: grid;
+    gap: 0.16rem;
+    width: fit-content;
+    max-width: min(360px, calc(100% - 4.8rem));
+    padding: 0.55rem 0.65rem;
+    border: 1px solid rgba(245, 242, 232, 0.12);
+    border-radius: 10px;
+    background: rgba(5, 8, 7, 0.68);
+    backdrop-filter: blur(8px);
+  }
+
+  .story-modal-copy h3 {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: clamp(0.92rem, 2vw, 1.1rem);
+    color: var(--cream);
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .story-modal-copy p:last-of-type {
+    margin: 0.08rem 0 0;
+    color: rgba(245, 242, 232, 0.76);
+    font-size: 0.82rem;
+    line-height: 1.3;
+    white-space: pre-wrap;
+  }
+
+  .story-modal-original {
+    width: fit-content;
+    margin-top: 0.12rem;
+    color: var(--marker);
+    font-family: Oswald, sans-serif;
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-underline-offset: 0.25em;
+  }
+
+  .story-modal-controls {
+    position: absolute;
+    right: 0.8rem;
+    bottom: 0.8rem;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .story-modal-controls button {
+    min-height: 44px;
+    padding: 0.7rem 1rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--marker);
+    color: var(--ink);
+    font-family: Oswald, sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .story-modal-controls span {
+    font-family: Oswald, sans-serif;
+    font-weight: 800;
+    color: var(--cream);
+  }
+
+  @media (min-width: 900px) {
+    .hero-layout {
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    }
+
+    .hero-content {
+      text-align: left;
+    }
+
+    .hero-stamp,
+    .hero-route,
+    .hero-cta {
+      justify-content: flex-start;
+    }
   }
 
   .hero-stamp {
@@ -1178,7 +1762,7 @@
     letter-spacing: 0.08em;
     color: var(--cream);
     text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    line-height: 1;
+    line-height: 0.96;
   }
 
   .title-suffix {
@@ -1292,6 +1876,83 @@
   .cta-icon svg {
     width: 100%;
     height: 100%;
+  }
+
+  @media (min-width: 900px) {
+    .hero-layout {
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+      gap: clamp(3rem, 7vw, 6rem);
+    }
+
+    .hero-content {
+      justify-self: start;
+      max-width: 760px;
+      text-align: left;
+    }
+
+    .hero-title,
+    .hero-subtitle,
+    .hero-route,
+    .hero-cta {
+      max-width: 720px;
+    }
+
+    .hero-stamp,
+    .hero-route,
+    .hero-cta {
+      justify-content: flex-start;
+    }
+
+    .hero-route {
+      width: fit-content;
+    }
+
+    .hero-story-rail {
+      position: absolute;
+      top: 50%;
+      right: 0.55rem;
+      z-index: 4;
+      grid-template-columns: 1fr;
+      grid-template-rows: 34px auto 34px;
+      gap: 0.34rem;
+      margin-top: 0;
+      transform: translateY(-50%);
+    }
+
+    .hero-story-rail::before {
+      content: '';
+      position: absolute;
+      inset: -0.42rem -0.28rem;
+      z-index: -1;
+      border: 1px solid rgba(245, 242, 232, 0.24);
+      border-radius: 999px;
+      background: rgba(18, 29, 22, 0.46);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(6px);
+    }
+
+    .hero-story-rail button {
+      width: 34px;
+      height: 34px;
+    }
+
+    .hero-story-rail svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .hero-story-rail span {
+      min-width: 0;
+      color: var(--cream);
+      font-size: 0.72rem;
+      text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+
+    .hero-story-rail small {
+      color: rgba(245, 242, 232, 0.7);
+    }
   }
 
   .hero-blazes {
@@ -1905,6 +2566,165 @@
     height: 18px;
   }
 
+  /* ===== STORY SECTION ===== */
+  .ranger-story {
+    position: relative;
+    padding: 4rem 1.5rem;
+    background:
+      linear-gradient(180deg, rgba(245, 242, 232, 0.95), rgba(245, 242, 232, 0.88)),
+      url('/default-background.svg');
+    background-size: auto, 850px 850px;
+    background-position: center, center top;
+    border-top: 1px solid rgba(77, 89, 74, 0.12);
+    border-bottom: 1px solid rgba(77, 89, 74, 0.12);
+  }
+
+  .story-container {
+    max-width: 1050px;
+    margin: 0 auto;
+  }
+
+  .story-header {
+    display: grid;
+    gap: 0.5rem;
+    max-width: 760px;
+    margin-bottom: 1.5rem;
+  }
+
+  .story-kicker,
+  .story-meta {
+    margin: 0;
+    font-family: Oswald, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--terra);
+  }
+
+  .story-title {
+    margin: 0;
+    color: var(--pine-dark);
+    font-family: Oswald, sans-serif;
+    font-size: clamp(2.35rem, 7vw, 4.8rem);
+    line-height: 0.92;
+    text-transform: uppercase;
+  }
+
+  .story-subtitle {
+    margin: 0;
+    max-width: 55ch;
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+
+  .story-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .story-card,
+  .story-empty {
+    border: 3px solid var(--brown);
+    border-radius: 8px;
+    background: rgba(255, 252, 241, 0.92);
+    box-shadow: 0 18px 45px rgba(60, 44, 25, 0.12);
+    overflow: hidden;
+  }
+
+  .story-card:first-child {
+    border-color: var(--terra);
+  }
+
+  .story-media {
+    aspect-ratio: 4 / 3;
+    background: rgba(77, 89, 74, 0.12);
+    overflow: hidden;
+  }
+
+  .story-media img,
+  .story-media video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .story-card-copy {
+    padding: 1rem;
+  }
+
+  .story-card h3 {
+    margin: 0.45rem 0 0;
+    color: var(--ink);
+    font-family: Oswald, sans-serif;
+    font-size: 1.35rem;
+    line-height: 1.08;
+    text-transform: uppercase;
+  }
+
+  .story-card-copy p:last-child {
+    margin: 0.65rem 0 0;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .story-empty {
+    padding: 1.25rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .story-empty strong {
+    color: var(--ink);
+  }
+
+  .story-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .story-primary,
+  .story-secondary {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    font-family: Oswald, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .story-primary {
+    background: var(--marker);
+    color: var(--ink);
+  }
+
+  .story-secondary {
+    border: 1px solid rgba(77, 89, 74, 0.25);
+    background: rgba(255, 255, 255, 0.62);
+    color: var(--pine-dark);
+  }
+
+  @media (min-width: 760px) {
+    .story-grid {
+      grid-template-columns: 1.25fr 1fr 1fr;
+      align-items: stretch;
+    }
+
+    .story-card:first-child .story-media {
+      aspect-ratio: 16 / 10;
+    }
+  }
+
   /* ===== TRAIL DISPATCHES (VIDEOS) SECTION ===== */
   .ranger-dispatches {
     padding: 4rem 1.5rem;
@@ -2142,10 +2962,6 @@
     color: var(--pine-dark);
     margin: 0 0 0.5rem;
     line-height: 1.3;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .dispatch-featured .dispatch-title {
@@ -2917,6 +3733,10 @@
   }
 
   @media (max-width: 900px) {
+    .hero-waypoints {
+      display: none;
+    }
+
     .mission-container {
       grid-template-columns: 1fr;
       gap: 2.5rem;
@@ -2961,10 +3781,6 @@
 
     .hero-border {
       inset: 0.75rem;
-    }
-
-    .hero-blazes {
-      display: none;
     }
 
     .hero-route {
