@@ -23,6 +23,8 @@ const ALIGNMENT_STATUS = 'yellow_unresolved_open_route_delta';
 const ROUTE_ID = 'at-full-trail-rc1-open-2026';
 const SOURCE_ROUTE_ID = 'at-main-osm-2026-open';
 const ROCKINESS_V2_SOURCE_ID = 'full_trail_rockiness_v2_model';
+const ROCKINESS_V2_1_SOURCE_ID = 'full_trail_rockiness_v2_1_extraction_model';
+const ROCKINESS_V2_1_SNAPSHOT_PATH = 'raw/source_discovery/rockiness_v2_1_source_extraction.json';
 const SOURCE_REVIEW_IDS = new Set([
   'opentrail_review',
   'openlongtrails_review',
@@ -545,6 +547,22 @@ function sourceManifest() {
       production_safe: true,
       data_categories: ['tread_rockiness_v2', 'difficulty_input', 'pace_penalty', 'model_notes'],
       notes: 'Combines 100-meter USGS 3DEP/EPQS micro-roughness, existing OSM-derived tread signals, and a documented-but-not-yet-extracted gSSURGO lane. No field verification is implied.',
+    },
+    {
+      source_id: ROCKINESS_V2_1_SOURCE_ID,
+      name: 'Scout Rockiness V2.1 bounded source extraction model',
+      owner: 'Hogg Country',
+      source_type: 'derived model and extraction metadata',
+      source_url: `internal:data/at-open-reference/${ROCKINESS_V2_1_SNAPSHOT_PATH}`,
+      access_method: 'bounded live source discovery snapshot promoted into local generated artifacts',
+      license_status: 'open_license_share_alike',
+      allowed_use: 'package generated extraction-aware model records with OSM ODbL attribution, USGS public-domain metadata, confidence, and not-field-verified cautions',
+      attribution_required: 'Preserve OpenStreetMap contributor attribution and USGS/NRCS source notes.',
+      confidence: 'model_screening_with_bounded_dem_lidar_metadata_not_field_verified',
+      last_checked: GENERATED_DATE,
+      production_safe: true,
+      data_categories: ['tread_rockiness_v2_1', 'difficulty_input', 'source_extraction', 'pace_penalty', 'model_notes'],
+      notes: 'V2.1 promotes bounded 3DEP Seamless DEM STAC and USGS 3DEP LiDAR catalog metadata into the pack. It does not claim raster pixel sampling, LiDAR point-cloud scoring, SSURGO attribute scoring, or field verification.',
     },
     {
       source_id: 'opentrail_review',
@@ -2063,9 +2081,240 @@ No Rockiness V2 record is field verified. In answer text, treat Rockiness V2 as 
   };
 }
 
+function defaultRockinessV21Snapshot() {
+  return {
+    extraction_id: 'rockiness-v2-1-no-live-snapshot',
+    generated_at: GENERATED_AT,
+    extraction_level: 'missing_snapshot_fallback',
+    production_safe: true,
+    license_status: 'open_license_share_alike_or_public_domain',
+    dem: {
+      source_id: 'usgs_3dep_seamless_dem',
+      source_url: SOURCE_URLS.usgs3depSeamless,
+      sections: [],
+    },
+    lidar: {
+      source_id: 'usgs_3dep_lidar',
+      source_url: SOURCE_URLS.usgs3depLidar,
+      catalog_item_link_count: 0,
+      at_state_item_link_count: 0,
+      inspected_item_count: 0,
+      inspected_item_errors: 0,
+      calibration_sections: [],
+      extraction_status: 'snapshot_missing',
+      production_safe: true,
+      license_status: 'public_domain',
+    },
+    soil: {
+      source_id: 'nrcs_gssurgo_ssurgo',
+      source_url: SOURCE_URLS.nrcsGssurgo,
+      extraction_status: 'not_extracted_in_v2_1',
+      production_safe: true,
+      license_status: 'public_domain',
+    },
+    osm: {
+      source_id: 'osm',
+      source_url: SOURCE_URLS.osmCopyright,
+      extraction_status: 'uses_existing_rc1_odbl_surface_signal_lane',
+      production_safe: true,
+      license_status: 'open_license_share_alike',
+    },
+    policy: 'No live V2.1 snapshot was found. Records must fall back to Rockiness V2 and keep confidence conservative.',
+  };
+}
+
+function sectionCoversMile(section, mile) {
+  const range = section?.mile_range_nobo_global_est;
+  return Array.isArray(range) && typeof range[0] === 'number' && typeof range[1] === 'number' && mile >= range[0] && mile <= range[1];
+}
+
+function extractionEvidenceForMile(snapshot, mile) {
+  const demSections = snapshot?.dem?.sections ?? [];
+  const fullCorridorDem = demSections.find((section) => section.section_id === 'full_at_corridor');
+  const rangedDem = demSections.filter((section) => sectionCoversMile(section, mile));
+  const dem = rangedDem[0] ?? fullCorridorDem ?? null;
+  const lidarSections = snapshot?.lidar?.calibration_sections ?? [];
+  const lidar = lidarSections.find((section) => sectionCoversMile(section, mile)) ?? null;
+  const demItemCount = dem?.item_count_returned ?? 0;
+  const lidarItemCount = lidar?.intersecting_item_count ?? 0;
+  return {
+    dem_section_id: dem?.section_id ?? null,
+    dem_stac_item_count: demItemCount,
+    dem_stac_item_ids: (dem?.item_ids ?? []).slice(0, 12),
+    dem_extraction_status: dem?.extraction_status ?? 'no_bounded_dem_snapshot_for_mile',
+    lidar_section_id: lidar?.section_id ?? null,
+    lidar_catalog_checked: (snapshot?.lidar?.inspected_item_count ?? 0) > 0,
+    lidar_intersecting_item_count: lidarItemCount,
+    lidar_intersecting_item_ids: (lidar?.item_ids ?? []).slice(0, 12),
+    lidar_extraction_status: lidar?.extraction_status ?? snapshot?.lidar?.extraction_status ?? 'no_bounded_lidar_snapshot_for_mile',
+    confidence_addition: demItemCount > 0 && lidarItemCount > 0
+      ? 'bounded_dem_and_lidar_catalog_metadata'
+      : demItemCount > 0
+        ? 'bounded_dem_stac_metadata'
+        : 'no_v2_1_source_metadata_for_mile',
+  };
+}
+
+function rockinessV21Confidence(baseConfidence, evidence) {
+  if (baseConfidence === 'low_due_to_regional_mvp_gap') return baseConfidence;
+  if (evidence.dem_stac_item_count > 0 && evidence.lidar_intersecting_item_count > 0 && String(baseConfidence).startsWith('medium')) {
+    return 'medium_model_with_100m_dem_osm_and_bounded_v2_1_source_metadata';
+  }
+  if (evidence.dem_stac_item_count > 0 && String(baseConfidence).startsWith('medium')) {
+    return 'medium_model_with_100m_dem_osm_and_bounded_dem_metadata';
+  }
+  if (evidence.dem_stac_item_count > 0) return 'low_to_medium_model_with_bounded_dem_metadata';
+  return 'low_v2_1_snapshot_missing_or_not_in_calibration_window';
+}
+
+function buildRockinessV21Record(record, index, snapshot, intervalMiles) {
+  const mile = round(record.mile_nobo_global_est ?? record.start_mile_nobo_global_est ?? 0, 1);
+  const evidence = extractionEvidenceForMile(snapshot, mile);
+  const baseScore = record.rockiness_v2_score_0_10 ?? 0;
+  const confidence = rockinessV21Confidence(record.confidence, evidence);
+  return {
+    rockiness_v2_1_id: `full-rc1-rockiness-v2-1-${String(intervalMiles).replace('.', '-')}-${String(index + 1).padStart(5, '0')}`,
+    source_rockiness_v2_id: record.rockiness_v2_id,
+    route_id: ROUTE_ID,
+    interval_miles: intervalMiles,
+    ...(typeof record.start_mile_nobo_global_est === 'number' ? { start_mile_nobo_global_est: record.start_mile_nobo_global_est } : {}),
+    ...(typeof record.end_mile_nobo_global_est === 'number' ? { end_mile_nobo_global_est: record.end_mile_nobo_global_est } : {}),
+    mile_nobo_global_est: mile,
+    mile_sobo_global_est: round(FULL_LENGTH - mile, 1),
+    official: false,
+    ...regionalFields(mile),
+    state: stateForMile(mile),
+    rockiness_v2_1_score_0_10: baseScore,
+    rockiness_v2_score_0_10: baseScore,
+    rockiness_class: record.rockiness_class,
+    confidence,
+    field_verified: false,
+    lidar_available: false,
+    dem_resolution_m: record.dem_resolution_m,
+    v2_1_extraction_level: snapshot.extraction_level,
+    v2_1_extracted_at: snapshot.generated_at,
+    dem_section_id: evidence.dem_section_id,
+    dem_stac_item_count: evidence.dem_stac_item_count,
+    dem_stac_item_ids: evidence.dem_stac_item_ids,
+    dem_extraction_status: evidence.dem_extraction_status,
+    lidar_section_id: evidence.lidar_section_id,
+    lidar_catalog_checked: evidence.lidar_catalog_checked,
+    lidar_intersecting_item_count: evidence.lidar_intersecting_item_count,
+    lidar_intersecting_item_ids: evidence.lidar_intersecting_item_ids,
+    lidar_extraction_status: evidence.lidar_extraction_status,
+    micro_roughness_score: record.micro_roughness_score,
+    soil_stoniness_score: record.soil_stoniness_score,
+    soil_extraction_status: snapshot.soil?.extraction_status ?? 'not_extracted_in_v2_1',
+    osm_surface_signal: record.osm_surface_signal,
+    user_report_signal: record.user_report_signal,
+    pace_penalty_factor: record.pace_penalty_factor,
+    source_id: ROCKINESS_V2_1_SOURCE_ID,
+    source_ids: [ROCKINESS_V2_1_SOURCE_ID, ROCKINESS_V2_SOURCE_ID, 'usgs_3dep_seamless_dem', 'usgs_3dep_lidar', 'usgs_3dep', 'osm', 'nrcs_gssurgo_ssurgo'],
+    source_url: `internal:data/at-open-reference/${ROCKINESS_V2_1_SNAPSHOT_PATH}`,
+    license_status: 'open_license_share_alike',
+    source_license: 'ODbL-derived plus USGS/NRCS public domain metadata',
+    attribution: 'OpenStreetMap contributors; Data available from U.S. Geological Survey, 3D Elevation Program; USDA NRCS gSSURGO/SSURGO source lane reviewed but not yet extracted.',
+    last_checked: (snapshot.generated_at ?? GENERATED_AT).slice(0, 10),
+    last_generated: GENERATED_DATE,
+    production_safe: true,
+    model_inputs: {
+      rockiness_v2_source_record: record.rockiness_v2_id,
+      bounded_source_extraction: evidence.confidence_addition,
+      dem_stac: {
+        section_id: evidence.dem_section_id,
+        item_count: evidence.dem_stac_item_count,
+        item_ids: evidence.dem_stac_item_ids,
+        extraction_status: evidence.dem_extraction_status,
+      },
+      lidar_catalog: {
+        section_id: evidence.lidar_section_id,
+        catalog_checked: evidence.lidar_catalog_checked,
+        intersecting_item_count: evidence.lidar_intersecting_item_count,
+        item_ids: evidence.lidar_intersecting_item_ids,
+        extraction_status: evidence.lidar_extraction_status,
+      },
+      soil_stoniness: snapshot.soil?.extraction_status ?? 'not_extracted_in_v2_1',
+      osm_surface_signal: record.osm_surface_signal === null ? 'not_available_on_source_record' : 'existing_rc1_odbl_surface_signal',
+      user_reports: 'none_available_in_open_rc1_pack',
+    },
+    ai_answer_rule: 'Describe as Rockiness V2.1 model screening with bounded DEM/LiDAR source metadata, not field verified. Do not claim raster-pixel, LiDAR point-cloud, SSURGO, or current tread-condition proof unless record-level extracted evidence exists. Generated/open-route miles are not official ATC mileage.',
+  };
+}
+
+function buildRockinessV21(rockinessV2) {
+  const snapshot = maybeReadJson(ROCKINESS_V2_1_SNAPSHOT_PATH, packRoot) ?? defaultRockinessV21Snapshot();
+  const extraction = {
+    ...snapshot,
+    snapshot_source_path: ROCKINESS_V2_1_SNAPSHOT_PATH,
+    promoted_into_rc1_at: GENERATED_AT,
+    ai_answer_rule: 'This is production-safe source-availability metadata only. It supports cautious Rockiness V2.1 confidence notes, not field-verified footing or current conditions.',
+  };
+  const byOneMile = rockinessV2.byOneMile.map((record, index) => buildRockinessV21Record(record, index, snapshot, 1));
+
+  writeJson('processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json', extraction);
+  writeJson('processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json', byOneMile);
+  writeText('processed/tread_rockiness_v2_1/rockiness_v2_1_model_notes.md', `
+# Rockiness V2.1 Model Notes
+
+Rockiness V2.1 keeps the RC1 Rockiness V2 score stable, then adds bounded source-extraction evidence from production-safe sources:
+- 3DEP Seamless DEM STAC item metadata for the full A.T. corridor and high-priority calibration windows.
+- USGS 3DEP LiDAR catalog metadata for AT-state items intersecting calibration windows.
+- Existing ODbL OSM surface/tread signals from RC1.
+- gSSURGO/SSURGO remains reviewed but not extracted in V2.1, so soil_stoniness_score stays null.
+
+This is still a model screen and not field verified. V2.1 does not download DEM rasters, does not sample DEM raster pixels, does not stream LiDAR EPT tiles, does not join SSURGO attributes, and does not field-verify tread. Use it to improve source transparency and difficulty confidence, not to promise exact footing.
+`);
+  writeText('processed/tread_rockiness_v2_1/rockiness_v2_1_source_limitations.md', `
+# Rockiness V2.1 Source Limitations
+
+- Bounded STAC/catalog extraction proves that source metadata exists for a corridor/window; it does not prove rockiness at a specific step.
+- DEM raster pixels and LiDAR points are not sampled in V2.1. lidar_available remains false on records until point-cloud evidence is extracted.
+- SSURGO/gSSURGO remains a reviewed future lane. soil_stoniness_score must remain null until bounded soil attributes are joined.
+- OSM surface/tread signals remain ODbL-derived and unevenly populated.
+- No Rockiness V2.1 record is field verified or current-conditions verified; in answer language say it is not field verified.
+`);
+  writeJson('schemas/rockiness_v2_1.schema.json', {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    title: 'Scout Full Trail Rockiness V2.1 Record',
+    type: 'object',
+    required: [
+      'mile_nobo_global_est',
+      'mile_sobo_global_est',
+      'official',
+      'rockiness_v2_1_score_0_10',
+      'rockiness_class',
+      'confidence',
+      'field_verified',
+      'lidar_available',
+      'dem_stac_item_count',
+      'lidar_catalog_checked',
+      'lidar_intersecting_item_count',
+      'soil_extraction_status',
+      'source_id',
+      'source_url',
+      'license_status',
+      'last_checked',
+      'last_generated',
+      'ai_answer_rule',
+    ],
+    properties: {
+      official: { const: false },
+      field_verified: { const: false },
+      lidar_available: { const: false },
+      rockiness_v2_1_score_0_10: { type: 'number', minimum: 0, maximum: 10 },
+      license_status: { enum: ['open_license_share_alike'] },
+    },
+  });
+  return {
+    sourceExtraction: extraction,
+    byOneMile,
+  };
+}
+
 function buildDifficulty(elevationSummaries, tread, rockinessV2, water, waypoints, rules) {
   const treadByMile = new Map(tread.map((record) => [Math.round(record.mile_nobo_global_est ?? record.start_mile_nobo_global_est ?? 0), record]));
   const rockinessByMile = new Map(rockinessV2.map((record) => [Math.floor(record.start_mile_nobo_global_est ?? record.mile_nobo_global_est ?? 0), record]));
+  const rockinessScore = (record) => record.rockiness_v2_1_score_0_10 ?? record.rockiness_v2_score_0_10 ?? 0;
   const difficulty = [];
   for (let start = 0; start < FULL_LENGTH; start += 10) {
     const end = Math.min(FULL_LENGTH, start + 10);
@@ -2082,8 +2331,9 @@ function buildDifficulty(elevationSummaries, tread, rockinessV2, water, waypoint
     }
     const avgTread = treadRecords.length ? treadRecords.reduce((sum, record) => sum + (record.score ?? 0), 0) / treadRecords.length : 2;
     const avgRockinessV2 = rockinessRecords.length
-      ? rockinessRecords.reduce((sum, record) => sum + (record.rockiness_v2_score_0_10 ?? 0), 0) / rockinessRecords.length
+      ? rockinessRecords.reduce((sum, record) => sum + rockinessScore(record), 0) / rockinessRecords.length
       : null;
+    const usesRockinessV21 = rockinessRecords.some((record) => typeof record.rockiness_v2_1_score_0_10 === 'number');
     const fordCount = water.filter((record) => (record.mile_nobo_global_est ?? 0) >= start && (record.mile_nobo_global_est ?? 0) < end && record.ford_safety === 'unknown').length;
     const waterCount = water.filter((record) => (record.mile_nobo_global_est ?? 0) >= start && (record.mile_nobo_global_est ?? 0) < end).length;
     const bailoutCount = (waypoints.bailout_access_points ?? []).filter((record) => (record.mile_nobo_global_est ?? 0) >= start && (record.mile_nobo_global_est ?? 0) < end).length;
@@ -2126,7 +2376,8 @@ function buildDifficulty(elevationSummaries, tread, rockinessV2, water, waypoint
         rockiness_v2_score_avg: avgRockinessV2 === null ? null : round(avgRockinessV2, 2),
         rockiness_v2_confidence: rockinessRecords.length ? [...new Set(rockinessRecords.map((record) => record.confidence))].join('; ') : null,
         rockiness_v2_record_count: rockinessRecords.length,
-        preferred_tread_source: avgRockinessV2 === null ? 'tread_v1_fallback' : 'rockiness_v2',
+        rockiness_v2_1_extracted_record_count: rockinessRecords.filter((record) => typeof record.dem_stac_item_count === 'number' && record.dem_stac_item_count > 0).length,
+        preferred_tread_source: avgRockinessV2 === null ? 'tread_v1_fallback' : usesRockinessV21 ? 'rockiness_v2_1' : 'rockiness_v2',
         ford_candidate_count: fordCount,
         bailout_access_count: bailoutCount,
         water_candidate_count: waterCount,
@@ -2149,7 +2400,7 @@ function buildDifficulty(elevationSummaries, tread, rockinessV2, water, waypoint
       },
       difficulty_score_0_10: score,
       difficulty_label: score >= 8 ? 'severe' : score >= 6 ? 'hard' : score >= 4 ? 'moderate' : 'easier',
-      explanation: 'Screening score from distance, 100-meter USGS 3DEP gain/loss and steep-grade screens, descents, Rockiness V2 when present, ford uncertainty, remoteness, water uncertainty, weather severity, permit/rule friction, and known regional data gaps.',
+      explanation: 'Screening score from distance, 100-meter USGS 3DEP gain/loss and steep-grade screens, descents, Rockiness V2.1 when present, ford uncertainty, remoteness, water uncertainty, weather severity, permit/rule friction, and known regional data gaps.',
       confidence: region.gap ? 'low_due_to_regional_mvp_gap' : 'model_screening_not_field_verified',
       source_id: 'full_trail_rc1_difficulty_model',
       source_url: 'internal:data/at-open-reference/scripts/build-full-trail-rc1-reference-pack.mjs',
@@ -2169,7 +2420,7 @@ The RC1 difficulty model is a planning screen, not field verified and not a fiel
 Inputs:
 - distance
 - gain/loss, steep descents, and max-grade screens from 100-meter USGS 3DEP/EPQS summaries
-- Rockiness V2 score when present; tread v1 remains a compatibility fallback
+- Rockiness V2.1 score when present; Rockiness V2 and tread v1 remain compatibility fallbacks
 - tread/rockiness/rootiness/mud model score
 - ford uncertainty
 - remoteness and bailout scarcity
@@ -2187,7 +2438,7 @@ Outputs:
 Rules:
 - Short mileage may still be hard in the Smokies, White Mountains, Maine, Katahdin, and rugged New England.
 - Prefer processed/elevation/full_trail_elevation_samples_100m.json for detailed terrain; the 1-mile elevation file is retained for compatibility.
-- Prefer processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json for tread/rockiness difficulty input; tread v1 remains for compatibility and regional fallback.
+- Prefer processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json for tread/rockiness difficulty input; Rockiness V2 and tread v1 remain compatibility fallbacks.
 - Static difficulty cannot answer current weather, closures, fords, snow/ice, fire bans, permits, campsite/hut status, or Baxter/Katahdin conditions.
 - The Davenport Gap to Damascus corridor receives an explicit regional-gap factor until MVP detail exists.
 `);
@@ -2199,10 +2450,11 @@ Rules:
     classes: ['easier', 'moderate', 'hard', 'severe'],
     preferred_elevation_source: 'processed/elevation/full_trail_elevation_samples_100m.json',
     elevation_sample_spacing_meters: ELEVATION_SAMPLE_SPACING_METERS,
-    preferred_tread_source: 'processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json',
+    preferred_tread_source: 'processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json',
+    fallback_rockiness_source: 'processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json',
     fallback_tread_source: 'processed/tread/full_trail_tread_rockiness_1_0mi.json',
-    inputs: ['distance', 'gain_loss', 'descents', 'max_grade_100m', 'rockiness_v2', 'tread_v1_fallback', 'mud_rootiness', 'ford_uncertainty', 'remoteness_bailout_scarcity', 'water_uncertainty', 'weather_severity', 'permit_rule_friction'],
-    ai_answer_rule: 'Use for cautious itinerary screening only with uncertainty and live-check requirements. The 100-meter elevation layer and Rockiness V2 improve terrain/tread screening but remain model-derived and not field verified.',
+    inputs: ['distance', 'gain_loss', 'descents', 'max_grade_100m', 'rockiness_v2_1', 'rockiness_v2_fallback', 'tread_v1_fallback', 'mud_rootiness', 'ford_uncertainty', 'remoteness_bailout_scarcity', 'water_uncertainty', 'weather_severity', 'permit_rule_friction'],
+    ai_answer_rule: 'Use for cautious itinerary screening only with uncertainty and live-check requirements. The 100-meter elevation layer and Rockiness V2.1 improve terrain/tread screening but remain model-derived and not field verified.',
   });
   return difficulty;
 }
@@ -2216,7 +2468,8 @@ function summarizeForSegment(start, end, datasets) {
   const shelters = datasets.waypoints.shelters.filter(inRange);
   const towns = datasets.waypoints.towns_resupply_candidates.filter(inRange);
   const tread = datasets.tread.filter(inRange);
-  const rockinessV2 = datasets.rockinessV2.byOneMile.filter(inRange);
+  const preferredRockiness = datasets.rockinessV21?.byOneMile ?? datasets.rockinessV2.byOneMile;
+  const rockinessV2 = preferredRockiness.filter(inRange);
   const difficulty = datasets.difficulty.filter((record) => record.start_mile_nobo_global_est < end && record.end_mile_nobo_global_est > start);
   const rules = datasets.rules.filter((rule) => {
     const range = rule.mile_range_nobo ?? [rule.start_mile_nobo_global_est, rule.end_mile_nobo_global_est];
@@ -2269,9 +2522,9 @@ Generated miles are not official ATC mileage.
 
 ## Terrain And Difficulty
 - Difficulty labels in this span: ${summary.difficulty_labels.join(', ') || 'not computed'}
-- Rockiness V2 average: ${summary.rockiness_v2_avg ?? 'unknown'} (${summary.rockiness_v2_confidence.join('; ') || 'no V2 records'})
+- Rockiness V2.1 average: ${summary.rockiness_v2_avg ?? 'unknown'} (${summary.rockiness_v2_confidence.join('; ') || 'no V2.1 records'})
 - Tread score average: ${summary.tread_avg ?? 'unknown'}
-- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, Rockiness V2, and tread model outputs as planning screens, not field verification.
+- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, Rockiness V2.1, and tread model outputs as planning screens, not field verification.
 
 ## Water Candidates
 - Mapped water/fording candidates in span: ${summary.water_count}
@@ -2347,8 +2600,8 @@ Use it as a conservative pointer layer. Unknowns stay unknown. Current closures,
     'weather_live_conditions.md': 'Use NWS, NPS, USFS, state, Baxter, and other official sources for current conditions. Static docs cannot answer current weather or closures.',
     'closures.md': 'Closures, detours, fire, flooding, storm damage, snow/ice, bear activity, road closures, permit changes, and Katahdin status require live checks.',
     'navigation.md': `RC1 is a planning corpus, not field navigation. Landmark identity is coordinate-first: use coordinate_anchor lat/lon as the stable location and route_snap as a derived generated/open-route mile view. Generated/open-route miles are not official and route length has a known ${LENGTH_DELTA}-mile delta versus the ${OFFICIAL_REFERENCE_LENGTH}-mile 2026 official reference.`,
-    'tread.md': 'Rockiness V2 is the preferred tread/rockiness screen when present. It blends 100-meter USGS 3DEP/EPQS micro-roughness with OSM-derived tread signals, while LiDAR and gSSURGO lanes remain reviewed future inputs unless record fields prove extraction. Tread/rockiness/rootiness/mud scores are model screens. State confidence and avoid field-verified language unless the record explicitly proves it.',
-    'difficulty.md': 'Difficulty combines distance, 100-meter USGS 3DEP/EPQS gain/loss and steep-grade screens, Rockiness V2 when present, tread v1 fallback, remoteness, weather, water, fords, permits, and data gaps. Use as a cautious screen.',
+    'tread.md': 'Rockiness V2.1 is the preferred tread/rockiness screen when present. It keeps Rockiness V2 scores stable while adding bounded 3DEP DEM STAC and USGS LiDAR catalog metadata. It still does not sample DEM pixels, stream LiDAR points, join gSSURGO/SSURGO attributes, or field-verify tread. Tread/rockiness/rootiness/mud scores are model screens. State confidence and avoid field-verified language unless the record explicitly proves it.',
+    'difficulty.md': 'Difficulty combines distance, 100-meter USGS 3DEP/EPQS gain/loss and steep-grade screens, Rockiness V2.1 when present, Rockiness V2/tread v1 fallbacks, remoteness, weather, water, fords, permits, and data gaps. Use as a cautious screen.',
     'license_attribution.md': 'Use only public-domain, open-license, API-accessible, or license-reviewed sources. Attribute OpenStreetMap contributors for ODbL-derived data.',
   };
   for (const [file, body] of Object.entries(policies)) {
@@ -2435,6 +2688,8 @@ function buildDatasetIndex(datasets) {
     ['micro_roughness_coverage', 'processed/tread_rockiness_v2/full_trail_micro_roughness_coverage.json', datasets.rockinessV2.coverage.length, true],
     ['soil_stoniness', 'processed/tread_rockiness_v2/full_trail_soil_stoniness.json', datasets.rockinessV2.soilRecords.length, true],
     ['osm_surface_tags', 'processed/tread_rockiness_v2/full_trail_osm_surface_tags.json', datasets.rockinessV2.osmRecords.length, true],
+    ['rockiness_v2_1_1mi', 'processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json', datasets.rockinessV21.byOneMile.length, true],
+    ['rockiness_v2_1_source_extraction', 'processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json', 1, true],
     ['difficulty', 'processed/difficulty/full_trail_difficulty_by_10mi_segment.json', datasets.difficulty.length, true],
     ['rag_metadata', 'rag_docs/rag_doc_metadata.json', readJson('rag_docs/rag_doc_metadata.json', rcRoot).length, true],
     ['qa_questions', 'tests/full_trail_rc1_behavior_questions.json', datasets.qa.length, false],
@@ -2528,8 +2783,9 @@ Generated: ${GENERATED_AT}
 | Rules | Yellow | Conservative official-source/pointer layer; live verification required. |
 | Live Connectors | Green | NWS/NPS/USFS/state/Baxter/ATC-pointer policy centralized. |
 | Tread | Yellow | Tread v1 retained for compatibility; model-estimated, not field verified; gap tread low confidence. |
-| Rockiness V2 | Yellow | ${datasets.rockinessV2.byPointOneMile.length} 0.1-mile records and ${datasets.rockinessV2.byOneMile.length} 1-mile records. Uses 100m DEM/OSM signals now; LiDAR/gSSURGO are reviewed future lanes, not populated evidence. |
-| Difficulty | Yellow | Planning screen prefers Rockiness V2 when present; not field verified. |
+| Rockiness V2 | Yellow | ${datasets.rockinessV2.byPointOneMile.length} 0.1-mile records and ${datasets.rockinessV2.byOneMile.length} 1-mile records. Uses 100m DEM/OSM signals; retained as V2.1 fallback. |
+| Rockiness V2.1 | Yellow | ${datasets.rockinessV21.byOneMile.length} 1-mile records plus bounded source-extraction metadata. Adds 3DEP DEM STAC and USGS LiDAR catalog metadata; no raster pixels, LiDAR points, SSURGO attributes, or field verification yet. |
+| Difficulty | Yellow | Planning screen prefers Rockiness V2.1 when present; not field verified. |
 | RAG Docs | Green | Full overview, policies, 25-mile segments, indexes, metadata. |
 | Source Reviews | Yellow | OpenTrail/OpenLongTrails held as unknown_review_required; USGS 3DEP Seamless, USGS LiDAR, and gSSURGO/SSURGO reviewed as production-safe source lanes. |
 | Licensing | Green | Blocked sources and review-only sources excluded from production-safe export. |
@@ -2547,6 +2803,7 @@ Generated: ${GENERATED_AT}
 - Merged elevation, water, waypoints, rules, live-source, tread, difficulty, and RAG metadata indexes.
 - Added direct 100-meter USGS 3DEP/EPQS elevation samples with 1/5/10-mile detailed summaries, major climb/descent candidates, and steep-grade screening sections.
 - Added Rockiness V2 source reviews, 0.1-mile and 1-mile model records, micro-roughness coverage metadata, OSM surface-signal records, and a conservative gSSURGO/SSURGO lane that stays null until bounded extraction exists.
+- Added Rockiness V2.1 source-extraction records from a bounded 3DEP DEM STAC / USGS LiDAR catalog metadata snapshot and promoted them into 1-mile difficulty inputs.
 - Added blocked legacy AWOL audit metadata and validation gates to keep AWOL/A.T. Guide-derived data out of production-safe exports.
 - Created license/provenance audit docs and production-safe export tooling.
 - Created ${datasets.qa.length} full-trail behavior QA questions.
@@ -2574,7 +2831,7 @@ ${datasetIndex.map((dataset) => `- ${dataset.dataset_id}: ${dataset.record_count
 - Generated miles are not official and should not be used as exact field navigation.
 - Davenport Gap to Damascus lacks regional MVP depth.
 - Tread/difficulty are model screens, not field verified.
-- Rockiness V2 improves roughness screening, but LiDAR and gSSURGO are reviewed future lanes in RC1; they are not record-level extracted evidence yet.
+- Rockiness V2.1 improves source transparency with bounded DEM/LiDAR catalog metadata, but it still does not sample raster pixels, stream LiDAR points, join gSSURGO attributes, or field-verify tread.
 - Elevation is model-derived from USGS 3DEP/EPQS at 100-meter spacing; it is detailed enough for planning screens but not surveyed tread grade.
 - Water/fords remain candidate-only unless verified.
 - Current closures/weather/permits/fords/Katahdin status require live checks.
@@ -2673,6 +2930,10 @@ REQUIRED_PATHS = [
     "processed/tread_rockiness_v2/full_trail_osm_surface_tags.json",
     "processed/tread_rockiness_v2/rockiness_v2_model_notes.md",
     "processed/tread_rockiness_v2/rockiness_v2_source_limitations.md",
+    "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json",
+    "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
+    "processed/tread_rockiness_v2_1/rockiness_v2_1_model_notes.md",
+    "processed/tread_rockiness_v2_1/rockiness_v2_1_source_limitations.md",
     "processed/legal/blocked_legacy_awol_audit.json",
     "processed/difficulty/full_trail_daily_difficulty_model.md",
     "processed/difficulty/full_trail_daily_difficulty_model.json",
@@ -2692,6 +2953,7 @@ REQUIRED_PATHS = [
     "rag_docs/policies/license_attribution.md",
     "rag_docs/rag_doc_metadata.json",
     "schemas/rockiness_v2.schema.json",
+    "schemas/rockiness_v2_1.schema.json",
     "sources/opentrail_review.json",
     "sources/openlongtrails_review.json",
     "sources/open_dem_review.json",
@@ -2767,7 +3029,7 @@ def validate() -> dict[str, Any]:
         fail_if(source.get("license_status") != "unknown_review_required", failures, f"{review_only} should remain review-only")
         fail_if(source.get("production_safe") is not False, failures, f"{review_only} leaked into production-safe sources")
         fail_if(not source.get("blocked_until"), failures, f"{review_only} missing blocked_until")
-    for safe_source in ["usgs_3dep_seamless_dem", "usgs_3dep_lidar", "nrcs_gssurgo_ssurgo", "full_trail_rockiness_v2_model"]:
+    for safe_source in ["usgs_3dep_seamless_dem", "usgs_3dep_lidar", "nrcs_gssurgo_ssurgo", "full_trail_rockiness_v2_model", "full_trail_rockiness_v2_1_extraction_model"]:
         source = source_map.get(safe_source, {})
         fail_if(source.get("production_safe") is not True, failures, f"{safe_source} not production safe")
         fail_if(source.get("license_status") not in VALID_LICENSES, failures, f"{safe_source} unsafe license")
@@ -2981,6 +3243,31 @@ def validate() -> dict[str, Any]:
     for term in ["opentrail", "openlongtrails", "not field verified", "100-meter", "osm", "gssurgo", "lidar", "user reports"]:
         fail_if(term not in limitations_text and term not in notes_text, failures, f"Rockiness V2 docs missing {term}")
 
+    rockiness21_extraction = j("processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json")
+    rockiness21_1 = j("processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json")
+    fail_if(rockiness21_extraction.get("production_safe") is not True, failures, "Rockiness V2.1 extraction not production-safe")
+    fail_if(rockiness21_extraction.get("extraction_level") == "missing_snapshot_fallback", failures, "Rockiness V2.1 missing live extraction snapshot")
+    dem_sections = rockiness21_extraction.get("dem", {}).get("sections", [])
+    fail_if(not any(section.get("item_count_returned", 0) > 0 for section in dem_sections), failures, "Rockiness V2.1 DEM STAC extraction has no items")
+    lidar = rockiness21_extraction.get("lidar", {})
+    fail_if(lidar.get("catalog_item_link_count", 0) <= 0, failures, "Rockiness V2.1 LiDAR catalog not checked")
+    fail_if(lidar.get("at_state_item_link_count", 0) <= 0, failures, "Rockiness V2.1 LiDAR AT-state catalog count missing")
+    fail_if(len(rockiness21_1) != len(rockiness1), failures, "Rockiness V2.1 1mi count does not match V2")
+    for label, records in [("1mi V2.1", rockiness21_1)]:
+        fail_if(any(record.get("field_verified") is True for record in records), failures, f"{label} has field_verified true")
+        fail_if(any(record.get("lidar_available") is True for record in records), failures, f"{label} claims lidar_available before point-cloud extraction")
+        fail_if(any(record.get("official") is not False for record in records[:50] + records[-50:]), failures, f"{label} official not false")
+        fail_if(not any(record.get("dem_stac_item_count", 0) > 0 for record in records), failures, f"{label} lacks DEM STAC metadata")
+        for record in records[:50] + records[-50:]:
+            common(record, failures, label)
+            fail_if(record.get("source_id") != "full_trail_rockiness_v2_1_extraction_model", failures, f"{label} wrong source_id")
+            fail_if("not field verified" not in record.get("ai_answer_rule", "").lower(), failures, f"{label} missing not-field-verified rule")
+            fail_if("generated/open-route miles are not official" not in record.get("ai_answer_rule", "").lower(), failures, f"{label} missing generated-mile caution")
+    v21_notes = t("processed/tread_rockiness_v2_1/rockiness_v2_1_model_notes.md").lower()
+    v21_limits = t("processed/tread_rockiness_v2_1/rockiness_v2_1_source_limitations.md").lower()
+    for term in ["bounded", "stac", "lidar", "not field verified", "ssurgo", "does not sample"]:
+        fail_if(term not in v21_notes and term not in v21_limits, failures, f"Rockiness V2.1 docs missing {term}")
+
     awol_audit = j("processed/legal/blocked_legacy_awol_audit.json")
     fail_if(awol_audit.get("production_safe") is not False, failures, "AWOL audit should not be production safe")
     fail_if(awol_audit.get("license_status") != "blocked", failures, "AWOL audit should be blocked")
@@ -3002,7 +3289,7 @@ def validate() -> dict[str, Any]:
         fail_if("rockiness_v2_score_avg" not in record.get("inputs", {}), failures, "difficulty missing Rockiness V2 input")
         fail_if("rockiness_v2_factor" not in record.get("factors", {}), failures, "difficulty missing Rockiness V2 factor")
     difficulty_model = j("processed/difficulty/full_trail_daily_difficulty_model.json")
-    fail_if(difficulty_model.get("preferred_tread_source") != "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json", failures, "difficulty model does not prefer Rockiness V2")
+    fail_if(difficulty_model.get("preferred_tread_source") != "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json", failures, "difficulty model does not prefer Rockiness V2.1")
     difficulty_doc = t("processed/difficulty/full_trail_daily_difficulty_model.md").lower()
     fail_if("rockiness v2" not in difficulty_doc or ("not field verified" not in difficulty_doc and "not field-verified" not in difficulty_doc), failures, "difficulty doc missing Rockiness V2 caveat")
 
@@ -3052,6 +3339,7 @@ def validate() -> dict[str, Any]:
         "tread_1mi_records": len(tread),
         "rockiness_v2_0_1mi_records": len(rockiness01),
         "rockiness_v2_1mi_records": len(rockiness1),
+        "rockiness_v2_1_1mi_records": len(rockiness21_1),
         "difficulty_segments": len(difficulty),
         "rag_docs": len(rag_metadata),
         "behavior_questions": len(qa),
@@ -3104,8 +3392,9 @@ function main() {
   const liveSources = buildLiveSources();
   const tread = buildTread(elevation.oneMileSamples);
   const rockinessV2 = buildRockinessV2(elevation.highResolutionSamples, tread);
+  const rockinessV21 = buildRockinessV21(rockinessV2);
   const elevation10 = readJson('processed/elevation/full_trail_elevation_by_10mi_segment.json', rcRoot);
-  const difficulty = buildDifficulty(elevation10, tread, rockinessV2.byOneMile, water, waypoints, rules);
+  const difficulty = buildDifficulty(elevation10, tread, rockinessV21.byOneMile, water, waypoints, rules);
   const datasets = {
     elevation: elevation.oneMileSamples,
     elevation100m: elevation.highResolutionSamples,
@@ -3122,6 +3411,7 @@ function main() {
     liveSources,
     tread,
     rockinessV2,
+    rockinessV21,
     difficulty,
   };
   buildRagDocs(datasets);

@@ -125,6 +125,16 @@
     "reason": "safe license statuses or generated integration metadata"
   },
   {
+    "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
+    "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json",
+    "production_safe": true,
+    "reason": "safe license statuses or generated integration metadata"
+  },
+  {
     "path": "processed/difficulty/full_trail_difficulty_by_10mi_segment.json",
     "production_safe": true,
     "reason": "safe license statuses or generated integration metadata"

@@ -16,8 +16,9 @@ Generated: 2026-05-16T00:00:00.000Z
 | Rules | Yellow | Conservative official-source/pointer layer; live verification required. |
 | Live Connectors | Green | NWS/NPS/USFS/state/Baxter/ATC-pointer policy centralized. |
 | Tread | Yellow | Tread v1 retained for compatibility; model-estimated, not field verified; gap tread low confidence. |
-| Rockiness V2 | Yellow | 21062 0.1-mile records and 2107 1-mile records. Uses 100m DEM/OSM signals now; LiDAR/gSSURGO are reviewed future lanes, not populated evidence. |
-| Difficulty | Yellow | Planning screen prefers Rockiness V2 when present; not field verified. |
+| Rockiness V2 | Yellow | 21062 0.1-mile records and 2107 1-mile records. Uses 100m DEM/OSM signals; retained as V2.1 fallback. |
+| Rockiness V2.1 | Yellow | 2107 1-mile records plus bounded source-extraction metadata. Adds 3DEP DEM STAC and USGS LiDAR catalog metadata; no raster pixels, LiDAR points, SSURGO attributes, or field verification yet. |
+| Difficulty | Yellow | Planning screen prefers Rockiness V2.1 when present; not field verified. |
 | RAG Docs | Green | Full overview, policies, 25-mile segments, indexes, metadata. |
 | Source Reviews | Yellow | OpenTrail/OpenLongTrails held as unknown_review_required; USGS 3DEP Seamless, USGS LiDAR, and gSSURGO/SSURGO reviewed as production-safe source lanes. |
 | Licensing | Green | Blocked sources and review-only sources excluded from production-safe export. |

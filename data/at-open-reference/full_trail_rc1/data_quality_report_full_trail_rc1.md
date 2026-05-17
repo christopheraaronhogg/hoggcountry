@@ -8,6 +8,7 @@
 - Merged elevation, water, waypoints, rules, live-source, tread, difficulty, and RAG metadata indexes.
 - Added direct 100-meter USGS 3DEP/EPQS elevation samples with 1/5/10-mile detailed summaries, major climb/descent candidates, and steep-grade screening sections.
 - Added Rockiness V2 source reviews, 0.1-mile and 1-mile model records, micro-roughness coverage metadata, OSM surface-signal records, and a conservative gSSURGO/SSURGO lane that stays null until bounded extraction exists.
+- Added Rockiness V2.1 source-extraction records from a bounded 3DEP DEM STAC / USGS LiDAR catalog metadata snapshot and promoted them into 1-mile difficulty inputs.
 - Added blocked legacy AWOL audit metadata and validation gates to keep AWOL/A.T. Guide-derived data out of production-safe exports.
 - Created license/provenance audit docs and production-safe export tooling.
 - Created 638 full-trail behavior QA questions.
@@ -54,6 +55,8 @@ See processed/route/route_alignment_report.md and processed/route/route_alignmen
 - micro_roughness_coverage: 3
 - soil_stoniness: 2108
 - osm_surface_tags: 2108
+- rockiness_v2_1_1mi: 2107
+- rockiness_v2_1_source_extraction: 1
 - difficulty: 211
 - rag_metadata: 85
 - qa_questions: 638
@@ -66,7 +69,7 @@ See processed/route/route_alignment_report.md and processed/route/route_alignmen
 - Generated miles are not official and should not be used as exact field navigation.
 - Davenport Gap to Damascus lacks regional MVP depth.
 - Tread/difficulty are model screens, not field verified.
-- Rockiness V2 improves roughness screening, but LiDAR and gSSURGO are reviewed future lanes in RC1; they are not record-level extracted evidence yet.
+- Rockiness V2.1 improves source transparency with bounded DEM/LiDAR catalog metadata, but it still does not sample raster pixels, stream LiDAR points, join gSSURGO attributes, or field-verify tread.
 - Elevation is model-derived from USGS 3DEP/EPQS at 100-meter spacing; it is detailed enough for planning screens but not surveyed tread grade.
 - Water/fords remain candidate-only unless verified.
 - Current closures/weather/permits/fords/Katahdin status require live checks.

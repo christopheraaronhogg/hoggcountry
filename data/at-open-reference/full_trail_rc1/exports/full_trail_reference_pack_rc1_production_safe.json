@@ -5,8 +5,8 @@
     "generated_from": "data/at-open-reference/full_trail_rc1",
     "production_safe": true,
     "policy": "Only datasets marked production_safe:true are included. Unknown, review-required, blocked, pointer-only, and test datasets are excluded.",
-    "source_count": 55,
-    "dataset_count": 25,
+    "source_count": 56,
+    "dataset_count": 27,
     "datasets": [
       {
         "dataset_id": "route",
@@ -239,6 +239,26 @@
         "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
       },
       {
+        "dataset_id": "rockiness_v2_1_1mi",
+        "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
+        "record_count": 2107,
+        "production_safe": true,
+        "route_id": "at-full-trail-rc1-open-2026",
+        "last_generated": "2026-05-16",
+        "license_status": "open_license_share_alike_or_public_domain",
+        "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+      },
+      {
+        "dataset_id": "rockiness_v2_1_source_extraction",
+        "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json",
+        "record_count": 1,
+        "production_safe": true,
+        "route_id": "at-full-trail-rc1-open-2026",
+        "last_generated": "2026-05-16",
+        "license_status": "open_license_share_alike_or_public_domain",
+        "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+      },
+      {
         "dataset_id": "difficulty",
         "path": "processed/difficulty/full_trail_difficulty_by_10mi_segment.json",
         "record_count": 211,
@@ -399,6 +419,28 @@
         "validation"
       ],
       "notes": "Does not add commercial guide data. It stitches existing public/open/API-accessible MVP packs and base open-route assets."
+    },
+    {
+      "source_id": "full_trail_rockiness_v2_1_extraction_model",
+      "name": "Scout Rockiness V2.1 bounded source extraction model",
+      "owner": "Hogg Country",
+      "source_type": "derived model and extraction metadata",
+      "source_url": "internal:data/at-open-reference/raw/source_discovery/rockiness_v2_1_source_extraction.json",
+      "access_method": "bounded live source discovery snapshot promoted into local generated artifacts",
+      "license_status": "open_license_share_alike",
+      "allowed_use": "package generated extraction-aware model records with OSM ODbL attribution, USGS public-domain metadata, confidence, and not-field-verified cautions",
+      "attribution_required": "Preserve OpenStreetMap contributor attribution and USGS/NRCS source notes.",
+      "confidence": "model_screening_with_bounded_dem_lidar_metadata_not_field_verified",
+      "last_checked": "2026-05-16",
+      "production_safe": true,
+      "data_categories": [
+        "tread_rockiness_v2_1",
+        "difficulty_input",
+        "source_extraction",
+        "pace_penalty",
+        "model_notes"
+      ],
+      "notes": "V2.1 promotes bounded 3DEP Seamless DEM STAC and USGS 3DEP LiDAR catalog metadata into the pack. It does not claim raster pixel sampling, LiDAR point-cloud scoring, SSURGO attribute scoring, or field verification."
     },
     {
       "source_id": "full_trail_rockiness_v2_model",
@@ -1815,6 +1857,26 @@
       "dataset_id": "osm_surface_tags",
       "path": "processed/tread_rockiness_v2/full_trail_osm_surface_tags.json",
       "record_count": 2108,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-16",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "rockiness_v2_1_1mi",
+      "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
+      "record_count": 2107,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-16",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "rockiness_v2_1_source_extraction",
+      "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json",
+      "record_count": 1,
       "production_safe": true,
       "route_id": "at-full-trail-rc1-open-2026",
       "last_generated": "2026-05-16",

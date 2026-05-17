@@ -65,6 +65,9 @@ export interface ReferenceProgressData {
     readonly rockinessV2PointOneMileCount: number;
     readonly rockinessV2OneMileCount: number;
     readonly rockinessV2Path: string;
+    readonly rockinessV21OneMileCount: number;
+    readonly rockinessV21SourceExtractionCount: number;
+    readonly rockinessV21Path: string;
     readonly maxContinuityGapMiles: number | null;
     readonly unresolvedCauses: readonly string[];
     readonly suspectedCauses: readonly string[];
@@ -260,6 +263,12 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
         elevation100mSampleCount: 0,
         elevation100mComplete: false,
         elevation100mStatusPath: 'data/at-open-reference/full_trail_rc1/processed/elevation/full_trail_elevation_100m_status.json',
+        rockinessV2PointOneMileCount: 0,
+        rockinessV2OneMileCount: 0,
+        rockinessV2Path: 'data/at-open-reference/full_trail_rc1/processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json',
+        rockinessV21OneMileCount: 0,
+        rockinessV21SourceExtractionCount: 0,
+        rockinessV21Path: 'data/at-open-reference/full_trail_rc1/processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json',
         maxContinuityGapMiles: null,
         unresolvedCauses: [],
         suspectedCauses: [],
@@ -333,6 +342,8 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
   const rag = datasetIndex.find((dataset) => dataset.dataset_id === 'rag_metadata')?.record_count ?? countFiles(packRoot, 'full_trail_rc1/rag_docs/segment_guides');
   const rockinessV2PointOneMile = datasetIndex.find((dataset) => dataset.dataset_id === 'rockiness_v2_0_1mi');
   const rockinessV2OneMile = datasetIndex.find((dataset) => dataset.dataset_id === 'rockiness_v2_1mi');
+  const rockinessV21OneMile = datasetIndex.find((dataset) => dataset.dataset_id === 'rockiness_v2_1_1mi');
+  const rockinessV21SourceExtraction = datasetIndex.find((dataset) => dataset.dataset_id === 'rockiness_v2_1_source_extraction');
 
   return {
     generatedAt: new Date().toISOString(),
@@ -354,6 +365,9 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       rockinessV2PointOneMileCount: rockinessV2PointOneMile?.record_count ?? 0,
       rockinessV2OneMileCount: rockinessV2OneMile?.record_count ?? 0,
       rockinessV2Path: 'data/at-open-reference/full_trail_rc1/processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json',
+      rockinessV21OneMileCount: rockinessV21OneMile?.record_count ?? 0,
+      rockinessV21SourceExtractionCount: rockinessV21SourceExtraction?.record_count ?? 0,
+      rockinessV21Path: 'data/at-open-reference/full_trail_rc1/processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json',
       maxContinuityGapMiles: continuity?.max_consecutive_vertex_gap_miles ?? null,
       unresolvedCauses: routeAlignment?.unresolved_causes ?? [],
       suspectedCauses: routeAlignment?.suspected_causes ?? [],
@@ -384,6 +398,10 @@ export function loadScoutReferenceProgressData(): ReferenceProgressData {
       {
         label: 'Refresh 100m elevation',
         command: 'node data/at-open-reference/scripts/build-full-trail-100m-elevation.mjs --concurrency 10',
+      },
+      {
+        label: 'Refresh Rockiness V2.1 source extraction',
+        command: 'node data/at-open-reference/scripts/discover/discover-rockiness-v2-1-sources.mjs --write data/at-open-reference/raw/source_discovery/rockiness_v2_1_source_extraction.json',
       },
       {
         label: 'Regenerate RC1',

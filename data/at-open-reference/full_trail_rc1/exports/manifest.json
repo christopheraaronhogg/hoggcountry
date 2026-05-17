@@ -4,8 +4,8 @@
   "generated_from": "data/at-open-reference/full_trail_rc1",
   "production_safe": true,
   "policy": "Only datasets marked production_safe:true are included. Unknown, review-required, blocked, pointer-only, and test datasets are excluded.",
-  "source_count": 55,
-  "dataset_count": 25,
+  "source_count": 56,
+  "dataset_count": 27,
   "datasets": [
     {
       "dataset_id": "route",
@@ -231,6 +231,26 @@
       "dataset_id": "osm_surface_tags",
       "path": "processed/tread_rockiness_v2/full_trail_osm_surface_tags.json",
       "record_count": 2108,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-16",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "rockiness_v2_1_1mi",
+      "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
+      "record_count": 2107,
+      "production_safe": true,
+      "route_id": "at-full-trail-rc1-open-2026",
+      "last_generated": "2026-05-16",
+      "license_status": "open_license_share_alike_or_public_domain",
+      "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+    },
+    {
+      "dataset_id": "rockiness_v2_1_source_extraction",
+      "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json",
+      "record_count": 1,
       "production_safe": true,
       "route_id": "at-full-trail-rc1-open-2026",
       "last_generated": "2026-05-16",

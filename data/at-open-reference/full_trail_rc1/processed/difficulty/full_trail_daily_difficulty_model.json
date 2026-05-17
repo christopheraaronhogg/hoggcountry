@@ -14,14 +14,16 @@
   ],
   "preferred_elevation_source": "processed/elevation/full_trail_elevation_samples_100m.json",
   "elevation_sample_spacing_meters": 100,
-  "preferred_tread_source": "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json",
+  "preferred_tread_source": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
+  "fallback_rockiness_source": "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json",
   "fallback_tread_source": "processed/tread/full_trail_tread_rockiness_1_0mi.json",
   "inputs": [
     "distance",
     "gain_loss",
     "descents",
     "max_grade_100m",
-    "rockiness_v2",
+    "rockiness_v2_1",
+    "rockiness_v2_fallback",
     "tread_v1_fallback",
     "mud_rootiness",
     "ford_uncertainty",
@@ -30,5 +32,5 @@
     "weather_severity",
     "permit_rule_friction"
   ],
-  "ai_answer_rule": "Use for cautious itinerary screening only with uncertainty and live-check requirements. The 100-meter elevation layer and Rockiness V2 improve terrain/tread screening but remain model-derived and not field verified."
+  "ai_answer_rule": "Use for cautious itinerary screening only with uncertainty and live-check requirements. The 100-meter elevation layer and Rockiness V2.1 improve terrain/tread screening but remain model-derived and not field verified."
 }

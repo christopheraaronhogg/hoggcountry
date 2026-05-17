@@ -134,6 +134,8 @@ test('Scout admin reference progress dashboard exposes RC1 progress without load
   assert.match(page, /Length delta/u);
   assert.match(page, /Open Geometry Vs Official Reference/u);
   assert.match(page, /Rockiness V2/u);
+  assert.match(page, /Rockiness V2\.1/u);
+  assert.match(page, /Source extraction/u);
   assert.match(page, /generated\/open-route mile/u);
   assert.match(page, /Regenerate and verify/u);
   assert.match(server, /loadScoutReferenceProgressData/u);
@@ -157,6 +159,9 @@ test('Scout admin reference progress dashboard exposes RC1 progress without load
   assert.ok(progress.rc1.rockinessV2PointOneMileCount >= 21_000);
   assert.ok(progress.rc1.rockinessV2OneMileCount >= 2_100);
   assert.match(progress.rc1.rockinessV2Path, /tread_rockiness_v2/u);
+  assert.ok(progress.rc1.rockinessV21OneMileCount >= 2_100);
+  assert.equal(progress.rc1.rockinessV21SourceExtractionCount, 1);
+  assert.match(progress.rc1.rockinessV21Path, /tread_rockiness_v2_1/u);
   assert.ok(progress.rc1.totalDatasetRecords > 25_000);
   assert.ok(progress.rc1.zipSizeBytes > 1_000_000);
   assert.ok(progress.packs.length >= 6);
@@ -164,10 +169,13 @@ test('Scout admin reference progress dashboard exposes RC1 progress without load
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'elevation_samples_100m' && dataset.recordCount >= 33_000));
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'rockiness_v2_0_1mi' && dataset.recordCount >= 21_000 && dataset.productionSafe));
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'rockiness_v2_1mi' && dataset.recordCount >= 2_100 && dataset.productionSafe));
+  assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'rockiness_v2_1_source_extraction' && dataset.recordCount === 1 && dataset.productionSafe));
+  assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'rockiness_v2_1_1mi' && dataset.recordCount >= 2_100 && dataset.productionSafe));
   assert.ok(progress.datasets.some((dataset) => dataset.datasetId === 'route_alignment_diagnostics' && dataset.recordCount === 1));
   assert.ok(progress.rc1.statusRows.some((row) => row.area === 'Landmark Anchors' && /coordinate-first/i.test(row.notes)));
   assert.ok(progress.rc1.yellowFlags.some((flag) => /Davenport Gap to Damascus/i.test(flag.notes)));
   assert.ok(progress.rc1.yellowFlags.some((flag) => /official reference/i.test(flag.notes)));
   assert.ok(progress.commands.some((command) => /build-full-trail-100m-elevation\.mjs/.test(command.command)));
+  assert.ok(progress.commands.some((command) => /discover-rockiness-v2-1-sources\.mjs/.test(command.command)));
   assert.ok(progress.commands.some((command) => /run_full_trail_validation.py/.test(command.command)));
 });

@@ -1,0 +1,1576 @@
+{
+  "extraction_id": "rockiness-v2-1-bounded-source-extraction",
+  "generated_at": "2026-05-17T14:10:21.289Z",
+  "extraction_level": "catalog_coverage_metadata_only_not_raster_or_point_cloud_sampling",
+  "production_safe": true,
+  "license_status": "open_license_share_alike_or_public_domain",
+  "dem": {
+    "source_id": "usgs_3dep_seamless_dem",
+    "source_url": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/3dep-seamless",
+    "stac_search_url": "https://planetarycomputer.microsoft.com/api/stac/v1/search",
+    "collection": "3dep-seamless",
+    "sections": [
+      {
+        "section_id": "full_at_corridor",
+        "label": "Full Appalachian Trail corridor bounding box",
+        "bbox": [
+          -84.35,
+          34.45,
+          -68.75,
+          46
+        ],
+        "expected_signal": "broad 10m/30m DEM coverage discovery",
+        "source_id": "usgs_3dep_seamless_dem",
+        "source_url": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/3dep-seamless",
+        "request": {
+          "collections": [
+            "3dep-seamless"
+          ],
+          "bbox": [
+            -84.35,
+            34.45,
+            -68.75,
+            46
+          ],
+          "limit": 12
+        },
+        "item_count_returned": 12,
+        "item_ids": [
+          "n45w083-1",
+          "n41w084-13",
+          "n41w084-1",
+          "n41w083-13",
+          "n41w083-1",
+          "n40w084-13",
+          "n40w084-1",
+          "n40w083-13",
+          "n40w083-1",
+          "n39w079-13",
+          "n39w079-1",
+          "n40w078-13"
+        ],
+        "items": [
+          {
+            "item_id": "n45w083-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -83.0016666667,
+              43.9983333333,
+              -81.9983333333,
+              45.0016666667
+            ],
+            "datetime": "2019-03-25T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w084-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -84.0005555563932,
+              39.9994444440068,
+              -82.9994444442051,
+              41.0005555561949
+            ],
+            "datetime": "2020-02-28T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w084-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -84.0016666669824,
+              39.9983333334175,
+              -82.9983333336158,
+              41.0016666667842
+            ],
+            "datetime": "2020-02-28T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w083-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -83.000555556593,
+              39.9994444440068,
+              -81.9994444435056,
+              41.0005555561949
+            ],
+            "datetime": "2020-02-28T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w083-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -83.0016666671823,
+              39.9983333334175,
+              -81.9983333329163,
+              41.0016666667842
+            ],
+            "datetime": "2020-02-28T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n40w084-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -84.0005555563932,
+              38.9994444442066,
+              -82.9994444442051,
+              40.0005555563947
+            ],
+            "datetime": "2020-02-28T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n40w084-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -84.0016666669824,
+              38.9983333336173,
+              -82.9983333336158,
+              40.001666666984
+            ],
+            "datetime": "2020-02-28T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n40w083-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -83.000555556593,
+              38.9994444442066,
+              -81.9994444435056,
+              40.0005555563947
+            ],
+            "datetime": "2020-02-28T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n40w083-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -83.0016666671823,
+              38.9983333336173,
+              -81.9983333329163,
+              40.001666666984
+            ],
+            "datetime": "2020-02-28T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n39w079-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -79.0005555555937,
+              37.9994444444065,
+              -77.999444444305,
+              39.0005555556953
+            ],
+            "datetime": "2018-12-19T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n39w079-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -79.0016666670824,
+              37.9983333329179,
+              -77.9983333328164,
+              39.0016666671838
+            ],
+            "datetime": "2018-12-19T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n40w078-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -78.0005555557936,
+              38.9994444442066,
+              -76.9994444436055,
+              40.0005555563947
+            ],
+            "datetime": "2020-02-20T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          }
+        ],
+        "extraction_status": "bounded_stac_metadata_extracted_no_raster_pixels_downloaded",
+        "production_safe": true,
+        "license_status": "public_domain"
+      },
+      {
+        "section_id": "northern_pennsylvania_rocky_ridges",
+        "label": "Northern Pennsylvania rocky ridge calibration window",
+        "bbox": [
+          -77.9,
+          40.3,
+          -75.1,
+          41.4
+        ],
+        "mile_range_nobo_global_est": [
+          1180,
+          1270
+        ],
+        "expected_signal": "rocky-but-lower-elevation tread calibration",
+        "source_id": "usgs_3dep_seamless_dem",
+        "source_url": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/3dep-seamless",
+        "request": {
+          "collections": [
+            "3dep-seamless"
+          ],
+          "bbox": [
+            -77.9,
+            40.3,
+            -75.1,
+            41.4
+          ],
+          "limit": 12
+        },
+        "item_count_returned": 12,
+        "item_ids": [
+          "n42w077-13",
+          "n42w077-1",
+          "n42w076-13",
+          "n42w076-1",
+          "n42w078-13",
+          "n42w078-1",
+          "n41w078-13",
+          "n41w078-1",
+          "n41w077-13",
+          "n41w077-1",
+          "n41w076-13",
+          "n41w076-1"
+        ],
+        "items": [
+          {
+            "item_id": "n42w077-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -77.000555556,
+              40.9994444438,
+              -75.9994444438,
+              42.000555556
+            ],
+            "datetime": "2019-10-01T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n42w077-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -77.0016666666,
+              40.9983333332,
+              -75.9983333332,
+              42.0016666666
+            ],
+            "datetime": "2019-10-01T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n42w076-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -76.0005555562,
+              40.9994444438,
+              -74.999444444,
+              42.000555556
+            ],
+            "datetime": "2019-10-01T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n42w076-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -76.0016666668,
+              40.9983333332,
+              -74.9983333334,
+              42.0016666666
+            ],
+            "datetime": "2019-10-01T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n42w078-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -78.0005558988,
+              40.9993520322,
+              -76.9993521906,
+              42.0005557404
+            ],
+            "datetime": "2019-06-12T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n42w078-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -78.0016672907,
+              40.9980558835,
+              -76.9980561715,
+              42.0016670027
+            ],
+            "datetime": "2019-06-12T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w078-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -78.0005555549,
+              39.9994444449,
+              -76.9994444445,
+              41.0005555553
+            ],
+            "datetime": "2019-04-17T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w078-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -78.0016666664,
+              39.9983333334,
+              -76.998333333,
+              41.0016666668
+            ],
+            "datetime": "2019-04-17T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w077-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -77.0005555551,
+              39.9994444449,
+              -75.9994444447,
+              41.0005555553
+            ],
+            "datetime": "2019-04-17T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w077-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -77.0016666666,
+              39.9983333334,
+              -75.9983333332,
+              41.0016666668
+            ],
+            "datetime": "2019-04-17T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w076-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -76.000555555294,
+              39.9994444449061,
+              -74.9994444449046,
+              41.0005555552955
+            ],
+            "datetime": "2017-05-05T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n41w076-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -76.0016666667826,
+              39.9983333334175,
+              -74.9983333334159,
+              41.0016666667842
+            ],
+            "datetime": "2017-05-05T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          }
+        ],
+        "extraction_status": "bounded_stac_metadata_extracted_no_raster_pixels_downloaded",
+        "production_safe": true,
+        "license_status": "public_domain"
+      },
+      {
+        "section_id": "white_mountains_nh",
+        "label": "White Mountains high-relief calibration window",
+        "bbox": [
+          -72.2,
+          43.8,
+          -70.7,
+          44.5
+        ],
+        "mile_range_nobo_global_est": [
+          1760,
+          1853
+        ],
+        "expected_signal": "steep rocky/rooty alpine terrain calibration",
+        "source_id": "usgs_3dep_seamless_dem",
+        "source_url": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/3dep-seamless",
+        "request": {
+          "collections": [
+            "3dep-seamless"
+          ],
+          "bbox": [
+            -72.2,
+            43.8,
+            -70.7,
+            44.5
+          ],
+          "limit": 12
+        },
+        "item_count_returned": 12,
+        "item_ids": [
+          "n45w072-13",
+          "n45w072-1",
+          "n44w072-13",
+          "n44w072-1",
+          "n45w071-13",
+          "n45w071-1",
+          "n44w071-13",
+          "n44w071-1",
+          "n45w073-13",
+          "n45w073-1",
+          "n44w073-13",
+          "n44w073-1"
+        ],
+        "items": [
+          {
+            "item_id": "n45w072-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -72.0005555552,
+              43.999444445,
+              -70.9994444448,
+              45.0005555554
+            ],
+            "datetime": "2019-05-09T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n45w072-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -72.0016666667,
+              43.9983333335,
+              -70.9983333333,
+              45.0016666669
+            ],
+            "datetime": "2019-05-09T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n44w072-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -72.0005555552,
+              42.9994444448,
+              -70.9994444444,
+              44.0005555556
+            ],
+            "datetime": "2019-05-09T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n44w072-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -72.0016666667,
+              42.9983333333,
+              -70.9983333329,
+              44.0016666671
+            ],
+            "datetime": "2019-05-09T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n45w071-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -71.0005555563,
+              43.9994444441,
+              -69.9994444441,
+              45.0005555563
+            ],
+            "datetime": "2019-09-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n45w071-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -71.0016666669,
+              43.9983333335,
+              -69.9983333335,
+              45.0016666669
+            ],
+            "datetime": "2019-09-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n44w071-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -71.0005555562932,
+              42.9994444434072,
+              -69.9994444441051,
+              44.0005555564946
+            ],
+            "datetime": "2019-12-16T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n44w071-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -71.0016666668825,
+              42.9983333328179,
+              -69.9983333335158,
+              44.001666667084
+            ],
+            "datetime": "2019-12-16T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n45w073-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -73.0005555549942,
+              43.999444445006,
+              -71.9994444446048,
+              45.0005555553955
+            ],
+            "datetime": "2018-12-04T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n45w073-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -73.0016666664828,
+              43.9983333335175,
+              -71.9983333331161,
+              45.0016666668841
+            ],
+            "datetime": "2018-12-04T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n44w073-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -73.0005555549942,
+              42.9994444452059,
+              -71.9994444446048,
+              44.0005555555953
+            ],
+            "datetime": "2018-12-04T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n44w073-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -73.0016666664828,
+              42.9983333337173,
+              -71.9983333331161,
+              44.001666667084
+            ],
+            "datetime": "2018-12-04T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          }
+        ],
+        "extraction_status": "bounded_stac_metadata_extracted_no_raster_pixels_downloaded",
+        "production_safe": true,
+        "license_status": "public_domain"
+      },
+      {
+        "section_id": "western_maine_mahoosucs_100_mile",
+        "label": "Western Maine / Mahoosucs / 100-Mile Wilderness calibration window",
+        "bbox": [
+          -71.1,
+          44.4,
+          -68.7,
+          46
+        ],
+        "mile_range_nobo_global_est": [
+          1853,
+          2106.2
+        ],
+        "expected_signal": "rocks, roots, mud, remoteness, and ford uncertainty calibration",
+        "source_id": "usgs_3dep_seamless_dem",
+        "source_url": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/3dep-seamless",
+        "request": {
+          "collections": [
+            "3dep-seamless"
+          ],
+          "bbox": [
+            -71.1,
+            44.4,
+            -68.7,
+            46
+          ],
+          "limit": 12
+        },
+        "item_count_returned": 12,
+        "item_ids": [
+          "n45w072-13",
+          "n45w072-1",
+          "n47w070-13",
+          "n47w070-1",
+          "n47w069-13",
+          "n47w069-1",
+          "n46w070-13",
+          "n46w070-1",
+          "n46w069-13",
+          "n46w069-1",
+          "n45w069-13",
+          "n45w069-1"
+        ],
+        "items": [
+          {
+            "item_id": "n45w072-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -72.0005555552,
+              43.999444445,
+              -70.9994444448,
+              45.0005555554
+            ],
+            "datetime": "2019-05-09T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n45w072-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -72.0016666667,
+              43.9983333335,
+              -70.9983333333,
+              45.0016666669
+            ],
+            "datetime": "2019-05-09T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n47w070-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -70.0005555556,
+              45.9994444444,
+              -68.9994444444,
+              47.0005555556
+            ],
+            "datetime": "2019-04-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n47w070-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -70.0016666667,
+              45.9983333333,
+              -68.9983333333,
+              47.0016666667
+            ],
+            "datetime": "2019-04-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n47w069-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -69.0005555558,
+              45.9994444437,
+              -67.9994444436,
+              47.0005555559
+            ],
+            "datetime": "2019-09-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n47w069-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -69.0016666664,
+              45.9983333331,
+              -67.998333333,
+              47.0016666665
+            ],
+            "datetime": "2019-09-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n46w070-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -70.0005555565,
+              44.9994444439,
+              -68.9994444434,
+              46.0005555561
+            ],
+            "datetime": "2019-09-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n46w070-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -70.0016666671,
+              44.9983333333,
+              -68.9983333328,
+              46.0016666667
+            ],
+            "datetime": "2019-09-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n46w069-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -69.0005555558,
+              44.9994444439,
+              -67.9994444436,
+              46.0005555561
+            ],
+            "datetime": "2019-09-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n46w069-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -69.0016666664,
+              44.9983333333,
+              -67.998333333,
+              46.0016666667
+            ],
+            "datetime": "2019-09-30T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n45w069-13",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -69.0005555549,
+              43.999444445,
+              -67.9994444445,
+              45.0005555554
+            ],
+            "datetime": "2019-05-01T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          },
+          {
+            "item_id": "n45w069-1",
+            "collection": "3dep-seamless",
+            "bbox": [
+              -69.0016666664,
+              43.9983333335,
+              -67.998333333,
+              45.0016666669
+            ],
+            "datetime": "2019-05-01T00:00:00Z",
+            "asset_keys": [
+              "data",
+              "gpkg",
+              "metadata",
+              "rendered_preview",
+              "thumbnail",
+              "tilejson"
+            ],
+            "has_cog_asset": true
+          }
+        ],
+        "extraction_status": "bounded_stac_metadata_extracted_no_raster_pixels_downloaded",
+        "production_safe": true,
+        "license_status": "public_domain"
+      }
+    ]
+  },
+  "lidar": {
+    "source_id": "usgs_3dep_lidar",
+    "source_url": "https://registry.opendata.aws/usgs-lidar/",
+    "stac_root": "https://usgs-lidar-stac.s3-us-west-2.amazonaws.com/ept/catalog.json",
+    "catalog_id": "3dep",
+    "catalog_item_link_count": 2255,
+    "at_state_item_link_count": 211,
+    "inspected_item_count": 211,
+    "inspected_item_errors": 3,
+    "calibration_sections": [
+      {
+        "section_id": "northern_pennsylvania_rocky_ridges",
+        "label": "Northern Pennsylvania rocky ridge calibration window",
+        "bbox": [
+          -77.9,
+          40.3,
+          -75.1,
+          41.4
+        ],
+        "mile_range_nobo_global_est": [
+          1180,
+          1270
+        ],
+        "expected_signal": "rocky-but-lower-elevation tread calibration",
+        "source_id": "usgs_3dep_lidar",
+        "source_url": "https://registry.opendata.aws/usgs-lidar/",
+        "intersecting_item_count": 9,
+        "item_ids": [
+          "NJ_NW6Co_2017",
+          "NJ_SussexWarren_2008",
+          "NY_FEMAR2_Central_B1_2018",
+          "PA_3_County_South_Central_2018",
+          "PA_Northcentral_B1_2019",
+          "PA_Northcentral_B2_2019",
+          "PA_Northcentral_B3_2019",
+          "PA_Northcentral_B4_2019",
+          "PA_Northcentral_B5_2019"
+        ],
+        "sample_items": [
+          {
+            "item_id": "NJ_NW6Co_2017",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/NJ_NW6Co_2017.json",
+            "bbox": [
+              -75.2154087333099,
+              40.328088655208894,
+              -74.08353147531929,
+              41.363825744422996
+            ],
+            "point_count": 30097024116,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "NJ_SussexWarren_2008",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/NJ_SussexWarren_2008.json",
+            "bbox": [
+              -75.1448586441563,
+              40.846215641229335,
+              -74.53400425095501,
+              41.367912684208605
+            ],
+            "point_count": 619680890,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "NY_FEMAR2_Central_B1_2018",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/NY_FEMAR2_Central_B1_2018.json",
+            "bbox": [
+              -79.10063850680194,
+              40.855821014918554,
+              -73.46371009895194,
+              43.394087147942926
+            ],
+            "point_count": 31432382435,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "PA_3_County_South_Central_2018",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/PA_3_County_South_Central_2018.json",
+            "bbox": [
+              -76.83254602631374,
+              40.12461740225582,
+              -75.50753098223744,
+              41.601288835219194
+            ],
+            "point_count": 53094718674,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "PA_Northcentral_B1_2019",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/PA_Northcentral_B1_2019.json",
+            "bbox": [
+              -78.82027879820467,
+              39.69684139786694,
+              -75.85134678418964,
+              40.32842901570333
+            ],
+            "point_count": 38345516471,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "PA_Northcentral_B2_2019",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/PA_Northcentral_B2_2019.json",
+            "bbox": [
+              -78.83033633612567,
+              40.170327730610346,
+              -77.68049277245268,
+              41.24946418033486
+            ],
+            "point_count": 55390434079,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "PA_Northcentral_B3_2019",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/PA_Northcentral_B3_2019.json",
+            "bbox": [
+              -79.11336763437792,
+              41.116326724332254,
+              -76.87207100049972,
+              42.01848560258724
+            ],
+            "point_count": 138364149002,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "PA_Northcentral_B4_2019",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/PA_Northcentral_B4_2019.json",
+            "bbox": [
+              -77.99074841370546,
+              40.617484585799005,
+              -77.12387416453012,
+              41.49739992329685
+            ],
+            "point_count": 45908105840,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          }
+        ],
+        "extraction_status": "bounded_catalog_metadata_extracted_no_ept_tiles_streamed",
+        "production_safe": true,
+        "license_status": "public_domain"
+      },
+      {
+        "section_id": "white_mountains_nh",
+        "label": "White Mountains high-relief calibration window",
+        "bbox": [
+          -72.2,
+          43.8,
+          -70.7,
+          44.5
+        ],
+        "mile_range_nobo_global_est": [
+          1760,
+          1853
+        ],
+        "expected_signal": "steep rocky/rooty alpine terrain calibration",
+        "source_id": "usgs_3dep_lidar",
+        "source_url": "https://registry.opendata.aws/usgs-lidar/",
+        "intersecting_item_count": 4,
+        "item_ids": [
+          "ME_SouthCentral_1_B22",
+          "ME_SouthCoastal_1_2020",
+          "NH_Umbagog_2016",
+          "VT_Statewide_1_A23"
+        ],
+        "sample_items": [
+          {
+            "item_id": "ME_SouthCentral_1_B22",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_SouthCentral_1_B22.json",
+            "bbox": [
+              -71.02136421628079,
+              43.16649226410532,
+              -69.37295566992147,
+              44.75669642465674
+            ],
+            "point_count": 75820697284,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "ME_SouthCoastal_1_2020",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_SouthCoastal_1_2020.json",
+            "bbox": [
+              -70.73023819900334,
+              43.03951783477809,
+              -69.25700113304732,
+              44.500052514582826
+            ],
+            "point_count": 47351251607,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "NH_Umbagog_2016",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/NH_Umbagog_2016.json",
+            "bbox": [
+              -71.73710769868644,
+              43.792173627786084,
+              -70.37166846682476,
+              45.44222991129184
+            ],
+            "point_count": 60565448080,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "VT_Statewide_1_A23",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/VT_Statewide_1_A23.json",
+            "bbox": [
+              -73.39439339668343,
+              44.47424231805178,
+              -71.44954080656467,
+              45.02672962110313
+            ],
+            "point_count": 227234049777,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          }
+        ],
+        "extraction_status": "bounded_catalog_metadata_extracted_no_ept_tiles_streamed",
+        "production_safe": true,
+        "license_status": "public_domain"
+      },
+      {
+        "section_id": "western_maine_mahoosucs_100_mile",
+        "label": "Western Maine / Mahoosucs / 100-Mile Wilderness calibration window",
+        "bbox": [
+          -71.1,
+          44.4,
+          -68.7,
+          46
+        ],
+        "mile_range_nobo_global_est": [
+          1853,
+          2106.2
+        ],
+        "expected_signal": "rocks, roots, mud, remoteness, and ford uncertainty calibration",
+        "source_id": "usgs_3dep_lidar",
+        "source_url": "https://registry.opendata.aws/usgs-lidar/",
+        "intersecting_item_count": 10,
+        "item_ids": [
+          "ME_Androscoggin_2009",
+          "ME_AroostookCo_2012",
+          "ME_Eastern_TL_2017",
+          "ME_ME_MA_QL2_L1_2015",
+          "ME_MidCentral_1_B23",
+          "ME_MidCoast_2_2021",
+          "ME_MidCoast_3_2021",
+          "ME_SouthCentral_1_B22",
+          "ME_SouthCoastal_1_2020",
+          "NH_Umbagog_2016"
+        ],
+        "sample_items": [
+          {
+            "item_id": "ME_Androscoggin_2009",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_Androscoggin_2009.json",
+            "bbox": [
+              -70.51620829435488,
+              43.894536223434436,
+              -69.98620227672437,
+              44.50246991311022
+            ],
+            "point_count": 8809454657,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "ME_AroostookCo_2012",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_AroostookCo_2012.json",
+            "bbox": [
+              -68.7219618548799,
+              45.97180373646651,
+              -67.760764500872,
+              47.35451106758368
+            ],
+            "point_count": 5057660149,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "ME_Eastern_TL_2017",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_Eastern_TL_2017.json",
+            "bbox": [
+              -69.16978010885103,
+              44.73999898679663,
+              -67.5078977315452,
+              46.94532572009499
+            ],
+            "point_count": 4379108531,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "ME_ME_MA_QL2_L1_2015",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_ME_MA_QL2_L1_2015.json",
+            "bbox": [
+              -70.16099556639305,
+              44.404808873499185,
+              -68.25656716405967,
+              45.358419499923855
+            ],
+            "point_count": 29699353531,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "ME_MidCentral_1_B23",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_MidCentral_1_B23.json",
+            "bbox": [
+              -70.17844893404822,
+              44.403913598929876,
+              -68.23359634392945,
+              45.3684707670399
+            ],
+            "point_count": 242133880121,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "ME_MidCoast_2_2021",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_MidCoast_2_2021.json",
+            "bbox": [
+              -69.52619388434772,
+              43.769152999080134,
+              -68.41677450846011,
+              45.04181686593307
+            ],
+            "point_count": 55059924556,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "ME_MidCoast_3_2021",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_MidCoast_3_2021.json",
+            "bbox": [
+              -69.37520864465405,
+              43.92677286667359,
+              -67.0440804823639,
+              45.04233163861746
+            ],
+            "point_count": 1172018724,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          },
+          {
+            "item_id": "ME_SouthCentral_1_B22",
+            "href": "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/ME_SouthCentral_1_B22.json",
+            "bbox": [
+              -71.02136421628079,
+              43.16649226410532,
+              -69.37295566992147,
+              44.75669642465674
+            ],
+            "point_count": 75820697284,
+            "point_type": "lidar",
+            "point_encoding": "ept",
+            "projection": "EPSG:3857"
+          }
+        ],
+        "extraction_status": "bounded_catalog_metadata_extracted_no_ept_tiles_streamed",
+        "production_safe": true,
+        "license_status": "public_domain"
+      }
+    ],
+    "extraction_status": "bounded_catalog_metadata_extracted_no_ept_tiles_streamed",
+    "production_safe": true,
+    "license_status": "public_domain"
+  },
+  "soil": {
+    "source_id": "nrcs_gssurgo_ssurgo",
+    "source_url": "https://www.nrcs.usda.gov/resources/data-and-reports/gridded-soil-survey-geographic-gssurgo-database",
+    "extraction_status": "not_extracted_in_v2_1",
+    "production_safe": true,
+    "license_status": "public_domain",
+    "reason": "V2.1 starts with bounded DEM/LiDAR coverage metadata. Corridor SSURGO attribute joins remain a separate bounded extractor, so soil_stoniness_score must stay null."
+  },
+  "osm": {
+    "source_id": "osm",
+    "source_url": "https://www.openstreetmap.org/copyright",
+    "extraction_status": "uses_existing_rc1_odbl_surface_signal_lane",
+    "production_safe": true,
+    "license_status": "open_license_share_alike"
+  },
+  "policy": "Use this snapshot as extraction evidence for source availability only. Do not claim field-verified rockiness, reliable footing, LiDAR-derived record scores, or SSURGO-derived record scores until bounded pixel/point/soil attribute extraction writes record-level evidence."
+}

@@ -62,6 +62,10 @@ REQUIRED_PATHS = [
     "processed/tread_rockiness_v2/full_trail_osm_surface_tags.json",
     "processed/tread_rockiness_v2/rockiness_v2_model_notes.md",
     "processed/tread_rockiness_v2/rockiness_v2_source_limitations.md",
+    "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json",
+    "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
+    "processed/tread_rockiness_v2_1/rockiness_v2_1_model_notes.md",
+    "processed/tread_rockiness_v2_1/rockiness_v2_1_source_limitations.md",
     "processed/legal/blocked_legacy_awol_audit.json",
     "processed/difficulty/full_trail_daily_difficulty_model.md",
     "processed/difficulty/full_trail_daily_difficulty_model.json",
@@ -81,6 +85,7 @@ REQUIRED_PATHS = [
     "rag_docs/policies/license_attribution.md",
     "rag_docs/rag_doc_metadata.json",
     "schemas/rockiness_v2.schema.json",
+    "schemas/rockiness_v2_1.schema.json",
     "sources/opentrail_review.json",
     "sources/openlongtrails_review.json",
     "sources/open_dem_review.json",
@@ -156,7 +161,7 @@ def validate() -> dict[str, Any]:
         fail_if(source.get("license_status") != "unknown_review_required", failures, f"{review_only} should remain review-only")
         fail_if(source.get("production_safe") is not False, failures, f"{review_only} leaked into production-safe sources")
         fail_if(not source.get("blocked_until"), failures, f"{review_only} missing blocked_until")
-    for safe_source in ["usgs_3dep_seamless_dem", "usgs_3dep_lidar", "nrcs_gssurgo_ssurgo", "full_trail_rockiness_v2_model"]:
+    for safe_source in ["usgs_3dep_seamless_dem", "usgs_3dep_lidar", "nrcs_gssurgo_ssurgo", "full_trail_rockiness_v2_model", "full_trail_rockiness_v2_1_extraction_model"]:
         source = source_map.get(safe_source, {})
         fail_if(source.get("production_safe") is not True, failures, f"{safe_source} not production safe")
         fail_if(source.get("license_status") not in VALID_LICENSES, failures, f"{safe_source} unsafe license")
@@ -370,6 +375,31 @@ def validate() -> dict[str, Any]:
     for term in ["opentrail", "openlongtrails", "not field verified", "100-meter", "osm", "gssurgo", "lidar", "user reports"]:
         fail_if(term not in limitations_text and term not in notes_text, failures, f"Rockiness V2 docs missing {term}")
 
+    rockiness21_extraction = j("processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json")
+    rockiness21_1 = j("processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json")
+    fail_if(rockiness21_extraction.get("production_safe") is not True, failures, "Rockiness V2.1 extraction not production-safe")
+    fail_if(rockiness21_extraction.get("extraction_level") == "missing_snapshot_fallback", failures, "Rockiness V2.1 missing live extraction snapshot")
+    dem_sections = rockiness21_extraction.get("dem", {}).get("sections", [])
+    fail_if(not any(section.get("item_count_returned", 0) > 0 for section in dem_sections), failures, "Rockiness V2.1 DEM STAC extraction has no items")
+    lidar = rockiness21_extraction.get("lidar", {})
+    fail_if(lidar.get("catalog_item_link_count", 0) <= 0, failures, "Rockiness V2.1 LiDAR catalog not checked")
+    fail_if(lidar.get("at_state_item_link_count", 0) <= 0, failures, "Rockiness V2.1 LiDAR AT-state catalog count missing")
+    fail_if(len(rockiness21_1) != len(rockiness1), failures, "Rockiness V2.1 1mi count does not match V2")
+    for label, records in [("1mi V2.1", rockiness21_1)]:
+        fail_if(any(record.get("field_verified") is True for record in records), failures, f"{label} has field_verified true")
+        fail_if(any(record.get("lidar_available") is True for record in records), failures, f"{label} claims lidar_available before point-cloud extraction")
+        fail_if(any(record.get("official") is not False for record in records[:50] + records[-50:]), failures, f"{label} official not false")
+        fail_if(not any(record.get("dem_stac_item_count", 0) > 0 for record in records), failures, f"{label} lacks DEM STAC metadata")
+        for record in records[:50] + records[-50:]:
+            common(record, failures, label)
+            fail_if(record.get("source_id") != "full_trail_rockiness_v2_1_extraction_model", failures, f"{label} wrong source_id")
+            fail_if("not field verified" not in record.get("ai_answer_rule", "").lower(), failures, f"{label} missing not-field-verified rule")
+            fail_if("generated/open-route miles are not official" not in record.get("ai_answer_rule", "").lower(), failures, f"{label} missing generated-mile caution")
+    v21_notes = t("processed/tread_rockiness_v2_1/rockiness_v2_1_model_notes.md").lower()
+    v21_limits = t("processed/tread_rockiness_v2_1/rockiness_v2_1_source_limitations.md").lower()
+    for term in ["bounded", "stac", "lidar", "not field verified", "ssurgo", "does not sample"]:
+        fail_if(term not in v21_notes and term not in v21_limits, failures, f"Rockiness V2.1 docs missing {term}")
+
     awol_audit = j("processed/legal/blocked_legacy_awol_audit.json")
     fail_if(awol_audit.get("production_safe") is not False, failures, "AWOL audit should not be production safe")
     fail_if(awol_audit.get("license_status") != "blocked", failures, "AWOL audit should be blocked")
@@ -391,7 +421,7 @@ def validate() -> dict[str, Any]:
         fail_if("rockiness_v2_score_avg" not in record.get("inputs", {}), failures, "difficulty missing Rockiness V2 input")
         fail_if("rockiness_v2_factor" not in record.get("factors", {}), failures, "difficulty missing Rockiness V2 factor")
     difficulty_model = j("processed/difficulty/full_trail_daily_difficulty_model.json")
-    fail_if(difficulty_model.get("preferred_tread_source") != "processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json", failures, "difficulty model does not prefer Rockiness V2")
+    fail_if(difficulty_model.get("preferred_tread_source") != "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json", failures, "difficulty model does not prefer Rockiness V2.1")
     difficulty_doc = t("processed/difficulty/full_trail_daily_difficulty_model.md").lower()
     fail_if("rockiness v2" not in difficulty_doc or ("not field verified" not in difficulty_doc and "not field-verified" not in difficulty_doc), failures, "difficulty doc missing Rockiness V2 caveat")
 
@@ -441,6 +471,7 @@ def validate() -> dict[str, Any]:
         "tread_1mi_records": len(tread),
         "rockiness_v2_0_1mi_records": len(rockiness01),
         "rockiness_v2_1mi_records": len(rockiness1),
+        "rockiness_v2_1_1mi_records": len(rockiness21_1),
         "difficulty_segments": len(difficulty),
         "rag_docs": len(rag_metadata),
         "behavior_questions": len(qa),

@@ -75,6 +75,11 @@
       <strong>{formatNumber(data.rc1.rockinessV2PointOneMileCount)}</strong>
       <small>0.1mi records · {formatNumber(data.rc1.rockinessV2OneMileCount)} 1mi records</small>
     </article>
+    <article class="metric-tile">
+      <span>Rockiness V2.1</span>
+      <strong>{formatNumber(data.rc1.rockinessV21OneMileCount)}</strong>
+      <small>1mi records · bounded source metadata</small>
+    </article>
   </section>
 
   <section class="alignment-panel" aria-label="Route alignment diagnostics">
@@ -102,9 +107,14 @@
         <small>{formatNumber(data.rc1.elevation100mSampleCount)} samples · 100m {data.rc1.elevation100mComplete ? 'complete' : 'incomplete'}</small>
       </article>
       <article>
-        <span>Rockiness V2</span>
-        <strong>{formatNumber(data.rc1.rockinessV2OneMileCount)}</strong>
+        <span>Rockiness V2.1</span>
+        <strong>{formatNumber(data.rc1.rockinessV21OneMileCount)}</strong>
         <small>preferred difficulty input · not field verified</small>
+      </article>
+      <article>
+        <span>Source extraction</span>
+        <strong>{formatNumber(data.rc1.rockinessV21SourceExtractionCount)}</strong>
+        <small>DEM/LiDAR metadata snapshot · no raster or point-cloud scoring</small>
       </article>
       <article>
         <span>Max continuity gap</span>

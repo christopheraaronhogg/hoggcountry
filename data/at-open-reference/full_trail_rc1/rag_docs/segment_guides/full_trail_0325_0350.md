@@ -23,9 +23,9 @@ Generated miles are not official ATC mileage.
 
 ## Terrain And Difficulty
 - Difficulty labels in this span: severe
-- Rockiness V2 average: 5.11 (low_due_to_regional_mvp_gap)
+- Rockiness V2.1 average: 5.11 (low_due_to_regional_mvp_gap)
 - Tread score average: 2.48
-- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, Rockiness V2, and tread model outputs as planning screens, not field verification.
+- Use 100-meter USGS 3DEP/EPQS gain/loss, steep-grade screens, Rockiness V2.1, and tread model outputs as planning screens, not field verification.
 
 ## Water Candidates
 - Mapped water/fording candidates in span: 65

@@ -250,6 +250,26 @@
     "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
   },
   {
+    "dataset_id": "rockiness_v2_1_1mi",
+    "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
+    "record_count": 2107,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-16",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
+    "dataset_id": "rockiness_v2_1_source_extraction",
+    "path": "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json",
+    "record_count": 1,
+    "production_safe": true,
+    "route_id": "at-full-trail-rc1-open-2026",
+    "last_generated": "2026-05-16",
+    "license_status": "open_license_share_alike_or_public_domain",
+    "ai_answer_rule": "Use with source/license/confidence and generated-mile cautions."
+  },
+  {
     "dataset_id": "difficulty",
     "path": "processed/difficulty/full_trail_difficulty_by_10mi_segment.json",
     "record_count": 211,

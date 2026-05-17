@@ -6,7 +6,7 @@ The RC1 difficulty model is a planning screen, not field verified and not a fiel
 Inputs:
 - distance
 - gain/loss, steep descents, and max-grade screens from 100-meter USGS 3DEP/EPQS summaries
-- Rockiness V2 score when present; tread v1 remains a compatibility fallback
+- Rockiness V2.1 score when present; Rockiness V2 and tread v1 remain compatibility fallbacks
 - tread/rockiness/rootiness/mud model score
 - ford uncertainty
 - remoteness and bailout scarcity
@@ -24,6 +24,6 @@ Outputs:
 Rules:
 - Short mileage may still be hard in the Smokies, White Mountains, Maine, Katahdin, and rugged New England.
 - Prefer processed/elevation/full_trail_elevation_samples_100m.json for detailed terrain; the 1-mile elevation file is retained for compatibility.
-- Prefer processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json for tread/rockiness difficulty input; tread v1 remains for compatibility and regional fallback.
+- Prefer processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json for tread/rockiness difficulty input; Rockiness V2 and tread v1 remain compatibility fallbacks.
 - Static difficulty cannot answer current weather, closures, fords, snow/ice, fire bans, permits, campsite/hut status, or Baxter/Katahdin conditions.
 - The Davenport Gap to Damascus corridor receives an explicit regional-gap factor until MVP detail exists.

@@ -48,6 +48,8 @@ def validate() -> dict:
     failures: list[str] = []
     rockiness_01 = read_json("processed/tread_rockiness_v2/full_trail_rockiness_v2_by_0_1mi.json")
     rockiness_1 = read_json("processed/tread_rockiness_v2/full_trail_rockiness_v2_by_1mi.json")
+    rockiness_21_extraction = read_json("processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json")
+    rockiness_21_1 = read_json("processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json")
     soil = read_json("processed/tread_rockiness_v2/full_trail_soil_stoniness.json")
     osm = read_json("processed/tread_rockiness_v2/full_trail_osm_surface_tags.json")
     coverage = read_json("processed/tread_rockiness_v2/full_trail_micro_roughness_coverage.json")
@@ -65,6 +67,9 @@ def validate() -> dict:
         source = source_by_id.get(source_id, {})
         fail_if(source.get("production_safe") is not True, failures, f"{source_id} not production-safe")
         fail_if(source.get("license_status") != "public_domain", failures, f"{source_id} should be public_domain")
+    source = source_by_id.get("full_trail_rockiness_v2_1_extraction_model", {})
+    fail_if(source.get("production_safe") is not True, failures, "Rockiness V2.1 source not production-safe")
+    fail_if(source.get("license_status") != "open_license_share_alike", failures, "Rockiness V2.1 source should be open_license_share_alike")
     for source_id in ["opentrail_review", "openlongtrails_review"]:
         source = source_by_id.get(source_id, {})
         fail_if(source.get("production_safe") is not False, failures, f"{source_id} should remain held")
@@ -87,6 +92,28 @@ def validate() -> dict:
     fail_if(not all(record.get("soil_stoniness_score") is None for record in soil[:100]), failures, "soil lane should stay null until bounded extraction")
     fail_if(not any(record.get("osm_surface_signal") is not None for record in osm), failures, "OSM surface signal never populated")
 
+    fail_if(rockiness_21_extraction.get("production_safe") is not True, failures, "V2.1 source extraction not production-safe")
+    fail_if(rockiness_21_extraction.get("extraction_level") == "missing_snapshot_fallback", failures, "V2.1 source extraction fell back to missing snapshot")
+    dem_sections = rockiness_21_extraction.get("dem", {}).get("sections", [])
+    fail_if(not any(section.get("item_count_returned", 0) > 0 for section in dem_sections), failures, "V2.1 DEM STAC metadata missing")
+    lidar = rockiness_21_extraction.get("lidar", {})
+    fail_if(lidar.get("catalog_item_link_count", 0) <= 0, failures, "V2.1 LiDAR catalog metadata missing")
+    fail_if(lidar.get("at_state_item_link_count", 0) <= 0, failures, "V2.1 AT-state LiDAR catalog count missing")
+    fail_if(len(rockiness_21_1) != len(rockiness_1), failures, "V2.1 1mi record count should match V2")
+
+    for label, records in [("V2.1 1mi", rockiness_21_1)]:
+        fail_if(any(record.get("field_verified") is True for record in records), failures, f"{label} marked field verified")
+        fail_if(any(record.get("lidar_available") is True for record in records), failures, f"{label} marks lidar_available before point-cloud extraction")
+        fail_if(not any(record.get("dem_stac_item_count", 0) > 0 for record in records), failures, f"{label} lacks bounded DEM metadata")
+        for record in records[:100] + records[-100:]:
+            fail_if(record.get("official") is not False, failures, f"{label} record has official true/missing")
+            fail_if(record.get("source_id") != "full_trail_rockiness_v2_1_extraction_model", failures, f"{label} wrong source_id")
+            fail_if(record.get("license_status") != "open_license_share_alike", failures, f"{label} missing ODbL/share-alike license")
+            fail_if(record.get("soil_extraction_status") != "not_extracted_in_v2_1", failures, f"{label} should not claim soil extraction")
+            rule = record.get("ai_answer_rule", "").lower()
+            fail_if("not field verified" not in rule, failures, f"{label} answer rule lacks not-field-verified caution")
+            fail_if("not official atc" not in rule, failures, f"{label} answer rule lacks generated-mile caution")
+
     safe_paths = {dataset["path"] for dataset in dataset_index if dataset.get("production_safe")}
     with ZipFile(RC_ROOT / "exports/full_trail_reference_pack_rc1.zip") as zf:
         zip_names = set(zf.namelist())
@@ -96,6 +123,8 @@ def validate() -> dict:
         "processed/tread_rockiness_v2/full_trail_micro_roughness_coverage.json",
         "processed/tread_rockiness_v2/full_trail_soil_stoniness.json",
         "processed/tread_rockiness_v2/full_trail_osm_surface_tags.json",
+        "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_source_extraction.json",
+        "processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json",
     ]:
         fail_if(expected not in safe_paths, failures, f"{expected} not marked production-safe")
         fail_if(expected not in zip_names, failures, f"{expected} missing from production-safe zip")
@@ -107,6 +136,7 @@ def validate() -> dict:
         "failures": failures,
         "rockiness_v2_0_1mi_records": len(rockiness_01),
         "rockiness_v2_1mi_records": len(rockiness_1),
+        "rockiness_v2_1_1mi_records": len(rockiness_21_1),
         "soil_records": len(soil),
         "osm_surface_records": len(osm),
         "coverage_records": len(coverage),

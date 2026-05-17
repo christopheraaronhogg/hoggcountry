@@ -331,6 +331,28 @@
     "notes": "Does not add commercial guide data. It stitches existing public/open/API-accessible MVP packs and base open-route assets."
   },
   {
+    "source_id": "full_trail_rockiness_v2_1_extraction_model",
+    "name": "Scout Rockiness V2.1 bounded source extraction model",
+    "owner": "Hogg Country",
+    "source_type": "derived model and extraction metadata",
+    "source_url": "internal:data/at-open-reference/raw/source_discovery/rockiness_v2_1_source_extraction.json",
+    "access_method": "bounded live source discovery snapshot promoted into local generated artifacts",
+    "license_status": "open_license_share_alike",
+    "allowed_use": "package generated extraction-aware model records with OSM ODbL attribution, USGS public-domain metadata, confidence, and not-field-verified cautions",
+    "attribution_required": "Preserve OpenStreetMap contributor attribution and USGS/NRCS source notes.",
+    "confidence": "model_screening_with_bounded_dem_lidar_metadata_not_field_verified",
+    "last_checked": "2026-05-16",
+    "production_safe": true,
+    "data_categories": [
+      "tread_rockiness_v2_1",
+      "difficulty_input",
+      "source_extraction",
+      "pace_penalty",
+      "model_notes"
+    ],
+    "notes": "V2.1 promotes bounded 3DEP Seamless DEM STAC and USGS 3DEP LiDAR catalog metadata into the pack. It does not claim raster pixel sampling, LiDAR point-cloud scoring, SSURGO attribute scoring, or field verification."
+  },
+  {
     "source_id": "full_trail_rockiness_v2_model",
     "name": "Scout Rockiness V2 composite screening model",
     "owner": "Hogg Country",
