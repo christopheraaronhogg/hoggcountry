@@ -197,7 +197,7 @@
     </div>
 
     <main id="main-content" class="site-main public-site-main" tabindex="-1">
-      {#if page.url.pathname === '/' || page.url.pathname === '/guide' || page.url.pathname === '/at-map'}
+      {#if page.url.pathname === '/' || page.url.pathname === '/guide' || page.url.pathname === '/at-map' || page.url.pathname === '/track'}
         {@render children()}
       {:else}
         <div class="container public-page-wrap">
@@ -206,7 +206,7 @@
       {/if}
     </main>
 
-    {#if page.url.pathname !== '/at-map'}
+    {#if page.url.pathname !== '/at-map' && page.url.pathname !== '/track'}
     <footer class="public-meta-footer">
       <div>&copy; {currentYear} Hogg Country. All rights reserved.</div>
       <div class="social-links">

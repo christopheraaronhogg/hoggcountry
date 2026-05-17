@@ -92,6 +92,21 @@ class RefreshTrackersCommandTest extends TestCase
         $this->assertSame('2026-02-07T03:10:00+00:00', $fix->observed_at?->toIso8601String());
     }
 
+    public function test_refresh_command_seeds_default_public_hogg_tracker(): void
+    {
+        Http::fake([
+            'https://explore.garmin.com/Feed/Share/*' => Http::response($this->kmlPoint('2026-02-07T03:00:00Z', -84.002301, 34.678923), 200),
+        ]);
+
+        $this->artisan('trackers:refresh')->assertExitCode(0);
+
+        $tracker = CommunityTracker::query()->where('label', 'HoggCountry')->first();
+        $this->assertNotNull($tracker);
+        $this->assertTrue((bool) $tracker->is_public);
+        $this->assertSame('hoggcountry', $tracker->garmin_share_id);
+        $this->assertDatabaseCount('tracker_fixes', 1);
+    }
+
     private function kmlPoint(string $when, float $lon, float $lat): string
     {
         return <<<KML

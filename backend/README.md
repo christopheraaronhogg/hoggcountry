@@ -90,6 +90,7 @@ php8.3 /home/forge/hoggcountry.on-forge.com/current/backend/artisan schedule:run
 Laravel schedule tasks:
 
 - `trackers:refresh` (every minute) polls Garmin MapShare for each saved tracker and upserts fresh points into `tracker_fixes`.
+- If no HoggCountry tracker exists, `trackers:refresh` creates a public default tracker from `HOGGCOUNTRY_GARMIN_SHARE_ID` so Dad's historical line can accumulate without a manual seed step.
 
 Manual verification:
 
@@ -100,7 +101,7 @@ tail -f storage/logs/scheduler.log
 tail -f storage/logs/laravel.log
 ```
 
-`No trackers found for refresh.` means no `community_trackers` records exist yet for your user.
+Set `HOGGCOUNTRY_DEFAULT_TRACKER_ENABLED=false` to disable the automatic public HoggCountry tracker seed.
 
 ## Notes
 

@@ -4,9 +4,12 @@ namespace App\Console\Commands;
 
 use App\Models\CommunityTracker;
 use App\Models\TrackerFix;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -20,9 +23,11 @@ class RefreshTrackersCommand extends Command
 
     public function handle(): int
     {
+        $trackerOption = trim((string) ($this->option('tracker') ?? ''));
+        $this->ensureDefaultPublicTracker($trackerOption);
+
         $query = CommunityTracker::query()->orderBy('label');
 
-        $trackerOption = trim((string) ($this->option('tracker') ?? ''));
         if ($trackerOption !== '') {
             $query->where(function ($inner) use ($trackerOption): void {
                 $inner
@@ -85,6 +90,67 @@ class RefreshTrackersCommand extends Command
 
         // Return success so scheduler keeps running even if a subset fails.
         return self::SUCCESS;
+    }
+
+    private function ensureDefaultPublicTracker(string $trackerOption): void
+    {
+        if ($trackerOption !== '') {
+            return;
+        }
+
+        if (filter_var(env('HOGGCOUNTRY_DEFAULT_TRACKER_ENABLED', true), FILTER_VALIDATE_BOOLEAN) === false) {
+            return;
+        }
+
+        $shareId = trim((string) (
+            env('HOGGCOUNTRY_GARMIN_SHARE_ID')
+            ?: env('HOGG_GARMIN_SHARE_ID')
+            ?: env('GARMIN_SHARE_ID')
+            ?: 'hoggcountry'
+        ));
+
+        if ($shareId === '') {
+            return;
+        }
+
+        $label = trim((string) env('HOGGCOUNTRY_DEFAULT_TRACKER_LABEL', 'HoggCountry')) ?: 'HoggCountry';
+
+        $tracker = CommunityTracker::query()
+            ->where('garmin_share_id', $shareId)
+            ->whereRaw('LOWER(label) = ?', [mb_strtolower($label)])
+            ->first();
+
+        if ($tracker instanceof CommunityTracker) {
+            $tracker->forceFill([
+                'is_public' => true,
+                'color' => $tracker->color ?: '#dc2626',
+            ])->save();
+
+            return;
+        }
+
+        $ownerEmail = trim((string) env('HOGGCOUNTRY_TRACKER_OWNER_EMAIL', 'hoggcountry-tracker@hoggcountry.local'))
+            ?: 'hoggcountry-tracker@hoggcountry.local';
+
+        $owner = User::query()->firstOrCreate(
+            ['email' => $ownerEmail],
+            [
+                'name' => 'Hogg Country Tracker',
+                'password' => Hash::make(Str::random(40)),
+            ]
+        );
+
+        if ($owner->email_verified_at === null) {
+            $owner->forceFill(['email_verified_at' => CarbonImmutable::now('UTC')])->save();
+        }
+
+        CommunityTracker::query()->create([
+            'user_id' => $owner->id,
+            'label' => $label,
+            'garmin_share_id' => $shareId,
+            'color' => '#dc2626',
+            'is_public' => true,
+        ]);
     }
 
     /**

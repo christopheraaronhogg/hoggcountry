@@ -1,0 +1,1161 @@
+<script lang="ts">
+  import { onDestroy, onMount } from 'svelte';
+  import 'leaflet/dist/leaflet.css';
+  import type {
+    LatLon,
+    TrailMapElevationPoint,
+    TrailMapPack,
+    TrailMapPoint,
+    TrailMapWaypoint
+  } from '$lib/map-pack-types';
+
+  type TerrainMode = 'grade' | 'rockiness' | 'difficulty';
+  type PlaceMode = 'core' | 'access' | 'camp' | 'view';
+
+  const {
+    endpoint = '/track/map-pack',
+    title = 'Trail Map',
+    appMode = false,
+    publicRoute = false
+  } = $props<{
+    endpoint?: string;
+    title?: string;
+    appMode?: boolean;
+    publicRoute?: boolean;
+  }>();
+
+  let host = $state<HTMLDivElement | null>(null);
+  let pack = $state<TrailMapPack | null>(null);
+  let loading = $state(true);
+  let errorMessage = $state('');
+  let terrainMode = $state<TerrainMode>('difficulty');
+  let placeMode = $state<PlaceMode>('core');
+  let selectedHistoryIndex = $state(0);
+  let lastRenderedTerrainMode: TerrainMode | null = null;
+  let lastRenderedPlaceMode: PlaceMode | null = null;
+  let lastRenderedMile = -1;
+
+  let L: any = null;
+  let map: any = null;
+  let routeLayer: any = null;
+  let terrainLayer: any = null;
+  let placesLayer: any = null;
+  let trackerLayer: any = null;
+  let mileLayer: any = null;
+  let selectedMarker: any = null;
+
+  const history = $derived.by(() => pack?.tracker.history ?? []);
+  const currentPoint = $derived.by(() => pack?.tracker.current ?? null);
+  const selectedPoint = $derived.by(() => {
+    if (!history.length) return currentPoint;
+    return history[Math.max(0, Math.min(history.length - 1, selectedHistoryIndex))] ?? currentPoint;
+  });
+  const selectedMile = $derived.by(() => selectedPoint?.mile ?? currentPoint?.mile ?? 0);
+  const selectedElevation = $derived.by(() => nearestElevation(selectedMile));
+  const selectedTerrain = $derived.by(() => nearestTerrainSegment(selectedMile));
+  const selectedRockiness = $derived.by(() => nearestRockiness(selectedMile));
+  const selectedDifficulty = $derived.by(() => nearestDifficulty(selectedMile));
+  const nextShelter = $derived.by(() => nextWaypoint(pack?.waypoints.shelters ?? [], selectedMile));
+  const nextWater = $derived.by(() => nextWaypoint(pack?.waypoints.water ?? [], selectedMile));
+  const nextTown = $derived.by(() => nextWaypoint(pack?.waypoints.towns ?? [], selectedMile));
+  const nextRoad = $derived.by(() => nextWaypoint(pack?.waypoints.roads ?? [], selectedMile));
+  const elevationWindow = $derived.by(() => profileWindow(selectedMile, 18));
+  const profileD = $derived(profilePath(elevationWindow));
+  const selectedDifficultyClass = $derived(difficultyClass(selectedDifficulty?.score ?? 0));
+  const scoutPrompt = $derived.by(() => {
+    const mile = Number.isFinite(selectedMile) ? selectedMile.toFixed(1) : 'the current trail location';
+    return `Use the Scout map data around AT mile ${mile}. Summarize Dad's current location, next shelters, water candidates, road bailouts, elevation gain/loss, steep sections, rockiness, and what needs live verification before relying on it.`;
+  });
+
+  function fmt(value: unknown, digits = 0): string {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '--';
+    return number.toFixed(digits);
+  }
+
+  function timeLabel(iso?: string | null): string {
+    if (!iso) return 'No timestamp';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  }
+
+  function colorForGrade(grade: number): string {
+    if (grade >= 22) return '#b91c1c';
+    if (grade >= 16) return '#dc2626';
+    if (grade >= 11) return '#f97316';
+    if (grade >= 7) return '#eab308';
+    return '#4d7c0f';
+  }
+
+  function colorForRock(score: number): string {
+    if (score >= 8) return '#6d28d9';
+    if (score >= 6.5) return '#9333ea';
+    if (score >= 5) return '#c026d3';
+    if (score >= 3.5) return '#f97316';
+    return '#3f6212';
+  }
+
+  function colorForDifficulty(score: number): string {
+    if (score >= 8.5) return '#991b1b';
+    if (score >= 7) return '#ea580c';
+    if (score >= 5) return '#ca8a04';
+    return '#15803d';
+  }
+
+  function difficultyClass(score: number): string {
+    if (score >= 8.5) return 'severe';
+    if (score >= 7) return 'hard';
+    if (score >= 5) return 'steady';
+    return 'cruise';
+  }
+
+  function displayLabel(value: string | undefined): string {
+    return value?.replace(/_/gu, ' ') || 'model screen';
+  }
+
+  function clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function coordForMile(mile: number): LatLon | null {
+    if (!pack?.milepoints.length || !Number.isFinite(mile)) return null;
+    const points = pack.milepoints;
+    let lower = points[0];
+    let upper = points[points.length - 1];
+
+    for (const point of points) {
+      if (point.mile <= mile) lower = point;
+      if (point.mile >= mile) {
+        upper = point;
+        break;
+      }
+    }
+
+    if (!lower || !upper) return null;
+    if (lower.mile === upper.mile) return [lower.lat, lower.lon];
+    const progress = (mile - lower.mile) / (upper.mile - lower.mile);
+    return [
+      lower.lat + (upper.lat - lower.lat) * progress,
+      lower.lon + (upper.lon - lower.lon) * progress
+    ];
+  }
+
+  function nearestElevation(mile: number): TrailMapElevationPoint | null {
+    const list = pack?.terrain.elevation ?? [];
+    if (!list.length || !Number.isFinite(mile)) return null;
+    return list.reduce((best, item) => Math.abs(item.mile - mile) < Math.abs(best.mile - mile) ? item : best, list[0]);
+  }
+
+  function nearestTerrainSegment(mile: number) {
+    return (pack?.terrain.segments ?? []).find((segment) => mile >= segment.startMile && mile <= segment.endMile) ?? null;
+  }
+
+  function nearestRockiness(mile: number) {
+    return (pack?.terrain.rockiness ?? []).find((segment) => mile >= segment.startMile && mile <= segment.endMile) ?? null;
+  }
+
+  function nearestDifficulty(mile: number) {
+    return (pack?.terrain.difficulty ?? []).find((segment) => mile >= segment.startMile && mile <= segment.endMile) ?? null;
+  }
+
+  function nextWaypoint(list: TrailMapWaypoint[], mile: number): TrailMapWaypoint | null {
+    if (!Number.isFinite(mile)) return null;
+    return list.find((point) => point.mile >= mile) ?? null;
+  }
+
+  function distanceAhead(point: TrailMapWaypoint | null): string {
+    if (!point || !Number.isFinite(selectedMile)) return '--';
+    return `${Math.max(0, point.mile - selectedMile).toFixed(1)} mi`;
+  }
+
+  function profileWindow(mile: number, radiusMiles: number): TrailMapElevationPoint[] {
+    const list = pack?.terrain.elevation ?? [];
+    if (!list.length || !Number.isFinite(mile)) return [];
+    const start = mile - radiusMiles;
+    const end = mile + radiusMiles;
+    return list.filter((point) => point.mile >= start && point.mile <= end);
+  }
+
+  function profilePath(points: TrailMapElevationPoint[], width = 340, height = 82): string {
+    if (points.length < 2) return '';
+    const minMile = points[0].mile;
+    const maxMile = points[points.length - 1].mile;
+    const minElev = Math.min(...points.map((point) => point.elevationFt));
+    const maxElev = Math.max(...points.map((point) => point.elevationFt));
+    const mileSpan = Math.max(0.1, maxMile - minMile);
+    const elevSpan = Math.max(1, maxElev - minElev);
+
+    return points
+      .map((point, index) => {
+        const x = ((point.mile - minMile) / mileSpan) * width;
+        const y = height - ((point.elevationFt - minElev) / elevSpan) * height;
+        return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
+      })
+      .join(' ');
+  }
+
+  function profileMarkerX(points: TrailMapElevationPoint[], mile: number, width = 340): number {
+    if (points.length < 2) return 0;
+    const minMile = points[0].mile;
+    const maxMile = points[points.length - 1].mile;
+    return clamp(((mile - minMile) / Math.max(0.1, maxMile - minMile)) * width, 0, width);
+  }
+
+  function layerGroup(): any {
+    return L.layerGroup().addTo(map);
+  }
+
+  function clearLayer(layer: any) {
+    if (layer) layer.clearLayers();
+  }
+
+  function addRouteLayer() {
+    clearLayer(routeLayer);
+    if (!pack || !L || !routeLayer) return;
+    for (const segment of pack.route.segments) {
+      L.polyline(segment, {
+        color: '#f97316',
+        weight: 3,
+        opacity: 0.82,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(routeLayer);
+    }
+  }
+
+  function addMileLayer() {
+    clearLayer(mileLayer);
+    if (!pack || !L || !mileLayer) return;
+    for (const point of pack.milepoints) {
+      if (point.mile % 25 !== 0) continue;
+      L.circleMarker([point.lat, point.lon], {
+        radius: point.mile % 100 === 0 ? 4.5 : 3,
+        color: '#162018',
+        fillColor: '#fef3c7',
+        fillOpacity: 0.9,
+        weight: 1
+      }).bindTooltip(`Mile ${point.mile}`, { direction: 'top' }).addTo(mileLayer);
+    }
+  }
+
+  function addTerrainLayer() {
+    clearLayer(terrainLayer);
+    if (!pack || !L || !terrainLayer) return;
+
+    if (terrainMode === 'grade') {
+      for (const segment of pack.terrain.segments) {
+        if (segment.maxGradePercent < 6) continue;
+        const start = coordForMile(segment.startMile);
+        const end = coordForMile(segment.endMile);
+        if (!start || !end) continue;
+        L.polyline([start, end], {
+          color: colorForGrade(segment.maxGradePercent),
+          weight: segment.maxGradePercent >= 16 ? 7 : 5,
+          opacity: 0.72
+        }).bindTooltip(`${segment.maxGradePercent.toFixed(0)}% max grade · ${segment.gainFt.toFixed(0)} ft gain`).addTo(terrainLayer);
+      }
+      return;
+    }
+
+    if (terrainMode === 'rockiness') {
+      for (const segment of pack.terrain.rockiness) {
+        if (segment.score < 3.2) continue;
+        const start = coordForMile(segment.startMile);
+        const end = coordForMile(segment.endMile);
+        if (!start || !end) continue;
+        L.polyline([start, end], {
+          color: colorForRock(segment.score),
+          weight: segment.score >= 6.5 ? 7 : 5,
+          opacity: 0.68
+        }).bindTooltip(`Rockiness ${segment.score.toFixed(1)}/10 · ${segment.label.replace(/_/gu, ' ')}`).addTo(terrainLayer);
+      }
+      return;
+    }
+
+    for (const segment of pack.terrain.difficulty) {
+      const start = coordForMile(segment.startMile);
+      const end = coordForMile(segment.endMile);
+      if (!start || !end) continue;
+      L.polyline([start, end], {
+        color: colorForDifficulty(segment.score),
+        weight: segment.score >= 8 ? 8 : 6,
+        opacity: 0.76
+      }).bindTooltip(`Difficulty ${segment.score.toFixed(1)}/10 · ${displayLabel(segment.label)}`).addTo(terrainLayer);
+    }
+  }
+
+  function iconForWaypoint(type: TrailMapWaypoint['type']): { color: string; fill: string; radius: number } {
+    if (type === 'water') return { color: '#075985', fill: '#38bdf8', radius: 4.5 };
+    if (type === 'town') return { color: '#7c2d12', fill: '#fb923c', radius: 5.5 };
+    if (type === 'road') return { color: '#334155', fill: '#cbd5e1', radius: 4 };
+    if (type === 'summit' || type === 'vista') return { color: '#365314', fill: '#bef264', radius: 4.5 };
+    if (type === 'campsite') return { color: '#78350f', fill: '#facc15', radius: 4.5 };
+    return { color: '#422006', fill: '#f59e0b', radius: 5 };
+  }
+
+  function visibleWaypoints(): TrailMapWaypoint[] {
+    if (!pack) return [];
+    const radius = 36;
+    const near = (list: TrailMapWaypoint[], max = 80) => list
+      .filter((point) => Math.abs(point.mile - selectedMile) <= radius)
+      .sort((a, b) => Math.abs(a.mile - selectedMile) - Math.abs(b.mile - selectedMile))
+      .slice(0, max);
+
+    if (placeMode === 'access') return [...near(pack.waypoints.roads, 95), ...near(pack.waypoints.towns, 28)];
+    if (placeMode === 'camp') return [...near(pack.waypoints.shelters, 55), ...near(pack.waypoints.campsites, 60), ...near(pack.waypoints.water, 70)];
+    if (placeMode === 'view') return [...near(pack.waypoints.summits, 55), ...near(pack.waypoints.vistas, 55)];
+    return [...near(pack.waypoints.shelters, 45), ...near(pack.waypoints.water, 65), ...near(pack.waypoints.towns, 22)];
+  }
+
+  function addPlacesLayer() {
+    clearLayer(placesLayer);
+    if (!L || !placesLayer) return;
+    for (const point of visibleWaypoints()) {
+      const icon = iconForWaypoint(point.type);
+      L.circleMarker([point.lat, point.lon], {
+        radius: icon.radius,
+        color: icon.color,
+        fillColor: icon.fill,
+        fillOpacity: 0.86,
+        weight: 1.4
+      })
+        .bindPopup(`<b>${point.name}</b><br/>Mile ${point.mile.toFixed(1)}${point.detail ? `<br/>${point.detail}` : ''}<br/><small>${point.confidence}</small>`)
+        .addTo(placesLayer);
+    }
+  }
+
+  function samplePoints(points: TrailMapPoint[], maxCount: number): TrailMapPoint[] {
+    if (points.length <= maxCount) return points;
+    const step = Math.ceil(points.length / maxCount);
+    return points.filter((_, index) => index % step === 0 || index === points.length - 1);
+  }
+
+  function addTrackerLayer(recenter = false) {
+    clearLayer(trackerLayer);
+    if (!pack || !L || !trackerLayer) return;
+    const path = history.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon));
+
+    if (path.length >= 2) {
+      L.polyline(path.map((point) => [point.lat, point.lon]), {
+        color: '#2563eb',
+        weight: 4,
+        opacity: 0.86,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(trackerLayer);
+    }
+
+    for (const point of samplePoints(path, 260)) {
+      L.circleMarker([point.lat, point.lon], {
+        radius: 3,
+        color: '#172554',
+        fillColor: '#60a5fa',
+        fillOpacity: 0.9,
+        weight: 1
+      }).bindTooltip(timeLabel(point.observedAt)).addTo(trackerLayer);
+    }
+
+    if (currentPoint) {
+      L.marker([currentPoint.lat, currentPoint.lon], {
+        icon: L.divIcon({
+          className: 'trail-current-pin',
+          html: '<span></span>',
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
+        })
+      }).bindPopup(`<b>HoggCountry</b><br/>Mile ${fmt(currentPoint.mile, 1)}<br/>${timeLabel(currentPoint.observedAt)}`).addTo(trackerLayer);
+    }
+
+    if (selectedPoint) {
+      selectedMarker = L.circleMarker([selectedPoint.lat, selectedPoint.lon], {
+        radius: 9,
+        color: '#fff7ed',
+        fillColor: '#ea580c',
+        fillOpacity: 0.96,
+        weight: 3
+      }).bindPopup(`<b>Selected point</b><br/>Mile ${fmt(selectedPoint.mile, 1)}<br/>${timeLabel(selectedPoint.observedAt)}`).addTo(trackerLayer);
+
+      if (recenter) {
+        map.setView([selectedPoint.lat, selectedPoint.lon], Math.max(map.getZoom(), 11), {
+          animate: true,
+          duration: 0.28
+        });
+      }
+    }
+  }
+
+  function fitInitialView() {
+    if (!map || !L || !pack) return;
+    if (currentPoint) {
+      map.setView([currentPoint.lat, currentPoint.lon], 11);
+      return;
+    }
+
+    const bounds = L.latLngBounds([]);
+    for (const segment of pack.route.segments) {
+      for (const point of segment) bounds.extend(point);
+    }
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [28, 28] });
+  }
+
+  function renderAll(recenter = false) {
+    addRouteLayer();
+    addMileLayer();
+    addTerrainLayer();
+    addPlacesLayer();
+    addTrackerLayer(recenter);
+    lastRenderedTerrainMode = terrainMode;
+    lastRenderedPlaceMode = placeMode;
+    lastRenderedMile = selectedMile;
+  }
+
+  async function loadPack(recenter = false) {
+    loading = true;
+    errorMessage = '';
+
+    try {
+      const response = await fetch(`${endpoint}${endpoint.includes('?') ? '&' : '?'}limit=1600`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`Map pack returned ${response.status}`);
+      pack = await response.json() as TrailMapPack;
+      selectedHistoryIndex = Math.max(0, (pack.tracker.history.length || 1) - 1);
+      renderAll(recenter);
+      fitInitialView();
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : 'Could not load the map pack.';
+    } finally {
+      loading = false;
+    }
+  }
+
+  function recenterOnSelected() {
+    if (!selectedPoint || !map) return;
+    map.setView([selectedPoint.lat, selectedPoint.lon], Math.max(map.getZoom(), 12), {
+      animate: true,
+      duration: 0.25
+    });
+  }
+
+  onMount(async () => {
+    const leaflet = await import('leaflet');
+    L = leaflet.default ?? leaflet;
+    if (!host) return;
+
+    map = L.map(host, {
+      zoomControl: false,
+      attributionControl: false,
+      preferCanvas: true
+    });
+
+    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17,
+      attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap'
+    }).addTo(map);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    routeLayer = layerGroup();
+    terrainLayer = layerGroup();
+    placesLayer = layerGroup();
+    mileLayer = layerGroup();
+    trackerLayer = layerGroup();
+    map.setView([39, -76], 5);
+
+    await loadPack(true);
+  });
+
+  onDestroy(() => {
+    if (map) {
+      map.remove();
+      map = null;
+    }
+  });
+
+  $effect(() => {
+    if (!map || !pack) return;
+    if (terrainMode !== lastRenderedTerrainMode) {
+      addTerrainLayer();
+      lastRenderedTerrainMode = terrainMode;
+    }
+  });
+
+  $effect(() => {
+    if (!map || !pack) return;
+    if (placeMode !== lastRenderedPlaceMode || Math.abs(selectedMile - lastRenderedMile) >= 1) {
+      addPlacesLayer();
+      lastRenderedPlaceMode = placeMode;
+      lastRenderedMile = selectedMile;
+    }
+  });
+
+  $effect(() => {
+    if (!map || !pack) return;
+    void selectedHistoryIndex;
+    addTrackerLayer(false);
+  });
+</script>
+
+<section class="trail-map-shell" class:publicRoute aria-label={title}>
+  <div class="map-host" bind:this={host}></div>
+  <div class="map-shade" aria-hidden="true"></div>
+
+  <header class="map-hud map-hud-top">
+    <div class="identity">
+      <a class="back-link" href={appMode ? '/app' : '/'} aria-label="Back">←</a>
+      <div>
+        <p class="eyebrow">{title}</p>
+        <h1>{currentPoint ? `Mile ${fmt(currentPoint.mile, 1)}` : 'Loading trail signal'}</h1>
+      </div>
+    </div>
+
+    <div class="signal">
+      <span class="signal-dot" class:live={Boolean(currentPoint)}></span>
+      <span>{currentPoint ? timeLabel(currentPoint.observedAt) : loading ? 'Loading' : 'No signal'}</span>
+    </div>
+  </header>
+
+  <aside class="map-hud mode-panel" aria-label="Map layers">
+    <div class="mode-group">
+      <span>Terrain</span>
+      <button class:active={terrainMode === 'difficulty'} type="button" onclick={() => (terrainMode = 'difficulty')}>Diff</button>
+      <button class:active={terrainMode === 'grade'} type="button" onclick={() => (terrainMode = 'grade')}>Grade</button>
+      <button class:active={terrainMode === 'rockiness'} type="button" onclick={() => (terrainMode = 'rockiness')}>Rock</button>
+    </div>
+    {#if terrainMode === 'difficulty'}
+      <div class="difficulty-legend" aria-label="Difficulty color key">
+        <span><i class="cruise"></i>Cruise</span>
+        <span><i class="steady"></i>Steady</span>
+        <span><i class="hard"></i>Hard</span>
+        <span><i class="severe"></i>Severe</span>
+      </div>
+    {/if}
+    <div class="mode-group">
+      <span>Places</span>
+      <button class:active={placeMode === 'core'} type="button" onclick={() => (placeMode = 'core')}>Core</button>
+      <button class:active={placeMode === 'access'} type="button" onclick={() => (placeMode = 'access')}>Roads</button>
+      <button class:active={placeMode === 'camp'} type="button" onclick={() => (placeMode = 'camp')}>Camp</button>
+      <button class:active={placeMode === 'view'} type="button" onclick={() => (placeMode = 'view')}>Views</button>
+    </div>
+    <button class="refresh" type="button" onclick={() => loadPack(true)} disabled={loading}>{loading ? '...' : 'Refresh'}</button>
+  </aside>
+
+  <section class="map-hud detail-panel" aria-label="Trail detail">
+    {#if errorMessage}
+      <div class="error">{errorMessage}</div>
+    {:else}
+      <div class="detail-grid">
+        <div class="metric primary">
+          <span>Selected</span>
+          <strong>mi {fmt(selectedMile, 1)}</strong>
+          <small>{selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
+        </div>
+        <div class={`metric difficulty ${selectedDifficultyClass}`}>
+          <span>Difficulty</span>
+          <strong>{selectedDifficulty ? `${fmt(selectedDifficulty.score, 1)}/10` : '--'}</strong>
+          <small>{displayLabel(selectedDifficulty?.label)}</small>
+        </div>
+        <div class="metric">
+          <span>Elevation</span>
+          <strong>{selectedElevation ? `${fmt(selectedElevation.elevationFt)} ft` : '--'}</strong>
+          <small>{selectedElevation?.state || 'USGS screen'}</small>
+        </div>
+        <div class="metric">
+          <span>Grade</span>
+          <strong>{selectedTerrain ? `${fmt(selectedTerrain.maxGradePercent)}%` : '--'}</strong>
+          <small>{selectedTerrain ? `${fmt(selectedTerrain.gainFt)} ft gain / ${fmt(selectedTerrain.lossFt)} ft loss` : 'nearest mile'}</small>
+        </div>
+        <div class="metric">
+          <span>Rock</span>
+          <strong>{selectedRockiness ? `${fmt(selectedRockiness.score, 1)}/10` : '--'}</strong>
+          <small>{displayLabel(selectedRockiness?.label)}</small>
+        </div>
+      </div>
+
+      {#if history.length > 1}
+        <div class="history-row">
+          <button type="button" onclick={() => (selectedHistoryIndex = Math.max(0, selectedHistoryIndex - 1))}>−</button>
+          <input
+            type="range"
+            min="0"
+            max={history.length - 1}
+            step="1"
+            bind:value={selectedHistoryIndex}
+            aria-label="Historical Garmin point"
+          />
+          <button type="button" onclick={() => (selectedHistoryIndex = Math.min(history.length - 1, selectedHistoryIndex + 1))}>+</button>
+          <button class="center" type="button" onclick={recenterOnSelected}>Center</button>
+        </div>
+      {/if}
+
+      <div class="profile-row">
+        <svg viewBox="0 0 340 92" role="img" aria-label="Elevation profile around selected mile">
+          {#if profileD}
+            <path class="profile-fill" d={`${profileD} L340 92 L0 92 Z`}></path>
+            <path class="profile-line" d={profileD}></path>
+            <line class="profile-cursor" x1={profileMarkerX(elevationWindow, selectedMile)} x2={profileMarkerX(elevationWindow, selectedMile)} y1="0" y2="92"></line>
+          {/if}
+        </svg>
+      </div>
+
+      <div class="next-grid">
+        <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 12)}>
+          <span>Shelter</span><strong>{distanceAhead(nextShelter)}</strong><small>{nextShelter?.name ?? '--'}</small>
+        </button>
+        <button type="button" onclick={() => nextWater && map?.setView([nextWater.lat, nextWater.lon], 12)}>
+          <span>Water</span><strong>{distanceAhead(nextWater)}</strong><small>{nextWater?.name ?? '--'}</small>
+        </button>
+        <button type="button" onclick={() => nextTown && map?.setView([nextTown.lat, nextTown.lon], 11)}>
+          <span>Town</span><strong>{distanceAhead(nextTown)}</strong><small>{nextTown?.name ?? '--'}</small>
+        </button>
+        <button type="button" onclick={() => nextRoad && map?.setView([nextRoad.lat, nextRoad.lon], 12)}>
+          <span>Road</span><strong>{distanceAhead(nextRoad)}</strong><small>{nextRoad?.name ?? '--'}</small>
+        </button>
+      </div>
+
+      <div class="action-row">
+        {#if appMode}
+          <a href={`/app/scout?prompt=${encodeURIComponent(scoutPrompt)}`}>Ask Scout</a>
+        {:else}
+          <a href="/app/map">Open in Scout</a>
+        {/if}
+        <span>{pack ? `${pack.terrain.elevation.length.toLocaleString()} elevation points · ${pack.terrain.rockiness.length.toLocaleString()} rockiness miles` : ''}</span>
+      </div>
+    {/if}
+  </section>
+
+  <div class="map-credit">OpenTopoMap · OSM · USGS 3DEP · Scout RC1</div>
+</section>
+
+<style>
+  :global(.public-shell:has(.trail-map-shell.publicRoute)) {
+    background: #10130f;
+  }
+
+  :global(.public-shell:has(.trail-map-shell.publicRoute) #site-header),
+  :global(.public-shell:has(.trail-map-shell.publicRoute) .public-meta-footer),
+  :global(.public-shell:has(.trail-map-shell.publicRoute) #version-stamp) {
+    display: none;
+  }
+
+  :global(body:has(.trail-map-shell.publicRoute)) {
+    overflow: hidden;
+  }
+
+  :global(.trail-current-pin) {
+    background: transparent;
+    border: none;
+  }
+
+  :global(.trail-current-pin span) {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid #fff7ed;
+    border-radius: 999px;
+    background: #dc2626;
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0.2), 0 10px 28px rgba(0, 0, 0, 0.35);
+  }
+
+  .trail-map-shell {
+    position: relative;
+    width: min(100vw, 100%);
+    height: calc(100svh - 84px);
+    min-height: 680px;
+    overflow: hidden;
+    border-radius: 0;
+    background: #10130f;
+    color: #fffdf8;
+  }
+
+  .trail-map-shell.publicRoute {
+    width: 100vw;
+    height: 100svh;
+    min-height: 100svh;
+  }
+
+  :global(.site-main .container > .trail-map-shell) {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
+
+  .map-host,
+  .map-shade {
+    position: absolute;
+    inset: 0;
+  }
+
+  .map-host {
+    z-index: 0;
+  }
+
+  .map-shade {
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(8, 13, 9, 0.62), rgba(8, 13, 9, 0.05) 30%, rgba(8, 13, 9, 0.18) 62%, rgba(8, 13, 9, 0.72)),
+      radial-gradient(circle at 0% 100%, rgba(4, 10, 6, 0.58), transparent 42%);
+  }
+
+  .map-hud {
+    position: absolute;
+    z-index: 2;
+    border: 1px solid rgba(255, 253, 248, 0.14);
+    background: rgba(20, 28, 22, 0.78);
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(14px);
+  }
+
+  .map-hud-top {
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: max(0.75rem, env(safe-area-inset-left));
+    right: max(0.75rem, env(safe-area-inset-right));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-radius: 18px;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .identity {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 0.72rem;
+  }
+
+  .back-link,
+  .mode-group button,
+  .refresh,
+  .history-row button,
+  .next-grid button,
+  .action-row a {
+    border: 1px solid rgba(255, 253, 248, 0.16);
+    color: #fffdf8;
+    background: rgba(255, 253, 248, 0.08);
+    text-decoration: none;
+  }
+
+  .back-link {
+    display: grid;
+    place-items: center;
+    width: 2.55rem;
+    height: 2.55rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    font-size: 1.3rem;
+    font-weight: 900;
+  }
+
+  .eyebrow {
+    margin: 0 0 0.08rem;
+    color: #d9f99d;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0;
+    overflow: hidden;
+    color: #fffdf8;
+    font-size: clamp(1.55rem, 4vw, 2.8rem);
+    line-height: 0.95;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .signal {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 7rem;
+    gap: 0.45rem;
+    color: rgba(255, 253, 248, 0.82);
+    font-size: 0.84rem;
+    font-weight: 800;
+    text-align: right;
+  }
+
+  .signal-dot {
+    width: 0.72rem;
+    height: 0.72rem;
+    border-radius: 999px;
+    background: #64748b;
+  }
+
+  .signal-dot.live {
+    background: #22c55e;
+    box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.15);
+  }
+
+  .mode-panel {
+    top: 6.3rem;
+    right: max(0.75rem, env(safe-area-inset-right));
+    display: grid;
+    width: min(17rem, calc(100vw - 1.5rem));
+    gap: 0.65rem;
+    border-radius: 18px;
+    padding: 0.68rem;
+  }
+
+  .mode-group {
+    display: grid;
+    grid-template-columns: 4.2rem repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .mode-group:nth-of-type(2) {
+    grid-template-columns: 4.2rem repeat(4, minmax(0, 1fr));
+  }
+
+  .mode-group span {
+    color: rgba(255, 253, 248, 0.68);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mode-group button,
+  .refresh,
+  .history-row button {
+    min-height: 2rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .mode-group button.active {
+    border-color: rgba(217, 249, 157, 0.55);
+    background: rgba(217, 249, 157, 0.18);
+    color: #ecfccb;
+  }
+
+  .difficulty-legend {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.3rem;
+  }
+
+  .difficulty-legend span {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.25rem;
+    color: rgba(255, 253, 248, 0.7);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.58rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .difficulty-legend i {
+    width: 0.5rem;
+    height: 0.5rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+  }
+
+  .difficulty-legend .cruise,
+  .metric.difficulty.cruise {
+    background: rgba(21, 128, 61, 0.34);
+  }
+
+  .difficulty-legend .steady,
+  .metric.difficulty.steady {
+    background: rgba(202, 138, 4, 0.3);
+  }
+
+  .difficulty-legend .hard,
+  .metric.difficulty.hard {
+    background: rgba(234, 88, 12, 0.32);
+  }
+
+  .difficulty-legend .severe,
+  .metric.difficulty.severe {
+    background: rgba(153, 27, 27, 0.34);
+  }
+
+  .refresh:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+
+  .detail-panel {
+    left: max(0.75rem, env(safe-area-inset-left));
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    display: grid;
+    gap: 0.72rem;
+    border-radius: 22px;
+    padding: clamp(0.75rem, 2vw, 1rem);
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1.15fr repeat(4, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .metric {
+    min-width: 0;
+    border-radius: 16px;
+    background: rgba(255, 253, 248, 0.08);
+    padding: 0.65rem;
+  }
+
+  .metric.primary {
+    background: rgba(217, 119, 6, 0.22);
+  }
+
+  .metric span,
+  .next-grid span {
+    display: block;
+    color: rgba(255, 253, 248, 0.62);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .metric strong {
+    display: block;
+    overflow: hidden;
+    margin: 0.12rem 0;
+    font-size: clamp(1.15rem, 3vw, 1.75rem);
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .metric small,
+  .next-grid small,
+  .action-row span {
+    display: block;
+    overflow: hidden;
+    color: rgba(255, 253, 248, 0.64);
+    font-size: 0.77rem;
+    font-weight: 740;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .history-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .history-row input {
+    width: 100%;
+    accent-color: #f97316;
+  }
+
+  .history-row .center {
+    padding: 0 0.8rem;
+  }
+
+  .profile-row {
+    overflow: hidden;
+    border-radius: 16px;
+    background: rgba(255, 253, 248, 0.07);
+    padding: 0.45rem 0.55rem 0.25rem;
+  }
+
+  .profile-row svg {
+    display: block;
+    width: 100%;
+    height: 92px;
+  }
+
+  .profile-fill {
+    fill: rgba(217, 249, 157, 0.12);
+  }
+
+  .profile-line {
+    fill: none;
+    stroke: #d9f99d;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+  }
+
+  .profile-cursor {
+    stroke: #fb923c;
+    stroke-dasharray: 4 4;
+    stroke-width: 2;
+  }
+
+  .next-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .next-grid button {
+    min-width: 0;
+    border-radius: 16px;
+    cursor: pointer;
+    padding: 0.62rem;
+    text-align: left;
+  }
+
+  .next-grid strong {
+    display: block;
+    margin: 0.08rem 0;
+    color: #fff7ed;
+    font-size: 1.1rem;
+  }
+
+  .action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .action-row a {
+    border-radius: 999px;
+    background: #fff7ed;
+    color: #1c1917;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    padding: 0.68rem 1rem;
+    text-transform: uppercase;
+  }
+
+  .error {
+    border-radius: 16px;
+    background: rgba(127, 29, 29, 0.82);
+    color: #fee2e2;
+    font-weight: 850;
+    padding: 0.8rem;
+  }
+
+  .map-credit {
+    position: absolute;
+    z-index: 2;
+    top: 19.6rem;
+    right: max(0.75rem, env(safe-area-inset-right));
+    border-radius: 999px;
+    background: rgba(17, 24, 39, 0.58);
+    color: rgba(255, 253, 248, 0.68);
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.35rem 0.55rem;
+    z-index: 2;
+  }
+
+  @media (max-width: 820px) {
+    .trail-map-shell,
+    .trail-map-shell.publicRoute {
+      height: 100svh;
+      min-height: 100svh;
+    }
+
+    .map-hud-top {
+      align-items: flex-start;
+      padding-right: 0.7rem;
+    }
+
+    .signal {
+      min-width: 5.5rem;
+      font-size: 0.72rem;
+    }
+
+    .mode-panel {
+      top: 5.85rem;
+      left: max(0.75rem, env(safe-area-inset-left));
+      right: max(0.75rem, env(safe-area-inset-right));
+      width: auto;
+    }
+
+    .detail-panel {
+      max-height: 49svh;
+      overflow-y: auto;
+    }
+
+    .detail-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .next-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .map-credit {
+      display: none;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .map-hud-top {
+      gap: 0.45rem;
+    }
+
+    .back-link {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+
+    h1 {
+      max-width: 9.5rem;
+      font-size: 1.45rem;
+    }
+
+    .mode-group,
+    .mode-group:nth-of-type(2) {
+      grid-template-columns: 1fr;
+    }
+
+    .mode-group {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .mode-group span {
+      grid-column: 1 / -1;
+    }
+
+    .detail-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .history-row {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .history-row .center {
+      grid-column: 1 / -1;
+    }
+
+    .action-row {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>
