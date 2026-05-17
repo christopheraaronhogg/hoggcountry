@@ -222,7 +222,11 @@
         const res = await fetch('/.netlify/functions/trail-updates?limit=50', { headers: { Accept: 'application/json' } });
         if (!res.ok) throw new Error(`trail-updates failed: ${res.status}`);
         const payload = await res.json();
-        trailUpdates = Array.isArray(payload?.updates) ? payload.updates : [];
+        trailUpdates = Array.isArray(payload?.updates)
+          ? payload.updates
+          : Array.isArray(payload?.data?.updates)
+            ? payload.data.updates
+            : [];
         if (heroStoryIndex >= trailUpdates.length) heroStoryIndex = 0;
       } catch (e) {
         trailUpdatesError = e?.message || String(e);
