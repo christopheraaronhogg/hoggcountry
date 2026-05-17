@@ -14,9 +14,14 @@
   let isOffline = $state(false);
 
   const publicToolsLinks = [
+    { href: '/updates', label: 'Trail Updates', external: false },
     { href: '/guide', label: 'Field Guide', external: false },
     { href: '/videos', label: 'Videos', external: false },
-    { href: '/at-map', label: 'AT Map', external: false }
+    { href: '/trips', label: 'Trips', external: false },
+    { href: '/blog', label: 'Blog', external: false },
+    { href: '/at-map', label: 'AT Map', external: false },
+    { href: '/tools', label: 'Trail Tools', external: false },
+    { href: '/login', label: 'Account', external: false }
   ];
 
   function closeTools() {
@@ -56,6 +61,17 @@
   }
 </script>
 
+<svelte:head>
+  <link rel="sitemap" href="/sitemap-index.xml" />
+  <link rel="alternate" type="application/rss+xml" title="Hogg Country" href="/rss.xml" />
+  <link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hogg Country" />
+  <meta property="og:url" content={`${page.url.origin}${page.url.pathname}`} />
+  <meta property="og:image" content={`${page.url.origin}/logo.png`} />
+  <meta name="twitter:card" content="summary_large_image" />
+</svelte:head>
+
 <svelte:window onscroll={updateGuideHeaderState} />
 
 {#if page.url.pathname.startsWith('/app')}
@@ -92,6 +108,10 @@
 
         <div class="nav-controls">
           <div class="nav-ctas" aria-label="Quick links">
+            <a href="/updates" class="guide-link" class:is-active={page.url.pathname.startsWith('/updates')}>
+              <span>Updates</span>
+            </a>
+
             <a href="/guide" class="guide-link" class:is-active={page.url.pathname.startsWith('/guide')}>
               <span class="guide-link__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -170,7 +190,7 @@
             <a
               href={link.href}
               class="mobile-link"
-              class:is-active={!link.external && page.url.pathname.startsWith('/guide') && link.href === '/guide'}
+              class:is-active={!link.external && page.url.pathname.startsWith(link.href)}
               target={link.external ? '_blank' : undefined}
               rel={link.external ? 'noopener noreferrer' : undefined}
               onclick={closeTools}

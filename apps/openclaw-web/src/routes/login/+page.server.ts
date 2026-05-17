@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { loadDadVideos } from '$lib/server/dad';
+import { publicApiBase } from '$lib/server/public-api';
 
 export const load: PageServerLoad = async () => {
   return {
-    videos: await loadDadVideos(18)
+    apiBase: publicApiBase()
   };
 };

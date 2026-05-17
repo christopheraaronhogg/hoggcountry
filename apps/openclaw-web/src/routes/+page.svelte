@@ -13,4 +13,4 @@
   />
 </svelte:head>
 
-<ProtoF videos={data.videos} cutoverSafe={true} />
+<ProtoF videos={data.videos} />

@@ -44,7 +44,17 @@ const APP_RUNTIME_PATHS = [
   '/app-api/scout/daily-brief',
   '/app-api/claw',
   '/app-api/claw/daily-brief',
-  '/app-api/offline-pack'
+  '/app-api/offline-pack',
+  '/updates',
+  '/trips',
+  '/blog',
+  '/tags',
+  '/tools',
+  '/about',
+  '/login',
+  '/admin',
+  '/rss.xml',
+  '/sitemap.xml'
 ];
 
 function isRuntimePath(pathname: string): boolean {
