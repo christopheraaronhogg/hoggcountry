@@ -80,6 +80,44 @@ function normalizeText(value: unknown, fallback = ''): string {
   return typeof value === 'string' && value.trim() !== '' ? value.replace(/\s+/gu, ' ').trim() : fallback;
 }
 
+function objectRecord(value: unknown): GenericRecord | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as GenericRecord : null;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function movementDifficultyLabel(score: number): string {
+  if (score >= 8.5) return 'severe';
+  if (score >= 7) return 'hard';
+  if (score >= 5) return 'steady';
+  return 'cruise';
+}
+
+function movementDifficultyFrom(row: GenericRecord, startMile: number, endMile: number): number | null {
+  const inputs = objectRecord(row.inputs) ?? row;
+  const rowDistanceMiles = normalizeNumber(row.distance_miles);
+  const spanDistanceMiles = Math.abs(endMile - startMile);
+  const distanceMiles = Math.max(1, rowDistanceMiles ?? (spanDistanceMiles > 0 ? spanDistanceMiles : 10));
+  const gainFt = normalizeNumber(inputs.elevation_gain_ft);
+  const lossFt = normalizeNumber(inputs.elevation_loss_ft) ?? 0;
+  const maxGradePercent = normalizeNumber(inputs.max_grade_percent) ?? 0;
+  const rockScore = normalizeNumber(inputs.rockiness_v2_1_score_avg)
+    ?? normalizeNumber(inputs.rockiness_v2_score_avg)
+    ?? normalizeNumber(inputs.tread_score_avg)
+    ?? 0;
+
+  if (gainFt === null) return null;
+
+  const ascentScore = clamp((gainFt / distanceMiles / 350) * 10, 0, 10);
+  const descentScore = clamp((lossFt / distanceMiles / 700) * 10, 0, 10);
+  const gradeScore = clamp((maxGradePercent / 24) * 10, 0, 10);
+  const treadScore = clamp(rockScore, 0, 10);
+
+  return clamp((ascentScore * 0.46) + (gradeScore * 0.24) + (treadScore * 0.2) + (descentScore * 0.1), 0, 10);
+}
+
 function repoRootCandidates(relativePath: string): string[] {
   const normalized = relativePath.replace(/^\/+/u, '');
   const roots = [process.cwd(), dirname(process.cwd())];
@@ -303,14 +341,14 @@ async function loadTerrain() {
     .map((row): TrailMapDifficultySegment | null => {
       const startMile = mileFrom(row, ['start_mile_nobo_global_est', 'start_mile_nobo']);
       const endMile = mileFrom(row, ['end_mile_nobo_global_est', 'end_mile_nobo']);
-      const score = normalizeNumber(row.difficulty_score_0_10);
+      const score = startMile !== null && endMile !== null ? movementDifficultyFrom(row, startMile, endMile) : null;
       if (startMile === null || endMile === null || score === null) return null;
       return {
         startMile,
         endMile,
-        score,
-        label: normalizeText(row.difficulty_label, 'screening'),
-        confidence: normalizeText(row.confidence, 'model screening')
+        score: Math.round(score * 10) / 10,
+        label: movementDifficultyLabel(score),
+        confidence: 'terrain_only_screening_not_field_verified'
       };
     })
     .filter((segment): segment is TrailMapDifficultySegment => segment !== null);
@@ -399,6 +437,7 @@ async function loadReferencePack(): Promise<Omit<TrailMapPack, 'generatedAt' | '
         'Garmin points come from MapShare/Laravel history when available.',
         'Elevation is model-derived USGS 3DEP/EPQS screening data.',
         'Rockiness is Scout Rockiness V2.1 model output, not field verification.',
+        'Difficulty is a movement-only score weighted toward ascent, steep grade, rockiness, then descent.',
         'Open route miles are generated from an OSM-derived route candidate and remain visually useful but not official guidebook mileage.'
       ]
     }));

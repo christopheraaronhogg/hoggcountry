@@ -31,6 +31,7 @@
   let terrainMode = $state<TerrainMode>('difficulty');
   let placeMode = $state<PlaceMode>('core');
   let selectedHistoryIndex = $state(0);
+  let detailsOpen = $state(false);
   let lastRenderedTerrainMode: TerrainMode | null = null;
   let lastRenderedPlaceMode: PlaceMode | null = null;
   let lastRenderedMile = -1;
@@ -550,83 +551,90 @@
     {#if errorMessage}
       <div class="error">{errorMessage}</div>
     {:else}
-      <div class="detail-grid">
-        <div class="metric primary">
-          <span>Selected</span>
-          <strong>mi {fmt(selectedMile, 1)}</strong>
-          <small>{selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
+      <div class="detail-summary">
+        <div class="detail-grid">
+          <div class="metric primary">
+            <span>Selected</span>
+            <strong>mi {fmt(selectedMile, 1)}</strong>
+            <small>{selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
+          </div>
+          <div class={`metric difficulty ${selectedDifficultyClass}`}>
+            <span>Difficulty</span>
+            <strong>{selectedDifficulty ? `${fmt(selectedDifficulty.score, 1)}/10` : '--'}</strong>
+            <small>{displayLabel(selectedDifficulty?.label)}</small>
+          </div>
+          <div class="metric">
+            <span>Elevation</span>
+            <strong>{selectedElevation ? `${fmt(selectedElevation.elevationFt)} ft` : '--'}</strong>
+            <small>{selectedElevation?.state || 'USGS screen'}</small>
+          </div>
+          <div class="metric">
+            <span>Grade</span>
+            <strong>{selectedTerrain ? `${fmt(selectedTerrain.maxGradePercent)}%` : '--'}</strong>
+            <small>{selectedTerrain ? `${fmt(selectedTerrain.gainFt)} ft up / ${fmt(selectedTerrain.lossFt)} ft down` : 'nearest mile'}</small>
+          </div>
+          <div class="metric">
+            <span>Rock</span>
+            <strong>{selectedRockiness ? `${fmt(selectedRockiness.score, 1)}/10` : '--'}</strong>
+            <small>{displayLabel(selectedRockiness?.label)}</small>
+          </div>
         </div>
-        <div class={`metric difficulty ${selectedDifficultyClass}`}>
-          <span>Difficulty</span>
-          <strong>{selectedDifficulty ? `${fmt(selectedDifficulty.score, 1)}/10` : '--'}</strong>
-          <small>{displayLabel(selectedDifficulty?.label)}</small>
-        </div>
-        <div class="metric">
-          <span>Elevation</span>
-          <strong>{selectedElevation ? `${fmt(selectedElevation.elevationFt)} ft` : '--'}</strong>
-          <small>{selectedElevation?.state || 'USGS screen'}</small>
-        </div>
-        <div class="metric">
-          <span>Grade</span>
-          <strong>{selectedTerrain ? `${fmt(selectedTerrain.maxGradePercent)}%` : '--'}</strong>
-          <small>{selectedTerrain ? `${fmt(selectedTerrain.gainFt)} ft gain / ${fmt(selectedTerrain.lossFt)} ft loss` : 'nearest mile'}</small>
-        </div>
-        <div class="metric">
-          <span>Rock</span>
-          <strong>{selectedRockiness ? `${fmt(selectedRockiness.score, 1)}/10` : '--'}</strong>
-          <small>{displayLabel(selectedRockiness?.label)}</small>
-        </div>
+        <button class="details-toggle" type="button" aria-expanded={detailsOpen} onclick={() => (detailsOpen = !detailsOpen)}>
+          {detailsOpen ? 'Less' : 'More'}
+        </button>
       </div>
 
-      {#if history.length > 1}
-        <div class="history-row">
-          <button type="button" onclick={() => (selectedHistoryIndex = Math.max(0, selectedHistoryIndex - 1))}>−</button>
-          <input
-            type="range"
-            min="0"
-            max={history.length - 1}
-            step="1"
-            bind:value={selectedHistoryIndex}
-            aria-label="Historical Garmin point"
-          />
-          <button type="button" onclick={() => (selectedHistoryIndex = Math.min(history.length - 1, selectedHistoryIndex + 1))}>+</button>
-          <button class="center" type="button" onclick={recenterOnSelected}>Center</button>
+      {#if detailsOpen}
+        {#if history.length > 1}
+          <div class="history-row">
+            <button type="button" onclick={() => (selectedHistoryIndex = Math.max(0, selectedHistoryIndex - 1))}>−</button>
+            <input
+              type="range"
+              min="0"
+              max={history.length - 1}
+              step="1"
+              bind:value={selectedHistoryIndex}
+              aria-label="Historical Garmin point"
+            />
+            <button type="button" onclick={() => (selectedHistoryIndex = Math.min(history.length - 1, selectedHistoryIndex + 1))}>+</button>
+            <button class="center" type="button" onclick={recenterOnSelected}>Center</button>
+          </div>
+        {/if}
+
+        <div class="profile-row">
+          <svg viewBox="0 0 340 92" role="img" aria-label="Elevation profile around selected mile">
+            {#if profileD}
+              <path class="profile-fill" d={`${profileD} L340 92 L0 92 Z`}></path>
+              <path class="profile-line" d={profileD}></path>
+              <line class="profile-cursor" x1={profileMarkerX(elevationWindow, selectedMile)} x2={profileMarkerX(elevationWindow, selectedMile)} y1="0" y2="92"></line>
+            {/if}
+          </svg>
+        </div>
+
+        <div class="next-grid">
+          <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 12)}>
+            <span>Shelter</span><strong>{distanceAhead(nextShelter)}</strong><small>{nextShelter?.name ?? '--'}</small>
+          </button>
+          <button type="button" onclick={() => nextWater && map?.setView([nextWater.lat, nextWater.lon], 12)}>
+            <span>Water</span><strong>{distanceAhead(nextWater)}</strong><small>{nextWater?.name ?? '--'}</small>
+          </button>
+          <button type="button" onclick={() => nextTown && map?.setView([nextTown.lat, nextTown.lon], 11)}>
+            <span>Town</span><strong>{distanceAhead(nextTown)}</strong><small>{nextTown?.name ?? '--'}</small>
+          </button>
+          <button type="button" onclick={() => nextRoad && map?.setView([nextRoad.lat, nextRoad.lon], 12)}>
+            <span>Road</span><strong>{distanceAhead(nextRoad)}</strong><small>{nextRoad?.name ?? '--'}</small>
+          </button>
+        </div>
+
+        <div class="action-row">
+          {#if appMode}
+            <a href={`/app/scout?prompt=${encodeURIComponent(scoutPrompt)}`}>Ask Scout</a>
+          {:else}
+            <a href="/app/map">Open in Scout</a>
+          {/if}
+          <span>{pack ? `${pack.terrain.elevation.length.toLocaleString()} elevation points · ${pack.terrain.rockiness.length.toLocaleString()} rockiness miles` : ''}</span>
         </div>
       {/if}
-
-      <div class="profile-row">
-        <svg viewBox="0 0 340 92" role="img" aria-label="Elevation profile around selected mile">
-          {#if profileD}
-            <path class="profile-fill" d={`${profileD} L340 92 L0 92 Z`}></path>
-            <path class="profile-line" d={profileD}></path>
-            <line class="profile-cursor" x1={profileMarkerX(elevationWindow, selectedMile)} x2={profileMarkerX(elevationWindow, selectedMile)} y1="0" y2="92"></line>
-          {/if}
-        </svg>
-      </div>
-
-      <div class="next-grid">
-        <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 12)}>
-          <span>Shelter</span><strong>{distanceAhead(nextShelter)}</strong><small>{nextShelter?.name ?? '--'}</small>
-        </button>
-        <button type="button" onclick={() => nextWater && map?.setView([nextWater.lat, nextWater.lon], 12)}>
-          <span>Water</span><strong>{distanceAhead(nextWater)}</strong><small>{nextWater?.name ?? '--'}</small>
-        </button>
-        <button type="button" onclick={() => nextTown && map?.setView([nextTown.lat, nextTown.lon], 11)}>
-          <span>Town</span><strong>{distanceAhead(nextTown)}</strong><small>{nextTown?.name ?? '--'}</small>
-        </button>
-        <button type="button" onclick={() => nextRoad && map?.setView([nextRoad.lat, nextRoad.lon], 12)}>
-          <span>Road</span><strong>{distanceAhead(nextRoad)}</strong><small>{nextRoad?.name ?? '--'}</small>
-        </button>
-      </div>
-
-      <div class="action-row">
-        {#if appMode}
-          <a href={`/app/scout?prompt=${encodeURIComponent(scoutPrompt)}`}>Ask Scout</a>
-        {:else}
-          <a href="/app/map">Open in Scout</a>
-        {/if}
-        <span>{pack ? `${pack.terrain.elevation.length.toLocaleString()} elevation points · ${pack.terrain.rockiness.length.toLocaleString()} rockiness miles` : ''}</span>
-      </div>
     {/if}
   </section>
 
@@ -736,6 +744,7 @@
   .mode-group button,
   .refresh,
   .history-row button,
+  .details-toggle,
   .next-grid button,
   .action-row a {
     border: 1px solid rgba(255, 253, 248, 0.16);
@@ -832,6 +841,7 @@
 
   .mode-group button,
   .refresh,
+  .details-toggle,
   .history-row button {
     min-height: 2rem;
     border-radius: 999px;
@@ -906,9 +916,16 @@
     right: max(0.75rem, env(safe-area-inset-right));
     bottom: max(0.75rem, env(safe-area-inset-bottom));
     display: grid;
-    gap: 0.72rem;
-    border-radius: 22px;
-    padding: clamp(0.75rem, 2vw, 1rem);
+    gap: 0.55rem;
+    border-radius: 18px;
+    padding: clamp(0.55rem, 1.4vw, 0.8rem);
+  }
+
+  .detail-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    align-items: center;
   }
 
   .detail-grid {
@@ -919,9 +936,9 @@
 
   .metric {
     min-width: 0;
-    border-radius: 16px;
+    border-radius: 13px;
     background: rgba(255, 253, 248, 0.08);
-    padding: 0.65rem;
+    padding: 0.5rem 0.58rem;
   }
 
   .metric.primary {
@@ -942,8 +959,8 @@
   .metric strong {
     display: block;
     overflow: hidden;
-    margin: 0.12rem 0;
-    font-size: clamp(1.15rem, 3vw, 1.75rem);
+    margin: 0.08rem 0;
+    font-size: clamp(1.05rem, 2.3vw, 1.55rem);
     line-height: 1;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -955,11 +972,16 @@
     display: block;
     overflow: hidden;
     color: rgba(255, 253, 248, 0.64);
-    font-size: 0.77rem;
+    font-size: 0.72rem;
     font-weight: 740;
     line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .details-toggle {
+    width: 4.2rem;
+    padding: 0 0.7rem;
   }
 
   .history-row {
@@ -980,15 +1002,15 @@
 
   .profile-row {
     overflow: hidden;
-    border-radius: 16px;
+    border-radius: 13px;
     background: rgba(255, 253, 248, 0.07);
-    padding: 0.45rem 0.55rem 0.25rem;
+    padding: 0.35rem 0.45rem 0.2rem;
   }
 
   .profile-row svg {
     display: block;
     width: 100%;
-    height: 92px;
+    height: 72px;
   }
 
   .profile-fill {
@@ -1017,9 +1039,9 @@
 
   .next-grid button {
     min-width: 0;
-    border-radius: 16px;
+    border-radius: 13px;
     cursor: pointer;
-    padding: 0.62rem;
+    padding: 0.5rem 0.58rem;
     text-align: left;
   }
 
@@ -1027,7 +1049,7 @@
     display: block;
     margin: 0.08rem 0;
     color: #fff7ed;
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .action-row {
@@ -1137,12 +1159,63 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
+    .mode-panel {
+      gap: 0.48rem;
+      padding: 0.52rem;
+    }
+
+    .mode-group {
+      gap: 0.28rem;
+    }
+
+    .mode-group button,
+    .refresh,
+    .details-toggle,
+    .history-row button {
+      min-height: 1.85rem;
+      font-size: 0.66rem;
+    }
+
     .mode-group span {
       grid-column: 1 / -1;
     }
 
+    .detail-panel {
+      gap: 0.42rem;
+      padding: 0.5rem;
+    }
+
+    .detail-summary {
+      gap: 0.42rem;
+    }
+
     .detail-grid {
       grid-template-columns: 1fr 1fr;
+      gap: 0.42rem;
+    }
+
+    .metric {
+      padding: 0.42rem 0.48rem;
+    }
+
+    .metric span,
+    .next-grid span {
+      font-size: 0.58rem;
+    }
+
+    .metric strong {
+      font-size: 1.22rem;
+    }
+
+    .metric small,
+    .next-grid small,
+    .action-row span {
+      font-size: 0.66rem;
+    }
+
+    .details-toggle {
+      width: 3.65rem;
+      padding: 0 0.45rem;
     }
 
     .history-row {
