@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Scout by Hogg Country",
     "subtitle": "Plan AT hikes",
-    "description": "Scout by Hogg Country helps Appalachian Trail hikers plan days, weeks, resupply, and section hikes in ChatGPT using Hogg Country guide content and open-reference trail context. It returns source receipts and caveats for candidate water, shelter, campsite, resupply, terrain, rule, and live-source leads, while clearly separating generated planning help from current field conditions.",
+    "description": "Scout helps Appalachian Trail hikers plan days, weeks, resupply, and section hikes in ChatGPT using curated A.T. guide content and open-reference trail context from Hogg Country. It returns source receipts and caveats for candidate water, shelter, campsite, resupply, terrain, rule, and live-source leads, while clearly separating generated planning help from current field conditions.",
     "category": "TRAVEL"
   },
   "tools": {
@@ -131,11 +131,11 @@
   },
   "test_cases": [
     {
-      "description": "Search Hogg Country trail planning guidance.",
-      "user_prompt": "Find Hogg Country guidance about resupply planning for the early Appalachian Trail.",
+      "description": "Search Appalachian Trail planning guidance.",
+      "user_prompt": "Help me plan resupply for the early Appalachian Trail.",
       "file_attachment_urls": null,
       "tools_triggered": "search",
-      "expected_output": "Returns relevant Hogg Country source leads with titles, excerpts, URLs, and source metadata.",
+      "expected_output": "Returns relevant A.T. planning source leads with titles, excerpts, URLs, and source metadata.",
       "expected_output_url": null
     },
     {
