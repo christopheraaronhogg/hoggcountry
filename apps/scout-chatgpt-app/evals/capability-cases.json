@@ -30,6 +30,33 @@
       "successCriteria": "Uses search, fetches a relevant document id, and distinguishes source leads from live services."
     },
     {
+      "id": "nearby-open-reference",
+      "intent": "I am NOBO around mile 42. What water, shelter, resupply, and terrain leads are near me?",
+      "valueAxis": ["know", "show"],
+      "expectedTools": ["find_nearby_trail_context"],
+      "optionalTools": ["search", "fetch"],
+      "mustNotClaim": ["water is reliable", "water is potable", "shelter space is available", "mileage is official ATC mileage"],
+      "successCriteria": "Returns candidate water/overnight/resupply/terrain records with caveats that generated open-route miles and mapped candidates require confirmation."
+    },
+    {
+      "id": "section-plan-open-reference",
+      "intent": "Build a conservative section plan from NOBO mile 31 to 68 with water, overnight, resupply, and terrain notes.",
+      "valueAxis": ["know", "show"],
+      "expectedTools": ["build_section_plan"],
+      "optionalTools": ["search", "fetch"],
+      "mustNotClaim": ["official guidebook itinerary", "live closures checked", "legal camping confirmed"],
+      "successCriteria": "Chunks the section into day ranges, includes candidate water/overnight/resupply/terrain data, and calls out live/official checks before field reliance."
+    },
+    {
+      "id": "draft-safety-risk-brief",
+      "intent": "Draft a Scout safety risk brief for me around VA mile 860 with the source checks still missing.",
+      "valueAxis": ["know", "show"],
+      "expectedTools": ["draft_scout_document"],
+      "optionalTools": ["find_nearby_trail_context"],
+      "mustNotClaim": ["saved to Scout", "live weather checked", "official alerts are current"],
+      "successCriteria": "Creates a structured draft document only, includes source receipts and open questions, and does not imply persistence or live checks."
+    },
+    {
       "id": "no-brand-awareness",
       "intent": "What can you do for my hike tomorrow?",
       "valueAxis": ["know", "show"],

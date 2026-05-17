@@ -2,20 +2,24 @@
 
 Apps SDK prototype for exposing Hogg Country Scout inside ChatGPT.
 
-This is a focused, read-only first pass. It is intentionally not a mini clone of
-the full trail app; it gives ChatGPT a few reusable Scout powers it can invoke
-inside trail-planning conversations.
+This is a read-only ChatGPT app for bringing Hogg Country Scout context into
+trail-planning conversations. It is intentionally not a mini clone of the field
+runtime; ChatGPT gets source-backed planning and compact visual summaries while
+the Scout/OpenClaw app continues to own offline field use, GPS, notifications,
+and saved device state.
 
-- `search` and `fetch` expose the public Hogg Country guide/corpus as standard ChatGPT knowledge tools.
-- `get_today_brief` renders a compact Scout Today widget.
-- `plan_next_day`, `plan_next_week`, and `find_next_resupply` return deterministic planning scaffolds that ChatGPT can reason over.
+- `search` and `fetch` expose public Hogg Country guide/corpus docs plus the AT open-reference RAG docs as standard ChatGPT knowledge tools.
+- `get_trail_reference_snapshot` reports what datasets Scout can use and the caveats attached to route, water, town, terrain, and live-condition data.
+- `find_nearby_trail_context` pulls candidate water, shelters, campsites, privies, vistas, trailheads, resupply towns, terrain screens, state rules, and live-source pointers around a NOBO mile marker.
+- `get_today_brief`, `plan_next_day`, `plan_next_week`, `find_next_resupply`, `build_section_plan`, and `draft_scout_document` return structured planning outputs and render through the Scout widget.
 
 ## Capability Surface
 
 | Value axis | Scout capability | Current tools |
 | --- | --- | --- |
 | Know | Pull public, source-backed Hogg Country trail context into the conversation. | `search`, `fetch` |
-| Show | Render a compact HUD-style view when structured trail cues beat plain text. | `get_today_brief` |
+| Know | Pull license-aware AT open-reference pack inventory and candidate records. | `get_trail_reference_snapshot`, `find_nearby_trail_context` |
+| Show | Render compact HUD, context, section-plan, resupply, and document views when structured trail cues beat plain text. | `get_today_brief`, `plan_next_day`, `plan_next_week`, `find_next_resupply`, `build_section_plan`, `draft_scout_document` |
 | Do | No mutating field actions yet. Future candidates: save plan, create checklist, subscribe to alerts, send watch notification. | none |
 
 The app should win when the user asks for:
@@ -23,11 +27,21 @@ The app should win when the user asks for:
 - Vague planning help: "Help me think through tomorrow on trail."
 - Specific planning help: "I am NOBO at mile 42, carrying 2.5L, and want a conservative day."
 - Source-backed lookup: "Find the Hogg Country resupply guidance for this section."
+- Candidate-data lookup: "What water, shelter, and terrain leads are ahead of NOBO mile 42?"
+- Section planning: "Build a 3-day plan from NOBO mile 31 to 68."
+- Document drafting: "Draft my safety risk brief for Virginia."
 - Compact visual summary: "Show me the trail HUD for today."
 
 The app should not claim live conditions yet. Weather, closures, water reports,
 town services, device push, and watch notifications are future capabilities that
 need live data/auth before they become field-reliable.
+
+The AT open-reference pack also has explicit limits:
+
+- Generated open-route miles are Scout candidate miles, not official ATC/guidebook miles.
+- Water records are mapped candidates with unknown reliability and potability unless a current licensed source says otherwise.
+- Shelter, campsite, trailhead, vista, privy, and town records are open-data candidates that require current access/service confirmation.
+- Permit, fee, weather, closure, flooding, fire/smoke, bear, and Baxter/Katahdin details require live official checks before field reliance.
 
 ## Design Rules
 
@@ -90,9 +104,16 @@ Refresh the connector after changing tools, metadata, or widget resources.
 
 ## App Shape
 
-Archetype: `vanilla-widget`.
+Archetype: connector-style planning app with a reusable `vanilla-widget`.
 
 The MCP server owns tool descriptions, schemas, and resource registration. The widget is a single static HTML file under `public/` and listens for Apps SDK tool-result notifications.
+
+The app follows current Apps SDK guidance:
+
+- MCP server required at `/mcp`.
+- UI resource served as `text/html;profile=mcp-app`.
+- Tool results return concise `structuredContent`.
+- The widget listens for `ui/notifications/tool-result` through the MCP Apps bridge and uses `window.openai` only as an optional compatibility layer.
 
 ## Evaluation Fixture
 
@@ -105,5 +126,6 @@ Docs followed:
 - https://developers.openai.com/apps-sdk/quickstart
 - https://developers.openai.com/apps-sdk/build/mcp-server
 - https://developers.openai.com/apps-sdk/build/chatgpt-ui
-- https://developers.openai.com/apps-sdk/deploy/submission
 - https://developers.openai.com/apps-sdk/plan/tools
+- https://developers.openai.com/apps-sdk/reference
+- https://developers.openai.com/apps-sdk/deploy

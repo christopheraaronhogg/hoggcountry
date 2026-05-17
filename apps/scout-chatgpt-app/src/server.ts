@@ -2,7 +2,14 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { readFile } from 'node:fs/promises';
 
 import { publicCorpus, searchPublicCorpus, type PublicCorpusEntry } from '@hoggcountry/corpus';
-import type { Direction, ManualProfile, ShelterPreference } from '@hoggcountry/manual-core';
+import {
+  STANDARD_DOCUMENT_SLOTS,
+  standardDocumentSlotForKey,
+  type Direction,
+  type ManualProfile,
+  type ShelterPreference,
+  type StandardDocumentSlotKey,
+} from '@hoggcountry/manual-core';
 import {
   buildPlanLanes,
   buildTodayCards,
@@ -13,11 +20,20 @@ import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@model
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod/v3';
+import {
+  atReferenceCorpus,
+  buildReferenceSnapshot,
+  buildSectionReference,
+  findTrailReferenceContext,
+  REFERENCE_CATEGORIES,
+  type ReferenceCategory,
+} from './at-reference.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 const SITE_ORIGIN = process.env.PUBLIC_SITE_ORIGIN ?? 'https://hoggcountry.com';
 const WIDGET_URI = 'ui://scout/today.html';
 const WIDGET_HTML_URL = new URL('../public/scout-widget.html', import.meta.url);
+const scoutKnowledgeCorpus: readonly PublicCorpusEntry[] = [...publicCorpus, ...atReferenceCorpus];
 const READ_ONLY_LOCAL_ANNOTATIONS = {
   readOnlyHint: true,
   idempotentHint: true,
@@ -26,6 +42,10 @@ const READ_ONLY_LOCAL_ANNOTATIONS = {
 
 const directionSchema = z.enum(['NOBO', 'SOBO']);
 const shelterPreferenceSchema = z.enum(['tent-first', 'shelter-first', 'mixed']);
+const referenceCategorySchema = z.enum(REFERENCE_CATEGORIES);
+const documentSlotSchema = z.enum(
+  STANDARD_DOCUMENT_SLOTS.map((slot) => slot.key) as [StandardDocumentSlotKey, ...StandardDocumentSlotKey[]],
+);
 
 const trailContextInput = {
   currentMile: z.number().min(0).max(TRAIL_FACTS.totalMiles).default(0),
@@ -53,6 +73,31 @@ type DayPlanContext = TrailContext & {
 
 type ResupplyContext = TrailContext & {
   query: string;
+};
+
+type NearbyTrailContext = {
+  currentMile: number;
+  direction: Direction;
+  radiusMiles: number;
+  categories: ReferenceCategory[];
+  forwardOnly: boolean;
+  state?: string;
+};
+
+type SectionPlanContext = {
+  startMile: number;
+  endMile: number;
+  direction: Direction;
+  targetPace: number;
+  waterCapacityLiters: number;
+  shelterPreference: ShelterPreference;
+  state?: string;
+};
+
+type DraftDocumentContext = TrailContext & {
+  slotKey: StandardDocumentSlotKey;
+  notes: string;
+  state?: string;
 };
 
 type ToolHandler<TArgs> = (args: TArgs) => unknown | Promise<unknown>;
@@ -183,6 +228,113 @@ function buildBrief(profile: ManualProfile) {
   };
 }
 
+function referenceCategoriesForSlot(slotKey: StandardDocumentSlotKey): ReferenceCategory[] {
+  switch (slotKey) {
+    case 'current-plan':
+      return ['water', 'shelters', 'campsites', 'resupply', 'terrain', 'live-sources'];
+    case 'seven-day-plan':
+      return ['water', 'shelters', 'campsites', 'resupply', 'terrain'];
+    case 'resupply-plan':
+      return ['resupply', 'trailheads', 'water', 'live-sources'];
+    case 'gear-body-notes':
+      return ['terrain', 'live-sources'];
+    case 'safety-risk-brief':
+      return ['terrain', 'rules', 'live-sources'];
+    case 'hiker-profile':
+    default:
+      return ['terrain', 'live-sources'];
+  }
+}
+
+function buildDraftDocument(context: DraftDocumentContext) {
+  const slot = standardDocumentSlotForKey(context.slotKey);
+  const profile = makeProfile(context);
+  const categories = referenceCategoriesForSlot(context.slotKey);
+  const reference = findTrailReferenceContext({
+    currentMile: profile.currentMile,
+    direction: profile.direction,
+    radiusMiles: context.slotKey === 'seven-day-plan' ? profile.targetPace * 7 : Math.max(8, profile.targetPace),
+    categories,
+    forwardOnly: context.slotKey !== 'hiker-profile' && context.slotKey !== 'gear-body-notes',
+    state: context.state,
+    limit: 6,
+  });
+
+  return {
+    slotKey: context.slotKey,
+    title: slot?.title ?? context.slotKey,
+    purpose: slot?.purpose ?? 'Scout planning document',
+    summary: `Draft ${slot?.shortTitle ?? context.slotKey} for ${routeLabel(profile.direction)} around NOBO mile ${profile.currentMile.toFixed(1)}.`,
+    stableFacts: [
+      `Direction: ${profile.direction}`,
+      `Current NOBO mile marker: ${profile.currentMile.toFixed(1)}`,
+      `Planning pace: ${profile.targetPace} mi/day`,
+      `Water capacity: ${profile.waterCapacityLiters.toFixed(1)}L`,
+      `Shelter preference: ${profile.shelterPreference}`,
+      context.notes ? `User notes: ${context.notes}` : undefined,
+    ].filter(Boolean),
+    workingPlan: [
+      'Use Hogg Country guide/corpus documents for narrative planning context.',
+      'Use the AT open reference pack for candidate water, overnight, town, terrain, and rule leads.',
+      'Separate generated candidate data from live/official checks before making field commitments.',
+    ],
+    referenceContext: reference,
+    openQuestions: slot?.starterQuestions ?? [
+      'What source-backed facts are missing?',
+      'What live checks must happen before the hiker depends on this?',
+    ],
+    sourceReceipts: reference.sourceReceipts,
+  };
+}
+
+function buildDayReference(profile: ManualProfile, targetMiles: number) {
+  return findTrailReferenceContext({
+    currentMile: profile.currentMile,
+    direction: profile.direction,
+    radiusMiles: Math.max(8, targetMiles + 4),
+    categories: ['water', 'shelters', 'campsites', 'resupply', 'terrain', 'live-sources'],
+    forwardOnly: true,
+    limit: 6,
+  });
+}
+
+function buildSectionDays(startMile: number, endMile: number, targetPace: number) {
+  const directionSign = endMile >= startMile ? 1 : -1;
+  const distance = Math.abs(endMile - startMile);
+  const dayCount = Math.max(1, Math.ceil(distance / Math.max(1, targetPace)));
+  const days = [];
+  let cursor = startMile;
+
+  for (let day = 1; day <= dayCount; day += 1) {
+    const remaining = Math.abs(endMile - cursor);
+    const travel = Math.min(targetPace, remaining);
+    const next = day === dayCount ? endMile : cursor + directionSign * travel;
+    const dayReference = buildSectionReference({
+      startMile: Math.min(cursor, next),
+      endMile: Math.max(cursor, next),
+      direction: directionSign >= 0 ? 'NOBO' : 'SOBO',
+      categories: ['water', 'shelters', 'campsites', 'resupply', 'terrain'],
+      limit: 4,
+    });
+
+    days.push({
+      day,
+      startMile: Number(cursor.toFixed(1)),
+      endMile: Number(next.toFixed(1)),
+      targetMiles: Number(Math.abs(next - cursor).toFixed(1)),
+      waterLeads: dayReference.nearby.water ?? [],
+      overnightLeads: [...(dayReference.nearby.shelters ?? []), ...(dayReference.nearby.campsites ?? [])].slice(0, 4),
+      resupplyLeads: dayReference.nearby.resupply ?? [],
+      gradeRisks: dayReference.terrain.gradeRisks.slice(0, 3),
+      note:
+        'Candidate-data planning day. Confirm live weather, closures, water reliability, legal camping, and town services before relying on it.',
+    });
+    cursor = next;
+  }
+
+  return days;
+}
+
 function toSearchResult(entry: ReturnType<typeof searchPublicCorpus>[number]) {
   return {
     id: entry.id,
@@ -213,7 +365,7 @@ async function createScoutServer(): Promise<McpServer> {
   const server = new McpServer(
     {
       name: 'scout-chatgpt-app',
-      version: '0.1.0',
+      version: '0.2.0',
     },
     {
       capabilities: {
@@ -280,7 +432,7 @@ async function createScoutServer(): Promise<McpServer> {
     },
     async ({ query }: { query: string }) => {
       const structuredContent = {
-        results: searchPublicCorpus(publicCorpus, query).slice(0, 8).map(toSearchResult),
+        results: searchPublicCorpus(scoutKnowledgeCorpus, query).slice(0, 10).map(toSearchResult),
       };
 
       return {
@@ -303,7 +455,7 @@ async function createScoutServer(): Promise<McpServer> {
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async ({ id }: { id: string }) => {
-      const entry = publicCorpus.find((candidate) => candidate.id === id);
+      const entry = scoutKnowledgeCorpus.find((candidate) => candidate.id === id);
       if (!entry) {
         return {
           isError: true,
@@ -315,6 +467,71 @@ async function createScoutServer(): Promise<McpServer> {
       return {
         structuredContent,
         content: textContent(JSON.stringify(structuredContent)),
+      };
+    },
+  );
+
+  registerScoutTool(
+    server,
+    'get_trail_reference_snapshot',
+    {
+      title: 'Get Scout AT reference inventory',
+      description:
+        'Use this when the user asks what Scout can draw from, what data is available, or what caveats apply to Scout AT planning data.',
+      inputSchema: {
+        focus: z.enum(['inventory', 'route-caveats', 'live-sources', 'all']).default('all'),
+      },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
+    },
+    async ({ focus }: { focus: 'inventory' | 'route-caveats' | 'live-sources' | 'all' }) => {
+      const structuredContent = {
+        snapshot: buildReferenceSnapshot(focus),
+      };
+
+      return {
+        structuredContent,
+        content: textContent(`Scout AT reference snapshot is ready for focus "${focus}". Use the caveats and source receipts before making field claims.`),
+      };
+    },
+  );
+
+  registerScoutAppTool(
+    server,
+    'find_nearby_trail_context',
+    {
+      title: 'Find nearby AT context',
+      description:
+        'Use this when the user needs nearby or ahead-of-hiker AT context: candidate water, shelters, campsites, privies, vistas, trailheads, resupply towns, terrain, rules, or live-source pointers.',
+      inputSchema: {
+        currentMile: trailContextInput.currentMile.describe('Current NOBO mile marker. For SOBO hikers, still pass the NOBO mile marker.'),
+        direction: directionSchema.default('NOBO'),
+        radiusMiles: z.number().min(0.5).max(80).default(8),
+        categories: z.array(referenceCategorySchema).default(['water', 'shelters', 'campsites', 'resupply', 'terrain']),
+        forwardOnly: z.boolean().default(false).describe('When true, only return candidates ahead of the hiker in their walking direction.'),
+        state: z.string().min(2).max(2).optional().describe('Optional two-letter state code for permit, fee, and camping rule summaries.'),
+      },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
+      _meta: {
+        ui: {
+          resourceUri: WIDGET_URI,
+          visibility: ['model', 'app'],
+        },
+        'openai/toolInvocation/invoking': 'Finding Scout trail context...',
+        'openai/toolInvocation/invoked': 'Scout trail context ready.',
+        'openai/outputTemplate': WIDGET_URI,
+      },
+    },
+    async (context: NearbyTrailContext) => {
+      const nearby = findTrailReferenceContext(context);
+      const structuredContent = {
+        nearby,
+      };
+
+      return {
+        structuredContent,
+        content: textContent(
+          `Scout found ${Object.values(nearby.categories).reduce((count, items) => count + (items?.length ?? 0), 0)} candidate trail-context records around NOBO mile ${nearby.currentMile.toFixed(1)}. Treat them as candidate leads until current sources confirm them.`,
+        ),
       };
     },
   );
@@ -342,6 +559,7 @@ async function createScoutServer(): Promise<McpServer> {
       const profile = makeProfile(context);
       const structuredContent = {
         brief: buildBrief(profile),
+        referenceContext: buildDayReference(profile, profile.targetPace),
       };
 
       return {
@@ -353,7 +571,7 @@ async function createScoutServer(): Promise<McpServer> {
     },
   );
 
-  registerScoutTool(
+  registerScoutAppTool(
     server,
     'plan_next_day',
     {
@@ -365,6 +583,15 @@ async function createScoutServer(): Promise<McpServer> {
         effort: z.enum(['conservative', 'standard', 'push']).default('standard'),
       },
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
+      _meta: {
+        ui: {
+          resourceUri: WIDGET_URI,
+          visibility: ['model', 'app'],
+        },
+        'openai/toolInvocation/invoking': 'Drafting Scout day plan...',
+        'openai/toolInvocation/invoked': 'Scout day plan ready.',
+        'openai/outputTemplate': WIDGET_URI,
+      },
     },
     async (context: DayPlanContext) => {
       const profile = makeProfile(context);
@@ -373,9 +600,11 @@ async function createScoutServer(): Promise<McpServer> {
       const phase = getTrailPhase(profile.currentMile);
       const planLanes = buildPlanLanes(profile);
       const endMile = moveMile(profile.currentMile, profile.direction, targetMiles);
+      const referenceContext = buildDayReference(profile, targetMiles);
 
       const structuredContent = {
         plan: {
+          kind: 'next-day',
           routeLabel: routeLabel(profile.direction),
           startMile: profile.currentMile,
           endMile,
@@ -398,17 +627,20 @@ async function createScoutServer(): Promise<McpServer> {
             { label: 'AT core facts audit', status: `last verified ${TRAIL_FACTS.lastVerified}` },
             { label: 'Current conditions', status: 'not live yet - user must confirm' },
           ],
+          referenceContext,
         },
       };
 
       return {
         structuredContent,
-        content: textContent(JSON.stringify(structuredContent)),
+        content: textContent(
+          `Scout drafted a ${context.effort} next-day scaffold from mile ${profile.currentMile.toFixed(1)} to ${endMile.toFixed(1)}. Confirm live weather, closures, water, and overnight details before field reliance.`,
+        ),
       };
     },
   );
 
-  registerScoutTool(
+  registerScoutAppTool(
     server,
     'plan_next_week',
     {
@@ -417,6 +649,15 @@ async function createScoutServer(): Promise<McpServer> {
         'Use this when the user wants a 7-day rolling AT plan scaffold with mileage targets, zero/nero pressure, and source checks. Does not confirm live conditions.',
       inputSchema: trailContextInput,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
+      _meta: {
+        ui: {
+          resourceUri: WIDGET_URI,
+          visibility: ['model', 'app'],
+        },
+        'openai/toolInvocation/invoking': 'Drafting Scout week plan...',
+        'openai/toolInvocation/invoked': 'Scout week plan ready.',
+        'openai/outputTemplate': WIDGET_URI,
+      },
     },
     async (context: TrailContext) => {
       const profile = makeProfile(context);
@@ -441,8 +682,17 @@ async function createScoutServer(): Promise<McpServer> {
         cursor = endMile;
       }
 
+      const sectionReference = buildSectionReference({
+        startMile: Math.min(profile.currentMile, cursor),
+        endMile: Math.max(profile.currentMile, cursor),
+        direction: profile.direction,
+        categories: ['water', 'shelters', 'campsites', 'resupply', 'terrain'],
+        limit: 10,
+      });
+
       const structuredContent = {
         plan: {
+          kind: 'next-week',
           routeLabel: routeLabel(profile.direction),
           startMile: profile.currentMile,
           endMile: Number(cursor.toFixed(1)),
@@ -457,17 +707,20 @@ async function createScoutServer(): Promise<McpServer> {
             { label: 'AT core facts audit', status: `last verified ${TRAIL_FACTS.lastVerified}` },
             { label: 'Current conditions', status: 'not live yet - user must confirm' },
           ],
+          sectionReference,
         },
       };
 
       return {
         structuredContent,
-        content: textContent(JSON.stringify(structuredContent)),
+        content: textContent(
+          `Scout drafted a 7-day scaffold from mile ${profile.currentMile.toFixed(1)} to ${Number(cursor.toFixed(1)).toFixed(1)} with candidate reference leads and source checks.`,
+        ),
       };
     },
   );
 
-  registerScoutTool(
+  registerScoutAppTool(
     server,
     'find_next_resupply',
     {
@@ -479,13 +732,30 @@ async function createScoutServer(): Promise<McpServer> {
         query: z.string().min(1).default('resupply').describe('Optional resupply search query.'),
       },
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
+      _meta: {
+        ui: {
+          resourceUri: WIDGET_URI,
+          visibility: ['model', 'app'],
+        },
+        'openai/toolInvocation/invoking': 'Finding Scout resupply leads...',
+        'openai/toolInvocation/invoked': 'Scout resupply leads ready.',
+        'openai/outputTemplate': WIDGET_URI,
+      },
     },
     async (context: ResupplyContext) => {
       const profile = makeProfile(context);
       const phase = getTrailPhase(profile.currentMile);
       const query = `${context.query} ${phase.label}`.trim();
-      const hits = searchPublicCorpus(publicCorpus, query);
-      const fallbackHits = hits.length ? hits : searchPublicCorpus(publicCorpus, context.query);
+      const hits = searchPublicCorpus(scoutKnowledgeCorpus, query);
+      const fallbackHits = hits.length ? hits : searchPublicCorpus(scoutKnowledgeCorpus, context.query);
+      const referenceContext = findTrailReferenceContext({
+        currentMile: profile.currentMile,
+        direction: profile.direction,
+        radiusMiles: 80,
+        categories: ['resupply', 'trailheads', 'water', 'live-sources'],
+        forwardOnly: true,
+        limit: 8,
+      });
 
       const structuredContent = {
         resupply: {
@@ -493,6 +763,9 @@ async function createScoutServer(): Promise<McpServer> {
           currentMile: profile.currentMile,
           query,
           candidates: fallbackHits.slice(0, 5).map(toSearchResult),
+          openReferenceCandidates: referenceContext.categories.resupply ?? [],
+          trailheadCandidates: referenceContext.categories.trailheads ?? [],
+          waterCandidates: referenceContext.categories.water ?? [],
           nextActions: [
             'Fetch the most relevant candidate document before quoting details.',
             'Confirm hours, lodging, shuttle, mail drop, and food availability with live/local sources.',
@@ -500,14 +773,136 @@ async function createScoutServer(): Promise<McpServer> {
           ],
           sourceReceipts: [
             { label: 'Hogg Country public corpus search', status: 'source leads only' },
+            ...referenceContext.sourceReceipts,
             { label: 'Current town services', status: 'not live yet - user must confirm' },
+          ],
+          caveats: referenceContext.caveats,
+        },
+      };
+
+      return {
+        structuredContent,
+        content: textContent(
+          `Scout found ${(referenceContext.categories.resupply ?? []).length} open-reference resupply leads and ${fallbackHits.slice(0, 5).length} corpus matches. Confirm live hours, services, shuttles, lodging, and inventory before relying on them.`,
+        ),
+      };
+    },
+  );
+
+  registerScoutAppTool(
+    server,
+    'build_section_plan',
+    {
+      title: 'Build AT section plan',
+      description:
+        'Use this when the user wants a source-aware plan for a specific AT mile range, including day chunks, candidate water, overnight options, resupply leads, and coarse terrain flags.',
+      inputSchema: {
+        startMile: z.number().min(0).max(TRAIL_FACTS.totalMiles).describe('Starting NOBO mile marker for the section.'),
+        endMile: z.number().min(0).max(TRAIL_FACTS.totalMiles).describe('Ending NOBO mile marker for the section.'),
+        direction: directionSchema.default('NOBO'),
+        targetPace: z.number().min(1).max(35).default(12),
+        waterCapacityLiters: z.number().min(0.5).max(8).default(2),
+        shelterPreference: shelterPreferenceSchema.default('mixed'),
+        state: z.string().min(2).max(2).optional().describe('Optional two-letter state code for rule summaries.'),
+      },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
+      _meta: {
+        ui: {
+          resourceUri: WIDGET_URI,
+          visibility: ['model', 'app'],
+        },
+        'openai/toolInvocation/invoking': 'Building Scout section plan...',
+        'openai/toolInvocation/invoked': 'Scout section plan ready.',
+        'openai/outputTemplate': WIDGET_URI,
+      },
+    },
+    async (context: SectionPlanContext) => {
+      const sectionReference = buildSectionReference({
+        startMile: Math.min(context.startMile, context.endMile),
+        endMile: Math.max(context.startMile, context.endMile),
+        direction: context.direction,
+        categories: ['water', 'shelters', 'campsites', 'privies', 'trailheads', 'resupply', 'terrain'],
+        limit: 12,
+      });
+      const rules = context.state
+        ? findTrailReferenceContext({
+            currentMile: context.startMile,
+            direction: context.direction,
+            radiusMiles: Math.abs(context.endMile - context.startMile),
+            categories: ['rules', 'live-sources'],
+            state: context.state,
+          })
+        : null;
+      const days = buildSectionDays(context.startMile, context.endMile, context.targetPace);
+
+      const structuredContent = {
+        sectionPlan: {
+          routeLabel: routeLabel(context.direction),
+          startMile: context.startMile,
+          endMile: context.endMile,
+          targetPace: context.targetPace,
+          waterCapacityLiters: context.waterCapacityLiters,
+          shelterPreference: context.shelterPreference,
+          days,
+          reference: sectionReference,
+          rules: rules?.rules ?? [],
+          liveSources: rules?.liveSources ?? [],
+          checks: [
+            'Confirm live weather and alerts for the exact dates.',
+            'Verify water reliability and treatment needs with current/local sources.',
+            'Verify legal camping, permits, fees, shuttles, stores, hostels, and road access before itinerary commitment.',
+            'Treat generated open-route miles as Scout candidate miles, not official ATC guidebook miles.',
+          ],
+          sourceReceipts: [
+            ...sectionReference.sourceReceipts,
+            ...(rules?.sourceReceipts ?? []),
+            { label: 'Current conditions', status: 'not live yet - user must confirm' },
           ],
         },
       };
 
       return {
         structuredContent,
-        content: textContent(JSON.stringify(structuredContent)),
+        content: textContent(
+          `Scout built a section plan from NOBO mile ${context.startMile.toFixed(1)} to ${context.endMile.toFixed(1)} with ${days.length} day chunks and candidate reference leads.`,
+        ),
+      };
+    },
+  );
+
+  registerScoutAppTool(
+    server,
+    'draft_scout_document',
+    {
+      title: 'Draft Scout planning document',
+      description:
+        'Use this when the user wants ChatGPT to draft a structured Scout planning document such as a current plan, seven-day plan, resupply plan, gear/body notes, or safety risk brief. This drafts only; it does not save.',
+      inputSchema: {
+        ...trailContextInput,
+        slotKey: documentSlotSchema,
+        notes: z.string().max(1200).default(''),
+        state: z.string().min(2).max(2).optional().describe('Optional two-letter state code for rule summaries.'),
+      },
+      annotations: READ_ONLY_LOCAL_ANNOTATIONS,
+      _meta: {
+        ui: {
+          resourceUri: WIDGET_URI,
+          visibility: ['model', 'app'],
+        },
+        'openai/toolInvocation/invoking': 'Drafting Scout document...',
+        'openai/toolInvocation/invoked': 'Scout document ready.',
+        'openai/outputTemplate': WIDGET_URI,
+      },
+    },
+    async (context: DraftDocumentContext) => {
+      const document = buildDraftDocument(context);
+      const structuredContent = {
+        document,
+      };
+
+      return {
+        structuredContent,
+        content: textContent(`Scout drafted "${document.title}" as a read-only planning document. Nothing was saved back to Scout.`),
       };
     },
   );

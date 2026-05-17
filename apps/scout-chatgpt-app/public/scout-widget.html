@@ -156,6 +156,32 @@
         line-height: 1.35;
       }
 
+      .split {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .kicker {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+        line-height: 1.35;
+      }
+
+      .list {
+        display: grid;
+        gap: 7px;
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .list li {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
       @media (max-width: 520px) {
         main {
           padding: 10px;
@@ -167,6 +193,10 @@
         }
 
         .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .split {
           grid-template-columns: 1fr;
         }
       }
@@ -190,6 +220,18 @@
 
     <script type="module">
       const app = document.querySelector("#app");
+      const CATEGORY_LABELS = {
+        water: "Water",
+        shelters: "Shelters",
+        campsites: "Campsites",
+        privies: "Privies",
+        vistas: "Vistas",
+        trailheads: "Trailheads",
+        resupply: "Resupply",
+        terrain: "Terrain",
+        rules: "Rules",
+        "live-sources": "Live sources"
+      };
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -200,36 +242,108 @@
           .replaceAll("'", "&#039;");
       }
 
-      function normalizePayload(response) {
-        const structured = response?.structuredContent ?? response?.toolResult?.structuredContent ?? response;
-        if (structured?.brief) return structured.brief;
-        return structured;
+      function asArray(value) {
+        return Array.isArray(value) ? value : [];
       }
 
-      function render(payload) {
-        const brief = normalizePayload(payload);
-        if (!brief || typeof brief !== "object") return;
+      function formatMile(value) {
+        const number = Number(value);
+        return Number.isFinite(number) ? number.toFixed(1) : "--";
+      }
 
-        const cues = Array.isArray(brief.cues) ? brief.cues : [];
-        const actions = Array.isArray(brief.actions) ? brief.actions : [];
-        const sources = Array.isArray(brief.sourceReceipts) ? brief.sourceReceipts : [];
-        const route = brief.routeLabel ?? "AT - NOBO";
-        const currentMile = Number.isFinite(Number(brief.currentMile)) ? Number(brief.currentMile).toFixed(1) : "--";
+      function normalizePayload(response) {
+        const structured = response?.structuredContent ?? response?.toolResult?.structuredContent ?? response;
+        if (structured?.brief) return { kind: "brief", data: structured.brief };
+        if (structured?.nearby) return { kind: "nearby", data: structured.nearby };
+        if (structured?.sectionPlan) return { kind: "sectionPlan", data: structured.sectionPlan };
+        if (structured?.document) return { kind: "document", data: structured.document };
+        if (structured?.resupply) return { kind: "resupply", data: structured.resupply };
+        if (structured?.plan) return { kind: "plan", data: structured.plan };
+        if (structured?.snapshot) return { kind: "snapshot", data: structured.snapshot };
+        return { kind: "raw", data: structured };
+      }
 
-        app.innerHTML = `
+      function heroHTML(eyebrow, chip, metricLabel, metricValue, metricNote) {
+        return `
           <section class="hero">
             <div>
-              <p class="eyebrow">Scout Today</p>
+              <p class="eyebrow">${escapeHtml(eyebrow)}</p>
               <h1>Scout</h1>
-              <span class="route-chip">${escapeHtml(route)}</span>
+              <span class="route-chip">${escapeHtml(chip)}</span>
             </div>
             <div class="mile">
-              <span>Current mile</span>
-              <strong>${escapeHtml(currentMile)}</strong>
-              <span>${escapeHtml(brief.phaseLabel ?? "Trail context")}</span>
+              <span>${escapeHtml(metricLabel)}</span>
+              <strong>${escapeHtml(metricValue)}</strong>
+              <span>${escapeHtml(metricNote)}</span>
             </div>
           </section>
+        `;
+      }
 
+      function listHTML(items, mapper = (item) => item) {
+        const rows = asArray(items).filter(Boolean);
+        if (!rows.length) return "";
+        return `<ul class="list">${rows.map((item) => `<li>${escapeHtml(mapper(item))}</li>`).join("")}</ul>`;
+      }
+
+      function sourceHTML(sources) {
+        const rows = asArray(sources);
+        if (!rows.length) return "";
+        return `
+          <section class="card">
+            <p class="eyebrow">Sources</p>
+            <ul class="sources">
+              ${rows.map((source) => `<li>${escapeHtml(source.label)} - ${escapeHtml(source.status)}</li>`).join("")}
+            </ul>
+          </section>
+        `;
+      }
+
+      function candidateLine(candidate) {
+        const ahead = Number(candidate?.distanceAheadMiles);
+        const direction = Number.isFinite(ahead) ? `${ahead >= 0 ? "+" : ""}${ahead.toFixed(1)} mi` : "nearby";
+        return `${candidate?.name ?? "Candidate"} - NOBO ${formatMile(candidate?.mileNobo)} (${direction})`;
+      }
+
+      function candidateSection(title, candidates) {
+        const rows = asArray(candidates);
+        if (!rows.length) return "";
+        return `
+          <section class="card">
+            <p class="eyebrow">${escapeHtml(title)}</p>
+            ${listHTML(rows.slice(0, 7), candidateLine)}
+          </section>
+        `;
+      }
+
+      function terrainLine(segment) {
+        const grade = Number.isFinite(Number(segment?.averageGradePercent)) ? `, ${Number(segment.averageGradePercent).toFixed(1)}% ${segment.gradeDirection ?? "grade"}` : "";
+        const gain = Number.isFinite(Number(segment?.gainFt)) ? `, +${Math.round(Number(segment.gainFt))} ft` : "";
+        const loss = Number.isFinite(Number(segment?.lossFt)) ? `, -${Math.round(Number(segment.lossFt))} ft` : "";
+        return `NOBO ${formatMile(segment?.startMileNobo)}-${formatMile(segment?.endMileNobo)}${grade}${gain}${loss}`;
+      }
+
+      function terrainSection(terrain) {
+        const grades = asArray(terrain?.gradeRisks);
+        const climbs = asArray(terrain?.elevationSegments);
+        if (!grades.length && !climbs.length) return "";
+        return `
+          <section class="card">
+            <p class="eyebrow">Terrain</p>
+            ${grades.length ? `<p class="kicker">Highest grade screens</p>${listHTML(grades.slice(0, 5), terrainLine)}` : ""}
+            ${climbs.length ? `<p class="kicker">Elevation segments</p>${listHTML(climbs.slice(0, 4), terrainLine)}` : ""}
+          </section>
+        `;
+      }
+
+      function renderBrief(brief) {
+        const cues = asArray(brief.cues);
+        const actions = asArray(brief.actions);
+        const sources = asArray(brief.sourceReceipts);
+        const route = brief.routeLabel ?? "AT - NOBO";
+
+        app.innerHTML = `
+          ${heroHTML("Scout Today", route, "Current mile", formatMile(brief.currentMile), brief.phaseLabel ?? "Trail context")}
           <section class="grid" aria-label="Trail cues">
             ${cues.map((cue) => `
               <article class="card">
@@ -239,27 +353,131 @@
               </article>
             `).join("")}
           </section>
-
-          ${actions.length ? `
-            <section class="card">
-              <p class="eyebrow">Next actions</p>
-              <ul class="actions">
-                ${actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}
-              </ul>
-            </section>
-          ` : ""}
-
-          ${sources.length ? `
-            <section class="card">
-              <p class="eyebrow">Sources</p>
-              <ul class="sources">
-                ${sources.map((source) => `<li>${escapeHtml(source.label)} - ${escapeHtml(source.status)}</li>`).join("")}
-              </ul>
-            </section>
-          ` : ""}
-
+          ${actions.length ? `<section class="card"><p class="eyebrow">Next actions</p>${listHTML(actions)}</section>` : ""}
+          ${sourceHTML(sources)}
           <p class="meta">Generated ${escapeHtml(brief.generatedAt ?? "now")}. Current weather, closures, water reports, and town services still need fresh confirmation before field reliance.</p>
         `;
+      }
+
+      function renderNearby(nearby) {
+        const categories = nearby?.categories ?? {};
+        const entries = Object.entries(categories).filter(([, items]) => asArray(items).length);
+
+        app.innerHTML = `
+          ${heroHTML("Scout Context", `${nearby?.direction ?? "NOBO"} reference`, "NOBO mile", formatMile(nearby?.currentMile), `${nearby?.mode ?? "nearby"} ${nearby?.radiusMiles ?? 0} mi`)}
+          <section class="grid" aria-label="Reference categories">
+            ${entries.map(([category, items]) => `
+              <article class="card">
+                <p class="eyebrow">${escapeHtml(CATEGORY_LABELS[category] ?? category)}</p>
+                <strong>${escapeHtml(asArray(items).length)}</strong>
+                <p>${escapeHtml(asArray(items)[0]?.name ?? "Candidate leads")}</p>
+              </article>
+            `).join("")}
+          </section>
+          ${entries.map(([category, items]) => candidateSection(CATEGORY_LABELS[category] ?? category, items)).join("")}
+          ${terrainSection(nearby?.terrain)}
+          ${nearby?.rules?.length ? `<section class="card"><p class="eyebrow">Rules</p>${listHTML(nearby.rules, (rule) => `${rule.jurisdiction}: permit ${rule.permitRequired ?? "unknown"}, fee ${rule.feeRequired ?? "unknown"}`)}</section>` : ""}
+          ${nearby?.liveSources?.length ? `<section class="card"><p class="eyebrow">Live sources</p>${listHTML(nearby.liveSources, (source) => `${source.name}: ${asArray(source.categories).join(", ")}`)}</section>` : ""}
+          ${sourceHTML(nearby?.sourceReceipts)}
+          <p class="meta">${escapeHtml(asArray(nearby?.caveats)[0] ?? "Candidate data requires live confirmation before field reliance.")}</p>
+        `;
+      }
+
+      function renderPlan(plan) {
+        const dayRows = asArray(plan.days).map((day) => `Day ${day.day}: NOBO ${formatMile(day.startMile)} to ${formatMile(day.endMile)} (${formatMile(day.targetMiles)} mi)`);
+        const actions = asArray(plan.actions);
+        const checks = asArray(plan.checks);
+
+        app.innerHTML = `
+          ${heroHTML("Scout Plan", plan.routeLabel ?? "AT plan", "Target", formatMile(plan.targetMiles ?? plan.days?.length ?? 0), plan.phaseLabel ?? plan.kind ?? "planning")}
+          <section class="split">
+            <article class="card">
+              <p class="eyebrow">Mile window</p>
+              <strong>${escapeHtml(formatMile(plan.startMile))}-${escapeHtml(formatMile(plan.endMile))}</strong>
+              <p>${escapeHtml(plan.effort ?? "standard")} effort</p>
+            </article>
+            <article class="card">
+              <p class="eyebrow">Checks</p>
+              <p>${escapeHtml(checks[0] ?? "Confirm live sources before relying on this plan.")}</p>
+            </article>
+          </section>
+          ${dayRows.length ? `<section class="card"><p class="eyebrow">Days</p>${listHTML(dayRows)}</section>` : ""}
+          ${actions.length ? `<section class="card"><p class="eyebrow">Actions</p>${listHTML(actions)}</section>` : ""}
+          ${candidateSection("Water leads", plan.referenceContext?.categories?.water ?? plan.sectionReference?.nearby?.water)}
+          ${candidateSection("Overnight leads", [...asArray(plan.referenceContext?.categories?.shelters ?? plan.sectionReference?.nearby?.shelters), ...asArray(plan.referenceContext?.categories?.campsites ?? plan.sectionReference?.nearby?.campsites)])}
+          ${terrainSection(plan.referenceContext?.terrain ?? plan.sectionReference?.terrain)}
+          ${sourceHTML(plan.sourceReceipts)}
+        `;
+      }
+
+      function renderResupply(resupply) {
+        app.innerHTML = `
+          ${heroHTML("Scout Resupply", resupply.routeLabel ?? "AT resupply", "NOBO mile", formatMile(resupply.currentMile), resupply.query ?? "source leads")}
+          ${candidateSection("Open reference towns", resupply.openReferenceCandidates)}
+          ${candidateSection("Trailhead leads", resupply.trailheadCandidates)}
+          ${candidateSection("Water before town", resupply.waterCandidates)}
+          ${resupply.candidates?.length ? `<section class="card"><p class="eyebrow">Corpus matches</p>${listHTML(resupply.candidates, (hit) => `${hit.title} - ${hit.metadata?.source ?? "Hogg Country"}`)}</section>` : ""}
+          ${resupply.nextActions?.length ? `<section class="card"><p class="eyebrow">Next actions</p>${listHTML(resupply.nextActions)}</section>` : ""}
+          ${sourceHTML(resupply.sourceReceipts)}
+        `;
+      }
+
+      function renderSectionPlan(sectionPlan) {
+        const days = asArray(sectionPlan.days);
+        app.innerHTML = `
+          ${heroHTML("Scout Section", sectionPlan.routeLabel ?? "AT section", "Miles", `${formatMile(sectionPlan.startMile)}-${formatMile(sectionPlan.endMile)}`, `${days.length} day${days.length === 1 ? "" : "s"}`)}
+          <section class="grid" aria-label="Section summary">
+            <article class="card"><p class="eyebrow">Pace</p><strong>${escapeHtml(formatMile(sectionPlan.targetPace))}</strong><p>miles per day</p></article>
+            <article class="card"><p class="eyebrow">Water</p><strong>${escapeHtml(formatMile(sectionPlan.waterCapacityLiters))}L</strong><p>carry assumption</p></article>
+            <article class="card"><p class="eyebrow">Sleep</p><strong>${escapeHtml(sectionPlan.shelterPreference ?? "mixed")}</strong><p>overnight preference</p></article>
+          </section>
+          <section class="card">
+            <p class="eyebrow">Day chunks</p>
+            ${listHTML(days, (day) => `Day ${day.day}: NOBO ${formatMile(day.startMile)} to ${formatMile(day.endMile)} (${formatMile(day.targetMiles)} mi)`)}
+          </section>
+          ${candidateSection("Water leads", sectionPlan.reference?.nearby?.water)}
+          ${candidateSection("Overnight leads", [...asArray(sectionPlan.reference?.nearby?.shelters), ...asArray(sectionPlan.reference?.nearby?.campsites)])}
+          ${candidateSection("Resupply leads", sectionPlan.reference?.nearby?.resupply)}
+          ${terrainSection(sectionPlan.reference?.terrain)}
+          ${sourceHTML(sectionPlan.sourceReceipts)}
+        `;
+      }
+
+      function renderDocument(document) {
+        app.innerHTML = `
+          ${heroHTML("Scout Document", document.title ?? "Draft", "NOBO planning", "Draft", document.slotKey ?? "document")}
+          <section class="card"><p class="eyebrow">Purpose</p><p>${escapeHtml(document.purpose)}</p></section>
+          <section class="card"><p class="eyebrow">Stable facts</p>${listHTML(document.stableFacts)}</section>
+          <section class="card"><p class="eyebrow">Working plan</p>${listHTML(document.workingPlan)}</section>
+          <section class="card"><p class="eyebrow">Open questions</p>${listHTML(document.openQuestions)}</section>
+          ${document.referenceContext ? terrainSection(document.referenceContext.terrain) : ""}
+          ${sourceHTML(document.sourceReceipts)}
+        `;
+      }
+
+      function renderSnapshot(snapshot) {
+        const datasets = asArray(snapshot.datasets);
+        app.innerHTML = `
+          ${heroHTML("Scout Reference", snapshot.focus ?? "all", "Datasets", String(datasets.length), snapshot.generatedAt ?? "inventory")}
+          <section class="card"><p class="eyebrow">Route</p><p>${escapeHtml(snapshot.route?.aiAnswerRule ?? "Open route candidate with caveats.")}</p></section>
+          ${datasets.length ? `<section class="card"><p class="eyebrow">Available data</p>${listHTML(datasets.slice(0, 12), (dataset) => `${dataset.label}: ${dataset.recordCount ?? "unknown"} records`)}</section>` : ""}
+          ${snapshot.liveSources?.length ? `<section class="card"><p class="eyebrow">Live sources</p>${listHTML(snapshot.liveSources, (source) => `${source.name}: ${asArray(source.categories).join(", ")}`)}</section>` : ""}
+          ${snapshot.caveats?.length ? `<section class="card"><p class="eyebrow">Caveats</p>${listHTML(snapshot.caveats)}</section>` : ""}
+          ${sourceHTML(snapshot.sourceReceipts)}
+        `;
+      }
+
+      function render(payload) {
+        const normalized = normalizePayload(payload);
+        if (!normalized.data || typeof normalized.data !== "object") return;
+
+        if (normalized.kind === "brief") renderBrief(normalized.data);
+        else if (normalized.kind === "nearby") renderNearby(normalized.data);
+        else if (normalized.kind === "plan") renderPlan(normalized.data);
+        else if (normalized.kind === "resupply") renderResupply(normalized.data);
+        else if (normalized.kind === "sectionPlan") renderSectionPlan(normalized.data);
+        else if (normalized.kind === "document") renderDocument(normalized.data);
+        else if (normalized.kind === "snapshot") renderSnapshot(normalized.data);
       }
 
       function renderOpenAiGlobals(globals) {
@@ -308,7 +526,7 @@
 
       async function initializeBridge() {
         await rpcRequest("ui/initialize", {
-          appInfo: { name: "scout-widget", version: "0.1.0" },
+          appInfo: { name: "scout-widget", version: "0.2.0" },
           appCapabilities: {},
           protocolVersion: "2026-01-26"
         });
