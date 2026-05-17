@@ -16,8 +16,8 @@
   let storyModalIndex = $state(null);
   let heroStoryIndex = $state(0);
 
-  // Get first 3 videos for the dispatches section
-  const displayVideos = $derived(videos.slice(0, 3));
+  // Keep one extra card so landscape uploads can tile around portrait Shorts.
+  const displayVideos = $derived(videos.slice(0, 4));
 
   // Format date for display
   function formatDate(isoDate) {
@@ -469,10 +469,10 @@
         <p class="dispatches-subtitle">Recent uploads from the trail</p>
       </div>
 
-      <div class="dispatches-grid">
+      <div class={`dispatches-grid ${displayVideos[0] && isShort(displayVideos[0]) ? 'has-featured-short' : 'has-featured-landscape'}`}>
         {#if displayVideos.length > 0}
           <!-- Featured (first) video -->
-          <a href={displayVideos[0].link} target="_blank" rel="noopener" class={`dispatch-card dispatch-featured ${isShort(displayVideos[0]) ? 'is-short' : ''}`}>
+          <a href={displayVideos[0].link} target="_blank" rel="noopener" class={`dispatch-card dispatch-featured ${isShort(displayVideos[0]) ? 'is-short' : 'is-landscape'}`}>
             <div class={`dispatch-media ${isShort(displayVideos[0]) ? 'is-short' : ''}`}>
               <img
                 src={getThumbnail(displayVideos[0])}
@@ -491,36 +491,40 @@
             <div class="dispatch-content">
               <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
               <h3 class="dispatch-title">{displayVideos[0].title}</h3>
-              <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], 420)}</p>
+              <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], isShort(displayVideos[0]) ? 420 : 260)}</p>
               <span class="dispatch-cta">{actionLabel(displayVideos[0])}</span>
             </div>
           </a>
 
           <!-- Secondary videos -->
-          {#each displayVideos.slice(1) as video}
-            <a href={video.link} target="_blank" rel="noopener" class={`dispatch-card ${isShort(video) ? 'is-short' : ''}`}>
-              <div class={`dispatch-media ${isShort(video) ? 'is-short' : 'small'}`}>
-                <img
-                  src={getThumbnail(video)}
-                  alt={video.title}
-                  class="dispatch-thumb"
-                  onerror={(e) => handleImageError(e, video.id)}
-                  loading="lazy"
-                />
-                <div class="dispatch-play small">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </div>
-              </div>
-              <div class="dispatch-content">
-                <time class="dispatch-date">{formatDate(video.published)}</time>
-                <h3 class="dispatch-title">{video.title}</h3>
-                <p class="dispatch-desc">{getVideoExcerpt(video, 110)}</p>
-                <span class="dispatch-cta">{actionLabel(video)}</span>
-              </div>
-            </a>
-          {/each}
+          {#if displayVideos.length > 1}
+            <div class="dispatch-secondary-grid">
+              {#each displayVideos.slice(1) as video}
+                <a href={video.link} target="_blank" rel="noopener" class={`dispatch-card ${isShort(video) ? 'is-short' : 'is-landscape'}`}>
+                  <div class={`dispatch-media ${isShort(video) ? 'is-short' : 'small'}`}>
+                    <img
+                      src={getThumbnail(video)}
+                      alt={video.title}
+                      class="dispatch-thumb"
+                      onerror={(e) => handleImageError(e, video.id)}
+                      loading="lazy"
+                    />
+                    <div class="dispatch-play small">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="dispatch-content">
+                    <time class="dispatch-date">{formatDate(video.published)}</time>
+                    <h3 class="dispatch-title">{video.title}</h3>
+                    <p class="dispatch-desc">{getVideoExcerpt(video, 110)}</p>
+                    <span class="dispatch-cta">{actionLabel(video)}</span>
+                  </div>
+                </a>
+              {/each}
+            </div>
+          {/if}
         {:else}
           <!-- Fallback when no videos available -->
           <div class="dispatch-card dispatch-featured dispatch-placeholder">
@@ -2942,6 +2946,42 @@
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
     margin-bottom: 2rem;
+    align-items: start;
+  }
+
+  .dispatches-grid.has-featured-landscape {
+    display: block;
+  }
+
+  .dispatch-secondary-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+
+  .dispatches-grid.has-featured-short .dispatch-secondary-grid {
+    grid-column: 2;
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid {
+    column-count: 2;
+    column-gap: 1.5rem;
+    display: block;
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
+    width: 100%;
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-landscape {
+    display: inline-grid;
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-short {
+    display: inline-flex;
   }
 
   .dispatch-card {
@@ -2951,6 +2991,9 @@
     overflow: hidden;
     text-decoration: none;
     transition: all 0.25s ease;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
   }
 
   .dispatch-card:hover {
@@ -2964,19 +3007,43 @@
     grid-row: span 2;
   }
 
+  .dispatch-card.dispatch-featured.is-landscape {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    display: block;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  .dispatch-card.dispatch-featured.is-landscape .dispatch-media {
+    height: clamp(260px, 32vw, 360px);
+    aspect-ratio: auto;
+  }
+
+  .dispatch-card:not(.dispatch-featured).is-landscape {
+    display: grid;
+    grid-template-columns: minmax(136px, 42%) minmax(0, 1fr);
+  }
+
   .dispatch-media {
     position: relative;
-    height: 200px;
+    aspect-ratio: 16 / 9;
     background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    overflow: hidden;
   }
 
   .dispatch-media.small {
-    height: 100px;
+    aspect-ratio: 16 / 9;
   }
 
   .dispatch-media.is-short {
-    height: auto;
     aspect-ratio: 9 / 16;
+  }
+
+  .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-media {
+    min-height: 128px;
+    height: 100%;
+    aspect-ratio: auto;
   }
 
   .dispatch-card.is-short:not(.dispatch-featured) {
@@ -3075,6 +3142,21 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .dispatch-card.dispatch-featured.is-landscape .dispatch-content {
+    position: absolute;
+    inset: auto 0 0;
+    min-height: 46%;
+    padding: 4rem 1.25rem 1.25rem;
+    justify-content: flex-end;
+    background: linear-gradient(0deg, rgba(36, 48, 39, 0.95) 0%, rgba(36, 48, 39, 0.72) 55%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-content {
+    padding: 1rem;
   }
 
   .dispatch-date {
@@ -3101,6 +3183,11 @@
     font-size: 1.35rem;
   }
 
+  .dispatch-featured.is-landscape .dispatch-title {
+    color: var(--cream);
+    max-width: 620px;
+  }
+
   .dispatch-desc {
     font-size: 0.9rem;
     color: var(--muted);
@@ -3113,12 +3200,27 @@
   }
 
   .dispatch-featured .dispatch-desc {
-    -webkit-line-clamp: 10;
+    -webkit-line-clamp: 6;
+  }
+
+  .dispatch-featured.is-landscape .dispatch-desc {
+    -webkit-line-clamp: 2;
+    color: rgba(255, 252, 242, 0.82);
+    max-width: 560px;
+  }
+
+  .dispatch-featured.is-landscape .dispatch-date,
+  .dispatch-featured.is-landscape .dispatch-cta {
+    color: var(--marker);
   }
 
   .dispatch-card:not(.dispatch-featured) .dispatch-desc {
     font-size: 0.85rem;
     -webkit-line-clamp: 2;
+  }
+
+  .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-desc {
+    display: none;
   }
 
   .dispatch-cta {
@@ -3853,11 +3955,74 @@
     }
 
     .dispatches-grid {
+      display: grid;
       grid-template-columns: 1fr;
+    }
+
+    .dispatches-grid.has-featured-landscape {
+      display: grid;
+    }
+
+    .dispatch-secondary-grid,
+    .dispatches-grid.has-featured-landscape .dispatch-secondary-grid {
+      column-count: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      grid-column: auto;
+    }
+
+    .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card {
+      margin-bottom: 0;
     }
 
     .dispatch-card.dispatch-featured {
       grid-row: span 1;
+    }
+
+    .dispatch-card.dispatch-featured.is-landscape,
+    .dispatch-card:not(.dispatch-featured).is-landscape,
+    .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-landscape,
+    .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-short {
+      display: flex;
+      grid-column: auto;
+    }
+
+    .dispatch-card.dispatch-featured.is-landscape .dispatch-media {
+      height: auto;
+      aspect-ratio: 16 / 9;
+    }
+
+    .dispatch-card.dispatch-featured.is-landscape .dispatch-content {
+      position: static;
+      min-height: 0;
+      padding: 1.25rem;
+      background: transparent;
+      pointer-events: auto;
+    }
+
+    .dispatch-featured.is-landscape .dispatch-title {
+      color: var(--pine-dark);
+    }
+
+    .dispatch-featured.is-landscape .dispatch-desc {
+      color: var(--muted);
+      max-width: none;
+    }
+
+    .dispatch-featured.is-landscape .dispatch-date,
+    .dispatch-featured.is-landscape .dispatch-cta {
+      color: var(--terra);
+    }
+
+    .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-media {
+      height: auto;
+      min-height: 0;
+      aspect-ratio: 16 / 9;
+    }
+
+    .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-desc {
+      display: -webkit-box;
     }
 
     .dispatch-featured .dispatch-desc {
@@ -3960,8 +4125,9 @@
       display: none;
     }
 
-    .dispatch-media {
-      height: 160px;
+    .dispatch-media,
+    .dispatch-media.small {
+      aspect-ratio: 16 / 9;
     }
 
     .bulletin-board {
