@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { loadBlogEntries, loadTrips } from '$lib/server/public-content';
+import { loadPublicTrailUpdates } from '$lib/server/trail-updates';
 
 function escapeXml(value: string): string {
   return value
@@ -11,21 +11,17 @@ function escapeXml(value: string): string {
 }
 
 export const GET: RequestHandler = async ({ url }) => {
-  const [posts, trips] = await Promise.all([loadBlogEntries(), loadTrips()]);
-  const items = [
-    ...posts.map((post) => ({
-      title: post.title,
-      description: post.description,
-      link: new URL(`/blog/${post.slug}`, url.origin).toString(),
-      date: post.date
-    })),
-    ...trips.map((trip) => ({
-      title: trip.title,
-      description: trip.description,
-      link: new URL(`/trips/${trip.slug}`, url.origin).toString(),
-      date: trip.date
+  const { updates } = await loadPublicTrailUpdates(url.origin, 30);
+  const items = updates
+    .map((update) => ({
+      title: update.title,
+      description: update.body || update.sourceLabel || 'Hogg Country trail update',
+      link: update.externalUrl || new URL('/updates', url.origin).toString(),
+      date: update.publishedAt || update.createdAt
     }))
-  ].sort((left, right) => right.date.localeCompare(left.date)).slice(0, 30);
+    .filter((item) => item.date)
+    .sort((left, right) => right.date.localeCompare(left.date))
+    .slice(0, 30);
 
   const body = `<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0">

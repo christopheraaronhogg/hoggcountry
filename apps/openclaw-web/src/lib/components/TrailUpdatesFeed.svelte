@@ -19,13 +19,14 @@
   }
 
   interface Props {
-    apiBase: string;
+    apiBase?: string;
+    endpoint?: string;
     limit?: number;
     compact?: boolean;
     showHeader?: boolean;
   }
 
-  const { apiBase, limit = 12, compact = false, showHeader = true } = $props<Props>();
+  const { apiBase, endpoint, limit = 12, compact = false, showHeader = true } = $props<Props>();
   let updates = $state<TrailUpdate[]>([]);
   let stateMessage = $state('Loading trail updates...');
 
@@ -35,7 +36,7 @@
 
   async function loadUpdates() {
     try {
-      const response = await fetch(`${apiBase.replace(/\/+$/u, '')}/trail-updates?limit=${limit}`);
+      const response = await fetch(feedUrl());
       if (!response.ok) throw new Error('Could not load updates');
       const payload = await response.json();
       updates = Array.isArray(payload?.data?.updates)
@@ -47,6 +48,13 @@
     } catch {
       stateMessage = 'Trail updates are temporarily unavailable.';
     }
+  }
+
+  function feedUrl(): string {
+    const rawEndpoint = endpoint || (apiBase ? `${apiBase.replace(/\/+$/u, '')}/trail-updates` : '/updates/feed');
+    const url = new URL(rawEndpoint, window.location.origin);
+    url.searchParams.set('limit', String(limit));
+    return url.toString();
   }
 
   function formatDate(value: string | undefined): string {

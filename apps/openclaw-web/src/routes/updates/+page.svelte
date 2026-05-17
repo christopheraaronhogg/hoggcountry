@@ -22,7 +22,7 @@
 </section>
 
 <div class="container">
-  <TrailUpdatesFeed apiBase={data.apiBase} limit={50} showHeader={false} />
+  <TrailUpdatesFeed endpoint={data.updatesEndpoint} limit={50} showHeader={false} />
 </div>
 
 <style>

@@ -298,20 +298,29 @@
       trailUpdatesLoading = true;
       trailUpdatesError = '';
       try {
-        const res = await fetch('/app-api/trail-updates?limit=50', { headers: { Accept: 'application/json' } });
-        if (!res.ok) throw new Error(`trail-updates failed: ${res.status}`);
-        const payload = await res.json();
-        trailUpdates = Array.isArray(payload?.updates)
-          ? payload.updates
-          : Array.isArray(payload?.data?.updates)
-            ? payload.data.updates
-            : [];
+        trailUpdates = await loadTrailUpdatesFromFeed('/updates/feed?limit=50');
         if (heroStoryIndex >= trailUpdates.length) heroStoryIndex = 0;
       } catch (e) {
-        trailUpdatesError = e?.message || String(e);
+        try {
+          trailUpdates = await loadTrailUpdatesFromFeed('/.netlify/functions/trail-updates?limit=50');
+          if (heroStoryIndex >= trailUpdates.length) heroStoryIndex = 0;
+        } catch (fallbackError) {
+          trailUpdatesError = fallbackError?.message || e?.message || String(fallbackError || e);
+        }
       } finally {
         trailUpdatesLoading = false;
       }
+    }
+
+    async function loadTrailUpdatesFromFeed(feedUrl) {
+      const res = await fetch(feedUrl, { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(`trail-updates failed: ${res.status}`);
+      const payload = await res.json();
+      return Array.isArray(payload?.updates)
+        ? payload.updates
+        : Array.isArray(payload?.data?.updates)
+          ? payload.data.updates
+          : [];
     }
 
     refreshVideos();
@@ -1074,7 +1083,7 @@
       {/if}
 
       <!-- Panel 3: The Journey -->
-      <a href="/trips" class="panel panel-journey">
+      <a href="/videos" class="panel panel-journey">
         <div class="panel-frame">
           <div class="panel-number">III</div>
           <div class="panel-icon">
@@ -1086,8 +1095,8 @@
           </div>
           <h3 class="panel-title">THE JOURNEY</h3>
           <p class="panel-desc">
-            Training expeditions, field reports, and moving picture logs documenting the path from
-            Arkansas trails to the AT's white blazes.
+            Trail videos, Shorts, and moving picture logs documenting the path from Arkansas
+            trails to the AT's white blazes.
           </p>
           <div class="panel-meta">
             <span class="meta-item">
@@ -1102,7 +1111,7 @@
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              Field Reports
+              Trail Log
             </span>
           </div>
           <span class="panel-cta">Follow Along</span>
@@ -1324,7 +1333,7 @@
         <span class="footer-dot"></span>
         <a href="/tools">Trail Tools</a>
         <span class="footer-dot"></span>
-        <a href="/trips">Trip Reports</a>
+        <a href="/updates">Trail Updates</a>
         <span class="footer-dot"></span>
         <a href="/videos">Videos</a>
       </div>

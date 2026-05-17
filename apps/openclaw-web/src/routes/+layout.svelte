@@ -16,8 +16,6 @@
     { href: '/updates', label: 'Trail Updates', external: false },
     { href: '/guide', label: 'Field Guide', external: false },
     { href: '/videos', label: 'Videos', external: false },
-    { href: '/trips', label: 'Trips', external: false },
-    { href: '/blog', label: 'Blog', external: false },
     { href: '/at-map', label: 'AT Map', external: false },
     { href: '/tools', label: 'Trail Tools', external: false },
     { href: '/login', label: 'Account', external: false }
