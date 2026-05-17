@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Scout by Hogg Country",
     "subtitle": "Plan AT hikes",
-    "description": "Scout helps Appalachian Trail hikers plan days, weeks, resupply, and section hikes in ChatGPT using curated A.T. guide content and open-reference trail context from Hogg Country. It returns source receipts and caveats for candidate water, shelter, campsite, resupply, terrain, rule, and live-source leads, while clearly separating generated planning help from current field conditions.",
+    "description": "Scout helps Appalachian Trail hikers plan days, weeks, resupply, and section hikes in ChatGPT using license-aware open-reference trail context from Hogg Country. It returns source receipts and caveats for candidate water, shelter, campsite, resupply, terrain, rule, and live-source leads, while clearly separating generated planning help from current field conditions.",
     "category": "TRAVEL"
   },
   "tools": {
@@ -15,7 +15,7 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Searches local public Scout guide and reference content and returns matching source leads without changing state.",
+        "read_only_justification": "Searches local Scout open-reference content and returns matching source leads without changing state.",
         "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
         "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
       }
@@ -27,7 +27,7 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Retrieves one local public Scout document by id and returns its text without changing state.",
+        "read_only_justification": "Retrieves one local Scout open-reference document by id and returns its text without changing state.",
         "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
         "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
       }
@@ -132,15 +132,15 @@
   "test_cases": [
     {
       "description": "Search Appalachian Trail planning guidance.",
-      "user_prompt": "Help me plan resupply for the early Appalachian Trail.",
+      "user_prompt": "Help me find Scout open-reference resupply context for the early Appalachian Trail.",
       "file_attachment_urls": null,
       "tools_triggered": "search",
       "expected_output": "Returns relevant A.T. planning source leads with titles, excerpts, URLs, and source metadata.",
       "expected_output_url": null
     },
     {
-      "description": "Fetch a source document after search returns an id.",
-      "user_prompt": "Fetch the Scout document with id guide:14-food-and-resupply.",
+      "description": "Fetch an open-reference source document after search returns an id.",
+      "user_prompt": "Fetch the Scout document with id at-open-reference:rag-docs-source-notes-osm-corridor-candidates-md.",
       "file_attachment_urls": null,
       "tools_triggered": "fetch",
       "expected_output": "Returns the full public document text and source URL for the requested id, or a clear not-found response.",

@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 
-import { publicCorpus, searchPublicCorpus, type PublicCorpusEntry } from '@hoggcountry/corpus';
+import { searchPublicCorpus, type PublicCorpusEntry } from '@hoggcountry/corpus';
 import {
   STANDARD_DOCUMENT_SLOTS,
   standardDocumentSlotForKey,
@@ -33,7 +33,7 @@ const PORT = Number(process.env.PORT ?? 8787);
 const SITE_ORIGIN = process.env.PUBLIC_SITE_ORIGIN ?? 'https://hoggcountry.com';
 const WIDGET_URI = 'ui://scout/today.html';
 const WIDGET_HTML_URL = new URL('../public/scout-widget.html', import.meta.url);
-const scoutKnowledgeCorpus: readonly PublicCorpusEntry[] = [...publicCorpus, ...atReferenceCorpus];
+const scoutKnowledgeCorpus: readonly PublicCorpusEntry[] = [...atReferenceCorpus];
 const READ_ONLY_LOCAL_ANNOTATIONS = {
   readOnlyHint: true,
   idempotentHint: true,
@@ -219,7 +219,7 @@ function buildBrief(profile: ManualProfile) {
     actions: [
       nextPhaseCard?.detail ?? 'Check the next terrain shift before committing to a bigger mileage day.',
       'Confirm weather, closures, water reports, and town services with live sources before field reliance.',
-      'Ask Scout to fetch any cited Hogg Country guide document before treating a planning detail as sourced.',
+      'Ask Scout to fetch any cited AT open-reference document before treating a planning detail as sourced.',
     ],
     sourceReceipts: [
       { label: 'Hogg Country trail phase model', status: 'local deterministic source' },
@@ -275,7 +275,7 @@ function buildDraftDocument(context: DraftDocumentContext) {
       context.notes ? `User notes: ${context.notes}` : undefined,
     ].filter(Boolean),
     workingPlan: [
-      'Use Hogg Country guide/corpus documents for narrative planning context.',
+      'Use Scout AT open-reference documents for source-aware planning context.',
       'Use the AT open reference pack for candidate water, overnight, town, terrain, and rule leads.',
       'Separate generated candidate data from live/official checks before making field commitments.',
     ],
@@ -423,11 +423,11 @@ async function createScoutServer(): Promise<McpServer> {
     server,
     'search',
     {
-      title: 'Search Hogg Country Scout knowledge',
+      title: 'Search Scout AT reference knowledge',
       description:
-        'Use this when the user needs source-backed Hogg Country Scout context. Searches public guide and planning documents; call fetch next for full document text.',
+        'Use this when the user needs source-backed Scout AT planning context. Searches license-aware open-reference documents; call fetch next for full document text.',
       inputSchema: {
-        query: z.string().min(1).describe('Search query for Scout guide, planning, resupply, gear, safety, or trail context.'),
+        query: z.string().min(1).describe('Search query for Scout AT planning, resupply, gear, safety, or trail context.'),
       },
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
@@ -447,9 +447,9 @@ async function createScoutServer(): Promise<McpServer> {
     server,
     'fetch',
     {
-      title: 'Fetch Hogg Country Scout document',
+      title: 'Fetch Scout AT reference document',
       description:
-        'Use this when search returns a relevant Hogg Country Scout document id and the model needs the full public source text before answering.',
+        'Use this when search returns a relevant Scout AT reference document id and the model needs the full source text before answering.',
       inputSchema: {
         id: z.string().min(1).describe('Document id returned by search.'),
       },
@@ -460,7 +460,7 @@ async function createScoutServer(): Promise<McpServer> {
       if (!entry) {
         return {
           isError: true,
-          content: textContent(`No Hogg Country Scout document found for id "${id}".`),
+          content: textContent(`No Scout AT reference document found for id "${id}".`),
         };
       }
 
@@ -699,7 +699,7 @@ async function createScoutServer(): Promise<McpServer> {
           endMile: Number(cursor.toFixed(1)),
           days,
           checks: [
-            'Fetch any relevant Hogg Country guide documents for the section before treating the route plan as sourced.',
+            'Fetch any relevant Scout AT open-reference documents for the section before treating the route plan as sourced.',
             'Add live weather, official closures, water reports, and town service checks before using this in the field.',
             'Revise the plan when body notes, storms, heat, or resupply friction change the assumptions.',
           ],
@@ -727,7 +727,7 @@ async function createScoutServer(): Promise<McpServer> {
     {
       title: 'Find next resupply leads',
       description:
-        'Use this when the user asks about next resupply options or town-planning leads. Returns public Hogg Country source leads, not live hours or inventory.',
+        'Use this when the user asks about next resupply options or town-planning leads. Returns Scout open-reference source leads, not live hours or inventory.',
       inputSchema: {
         ...trailContextInput,
         query: z.string().min(1).default('resupply').describe('Optional resupply search query.'),
@@ -773,7 +773,7 @@ async function createScoutServer(): Promise<McpServer> {
             'Carry enough buffer food if the plan depends on a small store, hostel box, or shuttle timing.',
           ],
           sourceReceipts: [
-            { label: 'Hogg Country public corpus search', status: 'source leads only' },
+            { label: 'Scout AT open-reference search', status: 'source leads only' },
             ...referenceContext.sourceReceipts,
             { label: 'Current town services', status: 'not live yet - user must confirm' },
           ],
@@ -784,7 +784,7 @@ async function createScoutServer(): Promise<McpServer> {
       return {
         structuredContent,
         content: textContent(
-          `Scout found ${(referenceContext.categories.resupply ?? []).length} open-reference resupply leads and ${fallbackHits.slice(0, 5).length} corpus matches. Confirm live hours, services, shuttles, lodging, and inventory before relying on them.`,
+          `Scout found ${(referenceContext.categories.resupply ?? []).length} open-reference resupply leads and ${fallbackHits.slice(0, 5).length} reference matches. Confirm live hours, services, shuttles, lodging, and inventory before relying on them.`,
         ),
       };
     },

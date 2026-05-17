@@ -146,25 +146,63 @@ export interface SectionReference {
 
 const AT_REFERENCE_ROOT = fileURLToPath(new URL('../../../data/at-open-reference/', import.meta.url));
 const DEFAULT_LIMIT = 8;
+const ALLOWED_EXPOSED_LICENSE_STATUSES = new Set([
+  'api_access_allowed',
+  'open_license_attribution',
+  'open_license_share_alike',
+  'public_domain',
+]);
+const BLOCKED_SOURCE_IDS = new Set([
+  'alltrails_gaia_hiking_project',
+  'at_data_book',
+  'atc_website',
+  'awol_at_guide',
+  'farout',
+]);
+
+function rawString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
 
 function readReferenceJson<T>(relativePath: string): T {
   return JSON.parse(readFileSync(join(AT_REFERENCE_ROOT, relativePath), 'utf8')) as T;
 }
 
+function readExposedReferenceRecords(relativePath: string): JsonRecord[] {
+  const records = readReferenceJson<JsonRecord[]>(relativePath);
+
+  records.forEach((record, index) => {
+    const licenseStatus = rawString(record.license_status) ?? rawString(record.licenseStatus);
+    const sourceId = rawString(record.source_id) ?? rawString(record.sourceId);
+
+    if (!licenseStatus || !ALLOWED_EXPOSED_LICENSE_STATUSES.has(licenseStatus)) {
+      throw new Error(
+        `Refusing to expose ${relativePath}[${index}] with license status "${licenseStatus ?? 'missing'}".`,
+      );
+    }
+
+    if (sourceId && BLOCKED_SOURCE_IDS.has(sourceId)) {
+      throw new Error(`Refusing to expose ${relativePath}[${index}] from blocked source "${sourceId}".`);
+    }
+  });
+
+  return records;
+}
+
 const referenceSummary = readReferenceJson<ReferenceSummary>('processed/summary/scout_offline_reference_summary.json');
-const waterCandidates = readReferenceJson<JsonRecord[]>('processed/water/water_candidates.json');
-const shelters = readReferenceJson<JsonRecord[]>('processed/waypoints/shelters.json');
-const campsites = readReferenceJson<JsonRecord[]>('processed/waypoints/campsites.json');
-const privies = readReferenceJson<JsonRecord[]>('processed/waypoints/privies.json');
-const vistas = readReferenceJson<JsonRecord[]>('processed/waypoints/vistas.json');
-const trailheads = readReferenceJson<JsonRecord[]>('processed/access/trailheads.json');
-const resupplyCandidates = readReferenceJson<JsonRecord[]>('processed/towns_resupply/towns_within_15mi.json');
-const elevationSegments = readReferenceJson<JsonRecord[]>('processed/elevation/climbs_descents_by_25mi_segment_1_0mi.json');
-const gradeRiskSections = readReferenceJson<JsonRecord[]>('processed/elevation/grade_risk_sections_1_0mi.json');
-const campingRules = readReferenceJson<JsonRecord[]>('processed/camping_rules/rules_by_state.json');
-const permitRules = readReferenceJson<JsonRecord[]>('processed/permits_fees/permit_required_sections.json');
-const feeRules = readReferenceJson<JsonRecord[]>('processed/permits_fees/fee_required_sections.json');
-const liveConditionSources = readReferenceJson<JsonRecord[]>('processed/live_alerts/live_condition_sources.json');
+const waterCandidates = readExposedReferenceRecords('processed/water/water_candidates.json');
+const shelters = readExposedReferenceRecords('processed/waypoints/shelters.json');
+const campsites = readExposedReferenceRecords('processed/waypoints/campsites.json');
+const privies = readExposedReferenceRecords('processed/waypoints/privies.json');
+const vistas = readExposedReferenceRecords('processed/waypoints/vistas.json');
+const trailheads = readExposedReferenceRecords('processed/access/trailheads.json');
+const resupplyCandidates = readExposedReferenceRecords('processed/towns_resupply/towns_within_15mi.json');
+const elevationSegments = readExposedReferenceRecords('processed/elevation/climbs_descents_by_25mi_segment_1_0mi.json');
+const gradeRiskSections = readExposedReferenceRecords('processed/elevation/grade_risk_sections_1_0mi.json');
+const campingRules = readExposedReferenceRecords('processed/camping_rules/rules_by_state.json');
+const permitRules = readExposedReferenceRecords('processed/permits_fees/permit_required_sections.json');
+const feeRules = readExposedReferenceRecords('processed/permits_fees/fee_required_sections.json');
+const liveConditionSources = readExposedReferenceRecords('processed/live_alerts/live_condition_sources.json');
 
 const candidateData: Record<Exclude<ReferenceCategory, 'terrain' | 'rules' | 'live-sources'>, readonly JsonRecord[]> = {
   water: waterCandidates,
@@ -177,7 +215,7 @@ const candidateData: Record<Exclude<ReferenceCategory, 'terrain' | 'rules' | 'li
 };
 
 function asString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  return rawString(value);
 }
 
 function asNumber(value: unknown): number | undefined {
