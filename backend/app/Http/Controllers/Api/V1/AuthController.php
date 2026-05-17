@@ -21,14 +21,23 @@ class AuthController extends ApiController
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'confirmed', 'min:8'],
             'device_name' => ['nullable', 'string', 'max:120'],
         ]);
 
+        $email = $this->normalizeEmail($validated['email']);
+        $existingUser = $this->findUserByEmail($email);
+        if ($existingUser) {
+            return $this->fail('account_exists', 'An account already exists for this email. Sign in or recover your login instead.', 409, [
+                'email' => $email,
+                'providers' => $this->authProvidersForUser($existingUser),
+            ]);
+        }
+
         $user = User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => $email,
             'password' => $validated['password'],
         ]);
 
@@ -56,7 +65,8 @@ class AuthController extends ApiController
             'device_name' => ['nullable', 'string', 'max:120'],
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        $email = $this->normalizeEmail($validated['email']);
+        $user = $this->findUserByEmail($email);
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -93,9 +103,16 @@ class AuthController extends ApiController
             'email' => ['required', 'email'],
         ]);
 
+        $email = $this->normalizeEmail($validated['email']);
         $status = Password::sendResetLink([
-            'email' => $validated['email'],
+            'email' => $email,
         ]);
+
+        if ($status === Password::INVALID_USER) {
+            return $this->ok([
+                'message' => __(Password::RESET_LINK_SENT),
+            ]);
+        }
 
         if ($status !== Password::RESET_LINK_SENT) {
             return $this->fail('password_reset_failed', __($status), 422);
@@ -114,6 +131,8 @@ class AuthController extends ApiController
             'password' => ['required', 'confirmed', 'min:8'],
         ]);
 
+        $validated['email'] = $this->normalizeEmail($validated['email']);
+
         $status = Password::reset(
             $validated,
             function (User $user, string $password): void {
@@ -121,6 +140,10 @@ class AuthController extends ApiController
                     'password' => $password,
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                if (! $user->hasVerifiedEmail()) {
+                    $user->markEmailAsVerified();
+                }
 
                 event(new PasswordReset($user));
             }
@@ -184,10 +207,16 @@ class AuthController extends ApiController
         }
 
         $providerUserId = trim((string) $googleUser->getId());
-        $email = Str::lower(trim((string) $googleUser->getEmail()));
+        $email = $this->normalizeEmail((string) $googleUser->getEmail());
 
         if ($providerUserId === '' || $email === '') {
             return $this->fail('oauth_invalid_user', 'Google account did not return required identity fields.', 422, [
+                'provider' => 'google',
+            ]);
+        }
+
+        if (! $this->googleEmailIsVerified($googleUser)) {
+            return $this->fail('oauth_unverified_email', 'Google did not return a verified email for this account.', 422, [
                 'provider' => 'google',
             ]);
         }
@@ -199,12 +228,16 @@ class AuthController extends ApiController
                 ->first();
 
             if ($social) {
+                $social->forceFill([
+                    'email' => $email,
+                    'avatar_url' => $googleUser->getAvatar(),
+                    'raw_user' => $this->googleRawUserPayload($googleUser),
+                ])->save();
+
                 return $social->user;
             }
 
-            $existingUser = User::query()
-                ->where('email', $email)
-                ->first();
+            $existingUser = $this->findUserByEmail($email);
 
             if (! $existingUser) {
                 $displayName = trim((string) $googleUser->getName());
@@ -243,12 +276,7 @@ class AuthController extends ApiController
                     'user_id' => $existingUser->id,
                     'email' => $email,
                     'avatar_url' => $googleUser->getAvatar(),
-                    'raw_user' => [
-                        'nickname' => $googleUser->getNickname(),
-                        'name' => $googleUser->getName(),
-                        'email' => $googleUser->getEmail(),
-                        'avatar' => $googleUser->getAvatar(),
-                    ],
+                    'raw_user' => $this->googleRawUserPayload($googleUser),
                 ]
             );
 
@@ -277,12 +305,17 @@ class AuthController extends ApiController
             ! $request->expectsJson() &&
             is_string($frontendCallbackUrl)
         ) {
-            $fragment = http_build_query([
+            $handoffCode = Str::random(64);
+            Cache::put($this->googleHandoffCacheKey($handoffCode), [
                 'token' => $token,
+                'user' => $this->userPayload($user->load('profile')),
                 'provider' => 'google',
-            ]);
+            ], now()->addMinutes(5));
 
-            return redirect()->away("{$frontendCallbackUrl}#{$fragment}");
+            return redirect()->away($this->appendQueryParams($frontendCallbackUrl, [
+                'handoff' => $handoffCode,
+                'provider' => 'google',
+            ]));
         }
 
         return $this->ok([
@@ -292,9 +325,79 @@ class AuthController extends ApiController
         ]);
     }
 
+    public function googleHandoff(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'size:64'],
+        ]);
+
+        $payload = Cache::pull($this->googleHandoffCacheKey($validated['code']));
+        if (! is_array($payload) || ! isset($payload['token'], $payload['user'], $payload['provider'])) {
+            return $this->fail('google_handoff_invalid', 'Google login expired. Try signing in again.', 422, [
+                'provider' => 'google',
+            ]);
+        }
+
+        return $this->ok($payload);
+    }
+
     private function googleStateCacheKey(string $state): string
     {
         return "oauth_google_state:{$state}";
+    }
+
+    private function googleHandoffCacheKey(string $code): string
+    {
+        return "oauth_google_handoff:{$code}";
+    }
+
+    private function normalizeEmail(string $email): string
+    {
+        return Str::lower(trim($email));
+    }
+
+    private function findUserByEmail(string $email): ?User
+    {
+        return User::query()
+            ->whereRaw('LOWER(email) = ?', [$this->normalizeEmail($email)])
+            ->first();
+    }
+
+    private function authProvidersForUser(User $user): array
+    {
+        $providers = $user->socialAccounts()
+            ->pluck('provider')
+            ->map(fn (string $provider): string => Str::lower($provider))
+            ->unique()
+            ->values()
+            ->all();
+
+        array_unshift($providers, 'email');
+
+        return array_values(array_unique($providers));
+    }
+
+    private function googleEmailIsVerified($googleUser): bool
+    {
+        $raw = method_exists($googleUser, 'getRaw') ? $googleUser->getRaw() : [];
+        $verified = is_array($raw)
+            ? ($raw['email_verified'] ?? $raw['verified_email'] ?? null)
+            : null;
+
+        return $verified === true || $verified === 1 || $verified === '1' || $verified === 'true';
+    }
+
+    private function googleRawUserPayload($googleUser): array
+    {
+        $raw = method_exists($googleUser, 'getRaw') ? $googleUser->getRaw() : [];
+
+        return [
+            'nickname' => $googleUser->getNickname(),
+            'name' => $googleUser->getName(),
+            'email' => $googleUser->getEmail(),
+            'avatar' => $googleUser->getAvatar(),
+            'email_verified' => is_array($raw) ? ($raw['email_verified'] ?? $raw['verified_email'] ?? null) : null,
+        ];
     }
 
     private function resolveFrontendCallbackUrl(?string $candidate): ?string
@@ -328,6 +431,18 @@ class AuthController extends ApiController
         }
 
         return $candidate;
+    }
+
+    private function appendQueryParams(string $url, array $params): string
+    {
+        $fragment = parse_url($url, PHP_URL_FRAGMENT);
+        $baseUrl = is_string($fragment)
+            ? Str::before($url, '#')
+            : $url;
+        $separator = Str::contains($baseUrl, '?') ? '&' : '?';
+        $withQuery = $baseUrl.$separator.http_build_query($params);
+
+        return is_string($fragment) ? "{$withQuery}#{$fragment}" : $withQuery;
     }
 
     private function allowedFrontendHosts(): array

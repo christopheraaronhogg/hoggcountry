@@ -1,244 +1,193 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import type { PageData } from './$types';
+  import type { ActionData, PageData } from './$types';
 
-  const { data } = $props<{ data: PageData }>();
-  const AUTH_KEY = 'hcApiAuth.v1';
-  const REDIRECT_KEY = 'hcLoginRedirect.v1';
-
-  interface AuthPayload {
-    token: string;
-    provider?: string;
-    user?: { name?: string; email?: string } | null;
-  }
-
-  let status = $state('');
-  let statusType = $state<'info' | 'success' | 'error'>('info');
-  let user = $state<{ name?: string; email?: string } | null>(null);
-  let loggedIn = $state(false);
-  let busy = $state(false);
-  let redirectTo = $state('/trail/');
-
-  onMount(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const queryRedirect = normalizeRedirect(searchParams.get('redirect') || '');
-    const storedRedirect = normalizeRedirect(sessionStorage.getItem(REDIRECT_KEY) || '');
-    redirectTo = queryRedirect || storedRedirect || '/trail/';
-    if (queryRedirect) sessionStorage.setItem(REDIRECT_KEY, queryRedirect);
-
-    const hashParams = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '');
-    const tokenFromHash = hashParams.get('token');
-    if (tokenFromHash) {
-      writeAuth({ token: tokenFromHash, provider: hashParams.get('provider') || 'google' });
-      history.replaceState({}, document.title, window.location.pathname + window.location.search);
-    }
-
-    void hydrate(Boolean(tokenFromHash));
-  });
-
-  function parseJson(raw: string | null): AuthPayload | null {
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as AuthPayload;
-    } catch {
-      return null;
-    }
-  }
-
-  function readAuth(): AuthPayload | null {
-    const auth = parseJson(localStorage.getItem(AUTH_KEY));
-    return auth?.token ? auth : null;
-  }
-
-  function writeAuth(payload: AuthPayload) {
-    localStorage.setItem(AUTH_KEY, JSON.stringify({
-      token: payload.token,
-      provider: payload.provider || 'google',
-      user: payload.user || null,
-      updatedAt: new Date().toISOString()
-    }));
-  }
-
-  function clearAuth() {
-    localStorage.removeItem(AUTH_KEY);
-  }
-
-  function normalizeRedirect(value: string): string {
-    if (!value.startsWith('/') || value.startsWith('//')) return '';
-    return value;
-  }
-
-  function setStatus(message: string, type: typeof statusType = 'info') {
-    status = message;
-    statusType = type;
-  }
-
-  async function fetchMe(token: string) {
-    const response = await fetch(`${data.apiBase}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!response.ok) return null;
-    const payload = await response.json().catch(() => null);
-    return payload?.data ?? null;
-  }
-
-  async function hydrate(returnedFromProvider = false) {
-    const auth = readAuth();
-    if (!auth) {
-      loggedIn = false;
-      setStatus('Sign in to sync your profile across devices.');
-      return;
-    }
-
-    setStatus('Verifying session...');
-    const me = await fetchMe(auth.token);
-    if (!me) {
-      clearAuth();
-      loggedIn = false;
-      setStatus('Your session expired. Please sign in again.', 'error');
-      return;
-    }
-
-    user = me;
-    loggedIn = true;
-    writeAuth({ token: auth.token, provider: auth.provider, user: me });
-
-    if (returnedFromProvider) {
-      setStatus('Signed in with Google. Redirecting...', 'success');
-      setTimeout(() => window.location.assign(redirectTo), 500);
-    } else {
-      setStatus('You are signed in.', 'success');
-    }
-  }
-
-  function loginWithGoogle() {
-    busy = true;
-    setStatus('Redirecting to Google...');
-    sessionStorage.setItem(REDIRECT_KEY, redirectTo);
-    const callbackUrl = new URL('/login', window.location.origin);
-    if (redirectTo !== '/trail/') callbackUrl.searchParams.set('redirect', redirectTo);
-    const oauthUrl = new URL(`${data.apiBase}/auth/google/redirect`);
-    oauthUrl.searchParams.set('callback', callbackUrl.toString());
-    window.location.assign(oauthUrl.toString());
-  }
-
-  async function logout() {
-    const auth = readAuth();
-    busy = true;
-    setStatus('Signing out...');
-    try {
-      if (auth?.token) {
-        await fetch(`${data.apiBase}/auth/logout`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${auth.token}` }
-        });
-      }
-    } finally {
-      clearAuth();
-      busy = false;
-      loggedIn = false;
-      user = null;
-      setStatus('Signed out.', 'success');
-    }
-  }
+  const { data, form } = $props<{ data: PageData; form: ActionData }>();
+  const message = $derived(form?.message || data.message);
+  const redirectTo = $derived(form?.redirectTo || data.redirectTo || '/app');
 </script>
 
 <svelte:head>
-  <title>Account | Hogg Country</title>
-  <meta name="description" content="Sign in with Google to sync your profile and trail data across devices." />
+  <title>Sign in | Hogg Country</title>
+  <meta name="description" content="Sign in to Scout with Google or email and password." />
 </svelte:head>
 
-<section class="hero">
-  <span class="chapter">Account</span>
-  <h1>Sign In</h1>
-  <p>Use Google for a fast login. We keep your trail model local-first and sync in the background.</p>
+<section class="auth-shell">
+  <div class="auth-copy">
+    <p class="eyebrow">Scout account</p>
+    <h1>Sign in to your trail workspace.</h1>
+    <p class="lede">Use Google or email and password. Same verified email, same Scout workspace.</p>
+  </div>
+
+  <div class="auth-panel">
+    <a class="google-button" href={data.googleUrl}>Continue with Google</a>
+
+    <div class="divider"><span>or</span></div>
+
+    <form method="POST" class="auth-form">
+      <input type="hidden" name="redirectTo" value={redirectTo} />
+
+      <label>
+        <span>Email</span>
+        <input name="email" type="email" autocomplete="email" required value={form?.email ?? ''} />
+      </label>
+
+      <label>
+        <span>Password</span>
+        <input name="password" type="password" autocomplete="current-password" required />
+      </label>
+
+      {#if message}
+        <p class="status" data-type={form?.message ? 'error' : data.messageType}>{message}</p>
+      {/if}
+
+      <button class="primary-button" type="submit">Sign in</button>
+    </form>
+
+    <div class="auth-links">
+      <a href={`/forgot-password?email=${encodeURIComponent(form?.email ?? '')}`}>Forgot password?</a>
+      <a href={`/signup?redirect=${encodeURIComponent(redirectTo)}`}>Create account</a>
+    </div>
+  </div>
 </section>
 
-<div class="container auth-wrap">
-  <div class="auth-card">
-    {#if loggedIn}
-      <p class="user">Signed in as {user?.name || user?.email}</p>
-      <a class="continue-link" href={redirectTo}>Continue to Trail Hub</a>
-      <button type="button" class="logout-button" disabled={busy} onclick={logout}>Log Out</button>
-    {:else}
-      <button type="button" class="google-button" disabled={busy} onclick={loginWithGoogle}>Continue with Google</button>
-    {/if}
-    <p class="status" data-type={statusType} aria-live="polite">{status}</p>
-  </div>
-</div>
-
 <style>
-  .hero {
-    padding: 3rem 1rem 2rem;
+  .auth-shell {
+    display: grid;
+    gap: 1.2rem;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: clamp(2rem, 7vw, 4.5rem) 1rem;
+  }
+
+  .auth-copy {
+    display: grid;
+    gap: 0.55rem;
     text-align: center;
   }
 
-  .chapter {
-    display: inline-block;
-    margin: 0.5rem auto 1rem;
-    padding: 0.25rem 0.75rem;
-    border: 2px solid var(--pine);
-    border-radius: 999px;
-    background: #fdfcf7;
-    color: var(--pine);
-    font-family: Oswald, sans-serif;
-    letter-spacing: 0.02em;
-  }
-
-  h1 {
+  .auth-copy h1 {
     margin: 0;
-    font-size: clamp(2.4rem, 5vw, 4rem);
+    color: var(--ink);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1;
   }
 
-  .hero p,
-  .status,
-  .user {
+  .lede {
+    max-width: 36rem;
+    margin: 0 auto;
     color: var(--muted);
   }
 
-  .auth-wrap {
-    max-width: 560px;
-    padding-bottom: 4rem;
-  }
-
-  .auth-card {
+  .auth-panel {
     display: grid;
-    gap: 0.9rem;
-    padding: 1.1rem;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--card);
-    box-shadow: var(--shadow-soft);
+    gap: 1rem;
+    max-width: 440px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1rem;
+    border: 1px solid rgba(77, 89, 74, 0.16);
+    border-radius: 8px;
+    background: #fffdf8;
+    box-shadow: 0 16px 34px rgba(31, 41, 55, 0.08);
   }
 
-  button,
-  .continue-link {
-    min-height: 46px;
-    border-radius: 10px;
-    padding: 0.72rem 0.9rem;
+  .auth-form {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  label {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--muted);
     font-weight: 800;
-    text-align: center;
+  }
+
+  input {
+    min-height: 2.9rem;
+    width: 100%;
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    border-radius: 8px;
+    padding: 0 0.8rem;
+    background: white;
+    color: var(--ink);
+    font: inherit;
   }
 
   .google-button,
-  .logout-button {
-    border: 1px solid var(--border);
-    background: #fff;
+  .primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.95rem;
+    border-radius: 8px;
+    padding: 0 0.9rem;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .google-button {
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    background: white;
     color: var(--ink);
+  }
+
+  .primary-button {
+    border: 0;
+    background: var(--pine);
+    color: white;
     cursor: pointer;
   }
 
-  .continue-link {
-    background: var(--pine);
-    color: #fff;
-    text-decoration: none;
+  .divider {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: '';
+    height: 1px;
+    background: rgba(77, 89, 74, 0.16);
+  }
+
+  .status {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 800;
   }
 
   .status[data-type='error'] {
     color: #9f1239;
   }
 
-  .status[data-type='success'] {
-    color: var(--status-live);
+  .auth-links {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    color: var(--pine);
+    font-weight: 850;
+  }
+
+  @media (min-width: 760px) {
+    .auth-shell {
+      grid-template-columns: minmax(0, 1fr) 440px;
+      align-items: center;
+    }
+
+    .auth-copy {
+      text-align: left;
+    }
+
+    .lede {
+      margin: 0;
+    }
   }
 </style>

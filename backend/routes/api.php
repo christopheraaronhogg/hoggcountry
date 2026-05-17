@@ -64,6 +64,7 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
         Route::post('/login', [AuthController::class, 'login']);
         Route::get('/google/redirect', [AuthController::class, 'googleRedirect']);
         Route::get('/google/callback', [AuthController::class, 'googleCallback']);
+        Route::post('/google/handoff', [AuthController::class, 'googleHandoff']);
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
         Route::post('/reset-password', [AuthController::class, 'resetPassword']);
         Route::get('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])

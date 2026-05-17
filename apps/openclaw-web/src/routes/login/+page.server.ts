@@ -1,8 +1,95 @@
-import type { PageServerLoad } from './$types';
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+import {
+  authApi,
+  normalizeRedirect,
+  setAuthCookie,
+  type AuthUser
+} from '$lib/server/auth';
 import { publicApiBase } from '$lib/server/public-api';
 
-export const load: PageServerLoad = async () => {
+interface LoginPayload {
+  token: string;
+  user: AuthUser;
+  provider?: string;
+}
+
+function googleLoginUrl(origin: string, redirectTo: string): string {
+  const callbackUrl = new URL('/login', origin);
+  callbackUrl.searchParams.set('redirect', redirectTo);
+
+  const oauthUrl = new URL(`${publicApiBase()}/auth/google/redirect`, origin);
+  oauthUrl.searchParams.set('callback', callbackUrl.toString());
+
+  return oauthUrl.toString();
+}
+
+function authErrorMessage(status: number, message?: string): string {
+  if (message) return message;
+  if (status === 422 || status === 401) return 'Check your email and password, then try again.';
+  return 'Sign in failed. Try again.';
+}
+
+export const load: PageServerLoad = async ({ cookies, fetch, locals, url }) => {
+  const redirectTo = normalizeRedirect(url.searchParams.get('redirect'));
+  const handoff = url.searchParams.get('handoff');
+
+  if (handoff) {
+    const result = await authApi<LoginPayload>('/auth/google/handoff', {
+      method: 'POST',
+      body: JSON.stringify({ code: handoff })
+    }, fetch);
+
+    if (result.ok && result.data?.token) {
+      setAuthCookie(cookies, url, result.data.token);
+      throw redirect(303, redirectTo);
+    }
+
+    return {
+      redirectTo,
+      googleUrl: googleLoginUrl(url.origin, redirectTo),
+      message: authErrorMessage(result.status, result.error?.message),
+      messageType: 'error' as const
+    };
+  }
+
+  if (locals.authUser) {
+    throw redirect(302, redirectTo);
+  }
+
   return {
-    apiBase: publicApiBase()
+    redirectTo,
+    googleUrl: googleLoginUrl(url.origin, redirectTo),
+    message: '',
+    messageType: 'info' as const
   };
+};
+
+export const actions: Actions = {
+  default: async ({ cookies, fetch, request, url }) => {
+    const formData = await request.formData();
+    const email = String(formData.get('email') ?? '').trim();
+    const password = String(formData.get('password') ?? '');
+    const redirectTo = normalizeRedirect(String(formData.get('redirectTo') ?? ''));
+
+    const result = await authApi<LoginPayload>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        password,
+        device_name: 'Scout web'
+      })
+    }, fetch);
+
+    if (!result.ok || !result.data?.token) {
+      return fail(result.status === 401 ? 401 : 400, {
+        message: authErrorMessage(result.status, result.error?.message),
+        email,
+        redirectTo
+      });
+    }
+
+    setAuthCookie(cookies, url, result.data.token);
+    throw redirect(303, redirectTo);
+  }
 };

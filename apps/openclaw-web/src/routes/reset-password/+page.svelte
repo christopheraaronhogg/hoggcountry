@@ -2,53 +2,49 @@
   import type { ActionData, PageData } from './$types';
 
   const { data, form } = $props<{ data: PageData; form: ActionData }>();
-  const redirectTo = $derived(form?.redirectTo || data.redirectTo || '/app');
+  const token = $derived(form?.token || data.token || '');
+  const email = $derived(form?.email || data.email || '');
 </script>
 
 <svelte:head>
-  <title>Create Scout account | Hogg Country</title>
+  <title>Reset password | Hogg Country</title>
   <meta name="robots" content="noindex,nofollow" />
 </svelte:head>
 
 <section class="auth-shell">
   <div class="auth-copy">
-    <p class="eyebrow">Scout account</p>
-    <h1>Create your trail workspace.</h1>
-    <p class="lede">Use email and password now. You can still add Google later with the same verified email.</p>
+    <p class="eyebrow">Account recovery</p>
+    <h1>Set a new password.</h1>
+    <p class="lede">Use this password with your Scout account. Google login will still work when it uses the same verified email.</p>
   </div>
 
   <form method="POST" class="auth-panel">
-    <input type="hidden" name="redirectTo" value={redirectTo} />
-
-    <label>
-      <span>Name</span>
-      <input name="name" autocomplete="name" required value={form?.name ?? ''} />
-    </label>
+    <input type="hidden" name="token" value={token} />
 
     <label>
       <span>Email</span>
-      <input name="email" type="email" autocomplete="email" required value={form?.email ?? ''} />
+      <input name="email" type="email" autocomplete="email" required value={email} />
     </label>
 
     <label>
-      <span>Password</span>
+      <span>New password</span>
       <input name="password" type="password" autocomplete="new-password" minlength="8" required />
     </label>
 
     <label>
-      <span>Confirm password</span>
+      <span>Confirm new password</span>
       <input name="passwordConfirmation" type="password" autocomplete="new-password" minlength="8" required />
     </label>
 
     {#if form?.message}
-      <p class="status" data-type="error">{form.message}</p>
+      <p class="status">{form.message}</p>
     {/if}
 
-    <button class="primary-button" type="submit">Create account</button>
+    <button class="primary-button" type="submit" disabled={!token}>Save password</button>
 
     <div class="auth-links">
-      <a href={`/login?redirect=${encodeURIComponent(redirectTo)}`}>Already have an account?</a>
-      <a href={`/forgot-password?email=${encodeURIComponent(form?.email ?? '')}`}>Recover login</a>
+      <a href="/forgot-password">Request new link</a>
+      <a href="/login">Back to sign in</a>
     </div>
   </form>
 </section>
@@ -114,9 +110,6 @@
   }
 
   .primary-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     min-height: 2.95rem;
     border: 0;
     border-radius: 8px;
@@ -124,6 +117,11 @@
     color: white;
     font-weight: 900;
     cursor: pointer;
+  }
+
+  .primary-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
   }
 
   .status {

@@ -2,53 +2,35 @@
   import type { ActionData, PageData } from './$types';
 
   const { data, form } = $props<{ data: PageData; form: ActionData }>();
-  const redirectTo = $derived(form?.redirectTo || data.redirectTo || '/app');
 </script>
 
 <svelte:head>
-  <title>Create Scout account | Hogg Country</title>
+  <title>Recover login | Hogg Country</title>
   <meta name="robots" content="noindex,nofollow" />
 </svelte:head>
 
 <section class="auth-shell">
   <div class="auth-copy">
-    <p class="eyebrow">Scout account</p>
-    <h1>Create your trail workspace.</h1>
-    <p class="lede">Use email and password now. You can still add Google later with the same verified email.</p>
+    <p class="eyebrow">Account recovery</p>
+    <h1>Get back into Scout.</h1>
+    <p class="lede">Send a recovery link to set or reset your password. This also works if you started with Google.</p>
   </div>
 
   <form method="POST" class="auth-panel">
-    <input type="hidden" name="redirectTo" value={redirectTo} />
-
-    <label>
-      <span>Name</span>
-      <input name="name" autocomplete="name" required value={form?.name ?? ''} />
-    </label>
-
     <label>
       <span>Email</span>
-      <input name="email" type="email" autocomplete="email" required value={form?.email ?? ''} />
-    </label>
-
-    <label>
-      <span>Password</span>
-      <input name="password" type="password" autocomplete="new-password" minlength="8" required />
-    </label>
-
-    <label>
-      <span>Confirm password</span>
-      <input name="passwordConfirmation" type="password" autocomplete="new-password" minlength="8" required />
+      <input name="email" type="email" autocomplete="email" required value={form?.email ?? data.email ?? ''} />
     </label>
 
     {#if form?.message}
-      <p class="status" data-type="error">{form.message}</p>
+      <p class="status" data-type={form.sent ? 'success' : 'error'}>{form.message}</p>
     {/if}
 
-    <button class="primary-button" type="submit">Create account</button>
+    <button class="primary-button" type="submit">Send recovery link</button>
 
     <div class="auth-links">
-      <a href={`/login?redirect=${encodeURIComponent(redirectTo)}`}>Already have an account?</a>
-      <a href={`/forgot-password?email=${encodeURIComponent(form?.email ?? '')}`}>Recover login</a>
+      <a href="/login">Back to sign in</a>
+      <a href="/signup">Create account</a>
     </div>
   </form>
 </section>
@@ -114,9 +96,6 @@
   }
 
   .primary-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     min-height: 2.95rem;
     border: 0;
     border-radius: 8px;
@@ -130,6 +109,10 @@
     margin: 0;
     color: #9f1239;
     font-weight: 800;
+  }
+
+  .status[data-type='success'] {
+    color: var(--status-live);
   }
 
   .auth-links {

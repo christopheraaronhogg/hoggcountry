@@ -153,14 +153,29 @@ class GoogleAuthTest extends TestCase
         $response->assertStatus(302);
         $location = $response->headers->get('Location');
         $this->assertNotNull($location);
-        $this->assertStringStartsWith('https://frontend.example.com/login#', $location);
+        $this->assertStringStartsWith('https://frontend.example.com/login?', $location);
 
-        $fragment = (string) parse_url($location, PHP_URL_FRAGMENT);
-        parse_str($fragment, $fragmentParams);
+        parse_str((string) parse_url($location, PHP_URL_QUERY), $queryParams);
 
-        $this->assertSame('google', $fragmentParams['provider'] ?? null);
-        $this->assertIsString($fragmentParams['token'] ?? null);
-        $this->assertNotSame('', (string) ($fragmentParams['token'] ?? ''));
+        $this->assertSame('google', $queryParams['provider'] ?? null);
+        $this->assertIsString($queryParams['handoff'] ?? null);
+        $this->assertNotSame('', (string) ($queryParams['handoff'] ?? ''));
+        $this->assertArrayNotHasKey('token', $queryParams);
+
+        $handoff = $this->postJson('/api/v1/auth/google/handoff', [
+            'code' => $queryParams['handoff'],
+        ]);
+
+        $handoff
+            ->assertOk()
+            ->assertJsonPath('data.provider', 'google')
+            ->assertJsonPath('data.user.email', 'frontend@example.com');
+        $this->assertNotEmpty($handoff->json('data.token'));
+
+        $this->postJson('/api/v1/auth/google/handoff', [
+            'code' => $queryParams['handoff'],
+        ])->assertStatus(422)
+            ->assertJsonPath('error.code', 'google_handoff_invalid');
     }
 
     public function test_google_callback_uses_state_mapped_callback_url_when_present(): void
@@ -182,17 +197,50 @@ class GoogleAuthTest extends TestCase
         $response->assertStatus(302);
         $location = $response->headers->get('Location');
         $this->assertNotNull($location);
-        $this->assertStringStartsWith('https://state.example.com/login#', $location);
+        $this->assertStringStartsWith('https://state.example.com/login?', $location);
+        parse_str((string) parse_url($location, PHP_URL_QUERY), $queryParams);
+        $this->assertIsString($queryParams['handoff'] ?? null);
         $this->assertNull(Cache::get('oauth_google_state:test-state'));
     }
 
-    private function fakeGoogleUser(string $id, string $email, string $name): SocialiteUser
+    public function test_google_callback_rejects_unverified_google_email(): void
+    {
+        $socialUser = $this->fakeGoogleUser(
+            id: 'google-unverified',
+            email: 'unverified@example.com',
+            name: 'Unverified User',
+            emailVerified: false
+        );
+
+        Socialite::shouldReceive('driver->stateless->user')
+            ->once()
+            ->andReturn($socialUser);
+
+        $response = $this->getJson('/api/v1/auth/google/callback');
+
+        $response
+            ->assertStatus(422)
+            ->assertJsonPath('error.code', 'oauth_unverified_email');
+
+        $this->assertDatabaseMissing('users', [
+            'email' => 'unverified@example.com',
+        ]);
+    }
+
+    private function fakeGoogleUser(string $id, string $email, string $name, bool $emailVerified = true): SocialiteUser
     {
         $user = new SocialiteUser;
         $user->id = $id;
         $user->name = $name;
         $user->email = $email;
         $user->avatar = 'https://example.com/avatar.png';
+        $user->setRaw([
+            'sub' => $id,
+            'name' => $name,
+            'email' => $email,
+            'email_verified' => $emailVerified,
+            'picture' => 'https://example.com/avatar.png',
+        ]);
 
         return $user;
     }

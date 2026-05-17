@@ -1,72 +1,65 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { BETA_COOKIE, encodeBetaProfile } from '$lib/beta';
-import { betaCookieOptions } from '$lib/server/beta-cookie';
-import { resolveScoutQuickLogin } from '$lib/server/scout-beta-logins';
+import {
+  authApi,
+  normalizeRedirect,
+  setAuthCookie,
+  type AuthUser
+} from '$lib/server/auth';
 
-const SCOUT_BETA_PASSCODE = '3184';
+interface RegisterPayload {
+  token: string;
+  user: AuthUser;
+}
 
-export const load: PageServerLoad = async ({ locals }) => {
-  if (locals.betaProfile) {
-    throw redirect(302, '/app');
+function registerMessage(status: number, message?: string): string {
+  if (message) return message;
+  if (status === 409) return 'An account already exists for this email. Sign in or recover your login instead.';
+  if (status === 422) return 'Check the account details, then try again.';
+  return 'Account creation failed. Try again.';
+}
+
+export const load: PageServerLoad = async ({ locals, url }) => {
+  const redirectTo = normalizeRedirect(url.searchParams.get('redirect'));
+  if (locals.authUser) {
+    throw redirect(302, redirectTo);
   }
 
-  return {};
+  return {
+    redirectTo
+  };
 };
 
 export const actions: Actions = {
-  default: async ({ cookies, request, url }) => {
+  default: async ({ cookies, fetch, request, url }) => {
     const formData = await request.formData();
-    const quickUsername = String(formData.get('quickUsername') ?? '').trim();
-    const quickPassword = String(formData.get('quickPassword') ?? '').trim();
-    const passcode = String(formData.get('passcode') ?? '').trim();
-    const rawName = String(formData.get('name') ?? '').trim();
+    const name = String(formData.get('name') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
-    const rawTrailName = String(formData.get('trailName') ?? '').trim();
-    const fallbackName = email.split('@')[0]?.replace(/[._-]+/g, ' ').trim() || 'Hiker';
-    const name = rawName || fallbackName;
-    const trailName = rawTrailName || name;
+    const password = String(formData.get('password') ?? '');
+    const passwordConfirmation = String(formData.get('passwordConfirmation') ?? '');
+    const redirectTo = normalizeRedirect(String(formData.get('redirectTo') ?? ''));
 
-    if (quickUsername || quickPassword) {
-      const profile = resolveScoutQuickLogin(quickUsername, quickPassword);
-      if (!profile) {
-        return fail(401, {
-          message: 'Use chris or dad with the shared trail beta password.',
-          quickUsername
-        });
-      }
-
-      cookies.set(BETA_COOKIE, encodeBetaProfile(profile), betaCookieOptions(url));
-      throw redirect(303, '/app/scout');
-    }
-
-    if (passcode !== SCOUT_BETA_PASSCODE) {
-      return fail(401, {
-        message: 'Enter the beta passcode to start asking Scout.',
-        email,
-        name: rawName,
-        trailName: rawTrailName
-      });
-    }
-
-    if (!email) {
-      return fail(400, {
-        message: 'Email is required for the private beta gate. Everything else can be filled in later.',
-        name: rawName,
-        trailName: rawTrailName
-      });
-    }
-
-    cookies.set(
-      BETA_COOKIE,
-      encodeBetaProfile({
+    const result = await authApi<RegisterPayload>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
         name,
         email,
-        trailName
-      }),
-      betaCookieOptions(url)
-    );
+        password,
+        password_confirmation: passwordConfirmation,
+        device_name: 'Scout web'
+      })
+    }, fetch);
 
-    throw redirect(303, '/app/scout');
+    if (!result.ok || !result.data?.token) {
+      return fail(result.status === 409 ? 409 : 400, {
+        message: registerMessage(result.status, result.error?.message),
+        name,
+        email,
+        redirectTo
+      });
+    }
+
+    setAuthCookie(cookies, url, result.data.token);
+    throw redirect(303, redirectTo);
   }
 };

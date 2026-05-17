@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\SocialAccount;
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -49,6 +52,78 @@ class AuthAndSyncTest extends TestCase
         $user = User::where('email', 'chris@example.com')->first();
         $this->assertNotNull($user);
         Notification::assertSentTo($user, VerifyEmail::class);
+    }
+
+    public function test_duplicate_register_returns_account_exists_without_creating_user(): void
+    {
+        User::factory()->create([
+            'email' => 'exists@example.com',
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/register', [
+            'name' => 'Duplicate',
+            'email' => 'EXISTS@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response
+            ->assertStatus(409)
+            ->assertJsonPath('error.code', 'account_exists')
+            ->assertJsonPath('error.details.email', 'exists@example.com');
+
+        $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_google_account_can_set_password_through_frontend_reset_link(): void
+    {
+        Notification::fake();
+        config()->set('app.frontend_password_reset_url', 'https://scout.example.com/reset-password');
+
+        $user = User::factory()->create([
+            'email' => 'google@example.com',
+            'password' => Hash::make('random-google-only-password'),
+            'email_verified_at' => now(),
+        ]);
+
+        SocialAccount::query()->create([
+            'user_id' => $user->id,
+            'provider' => 'google',
+            'provider_user_id' => 'google-123',
+            'email' => 'google@example.com',
+        ]);
+
+        $this->postJson('/api/v1/auth/forgot-password', [
+            'email' => 'GOOGLE@example.com',
+        ])->assertOk();
+
+        $token = null;
+        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user, &$token): bool {
+            $token = $notification->token;
+            $url = $notification->toMail($user)->actionUrl;
+            $this->assertStringStartsWith('https://scout.example.com/reset-password?', $url);
+
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $queryParams);
+            $this->assertSame('google@example.com', $queryParams['email'] ?? null);
+            $this->assertSame($token, $queryParams['token'] ?? null);
+
+            return true;
+        });
+
+        $this->assertIsString($token);
+
+        $this->postJson('/api/v1/auth/reset-password', [
+            'token' => $token,
+            'email' => 'google@example.com',
+            'password' => 'new-password123',
+            'password_confirmation' => 'new-password123',
+        ])->assertOk();
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'google@example.com',
+            'password' => 'new-password123',
+        ])->assertOk()
+            ->assertJsonPath('data.user.email', 'google@example.com');
     }
 
     public function test_user_can_register_device_and_sync_character_document(): void

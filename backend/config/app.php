@@ -66,6 +66,8 @@ return [
 
     'frontend_auth_callback_url' => env('FRONTEND_AUTH_CALLBACK_URL'),
 
+    'frontend_password_reset_url' => env('FRONTEND_PASSWORD_RESET_URL'),
+
     'frontend_auth_allowed_hosts' => array_values(
         array_filter(
             array_map(
