@@ -16,8 +16,27 @@
   let storyModalIndex = $state(null);
   let heroStoryIndex = $state(0);
 
-  // Keep one extra card so landscape uploads can tile around portrait Shorts.
-  const displayVideos = $derived(videos.slice(0, 4));
+  const LANDSCAPE_SECONDARY_COLUMNS = 2;
+  const LANDSCAPE_SECONDARY_ROWS = 2;
+  const SHORT_FEATURE_SECONDARY_COUNT = 2;
+
+  function dispatchVideoCount(items) {
+    if (!Array.isArray(items) || items.length === 0) return 0;
+
+    if (isShort(items[0])) {
+      return items.length >= SHORT_FEATURE_SECONDARY_COUNT + 1
+        ? SHORT_FEATURE_SECONDARY_COUNT + 1
+        : 1;
+    }
+
+    const maxSecondary = LANDSCAPE_SECONDARY_COLUMNS * LANDSCAPE_SECONDARY_ROWS;
+    const availableSecondary = Math.min(items.length - 1, maxSecondary);
+    const completeSecondary = Math.floor(availableSecondary / LANDSCAPE_SECONDARY_COLUMNS) * LANDSCAPE_SECONDARY_COLUMNS;
+
+    return 1 + completeSecondary;
+  }
+
+  const displayVideos = $derived.by(() => videos.slice(0, dispatchVideoCount(videos)));
 
   // Format date for display
   function formatDate(isoDate) {
@@ -2969,23 +2988,24 @@
   }
 
   .dispatches-grid.has-featured-landscape .dispatch-secondary-grid {
-    column-count: 2;
-    column-gap: 1.5rem;
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
   }
 
   .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card {
-    break-inside: avoid;
-    margin-bottom: 1.5rem;
+    align-self: stretch;
+    margin-bottom: 0;
     width: 100%;
   }
 
   .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-landscape {
-    display: inline-grid;
+    display: grid;
   }
 
   .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-short {
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: minmax(136px, 42%) minmax(0, 1fr);
   }
 
   .dispatch-card {
@@ -3032,7 +3052,7 @@
   .dispatch-media {
     position: relative;
     aspect-ratio: 16 / 9;
-    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    background: linear-gradient(135deg, var(--pine) 0%, var(--pine-dark) 100%);
     overflow: hidden;
   }
 
@@ -3050,8 +3070,18 @@
     aspect-ratio: auto;
   }
 
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-media {
+    min-height: 148px;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
   .dispatch-card.is-short:not(.dispatch-featured) {
     align-self: start;
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-short {
+    align-self: stretch;
   }
 
   .dispatch-media .media-placeholder {
@@ -3163,6 +3193,10 @@
     padding: 1rem;
   }
 
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-content {
+    padding: 1rem;
+  }
+
   .dispatch-date {
     display: block;
     font-family: Oswald, sans-serif;
@@ -3224,6 +3258,10 @@
   }
 
   .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-desc {
+    display: none;
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-desc {
     display: none;
   }
 
