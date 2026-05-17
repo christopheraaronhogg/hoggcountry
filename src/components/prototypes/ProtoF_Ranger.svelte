@@ -16,27 +16,55 @@
   let storyModalIndex = $state(null);
   let heroStoryIndex = $state(0);
 
-  const LANDSCAPE_SECONDARY_COLUMNS = 2;
-  const LANDSCAPE_SECONDARY_ROWS = 2;
-  const SHORT_FEATURE_SECONDARY_COUNT = 2;
-
-  function dispatchVideoCount(items) {
-    if (!Array.isArray(items) || items.length === 0) return 0;
-
-    if (isShort(items[0])) {
-      return items.length >= SHORT_FEATURE_SECONDARY_COUNT + 1
-        ? SHORT_FEATURE_SECONDARY_COUNT + 1
-        : 1;
-    }
-
-    const maxSecondary = LANDSCAPE_SECONDARY_COLUMNS * LANDSCAPE_SECONDARY_ROWS;
-    const availableSecondary = Math.min(items.length - 1, maxSecondary);
-    const completeSecondary = Math.floor(availableSecondary / LANDSCAPE_SECONDARY_COLUMNS) * LANDSCAPE_SECONDARY_COLUMNS;
-
-    return 1 + completeSecondary;
+  function tileFor(video) {
+    return { video, shape: isShort(video) ? 'tall' : 'wide' };
   }
 
-  const displayVideos = $derived.by(() => videos.slice(0, dispatchVideoCount(videos)));
+  function templateFor(tiles) {
+    return tiles
+      .map((tile) => `minmax(0, ${tile.shape === 'tall' ? '0.5625fr' : '1.7778fr'})`)
+      .join(' ');
+  }
+
+  function layoutFor(featured, mode, videosForTiles) {
+    const secondary = videosForTiles.map(tileFor);
+
+    return {
+      featured,
+      mode,
+      secondary,
+      template: templateFor(secondary)
+    };
+  }
+
+  function buildDispatchLayout(items) {
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    const featured = list[0] || null;
+    const remaining = list.slice(1);
+
+    if (!featured) {
+      return { featured: null, secondary: [], mode: 'empty', template: '' };
+    }
+
+    const shorts = remaining.filter(isShort);
+    const videosOnly = remaining.filter((video) => !isShort(video));
+
+    if (!shorts.length) {
+      const wideCount = remaining.length >= 4 ? 4 : remaining.length >= 2 ? 2 : remaining.length;
+      return layoutFor(featured, wideCount ? `wide-${wideCount}` : 'single', remaining.slice(0, wideCount));
+    }
+
+    if (!videosOnly.length) {
+      const tallCount = remaining.length >= 4 ? 4 : remaining.length >= 3 ? 3 : remaining.length >= 2 ? 2 : remaining.length;
+      return layoutFor(featured, tallCount ? 'shape-strip' : 'single', remaining.slice(0, tallCount));
+    }
+
+    return layoutFor(featured, 'shape-strip', remaining.slice(0, Math.min(remaining.length, 4)));
+  }
+
+  const dispatchLayout = $derived.by(() => buildDispatchLayout(videos));
+  const featuredVideo = $derived(dispatchLayout.featured);
+  const secondaryVideoTiles = $derived(dispatchLayout.secondary);
 
   // Format date for display
   function formatDate(isoDate) {
@@ -53,9 +81,38 @@
     return `${normalized.slice(0, limit).trimEnd()}...`;
   }
 
-  const storyUpdates = $derived(trailUpdates);
+  function videoToStoryUpdate(video) {
+    if (!video?.id) return null;
+    const published = video.published || new Date().toISOString();
+    const short = isShort(video);
+
+    return {
+      id: `youtube-${video.id}`,
+      title: video.title || (short ? 'YouTube Short' : 'YouTube Video'),
+      body: getVideoExcerpt(video, 220),
+      location: '',
+      trailMile: '',
+      status: 'published',
+      featured: false,
+      mediaKey: null,
+      mediaName: null,
+      mediaType: 'image/jpeg',
+      mediaUrl: getThumbnail(video, short ? 'tall' : 'wide'),
+      thumbnailUrl: getThumbnail(video, short ? 'tall' : 'wide'),
+      previewUrl: getThumbnail(video, short ? 'tall' : 'wide'),
+      externalUrl: video.link,
+      sourceLabel: short ? 'YouTube Short' : 'YouTube Video',
+      sourceType: short ? 'youtube_short' : 'youtube_video',
+      createdAt: published,
+      updatedAt: published,
+      publishedAt: published
+    };
+  }
+
+  const videoStoryUpdates = $derived.by(() => videos.map(videoToStoryUpdate).filter(Boolean).slice(0, 8));
+  const storyUpdates = $derived.by(() => trailUpdates.length ? trailUpdates : videoStoryUpdates);
   const heroStoryUpdate = $derived(storyUpdates.length ? storyUpdates[heroStoryIndex % storyUpdates.length] : null);
-  const storyModalUpdate = $derived(storyModalIndex === null ? null : trailUpdates[storyModalIndex]);
+  const storyModalUpdate = $derived(storyModalIndex === null ? null : storyUpdates[storyModalIndex]);
 
   function formatUpdateDate(value) {
     if (!value) return 'Trail story';
@@ -67,13 +124,16 @@
   function updateExcerpt(update, limit = 170) {
     const raw = typeof update?.body === 'string' ? update.body : '';
     const normalized = raw.replace(/\s+/g, ' ').trim();
+    if (!normalized && isYouTubeUpdate(update)) return 'Latest trail dispatch from HoggCountry.';
     if (!normalized) return 'A quick field note from the Appalachian Trail.';
     if (normalized.length <= limit) return normalized;
     return `${normalized.slice(0, limit).trimEnd()}...`;
   }
 
   function updateMeta(update) {
-    const bits = [formatUpdateDate(update?.publishedAt || update?.createdAt)];
+    const bits = [];
+    if (update?.sourceLabel) bits.push(update.sourceLabel);
+    bits.push(formatUpdateDate(update?.publishedAt || update?.createdAt));
     if (update?.location) bits.push(update.location);
     if (update?.trailMile) bits.push(`Mile ${update.trailMile}`);
     return bits.join(' • ');
@@ -150,17 +210,17 @@
   }
 
   function previousStoryUpdate() {
-    if (!trailUpdates.length || storyModalIndex === null) return;
-    storyModalIndex = (storyModalIndex - 1 + trailUpdates.length) % trailUpdates.length;
+    if (!storyUpdates.length || storyModalIndex === null) return;
+    storyModalIndex = (storyModalIndex - 1 + storyUpdates.length) % storyUpdates.length;
   }
 
   function nextStoryUpdate() {
-    if (!trailUpdates.length || storyModalIndex === null) return;
-    storyModalIndex = (storyModalIndex + 1) % trailUpdates.length;
+    if (!storyUpdates.length || storyModalIndex === null) return;
+    storyModalIndex = (storyModalIndex + 1) % storyUpdates.length;
   }
 
   // Get reliable thumbnail URL - YouTube has multiple CDN hosts
-  function getThumbnail(video) {
+  function getThumbnail(video, shape = '') {
     if (!video?.id) return '';
     return isShort(video)
       ? `https://i.ytimg.com/vi/${video.id}/oardefault.jpg`
@@ -238,7 +298,7 @@
       trailUpdatesLoading = true;
       trailUpdatesError = '';
       try {
-        const res = await fetch('/.netlify/functions/trail-updates?limit=50', { headers: { Accept: 'application/json' } });
+        const res = await fetch('/app-api/trail-updates?limit=50', { headers: { Accept: 'application/json' } });
         if (!res.ok) throw new Error(`trail-updates failed: ${res.status}`);
         const payload = await res.json();
         trailUpdates = Array.isArray(payload?.updates)
@@ -390,7 +450,7 @@
       <aside class="hero-story" aria-labelledby="hero-story-title">
         <p class="hero-story-kicker">STORY</p>
         <h2 id="hero-story-title">Latest from the trail</h2>
-        {#if trailUpdatesLoading}
+        {#if trailUpdatesLoading && !heroStoryUpdate}
           <p class="hero-story-empty">Loading the latest trail story…</p>
         {:else if heroStoryUpdate}
           <div class="hero-story-stage" style={`--story-progress: ${((heroStoryIndex + 1) / storyUpdates.length) * 100}%`}>
@@ -465,10 +525,10 @@
             <a class="story-modal-original" href={storyOriginalUrl(storyModalUpdate)} target="_blank" rel="noopener">{storyActionLabel(storyModalUpdate)}</a>
           {/if}
         </div>
-        {#if trailUpdates.length > 1}
+        {#if storyUpdates.length > 1}
           <div class="story-modal-controls">
             <button type="button" onclick={previousStoryUpdate}>Previous</button>
-            <span>{storyModalIndex + 1} / {trailUpdates.length}</span>
+            <span>{storyModalIndex + 1} / {storyUpdates.length}</span>
             <button type="button" onclick={nextStoryUpdate}>Next</button>
           </div>
         {/if}
@@ -492,16 +552,16 @@
         <p class="dispatches-subtitle">Recent uploads from the trail</p>
       </div>
 
-      <div class={`dispatches-grid ${displayVideos[0] && isShort(displayVideos[0]) ? 'has-featured-short' : 'has-featured-landscape'}`}>
-        {#if displayVideos.length > 0}
+      <div class={`dispatches-grid ${featuredVideo ? (isShort(featuredVideo) ? 'has-featured-short' : 'has-featured-landscape') : ''}`}>
+        {#if featuredVideo}
           <!-- Featured (first) video -->
-          <a href={displayVideos[0].link} target="_blank" rel="noopener" class={`dispatch-card dispatch-featured ${isShort(displayVideos[0]) ? 'is-short' : 'is-landscape'}`}>
-            <div class={`dispatch-media ${isShort(displayVideos[0]) ? 'is-short' : ''}`}>
+          <a href={featuredVideo.link} target="_blank" rel="noopener" class={`dispatch-card dispatch-featured ${isShort(featuredVideo) ? 'is-short' : 'is-landscape'}`}>
+            <div class={`dispatch-media ${isShort(featuredVideo) ? 'is-short' : ''}`}>
               <img
-                src={getThumbnail(displayVideos[0])}
-                alt={displayVideos[0].title}
+                src={getThumbnail(featuredVideo, 'wide')}
+                alt={featuredVideo.title}
                 class="dispatch-thumb"
-                onerror={(e) => handleImageError(e, displayVideos[0].id)}
+                onerror={(e) => handleImageError(e, featuredVideo.id)}
                 loading="lazy"
               />
               <span class="dispatch-badge">LATEST</span>
@@ -512,24 +572,24 @@
               </div>
             </div>
             <div class="dispatch-content">
-              <time class="dispatch-date">{formatDate(displayVideos[0].published)}</time>
-              <h3 class="dispatch-title">{displayVideos[0].title}</h3>
-              <p class="dispatch-desc">{getVideoExcerpt(displayVideos[0], isShort(displayVideos[0]) ? 420 : 260)}</p>
-              <span class="dispatch-cta">{actionLabel(displayVideos[0])}</span>
+              <time class="dispatch-date">{formatDate(featuredVideo.published)}</time>
+              <h3 class="dispatch-title">{featuredVideo.title}</h3>
+              <p class="dispatch-desc">{getVideoExcerpt(featuredVideo, isShort(featuredVideo) ? 420 : 260)}</p>
+              <span class="dispatch-cta">{actionLabel(featuredVideo)}</span>
             </div>
           </a>
 
           <!-- Secondary videos -->
-          {#if displayVideos.length > 1}
-            <div class="dispatch-secondary-grid">
-              {#each displayVideos.slice(1) as video}
-                <a href={video.link} target="_blank" rel="noopener" class={`dispatch-card ${isShort(video) ? 'is-short' : 'is-landscape'}`}>
-                  <div class={`dispatch-media ${isShort(video) ? 'is-short' : 'small'}`}>
+          {#if secondaryVideoTiles.length > 0}
+            <div class={`dispatch-secondary-grid is-${dispatchLayout.mode}`} style={`--secondary-template: ${dispatchLayout.template};`}>
+              {#each secondaryVideoTiles as tile}
+                <a href={tile.video.link} target="_blank" rel="noopener" class={`dispatch-card dispatch-tile-${tile.shape} ${isShort(tile.video) ? 'is-short' : 'is-landscape'}`}>
+                  <div class={`dispatch-media ${tile.shape === 'tall' ? 'is-short' : 'small'}`}>
                     <img
-                      src={getThumbnail(video)}
-                      alt={video.title}
+                      src={getThumbnail(tile.video, tile.shape)}
+                      alt={tile.video.title}
                       class="dispatch-thumb"
-                      onerror={(e) => handleImageError(e, video.id)}
+                      onerror={(e) => handleImageError(e, tile.video.id)}
                       loading="lazy"
                     />
                     <div class="dispatch-play small">
@@ -539,10 +599,10 @@
                     </div>
                   </div>
                   <div class="dispatch-content">
-                    <time class="dispatch-date">{formatDate(video.published)}</time>
-                    <h3 class="dispatch-title">{video.title}</h3>
-                    <p class="dispatch-desc">{getVideoExcerpt(video, 110)}</p>
-                    <span class="dispatch-cta">{actionLabel(video)}</span>
+                    <time class="dispatch-date">{formatDate(tile.video.published)}</time>
+                    <h3 class="dispatch-title">{tile.video.title}</h3>
+                    <p class="dispatch-desc">{getVideoExcerpt(tile.video, 110)}</p>
+                    <span class="dispatch-cta">{actionLabel(tile.video)}</span>
                   </div>
                 </a>
               {/each}
@@ -2976,15 +3036,15 @@
     display: block;
   }
 
+  .dispatches-grid.has-featured-short {
+    align-items: stretch;
+  }
+
   .dispatch-secondary-grid {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     min-width: 0;
-  }
-
-  .dispatches-grid.has-featured-short .dispatch-secondary-grid {
-    grid-column: 2;
   }
 
   .dispatches-grid.has-featured-landscape .dispatch-secondary-grid {
@@ -2993,19 +3053,87 @@
     gap: 1.5rem;
   }
 
-  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card {
+  .dispatches-grid.has-featured-short .dispatch-secondary-grid {
+    grid-column: 2;
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid.is-mixed-4 {
+    grid-template-columns: minmax(128px, 0.78fr) minmax(0, 1.22fr) minmax(0, 1.22fr) minmax(128px, 0.78fr);
+    grid-template-rows: repeat(2, minmax(190px, 1fr));
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid.is-mixed-3 {
+    grid-template-columns: minmax(132px, 0.8fr) repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(180px, 1fr));
+  }
+
+  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid.is-shape-strip {
+    grid-template-columns: var(--secondary-template);
+    align-items: stretch;
+  }
+
+  .dispatch-secondary-grid .dispatch-card {
     align-self: stretch;
+    aspect-ratio: 16 / 9;
     margin-bottom: 0;
+    min-height: 210px;
+    position: relative;
     width: 100%;
   }
 
-  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-landscape {
-    display: grid;
+  .dispatch-secondary-grid .dispatch-card.is-landscape {
+    display: block;
   }
 
-  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-short {
-    display: grid;
-    grid-template-columns: minmax(136px, 42%) minmax(0, 1fr);
+  .dispatch-secondary-grid .dispatch-card.is-short {
+    display: block;
+  }
+
+  .dispatch-secondary-grid.is-mixed-4 .dispatch-card,
+  .dispatch-secondary-grid.is-mixed-3 .dispatch-card {
+    aspect-ratio: auto;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .dispatch-secondary-grid.is-shape-strip .dispatch-card {
+    height: auto;
+    min-height: 0;
+  }
+
+  .dispatch-secondary-grid.is-mixed-4 .dispatch-card:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .dispatch-secondary-grid.is-mixed-4 .dispatch-card:nth-child(2) {
+    grid-column: 2 / span 2;
+    grid-row: 1;
+  }
+
+  .dispatch-secondary-grid.is-mixed-4 .dispatch-card:nth-child(3) {
+    grid-column: 2 / span 2;
+    grid-row: 2;
+  }
+
+  .dispatch-secondary-grid.is-mixed-4 .dispatch-card:nth-child(4) {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+  }
+
+  .dispatch-secondary-grid.is-mixed-3 .dispatch-card:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .dispatch-secondary-grid.is-mixed-3 .dispatch-card:nth-child(2) {
+    grid-column: 2 / span 3;
+    grid-row: 1;
+  }
+
+  .dispatch-secondary-grid.is-mixed-3 .dispatch-card:nth-child(3) {
+    grid-column: 2 / span 3;
+    grid-row: 2;
   }
 
   .dispatch-card {
@@ -3044,9 +3172,49 @@
     aspect-ratio: auto;
   }
 
+  .dispatch-card.dispatch-featured.is-short {
+    display: block;
+    position: relative;
+    min-height: clamp(430px, 40vw, 600px);
+    aspect-ratio: 9 / 16;
+  }
+
+  .dispatch-card.dispatch-featured.is-short .dispatch-media {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
   .dispatch-card:not(.dispatch-featured).is-landscape {
     display: grid;
     grid-template-columns: minmax(136px, 42%) minmax(0, 1fr);
+  }
+
+  .dispatch-secondary-grid .dispatch-card.is-landscape,
+  .dispatch-secondary-grid .dispatch-card.is-short {
+    display: block;
+    grid-template-columns: none;
+  }
+
+  .dispatch-secondary-grid .dispatch-card.dispatch-tile-wide {
+    aspect-ratio: 16 / 9;
+  }
+
+  .dispatch-secondary-grid .dispatch-card.dispatch-tile-tall {
+    aspect-ratio: 9 / 16;
+  }
+
+  .dispatch-secondary-grid .dispatch-card.dispatch-tile-tall {
+    min-height: clamp(430px, 38vw, 560px);
+  }
+
+  .dispatch-secondary-grid.is-mixed-3 .dispatch-card.dispatch-tile-tall {
+    min-height: clamp(380px, 34vw, 510px);
+  }
+
+  .dispatch-secondary-grid.is-shape-strip .dispatch-card.dispatch-tile-tall {
+    min-height: 0;
   }
 
   .dispatch-media {
@@ -3070,9 +3238,10 @@
     aspect-ratio: auto;
   }
 
-  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-media {
-    min-height: 148px;
+  .dispatch-secondary-grid .dispatch-media {
+    inset: 0;
     height: 100%;
+    position: absolute;
     aspect-ratio: auto;
   }
 
@@ -3080,7 +3249,7 @@
     align-self: start;
   }
 
-  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-short {
+  .dispatch-secondary-grid .dispatch-card.is-short {
     align-self: stretch;
   }
 
@@ -3189,12 +3358,28 @@
     pointer-events: none;
   }
 
+  .dispatch-card.dispatch-featured.is-short .dispatch-content {
+    position: absolute;
+    inset: auto 0 0;
+    min-height: 48%;
+    padding: 3rem 1rem 1rem;
+    justify-content: flex-end;
+    background: linear-gradient(0deg, rgba(36, 48, 39, 0.95) 0%, rgba(36, 48, 39, 0.68) 58%, transparent 100%);
+    pointer-events: none;
+  }
+
   .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-content {
     padding: 1rem;
   }
 
-  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-content {
-    padding: 1rem;
+  .dispatch-secondary-grid .dispatch-content {
+    position: absolute;
+    inset: auto 0 0;
+    min-height: 58%;
+    padding: 3rem 1rem 1rem;
+    justify-content: flex-end;
+    background: linear-gradient(0deg, rgba(36, 48, 39, 0.94) 0%, rgba(36, 48, 39, 0.66) 58%, transparent 100%);
+    pointer-events: none;
   }
 
   .dispatch-date {
@@ -3226,6 +3411,10 @@
     max-width: 620px;
   }
 
+  .dispatch-featured.is-short .dispatch-title {
+    color: var(--cream);
+  }
+
   .dispatch-desc {
     font-size: 0.9rem;
     color: var(--muted);
@@ -3247,8 +3436,14 @@
     max-width: 560px;
   }
 
+  .dispatch-featured.is-short .dispatch-desc {
+    display: none;
+  }
+
   .dispatch-featured.is-landscape .dispatch-date,
-  .dispatch-featured.is-landscape .dispatch-cta {
+  .dispatch-featured.is-landscape .dispatch-cta,
+  .dispatch-featured.is-short .dispatch-date,
+  .dispatch-featured.is-short .dispatch-cta {
     color: var(--marker);
   }
 
@@ -3261,8 +3456,17 @@
     display: none;
   }
 
-  .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-desc {
+  .dispatch-secondary-grid .dispatch-desc {
     display: none;
+  }
+
+  .dispatch-secondary-grid .dispatch-date,
+  .dispatch-secondary-grid .dispatch-cta {
+    color: var(--marker);
+  }
+
+  .dispatch-secondary-grid .dispatch-title {
+    color: var(--cream);
   }
 
   .dispatch-cta {
@@ -4018,6 +4222,20 @@
       margin-bottom: 0;
     }
 
+    .dispatch-secondary-grid.is-mixed-4 .dispatch-card,
+    .dispatch-secondary-grid.is-mixed-3 .dispatch-card {
+      height: auto;
+      min-height: 210px;
+      aspect-ratio: 16 / 9;
+    }
+
+    .dispatch-secondary-grid .dispatch-card.dispatch-tile-tall,
+    .dispatch-secondary-grid.is-mixed-3 .dispatch-card.dispatch-tile-tall {
+      aspect-ratio: 9 / 16;
+      min-height: 0;
+      max-height: 560px;
+    }
+
     .dispatch-card.dispatch-featured {
       grid-row: span 1;
     }
@@ -4026,7 +4244,6 @@
     .dispatch-card:not(.dispatch-featured).is-landscape,
     .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-landscape,
     .dispatches-grid.has-featured-landscape .dispatch-secondary-grid .dispatch-card.is-short {
-      display: flex;
       grid-column: auto;
     }
 
@@ -4035,36 +4252,14 @@
       aspect-ratio: 16 / 9;
     }
 
-    .dispatch-card.dispatch-featured.is-landscape .dispatch-content {
-      position: static;
-      min-height: 0;
-      padding: 1.25rem;
-      background: transparent;
-      pointer-events: auto;
-    }
-
-    .dispatch-featured.is-landscape .dispatch-title {
-      color: var(--pine-dark);
-    }
-
-    .dispatch-featured.is-landscape .dispatch-desc {
-      color: var(--muted);
-      max-width: none;
-    }
-
-    .dispatch-featured.is-landscape .dispatch-date,
-    .dispatch-featured.is-landscape .dispatch-cta {
-      color: var(--terra);
-    }
-
     .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-media {
-      height: auto;
+      height: 100%;
       min-height: 0;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: auto;
     }
 
     .dispatch-card:not(.dispatch-featured).is-landscape .dispatch-desc {
-      display: -webkit-box;
+      display: none;
     }
 
     .dispatch-featured .dispatch-desc {
