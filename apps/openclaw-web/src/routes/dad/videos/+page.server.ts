@@ -1,8 +1,6 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { loadDadVideos } from '$lib/server/dad';
 
 export const load: PageServerLoad = async () => {
-  return {
-    videos: await loadDadVideos(18)
-  };
+  throw redirect(308, '/videos');
 };

@@ -38,6 +38,7 @@ const APP_RUNTIME_PATHS = [
   '/app/docs',
   '/guide',
   '/at-map',
+  '/track',
   '/videos',
   '/app-api/workspace',
   '/app-api/scout',
@@ -54,7 +55,8 @@ const APP_RUNTIME_PATHS = [
   '/login',
   '/admin',
   '/rss.xml',
-  '/sitemap.xml'
+  '/sitemap.xml',
+  '/sitemap-index.xml'
 ];
 
 function isRuntimePath(pathname: string): boolean {

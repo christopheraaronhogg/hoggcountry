@@ -4,7 +4,6 @@
   import { page } from '$app/state';
   import { initSpacetimeProvider } from '$lib/spacetime';
   import type { LayoutData } from './$types';
-  import { LIVE_TRACKING_URL } from '../../../../src/lib/config';
 
   const { data, children } = $props<{ data: LayoutData; children: import('svelte').Snippet }>();
 
@@ -124,11 +123,9 @@
             </a>
 
             <a
-              href={LIVE_TRACKING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/track"
               class="live-link live-link--header"
-              title="Track Me on Garmin"
+              title="Track Me"
             >
               <span class="live-dot"></span>
               <span class="live-text">Track Me</span>
@@ -175,11 +172,9 @@
 
         <div class="mobile-links">
           <a
-            href={LIVE_TRACKING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/track"
             class="live-link mobile-live"
-            title="Track Me on Garmin"
+            title="Track Me"
             onclick={closeTools}
           >
             <span class="live-dot"></span>
@@ -204,7 +199,7 @@
     </div>
 
     <main id="main-content" class="site-main public-site-main" tabindex="-1">
-      {#if page.url.pathname === '/' || page.url.pathname === '/guide'}
+      {#if page.url.pathname === '/' || page.url.pathname === '/guide' || page.url.pathname === '/at-map'}
         {@render children()}
       {:else}
         <div class="container public-page-wrap">
@@ -213,6 +208,7 @@
       {/if}
     </main>
 
+    {#if page.url.pathname !== '/at-map'}
     <footer class="public-meta-footer">
       <div>&copy; {currentYear} Hogg Country. All rights reserved.</div>
       <div class="social-links">
@@ -228,6 +224,7 @@
         </a>
       </div>
     </footer>
+    {/if}
 
     <div id="version-stamp">alpha 0.7</div>
   </div>
