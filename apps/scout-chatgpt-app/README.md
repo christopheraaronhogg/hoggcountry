@@ -82,6 +82,21 @@ Optional environment:
 - `PUBLIC_SITE_ORIGIN` - canonical origin used for `search`/`fetch` result URLs, defaults to `https://hoggcountry.com`.
 - `SCOUT_APP_DOMAIN` - stable widget domain for app submission metadata when the deployed HTTPS origin is known.
 
+## Production Distribution
+
+The Forge deployment runs this MCP server as `hoggcountry-scout-chatgpt-app` on
+`127.0.0.1:8787` and Laravel proxies the public MCP endpoint at:
+
+```text
+https://hoggcountry.on-forge.com/mcp
+```
+
+That public HTTPS URL is the endpoint to use for ChatGPT Developer Mode testing
+and the OpenAI Platform review flow. See
+`docs/runbooks/scout-chatgpt-app-distribution.md` for the full submission and
+publishing checklist. `chatgpt-app-submission.json` contains the review-facing
+app info, tool hint justifications, and test cases for the dashboard upload.
+
 ## Connect To ChatGPT Developer Mode
 
 ChatGPT needs a public HTTPS MCP URL, even while developing locally.

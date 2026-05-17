@@ -46,4 +46,9 @@ return [
         'origin' => rtrim((string) env('SCOUT_WEB_PROXY_ORIGIN', env('OPENCLAW_WEB_PROXY_ORIGIN', 'http://127.0.0.1:3000')), '/'),
     ],
 
+    'scout_chatgpt_app' => [
+        'enabled' => filter_var(env('SCOUT_CHATGPT_APP_PROXY_ENABLED', true), FILTER_VALIDATE_BOOL),
+        'origin' => rtrim((string) env('SCOUT_CHATGPT_APP_PROXY_ORIGIN', 'http://127.0.0.1:8787'), '/'),
+    ],
+
 ];

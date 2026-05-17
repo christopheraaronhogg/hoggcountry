@@ -37,6 +37,7 @@ const scoutKnowledgeCorpus: readonly PublicCorpusEntry[] = [...publicCorpus, ...
 const READ_ONLY_LOCAL_ANNOTATIONS = {
   readOnlyHint: true,
   idempotentHint: true,
+  destructiveHint: false,
   openWorldHint: false,
 } as const;
 

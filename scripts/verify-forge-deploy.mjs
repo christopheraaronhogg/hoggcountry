@@ -101,6 +101,36 @@ const checks = [
       return null;
     },
   },
+  {
+    label: "scout-chatgpt-mcp",
+    path: "/mcp",
+    method: "POST",
+    expectStatus: 200,
+    headers: {
+      accept: "application/json, text/event-stream",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: {
+          name: "hoggcountry-forge-verify",
+          version: "1.0",
+        },
+      },
+    }),
+    validate(result) {
+      if (!/protocolVersion|serverInfo|scout-chatgpt-app/.test(result.text)) {
+        return "expected MCP initialize response from Scout ChatGPT app";
+      }
+
+      return null;
+    },
+  },
 ];
 
 async function fetchCheck(check) {
@@ -108,10 +138,13 @@ async function fetchCheck(check) {
 
   try {
     const response = await fetch(url, {
+      method: check.method ?? "GET",
       redirect: "manual",
       headers: {
         "user-agent": "hoggcountry-forge-verify/1.0",
+        ...(check.headers ?? {}),
       },
+      ...(check.body ? { body: check.body } : {}),
     });
 
     const text = await response.text();

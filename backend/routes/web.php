@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ScoutWebProxyController;
+use App\Http\Controllers\ScoutChatGptAppProxyController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,16 @@ Route::get('/native', function () {
         ],
     ]);
 });
+
+Route::match(['GET', 'HEAD', 'POST', 'OPTIONS'], '/mcp', [ScoutChatGptAppProxyController::class, 'handle'])
+    ->withoutMiddleware([
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        \App\Http\Middleware\HandleInertiaRequests::class,
+    ]);
 
 Route::match(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/{path}', [ScoutWebProxyController::class, 'show'])
     ->where('path', '^(?!api(?:/|$)|up(?:/|$)|native(?:/|$)).+')

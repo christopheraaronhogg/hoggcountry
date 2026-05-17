@@ -1,0 +1,224 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "Scout by Hogg Country",
+    "subtitle": "Plan AT hikes",
+    "description": "Scout by Hogg Country helps Appalachian Trail hikers plan days, weeks, resupply, and section hikes in ChatGPT using Hogg Country guide content and open-reference trail context. It returns source receipts and caveats for candidate water, shelter, campsite, resupply, terrain, rule, and live-source leads, while clearly separating generated planning help from current field conditions.",
+    "category": "TRAVEL"
+  },
+  "tools": {
+    "search": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Searches local public Scout guide and reference content and returns matching source leads without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "fetch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves one local public Scout document by id and returns its text without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "get_trail_reference_snapshot": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns a computed inventory and caveat snapshot from local Scout reference data without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "find_nearby_trail_context": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes nearby candidate trail context from local reference data and returns source receipts without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "get_today_brief": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes a deterministic trail briefing and widget payload from supplied planning inputs without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "plan_next_day": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes a next-day planning scaffold from user-provided assumptions and local reference data without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "plan_next_week": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes a seven-day planning scaffold from user-provided assumptions and local reference data without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "find_next_resupply": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Finds local resupply source leads and candidate town context without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "build_section_plan": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes a source-aware section plan and candidate reference leads from local data without changing state.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    },
+    "draft_scout_document": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Drafts a planning document payload from inputs and local reference data but does not save or modify anything.",
+        "open_world_justification": "Does not publish, submit, or modify public internet or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke, send, or perform irreversible actions."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Search Hogg Country trail planning guidance.",
+      "user_prompt": "Find Hogg Country guidance about resupply planning for the early Appalachian Trail.",
+      "file_attachment_urls": null,
+      "tools_triggered": "search",
+      "expected_output": "Returns relevant Hogg Country source leads with titles, excerpts, URLs, and source metadata.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Fetch a source document after search returns an id.",
+      "user_prompt": "Fetch the Scout document with id guide:14-food-and-resupply.",
+      "file_attachment_urls": null,
+      "tools_triggered": "fetch",
+      "expected_output": "Returns the full public document text and source URL for the requested id, or a clear not-found response.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Show the current trail briefing widget.",
+      "user_prompt": "I'm NOBO at mile 42, carrying 2.5 liters, and aiming for 12 miles. Show my Scout Today brief.",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_today_brief",
+      "expected_output": "Returns a compact Scout Today briefing with phase, water, pace, sleep cues, source receipts, and live-condition caveats.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Plan a conservative next trail day.",
+      "user_prompt": "Plan a conservative day from NOBO mile 31 with a tent-first preference and 2 liters of water.",
+      "file_attachment_urls": null,
+      "tools_triggered": "plan_next_day",
+      "expected_output": "Returns a next-day scaffold with target miles, checks, candidate reference context, and reminders to confirm live conditions.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Find nearby AT candidate context.",
+      "user_prompt": "What water, shelter, campsite, and resupply leads are ahead of NOBO mile 52 within 15 miles?",
+      "file_attachment_urls": null,
+      "tools_triggered": "find_nearby_trail_context",
+      "expected_output": "Returns nearby candidate trail records grouped by requested categories with caveats and source receipts.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Build a section plan for a mile range.",
+      "user_prompt": "Build a 3-day plan from NOBO mile 31 to mile 68 at about 13 miles per day.",
+      "file_attachment_urls": null,
+      "tools_triggered": "build_section_plan",
+      "expected_output": "Returns day chunks, candidate water and overnight leads, resupply leads, terrain flags, checks, and source receipts.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Draft a read-only Scout planning document.",
+      "user_prompt": "Draft my safety risk brief for Virginia around NOBO mile 550. I am tired and trying to avoid big heat exposure.",
+      "file_attachment_urls": null,
+      "tools_triggered": "draft_scout_document",
+      "expected_output": "Returns a structured draft with stable facts, working plan, reference context, open questions, and no saved state.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not trigger for unrelated travel booking.",
+      "user_prompt": "Book me a hotel in Atlanta for tomorrow night.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because booking travel is outside its read-only AT planning scope.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for live emergency services.",
+      "user_prompt": "Send a rescue alert to park rangers from my current GPS location.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked to send alerts because it cannot contact emergency services or use live GPS.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for current official conditions as a definitive source.",
+      "user_prompt": "Tell me for sure whether the next water source is flowing right now.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not provide a definitive live condition claim and should direct the user to current official or local sources.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for mutating Scout field state.",
+      "user_prompt": "Save this plan into my Scout account and push it to my watch.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked for saving or device push actions because the current tools are read-only.",
+      "expected_output_url": null
+    }
+  ]
+}
