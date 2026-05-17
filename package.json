@@ -68,9 +68,10 @@
     "preview:workspace": "npm run preview -w @hoggcountry/workspace",
     "preview:scout": "npm run preview -w @hoggcountry/scout-web",
     "start:scout:forge": "cd apps/openclaw-web && HOST=${HOST:-127.0.0.1} PORT=${PORT:-3000} node build",
-    "forge:scout:pm2": "pm2 startOrReload apps/openclaw-web/ecosystem.config.cjs --update-env && npm run forge:scout-chatgpt-app:install-runtime && pm2 startOrReload apps/scout-chatgpt-app/ecosystem.config.cjs --update-env",
+    "forge:scout:pm2": "pm2 startOrReload apps/openclaw-web/ecosystem.config.cjs --update-env && npm run forge:scout-chatgpt-app:pm2:optional",
     "forge:scout:pm2:status": "pm2 show hoggcountry-scout",
     "forge:scout-chatgpt-app:install-runtime": "test -x node_modules/.bin/tsx || npm install --package-lock=false --omit=dev --workspace @hoggcountry/scout-chatgpt-app",
+    "forge:scout-chatgpt-app:pm2:optional": "if [ -d apps/scout-chatgpt-app ] && [ -x node_modules/.bin/tsx ]; then pm2 startOrReload apps/scout-chatgpt-app/ecosystem.config.cjs --update-env; else echo \"Skipping Scout ChatGPT app PM2 reload; runtime is not installed in this release.\"; fi",
     "forge:scout-chatgpt-app:pm2": "pm2 startOrReload apps/scout-chatgpt-app/ecosystem.config.cjs --update-env",
     "forge:scout-chatgpt-app:pm2:status": "pm2 show hoggcountry-scout-chatgpt-app",
     "astro": "astro"
