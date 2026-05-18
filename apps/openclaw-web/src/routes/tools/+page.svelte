@@ -1,49 +1,48 @@
+<script lang="ts">
+  import ToolsDashboard from '../../../../../src/components/tools/ToolsDashboard.svelte';
+</script>
+
 <svelte:head>
-  <title>Trail Tools Moved | Hogg Country</title>
-  <meta name="description" content="The old multi-tool dashboard has been folded into the personal field manual workspace." />
+  <title>Trail Tools | Hogg Country</title>
+  <meta
+    name="description"
+    content="Interactive tools for AT thru-hiking: milestone planner, gear calculator, daylight calculator, and more."
+  />
 </svelte:head>
 
-<section class="container tools-moved">
-  <div class="card moved-card">
-    <p class="eyebrow">Merged</p>
-    <h1>Trail tools now live inside the workspace.</h1>
-    <p>
-      The old dashboard is no longer a standalone public surface. The important parts are being folded into Today and
-      Plan so hikers get fewer, calmer screens.
-    </p>
-    <div class="actions">
-      <a href="/app/today" class="btn btn-primary">Open Today</a>
-      <a href="/app" class="btn btn-ghost">Open Scout</a>
-    </div>
+<section class="tools-page">
+  <header class="hero tools-hero">
+    <span class="chapter font-chapter">AT 2026</span>
+    <h1 class="font-display">Trail Tools</h1>
+    <p>Interactive planning tools for the Appalachian Trail</p>
+  </header>
+
+  <div class="tools-container">
+    <ToolsDashboard />
   </div>
 </section>
 
 <style>
-  .tools-moved {
-    padding-top: 3rem;
+  .tools-page {
+    padding-bottom: 4rem;
+    overflow-x: clip;
   }
 
-  .moved-card {
-    max-width: 760px;
-    padding: 1.4rem;
+  .tools-hero {
+    padding-top: 2.5rem;
   }
 
-  h1 {
-    max-width: 12ch;
+  .tools-hero h1 {
     margin: 0;
-    font-size: clamp(2.6rem, 6vw, 4.8rem);
-    line-height: 0.98;
   }
 
-  p {
-    max-width: 58ch;
-    color: var(--muted);
-    line-height: 1.75;
+  .tools-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+  :global(.public-page-wrap) {
+    max-width: 1100px;
   }
 </style>
