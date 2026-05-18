@@ -507,10 +507,82 @@
 <section class="trail-map-shell" class:publicRoute aria-label={title}>
   <div class="map-host" bind:this={host}></div>
   <div class="map-shade" aria-hidden="true"></div>
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="trail-map-icon-arrow-left" viewBox="0 0 24 24">
+      <path d="M15 18l-6-6 6-6"></path>
+      <path d="M10 12h11"></path>
+    </symbol>
+    <symbol id="trail-map-icon-layers" viewBox="0 0 24 24">
+      <path d="M12 3l9 5-9 5-9-5 9-5z"></path>
+      <path d="M3 12l9 5 9-5"></path>
+      <path d="M3 16l9 5 9-5"></path>
+    </symbol>
+    <symbol id="trail-map-icon-route" viewBox="0 0 24 24">
+      <path d="M6 18c3.5-7 8.5.5 12-6"></path>
+      <circle cx="6" cy="18" r="2"></circle>
+      <circle cx="18" cy="12" r="2"></circle>
+    </symbol>
+    <symbol id="trail-map-icon-difficulty" viewBox="0 0 24 24">
+      <path d="M4 15a8 8 0 0 1 16 0"></path>
+      <path d="M12 15l4-6"></path>
+      <path d="M8 19h8"></path>
+    </symbol>
+    <symbol id="trail-map-icon-elevation" viewBox="0 0 24 24">
+      <path d="M3 19l6-10 4 6 3-4 5 8H3z"></path>
+      <path d="M9 9l2.2 3.2L13 10"></path>
+    </symbol>
+    <symbol id="trail-map-icon-grade" viewBox="0 0 24 24">
+      <path d="M4 18h16"></path>
+      <path d="M6 16l10-10"></path>
+      <path d="M12 6h4v4"></path>
+    </symbol>
+    <symbol id="trail-map-icon-rock" viewBox="0 0 24 24">
+      <path d="M5 17l3-9 7-3 4 6-2 7H8l-3-1z"></path>
+      <path d="M8 8l4 5 5-2"></path>
+    </symbol>
+    <symbol id="trail-map-icon-panel" viewBox="0 0 24 24">
+      <path d="M5 7h14"></path>
+      <path d="M5 12h14"></path>
+      <path d="M5 17h8"></path>
+    </symbol>
+    <symbol id="trail-map-icon-shelter" viewBox="0 0 24 24">
+      <path d="M3 13l9-8 9 8"></path>
+      <path d="M6 11v8h12v-8"></path>
+      <path d="M10 19v-5h4v5"></path>
+    </symbol>
+    <symbol id="trail-map-icon-water" viewBox="0 0 24 24">
+      <path d="M12 3c4 5 6 8.2 6 11a6 6 0 0 1-12 0c0-2.8 2-6 6-11z"></path>
+    </symbol>
+    <symbol id="trail-map-icon-town" viewBox="0 0 24 24">
+      <path d="M4 20V8l6-3v15"></path>
+      <path d="M10 20V4l10 5v11"></path>
+      <path d="M7 11h.1M7 15h.1M14 11h.1M17 13h.1M14 16h.1"></path>
+    </symbol>
+    <symbol id="trail-map-icon-road" viewBox="0 0 24 24">
+      <path d="M9 21l2-18"></path>
+      <path d="M15 21L13 3"></path>
+      <path d="M12 6v2M12 11v2M12 16v2"></path>
+    </symbol>
+    <symbol id="trail-map-icon-camp" viewBox="0 0 24 24">
+      <path d="M3 20h18"></path>
+      <path d="M6 20l6-14 6 14"></path>
+      <path d="M9 20l3-7 3 7"></path>
+    </symbol>
+    <symbol id="trail-map-icon-view" viewBox="0 0 24 24">
+      <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </symbol>
+    <symbol id="trail-map-icon-refresh" viewBox="0 0 24 24">
+      <path d="M20 12a8 8 0 1 1-2.3-5.7"></path>
+      <path d="M20 4v6h-6"></path>
+    </symbol>
+  </svg>
 
   <header class="map-hud map-hud-top">
     <div class="identity">
-      <a class="back-link" href={appMode ? '/app' : '/'} aria-label="Back">←</a>
+      <a class="back-link" href={appMode ? '/app' : '/'} aria-label="Back">
+        <svg aria-hidden="true"><use href="#trail-map-icon-arrow-left"></use></svg>
+      </a>
       <div>
         <p class="eyebrow">{title}</p>
         <h1>{currentPoint ? `Mile ${fmt(currentPoint.mile, 1)}` : 'Loading trail signal'}</h1>
@@ -523,6 +595,7 @@
         <span>{currentPoint ? timeLabel(currentPoint.observedAt) : loading ? 'Loading' : 'No signal'}</span>
       </div>
       <button class="layers-toggle" type="button" aria-expanded={layersOpen} aria-controls="map-layer-panel" onclick={() => (layersOpen = !layersOpen)}>
+        <svg class="control-icon" aria-hidden="true"><use href="#trail-map-icon-layers"></use></svg>
         <span>Layers</span>
         <strong>{terrainMode === 'difficulty' ? 'Diff' : terrainMode === 'rockiness' ? 'Rock' : 'Grade'} / {placeMode === 'access' ? 'Roads' : placeMode === 'view' ? 'Views' : placeMode === 'camp' ? 'Camp' : 'Core'}</strong>
       </button>
@@ -532,10 +605,19 @@
   {#if layersOpen}
     <aside id="map-layer-panel" class="map-hud mode-panel" aria-label="Map layers">
       <div class="mode-group">
-        <span>Terrain</span>
-        <button class:active={terrainMode === 'difficulty'} type="button" onclick={() => (terrainMode = 'difficulty')}>Diff</button>
-        <button class:active={terrainMode === 'grade'} type="button" onclick={() => (terrainMode = 'grade')}>Grade</button>
-        <button class:active={terrainMode === 'rockiness'} type="button" onclick={() => (terrainMode = 'rockiness')}>Rock</button>
+        <span class="mode-label">Terrain</span>
+        <button class:active={terrainMode === 'difficulty'} type="button" onclick={() => (terrainMode = 'difficulty')}>
+          <svg aria-hidden="true"><use href="#trail-map-icon-difficulty"></use></svg>
+          <span>Diff</span>
+        </button>
+        <button class:active={terrainMode === 'grade'} type="button" onclick={() => (terrainMode = 'grade')}>
+          <svg aria-hidden="true"><use href="#trail-map-icon-grade"></use></svg>
+          <span>Grade</span>
+        </button>
+        <button class:active={terrainMode === 'rockiness'} type="button" onclick={() => (terrainMode = 'rockiness')}>
+          <svg aria-hidden="true"><use href="#trail-map-icon-rock"></use></svg>
+          <span>Rock</span>
+        </button>
       </div>
       {#if terrainMode === 'difficulty'}
         <div class="difficulty-legend" aria-label="Difficulty color key">
@@ -546,48 +628,82 @@
         </div>
       {/if}
       <div class="mode-group">
-        <span>Places</span>
-        <button class:active={placeMode === 'core'} type="button" onclick={() => (placeMode = 'core')}>Core</button>
-        <button class:active={placeMode === 'access'} type="button" onclick={() => (placeMode = 'access')}>Roads</button>
-        <button class:active={placeMode === 'camp'} type="button" onclick={() => (placeMode = 'camp')}>Camp</button>
-        <button class:active={placeMode === 'view'} type="button" onclick={() => (placeMode = 'view')}>Views</button>
+        <span class="mode-label">Places</span>
+        <button class:active={placeMode === 'core'} type="button" onclick={() => (placeMode = 'core')}>
+          <svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg>
+          <span>Core</span>
+        </button>
+        <button class:active={placeMode === 'access'} type="button" onclick={() => (placeMode = 'access')}>
+          <svg aria-hidden="true"><use href="#trail-map-icon-road"></use></svg>
+          <span>Roads</span>
+        </button>
+        <button class:active={placeMode === 'camp'} type="button" onclick={() => (placeMode = 'camp')}>
+          <svg aria-hidden="true"><use href="#trail-map-icon-camp"></use></svg>
+          <span>Camp</span>
+        </button>
+        <button class:active={placeMode === 'view'} type="button" onclick={() => (placeMode = 'view')}>
+          <svg aria-hidden="true"><use href="#trail-map-icon-view"></use></svg>
+          <span>Views</span>
+        </button>
       </div>
-      <button class="refresh" type="button" onclick={() => loadPack(true)} disabled={loading}>{loading ? '...' : 'Refresh'}</button>
+      <button class="refresh" type="button" onclick={() => loadPack(true)} disabled={loading}>
+        <svg aria-hidden="true"><use href="#trail-map-icon-refresh"></use></svg>
+        <span>{loading ? '...' : 'Refresh'}</span>
+      </button>
     </aside>
   {/if}
 
-  <section class="map-hud detail-panel" aria-label="Trail detail">
+  <section class="map-hud detail-panel" class:expanded={detailsOpen} aria-label="Trail detail" style:--difficulty-accent={colorForDifficulty(selectedDifficulty?.score ?? 0)}>
+    <button class="sheet-handle" type="button" aria-expanded={detailsOpen} aria-label={detailsOpen ? 'Collapse trail details' : 'Expand trail details'} onclick={() => (detailsOpen = !detailsOpen)}>
+      <span></span>
+    </button>
     {#if errorMessage}
       <div class="error">{errorMessage}</div>
     {:else}
       <div class="detail-summary">
         <div class="detail-grid">
           <div class="metric primary">
-            <span>Selected</span>
+            <div class="metric-head">
+              <svg aria-hidden="true"><use href="#trail-map-icon-route"></use></svg>
+              <span>Selected</span>
+            </div>
             <strong>mi {fmt(selectedMile, 1)}</strong>
             <small>{selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
           </div>
           <div class={`metric difficulty ${selectedDifficultyClass}`}>
-            <span>Difficulty</span>
+            <div class="metric-head">
+              <svg aria-hidden="true"><use href="#trail-map-icon-difficulty"></use></svg>
+              <span>Difficulty</span>
+            </div>
             <strong>{selectedDifficulty ? `${fmt(selectedDifficulty.score, 1)}/10` : '--'}</strong>
             <small>{displayLabel(selectedDifficulty?.label)}</small>
           </div>
           <div class="metric">
-            <span>Elevation</span>
+            <div class="metric-head">
+              <svg aria-hidden="true"><use href="#trail-map-icon-elevation"></use></svg>
+              <span>Elevation</span>
+            </div>
             <strong>{selectedElevation ? `${fmt(selectedElevation.elevationFt)} ft` : '--'}</strong>
             <small>{selectedElevation?.state || 'USGS screen'}</small>
           </div>
           <div class="metric">
-            <span>Grade</span>
+            <div class="metric-head">
+              <svg aria-hidden="true"><use href="#trail-map-icon-grade"></use></svg>
+              <span>Grade</span>
+            </div>
             <strong>{selectedTerrain ? `${fmt(selectedTerrain.maxGradePercent)}%` : '--'}</strong>
             <small>{selectedTerrain ? `${fmt(selectedTerrain.gainFt)} ft up / ${fmt(selectedTerrain.lossFt)} ft down` : 'nearest mile'}</small>
           </div>
           <div class="metric">
-            <span>Rock</span>
+            <div class="metric-head">
+              <svg aria-hidden="true"><use href="#trail-map-icon-rock"></use></svg>
+              <span>Rock</span>
+            </div>
             <strong>{selectedRockiness ? `${fmt(selectedRockiness.score, 1)}/10` : '--'}</strong>
             <small>{displayLabel(selectedRockiness?.label)}</small>
           </div>
           <button class="details-toggle metric-action" type="button" aria-expanded={detailsOpen} onclick={() => (detailsOpen = !detailsOpen)}>
+            <svg aria-hidden="true"><use href="#trail-map-icon-panel"></use></svg>
             <span>Details</span>
             <strong>{detailsOpen ? 'Less' : 'More'}</strong>
           </button>
@@ -623,16 +739,20 @@
 
         <div class="next-grid">
           <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 12)}>
-            <span>Shelter</span><strong>{distanceAhead(nextShelter)}</strong><small>{nextShelter?.name ?? '--'}</small>
+            <span class="next-head"><svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg><span>Shelter</span></span>
+            <strong>{distanceAhead(nextShelter)}</strong><small>{nextShelter?.name ?? '--'}</small>
           </button>
           <button type="button" onclick={() => nextWater && map?.setView([nextWater.lat, nextWater.lon], 12)}>
-            <span>Water</span><strong>{distanceAhead(nextWater)}</strong><small>{nextWater?.name ?? '--'}</small>
+            <span class="next-head"><svg aria-hidden="true"><use href="#trail-map-icon-water"></use></svg><span>Water</span></span>
+            <strong>{distanceAhead(nextWater)}</strong><small>{nextWater?.name ?? '--'}</small>
           </button>
           <button type="button" onclick={() => nextTown && map?.setView([nextTown.lat, nextTown.lon], 11)}>
-            <span>Town</span><strong>{distanceAhead(nextTown)}</strong><small>{nextTown?.name ?? '--'}</small>
+            <span class="next-head"><svg aria-hidden="true"><use href="#trail-map-icon-town"></use></svg><span>Town</span></span>
+            <strong>{distanceAhead(nextTown)}</strong><small>{nextTown?.name ?? '--'}</small>
           </button>
           <button type="button" onclick={() => nextRoad && map?.setView([nextRoad.lat, nextRoad.lon], 12)}>
-            <span>Road</span><strong>{distanceAhead(nextRoad)}</strong><small>{nextRoad?.name ?? '--'}</small>
+            <span class="next-head"><svg aria-hidden="true"><use href="#trail-map-icon-road"></use></svg><span>Road</span></span>
+            <strong>{distanceAhead(nextRoad)}</strong><small>{nextRoad?.name ?? '--'}</small>
           </button>
         </div>
 
@@ -664,6 +784,29 @@
 
   :global(body:has(.trail-map-shell.publicRoute)) {
     overflow: hidden;
+  }
+
+  .icon-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  .back-link svg,
+  .layers-toggle svg,
+  .mode-group button svg,
+  .refresh svg,
+  .metric-head svg,
+  .details-toggle svg,
+  .next-head svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
   }
 
   :global(.trail-current-pin) {
@@ -778,8 +921,12 @@
     height: 2.55rem;
     flex: 0 0 auto;
     border-radius: 999px;
-    font-size: 1.3rem;
     font-weight: 900;
+  }
+
+  .back-link svg {
+    width: 1.28rem;
+    height: 1.28rem;
   }
 
   .eyebrow {
@@ -829,13 +976,23 @@
 
   .layers-toggle {
     display: grid;
-    min-width: 5.85rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    min-width: 6.45rem;
     min-height: 2.42rem;
     align-content: center;
+    align-items: center;
+    column-gap: 0.48rem;
     border-radius: 999px;
     cursor: pointer;
     padding: 0.34rem 0.7rem;
     text-align: left;
+  }
+
+  .layers-toggle .control-icon {
+    grid-row: 1 / span 2;
+    width: 1.05rem;
+    height: 1.05rem;
+    color: #d9f99d;
   }
 
   .layers-toggle span {
@@ -849,6 +1006,7 @@
   }
 
   .layers-toggle strong {
+    grid-column: 2;
     overflow: hidden;
     color: #fffdf8;
     font-family: Oswald, Impact, sans-serif;
@@ -884,7 +1042,7 @@
     grid-template-columns: 4.2rem repeat(4, minmax(0, 1fr));
   }
 
-  .mode-group span {
+  .mode-group > .mode-label {
     color: rgba(255, 253, 248, 0.68);
     font-family: Oswald, Impact, sans-serif;
     font-size: 0.68rem;
@@ -897,6 +1055,10 @@
   .refresh,
   .details-toggle,
   .history-row button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.32rem;
     min-height: 2rem;
     border-radius: 999px;
     cursor: pointer;
@@ -907,10 +1069,21 @@
     text-transform: uppercase;
   }
 
+  .mode-group button svg,
+  .refresh svg {
+    width: 0.86rem;
+    height: 0.86rem;
+    color: rgba(255, 253, 248, 0.74);
+  }
+
   .mode-group button.active {
     border-color: rgba(217, 249, 157, 0.55);
     background: rgba(217, 249, 157, 0.18);
     color: #ecfccb;
+  }
+
+  .mode-group button.active svg {
+    color: #d9f99d;
   }
 
   .difficulty-legend {
@@ -966,13 +1139,49 @@
   }
 
   .detail-panel {
+    --difficulty-accent: #15803d;
     left: max(0.75rem, env(safe-area-inset-left));
     right: max(0.75rem, env(safe-area-inset-right));
     bottom: max(0.75rem, env(safe-area-inset-bottom));
     display: grid;
     gap: 0.55rem;
     border-radius: 18px;
-    padding: clamp(0.55rem, 1.4vw, 0.8rem);
+    padding: clamp(0.68rem, 1.4vw, 0.9rem) clamp(0.55rem, 1.4vw, 0.8rem) clamp(0.55rem, 1.4vw, 0.8rem);
+  }
+
+  .detail-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 1.15rem;
+    right: 1.15rem;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--difficulty-accent), transparent);
+    opacity: 0.82;
+  }
+
+  .sheet-handle {
+    position: absolute;
+    top: 0.28rem;
+    left: 50%;
+    display: grid;
+    width: 3.9rem;
+    height: 1.05rem;
+    place-items: center;
+    transform: translateX(-50%);
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .sheet-handle span {
+    display: block;
+    width: 2.3rem;
+    height: 0.22rem;
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.42);
   }
 
   .detail-summary {
@@ -986,25 +1195,48 @@
   }
 
   .metric {
+    position: relative;
     min-width: 0;
     border-radius: 13px;
     background: rgba(255, 253, 248, 0.08);
-    padding: 0.5rem 0.58rem;
+    padding: 0.52rem 0.58rem 0.5rem;
+    box-shadow: inset 0 1px 0 rgba(255, 253, 248, 0.08);
   }
 
   .metric.primary {
     background: rgba(217, 119, 6, 0.22);
   }
 
-  .metric span,
-  .next-grid span {
+  .metric.difficulty {
+    box-shadow: inset 0 1px 0 rgba(255, 253, 248, 0.1), inset 0 -2px 0 var(--difficulty-accent);
+  }
+
+  .metric-head,
+  .next-head {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.34rem;
+  }
+
+  .metric-head svg,
+  .next-head svg {
+    flex: 0 0 auto;
+    color: rgba(217, 249, 157, 0.82);
+  }
+
+  .metric-head span,
+  .next-head span {
     display: block;
+    overflow: hidden;
     color: rgba(255, 253, 248, 0.62);
     font-family: Oswald, Impact, sans-serif;
     font-size: 0.66rem;
     font-weight: 900;
     letter-spacing: 0.1em;
+    text-overflow: ellipsis;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .metric strong {
@@ -1035,8 +1267,15 @@
     min-width: 0;
     align-content: center;
     justify-items: center;
+    gap: 0.1rem;
     border-radius: 13px;
     padding: 0.42rem 0.45rem;
+  }
+
+  .details-toggle svg {
+    width: 1.04rem;
+    height: 1.04rem;
+    color: #d9f99d;
   }
 
   .details-toggle span {
@@ -1114,6 +1353,13 @@
     cursor: pointer;
     padding: 0.5rem 0.58rem;
     text-align: left;
+    transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+  }
+
+  .next-grid button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(217, 249, 157, 0.38);
+    background: rgba(255, 253, 248, 0.11);
   }
 
   .next-grid strong {
@@ -1284,13 +1530,13 @@
       font-size: 0.66rem;
     }
 
-    .mode-group span {
+    .mode-group > .mode-label {
       grid-column: 1 / -1;
     }
 
     .detail-panel {
       gap: 0.42rem;
-      padding: 0.5rem;
+      padding: 0.72rem 0.5rem 0.5rem;
     }
 
     .detail-summary {
@@ -1306,9 +1552,15 @@
       padding: 0.42rem 0.48rem;
     }
 
-    .metric span,
-    .next-grid span {
+    .metric-head span,
+    .next-head span {
       font-size: 0.58rem;
+    }
+
+    .metric-head svg,
+    .next-head svg {
+      width: 0.86rem;
+      height: 0.86rem;
     }
 
     .metric strong {
