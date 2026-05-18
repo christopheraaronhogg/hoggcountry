@@ -32,6 +32,7 @@
   let placeMode = $state<PlaceMode>('core');
   let selectedHistoryIndex = $state(0);
   let detailsOpen = $state(false);
+  let layersOpen = $state(false);
   let lastRenderedTerrainMode: TerrainMode | null = null;
   let lastRenderedPlaceMode: PlaceMode | null = null;
   let lastRenderedMile = -1;
@@ -516,36 +517,44 @@
       </div>
     </div>
 
-    <div class="signal">
-      <span class="signal-dot" class:live={Boolean(currentPoint)}></span>
-      <span>{currentPoint ? timeLabel(currentPoint.observedAt) : loading ? 'Loading' : 'No signal'}</span>
+    <div class="hud-actions">
+      <div class="signal">
+        <span class="signal-dot" class:live={Boolean(currentPoint)}></span>
+        <span>{currentPoint ? timeLabel(currentPoint.observedAt) : loading ? 'Loading' : 'No signal'}</span>
+      </div>
+      <button class="layers-toggle" type="button" aria-expanded={layersOpen} aria-controls="map-layer-panel" onclick={() => (layersOpen = !layersOpen)}>
+        <span>Layers</span>
+        <strong>{terrainMode === 'difficulty' ? 'Diff' : terrainMode === 'rockiness' ? 'Rock' : 'Grade'} / {placeMode === 'access' ? 'Roads' : placeMode === 'view' ? 'Views' : placeMode === 'camp' ? 'Camp' : 'Core'}</strong>
+      </button>
     </div>
   </header>
 
-  <aside class="map-hud mode-panel" aria-label="Map layers">
-    <div class="mode-group">
-      <span>Terrain</span>
-      <button class:active={terrainMode === 'difficulty'} type="button" onclick={() => (terrainMode = 'difficulty')}>Diff</button>
-      <button class:active={terrainMode === 'grade'} type="button" onclick={() => (terrainMode = 'grade')}>Grade</button>
-      <button class:active={terrainMode === 'rockiness'} type="button" onclick={() => (terrainMode = 'rockiness')}>Rock</button>
-    </div>
-    {#if terrainMode === 'difficulty'}
-      <div class="difficulty-legend" aria-label="Difficulty color key">
-        <span><i class="cruise"></i>Cruise</span>
-        <span><i class="steady"></i>Steady</span>
-        <span><i class="hard"></i>Hard</span>
-        <span><i class="severe"></i>Severe</span>
+  {#if layersOpen}
+    <aside id="map-layer-panel" class="map-hud mode-panel" aria-label="Map layers">
+      <div class="mode-group">
+        <span>Terrain</span>
+        <button class:active={terrainMode === 'difficulty'} type="button" onclick={() => (terrainMode = 'difficulty')}>Diff</button>
+        <button class:active={terrainMode === 'grade'} type="button" onclick={() => (terrainMode = 'grade')}>Grade</button>
+        <button class:active={terrainMode === 'rockiness'} type="button" onclick={() => (terrainMode = 'rockiness')}>Rock</button>
       </div>
-    {/if}
-    <div class="mode-group">
-      <span>Places</span>
-      <button class:active={placeMode === 'core'} type="button" onclick={() => (placeMode = 'core')}>Core</button>
-      <button class:active={placeMode === 'access'} type="button" onclick={() => (placeMode = 'access')}>Roads</button>
-      <button class:active={placeMode === 'camp'} type="button" onclick={() => (placeMode = 'camp')}>Camp</button>
-      <button class:active={placeMode === 'view'} type="button" onclick={() => (placeMode = 'view')}>Views</button>
-    </div>
-    <button class="refresh" type="button" onclick={() => loadPack(true)} disabled={loading}>{loading ? '...' : 'Refresh'}</button>
-  </aside>
+      {#if terrainMode === 'difficulty'}
+        <div class="difficulty-legend" aria-label="Difficulty color key">
+          <span><i class="cruise"></i>Cruise</span>
+          <span><i class="steady"></i>Steady</span>
+          <span><i class="hard"></i>Hard</span>
+          <span><i class="severe"></i>Severe</span>
+        </div>
+      {/if}
+      <div class="mode-group">
+        <span>Places</span>
+        <button class:active={placeMode === 'core'} type="button" onclick={() => (placeMode = 'core')}>Core</button>
+        <button class:active={placeMode === 'access'} type="button" onclick={() => (placeMode = 'access')}>Roads</button>
+        <button class:active={placeMode === 'camp'} type="button" onclick={() => (placeMode = 'camp')}>Camp</button>
+        <button class:active={placeMode === 'view'} type="button" onclick={() => (placeMode = 'view')}>Views</button>
+      </div>
+      <button class="refresh" type="button" onclick={() => loadPack(true)} disabled={loading}>{loading ? '...' : 'Refresh'}</button>
+    </aside>
+  {/if}
 
   <section class="map-hud detail-panel" aria-label="Trail detail">
     {#if errorMessage}
@@ -578,10 +587,11 @@
             <strong>{selectedRockiness ? `${fmt(selectedRockiness.score, 1)}/10` : '--'}</strong>
             <small>{displayLabel(selectedRockiness?.label)}</small>
           </div>
+          <button class="details-toggle metric-action" type="button" aria-expanded={detailsOpen} onclick={() => (detailsOpen = !detailsOpen)}>
+            <span>Details</span>
+            <strong>{detailsOpen ? 'Less' : 'More'}</strong>
+          </button>
         </div>
-        <button class="details-toggle" type="button" aria-expanded={detailsOpen} onclick={() => (detailsOpen = !detailsOpen)}>
-          {detailsOpen ? 'Less' : 'More'}
-        </button>
       </div>
 
       {#if detailsOpen}
@@ -736,11 +746,19 @@
   .identity {
     display: flex;
     align-items: center;
-    min-width: 0;
     gap: 0.72rem;
+    min-width: 0;
+  }
+
+  .hud-actions {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 0.55rem;
   }
 
   .back-link,
+  .layers-toggle,
   .mode-group button,
   .refresh,
   .history-row button,
@@ -807,6 +825,42 @@
   .signal-dot.live {
     background: #22c55e;
     box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.15);
+  }
+
+  .layers-toggle {
+    display: grid;
+    min-width: 5.85rem;
+    min-height: 2.42rem;
+    align-content: center;
+    border-radius: 999px;
+    cursor: pointer;
+    padding: 0.34rem 0.7rem;
+    text-align: left;
+  }
+
+  .layers-toggle span {
+    color: rgba(255, 253, 248, 0.58);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.56rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .layers-toggle strong {
+    overflow: hidden;
+    color: #fffdf8;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.78rem;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .layers-toggle[aria-expanded='true'] {
+    border-color: rgba(217, 249, 157, 0.55);
+    background: rgba(217, 249, 157, 0.18);
   }
 
   .mode-panel {
@@ -922,15 +976,12 @@
   }
 
   .detail-summary {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.55rem;
-    align-items: center;
+    min-width: 0;
   }
 
   .detail-grid {
     display: grid;
-    grid-template-columns: 1.15fr repeat(4, minmax(0, 1fr));
+    grid-template-columns: 1.15fr repeat(4, minmax(0, 1fr)) minmax(4.2rem, 0.52fr);
     gap: 0.55rem;
   }
 
@@ -980,8 +1031,28 @@
   }
 
   .details-toggle {
-    width: 4.2rem;
-    padding: 0 0.7rem;
+    display: grid;
+    min-width: 0;
+    align-content: center;
+    justify-items: center;
+    border-radius: 13px;
+    padding: 0.42rem 0.45rem;
+  }
+
+  .details-toggle span {
+    color: rgba(255, 253, 248, 0.62);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .details-toggle strong {
+    color: #fffdf8;
+    font-size: 1.2rem;
+    line-height: 0.95;
   }
 
   .history-row {
@@ -1101,8 +1172,12 @@
     }
 
     .map-hud-top {
-      align-items: flex-start;
+      align-items: center;
       padding-right: 0.7rem;
+    }
+
+    .hud-actions {
+      gap: 0.38rem;
     }
 
     .signal {
@@ -1138,6 +1213,8 @@
   @media (max-width: 520px) {
     .map-hud-top {
       gap: 0.45rem;
+      border-radius: 16px;
+      padding: 0.58rem;
     }
 
     .back-link {
@@ -1146,8 +1223,39 @@
     }
 
     h1 {
-      max-width: 9.5rem;
+      max-width: 7.8rem;
       font-size: 1.45rem;
+    }
+
+    .hud-actions {
+      align-items: flex-end;
+      flex-direction: column;
+      gap: 0.28rem;
+    }
+
+    .signal {
+      min-width: 0;
+      gap: 0.34rem;
+      font-size: 0.64rem;
+    }
+
+    .signal-dot {
+      width: 0.56rem;
+      height: 0.56rem;
+    }
+
+    .layers-toggle {
+      min-width: 4.8rem;
+      min-height: 1.7rem;
+      padding: 0.22rem 0.54rem;
+    }
+
+    .layers-toggle span {
+      display: none;
+    }
+
+    .layers-toggle strong {
+      font-size: 0.68rem;
     }
 
     .mode-group,
@@ -1186,7 +1294,7 @@
     }
 
     .detail-summary {
-      gap: 0.42rem;
+      display: block;
     }
 
     .detail-grid {
@@ -1214,8 +1322,13 @@
     }
 
     .details-toggle {
-      width: 3.65rem;
-      padding: 0 0.45rem;
+      width: auto;
+      min-height: 3.8rem;
+      padding: 0.38rem 0.45rem;
+    }
+
+    .details-toggle strong {
+      font-size: 1rem;
     }
 
     .history-row {
