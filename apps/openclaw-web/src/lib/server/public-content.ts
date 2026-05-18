@@ -278,7 +278,19 @@ export async function loadTag(tag: string): Promise<TagBucket> {
 
 export async function loadPublicUrls(origin: string): Promise<string[]> {
   const guide = await loadGuideIndex();
-  const baseUrls = ['/', '/updates', '/videos', '/guide', '/tools', '/about', '/login'];
+  const baseUrls = [
+    '/',
+    '/updates',
+    '/videos',
+    '/guide',
+    '/tools',
+    '/at-map',
+    '/track',
+    '/about',
+    '/login',
+    '/privacy',
+    '/terms'
+  ];
   const urls = [
     ...baseUrls,
     ...guide.map((chapter) => `/guide/${chapter.slug}`)

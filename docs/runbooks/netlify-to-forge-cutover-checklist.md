@@ -1,6 +1,6 @@
 # Netlify to Forge Cutover Checklist
 
-Last verified: 2026-04-17
+Last verified: 2026-05-18
 
 ## Goal
 
@@ -11,18 +11,19 @@ This checklist assumes:
 - `https://hoggcountry.on-forge.com` is already serving the public frontend through Laravel plus the localhost Node bridge
 - the Node app is managed by PM2
 - the backend API remains on the same Forge host
+- `hoggcountry.com` remains on Netlify until Chris explicitly approves the final domain move
 
 ## Do not cut over until these are true
 
 - `npm run verify:forge` passes against `https://hoggcountry.on-forge.com`
 - `pm2 show hoggcountry-scout` reports `online`
-- `/`, `/guide`, and `/guide/quick/layering` work on the Forge domain
-- `/api/v1/health`, `/api/v1/trail-assistant/plans`, and `/api/v1/trail-assistant/byos/providers` work on the Forge domain
-- alias redirects still behave:
-  - `/track` -> `/dad/map`
-  - `/videos` -> `/dad/videos`
-  - `/at-map` -> `/dad/map`
-- the remaining public drawer destinations are either ported, intentionally redirected, or intentionally hidden for launch
+- `/`, `/updates`, `/videos`, `/guide`, `/guide/quick/layering`, `/tools`, `/at-map`, `/track`, `/login`, and `/admin/updates` work on the Forge domain
+- `/updates/feed?limit=50` is public, non-empty, and includes both `youtube_video` and `youtube_short`
+- `/track/map-pack` returns Garmin-backed current coordinates and tracker history
+- `/api/v1/health` works on the Forge domain
+- `/manifest.webmanifest`, `/service-worker.js`, `/rss.xml`, and `/sitemap.xml` work on the Forge domain
+- Trips, Blog, and Tags are not presented as production-beta navigation items or smoke-test blockers
+- authenticated `/app/*` routes redirect anonymous visitors to `/login`
 - Chris is ready for the live domain switch
 
 ## Prep, 24 to 48 hours before cutover
@@ -77,10 +78,14 @@ npm run verify:forge --base-url https://hoggcountry.com
 
 7. Manually smoke-check the real domain:
    - homepage shell and hero
+   - latest trail feed and YouTube video/Short cards
    - guide index
    - a nested guide page like `/guide/quick/layering`
-   - public tool redirects
+   - public tools hub
+   - live AT map and `/track/map-pack`
+   - login/signup/recovery surfaces
    - API health route
+   - manifest, service worker, RSS, and sitemap
    - CSS and JS assets loading without console 404s
 
 8. Verify `www` behavior.

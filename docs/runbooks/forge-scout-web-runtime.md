@@ -187,17 +187,25 @@ npm run verify:forge
 These should pass when the bridge is healthy:
 
 - `https://hoggcountry.on-forge.com/`
+- `https://hoggcountry.on-forge.com/updates`
+- `https://hoggcountry.on-forge.com/updates/feed?limit=50`
+- `https://hoggcountry.on-forge.com/videos`
 - `https://hoggcountry.on-forge.com/guide`
 - `https://hoggcountry.on-forge.com/guide/quick/layering`
+- `https://hoggcountry.on-forge.com/tools`
+- `https://hoggcountry.on-forge.com/at-map`
+- `https://hoggcountry.on-forge.com/track`
+- `https://hoggcountry.on-forge.com/track/map-pack`
+- `https://hoggcountry.on-forge.com/login`
+- `https://hoggcountry.on-forge.com/manifest.webmanifest`
+- `https://hoggcountry.on-forge.com/service-worker.js`
+- `https://hoggcountry.on-forge.com/rss.xml`
+- `https://hoggcountry.on-forge.com/sitemap.xml`
 - `https://hoggcountry.on-forge.com/api/v1/health`
-- `https://hoggcountry.on-forge.com/api/v1/trail-assistant/plans`
-- `https://hoggcountry.on-forge.com/api/v1/trail-assistant/byos/providers`
 
-Alias redirects should also behave:
+The SvelteKit beta owns `/track`, `/videos`, and `/at-map` directly. They are not expected to redirect to `/dad/*`.
 
-- `/track` -> `/dad/map`
-- `/videos` -> `/dad/videos`
-- `/at-map` -> `/dad/map`
+Trips, Blog, and Tags are not cutover blockers for the Forge beta and should stay out of public navigation, the service-worker runtime list, and smoke-test requirements.
 
 Gated app workspace checks should also work through the Laravel bridge, not only against localhost:
 

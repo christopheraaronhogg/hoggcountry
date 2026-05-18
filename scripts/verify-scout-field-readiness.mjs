@@ -2,16 +2,32 @@ const args = process.argv.slice(2);
 
 const options = {
   baseUrl: process.env.FORGE_BASE_URL || 'https://hoggcountry.on-forge.com',
+  email: process.env.SCOUT_VERIFY_EMAIL || '',
+  password: process.env.SCOUT_VERIFY_PASSWORD || '',
   json: false
 };
 
 for (let i = 0; i < args.length; i += 1) {
   const arg = args[i];
+
   if (arg === '--base-url' && args[i + 1]) {
     options.baseUrl = args[i + 1];
     i += 1;
     continue;
   }
+
+  if (arg === '--email' && args[i + 1]) {
+    options.email = args[i + 1];
+    i += 1;
+    continue;
+  }
+
+  if (arg === '--password' && args[i + 1]) {
+    options.password = args[i + 1];
+    i += 1;
+    continue;
+  }
+
   if (arg === '--json') {
     options.json = true;
   }
@@ -25,19 +41,19 @@ function setCookieValues(setCookie) {
   return setCookie ? [setCookie] : [];
 }
 
-function betaSetCookie(setCookie) {
-  return setCookieValues(setCookie).find((value) => value.startsWith('hogg_beta_profile=')) ?? '';
+function authSetCookie(setCookie) {
+  return setCookieValues(setCookie).find((value) => value.startsWith('hc_auth_token=')) ?? '';
 }
 
 function cookiePair(setCookie) {
-  const betaCookie = betaSetCookie(setCookie);
-  if (!betaCookie) return null;
-  const match = /^(hogg_beta_profile=[^;,\s]+)/u.exec(betaCookie);
+  const authCookie = authSetCookie(setCookie);
+  if (!authCookie) return null;
+  const match = /^(hc_auth_token=[^;,\s]+)/u.exec(authCookie);
   return match?.[1] ?? null;
 }
 
 function cookieAttributes(setCookie) {
-  return betaSetCookie(setCookie).toLowerCase();
+  return authSetCookie(setCookie).toLowerCase();
 }
 
 async function request(path, init = {}) {
@@ -64,8 +80,8 @@ async function request(path, init = {}) {
   };
 }
 
-async function postLogin(username, password) {
-  return request('/signup', {
+async function postLogin(email, password, redirectTo = '/app/scout') {
+  return request('/login', {
     method: 'POST',
     headers: {
       origin: baseUrl,
@@ -73,72 +89,108 @@ async function postLogin(username, password) {
       'content-type': 'application/x-www-form-urlencoded'
     },
     body: new URLSearchParams({
-      quickUsername: username,
-      quickPassword: password
+      email,
+      password,
+      redirectTo
     })
   });
 }
 
+function expectHtmlMarkers(label, result, markers) {
+  if (result.status !== 200) {
+    problems.push(`${label} expected 200, got ${result.status}`);
+    return;
+  }
+
+  for (const marker of markers) {
+    if (!marker.test(result.text)) problems.push(`${label} missing ${marker} marker`);
+  }
+}
+
+const login = await request('/login');
+expectHtmlMarkers('/login', login, [
+  /Sign in to your trail workspace/u,
+  /Continue with Google/u,
+  /Email/u,
+  /Password/u,
+  /Forgot password/u
+]);
+
 const signup = await request('/signup');
-if (signup.status !== 200) problems.push(`/signup expected 200, got ${signup.status}`);
-if (!/Trail beta quick login/u.test(signup.text)) problems.push('/signup missing quick login marker');
-if (!/value="chris"/u.test(signup.text) || !/value="dad"/u.test(signup.text)) {
-  problems.push('/signup missing Chris/Dad quick login buttons');
+expectHtmlMarkers('/signup', signup, [
+  /Create your trail workspace/u,
+  /Confirm password/u,
+  /Already have an account/u
+]);
+
+const forgotPassword = await request('/forgot-password');
+expectHtmlMarkers('/forgot-password', forgotPassword, [
+  /Recover|reset|password/iu,
+  /Email/u
+]);
+
+const gatedPaths = ['/app', '/app/today', '/app/map'];
+const gatedResults = {};
+
+for (const path of gatedPaths) {
+  const result = await request(path);
+  gatedResults[path] = result.status;
+  const expectedLocation = `/login?redirect=${encodeURIComponent(path)}`;
+
+  if (result.status !== 302) problems.push(`${path} expected anonymous 302, got ${result.status}`);
+  if (result.headers.location !== expectedLocation) {
+    problems.push(`${path} expected redirect ${expectedLocation}, got ${result.headers.location ?? 'none'}`);
+  }
 }
 
-const chrisLogin = await postLogin('chris', '0721');
-const chrisCookie = cookiePair(chrisLogin.setCookies);
-const chrisAttrs = cookieAttributes(chrisLogin.setCookies);
-if (chrisLogin.status !== 303) problems.push(`Chris login expected 303, got ${chrisLogin.status}`);
-if (chrisLogin.headers.location !== '/app/scout') problems.push(`Chris login expected /app/scout redirect, got ${chrisLogin.headers.location ?? 'none'}`);
-if (!chrisCookie) problems.push('Chris login did not set hogg_beta_profile cookie');
-if (!chrisAttrs.includes('httponly')) problems.push('Chris login cookie missing HttpOnly');
-if (!chrisAttrs.includes('samesite=lax')) problems.push('Chris login cookie missing SameSite=Lax');
-if (baseUrl.startsWith('https://') && !chrisAttrs.includes('secure')) problems.push('Chris login cookie missing Secure on HTTPS');
-
-const dadLogin = await postLogin('dad', '0721');
-const dadCookie = cookiePair(dadLogin.setCookies);
-if (dadLogin.status !== 303) problems.push(`Dad login expected 303, got ${dadLogin.status}`);
-if (!dadCookie) problems.push('Dad login did not set hogg_beta_profile cookie');
-if (chrisCookie && dadCookie && chrisCookie === dadCookie) problems.push('Chris and Dad resolved to the same beta cookie');
-
-if (chrisCookie) {
-  const app = await request('/app/scout', {
-    headers: {
-      cookie: chrisCookie
-    }
-  });
-  if (app.status !== 200) problems.push(`Chris /app/scout expected 200, got ${app.status}`);
-  if (!/Scout beta/u.test(app.text)) problems.push('Chris /app/scout missing Scout beta app marker');
-  if (!/Chris/u.test(app.text)) problems.push('Chris /app/scout missing Chris workspace marker');
-
-  const legacyApp = await request('/app/claw', {
-    headers: {
-      cookie: chrisCookie
-    }
-  });
-  if (legacyApp.status !== 200) problems.push(`Legacy /app/claw expected 200, got ${legacyApp.status}`);
-
-  const logout = await request('/app/logout', {
-    headers: {
-      cookie: chrisCookie
-    }
-  });
-  if (logout.status !== 303) problems.push(`Logout expected 303, got ${logout.status}`);
-  if (logout.headers.location !== '/signup') problems.push(`Logout expected /signup redirect, got ${logout.headers.location ?? 'none'}`);
-  if (!betaSetCookie(logout.setCookies)) problems.push('Logout did not clear beta cookie');
+const badLogin = await postLogin(`codex-${Date.now()}@example.invalid`, 'not-the-password');
+if (![400, 401, 422].includes(badLogin.status)) {
+  problems.push(`Bad login expected 400, 401, or 422, got ${badLogin.status}`);
 }
+if (cookiePair(badLogin.setCookies)) problems.push('Bad login unexpectedly set hc_auth_token cookie');
 
-const badLogin = await postLogin('chris', 'wrong');
-if (badLogin.status !== 401) problems.push(`Bad quick login expected 401, got ${badLogin.status}`);
+let credentialLoginStatus = 'skipped';
+let appStatus = 'skipped';
+
+if (options.email && options.password) {
+  const credentialLogin = await postLogin(options.email, options.password);
+  credentialLoginStatus = credentialLogin.status;
+  const authCookie = cookiePair(credentialLogin.setCookies);
+  const authAttrs = cookieAttributes(credentialLogin.setCookies);
+
+  if (credentialLogin.status !== 303) problems.push(`Credential login expected 303, got ${credentialLogin.status}`);
+  if (credentialLogin.headers.location !== '/app/scout') {
+    problems.push(`Credential login expected /app/scout redirect, got ${credentialLogin.headers.location ?? 'none'}`);
+  }
+  if (!authCookie) problems.push('Credential login did not set hc_auth_token cookie');
+  if (!authAttrs.includes('httponly')) problems.push('Credential login cookie missing HttpOnly');
+  if (!authAttrs.includes('samesite=lax')) problems.push('Credential login cookie missing SameSite=Lax');
+  if (baseUrl.startsWith('https://') && !authAttrs.includes('secure')) {
+    problems.push('Credential login cookie missing Secure on HTTPS');
+  }
+
+  if (authCookie) {
+    const app = await request('/app/scout', {
+      headers: {
+        cookie: authCookie
+      }
+    });
+    appStatus = app.status;
+    if (app.status !== 200) problems.push(`Authenticated /app/scout expected 200, got ${app.status}`);
+    if (!/Scout|workspace|Today|Plan/iu.test(app.text)) problems.push('Authenticated /app/scout missing Scout workspace markers');
+  }
+}
 
 const summary = {
   baseUrl,
   ok: problems.length === 0,
+  authLogin: credentialLoginStatus,
+  app: appStatus,
   checks: {
+    login: login.status,
     signup: signup.status,
-    chrisLogin: chrisLogin.status,
-    dadLogin: dadLogin.status,
+    forgotPassword: forgotPassword.status,
+    gated: gatedResults,
     badLogin: badLogin.status
   },
   problems
@@ -148,6 +200,9 @@ if (options.json) {
   console.log(JSON.stringify(summary, null, 2));
 } else if (summary.ok) {
   console.log(`Scout field readiness OK for ${baseUrl}`);
+  if (credentialLoginStatus === 'skipped') {
+    console.log('- authenticated login skipped; set SCOUT_VERIFY_EMAIL and SCOUT_VERIFY_PASSWORD to test a real account');
+  }
 } else {
   console.error(`Scout field readiness failed for ${baseUrl}`);
   for (const problem of problems) console.error(`- ${problem}`);
