@@ -26,7 +26,22 @@ const OFFLINE_FALLBACK = `<!doctype html>
   </body>
 </html>`;
 
-const STATIC_ASSETS = [...build, ...files];
+// Large, rarely-needed files stay out of the install-time precache so first
+// install stays light. They are still cached on demand (see isStaticAsset),
+// which is how the guide's "Save for Offline" warming works.
+const PRECACHE_EXCLUDE_PREFIXES = [
+  '/game/',
+  '/AT-Field-Guide-2026.pdf',
+  '/kjv-pce.jsonl',
+  '/kjv-context.txt',
+  '/guide-context.txt',
+  '/og-banner.png',
+  '/scout-chatgpt-demo.mp4'
+];
+
+const STATIC_ASSETS = [...build, ...files].filter(
+  (path) => !PRECACHE_EXCLUDE_PREFIXES.some((prefix) => path === prefix || path.startsWith(prefix))
+);
 const APP_RUNTIME_PATHS = [
   '/',
   '/app',
@@ -37,10 +52,17 @@ const APP_RUNTIME_PATHS = [
   '/app/resources',
   '/app/docs',
   '/guide',
+  '/guide/manual-builder',
   '/at-map',
+  '/at-weather',
+  '/trail',
+  '/character',
+  '/dispatch',
   '/track',
   '/track/map-pack',
   '/videos',
+  '/videohogg',
+  '/trail-assistant',
   '/app-api/workspace',
   '/app-api/scout',
   '/app-api/scout/daily-brief',
@@ -67,7 +89,7 @@ function isRuntimePath(pathname: string): boolean {
 
 function isStaticAsset(url: URL): boolean {
   return STATIC_ASSETS.includes(url.pathname)
-    || /\.(?:css|js|mjs|json|svg|png|jpg|jpeg|webp|avif|woff2?)$/iu.test(url.pathname);
+    || /\.(?:css|js|mjs|json|jsonl|txt|pdf|svg|png|jpg|jpeg|webp|avif|woff2?|mp4)$/iu.test(url.pathname);
 }
 
 async function cacheFirst(request: Request): Promise<Response> {

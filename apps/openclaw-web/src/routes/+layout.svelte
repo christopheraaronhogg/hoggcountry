@@ -17,7 +17,11 @@
     { href: '/guide', label: 'Field Guide', external: false },
     { href: '/videos', label: 'Videos', external: false },
     { href: '/at-map', label: 'AT Map', external: false },
+    { href: '/at-weather', label: 'AT Weather', external: false },
+    { href: '/trail', label: 'Trail Hub', external: false },
     { href: '/tools', label: 'Trail Tools', external: false },
+    { href: '/tools/character', label: 'My Profile', external: false },
+    { href: '/videohogg', label: 'VideoHogg', external: false },
     { href: '/login', label: 'Account', external: false }
   ];
 
@@ -25,9 +29,13 @@
     toolsOpen = false;
   }
 
+  const isGuidePage = $derived(
+    page.url.pathname === '/guide' || page.url.pathname.startsWith('/guide/manual-builder')
+  );
+
   function updateGuideHeaderState() {
     if (!browser) return;
-    guideHeaderHidden = page.url.pathname === '/guide' && window.scrollY >= 50;
+    guideHeaderHidden = isGuidePage && window.scrollY >= 50;
   }
 
   function updateOnlineState() {
@@ -95,8 +103,8 @@
 {:else}
   <a href="#main-content" class="skip-to-content">Skip to main content</a>
 
-  <div class="site-shell public-shell" class:guide-shell={page.url.pathname === '/guide'}>
-    <div class:guide-header-wrapper={page.url.pathname === '/guide'} class:is-hidden={page.url.pathname === '/guide' && guideHeaderHidden}>
+  <div class="site-shell public-shell" class:guide-shell={isGuidePage}>
+    <div class:guide-header-wrapper={isGuidePage} class:is-hidden={isGuidePage && guideHeaderHidden}>
       <header class="header" id="site-header">
         <nav class="container nav">
         <a href="/" class="brand" aria-label="Hogg Country">
@@ -197,7 +205,7 @@
     </div>
 
     <main id="main-content" class="site-main public-site-main" tabindex="-1">
-      {#if page.url.pathname === '/' || page.url.pathname === '/guide' || page.url.pathname === '/at-map' || page.url.pathname === '/track'}
+      {#if page.url.pathname === '/' || page.url.pathname === '/guide' || page.url.pathname === '/at-map' || page.url.pathname === '/track' || page.url.pathname.startsWith('/guide/manual-builder')}
         {@render children()}
       {:else}
         <div class="container public-page-wrap">

@@ -19,7 +19,10 @@ test('Scout app and API aliases exist while legacy Claw routes remain compatible
   const signup = read('apps/openclaw-web/src/routes/signup/+page.server.ts');
   const appLayout = read('apps/openclaw-web/src/routes/app/+layout.svelte');
   const alias = read('apps/openclaw-web/src/lib/server/scout-api-alias.ts');
-  assert.match(signup, /redirect\(303, '\/app\/scout'\)/u);
+  // Unified Scout auth (945eb36) made signup redirect-param aware; it must
+  // still land users inside the gated app via the sanitized redirect target.
+  assert.match(signup, /normalizeRedirect/u);
+  assert.match(signup, /redirect\(303, redirectTo\)/u);
   assert.match(appLayout, /href: '\/app\/scout'/u);
   assert.match(appLayout, /path\.startsWith\('\/app\/claw'\)/u);
   assert.match(alias, /target\.pathname = `\/app-api\/claw/u);
