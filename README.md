@@ -6,12 +6,12 @@ Built for a February 2026 Appalachian Trail NOBO thru-hike, this site serves as 
 
 ## Current app surfaces
 
-This monorepo now carries four distinct app layers:
+This monorepo carries four distinct app layers:
 
-- `apps/public` - the Astro public site and current `hoggcountry.com` experience
-- `apps/openclaw-web` - the Scout SvelteKit frontend for Dad updates, Dad's guide, and the gated hiker workspace
-- `apps/workspace` - the earlier workspace prototype, kept while the new frontend takes over
-- `backend/` - the Laravel operational backend and legacy Trail Assistant APIs
+- `apps/openclaw-web` - **the SvelteKit site (primary)**: all public routes (timeline, guide, tools, maps, weather, trail hub, VideoHogg, trail-assistant) plus the gated hiker workspace. SvelteKit rules the whole site going forward and is the base for the planned SvelteKit + Capacitor mobile app.
+- `apps/public` - the legacy Astro build (root `src/`), still what Netlify serves at `hoggcountry.com` until the Forge cutover completes (`docs/runbooks/netlify-to-forge-cutover-checklist.md`). No new public-surface work goes here.
+- `apps/workspace` - the earlier workspace prototype, kept for reference
+- `backend/` - the Laravel operational backend and Trail Assistant APIs (Forge)
 
 ## Scout web frontend
 

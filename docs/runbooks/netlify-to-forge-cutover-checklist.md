@@ -18,6 +18,7 @@ This checklist assumes:
 - `npm run verify:forge` passes against `https://hoggcountry.on-forge.com`
 - `pm2 show hoggcountry-scout` reports `online`
 - `/`, `/updates`, `/videos`, `/guide`, `/guide/quick/layering`, `/tools`, `/at-map`, `/track`, `/login`, and `/admin/updates` work on the Forge domain
+- Ported parity routes work on the Forge domain: `/at-weather`, `/trail`, `/tools/character`, `/dispatch`, `/videohogg`, `/trail-assistant`, `/guide/manual-builder`, `/game/` (legacy-public fallback), `/AT-Field-Guide-2026.pdf`
 - `/updates/feed?limit=50` is public, non-empty, and includes both `youtube_video` and `youtube_short`
 - `/track/map-pack` returns Garmin-backed current coordinates and tracker history
 - `/api/v1/health` works on the Forge domain
@@ -112,6 +113,15 @@ Watch for:
 - 502 or 503 errors from the Laravel proxy path
 - redirect loops
 - SSL mismatch on apex or `www`
+
+## Post-cutover repo cleanup
+
+Only after hoggcountry.com is stable on Forge:
+
+1. Delete the Astro route tree `src/pages/` (the SvelteKit app owns every route; shared components in `src/components/`, `src/lib/`, `src/stores/`, `src/data/`, and `src/content/` stay — Scout web imports them cross-tree).
+2. Remove `build:netlify`, `build:public`, the `apps/public` shim, `astro.config.mjs`, and the Astro dependencies from the root package.json.
+3. Retire `netlify.toml` and the Netlify site (or keep it as a redirect shell).
+4. Move remaining root `public/` assets into `apps/openclaw-web/static/` or keep serving them via the `[...legacyPublic]` fallback route.
 
 ## Rollback plan
 

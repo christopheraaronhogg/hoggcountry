@@ -2,269 +2,100 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## What This Repo Is
 
-Hogg Country is a digital hiking logbook built with Astro 5 (SSG). It displays trips, YouTube videos, and blog posts in a unified timeline with a warm, outdoorsy aesthetic.
+Hogg Country is an Appalachian Trail platform built around Dad's Feb 2026 NOBO thru-hike: part public trail site, part Scout trail assistant, part operational backend. It is a **monorepo with four app layers** — always confirm which layer a task targets before editing:
+
+| Layer | Path | Stack | Role |
+|-------|------|-------|------|
+| **Scout web (primary)** | `apps/openclaw-web/` | SvelteKit 2 + Svelte 5 | The whole public site + gated `/app/*` hiker workspace. This is the future of the site and the base for the planned mobile app (SvelteKit + Capacitor). |
+| Public site (legacy) | root `src/` + `apps/public/` shim | Astro 5 | Being retired. Routes are migrated into Scout web. Shared Svelte components in `src/components/` are still imported cross-tree by Scout web — do not delete them. |
+| Workspace prototype | `apps/workspace/` | SvelteKit | Earlier prototype, kept for reference. |
+| Backend | `backend/` | Laravel 12 | APIs, auth (Sanctum), Trail Assistant domains, moderation, VideoHogg queue. Deploys to Forge. |
+
+Shared packages live in `packages/` (brand, corpus, manual-core, scout-skills, scout-sources, trail-data). Eval/build tooling lives in `scripts/` (51 scripts).
+
+**Direction (decided 2026-06): SvelteKit rules the whole site.** New public-surface work goes in `apps/openclaw-web`, not the Astro tree. The Astro app stays buildable only until the Netlify→Forge cutover completes (see `docs/runbooks/netlify-to-forge-cutover-checklist.md`).
+
+## Deployment Reality
+
+- `hoggcountry.com` — currently Netlify serving the **Astro** build (`dist/`). Stays live until DNS cutover.
+- `hoggcountry.on-forge.com` — Forge box: Laravel serves `/api/*` and proxies everything else to the SvelteKit node app (`pm2` app `hoggcountry-scout`, port 3000). This is the cutover target for hoggcountry.com.
+- Forge deploys on push to `main`. Netlify also deploys on push to `main`. **Every push to main hits production twice.**
+- Post-deploy proof beats local proof: `npm run verify:forge` and check `https://hoggcountry.on-forge.com/api/v1/health`.
 
 ## Development Commands
 
 ```bash
-npm install           # Install dependencies
-npm run dev           # Start dev server at localhost:4321
-npm run build         # Build to ./dist/
-npm run preview       # Preview production build
-npm run astro -- check # Validate content collections
+npm install                      # root install (workspaces)
+npm run dev:scout                # SvelteKit site (primary)
+npm run dev                      # legacy Astro site
+npm run build                    # builds public + workspace + scout
+SCOUT_WEB_ADAPTER=node npm run build -w @hoggcountry/scout-web   # Forge-shape build
+npm run check -w @hoggcountry/scout-web                          # svelte-check
+npm test                         # node:test suites (guide parser, scout runtime, etc.)
+npm run backend:test             # Laravel tests
 ```
 
-## Architecture
+## Scout Reliability Rules
 
-**Stack:** Astro 5 + Svelte 5 islands + Tailwind CSS 4 + TypeScript
+Scout planning changes require evidence, not vibes. See `docs/scout-reliability-runbook.md`.
 
-**Content Sources:**
-- Trips: `src/content/trips/*.md` (schema in `src/content.config.ts`)
-- Posts: `src/content/posts/*.md` (schema in `src/content.config.ts`)
-- Blog: `src/content/blog/**/*.{md,mdx}` (schema in `src/content/config.ts`)
-- Videos: YouTube RSS feed, fetched at build time with 10-minute cache (`src/lib/youtube.ts`)
+- Regression scenarios: `data/scout-reliability/scenarios.json`; holdout suite is an overfit detector — never patch one holdout prompt and claim readiness.
+- Required validation for Scout slices: `npm run eval:scout-grounding`, `npm run eval:scout-sources`, `npm run eval:scout-reliability -- --difficulty-max 3`, `npm test`, svelte-check, build, `git diff --check`, post-deploy Forge smoke when applicable.
+- Run artifacts in `data/scout-reliability/runs/` are committed (leaderboard evidence). `.openclaw-artifacts/` and `tmp/` are local-only (gitignored).
+- If current trail/weather/provider data is involved, source live data; stale generated context can be unsafe for hikers.
 
-**Timeline Data Flow:**
-1. `index.astro` fetches trips (content collections) + videos (YouTube RSS)
-2. Transforms to common shape with `kind` (trip/video)
-3. Merges and sorts by date descending
-4. Client-side filter pills filter by `data-kind` attribute
+## Trail Data Integrity System
 
-**Key Components:**
-- `BaseHead.astro` — Single source of truth for meta tags, fonts, canonical URLs
-- `Timeline.astro` / `TimelineItem.astro` — Timeline layout system
-- `YouTubeEmbed.astro` — Privacy-friendly click-to-play embeds (youtube-nocookie.com)
-- `Gallery.svelte` — Lightbox island for trip photos
+**CRITICAL:** All AT facts must come from the canonical sources — `src/data/trail-facts.yaml` (guide template injection) and `src/data/trailData.ts` (code).
 
-## Key Conventions
+Key facts (AWOL 2026): total trail **2,197.4 miles** (not 2,197.9); approach trail **8.8 miles** (not in AT total); **14** states; **~260** shelters.
 
-**Content:**
-- Use ISO dates: `YYYY-MM-DD`
-- Images go in `src/assets/` or `public/`
-- Respect Zod schemas; update schemas if frontmatter changes
-
-**Code:**
-- TypeScript first, minimal `any`
-- Astro for pages, Svelte only for interactivity (islands)
-- Use semantic CSS classes from `src/styles/global.css` (`.card`, `.badge`, `.timeline-*`)
-- Design tokens are CSS variables in `global.css`
-
-**What to Avoid:**
-- Don't introduce new build tools or frameworks
-- Don't remove Tailwind layers or design tokens
-- Keep Svelte islands minimal; prefer vanilla JS for simple interactivity
+When adding AT facts: add to the canonical source with citation, import the value (never hardcode), then run `/audit-trail-facts` to validate (5-agent cross-check; see `.claude/skills/audit-trail-facts.md`).
 
 ## AT Field Guide
 
-The Field Guide (`/guide/`) is built from a master markdown document. To update:
+The Field Guide is built from `MASTER_NOBO_FIELD_GUIDE.md` (source of truth):
 
-1. Replace `MASTER_NOBO_FIELD_GUIDE.md` with the new version
-2. Run `npm run update-guide` to parse and regenerate chapter files
-3. Run `npm run build` to rebuild the site
+1. Edit/replace `MASTER_NOBO_FIELD_GUIDE.md`
+2. `npm run update-guide` parses it into `src/content/guide/*.md` chapters (template `{{...}}` facts injected from trail-facts.yaml)
+3. Quick-reference cards in `src/content/guide/quick/` are manually maintained — the parser never overwrites them
 
-**Structure:**
-- Master doc: `MASTER_NOBO_FIELD_GUIDE.md` (source of truth)
-- Parser: `scripts/parse-master-guide.js` (splits into chapters)
-- Chapters: `src/content/guide/*.md` (auto-generated from master)
-- Quick refs: `src/content/guide/quick/*.md` (manually maintained)
+Both the Astro guide routes and the SvelteKit guide routes read this same generated content.
 
-The parser extracts:
-- Introduction (before PART I)
-- Parts I–XVII (main chapters)
-- Conclusion (The Path to Katahdin)
+## Key Conventions
 
-Quick reference cards in `quick/` are NOT overwritten by the parser.
-
-## Configuration
-
-- `astro.config.mjs`: Update `site` for production domain (affects canonical URLs, RSS, sitemaps)
-- `src/lib/config.ts`: YouTube channel ID
-- `src/consts.ts`: SITE_TITLE, SITE_DESCRIPTION
-
-## Validation Checklist
-
-Before committing:
-- `npm run build` succeeds
-- `npm run preview` shows expected routes without console errors
-- Content schemas validate (`npm run astro -- check`)
-- Timeline layout works on mobile and desktop
+- TypeScript first; Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`) — no `export let`
+- SvelteKit pages render content only; the shared shell lives in `apps/openclaw-web/src/routes/+layout.svelte`
+- Cross-tree imports from root `src/` (components/stores/lib/data) are established precedent in Scout web during the migration
+- Design tokens are CSS variables (`--bg`, `--pine`, `--alpine`, `--marker`, `--terra`); fonts Oswald/Anton/Lato/Caveat
+- ISO dates (`YYYY-MM-DD`) in content frontmatter; respect Zod schemas
+- Don't introduce new build tools or frameworks
 
 ## Commit Rule
 
 - Always commit and push to `main` immediately after a successful change.
-- Do not wait for permission.
-- We can always revert changes if needed.
+- Do not wait for permission. We can always revert.
+- Remember both Netlify and Forge deploy from `main` — keep both builds green (`npm run build` covers the Astro/Netlify path; the scout-web node build covers Forge).
 
 ## Interrupt Handling
 
 When the user mentions a bug, feature request, or task mid-conversation:
-- **Default:** Add it to the relevant roadmap/task list and continue current work
-- **"Drop everything":** Stop current work immediately and focus on the new request
+- **Default:** note it in the relevant roadmap/task list and continue current work
+- **"Drop everything":** switch focus immediately
 - Don't context-switch unless explicitly told to prioritize the interruption
+
+## TrailHogg Game
+
+Phaser 3.90 + Vite 7 sim of the full 2,197.4-mile AT (260+ real shelters, 24+ terrain zones, 25+ towns). Source in `trailhogg/`; a built copy is served statically at `/game` (committed under `public/game/` and `apps/openclaw-web/static/game/`). Feature-flagged "archived" in `src/lib/features.ts` — preserved, not part of the active product. Dev: `cd trailhogg/trailhogg && npm run dev:client`.
 
 ## Additional Documentation
 
-- `cursor.md` — Detailed AI assistant guidelines and common tasks
-- `architecture.md` — High-level architecture and routes
-- `design.md` — Visual design system, colors, typography
-- `content-model.md` — Content schema examples
-
-
-## Current Session Tasks
-- [x] Hmmm *(00:59)*
-- [x] * can we perhaps pull the elements of the "your journey" into the at map? *(00:48)*
-- [x] You are a senior product designer + frontend engineer *(20:20)*
-- [x] You are a senior product designer + frontend engineer auditing and redesigning the mobile UX for an *(19:59)*
-- [x] These sound great *(20:52)*
-- [x] Come up with 3 ideas to make our game more fun *(20:49)*
-- [x] 2 and 3 sound great *(20:19)*
-- [x] Come up with 3 ideas to make our game more fun *(20:17)*
-- [x] Good *(12:54)*
-- [x] Neee ability to remove highlights too *(12:47)*
-- [x] Well, the feature is there now like apparently i can highlight/add notes but they dont show anywhere *(12:40)*
-- [x] Merge it to main i wanna see it live, which netlify will deploy if you geth the change added to main *(23:00)*
-- [x] Sounds good *(22:49)*
-- [x] Highlight/take notes *(21:57)*
-- [x] Go with the former solution *(02:00)*
-
----
-
-## Trail Data Integrity System
-
-**CRITICAL:** All AT facts must be sourced from `src/data/trailData.ts` — the canonical source of truth.
-
-**Key facts (AWOL 2026):**
-- Total trail length: **2,197.4 miles** (not 2,197.9)
-- Approach trail: **8.8 miles** (Amicalola to Springer, NOT included in AT total)
-- States: **14**
-- Shelters: **~260**
-
-**To validate data consistency:** Run `/audit-trail-facts`
-
-This skill uses 5 independent agents that cross-check each other:
-1. **Extractor** - Scans codebase for all AT claims
-2. **Citation** - Fetches official sources (ATC, AWOL, NPS)
-3. **Internal Validator** - Compares our files against each other
-4. **Reconciler** - Requires 2/3 agent agreement
-5. **Reporter** - Generates actionable fix list
-
-See `.claude/skills/audit-trail-facts.md` for full documentation.
-
-**When adding AT facts:**
-1. Add to `src/data/trailData.ts` with citation
-2. Import and use the value (never hardcode)
-3. Run `/audit-trail-facts` to verify consistency
-
----
-
-## TrailHogg Game Roadmap
-
-An AT thru-hiking simulation game. **Live at [hoggcountry.com/game](https://hoggcountry.com/game)**
-
-**Stack:** Phaser 3.90 + Vite 7 + TypeScript. Located in `trailhogg/`.
-
-### Vision
-A gritty, immersive AT simulation with Project Zomboid pacing. Slow and deliberate by default (0.5x speed), with player-adjustable speeds (0.25x to 8x). The entire 2,197.4 miles mapped with real shelters, towns, terrain zones, and landmarks.
-
-### Completed
-- [x] Project scaffold (client/server/shared monorepo)
-- [x] 32-color pixel art palette system
-- [x] 358 programmatic sprites across 43 categories
-- [x] Sprite catalog page at `/cat` (unlisted)
-- [x] Core sprite types: hiker, environment, blazes, structures, weather, UI
-- [x] Extended sprites: wildlife, trail features, items, signs, terrain, plants
-- [x] Character sprites: NPCs, expressions, clothing
-- [x] Location sprites: towns, shelters, summits, bridges, trailheads, campsites
-- [x] Famous landmarks: McAfee Knob, Dragon's Tooth, Katahdin sign
-- [x] AMC huts, lighting effects, celebrations, ruins, vistas
-- [x] Optimized /cat catalog (CSS variable scaling, 1 update vs 358)
-- [x] Phase 0: Rename to TrailHogg, upgrade deps (Phaser 3.90, Vite 7)
-- [x] Phase 0: Add Vitest test infrastructure (10 tests passing)
-- [x] Phase 0: Deploy to /game path on Netlify (offline single-player mode)
-- [x] Vertical scroller gameplay with SPACE to hike
-- [x] Mobile joystick controls
-- [x] Project Zomboid-style game speed system (0.25x-8x, default 0.5x)
-- [x] IndexedDB save/load persistence
-- [x] Day/night cycle with headlamp
-- [x] Weather system (rain, fog)
-- [x] Shelter and town scenes with stores/hostels
-- [x] Inventory management and food system
-- [x] Moodles system (fatigue, hunger, morale, anxiety)
-- [x] Wildlife encounters (deer, bear, snake, turkey, squirrel)
-- [x] Trail magic random events
-- [x] In-game Field Guide (G key)
-- [x] **FULL TRAIL DATA**: 2,197.4 miles with:
-  - 260+ real shelters (mile, elevation, water, privy, capacity)
-  - 24+ terrain zones with unique visuals (PA rocks, Whites, Smokies, etc.)
-  - 25+ real towns with services (hostels, stores, restaurants, outfitters)
-  - 20+ major peaks and landmarks
-  - 14 state boundaries with celebration messages
-- [x] **Terrain-adaptive visuals**: Tree/ground/sky colors change by zone
-
-### In Progress
-- [ ] P2P multiplayer (see architecture below)
-
-### Next Up
-- [ ] Real pixel art assets (replace procedural)
-- [ ] Audio system (ambient + SFX)
-- [ ] NPC hiker encounters with dialogue
-- [ ] PWA + app store deployment
-
-### P2P Multiplayer Architecture (Project Zomboid Style)
-
-**Goal:** Drop-in co-op where friends can join your hike. No central servers, no monthly costs.
-
-**Stack Options:**
-
-1. **WebRTC + PeerJS** (Recommended for v1)
-   - Pure P2P, works in browsers
-   - Host runs simulation, guests sync state
-   - Free signaling via PeerJS public server (or self-host)
-   - Pros: Zero server cost, works offline after connection
-   - Cons: NAT traversal can be tricky, one player must host
-
-2. **libp2p / Hyperswarm** (For advanced P2P)
-   - DHT-based peer discovery
-   - Works without any central server at all
-   - Better for truly decentralized games
-   - Cons: More complex, less browser support
-
-3. **Steam Relay / Epic Online Services** (For desktop)
-   - Handles NAT traversal automatically
-   - Free for games on their platforms
-   - Cons: Requires platform integration
-
-**Implementation Plan:**
-```
-1. Host starts game → generates room code (PeerJS ID)
-2. Guests enter code → WebRTC connection established
-3. Host runs authoritative simulation, sends state updates
-4. Guests send inputs (hike, rest, eat), host validates
-5. All players see each other on trail in real-time
-```
-
-**Data Sync:**
-- Host broadcasts: position, energy, weather, time of day
-- Guests send: input intentions (not direct state changes)
-- Conflict resolution: Host wins (authoritative)
-
-**Offline Fallback:**
-- Game works 100% offline (current state)
-- P2P is optional enhancement for co-op
-- Save data stays local (IndexedDB)
-
-### Research Backlog
-- [ ] **SpacetimeDB evaluation** — All-in-one DB+server with SQL subscriptions, 60 FPS transaction rate, time-travel debugging. Pros: Perfect for real-time multiplayer, cheap ($5/hr for thousands of players), simpler than traditional servers. Cons: Rust/C# only (no TypeScript SDK yet), would require server rewrite. Revisit when TS support lands.
-
-### Dev Commands
-```bash
-cd trailhogg/trailhogg
-npm install              # Install all workspace deps
-npm run dev:client       # Start Phaser client at localhost:3000
-npm run build            # Production build
-npm test                 # Run Vitest tests
-```
-
-**After completing TrailHogg work:** Update this roadmap by moving items between sections.
+- `AGENTS.md` — agent working notes (kept current more often than long-form docs)
+- `architecture.md` — system tracks, Scout app architecture, target product architecture
+- `docs/scout-reliability-runbook.md` — the reliability workflow (read before Scout changes)
+- `docs/runbooks/` — Forge runtime, deploy recovery, Netlify→Forge cutover checklist
+- `docs/business/` — Trail Assistant PRD, implementation plan, API/screen contracts
+- `docs/plans/` — dated design plans (local-first phone AI, document system, etc.)
+- `design.md`, `content-model.md` — visual system and content schemas

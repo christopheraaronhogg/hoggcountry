@@ -1,6 +1,10 @@
 # build output
 dist/
 .scout-artifacts/
+# local QA screenshots / session artifacts
+.openclaw-artifacts/
+# local scratch
+tmp/
 apps/public/.astro/
 apps/public/.netlify/
 apps/workspace/.svelte-kit/
