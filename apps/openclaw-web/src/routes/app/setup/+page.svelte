@@ -16,7 +16,7 @@
     }
 
     if (await hasManual()) {
-      await goto('/app/today');
+      await goto('/app');
     }
   });
 
@@ -27,7 +27,7 @@
 
     try {
       await initializeManual(profile);
-      await goto('/app/today');
+      await goto('/app');
     } catch (caught) {
       console.error(caught);
       error = 'Could not create your manual.';

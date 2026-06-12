@@ -23,6 +23,11 @@
       icon: 'map'
     },
     {
+      href: '/app/loadout',
+      label: 'Loadout',
+      icon: 'loadout'
+    },
+    {
       href: '/app/profile',
       label: 'Profile',
       icon: 'profile'
@@ -98,7 +103,7 @@
 {@render children()}
 
 <nav class="app-bottom-nav" aria-label="Primary app navigation">
-  {#each visibleAppTabs.slice(0, 4) as tab}
+  {#each visibleAppTabs.slice(0, 5) as tab}
     <a href={tab.href} class:is-active={tabActive(tab.href)}>
       <span class="nav-icon" aria-hidden="true">
         {#if tab.icon === 'home'}
@@ -107,6 +112,8 @@
           <svg viewBox="0 0 24 24"><path d="M7 4h8l3 3v13H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M10 11h5M10 15h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         {:else if tab.icon === 'map'}
           <svg viewBox="0 0 24 24"><path d="M8 5 3 7v13l5-2 8 2 5-2V5l-5 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M8 5v13M16 7v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+        {:else if tab.icon === 'loadout'}
+          <svg viewBox="0 0 24 24"><path d="M7 9a5 5 0 0 1 10 0v11H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M9 15h6M9 5V3h6v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
         {:else}
           <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         {/if}
@@ -230,13 +237,14 @@
     left: 0;
     z-index: 40;
     display: none;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* Five tabs (Today / Plan / Map / Loadout / Profile) must fit at 360px. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     min-height: calc(3.15rem + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(39, 51, 43, 0.14);
     background: #fffdf8;
     box-shadow: none;
     backdrop-filter: none;
-    padding: 0.28rem 0.48rem max(0.28rem, env(safe-area-inset-bottom));
+    padding: 0.28rem 0.3rem max(0.28rem, env(safe-area-inset-bottom));
   }
 
   .app-bottom-nav a {
@@ -263,15 +271,16 @@
   }
 
   .app-bottom-nav strong {
-    font-size: 0.64rem;
+    font-size: 0.6rem;
     font-weight: 850;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
     line-height: 1;
+    white-space: nowrap;
   }
 
   .app-bottom-nav a.is-active {
     min-height: 2.18rem;
-    margin: 0.16rem 0.5rem;
+    margin: 0.16rem 0.24rem;
     background: #2e4334;
     color: #b8c1b7;
   }

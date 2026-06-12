@@ -45,9 +45,9 @@ const STATIC_ASSETS = [...build, ...files].filter(
 const APP_RUNTIME_PATHS = [
   '/',
   '/app',
-  '/app/today',
   '/app/scout',
   '/app/claw',
+  '/app/loadout',
   '/app/profile',
   '/app/resources',
   '/app/docs',
