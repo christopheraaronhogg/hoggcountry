@@ -4,6 +4,7 @@
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 
   import { onMount } from "svelte";
+  import WaitlistSignup from "../../../apps/openclaw-web/src/lib/components/WaitlistSignup.svelte";
 
   const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "https://hoggcountry.on-forge.com/api/v1").replace(/\/+$/, "");
 
@@ -467,6 +468,10 @@
             Explore Trail Tools
           </a>
         {/if}
+      </div>
+
+      <div class="hero-waitlist">
+        <WaitlistSignup source="homepage-hero" />
       </div>
       </div>
 
@@ -1595,6 +1600,12 @@
   @keyframes story-card-in {
     from { opacity: 0.45; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-waitlist {
+    margin-top: 1.4rem;
+    display: flex;
+    justify-content: flex-start;
   }
 
   .hero-story-media {

@@ -3,6 +3,7 @@
   import { browser } from '$app/environment';
   import { page } from '$app/state';
   import { initSpacetimeProvider } from '$lib/spacetime';
+  import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
   import type { LayoutData } from './$types';
 
   const { data, children } = $props<{ data: LayoutData; children: import('svelte').Snippet }>();
@@ -216,6 +217,10 @@
 
     {#if page.url.pathname !== '/at-map' && page.url.pathname !== '/track'}
     <footer class="public-meta-footer">
+      <div class="footer-waitlist">
+        <p class="footer-waitlist-title">Get the Scout app the day it drops</p>
+        <WaitlistSignup source="footer" compact />
+      </div>
       <div>&copy; {currentYear} Hogg Country. All rights reserved.</div>
       <div class="social-links">
         <a href="https://www.youtube.com/@hoggcountry7483" target="_blank" rel="noopener" aria-label="Hogg Country on YouTube">
@@ -592,6 +597,24 @@
     background: var(--bg);
     color: var(--muted);
     text-align: center;
+  }
+
+  .footer-waitlist {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: center;
+    max-width: 30rem;
+    margin: 0 auto 1.6em;
+  }
+
+  .footer-waitlist-title {
+    margin: 0;
+    color: var(--pine);
+    font-family: Oswald, system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.9rem;
   }
 
   .social-links {
