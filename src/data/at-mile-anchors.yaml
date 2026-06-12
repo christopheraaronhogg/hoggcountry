@@ -1,0 +1,648 @@
+# Official AT mile anchors — the calibration source of truth for every mile
+# the product displays.
+#
+# Each anchor pins a physical location (lat/lon ON or near the trail) to its
+# official NOBO mile. The calibration pipeline
+# (scripts/calibrate-at-mileposts.mjs) projects these onto the dense
+# open-route geometry and interpolates everything in between. Mile markers
+# change year to year: when a new AWOL/ATC edition lands, update THIS file
+# and re-run the pipeline — nothing else needs to change.
+#
+# Provenance: researched 2026-06-12 from the 2026 ATC Data Book mileages
+# (atdist.com), cross-checked against the 2023 Data Book (traildistance.com)
+# and The Trek's FarOut-aligned resupply list (2023, updated 2025). The 2026
+# ATC Data Book total is 2,197.9 vs AWOL 2026's 2,197.4 — a systematic
+# ~0.0-0.5 mi frame difference we accept (display rounds to 0.1 mi; Katahdin
+# stays pinned at 2,197.4). Verify entries marked medium/low against the
+# physical AWOL 2026 guide when available.
+#
+# confidence:
+#   definitional — terminus; true by definition of the frame
+#   high         — 2+ recent (2023-2026) sources agree within 0.5 mi
+#   medium       — single recent source, or sources disagree by <= 2 mi
+#   low          — best available; verify against the AWOL 2026 guide
+#
+# IMPORTANT: do not add anchors from memory. Every non-definitional entry
+# needs citations.
+
+frame:
+  total_miles: 2197.4
+  reference: AWOL 2026 (anchors mostly ATC Data Book 2026)
+  updated: '2026-06-12'
+anchors:
+  - name: Springer Mountain summit, GA
+    lat: 34.6272
+    lon: -84.1934
+    mile: 0
+    confidence: definitional
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://en.wikipedia.org/wiki/Springer_Mountain (coords)
+    notes: Definitional southern terminus; mile 0.0 in all sources.
+  - name: Blood Mountain summit, GA
+    lat: 34.74
+    lon: -83.9369
+    mile: 28.9
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+    notes: Both Data Books list Blood Mtn Shelter (on the summit) at exactly 28.9.
+  - name: Neels Gap / Mountain Crossings (US 19/129), GA
+    lat: 34.7406
+    lon: -83.9181
+    mile: 31.3
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+    notes: 31.3 in both Data Books; The Trek/FarOut lists 'Mile 31'.
+  - name: Dicks Creek Gap (US 76, Hiawassee), GA
+    lat: 34.9122
+    lon: -83.6188
+    mile: 69.4
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+      - https://cnyhiking.com/ATinNC-BlyGapToUS64.htm (coords)
+    notes: 2026 DB 69.4; 2023 DB 69.2; Trek/FarOut 'Mile 69'.
+  - name: GA/NC state line (Bly Gap), NC
+    lat: 35.0046
+    lon: -83.6254
+    mile: 78.3
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://www.summitpost.org/bly-gap/758151 (coords)
+    notes: >-
+      State line: 2026 DB 78.3, 2023 DB 78.1. Bly Gap itself (gnarled oak) is ~0.1 mi north of the line
+      (~78.4).
+  - name: Winding Stair Gap (US 64, Franklin), NC
+    lat: 35.1197
+    lon: -83.5481
+    mile: 109.6
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+      - https://cnyhiking.com/ATinNC-BlyGapToUS64.htm (coords)
+    notes: 2026 DB 109.6; 2023 DB 109.4; Trek/FarOut 'Mile 109'. Franklin town is ~10 mi east.
+  - name: Nantahala Outdoor Center (Wesser, US 19), NC
+    lat: 35.3291
+    lon: -83.5926
+    mile: 136.9
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+    notes: >-
+      Listed as US19-Nantahala River: 2026 DB 136.9, 2023 DB 136.7; Trek/FarOut 'Mile 137'. Coords corrected
+      to the US 19/74 Nantahala River crossing at Wesser.
+  - name: Fontana Dam, NC
+    lat: 35.4525
+    lon: -83.8047
+    mile: 167
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://en.wikipedia.org/wiki/Fontana_Dam (coords)
+    notes: 'Dam crossing / GSMNP southern boundary: 2026 DB 167.0, 2023 DB 166.7.'
+  - name: Clingmans Dome / Kuwohi, TN-NC
+    lat: 35.5628
+    lon: -83.4986
+    mile: 200.3
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://en.wikipedia.org/wiki/Kuwohi (coords)
+    notes: 2026 DB 200.3; 2023 DB 200.0. Highest point on the AT.
+  - name: Newfound Gap (US 441), TN-NC
+    lat: 35.6111
+    lon: -83.425
+    mile: 208
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+    notes: 2026 DB 208.0; 2023 DB 207.7; Trek/FarOut 'Mile 208'.
+  - name: Davenport Gap (TN 32, east end of Smokies), TN
+    lat: 35.7706
+    lon: -83.1111
+    mile: 239.4
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://www.trailforks.com/trails/appalachian-trail-davenport-gap-207478/ (coords)
+    notes: 2026 DB 239.4; 2023 DB 239.1.
+  - name: Hot Springs, NC
+    lat: 35.8934
+    lon: -82.829
+    mile: 275.2
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+    notes: 2026 DB 275.2; 2023 DB 274.9; Trek/FarOut 'Mile 275'. Trail runs down Main St.
+  - name: Nolichucky River / Erwin TN (Uncle Johnny's, Chestoa)
+    lat: 36.1056
+    lon: -82.4438
+    mile: 344.6
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+    notes: 2026 DB 344.6; 2023 DB 344.3. 2026 Data Book flags a post-Helene DETOUR here.
+  - name: Roan High Knob, TN-NC
+    lat: 36.1044
+    lon: -82.1219
+    mile: 379.3
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://en.wikipedia.org/wiki/Roan_Mountain_(Roan_Highlands) (coords)
+    notes: 'Roan High Knob Shelter (at the summit): 2026 DB 379.3, 2023 DB 379.0.'
+  - name: Carvers Gap (TN 143 / NC 261), TN-NC
+    lat: 36.1063
+    lon: -82.1107
+    mile: 380.8
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+    notes: 2026 DB 380.8; 2023 DB 380.5.
+  - name: Dennis Cove Road (USFS 50, Kincora/Laurel Fork), TN
+    lat: 36.253
+    lon: -82.122
+    mile: 420.3
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+    notes: 2026 DB 420.3; 2023 DB 420.0.
+  - name: Damascus, VA
+    lat: 36.6353
+    lon: -81.7922
+    mile: 471
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 Data Book)
+      - https://traildistance.com/ (2023 AT Data Book)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025)
+    notes: '2026 DB 471.0; 2023 DB 470.7. Frame note: 2026 ATC Data Book total is 2197.9 vs AWOL 2026''s 2197.4.'
+  - name: Mount Rogers spur / Thomas Knob Shelter (Grayson Highlands area)
+    lat: 36.656
+    lon: -81.538
+    mile: 499.4
+    confidence: medium
+    sources:
+      - https://www.atdist.com/ (2026 AT Data Book)
+      - >-
+        https://thetrek.co/appalachian-trail/day-57-ponies-on-the-appalachian-trail/ (~500-mile mark at Thomas
+        Knob)
+    notes: >-
+      Thomas Knob Shelter 499.4 per 2026 Data Book. 2025-26 Helene detour north of Damascus may alter
+      on-the-ground mileage here.
+  - name: Atkins VA (US 11 / I-81)
+    lat: 36.87
+    lon: -81.416
+    mile: 546
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 AT Data Book)
+      - https://wanderlog.com/place/details/11191311/appalachian-trail (Long Neck Lair at Atkins mile 545.9)
+  - name: Pearisburg VA (VA 634 Cross Ave crossing)
+    lat: 37.327
+    lon: -80.723
+    mile: 636.4
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 AT Data Book)
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        637 - Pearisburg')
+      - https://virginialiving.com/outdoors/visiting-pearisburg/ (~mile 636)
+    notes: Recent sources range 636-637; 636.4 is the 2026 Data Book town crossing.
+  - name: Dragons Tooth
+    lat: 37.357
+    lon: -80.17
+    mile: 702.9
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 AT Data Book)
+      - https://www.hikingproject.com/gem/8787/dragons-tooth ('just off mile 702.4')
+    notes: Spire is 0.1 mi off the AT on a side trail; values seen 702.4-702.9.
+  - name: McAfee Knob
+    lat: 37.3926
+    lon: -80.0356
+    mile: 714.4
+    confidence: high
+    sources:
+      - >-
+        https://thetrek.co/appalachian-trail/hike-the-virginia-triple-crown-34-miles-in-southern-virginia/
+        (714.2)
+      - https://www.youtube.com/shorts/5sMSRkGTxrw (titled 'Mile 714.5')
+      - 'https://www.atdist.com/ (2026 Data Book brackets: Catawba Mtn Shelter 713.3, Campbell Shelter 715.7)'
+    notes: Sources converge 714.2-714.5.
+  - name: Daleville VA (US 220)
+    lat: 37.391
+    lon: -79.908
+    mile: 731.1
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (2026 AT Data Book: US220-Daleville 731.1)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        730 - Daleville')
+    notes: Sources disagree by ~1 mile; 2026 Data Book value used.
+  - name: James River Foot Bridge
+    lat: 37.561
+    lon: -79.38
+    mile: 787.9
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 AT Data Book)
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        788 - Glasgow')
+      - https://www.lynchburgvirginia.org/why-you-should-visit-the-james-river-foot-bridge/ (787.1)
+    notes: 787.9 (2026 Data Book) agrees with Trek's 788.
+  - name: Rockfish Gap / Waynesboro VA (south end Shenandoah, I-64/US 250)
+    lat: 38.0304
+    lon: -78.8589
+    mile: 865.1
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (2026 AT Data Book)
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        865 - Waynesboro')
+      - 'https://www.trailjournals.com/journal/entry/652518 (2022: 864.4)'
+    notes: Current-era sources agree at 865.
+  - name: Harpers Ferry WV (ATC HQ side trail)
+    lat: 39.3251
+    lon: -77.7453
+    mile: 1026.5
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (2026 AT Data Book: ATC Side Trail 1026.5)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        1026 - Harpers Ferry')
+      - https://www.nps.gov/places/000/appalachian-trail-trailhead-at-the-point.htm
+    notes: Modern values cluster 1025.8-1026.5; pre-2020 sources citing ~1009-1012 are stale.
+  - name: Pen Mar Park / Mason-Dixon Line (PA-MD line)
+    lat: 39.7193
+    lon: -77.5046
+    mile: 1068.1
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (2026 AT Data Book: Pennsylvania-Maryland Line 1068.1)'
+      - >-
+        https://www.blueridgeoutdoors.com/hiking/taking-steps-a-guide-to-hiking-marylands-stretch-of-the-appalachian-trail/
+        (Pen Mar Road at mile 1067.4)
+    notes: Pen Mar Park is ~0.2 mi south of the line; sources span 1067.4-1068.1.
+  - name: Boiling Springs PA (PA 174)
+    lat: 40.1499
+    lon: -77.1287
+    mile: 1125.1
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (2026 AT Data Book: PA174-Boiling Springs 1125.1)'
+      - 'https://www.youtube.com/watch?v=xOYW80OoMuA (day 87 vlog: 1124.9)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        1124')
+    notes: 1124.9 and 1125.1 agree within 0.2.
+  - name: Duncannon PA (Susquehanna River)
+    lat: 40.3953
+    lon: -77.023
+    mile: 1150.8
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (2026 AT Data Book: Duncannon 1150.8)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        1150 - Duncannon')
+      - 'https://www.trailjournals.com/journal/about/25420 (2022: 1149.5)'
+    notes: Current sources agree at 1150-1150.8.
+  - name: Port Clinton PA (Schuylkill River)
+    lat: 40.5809
+    lon: -76.0263
+    mile: 1220.7
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (2026 AT Data Book: Port Clinton 1220.7)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        1220')
+  - name: Lehigh Gap / Palmerton PA (Lehigh River bridge east side)
+    lat: 40.7793
+    lon: -75.6063
+    mile: 1261.5
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (2026 AT Data Book: Lehigh River Bridge E 1261.5)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        1261 - Palmerton')
+  - name: Delaware Water Gap, PA (I-80 / Delaware River)
+    lat: 40.975
+    lon: -75.135
+    mile: 1297.4
+    confidence: high
+    sources:
+      - https://www.atdist.com/ (ATC Data Book 2024/2025 = 1297.4, 2026 edition = 1297.9)
+      - https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03)
+    notes: >-
+      Data Book 2024/2025 = 1297.4 in the 2197.4-mile frame used here. 2026 Data Book frame is +0.5 throughout
+      (total 2197.9).
+  - name: High Point State Park HQ, NJ 23 (High Point NJ)
+    lat: 41.301
+    lon: -74.668
+    mile: 1340.3
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: NJ23 = 1340.3)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1340)
+    notes: High Point Shelter = 1342.0 same frame. Monument is ~0.3 mi off-trail.
+  - name: Greenwood Lake NY (NY 17A, Bellvale/Mt Peter)
+    lat: 41.244
+    lon: -74.288
+    mile: 1376
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: NY17A-Bellvale = 1376.0)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1374)
+    notes: Trek's 1374 likely refers to the Village Vista Trail access south of NY 17A; values differ by ~2 mi.
+  - name: Bear Mountain Bridge / Hudson River, NY
+    lat: 41.3203
+    lon: -73.9869
+    mile: 1409.1
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: 1409.1; 2026 edition: 1409.6)'
+      - 'https://appalachiantrail.org/trail-updates/ny-bear-mtn-bridge-project/ (2025/2026: NOBO mile 1409.8)'
+    notes: >-
+      Two modern frames disagree by 0.7: ATC Data Book 1409.1 vs ATC trail-updates 1409.8. Bear Mountain Inn
+      (Hessian Lake) = 1408.3 Data Book frame.
+  - name: Graymoor / Appalachian Market (US 9 / NY 403)
+    lat: 41.3536
+    lon: -73.9189
+    mile: 1415.1
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: US9/NY403-Peekskill = 1415.1)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1415)
+    notes: Graymoor Friary ballfield is ~0.4 mi north of the US 9 crossing.
+  - name: RPH Shelter, NY
+    lat: 41.534
+    lon: -73.787
+    mile: 1434.5
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: 1434.5)'
+      - https://tnlandforms.us/at/m.php?wpt=RPH (1434.5 from Springer)
+    notes: NY 52 (Stormville) crossing = 1439.6 in the same frame.
+  - name: Appalachian Trail Metro-North station, NY 22 (Pawling NY)
+    lat: 41.5956
+    lon: -73.6036
+    mile: 1454.4
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: NY22-Metro-North Railroad = 1454.4)'
+      - https://en.wikipedia.org/wiki/Appalachian_Trail_station (location only)
+    notes: Trek's 'Mile 1452 - Pawling' refers to the County Rd 20 / Dover Oak trailhead 2 mi south.
+  - name: Kent CT (CT 341)
+    lat: 41.7245
+    lon: -73.4887
+    mile: 1473.2
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: CT341-Kent = 1473.2)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1473)
+    notes: Town center is 0.8 mi east of the crossing.
+  - name: Salisbury CT (CT 41)
+    lat: 41.9903
+    lon: -73.427
+    mile: 1507.5
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: CT41-Salisbury = 1507.5)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1508)
+  - name: US 7 crossing, Sheffield/Great Barrington MA
+    lat: 42.121
+    lon: -73.349
+    mile: 1528
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: US7-Sheffield = 1528.0)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1528 - Great Barrington)
+    notes: MA 23 crossing east of Great Barrington = 1536.4 in the same frame.
+  - name: Dalton MA (MA 8/9, trail through town)
+    lat: 42.4735
+    lon: -73.166
+    mile: 1576.3
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: MA8and9-Dalton = 1576.3)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1576)
+  - name: Mount Greylock summit (Bascom Lodge), MA
+    lat: 42.6376
+    lon: -73.1662
+    mile: 1593.3
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: Bascom Lodge = 1593.3; 2026 edition: 1593.8)'
+    notes: Single numeric source; consistent with MA2-North Adams ~1599 and Cheshire ~1585.
+  - name: VT 9 crossing (Bennington VT)
+    lat: 42.8753
+    lon: -73.1148
+    mile: 1618
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: VT9-Bennington = 1618.0)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1618)
+    notes: Bennington town is 5 mi west of the crossing.
+  - name: VT 103 / Clarendon Gorge (North Clarendon VT)
+    lat: 43.5225
+    lon: -72.927
+    mile: 1690.5
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: VT103-N Clarendon = 1690.5; 2026 edition: 1691.0)'
+    notes: Single numeric source.
+  - name: US 4 / Killington VT (Sherburne Pass area, near Maine Junction)
+    lat: 43.6653
+    lon: -72.8331
+    mile: 1708.2
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: US4-Killington = 1708.2)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1708)
+    notes: Maine Junction (LT/AT split) is ~1 mi north.
+  - name: Hanover NH (Dartmouth College / Connecticut River)
+    lat: 43.704
+    lon: -72.29
+    mile: 1755
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: Dartmouth College-Hanover = 1755.0)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1755)
+    notes: Connecticut River bridge (VT/NH line) is ~0.4 mi west, ~1754.6.
+  - name: Mount Moosilauke summit, NH
+    lat: 44.0245
+    lon: -71.8316
+    mile: 1804.8
+    confidence: low
+    sources:
+      - >-
+        https://www.atdist.com/ (ATC Data Book 2024/2025: NH25-Glencliff = 1798.3, Beaver Brook Shelter =
+        1806.3; summit interpolated)
+      - >-
+        https://thetrek.co/appalachian-trail/the-one-with-mighty-moosilauke-at-mile-1613-9-1803-7/ (2022-frame
+        blog: ~1803.7)
+    notes: Interpolated between Data Book bracketing waypoints.
+  - name: Franconia Notch (US 3 / I-93), NH
+    lat: 44.101
+    lon: -71.6824
+    mile: 1824.1
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: US3-Franconia Notch = 1824.1)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'mile
+        1822' for Lincoln/N Woodstock)
+    notes: Sources differ ~2 mi; Data Book 2024/2025 value preferred.
+  - name: Mount Washington summit, NH
+    lat: 44.2706
+    lon: -71.3033
+    mile: 1864.3
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: Mount Washington = 1864.3; 2026 edition: 1864.8)'
+    notes: Consistent with Pinkham Notch 1877.8 (13.5 mi north).
+  - name: Pinkham Notch (NH 16), NH
+    lat: 44.2571
+    lon: -71.2531
+    mile: 1877.8
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: NH16-Pinkham Notch = 1877.8)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1878)
+  - name: Gorham NH (US 2, Rattle River trailhead)
+    lat: 44.3963
+    lon: -71.084
+    mile: 1898.9
+    confidence: medium
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: US2-Gorham = 1898.9)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: 'Mile
+        1898')
+    notes: Town is 3.6 mi west of the trailhead.
+  - name: ME 4 / Rangeley ME
+    lat: 44.8857
+    lon: -70.5316
+    mile: 1976.8
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: ME4-Rangeley = 1976.8)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        1977)
+    notes: Rangeley town is 9 mi north of the crossing.
+  - name: ME 27 / Stratton ME
+    lat: 45.0855
+    lon: -70.364
+    mile: 2009
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: ME27-Stratton = 2009.0)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        2009)
+    notes: Stratton village is 5 mi northwest of the crossing.
+  - name: Caratunk / Kennebec River ferry (US 201), ME
+    lat: 45.2302
+    lon: -69.9719
+    mile: 2046
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: US201-Caratunk = 2046.0)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        2046)
+    notes: Ferry crossing of the Kennebec is ~0.3 mi before the Caratunk waypoint.
+  - name: Monson ME (ME 15 trailhead)
+    lat: 45.325
+    lon: -69.538
+    mile: 2079.4
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: Monson = 2079.4)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        2079)
+    notes: Town is ~3.5 mi south of the trailhead. Last stop before the 100-Mile Wilderness.
+  - name: Abol Bridge / Golden Road (W Branch Penobscot), ME
+    lat: 45.836
+    lon: -68.968
+    mile: 2182.3
+    confidence: high
+    sources:
+      - 'https://www.atdist.com/ (ATC Data Book 2024/2025: Abol Br.-W Penobscot River = 2182.3)'
+      - >-
+        https://thetrek.co/appalachian-trail/resupply-points-appalachian-trail/ (2023, updated 2025-03: Mile
+        2183)
+      - >-
+        https://appalachiantrail.org/experience/hike-the-trail/thru-section-hiking/finish-well/ (2025: ~15.1
+        mi remaining, consistent with 2197.4 - 2182.3)
+    notes: ATC remaining-distance arithmetic supports 2182.3.
+  - name: Katahdin / Baxter Peak, ME
+    lat: 45.9044
+    lon: -68.9213
+    mile: 2197.4
+    confidence: definitional
+    sources:
+      - https://www.atdist.com/ (ATC Data Book 2024/2025 total = 2197.4)
+      - >-
+        https://thetrek.co/appalachian-trail/the-appalachian-trail-state-by-state-overview-highlights-hiker-tips-maps-and-more/
+        (Trek/ATC 2024 figure 2197.4)
+    notes: Definitional northern terminus in the 2197.4 frame.

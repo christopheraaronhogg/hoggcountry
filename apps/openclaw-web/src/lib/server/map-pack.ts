@@ -37,7 +37,8 @@ const RELATIVE_PATHS = {
   roads: 'data/at-open-reference/full_trail_rc1/processed/waypoints/full_trail_road_crossings.json',
   towns: 'data/at-open-reference/full_trail_rc1/processed/waypoints/full_trail_towns_resupply_candidates.json',
   summits: 'data/at-open-reference/full_trail_rc1/processed/waypoints/full_trail_summits.json',
-  vistas: 'data/at-open-reference/full_trail_rc1/processed/waypoints/full_trail_vistas.json'
+  vistas: 'data/at-open-reference/full_trail_rc1/processed/waypoints/full_trail_vistas.json',
+  mileCalibration: 'src/data/at-mile-calibration.json'
 } as const;
 
 type FetchLike = typeof fetch;
@@ -429,26 +430,105 @@ async function loadWaypoints(): Promise<TrailMapPack['waypoints']> {
   };
 }
 
+// Piecewise-linear measured→official mile converter built from the anchor
+// calibration (scripts/calibrate-at-mileposts.mjs). The processed datasets
+// carry open-route geometric miles (~2106 total); the product frame is
+// official AWOL miles (2,197.4). Returns null when the calibration file is
+// absent so the pack falls back to shipping the measured frame untouched.
+async function loadMeasuredToOfficial(): Promise<((measured: number) => number) | null> {
+  try {
+    const payload = await cachedJson<{ readonly pairs?: unknown }>(RELATIVE_PATHS.mileCalibration);
+    const pairs = (Array.isArray(payload.pairs) ? payload.pairs : [])
+      .map((pair) => Array.isArray(pair) ? [normalizeNumber(pair[0]), normalizeNumber(pair[1])] : null)
+      .filter((pair): pair is [number, number] => pair !== null && pair[0] !== null && pair[1] !== null)
+      .sort((a, b) => a[0] - b[0]);
+    if (pairs.length < 2) return null;
+
+    return (measured: number) => {
+      let lo = 0;
+      let hi = pairs.length - 1;
+      if (measured <= pairs[0][0]) hi = 1;
+      else if (measured >= pairs[hi][0]) lo = hi - 1;
+      else {
+        while (lo + 1 < hi) {
+          const mid = (lo + hi) >> 1;
+          if (pairs[mid][0] <= measured) lo = mid;
+          else hi = mid;
+        }
+      }
+      const [m0, o0] = pairs[lo];
+      const [m1, o1] = pairs[hi];
+      const t = m1 > m0 ? (measured - m0) / (m1 - m0) : 0;
+      return Math.round((o0 + (o1 - o0) * t) * 1000) / 1000;
+    };
+  } catch {
+    return null;
+  }
+}
+
+function calibratePack(
+  pack: Omit<TrailMapPack, 'generatedAt' | 'tracker'>,
+  toOfficial: (measured: number) => number
+): Omit<TrailMapPack, 'generatedAt' | 'tracker'> {
+  const waypoints = Object.fromEntries(
+    Object.entries(pack.waypoints).map(([key, list]) => [
+      key,
+      list.map((point) => ({ ...point, mile: toOfficial(point.mile) }))
+    ])
+  ) as TrailMapPack['waypoints'];
+
+  return {
+    ...pack,
+    // Everything below ships in the official frame, so the measured/display
+    // conversion factor consumers derive from the route collapses to 1.
+    route: {
+      ...pack.route,
+      measuredMiles: pack.route.displayMiles,
+      qualityNotes: [
+        'Miles calibrated to official guidebook anchors (src/data/at-mile-anchors.yaml).',
+        ...pack.route.qualityNotes
+      ]
+    },
+    terrain: {
+      elevation: pack.terrain.elevation.map((point) => ({ ...point, mile: toOfficial(point.mile) })),
+      segments: pack.terrain.segments.map((s) => ({ ...s, startMile: toOfficial(s.startMile), endMile: toOfficial(s.endMile) })),
+      steep: pack.terrain.steep.map((s) => ({ ...s, startMile: toOfficial(s.startMile), endMile: toOfficial(s.endMile) })),
+      rockiness: pack.terrain.rockiness.map((s) => ({
+        ...s,
+        startMile: toOfficial(s.startMile),
+        endMile: toOfficial(s.endMile),
+        mile: toOfficial(s.mile)
+      })),
+      difficulty: pack.terrain.difficulty.map((s) => ({ ...s, startMile: toOfficial(s.startMile), endMile: toOfficial(s.endMile) }))
+    },
+    waypoints
+  };
+}
+
 async function loadReferencePack(): Promise<Omit<TrailMapPack, 'generatedAt' | 'tracker'>> {
   if (!referencePackPromise) {
     referencePackPromise = Promise.all([
       loadRoute(),
       loadMilepoints(),
       loadTerrain(),
-      loadWaypoints()
-    ]).then(([route, milepoints, terrain, waypoints]) => ({
-      route,
-      milepoints,
-      terrain,
-      waypoints,
-      sourceNotes: [
-        'Garmin points come from MapShare/Laravel history when available.',
-        'Elevation is model-derived USGS 3DEP/EPQS screening data.',
-        'Rockiness is Scout Rockiness V2.1 model output, not field verification.',
-        'Difficulty is a movement-only score weighted toward ascent, steep grade, rockiness, then descent.',
-        'Open route miles are generated from an OSM-derived route candidate and remain visually useful but not official guidebook mileage.'
-      ]
-    }));
+      loadWaypoints(),
+      loadMeasuredToOfficial()
+    ]).then(([route, milepoints, terrain, waypoints, toOfficial]) => {
+      const pack = {
+        route,
+        milepoints,
+        terrain,
+        waypoints,
+        sourceNotes: [
+          'Garmin points come from MapShare/Laravel history when available.',
+          'Elevation is model-derived USGS 3DEP/EPQS screening data.',
+          'Rockiness is Scout Rockiness V2.1 model output, not field verification.',
+          'Difficulty is a movement-only score weighted toward ascent, steep grade, rockiness, then descent.',
+          'Open route miles are generated from an OSM-derived route candidate and remain visually useful but not official guidebook mileage.'
+        ]
+      };
+      return toOfficial ? calibratePack(pack, toOfficial) : pack;
+    });
   }
 
   return referencePackPromise;

@@ -1,3 +1,10 @@
+// SUPERSEDED for mile values: this script uniformly rescales geometric
+// centerline distance to 2,197.4, which drifts up to ~23 mi from official
+// guidebook miles mid-trail. public/at-mileposts.json is now produced by
+// scripts/calibrate-at-mileposts.mjs (anchor-calibrated against
+// src/data/at-mile-anchors.yaml). Keep this script only as a reference for
+// fetching fresh centerline geometry; do NOT run it to regenerate mileposts.
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

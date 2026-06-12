@@ -1,0 +1,651 @@
+{
+  "generatedAt": "2026-06-12T23:55:03.333Z",
+  "source": "scripts/calibrate-at-mileposts.mjs",
+  "frame": {
+    "totalMiles": 2197.4,
+    "reference": "AWOL 2026 (anchors mostly ATC Data Book 2026)"
+  },
+  "measuredTotalMiles": 2106.1,
+  "anchorsUsed": [
+    {
+      "name": "Springer Mountain summit, GA",
+      "officialMile": 0,
+      "measuredMile": 0,
+      "offTrailMiles": 0.035,
+      "confidence": "definitional"
+    },
+    {
+      "name": "Blood Mountain summit, GA",
+      "officialMile": 28.9,
+      "measuredMile": 28.1,
+      "offTrailMiles": 0.035,
+      "confidence": "high"
+    },
+    {
+      "name": "Neels Gap / Mountain Crossings (US 19/129), GA",
+      "officialMile": 31.3,
+      "measuredMile": 30.1,
+      "offTrailMiles": 0.187,
+      "confidence": "high"
+    },
+    {
+      "name": "Dicks Creek Gap (US 76, Hiawassee), GA",
+      "officialMile": 69.4,
+      "measuredMile": 66.5,
+      "offTrailMiles": 0.012,
+      "confidence": "high"
+    },
+    {
+      "name": "GA/NC state line (Bly Gap), NC",
+      "officialMile": 78.3,
+      "measuredMile": 75.3,
+      "offTrailMiles": 1.636,
+      "confidence": "high"
+    },
+    {
+      "name": "Winding Stair Gap (US 64, Franklin), NC",
+      "officialMile": 109.6,
+      "measuredMile": 105.7,
+      "offTrailMiles": 0.032,
+      "confidence": "high"
+    },
+    {
+      "name": "Nantahala Outdoor Center (Wesser, US 19), NC",
+      "officialMile": 136.9,
+      "measuredMile": 132.5,
+      "offTrailMiles": 0.016,
+      "confidence": "high"
+    },
+    {
+      "name": "Fontana Dam, NC",
+      "officialMile": 167,
+      "measuredMile": 162.2,
+      "offTrailMiles": 0.046,
+      "confidence": "high"
+    },
+    {
+      "name": "Clingmans Dome / Kuwohi, TN-NC",
+      "officialMile": 200.3,
+      "measuredMile": 194.8,
+      "offTrailMiles": 0.041,
+      "confidence": "high"
+    },
+    {
+      "name": "Newfound Gap (US 441), TN-NC",
+      "officialMile": 208,
+      "measuredMile": 202.2,
+      "offTrailMiles": 0.021,
+      "confidence": "high"
+    },
+    {
+      "name": "Davenport Gap (TN 32, east end of Smokies), TN",
+      "officialMile": 239.4,
+      "measuredMile": 233,
+      "offTrailMiles": 0.004,
+      "confidence": "high"
+    },
+    {
+      "name": "Hot Springs, NC",
+      "officialMile": 275.2,
+      "measuredMile": 268.3,
+      "offTrailMiles": 0.084,
+      "confidence": "high"
+    },
+    {
+      "name": "Nolichucky River / Erwin TN (Uncle Johnny's, Chestoa)",
+      "officialMile": 344.6,
+      "measuredMile": 336.6,
+      "offTrailMiles": 0.166,
+      "confidence": "high"
+    },
+    {
+      "name": "Roan High Knob, TN-NC",
+      "officialMile": 379.3,
+      "measuredMile": 369.5,
+      "offTrailMiles": 0.097,
+      "confidence": "high"
+    },
+    {
+      "name": "Carvers Gap (TN 143 / NC 261), TN-NC",
+      "officialMile": 380.8,
+      "measuredMile": 370.9,
+      "offTrailMiles": 0.037,
+      "confidence": "high"
+    },
+    {
+      "name": "Dennis Cove Road (USFS 50, Kincora/Laurel Fork), TN",
+      "officialMile": 420.3,
+      "measuredMile": 407.7,
+      "offTrailMiles": 0.007,
+      "confidence": "high"
+    },
+    {
+      "name": "Damascus, VA",
+      "officialMile": 471,
+      "measuredMile": 458.9,
+      "offTrailMiles": 0.011,
+      "confidence": "high"
+    },
+    {
+      "name": "Mount Rogers spur / Thomas Knob Shelter (Grayson Highlands area)",
+      "officialMile": 499.4,
+      "measuredMile": 486.6,
+      "offTrailMiles": 0.074,
+      "confidence": "medium"
+    },
+    {
+      "name": "Atkins VA (US 11 / I-81)",
+      "officialMile": 546,
+      "measuredMile": 532.4,
+      "offTrailMiles": 2.606,
+      "confidence": "high"
+    },
+    {
+      "name": "Pearisburg VA (VA 634 Cross Ave crossing)",
+      "officialMile": 636.4,
+      "measuredMile": 621.2,
+      "offTrailMiles": 1.507,
+      "confidence": "high"
+    },
+    {
+      "name": "Dragons Tooth",
+      "officialMile": 702.9,
+      "measuredMile": 687,
+      "offTrailMiles": 0.346,
+      "confidence": "high"
+    },
+    {
+      "name": "McAfee Knob",
+      "officialMile": 714.4,
+      "measuredMile": 698.7,
+      "offTrailMiles": 0.088,
+      "confidence": "high"
+    },
+    {
+      "name": "Daleville VA (US 220)",
+      "officialMile": 731.1,
+      "measuredMile": 714.6,
+      "offTrailMiles": 0.106,
+      "confidence": "medium"
+    },
+    {
+      "name": "James River Foot Bridge",
+      "officialMile": 787.9,
+      "measuredMile": 770.8,
+      "offTrailMiles": 2.387,
+      "confidence": "high"
+    },
+    {
+      "name": "Rockfish Gap / Waynesboro VA (south end Shenandoah, I-64/US 250)",
+      "officialMile": 865.1,
+      "measuredMile": 846.2,
+      "offTrailMiles": 0.082,
+      "confidence": "high"
+    },
+    {
+      "name": "Harpers Ferry WV (ATC HQ side trail)",
+      "officialMile": 1026.5,
+      "measuredMile": 1005.4,
+      "offTrailMiles": 0.213,
+      "confidence": "high"
+    },
+    {
+      "name": "Pen Mar Park / Mason-Dixon Line (PA-MD line)",
+      "officialMile": 1068.1,
+      "measuredMile": 1046,
+      "offTrailMiles": 0.13,
+      "confidence": "medium"
+    },
+    {
+      "name": "Boiling Springs PA (PA 174)",
+      "officialMile": 1125.1,
+      "measuredMile": 1101.3,
+      "offTrailMiles": 0.103,
+      "confidence": "high"
+    },
+    {
+      "name": "Duncannon PA (Susquehanna River)",
+      "officialMile": 1150.8,
+      "measuredMile": 1126,
+      "offTrailMiles": 0.203,
+      "confidence": "high"
+    },
+    {
+      "name": "Port Clinton PA (Schuylkill River)",
+      "officialMile": 1220.7,
+      "measuredMile": 1195,
+      "offTrailMiles": 0.078,
+      "confidence": "high"
+    },
+    {
+      "name": "Lehigh Gap / Palmerton PA (Lehigh River bridge east side)",
+      "officialMile": 1261.5,
+      "measuredMile": 1234.6,
+      "offTrailMiles": 0.186,
+      "confidence": "high"
+    },
+    {
+      "name": "Delaware Water Gap, PA (I-80 / Delaware River)",
+      "officialMile": 1297.4,
+      "measuredMile": 1270.6,
+      "offTrailMiles": 0.025,
+      "confidence": "high"
+    },
+    {
+      "name": "High Point State Park HQ, NJ 23 (High Point NJ)",
+      "officialMile": 1340.3,
+      "measuredMile": 1310.6,
+      "offTrailMiles": 0.26,
+      "confidence": "high"
+    },
+    {
+      "name": "Greenwood Lake NY (NY 17A, Bellvale/Mt Peter)",
+      "officialMile": 1376,
+      "measuredMile": 1343.8,
+      "offTrailMiles": 0.108,
+      "confidence": "medium"
+    },
+    {
+      "name": "Bear Mountain Bridge / Hudson River, NY",
+      "officialMile": 1409.1,
+      "measuredMile": 1374.8,
+      "offTrailMiles": 0.034,
+      "confidence": "medium"
+    },
+    {
+      "name": "Graymoor / Appalachian Market (US 9 / NY 403)",
+      "officialMile": 1415.1,
+      "measuredMile": 1380.8,
+      "offTrailMiles": 0.077,
+      "confidence": "high"
+    },
+    {
+      "name": "RPH Shelter, NY",
+      "officialMile": 1434.5,
+      "measuredMile": 1400.5,
+      "offTrailMiles": 0.949,
+      "confidence": "high"
+    },
+    {
+      "name": "Appalachian Trail Metro-North station, NY 22 (Pawling NY)",
+      "officialMile": 1454.4,
+      "measuredMile": 1416.9,
+      "offTrailMiles": 0.536,
+      "confidence": "medium"
+    },
+    {
+      "name": "Kent CT (CT 341)",
+      "officialMile": 1473.2,
+      "measuredMile": 1436.1,
+      "offTrailMiles": 0.265,
+      "confidence": "high"
+    },
+    {
+      "name": "Salisbury CT (CT 41)",
+      "officialMile": 1507.5,
+      "measuredMile": 1468.6,
+      "offTrailMiles": 0.232,
+      "confidence": "high"
+    },
+    {
+      "name": "US 7 crossing, Sheffield/Great Barrington MA",
+      "officialMile": 1528,
+      "measuredMile": 1490,
+      "offTrailMiles": 1.612,
+      "confidence": "high"
+    },
+    {
+      "name": "Dalton MA (MA 8/9, trail through town)",
+      "officialMile": 1576.3,
+      "measuredMile": 1535.4,
+      "offTrailMiles": 0.218,
+      "confidence": "high"
+    },
+    {
+      "name": "Mount Greylock summit (Bascom Lodge), MA",
+      "officialMile": 1593.3,
+      "measuredMile": 1551.4,
+      "offTrailMiles": 0.016,
+      "confidence": "medium"
+    },
+    {
+      "name": "VT 9 crossing (Bennington VT)",
+      "officialMile": 1618,
+      "measuredMile": 1574.1,
+      "offTrailMiles": 0.609,
+      "confidence": "high"
+    },
+    {
+      "name": "VT 103 / Clarendon Gorge (North Clarendon VT)",
+      "officialMile": 1690.5,
+      "measuredMile": 1642.9,
+      "offTrailMiles": 0.124,
+      "confidence": "medium"
+    },
+    {
+      "name": "US 4 / Killington VT (Sherburne Pass area, near Maine Junction)",
+      "officialMile": 1708.2,
+      "measuredMile": 1661.5,
+      "offTrailMiles": 0.365,
+      "confidence": "high"
+    },
+    {
+      "name": "Hanover NH (Dartmouth College / Connecticut River)",
+      "officialMile": 1755,
+      "measuredMile": 1703.9,
+      "offTrailMiles": 0.105,
+      "confidence": "high"
+    },
+    {
+      "name": "Mount Moosilauke summit, NH",
+      "officialMile": 1804.8,
+      "measuredMile": 1749.8,
+      "offTrailMiles": 0.05,
+      "confidence": "low"
+    },
+    {
+      "name": "Franconia Notch (US 3 / I-93), NH",
+      "officialMile": 1824.1,
+      "measuredMile": 1767.3,
+      "offTrailMiles": 0.618,
+      "confidence": "medium"
+    },
+    {
+      "name": "Mount Washington summit, NH",
+      "officialMile": 1864.3,
+      "measuredMile": 1803.6,
+      "offTrailMiles": 0.137,
+      "confidence": "medium"
+    },
+    {
+      "name": "Pinkham Notch (NH 16), NH",
+      "officialMile": 1877.8,
+      "measuredMile": 1815.7,
+      "offTrailMiles": 0.021,
+      "confidence": "high"
+    },
+    {
+      "name": "Gorham NH (US 2, Rattle River trailhead)",
+      "officialMile": 1898.9,
+      "measuredMile": 1833.2,
+      "offTrailMiles": 1.117,
+      "confidence": "medium"
+    },
+    {
+      "name": "ME 4 / Rangeley ME",
+      "officialMile": 1976.8,
+      "measuredMile": 1903.5,
+      "offTrailMiles": 0.318,
+      "confidence": "high"
+    },
+    {
+      "name": "ME 27 / Stratton ME",
+      "officialMile": 2009,
+      "measuredMile": 1930.6,
+      "offTrailMiles": 0.091,
+      "confidence": "high"
+    },
+    {
+      "name": "Caratunk / Kennebec River ferry (US 201), ME",
+      "officialMile": 2046,
+      "measuredMile": 1966.4,
+      "offTrailMiles": 1.226,
+      "confidence": "high"
+    },
+    {
+      "name": "Monson ME (ME 15 trailhead)",
+      "officialMile": 2079.4,
+      "measuredMile": 2000.1,
+      "offTrailMiles": 0.113,
+      "confidence": "high"
+    },
+    {
+      "name": "Abol Bridge / Golden Road (W Branch Penobscot), ME",
+      "officialMile": 2182.3,
+      "measuredMile": 2092.1,
+      "offTrailMiles": 0.068,
+      "confidence": "high"
+    },
+    {
+      "name": "Katahdin / Baxter Peak, ME",
+      "officialMile": 2197.4,
+      "measuredMile": 2106.1,
+      "offTrailMiles": 0.091,
+      "confidence": "definitional"
+    }
+  ],
+  "pairs": [
+    [
+      0,
+      0
+    ],
+    [
+      28.1,
+      28.9
+    ],
+    [
+      30.1,
+      31.3
+    ],
+    [
+      66.5,
+      69.4
+    ],
+    [
+      75.3,
+      78.3
+    ],
+    [
+      105.7,
+      109.6
+    ],
+    [
+      132.5,
+      136.9
+    ],
+    [
+      162.2,
+      167
+    ],
+    [
+      194.8,
+      200.3
+    ],
+    [
+      202.2,
+      208
+    ],
+    [
+      233,
+      239.4
+    ],
+    [
+      268.3,
+      275.2
+    ],
+    [
+      336.6,
+      344.6
+    ],
+    [
+      369.5,
+      379.3
+    ],
+    [
+      370.9,
+      380.8
+    ],
+    [
+      407.7,
+      420.3
+    ],
+    [
+      458.9,
+      471
+    ],
+    [
+      486.6,
+      499.4
+    ],
+    [
+      532.4,
+      546
+    ],
+    [
+      621.2,
+      636.4
+    ],
+    [
+      687,
+      702.9
+    ],
+    [
+      698.7,
+      714.4
+    ],
+    [
+      714.6,
+      731.1
+    ],
+    [
+      770.8,
+      787.9
+    ],
+    [
+      846.2,
+      865.1
+    ],
+    [
+      1005.4,
+      1026.5
+    ],
+    [
+      1046,
+      1068.1
+    ],
+    [
+      1101.3,
+      1125.1
+    ],
+    [
+      1126,
+      1150.8
+    ],
+    [
+      1195,
+      1220.7
+    ],
+    [
+      1234.6,
+      1261.5
+    ],
+    [
+      1270.6,
+      1297.4
+    ],
+    [
+      1310.6,
+      1340.3
+    ],
+    [
+      1343.8,
+      1376
+    ],
+    [
+      1374.8,
+      1409.1
+    ],
+    [
+      1380.8,
+      1415.1
+    ],
+    [
+      1400.5,
+      1434.5
+    ],
+    [
+      1416.9,
+      1454.4
+    ],
+    [
+      1436.1,
+      1473.2
+    ],
+    [
+      1468.6,
+      1507.5
+    ],
+    [
+      1490,
+      1528
+    ],
+    [
+      1535.4,
+      1576.3
+    ],
+    [
+      1551.4,
+      1593.3
+    ],
+    [
+      1574.1,
+      1618
+    ],
+    [
+      1642.9,
+      1690.5
+    ],
+    [
+      1661.5,
+      1708.2
+    ],
+    [
+      1703.9,
+      1755
+    ],
+    [
+      1749.8,
+      1804.8
+    ],
+    [
+      1767.3,
+      1824.1
+    ],
+    [
+      1803.6,
+      1864.3
+    ],
+    [
+      1815.7,
+      1877.8
+    ],
+    [
+      1833.2,
+      1898.9
+    ],
+    [
+      1903.5,
+      1976.8
+    ],
+    [
+      1930.6,
+      2009
+    ],
+    [
+      1966.4,
+      2046
+    ],
+    [
+      2000.1,
+      2079.4
+    ],
+    [
+      2092.1,
+      2182.3
+    ],
+    [
+      2106.1,
+      2197.4
+    ]
+  ]
+}
