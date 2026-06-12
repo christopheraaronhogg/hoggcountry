@@ -6,6 +6,7 @@
   import type {
     LatLon,
     TrailMapElevationPoint,
+    TrailMapMilepoint,
     TrailMapPack,
     TrailMapPoint,
     TrailMapWaypoint
@@ -36,6 +37,18 @@
   let inspectedMile = $state<number | null>(null);
   let scrubbing = $state(false);
   let lastScrubUpdate = 0;
+  let scrubHintVisible = $state(false);
+  const SCRUB_HINT_KEY = 'hoggcountry.atmap.scrubHint.v1';
+
+  function dismissScrubHint() {
+    if (!scrubHintVisible) return;
+    scrubHintVisible = false;
+    try {
+      localStorage.setItem(SCRUB_HINT_KEY, 'seen');
+    } catch {
+      // private mode etc.
+    }
+  }
   let detailsOpen = $state(false);
   let layersOpen = $state(false);
   let lastRenderedTerrainMode: TerrainMode | null = null;
@@ -43,7 +56,10 @@
   let lastRenderedMile = -1;
 
   let L: any = null;
-  let map: any = null;
+  // $state so the render effects below stay subscribed: their `!map || !pack`
+  // guard short-circuits on map while it is still null, and a non-reactive
+  // map would leave a first run with zero tracked dependencies — dead forever.
+  let map = $state<any>(null);
   let routeLayer: any = null;
   let terrainLayer: any = null;
   let placesLayer: any = null;
@@ -67,11 +83,23 @@
       : 1;
   });
   const selectedMileMeasured = $derived(selectedMile * measuredFactor);
-  // Cumulative measured-mile index over the dense route so overlays can be
-  // sliced along the actual trail geometry instead of straight chords.
+  // The product's mile frame: the tracker pipeline reports each milepost's
+  // scaledTrailMiles (the source data's official mileage), not the uniformly
+  // rescaled `mile` label, which drifts up to ~23 mi away from it mid-trail.
+  // Every mile the map shows must sit in the same frame as the live banner.
+  function milepostMile(post: { mile: number; scaledTrailMiles: number | null }): number {
+    return post.scaledTrailMiles ?? post.mile;
+  }
+  // Cumulative mile index over the dense route, calibrated against the
+  // milepost skeleton. Raw flat-earth distance along the downsampled vector
+  // underruns the official mileage unevenly (uniform normalization drifted
+  // ~35 mi off the milepost frame mid-trail), so each milepost is matched to
+  // its spot along the route and every point's raw distance is interpolated
+  // between those control pairs. Miles here are banner-frame (milepostMile),
+  // so tap/drag readouts agree with the live tracker.
   const routeMileIndex = $derived.by(() => {
     const segments = pack?.route.segments ?? [];
-    const measuredTotal = pack?.route.measuredMiles ?? 0;
+    const mileposts = pack?.milepoints ?? [];
     if (!segments.length) return [] as { miles: number[]; points: LatLon[] }[];
 
     let cumulative = 0;
@@ -91,26 +119,169 @@
       return { miles, points };
     });
 
-    // Normalize haversine-ish miles onto the official measured length.
-    if (cumulative > 0 && measuredTotal > 0) {
-      const scale = measuredTotal / cumulative;
-      for (const segment of indexed) {
-        for (let i = 0; i < segment.miles.length; i += 1) segment.miles[i] *= scale;
+    if (!mileposts.length || cumulative <= 0) return indexed;
+
+    const flatPoints: LatLon[] = [];
+    const flatRaw: number[] = [];
+    for (const segment of indexed) {
+      for (let i = 0; i < segment.points.length; i += 1) {
+        flatPoints.push(segment.points[i]);
+        flatRaw.push(segment.miles[i]);
+      }
+    }
+
+    // Forward sweep: match each milepost to the nearest route point at or
+    // ahead of the previous match, producing monotonic
+    // (raw distance, canonical mile) control pairs.
+    const WINDOW = 400;
+    const controlRaw: number[] = [];
+    const controlMile: number[] = [];
+    let cursor = 0;
+    for (const post of mileposts) {
+      const cosLat = Math.cos((post.lat * Math.PI) / 180);
+      const limit = Math.min(flatPoints.length - 1, cursor + WINDOW);
+      let bestIndex = -1;
+      let bestDistSq = Infinity;
+      for (let i = cursor; i <= limit; i += 1) {
+        const dLat = flatPoints[i][0] - post.lat;
+        const dLon = (flatPoints[i][1] - post.lon) * cosLat;
+        const distSq = dLat * dLat + dLon * dLon;
+        if (distSq < bestDistSq) {
+          bestDistSq = distSq;
+          bestIndex = i;
+        }
+      }
+      if (bestIndex < 0) continue;
+      const raw = flatRaw[bestIndex];
+      const postMile = milepostMile(post);
+      const last = controlRaw.length - 1;
+      if (last >= 0 && (raw <= controlRaw[last] + 1e-6 || postMile <= controlMile[last])) {
+        cursor = Math.max(cursor, bestIndex);
+        continue;
+      }
+      controlRaw.push(raw);
+      controlMile.push(postMile);
+      cursor = bestIndex;
+    }
+
+    if (controlRaw.length < 2) return indexed;
+
+    // Remap every point's raw distance through the control pairs. Points are
+    // visited in ascending raw order, so a single advancing pointer suffices;
+    // the ends extrapolate linearly from the outermost pairs.
+    let pair = 0;
+    const rawToMile = (raw: number): number => {
+      while (pair < controlRaw.length - 2 && controlRaw[pair + 1] < raw) pair += 1;
+      const r0 = controlRaw[pair];
+      const r1 = controlRaw[pair + 1];
+      const t = r1 > r0 ? (raw - r0) / (r1 - r0) : 0;
+      return controlMile[pair] + (controlMile[pair + 1] - controlMile[pair]) * t;
+    };
+    for (const segment of indexed) {
+      for (let i = 0; i < segment.miles.length; i += 1) {
+        segment.miles[i] = rawToMile(segment.miles[i]);
       }
     }
 
     return indexed;
   });
 
-  // Slice the dense route between two measured miles; returns one or more
-  // polyline paths (the route has gaps between segments).
+  // Nearest position ON the dense route to a lat/lon: coarse stride pass,
+  // then exact projection onto segments in the winning neighborhood. Returns
+  // the banner-frame mile so callers match the live tracker readout.
+  function nearestRoutePosition(lat: number, lon: number): { lat: number; lon: number; mile: number } | null {
+    const indexed = routeMileIndex;
+    if (!indexed.length) return null;
+
+    const cosLat = Math.cos((lat * Math.PI) / 180);
+    const STRIDE = 16;
+    let bestSegment = -1;
+    let bestIndex = 0;
+    let bestDistSq = Infinity;
+
+    for (let si = 0; si < indexed.length; si += 1) {
+      const points = indexed[si].points;
+      for (let i = 0; i < points.length; i += STRIDE) {
+        const dLat = points[i][0] - lat;
+        const dLon = (points[i][1] - lon) * cosLat;
+        const distSq = dLat * dLat + dLon * dLon;
+        if (distSq < bestDistSq) {
+          bestDistSq = distSq;
+          bestSegment = si;
+          bestIndex = i;
+        }
+      }
+    }
+
+    if (bestSegment < 0) return null;
+    const segment = indexed[bestSegment];
+    const from = Math.max(0, bestIndex - STRIDE);
+    const to = Math.min(segment.points.length - 2, bestIndex + STRIDE);
+    let best: { lat: number; lon: number; mile: number } | null = null;
+    let bestProjDistSq = Infinity;
+
+    for (let i = from; i <= to; i += 1) {
+      const [aLat, aLon] = segment.points[i];
+      const [bLat, bLon] = segment.points[i + 1];
+      const abLat = bLat - aLat;
+      const abLon = (bLon - aLon) * cosLat;
+      const lengthSq = abLat * abLat + abLon * abLon;
+      const t = lengthSq > 0
+        ? clamp(((lat - aLat) * abLat + (lon - aLon) * cosLat * abLon) / lengthSq, 0, 1)
+        : 0;
+      const projLat = aLat + (bLat - aLat) * t;
+      const projLon = aLon + (bLon - aLon) * t;
+      const dLat = projLat - lat;
+      const dLon = (projLon - lon) * cosLat;
+      const distSq = dLat * dLat + dLon * dLon;
+      if (distSq < bestProjDistSq) {
+        bestProjDistSq = distSq;
+        best = {
+          lat: projLat,
+          lon: projLon,
+          mile: segment.miles[i] + (segment.miles[i + 1] - segment.miles[i]) * t
+        };
+      }
+    }
+
+    return best;
+  }
+
+  // Exact position on the dense route for a canonical mile (binary search the
+  // calibrated index). Falls back to milepost interpolation off-route.
+  function routePositionAtMile(canonicalMile: number): LatLon | null {
+    for (const segment of routeMileIndex) {
+      const miles = segment.miles;
+      if (!miles.length || canonicalMile < miles[0] || canonicalMile > miles[miles.length - 1]) continue;
+      let lo = 0;
+      let hi = miles.length - 1;
+      while (lo + 1 < hi) {
+        const mid = (lo + hi) >> 1;
+        if (miles[mid] <= canonicalMile) lo = mid;
+        else hi = mid;
+      }
+      const span = miles[hi] - miles[lo];
+      const t = span > 0 ? (canonicalMile - miles[lo]) / span : 0;
+      const [aLat, aLon] = segment.points[lo];
+      const [bLat, bLon] = segment.points[hi];
+      return [aLat + (bLat - aLat) * t, aLon + (bLon - aLon) * t];
+    }
+    return coordForMile(canonicalMile);
+  }
+
+  // Slice the dense route between two measured-frame miles (terrain data
+  // lives on the ~2,106 OSM scale); the index itself is canonical, so convert
+  // at this boundary. Returns one or more polyline paths (the route can have
+  // gaps between segments).
   function pathsForMileRange(startMile: number, endMile: number): LatLon[][] {
+    const startCanonical = startMile / measuredFactor;
+    const endCanonical = endMile / measuredFactor;
     const paths: LatLon[][] = [];
     for (const segment of routeMileIndex) {
       const run: LatLon[] = [];
       for (let i = 0; i < segment.points.length; i += 1) {
         const mile = segment.miles[i];
-        if (mile >= startMile && mile <= endMile) {
+        if (mile >= startCanonical && mile <= endCanonical) {
           run.push(segment.points[i]);
         } else if (run.length) {
           break;
@@ -124,7 +295,7 @@
   // when inspecting, otherwise the scrubbed/live Garmin point.
   const displayedSelection = $derived.by(() => {
     if (inspectedMile !== null) {
-      const coord = coordForMile(inspectedMile);
+      const coord = routePositionAtMile(inspectedMile) ?? coordForMile(inspectedMile);
       if (coord) return { lat: coord[0], lon: coord[1], mile: inspectedMile, observedAt: null as string | null };
     }
     if (!selectedPoint) return null;
@@ -241,16 +412,16 @@
     let upper = points[points.length - 1];
 
     for (const point of points) {
-      if (point.mile <= mile) lower = point;
-      if (point.mile >= mile) {
+      if (milepostMile(point) <= mile) lower = point;
+      if (milepostMile(point) >= mile) {
         upper = point;
         break;
       }
     }
 
     if (!lower || !upper) return null;
-    if (lower.mile === upper.mile) return [lower.lat, lower.lon];
-    const progress = (mile - lower.mile) / (upper.mile - lower.mile);
+    if (milepostMile(lower) === milepostMile(upper)) return [lower.lat, lower.lon];
+    const progress = (mile - milepostMile(lower)) / (milepostMile(upper) - milepostMile(lower));
     return [
       lower.lat + (upper.lat - lower.lat) * progress,
       lower.lon + (upper.lon - lower.lon) * progress
@@ -350,16 +521,19 @@
   function addMileLayer() {
     clearLayer(mileLayer);
     if (!pack || !L || !mileLayer) return;
+    let lastLabeled = -1;
     for (const point of pack.milepoints) {
-      if (point.mile % 25 !== 0) continue;
+      const mile = Math.round(milepostMile(point));
+      if (mile % 25 !== 0 || mile === lastLabeled) continue;
+      lastLabeled = mile;
       L.circleMarker([point.lat, point.lon], {
-        radius: point.mile % 100 === 0 ? 4.5 : 3,
+        radius: mile % 100 === 0 ? 4.5 : 3,
         color: '#162018',
         fillColor: '#fef3c7',
         fillOpacity: 0.9,
         weight: 1
-      }).bindTooltip(`Mile ${point.mile}`, { direction: 'top' })
-        .on('click', () => { inspectedMile = point.mile; })
+      }).bindTooltip(`Mile ${mile}`, { direction: 'top' })
+        .on('click', () => { inspectedMile = mile; })
         .addTo(mileLayer);
     }
   }
@@ -517,7 +691,7 @@
       selectedMarker = L.marker([displayedSelection.lat, displayedSelection.lon], {
         draggable: true,
         zIndexOffset: 900,
-        icon: L.divIcon({ className: 'scrub-marker', iconSize: [22, 22], iconAnchor: [11, 11] }),
+        icon: L.divIcon({ className: 'scrub-marker', iconSize: [44, 44], iconAnchor: [22, 22] }),
         title: 'Drag along the trail to scout any mile'
       }).bindPopup(`<b>Mile ${fmt(displayedSelection.mile, 1)}</b><br/>${selectionLabel}`).addTo(trackerLayer);
 
@@ -558,7 +732,7 @@
       }
     }
 
-    let best = { mile: points[bestIndex].mile, lat: points[bestIndex].lat, lon: points[bestIndex].lon };
+    let best = { mile: milepostMile(points[bestIndex]), lat: points[bestIndex].lat, lon: points[bestIndex].lon };
     let bestProjectionDistSq = bestDistSq;
 
     for (const neighborIndex of [bestIndex - 1, bestIndex + 1]) {
@@ -582,7 +756,7 @@
       if (distSq < bestProjectionDistSq) {
         bestProjectionDistSq = distSq;
         best = {
-          mile: a.mile + (b.mile - a.mile) * t,
+          mile: milepostMile(a) + (milepostMile(b) - milepostMile(a)) * t,
           lat: projLat,
           lon: projLon
         };
@@ -597,10 +771,11 @@
   // stat updates are throttled to keep derived churn sane.
   function handleScrubDrag(event: { target: { getLatLng: () => { lat: number; lng: number }; setLatLng: (latlng: [number, number]) => void } }) {
     const position = event.target.getLatLng();
-    const nearest = nearestTrailPosition(position.lat, position.lng);
+    const nearest = nearestRoutePosition(position.lat, position.lng) ?? nearestTrailPosition(position.lat, position.lng);
     if (!nearest) return;
 
     event.target.setLatLng([nearest.lat, nearest.lon]);
+    dismissScrubHint();
 
     const now = Date.now();
     if (now - lastScrubUpdate < 90) return;
@@ -610,7 +785,7 @@
 
   function handleScrubEnd(event: { target: { getLatLng: () => { lat: number; lng: number }; setLatLng: (latlng: [number, number]) => void } }) {
     const position = event.target.getLatLng();
-    const nearest = nearestTrailPosition(position.lat, position.lng);
+    const nearest = nearestRoutePosition(position.lat, position.lng) ?? nearestTrailPosition(position.lat, position.lng);
     if (nearest) {
       inspectedMile = Math.round(nearest.mile * 10) / 10;
       event.target.setLatLng([nearest.lat, nearest.lon]);
@@ -655,6 +830,11 @@
       if (!response.ok) throw new Error(`Map pack returned ${response.status}`);
       pack = await response.json() as TrailMapPack;
       selectedHistoryIndex = Math.max(0, (pack.tracker.history.length || 1) - 1);
+      try {
+        if (!localStorage.getItem(SCRUB_HINT_KEY)) scrubHintVisible = true;
+      } catch {
+        // private mode etc.
+      }
       renderAll(recenter);
       fitInitialView();
     } catch (error) {
@@ -693,7 +873,7 @@
     if (!points?.length || !map) return;
 
     const cosLat = Math.cos((lat * Math.PI) / 180);
-    let best: { mile: number; lat: number; lon: number } | null = null;
+    let best: TrailMapMilepoint | null = null;
     let bestDistSq = Infinity;
 
     for (const point of points) {
@@ -711,7 +891,10 @@
     const trailPoint = map.latLngToContainerPoint([best.lat, best.lon]);
     const pixelDistance = Math.hypot(clickPoint.x - trailPoint.x, clickPoint.y - trailPoint.y);
     if (pixelDistance > 36) return;
-    inspectedMile = best.mile;
+
+    const exact = nearestRoutePosition(lat, lon);
+    inspectedMile = exact ? Math.round(exact.mile * 10) / 10 : Math.round(milepostMile(best) * 10) / 10;
+    dismissScrubHint();
   }
 
   onMount(async () => {
@@ -932,6 +1115,13 @@
         <span>{loading ? '...' : 'Refresh'}</span>
       </button>
     </aside>
+  {/if}
+
+  {#if scrubHintVisible && inspectedMile === null}
+    <button class="map-hud scrub-hint" type="button" onclick={dismissScrubHint}>
+      <span>Tap anywhere on the trail to scout that mile — then drag the dot to glide.</span>
+      <strong>Got it</strong>
+    </button>
   {/if}
 
   {#if inspectedMile !== null}
@@ -1276,16 +1466,51 @@
   }
 
   :global(.scrub-marker) {
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+    cursor: grab;
+  }
+
+  :global(.scrub-marker::after) {
+    content: '';
     box-sizing: border-box;
+    width: 22px;
+    height: 22px;
     border: 3px solid #fff7ed;
     border-radius: 999px;
     background: #ea580c;
     box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.25), 0 4px 10px rgba(0, 0, 0, 0.35);
-    cursor: grab;
   }
 
   :global(.scrub-marker:active) {
     cursor: grabbing;
+  }
+
+  .scrub-hint {
+    top: calc(max(0.75rem, env(safe-area-inset-top)) + 5.4rem);
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    max-width: min(92vw, 30rem);
+    padding: 0.55rem 0.85rem;
+    transform: translateX(-50%);
+    border-radius: 16px;
+    color: rgba(255, 253, 248, 0.9);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .scrub-hint strong {
+    flex: 0 0 auto;
+    color: #d9f99d;
+    font-family: Oswald, Impact, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .profile-row {
