@@ -5,6 +5,9 @@ dist/
 .openclaw-artifacts/
 # local scratch
 tmp/
+# local agent session dirs (Codex, etc.)
+.agents/
+.codex/
 apps/public/.astro/
 apps/public/.netlify/
 apps/workspace/.svelte-kit/
