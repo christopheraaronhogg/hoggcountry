@@ -252,6 +252,13 @@
     if (layer) layer.clearLayers();
   }
 
+  // Leaflet's interactive layers swallow clicks that land exactly on them,
+  // so the trail line and terrain overlays forward their clicks into the
+  // same tap-to-inspect path the bare map uses.
+  function forwardMapClick(event: { latlng: { lat: number; lng: number } }) {
+    inspectFromLatLng(event.latlng.lat, event.latlng.lng);
+  }
+
   function addRouteLayer() {
     clearLayer(routeLayer);
     if (!pack || !L || !routeLayer) return;
@@ -262,7 +269,7 @@
         opacity: 0.82,
         lineCap: 'round',
         lineJoin: 'round'
-      }).addTo(routeLayer);
+      }).on('click', forwardMapClick).addTo(routeLayer);
     }
   }
 
@@ -277,7 +284,9 @@
         fillColor: '#fef3c7',
         fillOpacity: 0.9,
         weight: 1
-      }).bindTooltip(`Mile ${point.mile}`, { direction: 'top' }).addTo(mileLayer);
+      }).bindTooltip(`Mile ${point.mile}`, { direction: 'top' })
+        .on('click', () => { inspectedMile = point.mile; })
+        .addTo(mileLayer);
     }
   }
 
@@ -295,7 +304,7 @@
           color: colorForGrade(segment.maxGradePercent),
           weight: segment.maxGradePercent >= 16 ? 7 : 5,
           opacity: 0.72
-        }).bindTooltip(`${segment.maxGradePercent.toFixed(0)}% max grade · ${segment.gainFt.toFixed(0)} ft gain`).addTo(terrainLayer);
+        }).bindTooltip(`${segment.maxGradePercent.toFixed(0)}% max grade · ${segment.gainFt.toFixed(0)} ft gain`).on('click', forwardMapClick).addTo(terrainLayer);
       }
       return;
     }
@@ -310,7 +319,7 @@
           color: colorForRock(segment.score),
           weight: segment.score >= 6.5 ? 7 : 5,
           opacity: 0.68
-        }).bindTooltip(`Rockiness ${segment.score.toFixed(1)}/10 · ${segment.label.replace(/_/gu, ' ')}`).addTo(terrainLayer);
+        }).bindTooltip(`Rockiness ${segment.score.toFixed(1)}/10 · ${segment.label.replace(/_/gu, ' ')}`).on('click', forwardMapClick).addTo(terrainLayer);
       }
       return;
     }
@@ -323,7 +332,7 @@
         color: colorForDifficulty(segment.score),
         weight: segment.score >= 8 ? 8 : 6,
         opacity: 0.76
-      }).bindTooltip(`Difficulty ${segment.score.toFixed(1)}/10 · ${displayLabel(segment.label)}`).addTo(terrainLayer);
+      }).bindTooltip(`Difficulty ${segment.score.toFixed(1)}/10 · ${displayLabel(segment.label)}`).on('click', forwardMapClick).addTo(terrainLayer);
     }
   }
 
