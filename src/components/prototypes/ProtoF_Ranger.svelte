@@ -1625,6 +1625,28 @@
     justify-content: flex-start;
   }
 
+  /* The hero sits on dark pine; the component's muted-on-light defaults vanish here. */
+  .hero-waitlist :global(.waitlist-copy) {
+    color: rgba(255, 253, 248, 0.88);
+  }
+
+  .hero-waitlist :global(.waitlist-kicker) {
+    color: var(--marker, #f0e000);
+  }
+
+  .hero-waitlist :global(.waitlist-button) {
+    background: var(--marker, #f0e000);
+    color: #2b2f26;
+  }
+
+  .hero-waitlist :global(.waitlist-done) {
+    color: rgba(255, 253, 248, 0.92);
+  }
+
+  .hero-waitlist :global(.waitlist-error) {
+    color: #fecaca;
+  }
+
   .hero-story-media {
     position: relative;
     display: grid;

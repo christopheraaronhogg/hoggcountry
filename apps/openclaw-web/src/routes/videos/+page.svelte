@@ -7,6 +7,8 @@
   const channelUrl = 'https://www.youtube.com/@hoggcountry7483';
   const featuredVideo = $derived(data.videos[0] ?? null);
   const libraryVideos = $derived(featuredVideo ? data.videos.slice(1) : data.videos);
+  const longFormVideos = $derived(libraryVideos.filter((video: PageData['videos'][number]) => !isShort(video)));
+  const shortVideos = $derived(libraryVideos.filter((video: PageData['videos'][number]) => isShort(video)));
 
   function isShort(video: PageData['videos'][number]) {
     return video.kind === 'short' || video.link.includes('/shorts/');
@@ -53,7 +55,7 @@
     <div class="container">
       <div class="section-heading">
         <p class="section-kicker">Latest upload</p>
-        <h2>Most recent video or Short.</h2>
+        <h2>Fresh from the trail.</h2>
       </div>
 
       <article id={`video-${featuredVideo.id}`} class="featured-card" class:is-short={isShort(featuredVideo)}>
@@ -76,32 +78,63 @@
   </section>
 {/if}
 
-<section class="library-section" id="recent-videos">
-  <div class="container">
-    <div class="section-heading">
-      <p class="section-kicker">Archive</p>
-      <h2>Recent videos and Shorts.</h2>
-    </div>
+{#if longFormVideos.length}
+  <section class="library-section" id="recent-videos">
+    <div class="container">
+      <div class="section-heading">
+        <p class="section-kicker">Trail videos</p>
+        <h2>The long way, documented.</h2>
+      </div>
 
-    <div class="videos-grid">
-      {#each libraryVideos as video, index}
-        <article class="video-card" class:is-short={isShort(video)}>
-          <a class="video-card__media" href={video.link} target="_blank" rel="noopener noreferrer" aria-label={`Watch ${video.title} on YouTube`}>
-            <YouTubeThumbnail id={video.id} alt={video.title} provided={video.thumbnail} portrait={isShort(video)} />
-            <span class="video-card__play">▶ Watch</span>
-            <span class="video-card__index">{String(index + 1).padStart(2, '0')}</span>
-          </a>
-          <div class="video-card__copy">
-            <p class="video-card__meta">{isShort(video) ? 'YouTube Short' : 'YouTube Video'} • {formatDate(video.published)}</p>
-            <h3>{video.title}</h3>
-            {#if clipText(video.description, 140)}<p>{clipText(video.description, 140)}</p>{/if}
-            <a class="video-card__link" href={video.link} target="_blank" rel="noopener noreferrer">Open on YouTube</a>
-          </div>
-        </article>
-      {/each}
+      <div class="videos-grid">
+        {#each longFormVideos as video (video.id)}
+          <article class="video-card">
+            <a class="video-card__media" href={video.link} target="_blank" rel="noopener noreferrer" aria-label={`Watch ${video.title} on YouTube`}>
+              <YouTubeThumbnail id={video.id} alt={video.title} provided={video.thumbnail} />
+              <span class="video-card__play">▶ Watch</span>
+            </a>
+            <div class="video-card__copy">
+              <p class="video-card__meta">{formatDate(video.published)}</p>
+              <h3>{video.title}</h3>
+              {#if clipText(video.description, 110)}<p>{clipText(video.description, 110)}</p>{/if}
+            </div>
+          </article>
+        {/each}
+      </div>
     </div>
-  </div>
-</section>
+  </section>
+{/if}
+
+{#if shortVideos.length}
+  <section class="library-section shorts-section">
+    <div class="container">
+      <div class="section-heading">
+        <p class="section-kicker">Shorts</p>
+        <h2>Quick hits from the trail.</h2>
+      </div>
+
+      <div class="shorts-strip" role="list">
+        {#each shortVideos as video (video.id)}
+          <a
+            role="listitem"
+            class="short-card"
+            href={video.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Watch ${video.title} on YouTube`}
+          >
+            <span class="short-card__media">
+              <YouTubeThumbnail id={video.id} alt={video.title} provided={video.thumbnail} portrait />
+              <span class="short-card__badge">Short</span>
+            </span>
+            <span class="short-card__title">{video.title}</span>
+            <span class="short-card__date">{formatDate(video.published)}</span>
+          </a>
+        {/each}
+      </div>
+    </div>
+  </section>
+{/if}
 
 <style>
   .videos-hero {
@@ -228,6 +261,7 @@
   .videos-grid {
     display: grid;
     gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   }
 
   .video-card__media {
@@ -246,8 +280,75 @@
     object-fit: cover;
   }
 
-  .video-card.is-short .video-card__media :global(img) {
+  .video-card h3,
+  .video-card p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .shorts-strip {
+    display: flex;
+    gap: 0.85rem;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .short-card {
+    flex: 0 0 168px;
+    display: grid;
+    gap: 0.4rem;
+    scroll-snap-align: start;
+    text-decoration: none;
+  }
+
+  .short-card__media {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border: 1px solid rgba(48, 65, 54, 0.12);
+    border-radius: 18px;
+    background: #111827;
+  }
+
+  .short-card__media :global(img) {
+    display: block;
+    width: 100%;
     aspect-ratio: 9 / 16;
+    object-fit: cover;
+  }
+
+  .short-card__badge {
+    position: absolute;
+    top: 0.55rem;
+    left: 0.55rem;
+    border-radius: 999px;
+    padding: 0.25rem 0.55rem;
+    background: rgba(17, 24, 39, 0.72);
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .short-card__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    color: var(--ink);
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .short-card__date {
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 700;
   }
 
   .video-card__play,
@@ -286,8 +387,6 @@
       grid-template-columns: minmax(280px, 0.5fr) minmax(0, 1fr);
     }
 
-    .videos-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+
   }
 </style>
