@@ -14,7 +14,7 @@
   <div class="auth-copy">
     <p class="eyebrow">Scout account</p>
     <h1>Create your trail workspace.</h1>
-    <p class="lede">Use email and password now. You can connect ChatGPT as Scout's brain right after signup.</p>
+    <p class="lede">Use email and password now. You can still add Google later with the same verified email.</p>
   </div>
 
   <form method="POST" class="auth-panel">

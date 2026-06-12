@@ -60,13 +60,18 @@ Two different OpenAI integrations — do not conflate them:
   server **rejects unregistered redirect URIs** for the Codex client
   (`authorize_hydra_invalid_request` for
   https://hoggcountry.com/auth/chatgpt/callback). Only the registered
-  localhost redirect works, so every ChatGPT connect/login flow runs in
-  manual paste-back mode until the official program registers a cloud
-  redirect for us. Consequences shipped the same day: the OAuth flow
-  defaults to the localhost redirect everywhere, and the one-tap
-  "Continue with ChatGPT" login buttons are built but gated behind
-  `PUBLIC_CHATGPT_LOGIN_ENABLED=1` (flip on + set
-  `SCOUT_OPENAI_CODEX_REDIRECT_URI` when a registered redirect exists).
+  localhost redirect works, which forces manual paste-back mode for every
+  ChatGPT connect/login flow until the official program registers a cloud
+  redirect for us.
+
+  **Product decision (Chris, 2026-06-12): paste-back does not ship as a
+  customer experience.** The public front door is Google + email. The
+  consumer path to a cloud brain is the house-model subscription (zero
+  setup). ChatGPT-connect remains in the gated beta workspace only
+  (family/dev use), BYOK lives in advanced settings, and the one-tap
+  "Continue with ChatGPT" login stays built but dark behind
+  `PUBLIC_CHATGPT_LOGIN_ENABLED=1` + `SCOUT_OPENAI_CODEX_REDIRECT_URI`,
+  ready to flip on the day OpenAI registers a redirect for us.
 
   Honest risk framing: this rides OpenAI's Codex OAuth client and the
   Codex-scoped responses endpoint, which OpenAI sanctions for Codex surfaces —
