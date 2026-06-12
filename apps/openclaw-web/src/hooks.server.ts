@@ -8,6 +8,13 @@ import {
 } from '$lib/server/auth';
 
 export const handle: Handle = async ({ event, resolve }) => {
+  // Canonical host: www resolves to the apex after the Forge cutover.
+  if (event.url.hostname.startsWith('www.')) {
+    const target = new URL(event.url);
+    target.hostname = event.url.hostname.slice(4);
+    return new Response(null, { status: 301, headers: { location: target.toString() } });
+  }
+
   event.locals.authToken = readAuthToken(event.cookies);
   event.locals.authUser = await loadAuthenticatedUser(event.locals.authToken, event.fetch);
 
