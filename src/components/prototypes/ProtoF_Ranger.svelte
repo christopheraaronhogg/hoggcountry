@@ -18,13 +18,14 @@
   let heroStoryIndex = $state(0);
 
   function tileFor(video) {
-    return { video, shape: isShort(video) ? 'tall' : 'wide' };
+    // Uniform landscape tiles: mixed portrait/landscape fractions made Shorts
+    // collapse into skinny broken columns, so every secondary tile is 16:9
+    // and Shorts are identified by label instead of shape.
+    return { video, shape: 'wide' };
   }
 
   function templateFor(tiles) {
-    return tiles
-      .map((tile) => `minmax(0, ${tile.shape === 'tall' ? '0.5625fr' : '1.7778fr'})`)
-      .join(' ');
+    return tiles.map(() => 'minmax(0, 1fr)').join(' ');
   }
 
   function layoutFor(featured, mode, videosForTiles) {
@@ -284,9 +285,11 @@
     img.closest('.hero-story-media, .story-modal-media')?.classList.add('has-media-error');
   }
 
-  // This page is statically generated; keep videos live by polling the Laravel API.
+  // Videos arrive via SSR; refresh only when that payload was empty and when
+  // the tab regains focus (throttled), instead of hammering the API on a timer.
   onMount(() => {
-    let timer = null;
+    let lastVideoRefresh = 0;
+    const VIDEO_REFRESH_MIN_MS = 5 * 60 * 1000;
 
     async function refreshVideos() {
       try {
@@ -338,14 +341,28 @@
           : [];
     }
 
-    refreshVideos();
+    function refreshVideosThrottled() {
+      const now = Date.now();
+      if (now - lastVideoRefresh < VIDEO_REFRESH_MIN_MS) return;
+      lastVideoRefresh = now;
+      refreshVideos();
+    }
+
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') refreshVideosThrottled();
+    }
+
+    if (!videos.length) {
+      lastVideoRefresh = Date.now();
+      refreshVideos();
+    } else {
+      lastVideoRefresh = Date.now();
+    }
     refreshTrailUpdates();
-    timer = window.setInterval(refreshVideos, 20000);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
-      if (timer) {
-        window.clearInterval(timer);
-      }
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   });
 </script>
