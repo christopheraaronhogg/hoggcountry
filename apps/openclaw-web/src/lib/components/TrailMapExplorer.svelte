@@ -1465,26 +1465,33 @@
     box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.15);
   }
 
-  :global(.scrub-marker) {
-    display: grid;
-    place-items: center;
+  /* Leaflet's stylesheet is code-split and can load AFTER this component's
+     CSS; its `.leaflet-marker-icon { display: block }` ties a lone
+     `.scrub-marker` on specificity and killed the grid-centered dot (the
+     ::after collapsed to an inline sliver). Double up the class selector and
+     absolutely position the dot so cascade order can't break it. */
+  :global(.leaflet-marker-icon.scrub-marker) {
     background: transparent;
     border: 0;
     cursor: grab;
   }
 
-  :global(.scrub-marker::after) {
+  :global(.leaflet-marker-icon.scrub-marker::after) {
     content: '';
-    box-sizing: border-box;
+    position: absolute;
+    left: 50%;
+    top: 50%;
     width: 22px;
     height: 22px;
+    margin: -11px 0 0 -11px;
+    box-sizing: border-box;
     border: 3px solid #fff7ed;
     border-radius: 999px;
     background: #ea580c;
     box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.25), 0 4px 10px rgba(0, 0, 0, 0.35);
   }
 
-  :global(.scrub-marker:active) {
+  :global(.leaflet-marker-icon.scrub-marker:active) {
     cursor: grabbing;
   }
 
