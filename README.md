@@ -469,6 +469,18 @@ Currently deployed to Netlify. On push to `main`:
 - [x] **Offline PWA Support** - Full offline capability via service worker (2025)
 - [x] **Code-Split Tools** - 14 tools lazy-loaded for performance (2025)
 
+### Product keys (decided 2026-06-11)
+
+The three pillars everything else builds on:
+
+1. **The map** — TrailMapExplorer is the shared map surface (live Garmin, terrain/difficulty layers, tap-to-inspect)
+2. **The agent** — Scout, grounded in trail data with reliability evidence
+3. **Primary documents** — the Field Guide / Field Manual system
+
+Next systems build outward from those, starting with shared hiker systems
+like **Loadout** (pack/bag contents as a first-class object every hiker
+maintains, feeding weight, resupply, and gear-swap decisions).
+
 ### In Progress
 - [ ] **#9 AWOL 2026 Deep Dive** - Full audit comparing our guide to official AWOL 2026 data
 
