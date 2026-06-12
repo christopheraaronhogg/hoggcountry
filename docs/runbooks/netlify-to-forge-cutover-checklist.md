@@ -1,6 +1,29 @@
 # Netlify to Forge Cutover Checklist
 
-Last verified: 2026-05-18
+Last verified: 2026-06-11
+
+## Execution status (2026-06-11)
+
+Everything below is DONE except the two dashboard steps that require logins:
+
+- [x] Route parity: every public Astro surface ported to SvelteKit and verified live on the Forge domain (incl. /at-map trail explorer, /videohogg, /trail-assistant, /guide/manual-builder, /game via legacy-public fallback)
+- [x] `npm run verify:forge` passes — "problems: none"
+- [x] Security headers (CSP/frame/sniff/referrer/permissions) now applied by the SvelteKit app itself (`hooks.server.ts`), so Netlify's header config is no longer load-bearing
+- [x] `www.` requests 301 to the apex at the app layer — no Nginx config needed
+- [x] Forge auto-deploys from `main` (confirmed repeatedly tonight)
+- [ ] **Forge dashboard:** add `hoggcountry.com` and `www.hoggcountry.com` to the `hoggcountry.on-forge.com` site; note the server's public IP; issue Let's Encrypt cert for both names once DNS resolves
+- [ ] **Namecheap (DNS host — nameservers are dns1/dns2.registrar-servers.com):** in Advanced DNS for hoggcountry.com, replace the Netlify records with A records to the Forge server IP
+
+DNS rollback snapshot (current Netlify values, recorded 2026-06-11):
+
+- apex `hoggcountry.com` A → `75.2.60.5`, `99.83.231.61`
+- `www.hoggcountry.com` A → `75.2.60.5`, `99.83.231.61`
+
+Note: Netlify stopped deploying pushes from this repo sometime before 2026-06-11
+(multiple pushes produced no new deploy). The live Netlify site is frozen at a
+pre-migration build, which makes it a stable rollback target but means nothing
+new ships through Netlify. This removes the "freeze deploys" concern for the
+Netlify side of the cutover window.
 
 ## Goal
 
