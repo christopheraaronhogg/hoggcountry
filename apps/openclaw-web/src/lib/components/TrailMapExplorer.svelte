@@ -498,13 +498,14 @@
   }
 
   // Tapping near the trail inspects that mile's terrain, even where Dad
-  // hasn't hiked yet. Taps far from the corridor are treated as map panning.
+  // hasn't hiked yet. The hit area is a finger-sized 36px regardless of zoom,
+  // so taps far from the corridor still behave as plain map panning.
   function inspectFromLatLng(lat: number, lon: number) {
     const points = pack?.milepoints;
-    if (!points?.length) return;
+    if (!points?.length || !map) return;
 
     const cosLat = Math.cos((lat * Math.PI) / 180);
-    let bestMile: number | null = null;
+    let best: { mile: number; lat: number; lon: number } | null = null;
     let bestDistSq = Infinity;
 
     for (const point of points) {
@@ -513,13 +514,16 @@
       const distSq = dLat * dLat + dLon * dLon;
       if (distSq < bestDistSq) {
         bestDistSq = distSq;
-        bestMile = point.mile;
+        best = point;
       }
     }
 
-    // ~0.072 degrees ≈ 5 miles: beyond that the tap wasn't aimed at the trail.
-    if (bestMile === null || Math.sqrt(bestDistSq) > 0.072) return;
-    inspectedMile = bestMile;
+    if (!best) return;
+    const clickPoint = map.latLngToContainerPoint([lat, lon]);
+    const trailPoint = map.latLngToContainerPoint([best.lat, best.lon]);
+    const pixelDistance = Math.hypot(clickPoint.x - trailPoint.x, clickPoint.y - trailPoint.y);
+    if (pixelDistance > 36) return;
+    inspectedMile = best.mile;
   }
 
   onMount(async () => {
