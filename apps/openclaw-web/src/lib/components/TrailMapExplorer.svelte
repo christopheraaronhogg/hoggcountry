@@ -34,6 +34,8 @@
   let placeMode = $state<PlaceMode>('core');
   let selectedHistoryIndex = $state(0);
   let inspectedMile = $state<number | null>(null);
+  let scrubbing = $state(false);
+  let lastScrubUpdate = 0;
   let detailsOpen = $state(false);
   let layersOpen = $state(false);
   let lastRenderedTerrainMode: TerrainMode | null = null;
@@ -56,6 +58,15 @@
     return history[Math.max(0, Math.min(history.length - 1, selectedHistoryIndex))] ?? currentPoint;
   });
   const selectedMile = $derived.by(() => inspectedMile ?? selectedPoint?.mile ?? currentPoint?.mile ?? 0);
+  // Waypoints/terrain/elevation are on the OSM measured scale (~2106 mi);
+  // selection miles are canonical 2197.4. Convert at the lookup boundary.
+  const measuredFactor = $derived.by(() => {
+    const route = pack?.route;
+    return route && route.measuredMiles > 0 && route.displayMiles > 0
+      ? route.measuredMiles / route.displayMiles
+      : 1;
+  });
+  const selectedMileMeasured = $derived(selectedMile * measuredFactor);
   // What the orange marker and "Selected" tile represent: a tapped trail mile
   // when inspecting, otherwise the scrubbed/live Garmin point.
   const displayedSelection = $derived.by(() => {
@@ -88,16 +99,26 @@
     const staleAfterMinutes = pack?.tracker.staleAfterMinutes ?? 360;
     return Date.now() - observed <= staleAfterMinutes * 60000;
   });
-  const selectedElevation = $derived.by(() => nearestElevation(selectedMile));
-  const selectedTerrain = $derived.by(() => nearestTerrainSegment(selectedMile));
-  const selectedRockiness = $derived.by(() => nearestRockiness(selectedMile));
-  const selectedDifficulty = $derived.by(() => nearestDifficulty(selectedMile));
-  const nextShelter = $derived.by(() => nextWaypoint(pack?.waypoints.shelters ?? [], selectedMile));
-  const nextWater = $derived.by(() => nextWaypoint(pack?.waypoints.water ?? [], selectedMile));
-  const nextTown = $derived.by(() => nextWaypoint(pack?.waypoints.towns ?? [], selectedMile));
-  const nextRoad = $derived.by(() => nextWaypoint(pack?.waypoints.roads ?? [], selectedMile));
-  const elevationWindow = $derived.by(() => profileWindow(selectedMile, 18));
+  const selectedElevation = $derived.by(() => nearestElevation(selectedMileMeasured));
+  const selectedTerrain = $derived.by(() => nearestTerrainSegment(selectedMileMeasured));
+  const selectedRockiness = $derived.by(() => nearestRockiness(selectedMileMeasured));
+  const selectedDifficulty = $derived.by(() => nearestDifficulty(selectedMileMeasured));
+  const nextShelter = $derived.by(() => nextWaypoint(pack?.waypoints.shelters ?? [], selectedMileMeasured));
+  const nextWater = $derived.by(() => nextWaypoint(pack?.waypoints.water ?? [], selectedMileMeasured));
+  const nextTown = $derived.by(() => nextWaypoint(pack?.waypoints.towns ?? [], selectedMileMeasured));
+  const nextRoad = $derived.by(() => nextWaypoint(pack?.waypoints.roads ?? [], selectedMileMeasured));
+  const elevationWindow = $derived.by(() => profileWindow(selectedMileMeasured, 18 * measuredFactor));
   const profileD = $derived(profilePath(elevationWindow));
+  const profileStats = $derived.by(() => {
+    if (elevationWindow.length < 2) return null;
+    const elevations = elevationWindow.map((point) => point.elevationFt);
+    return {
+      minFt: Math.round(Math.min(...elevations)),
+      maxFt: Math.round(Math.max(...elevations)),
+      startMile: elevationWindow[0].mile / measuredFactor,
+      endMile: elevationWindow[elevationWindow.length - 1].mile / measuredFactor
+    };
+  });
   const selectedDifficultyClass = $derived(difficultyClass(selectedDifficulty?.score ?? 0));
   const scoutPrompt = $derived.by(() => {
     const mile = Number.isFinite(selectedMile) ? selectedMile.toFixed(1) : 'the current trail location';
@@ -207,8 +228,8 @@
   }
 
   function distanceAhead(point: TrailMapWaypoint | null): string {
-    if (!point || !Number.isFinite(selectedMile)) return '--';
-    return `${Math.max(0, point.mile - selectedMile).toFixed(1)} mi`;
+    if (!point || !Number.isFinite(selectedMileMeasured)) return '--';
+    return `${Math.max(0, (point.mile - selectedMileMeasured) / measuredFactor).toFixed(1)} mi`;
   }
 
   function profileWindow(mile: number, radiusMiles: number): TrailMapElevationPoint[] {
@@ -383,6 +404,7 @@
   }
 
   function addTrackerLayer(recenter = false) {
+    if (scrubbing) return;
     clearLayer(trackerLayer);
     if (!pack || !L || !trackerLayer) return;
     const path = history.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon));
@@ -422,13 +444,18 @@
       const selectionLabel = inspectedMile !== null
         ? 'Inspecting trail mile'
         : `Selected point<br/>${timeLabel(displayedSelection.observedAt)}`;
-      selectedMarker = L.circleMarker([displayedSelection.lat, displayedSelection.lon], {
-        radius: 9,
-        color: '#fff7ed',
-        fillColor: '#ea580c',
-        fillOpacity: 0.96,
-        weight: 3
+      selectedMarker = L.marker([displayedSelection.lat, displayedSelection.lon], {
+        draggable: true,
+        zIndexOffset: 900,
+        icon: L.divIcon({ className: 'scrub-marker', iconSize: [22, 22], iconAnchor: [11, 11] }),
+        title: 'Drag along the trail to scout any mile'
       }).bindPopup(`<b>Mile ${fmt(displayedSelection.mile, 1)}</b><br/>${selectionLabel}`).addTo(trackerLayer);
+
+      selectedMarker.on('dragstart', () => {
+        scrubbing = true;
+      });
+      selectedMarker.on('drag', handleScrubDrag);
+      selectedMarker.on('dragend', handleScrubEnd);
 
       if (recenter) {
         map.setView([displayedSelection.lat, displayedSelection.lon], Math.max(map.getZoom(), 11), {
@@ -437,6 +464,47 @@
         });
       }
     }
+  }
+
+  function nearestMilepointTo(lat: number, lon: number): { mile: number; lat: number; lon: number } | null {
+    const points = pack?.milepoints;
+    if (!points?.length) return null;
+
+    const cosLat = Math.cos((lat * Math.PI) / 180);
+    let best: { mile: number; lat: number; lon: number } | null = null;
+    let bestDistSq = Infinity;
+
+    for (const point of points) {
+      const dLat = point.lat - lat;
+      const dLon = (point.lon - lon) * cosLat;
+      const distSq = dLat * dLat + dLon * dLon;
+      if (distSq < bestDistSq) {
+        bestDistSq = distSq;
+        best = point;
+      }
+    }
+
+    return best;
+  }
+
+  function handleScrubDrag(event: { target: { getLatLng: () => { lat: number; lng: number } } }) {
+    const now = Date.now();
+    if (now - lastScrubUpdate < 90) return;
+    lastScrubUpdate = now;
+
+    const position = event.target.getLatLng();
+    const nearest = nearestMilepointTo(position.lat, position.lng);
+    if (nearest) inspectedMile = nearest.mile;
+  }
+
+  function handleScrubEnd(event: { target: { getLatLng: () => { lat: number; lng: number }; setLatLng: (latlng: [number, number]) => void } }) {
+    const position = event.target.getLatLng();
+    const nearest = nearestMilepointTo(position.lat, position.lng);
+    if (nearest) {
+      inspectedMile = nearest.mile;
+      event.target.setLatLng([nearest.lat, nearest.lon]);
+    }
+    scrubbing = false;
   }
 
   function fitInitialView() {
@@ -777,7 +845,7 @@
               <span>Selected</span>
             </div>
             <strong>mi {fmt(selectedMile, 1)}</strong>
-            <small>{inspectedMile !== null ? 'Tapped on map' : selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
+            <small>{inspectedMile !== null ? 'Scouted on the map' : selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
           </div>
           <div class={`metric difficulty ${selectedDifficultyClass}`}>
             <div class="metric-head">
@@ -837,13 +905,26 @@
         {/if}
 
         <div class="profile-row">
+          {#if profileStats}
+            <div class="profile-y-labels" aria-hidden="true">
+              <span>{profileStats.maxFt.toLocaleString()} ft</span>
+              <span>{profileStats.minFt.toLocaleString()} ft</span>
+            </div>
+          {/if}
           <svg viewBox="0 0 340 92" role="img" aria-label="Elevation profile around selected mile">
             {#if profileD}
               <path class="profile-fill" d={`${profileD} L340 92 L0 92 Z`}></path>
               <path class="profile-line" d={profileD}></path>
-              <line class="profile-cursor" x1={profileMarkerX(elevationWindow, selectedMile)} x2={profileMarkerX(elevationWindow, selectedMile)} y1="0" y2="92"></line>
+              <line class="profile-cursor" x1={profileMarkerX(elevationWindow, selectedMileMeasured)} x2={profileMarkerX(elevationWindow, selectedMileMeasured)} y1="0" y2="92"></line>
             {/if}
           </svg>
+          {#if profileStats}
+            <div class="profile-x-labels">
+              <span>mi {fmt(profileStats.startMile, 0)}</span>
+              <span class="profile-cursor-label">mi {fmt(selectedMile, 1)} · {selectedElevation ? `${fmt(selectedElevation.elevationFt)} ft` : '--'}</span>
+              <span>mi {fmt(profileStats.endMile, 0)}</span>
+            </div>
+          {/if}
         </div>
 
         <div class="next-grid">
@@ -1081,6 +1162,54 @@
   .signal-dot.live {
     background: #22c55e;
     box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.15);
+  }
+
+  :global(.scrub-marker) {
+    box-sizing: border-box;
+    border: 3px solid #fff7ed;
+    border-radius: 999px;
+    background: #ea580c;
+    box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.25), 0 4px 10px rgba(0, 0, 0, 0.35);
+    cursor: grab;
+  }
+
+  :global(.scrub-marker:active) {
+    cursor: grabbing;
+  }
+
+  .profile-row {
+    position: relative;
+  }
+
+  .profile-y-labels {
+    position: absolute;
+    top: 0.2rem;
+    bottom: 1.6rem;
+    left: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: rgba(255, 253, 248, 0.55);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+
+  .profile-x-labels {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    color: rgba(255, 253, 248, 0.55);
+    font-size: 0.64rem;
+    font-weight: 800;
+  }
+
+  .profile-cursor-label {
+    color: #fdba74;
+    font-size: 0.7rem;
   }
 
   .signal-dot.stale {
