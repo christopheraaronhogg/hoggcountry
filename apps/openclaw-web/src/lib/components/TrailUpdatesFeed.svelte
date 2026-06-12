@@ -205,9 +205,7 @@
   }
 
   .updates-grid {
-    display: grid;
-    align-items: start;
-    gap: 1rem;
+    column-gap: 1rem;
   }
 
   .update-card {
@@ -216,6 +214,8 @@
     border-radius: 28px;
     background: rgba(255, 255, 255, 0.86);
     box-shadow: 0 22px 50px rgba(60, 44, 25, 0.08);
+    break-inside: avoid;
+    margin-bottom: 1rem;
   }
 
   .update-media {
@@ -273,7 +273,13 @@
 
   @media (min-width: 760px) {
     .updates-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      columns: 2;
+    }
+  }
+
+  @media (min-width: 1080px) {
+    .updates-grid {
+      columns: 3;
     }
   }
 </style>
