@@ -65,10 +65,18 @@ export const DEFAULT_TRACK_POINT = {
 
 const TRAIL_UPDATES_CACHE_MS = 60 * 1000;
 const TRACK_CACHE_MS = 60 * 1000;
+const VIDEOS_CACHE_MS = 5 * 60 * 1000;
 let cachedTrailUpdates: { readonly items: DadTrailUpdateSummary[]; readonly ts: number } | null = null;
 let cachedTrack: { readonly track: GarminFeatureCollection; readonly ts: number } | null = null;
+let cachedVideos: { readonly items: YtVideo[]; readonly ts: number } | null = null;
 
 export async function loadDadVideos(limit = 8): Promise<YtVideo[]> {
+  // Two live YouTube RSS fetches per call made homepage TTFB ride YouTube's
+  // latency; cache the merged list like the track and trail-update loaders.
+  if (cachedVideos && Date.now() - cachedVideos.ts < VIDEOS_CACHE_MS) {
+    return cachedVideos.items.slice(0, limit);
+  }
+
   const [uploads, shorts] = await Promise.all([
     fetchYouTubeRSS(YT_UPLOADS_FEED_URL).catch(() => []),
     fetchYouTubeRSS(YT_SHORTS_FEED_URL).catch(() => [])
@@ -85,9 +93,16 @@ export async function loadDadVideos(limit = 8): Promise<YtVideo[]> {
     }
   }
 
-  return Array.from(merged.values())
-    .sort((a, b) => String(b.published || '').localeCompare(String(a.published || '')))
-    .slice(0, limit);
+  const items = Array.from(merged.values())
+    .sort((a, b) => String(b.published || '').localeCompare(String(a.published || '')));
+
+  // Only cache a non-empty result so a transient YouTube failure does not
+  // pin an empty homepage for the full TTL.
+  if (items.length > 0) {
+    cachedVideos = { items, ts: Date.now() };
+  }
+
+  return items.slice(0, limit);
 }
 
 function previewTrack(): GarminFeatureCollection {
