@@ -1,13 +1,15 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import 'leaflet/dist/leaflet.css';
+  // Relative import (not $lib) so the legacy Astro site can mount this
+  // component cross-tree until the Forge cutover retires that build.
   import type {
     LatLon,
     TrailMapElevationPoint,
     TrailMapPack,
     TrailMapPoint,
     TrailMapWaypoint
-  } from '$lib/map-pack-types';
+  } from '../map-pack-types';
 
   type TerrainMode = 'grade' | 'rockiness' | 'difficulty';
   type PlaceMode = 'core' | 'access' | 'camp' | 'view';
@@ -31,6 +33,7 @@
   let terrainMode = $state<TerrainMode>('difficulty');
   let placeMode = $state<PlaceMode>('core');
   let selectedHistoryIndex = $state(0);
+  let inspectedMile = $state<number | null>(null);
   let detailsOpen = $state(false);
   let layersOpen = $state(false);
   let lastRenderedTerrainMode: TerrainMode | null = null;
@@ -52,7 +55,39 @@
     if (!history.length) return currentPoint;
     return history[Math.max(0, Math.min(history.length - 1, selectedHistoryIndex))] ?? currentPoint;
   });
-  const selectedMile = $derived.by(() => selectedPoint?.mile ?? currentPoint?.mile ?? 0);
+  const selectedMile = $derived.by(() => inspectedMile ?? selectedPoint?.mile ?? currentPoint?.mile ?? 0);
+  // What the orange marker and "Selected" tile represent: a tapped trail mile
+  // when inspecting, otherwise the scrubbed/live Garmin point.
+  const displayedSelection = $derived.by(() => {
+    if (inspectedMile !== null) {
+      const coord = coordForMile(inspectedMile);
+      if (coord) return { lat: coord[0], lon: coord[1], mile: inspectedMile, observedAt: null as string | null };
+    }
+    if (!selectedPoint) return null;
+    return {
+      lat: selectedPoint.lat,
+      lon: selectedPoint.lon,
+      mile: selectedPoint.mile,
+      observedAt: selectedPoint.observedAt as string | null
+    };
+  });
+  const totalMiles = $derived.by(() => {
+    const points = pack?.milepoints;
+    return points?.length ? points[points.length - 1].mile : null;
+  });
+  const progressLine = $derived.by(() => {
+    if (!currentPoint || !totalMiles) return '';
+    const pct = clamp((currentPoint.mile / totalMiles) * 100, 0, 100);
+    const remaining = Math.max(0, totalMiles - currentPoint.mile);
+    return `${pct.toFixed(0)}% of ${Math.round(totalMiles).toLocaleString()} mi · ${Math.round(remaining).toLocaleString()} mi to Katahdin`;
+  });
+  const signalIsLive = $derived.by(() => {
+    if (!currentPoint?.observedAt) return false;
+    const observed = new Date(currentPoint.observedAt).getTime();
+    if (Number.isNaN(observed)) return false;
+    const staleAfterMinutes = pack?.tracker.staleAfterMinutes ?? 360;
+    return Date.now() - observed <= staleAfterMinutes * 60000;
+  });
   const selectedElevation = $derived.by(() => nearestElevation(selectedMile));
   const selectedTerrain = $derived.by(() => nearestTerrainSegment(selectedMile));
   const selectedRockiness = $derived.by(() => nearestRockiness(selectedMile));
@@ -374,17 +409,20 @@
       }).bindPopup(`<b>HoggCountry</b><br/>Mile ${fmt(currentPoint.mile, 1)}<br/>${timeLabel(currentPoint.observedAt)}`).addTo(trackerLayer);
     }
 
-    if (selectedPoint) {
-      selectedMarker = L.circleMarker([selectedPoint.lat, selectedPoint.lon], {
+    if (displayedSelection) {
+      const selectionLabel = inspectedMile !== null
+        ? 'Inspecting trail mile'
+        : `Selected point<br/>${timeLabel(displayedSelection.observedAt)}`;
+      selectedMarker = L.circleMarker([displayedSelection.lat, displayedSelection.lon], {
         radius: 9,
         color: '#fff7ed',
         fillColor: '#ea580c',
         fillOpacity: 0.96,
         weight: 3
-      }).bindPopup(`<b>Selected point</b><br/>Mile ${fmt(selectedPoint.mile, 1)}<br/>${timeLabel(selectedPoint.observedAt)}`).addTo(trackerLayer);
+      }).bindPopup(`<b>Mile ${fmt(displayedSelection.mile, 1)}</b><br/>${selectionLabel}`).addTo(trackerLayer);
 
       if (recenter) {
-        map.setView([selectedPoint.lat, selectedPoint.lon], Math.max(map.getZoom(), 11), {
+        map.setView([displayedSelection.lat, displayedSelection.lon], Math.max(map.getZoom(), 11), {
           animate: true,
           duration: 0.28
         });
@@ -439,11 +477,49 @@
   }
 
   function recenterOnSelected() {
-    if (!selectedPoint || !map) return;
-    map.setView([selectedPoint.lat, selectedPoint.lon], Math.max(map.getZoom(), 12), {
+    if (!displayedSelection || !map) return;
+    map.setView([displayedSelection.lat, displayedSelection.lon], Math.max(map.getZoom(), 12), {
       animate: true,
       duration: 0.25
     });
+  }
+
+  function clearInspect() {
+    inspectedMile = null;
+    recenterOnLive();
+  }
+
+  function recenterOnLive() {
+    if (!currentPoint || !map) return;
+    map.setView([currentPoint.lat, currentPoint.lon], Math.max(map.getZoom(), 11), {
+      animate: true,
+      duration: 0.25
+    });
+  }
+
+  // Tapping near the trail inspects that mile's terrain, even where Dad
+  // hasn't hiked yet. Taps far from the corridor are treated as map panning.
+  function inspectFromLatLng(lat: number, lon: number) {
+    const points = pack?.milepoints;
+    if (!points?.length) return;
+
+    const cosLat = Math.cos((lat * Math.PI) / 180);
+    let bestMile: number | null = null;
+    let bestDistSq = Infinity;
+
+    for (const point of points) {
+      const dLat = point.lat - lat;
+      const dLon = (point.lon - lon) * cosLat;
+      const distSq = dLat * dLat + dLon * dLon;
+      if (distSq < bestDistSq) {
+        bestDistSq = distSq;
+        bestMile = point.mile;
+      }
+    }
+
+    // ~0.072 degrees ≈ 5 miles: beyond that the tap wasn't aimed at the trail.
+    if (bestMile === null || Math.sqrt(bestDistSq) > 0.072) return;
+    inspectedMile = bestMile;
   }
 
   onMount(async () => {
@@ -463,6 +539,10 @@
     }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    map.on('click', (event: { latlng: { lat: number; lng: number } }) => {
+      inspectFromLatLng(event.latlng.lat, event.latlng.lng);
+    });
     routeLayer = layerGroup();
     terrainLayer = layerGroup();
     placesLayer = layerGroup();
@@ -586,13 +666,22 @@
       <div>
         <p class="eyebrow">{title}</p>
         <h1>{currentPoint ? `Mile ${fmt(currentPoint.mile, 1)}` : 'Loading trail signal'}</h1>
+        {#if progressLine}
+          <p class="progress-line">{progressLine}</p>
+        {/if}
       </div>
     </div>
 
     <div class="hud-actions">
       <div class="signal">
-        <span class="signal-dot" class:live={Boolean(currentPoint)}></span>
-        <span>{currentPoint ? timeLabel(currentPoint.observedAt) : loading ? 'Loading' : 'No signal'}</span>
+        <span class="signal-dot" class:live={signalIsLive} class:stale={Boolean(currentPoint) && !signalIsLive}></span>
+        <span>
+          {#if currentPoint}
+            {signalIsLive ? timeLabel(currentPoint.observedAt) : `Last seen ${timeLabel(currentPoint.observedAt)}`}
+          {:else}
+            {loading ? 'Loading' : 'No signal'}
+          {/if}
+        </span>
       </div>
       <button class="layers-toggle" type="button" aria-expanded={layersOpen} aria-controls="map-layer-panel" onclick={() => (layersOpen = !layersOpen)}>
         <svg class="control-icon" aria-hidden="true"><use href="#trail-map-icon-layers"></use></svg>
@@ -653,6 +742,13 @@
     </aside>
   {/if}
 
+  {#if inspectedMile !== null}
+    <button class="map-hud inspect-chip" type="button" onclick={clearInspect}>
+      <span>Inspecting mi {fmt(inspectedMile, 1)}</span>
+      <strong>Back to live</strong>
+    </button>
+  {/if}
+
   <section class="map-hud detail-panel" class:expanded={detailsOpen} aria-label="Trail detail" style:--difficulty-accent={colorForDifficulty(selectedDifficulty?.score ?? 0)}>
     <button class="sheet-handle" type="button" aria-expanded={detailsOpen} aria-label={detailsOpen ? 'Collapse trail details' : 'Expand trail details'} onclick={() => (detailsOpen = !detailsOpen)}>
       <span></span>
@@ -668,7 +764,7 @@
               <span>Selected</span>
             </div>
             <strong>mi {fmt(selectedMile, 1)}</strong>
-            <small>{selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
+            <small>{inspectedMile !== null ? 'Tapped on map' : selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
           </div>
           <div class={`metric difficulty ${selectedDifficultyClass}`}>
             <div class="metric-head">
@@ -972,6 +1068,49 @@
   .signal-dot.live {
     background: #22c55e;
     box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.15);
+  }
+
+  .signal-dot.stale {
+    background: #d97706;
+    box-shadow: 0 0 0 7px rgba(217, 119, 6, 0.14);
+  }
+
+  .progress-line {
+    margin: 0.22rem 0 0;
+    overflow: hidden;
+    color: rgba(255, 253, 248, 0.66);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .inspect-chip {
+    top: calc(max(0.75rem, env(safe-area-inset-top)) + 5.4rem);
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0.8rem;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    color: #fffdf8;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .inspect-chip span {
+    color: rgba(255, 253, 248, 0.78);
+  }
+
+  .inspect-chip strong {
+    color: #d9f99d;
+    font-family: Oswald, Impact, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .layers-toggle {

@@ -1,13 +1,24 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import AtMapIsland from "../components/AtMap.svelte";
+// Scout's trail map explorer (shared with apps/openclaw-web) replaces the
+// legacy AtMap HUD so both sites show the same map until the Forge cutover.
+import TrailMapExplorer from "../../apps/openclaw-web/src/lib/components/TrailMapExplorer.svelte";
+
+// The map pack API lives on the Forge host; CSP connect-src and the
+// endpoint's CORS headers both allow this cross-origin fetch.
+const MAP_PACK_ENDPOINT = "https://hoggcountry.on-forge.com/track/map-pack";
 ---
 
 <BaseLayout
   title="Appalachian Trail Map"
-  description="Interactive map of the Appalachian Trail (OSM-derived)."
+  description="A live Appalachian Trail map with Garmin history, elevation, difficulty, rockiness, water, shelters, roads, and resupply context."
 >
-  <AtMapIsland client:only="svelte" />
+  <TrailMapExplorer
+    client:only="svelte"
+    endpoint={MAP_PACK_ENDPOINT}
+    title="AT Map"
+    publicRoute
+  />
 </BaseLayout>
 
 <style>
