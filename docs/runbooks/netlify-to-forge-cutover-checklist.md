@@ -1,21 +1,25 @@
 # Netlify to Forge Cutover Checklist
 
-Last verified: 2026-06-11
+Last verified: 2026-06-12
 
-## Execution status (2026-06-11)
+## Execution status (2026-06-12)
 
-Everything below is DONE except the two dashboard steps that require logins:
+The live cutover is complete:
 
 - [x] Route parity: every public Astro surface ported to SvelteKit and verified live on the Forge domain (incl. /at-map trail explorer, /videohogg, /trail-assistant, /guide/manual-builder, /game via legacy-public fallback)
 - [x] `npm run verify:forge` passes — "problems: none"
 - [x] Security headers (CSP/frame/sniff/referrer/permissions) now applied by the SvelteKit app itself (`hooks.server.ts`), so Netlify's header config is no longer load-bearing
 - [x] `www.` requests 301 to the apex at the app layer — no Nginx config needed
-- [x] Forge auto-deploys from `main` (confirmed repeatedly tonight)
-- [ ] **Forge dashboard:** add `hoggcountry.com` and `www.hoggcountry.com` to the `hoggcountry.on-forge.com` site; note the server's public IP; issue Let's Encrypt cert for both names once DNS resolves
-- [ ] **Namecheap (DNS host — nameservers are dns1/dns2.registrar-servers.com):** in Advanced DNS for hoggcountry.com, replace the Netlify records with A records to the Forge server IP
+- [x] Forge auto-deploys from `main`
+- [x] **Forge dashboard:** `hoggcountry.com` and `www.hoggcountry.com` added to `hoggcountry.on-forge.com`
+- [x] **Forge SSL:** Let's Encrypt certificate active for apex + www
+- [x] **Namecheap DNS host:** authoritative nameservers are `dns1.registrar-servers.com` and `dns2.registrar-servers.com`
+- [x] **Current DNS:** `@` A record points to Forge `129.212.138.246`; `www` CNAME points to `hoggcountry.com`
+- [x] **Current live domain:** `https://hoggcountry.com/` serves SvelteKit through Forge; `https://www.hoggcountry.com/` redirects to apex
 
-DNS rollback snapshot (current Netlify values, recorded 2026-06-11):
+DNS rollback snapshot (previous Netlify values, recorded 2026-06-11 before cutover):
 
+- Namecheap previously had ALIAS records for `@` and `www` to `apex-loadbalancer.netlify.com.`
 - apex `hoggcountry.com` A → `75.2.60.5`, `99.83.231.61`
 - `www.hoggcountry.com` A → `75.2.60.5`, `99.83.231.61`
 
@@ -27,14 +31,14 @@ Netlify side of the cutover window.
 
 ## Goal
 
-Move the public Hogg Country site from Netlify to Forge only after the Forge-hosted SvelteKit frontend is proven stable on the Forge domain.
+Move the public Hogg Country site from Netlify to Forge only after the Forge-hosted SvelteKit frontend is proven stable on the Forge domain. This move was completed on 2026-06-12.
 
 This checklist assumes:
 
 - `https://hoggcountry.on-forge.com` is already serving the public frontend through Laravel plus the localhost Node bridge
 - the Node app is managed by PM2
 - the backend API remains on the same Forge host
-- `hoggcountry.com` remains on Netlify until Chris explicitly approves the final domain move
+- `hoggcountry.com` now points at Forge; Netlify is rollback-only
 
 ## Do not cut over until these are true
 
@@ -97,7 +101,7 @@ pm2 show hoggcountry-scout
 6. Validate the real domain after propagation.
 
 ```bash
-npm run verify:forge --base-url https://hoggcountry.com
+npm run verify:forge -- --base-url https://hoggcountry.com --sha=$(git rev-parse HEAD)
 ```
 
 7. Manually smoke-check the real domain:

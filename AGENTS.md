@@ -2,23 +2,22 @@
 
 Working notes for AI agents in this repository.
 
-## ⚡ ACTIVE HANDOFF — Netlify → Forge cutover (2026-06-11)
+## Active Status — Netlify → Forge cutover completed (2026-06-12)
 
-**All repo-side work is complete and pushed to `main`.** The remaining steps are
-dashboard-only (Forge + Namecheap) and are being executed via the web:
+`hoggcountry.com` now serves from Forge. Netlify is no longer the production
+host for the public domain.
 
 1. Read `docs/runbooks/netlify-to-forge-cutover-checklist.md` — the
-   **"Execution status (2026-06-11)"** section lists exactly what is done,
-   the two outstanding dashboard steps, and the DNS rollback snapshot.
+   **"Execution status (2026-06-12)"** section lists the DNS records, SSL
+   status, and rollback snapshot.
 2. Forge auto-deploys this repo's `main` (Laravel API + pm2 `hoggcountry-scout`
    SvelteKit node app behind a Laravel proxy). Deploys cause a ~5s 503 blip
    while pm2 reloads.
 3. Netlify no longer deploys from this repo (builds stopped before 2026-06-11);
-   the live hoggcountry.com is a frozen pre-migration build = the rollback target.
-4. The SvelteKit app already handles security headers and the www→apex
-   redirect itself, so no Nginx header/redirect config is needed beyond
-   adding the domains and SSL.
-5. After cutover, verify with `npm run verify:forge -- --base-url https://hoggcountry.com`
+   the frozen pre-migration Netlify build is now only a rollback target.
+4. The SvelteKit app handles security headers and the www→apex redirect itself.
+5. After each production push, verify with
+   `npm run verify:forge -- --base-url https://hoggcountry.com --sha=$(git rev-parse HEAD)`
    and the smoke list in the checklist.
 
 Everything below this line predates the SvelteKit migration: the Astro routes it

@@ -15,14 +15,15 @@ Hogg Country is an Appalachian Trail platform built around Dad's Feb 2026 NOBO t
 
 Shared packages live in `packages/` (brand, corpus, manual-core, scout-skills, scout-sources, trail-data). Eval/build tooling lives in `scripts/` (51 scripts).
 
-**Direction (decided 2026-06): SvelteKit rules the whole site.** New public-surface work goes in `apps/openclaw-web`, not the Astro tree. The Astro app stays buildable only until the Netlify→Forge cutover completes (see `docs/runbooks/netlify-to-forge-cutover-checklist.md`).
+**Direction (decided 2026-06): SvelteKit rules the whole site.** New public-surface work goes in `apps/openclaw-web`, not the Astro tree. The Astro app stays buildable as rollback/archive material after the Netlify→Forge cutover (see `docs/runbooks/netlify-to-forge-cutover-checklist.md`).
 
 ## Deployment Reality
 
-- `hoggcountry.com` — currently Netlify serving the **Astro** build (`dist/`). Stays live until DNS cutover.
-- `hoggcountry.on-forge.com` — Forge box: Laravel serves `/api/*` and proxies everything else to the SvelteKit node app (`pm2` app `hoggcountry-scout`, port 3000). This is the cutover target for hoggcountry.com.
-- Forge deploys on push to `main`. Netlify also deploys on push to `main`. **Every push to main hits production twice.**
-- Post-deploy proof beats local proof: `npm run verify:forge` and check `https://hoggcountry.on-forge.com/api/v1/health`.
+- `hoggcountry.com` — production, served from Forge.
+- `www.hoggcountry.com` — redirects to the apex domain.
+- `hoggcountry.on-forge.com` — Forge validation domain. Laravel serves `/api/*` and proxies everything else to the SvelteKit node app (`pm2` app `hoggcountry-scout`, port 3000).
+- Forge deploys on push to `main`. Netlify is no longer the production deploy path for this repo.
+- Post-deploy proof beats local proof: `npm run verify:forge -- --base-url https://hoggcountry.com --sha=$(git rev-parse HEAD)` and check `https://hoggcountry.com/api/v1/health`.
 
 ## Development Commands
 
@@ -77,7 +78,7 @@ Both the Astro guide routes and the SvelteKit guide routes read this same genera
 
 - Always commit and push to `main` immediately after a successful change.
 - Do not wait for permission. We can always revert.
-- Remember both Netlify and Forge deploy from `main` — keep both builds green (`npm run build` covers the Astro/Netlify path; the scout-web node build covers Forge).
+- Forge deploys from `main`; keep the Scout node build green for production and keep the legacy Astro build green until the rollback/archive cleanup is intentionally done.
 
 ## Interrupt Handling
 

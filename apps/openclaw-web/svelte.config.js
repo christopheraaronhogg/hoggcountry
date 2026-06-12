@@ -19,6 +19,9 @@ const config = {
           }
         : undefined
     ),
+    paths: {
+      relative: false
+    },
     alias: {
       $lib: './src/lib',
       $components: './src/lib/components'

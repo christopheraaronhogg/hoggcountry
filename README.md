@@ -9,7 +9,7 @@ Built for a February 2026 Appalachian Trail NOBO thru-hike, this site serves as 
 This monorepo carries four distinct app layers:
 
 - `apps/openclaw-web` - **the SvelteKit site (primary)**: all public routes (timeline, guide, tools, maps, weather, trail hub, VideoHogg, trail-assistant) plus the gated hiker workspace. SvelteKit rules the whole site going forward and is the base for the planned SvelteKit + Capacitor mobile app.
-- `apps/public` - the legacy Astro build (root `src/`), still what Netlify serves at `hoggcountry.com` until the Forge cutover completes (`docs/runbooks/netlify-to-forge-cutover-checklist.md`). No new public-surface work goes here.
+- `apps/public` - the legacy Astro build (root `src/`), kept buildable as rollback/archive material after the Forge cutover. No new public-surface work goes here.
 - `apps/workspace` - the earlier workspace prototype, kept for reference
 - `backend/` - the Laravel operational backend and Trail Assistant APIs (Forge)
 
@@ -37,7 +37,7 @@ The new frontend preserves the Hogg Country visual language while shifting the p
    - `/app/scout`
    - `/app/claw` remains a compatibility route
 
-The Scout app currently lives in the legacy `apps/openclaw-web/` directory and is intended for `app.hoggcountry.com`.
+The Scout app currently lives in the legacy `apps/openclaw-web/` directory and serves the primary public site on `hoggcountry.com`.
 
 ## Vision
 
@@ -434,10 +434,10 @@ Before committing:
 
 ## Deployment
 
-Currently deployed to Netlify. On push to `main`:
-1. Netlify triggers build
-2. `npm run build` runs full pipeline
-3. Static files served from CDN
+Currently deployed to Forge. On push to `main`:
+1. Forge pulls and builds the Laravel backend plus Scout SvelteKit node app
+2. The SvelteKit node app runs under PM2 as `hoggcountry-scout`
+3. Laravel proxies public routes to the local SvelteKit app and serves `/api/*`
 4. Service worker updates on next visit
 
 **Important**: After deploy, users should hard-refresh (Cmd+Shift+R) to get new service worker.
