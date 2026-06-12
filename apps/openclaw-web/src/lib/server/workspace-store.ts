@@ -34,6 +34,7 @@ import {
   type ScoutSkillSettings
 } from '@hoggcountry/scout-skills';
 import type { BetaProfileCookie } from '$lib/beta';
+import { LOADOUT_CATEGORIES, LOADOUT_LIMITS, sanitizeLoadoutLink, type LoadoutCategory, type LoadoutItemInput } from '$lib/loadout';
 import { OPENAI_CODEX_LOCAL_REDIRECT_URI } from '$lib/server/claw-openai-codex';
 
 const MAX_STORED_CLAW_MESSAGES = 200;
@@ -108,6 +109,20 @@ export interface WorkspaceLocationFix {
   readonly profileUpdated: boolean;
 }
 
+export interface WorkspaceLoadoutItem {
+  readonly id: string;
+  readonly name: string;
+  readonly category: LoadoutCategory;
+  readonly weightOz: number;
+  readonly quantity: number;
+  readonly worn: boolean;
+  readonly consumable: boolean;
+  readonly notes: string;
+  readonly link: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
 export interface WorkspaceEncryptedSecret {
   readonly version: 1;
   readonly algorithm: 'aes-256-gcm';
@@ -136,6 +151,7 @@ export interface WorkspaceSnapshot {
   readonly clawMessages: WorkspaceClawMessage[];
   readonly factCandidates: WorkspaceFactCandidate[];
   readonly locationHistory: WorkspaceLocationFix[];
+  readonly loadout: WorkspaceLoadoutItem[];
   readonly skillSettings: ScoutSkillSettings;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -365,6 +381,62 @@ function normalizeLocationHistory(input: unknown): WorkspaceLocationFix[] {
     .filter((fix): fix is WorkspaceLocationFix => fix !== null)
     .sort((left, right) => left.recordedAt.localeCompare(right.recordedAt))
     .slice(-120);
+}
+
+const LOADOUT_CATEGORY_IDS = new Set<string>(LOADOUT_CATEGORIES.map((category) => category.id));
+const LOADOUT_CATEGORY_ORDER = new Map<string, number>(LOADOUT_CATEGORIES.map((category, index) => [category.id, index]));
+
+function normalizeLoadoutCategory(value: unknown): LoadoutCategory {
+  return typeof value === 'string' && LOADOUT_CATEGORY_IDS.has(value) ? value as LoadoutCategory : 'other';
+}
+
+function normalizeLoadoutWeightOz(value: unknown): number {
+  const numeric = finiteNumber(value);
+  return numeric !== null && numeric >= 0 ? Math.min(numeric, LOADOUT_LIMITS.maxWeightOz) : 0;
+}
+
+function normalizeLoadoutQuantity(value: unknown): number {
+  const numeric = finiteNumber(value);
+  return numeric !== null && numeric >= 1 ? Math.min(Math.floor(numeric), LOADOUT_LIMITS.maxQuantity) : 1;
+}
+
+function sortLoadout(items: WorkspaceLoadoutItem[]): WorkspaceLoadoutItem[] {
+  return [...items].sort((left, right) =>
+    (LOADOUT_CATEGORY_ORDER.get(left.category) ?? Number.MAX_SAFE_INTEGER)
+      - (LOADOUT_CATEGORY_ORDER.get(right.category) ?? Number.MAX_SAFE_INTEGER)
+    || left.name.localeCompare(right.name)
+  );
+}
+
+function normalizeLoadout(input: unknown): WorkspaceLoadoutItem[] {
+  if (!Array.isArray(input)) return [];
+
+  return sortLoadout(
+    input
+      .filter(isObject)
+      .map((item) => {
+        const name = typeof item.name === 'string' ? item.name.trim().slice(0, LOADOUT_LIMITS.maxNameChars) : '';
+        if (!name) return null;
+
+        const createdAt = typeof item.createdAt === 'string' && item.createdAt ? item.createdAt : nowIso();
+
+        return {
+          id: typeof item.id === 'string' && item.id ? item.id : createId('loadout'),
+          name,
+          category: normalizeLoadoutCategory(item.category),
+          weightOz: normalizeLoadoutWeightOz(item.weightOz),
+          quantity: normalizeLoadoutQuantity(item.quantity),
+          worn: Boolean(item.worn),
+          consumable: Boolean(item.consumable),
+          notes: typeof item.notes === 'string' ? item.notes.trim().slice(0, LOADOUT_LIMITS.maxNotesChars) : '',
+          link: sanitizeLoadoutLink(item.link),
+          createdAt,
+          updatedAt: typeof item.updatedAt === 'string' && item.updatedAt ? item.updatedAt : createdAt
+        };
+      })
+      .filter((item): item is WorkspaceLoadoutItem => item !== null)
+      .slice(0, LOADOUT_LIMITS.maxItems)
+  );
 }
 
 const DOCUMENT_STATUSES = ['draft', 'needs-review', 'active', 'archived'] as const satisfies readonly ImportedDocumentStatus[];
@@ -657,6 +729,7 @@ function sanitizeRecord(record: WorkspaceRecord): WorkspaceSnapshot {
     clawMessages: record.clawMessages,
     factCandidates: record.factCandidates,
     locationHistory: record.locationHistory,
+    loadout: record.loadout,
     skillSettings: record.skillSettings,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
@@ -679,6 +752,7 @@ function baseRecord(workspaceId: string, betaProfile: BetaProfileCookie): Worksp
     clawMessages: [],
     factCandidates: [],
     locationHistory: [],
+    loadout: [],
     skillSettings: defaultScoutSkillSettings(timestamp),
     openAICodexCredentials: null,
     pendingOpenAICodexAuth: null,
@@ -713,6 +787,7 @@ function normalizeRecord(raw: unknown, workspaceId: string, betaProfile: BetaPro
     clawMessages: normalizeClawMessages(raw.clawMessages),
     factCandidates: normalizeFactCandidates(raw.factCandidates),
     locationHistory: normalizeLocationHistory(raw.locationHistory),
+    loadout: normalizeLoadout(raw.loadout),
     skillSettings: normalizeScoutSkillSettings(raw.skillSettings, updatedAt),
     openAICodexCredentials: normalizeEncryptedSecret(raw.openAICodexCredentials),
     pendingOpenAICodexAuth: normalizePendingOpenAICodexAuth(raw.pendingOpenAICodexAuth),
@@ -1730,6 +1805,116 @@ export async function deleteWorkspaceTool(
     await persist({
       ...record,
       tools: record.tools.filter((tool) => tool.id !== toolId)
+    })
+  );
+}
+
+function loadoutItemFromInput(input: LoadoutItemInput, timestamp: string): WorkspaceLoadoutItem {
+  const name = typeof input.name === 'string' ? input.name.trim() : '';
+  if (!name) {
+    throw new Error('Loadout item name is required.');
+  }
+
+  return {
+    id: createId('loadout'),
+    name: name.slice(0, LOADOUT_LIMITS.maxNameChars),
+    category: normalizeLoadoutCategory(input.category),
+    weightOz: normalizeLoadoutWeightOz(input.weightOz),
+    quantity: normalizeLoadoutQuantity(input.quantity),
+    worn: Boolean(input.worn),
+    consumable: Boolean(input.consumable),
+    notes: typeof input.notes === 'string' ? input.notes.trim().slice(0, LOADOUT_LIMITS.maxNotesChars) : '',
+    link: sanitizeLoadoutLink(input.link),
+    createdAt: timestamp,
+    updatedAt: timestamp
+  };
+}
+
+export async function addWorkspaceLoadoutItem(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: LoadoutItemInput
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  if (record.loadout.length >= LOADOUT_LIMITS.maxItems) {
+    throw new Error(`Loadout is full (${LOADOUT_LIMITS.maxItems} items).`);
+  }
+  const item = loadoutItemFromInput(input, nowIso());
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      loadout: sortLoadout([...record.loadout, item])
+    })
+  );
+}
+
+export async function updateWorkspaceLoadoutItem(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  itemId: string,
+  patch: Partial<LoadoutItemInput>
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const existing = record.loadout.find((item) => item.id === itemId);
+
+  if (!existing) {
+    throw new Error('Loadout item not found.');
+  }
+
+  const name = patch.name !== undefined ? (typeof patch.name === 'string' ? patch.name.trim() : '') : existing.name;
+  if (!name) {
+    throw new Error('Loadout item name is required.');
+  }
+
+  const updated: WorkspaceLoadoutItem = {
+    ...existing,
+    name,
+    category: patch.category !== undefined ? normalizeLoadoutCategory(patch.category) : existing.category,
+    weightOz: patch.weightOz !== undefined ? normalizeLoadoutWeightOz(patch.weightOz) : existing.weightOz,
+    quantity: patch.quantity !== undefined ? normalizeLoadoutQuantity(patch.quantity) : existing.quantity,
+    worn: patch.worn !== undefined ? Boolean(patch.worn) : existing.worn,
+    consumable: patch.consumable !== undefined ? Boolean(patch.consumable) : existing.consumable,
+    notes: patch.notes !== undefined ? (typeof patch.notes === 'string' ? patch.notes.trim() : '') : existing.notes,
+    link: patch.link !== undefined ? (typeof patch.link === 'string' && patch.link.trim() ? patch.link.trim() : null) : existing.link,
+    updatedAt: nowIso()
+  };
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      loadout: sortLoadout(record.loadout.map((item) => (item.id === itemId ? updated : item)))
+    })
+  );
+}
+
+export async function removeWorkspaceLoadoutItem(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  itemId: string
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      loadout: record.loadout.filter((item) => item.id !== itemId)
+    })
+  );
+}
+
+export async function replaceWorkspaceLoadout(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  items: LoadoutItemInput[]
+): Promise<WorkspaceSnapshot> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const timestamp = nowIso();
+
+  return sanitizeRecord(
+    await persist({
+      ...record,
+      loadout: sortLoadout(items.slice(0, LOADOUT_LIMITS.maxItems).map((item) => loadoutItemFromInput(item, timestamp)))
     })
   );
 }
