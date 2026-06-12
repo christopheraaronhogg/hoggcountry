@@ -180,7 +180,15 @@ function downsampleLine(line: LatLon[], step: number): LatLon[] {
   return line.filter((_, index) => index % step === 0 || index === line.length - 1);
 }
 
-function routeSegmentsFromGeojson(geojson: GenericRecord, maxPoints = 5200): LatLon[][] {
+// 5 decimals ≈ 1.1 m — plenty for a hiking trail, and ~35% smaller JSON.
+function roundCoord(value: number): number {
+  return Math.round(value * 100000) / 100000;
+}
+
+// ~30k points keeps the drawn vector hugging the basemap's trail at street
+// zooms instead of cutting switchbacks; Leaflet simplifies per-zoom when
+// rendering, so the cost is payload, not framerate.
+function routeSegmentsFromGeojson(geojson: GenericRecord, maxPoints = 30000): LatLon[][] {
   const features = Array.isArray(geojson.features) ? geojson.features as GenericRecord[] : [];
   const rawSegments: LatLon[][] = [];
 
@@ -195,7 +203,7 @@ function routeSegmentsFromGeojson(geojson: GenericRecord, maxPoints = 5200): Lat
           if (!Array.isArray(coord)) return null;
           const lon = normalizeNumber(coord[0]);
           const lat = normalizeNumber(coord[1]);
-          return lat !== null && lon !== null ? [lat, lon] as const : null;
+          return lat !== null && lon !== null ? [roundCoord(lat), roundCoord(lon)] as const : null;
         })
         .filter((coord): coord is LatLon => coord !== null));
     }
@@ -208,7 +216,7 @@ function routeSegmentsFromGeojson(geojson: GenericRecord, maxPoints = 5200): Lat
             if (!Array.isArray(coord)) return null;
             const lon = normalizeNumber(coord[0]);
             const lat = normalizeNumber(coord[1]);
-            return lat !== null && lon !== null ? [lat, lon] as const : null;
+            return lat !== null && lon !== null ? [roundCoord(lat), roundCoord(lon)] as const : null;
           })
           .filter((coord): coord is LatLon => coord !== null));
       }

@@ -67,6 +67,59 @@
       : 1;
   });
   const selectedMileMeasured = $derived(selectedMile * measuredFactor);
+  // Cumulative measured-mile index over the dense route so overlays can be
+  // sliced along the actual trail geometry instead of straight chords.
+  const routeMileIndex = $derived.by(() => {
+    const segments = pack?.route.segments ?? [];
+    const measuredTotal = pack?.route.measuredMiles ?? 0;
+    if (!segments.length) return [] as { miles: number[]; points: LatLon[] }[];
+
+    let cumulative = 0;
+    const indexed = segments.map((points) => {
+      const miles: number[] = [];
+      for (let i = 0; i < points.length; i += 1) {
+        if (i > 0) {
+          const [lat1, lon1] = points[i - 1];
+          const [lat2, lon2] = points[i];
+          const cosLat = Math.cos((lat1 * Math.PI) / 180);
+          const dLat = (lat2 - lat1) * 69.05;
+          const dLon = (lon2 - lon1) * 69.17 * cosLat;
+          cumulative += Math.hypot(dLat, dLon);
+        }
+        miles.push(cumulative);
+      }
+      return { miles, points };
+    });
+
+    // Normalize haversine-ish miles onto the official measured length.
+    if (cumulative > 0 && measuredTotal > 0) {
+      const scale = measuredTotal / cumulative;
+      for (const segment of indexed) {
+        for (let i = 0; i < segment.miles.length; i += 1) segment.miles[i] *= scale;
+      }
+    }
+
+    return indexed;
+  });
+
+  // Slice the dense route between two measured miles; returns one or more
+  // polyline paths (the route has gaps between segments).
+  function pathsForMileRange(startMile: number, endMile: number): LatLon[][] {
+    const paths: LatLon[][] = [];
+    for (const segment of routeMileIndex) {
+      const run: LatLon[] = [];
+      for (let i = 0; i < segment.points.length; i += 1) {
+        const mile = segment.miles[i];
+        if (mile >= startMile && mile <= endMile) {
+          run.push(segment.points[i]);
+        } else if (run.length) {
+          break;
+        }
+      }
+      if (run.length >= 2) paths.push(run);
+    }
+    return paths;
+  }
   // What the orange marker and "Selected" tile represent: a tapped trail mile
   // when inspecting, otherwise the scrubbed/live Garmin point.
   const displayedSelection = $derived.by(() => {
@@ -318,14 +371,13 @@
     if (terrainMode === 'grade') {
       for (const segment of pack.terrain.segments) {
         if (segment.maxGradePercent < 6) continue;
-        const start = coordForMile(segment.startMile);
-        const end = coordForMile(segment.endMile);
-        if (!start || !end) continue;
-        L.polyline([start, end], {
-          color: colorForGrade(segment.maxGradePercent),
-          weight: segment.maxGradePercent >= 16 ? 7 : 5,
-          opacity: 0.72
-        }).bindTooltip(`${segment.maxGradePercent.toFixed(0)}% max grade · ${segment.gainFt.toFixed(0)} ft gain`).on('click', forwardMapClick).addTo(terrainLayer);
+        for (const path of pathsForMileRange(segment.startMile, segment.endMile)) {
+          L.polyline(path, {
+            color: colorForGrade(segment.maxGradePercent),
+            weight: segment.maxGradePercent >= 16 ? 7 : 5,
+            opacity: 0.72
+          }).bindTooltip(`${segment.maxGradePercent.toFixed(0)}% max grade · ${segment.gainFt.toFixed(0)} ft gain`).on('click', forwardMapClick).addTo(terrainLayer);
+        }
       }
       return;
     }
@@ -333,27 +385,25 @@
     if (terrainMode === 'rockiness') {
       for (const segment of pack.terrain.rockiness) {
         if (segment.score < 3.2) continue;
-        const start = coordForMile(segment.startMile);
-        const end = coordForMile(segment.endMile);
-        if (!start || !end) continue;
-        L.polyline([start, end], {
-          color: colorForRock(segment.score),
-          weight: segment.score >= 6.5 ? 7 : 5,
-          opacity: 0.68
-        }).bindTooltip(`Rockiness ${segment.score.toFixed(1)}/10 · ${segment.label.replace(/_/gu, ' ')}`).on('click', forwardMapClick).addTo(terrainLayer);
+        for (const path of pathsForMileRange(segment.startMile, segment.endMile)) {
+          L.polyline(path, {
+            color: colorForRock(segment.score),
+            weight: segment.score >= 6.5 ? 7 : 5,
+            opacity: 0.68
+          }).bindTooltip(`Rockiness ${segment.score.toFixed(1)}/10 · ${segment.label.replace(/_/gu, ' ')}`).on('click', forwardMapClick).addTo(terrainLayer);
+        }
       }
       return;
     }
 
     for (const segment of pack.terrain.difficulty) {
-      const start = coordForMile(segment.startMile);
-      const end = coordForMile(segment.endMile);
-      if (!start || !end) continue;
-      L.polyline([start, end], {
-        color: colorForDifficulty(segment.score),
-        weight: segment.score >= 8 ? 8 : 6,
-        opacity: 0.76
-      }).bindTooltip(`Difficulty ${segment.score.toFixed(1)}/10 · ${displayLabel(segment.label)}`).on('click', forwardMapClick).addTo(terrainLayer);
+      for (const path of pathsForMileRange(segment.startMile, segment.endMile)) {
+        L.polyline(path, {
+          color: colorForDifficulty(segment.score),
+          weight: segment.score >= 8 ? 8 : 6,
+          opacity: 0.76
+        }).bindTooltip(`Difficulty ${segment.score.toFixed(1)}/10 · ${displayLabel(segment.label)}`).on('click', forwardMapClick).addTo(terrainLayer);
+      }
     }
   }
 
