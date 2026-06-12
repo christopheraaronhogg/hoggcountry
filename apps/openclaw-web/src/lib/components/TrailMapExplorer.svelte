@@ -409,8 +409,28 @@
     if (!pack || !L || !trackerLayer) return;
     const path = history.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon));
 
-    if (path.length >= 2) {
-      L.polyline(path.map((point) => [point.lat, point.lon]), {
+    // Sparse history (e.g. just the start fix and today's) must not be
+    // connected — a straight chord across five states is not a track. Break
+    // the path wherever consecutive fixes are more than ~20 miles apart and
+    // only draw runs of genuinely adjacent points.
+    const MAX_SEGMENT_GAP_DEG = 0.3;
+    let run: TrailMapPoint[] = [];
+    const runs: TrailMapPoint[][] = [];
+    for (const point of path) {
+      const previous = run[run.length - 1];
+      if (
+        previous &&
+        Math.hypot(point.lat - previous.lat, (point.lon - previous.lon) * Math.cos((point.lat * Math.PI) / 180)) > MAX_SEGMENT_GAP_DEG
+      ) {
+        if (run.length >= 2) runs.push(run);
+        run = [];
+      }
+      run.push(point);
+    }
+    if (run.length >= 2) runs.push(run);
+
+    for (const segment of runs) {
+      L.polyline(segment.map((point) => [point.lat, point.lon]), {
         color: '#2563eb',
         weight: 4,
         opacity: 0.86,
