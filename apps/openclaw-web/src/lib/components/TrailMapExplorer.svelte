@@ -486,42 +486,83 @@
     }
   }
 
-  function nearestMilepointTo(lat: number, lon: number): { mile: number; lat: number; lon: number } | null {
+  // Continuous position on the trail: nearest milepost, refined by projecting
+  // onto the polyline segments to its neighbors. Gives smooth sliding and
+  // fractional miles instead of 1-mile jumps.
+  function nearestTrailPosition(lat: number, lon: number): { mile: number; lat: number; lon: number } | null {
     const points = pack?.milepoints;
     if (!points?.length) return null;
 
     const cosLat = Math.cos((lat * Math.PI) / 180);
-    let best: { mile: number; lat: number; lon: number } | null = null;
+    let bestIndex = 0;
     let bestDistSq = Infinity;
 
-    for (const point of points) {
+    for (let index = 0; index < points.length; index += 1) {
+      const point = points[index];
       const dLat = point.lat - lat;
       const dLon = (point.lon - lon) * cosLat;
       const distSq = dLat * dLat + dLon * dLon;
       if (distSq < bestDistSq) {
         bestDistSq = distSq;
-        best = point;
+        bestIndex = index;
+      }
+    }
+
+    let best = { mile: points[bestIndex].mile, lat: points[bestIndex].lat, lon: points[bestIndex].lon };
+    let bestProjectionDistSq = bestDistSq;
+
+    for (const neighborIndex of [bestIndex - 1, bestIndex + 1]) {
+      if (neighborIndex < 0 || neighborIndex >= points.length) continue;
+      const a = points[bestIndex];
+      const b = points[neighborIndex];
+      const abLat = b.lat - a.lat;
+      const abLon = (b.lon - a.lon) * cosLat;
+      const lengthSq = abLat * abLat + abLon * abLon;
+      if (lengthSq <= 0) continue;
+
+      const apLat = lat - a.lat;
+      const apLon = (lon - a.lon) * cosLat;
+      const t = clamp((apLat * abLat + apLon * abLon) / lengthSq, 0, 1);
+      const projLat = a.lat + (b.lat - a.lat) * t;
+      const projLon = a.lon + (b.lon - a.lon) * t;
+      const dLat = projLat - lat;
+      const dLon = (projLon - lon) * cosLat;
+      const distSq = dLat * dLat + dLon * dLon;
+
+      if (distSq < bestProjectionDistSq) {
+        bestProjectionDistSq = distSq;
+        best = {
+          mile: a.mile + (b.mile - a.mile) * t,
+          lat: projLat,
+          lon: projLon
+        };
       }
     }
 
     return best;
   }
 
-  function handleScrubDrag(event: { target: { getLatLng: () => { lat: number; lng: number } } }) {
+  // Constrained drag: the dot rides the trail. Every drag event re-pins the
+  // marker to the nearest on-trail position, so it cannot leave the vector;
+  // stat updates are throttled to keep derived churn sane.
+  function handleScrubDrag(event: { target: { getLatLng: () => { lat: number; lng: number }; setLatLng: (latlng: [number, number]) => void } }) {
+    const position = event.target.getLatLng();
+    const nearest = nearestTrailPosition(position.lat, position.lng);
+    if (!nearest) return;
+
+    event.target.setLatLng([nearest.lat, nearest.lon]);
+
     const now = Date.now();
     if (now - lastScrubUpdate < 90) return;
     lastScrubUpdate = now;
-
-    const position = event.target.getLatLng();
-    const nearest = nearestMilepointTo(position.lat, position.lng);
-    if (nearest) inspectedMile = nearest.mile;
+    inspectedMile = Math.round(nearest.mile * 10) / 10;
   }
 
   function handleScrubEnd(event: { target: { getLatLng: () => { lat: number; lng: number }; setLatLng: (latlng: [number, number]) => void } }) {
     const position = event.target.getLatLng();
-    const nearest = nearestMilepointTo(position.lat, position.lng);
+    const nearest = nearestTrailPosition(position.lat, position.lng);
     if (nearest) {
-      inspectedMile = nearest.mile;
+      inspectedMile = Math.round(nearest.mile * 10) / 10;
       event.target.setLatLng([nearest.lat, nearest.lon]);
     }
     scrubbing = false;
