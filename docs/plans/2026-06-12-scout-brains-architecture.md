@@ -56,17 +56,42 @@ Two different OpenAI integrations — do not conflate them:
   registry the backend already has. Apply to OpenAI's sign-in developer
   interest program so we're early when user-plan compute opens up.
 
-### 3. House cloud (our keys, Forge-side)
+### 3. House cloud (our keys, Forge-side) — subscribers only
 
-Default for free-tier/rationed use, the public demo surfaces, and any
-concierge-reviewed flow. Also the fallback when a user's key fails mid-thread.
+Decision 2026-06-12: **no rationed free cloud tier.** Free users get the
+on-device engine (unlimited, zero marginal cost, and it markets the core
+offline differentiator). House cloud (GPT-5.5 via the API: $5/$30 per 1M
+tokens, $0.50 cached input as of June 2026) powers paying subscribers and
+the public demo surfaces, and is the fallback when a user's key fails.
+
+Pricing shape:
+
+- **Free** — on-device Gemma only + follow + guide.
+- **Trail Pass (monthly, and a season pass SKU)** — house GPT-5.5 with
+  generous fair-use included usage, sync, offline packs. Unit economics:
+  a grounded Scout turn is roughly 6–8K input / ~800 output ≈ $0.04–0.07
+  at list, and the static corpus prefix is highly cacheable (cached input
+  is 10x cheaper), so a ~$25–30/mo pass covers even heavy daily use.
+  Route routine turns to a mini-class model, escalate hard ones to 5.5
+  (scenario difficulty scoring already exists in the eval suite).
+- **BYOK** — their key, minimal/no app fee; also the overflow path when a
+  subscriber exceeds fair use (degrade gracefully: offer BYOK or top-up,
+  never hard-stop mid-trail — worst case drop to on-device).
+- **Sign-in-with-ChatGPT user-plan** — slots in as a provider when OpenAI
+  ships it (interest form application submitted 2026-06).
+
+Avoid raw usage-metered billing for consumers: thru-hikers budget the whole
+hike in advance, and a taximeter on Scout suppresses the daily-loop habit the
+product depends on. Metering stays internal (fair-use accounting), not the
+customer-facing price.
 
 ## Router policy
 
 ```
 offline                          -> on-device Gemma (E4B if able, else E2B)
 online + user provider connected -> user's provider (BYOS / future user-plan)
-online + no provider             -> house cloud (rationed)
+online + subscriber              -> house cloud (GPT-5.5, fair-use)
+online + free                    -> on-device engine (cloud upsell surface)
 engine failure mid-thread        -> degrade down the list, tell the user
 ```
 
