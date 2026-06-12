@@ -30,7 +30,7 @@
     "build:pdf": "node scripts/generate-pdf.js",
     "build:all": "npm run build && node scripts/generate-pdf.js",
     "update-guide": "node scripts/parse-master-guide.js",
-    "test": "node --experimental-strip-types --experimental-transform-types --test scripts/parse-master-guide.test.js scripts/kjv-pce.test.mjs scripts/scout-skills.test.mjs scripts/scout-reliability-arena.test.mjs scripts/scout-runtime-tools.test.mjs scripts/scout-web-research.test.mjs scripts/scout-mobile-recovery.test.mjs scripts/scout-concierge-runtime.test.mjs scripts/scout-beta-logins.test.mjs scripts/scout-beta-cookie.test.mjs scripts/scout-chatgpt-login.test.mjs data/at-open-reference/tests/at-open-reference.test.mjs",
+    "test": "node --experimental-strip-types --experimental-transform-types --test scripts/parse-master-guide.test.js scripts/kjv-pce.test.mjs scripts/scout-skills.test.mjs scripts/scout-reliability-arena.test.mjs scripts/scout-runtime-tools.test.mjs scripts/scout-web-research.test.mjs scripts/scout-mobile-recovery.test.mjs scripts/scout-concierge-runtime.test.mjs scripts/scout-beta-logins.test.mjs scripts/scout-beta-cookie.test.mjs scripts/scout-chatgpt-login.test.mjs scripts/scout-loadout.test.mjs scripts/scout-today-context.test.mjs data/at-open-reference/tests/at-open-reference.test.mjs",
     "test:guide": "node --test scripts/parse-master-guide.test.js",
     "dogfood:manual": "node scripts/dogfood-field-manual.mjs",
     "eval:scout-grounding": "node --experimental-strip-types --experimental-transform-types scripts/eval-scout-grounding.mjs",

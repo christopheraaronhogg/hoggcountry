@@ -31,6 +31,45 @@
     };
   }
 
+  interface TrailAheadWaypoint {
+    readonly name: string;
+    readonly mile: number;
+    readonly milesAhead: number;
+    readonly type: string;
+  }
+
+  interface TrailAheadWeatherDay {
+    readonly date: string;
+    readonly label: string;
+    readonly highF: number | null;
+    readonly lowF: number | null;
+    readonly precipChancePct: number | null;
+    readonly windMaxMph: number | null;
+  }
+
+  interface TrailAheadTerrain {
+    readonly lookaheadMiles: number;
+    readonly gainFt: number | null;
+    readonly lossFt: number | null;
+    readonly maxGradePercent: number | null;
+    readonly difficultyScore: number | null;
+    readonly difficultyLabel: string | null;
+  }
+
+  interface TrailAheadContext {
+    readonly mile: number;
+    readonly mileSource: 'profile' | 'tracker';
+    readonly weather: readonly TrailAheadWeatherDay[];
+    readonly weatherError: string | null;
+    readonly next: {
+      readonly shelter: TrailAheadWaypoint | null;
+      readonly water: TrailAheadWaypoint | null;
+      readonly town: TrailAheadWaypoint | null;
+      readonly road: TrailAheadWaypoint | null;
+    };
+    readonly terrainAhead: TrailAheadTerrain | null;
+  }
+
   let profile = $state<ManualProfile | null>(null);
   let todayCards = $state.raw<readonly TodayCard[]>([]);
   let dailyBrief = $state.raw<OfflineScoutDailyBrief | null>(null);
@@ -48,6 +87,10 @@
   let locationError = $state('');
   let mileBusy = $state(false);
   let mileError = $state('');
+  let trailAhead = $state<TrailAheadContext | null>(null);
+  let trailAheadLoading = $state(true);
+  let trailAheadError = $state('');
+  let trailAheadUnavailable = $state(false);
 
   const currentMile = $derived(profile && Number.isFinite(profile.currentMile) ? Math.max(0, profile.currentMile) : 0);
   const hasMile = $derived(currentMile > 0);
@@ -62,6 +105,18 @@
   const contextCount = $derived(docCount + resourceCount);
   const sourceLine = $derived(dailyBrief ? `Brief ${formatShortDate(dailyBrief.generatedAt)}` : fieldPackStatus);
   const briefPrompt = $derived(dailyBrief?.scoutPrompt ?? buildFallbackBriefPrompt());
+  const trailAheadMileLine = $derived(trailAhead
+    ? `at mile ${trailAhead.mile.toFixed(1)} — ${trailAhead.mileSource === 'tracker' ? 'Garmin tracker (profile mile not set)' : 'your profile mile'}`
+    : '');
+  const trailAheadRows = $derived.by(() => {
+    if (!trailAhead) return [];
+    const rows: { readonly label: string; readonly waypoint: TrailAheadWaypoint }[] = [];
+    if (trailAhead.next.shelter) rows.push({ label: 'Shelter', waypoint: trailAhead.next.shelter });
+    if (trailAhead.next.water) rows.push({ label: 'Water', waypoint: trailAhead.next.water });
+    if (trailAhead.next.town) rows.push({ label: 'Town', waypoint: trailAhead.next.town });
+    if (trailAhead.next.road) rows.push({ label: 'Road', waypoint: trailAhead.next.road });
+    return rows;
+  });
   const hudCues = $derived.by(() => [
     {
       label: 'Elevation',
@@ -92,6 +147,7 @@
 
     const handleOnline = () => {
       online = true;
+      if (trailAheadError || trailAheadUnavailable) void loadTrailAhead();
     };
     const handleOffline = () => {
       online = false;
@@ -106,6 +162,7 @@
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     void loadHudState();
+    void loadTrailAhead();
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -177,6 +234,7 @@
     try {
       applyProfile(await setCurrentMile(nextMile));
       if (online) void saveFieldPack(true);
+      void loadTrailAhead();
     } catch (caught) {
       mileError = caught instanceof Error ? caught.message : 'Could not save mile.';
     } finally {
@@ -222,11 +280,62 @@
         ? `GPS set Scout to AT mile ${typeof nearestMile === 'number' ? nearestMile.toFixed(1) : currentMile.toFixed(1)}.`
         : payload?.profileUpdateReason || 'GPS checked, but the profile mile was not changed.';
       if (online) void saveFieldPack(true);
+      void loadTrailAhead();
     } catch (caught) {
       locationError = caught instanceof Error ? caught.message : 'Could not read GPS location.';
     } finally {
       locationBusy = false;
     }
+  }
+
+  async function loadTrailAhead() {
+    trailAheadLoading = true;
+    trailAheadError = '';
+    trailAheadUnavailable = false;
+
+    try {
+      const response = await fetch('/app-api/scout/today-context', { cache: 'no-store' });
+      const payload = (await response.json().catch(() => null)) as (TrailAheadContext & { unavailable?: boolean }) | { unavailable?: boolean } | null;
+      if (!response.ok) throw new Error('Could not load the trail-ahead brief.');
+
+      if (!payload || payload.unavailable) {
+        trailAhead = null;
+        trailAheadUnavailable = true;
+      } else {
+        trailAhead = payload as TrailAheadContext;
+      }
+    } catch (caught) {
+      trailAheadError = caught instanceof Error ? caught.message : 'Could not load the trail-ahead brief.';
+    } finally {
+      trailAheadLoading = false;
+    }
+  }
+
+  function weekdayLabel(isoDate: string): string {
+    const [yearS, monthS, dayS] = isoDate.split('-');
+    const year = Number(yearS);
+    const month = Number(monthS);
+    const day = Number(dayS);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return isoDate;
+    return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
+  }
+
+  function terrainLine(terrain: TrailAheadTerrain): string {
+    const parts: string[] = [];
+    const climb = [
+      terrain.gainFt !== null && Math.round(terrain.gainFt) !== 0 ? `+${Math.round(terrain.gainFt).toLocaleString()} ft` : null,
+      terrain.lossFt !== null && Math.round(terrain.lossFt) !== 0 ? `-${Math.round(terrain.lossFt).toLocaleString()} ft` : null
+    ].filter(Boolean).join(' / ');
+    if (climb) parts.push(`${climb} over next ${terrain.lookaheadMiles} mi`);
+    if (terrain.maxGradePercent !== null) {
+      parts.push(`max grade ${terrain.maxGradePercent > 35 ? '35%+' : `${terrain.maxGradePercent.toFixed(0)}%`}`);
+    }
+    if (terrain.difficultyScore !== null) {
+      parts.push(`difficulty ${terrain.difficultyScore.toFixed(1)}/10${terrain.difficultyLabel ? ` (${terrain.difficultyLabel})` : ''}`);
+    } else if (terrain.difficultyLabel) {
+      parts.push(`difficulty ${terrain.difficultyLabel}`);
+    }
+    return parts.join(' — ');
   }
 
   function formatShortDate(value: string | null | undefined): string {
@@ -327,7 +436,7 @@
     <button type="button" onclick={() => saveFieldPack()} disabled={fieldPackBusy}>{fieldPackBusy ? 'Saving pack' : 'Save pack'}</button>
   </div>
 
-  <section class="mile-editor" aria-label="Manual mile update">
+  <section class="mile-editor" id="manual-mile" aria-label="Manual mile update">
     <div>
       <strong>Manual mile</strong>
       <small>Use this when GPS is noisy or off trail.</small>
@@ -357,6 +466,56 @@
         </article>
       {/each}
     </div>
+  </section>
+
+  <section class="trail-ahead" aria-label="Trail ahead brief">
+    <div class="section-heading">
+      <p class="home-kicker">Trail ahead</p>
+      {#if trailAhead}<span>{trailAheadMileLine}</span>{/if}
+    </div>
+
+    {#if trailAheadLoading}
+      <p class="trail-ahead-note">Checking weather and waypoints ahead...</p>
+    {:else if trailAheadError}
+      <p role="alert" style="margin:0; color:#8a2f2f; font-weight:700;">{trailAheadError}</p>
+      <button class="btn btn-secondary" type="button" style="margin-top:0.6rem;" onclick={() => void loadTrailAhead()}>Try again</button>
+    {:else if trailAheadUnavailable}
+      <p class="trail-ahead-note">Set your mile to unlock the trail-ahead brief. Use the <a href="#manual-mile">manual mile editor</a> above.</p>
+    {:else if trailAhead}
+      {#if trailAhead.weather.length > 0}
+        <div class="wx-strip">
+          {#each trailAhead.weather.slice(0, 3) as day (day.date)}
+            <article class="wx-day">
+              <span>{weekdayLabel(day.date)}</span>
+              <strong>{day.highF !== null ? Math.round(day.highF) : '--'}° / {day.lowF !== null ? Math.round(day.lowF) : '--'}°</strong>
+              <small>{day.label}</small>
+              <small>{day.precipChancePct !== null ? `${Math.round(day.precipChancePct)}% precip` : '-- precip'}{day.windMaxMph !== null ? ` · ${Math.round(day.windMaxMph)} mph wind` : ''}</small>
+            </article>
+          {/each}
+        </div>
+      {:else if trailAhead.weatherError}
+        <p class="trail-ahead-note">{trailAhead.weatherError}</p>
+      {/if}
+
+      {#if trailAheadRows.length > 0}
+        <div class="next-rows">
+          <p class="home-kicker">Next on trail</p>
+          <ul>
+            {#each trailAheadRows as row (row.label)}
+              <li>
+                <span>{row.label}</span>
+                <strong>{row.waypoint.name}</strong>
+                <small>{row.waypoint.milesAhead.toFixed(1)} mi ahead</small>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
+
+      {#if trailAhead.terrainAhead}
+        <p class="terrain-line">{terrainLine(trailAhead.terrainAhead)}</p>
+      {/if}
+    {/if}
   </section>
 
   <section class="quick-list" aria-label="Quick Scout prompts">
@@ -398,6 +557,7 @@
   .ask-card,
   .mile-editor,
   .cue-panel,
+  .trail-ahead,
   .quick-card,
   .field-pack {
     border: 1px solid rgba(77, 89, 74, 0.13);
@@ -773,6 +933,111 @@
     margin: 0;
   }
 
+  .trail-ahead {
+    display: grid;
+    gap: 0.62rem;
+    border-radius: 24px;
+    padding: 0.88rem;
+  }
+
+  .trail-ahead-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 760;
+    line-height: 1.3;
+  }
+
+  .trail-ahead-note a {
+    color: #24362c;
+    font-weight: 900;
+  }
+
+  .wx-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.42rem;
+  }
+
+  .wx-day {
+    display: grid;
+    gap: 0.16rem;
+    border: 1px solid rgba(77, 89, 74, 0.11);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.54);
+    padding: 0.56rem;
+  }
+
+  .wx-day span,
+  .next-rows li span {
+    color: var(--pine);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .wx-day strong {
+    color: #27332b;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    line-height: 1;
+  }
+
+  .wx-day small {
+    color: var(--muted);
+    font-size: 0.64rem;
+    font-weight: 740;
+    line-height: 1.25;
+  }
+
+  .next-rows {
+    display: grid;
+    gap: 0.34rem;
+  }
+
+  .next-rows ul {
+    display: grid;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .next-rows li {
+    display: grid;
+    grid-template-columns: 4.1rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 0.42rem;
+  }
+
+  .next-rows li strong {
+    overflow: hidden;
+    color: #27332b;
+    font-size: 0.85rem;
+    font-weight: 850;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .next-rows li small {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .terrain-line {
+    margin: 0;
+    color: #27332b;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
   .quick-card {
     display: grid;
     align-content: center;
@@ -982,6 +1247,23 @@
 
     .cue-card strong {
       font-size: 1rem;
+    }
+
+    .trail-ahead {
+      border-radius: 20px;
+      padding: 0.68rem;
+    }
+
+    .wx-strip {
+      gap: 0.34rem;
+    }
+
+    .wx-day {
+      padding: 0.5rem 0.44rem;
+    }
+
+    .next-rows li {
+      grid-template-columns: 3.5rem minmax(0, 1fr) auto;
     }
 
     .quick-card {
