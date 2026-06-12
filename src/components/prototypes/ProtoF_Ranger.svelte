@@ -439,7 +439,7 @@
       </h1>
 
       <p class="hero-subtitle">
-        An Official Trail Guide to 2,194 Miles of America's Footpath
+        An Official Trail Guide to 2,197.4 Miles of America's Footpath
       </p>
 
       <div class="hero-route">
@@ -739,7 +739,7 @@
         <h2 class="mission-heading">The Expedition Ahead</h2>
         <p class="mission-text">
           In February 2026, Jimmy "HoggCountry" Hogg heads north from Springer Mountain.
-          After 840+ miles on Arkansas trails and the rare Sassafras Award, he's ready for the AT's 2,194 miles to Katahdin.
+          After 840+ miles on Arkansas trails and the rare Sassafras Award, he's ready for the AT's 2,197.4 miles to Katahdin.
           This guide captures what he's learned along the way—and what he wishes he'd known sooner.
         </p>
 
@@ -843,7 +843,7 @@
 
         <div class="expedition-card">
           <div class="card-stamp">DISTANCE</div>
-          <div class="card-value">2,194</div>
+          <div class="card-value">2,197.4</div>
           <div class="card-label">Total Trail Miles</div>
         </div>
 
@@ -1196,7 +1196,7 @@
                 <path d="M4 44h40" />
               </svg>
             </div>
-            <div class="fact-number">2,194</div>
+            <div class="fact-number">2,197.4</div>
             <div class="fact-label">TRAIL MILES</div>
             <div class="fact-detail">Springer to Katahdin</div>
           </div>
@@ -1305,7 +1305,7 @@
             <h3 class="featured-title">Part I: Hiker Profile & Experience</h3>
             <p class="featured-desc">
               Trail credentials, completed thru-hikes, and the 840+ miles of experience that prepare
-              a hiker for 2,194 miles of the Appalachian Trail.
+              a hiker for 2,197.4 miles of the Appalachian Trail.
             </p>
             <a href="/guide#01-hiker-profile-and-experience" class="featured-link">
               Read Chapter
