@@ -19,6 +19,10 @@
   </div>
 
   <div class="auth-panel">
+    <a class="chatgpt-button" href={data.chatgptUrl}>
+      Continue with ChatGPT
+      <span class="chatgpt-note">also connects Scout's brain</span>
+    </a>
     <a class="google-button" href={data.googleUrl}>Continue with Google</a>
 
     <div class="divider"><span>or</span></div>
@@ -131,6 +135,26 @@
     border: 1px solid rgba(77, 89, 74, 0.18);
     background: white;
     color: var(--ink);
+  }
+
+  .chatgpt-button {
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    min-height: 3.3rem;
+    border: 0;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    background: #0d0d0d;
+    color: white;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .chatgpt-note {
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 0.72rem;
+    font-weight: 700;
   }
 
   .primary-button {

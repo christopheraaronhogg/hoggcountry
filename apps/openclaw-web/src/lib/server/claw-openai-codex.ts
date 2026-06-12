@@ -168,6 +168,17 @@ export async function exchangeOpenAICodexAuthorizationCode(
   verifier: string,
   redirectUri = OPENAI_CODEX_LOCAL_REDIRECT_URI
 ): Promise<OpenAICodexCredentials> {
+  const { credentials } = await exchangeOpenAICodexAuthorizationCodeWithIdentity(code, verifier, redirectUri);
+  return credentials;
+}
+
+// Login flows also need the OIDC id_token (verified server-side by the
+// Laravel API) alongside the model-lane credentials.
+export async function exchangeOpenAICodexAuthorizationCodeWithIdentity(
+  code: string,
+  verifier: string,
+  redirectUri = OPENAI_CODEX_LOCAL_REDIRECT_URI
+): Promise<{ credentials: OpenAICodexCredentials; idToken: string | null }> {
   const response = await fetch(TOKEN_URL, {
     method: 'POST',
     headers: {
@@ -191,6 +202,7 @@ export async function exchangeOpenAICodexAuthorizationCode(
     access_token?: string;
     refresh_token?: string;
     expires_in?: number;
+    id_token?: string;
   };
 
   if (!json.access_token || !json.refresh_token || typeof json.expires_in !== 'number') {
@@ -200,11 +212,14 @@ export async function exchangeOpenAICodexAuthorizationCode(
   const accountId = getOpenAICodexAccountId(json.access_token);
 
   return {
-    access: json.access_token,
-    refresh: json.refresh_token,
-    expires: Date.now() + json.expires_in * 1000,
-    accountId,
-    label: buildOpenAICodexLabel(accountId)
+    credentials: {
+      access: json.access_token,
+      refresh: json.refresh_token,
+      expires: Date.now() + json.expires_in * 1000,
+      accountId,
+      label: buildOpenAICodexLabel(accountId)
+    },
+    idToken: typeof json.id_token === 'string' && json.id_token.length > 0 ? json.id_token : null
   };
 }
 

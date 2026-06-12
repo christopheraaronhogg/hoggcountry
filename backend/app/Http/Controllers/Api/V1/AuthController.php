@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Profile;
 use App\Models\SocialAccount;
 use App\Models\User;
+use App\Support\OpenAIIdToken;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -339,6 +340,125 @@ class AuthController extends ApiController
         }
 
         return $this->ok($payload);
+    }
+
+    /**
+     * "Continue with ChatGPT" login: the Scout web frontend completes the
+     * Codex PKCE flow and posts the resulting OIDC id_token here. The token
+     * is verified against OpenAI's public JWKS, so this endpoint trusts the
+     * token issuer, never the caller.
+     */
+    public function openaiExchange(Request $request)
+    {
+        $validated = $request->validate([
+            'id_token' => ['required', 'string', 'max:8192'],
+            'device_name' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        try {
+            $claims = OpenAIIdToken::verify($validated['id_token']);
+        } catch (\RuntimeException $exception) {
+            report($exception);
+
+            return $this->fail('openai_token_invalid', 'ChatGPT login could not be verified. Try signing in again.', 422, [
+                'provider' => 'openai',
+            ]);
+        }
+
+        $providerUserId = trim((string) ($claims['sub'] ?? ''));
+        $email = $this->normalizeEmail((string) ($claims['email'] ?? ''));
+
+        if ($providerUserId === '' || $email === '' || ! str_contains($email, '@')) {
+            return $this->fail('openai_profile_incomplete', 'Your ChatGPT account did not share a verified email. Use email signup instead.', 422, [
+                'provider' => 'openai',
+            ]);
+        }
+
+        if (($claims['email_verified'] ?? null) === false) {
+            return $this->fail('openai_email_unverified', 'Verify the email on your ChatGPT account, then try again.', 422, [
+                'provider' => 'openai',
+            ]);
+        }
+
+        $user = DB::transaction(function () use ($claims, $providerUserId, $email): User {
+            $social = SocialAccount::query()
+                ->where('provider', 'openai')
+                ->where('provider_user_id', $providerUserId)
+                ->first();
+
+            if ($social) {
+                $social->forceFill([
+                    'email' => $email,
+                    'raw_user' => $this->openaiRawUserPayload($claims),
+                ])->save();
+
+                return $social->user;
+            }
+
+            $existingUser = $this->findUserByEmail($email);
+
+            if (! $existingUser) {
+                $displayName = trim((string) ($claims['name'] ?? ''));
+                $fallbackName = Str::headline(Str::before($email, '@'));
+
+                $existingUser = User::query()->create([
+                    'name' => $displayName !== '' ? $displayName : $fallbackName,
+                    'email' => $email,
+                    'password' => Str::random(40),
+                ]);
+
+                $existingUser->forceFill([
+                    'email_verified_at' => now(),
+                ])->save();
+            } elseif (! $existingUser->email_verified_at) {
+                $existingUser->forceFill([
+                    'email_verified_at' => now(),
+                ])->save();
+            }
+
+            $existingUser->profile()->firstOrCreate(
+                ['user_id' => $existingUser->id],
+                ['display_name' => $existingUser->name]
+            );
+
+            SocialAccount::query()->updateOrCreate(
+                [
+                    'provider' => 'openai',
+                    'provider_user_id' => $providerUserId,
+                ],
+                [
+                    'user_id' => $existingUser->id,
+                    'email' => $email,
+                    'raw_user' => $this->openaiRawUserPayload($claims),
+                ]
+            );
+
+            return $existingUser;
+        });
+
+        $tokenName = $validated['device_name'] ?? 'chatgpt-oauth';
+        $token = $user->createToken($tokenName)->plainTextToken;
+
+        return $this->ok([
+            'token' => $token,
+            'user' => $this->userPayload($user->load('profile')),
+            'provider' => 'openai',
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $claims
+     * @return array<string, mixed>
+     */
+    private function openaiRawUserPayload(array $claims): array
+    {
+        return [
+            'sub' => $claims['sub'] ?? null,
+            'email' => $claims['email'] ?? null,
+            'email_verified' => $claims['email_verified'] ?? null,
+            'name' => $claims['name'] ?? null,
+            'iss' => $claims['iss'] ?? null,
+        ];
     }
 
     private function googleStateCacheKey(string $state): string

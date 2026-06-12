@@ -14,10 +14,17 @@
   <div class="auth-copy">
     <p class="eyebrow">Scout account</p>
     <h1>Create your trail workspace.</h1>
-    <p class="lede">Use email and password now. You can still add Google later with the same verified email.</p>
+    <p class="lede">One tap with ChatGPT creates your account and connects Scout's brain, or use email and password.</p>
   </div>
 
   <form method="POST" class="auth-panel">
+    <a class="chatgpt-button" href={`/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`}>
+      Continue with ChatGPT
+      <span class="chatgpt-note">creates your account + connects Scout's brain</span>
+    </a>
+
+    <div class="divider"><span>or</span></div>
+
     <input type="hidden" name="redirectTo" value={redirectTo} />
 
     <label>
@@ -93,6 +100,42 @@
     border-radius: 8px;
     background: #fffdf8;
     box-shadow: 0 16px 34px rgba(31, 41, 55, 0.08);
+  }
+
+  .chatgpt-button {
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    min-height: 3.3rem;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    background: #0d0d0d;
+    color: white;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .chatgpt-note {
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .divider {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: '';
+    height: 1px;
+    background: rgba(77, 89, 74, 0.16);
   }
 
   label {

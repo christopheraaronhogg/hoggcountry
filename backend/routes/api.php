@@ -65,6 +65,7 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
         Route::get('/google/redirect', [AuthController::class, 'googleRedirect']);
         Route::get('/google/callback', [AuthController::class, 'googleCallback']);
         Route::post('/google/handoff', [AuthController::class, 'googleHandoff']);
+        Route::post('/openai/exchange', [AuthController::class, 'openaiExchange'])->middleware('throttle:10,1');
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
         Route::post('/reset-password', [AuthController::class, 'resetPassword']);
         Route::get('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])

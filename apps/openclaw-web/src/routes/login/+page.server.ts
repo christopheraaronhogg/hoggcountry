@@ -48,6 +48,7 @@ export const load: PageServerLoad = async ({ cookies, fetch, locals, url }) => {
     return {
       redirectTo,
       googleUrl: googleLoginUrl(url.origin, redirectTo),
+      chatgptUrl: `/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`,
       message: authErrorMessage(result.status, result.error?.message),
       messageType: 'error' as const
     };
@@ -57,11 +58,14 @@ export const load: PageServerLoad = async ({ cookies, fetch, locals, url }) => {
     throw redirect(302, redirectTo);
   }
 
+  const chatgptError = url.searchParams.get('chatgpt_error');
+
   return {
     redirectTo,
     googleUrl: googleLoginUrl(url.origin, redirectTo),
-    message: '',
-    messageType: 'info' as const
+    chatgptUrl: `/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`,
+    message: chatgptError ? `ChatGPT sign-in failed: ${chatgptError}` : '',
+    messageType: chatgptError ? ('error' as const) : ('info' as const)
   };
 };
 
