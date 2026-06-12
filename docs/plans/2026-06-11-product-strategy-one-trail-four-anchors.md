@@ -39,6 +39,27 @@ Public site = follow Dad (map dot, dispatches, videos) on the SAME surfaces a
 hiker uses. Viewer → follower → planner (guide/manual) → hiker (Scout).
 Marketing and product are one surface; the expedition is the demo.
 
+## Surface split (decided 2026-06-12)
+
+**The website is the sales device and demo. The app is the personal product.**
+
+- **Website (hoggcountry.com, public):** follow Dad's adventure — live map,
+  story feed, dispatches — and read Dad's guide. Everything public is Dad's
+  data, rendered by the same components the app uses. The pitch writes
+  itself: "this is his; the app builds yours." One conversion path
+  (signup → app) on every public surface.
+- **App (gated /app today, Capacitor app later):** everything owned —
+  your own guide/manual, your own mile and progress, your own loadout,
+  your Scout. Personal state never lives on public surfaces.
+
+Implications to execute over time:
+1. Public nav shrinks toward follow + guide + get-the-app; the public
+   planning tools become demo surfaces or fold into the app.
+2. The public manual-builder/personalize pages become read-only demos of
+   Dad's guide with a "make it yours" CTA into the app.
+3. New personal features (Today brief, Loadout, progress) land app-side
+   only — already the case as of the 2026-06-12 overnight build.
+
 ## Trust as moat
 
 - Scout answers carry citations and data freshness ("water report: 3 days old").
