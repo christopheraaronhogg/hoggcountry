@@ -47,14 +47,24 @@ Two different OpenAI integrations — do not conflate them:
   tools/data. It is a distribution channel, not a power source for our app.
   Next step there: add reviewed "Do" tools (save plan, update loadout) backed
   by account linking to the Laravel API.
-- **"Their ChatGPT powering OUR app"** — as of June 2026, OpenAI's
-  Sign-in-with-ChatGPT is previewed (Codex CLI connects ChatGPT accounts;
-  Plus/Pro grants API credits) but third-party "requests run on the user's
-  plan" is NOT yet GA. Design for it now: it becomes one more provider in the
-  BYOS registry when it ships. Until then, the shipping path is **BYOK** —
-  user pastes their own OpenAI (or other) API key into the BYOS provider
-  registry the backend already has. Apply to OpenAI's sign-in developer
-  interest program so we're early when user-plan compute opens up.
+- **"Their ChatGPT powering OUR app" — ALREADY SHIPPING in beta.** Scout's
+  workspace has a direct ChatGPT connect flow
+  (`app-api/claw/connect/openai-codex/*` + `lib/server/claw-openai-codex.ts`):
+  PKCE OAuth against auth.openai.com using the Codex app client, tokens stored
+  per workspace, and `claw-agent` runs cloud turns through the
+  `openai-codex-responses` API under the user's own ChatGPT plan. There is
+  also a localhost bridge (`scripts/scout-codex-local-bridge.mjs`) that shells
+  out to the Codex CLI for dev/local use.
+
+  Honest risk framing: this rides OpenAI's Codex OAuth client and the
+  Codex-scoped responses endpoint, which OpenAI sanctions for Codex surfaces —
+  not (yet) as a general third-party "user plan compute" API. It is solid for
+  the closed beta, but it is a dependency OpenAI could narrow at any time, so
+  it is **beta-grade, not the foundation for paid GA**. The durable ladder:
+  1. Codex-OAuth connect (working now, beta users)
+  2. **BYOK** via the BYOS provider registry (GA-grade, fully sanctioned)
+  3. Official Sign-in-with-ChatGPT user-plan compute when OpenAI ships it
+     (interest application submitted 2026-06; drop-in replacement for #1)
 
 ### 3. House cloud (our keys, Forge-side) — subscribers only
 
