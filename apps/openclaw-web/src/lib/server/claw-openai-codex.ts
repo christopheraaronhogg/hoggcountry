@@ -54,17 +54,14 @@ export function resolveOpenAICodexRedirectUri(requestOrigin?: string | null): st
     return configured;
   }
 
-  if (requestOrigin) {
-    try {
-      const origin = new URL(requestOrigin);
-      if (origin.protocol === 'https:') {
-        return new URL(OPENAI_CODEX_CLOUD_CALLBACK_PATH, origin).toString();
-      }
-    } catch {
-      // fall through
-    }
-  }
-
+  // Verified 2026-06-12: OpenAI's authorize server rejects unregistered
+  // redirect URIs for the Codex client (error authorize_hydra_invalid_request,
+  // request_id 8108187c-2f7f-4860-a72a-de337620be54, tested with
+  // https://hoggcountry.com/auth/chatgpt/callback). Only the registered
+  // localhost redirect works, so manual paste-back is the default until the
+  // official Sign-in-with-ChatGPT program registers a cloud redirect for us —
+  // at that point set SCOUT_OPENAI_CODEX_REDIRECT_URI to re-enable it.
+  void requestOrigin;
   return OPENAI_CODEX_LOCAL_REDIRECT_URI;
 }
 

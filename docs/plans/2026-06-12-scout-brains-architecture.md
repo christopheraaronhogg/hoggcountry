@@ -56,6 +56,18 @@ Two different OpenAI integrations — do not conflate them:
   also a localhost bridge (`scripts/scout-codex-local-bridge.mjs`) that shells
   out to the Codex CLI for dev/local use.
 
+  Empirical finding (2026-06-12, verified live by Codex): OpenAI's authorize
+  server **rejects unregistered redirect URIs** for the Codex client
+  (`authorize_hydra_invalid_request` for
+  https://hoggcountry.com/auth/chatgpt/callback). Only the registered
+  localhost redirect works, so every ChatGPT connect/login flow runs in
+  manual paste-back mode until the official program registers a cloud
+  redirect for us. Consequences shipped the same day: the OAuth flow
+  defaults to the localhost redirect everywhere, and the one-tap
+  "Continue with ChatGPT" login buttons are built but gated behind
+  `PUBLIC_CHATGPT_LOGIN_ENABLED=1` (flip on + set
+  `SCOUT_OPENAI_CODEX_REDIRECT_URI` when a registered redirect exists).
+
   Honest risk framing: this rides OpenAI's Codex OAuth client and the
   Codex-scoped responses endpoint, which OpenAI sanctions for Codex surfaces —
   not (yet) as a general third-party "user plan compute" API. It is solid for

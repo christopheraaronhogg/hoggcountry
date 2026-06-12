@@ -19,10 +19,12 @@
   </div>
 
   <div class="auth-panel">
-    <a class="chatgpt-button" href={data.chatgptUrl}>
-      Continue with ChatGPT
-      <span class="chatgpt-note">also connects Scout's brain</span>
-    </a>
+    {#if data.chatgptUrl}
+      <a class="chatgpt-button" href={data.chatgptUrl}>
+        Continue with ChatGPT
+        <span class="chatgpt-note">also connects Scout's brain</span>
+      </a>
+    {/if}
     <a class="google-button" href={data.googleUrl}>Continue with Google</a>
 
     <div class="divider"><span>or</span></div>

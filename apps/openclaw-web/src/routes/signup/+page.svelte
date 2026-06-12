@@ -14,16 +14,18 @@
   <div class="auth-copy">
     <p class="eyebrow">Scout account</p>
     <h1>Create your trail workspace.</h1>
-    <p class="lede">One tap with ChatGPT creates your account and connects Scout's brain, or use email and password.</p>
+    <p class="lede">Use email and password now. You can connect ChatGPT as Scout's brain right after signup.</p>
   </div>
 
   <form method="POST" class="auth-panel">
-    <a class="chatgpt-button" href={`/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`}>
-      Continue with ChatGPT
-      <span class="chatgpt-note">creates your account + connects Scout's brain</span>
-    </a>
+    {#if data.chatgptEnabled}
+      <a class="chatgpt-button" href={`/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`}>
+        Continue with ChatGPT
+        <span class="chatgpt-note">creates your account + connects Scout's brain</span>
+      </a>
 
-    <div class="divider"><span>or</span></div>
+      <div class="divider"><span>or</span></div>
+    {/if}
 
     <input type="hidden" name="redirectTo" value={redirectTo} />
 

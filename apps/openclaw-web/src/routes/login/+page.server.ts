@@ -7,6 +7,15 @@ import {
   type AuthUser
 } from '$lib/server/auth';
 import { publicApiBase } from '$lib/server/public-api';
+import { env } from '$env/dynamic/public';
+
+// One-tap ChatGPT login requires a cloud redirect URI that OpenAI's Codex
+// client rejects today (verified 2026-06-12); flip this on when the official
+// Sign-in-with-ChatGPT program registers one for us.
+function chatgptLoginUrl(redirectTo: string): string | null {
+  if (env.PUBLIC_CHATGPT_LOGIN_ENABLED !== '1') return null;
+  return `/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`;
+}
 
 interface LoginPayload {
   token: string;
@@ -48,7 +57,7 @@ export const load: PageServerLoad = async ({ cookies, fetch, locals, url }) => {
     return {
       redirectTo,
       googleUrl: googleLoginUrl(url.origin, redirectTo),
-      chatgptUrl: `/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`,
+      chatgptUrl: chatgptLoginUrl(redirectTo),
       message: authErrorMessage(result.status, result.error?.message),
       messageType: 'error' as const
     };
@@ -63,7 +72,7 @@ export const load: PageServerLoad = async ({ cookies, fetch, locals, url }) => {
   return {
     redirectTo,
     googleUrl: googleLoginUrl(url.origin, redirectTo),
-    chatgptUrl: `/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`,
+    chatgptUrl: chatgptLoginUrl(redirectTo),
     message: chatgptError ? `ChatGPT sign-in failed: ${chatgptError}` : '',
     messageType: chatgptError ? ('error' as const) : ('info' as const)
   };

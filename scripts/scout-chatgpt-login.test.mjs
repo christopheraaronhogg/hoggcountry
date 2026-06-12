@@ -28,14 +28,33 @@ test('login flow keeps lane storage non-fatal so auth still succeeds', () => {
   assert.match(callback, /connected lane save failed; login continues/u);
 });
 
-test('login and signup pages surface the ChatGPT button', () => {
+test('login and signup ChatGPT buttons exist but are gated off by default', () => {
   const login = read('apps/openclaw-web/src/routes/login/+page.svelte');
   assert.match(login, /Continue with ChatGPT/u);
-  assert.match(login, /chatgptUrl/u);
+  assert.match(login, /\{#if data\.chatgptUrl\}/u);
+
+  const loginServer = read('apps/openclaw-web/src/routes/login/+page.server.ts');
+  assert.match(loginServer, /PUBLIC_CHATGPT_LOGIN_ENABLED/u);
 
   const signup = read('apps/openclaw-web/src/routes/signup/+page.svelte');
   assert.match(signup, /Continue with ChatGPT/u);
+  assert.match(signup, /\{#if data\.chatgptEnabled\}/u);
   assert.match(signup, /\/auth\/chatgpt\/start/u);
+});
+
+test('OAuth redirect defaults to the registered localhost URI (cloud rejected by OpenAI)', async () => {
+  const { resolveOpenAICodexRedirectUri, OPENAI_CODEX_LOCAL_REDIRECT_URI } = await import(
+    '../apps/openclaw-web/src/lib/server/claw-openai-codex.ts'
+  );
+
+  assert.equal(resolveOpenAICodexRedirectUri('https://hoggcountry.com'), OPENAI_CODEX_LOCAL_REDIRECT_URI);
+
+  process.env.SCOUT_OPENAI_CODEX_REDIRECT_URI = 'https://example.com/cb';
+  try {
+    assert.equal(resolveOpenAICodexRedirectUri('https://hoggcountry.com'), 'https://example.com/cb');
+  } finally {
+    delete process.env.SCOUT_OPENAI_CODEX_REDIRECT_URI;
+  }
 });
 
 test('Laravel exchange endpoint is registered and verifies tokens via JWKS', () => {

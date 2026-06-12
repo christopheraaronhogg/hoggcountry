@@ -6,6 +6,7 @@ import {
   setAuthCookie,
   type AuthUser
 } from '$lib/server/auth';
+import { env } from '$env/dynamic/public';
 
 interface RegisterPayload {
   token: string;
@@ -26,7 +27,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   }
 
   return {
-    redirectTo
+    redirectTo,
+    chatgptEnabled: env.PUBLIC_CHATGPT_LOGIN_ENABLED === '1'
   };
 };
 
