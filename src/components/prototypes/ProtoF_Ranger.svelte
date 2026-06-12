@@ -191,6 +191,20 @@
     return 'Original full quality';
   }
 
+  // Touch-primary devices skip the tap-to-enlarge modal for image stories:
+  // accidental taps while scrolling beat the value of a lightbox when the
+  // full-size image can just sit inline and be pinch-zoomed natively.
+  let touchPrimary = $state(false);
+
+  onMount(() => {
+    touchPrimary = window.matchMedia('(pointer: coarse)').matches;
+  });
+
+  function heroOpensModal(update) {
+    if (!touchPrimary) return true;
+    return isYouTubeUpdate(update);
+  }
+
   function openStoryModal(index = heroStoryIndex) {
     storyModalIndex = index;
   }
@@ -465,27 +479,47 @@
           <div class="hero-story-stage" style={`--story-progress: ${((heroStoryIndex + 1) / storyUpdates.length) * 100}%`}>
             <article class="hero-story-card" data-story-index={heroStoryIndex}>
               {#if storyMediaUrl(heroStoryUpdate)}
-                <button class="hero-story-media" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label={isYouTubeUpdate(heroStoryUpdate) ? 'Play trail update video' : 'Open trail update image full screen'}>
-                  {#if String(heroStoryUpdate.mediaType || '').startsWith('video/')}
-                    <video src={storyMediaUrl(heroStoryUpdate)} playsinline preload="metadata"></video>
-                  {:else}
-                    <img src={storyThumbnailUrl(heroStoryUpdate)} alt={heroStoryUpdate.title || 'Trail update'} loading="lazy" onerror={(e) => handleStoryImageError(e, heroStoryUpdate)} />
-                  {/if}
-                  {#if isYouTubeUpdate(heroStoryUpdate)}
-                    <span class="story-play-button" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z"></path>
-                      </svg>
-                    </span>
-                  {/if}
-                  <span class="story-expand-hint">{isYouTubeUpdate(heroStoryUpdate) ? 'Tap to watch' : 'Tap to enlarge'}</span>
-                </button>
+                {#if heroOpensModal(heroStoryUpdate)}
+                  <button class="hero-story-media" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label={isYouTubeUpdate(heroStoryUpdate) ? 'Play trail update video' : 'Open trail update image full screen'}>
+                    {#if String(heroStoryUpdate.mediaType || '').startsWith('video/')}
+                      <video src={storyMediaUrl(heroStoryUpdate)} playsinline preload="metadata"></video>
+                    {:else}
+                      <img src={storyThumbnailUrl(heroStoryUpdate)} alt={heroStoryUpdate.title || 'Trail update'} loading="lazy" onerror={(e) => handleStoryImageError(e, heroStoryUpdate)} />
+                    {/if}
+                    {#if isYouTubeUpdate(heroStoryUpdate)}
+                      <span class="story-play-button" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M8 5v14l11-7z"></path>
+                        </svg>
+                      </span>
+                    {/if}
+                    <span class="story-expand-hint">{isYouTubeUpdate(heroStoryUpdate) ? 'Tap to watch' : 'Tap to enlarge'}</span>
+                  </button>
+                {:else}
+                  <div class="hero-story-media is-static">
+                    {#if String(heroStoryUpdate.mediaType || '').startsWith('video/')}
+                      <video src={storyMediaUrl(heroStoryUpdate)} playsinline controls preload="metadata">
+                        <track kind="captions" />
+                      </video>
+                    {:else}
+                      <img src={storyMediaUrl(heroStoryUpdate)} alt={heroStoryUpdate.title || 'Trail update'} loading="lazy" onerror={(e) => handleStoryImageError(e, heroStoryUpdate)} />
+                    {/if}
+                  </div>
+                {/if}
               {/if}
-              <button class="hero-story-overlay" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label="Open trail update story">
-                <span class="hero-story-meta">{updateMeta(heroStoryUpdate)}</span>
-                <span class="hero-story-card-title">{heroStoryUpdate.title || 'Trail update'}</span>
-                <span class="hero-story-card-copy">{updateExcerpt(heroStoryUpdate, 90)}</span>
-              </button>
+              {#if heroOpensModal(heroStoryUpdate)}
+                <button class="hero-story-overlay" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label="Open trail update story">
+                  <span class="hero-story-meta">{updateMeta(heroStoryUpdate)}</span>
+                  <span class="hero-story-card-title">{heroStoryUpdate.title || 'Trail update'}</span>
+                  <span class="hero-story-card-copy">{updateExcerpt(heroStoryUpdate, 90)}</span>
+                </button>
+              {:else}
+                <div class="hero-story-overlay is-static">
+                  <span class="hero-story-meta">{updateMeta(heroStoryUpdate)}</span>
+                  <span class="hero-story-card-title">{heroStoryUpdate.title || 'Trail update'}</span>
+                  <span class="hero-story-card-copy">{updateExcerpt(heroStoryUpdate, 90)}</span>
+                </div>
+              {/if}
             </article>
             <div class="hero-story-rail" aria-label="Trail story carousel controls">
               <button type="button" onclick={previousHeroStory} disabled={storyUpdates.length <= 1} aria-label="Show newer trail update">
@@ -1575,6 +1609,14 @@
     border: 0;
     background: rgba(77, 89, 74, 0.12);
     cursor: zoom-in;
+  }
+
+  .hero-story-media.is-static {
+    cursor: default;
+  }
+
+  .hero-story-overlay.is-static {
+    cursor: default;
   }
 
   .hero-story-media::after {
