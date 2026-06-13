@@ -2,6 +2,17 @@
 
 Working notes for AI agents in this repository.
 
+## Trail data — anchor calibration + licensing policy (2026-06-12)
+
+All displayed AT miles come from the anchor-calibration pipeline
+(`src/data/at-mile-anchors.yaml` → `scripts/calibrate-at-mileposts.mjs` →
+`public/at-mileposts.json` + the map-pack boundary conversion). Never
+hand-enter a trail mile; never add anchors from memory. Before touching any
+trail data source — especially anything involving purchased guidebooks
+(AWOL, ATC Data Book) or third-party apps (FarOut) — read
+`docs/trail-data-provenance.md`. Short version: individual facts we select
+and cite are fine; wholesale extraction of anyone's waypoint tables is not.
+
 ## Active Status — Netlify → Forge cutover completed (2026-06-12)
 
 `hoggcountry.com` now serves from Forge. Netlify is no longer the production

@@ -55,6 +55,8 @@ Key facts (AWOL 2026): total trail **2,197.4 miles** (not 2,197.9); approach tra
 
 When adding AT facts: add to the canonical source with citation, import the value (never hardcode), then run `/audit-trail-facts` to validate (5-agent cross-check; see `.claude/skills/audit-trail-facts.md`).
 
+**Mile markers** are anchor-calibrated, never hand-entered: `src/data/at-mile-anchors.yaml` → `scripts/calibrate-at-mileposts.mjs` → everything (map, tracker, Today, Scout, trail-facts derivations). Annual guidebook updates touch only the anchor file. Licensing rules — what data we may extract from purchased guides (facts: yes; their waypoint tables: never) — live in `docs/trail-data-provenance.md`. Read it before touching any trail data source.
+
 ## AT Field Guide
 
 The Field Guide is built from `MASTER_NOBO_FIELD_GUIDE.md` (source of truth):
