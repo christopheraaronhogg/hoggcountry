@@ -2,8 +2,14 @@ import type { RequestHandler } from './$types';
 import { requireWorkspace, ok } from '$lib/server/workspace-endpoint';
 import { setWorkspaceCurrentMile } from '$lib/server/workspace-store';
 
+// Official AT length (src/data/trail-facts.yaml). Clamp so a stored profile
+// mile can't exceed the trail and diverge Scout's prompt context from the UI.
+const TRAIL_TOTAL_MILES = 2197.4;
+
 export const POST: RequestHandler = async (event) => {
   const { workspaceId, betaProfile } = requireWorkspace(event);
   const payload = (await event.request.json()) as { currentMile?: number };
-  return ok(await setWorkspaceCurrentMile(workspaceId, betaProfile, Number(payload.currentMile ?? 0)));
+  const raw = Number(payload.currentMile ?? 0);
+  const mile = Number.isFinite(raw) ? Math.max(0, Math.min(TRAIL_TOTAL_MILES, raw)) : 0;
+  return ok(await setWorkspaceCurrentMile(workspaceId, betaProfile, mile));
 };

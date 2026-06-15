@@ -175,16 +175,16 @@ states:
   - id: PA
     name: Pennsylvania
     entry_mile: 1068.1
-    exit_mile: 1297.9
-    miles: 229.8
+    exit_mile: 1297.4
+    miles: 229.3
     note: "Rocksylvania - famous for rocky terrain"
     citation: { source: anchor-calibration vs ATC Data Book 2024/25, year: 2026 }
 
   - id: NJ
     name: New Jersey
-    entry_mile: 1297.9
+    entry_mile: 1297.4
     exit_mile: 1372.2
-    miles: 74.3
+    miles: 74.8
     citation: { source: anchor-calibration vs ATC Data Book 2024/25, year: 2026 }
 
   - id: NY

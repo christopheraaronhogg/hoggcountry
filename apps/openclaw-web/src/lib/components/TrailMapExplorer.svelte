@@ -306,10 +306,9 @@
       observedAt: selectedPoint.observedAt as string | null
     };
   });
-  const totalMiles = $derived.by(() => {
-    const points = pack?.milepoints;
-    return points?.length ? points[points.length - 1].mile : null;
-  });
+  // Official display frame (2,197.4) — the same total /journey, /app/progress,
+  // and the homepage teaser use, so every surface agrees on percent and total.
+  const totalMiles = $derived(pack?.route.displayMiles ?? null);
   const progressLine = $derived.by(() => {
     if (!currentPoint || !totalMiles) return '';
     const pct = clamp((currentPoint.mile / totalMiles) * 100, 0, 100);

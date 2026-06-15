@@ -7,7 +7,7 @@
   const exchanges = [
     {
       q: 'Plan me a 3-day northbound hike from Pine Grove Furnace.',
-      a: `Conservative shape, ~33.5 trail miles over 3 days (~11/day), Pine Grove Furnace (mile 1,105.9) finishing at Darlington Shelter:\n\n• Day 1 — Pine Grove Furnace → James Fry Shelter side trail\n• Day 2 — James Fry → PA 174 / Boiling Springs (mile 1,125.1) — resupply\n• Day 3 — Boiling Springs → Darlington Shelter\n\nWant more miles? I can stretch it to Duncannon (~44.9 mi). Verify shelter water and legal camping against a current guide before you commit.`
+      a: `Conservative shape, ~33.5 trail miles over 3 days (~11/day), Pine Grove Furnace (mile ~1,106) finishing at Darlington Shelter:\n\n• Day 1 — Pine Grove Furnace → James Fry Shelter side trail\n• Day 2 — James Fry → PA 174 / Boiling Springs (mile 1,125.1) — resupply\n• Day 3 — Boiling Springs → Darlington Shelter\n\nWant more miles? I can stretch it to Duncannon (~44.9 mi). Verify shelter water and legal camping against a current guide before you commit.`
     },
     {
       q: 'Next resupply heading north?',

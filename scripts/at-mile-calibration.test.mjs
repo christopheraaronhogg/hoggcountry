@@ -38,10 +38,17 @@ test('calibration frame matches the anchor table', () => {
 
 test('mileposts cover the official frame with monotonic miles', () => {
   const mileposts = milepostsPayload.mileposts;
+  const total = anchorsDoc.frame.total_miles;
   assert.equal(mileposts[0].mile, 0);
-  assert.equal(mileposts[mileposts.length - 1].mile, Math.floor(anchorsDoc.frame.total_miles));
+  // The final milepost must be the true terminus (2197.4), not the truncated
+  // integer — coordinate snaps at Katahdin must resolve to 100% complete.
+  assert.equal(mileposts[mileposts.length - 1].mile, total, 'last milepost must be the official terminus');
+  // Whole-mile spine increments by 1 up to floor(total); the appended fractional
+  // terminus is the only sub-mile step.
   for (let i = 1; i < mileposts.length; i += 1) {
-    assert.equal(mileposts[i].mile, mileposts[i - 1].mile + 1);
+    const delta = mileposts[i].mile - mileposts[i - 1].mile;
+    const isTerminusStep = i === mileposts.length - 1 && delta < 1;
+    assert.ok(isTerminusStep || delta === 1, `unexpected milepost step at index ${i}: ${delta}`);
   }
 });
 

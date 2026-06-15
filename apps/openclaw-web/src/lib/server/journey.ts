@@ -248,8 +248,10 @@ export function buildJourney(input: BuildJourneyInput): JourneyData {
       milesHiked: roundTenth(current),
       milesRemaining: roundTenth(Math.max(0, total - current)),
       currentStateName: input.isPreview ? null : states[currentStateIdx]?.name ?? null,
-      daysOnTrail,
-      paceMilesPerDay,
+      // In preview there's no known position, so time-on-trail/pace are
+      // meaningless and would contradict the "starts soon" / "mile 0" hero.
+      daysOnTrail: input.isPreview ? 0 : daysOnTrail,
+      paceMilesPerDay: input.isPreview ? null : paceMilesPerDay,
       startDate: input.startDateISO,
       latestFixLabel: input.latestFixLabel,
       latestFixAt: input.latestFixAt,
@@ -342,8 +344,11 @@ export async function loadProfileJourney(
   let elevationSamples: { mile: number; elevationFt: number }[] = [];
   if (options) {
     try {
-      const { loadTrailMapPack } = await import('$lib/server/map-pack');
-      const pack = await loadTrailMapPack({ fetch: options.fetch, requestOrigin: options.requestOrigin, historyLimit: 1 });
+      // Reference pack only (calibrated geometry/terrain) — no tracker network
+      // round-trips, since the elevation silhouette is identical for everyone
+      // and the hiker's own mile comes from their profile, not Dad's fix.
+      const { loadReferencePack } = await import('$lib/server/map-pack');
+      const pack = await loadReferencePack();
       elevationSamples = pack.terrain.elevation.map((e) => ({ mile: e.mile, elevationFt: e.elevationFt }));
     } catch {
       elevationSamples = [];

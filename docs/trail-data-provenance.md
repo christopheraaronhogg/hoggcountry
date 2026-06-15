@@ -95,14 +95,26 @@ cost money.
    ~58 anchors against it (reading + correcting our own facts; ~20 minutes) →
    re-run the pipeline → review the report → ship.
 
-## 4. Known gaps (as of 2026-06-12)
+## 4. Known gaps (as of 2026-06-15)
 
-- `MASTER_NOBO_FIELD_GUIDE.md` bail-out/mileage tables still carry mixed-frame
-  rows up to ~90 mi off; regenerate them data-driven from the calibrated
-  waypoints rather than patching rows.
+- **Scout grounding frame.** `packages/trail-data/src/at-route-validator.ts`
+  carries hand-maintained `AT_ROUTE_REFERENCE_POINTS` miles that match the
+  calibrated anchor frame for most points but diverge for some (Harpers Ferry
+  ~2 mi, Abol Bridge ~4.6 mi, a few up to ~7 mi). `scout-grounding-consistency`
+  fails only on gross drift (>5 mi at co-located anchors) and logs the rest.
+  Reconciling means regenerating those miles from the calibration at build time
+  AND re-baselining the deterministic grounding eval — a deliberate effort, not
+  a quick patch, because the validator is safety-critical. Until then Scout's
+  answers are self-consistent in their own frame but can differ from the map by
+  a few miles at those points.
 - Anchors marked `medium`/`low` in `at-mile-anchors.yaml` await verification
   against the physical AWOL 2026 guide.
-- `/audit-trail-facts` validation pass pending after the trail-facts
-  recalibration.
+- The NC/TN weave: a few NC landmarks (Hot Springs, Max Patch) sit past the
+  simplified TN cut at mile 239.4, so the mile-based state assignment files
+  them under TN. Geographically correct, frame-simplified; modeling the true
+  weave is out of scope.
+- `HIKE_START_DATE` (journey.ts) is a single hardcoded constant, not derived
+  from Dad's actual first Garmin fix — confirm it before relying on the
+  days-on-trail / pace figures.
 - Active trail detours (post-Helene Nolichucky/Damascus corridor, per the 2026
   Data Book) mean on-the-ground mileage can differ from any guide locally.

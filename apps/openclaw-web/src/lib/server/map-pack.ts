@@ -459,7 +459,11 @@ async function loadMeasuredToOfficial(): Promise<((measured: number) => number) 
       const [m0, o0] = pairs[lo];
       const [m1, o1] = pairs[hi];
       const t = m1 > m0 ? (measured - m0) / (m1 - m0) : 0;
-      return Math.round((o0 + (o1 - o0) * t) * 1000) / 1000;
+      const official = o0 + (o1 - o0) * t;
+      // Clamp to the official frame; linear extrapolation past the terminus
+      // pair could otherwise yield a mile above 2197.4 for an out-of-range fix.
+      const clamped = Math.max(0, Math.min(OFFICIAL_DISPLAY_MILES, official));
+      return Math.round(clamped * 1000) / 1000;
     };
   } catch {
     return null;
@@ -505,7 +509,7 @@ function calibratePack(
   };
 }
 
-async function loadReferencePack(): Promise<Omit<TrailMapPack, 'generatedAt' | 'tracker'>> {
+export async function loadReferencePack(): Promise<Omit<TrailMapPack, 'generatedAt' | 'tracker'>> {
   if (!referencePackPromise) {
     referencePackPromise = Promise.all([
       loadRoute(),
@@ -564,16 +568,16 @@ function selectHoggRow(rows: unknown): GenericRecord | null {
 }
 
 async function enrichPoint(point: TrailMapPoint): Promise<TrailMapPoint> {
-  if (point.mile !== null) return point;
-
+  // Always re-derive the mile from coordinates in the official calibrated
+  // frame, overwriting any scraped backend mile. The backend's `mile` comes
+  // from Garmin description text and is NOT on the calibrated frame, so
+  // trusting it would diverge /journey and the map banner from the
+  // coordinate-derived Today brief for the same fix (cross-surface drift).
   try {
     const nearest = await nearestAtMilepost(point.lat, point.lon);
-    return {
-      ...point,
-      mile: nearest.scaledTrailMiles ?? nearest.mile
-    };
+    return { ...point, mile: nearest.mile };
   } catch {
-    return point;
+    return point; // keep whatever mile we had if the lookup fails
   }
 }
 
