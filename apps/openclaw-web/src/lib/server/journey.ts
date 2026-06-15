@@ -73,9 +73,16 @@ export interface JourneySummary {
   readonly isPreview: boolean;
 }
 
+export interface JourneyElevation {
+  readonly points: { readonly mile: number; readonly ft: number }[];
+  readonly minFt: number;
+  readonly maxFt: number;
+}
+
 export interface JourneyData {
   readonly summary: JourneySummary;
   readonly states: JourneyState[];
+  readonly elevation: JourneyElevation;
 }
 
 interface RawState {
@@ -107,6 +114,39 @@ export interface BuildJourneyInput {
   readonly latestFixLabel: string | null;
   readonly latestFixAt: string | null;
   readonly isPreview: boolean;
+  // Per-mile elevation samples (official frame). Downsampled into a silhouette
+  // for the profile chart. Optional so the personal/app path can omit it.
+  readonly elevationSamples?: readonly { mile: number; elevationFt: number }[];
+}
+
+// Peak-preserving downsample of the elevation series into ~`bins` columns:
+// take the max elevation per mile-bin so the Whites/Katahdin spikes survive.
+function buildElevation(
+  samples: readonly { mile: number; elevationFt: number }[] | undefined,
+  totalMiles: number,
+  bins = 280
+): JourneyElevation {
+  const valid = (samples ?? []).filter((s) => Number.isFinite(s.mile) && Number.isFinite(s.elevationFt));
+  if (!valid.length || totalMiles <= 0) return { points: [], minFt: 0, maxFt: 0 };
+
+  const binWidth = totalMiles / bins;
+  const binMax: (number | null)[] = new Array(bins).fill(null);
+  for (const s of valid) {
+    const bi = Math.min(bins - 1, Math.max(0, Math.floor(s.mile / binWidth)));
+    if (binMax[bi] === null || s.elevationFt > (binMax[bi] as number)) binMax[bi] = s.elevationFt;
+  }
+
+  const points: { mile: number; ft: number }[] = [];
+  let minFt = Infinity;
+  let maxFt = -Infinity;
+  for (let i = 0; i < bins; i += 1) {
+    if (binMax[i] === null) continue; // sparse gap — skip rather than fabricate
+    const ft = Math.max(0, Math.round(binMax[i] as number));
+    points.push({ mile: Math.round((i + 0.5) * binWidth * 10) / 10, ft });
+    if (ft < minFt) minFt = ft;
+    if (ft > maxFt) maxFt = ft;
+  }
+  return { points, minFt: minFt === Infinity ? 0 : minFt, maxFt: maxFt === -Infinity ? 0 : maxFt };
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -215,7 +255,8 @@ export function buildJourney(input: BuildJourneyInput): JourneyData {
       latestFixAt: input.latestFixAt,
       isPreview: input.isPreview
     },
-    states: journeyStates
+    states: journeyStates,
+    elevation: buildElevation(input.elevationSamples, total)
   };
 }
 
@@ -357,6 +398,7 @@ export async function loadJourney(options: LoadJourneyOptions): Promise<JourneyD
     nowMs: Date.now(),
     latestFixLabel: !isPreview ? `AT mile ${currentMile.toFixed(1)}` : null,
     latestFixAt: current?.observedAt ?? null,
-    isPreview
+    isPreview,
+    elevationSamples: pack.terrain.elevation.map((e) => ({ mile: e.mile, elevationFt: e.elevationFt }))
   });
 }

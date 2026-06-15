@@ -122,6 +122,23 @@ test('personal journey: mid-trail mile is current state, not preview', () => {
   assert.equal(j.summary.currentMile, 500);
 });
 
+test('elevation: peak-preserving downsample with sane scale, empty when no samples', () => {
+  // dense ramp with a sharp spike at mile 1000 that binning must keep
+  const samples = [];
+  for (let m = 0; m <= 2197; m += 1) samples.push({ mile: m, elevationFt: m === 1000 ? 6600 : 1000 + Math.sin(m / 50) * 800 });
+  const j = base({ elevationSamples: samples });
+  assert.ok(j.elevation.points.length > 50 && j.elevation.points.length <= 280, 'downsampled to <= bins');
+  assert.equal(j.elevation.maxFt, 6600, 'spike preserved by max-per-bin');
+  assert.ok(j.elevation.minFt >= 0, 'floored at sea level');
+  // points are monotonic in mile and within range
+  for (let i = 1; i < j.elevation.points.length; i++) assert.ok(j.elevation.points[i].mile > j.elevation.points[i - 1].mile);
+
+  const none = base({ elevationSamples: [] });
+  assert.deepEqual(none.elevation, { points: [], minFt: 0, maxFt: 0 });
+  const missing = base();
+  assert.deepEqual(missing.elevation.points, []); // optional input → empty
+});
+
 test('personal journey: zero mile renders as preview with no current state', () => {
   const j = buildJourney({
     currentMile: 0, totalMiles: 2197.4, states: STATES, landmarks: [], milestones: [],
