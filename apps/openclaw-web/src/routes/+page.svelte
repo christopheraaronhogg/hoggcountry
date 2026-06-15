@@ -13,4 +13,4 @@
   />
 </svelte:head>
 
-<ProtoF videos={data.videos} />
+<ProtoF videos={data.videos} journey={data.journey} />

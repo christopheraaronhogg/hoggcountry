@@ -8,7 +8,11 @@
 
   const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "https://hoggcountry.on-forge.com/api/v1").replace(/\/+$/, "");
 
-  let { videos: initialVideos = [], cutoverSafe = false } = $props();
+  let { videos: initialVideos = [], cutoverSafe = false, journey = null } = $props();
+
+  function miFmt(n) {
+    return typeof n === 'number' ? n.toLocaleString('en-US', { maximumFractionDigits: 1 }) : n;
+  }
   let videos = $state(initialVideos);
   let _liveLoadError = $state("");
   let trailUpdates = $state([]);
@@ -463,6 +467,28 @@
           </svg>
         </span>
       </div>
+
+      {#if journey}
+        <a class="hero-progress" href="/journey" aria-label="Follow Dad's live trail progress">
+          <div class="hp-top">
+            <span class="hp-label">{journey.isPreview ? 'Expedition staging' : 'Live progress'}</span>
+            <span class="hp-pct">{journey.isPreview ? 'Mile 0' : `${journey.percentComplete}%`}</span>
+          </div>
+          <div class="hp-rail">
+            <span class="hp-fill" style={`width:${journey.percentComplete}%`}></span>
+            <span class="hp-marker" style={`left:${journey.percentComplete}%`}></span>
+          </div>
+          <div class="hp-foot">
+            {#if journey.isPreview}
+              <span class="hp-where">Staged at Springer — {miFmt(journey.totalMiles)} mi to Katahdin</span>
+            {:else}
+              <span class="hp-where"><strong>Mile {miFmt(journey.currentMile)}</strong>{#if journey.currentStateName}{` · ${journey.currentStateName}`}{/if}</span>
+              <span class="hp-rem">{miFmt(journey.milesRemaining)} mi to Katahdin{#if journey.daysOnTrail}{` · Day ${journey.daysOnTrail}`}{/if}</span>
+            {/if}
+            <span class="hp-go">Follow the journey →</span>
+          </div>
+        </a>
+      {/if}
 
       <div class="hero-cta">
         <a href="/guide" class="cta-primary">
@@ -2140,6 +2166,87 @@
   .route-line svg {
     width: 100%;
     height: 20px;
+  }
+
+  .hero-progress {
+    display: block;
+    width: min(100%, 30rem);
+    margin: -1rem auto 2rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: 0.9rem;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(245, 242, 232, 0.18);
+    text-decoration: none;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .hero-progress:hover {
+    background: rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+  }
+  .hp-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+  }
+  .hp-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--terra);
+  }
+  .hp-pct {
+    font-family: Oswald, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--cream, #f5f2e8);
+  }
+  .hp-rail {
+    position: relative;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(245, 242, 232, 0.2);
+  }
+  .hp-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--terra), #f0b450);
+    transition: width 0.6s ease;
+  }
+  .hp-marker {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background: var(--terra);
+    border: 2px solid var(--cream, #f5f2e8);
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3);
+  }
+  .hp-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.9rem;
+    align-items: baseline;
+    margin-top: 0.55rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.82rem;
+    color: rgba(245, 242, 232, 0.82);
+  }
+  .hp-where strong { color: var(--cream, #f5f2e8); }
+  .hp-go {
+    margin-left: auto;
+    color: var(--terra);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-progress:hover { transform: none; }
+    .hp-fill { transition: none; }
   }
 
   .hero-cta {

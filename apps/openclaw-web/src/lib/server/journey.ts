@@ -219,6 +219,57 @@ export function buildJourney(input: BuildJourneyInput): JourneyData {
   };
 }
 
+// Lean summary for the homepage teaser: uses the light Garmin-track path
+// (snapped to the calibrated mileposts) instead of the full map pack, so it
+// never parks the homepage behind a 30k-point geojson parse. Returns the
+// preview summary on any failure so the homepage always renders.
+export async function loadJourneySummary(): Promise<JourneySummary> {
+  try {
+    const [{ loadDadTrack }, { facts }] = await Promise.all([
+      import('$lib/server/dad'),
+      import('../../../../../src/data/trailFacts')
+    ]);
+    const track = await loadDadTrack();
+    const props = (track.properties ?? {}) as {
+      source?: string;
+      latestPoint?: { coords?: [number, number]; when?: string };
+      latestTrailLocation?: { nearestMile?: number };
+    };
+    const isPreview = props.source === 'preview' || !props.latestPoint?.coords;
+    const currentMile = typeof props.latestTrailLocation?.nearestMile === 'number' ? props.latestTrailLocation.nearestMile : 0;
+    const totalMiles = (facts.trail?.total_miles?.value as number) ?? 2197.4;
+
+    return buildJourney({
+      currentMile,
+      totalMiles,
+      states: facts.states as unknown as RawState[],
+      landmarks: [],
+      milestones: [],
+      dispatches: [],
+      startDateISO: HIKE_START_DATE,
+      nowMs: Date.now(),
+      latestFixLabel: isPreview ? null : `AT mile ${currentMile.toFixed(1)}`,
+      latestFixAt: props.latestPoint?.when ?? null,
+      isPreview
+    }).summary;
+  } catch {
+    return {
+      currentMile: 0,
+      totalMiles: 2197.4,
+      percentComplete: 0,
+      milesHiked: 0,
+      milesRemaining: 2197.4,
+      currentStateName: null,
+      daysOnTrail: 0,
+      paceMilesPerDay: null,
+      startDate: HIKE_START_DATE,
+      latestFixLabel: null,
+      latestFixAt: null,
+      isPreview: true
+    };
+  }
+}
+
 interface LoadJourneyOptions {
   readonly fetch: typeof fetch;
   readonly requestOrigin: string;
