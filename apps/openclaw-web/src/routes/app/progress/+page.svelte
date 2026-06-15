@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import ElevationProfile from '$lib/components/ElevationProfile.svelte';
 
   // Wire shapes (mirror of $lib/server/journey, kept client-local since that
   // module is server-only).
@@ -15,8 +16,9 @@
     milesRemaining: number; currentStateName: string | null; daysOnTrail: number;
     paceMilesPerDay: number | null; startDate: string; isPreview: boolean;
   };
+  type Elevation = { points: { mile: number; ft: number }[]; minFt: number; maxFt: number };
   type JourneyResponse = {
-    journey: { summary: Summary; states: JState[] };
+    journey: { summary: Summary; states: JState[]; elevation: Elevation };
     targetPace: number | null;
     hasProfile: boolean;
     trailName: string | null;
@@ -154,6 +156,11 @@
       {/if}
       {#if error}<p class="err">{error}</p>{/if}
     </div>
+
+    <!-- ELEVATION -->
+    {#if data?.journey.elevation?.points?.length}
+      <ElevationProfile elevation={data.journey.elevation} currentMile={summary.currentMile} totalMiles={summary.totalMiles} isPreview={summary.isPreview} />
+    {/if}
 
     <!-- TIMELINE -->
     <ol class="timeline">

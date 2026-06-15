@@ -327,11 +327,28 @@ export interface ProfileJourney {
 // driven by their workspace profile mile instead of Dad's live fix. No
 // dispatches/landmarks-significance differences; it reuses the calibrated
 // states + landmarks so a hiker sees the real trail ahead of them.
-export async function loadProfileJourney(profile: ProfileJourneyInput | null): Promise<ProfileJourney> {
+export async function loadProfileJourney(
+  profile: ProfileJourneyInput | null,
+  options?: { fetch: typeof fetch; requestOrigin: string }
+): Promise<ProfileJourney> {
   const [{ facts }, { MILESTONES }] = await Promise.all([
     import('../../../../../src/data/trailFacts'),
     import('../../../../../src/data/trailMilestones')
   ]);
+
+  // The trail silhouette is identical for everyone; pull the calibrated
+  // elevation series from the reference pack when caller wires fetch/origin.
+  // Best-effort: a pack failure must not sink the hiker's progress view.
+  let elevationSamples: { mile: number; elevationFt: number }[] = [];
+  if (options) {
+    try {
+      const { loadTrailMapPack } = await import('$lib/server/map-pack');
+      const pack = await loadTrailMapPack({ fetch: options.fetch, requestOrigin: options.requestOrigin, historyLimit: 1 });
+      elevationSamples = pack.terrain.elevation.map((e) => ({ mile: e.mile, elevationFt: e.elevationFt }));
+    } catch {
+      elevationSamples = [];
+    }
+  }
 
   const hasProfile = !!profile;
   const currentMile =
@@ -354,7 +371,8 @@ export async function loadProfileJourney(profile: ProfileJourneyInput | null): P
     nowMs: Date.now(),
     latestFixLabel: null,
     latestFixAt: null,
-    isPreview
+    isPreview,
+    elevationSamples
   });
 
   const targetPace =

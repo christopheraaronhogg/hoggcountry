@@ -1,5 +1,6 @@
 <script lang="ts">
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
+  import ElevationProfile from '$lib/components/ElevationProfile.svelte';
   import type { PageData } from './$types';
   import type { JourneyState } from '$lib/server/journey';
 
@@ -23,41 +24,6 @@
     // marker position within the current state's bar
     return state.percentThrough ?? 0;
   }
-
-  // --- Elevation profile (whole-trail silhouette) ---
-  const elev = $derived(data.journey.elevation);
-  const EW = 1000;
-  const EH = 200;
-  const EPAD_T = 14;
-  const EPAD_B = 2;
-  const elevCeil = $derived(Math.max(500, Math.ceil((elev.maxFt || 1) / 500) * 500));
-  function ex(mile: number): number {
-    return s.totalMiles > 0 ? (mile / s.totalMiles) * EW : 0;
-  }
-  function ey(ft: number): number {
-    return EPAD_T + (1 - ft / elevCeil) * (EH - EPAD_T - EPAD_B);
-  }
-  const elevAhead = $derived.by(() => {
-    if (elev.points.length < 2) return '';
-    let d = `M 0 ${EH}`;
-    for (const p of elev.points) d += ` L ${ex(p.mile).toFixed(1)} ${ey(p.ft).toFixed(1)}`;
-    return `${d} L ${EW} ${EH} Z`;
-  });
-  const elevDone = $derived.by(() => {
-    if (s.isPreview || elev.points.length < 2) return '';
-    const cm = s.currentMile;
-    const pts = elev.points.filter((p: { mile: number; ft: number }) => p.mile <= cm);
-    if (pts.length < 2) return '';
-    let d = `M 0 ${EH}`;
-    for (const p of pts) d += ` L ${ex(p.mile).toFixed(1)} ${ey(p.ft).toFixed(1)}`;
-    return `${d} L ${ex(cm).toFixed(1)} ${EH} Z`;
-  });
-  const currentFt = $derived.by(() => {
-    if (!elev.points.length) return 0;
-    let best = elev.points[0];
-    for (const p of elev.points) if (Math.abs(p.mile - s.currentMile) < Math.abs(best.mile - s.currentMile)) best = p;
-    return best.ft;
-  });
 </script>
 
 <svelte:head>
@@ -112,27 +78,7 @@
   </header>
 
   <!-- ELEVATION PROFILE -->
-  {#if elev.points.length > 1}
-    <figure class="elevation">
-      <figcaption class="elev-head">
-        <span class="elev-title">The whole climb</span>
-        <span class="elev-sub">Springer to Katahdin · {elevCeil.toLocaleString()} ft scale</span>
-      </figcaption>
-      <svg viewBox={`0 0 ${EW} ${EH}`} preserveAspectRatio="none" class="elev-svg" role="img" aria-label={`Elevation profile of the full trail${s.isPreview ? '' : `, current position at mile ${fmtMile(s.currentMile)}`}`}>
-        <path class="elev-ahead" d={elevAhead} />
-        {#if elevDone}<path class="elev-done" d={elevDone} />{/if}
-        {#if !s.isPreview}
-          <line class="elev-line" x1={ex(s.currentMile)} y1="0" x2={ex(s.currentMile)} y2={EH} />
-          <circle class="elev-dot" cx={ex(s.currentMile)} cy={ey(currentFt)} r="7" />
-        {/if}
-      </svg>
-      <div class="elev-foot">
-        <span>Springer · mi 0</span>
-        {#if !s.isPreview}<span class="elev-here">Mile {fmtMile(s.currentMile)} · {currentFt.toLocaleString()} ft</span>{/if}
-        <span>Katahdin · mi {fmtMile(s.totalMiles)}</span>
-      </div>
-    </figure>
-  {/if}
+  <ElevationProfile elevation={data.journey.elevation} currentMile={s.currentMile} totalMiles={s.totalMiles} isPreview={s.isPreview} />
 
   <!-- TIMELINE -->
   <ol class="timeline" aria-label="Appalachian Trail journey by state">
@@ -318,26 +264,6 @@
   }
   .btn--primary { background: var(--pine); color: #fff; border-color: var(--pine); }
   .fix-note { margin: 0; font-size: 0.78rem; color: rgba(74, 84, 72, 0.6); font-weight: 700; }
-
-  /* ELEVATION */
-  .elevation {
-    margin: 0 0 2.2rem;
-    padding: 0.9rem 1rem 0.7rem;
-    border: 1px solid var(--border);
-    border-radius: 0.9rem;
-    background: rgba(255, 255, 255, 0.75);
-    box-shadow: var(--shadow-soft);
-  }
-  .elev-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.5rem; }
-  .elev-title { font-family: Oswald, Impact, sans-serif; font-size: 1.05rem; color: var(--ink); }
-  .elev-sub { font-size: 0.72rem; font-weight: 700; color: rgba(74, 84, 72, 0.6); }
-  .elev-svg { display: block; width: 100%; height: clamp(110px, 26vw, 180px); }
-  .elev-ahead { fill: rgba(77, 89, 74, 0.16); stroke: rgba(77, 89, 74, 0.4); stroke-width: 1; vector-effect: non-scaling-stroke; }
-  .elev-done { fill: rgba(166, 181, 137, 0.5); stroke: var(--pine); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
-  .elev-line { stroke: var(--terra); stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0.85; }
-  .elev-dot { fill: var(--terra); stroke: #fff; stroke-width: 2; }
-  .elev-foot { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.4rem; font-size: 0.72rem; font-weight: 700; color: rgba(74, 84, 72, 0.7); }
-  .elev-here { color: var(--terra); }
 
   /* TIMELINE */
   .timeline { list-style: none; margin: 0; padding: 0; }
