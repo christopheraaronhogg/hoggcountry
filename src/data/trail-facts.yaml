@@ -906,21 +906,21 @@ extremes:
 
   longest_state:
     name: Virginia
-    miles: 544.6
+    miles: 556.0
+    note: "Calibrated span (states table, 467.5–1023.5). AWOL 2026 lists ~544.6; the ~11 mi difference is the VA/WV border-ridge attribution convention — verify against the physical AWOL guide."
     citations:
-      - source: AWOL
+      - source: anchor-calibration vs ATC Data Book 2024/25
         year: 2026
-      - source: ATC
-        year: 2026
+        note: "Matches the states table; AWOL per-state figure pending book verification."
 
   shortest_state:
     name: West Virginia
-    miles: 3.1
+    miles: 3.7
+    note: "Calibrated span (states table, 1023.5–1027.2). AWOL 2026 lists ~3.1; depends on the same VA/WV border convention — verify against the physical AWOL guide."
     citations:
-      - source: AWOL
+      - source: anchor-calibration vs ATC Data Book 2024/25
         year: 2026
-      - source: ATC
-        year: 2026
+        note: "Matches the states table; AWOL per-state figure pending book verification."
 
   hardest_mile:
     name: Mahoosuc Notch
