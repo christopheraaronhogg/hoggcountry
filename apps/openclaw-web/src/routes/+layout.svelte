@@ -15,6 +15,7 @@
 
   const publicToolsLinks = [
     { href: '/journey', label: 'The Journey', external: false },
+    { href: '/scout', label: 'Scout', external: false },
     { href: '/updates', label: 'Trail Updates', external: false },
     { href: '/guide', label: 'Field Guide', external: false },
     { href: '/videos', label: 'Videos', external: false },
