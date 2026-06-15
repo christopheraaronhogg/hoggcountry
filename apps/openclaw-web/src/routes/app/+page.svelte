@@ -402,6 +402,9 @@
     <div class="trail-progress" aria-hidden="true">
       <span style={`width:${progressPercent}%`}></span>
     </div>
+    <a class="journey-link" href="/app/progress">
+      Your journey — {hasMile ? `mile ${currentMile.toFixed(1)} of ${TRAIL_FACTS.totalMiles.toLocaleString()}` : 'see the whole trail'} →
+    </a>
   </header>
 
   <section class="hud-strip" aria-label="Trail status">
@@ -709,6 +712,16 @@
     border-radius: inherit;
     background: linear-gradient(90deg, #24362c, #7c8c64);
   }
+
+  .journey-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    color: var(--terra, #d97706);
+    font-weight: 800;
+    font-size: 0.82rem;
+    text-decoration: none;
+  }
+  .journey-link:hover { text-decoration: underline; }
 
   .hud-strip,
   .cue-grid,

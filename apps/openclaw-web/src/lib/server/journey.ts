@@ -270,6 +270,60 @@ export async function loadJourneySummary(): Promise<JourneySummary> {
   }
 }
 
+export interface ProfileJourneyInput {
+  readonly currentMile?: number | null;
+  readonly startDate?: string | null;
+  readonly targetPace?: number | null;
+}
+
+export interface ProfileJourney {
+  readonly journey: JourneyData;
+  readonly targetPace: number | null;
+  readonly hasProfile: boolean;
+}
+
+// The hiker's OWN journey — same engine and frame as the public /journey,
+// driven by their workspace profile mile instead of Dad's live fix. No
+// dispatches/landmarks-significance differences; it reuses the calibrated
+// states + landmarks so a hiker sees the real trail ahead of them.
+export async function loadProfileJourney(profile: ProfileJourneyInput | null): Promise<ProfileJourney> {
+  const [{ facts }, { MILESTONES }] = await Promise.all([
+    import('../../../../../src/data/trailFacts'),
+    import('../../../../../src/data/trailMilestones')
+  ]);
+
+  const hasProfile = !!profile;
+  const currentMile =
+    profile && typeof profile.currentMile === 'number' && Number.isFinite(profile.currentMile)
+      ? Math.max(0, profile.currentMile)
+      : 0;
+  const totalMiles = (facts.trail?.total_miles?.value as number) ?? 2197.4;
+  const startDateISO =
+    profile?.startDate && /^\d{4}-\d{2}-\d{2}/.test(profile.startDate) ? profile.startDate : HIKE_START_DATE;
+  const isPreview = !hasProfile || currentMile <= 0;
+
+  const journey = buildJourney({
+    currentMile,
+    totalMiles,
+    states: facts.states as unknown as RawState[],
+    landmarks: Object.values(facts.landmarks) as unknown as RawLandmark[],
+    milestones: MILESTONES,
+    dispatches: [],
+    startDateISO,
+    nowMs: Date.now(),
+    latestFixLabel: null,
+    latestFixAt: null,
+    isPreview
+  });
+
+  const targetPace =
+    profile && typeof profile.targetPace === 'number' && Number.isFinite(profile.targetPace) && profile.targetPace > 0
+      ? profile.targetPace
+      : null;
+
+  return { journey, targetPace, hasProfile };
+}
+
 interface LoadJourneyOptions {
   readonly fetch: typeof fetch;
   readonly requestOrigin: string;

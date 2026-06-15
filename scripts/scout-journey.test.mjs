@@ -5,6 +5,10 @@ import assert from 'node:assert/strict';
 
 const mod = await import('../apps/openclaw-web/src/lib/server/journey.ts');
 const { buildJourney } = mod;
+// loadProfileJourney/loadJourney aren't unit-tested here: they dynamically
+// import cross-tree (src/data) + $lib modules that only resolve under Vite,
+// not node:test. buildJourney carries their logic; the loaders are verified
+// via build + authenticated endpoint smoke.
 
 const STATES = [
   { id: 'GA', name: 'Georgia', entry_mile: 0, exit_mile: 78.3, miles: 78.3 },
@@ -104,4 +108,26 @@ test('pre-start date yields zero days and null pace', () => {
   const j = base({ nowMs: Date.parse('2026-02-01T00:00:00Z') });
   assert.equal(j.summary.daysOnTrail, 0);
   assert.equal(j.summary.paceMilesPerDay, null);
+});
+
+// Personal-journey shape (what loadProfileJourney passes to buildJourney):
+// mile 500 → Virginia 'current', not preview; mile 0 → preview, no state.
+test('personal journey: mid-trail mile is current state, not preview', () => {
+  const j = buildJourney({
+    currentMile: 500, totalMiles: 2197.4, states: STATES, landmarks: [], milestones: [],
+    dispatches: [], startDateISO: '2026-03-01', nowMs: Date.parse('2026-05-01T00:00:00Z'),
+    latestFixLabel: null, latestFixAt: null, isPreview: false
+  });
+  assert.equal(j.summary.isPreview, false);
+  assert.equal(j.summary.currentMile, 500);
+});
+
+test('personal journey: zero mile renders as preview with no current state', () => {
+  const j = buildJourney({
+    currentMile: 0, totalMiles: 2197.4, states: STATES, landmarks: [], milestones: [],
+    dispatches: [], startDateISO: '2026-03-01', nowMs: Date.parse('2026-05-01T00:00:00Z'),
+    latestFixLabel: null, latestFixAt: null, isPreview: true
+  });
+  assert.equal(j.summary.isPreview, true);
+  assert.equal(j.summary.currentStateName, null);
 });
