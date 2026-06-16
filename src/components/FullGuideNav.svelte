@@ -12,6 +12,9 @@
   let scrollY = $state(0);
   let innerHeight = $state(0);
   let scrollHeight = $state(1);
+  let progressTrackEl = $state(null);
+  let isScrubbing = $state(false);
+  let scrubPreview = $state(null);
 
   // Throttle flag for scroll height updates
   let scrollHeightPending = false;
@@ -19,6 +22,7 @@
   // Derived values for progress bar
   let docHeight = $derived(scrollHeight - innerHeight);
   let progress = $derived(docHeight > 0 ? Math.min((scrollY / docHeight) * 100, 100) : 0);
+  let displayedProgress = $derived(scrubPreview ?? progress);
   let showBackToTop = $derived(scrollY > 500);
 
   // Throttled scroll height update using rAF
@@ -103,6 +107,67 @@
     }
   }
 
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function getMaxScroll() {
+    scrollHeight = document.documentElement.scrollHeight;
+    return Math.max(0, scrollHeight - window.innerHeight);
+  }
+
+  function scrollToProgress(percent, behavior = 'auto') {
+    const maxScroll = getMaxScroll();
+    const nextPercent = clamp(percent, 0, 100);
+    window.scrollTo({ top: (nextPercent / 100) * maxScroll, behavior });
+  }
+
+  function scrubToClientX(clientX, behavior = 'auto') {
+    if (!progressTrackEl) return;
+
+    const rect = progressTrackEl.getBoundingClientRect();
+    const nextPercent = clamp(((clientX - rect.left) / rect.width) * 100, 0, 100);
+    scrubPreview = nextPercent;
+    scrollToProgress(nextPercent, behavior);
+  }
+
+  function handleScrubStart(event) {
+    event.preventDefault();
+    isScrubbing = true;
+    progressTrackEl?.setPointerCapture?.(event.pointerId);
+    scrubToClientX(event.clientX);
+  }
+
+  function handleScrubMove(event) {
+    if (!isScrubbing) return;
+    event.preventDefault();
+    scrubToClientX(event.clientX);
+  }
+
+  function handleScrubEnd(event) {
+    if (!isScrubbing) return;
+    progressTrackEl?.releasePointerCapture?.(event.pointerId);
+    scrubToClientX(event.clientX);
+    isScrubbing = false;
+    scrubPreview = null;
+  }
+
+  function handleProgressKeydown(event) {
+    const current = clamp(progress, 0, 100);
+    let next = current;
+
+    if (event.key === 'ArrowLeft') next = current - 5;
+    else if (event.key === 'ArrowRight') next = current + 5;
+    else if (event.key === 'PageUp') next = current - 10;
+    else if (event.key === 'PageDown') next = current + 10;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = 100;
+    else return;
+
+    event.preventDefault();
+    scrollToProgress(next, 'smooth');
+  }
+
   function openDownloadModal() {
     window.dispatchEvent(new CustomEvent('open-download-modal'));
     showMobileNav = false;
@@ -115,15 +180,31 @@
 
 <!-- Progress Bar -->
 <div class="progress-container" style={`top: ${headerHidden ? 0 : headerHeight}px`}>
-  <div class="progress-track">
-    <div class="progress-fill" style="width: {progress}%"></div>
-    <div class="progress-marker" style="left: {progress}%">
+  <div
+    class="progress-track"
+    class:scrubbing={isScrubbing}
+    bind:this={progressTrackEl}
+    role="slider"
+    tabindex="0"
+    aria-label="Guide progress"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow={Math.round(displayedProgress)}
+    aria-valuetext={`${Math.round(displayedProgress)}% through the guide`}
+    onpointerdown={handleScrubStart}
+    onpointermove={handleScrubMove}
+    onpointerup={handleScrubEnd}
+    onpointercancel={handleScrubEnd}
+    onkeydown={handleProgressKeydown}
+  >
+    <div class="progress-fill" style="width: {displayedProgress}%"></div>
+    <div class="progress-marker" style="left: {displayedProgress}%">
       <span class="marker-dot"></span>
     </div>
   </div>
   <div class="progress-labels">
     <span class="progress-start">Springer</span>
-    <span class="progress-percent">{Math.round(progress)}%</span>
+    <span class="progress-percent">{Math.round(displayedProgress)}%</span>
     <span class="progress-end">Katahdin</span>
   </div>
 </div>
@@ -137,7 +218,7 @@
 
   <div class="sidebar-scroll">
     <ul class="toc-list">
-      {#each mainChapters as chapter, i}
+      {#each mainChapters as chapter, i (chapter.id)}
         <li>
           <button
             class="toc-item"
@@ -155,7 +236,7 @@
       <div class="toc-divider"></div>
       <div class="toc-section-label">Quick Reference</div>
       <ul class="toc-list toc-list-quick">
-        {#each quickRefs as ref}
+        {#each quickRefs as ref (ref.id)}
           <li>
             <button
               class="toc-item toc-item-quick"
@@ -194,7 +275,12 @@
 
 <!-- Mobile Nav Drawer -->
 {#if showMobileNav}
-  <div class="mobile-overlay" onclick={() => showMobileNav = false}></div>
+  <button
+    type="button"
+    class="mobile-overlay"
+    onclick={() => showMobileNav = false}
+    aria-label="Close guide navigation"
+  ></button>
   <div class="mobile-drawer">
     <div class="drawer-header">
       <span>Field Guide Contents</span>
@@ -210,7 +296,7 @@
       <div class="drawer-divider"></div>
 
       <ul class="drawer-list">
-        {#each mainChapters as chapter, i}
+        {#each mainChapters as chapter, i (chapter.id)}
           <li>
             <button
               class="drawer-item"
@@ -227,7 +313,7 @@
         <div class="drawer-divider"></div>
         <div class="drawer-section-label">Quick Reference</div>
         <ul class="drawer-list">
-          {#each quickRefs as ref}
+          {#each quickRefs as ref (ref.id)}
             <li>
               <button
                 class="drawer-item"
@@ -289,6 +375,24 @@
     );
     border-radius: 3px;
     overflow: visible;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .progress-track::before {
+    content: '';
+    position: absolute;
+    inset: -12px 0;
+  }
+
+  .progress-track:focus-visible {
+    outline: 2px solid var(--terra, #d97706);
+    outline-offset: 8px;
+  }
+
+  .progress-track.scrubbing {
+    cursor: grabbing;
   }
 
   .progress-fill {
@@ -316,6 +420,7 @@
     border: 3px solid var(--pine, #4d594a);
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    pointer-events: none;
   }
 
   .progress-labels {
@@ -554,9 +659,12 @@
     display: none;
     position: fixed;
     inset: 0;
+    padding: 0;
     background: rgba(0,0,0,0.4);
+    border: 0;
     z-index: 1100;
     animation: fadeIn 0.2s ease;
+    cursor: pointer;
   }
 
   @media (max-width: 1024px) {
