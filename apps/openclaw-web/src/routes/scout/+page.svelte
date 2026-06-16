@@ -1,5 +1,7 @@
 <script lang="ts">
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
+  import ScoutCapabilities from '$lib/components/ScoutCapabilities.svelte';
+  import AppLaunchCTA from '$lib/components/AppLaunchCTA.svelte';
 
   // Example exchanges are illustrative. The numbers are drawn from the same
   // calibrated AT data the map and journey use, and the Pine Grove plan
@@ -28,29 +30,32 @@
 </script>
 
 <svelte:head>
-  <title>Scout — the Appalachian Trail assistant | Hogg Country</title>
+  <title>Scout — the Appalachian Trail app | Hogg Country</title>
   <meta
     name="description"
-    content="Scout is a field concierge for Appalachian Trail hikers: grounded in real calibrated trail miles, source-first from your own documents, offline-aware, and honest about what to verify."
+    content="Scout is a field-grade Appalachian Trail assistant on your phone — grounded in real calibrated trail miles, source-first from your own documents, offline-aware, and honest about what to verify."
   />
   <link rel="canonical" href="https://hoggcountry.com/scout" />
-  <meta property="og:title" content="Scout — a field concierge, not a chatbot" />
+  <meta property="og:title" content="Scout — a field cockpit, not a chatbot" />
   <meta property="og:description" content="Grounded in real AT trail data, built from your own sources, useful offline, and honest about what to verify before you rely on it." />
 </svelte:head>
 
 <div class="scout">
   <header class="hero">
-    <p class="kicker">Scout · Trail assistant</p>
-    <h1>A field concierge, not a chatbot.</h1>
+    <p class="kicker">Scout · The AT app</p>
+    <h1>A field cockpit, not a chatbot.</h1>
     <p class="lede">
-      Scout plans your days, watches the weather, tracks your bag, and turns your own documents into trail-ready
-      decisions — grounded in the same calibrated Appalachian Trail data behind Dad's live map, and honest about what
-      it can't confirm.
+      Scout plans your days, watches the weather, finds your next water and shelter, and turns your own documents into
+      trail-ready decisions — grounded in the same calibrated Appalachian Trail data behind Dad's live map, and honest
+      about what it can't confirm.
     </p>
     <div class="cta-row">
       <a class="btn btn--primary" href="#waitlist">Get early access</a>
-      <a class="btn" href="/journey">See the data it runs on →</a>
+      <a class="btn" href="/journey">See the live demo →</a>
     </div>
+    <p class="hero-disclaimer">
+      App Store and Google Play listings aren't live yet. The waitlist is. We'll email you the day Scout ships.
+    </p>
   </header>
 
   <section class="principles" aria-label="What makes Scout different">
@@ -63,6 +68,8 @@
     {/each}
   </section>
 
+  <ScoutCapabilities />
+
   <section class="demo" aria-label="Example exchanges">
     <h2 class="demo-title">What that looks like</h2>
     <p class="demo-note">Example exchanges — illustrative, with real calibrated trail miles.</p>
@@ -74,17 +81,25 @@
         </article>
       {/each}
     </div>
+    <p class="demo-foot">
+      Want to see the answer keyed to a real position? <a href="/journey">Open Dad's live journey →</a>
+    </p>
   </section>
 
   <section class="signup" id="waitlist" aria-label="Join the waitlist">
     <h2>Scout drops with the app.</h2>
-    <p>It's in private hardening now. Leave your email and we'll tell you the moment it opens.</p>
+    <p>
+      It's in private hardening now. Leave your email and we'll send the App Store and Google Play links the moment
+      they go live.
+    </p>
     <WaitlistSignup source="scout" />
   </section>
 </div>
 
+<AppLaunchCTA source="scout-page-launch" headline="The waitlist is the only line that's open." sub="iOS and Android. Offline-first. Source receipts on every answer. Get told the day the stores light up." />
+
 <style>
-  .scout { max-width: 54rem; margin: 0 auto; padding: clamp(1.5rem, 4vw, 3rem) 1rem 5rem; }
+  .scout { max-width: 54rem; margin: 0 auto; padding: clamp(1.5rem, 4vw, 3rem) 1rem 3rem; }
 
   .hero { text-align: center; display: grid; gap: 1rem; justify-items: center; padding-bottom: 1.5rem; }
   .kicker { margin: 0; color: var(--terra); font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; font-size: 0.74rem; }
@@ -93,6 +108,7 @@
   .cta-row { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-top: 0.3rem; }
   .btn { display: inline-flex; align-items: center; min-height: 2.8rem; padding: 0 1.2rem; border-radius: 999px; border: 1px solid rgba(77,89,74,0.2); background: rgba(255,255,255,0.8); color: var(--pine, #4d594a); font-weight: 800; text-decoration: none; }
   .btn--primary { background: var(--pine); color: #fff; border-color: var(--pine); }
+  .hero-disclaimer { margin: 0; max-width: 44ch; font-size: 0.8rem; font-weight: 700; color: rgba(74, 84, 72, 0.7); }
 
   .principles { display: grid; grid-template-columns: 1fr; gap: 0.8rem; margin-top: 1.5rem; }
   .principle { border: 1px solid var(--border, #e6e1d4); border-radius: 0.9rem; background: rgba(255,255,255,0.7); padding: 1rem 1.1rem; }
@@ -103,6 +119,8 @@
   .demo { margin-top: 2.4rem; }
   .demo-title { margin: 0; font-family: Oswald, Impact, sans-serif; font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--ink); text-align: center; }
   .demo-note { margin: 0.3rem 0 1.2rem; text-align: center; color: rgba(74,84,72,0.65); font-size: 0.82rem; font-weight: 700; }
+  .demo-foot { margin: 1.1rem 0 0; text-align: center; font-size: 0.85rem; color: rgba(74, 84, 72, 0.7); font-weight: 700; }
+  .demo-foot a { color: var(--terra); font-weight: 800; }
   .threads { display: grid; gap: 1rem; }
   .thread { border: 1px solid var(--border); border-radius: 1rem; background: var(--card, #fff); padding: 1rem 1.1rem; box-shadow: var(--shadow-soft); display: grid; gap: 0.7rem; }
   .ask { margin: 0; font-weight: 700; color: var(--ink); display: flex; gap: 0.5rem; align-items: baseline; }

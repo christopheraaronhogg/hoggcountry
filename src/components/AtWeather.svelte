@@ -578,38 +578,48 @@
 </script>
 
 <div class="wrap">
-  <div class="controls card">
-    <div class="row">
-      <div>
-        <div class="k">Mile</div>
-        <div class="v">{mile}</div>
-        <div class="sub">Lat {lat.toFixed(4)} • Lon {lon.toFixed(4)}</div>
-        <div class="sub small">Saved current mile: <b>{characterMile}</b></div>
-        {#if savedMsg}
-          <div class="sub saved">{savedMsg}</div>
-        {/if}
+  <section class="controls card" aria-label="Mile selector">
+    <div class="controlsTop">
+      <div class="mileBlock">
+        <p class="kicker">Preview mile</p>
+        <p class="mileNum">
+          <span class="mileNumValue">{mile}</span>
+          <span class="mileTotal">of 2,197</span>
+        </p>
+        <p class="coords">Lat {lat.toFixed(4)} · Lon {lon.toFixed(4)}</p>
+      </div>
+
+      <div class="mileMeta">
+        <span class="chip chip-current" title="The mile your profile is anchored to">
+          <span class="chip-k">Saved current</span>
+          <span class="chip-v">mile {characterMile}</span>
+        </span>
         {#if userDistMeters != null}
-          <div class="sub small">Nearest mile to you: ~{fmtMi(userDistMeters)} mi away</div>
+          <span class="chip chip-info">Nearest trail mile to you · ~{fmtMi(userDistMeters)} mi</span>
+        {/if}
+        {#if savedMsg}
+          <span class="chip chip-success" role="status">{savedMsg}</span>
         {/if}
         {#if locationErr}
-          <div class="sub err">{locationErr}</div>
+          <span class="chip chip-err" role="alert">{locationErr}</span>
         {/if}
       </div>
+
       <div class="actions">
-        <button class="btn" type="button" onclick={useMyLocation} disabled={locating}>
+        <button class="btn btn-primary" type="button" onclick={useMyLocation} disabled={locating}>
           {locating ? 'Locating…' : 'Use my location'}
         </button>
         {#if mile !== characterMile}
-          <button class="btn" type="button" onclick={setAsCurrentMile}>
-            Set as Current
+          <button class="btn btn-anchor" type="button" onclick={setAsCurrentMile}>
+            Set as current
           </button>
         {/if}
         <button
-          class="btn ghost icon"
+          class="btn btn-ghost btn-icon"
           type="button"
           onclick={copyLink}
-          title="Copy link"
-          aria-label="Copy link"
+          title="Copy link to this mile"
+          aria-label="Copy link to this mile"
         >
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path
@@ -617,233 +627,440 @@
               d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16h-9V7h9v14Z"
             />
           </svg>
+          <span class="btn-label">Copy link</span>
         </button>
       </div>
     </div>
 
-    <input
-      class="slider"
-      type="range"
-      min="0"
-      max="2197"
-      step="1"
-      bind:value={mile}
-      aria-label="Mile marker"
-    />
+    <div class="sliderWrap">
+      <input
+        class="slider"
+        type="range"
+        min="0"
+        max="2197"
+        step="1"
+        bind:value={mile}
+        aria-label="Mile marker — drag from Springer (0) to Katahdin (2,197)"
+      />
+      <div class="sliderLabels">
+        <span class="sliderEnd">
+          <span class="sliderEndName">Springer</span>
+          <span class="sliderEndMile">Mile 0</span>
+        </span>
+        <span class="sliderEnd sliderEnd--right">
+          <span class="sliderEndName">Katahdin</span>
+          <span class="sliderEndMile">Mile 2,197</span>
+        </span>
+      </div>
+    </div>
 
-    <div class="hint">Tip: drag the slider or click the map to set your mile.</div>
-  </div>
+    <p class="hint">Drag the slider, click the map, or use your location to pick any mile.</p>
+  </section>
 
   <div class="grid">
-    <div class="wx card">
-      <h2 class="h">Forecast</h2>
-      <div class="forecastModes" role="tablist" aria-label="Forecast range">
-        <button class="modeBtn" class:active={forecastMode === 'now'} onclick={() => (forecastMode = 'now')} type="button">Now</button>
-        <button class="modeBtn" class:active={forecastMode === 'next24h'} onclick={() => (forecastMode = 'next24h')} type="button">Next 24h</button>
-        <button class="modeBtn" class:active={forecastMode === 'next7d'} onclick={() => (forecastMode = 'next7d')} type="button">Next 7d</button>
-      </div>
+    <section class="wx card" aria-label="Forecast">
+      <header class="wxHead">
+        <div class="wxHeadCopy">
+          <p class="kicker">Forecast · Mile {mile}</p>
+          <p class="wxHeadSub">Open-Meteo model · refreshes with the marker</p>
+        </div>
+        <div class="forecastModes" role="tablist" aria-label="Forecast range">
+          <button
+            class="modeBtn"
+            class:active={forecastMode === 'now'}
+            onclick={() => (forecastMode = 'now')}
+            type="button"
+            role="tab"
+            aria-selected={forecastMode === 'now'}
+          >Now</button>
+          <button
+            class="modeBtn"
+            class:active={forecastMode === 'next24h'}
+            onclick={() => (forecastMode = 'next24h')}
+            type="button"
+            role="tab"
+            aria-selected={forecastMode === 'next24h'}
+          >24 hrs</button>
+          <button
+            class="modeBtn"
+            class:active={forecastMode === 'next7d'}
+            onclick={() => (forecastMode = 'next7d')}
+            type="button"
+            role="tab"
+            aria-selected={forecastMode === 'next7d'}
+          >7 days</button>
+        </div>
+      </header>
 
+      <div class="wxBody">
       {#if loading}
-        <p class="p">Loading…</p>
+        <p class="p">Loading the trail…</p>
       {:else if err}
-        <p class="p err">{err}</p>
+        <p class="p p-err">{err}</p>
       {:else}
         {#if wxLoading}
-          <p class="p">Fetching weather…</p>
+          <p class="p">Fetching forecast…</p>
         {:else if wxErr}
-          <p class="p err">{wxErr}</p>
+          <p class="p p-err">{wxErr}</p>
         {:else if wx?.current}
           {#if forecastMode === 'now'}
-            <div class="temps">
-              <div class="tempCard">
-                <div class="label">Current (Open‑Meteo)</div>
-                <div class="temp">{fmt(tempModelF, 0)}°F</div>
-                <div class="subline">Model elevation: {fmt(modelElevFt, 0)} ft</div>
-                <div class="cond">{wxCodeLabel(wx.current.weather_code)}</div>
+            <div class="nowCard">
+              <div class="nowMain">
+                <span class="nowLabel">Right now</span>
+                <span class="nowTemp">{fmt(tempModelF, 0)}<span class="nowDeg">°F</span></span>
+                <span class="nowCond">{wxCodeLabel(wx.current.weather_code)}</span>
               </div>
-            </div>
-
-            <div class="hr"></div>
-
-            <div class="meta">
-              <div><span class="mk">Feels</span> {fmt(wx.current.apparent_temperature, 0)}°</div>
-              <div><span class="mk">Wind</span> {fmt(wx.current.wind_speed_10m, 0)} mph</div>
-              <div><span class="mk">Gust</span> {fmt(wx.current.wind_gusts_10m, 0)} mph</div>
-              <div><span class="mk">Now</span> {wx.current.time ?? '—'} {wx.timezone_abbreviation ? `(${wx.timezone_abbreviation})` : ''}</div>
+              <ul class="nowMeta">
+                <li><span class="nowMetaK">Feels</span><span class="nowMetaV">{fmt(wx.current.apparent_temperature, 0)}°</span></li>
+                <li><span class="nowMetaK">Wind</span><span class="nowMetaV">{fmt(wx.current.wind_speed_10m, 0)} mph</span></li>
+                <li><span class="nowMetaK">Gust</span><span class="nowMetaV">{fmt(wx.current.wind_gusts_10m, 0)} mph</span></li>
+                <li><span class="nowMetaK">Elev</span><span class="nowMetaV">{fmt(modelElevFt, 0)} ft</span></li>
+              </ul>
+              <p class="nowAsOf">
+                As of {wx.current.time ?? '—'}{wx.timezone_abbreviation ? ` (${wx.timezone_abbreviation})` : ''}
+              </p>
             </div>
           {:else if forecastMode === 'next24h'}
             {#if hourlyForecastSteps.length}
               <div class="hourlyGrid">
-                {#each hourlyForecastSteps as hour}
+                {#each hourlyForecastSteps as hour (hour.time)}
                   <article class="forecastTile">
                     <div class="tileTime">{formatHourLabel(hour.time)}</div>
                     <div class="tileTemp">{fmt(hour.temperature, 0)}°</div>
                     <div class="tileCond">{wxCodeLabel(hour.weatherCode)}</div>
-                    <div class="tileMeta">Rain {fmt(hour.precipitationProbability, 0)}%</div>
-                    <div class="tileMeta">Wind {fmt(hour.windSpeed, 0)} mph</div>
+                    <div class="tileMeta"><span class="tileMetaK">Rain</span> {fmt(hour.precipitationProbability, 0)}%</div>
+                    <div class="tileMeta"><span class="tileMetaK">Wind</span> {fmt(hour.windSpeed, 0)} mph</div>
                   </article>
                 {/each}
               </div>
-              <p class="p small">24-hour trend shown in 3-hour steps.</p>
+              <p class="p p-small">3-hour steps · next 24 hours at the selected mile.</p>
             {:else}
               <p class="p">Hourly forecast unavailable for this point.</p>
             {/if}
           {:else}
             {#if dailyForecast.length}
-              <div class="dailyList">
-                {#each dailyForecast as day}
-                  <article class="dailyRow">
+              <ol class="dailyList">
+                {#each dailyForecast as day (day.time)}
+                  <li class="dailyRow">
                     <div class="dayMain">
                       <div class="dayLabel">{formatDayLabel(day.time)}</div>
                       <div class="dayCond">{wxCodeLabel(day.weatherCode)}</div>
                     </div>
-                    <div class="dayTemps">{fmt(day.temperatureMax, 0)}° / {fmt(day.temperatureMin, 0)}°</div>
-                    <div class="dayMeta">Rain {fmt(day.precipitationProbability, 0)}% • Wind {fmt(day.windSpeedMax, 0)} mph</div>
-                  </article>
+                    <div class="dayTemps">
+                      <span class="dayHi">{fmt(day.temperatureMax, 0)}°</span>
+                      <span class="daySep">/</span>
+                      <span class="dayLo">{fmt(day.temperatureMin, 0)}°</span>
+                    </div>
+                    <div class="dayMeta">
+                      <span><span class="dayMetaK">Rain</span> {fmt(day.precipitationProbability, 0)}%</span>
+                      <span><span class="dayMetaK">Wind</span> {fmt(day.windSpeedMax, 0)} mph</span>
+                    </div>
+                  </li>
                 {/each}
-              </div>
-              <p class="p small">7-day outlook for this mile marker.</p>
+              </ol>
+              <p class="p p-small">7-day outlook at the selected mile.</p>
             {:else}
               <p class="p">Daily forecast unavailable for this point.</p>
             {/if}
           {/if}
         {:else}
-          <p class="p">No weather available for this point.</p>
+          <p class="p">No forecast available for this point yet.</p>
         {/if}
       {/if}
-    </div>
+      </div>
 
-    <div class="map card">
-      <div bind:this={container} class="map-inner" aria-label="Appalachian Trail map"></div>
-      <div class="mapHint">Tip: click or drag the marker to set your mile.</div>
-    </div>
+      <footer class="wxFoot">
+        <span class="wxFootChip" aria-hidden="true"></span>
+        <span>Treat as planning data. Verify field conditions before you commit.</span>
+      </footer>
+    </section>
+
+    <section class="map card" aria-label="Appalachian Trail map">
+      <div class="mapBadge" aria-hidden="true">
+        <span class="mapBadgeK">Mile</span>
+        <span class="mapBadgeV">{mile}</span>
+      </div>
+      <div bind:this={container} class="map-inner"></div>
+      <div class="mapHint">Click anywhere on the trail or drag the marker to set the mile.</div>
+    </section>
   </div>
 </div>
 
 <style>
   .wrap {
     display: grid;
-    gap: 14px;
+    gap: 16px;
   }
 
   .card {
     border: 1px solid var(--border, #e6e1d4);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.7);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.06);
   }
 
+  /* ===== Controls ===== */
   .controls {
-    padding: 12px 12px 10px;
+    padding: 16px 16px 14px;
   }
 
-  .row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+  .controlsTop {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "mile actions"
+      "meta meta";
+    gap: 14px 16px;
+    align-items: start;
   }
 
-  .k {
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--pine, #4d594a);
+  .mileBlock {
+    grid-area: mile;
+    display: grid;
+    gap: 4px;
+  }
+
+  .kicker {
+    margin: 0;
+    color: var(--terra, #d97706);
     font-family: Oswald, system-ui, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 
-  .v {
-    font-size: 1.6rem;
+  .mileNum {
+    margin: 0;
+    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .mileNumValue {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: clamp(2.1rem, 6vw, 2.8rem);
     font-weight: 900;
     color: var(--ink, #1f2937);
-    line-height: 1.1;
+    line-height: 1;
   }
 
-  .sub {
-    margin-top: 2px;
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-
-  .sub.small {
-    font-size: 0.85rem;
-  }
-
-  .sub.err {
-    color: #b91c1c;
+  .mileTotal {
+    font-family: Oswald, sans-serif;
+    font-size: 0.95rem;
     font-weight: 700;
+    color: rgba(74, 84, 72, 0.72);
+    letter-spacing: 0.02em;
   }
 
-  .sub.saved {
+  .coords {
+    margin: 2px 0 0;
+    font-size: 0.86rem;
+    color: var(--muted, #4a5448);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mileMeta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.28rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--pine, #4d594a);
+    line-height: 1.2;
+  }
+
+  .chip-k {
+    font-family: Oswald, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.66rem;
+    color: rgba(77, 89, 74, 0.78);
+  }
+
+  .chip-v {
+    font-weight: 900;
+    color: var(--ink, #1f2937);
+  }
+
+  .chip-current {
+    background: rgba(166, 181, 137, 0.18);
+    border-color: rgba(166, 181, 137, 0.4);
+  }
+
+  .chip-info {
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  .chip-success {
+    background: rgba(22, 101, 52, 0.1);
+    border-color: rgba(22, 101, 52, 0.28);
     color: rgba(22, 101, 52, 0.95);
-    font-weight: 800;
+  }
+
+  .chip-err {
+    background: rgba(185, 28, 28, 0.08);
+    border-color: rgba(185, 28, 28, 0.28);
+    color: #b91c1c;
   }
 
   .actions {
+    grid-area: actions;
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     justify-content: flex-end;
+    align-items: flex-start;
   }
 
   .btn {
-    padding: 0.5rem 0.75rem;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    background: rgba(255, 255, 255, 0.85);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid rgba(77, 89, 74, 0.22);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--pine, #4d594a);
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 0.86rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
   }
 
   .btn:hover {
-    background: rgba(240, 224, 0, 0.18);
-    border-color: rgba(0, 0, 0, 0.16);
+    border-color: rgba(77, 89, 74, 0.42);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
   }
 
-  .btn.ghost {
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-primary {
+    background: var(--pine, #4d594a);
+    color: #fff;
+    border-color: var(--pine, #4d594a);
+  }
+
+  .btn-primary:hover {
+    background: #3a4438;
+    border-color: #3a4438;
+  }
+
+  .btn-anchor {
+    background: rgba(217, 119, 6, 0.12);
+    border-color: rgba(217, 119, 6, 0.4);
+    color: #8a4b06;
+  }
+
+  .btn-anchor:hover {
+    background: rgba(217, 119, 6, 0.2);
+    border-color: rgba(217, 119, 6, 0.6);
+  }
+
+  .btn-ghost {
     background: rgba(255, 255, 255, 0.0);
-    border-color: rgba(0, 0, 0, 0.08);
-    color: rgba(31, 41, 55, 0.75);
+    border-color: rgba(77, 89, 74, 0.16);
+    color: rgba(77, 89, 74, 0.85);
   }
 
-  .btn.ghost:hover {
-    background: rgba(255, 255, 255, 0.55);
+  .btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.6);
   }
 
-  .btn.icon {
-    padding: 0.5rem 0.55rem;
-    min-width: 42px;
-    justify-content: center;
-  }
+  .btn-icon .btn-label { display: inline; }
 
   .ico {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     display: block;
+  }
+
+  /* Slider with trail end labels */
+  .sliderWrap {
+    margin-top: 14px;
+    display: grid;
+    gap: 6px;
   }
 
   .slider {
     width: 100%;
-    margin-top: 10px;
+    margin: 0;
+    accent-color: var(--terra, #d97706);
+  }
+
+  .sliderLabels {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 0.74rem;
+    color: var(--muted, #4a5448);
+  }
+
+  .sliderEnd {
+    display: grid;
+    gap: 0;
+    line-height: 1.15;
+  }
+
+  .sliderEnd--right {
+    text-align: right;
+  }
+
+  .sliderEndName {
+    font-family: Oswald, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--pine, #4d594a);
+    font-size: 0.74rem;
+  }
+
+  .sliderEndMile {
+    font-variant-numeric: tabular-nums;
+    color: rgba(74, 84, 72, 0.7);
+    font-size: 0.7rem;
   }
 
   .hint {
-    margin-top: 6px;
+    margin: 8px 0 0;
     font-size: 0.85rem;
-    color: var(--muted);
+    color: var(--muted, #4a5448);
   }
 
+  /* ===== Grid: forecast + map ===== */
   .grid {
     display: grid;
-    grid-template-columns: 1.25fr 0.75fr;
+    grid-template-columns: 1.3fr 0.7fr;
     grid-template-areas: "map wx";
-    gap: 14px;
+    gap: 16px;
   }
 
   .map { grid-area: map; }
   .wx { grid-area: wx; }
 
-  /* Mobile/tablet: forecast first, map second */
   @media (max-width: 980px) {
     .grid {
       grid-template-columns: 1fr;
@@ -853,227 +1070,247 @@
     }
   }
 
-  .map {
-    padding: 0;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .map-inner {
-    width: 100%;
-    height: 62vh;
-    min-height: 420px;
-  }
-
-  .mapHint {
-    position: absolute;
-    left: 10px;
-    bottom: 10px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    padding: 6px 10px;
-    font-size: 0.85rem;
-    color: rgba(31, 41, 55, 0.85);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-    max-width: calc(100% - 20px);
-  }
-
-  @media (max-width: 600px) {
-    .map-inner {
-      height: 45vh;
-      min-height: 300px;
-    }
-  }
-
+  /* ===== Forecast card ===== */
   .wx {
-    padding: 14px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
   }
 
-  .h {
-    margin: 0 0 10px;
-    font-family: Oswald, system-ui, sans-serif;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 0.95rem;
-    color: rgba(52, 66, 58, 0.85);
+  .wxHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px 0;
+  }
+
+  .wxHeadCopy {
+    display: grid;
+    gap: 2px;
+  }
+
+  .wxHeadSub {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--muted, #4a5448);
   }
 
   .forecastModes {
     display: inline-flex;
-    gap: 6px;
+    gap: 4px;
     padding: 4px;
     border-radius: 999px;
-    border: 1px solid rgba(0, 0, 0, 0.09);
-    background: rgba(255, 255, 255, 0.66);
-    margin-bottom: 10px;
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    background: rgba(245, 242, 232, 0.6);
   }
 
   .modeBtn {
     border: none;
     border-radius: 999px;
-    padding: 0.35rem 0.7rem;
+    padding: 0.36rem 0.78rem;
+    font-family: Oswald, sans-serif;
     font-size: 0.78rem;
     font-weight: 800;
-    color: rgba(52, 66, 58, 0.8);
+    letter-spacing: 0.04em;
+    color: rgba(74, 84, 72, 0.78);
     background: transparent;
     cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .modeBtn:hover {
+    color: rgba(31, 41, 55, 0.95);
   }
 
   .modeBtn.active {
-    background: rgba(166, 181, 137, 0.26);
-    color: rgba(35, 47, 42, 0.96);
-    box-shadow: inset 0 0 0 1px rgba(166, 181, 137, 0.4);
+    background: var(--pine, #4d594a);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
   }
 
-  .temps {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  @media (max-width: 600px) {
-    .temps {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .tempCard {
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.65);
-  }
-
-  .label {
-    font-size: 0.78rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: rgba(52, 66, 58, 0.78);
-    font-weight: 900;
-    margin-bottom: 6px;
-  }
-
-  .subline {
-    margin-top: 2px;
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-
-  .tiny {
-    margin-top: 6px;
-    font-size: 0.85rem;
-    color: rgba(52, 66, 58, 0.75);
-  }
-
-  .err {
-    color: #b91c1c;
-    font-weight: 800;
+  .wxBody {
+    padding: 14px 16px 10px;
+    flex: 1;
   }
 
   .p {
-    margin: 0.5rem 0;
-    color: rgba(31, 41, 55, 0.85);
-  }
-
-  .p.small {
-    font-size: 0.92rem;
-    color: var(--muted);
-  }
-
-  .p.err {
-    color: #b91c1c;
-  }
-
-  .now {
-    display: grid;
-    gap: 10px;
-  }
-
-  .big {
-    display: grid;
-    gap: 2px;
-  }
-
-  .temp {
-    font-size: 2.2rem;
-    font-weight: 900;
-    color: var(--ink, #1f2937);
-    line-height: 1.05;
-  }
-
-  .cond {
-    color: var(--pine, #4d594a);
-    font-weight: 800;
-  }
-
-  .meta {
-    display: grid;
-    gap: 6px;
-    font-size: 0.95rem;
+    margin: 0.4rem 0;
     color: rgba(31, 41, 55, 0.86);
   }
 
+  .p-small {
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    color: rgba(74, 84, 72, 0.72);
+  }
+
+  .p-err {
+    color: #b91c1c;
+    font-weight: 800;
+  }
+
+  /* Now panel */
+  .nowCard {
+    display: grid;
+    gap: 12px;
+    padding: 14px 14px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    background: linear-gradient(165deg, rgba(166, 181, 137, 0.18), rgba(255, 255, 255, 0.55));
+  }
+
+  .nowMain {
+    display: grid;
+    gap: 4px;
+  }
+
+  .nowLabel {
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--terra, #d97706);
+    font-weight: 900;
+  }
+
+  .nowTemp {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: clamp(2.4rem, 9vw, 3.2rem);
+    line-height: 1;
+    color: var(--ink, #1f2937);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nowDeg {
+    font-size: 0.6em;
+    color: var(--pine, #4d594a);
+    margin-left: 2px;
+  }
+
+  .nowCond {
+    font-family: Oswald, sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--pine, #4d594a);
+    letter-spacing: 0.04em;
+  }
+
+  .nowMeta {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    border-top: 1px solid rgba(77, 89, 74, 0.18);
+    padding-top: 10px;
+  }
+
+  .nowMeta li {
+    display: grid;
+    gap: 1px;
+  }
+
+  .nowMetaK {
+    font-family: Oswald, sans-serif;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(74, 84, 72, 0.7);
+    font-weight: 800;
+  }
+
+  .nowMetaV {
+    font-size: 0.98rem;
+    color: var(--ink, #1f2937);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nowAsOf {
+    margin: 0;
+    font-size: 0.78rem;
+    color: rgba(74, 84, 72, 0.75);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Hourly tiles */
   .hourlyGrid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
   }
 
-  @media (max-width: 640px) {
-    .hourlyGrid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
   .forecastTile {
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(77, 89, 74, 0.16);
     border-radius: 12px;
-    padding: 9px;
-    background: rgba(255, 255, 255, 0.62);
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.78);
     display: grid;
-    gap: 2px;
+    gap: 3px;
   }
 
   .tileTime {
+    font-family: Oswald, sans-serif;
     font-size: 0.7rem;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(52, 66, 58, 0.74);
-    font-weight: 800;
+    color: var(--terra, #d97706);
+    font-weight: 900;
   }
 
   .tileTemp {
-    font-family: Oswald, system-ui, sans-serif;
-    font-size: 1.2rem;
-    line-height: 1.05;
+    font-family: Oswald, sans-serif;
+    font-size: 1.4rem;
+    line-height: 1;
     color: var(--ink, #1f2937);
     font-weight: 900;
+    font-variant-numeric: tabular-nums;
   }
 
   .tileCond {
     font-size: 0.82rem;
     color: var(--pine, #4d594a);
-    font-weight: 700;
+    font-weight: 800;
   }
 
   .tileMeta {
-    font-size: 0.74rem;
-    color: rgba(31, 41, 55, 0.8);
+    font-size: 0.76rem;
+    color: rgba(31, 41, 55, 0.82);
+    display: flex;
+    gap: 0.3rem;
+    align-items: baseline;
+    font-variant-numeric: tabular-nums;
   }
 
+  .tileMetaK {
+    font-family: Oswald, sans-serif;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(74, 84, 72, 0.72);
+    font-weight: 800;
+  }
+
+  /* Daily list */
   .dailyList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: grid;
     gap: 8px;
   }
 
   .dailyRow {
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(77, 89, 74, 0.16);
     border-radius: 12px;
-    padding: 9px 10px;
-    background: rgba(255, 255, 255, 0.62);
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.78);
     display: grid;
-    gap: 2px;
+    gap: 4px;
   }
 
   .dayMain {
@@ -1084,42 +1321,200 @@
   }
 
   .dayLabel {
-    font-family: Oswald, system-ui, sans-serif;
-    font-size: 0.95rem;
-    letter-spacing: 0.03em;
+    font-family: Oswald, sans-serif;
+    font-size: 0.98rem;
+    letter-spacing: 0.04em;
     color: var(--ink, #1f2937);
     font-weight: 800;
   }
 
   .dayCond {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     color: var(--pine, #4d594a);
-    font-weight: 700;
+    font-weight: 800;
     text-align: right;
   }
 
   .dayTemps {
-    font-size: 0.95rem;
-    color: rgba(31, 41, 55, 0.9);
-    font-weight: 800;
+    font-family: Oswald, sans-serif;
+    font-size: 1.05rem;
+    color: var(--ink, #1f2937);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
   }
+
+  .dayHi { color: var(--ink, #1f2937); }
+  .daySep { color: rgba(74, 84, 72, 0.45); margin: 0 0.2rem; }
+  .dayLo { color: rgba(74, 84, 72, 0.78); }
 
   .dayMeta {
     font-size: 0.8rem;
-    color: rgba(31, 41, 55, 0.78);
+    color: rgba(31, 41, 55, 0.82);
+    display: flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    font-variant-numeric: tabular-nums;
   }
 
-  .mk {
-    display: inline-block;
-    min-width: 54px;
-    color: rgba(52, 66, 58, 0.75);
+  .dayMetaK {
+    font-family: Oswald, sans-serif;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(74, 84, 72, 0.72);
     font-weight: 800;
+    margin-right: 0.25rem;
   }
 
-  .hr {
-    height: 1px;
-    background: rgba(0, 0, 0, 0.08);
-    margin: 12px 0;
+  .wxFoot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px 12px;
+    border-top: 1px solid rgba(77, 89, 74, 0.12);
+    background: rgba(245, 242, 232, 0.4);
+    border-radius: 0 0 18px 18px;
+    font-size: 0.78rem;
+    color: var(--muted, #4a5448);
+  }
+
+  .wxFootChip {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--terra, #d97706);
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
+    flex: none;
+  }
+
+  /* ===== Map card ===== */
+  .map {
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    border-radius: 18px;
+  }
+
+  .map-inner {
+    width: 100%;
+    height: 62vh;
+    min-height: 420px;
+  }
+
+  .mapBadge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 500;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(77, 89, 74, 0.22);
+    border-radius: 10px;
+    padding: 6px 10px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    pointer-events: none;
+  }
+
+  .mapBadgeK {
+    font-family: Oswald, sans-serif;
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--terra, #d97706);
+    font-weight: 900;
+  }
+
+  .mapBadgeV {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--ink, #1f2937);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mapHint {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    color: rgba(31, 41, 55, 0.85);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    max-width: calc(100% - 24px);
+    z-index: 500;
+    pointer-events: none;
+  }
+
+  /* ===== Mobile (~390px) ===== */
+  @media (max-width: 720px) {
+    .controlsTop {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "mile"
+        "actions"
+        "meta";
+    }
+
+    .actions {
+      justify-content: flex-start;
+    }
+
+    .btn {
+      flex: 1 1 auto;
+      min-width: 44%;
+    }
+
+    .btn-icon {
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+
+    .wxHead {
+      align-items: flex-start;
+    }
+
+    .forecastModes {
+      width: 100%;
+      justify-content: stretch;
+    }
+
+    .modeBtn {
+      flex: 1;
+      text-align: center;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .map-inner {
+      height: 50vh;
+      min-height: 320px;
+    }
+
+    .hourlyGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nowMeta {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nowTemp {
+      font-size: clamp(2.6rem, 12vw, 3.4rem);
+    }
+
+    .btn-icon .btn-label {
+      display: none;
+    }
+
+    .btn-icon {
+      padding: 0.55rem 0.7rem;
+    }
   }
 
   /* Leaflet divIcon marker */
@@ -1129,11 +1524,11 @@
   }
 
   :global(.at-mile-dot__inner) {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 999px;
-    background: #f0e000;
-    border: 2px solid #111827;
-    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+    background: var(--terra, #d97706);
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 1px rgba(31, 41, 55, 0.85), 0 10px 24px rgba(0, 0, 0, 0.25);
   }
 </style>

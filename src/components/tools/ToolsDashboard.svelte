@@ -34,6 +34,14 @@
     return { ...next, distance };
   });
 
+  // One-line intent per group — keeps the workbench feeling intentional
+  const groupBlurbs: Record<string, string> = {
+    Planning: 'Set up the hike before you leave: kit, calories, conditioning.',
+    'On Trail': 'Live decisions you make most days — water, weather, where to sleep.',
+    'Town Days': 'Resupply, mail, charging, gear swaps when you hit pavement.',
+    Always: 'The map of the whole trail and the upload queue, anytime.'
+  };
+
   onMount(() => {
     loadContext();
     mounted = true;
@@ -46,7 +54,10 @@
 
   <!-- What Matters Now Section -->
   <section class="matters-section">
-    <h2 class="section-title">What Matters Right Now</h2>
+    <div class="section-head">
+      <h2 class="section-title">What's next on trail</h2>
+      <p class="section-sub">Reads from your mile marker above.</p>
+    </div>
 
     <div class="matters-grid">
       <!-- Town Widget -->
@@ -59,7 +70,7 @@
       <BailoutWidget crossing={nextBailout} />
 
       <!-- Alerts (state line, bear, terrain) -->
-      {#each alerts.slice(0, 2) as alert}
+      {#each alerts.slice(0, 2) as alert (alert.title + alert.type)}
         <AlertBanner {alert} />
       {/each}
     </div>
@@ -67,13 +78,21 @@
 
   <!-- All Tools Section -->
   <section class="tools-section">
-    <h2 class="section-title">All Tools</h2>
+    <div class="section-head">
+      <h2 class="section-title">The toolkit</h2>
+      <p class="section-sub">Grouped by when you'll actually use them.</p>
+    </div>
 
-    {#each TRAIL_TOOL_GROUPS as group}
+    {#each TRAIL_TOOL_GROUPS as group (group.name)}
       <div class="tool-group">
-        <h3 class="group-name">{group.name}</h3>
+        <div class="group-head">
+          <h3 class="group-name">{group.name}</h3>
+          {#if groupBlurbs[group.name]}
+            <p class="group-blurb">{groupBlurbs[group.name]}</p>
+          {/if}
+        </div>
         <div class="tool-grid">
-          {#each group.tools as tool}
+          {#each group.tools as tool (tool.id)}
             <ToolCard
               id={tool.id}
               name={tool.name}
@@ -88,6 +107,10 @@
 
     <!-- Emergency Tool - Special Treatment -->
     <div class="emergency-section">
+      <div class="emergency-head">
+        <h3 class="emergency-label">If something goes wrong</h3>
+        <p class="emergency-sub">Bailouts, hospitals, in-case-of-emergency contacts.</p>
+      </div>
       <ToolCard
         id={TRAIL_EMERGENCY_TOOL.id}
         name={TRAIL_EMERGENCY_TOOL.name}
@@ -121,55 +144,105 @@
     margin-top: 2rem;
   }
 
+  .section-head {
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .section-title {
     font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pine, #4a5a44);
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+
+  .section-sub {
+    margin: 0;
+    font-size: 0.82rem;
     color: var(--muted, #888);
-    margin: 0 0 1rem;
+    line-height: 1.35;
   }
 
   /* What Matters Grid */
   .matters-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.85rem;
   }
 
   /* Tool Groups */
   .tool-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
   }
 
-  .group-name {
-    font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--pine, #4a5a44);
-    margin: 0 0 0.75rem;
+  .group-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.65rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border, #e5e5e5);
   }
 
+  .group-name {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pine, #4a5a44);
+    margin: 0;
+  }
+
+  .group-blurb {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--muted, #888);
+    line-height: 1.35;
+  }
+
   .tool-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.65rem;
   }
 
   /* Emergency Section */
   .emergency-section {
     margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 2px solid rgba(220, 38, 38, 0.2);
+    padding-top: 1.25rem;
+    border-top: 2px solid rgba(220, 38, 38, 0.18);
+  }
+
+  .emergency-head {
+    margin-bottom: 0.75rem;
+  }
+
+  .emergency-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #b91c1c;
+    margin: 0 0 0.2rem;
+  }
+
+  .emergency-sub {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--muted, #888);
+    line-height: 1.35;
   }
 
   .emergency-section :global(.tool-card) {
-    max-width: 200px;
+    max-width: 240px;
   }
 
   /* Responsive */
@@ -183,18 +256,29 @@
     }
 
     .tool-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.5rem;
     }
 
     .section-title {
+      font-size: 1rem;
+    }
+
+    .section-sub,
+    .group-blurb,
+    .emergency-sub {
       font-size: 0.75rem;
+    }
+
+    .emergency-section :global(.tool-card) {
+      max-width: 100%;
     }
   }
 
   @media (max-width: 380px) {
     .tool-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.4rem;
     }
   }
 </style>

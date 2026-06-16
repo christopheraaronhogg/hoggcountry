@@ -16,6 +16,8 @@ import type {
 	TrailState
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
+import { createScoutRuntime } from './scout';
+import type { ScoutAnswer, ScoutRuntime } from './scout';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
 const TRAIL_PULSE_RANGE_MILES = 0.1;
@@ -167,6 +169,9 @@ type PersistedState = TrailState;
 class TrailAssistantStore {
 	#state = $state<TrailState>(defaultState);
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
+	#scout: { runtime: ScoutRuntime } = createScoutRuntime();
+	#lastScoutAnswer = $state<ScoutAnswer | null>(null);
+	#scoutAnswersByMessage = new Map<string, ScoutAnswer>();
 
 	constructor() {
 		if (!browser) return;
@@ -437,13 +442,44 @@ class TrailAssistantStore {
 		if (!trimmed) return;
 
 		this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('user', trimmed)];
+		void this.#dispatchScoutReply(trimmed);
+	}
 
-		const reply = this.#coachReplyFor(trimmed);
-		const delay = this.#state.onlineStatus ? 650 : 180;
+	async #dispatchScoutReply(prompt: string) {
+		const fallbackText = this.#coachReplyFor(prompt);
+		try {
+			const answer = await this.#scout.runtime.ask({
+				prompt,
+				onlineStatus: this.#state.onlineStatus,
+				batterySaver: this.#state.trailSettings.batterySaver,
+				allowCloud: this.#state.privacySettings.allowCoachInsights
+			});
+			this.#lastScoutAnswer = answer;
+			const message = makeMessage('assistant', answer.answer);
+			this.#scoutAnswersByMessage.set(message.id, answer);
+			this.#state.coachMessages = [...this.#state.coachMessages, message];
+		} catch {
+			this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', fallbackText)];
+		}
+	}
 
-		setTimeout(() => {
-			this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', reply)];
-		}, delay);
+	async askScout(prompt: string): Promise<ScoutAnswer> {
+		const answer = await this.#scout.runtime.ask({
+			prompt,
+			onlineStatus: this.#state.onlineStatus,
+			batterySaver: this.#state.trailSettings.batterySaver,
+			allowCloud: this.#state.privacySettings.allowCoachInsights
+		});
+		this.#lastScoutAnswer = answer;
+		return answer;
+	}
+
+	get lastScoutAnswer(): ScoutAnswer | null {
+		return this.#lastScoutAnswer;
+	}
+
+	scoutAnswerFor(messageId: string): ScoutAnswer | null {
+		return this.#scoutAnswersByMessage.get(messageId) ?? null;
 	}
 
 	runQuickPrompt(prompt: string) {

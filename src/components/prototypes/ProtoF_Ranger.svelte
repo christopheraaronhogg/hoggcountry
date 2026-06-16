@@ -8,7 +8,7 @@
 
   const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "https://hoggcountry.on-forge.com/api/v1").replace(/\/+$/, "");
 
-  let { videos: initialVideos = [], cutoverSafe = false, journey = null } = $props();
+  let { videos: initialVideos = [], cutoverSafe = false, journey = null, showFooter = true } = $props();
 
   function miFmt(n) {
     return typeof n === 'number' ? n.toLocaleString('en-US', { maximumFractionDigits: 1 }) : n;
@@ -1387,55 +1387,57 @@
     </div>
   </section>
 
-  <!-- ========================================== -->
-  <!-- FOOTER - Vintage Style                    -->
-  <!-- ========================================== -->
-  <footer class="ranger-footer">
-    <div class="footer-border">
-      <svg viewBox="0 0 1200 20" preserveAspectRatio="none">
-        <path d="M0 10 Q300 0 600 10 T1200 10" stroke="currentColor" stroke-width="2" fill="none" />
-      </svg>
-    </div>
+  {#if showFooter}
+    <!-- ========================================== -->
+    <!-- FOOTER - Vintage Style                    -->
+    <!-- ========================================== -->
+    <footer class="ranger-footer">
+      <div class="footer-border">
+        <svg viewBox="0 0 1200 20" preserveAspectRatio="none">
+          <path d="M0 10 Q300 0 600 10 T1200 10" stroke="currentColor" stroke-width="2" fill="none" />
+        </svg>
+      </div>
 
-    <div class="footer-content">
-      <div class="footer-logo">
-        <div class="footer-badge">
-          <span class="footer-mountain">
-            <svg viewBox="0 0 40 20" fill="currentColor">
-              <path d="M0 20 L10 6 L16 12 L24 3 L34 14 L40 20 Z" />
-            </svg>
-          </span>
-          <span class="footer-brand">HOGG COUNTRY</span>
+      <div class="footer-content">
+        <div class="footer-logo">
+          <div class="footer-badge">
+            <span class="footer-mountain">
+              <svg viewBox="0 0 40 20" fill="currentColor">
+                <path d="M0 20 L10 6 L16 12 L24 3 L34 14 L40 20 Z" />
+              </svg>
+            </span>
+            <span class="footer-brand">HOGG COUNTRY</span>
+          </div>
+          <span class="footer-est">Est. 2024</span>
         </div>
-        <span class="footer-est">Est. 2024</span>
+
+        <div class="footer-nav">
+          <a href="/guide">Field Guide</a>
+          <span class="footer-dot"></span>
+          <a href="/tools">Trail Tools</a>
+          <span class="footer-dot"></span>
+          <a href="/updates">Trail Updates</a>
+          <span class="footer-dot"></span>
+          <a href="/videos">Videos</a>
+        </div>
+
+        <div class="footer-tagline">
+          <p class="tagline-main">See you on Katahdin.</p>
+          <p class="tagline-sub">Prepared with care for the trail ahead.</p>
+        </div>
+
+        <div class="footer-blaze">
+          <div class="blaze-mark"></div>
+          <div class="blaze-mark"></div>
+        </div>
       </div>
 
-      <div class="footer-nav">
-        <a href="/guide">Field Guide</a>
-        <span class="footer-dot"></span>
-        <a href="/tools">Trail Tools</a>
-        <span class="footer-dot"></span>
-        <a href="/updates">Trail Updates</a>
-        <span class="footer-dot"></span>
-        <a href="/videos">Videos</a>
+      <div class="footer-bottom">
+        <p>Est. 2024 - Prepared with care for the trail ahead</p>
+        <p class="footer-credit">Compiled by C. Hogg for J. "HoggCountry" Hogg</p>
       </div>
-
-      <div class="footer-tagline">
-        <p class="tagline-main">See you on Katahdin.</p>
-        <p class="tagline-sub">Prepared with care for the trail ahead.</p>
-      </div>
-
-      <div class="footer-blaze">
-        <div class="blaze-mark"></div>
-        <div class="blaze-mark"></div>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-      <p>Est. 2024 - Prepared with care for the trail ahead</p>
-      <p class="footer-credit">Compiled by C. Hogg for J. "HoggCountry" Hogg</p>
-    </div>
-  </footer>
+    </footer>
+  {/if}
 </div>
 
 <style>
@@ -1558,7 +1560,7 @@
     z-index: 2;
     display: grid;
     gap: 2.5rem;
-    max-width: 1120px;
+    max-width: 1180px;
     margin: 0 auto;
     align-items: center;
   }
@@ -1570,6 +1572,8 @@
 
   .hero-story {
     position: relative;
+    justify-self: center;
+    width: min(100%, 22rem);
     padding: 0.9rem;
     border: 3px solid rgba(240, 224, 0, 0.86);
     border-radius: 8px;
@@ -1648,7 +1652,7 @@
   .hero-waitlist {
     margin-top: 1.4rem;
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   /* The hero sits on dark pine; the component's muted-on-light defaults vanish here. */
@@ -1677,10 +1681,10 @@
     position: relative;
     display: grid;
     width: 100%;
+    aspect-ratio: 16 / 10;
     place-items: center;
     margin: 0;
     padding: 0;
-    max-height: clamp(300px, 58vh, 560px);
     overflow: hidden;
     border: 0;
     background: rgba(77, 89, 74, 0.12);
@@ -1708,13 +1712,12 @@
   .hero-story-media video {
     display: block;
     width: 100%;
-    height: auto;
-    max-height: clamp(300px, 58vh, 560px);
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover;
   }
 
   .hero-story-media.has-media-error {
-    min-height: clamp(300px, 58vh, 560px);
+    min-height: 12rem;
     background:
       linear-gradient(135deg, rgba(74, 91, 66, 0.84), rgba(149, 78, 50, 0.72)),
       var(--trail-forest);
@@ -2044,7 +2047,7 @@
 
   @media (min-width: 900px) {
     .hero-layout {
-      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+      grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
     }
 
     .hero-content {
@@ -2308,13 +2311,14 @@
 
   @media (min-width: 900px) {
     .hero-layout {
-      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
-      gap: clamp(3rem, 7vw, 6rem);
+      grid-template-columns: minmax(560px, 680px) minmax(320px, 360px);
+      gap: clamp(3.25rem, 6vw, 5.75rem);
+      justify-content: center;
     }
 
     .hero-content {
       justify-self: start;
-      max-width: 760px;
+      max-width: 680px;
       text-align: left;
     }
 
@@ -2333,6 +2337,22 @@
 
     .hero-route {
       width: fit-content;
+    }
+
+    .hero-progress {
+      width: min(100%, 32rem);
+      margin-right: 0;
+      margin-left: 0;
+    }
+
+    .hero-waitlist {
+      max-width: 32rem;
+      justify-content: flex-start;
+    }
+
+    .hero-story {
+      justify-self: start;
+      align-self: center;
     }
 
     .hero-story-rail {

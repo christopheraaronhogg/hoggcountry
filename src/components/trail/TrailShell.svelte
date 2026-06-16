@@ -958,25 +958,48 @@
     </div>
   </header>
 
-  <button
-    class="map-fab"
-    class:signal-live={trackerSignalStatus === 'live'}
-    class:signal-stale={trackerSignalStatus === 'stale'}
-    type="button"
-    onclick={openMapOverlay}
-    aria-label="Open full-screen map"
+  <section
+    class="mode-strip"
+    class:mode-prep={$trailShell.mode === 'prep'}
+    class:mode-live={$trailShell.mode === 'live'}
+    class:mode-post={$trailShell.mode === 'post'}
+    aria-label="Current mode and trail position"
   >
-    <span class="fab-main">🗺️ Map</span>
-    <span class="fab-meta">Mile {mapBadge.mile.toFixed(1)} • {mapBadge.remaining.toFixed(0)} left • {trackerSignalBadgeLabel}</span>
-  </button>
+    <div class="mode-meta">
+      <span class="mode-kicker">Active Mode</span>
+      <strong class="mode-title">{modeLabel}</strong>
+      <p>{modeSummary}</p>
+    </div>
+
+    <div class="mile-block">
+      <span class="mile-label">Current Mile</span>
+      <strong class="mile-number">{mapBadge.mile.toFixed(1)}</strong>
+      <span class="mile-remaining">{mapBadge.remaining.toFixed(0)} mi to Katahdin</span>
+    </div>
+
+    <button
+      class="map-cta"
+      class:signal-live={trackerSignalStatus === 'live'}
+      class:signal-stale={trackerSignalStatus === 'stale'}
+      type="button"
+      onclick={openMapOverlay}
+      aria-label="Open full-screen map"
+    >
+      <span class="map-cta-label">
+        <span aria-hidden="true">🗺️</span>
+        <span>Open Map</span>
+      </span>
+      <span class="map-cta-meta">{trackerSignalBadgeLabel}</span>
+    </button>
+  </section>
 
   <section class="command-deck" aria-label="Trail command deck">
     <header class="deck-head">
       <div>
         <p class="deck-kicker">Command Deck</p>
-        <h2>{modeLabel}</h2>
+        <h2>Session &amp; Signal</h2>
       </div>
-      <p>{modeSummary}</p>
+      <p>Runtime, sync freshness, and live tracker confidence — refreshed every minute.</p>
     </header>
 
     <div class="deck-grid">
@@ -1170,7 +1193,7 @@
 
 <style>
   .trail-shell {
-    --shell-pad: clamp(0.75rem, 2.2vw, 1.25rem);
+    --shell-pad: clamp(0.85rem, 2.4vw, 1.4rem);
     position: relative;
     isolation: isolate;
     min-height: calc(100dvh - 120px);
@@ -1200,9 +1223,15 @@
     z-index: 12;
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
-    gap: 0.55rem;
-    margin-bottom: 0.55rem;
+    gap: 0.55rem 0.55rem;
+    margin-bottom: 0.6rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: 14px;
+    border: 1px solid rgba(77, 89, 74, 0.18);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
   }
 
   .profile-chip {
@@ -1283,73 +1312,174 @@
     background: rgba(217, 119, 6, 0.15);
   }
 
-  .map-fab {
-    position: fixed;
-    right: max(1rem, env(safe-area-inset-right));
-    top: max(84px, env(safe-area-inset-top) + 72px);
-    z-index: 18;
-    border-radius: 14px;
-    border: 1px solid rgba(77, 89, 74, 0.28);
-    background: linear-gradient(150deg, rgba(255,255,255,0.95), rgba(252, 249, 240, 0.94));
-    box-shadow: 0 16px 30px rgba(33, 46, 34, 0.16);
-    color: #1f2937;
+  .mode-strip {
+    margin-top: 0.6rem;
     display: grid;
-    gap: 0.1rem;
-    padding: 0.54rem 0.68rem;
-    cursor: pointer;
-    min-width: 126px;
-    text-align: left;
-  }
-
-  .fab-main {
-    font-family: Oswald, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: 0.8rem;
-  }
-
-  .fab-meta {
-    font-size: 0.67rem;
-    color: rgba(31, 41, 55, 0.74);
-  }
-
-  .map-fab.signal-live {
-    border-color: rgba(22, 163, 74, 0.44);
-    box-shadow: 0 18px 34px rgba(22, 163, 74, 0.2);
-  }
-
-  .map-fab.signal-stale {
-    border-color: rgba(217, 119, 6, 0.46);
-  }
-
-  .command-deck {
-    margin-top: 0.74rem;
+    gap: 0.65rem;
+    grid-template-columns: minmax(0, 1.2fr) auto;
+    grid-template-areas:
+      'meta mile'
+      'cta  cta';
+    padding: 0.85rem 0.9rem;
     border-radius: 16px;
     border: 1px solid rgba(77, 89, 74, 0.2);
     background:
-      radial-gradient(740px 240px at 92% -64%, rgba(166, 181, 137, 0.25), transparent 60%),
-      linear-gradient(170deg, rgba(255,255,255,0.9), rgba(245, 240, 226, 0.86));
-    padding: 0.72rem;
+      radial-gradient(720px 200px at 100% 0%, rgba(166, 181, 137, 0.25), transparent 60%),
+      linear-gradient(165deg, rgba(255, 255, 255, 0.96), rgba(245, 240, 226, 0.9));
+    box-shadow: 0 14px 28px rgba(30, 42, 31, 0.12);
+  }
+
+  .mode-strip.mode-live {
+    border-color: rgba(217, 119, 6, 0.42);
+    background:
+      radial-gradient(720px 200px at 100% 0%, rgba(217, 119, 6, 0.16), transparent 60%),
+      linear-gradient(165deg, rgba(255, 248, 235, 0.96), rgba(255, 235, 205, 0.86));
+  }
+
+  .mode-strip.mode-post {
+    border-color: rgba(77, 89, 74, 0.35);
+  }
+
+  .mode-meta {
+    grid-area: meta;
     display: grid;
-    gap: 0.62rem;
-    box-shadow: 0 12px 26px rgba(30, 42, 31, 0.12);
+    gap: 0.2rem;
+    align-content: start;
+    min-width: 0;
+  }
+
+  .mode-kicker {
+    font-family: Oswald, sans-serif;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(31, 41, 55, 0.62);
+  }
+
+  .mode-title {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1.15rem;
+    line-height: 1.08;
+    color: #1f2937;
+  }
+
+  .mode-strip.mode-live .mode-title {
+    color: var(--terra, #d97706);
+  }
+
+  .mode-meta p {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: rgba(31, 41, 55, 0.72);
+  }
+
+  .mile-block {
+    grid-area: mile;
+    display: grid;
+    gap: 0.08rem;
+    justify-items: end;
+    align-content: start;
+    min-width: 0;
+  }
+
+  .mile-label {
+    font-family: Oswald, sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(31, 41, 55, 0.6);
+  }
+
+  .mile-number {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: clamp(1.85rem, 6.5vw, 2.4rem);
+    line-height: 1;
+    color: var(--pine, #4d594a);
+  }
+
+  .mile-remaining {
+    font-size: 0.72rem;
+    color: rgba(31, 41, 55, 0.66);
+  }
+
+  .map-cta {
+    grid-area: cta;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.62rem 0.9rem;
+    min-height: 52px;
+    border-radius: 12px;
+    border: 1px solid rgba(77, 89, 74, 0.35);
+    background: linear-gradient(160deg, #304136, #4b5d4d);
+    color: #fff;
+    cursor: pointer;
+    text-align: left;
+    box-shadow: 0 10px 22px rgba(33, 46, 34, 0.18);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .map-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(33, 46, 34, 0.22);
+  }
+
+  .map-cta-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: Oswald, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 0.95rem;
+  }
+
+  .map-cta-meta {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .map-cta.signal-live {
+    border-color: rgba(22, 163, 74, 0.55);
+    box-shadow: 0 14px 28px rgba(22, 163, 74, 0.25);
+  }
+
+  .map-cta.signal-stale {
+    border-color: rgba(217, 119, 6, 0.5);
+  }
+
+  .command-deck {
+    margin-top: 0.72rem;
+    border-radius: 16px;
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    background:
+      radial-gradient(740px 240px at 92% -64%, rgba(166, 181, 137, 0.22), transparent 60%),
+      linear-gradient(170deg, rgba(255,255,255,0.92), rgba(245, 240, 226, 0.86));
+    padding: 0.82rem 0.85rem;
+    display: grid;
+    gap: 0.7rem;
+    box-shadow: 0 12px 26px rgba(30, 42, 31, 0.1);
   }
 
   .deck-head {
     display: grid;
-    gap: 0.2rem;
+    gap: 0.22rem;
   }
 
   .deck-head h2 {
     margin: 0;
-    font-size: 1rem;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1.05rem;
     line-height: 1.1;
+    color: #1f2937;
   }
 
   .deck-head p {
     margin: 0;
-    font-size: 0.79rem;
-    line-height: 1.38;
+    font-size: 0.8rem;
+    line-height: 1.4;
     color: rgba(31, 41, 55, 0.72);
   }
 
@@ -1470,15 +1600,24 @@
 
   .mission-card button {
     justify-self: start;
-    border-radius: 9px;
+    border-radius: 999px;
     border: 1px solid rgba(77, 89, 74, 0.28);
-    background: rgba(77, 89, 74, 0.92);
+    background: linear-gradient(160deg, #304136, #4b5d4d);
     color: #fff;
-    padding: 0.42rem 0.62rem;
-    font-size: 0.74rem;
+    padding: 0.5rem 0.95rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     font-weight: 700;
     cursor: pointer;
     min-height: 44px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .mission-card button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(30, 42, 31, 0.18);
   }
 
   .presence-strip {
@@ -1693,7 +1832,7 @@
     font-weight: 700;
   }
 
-  .trail-shell.power-save .map-fab,
+  .trail-shell.power-save .map-cta,
   .trail-shell.power-save .quick-btn,
   .trail-shell.power-save .profile-chip {
     transition: none;
@@ -1706,8 +1845,16 @@
       min-height: calc(100dvh - 140px);
     }
 
-    .map-fab {
-      right: calc(50vw - min(600px, 47vw));
+    .mode-strip {
+      grid-template-columns: minmax(0, 2fr) auto auto;
+      grid-template-areas: 'meta mile cta';
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.1rem;
+    }
+
+    .map-cta {
+      min-width: 200px;
     }
 
     .quick-actions {
@@ -1731,7 +1878,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     .trail-shell,
-    .map-fab,
+    .map-cta,
+    .mission-card button,
     .quick-btn {
       transition: none;
       animation: none;

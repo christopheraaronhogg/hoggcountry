@@ -1,0 +1,8 @@
+{
+  "name": "@hoggcountry/scout-mobile-contract",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

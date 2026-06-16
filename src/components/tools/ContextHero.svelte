@@ -17,7 +17,17 @@
     <!-- Header -->
     <div class="hero-header">
       <div class="hero-primary">
-        <div class="eyebrow">Mile marker</div>
+        <div class="eyebrow-row">
+          <span class="eyebrow">Mile marker</span>
+          <div class="mode-badge" class:on-trail={trailContext.isOnTrail}>
+            {#if trailContext.isOnTrail}
+              <span class="badge-dot"></span>
+              On Trail
+            {:else}
+              Planning
+            {/if}
+          </div>
+        </div>
         <QuickMileControl />
         <div class="primary-meta" aria-label="Current trail context">
           <span class="landmark">
@@ -27,21 +37,12 @@
               Near {trailContext.nearestLandmark.name}
             {/if}
           </span>
-          <span class="dot">•</span>
+          <span class="dot"></span>
           <span class="date">{formatDate(new Date(trailContext.effectiveDate))}</span>
         </div>
       </div>
 
       <div class="hero-actions">
-        <div class="mode-badge" class:on-trail={trailContext.isOnTrail}>
-          {#if trailContext.isOnTrail}
-            <span class="badge-dot"></span>
-            On Trail
-          {:else}
-            Planning
-          {/if}
-        </div>
-
         <button
           class="edit-btn"
           type="button"
@@ -49,7 +50,7 @@
           aria-controls="trail-settings-panel"
           onclick={() => (settingsOpen = !settingsOpen)}
         >
-          Settings
+          {settingsOpen ? 'Close' : 'Trip settings'}
         </button>
       </div>
     </div>
@@ -132,6 +133,13 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.6);
+  }
+
+  .eyebrow-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
   }
 
   .primary-meta {
@@ -291,24 +299,46 @@
   /* Responsive */
   @media (max-width: 480px) {
     .context-hero {
-      padding: 1.25rem;
+      padding: 1.1rem 1rem;
+      border-radius: 14px;
     }
 
     .stats-row {
-      gap: 0.5rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.4rem;
+      padding-top: 0.85rem;
+    }
+
+    .stat-label {
+      font-size: 0.6rem;
     }
 
     .stat-value {
-      font-size: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .stat-value small {
+      font-size: 0.62rem;
     }
 
     .hero-header {
       grid-template-columns: 1fr;
-      gap: 0.75rem;
+      gap: 0.85rem;
+      margin-bottom: 0.95rem;
     }
 
     .hero-actions {
-      justify-content: flex-start;
+      justify-content: stretch;
+    }
+
+    .progress-section {
+      gap: 0.6rem;
+      margin-bottom: 0.95rem;
+    }
+
+    .landmark,
+    .date {
+      font-size: 0.82rem;
     }
   }
 

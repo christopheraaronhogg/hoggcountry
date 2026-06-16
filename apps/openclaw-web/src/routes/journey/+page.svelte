@@ -145,9 +145,18 @@
 
   <!-- CTA -->
   <section class="cta">
+    <p class="cta-kicker">This is Scout's proving ground</p>
     <h2>Want this for your own hike?</h2>
-    <p>Hogg Country is becoming a trail companion app — your own map, your own miles, your own loadout. Get notified when it drops.</p>
+    <p>
+      Everything above — the mile frame, the elevation profile, the landmarks, the live position — is what powers
+      <strong>Scout</strong>, the trail app we're shipping for iOS and Android. The waitlist below is the only line that's
+      open today.
+    </p>
+    <div class="cta-actions">
+      <a class="cta-btn cta-btn--primary" href="/scout">See what Scout does →</a>
+    </div>
     <WaitlistSignup source="journey" />
+    <p class="cta-fineprint">App Store and Google Play listings aren't live yet. We'll email you the moment they are.</p>
   </section>
 </div>
 
@@ -396,6 +405,41 @@
   }
   .cta h2 { margin: 0; font-family: Oswald, Impact, sans-serif; font-size: clamp(1.4rem, 4vw, 2rem); }
   .cta p { margin: 0; max-width: 46ch; color: rgba(255, 255, 255, 0.85); line-height: 1.55; }
+  .cta p strong { color: #f4c674; }
+  .cta-kicker {
+    margin: 0;
+    color: #f4c674;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .cta-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.6rem;
+    padding: 0 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(245, 242, 232, 0.35);
+    background: transparent;
+    color: #f5f2e8;
+    font-weight: 800;
+    text-decoration: none;
+    font-size: 0.92rem;
+  }
+  .cta-btn--primary {
+    background: var(--terra);
+    border-color: var(--terra);
+    color: #fff;
+  }
+  .cta-fineprint {
+    margin: 0;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 44ch;
+  }
 
   @media (min-width: 640px) {
     .station { grid-template-columns: 36px 1fr; gap: 1.2rem; }

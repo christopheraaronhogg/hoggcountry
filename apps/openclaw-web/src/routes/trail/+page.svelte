@@ -19,15 +19,19 @@
   <title>Trail Hub — Hogg Country</title>
   <meta
     name="description"
-    content="Character-first trail command center with full-screen map and contextual tool overlays."
+    content="Local-first trail command center: live mile, current mode, sync and tracker signal, Scout tools, and the map — one tap apart."
   />
 </svelte:head>
 
-<section class="hero trail-hero">
-  <span class="chapter font-chapter">Trail HQ</span>
-  <h1 class="font-display">Character + Map</h1>
-  <p>One local-first mobile shell for planning, live trail decisions, and social map visibility.</p>
-</section>
+<header class="trail-page-hero">
+  <p class="kicker">Trail Hub · Local-first command center</p>
+  <h1 class="font-display">Your Appalachian Trail HQ.</h1>
+  <p class="lede">
+    Live mile, mode, sync, and tracker signal at a glance — with Scout tools, the map, and your
+    character one tap away. Everything keeps working offline; live data lights up the moment your
+    Garmin tracker is connected. Field-verify before you bet on it.
+  </p>
+</header>
 
 <div class="trail-shell-wrap">
   {#if TrailShell}
@@ -40,8 +44,39 @@
 </div>
 
 <style>
-  .trail-hero {
-    padding-bottom: 1.1rem;
+  .trail-page-hero {
+    display: grid;
+    gap: 0.55rem;
+    justify-items: start;
+    width: min(960px, 100%);
+    margin: 0 auto;
+    padding: 1.4rem 1rem 1.1rem;
+  }
+
+  .trail-page-hero .kicker {
+    margin: 0;
+    color: var(--terra);
+    font-family: Oswald, Impact, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-size: 0.74rem;
+  }
+
+  .trail-page-hero h1 {
+    margin: 0;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.02;
+    color: var(--ink, #1f2937);
+  }
+
+  .trail-page-hero .lede {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--muted, #4a5448);
+    line-height: 1.6;
+    font-size: 0.98rem;
   }
 
   .trail-shell-wrap {
@@ -55,8 +90,12 @@
   }
 
   @media (max-width: 640px) {
-    .trail-hero {
-      padding-top: 1.35rem;
+    .trail-page-hero {
+      padding: 1rem 0.9rem 0.9rem;
+    }
+
+    .trail-page-hero .lede {
+      font-size: 0.94rem;
     }
   }
 </style>

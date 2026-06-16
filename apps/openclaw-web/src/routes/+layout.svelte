@@ -1,6 +1,7 @@
 <script lang="ts">
   import '../app.css';
   import { browser } from '$app/environment';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { initSpacetimeProvider } from '$lib/spacetime';
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
@@ -35,6 +36,7 @@
   const isGuidePage = $derived(
     page.url.pathname === '/guide' || page.url.pathname.startsWith('/guide/manual-builder')
   );
+  const isHomepage = $derived(page.url.pathname === '/');
 
   function updateGuideHeaderState() {
     if (!browser) return;
@@ -218,12 +220,42 @@
     </main>
 
     {#if page.url.pathname !== '/at-map' && page.url.pathname !== '/track'}
-    <footer class="public-meta-footer">
-      <div class="footer-waitlist">
-        <p class="footer-waitlist-title">Get the Scout app the day it drops</p>
-        <WaitlistSignup source="footer" compact />
-      </div>
-      <div>&copy; {currentYear} Hogg Country. All rights reserved.</div>
+    <footer class="public-meta-footer" class:home-closing={isHomepage}>
+      {#if isHomepage}
+        <div class="home-footer-inner">
+          <div class="home-footer-copy">
+            <p class="home-footer-kicker">Scout for your own hike</p>
+            <h2>Want this for your own hike?</h2>
+            <p>
+              Everything above — the mile frame, elevation profile, landmarks, and live position —
+              is the foundation we're turning into Scout, the trail app we're shipping for iOS and Android.
+            </p>
+          </div>
+
+          <div class="home-footer-actions">
+            <a class="home-footer-link" href={resolve('/scout')}>See what Scout does</a>
+            <span class="store-status-pill">App Store · not live yet</span>
+            <span class="store-status-pill">Google Play · not live yet</span>
+          </div>
+
+          <div class="footer-waitlist home-waitlist">
+            <p class="footer-waitlist-title">The waitlist is the only line open today</p>
+            <WaitlistSignup source="homepage-launch" compact={false} />
+            <p class="home-footer-note">
+              We'll email you the moment the store listings are ready.
+            </p>
+          </div>
+
+          <div class="footer-rule"></div>
+        </div>
+      {:else}
+        <div class="footer-waitlist">
+          <p class="footer-waitlist-title">Get the Scout app the day it drops</p>
+          <WaitlistSignup source="footer" compact />
+        </div>
+      {/if}
+
+      <div class="footer-copyright">&copy; {currentYear} Hogg Country. All rights reserved.</div>
       <div class="social-links">
         <a href="https://www.youtube.com/@hoggcountry7483" target="_blank" rel="noopener" aria-label="Hogg Country on YouTube">
           <svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32">
@@ -595,28 +627,186 @@
   }
 
   .public-meta-footer {
-    padding: 2em 1em 6em;
-    background: var(--bg);
-    color: var(--muted);
+    padding: 2.4em 1em 6em;
+    background:
+      linear-gradient(180deg, rgba(245, 242, 232, 0.08), rgba(0, 0, 0, 0)),
+      #263226;
+    color: rgba(250, 247, 237, 0.86);
     text-align: center;
+    border-top: 3px solid rgba(217, 119, 6, 0.55);
+  }
+
+  .public-meta-footer.home-closing {
+    padding-top: clamp(2.4rem, 6vw, 4rem);
+    background:
+      radial-gradient(circle at 15% 0%, rgba(244, 198, 116, 0.18), transparent 34rem),
+      linear-gradient(135deg, #1f2a20 0%, #263226 56%, #354033 100%);
+  }
+
+  .home-footer-inner {
+    width: min(1040px, 100%);
+    margin: 0 auto 1.5rem;
+    display: grid;
+    gap: 1.3rem;
+    justify-items: center;
+  }
+
+  .home-footer-copy {
+    display: grid;
+    gap: 0.6rem;
+    max-width: 56rem;
+    justify-items: center;
+  }
+
+  .home-footer-kicker {
+    margin: 0;
+    color: #f4c674;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .home-footer-copy h2 {
+    margin: 0;
+    color: #f7f3e6;
+    font-family: Oswald, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-size: clamp(1.85rem, 5vw, 2.8rem);
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+
+  .home-footer-copy p {
+    margin: 0;
+    max-width: 58ch;
+    color: rgba(250, 247, 237, 0.9);
+    font-size: clamp(0.98rem, 2vw, 1.08rem);
+    line-height: 1.6;
+  }
+
+  .home-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .home-footer-link,
+  .store-status-pill {
+    min-height: 2.45rem;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0 0.95rem;
+    font-size: 0.86rem;
+    font-weight: 850;
+    line-height: 1;
+  }
+
+  .home-footer-link {
+    background: #d97706;
+    color: #fffaf0;
+    border: 1px solid rgba(255, 250, 240, 0.24);
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(217, 119, 6, 0.2);
+  }
+
+  .home-footer-link:hover {
+    background: #f09a1a;
+  }
+
+  .store-status-pill {
+    color: rgba(250, 247, 237, 0.84);
+    background: rgba(0, 0, 0, 0.24);
+    border: 1px solid rgba(245, 242, 232, 0.22);
   }
 
   .footer-waitlist {
     display: grid;
-    gap: 0.5rem;
+    gap: 0.7rem;
     justify-items: center;
     max-width: 30rem;
     margin: 0 auto 1.6em;
   }
 
+  .home-waitlist {
+    width: min(100%, 34rem);
+    max-width: 34rem;
+    margin-bottom: 0;
+    padding: clamp(1rem, 3vw, 1.25rem);
+    border: 1px solid rgba(245, 242, 232, 0.2);
+    border-radius: 0.8rem;
+    background: rgba(6, 12, 7, 0.28);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
+  }
+
   .footer-waitlist-title {
     margin: 0;
-    color: var(--pine);
+    color: #f7f3e6;
     font-family: Oswald, system-ui, sans-serif;
     font-weight: 800;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     font-size: 0.9rem;
+  }
+
+  .footer-waitlist :global(.waitlist-form input[type='email']) {
+    background: #fffaf0;
+    border-color: rgba(250, 247, 237, 0.7);
+    color: #182019;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  }
+
+  .footer-waitlist :global(.waitlist-form input[type='email']::placeholder) {
+    color: rgba(24, 32, 25, 0.62);
+  }
+
+  .footer-waitlist :global(.waitlist-button) {
+    background: #d97706;
+    color: #fffaf0;
+    border: 1px solid rgba(255, 250, 240, 0.22);
+    box-shadow: 0 10px 24px rgba(217, 119, 6, 0.22);
+  }
+
+  .footer-waitlist :global(.waitlist-button:hover:not(:disabled)) {
+    background: #f09a1a;
+  }
+
+  .footer-waitlist :global(.waitlist-done) {
+    color: #f7f3e6;
+  }
+
+  .footer-waitlist :global(.waitlist-error) {
+    color: #ffd1c5;
+  }
+
+  .home-waitlist :global(.waitlist-kicker) {
+    color: #f4c674;
+  }
+
+  .home-waitlist :global(.waitlist-copy) {
+    color: rgba(250, 247, 237, 0.86);
+  }
+
+  .home-footer-note {
+    margin: 0;
+    max-width: 42ch;
+    color: rgba(250, 247, 237, 0.72);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .footer-rule {
+    width: min(100%, 42rem);
+    height: 1px;
+    margin-top: 0.2rem;
+    background: rgba(245, 242, 232, 0.18);
+  }
+
+  .footer-copyright {
+    color: rgba(250, 247, 237, 0.78);
+    font-weight: 700;
   }
 
   .social-links {
@@ -628,11 +818,15 @@
 
   .social-links a {
     text-decoration: none;
-    color: var(--muted);
+    color: rgba(250, 247, 237, 0.78);
+    transition:
+      color 0.16s ease,
+      transform 0.16s ease;
   }
 
   .social-links a:hover {
-    color: var(--pine);
+    color: #f4c674;
+    transform: translateY(-1px);
   }
 
   #version-stamp {
