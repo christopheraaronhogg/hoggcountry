@@ -7,6 +7,7 @@
   let showMobileNav = $state(false);
   let headerHidden = $state(false);
   let headerHeight = $state(52);
+  let dragPointerId = null;
 
   // Use svelte:window binding for scroll position (most reliable in Svelte 5)
   let scrollY = $state(0);
@@ -41,17 +42,24 @@
 
     // Watch for header wrapper visibility changes + keep a real header height offset
     let mutationObserver = null;
+    let resizeObserver = null;
     const headerWrapper = document.querySelector('.guide-header-wrapper');
 
     const syncHeaderMetrics = () => {
       if (!headerWrapper) return;
       headerHidden = headerWrapper.classList.contains('is-hidden');
+      headerHeight = Math.ceil(headerWrapper.getBoundingClientRect().height || 52);
     };
 
     if (headerWrapper) {
       syncHeaderMetrics();
       mutationObserver = new MutationObserver(syncHeaderMetrics);
-      mutationObserver.observe(headerWrapper, { attributes: true, attributeFilter: ['class'] });
+      mutationObserver.observe(headerWrapper, {
+        attributes: true,
+        attributeFilter: ['class', 'style']
+      });
+      resizeObserver = new ResizeObserver(syncHeaderMetrics);
+      resizeObserver.observe(headerWrapper);
     }
 
     const sections = document.querySelectorAll('.chapter-section');
@@ -82,6 +90,7 @@
     return () => {
       intersectionObserver.disconnect();
       mutationObserver?.disconnect();
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', updateScrollHeight);
     };
   });
@@ -134,21 +143,25 @@
   function handleScrubStart(event) {
     event.preventDefault();
     isScrubbing = true;
+    dragPointerId = event.pointerId;
     progressTrackEl?.setPointerCapture?.(event.pointerId);
     scrubToClientX(event.clientX);
   }
 
   function handleScrubMove(event) {
     if (!isScrubbing) return;
+    if (dragPointerId !== null && event.pointerId !== dragPointerId) return;
     event.preventDefault();
     scrubToClientX(event.clientX);
   }
 
   function handleScrubEnd(event) {
     if (!isScrubbing) return;
+    if (dragPointerId !== null && event.pointerId !== dragPointerId) return;
     progressTrackEl?.releasePointerCapture?.(event.pointerId);
     scrubToClientX(event.clientX);
     isScrubbing = false;
+    dragPointerId = null;
     scrubPreview = null;
   }
 
@@ -354,7 +367,7 @@
     z-index: 1002; /* Above page content, below the fixed guide header wrapper */
     background: linear-gradient(to bottom, rgba(245, 242, 232, 0.98), rgba(245, 242, 232, 0.95));
     backdrop-filter: blur(8px);
-    padding: 0.65rem 1rem 0.4rem;
+    padding: 0.9rem 1rem 0.45rem;
     border-bottom: 1px solid var(--border, #e6e1d4);
     transition: top 0.3s ease;
   }
@@ -362,18 +375,18 @@
   /* Mobile: extra top padding to prevent marker clipping */
   @media (max-width: 600px) {
     .progress-container {
-      padding-top: 0.75rem;
+      padding-top: 0.95rem;
     }
   }
 
   .progress-track {
     position: relative;
-    height: 6px;
+    height: 8px;
     background: linear-gradient(90deg,
       var(--stone, #ccc) 0%,
       var(--stone, #ccc) 100%
     );
-    border-radius: 3px;
+    border-radius: 999px;
     overflow: visible;
     cursor: grab;
     touch-action: none;
@@ -401,8 +414,13 @@
       var(--alpine, #a6b589) 0%,
       var(--pine, #4d594a) 100%
     );
-    border-radius: 3px;
+    border-radius: 999px;
     transition: width 0.1s ease-out;
+  }
+
+  .progress-track.scrubbing .progress-fill,
+  .progress-track.scrubbing .progress-marker {
+    transition: none;
   }
 
   .progress-marker {
@@ -414,12 +432,12 @@
 
   .marker-dot {
     display: block;
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     background: var(--marker, #f0e000);
     border: 3px solid var(--pine, #4d594a);
     border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 0 0 4px rgba(245, 242, 232, 0.95), 0 2px 10px rgba(0,0,0,0.22);
     pointer-events: none;
   }
 
