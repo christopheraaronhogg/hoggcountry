@@ -1,7 +1,6 @@
 <script lang="ts">
-  // Capability deck — what Scout actually does on trail. Honest sub-copy:
-  // anything "current" or "live" carries a verify/source receipt note so we
-  // don't imply we have a real-time service we haven't actually shipped.
+  // Capability deck — what Scout actually does on trail. Each card carries
+  // its own source line; the honesty footnote closes the section.
   const capabilities = [
     {
       id: 'next-20',
@@ -53,11 +52,11 @@
       receipt: 'Source: Hogg Country field guide, public AT lore'
     },
     {
-      id: 'sources',
-      kicker: 'Honesty',
-      title: 'Source receipts on every answer',
-      copy: 'Scout names what it read. When it can\'t verify something current — closures, fresh water, road work — it says so and asks you to confirm before you depend on it.',
-      receipt: 'Receipt format: source · timestamp · confidence'
+      id: 'towns',
+      kicker: 'Resupply',
+      title: 'Towns and mail drops',
+      copy: 'Next town off the trail, miles in and out, hostels, post offices, grocery hours — and which mail drop is queued for that stop.',
+      receipt: 'Source: AWOL town tables + your mail-drop plan'
     }
   ];
 </script>

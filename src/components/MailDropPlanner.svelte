@@ -681,13 +681,8 @@ Thanks! 🥾`;
 </script>
 
 <div class="mail-planner">
-  <!-- Header -->
+  <!-- Status strip -->
   <header class="planner-header">
-    <div class="header-icon">📦</div>
-    <div class="header-content">
-      <h2 class="header-title">Mail Drop Planner</h2>
-      <p class="header-sub">Ship-ahead resupply system</p>
-    </div>
     <div class="header-stats">
       <div class="stat" class:active={packedCount > 0}>
         <span class="stat-num">{packedCount}/{enabledCount}</span>
@@ -1234,41 +1229,12 @@ Thanks! 🥾`;
   /* ========== HEADER ========== */
   .planner-header {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem;
+    justify-content: flex-end;
+    padding: 0.85rem 1.25rem;
     background: linear-gradient(135deg, #5d4e37 0%, #3d3428 100%);
     border-radius: 14px;
     color: #fff;
     margin-bottom: 1rem;
-  }
-
-  .header-icon {
-    font-size: 2rem;
-    width: 52px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255,0.15);
-    border-radius: 12px;
-  }
-
-  .header-content { flex: 1; }
-
-  .header-title {
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .header-sub {
-    font-size: 0.8rem;
-    opacity: 0.7;
-    margin: 0.2rem 0 0;
   }
 
   .header-stats {

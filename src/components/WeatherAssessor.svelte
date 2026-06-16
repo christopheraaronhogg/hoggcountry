@@ -270,25 +270,6 @@
 </script>
 
 <div class="weather-assessor">
-  <!-- Atmospheric Header -->
-  <header class="wx-header">
-    <div class="wx-clouds">
-      <div class="cloud c1"></div>
-      <div class="cloud c2"></div>
-      <div class="cloud c3"></div>
-    </div>
-    <div class="wx-header-content">
-      <div class="wx-badge">
-        <span class="wx-badge-icon">🌤️</span>
-        <span class="wx-badge-text">WEATHER STATION</span>
-      </div>
-      <h2 class="wx-title">Weather Assessor</h2>
-        <p class="wx-subtitle">Temperature • Wind • Rain • Daylight</p>
-
-    </div>
-
-  </header>
-
   <!-- Navigation Tabs -->
   <nav class="wx-nav">
     <button class="nav-tab" class:active={activeSection === 'temp'} onclick={() => activeSection = 'temp'}>
@@ -555,101 +536,6 @@
   .weather-assessor {
     font-family: system-ui, -apple-system, sans-serif;
   }
-
-  /* Atmospheric Header */
-  .wx-header {
-    position: relative;
-    background: linear-gradient(180deg, #1e3a5f 0%, #2d5a87 50%, #4a90b5 100%);
-    border-radius: 20px;
-    padding: 2rem 1.5rem;
-    margin-bottom: 1rem;
-    overflow: hidden;
-  }
-
-  .wx-clouds {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    opacity: 0.3;
-  }
-
-  .cloud {
-    position: absolute;
-    background: #fff;
-    border-radius: 50px;
-  }
-
-  .cloud.c1 {
-    width: 80px;
-    height: 30px;
-    top: 20%;
-    left: 10%;
-    animation: drift 20s linear infinite;
-  }
-
-  .cloud.c2 {
-    width: 60px;
-    height: 24px;
-    top: 40%;
-    left: 60%;
-    animation: drift 25s linear infinite reverse;
-  }
-
-  .cloud.c3 {
-    width: 100px;
-    height: 36px;
-    top: 60%;
-    left: 30%;
-    animation: drift 30s linear infinite;
-  }
-
-  @keyframes drift {
-    from { transform: translateX(-100px); }
-    to { transform: translateX(calc(100% + 100px)); }
-  }
-
-  .wx-header-content {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    color: #fff;
-  }
-
-  .wx-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.15);
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    margin-bottom: 0.75rem;
-  }
-
-  .wx-badge-icon { font-size: 1rem; }
-
-  .wx-badge-text {
-    font-family: Oswald, sans-serif;
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-  }
-
-  .wx-title {
-    font-family: Oswald, sans-serif;
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .wx-subtitle {
-    font-size: 0.85rem;
-    opacity: 0.8;
-    margin: 0;
-  }
-
-
 
   /* Navigation Tabs */
   .wx-nav {

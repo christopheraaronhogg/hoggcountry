@@ -422,19 +422,10 @@
 
 <div class="trail-budget" class:mounted>
   <header class="budget-header">
-    <div class="header-main">
-      <span class="icon">💰</span>
-      <div>
-        <h2 style="color: white">Trail Categories</h2>
-        <p style="color: rgba(255,255,255,0.9)">
-          Every dollar has a name, every mile.
-        </p>
-      </div>
-    </div>
     <div class="month-selector">
-      <button onclick={() => changeMonth(-1)} class="month-nav">◀</button>
+      <button onclick={() => changeMonth(-1)} class="month-nav" aria-label="Previous month">◀</button>
       <span class="current-month">{getMonthDisplayName(currentMonthKey)}</span>
-      <button onclick={() => changeMonth(1)} class="month-nav">▶</button>
+      <button onclick={() => changeMonth(1)} class="month-nav" aria-label="Next month">▶</button>
     </div>
   </header>
 
@@ -810,7 +801,6 @@
   }
 
   /* Typography Overrides */
-  h2,
   h3,
   .current-month,
   .stat-value,
@@ -826,33 +816,12 @@
   .budget-header {
     background: var(--pine-green);
     color: white;
-    padding: 1.5rem 2rem;
+    padding: 0.85rem 2rem;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1.5rem;
-  }
-
-  .header-main {
-    display: flex;
     gap: 1rem;
-    align-items: center;
-  }
-  .header-main .icon {
-    font-size: 2.2rem;
-  }
-  .header-main h2 {
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--marker-gold);
-  }
-  .header-main p {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 0.8rem;
-    font-style: italic;
   }
 
   .month-selector {

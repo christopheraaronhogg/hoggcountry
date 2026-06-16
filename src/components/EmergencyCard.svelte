@@ -139,19 +139,8 @@
 </script>
 
 <div class="emergency-card" class:mounted>
-  <!-- Alert Header -->
+  <!-- Edit toggle strip -->
   <header class="card-header">
-    <div class="header-alert">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="alert-icon">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
-    </div>
-    <div class="header-text">
-      <h2>TRAIL SOS</h2>
-      <p>Emergency Information Card</p>
-    </div>
     <button class="edit-btn" onclick={() => editMode = !editMode}>
       {editMode ? '✓ SAVE' : '✎ EDIT'}
     </button>
@@ -560,54 +549,11 @@
   /* Header */
   .card-header {
     display: flex;
+    justify-content: flex-end;
     align-items: center;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
+    padding: 0.85rem 1.5rem;
     background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
     border-bottom: 2px solid #991b1b;
-  }
-
-  .header-alert {
-    width: 48px;
-    height: 48px;
-    background: rgba(255,255,255,0.15);
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .alert-icon {
-    width: 28px;
-    height: 28px;
-    color: #fff;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-  }
-
-  .header-text h2 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.1em;
-  }
-
-  .header-text p {
-    margin: 0.15rem 0 0;
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.8);
-    letter-spacing: 0.05em;
-  }
-
-  .header-text {
-    flex: 1;
   }
 
   .edit-btn {

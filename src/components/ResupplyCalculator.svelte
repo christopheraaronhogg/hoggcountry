@@ -97,12 +97,6 @@
 
 <section class="card hero">
   <div class="hero-top">
-    <div>
-      <h2 class="title">Resupply</h2>
-      <p class="sub">
-        Plan your next town stop fast: what’s next, what’s in range, and where to mail drops.
-      </p>
-    </div>
     <div class="hero-links">
       <a class="btn-link" href="/tools/mail/">Mail drops →</a>
       <a class="btn-link" href="/tools/milestone/">Journey →</a>
@@ -272,26 +266,11 @@
 
   .hero-top {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: flex-end;
     gap: 1rem;
     flex-wrap: wrap;
     margin-bottom: 0.6rem;
-  }
-
-  .title {
-    margin: 0 0 0.15rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1.35rem;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    color: var(--pine);
-  }
-
-  .sub {
-    margin: 0;
-    color: var(--muted);
-    max-width: 64ch;
   }
 
   .hero-links {

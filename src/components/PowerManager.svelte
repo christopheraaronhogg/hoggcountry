@@ -196,10 +196,6 @@
   <!-- Industrial Header with Power Gauge -->
   <header class="power-header">
     <div class="header-top">
-      <div class="header-badge">
-        <span class="badge-icon">⚡</span>
-        <span class="badge-text">POWER STATION</span>
-      </div>
       <div class="header-status" class:critical={bankStatus.level === 'low'} class:warning={bankStatus.level === 'moderate'}>
         <span class="status-dot"></span>
         <span class="status-text">{bankStatus.label}</span>
@@ -649,31 +645,9 @@
 
   .header-top {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     margin-bottom: 1.25rem;
-  }
-
-  .header-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .badge-icon {
-    font-size: 1rem;
-  }
-
-  .badge-text {
-    font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: rgba(255, 255, 255, 0.8);
   }
 
   .header-status {

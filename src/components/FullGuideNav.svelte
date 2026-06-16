@@ -1,9 +1,19 @@
 <script>
   import { onMount } from 'svelte';
 
-  let { chapters = [], markdownContent = '' } = $props();
+  let { chapters = [], markdownContent = '', currentSlug = '' } = $props();
 
-  let activeChapter = $state('');
+  // When currentSlug is set, the nav is rendered on a single-chapter page
+  // (no inline .chapter-section sections to scroll between). In that mode the
+  // TOC items navigate to /guide/<slug> instead of scrolling, and the active
+  // chapter is the one being viewed.
+  let isChapterPage = $derived(Boolean(currentSlug));
+
+  // observedChapter is updated by the IntersectionObserver on the index page
+  // (where multiple sections share the viewport). On a chapter page, the
+  // active item is simply the current slug.
+  let observedChapter = $state('');
+  let activeChapter = $derived(isChapterPage ? currentSlug : observedChapter);
   let showMobileNav = $state(false);
   let headerHidden = $state(false);
   let headerHeight = $state(52);
@@ -62,22 +72,27 @@
       resizeObserver.observe(headerWrapper);
     }
 
-    const sections = document.querySelectorAll('.chapter-section');
-    const observerOptions = {
-      root: null,
-      rootMargin: '-20% 0px -70% 0px',
-      threshold: 0
-    };
+    // Single-chapter pages set activeChapter from the slug prop; skip the
+    // observer there so we don't fight the explicit value.
+    let intersectionObserver = null;
+    if (!isChapterPage) {
+      const sections = document.querySelectorAll('.chapter-section');
+      const observerOptions = {
+        root: null,
+        rootMargin: '-20% 0px -70% 0px',
+        threshold: 0
+      };
 
-    const intersectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          activeChapter = entry.target.id;
-        }
-      });
-    }, observerOptions);
+      intersectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            observedChapter = entry.target.id;
+          }
+        });
+      }, observerOptions);
 
-    sections.forEach(section => intersectionObserver.observe(section));
+      sections.forEach(section => intersectionObserver.observe(section));
+    }
 
     // Update scrollHeight on resize (in case content changes)
     const updateScrollHeight = () => {
@@ -88,7 +103,7 @@
     window.addEventListener('resize', updateScrollHeight, { passive: true });
 
     return () => {
-      intersectionObserver.disconnect();
+      intersectionObserver?.disconnect();
       mutationObserver?.disconnect();
       resizeObserver?.disconnect();
       window.removeEventListener('resize', updateScrollHeight);
@@ -96,6 +111,17 @@
   });
 
   function scrollToChapter(id) {
+    if (isChapterPage) {
+      // On a chapter page, TOC items navigate to the chosen chapter rather
+      // than trying to scroll to an inline section that doesn't exist here.
+      showMobileNav = false;
+      if (id === currentSlug) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      window.location.href = `/guide/${id}`;
+      return;
+    }
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -108,6 +134,10 @@
   }
 
   function scrollToTOC() {
+    if (isChapterPage) {
+      window.location.href = '/guide#table-of-contents';
+      return;
+    }
     const toc = document.getElementById('table-of-contents');
     if (toc) {
       const offset = 80;

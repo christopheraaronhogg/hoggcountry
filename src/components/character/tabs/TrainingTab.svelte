@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
   import { loadCharacter, character, updateCharacter } from '../../../stores/character.svelte';
 
   loadCharacter();
@@ -109,7 +108,7 @@
         </label>
       </div>
 
-      <a class="action primary-action" href={resolve('/tools/training')}>Open full Training Planner</a>
+      <a class="action primary-action" href="/tools/training">Open full Training Planner</a>
     </div>
 
     <div class="card next-card">

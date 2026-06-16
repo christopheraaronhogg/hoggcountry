@@ -51,13 +51,6 @@
 </script>
 
 <section class="card" style="padding: 1rem;">
-  <h2 class="font-display" style="margin: 0 0 0.35rem;">Gear Transition Tracker</h2>
-  <p style="margin: 0; color: var(--muted);">
-    Track planned swap points (send-home / pickup / swap) as your mileage changes.
-  </p>
-</section>
-
-<section class="card" style="padding: 1rem; margin-top: 1rem;">
   <div class="entry-head" style="margin-bottom: 0.6rem;">
     <h3 style="margin: 0;">Add transition</h3>
     <div class="entry-meta">

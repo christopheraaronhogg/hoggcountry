@@ -468,23 +468,10 @@ hoggcountry.com/tools`;
 </script>
 
 <div class="milestone-calc" class:mounted>
-  <!-- Header -->
-  <header class="calc-header">
-    <div class="header-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
-        <path d="M12 8l3 4-3 4-3-4z" fill="currentColor"/>
-      </svg>
-    </div>
-    <div class="header-content">
-      <h2>JOURNEY NAVIGATOR</h2>
-      <p>{mode === 'planning' ? 'Plan your path from Springer to Katahdin' : 'Track your progress on the AT'}</p>
-    </div>
-    <div class="header-badge">
-      <span>{mode === 'planning' ? 'PLANNING' : 'ON TRAIL'}</span>
-    </div>
-  </header>
+  <!-- Mode badge -->
+  <div class="mode-strip">
+    <span class="mode-badge">{mode === 'planning' ? 'PLANNING' : 'ON TRAIL'}</span>
+  </div>
 
   <!-- Layer Filters (apply to timeline + milestone grid) -->
   <section class="layers-section">
@@ -890,64 +877,26 @@ hoggcountry.com/tools`;
     transform: translateY(0);
   }
 
-  /* Header */
-  .calc-header {
+  /* Mode strip */
+  .mode-strip {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-    border-bottom: 2px solid #1e3a5f;
+    justify-content: flex-end;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(30,58,95,0.06), rgba(37,99,235,0.06));
   }
 
-  .header-icon {
-    width: 48px;
-    height: 48px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #bfdbfe;
-  }
-
-  .header-icon svg {
-    width: 28px;
-    height: 28px;
-  }
-
-  .header-content {
-    flex: 1;
-  }
-
-  .header-content h2 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.05em;
-  }
-
-  .header-content p {
-    margin: 0.15rem 0 0;
-    font-size: 0.85rem;
-    color: #bfdbfe;
-  }
-
-  .header-badge {
-    padding: 0.35rem 0.75rem;
-    background: rgba(255,255,255,0.2);
-    border: 2px solid rgba(255,255,255,0.3);
+  .mode-badge {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(30,58,95,0.25);
     border-radius: 6px;
-  }
-
-  .header-badge span {
+    background: rgba(255,255,255,0.7);
     font-family: Oswald, sans-serif;
     font-size: 0.7rem;
     font-weight: 700;
-    color: #fff;
+    color: #1e3a5f;
     letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   /* Section Headers */
@@ -2353,10 +2302,6 @@ hoggcountry.com/tools`;
 
     .proj-grid {
       grid-template-columns: 1fr;
-    }
-
-    .header-badge {
-      display: none;
     }
   }
 </style>

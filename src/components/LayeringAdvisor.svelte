@@ -244,15 +244,6 @@
   <header class="layer-header">
     <div class="header-pattern"></div>
     <div class="header-content">
-      <div class="header-text">
-        <div class="title-row">
-          <svg class="title-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
-          </svg>
-          <h2>Layering Advisor</h2>
-        </div>
-        <p>What to wear for trail conditions</p>
-      </div>
       <div class="temp-orb" style="--zone-color: {tempZone.color}">
         <div class="orb-glow"></div>
         <span class="orb-temp">{temperature}°</span>
@@ -545,35 +536,9 @@
   .header-content {
     position: relative;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     z-index: 1;
-  }
-
-  .title-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .title-icon {
-    color: rgba(255,255,255,0.8);
-  }
-
-  .header-text h2 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .header-text p {
-    margin: 0.25rem 0 0;
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.7);
   }
 
   .temp-orb {
@@ -1341,13 +1306,8 @@
     }
 
     .header-content {
-      flex-direction: column;
-      gap: 1rem;
-      text-align: center;
-    }
-
-    .title-row {
       justify-content: center;
+      gap: 1rem;
     }
 
     .scenarios-bar {

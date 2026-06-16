@@ -1,12 +1,44 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageData } from './$types';
+  import type { GuideEntry } from '$lib/server/guide';
+  import FullGuideNav from '../../../../../../src/components/FullGuideNav.svelte';
+  import DownloadGuideButton from '../../../../../../src/components/DownloadGuideButton.svelte';
+  import GuideHighlighter from '../../../../../../src/components/GuideHighlighter.svelte';
 
   const { data } = $props<{ data: PageData }>();
 
-  const siblingChapters = $derived(data.chapters.filter((chapter) => chapter.quickRef === data.entry.quickRef));
-  const currentIndex = $derived(siblingChapters.findIndex((chapter) => chapter.slug === data.entry.slug));
+  const navChapters = $derived(
+    data.chapters.map((chapter: GuideEntry) => ({
+      id: chapter.slug,
+      data: {
+        title: chapter.title,
+        description: chapter.description,
+        part: chapter.part,
+        order: chapter.order,
+        quickRef: chapter.quickRef
+      }
+    }))
+  );
+
+  const mainChapters = $derived(data.chapters.filter((chapter: GuideEntry) => !chapter.quickRef));
+  const siblingChapters = $derived(
+    data.chapters.filter((chapter: GuideEntry) => chapter.quickRef === data.entry.quickRef)
+  );
+  const currentIndex = $derived(
+    siblingChapters.findIndex((chapter: GuideEntry) => chapter.slug === data.entry.slug)
+  );
   const prevChapter = $derived(currentIndex > 0 ? siblingChapters[currentIndex - 1] : null);
-  const nextChapter = $derived(currentIndex < siblingChapters.length - 1 ? siblingChapters[currentIndex + 1] : null);
+  const nextChapter = $derived(
+    currentIndex < siblingChapters.length - 1 ? siblingChapters[currentIndex + 1] : null
+  );
+
+  const chapterIndex = $derived(
+    mainChapters.findIndex((chapter: GuideEntry) => chapter.slug === data.entry.slug)
+  );
+  const chapterLabel = $derived(
+    data.entry.quickRef ? 'Quick Reference' : `Chapter ${String(chapterIndex).padStart(2, '0')}`
+  );
 </script>
 
 <svelte:head>
@@ -14,54 +46,92 @@
   <meta name="description" content={data.entry.description} />
 </svelte:head>
 
-<article class="guide-article">
-  <header class="guide-header">
-    <a href="/guide" class="back-link">&larr; Field Guide</a>
-    {#if data.entry.quickRef}
-      <span class="quick-badge">Quick Reference</span>
-    {/if}
-  </header>
+<FullGuideNav
+  chapters={navChapters}
+  markdownContent={data.markdownContent}
+  currentSlug={data.entry.slug}
+/>
 
-  <div class="guide-content">
-    <div class="prose">
-      {@html data.entry.html}
-    </div>
+<div class="guide-wrapper">
+  <div class="guide-content-area">
+    <header class="chapter-page-header">
+      <a href={resolve('/guide')} class="back-link">&larr; Field Guide</a>
+      {#if data.entry.quickRef}
+        <span class="quick-badge">Quick Reference</span>
+      {/if}
+    </header>
+
+    <article class="guide-article">
+      <section
+        id={data.entry.slug}
+        class:quick-ref={data.entry.quickRef}
+        class="chapter-section"
+      >
+        <div class="chapter-header">
+          <div class:quick-ref-label={data.entry.quickRef} class="chapter-label">
+            <span class="chapter-label-line"></span>
+            <span>{chapterLabel}</span>
+          </div>
+        </div>
+
+        <div class="prose">
+          {@html data.entry.html}
+        </div>
+      </section>
+
+      <nav class="chapter-nav" aria-label="Chapter navigation">
+        <div class="nav-prev">
+          {#if prevChapter}
+            <a href={resolve(`/guide/${prevChapter.slug}`)} class="nav-link">
+              <span class="nav-direction">&larr; Previous</span>
+              <span class="nav-title">{prevChapter.title}</span>
+            </a>
+          {/if}
+        </div>
+
+        <div class="nav-next">
+          {#if nextChapter}
+            <a href={resolve(`/guide/${nextChapter.slug}`)} class="nav-link">
+              <span class="nav-direction">Next &rarr;</span>
+              <span class="nav-title">{nextChapter.title}</span>
+            </a>
+          {/if}
+        </div>
+      </nav>
+    </article>
   </div>
+</div>
 
-  <nav class="chapter-nav" aria-label="Chapter navigation">
-    <div class="nav-prev">
-      {#if prevChapter}
-        <a href={`/guide/${prevChapter.slug}`} class="nav-link">
-          <span class="nav-direction">&larr; Previous</span>
-          <span class="nav-title">{prevChapter.title}</span>
-        </a>
-      {/if}
-    </div>
-
-    <div class="nav-next">
-      {#if nextChapter}
-        <a href={`/guide/${nextChapter.slug}`} class="nav-link">
-          <span class="nav-direction">Next &rarr;</span>
-          <span class="nav-title">{nextChapter.title}</span>
-        </a>
-      {/if}
-    </div>
-  </nav>
-</article>
+<DownloadGuideButton variant="header" markdownContent={data.markdownContent} />
+<GuideHighlighter />
 
 <style>
-  .guide-article {
-    max-width: 70ch;
-    margin: 0 auto;
-    padding-bottom: 3rem;
+  :global(.public-site-main) {
+    overflow-x: clip;
   }
 
-  .guide-header {
+  .guide-wrapper {
+    padding-top: 110px; /* Header (52px) + Progress bar (48px) + breathing room */
+    padding-bottom: 4rem;
+  }
+
+  @media (min-width: 1025px) {
+    .guide-wrapper {
+      margin-left: 220px;
+    }
+  }
+
+  .guide-content-area {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 6rem;
+  }
+
+  .chapter-page-header {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding-top: 0.25rem;
-    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
   }
 
   .back-link {
@@ -83,8 +153,49 @@
     color: #2b2f26;
   }
 
-  .guide-content {
-    padding-top: 0.5rem;
+  .guide-article {
+    padding-bottom: 3rem;
+  }
+
+  .chapter-section {
+    scroll-margin-top: 110px;
+    position: relative;
+    padding: 1.5rem 0 0;
+  }
+
+  .chapter-section.quick-ref {
+    background: linear-gradient(to right, rgba(240, 224, 0, 0.04), transparent);
+    border-radius: 12px;
+    padding: 1.5rem 1rem 0;
+  }
+
+  .chapter-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .chapter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .chapter-label.quick-ref-label {
+    color: var(--terra);
+  }
+
+  .chapter-label-line {
+    width: 30px;
+    height: 1px;
+    background: var(--stone);
+  }
+
+  .chapter-label.quick-ref-label .chapter-label-line {
+    background: var(--terra);
   }
 
   .prose :global(h1) {
@@ -306,7 +417,21 @@
     font-size: 0.95rem;
   }
 
+  @media (max-width: 1024px) {
+    .guide-wrapper {
+      margin-left: 0;
+    }
+  }
+
   @media (max-width: 600px) {
+    .guide-wrapper {
+      padding-top: 100px;
+    }
+
+    .guide-content-area {
+      padding: 1.25rem 1rem 5rem;
+    }
+
     .prose :global(h1) {
       font-size: 1.5rem;
     }

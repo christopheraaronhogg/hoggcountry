@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { resolve } from '$app/paths';
   import { loadContext, getContextSnapshot } from '../../stores/trailContext.svelte';
   import ContextBanner from './ContextBanner.svelte';
   import { recordToolOpened } from '../../lib/progression';
@@ -85,18 +84,14 @@
 
   let trailContext = $derived.by(() => getContextSnapshot());
   let milesRemaining = $derived(Math.max(0, Number(trailContext.milesRemaining) || 0));
-  let contextSummary = $derived.by(() => [
-    { label: 'Mile', value: Number(trailContext.currentMile || 0).toFixed(1) },
-    { label: 'Nearest', value: trailContext.nearestLandmark?.name ?? 'Springer Mountain' },
-    { label: 'Pace', value: `${Number(trailContext.targetPace || 0).toFixed(1)} / day` },
-    { label: 'Left', value: `${milesRemaining.toLocaleString()} mi` }
-  ]);
+  let percentComplete = $derived(Number(trailContext.percentComplete || 0));
+  let pacePerDay = $derived(Number(trailContext.targetPace || 0));
 
 </script>
 
 <div class="tool-page" class:mounted>
   <nav class="tool-ribbon" aria-label="Tool navigation">
-    <a class="back-link" href={resolve('/tools')}>
+    <a class="back-link" href="/tools">
       <span aria-hidden="true">←</span>
       Trail Tools
     </a>
@@ -108,28 +103,29 @@
   <header class="tool-hero">
     <div class="tool-title-block">
       <div class="tool-icon" aria-hidden="true">{toolIcon}</div>
-      <div>
+      <div class="tool-title-text">
         <p class="eyebrow">{toolGroup}</p>
         <h1>{toolName}</h1>
         <p class="tool-description">{toolDescription}</p>
       </div>
     </div>
 
-    <div class="context-card" aria-label="Current trail context">
-      <div class="context-card-head">
-        <span>Current context</span>
-        <strong>{Number(trailContext.percentComplete || 0).toFixed(1)}%</strong>
+    <div class="progress-strip" aria-label="Trail progress">
+      <div class="progress-meta">
+        <span class="progress-pct"><strong>{percentComplete.toFixed(1)}%</strong> complete</span>
+        <span class="progress-sep" aria-hidden="true">·</span>
+        <span class="progress-left">{milesRemaining.toLocaleString()} mi to Katahdin</span>
+        <span class="progress-sep" aria-hidden="true">·</span>
+        <span class="progress-pace">{pacePerDay.toFixed(1)} mi/day target</span>
       </div>
-      <div class="mini-progress" aria-label={`${Number(trailContext.percentComplete || 0).toFixed(1)}% complete`}>
-        <span style={`width: ${Math.max(0, Math.min(100, Number(trailContext.percentComplete || 0)))}%`}></span>
-      </div>
-      <div class="context-grid">
-        {#each contextSummary as item (item.label)}
-          <div>
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-          </div>
-        {/each}
+      <div
+        class="progress-bar"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={Math.round(percentComplete)}
+      >
+        <span style={`width: ${Math.max(0, Math.min(100, percentComplete))}%`}></span>
       </div>
     </div>
   </header>
@@ -171,7 +167,7 @@
           <h2>Keep the context moving</h2>
           <div class="related-list">
             {#each relatedTools as tool (tool.id)}
-              <a class="related-link" href={resolve(tool.href)}>
+              <a class="related-link" href={tool.href}>
                 <span class="related-icon" aria-hidden="true">{tool.icon}</span>
                 <span>
                   <strong>{tool.name}</strong>
@@ -253,14 +249,14 @@
 
   .tool-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 23rem);
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
     margin-bottom: 1rem;
     align-items: stretch;
   }
 
   .tool-title-block,
-  .context-card,
+  .progress-strip,
   .aside-card {
     border: 1px solid rgba(61, 74, 58, 0.14);
     background:
@@ -318,79 +314,46 @@
     line-height: 1.5;
   }
 
-  .context-card {
+  .progress-strip {
     display: grid;
-    align-content: start;
-    gap: 0.75rem;
-    padding: 1rem;
+    gap: 0.55rem;
+    padding: 0.7rem 1rem;
   }
 
-  .context-card-head {
+  .progress-meta {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    color: rgba(61, 74, 56, 0.7);
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    color: rgba(61, 74, 56, 0.78);
     font-family: Oswald, sans-serif;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
   }
 
-  .context-card-head strong {
+  .progress-meta strong {
     color: var(--pine, #3d4a38);
-    font-size: 1rem;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
   }
 
-  .mini-progress {
-    height: 0.55rem;
+  .progress-sep {
+    color: rgba(61, 74, 56, 0.35);
+  }
+
+  .progress-bar {
+    height: 0.4rem;
     overflow: hidden;
     border-radius: 999px;
     background: rgba(61, 74, 56, 0.1);
   }
 
-  .mini-progress span {
+  .progress-bar span {
     display: block;
     height: 100%;
     border-radius: inherit;
     background: linear-gradient(90deg, var(--pine, #3d4a38), var(--alpine, #7b9e6b));
-  }
-
-  .context-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem;
-  }
-
-  .context-grid div {
-    min-width: 0;
-    border: 1px solid rgba(61, 74, 56, 0.1);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.68);
-    padding: 0.55rem 0.65rem;
-  }
-
-  .context-grid span {
-    display: block;
-    color: rgba(61, 74, 56, 0.62);
-    font-family: Oswald, sans-serif;
-    font-size: 0.64rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .context-grid strong {
-    display: block;
-    min-width: 0;
-    margin-top: 0.15rem;
-    overflow: hidden;
-    color: rgba(31, 41, 55, 0.92);
-    font-size: 0.86rem;
-    line-height: 1.18;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .context-dock {
@@ -610,17 +573,11 @@
       font-size: 0.88rem;
     }
 
-    .context-card {
-      padding: 0.85rem;
+    .progress-strip {
+      padding: 0.65rem 0.85rem;
     }
 
     .related-list {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 390px) {
-    .context-grid {
       grid-template-columns: 1fr;
     }
   }

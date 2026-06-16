@@ -124,19 +124,13 @@
 
 <div class="water-tool" class:mounted>
   <header class="water-header">
-    <div class="water-header-top">
-      <div>
-        <h2>Water Sources</h2>
-        <p>AWOL mileages — list is still being expanded.</p>
-      </div>
-      <div class="water-chips">
-        <span class="badge"><strong>Now</strong> Mile {formatMiles(currentMile)}</span>
-        <span class="badge"><strong>Sources</strong> {sourcesSorted.length}</span>
-        {#if upcomingSources[0]}
-          {@const next = upcomingSources[0]}
-          <span class="badge"><strong>Next</strong> {formatMiles(next.mile)} (+{formatMiles(next.mile - currentMile)} mi)</span>
-        {/if}
-      </div>
+    <div class="water-chips">
+      <span class="badge"><strong>Now</strong> Mile {formatMiles(currentMile)}</span>
+      <span class="badge"><strong>Sources</strong> {sourcesSorted.length}</span>
+      {#if upcomingSources[0]}
+        {@const next = upcomingSources[0]}
+        <span class="badge"><strong>Next</strong> {formatMiles(next.mile)} (+{formatMiles(next.mile - currentMile)} mi)</span>
+      {/if}
     </div>
   </header>
 
@@ -305,36 +299,12 @@
     color: #fff;
   }
 
-  .water-header-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 0.75rem 1rem;
-  }
-
-  .water-header h2 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-
-  .water-header p {
-    margin: 0.25rem 0 0;
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.85);
-  }
-
   .water-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   .water-chips :global(.badge) {

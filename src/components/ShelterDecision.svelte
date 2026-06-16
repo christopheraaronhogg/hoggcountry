@@ -146,18 +146,12 @@
 </script>
 
 <div class="shelter-decision">
-  <!-- Hero Decision Header -->
+  <!-- Hero Decision -->
   <header class="decision-hero" class:shelter={recommendation.decision === 'shelter'} class:urgent={recommendation.urgent}>
     <div class="hero-bg">
       <div class="bg-pattern"></div>
     </div>
     <div class="hero-content">
-      <div class="hero-badge">
-        <span class="badge-icon">🛡️</span>
-        <span class="badge-text">DECISION ENGINE</span>
-      </div>
-      <h2 class="hero-title">Shelter Decision</h2>
-
       <div class="decision-display">
         <div class="option tent" class:active={recommendation.decision === 'tent'}>
           <span class="option-icon">🏕️</span>
@@ -533,34 +527,6 @@
     position: relative;
     z-index: 1;
     text-align: center;
-  }
-
-  .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(255,255,255,0.15);
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    margin-bottom: 0.75rem;
-  }
-
-  .badge-icon { font-size: 0.9rem; }
-
-  .badge-text {
-    font-family: Oswald, sans-serif;
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-  }
-
-  .hero-title {
-    font-family: Oswald, sans-serif;
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   /* Decision Display */

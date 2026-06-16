@@ -1,6 +1,5 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
-  import { resolve } from '$app/paths';
   import { loadCharacter, character, updateCharacter, type CharacterV1 } from '../stores/character.svelte';
   import { trailContext, updateContext } from '../stores/trailContext.svelte';
 
@@ -403,15 +402,15 @@
 
           <div class="actions" style="margin-top: 0.85rem;">
             <button class="action primary-action" type="button" onclick={() => setTab('trail')}>Edit trail defaults</button>
-            <a class="action" href={resolve('/tools/milestone')}>Journey</a>
-            <a class="action" href={resolve('/tools/pack')}>Pack</a>
-            <a class="action" href={resolve('/tools/resupply')}>Resupply</a>
-            <a class="action" href={resolve('/tools/food')}>Food</a>
-            <a class="action" href={resolve('/tools/water')}>Water</a>
-            <a class="action" href={resolve('/tools/power')}>Power</a>
-            <a class="action" href={resolve('/tools/budget')}>Budget</a>
-            <a class="action" href={resolve('/tools/mail')}>Mail Drops</a>
-            <a class="action" href={resolve('/tools/training')}>Training</a>
+            <a class="action" href="/tools/milestone">Journey</a>
+            <a class="action" href="/tools/pack">Pack</a>
+            <a class="action" href="/tools/resupply">Resupply</a>
+            <a class="action" href="/tools/food">Food</a>
+            <a class="action" href="/tools/water">Water</a>
+            <a class="action" href="/tools/power">Power</a>
+            <a class="action" href="/tools/budget">Budget</a>
+            <a class="action" href="/tools/mail">Mail Drops</a>
+            <a class="action" href="/tools/training">Training</a>
           </div>
         </div>
       </div>
@@ -484,7 +483,7 @@
         </div>
 
         <div class="actions" style="margin-top: 0.85rem;">
-          <a class="action" href={resolve('/at-weather')}>AT Weather</a>
+          <a class="action" href="/at-weather">AT Weather</a>
           <button class="action" type="button" onclick={syncGpsToCurrentMile} disabled={gpsSyncing}>
             {gpsSyncing ? 'Syncing GPS…' : 'Sync GPS → Current'}
           </button>

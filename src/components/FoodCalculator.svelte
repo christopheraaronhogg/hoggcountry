@@ -39,13 +39,6 @@
 </script>
 
 <section class="card" style="padding: 1rem;">
-  <h2 class="font-display" style="margin: 0 0 0.35rem;">Food Calculator</h2>
-  <p style="margin: 0; color: var(--muted);">
-    Quick planning math: calories → ounces → carry weight.
-  </p>
-</section>
-
-<section class="card" style="padding: 1rem; margin-top: 1rem;">
   <div class="controls">
     <label class="ctrl">
       <span class="label">Calories per day</span>

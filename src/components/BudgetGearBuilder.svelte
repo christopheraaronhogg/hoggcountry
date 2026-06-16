@@ -292,15 +292,8 @@
 </script>
 
 <div class="gear-builder">
-  <!-- Header -->
+  <!-- Items count strip -->
   <header class="builder-header">
-    <div class="header-icon-box">
-      <span class="header-icon">🎒</span>
-    </div>
-    <div class="header-content">
-      <h2>GEAR BUILDER</h2>
-      <p>Build your AT kit by budget</p>
-    </div>
     <div class="header-stat">
       <span class="stat-value">{recommendation.length}</span>
       <span class="stat-label">items</span>
@@ -678,45 +671,12 @@
   /* Header */
   .builder-header {
     display: flex;
+    justify-content: flex-end;
     align-items: center;
-    gap: 1rem;
-    padding: 1.25rem;
+    padding: 0.85rem 1.25rem;
     background: linear-gradient(135deg, #4a5568, #2d3748);
     border-radius: 12px;
     margin-bottom: 1.5rem;
-  }
-
-  .header-icon-box {
-    width: 48px;
-    height: 48px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .header-icon {
-    font-size: 1.5rem;
-  }
-
-  .header-content {
-    flex: 1;
-  }
-
-  .header-content h2 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.05em;
-  }
-
-  .header-content p {
-    margin: 0.15rem 0 0;
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.7);
   }
 
   .header-stat {

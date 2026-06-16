@@ -480,25 +480,6 @@
 
 
 <div class="pack-builder" class:mounted>
-  <!-- Header -->
-  <header class="calc-header">
-    <div class="header-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17 6V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-3zM9 4h6v2H9V4zm11 15H4V8h3v2h2V8h6v2h2V8h3v11z"/>
-      </svg>
-    </div>
-    <div class="header-content">
-      <h2>LOAD MASTER</h2>
-      <p>Build your kit, know your weight</p>
-    </div>
-    <div class="header-stat">
-      <span class="stat-val">{filledItemsCount}</span>
-      <span class="stat-lbl">items</span>
-    </div>
-
-  </header>
-
-
   <!-- Weight Hero -->
   <section class="weight-hero">
     <div class="weight-display">
@@ -867,74 +848,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-
-  /* Header */
-  .calc-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-    border-bottom: 2px solid #1f2937;
-  }
-
-  .header-icon {
-    width: 48px;
-    height: 48px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #d1d5db;
-  }
-
-  .header-icon svg {
-    width: 28px;
-    height: 28px;
-  }
-
-  .header-content {
-    flex: 1;
-  }
-
-  .header-content h2 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.05em;
-  }
-
-  .header-content p {
-    margin: 0.15rem 0 0;
-    font-size: 0.85rem;
-    color: #9ca3af;
-  }
-
-  .header-stat {
-    text-align: center;
-    padding: 0.5rem 0.75rem;
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-  }
-
-  .stat-val {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-  }
-
-  .stat-lbl {
-    font-size: 0.65rem;
-    color: #9ca3af;
-    text-transform: uppercase;
-  }
-
-
 
   /* Weight Hero */
   .weight-hero {
@@ -2072,10 +1985,6 @@
 
     .consumables-grid {
       grid-template-columns: 1fr;
-    }
-
-    .header-stat {
-      display: none;
     }
   }
 </style>

@@ -34,7 +34,9 @@
   }
 
   const isGuidePage = $derived(
-    page.url.pathname === '/guide' || page.url.pathname.startsWith('/guide/manual-builder')
+    page.url.pathname === '/guide' ||
+      page.url.pathname.startsWith('/guide/manual-builder') ||
+      (page.url.pathname.startsWith('/guide/') && !page.url.pathname.startsWith('/guide/personalize'))
   );
   const isHomepage = $derived(page.url.pathname === '/');
 

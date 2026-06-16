@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { resolve } from '$app/paths';
   import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   type FitnessLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'athlete';
@@ -413,7 +412,7 @@
         <p class="panel-copy">All prep benchmarks are checked. Keep training steady and avoid changing too much at once.</p>
       {/if}
 
-      <a class="guide-link" href={resolve('/guide/01-hiker-profile-and-experience')}>Open training guide</a>
+      <a class="guide-link" href="/guide/01-hiker-profile-and-experience">Open training guide</a>
     </aside>
   </div>
 </section>
