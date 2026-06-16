@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../app.css';
-  import { browser } from '$app/environment';
+  import { browser, dev } from '$app/environment';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { initSpacetimeProvider } from '$lib/spacetime';
@@ -48,13 +48,28 @@
     isOffline = !navigator.onLine;
   }
 
+  function syncServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    if (dev) {
+      void navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          if (registration.scope.startsWith(window.location.origin)) {
+            void registration.unregister();
+          }
+        }
+      });
+      return;
+    }
+
+    void navigator.serviceWorker.register('/service-worker.js').catch((error) => {
+      console.warn('Scout service worker registration failed:', error);
+    });
+  }
+
   if (browser) {
     initSpacetimeProvider();
-    if ('serviceWorker' in navigator) {
-      void navigator.serviceWorker.register('/service-worker.js').catch((error) => {
-        console.warn('Scout service worker registration failed:', error);
-      });
-    }
+    syncServiceWorker();
     $effect(() => {
       updateGuideHeaderState();
     });
