@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
+  import { resolve } from '$app/paths';
   import { loadCharacter, character, updateCharacter, type CharacterV1 } from '../stores/character.svelte';
   import { trailContext, updateContext } from '../stores/trailContext.svelte';
 
@@ -51,6 +52,25 @@
     return Math.round(n);
   });
 
+  let emergencyContacts = $derived.by(() =>
+    (character.emergency.contacts || []).filter((contact) => String(contact.name || '').trim() && String(contact.phone || '').trim()).length
+  );
+
+  let inventoryCount = $derived.by(() => (character.equipment.inventory.items || []).length);
+
+  let profileChecks = $derived.by(() => [
+    { id: 'identity', label: 'Identity', done: !!(displayName.trim() || nickname.trim()), value: canonicalName() },
+    { id: 'mile', label: 'Current mile', done: Number(trailContext.currentMile) > 0, value: `Mile ${Number(trailContext.currentMile || 0).toFixed(1)}` },
+    { id: 'pace', label: 'Pace target', done: Number(targetPace) > 0, value: `${Number(targetPace || 0).toFixed(1)} mi/day` },
+    { id: 'pack', label: 'Pack list', done: inventoryCount > 0, value: `${inventoryCount} items` },
+    { id: 'resupply', label: 'Resupply defaults', done: Number(carryDays) > 0, value: `${carryDays || 0} carry days` },
+    { id: 'emergency', label: 'Emergency contacts', done: emergencyContacts > 0, value: `${emergencyContacts} saved` },
+  ]);
+
+  let completedChecks = $derived.by(() => profileChecks.filter((check) => check.done).length);
+  let completionPct = $derived.by(() => Math.round((completedChecks / Math.max(1, profileChecks.length)) * 100));
+  let nextProfileGaps = $derived.by(() => profileChecks.filter((check) => !check.done).slice(0, 3));
+
   // Extra “sheet” stats (from Character slices)
   let direction = $derived(character.trail.direction || 'NOBO');
   let carryDays = $derived(character.logistics.resupply.carryDays || 0);
@@ -59,6 +79,7 @@
 
   let startDate = $derived(trailContext.startDate || character.trail.startDate || '');
   let targetPace = $derived(trailContext.targetPace || character.trail.targetPace || 0);
+  let atWeatherHref = $derived(`${resolve('/at-weather')}?mile=${Number(trailContext.currentMile || 0)}`);
 
   // Persist identity/preferences changes (guarded to avoid reactive update loops)
   let _coreSig = $state('');
@@ -105,11 +126,12 @@
     return t.startsWith('@') ? t : `@${t}`;
   }
 
-  // Portrait (v1: local upload / default avatar)
-  let portraitUrl = $derived.by(() => {
-    // future: character.core.portraitUrl
-    return '';
-  });
+  function formatDate(value: string) {
+    if (!value) return 'Not set';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
 
   const tabs: Array<{ id: Tab; label: string; glyph: string; note: string }> = [
     { id: 'overview', glyph: '✦', label: 'Overview', note: 'Stats + identity' },
@@ -221,63 +243,60 @@
 </script>
 
 <div class="cs" transition:fade={{ duration: 120 }}>
-  <!-- Header / Identity Strip -->
-  <header class="top">
-    <div class="brand">
-      <div class="crest" aria-hidden="true">
-        <div class="crest-ring"></div>
-        <div class="crest-core">HC</div>
+  <header class="profile-hero">
+    <div class="profile-copy">
+      <p class="eyebrow">Trail Profile</p>
+      <div class="name-row">
+        <h1 class="title">{canonicalName()}</h1>
+        {#if handle()}
+          <span class="handle">{handle()}</span>
+        {/if}
       </div>
-
-      <div class="who">
-        <div class="name-row">
-          <h1 class="title">{canonicalName()}</h1>
-          {#if handle()}
-            <span class="handle">{handle()}</span>
-          {/if}
-        </div>
-        <div class="sub">
-          <span class="pill" data-tone="{mode}">
-            {mode === 'trail' ? 'ON TRAIL' : 'PLANNING'}
-          </span>
-
-          <span class="muted">Nearest: <strong>{nearest}</strong></span>
-          <span class="muted">Base weight: <strong>{baseWeightLbs} lb</strong></span>
-          <span class="muted">Spent: <strong>${moneySpentAllTime}</strong></span>
-
-          <div class="chips" aria-label="Character quick stats">
-            <span class="chip"><span class="ck">Dir</span><span class="cv">{direction}</span></span>
-            {#if startDate}
-              <span class="chip"><span class="ck">Start</span><span class="cv">{new Date(startDate).toLocaleDateString('en-US')}</span></span>
-            {/if}
-            <span class="chip"><span class="ck">Pace</span><span class="cv">{Number(targetPace || 0).toFixed(1)} /day</span></span>
-            <span class="chip"><span class="ck">Carry</span><span class="cv">{carryDays} d</span></span>
-            <span class="chip"><span class="ck">Water</span><span class="cv">{typicalWaterCarry} L</span></span>
-            <span class="chip"><span class="ck">Bank</span><span class="cv">{powerBankMah.toLocaleString()} mAh</span></span>
-          </div>
-        </div>
+      <p class="lede">
+        The defaults Scout and the trail tools should trust first: who you are, where you are,
+        what you carry, how you move, and who to call if something goes wrong.
+      </p>
+      <div class="hero-actions" aria-label="Profile shortcuts">
+        <button class="hero-action primary" type="button" onclick={() => setTab('trail')}>Update mile</button>
+        <button class="hero-action" type="button" onclick={() => setTab('equipment')}>Pack setup</button>
+        <button class="hero-action" type="button" onclick={() => setTab('emergency')}>Emergency info</button>
       </div>
     </div>
 
-    <div class="portrait" aria-label="Character portrait">
-      {#if portraitUrl}
-        <img class="portrait-img" src={portraitUrl} alt="Character portrait" />
-      {:else}
-        <div class="portrait-placeholder">
-          <div class="pp-bg"></div>
-          <div class="pp-figure" aria-hidden="true"></div>
-          <div class="pp-label">
-            <span class="pp-k">Portrait</span>
-            <span class="pp-v">Default</span>
-          </div>
+    <aside class="readiness-panel" aria-label="Profile readiness">
+      <div class="readiness-top">
+        <div>
+          <span class="panel-k">Ready for tools</span>
+          <strong>{completionPct}%</strong>
+        </div>
+        <span class="pill" data-tone={mode}>{mode === 'trail' ? 'ON TRAIL' : 'PLANNING'}</span>
+      </div>
+      <div class="readiness-meter" aria-label={`${completionPct}% complete`}>
+        <span style={`width: ${completionPct}%`}></span>
+      </div>
+      <div class="readiness-grid">
+        <div><span>Nearest</span><strong>{nearest}</strong></div>
+        <div><span>Mile</span><strong>{Number(trailContext.currentMile || 0).toFixed(1)}</strong></div>
+        <div><span>Pace</span><strong>{Number(targetPace || 0).toFixed(1)}</strong></div>
+        <div><span>Base</span><strong>{baseWeightLbs} lb</strong></div>
+      </div>
+      {#if nextProfileGaps.length}
+        <div class="next-gaps">
+          <span class="panel-k">Next to finish</span>
+          {#each nextProfileGaps as gap (gap.id)}
+            <button class="gap-row" type="button" onclick={() => setTab(gap.id === 'emergency' ? 'emergency' : gap.id === 'pack' ? 'equipment' : gap.id === 'resupply' ? 'logistics' : gap.id === 'mile' || gap.id === 'pace' ? 'trail' : 'overview')}>
+              <span>{gap.label}</span>
+              <strong>{gap.value}</strong>
+            </button>
+          {/each}
         </div>
       {/if}
-    </div>
+    </aside>
   </header>
 
   <!-- Navigation -->
   <nav class="nav" aria-label="Character tabs">
-    {#each tabs as t}
+    {#each tabs as t (t.id)}
       <button
         class="tab"
         class:active={tab === t.id}
@@ -294,10 +313,15 @@
   <!-- Panel -->
   <section class="panel" transition:fly={{ y: 6, duration: 160 }}>
     {#if tab === 'overview'}
-      <div class="grid">
-        <div class="card">
-          <h2 class="h">Identity</h2>
-          <p class="p">This is what “inspect” and tools should treat as your public-facing hiker sheet.</p>
+      <div class="overview-layout">
+        <div class="card identity-card">
+          <div class="card-head">
+            <div>
+              <h2 class="h">Identity</h2>
+              <p class="p">Name, trail name, contact handle, and short notes for Scout context.</p>
+            </div>
+            <span class="save-chip">Autosaves locally</span>
+          </div>
 
           <div class="form">
             <label class="field">
@@ -314,16 +338,36 @@
             </label>
             <label class="field" style="grid-column: 1 / -1;">
               <span class="k">Bio</span>
-              <textarea class="ta" rows="3" bind:value={bio} placeholder="What makes this hiker tick?" />
+              <textarea class="ta" rows="4" bind:value={bio} placeholder="Useful field context: experience, limits, preferences, support notes." ></textarea>
             </label>
           </div>
         </div>
 
-        <div class="card">
-          <h2 class="h">Preferences</h2>
-          <p class="p" style="margin-top: -0.25rem;">Personal defaults that shape tools, prompts, and your trail routine.</p>
+        <div class="card status-card">
+          <h2 class="h">Setup status</h2>
+          <p class="p">The profile is useful when these pieces are filled in.</p>
 
-          <div class="checks" style="margin-top: 0.5rem;">
+          <div class="checklist">
+            {#each profileChecks as check (check.id)}
+              <button
+                class="setup-row"
+                class:is-done={check.done}
+                type="button"
+                onclick={() => setTab(check.id === 'emergency' ? 'emergency' : check.id === 'pack' ? 'equipment' : check.id === 'resupply' ? 'logistics' : check.id === 'mile' || check.id === 'pace' ? 'trail' : 'overview')}
+              >
+                <span class="setup-dot" aria-hidden="true"></span>
+                <span>{check.label}</span>
+                <strong>{check.value}</strong>
+              </button>
+            {/each}
+          </div>
+        </div>
+
+        <div class="card preferences-card">
+          <h2 class="h">Preferences</h2>
+          <p class="p">Defaults that shape tools, prompts, and trail recommendations.</p>
+
+          <div class="checks">
             <label class="check">
               <input type="checkbox" bind:checked={noHitchhiking} />
               <span>No hitchhiking</span>
@@ -337,15 +381,16 @@
               <span>Enable progression (XP + Marks)</span>
             </label>
           </div>
-
-          <div class="callout">
-            <div class="callout-k">Pro tip</div>
-            <div class="callout-v">This character sheet is the spine. Every tool is just a different window into it.</div>
-          </div>
         </div>
 
-        <div class="card wide">
-          <h2 class="h">Progress</h2>
+        <div class="card wide progress-card">
+          <div class="card-head">
+            <div>
+              <h2 class="h">Trail state</h2>
+              <p class="p">Current trail position and the tools that read from this profile.</p>
+            </div>
+            <span class="save-chip">{formatDate(startDate)}</span>
+          </div>
           <div class="meter" aria-label="Trail progress">
             <div class="bar" style={`--p:${Math.max(0, Math.min(100, percent))}%`}></div>
             <div class="meter-grid"></div>
@@ -356,15 +401,16 @@
           </div>
 
           <div class="actions" style="margin-top: 0.85rem;">
-            <a class="action" href="/tools/milestone/">Journey</a>
-            <a class="action" href="/tools/pack/">Pack</a>
-            <a class="action" href="/tools/resupply/">Resupply</a>
-            <a class="action" href="/tools/food/">Food</a>
-            <a class="action" href="/tools/water/">Water</a>
-            <a class="action" href="/tools/power/">Power</a>
-            <a class="action" href="/tools/budget/">Budget</a>
-            <a class="action" href="/tools/mail/">Mail Drops</a>
-            <a class="action" href="/tools/training/">Training</a>
+            <button class="action primary-action" type="button" onclick={() => setTab('trail')}>Edit trail defaults</button>
+            <a class="action" href={resolve('/tools/milestone')}>Journey</a>
+            <a class="action" href={resolve('/tools/pack')}>Pack</a>
+            <a class="action" href={resolve('/tools/resupply')}>Resupply</a>
+            <a class="action" href={resolve('/tools/food')}>Food</a>
+            <a class="action" href={resolve('/tools/water')}>Water</a>
+            <a class="action" href={resolve('/tools/power')}>Power</a>
+            <a class="action" href={resolve('/tools/budget')}>Budget</a>
+            <a class="action" href={resolve('/tools/mail')}>Mail Drops</a>
+            <a class="action" href={resolve('/tools/training')}>Training</a>
           </div>
         </div>
       </div>
@@ -437,7 +483,7 @@
         </div>
 
         <div class="actions" style="margin-top: 0.85rem;">
-          <a class="action" href={`/at-weather?mile=${Number(trailContext.currentMile || 0)}`}>AT Weather</a>
+          <a class="action" href={atWeatherHref}>AT Weather</a>
           <button class="action" type="button" onclick={syncGpsToCurrentMile} disabled={gpsSyncing}>
             {gpsSyncing ? 'Syncing GPS…' : 'Sync GPS → Current'}
           </button>
@@ -518,16 +564,16 @@
     --ink: var(--ink, #1f2937);
     --muted: rgba(92, 102, 90, 0.82);
 
-    --pine: var(--pine, #4d594a);
+    --pine: #4d594a;
     --pine-2: #3d4a3a;
-    --bone: var(--bg, #f5f2e8);
+    --bone: #f5f2e8;
 
     /* "Paper" surfaces */
     --paper: rgba(255, 255, 255, 0.84);
     --paper-2: rgba(255, 255, 255, 0.70);
 
-    --gold: var(--marker, #f0e000);
-    --copper: var(--terra, #d97706);
+    --gold: #f0e000;
+    --copper: #d97706;
     --blood: #dc2626;
     --border: rgba(0,0,0,0.10);
     --shadow: 0 18px 52px rgba(0,0,0,0.12);
@@ -553,65 +599,48 @@
 
   .cs > * { position: relative; z-index: 1; }
 
-  .top {
+  .profile-hero {
     display: grid;
-    grid-template-columns: 1fr 220px;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
     gap: 1rem;
     align-items: stretch;
     margin-bottom: 1rem;
   }
 
-  .brand {
-    display: grid;
-    grid-template-columns: 62px 1fr;
-    gap: 0.9rem;
-    padding: 1rem;
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78));
+  .profile-copy,
+  .readiness-panel {
+    border-radius: 16px;
     border: 1px solid var(--border);
-    box-shadow: var(--shadow);
+    box-shadow: 0 16px 42px rgba(0,0,0,0.1);
     position: relative;
     overflow: hidden;
   }
 
-  .brand:before {
+  .profile-copy {
+    padding: clamp(1rem, 3vw, 1.35rem);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.94), rgba(255,255,255,0.72)),
+      linear-gradient(90deg, rgba(123, 158, 107, 0.12), rgba(217, 119, 6, 0.07));
+  }
+
+  .profile-copy:before {
     content: '';
     position: absolute;
-    inset: -80px -120px auto auto;
-    width: 280px;
-    height: 280px;
-    background: radial-gradient(circle at 30% 30%, rgba(240,224,0,0.45), rgba(240,224,0,0) 55%);
-    filter: blur(2px);
-    transform: rotate(18deg);
+    inset: 0 auto 0 0;
+    width: 0.35rem;
+    background: linear-gradient(180deg, var(--pine), var(--copper));
     pointer-events: none;
   }
 
-  .crest {
-    width: 62px;
-    height: 62px;
-    border-radius: 16px;
-    background: linear-gradient(180deg, #2a352f, #1d2520);
-    position: relative;
-    display: grid;
-    place-items: center;
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 16px 30px rgba(0,0,0,0.25);
-  }
-
-  .crest-ring {
-    position: absolute;
-    inset: 9px;
-    border-radius: 12px;
-    border: 1px solid rgba(240,224,0,0.55);
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
-  }
-
-  .crest-core {
-    font-family: Anton, sans-serif;
-    letter-spacing: 0.06em;
-    color: var(--gold);
-    font-size: 1.2rem;
-    text-shadow: 0 2px 0 rgba(0,0,0,0.25);
+  .eyebrow,
+  .panel-k {
+    margin: 0;
+    color: rgba(52, 66, 58, 0.74);
+    font-family: Oswald, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
   .name-row {
@@ -622,12 +651,13 @@
   }
 
   .title {
-    margin: 0;
+    margin: 0.35rem 0 0;
     font-family: Anton, sans-serif;
     font-weight: 400;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    font-size: 1.6rem;
+    font-size: clamp(1.9rem, 6vw, 3.1rem);
+    line-height: 0.95;
     color: var(--ink);
   }
 
@@ -643,52 +673,168 @@
     border: 1px solid rgba(0,0,0,0.08);
   }
 
-  .sub {
-    margin-top: 0.25rem;
+  .lede {
+    max-width: 58ch;
+    margin: 0.65rem 0 0;
+    color: rgba(45, 55, 48, 0.82);
+    font-size: 0.98rem;
+    line-height: 1.55;
+  }
+
+  .hero-actions {
+    margin-top: 1rem;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.55rem 0.9rem;
+    gap: 0.5rem;
     align-items: center;
   }
 
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    align-items: center;
-    justify-content: flex-end;
-    margin-left: auto;
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.4rem;
-    padding: 0.2rem 0.55rem;
+  .hero-action {
+    min-height: 2.35rem;
+    border: 1px solid rgba(0,0,0,0.12);
     border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.10);
     background: rgba(255,255,255,0.74);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
-  }
-
-  .ck {
-    font-family: Oswald, sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    font-size: 0.62rem;
-    color: var(--muted);
-  }
-
-  .cv {
-    font-family: Oswald, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    font-size: 0.78rem;
     color: rgba(31, 41, 55, 0.92);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.85rem;
+    font-family: Oswald, sans-serif;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  }
+
+  .hero-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+  }
+
+  .hero-action.primary {
+    background: #263226;
+    border-color: rgba(38, 50, 38, 0.9);
+    color: #fffaf0;
+    box-shadow: 0 12px 24px rgba(38, 50, 38, 0.18);
+  }
+
+  .readiness-panel {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    background:
+      linear-gradient(180deg, rgba(38, 50, 38, 0.96), rgba(53, 64, 51, 0.95));
+    color: rgba(250, 247, 237, 0.9);
+  }
+
+  .readiness-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .readiness-top strong {
+    display: block;
+    margin-top: 0.15rem;
+    color: #fffaf0;
+    font-family: Anton, sans-serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.04em;
+  }
+
+  .readiness-panel .panel-k {
+    color: rgba(250, 247, 237, 0.62);
+  }
+
+  .readiness-meter {
+    height: 0.6rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.28);
+    border: 1px solid rgba(250, 247, 237, 0.14);
+  }
+
+  .readiness-meter span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7b9e6b, #f4c674);
+  }
+
+  .readiness-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .readiness-grid div {
+    min-width: 0;
+    border-radius: 10px;
+    padding: 0.62rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .readiness-grid span,
+  .gap-row span {
+    display: block;
+    color: rgba(250, 247, 237, 0.62);
+    font-size: 0.7rem;
+    font-family: Oswald, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .readiness-grid strong {
+    display: block;
+    margin-top: 0.2rem;
+    overflow: hidden;
+    color: #fffaf0;
+    font-family: Oswald, sans-serif;
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .next-gaps {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .gap-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    border: 1px solid rgba(250, 247, 237, 0.12);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.2);
+    color: inherit;
+    cursor: pointer;
+    padding: 0.55rem 0.65rem;
+    text-align: left;
+  }
+
+  .gap-row:hover {
+    background: rgba(255,255,255,0.1);
+  }
+
+  .gap-row strong {
+    color: #f4c674;
+    font-family: Oswald, sans-serif;
+    font-size: 0.82rem;
+    white-space: nowrap;
   }
 
   .pill {
+    align-self: flex-start;
     font-family: Oswald, sans-serif;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -696,8 +842,9 @@
     font-size: 0.72rem;
     padding: 0.22rem 0.6rem;
     border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(250, 247, 237, 0.18);
+    background: rgba(255,255,255,0.12);
+    color: #fffaf0;
   }
 
   .pill[data-tone="trail"] {
@@ -715,79 +862,23 @@
     font-size: 0.95rem;
   }
 
-  .portrait {
-    border-radius: 18px;
-    border: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.7));
-    box-shadow: var(--shadow);
-    overflow: hidden;
-  }
-
-  .portrait-placeholder {
-    height: 100%;
-    position: relative;
-    display: grid;
-    place-items: center;
-  }
-
-  .pp-bg {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at 20% 20%, rgba(240,224,0,0.35), rgba(240,224,0,0) 55%),
-      radial-gradient(circle at 70% 75%, rgba(34,197,94,0.18), rgba(34,197,94,0) 60%),
-      linear-gradient(180deg, rgba(52,66,58,0.08), rgba(255,255,255,0.0));
-  }
-
-  .pp-figure {
-    width: 120px;
-    height: 160px;
-    border-radius: 18px;
-    background:
-      radial-gradient(circle at 50% 30%, rgba(0,0,0,0.10), rgba(0,0,0,0) 55%),
-      linear-gradient(180deg, rgba(52,66,58,0.22), rgba(52,66,58,0.10));
-    border: 1px solid rgba(0,0,0,0.08);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
-  }
-
-  .pp-label {
-    position: absolute;
-    inset: auto 0 0 0;
-    padding: 0.7rem 0.85rem;
-    display: flex;
-    justify-content: space-between;
-    gap: 0.5rem;
-    align-items: baseline;
-    background: linear-gradient(180deg, rgba(255,255,255,0.0), rgba(255,255,255,0.9));
-  }
-
-  .pp-k {
-    font-family: Oswald, sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .pp-v {
-    font-family: Anton, sans-serif;
-    letter-spacing: 0.04em;
-  }
-
   .nav {
-    display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: 0.55rem;
+    display: flex;
+    gap: 0.45rem;
     margin-bottom: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scrollbar-width: thin;
   }
 
   .tab {
+    min-width: 8.5rem;
     text-align: left;
     border: 1px solid var(--border);
     background: rgba(255,255,255,0.78);
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 0.65rem 0.7rem;
-    box-shadow: 0 14px 34px rgba(0,0,0,0.10);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.07);
     cursor: pointer;
     transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
     display: grid;
@@ -823,11 +914,104 @@
   }
 
   .panel {
-    border-radius: 18px;
+    border-radius: 16px;
     border: 1px solid var(--border);
     background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.76));
     box-shadow: var(--shadow);
     padding: 1rem;
+  }
+
+  .overview-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
+    gap: 1rem;
+  }
+
+  .overview-layout .wide {
+    grid-column: 1 / -1;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .card-head .p {
+    margin-bottom: 0;
+  }
+
+  .save-chip {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(123, 158, 107, 0.14);
+    color: rgba(47, 64, 47, 0.95);
+    font-family: Oswald, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    padding: 0.24rem 0.55rem;
+    text-transform: uppercase;
+  }
+
+  .checklist {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .setup-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    align-items: center;
+    min-height: 2.4rem;
+    width: 100%;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.72);
+    color: rgba(31, 41, 55, 0.92);
+    cursor: pointer;
+    padding: 0.45rem 0.55rem;
+    text-align: left;
+  }
+
+  .setup-row:hover {
+    background: rgba(240,224,0,0.14);
+  }
+
+  .setup-row span:not(.setup-dot) {
+    overflow: hidden;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .setup-row strong {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .setup-dot {
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 999px;
+    background: #d97706;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
+  }
+
+  .setup-row.is-done .setup-dot {
+    background: #4d7c0f;
+    box-shadow: 0 0 0 3px rgba(77, 124, 15, 0.14);
+  }
+
+  .primary-action {
+    background: var(--pine) !important;
+    color: #fffaf0 !important;
   }
 
   :global(.cs .grid) {
@@ -909,28 +1093,6 @@
     gap: 0.55rem;
     color: rgba(31,35,32,0.88);
     font-weight: 700;
-  }
-
-  .callout {
-    margin-top: 1rem;
-    border-radius: 14px;
-    border: 1px dashed rgba(0,0,0,0.18);
-    padding: 0.8rem;
-    background: rgba(34,197,94,0.08);
-  }
-
-  .callout-k {
-    font-family: Oswald, sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.7rem;
-    color: rgba(52,66,58,0.85);
-  }
-
-  .callout-v {
-    margin-top: 0.25rem;
-    color: rgba(31,35,32,0.78);
   }
 
   :global(.cs .actions) {
@@ -1042,27 +1204,54 @@
     text-transform: uppercase;
   }
 
-  .todo {
-    margin-top: 0.8rem;
-    border-radius: 14px;
-    border: 1px solid rgba(0,0,0,0.10);
-    background: rgba(0,0,0,0.03);
-    padding: 0.8rem;
-  }
-
   @media (max-width: 980px) {
-    .top { grid-template-columns: 1fr; }
-    .portrait { height: 220px; }
-    .nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .profile-hero,
+    .overview-layout {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 720px) {
-    /* Reduce clutter on phones */
-    .portrait { display: none; }
-    .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cs:before {
+      inset: -8px;
+      border-radius: 18px;
+    }
 
     :global(.cs .grid) { grid-template-columns: 1fr; }
     :global(.cs .form) { grid-template-columns: 1fr; }
     :global(.cs .mini) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .readiness-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card-head {
+      display: grid;
+    }
+
+    .tab {
+      min-width: 7.5rem;
+    }
+
+    .profile-copy,
+    .readiness-panel,
+    .panel {
+      border-radius: 14px;
+    }
+
+    .title {
+      font-size: clamp(1.8rem, 12vw, 2.45rem);
+      line-height: 1;
+    }
+
+    .lede {
+      font-size: 0.94rem;
+      line-height: 1.45;
+    }
+
+    .hero-action {
+      min-height: 2.2rem;
+      padding: 0 0.7rem;
+    }
   }
 </style>
