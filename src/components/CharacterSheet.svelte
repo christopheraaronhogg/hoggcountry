@@ -11,6 +11,8 @@
   import TrainingTab from './character/tabs/TrainingTab.svelte';
   import EmergencyTab from './character/tabs/EmergencyTab.svelte';
 
+  let { embedded = false }: { embedded?: boolean; trailContext?: unknown } = $props();
+
   loadCharacter();
 
   // --- Local editing state (we persist on change) ---
@@ -79,7 +81,6 @@
 
   let startDate = $derived(trailContext.startDate || character.trail.startDate || '');
   let targetPace = $derived(trailContext.targetPace || character.trail.targetPace || 0);
-  let atWeatherHref = $derived(`${resolve('/at-weather')}?mile=${Number(trailContext.currentMile || 0)}`);
 
   // Persist identity/preferences changes (guarded to avoid reactive update loops)
   let _coreSig = $state('');
@@ -242,8 +243,8 @@
   }
 </script>
 
-<div class="cs" transition:fade={{ duration: 120 }}>
-  <header class="profile-hero">
+<div class="cs" class:embedded transition:fade={{ duration: 120 }}>
+  <header class="profile-hero" aria-label={embedded ? 'Profile readiness' : 'Trail profile'}>
     <div class="profile-copy">
       <p class="eyebrow">Trail Profile</p>
       <div class="name-row">
@@ -483,7 +484,7 @@
         </div>
 
         <div class="actions" style="margin-top: 0.85rem;">
-          <a class="action" href={atWeatherHref}>AT Weather</a>
+          <a class="action" href={resolve('/at-weather')}>AT Weather</a>
           <button class="action" type="button" onclick={syncGpsToCurrentMile} disabled={gpsSyncing}>
             {gpsSyncing ? 'Syncing GPS…' : 'Sync GPS → Current'}
           </button>
@@ -599,12 +600,22 @@
 
   .cs > * { position: relative; z-index: 1; }
 
+  .cs.embedded:before {
+    inset: -10px;
+    opacity: 0.28;
+  }
+
   .profile-hero {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
     gap: 1rem;
     align-items: stretch;
     margin-bottom: 1rem;
+  }
+
+  .cs.embedded .profile-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);
+    gap: 0.75rem;
   }
 
   .profile-copy,
@@ -630,6 +641,16 @@
     width: 0.35rem;
     background: linear-gradient(180deg, var(--pine), var(--copper));
     pointer-events: none;
+  }
+
+  .cs.embedded .profile-copy,
+  .cs.embedded .readiness-panel {
+    border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.07);
+  }
+
+  .cs.embedded .profile-copy {
+    padding: 0.95rem 1rem;
   }
 
   .eyebrow,
@@ -661,6 +682,10 @@
     color: var(--ink);
   }
 
+  .cs.embedded .title {
+    font-size: clamp(1.55rem, 4vw, 2.35rem);
+  }
+
   .handle {
     font-family: Oswald, sans-serif;
     font-weight: 700;
@@ -681,12 +706,21 @@
     line-height: 1.55;
   }
 
+  .cs.embedded .lede {
+    max-width: 62ch;
+    font-size: 0.9rem;
+  }
+
   .hero-actions {
     margin-top: 1rem;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+
+  .cs.embedded .hero-actions {
+    margin-top: 0.8rem;
   }
 
   .hero-action {
