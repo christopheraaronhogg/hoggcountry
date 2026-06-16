@@ -48,7 +48,7 @@
       id: 'landmarks',
       kicker: 'Trail culture',
       title: 'Landmarks & traditions',
-      copy: 'Half-gallon Challenge, four-state day, the Doyle, the Whites huts, Katahdin sunrise — Scout knows the ritual moments and the miles they live at.',
+      copy: 'Half-gallon Challenge, four-state day, the Doyle, the Whites huts, Katahdin sunrise — Scout marks the ritual moments and the miles they live at.',
       receipt: 'Source: Hogg Country field guide, public AT lore'
     },
     {

@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { slide, fade } from 'svelte/transition';
+  import ToolReadout from './tools/ToolReadout.svelte';
 
   let { trailContext = {} } = $props();
 
@@ -33,7 +34,9 @@
   let activeSection = $state('quick');
 
   let hasTrigger = $derived(Object.values(triggers).some(t => t));
+  let activeTriggerCount = $derived(Object.values(triggers).filter(t => t).length);
   let totalScore = $derived(Object.values(scores).reduce((a, b) => a + b, 0));
+  let scoreBand = $derived(totalScore >= 7 ? 'tent OK' : totalScore >= 4 ? 'weather stable only' : 'shelter');
   let quickCheckPasses = $derived(Object.values(quickChecks).every(c => c));
 
   let recommendation = $derived.by(() => {
@@ -174,6 +177,19 @@
       </div>
     </div>
   </header>
+
+  <!-- Honest summary -->
+  <div class="shelter-readout">
+    <ToolReadout
+      metrics={[
+        { k: 'Recommendation', v: recommendation.decision === 'tent' ? 'Tent' : 'Shelter', s: `${recommendation.confidence} confidence` },
+        { k: 'Triggers active', v: activeTriggerCount, s: activeTriggerCount ? 'any one = shelter' : 'none set' },
+        { k: 'Tent site score', v: `${totalScore}/10`, s: scoreBand },
+      ]}
+      assumption="Triggers and site score come from the field guide shelter-vs-tent protocol — these inputs are yours, not a live weather forecast."
+      tone={recommendation.urgent ? 'warn' : 'neutral'}
+    />
+  </div>
 
   <!-- Navigation -->
   <nav class="decision-nav">
@@ -471,6 +487,10 @@
 <style>
   .shelter-decision {
     font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .shelter-readout {
+    margin-bottom: 1.25rem;
   }
 
   /* Hero Decision Header */

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
+  import ToolReadout from './tools/ToolReadout.svelte';
 
   let { trailContext = {} as any } = $props<{ trailContext?: any }>();
 
@@ -36,9 +37,24 @@
   let ouncesPerDay = $derived(caloriesPerOz > 0 ? caloriesPerDay / caloriesPerOz : 0);
   let poundsPerDay = $derived(ouncesPerDay / 16);
   let poundsForCarry = $derived(poundsPerDay * daysBetweenResupply);
+  let totalCalories = $derived(caloriesPerDay * daysBetweenResupply);
+
+  let readoutMetrics = $derived([
+    { k: 'Per day', v: `${ouncesPerDay.toFixed(1)} oz`, s: `${poundsPerDay.toFixed(2)} lb` },
+    { k: 'Carry length', v: `${daysBetweenResupply} ${daysBetweenResupply === 1 ? 'day' : 'days'}` },
+    { k: 'Total calories', v: totalCalories.toLocaleString(), s: 'over the carry' },
+  ]);
 </script>
 
-<section class="card" style="padding: 1rem;">
+<ToolReadout
+  label="Food carry weight"
+  value={poundsForCarry.toFixed(1)}
+  unit="lb"
+  metrics={readoutMetrics}
+  assumption={`Assumes ${caloriesPerDay.toLocaleString()} cal/day at ${caloriesPerOz} cal/oz over a ${daysBetweenResupply}-day carry.`}
+/>
+
+<section class="card controls-card" style="padding: 1rem;">
   <div class="controls">
     <label class="ctrl">
       <span class="label">Calories per day</span>
@@ -55,28 +71,17 @@
       <input type="number" min="1" max="10" step="1" bind:value={daysBetweenResupply} />
     </label>
   </div>
-
-  <div class="results">
-    <div class="card result">
-      <div class="k">Per day</div>
-      <div class="v">{ouncesPerDay.toFixed(1)} oz</div>
-      <div class="s">{poundsPerDay.toFixed(2)} lb</div>
-    </div>
-
-    <div class="card result">
-      <div class="k">Carry</div>
-      <div class="v">{poundsForCarry.toFixed(2)} lb</div>
-      <div class="s">{daysBetweenResupply} days</div>
-    </div>
-  </div>
 </section>
 
 <style>
+  .controls-card {
+    margin-top: 0.75rem;
+  }
+
   .controls {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.75rem;
-    margin-bottom: 1rem;
   }
 
   @media (max-width: 820px) {
@@ -101,41 +106,5 @@
     border-radius: 10px;
     background: #fff;
     font-family: inherit;
-  }
-
-  .results {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 560px) {
-    .results {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .result {
-    padding: 0.85rem;
-    box-shadow: none;
-  }
-
-  .k {
-    color: var(--muted);
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .v {
-    font-family: Oswald, sans-serif;
-    font-weight: 800;
-    font-size: 1.6rem;
-    color: var(--ink);
-    line-height: 1.1;
-  }
-
-  .s {
-    color: var(--muted);
-    margin-top: 0.15rem;
   }
 </style>

@@ -796,6 +796,10 @@
       padding: 1.5rem 1rem 5rem;
     }
 
+    .guide-masthead {
+      padding: 2rem 0 1.5rem;
+    }
+
     .book-toc {
       padding: 1.5rem 1rem;
     }

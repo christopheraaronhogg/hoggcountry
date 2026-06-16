@@ -1,6 +1,7 @@
 <script lang="ts">
   import atWaterSources from '../data/at-water-sources.json';
   import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
+  import ToolReadout from './tools/ToolReadout.svelte';
 
   type WaterSource = { mile: number; name: string; type: string; offTrail: number };
 
@@ -120,6 +121,37 @@
       maxGap: maxGapFrom && maxGapTo ? { miles: maxGap, from: maxGapFrom, to: maxGapTo } : null,
     };
   });
+
+  let waterReadout = $derived.by(() => {
+    const plan = carryPlan;
+    if (!plan) return null;
+
+    const capacityShort = plan.maxGap !== null && plan.safeMilesAtCapacity < plan.maxGap.miles;
+
+    const metrics = [
+      { k: 'Next source', v: `+${formatMiles(plan.distToNext)} mi`, s: plan.next.name },
+      { k: 'Capacity covers', v: `${formatMiles(plan.safeMilesAtCapacity)} mi`, s: 'at current rate' },
+    ];
+    if (plan.maxGap) {
+      metrics.push({
+        k: 'Largest gap ahead',
+        v: `${formatMiles(plan.maxGap.miles)} mi`,
+        s: `${plan.maxGap.from.name} → ${plan.maxGap.to.name}`,
+      });
+    }
+
+    let assumption = `Assumes ${round1(litersPer10Mi)} L / 10 mi with ${bufferPct}% buffer from mile ${formatMiles(currentMile)}.`;
+    if (capacityShort && plan.maxGap) {
+      assumption += ` Capacity won't cover the ${formatMiles(plan.maxGap.miles)} mi gap ahead — plan a refill.`;
+    }
+
+    return {
+      value: round1(plan.litersToNext),
+      metrics,
+      assumption,
+      tone: capacityShort ? ('warn' as const) : ('neutral' as const),
+    };
+  });
 </script>
 
 <div class="water-tool" class:mounted>
@@ -166,26 +198,16 @@
       </label>
     </div>
 
-    {#if carryPlan}
-      <div class="carry-results">
-        <div class="carry-result">
-          <div class="carry-k">To next source</div>
-          <div class="carry-v">{round1(carryPlan.litersToNext)} L</div>
-          <div class="carry-s">+{formatMiles(carryPlan.distToNext)} mi</div>
-        </div>
-
-        <div class="carry-result">
-          <div class="carry-k">Capacity covers</div>
-          <div class="carry-v">{formatMiles(carryPlan.safeMilesAtCapacity)} mi</div>
-          <div class="carry-s">at current rate</div>
-        </div>
-
-        {#if carryPlan.maxGap}
-          <div class="carry-gap">
-            Largest gap ahead: <strong>{formatMiles(carryPlan.maxGap.miles)} mi</strong>
-            <span class="gap-note">({carryPlan.maxGap.from.name} → {carryPlan.maxGap.to.name})</span>
-          </div>
-        {/if}
+    {#if carryPlan && waterReadout}
+      <div class="carry-readout">
+        <ToolReadout
+          label="Carry to next source"
+          value={waterReadout.value}
+          unit="L"
+          metrics={waterReadout.metrics}
+          assumption={waterReadout.assumption}
+          tone={waterReadout.tone}
+        />
 
         {#if carryPlan.distToSecond !== null && carryPlan.litersToSecond !== null}
           <div class="carry-skip">
@@ -373,44 +395,13 @@
     font-size: 0.9rem;
   }
 
-  .carry-results {
+  .carry-readout {
     margin-top: 0.9rem;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
-    align-items: start;
   }
 
-  .carry-result {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 0.75rem 0.85rem;
-    background: rgba(255,255,255,0.9);
-  }
-
-  .carry-k {
-    color: var(--muted, #6b7280);
-    font-size: 0.78rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .carry-v {
-    font-family: Oswald, sans-serif;
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #075985;
-    line-height: 1.05;
-  }
-
-  .carry-s {
-    margin-top: 0.15rem;
-    color: var(--muted, #6b7280);
-    font-size: 0.8rem;
-  }
-
-  .carry-gap,
   .carry-skip {
-    grid-column: 1 / -1;
     border: 1px dashed rgba(2,132,199,0.35);
     border-radius: 12px;
     padding: 0.75rem 0.85rem;
@@ -432,9 +423,6 @@
 
   @media (max-width: 820px) {
     .carry-controls {
-      grid-template-columns: 1fr;
-    }
-    .carry-results {
       grid-template-columns: 1fr;
     }
   }

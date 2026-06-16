@@ -227,7 +227,7 @@
     </div>
 
     <main id="main-content" class="site-main public-site-main" tabindex="-1">
-      {#if page.url.pathname === '/' || page.url.pathname === '/guide' || page.url.pathname === '/at-map' || page.url.pathname === '/track' || page.url.pathname.startsWith('/guide/manual-builder')}
+      {#if isGuidePage || page.url.pathname === '/' || page.url.pathname === '/at-map' || page.url.pathname === '/track'}
         {@render children()}
       {:else}
         <div class="container public-page-wrap">
@@ -887,6 +887,14 @@
   @media (max-width: 600px) {
     .logo {
       height: 32px;
+    }
+
+    .nav-ctas {
+      display: none;
+    }
+
+    .nav-controls {
+      margin-left: auto;
     }
   }
 

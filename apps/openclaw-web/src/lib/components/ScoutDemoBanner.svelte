@@ -22,7 +22,7 @@
       <p class="sdb-kicker">Scout · The trail app</p>
       <h2 class="sdb-headline">
         {#if isPreview}
-          Dad steps onto the AT Feb&nbsp;2026. <span class="sdb-em">Scout</span> is the app he's planning, packing, and navigating with.
+          Dad steps onto the AT Feb&nbsp;2026. <span class="sdb-em">Scout</span> is being shaped around the planning, packing, and trail checks this hike actually needs.
         {:else}
           Dad is at <span class="sdb-em">mile&nbsp;{fmt(journey.currentMile)}</span>{#if journey.currentStateName}, {journey.currentStateName}{/if}. <span class="sdb-em">Scout</span> is the trail app we're building toward the kind of help he can actually use out there.
         {/if}
