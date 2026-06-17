@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Trail Assistant</string>
+    <string name="title_activity_main">Trail Assistant</string>
+    <string name="package_name">com.hoggcountry.trailassistant</string>
+    <string name="custom_url_scheme">com.hoggcountry.trailassistant</string>
+</resources>

@@ -117,11 +117,12 @@ function checkIosToolchain() {
 }
 
 function checkAndroidToolchain() {
-	const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
+	const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || defaultAndroidSdkPath();
 	if (sdk && existsSync(sdk)) ok(`Android SDK found (${sdk})`);
 	else warn('ANDROID_HOME/ANDROID_SDK_ROOT not set. Install Android Studio and set it before building APKs.');
 
 	if (hasCommand('java')) ok('Java runtime found');
+	else if (existsSync(defaultAndroidStudioJbr())) ok(`Android Studio Java runtime found (${defaultAndroidStudioJbr()})`);
 	else warn('java not found on PATH. Android Studio ships a JDK; building from CLI needs one too.');
 }
 
@@ -160,6 +161,14 @@ function hasCommand(cmd) {
 		shell: process.platform !== 'win32'
 	});
 	return probe.status === 0;
+}
+
+function defaultAndroidSdkPath() {
+	return join(process.env.HOME || '', 'Library', 'Android', 'sdk');
+}
+
+function defaultAndroidStudioJbr() {
+	return '/Applications/Android Studio.app/Contents/jbr/Contents/Home';
 }
 
 function resolveFieldPackUrl() {

@@ -10,7 +10,8 @@ The current pilot target is simple: Dad can open the app, load a trail-ahead fie
 - Field packs load from `https://hoggcountry.com/scout/field-pack` by default.
 - The app caches the latest pack in browser/native preferences storage.
 - The bundled pack remains as fallback if no remote or saved pack exists.
-- Native iOS/Android folders are intentionally not committed yet. Generate them locally when preparing a phone install.
+- Native iOS and Android Capacitor shells are committed for pilot installs.
+- Android debug APK builds locally as the backup sideload path when iOS signing/device install blocks.
 
 ## Daily Pilot Checks
 
@@ -44,14 +45,7 @@ Open the local Vite URL at a phone width and verify:
 
 ## Native Phone Prep
 
-Install native project folders only on the machine doing the phone build:
-
-```sh
-npm run cap:add:ios
-npm run cap:add:android
-```
-
-Then sync the built web app into the native project:
+Sync the built web app into the native project:
 
 ```sh
 npm run cap:sync:ios
@@ -71,6 +65,18 @@ For an iPhone pilot install, use Xcode after `cap:open:ios`:
 - Set Chris's Apple developer team/signing if Xcode asks.
 - Build and run on device.
 - After first online refresh, enable airplane mode and reopen the app to confirm the cached pack still drives Today and Scout.
+
+For the Android backup path, build a debug APK:
+
+```sh
+npm run android:debug-apk
+```
+
+The APK lands at `android/app/build/outputs/apk/debug/app-debug.apk`. To install directly when a USB-debugging Android phone is attached:
+
+```sh
+bash scripts/android-debug-apk.sh --install
+```
 
 ## Pilot Caveats
 

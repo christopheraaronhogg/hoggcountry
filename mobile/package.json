@@ -20,9 +20,11 @@
 		"cap:sync:ios": "npm run build && node scripts/preflight.mjs --platform ios && npx cap sync ios",
 		"cap:sync:android": "npm run build && node scripts/preflight.mjs --platform android && npx cap sync android",
 		"cap:open:ios": "node scripts/preflight.mjs --platform ios && npx cap open ios",
-		"cap:open:android": "node scripts/preflight.mjs --platform android && npx cap open android"
+		"cap:open:android": "node scripts/preflight.mjs --platform android && npx cap open android",
+		"android:debug-apk": "bash scripts/android-debug-apk.sh"
 	},
 	"dependencies": {
+		"@capacitor/android": "^7.6.6",
 		"@capacitor/app": "^7.1.0",
 		"@capacitor/core": "^7.4.3",
 		"@capacitor/haptics": "^7.0.2",
