@@ -34,6 +34,13 @@ public interface ScoutGemmaEngine {
     GenerateResult generate(String prompt, String systemContext, int maxTokens)
             throws ScoutGemmaUnavailableException;
 
+    /**
+     * Releases any native resources held by this engine instance.
+     * Safe to call multiple times; subsequent calls are no-ops.
+     * Must be called when swapping engines or when the plugin is destroyed.
+     */
+    void close();
+
     /** Mirrors the JS generate() return shape: { text, truncated }. */
     final class GenerateResult {
         public final String text;

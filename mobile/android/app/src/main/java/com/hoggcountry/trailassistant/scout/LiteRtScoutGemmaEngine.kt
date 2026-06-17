@@ -2,6 +2,7 @@ package com.hoggcountry.trailassistant.scout
 
 import android.content.Context
 import android.util.Log
+import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
@@ -29,7 +30,7 @@ class LiteRtScoutGemmaEngine private constructor(
     private val modelInfo: ScoutGemmaModelInfo
 ) : ScoutGemmaEngine {
 
-    @Volatile
+    // Guarded by synchronized(this) for both lazy init and close().
     private var engine: Engine? = null
 
     override fun isAvailable(): Boolean = true
@@ -66,10 +67,31 @@ class LiteRtScoutGemmaEngine private constructor(
         }
     }
 
+    /**
+     * Releases the native [Engine] if one has been initialized. Safe to call
+     * multiple times; subsequent calls are no-ops. Called by [ScoutGemmaPlugin]
+     * when swapping engines or when the plugin is destroyed.
+     */
+    override fun close() {
+        synchronized(this) {
+            engine?.close()
+            engine = null
+        }
+    }
+
     @Synchronized
     private fun ensureEngine(): Engine {
         engine?.let { return it }
-        val created = Engine(EngineConfig(modelPath = modelPath))
+        val config = EngineConfig(
+            modelPath = modelPath,
+            backend = Backend.CPU(),
+            visionBackend = Backend.CPU(),
+            audioBackend = Backend.CPU(),
+            maxNumTokens = null,
+            maxNumImages = null,
+            cacheDir = cacheDir
+        )
+        val created = Engine(config)
         created.initialize()
         engine = created
         return created
@@ -89,7 +111,7 @@ class LiteRtScoutGemmaEngine private constructor(
             return try {
                 val store = ScoutModelStore(context)
                 val status = store.getStatus()
-                if (ScoutModelStatus.READY != status.status) {
+                if (ScoutModelStatus.READY != status.state) {
                     // Fail-closed: never load an unverified or absent model file.
                     return null
                 }

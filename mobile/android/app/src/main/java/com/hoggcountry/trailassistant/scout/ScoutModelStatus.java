@@ -10,6 +10,10 @@ import com.getcapacitor.JSObject;
  * contract. The status string is one of the constants below; the gate is
  * fail-closed: a file is never reported {@link #READY} until it has been
  * verified (size + SHA-256) and a marker recorded.
+ *
+ * <p>The {@link #toJSObject()} shape is the canonical cross-platform contract
+ * (Android JSObject, iOS [String:Any], TypeScript ScoutGemmaModelStatus) and
+ * must be kept identical on all platforms.
  */
 public final class ScoutModelStatus {
     /** No download endpoint or checksum configured — nothing to fetch yet. */
@@ -22,49 +26,92 @@ public final class ScoutModelStatus {
     public static final String READY = "ready";
 
     public final String modelId;
-    public final String status;
-    public final String absolutePath;
+    /** One of the state constants above. */
+    public final String state;
+    public final String fileName;
+    public final String filePath;
     public final boolean exists;
-    public final long sizeBytes;
-    public final long expectedSizeBytes;
+    public final long bytesOnDevice;
+    public final long expectedBytes;
     public final String checksumAlgorithm;
+    /** Null when no checksum is configured. */
     public final String expectedChecksum;
-    public final boolean configured;
+    /** True when a checksum is configured (used to gate expectedChecksum emission). */
+    public final boolean checksumConfigured;
+    /**
+     * True when a download URL endpoint exists ({@code hasDownloadUrl}).
+     * This is intentionally NOT "url OR checksum" — see canonical contract.
+     */
+    public final boolean downloadConfigured;
+    /** True when a download is possible and needed right now. */
+    public final boolean canDownload;
+    /** Download URL; null when no endpoint is configured. */
+    public final String url;
+    /** Optional human-readable reason string; null when not present. */
+    public final String reason;
 
     ScoutModelStatus(
             String modelId,
-            String status,
-            String absolutePath,
+            String state,
+            String fileName,
+            String filePath,
             boolean exists,
-            long sizeBytes,
-            long expectedSizeBytes,
+            long bytesOnDevice,
+            long expectedBytes,
             String checksumAlgorithm,
             String expectedChecksum,
-            boolean configured) {
+            boolean checksumConfigured,
+            boolean downloadConfigured,
+            boolean canDownload,
+            String url,
+            String reason) {
         this.modelId = modelId;
-        this.status = status;
-        this.absolutePath = absolutePath;
+        this.state = state;
+        this.fileName = fileName;
+        this.filePath = filePath;
         this.exists = exists;
-        this.sizeBytes = sizeBytes;
-        this.expectedSizeBytes = expectedSizeBytes;
+        this.bytesOnDevice = bytesOnDevice;
+        this.expectedBytes = expectedBytes;
         this.checksumAlgorithm = checksumAlgorithm;
         this.expectedChecksum = expectedChecksum;
-        this.configured = configured;
+        this.checksumConfigured = checksumConfigured;
+        this.downloadConfigured = downloadConfigured;
+        this.canDownload = canDownload;
+        this.url = url;
+        this.reason = reason;
     }
 
+    /**
+     * Emits the canonical cross-platform status shape.
+     *
+     * <ul>
+     *   <li>{@code expectedChecksum} is emitted only when {@code checksumConfigured}.</li>
+     *   <li>{@code url} is emitted only when {@code downloadConfigured}.</li>
+     *   <li>{@code reason} is emitted only when present (non-null, non-empty).</li>
+     *   <li>{@code destinationPath} is NOT emitted — callers derive it from {@code filePath}.</li>
+     * </ul>
+     */
     public JSObject toJSObject() {
         JSObject object = new JSObject();
         object.put("modelId", modelId);
-        object.put("state", status);
-        object.put("filePath", absolutePath);
+        object.put("state", state);
+        object.put("fileName", fileName);
+        object.put("filePath", filePath);
         object.put("exists", exists);
-        object.put("bytesOnDevice", sizeBytes);
-        object.put("expectedBytes", expectedSizeBytes);
+        object.put("bytesOnDevice", bytesOnDevice);
+        object.put("expectedBytes", expectedBytes);
         object.put("checksumAlgorithm", checksumAlgorithm);
-        object.put("checksumConfigured", expectedChecksum != null && !expectedChecksum.isEmpty());
-        object.put("downloadConfigured", configured);
-        if (expectedChecksum != null) {
+        object.put("checksumConfigured", checksumConfigured);
+        object.put("downloadConfigured", downloadConfigured);
+        object.put("canDownload", canDownload);
+        if (checksumConfigured) {
             object.put("expectedChecksum", expectedChecksum);
+        }
+        if (downloadConfigured) {
+            object.put("url", url);
+        }
+        if (reason != null && !reason.isEmpty()) {
+            object.put("reason", reason);
         }
         return object;
     }

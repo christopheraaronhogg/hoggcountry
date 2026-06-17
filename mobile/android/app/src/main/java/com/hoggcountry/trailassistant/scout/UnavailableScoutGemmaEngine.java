@@ -31,4 +31,9 @@ public final class UnavailableScoutGemmaEngine implements ScoutGemmaEngine {
         throw new ScoutGemmaUnavailableException(
                 "On-device Gemma engine is not available in this build. Download and verify the Gemma 4 model file so the local LiteRT-LM runtime can load it.");
     }
+
+    @Override
+    public void close() {
+        // No native resources to release in the unavailable stub.
+    }
 }

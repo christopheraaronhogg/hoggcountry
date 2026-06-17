@@ -26,8 +26,13 @@ import java.net.URL;
  *   <li>Storage precheck: refuses to start unless free space covers the expected
  *       size plus margin, so it fails fast instead of filling the disk.</li>
  *   <li>Cancellable mid-stream; the {@code .part} file is kept for resume.</li>
+ *   <li>Short-read detection: if the connection drops without an error but before
+ *       all expected bytes arrive, the {@code .part} file is left intact for
+ *       resume and an exception is thrown WITHOUT calling finalizeAndVerify.</li>
  *   <li>Verifies size + checksum on completion and deletes the file on mismatch
  *       (fail-closed — a corrupt/partial model is never marked ready).</li>
+ *   <li>Marker is invalidated BEFORE moving the new file into the final path so a
+ *       crash mid-replace can never leave a stale marker over an unverified file.</li>
  * </ul>
  *
  * <p>This class performs blocking network + disk IO; {@link ScoutGemmaPlugin}
@@ -82,7 +87,7 @@ public final class ScoutModelDownloader {
         long expected = spec.hasExpectedSize() ? spec.expectedSizeBytes : -1L;
 
         // Already downloaded + verified? Nothing to do.
-        if (ScoutModelStatus.READY.equals(store.getStatus().status)) {
+        if (ScoutModelStatus.READY.equals(store.getStatus().state)) {
             return store.getStatus();
         }
 
@@ -173,6 +178,20 @@ public final class ScoutModelDownloader {
         return contentLength >= 0L ? contentLength + offset : -1L;
     }
 
+    /**
+     * Streams the response body to {@code partFile}.
+     *
+     * <p>Two fail-closed conditions are checked after the read loop exits:
+     * <ol>
+     *   <li>If {@link #cancelled} is set after the loop ends (was set in the last
+     *       iteration after the cancel check), we still honour it and leave the
+     *       {@code .part} file for resume.</li>
+     *   <li>Short read: if {@code total} is known AND the loop ended without an
+     *       error but fewer bytes were written than expected (dropped connection),
+     *       the {@code .part} file is left intact for resume and an exception is
+     *       thrown WITHOUT proceeding to finalizeAndVerify.</li>
+     * </ol>
+     */
     private void transfer(
             HttpURLConnection connection,
             File partFile,
@@ -201,13 +220,38 @@ public final class ScoutModelDownloader {
             }
             out.getFD().sync();
         }
+
+        // Re-check cancel AFTER the loop so a flag set in the last iteration is honoured
+        // before we attempt to finalize (leave .part intact for resume).
+        if (cancelled) {
+            throw new ScoutModelDownloadException("Model download cancelled.");
+        }
+
+        // Short-read detection: known total but not all bytes arrived. The connection
+        // dropped without throwing — leave .part intact for resume, do NOT finalize.
+        if (total > 0L && written < total) {
+            throw new ScoutModelDownloadException(
+                    "Model download incomplete: received " + written
+                            + " of " + total + " bytes. Resume will be attempted next call.");
+        }
+
         if (listener != null) {
             listener.onProgress(written, total);
         }
     }
 
+    /**
+     * Invalidates any existing verification marker, atomically renames the
+     * {@code .part} file to the final path, then verifies checksum. The marker
+     * must be cleared BEFORE the rename so a crash mid-rename can never leave a
+     * stale marker pointing at an unverified file.
+     */
     private void finalizeAndVerify(File partFile, File finalFile)
             throws ScoutModelDownloadException {
+        // Invalidate marker before touching the final file — fail-closed: if we
+        // crash between here and verify(), the next isVerified() check returns false.
+        store.invalidateVerification();
+
         if (finalFile.exists() && !finalFile.delete()) {
             throw new ScoutModelDownloadException("Could not replace existing model file.");
         }

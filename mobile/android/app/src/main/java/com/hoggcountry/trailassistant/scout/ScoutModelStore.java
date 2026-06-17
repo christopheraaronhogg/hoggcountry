@@ -2,24 +2,35 @@ package com.hoggcountry.trailassistant.scout;
 
 import android.content.Context;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
  * App-private store + download-readiness boundary for the on-device Gemma model.
  *
- * <p>Offline-safe: {@link #getStatus()} and {@link #prepareDownload()} never
- * touch the network. They only inspect app-private storage
- * ({@code context.getFilesDir()/scout-models}) and the {@link ScoutModelSpec}
- * contract. The actual byte transfer is intentionally NOT wired here yet — when a
- * download endpoint is finalized, a downloader uses the plan returned by
- * {@link #prepareDownload()} to fetch into {@link #modelFile()}, then calls
- * {@link #verify()} before the file is treated as ready. Nothing in this class
- * fabricates a ready model, and no model API/cloud inference is invoked.
+ * <p>Offline-safe: {@link #getStatus()} never touches the network. It only
+ * inspects app-private storage ({@code context.getFilesDir()/scout-models}) and
+ * the {@link ScoutModelSpec} contract. The actual byte transfer is handled by
+ * {@link ScoutModelDownloader}, which uses {@link #invalidateVerification()} to
+ * clear the marker BEFORE moving a new file into the final path, then calls
+ * {@link #verify()} after a successful move. Nothing in this class fabricates a
+ * ready model, and no model API/cloud inference is invoked.
+ *
+ * <h3>Fail-closed marker design</h3>
+ * The {@code .verified} sibling marker is BOUND to the verified file's identity
+ * (size in bytes + last-modified time in milliseconds). {@link #isVerified()}
+ * returns {@code true} ONLY when the marker exists AND its recorded size and
+ * mtime match the current file. A post-verify replacement that changes size or
+ * mtime fails closed without a per-load re-hash. The downloader MUST call
+ * {@link #invalidateVerification()} before moving new bytes into the final path
+ * so a crash mid-replace can never leave a stale marker over an unverified file.
  */
 public final class ScoutModelStore {
     private static final String MODEL_DIR = "scout-models";
@@ -46,78 +57,73 @@ public final class ScoutModelStore {
         return new File(modelDir, spec.fileName);
     }
 
-    /** Cheap status snapshot — no network and no checksum hashing. */
+    /**
+     * Cheap status snapshot — no network and no checksum hashing.
+     *
+     * <p>Computes {@code canDownload}, {@code downloadConfigured} (= hasDownloadUrl),
+     * and all canonical contract fields so {@link ScoutModelStatus#toJSObject()}
+     * emits the exact shape required by the cross-platform contract.
+     */
     public ScoutModelStatus getStatus() {
         File file = modelFile();
         boolean exists = file.isFile();
         long size = exists ? file.length() : 0L;
-        boolean configured = spec.hasDownloadUrl() || spec.hasExpectedChecksum();
 
-        String status;
-        if (!configured) {
-            status = ScoutModelStatus.UNCONFIGURED;
+        // Internal: state 'unconfigured' requires NEITHER url NOR checksum.
+        boolean internalConfigured = spec.hasDownloadUrl() || spec.hasExpectedChecksum();
+
+        String state;
+        if (!internalConfigured) {
+            state = ScoutModelStatus.UNCONFIGURED;
         } else if (!exists) {
-            status = ScoutModelStatus.NEEDS_DOWNLOAD;
+            state = ScoutModelStatus.NEEDS_DOWNLOAD;
         } else if (spec.hasExpectedSize() && size != spec.expectedSizeBytes) {
-            status = ScoutModelStatus.NEEDS_DOWNLOAD;
-        } else if (isVerified()) {
-            status = ScoutModelStatus.READY;
+            state = ScoutModelStatus.NEEDS_DOWNLOAD;
+        } else if (isVerified(file)) {
+            state = ScoutModelStatus.READY;
         } else {
-            status = ScoutModelStatus.PRESENT_UNVERIFIED;
+            state = ScoutModelStatus.PRESENT_UNVERIFIED;
         }
+
+        // Canonical emitted fields.
+        boolean checksumConfigured = spec.hasExpectedChecksum();
+        // downloadConfigured = hasDownloadUrl ONLY (not the OR).
+        boolean downloadConfigured = spec.hasDownloadUrl();
+        boolean canDownload = downloadConfigured && ScoutModelStatus.NEEDS_DOWNLOAD.equals(state);
 
         return new ScoutModelStatus(
                 spec.modelId,
-                status,
+                state,
+                spec.fileName,
                 file.getAbsolutePath(),
                 exists,
                 size,
                 spec.expectedSizeBytes,
                 ScoutModelSpec.CHECKSUM_ALGORITHM,
                 spec.expectedSha256,
-                configured);
+                checksumConfigured,
+                downloadConfigured,
+                canDownload,
+                spec.downloadUrl,
+                buildReason(state, spec));
     }
 
     /**
-     * Prepares for a (future) first-run/on-demand download without performing it.
-     * Creates the app-private model directory and returns a plan describing what a
-     * downloader would need. Offline-safe; never starts a transfer.
+     * Ensures the app-private model directory exists and returns the current
+     * status, which carries all fields needed for the {@code prepareModelDownload}
+     * plugin method. The directory creation is the only side-effect; no transfer
+     * is started.
      */
-    public ScoutModelDownloadPlan prepareDownload() {
+    public ScoutModelStatus prepareDownload() {
         ensureModelDir();
-        ScoutModelStatus status = getStatus();
-        boolean canDownload =
-                spec.hasDownloadUrl() && ScoutModelStatus.NEEDS_DOWNLOAD.equals(status.status);
-
-        String reason;
-        if (!spec.hasDownloadUrl()) {
-            reason = "No download endpoint configured for "
-                    + spec.modelId
-                    + "; the model must be provisioned before Scout can run on-device.";
-        } else if (ScoutModelStatus.READY.equals(status.status)) {
-            reason = "Model already downloaded and verified.";
-        } else if (ScoutModelStatus.PRESENT_UNVERIFIED.equals(status.status)) {
-            reason = "Model file present; integrity verification pending.";
-        } else {
-            reason = "Model download required.";
-        }
-
-        return new ScoutModelDownloadPlan(
-                spec.modelId,
-                status.status,
-                canDownload,
-                spec.downloadUrl,
-                modelFile().getAbsolutePath(),
-                spec.expectedSizeBytes,
-                ScoutModelSpec.CHECKSUM_ALGORITHM,
-                spec.expectedSha256,
-                reason);
+        return getStatus();
     }
 
     /**
      * Verifies an already-downloaded file against the configured size and SHA-256
-     * and, on success, writes a sibling {@code .verified} marker so
-     * {@link #getStatus()} can report {@link ScoutModelStatus#READY} cheaply.
+     * and, on success, writes a sibling {@code .verified} marker containing the
+     * file's size and last-modified time so {@link #getStatus()} can report
+     * {@link ScoutModelStatus#READY} cheaply without re-hashing on every call.
      *
      * <p>Returns {@code false} (and clears any marker) when the spec has no
      * checksum, the file is missing, or the size/hash mismatch — i.e. fail closed.
@@ -125,10 +131,12 @@ public final class ScoutModelStore {
      */
     public boolean verify() throws IOException {
         if (!spec.hasExpectedChecksum()) {
+            clearVerifiedMarker();
             return false;
         }
         File file = modelFile();
         if (!file.isFile()) {
+            clearVerifiedMarker();
             return false;
         }
         if (spec.hasExpectedSize() && file.length() != spec.expectedSizeBytes) {
@@ -138,30 +146,84 @@ public final class ScoutModelStore {
 
         boolean ok = sha256(file).equalsIgnoreCase(spec.expectedSha256);
         if (ok) {
-            writeVerifiedMarker();
+            writeVerifiedMarker(file);
         } else {
             clearVerifiedMarker();
         }
         return ok;
     }
 
+    /**
+     * Clears the {@code .verified} marker so the next {@link #getStatus()} call
+     * cannot report the model as ready. MUST be called by the downloader BEFORE
+     * moving new bytes into the final model path so a crash mid-replace can never
+     * leave a stale marker over an unverified file.
+     */
+    public void invalidateVerification() {
+        clearVerifiedMarker();
+    }
+
     public boolean ensureModelDir() {
         return modelDir.isDirectory() || modelDir.mkdirs();
     }
 
-    private boolean isVerified() {
-        return verifiedMarker().isFile();
+    // -------------------------------------------------------------------------
+    // Marker helpers (fail-closed identity binding)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns {@code true} only when the marker exists AND its recorded size and
+     * mtime exactly match the current file. Any mismatch deletes the stale marker
+     * so it can never again cause a false-ready result.
+     */
+    private boolean isVerified(File file) {
+        File marker = verifiedMarker();
+        if (!marker.isFile()) {
+            return false;
+        }
+        try {
+            long[] identity = readMarker(marker);
+            long recordedSize = identity[0];
+            long recordedMtime = identity[1];
+            if (recordedSize == file.length() && recordedMtime == file.lastModified()) {
+                return true;
+            }
+            // Stale marker — file was replaced or tampered. Remove it.
+            clearVerifiedMarker();
+            return false;
+        } catch (IOException e) {
+            clearVerifiedMarker();
+            return false;
+        }
     }
 
     private File verifiedMarker() {
         return new File(modelDir, spec.fileName + VERIFIED_SUFFIX);
     }
 
-    private void writeVerifiedMarker() throws IOException {
+    /**
+     * Writes the marker file containing two lines: {@code <sizeBytes>\n<mtimeMillis>}.
+     * Binding the marker to the file's identity makes a same-content replacement
+     * detectable by mtime even when size is identical.
+     */
+    private void writeVerifiedMarker(File file) throws IOException {
         ensureModelDir();
         File marker = verifiedMarker();
-        if (!marker.createNewFile() && !marker.isFile()) {
-            throw new IOException("Could not write verification marker: " + marker);
+        try (FileWriter writer = new FileWriter(marker, false)) {
+            writer.write(file.length() + "\n" + file.lastModified() + "\n");
+        }
+    }
+
+    /** Reads {@code <sizeBytes>\n<mtimeMillis>} from the marker file. */
+    private static long[] readMarker(File marker) throws IOException {
+        try (BufferedReader reader =
+                     new BufferedReader(new InputStreamReader(new FileInputStream(marker)))) {
+            String sizeLine = reader.readLine();
+            String mtimeLine = reader.readLine();
+            if (sizeLine == null || mtimeLine == null) {
+                throw new IOException("Marker file truncated: " + marker);
+            }
+            return new long[]{Long.parseLong(sizeLine.trim()), Long.parseLong(mtimeLine.trim())};
         }
     }
 
@@ -171,6 +233,30 @@ public final class ScoutModelStore {
             marker.deleteOnExit();
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Reason string helper
+    // -------------------------------------------------------------------------
+
+    private static String buildReason(String state, ScoutModelSpec spec) {
+        switch (state) {
+            case ScoutModelStatus.UNCONFIGURED:
+                return "No download endpoint configured for "
+                        + spec.modelId
+                        + "; the model must be provisioned before Scout can run on-device.";
+            case ScoutModelStatus.READY:
+                return "Model already downloaded and verified.";
+            case ScoutModelStatus.PRESENT_UNVERIFIED:
+                return "Model file present; integrity verification pending.";
+            case ScoutModelStatus.NEEDS_DOWNLOAD:
+            default:
+                return "Model download required.";
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // SHA-256 helper
+    // -------------------------------------------------------------------------
 
     private static String sha256(File file) throws IOException {
         MessageDigest digest;

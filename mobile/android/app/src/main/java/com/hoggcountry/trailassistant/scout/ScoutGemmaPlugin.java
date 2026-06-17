@@ -11,8 +11,18 @@ import java.util.concurrent.Executors;
 
 @CapacitorPlugin(name = "ScoutGemma")
 public class ScoutGemmaPlugin extends Plugin {
-    private ScoutGemmaEngine engine;
+
+    /**
+     * volatile: the field is read on the Capacitor thread and on the inference
+     * executor, and written on the downloads executor. The additional
+     * synchronization in {@link #getEngine()} and {@link #startModelDownload}
+     * guards the lazy-init and swap sequences; volatile ensures cross-thread
+     * visibility of the reference between those synchronized blocks.
+     */
+    private volatile ScoutGemmaEngine engine;
+
     private ScoutModelStore modelStore;
+
     // On-device generation (and the lazy first-call model load, which takes
     // seconds) must run off the Capacitor thread or it risks an ANR.
     private final ExecutorService inference = Executors.newSingleThreadExecutor();
@@ -21,10 +31,39 @@ public class ScoutGemmaPlugin extends Plugin {
     private final ExecutorService downloads = Executors.newSingleThreadExecutor();
     private volatile ScoutModelDownloader activeDownloader;
 
+    /**
+     * Guards lazy creation in {@link #getEngine()} and the engine swap in
+     * {@link #startModelDownload} so they cannot double-init or leave a window
+     * where a caller sees a partially-initialized engine.
+     */
+    private final Object engineLock = new Object();
+
     @Override
     public void load() {
         modelStore = new ScoutModelStore(getContext());
         engine = createEngine();
+    }
+
+    /**
+     * Cleans up resources when the Capacitor plugin is destroyed (e.g. activity
+     * finish, process reclaim). Cancels any in-progress download, shuts down both
+     * executor services, and closes the current engine to release native resources.
+     */
+    @Override
+    protected void handleOnDestroy() {
+        ScoutModelDownloader downloader = activeDownloader;
+        if (downloader != null) {
+            downloader.cancel();
+        }
+        inference.shutdownNow();
+        downloads.shutdownNow();
+        ScoutGemmaEngine currentEngine;
+        synchronized (engineLock) {
+            currentEngine = engine;
+        }
+        if (currentEngine != null) {
+            currentEngine.close();
+        }
     }
 
     @PluginMethod
@@ -83,6 +122,11 @@ public class ScoutGemmaPlugin extends Plugin {
         call.resolve(getModelStore().getStatus().toJSObject());
     }
 
+    /**
+     * Prepares for a model download: ensures the model directory exists and
+     * returns the canonical status shape (same as {@link #getModelStatus}).
+     * This is the contract surface that iOS/Android/TypeScript all share.
+     */
     @PluginMethod
     public void prepareModelDownload(PluginCall call) {
         call.resolve(getModelStore().prepareDownload().toJSObject());
@@ -92,6 +136,11 @@ public class ScoutGemmaPlugin extends Plugin {
      * Downloads + verifies the on-device model, streaming progress to JS via the
      * {@code scoutModelDownloadProgress} event. On success the engine is rebuilt
      * so {@code isAvailable()} flips to true without an app restart.
+     *
+     * <p>Engine swap is synchronized on {@link #engineLock} to prevent races with
+     * concurrent calls to {@link #getEngine()}: the previous engine is captured,
+     * the new one is installed, and then the old one is closed outside the lock so
+     * close() cannot block inference.
      */
     @PluginMethod
     public void startModelDownload(PluginCall call) {
@@ -105,9 +154,18 @@ public class ScoutGemmaPlugin extends Plugin {
                     progress.put("totalBytes", totalBytes);
                     notifyListeners("scoutModelDownloadProgress", progress);
                 });
-                // Model is on device and verified — rebuild the engine so the
-                // next isAvailable()/generate() picks it up.
-                engine = createEngine();
+                // Model is on device and verified — swap in a fresh engine so the
+                // next isAvailable()/generate() picks it up without an app restart.
+                ScoutGemmaEngine previous;
+                synchronized (engineLock) {
+                    previous = engine;
+                    engine = createEngine();
+                }
+                // Close the old engine outside the lock so close() cannot block
+                // callers waiting for engineLock in getEngine().
+                if (previous != null) {
+                    previous.close();
+                }
                 call.resolve(status.toJSObject());
             } catch (ScoutModelDownloadException exception) {
                 call.reject(exception.getMessage());
@@ -133,11 +191,18 @@ public class ScoutGemmaPlugin extends Plugin {
         return onDevice != null ? onDevice : new UnavailableScoutGemmaEngine();
     }
 
+    /**
+     * Returns the current engine, lazily creating it if null. Synchronized on
+     * {@link #engineLock} to prevent a double-init race when multiple threads call
+     * getEngine() concurrently before the first engine is assigned.
+     */
     private ScoutGemmaEngine getEngine() {
-        if (engine == null) {
-            engine = createEngine();
+        synchronized (engineLock) {
+            if (engine == null) {
+                engine = createEngine();
+            }
+            return engine;
         }
-        return engine;
     }
 
     private ScoutModelStore getModelStore() {
