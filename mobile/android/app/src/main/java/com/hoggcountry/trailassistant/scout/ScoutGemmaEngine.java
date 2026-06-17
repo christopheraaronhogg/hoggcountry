@@ -9,8 +9,9 @@ package com.hoggcountry.trailassistant.scout;
  * mobile/src/lib/scout/capacitor-gemma-bridge.ts stays stable while the engine
  * is swapped from the honest "unavailable" stub to a real implementation.
  *
- * Integration: add a LiteRTScoutGemmaEngine implementing this interface and return it
- * from ScoutGemmaPlugin.createEngine().
+ * Integration: ScoutGemmaPlugin.createEngine() tries a local implementation
+ * first and falls back to the unavailable stub when the runtime or verified
+ * model is missing.
  */
 public interface ScoutGemmaEngine {
 

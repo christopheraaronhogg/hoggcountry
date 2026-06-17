@@ -68,8 +68,9 @@ dependencies {
     // The ScoutGemma Capacitor plugin (src/main/java/.../scout/ScoutGemmaPlugin.java)
     // talks to ScoutGemmaEngine. Until a real engine is wired, the bundled stub
     // reports the model as unavailable and Gemma-only builds block chat rather
-    // than using a paid/cloud model. To run Gemma on-device, uncomment ONE path below, add a
-    // LiteRTScoutGemmaEngine, and return it from ScoutGemmaPlugin#createEngine().
+    // than using a paid/cloud model. MediaPipeScoutGemmaEngine is already wired
+    // as a reflection-gated loader; uncomment ONE path below and configure a
+    // verified model before it can activate.
     // See SCOUT_GEMMA_BRIDGE.md. No paid/cloud model APIs — inference is local.
     //
     // Path A (Maven-available today): MediaPipe LLM Inference, runs Gemma .task/.litertlm.

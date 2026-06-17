@@ -23,13 +23,15 @@ Native side (`app/src/main/java/com/hoggcountry/trailassistant/scout/`):
 | `ScoutGemmaPlugin.java` | `@CapacitorPlugin(name = "ScoutGemma")`. Marshals `isAvailable` / `describeModel` / `generate` to/from `ScoutGemmaEngine`. Registered in `MainActivity.java` via `registerPlugin(ScoutGemmaPlugin.class)` **before** `super.onCreate()`. |
 | `ScoutGemmaEngine.java` | The boundary. The only place allowed to know about a model runtime. |
 | `ScoutGemmaModelInfo.java` | Descriptor `{ tier, modelId, maxContextTokens }`, mirrors JS `GemmaModelDescriptor`. |
-| `ScoutGemmaModelStore.java` | App-private model file/status boundary for first-run download, size checks, and SHA-256 verification. |
+| `ScoutModelStore.java` | App-private model file/status boundary for first-run download, size checks, and SHA-256 verification. |
+| `MediaPipeScoutGemmaEngine.java` | Reflection-gated local engine loader. It only activates when MediaPipe `tasks-genai` is on the classpath and the model store reports a checksum-verified model. |
 | `ScoutGemmaUnavailableException.java` | Thrown when the engine can't generate → mapped to a Capacitor reject. Never fabricate output. |
 
-Current engine is `UnavailableScoutGemmaEngine`, which reports
-`isAvailable() == false`. Honest behavior: the app builds and runs, Gemma-only
-builds block chat until a model is installed, and nothing pretends a model is
-present.
+Current default behavior still falls back to `UnavailableScoutGemmaEngine`, which
+reports `isAvailable() == false`, because the MediaPipe dependency is not enabled
+and no verified model is configured. Honest behavior: the app builds and runs,
+Gemma-only builds block chat until a model is installed, and nothing pretends a
+model is present.
 
 ### JS ⇄ native contract
 
@@ -47,19 +49,34 @@ missing fields, so a stub descriptor never gets treated as a real model.
 
 ## Making it real — the swap point
 
-Replace `ScoutGemmaPlugin#createEngine()` so it returns a real engine when a
-runtime + model are present, falling back to the stub otherwise:
+`ScoutGemmaPlugin#createEngine()` now tries a local runtime first and falls back
+to the stub otherwise:
 
 ```java
 ScoutGemmaEngine createEngine() {
-    ScoutGemmaEngine engine = LiteRTScoutGemmaEngine.tryCreate(getContext());
+    ScoutGemmaEngine engine = MediaPipeScoutGemmaEngine.tryCreate(getContext());
     return engine != null ? engine : new UnavailableScoutGemmaEngine();
 }
 ```
 
-`LiteRTScoutGemmaEngine.tryCreate(...)` should: locate the model file, init the
-runtime, and return `null` (not throw) if either is missing, so the app degrades
-to the fallback instead of crashing.
+`MediaPipeScoutGemmaEngine.tryCreate(...)` locates the verified model file,
+reflectively initializes the MediaPipe LLM runtime, and returns `null` (not throw)
+if the dependency or model is missing, so the app degrades to the fallback instead
+of crashing.
+
+### Known gaps to close before go-live
+
+Intentional in the skeleton, but address these when the engine actually activates:
+
+- **Per-call `maxTokens` is ignored.** The engine sets the token cap once at creation
+  (`setMaxTokens` = target `maxContextTokens`); the `maxTokens` passed to `generate()`
+  never reaches the runtime, and `truncated` is always `false`. Plumb per-request limits
+  (or document the fixed cap) before relying on it.
+- **Blocking generation / ANR risk.** `generateResponse(String)` is synchronous and can
+  take seconds; run it off the main thread (or use the async/streaming API) so the
+  Capacitor call can't trip an ANR.
+- **No runtime teardown.** The reflected `LlmInference` handle is never closed; release it
+  (it holds native resources) if engines are ever recreated.
 
 ## Dependency — exact steps
 

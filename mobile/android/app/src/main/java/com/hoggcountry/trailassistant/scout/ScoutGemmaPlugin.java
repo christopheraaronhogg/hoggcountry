@@ -77,7 +77,8 @@ public class ScoutGemmaPlugin extends Plugin {
     }
 
     ScoutGemmaEngine createEngine() {
-        return new UnavailableScoutGemmaEngine();
+        ScoutGemmaEngine onDevice = MediaPipeScoutGemmaEngine.tryCreate(getContext());
+        return onDevice != null ? onDevice : new UnavailableScoutGemmaEngine();
     }
 
     private ScoutGemmaEngine getEngine() {
