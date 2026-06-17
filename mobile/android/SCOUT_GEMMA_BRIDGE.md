@@ -23,6 +23,7 @@ Native side (`app/src/main/java/com/hoggcountry/trailassistant/scout/`):
 | `ScoutGemmaPlugin.java` | `@CapacitorPlugin(name = "ScoutGemma")`. Marshals `isAvailable` / `describeModel` / `generate` to/from `ScoutGemmaEngine`. Registered in `MainActivity.java` via `registerPlugin(ScoutGemmaPlugin.class)` **before** `super.onCreate()`. |
 | `ScoutGemmaEngine.java` | The boundary. The only place allowed to know about a model runtime. |
 | `ScoutGemmaModelInfo.java` | Descriptor `{ tier, modelId, maxContextTokens }`, mirrors JS `GemmaModelDescriptor`. |
+| `ScoutGemmaModelStore.java` | App-private model file/status boundary for first-run download, size checks, and SHA-256 verification. |
 | `ScoutGemmaUnavailableException.java` | Thrown when the engine can't generate → mapped to a Capacitor reject. Never fabricate output. |
 
 Current engine is `UnavailableScoutGemmaEngine`, which reports
@@ -36,6 +37,8 @@ present.
 isAvailable()  -> { available: boolean, modelId?, reason? }
 describeModel() -> { tier, modelId, maxContextTokens, available? } | {}
 generate({ prompt, systemContext, maxTokens }) -> { text, truncated }
+getModelStatus() -> { modelId, state, downloadConfigured, checksumConfigured, expectedBytes, bytesOnDevice, reason? }
+prepareModelDownload() -> same status shape after creating the app-private model directory
 ```
 
 `tier` must be one of `fast` | `balanced` | `small`. The JS bridge's
@@ -120,6 +123,17 @@ Delivery (the E2B LiteRT-LM model package is roughly 2.5 GB, too large for the b
 
 Update `ScoutGemmaModelInfo` (`tier`, `modelId`, real `maxContextTokens`) and the
 plugin's `modelId` strings to match the chosen file once finalized.
+
+Configure a real model package at build time with:
+
+```sh
+export SCOUT_GEMMA_MODEL_URL=https://...
+export SCOUT_GEMMA_MODEL_SHA256=...
+export SCOUT_GEMMA_MODEL_BYTES=2583000000
+```
+
+Without those values, `ScoutGemma.getModelStatus()` returns `state:
+"unconfigured"` and the app must keep chat blocked in Gemma-only builds.
 
 ## Validation
 

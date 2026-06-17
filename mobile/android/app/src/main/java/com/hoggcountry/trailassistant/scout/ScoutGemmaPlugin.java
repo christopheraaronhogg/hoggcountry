@@ -9,9 +9,11 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "ScoutGemma")
 public class ScoutGemmaPlugin extends Plugin {
     private ScoutGemmaEngine engine;
+    private ScoutGemmaModelStore modelStore;
 
     @Override
     public void load() {
+        modelStore = new ScoutGemmaModelStore(getContext());
         engine = createEngine();
     }
 
@@ -64,6 +66,16 @@ public class ScoutGemmaPlugin extends Plugin {
         }
     }
 
+    @PluginMethod
+    public void getModelStatus(PluginCall call) {
+        call.resolve(getModelStore().getStatus());
+    }
+
+    @PluginMethod
+    public void prepareModelDownload(PluginCall call) {
+        call.resolve(getModelStore().prepareDownload());
+    }
+
     ScoutGemmaEngine createEngine() {
         return new UnavailableScoutGemmaEngine();
     }
@@ -73,5 +85,12 @@ public class ScoutGemmaPlugin extends Plugin {
             engine = createEngine();
         }
         return engine;
+    }
+
+    private ScoutGemmaModelStore getModelStore() {
+        if (modelStore == null) {
+            modelStore = new ScoutGemmaModelStore(getContext());
+        }
+        return modelStore;
     }
 }

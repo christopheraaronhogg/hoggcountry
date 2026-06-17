@@ -10,6 +10,26 @@ type ScoutGemmaDescriptor = GemmaModelDescriptor & {
 	available?: boolean;
 };
 
+export type ScoutGemmaModelStatus = {
+	modelId: string;
+	fileName: string;
+	filePath: string;
+	state:
+		| 'unconfigured'
+		| 'needs_download'
+		| 'invalid_size'
+		| 'invalid_checksum'
+		| 'verification_failed'
+		| 'downloaded_unverified'
+		| 'ready';
+	downloadConfigured: boolean;
+	checksumConfigured: boolean;
+	expectedBytes: number;
+	bytesOnDevice: number;
+	reason?: string;
+	actualSha256?: string;
+};
+
 type ScoutGemmaPlugin = {
 	isAvailable(): Promise<ScoutGemmaAvailability>;
 	describeModel(): Promise<ScoutGemmaDescriptor | ScoutGemmaAvailability | null>;
@@ -18,6 +38,8 @@ type ScoutGemmaPlugin = {
 		systemContext: string;
 		maxTokens: number;
 	}): Promise<{ text: string; truncated?: boolean }>;
+	getModelStatus?: () => Promise<ScoutGemmaModelStatus>;
+	prepareModelDownload?: () => Promise<ScoutGemmaModelStatus>;
 };
 
 type CapacitorWindow = Window & {
