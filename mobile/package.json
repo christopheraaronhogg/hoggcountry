@@ -10,6 +10,7 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test": "node --experimental-strip-types --experimental-transform-types --test src/lib/scout/*.test.ts",
 		"preflight": "node scripts/preflight.mjs",
 		"cap:doctor": "node scripts/preflight.mjs",
 		"smoke:field-pack": "node --experimental-strip-types --experimental-transform-types scripts/smoke-field-pack-cache.mjs",

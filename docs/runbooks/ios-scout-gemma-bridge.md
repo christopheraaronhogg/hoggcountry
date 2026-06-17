@@ -48,12 +48,21 @@ an Apple Developer Program enrollment.
 3. **Deployment target.** Bump `IPHONEOS_DEPLOYMENT_TARGET` / Podfile `platform`
    to whatever the installed LiteRT-LM version requires (SPM will refuse to
    resolve otherwise). Our Swift uses only iOS 14-era APIs.
-4. **Verify the API** in `LiteRtScoutGemmaEngine.swift` against the installed
-   version — the Swift API is Early Preview. Confirm: `EngineConfig(modelPath:backend:cacheDir:)`
-   is throwing; `Engine(_:)` init; `engine.initialize()`; `engine.createConversation()`;
-   `conversation.sendMessage(Message(_:))`; and how the response exposes text
-   (`response.toString` here). The `#if canImport(LiteRTLM)` block compiles once
-   the package resolves; fix any symbol drift then.
+4. **API status — compile-verified 2026-06-17** against LiteRT-LM 0.13.x via a
+   throwaway SwiftPM target (`swift build`, macOS), so the gated
+   `#if canImport(LiteRTLM)` block does not have to wait for the in-app Xcode
+   integration. Confirmed symbols: `try EngineConfig(modelPath:backend:cacheDir:)`
+   (throwing; `backend: .cpu()`); **`Engine(engineConfig:)`** (NOTE the
+   `engineConfig:` argument label — the first draft used `Engine(_:)` and it does
+   not compile); `try await engine.initialize()`;
+   `try await engine.createConversation()`;
+   `try await conversation.sendMessage(Message("..."))`; `response.toString`.
+   The app's `LiteRtScoutGemmaEngine.swift` already uses the verified forms.
+   - CLI gotcha: the LiteRT-LM package's target carries an **unsafe `-force_load`
+     build flag**, so SwiftPM refuses it as a *version*-pinned dependency on the
+     command line (`contains unsafe build flags`). Use a `branch:`/`path:` dep for
+     CLI compile-checks; Xcode permits the unsafe flag for an app (root) target,
+     which is the real integration path.
 
 ## Model
 

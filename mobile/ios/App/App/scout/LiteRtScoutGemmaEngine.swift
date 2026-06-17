@@ -52,7 +52,10 @@ final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
     private func ensureEngine() async throws -> Engine {
         if let engine = engine { return engine }
         let config = try EngineConfig(modelPath: modelPath, backend: .cpu(), cacheDir: cacheDir)
-        let created = Engine(config)
+        // Verified against the real LiteRT-LM 0.13.x Swift API: the initializer
+        // takes the `engineConfig:` argument label (compile-checked via a scratch
+        // SwiftPM target — see docs/runbooks/ios-scout-gemma-bridge.md).
+        let created = Engine(engineConfig: config)
         try await created.initialize()
         engine = created
         return created
