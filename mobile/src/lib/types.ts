@@ -1,4 +1,31 @@
-export type Tab = 'Today' | 'Plan' | 'Coach' | 'Town' | 'Safety' | 'Account';
+// Four pillars + a demoted Settings surface (reached via the header gear, not the
+// bottom nav). Scout (pure chat) is the home tab. Old tabs (Plan/Town/Safety/You)
+// were folded in — see migrateTab() for the persisted-state mapping.
+export type Tab = 'Scout' | 'Today' | 'Map' | 'Trail' | 'Settings';
+
+/** Maps any previously-persisted tab id onto the new IA so a returning user
+ *  doesn't land on a tab that no longer exists. */
+export function migrateTab(value: unknown): Tab {
+	switch (value) {
+		case 'Scout':
+		case 'Today':
+		case 'Map':
+		case 'Trail':
+		case 'Settings':
+			return value;
+		case 'Coach':
+			return 'Scout';
+		case 'Plan':
+			return 'Today'; // forward-looking content folded into Today's look-ahead
+		case 'Town':
+			return 'Map'; // town logistics now live on the map
+		case 'Safety':
+		case 'Account':
+			return 'Settings';
+		default:
+			return 'Scout';
+	}
+}
 
 export type ReadinessRecommendation = 'push' | 'steady' | 'hold' | 'nero' | 'zero';
 export type SyncState = 'synced' | 'syncing' | 'queued-offline';

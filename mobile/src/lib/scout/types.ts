@@ -7,7 +7,7 @@ export type ProviderId = 'deterministic-fallback' | 'on-device-gemma' | 'cloud-s
 export interface SourceReceipt {
 	id: string;
 	title: string;
-	kind: 'trail-pack' | 'field-guide' | 'official' | 'hiker-input' | 'cached-weather' | 'derived';
+	kind: 'trail-pack' | 'field-guide' | 'official' | 'hiker-input' | 'cached-weather' | 'derived' | 'scripture';
 	citation?: string;
 	url?: string;
 	generatedAt?: string;

@@ -106,7 +106,7 @@
 				class="cockpit-cell cell-button"
 				type="button"
 				data-kind="town"
-				onclick={() => (trailAssistant.activeTab = 'Town')}
+				onclick={() => (trailAssistant.activeTab = 'Map')}
 				aria-label="Next town"
 			>
 				<span class="cell-eyebrow">Next town</span>
@@ -117,7 +117,7 @@
 				class="cockpit-cell cell-button"
 				type="button"
 				data-kind="safety"
-				onclick={() => (trailAssistant.activeTab = 'Safety')}
+				onclick={() => (trailAssistant.activeTab = 'Settings')}
 				aria-label="Check-in due"
 			>
 				<span class="cell-eyebrow">Check-in due</span>
@@ -129,7 +129,7 @@
 		</div>
 
 		<div class="cockpit-actions">
-			<button class="cta-button" onclick={() => (trailAssistant.activeTab = 'Coach')}>
+			<button class="cta-button" onclick={() => (trailAssistant.activeTab = 'Scout')}>
 				Ask Scout about today
 			</button>
 			<button
@@ -174,7 +174,7 @@
 				<strong>{packTotalCarriedLb} lb</strong>
 				<span>{packMissingCount > 0 ? `${packMissingCount} item missing` : 'Complete loadout'}</span>
 			</div>
-			<button class="outline-button compact" onclick={() => (trailAssistant.activeTab = 'Account')}>
+			<button class="outline-button compact" onclick={() => (trailAssistant.activeTab = 'Trail')}>
 				Review pack →
 			</button>
 		</div>

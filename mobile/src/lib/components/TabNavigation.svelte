@@ -2,13 +2,13 @@
 	import type { Tab } from '$lib/types';
 	import { trailAssistant } from '$lib/trailState.svelte';
 
+	// Four pillars. Scout (chat) is the hub and the home tab; Settings lives behind
+	// the header gear, not here. Town logistics moved into Map; Plan folded into Today.
 	const tabs: Array<{ key: Tab; label: string; glyph: string }> = [
+		{ key: 'Scout', label: 'Scout', glyph: '✦' },
 		{ key: 'Today', label: 'Today', glyph: '☀' },
-		{ key: 'Plan', label: 'Plan', glyph: '◷' },
-		{ key: 'Coach', label: 'Scout', glyph: '✦' },
-		{ key: 'Town', label: 'Town', glyph: '⌂' },
-		{ key: 'Safety', label: 'Safety', glyph: '⚐' },
-		{ key: 'Account', label: 'You', glyph: '◉' }
+		{ key: 'Map', label: 'Map', glyph: '◎' },
+		{ key: 'Trail', label: 'Trail', glyph: '☷' }
 	];
 </script>
 
@@ -32,7 +32,7 @@
 		height: var(--nav-height);
 		padding: 6px 8px calc(env(safe-area-inset-bottom) + 8px);
 		display: grid;
-		grid-template-columns: repeat(6, minmax(0, 1fr));
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: 4px;
 		background: rgba(252, 248, 240, 0.96);
 		backdrop-filter: blur(14px);

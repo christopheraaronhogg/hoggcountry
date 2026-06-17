@@ -7,7 +7,7 @@
 		ScoutConfidence,
 		SourceReceipt as RuntimeSourceReceipt
 	} from '$lib/scout';
-	import { offlineModel, sourceReceipts } from './cockpitData';
+	import { sourceReceipts } from './cockpitData';
 	import type { SourceReceipt as UiSourceReceipt } from './cockpitData';
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
@@ -122,32 +122,19 @@
 </script>
 
 <div class="section-stack coach-shell">
-	<section class="coach-hero card">
-		<div class="hero-head">
-			<div>
-				<p class="eyebrow">Scout</p>
-				<h2>Field assistant</h2>
-				<p class="hero-detail">
-					Mile {trailAssistant.currentMile.toFixed(1)} · Day {trailAssistant.dayNumber} · {trailAssistant.onlineStatus
-						? 'Online field pack'
-						: 'Local only'}
-				</p>
-			</div>
-			<div class="mode-pill" data-online={trailAssistant.onlineStatus}>
-				<span class="status-dot" class:status-online={trailAssistant.onlineStatus} class:status-offline={!trailAssistant.onlineStatus}></span>
-				{trailAssistant.onlineStatus ? 'Online · Gemma-only Scout' : `Offline · ${offlineModel.tier}`}
-			</div>
-		</div>
-
-		<div class="hero-quick">
+	<!-- Chat stays pure: status (Day/Mile/online) lives in the app header, not
+	     repeated here. Only the starter prompts sit above the conversation, and
+	     only until the hiker has started talking. -->
+	{#if trailAssistant.coachMessages.length <= 1}
+		<section class="hero-quick">
 			<p class="quick-label">Quick prompts</p>
 			<div class="prompt-row">
 				{#each quickPrompts as prompt (prompt)}
 					<button class="prompt-pill" onclick={() => usePrompt(prompt)}>{prompt}</button>
 				{/each}
 			</div>
-		</div>
-	</section>
+		</section>
+	{/if}
 
 	<section class="chat-card card">
 		<div class="chat-log" bind:this={logRef}>
@@ -256,53 +243,10 @@
 		min-height: calc(100vh - 220px);
 	}
 
-	.coach-hero {
-		padding: 14px;
-		display: grid;
-		gap: 12px;
-		background:
-			radial-gradient(circle at top right, rgba(95, 128, 144, 0.16), transparent 38%),
-			linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(244, 238, 224, 0.96));
-	}
-
-	.hero-head {
-		display: flex;
-		gap: 12px;
-		justify-content: space-between;
-		align-items: flex-start;
-	}
-
-	.hero-head h2 {
-		font-family: var(--font-display);
-		font-size: 1.4rem;
-		margin: 2px 0;
-	}
-
-	.hero-detail {
-		font-size: 0.8rem;
-		color: var(--muted);
-	}
-
-	.mode-pill {
-		display: inline-flex;
-		gap: 6px;
-		align-items: center;
-		padding: 6px 10px;
-		border-radius: 999px;
-		font-size: 0.7rem;
-		font-weight: 800;
-		background: rgba(47, 75, 53, 0.1);
-		color: var(--forest);
-	}
-
-	.mode-pill[data-online='false'] {
-		background: rgba(200, 167, 122, 0.22);
-		color: #8c5d1f;
-	}
-
 	.hero-quick {
 		display: grid;
 		gap: 6px;
+		padding-top: 4px;
 	}
 
 	.quick-label {

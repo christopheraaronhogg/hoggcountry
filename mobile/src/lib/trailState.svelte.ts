@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 
+import { migrateTab } from './types';
 import type {
 	ChatMessage,
 	CheckInRecord,
@@ -134,7 +135,7 @@ function trailPulseDisplayText(report: TrailConditionReport): string {
 }
 
 const defaultState: TrailState = {
-	activeTab: 'Today',
+	activeTab: 'Scout',
 	coachMessages: [
 		makeMessage(
 			'assistant',
@@ -305,6 +306,9 @@ class TrailAssistantStore {
 		try {
 			const parsed = JSON.parse(raw) as PersistedState;
 			this.#state = { ...defaultState, ...parsed };
+			// Persisted activeTab may reference a tab that no longer exists after the
+			// IA change (Plan/Town/Safety/You) — map it onto the new pillars.
+			this.#state.activeTab = migrateTab(this.#state.activeTab);
 		} catch (error) {
 			console.error('Failed to restore Trail Assistant state', error);
 		}
