@@ -16,12 +16,15 @@ import type {
 	TrailState
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
-import { createScoutRuntime } from './scout';
-import type { ScoutAnswer, ScoutRuntime } from './scout';
+import { createScoutRuntime, InMemoryContextPackStore } from './scout';
+import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
 const TRAIL_PULSE_RANGE_MILES = 0.1;
 const TRAIL_ID = 'appalachian-trail';
+const FIELD_PACK_ENDPOINT =
+	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
+	'https://hoggcountry.on-forge.com/api/v1/public/scout/field-pack';
 
 function isoHoursFromNow(hours: number): string {
 	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -74,6 +77,17 @@ function makeTrailPulseReport(input: {
 		status: 'active',
 		createdAt: observedAt,
 		syncState: input.syncState ?? 'synced'
+	};
+}
+
+function browserStorageAdapter() {
+	return {
+		async get(key: string) {
+			return localStorage.getItem(key);
+		},
+		async set(key: string, value: string) {
+			localStorage.setItem(key, value);
+		}
 	};
 }
 
@@ -169,7 +183,12 @@ type PersistedState = TrailState;
 class TrailAssistantStore {
 	#state = $state<TrailState>(defaultState);
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
-	#scout: { runtime: ScoutRuntime } = createScoutRuntime();
+	#fieldPackStore = new InMemoryContextPackStore({
+		adapter: browser ? browserStorageAdapter() : undefined
+	});
+	#scout: { runtime: ScoutRuntime } = createScoutRuntime({ store: this.#fieldPackStore });
+	#fieldPack = $state.raw<ContextPack>(this.#fieldPackStore.get());
+	#fieldPackStatus = $state<ContextPackStatus>(this.#fieldPackStore.getStatus());
 	#lastScoutAnswer = $state<ScoutAnswer | null>(null);
 	#scoutAnswersByMessage = new Map<string, ScoutAnswer>();
 
@@ -178,6 +197,14 @@ class TrailAssistantStore {
 
 		this.#hydrate();
 		this.#state.onlineStatus = navigator.onLine;
+		this.#fieldPackStore.subscribe((pack) => {
+			this.#fieldPack = pack;
+			this.#applyPackToTrailState(pack);
+		});
+		this.#fieldPackStore.subscribeStatus((status) => {
+			this.#fieldPackStatus = status;
+		});
+		void this.#loadFieldPack();
 
 		window.addEventListener('online', () => {
 			this.#state.onlineStatus = true;
@@ -191,6 +218,7 @@ class TrailAssistantStore {
 				}
 				this.#finishSync('syncing');
 			}
+			void this.refreshFieldPack();
 		});
 
 		window.addEventListener('offline', () => {
@@ -239,6 +267,31 @@ class TrailAssistantStore {
 			readiness: { ...this.#state.readiness },
 			supportCircle: [...this.#state.supportCircle],
 			lastSyncAt: this.#state.lastSyncAt
+		};
+	}
+
+	async #loadFieldPack() {
+		const pack = await this.#fieldPackStore.load();
+		this.#fieldPack = pack;
+		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
+		this.#applyPackToTrailState(pack);
+		if (this.#state.onlineStatus) {
+			await this.refreshFieldPack();
+		}
+	}
+
+	#applyPackToTrailState(pack: ContextPack) {
+		this.#state.currentMile = pack.hiker.currentMile;
+		this.#state.dayNumber = pack.hiker.dayNumber;
+		if (pack.hiker.targetMilesToday) {
+			this.#state.readiness = {
+				...this.#state.readiness,
+				targetMiles: pack.hiker.targetMilesToday
+			};
+		}
+		this.#state.trailSettings = {
+			...this.#state.trailSettings,
+			offlineRegion: pack.downloadedRegions[0] ?? this.#state.trailSettings.offlineRegion
 		};
 	}
 
@@ -370,6 +423,14 @@ class TrailAssistantStore {
 		return this.#state.onlineStatus;
 	}
 
+	get fieldPack() {
+		return this.#fieldPack;
+	}
+
+	get fieldPackStatus() {
+		return this.#fieldPackStatus;
+	}
+
 	get syncState() {
 		return this.#state.syncState;
 	}
@@ -472,6 +533,15 @@ class TrailAssistantStore {
 		});
 		this.#lastScoutAnswer = answer;
 		return answer;
+	}
+
+	async refreshFieldPack(): Promise<ContextPack> {
+		const pack = await this.#fieldPackStore.refreshFromEndpoint(FIELD_PACK_ENDPOINT);
+		this.#fieldPack = pack;
+		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
+		this.#applyPackToTrailState(pack);
+		this.#state.lastSyncAt = new Date().toISOString();
+		return pack;
 	}
 
 	get lastScoutAnswer(): ScoutAnswer | null {

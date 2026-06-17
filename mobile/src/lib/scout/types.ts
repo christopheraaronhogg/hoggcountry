@@ -14,6 +14,16 @@ export interface SourceReceipt {
 	miles?: { from: number; to?: number };
 }
 
+export interface ContextPackStatus {
+	state: 'fallback' | 'saved' | 'refreshing' | 'ready' | 'stale' | 'error';
+	label: string;
+	detail: string;
+	lastLoadedAt: string | null;
+	validUntil: string | null;
+	source: 'bundled' | 'saved' | 'remote';
+	error?: string;
+}
+
 export interface RequiredConfirmation {
 	id: string;
 	prompt: string;
@@ -121,15 +131,21 @@ export interface ContextPack {
 	weather: CachedWeather | null;
 	downloadedRegions: string[];
 	generatedAt: string;
+	validUntil?: string;
+	sourceReceipts?: SourceReceipt[];
+	pilotNotice?: string;
 }
 
 export interface ContextPackStore {
 	load(): Promise<ContextPack>;
 	get(): ContextPack;
+	getStatus(): ContextPackStatus;
+	refreshFromEndpoint(endpoint: string, fetcher?: typeof fetch): Promise<ContextPack>;
 	updateHiker(patch: Partial<HikerProfile>): Promise<void>;
 	updateWeather(weather: CachedWeather | null): Promise<void>;
 	updateLoadout(items: LoadoutItem[]): Promise<void>;
 	subscribe(listener: (pack: ContextPack) => void): () => void;
+	subscribeStatus(listener: (status: ContextPackStatus) => void): () => void;
 }
 
 export interface ToolContext {

@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { quickPrompts } from '$lib/mockTrailData';
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import type { ScoutConfidence, SourceReceipt as RuntimeSourceReceipt } from '$lib/scout';
+	import type {
+		RequiredConfirmation,
+		SafetyFlag,
+		ScoutConfidence,
+		SourceReceipt as RuntimeSourceReceipt
+	} from '$lib/scout';
 	import { offlineModel, sourceReceipts } from './cockpitData';
 	import type { SourceReceipt as UiSourceReceipt } from './cockpitData';
 	import SourceChip from './SourceChip.svelte';
@@ -87,19 +92,29 @@
 		return tools;
 	}
 
-	function receiptsFor(messageId: string, content: string): { receipts: UiSourceReceipt[]; tools: string[]; confidence: ScoutConfidence } {
+	function receiptsFor(messageId: string, content: string): {
+		receipts: UiSourceReceipt[];
+		tools: string[];
+		confidence: ScoutConfidence;
+		confirmations: RequiredConfirmation[];
+		safetyFlags: SafetyFlag[];
+	} {
 		const answer = trailAssistant.scoutAnswerFor?.(messageId) ?? null;
 		if (answer) {
 			return {
 				receipts: answer.receipts.map((receipt) => toUiReceipt(receipt, answer.confidence)),
 				tools: answer.toolInvocations.map((invocation) => invocation.toolId),
-				confidence: answer.confidence
+				confidence: answer.confidence,
+				confirmations: answer.requiredConfirmations,
+				safetyFlags: answer.safetyFlags
 			};
 		}
 		return {
 			receipts: fallbackReceipts(content),
 			tools: fallbackTools(content),
-			confidence: trailAssistant.onlineStatus ? 'high' : 'medium'
+			confidence: trailAssistant.onlineStatus ? 'high' : 'medium',
+			confirmations: [],
+			safetyFlags: []
 		};
 	}
 </script>
@@ -159,6 +174,16 @@
 							<div class="message-receipts">
 								{#each meta.receipts as receipt (receipt.id)}
 									<SourceChip source={receipt} />
+								{/each}
+							</div>
+						{/if}
+						{#if meta.confirmations.length || meta.safetyFlags.length}
+							<div class="message-caveats">
+								{#each meta.confirmations as confirmation (confirmation.id)}
+									<span class="caveat-chip" data-kind={confirmation.reason}>{confirmation.prompt}</span>
+								{/each}
+								{#each meta.safetyFlags as flag (flag.id)}
+									<span class="caveat-chip" data-kind={flag.severity}>{flag.message}</span>
 								{/each}
 							</div>
 						{/if}
@@ -365,6 +390,28 @@
 		display: flex;
 		gap: 4px;
 		flex-wrap: wrap;
+	}
+
+	.message-caveats {
+		display: grid;
+		gap: 5px;
+	}
+
+	.caveat-chip {
+		display: block;
+		padding: 7px 9px;
+		border-radius: 10px;
+		background: rgba(200, 167, 122, 0.18);
+		color: #8c5d1f;
+		font-size: 0.72rem;
+		font-weight: 800;
+		line-height: 1.25;
+	}
+
+	.caveat-chip[data-kind='critical'],
+	.caveat-chip[data-kind='safety-critical'] {
+		background: rgba(154, 59, 47, 0.12);
+		color: var(--danger);
 	}
 
 	.timestamp {

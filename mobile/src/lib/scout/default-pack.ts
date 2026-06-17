@@ -1,6 +1,7 @@
 import type { ContextPack } from './types.ts';
 
 const DEFAULT_GENERATED_AT = '2026-06-16T00:00:00.000Z';
+const DEFAULT_VALID_UNTIL = '2026-06-22T00:00:00.000Z';
 
 export const DEFAULT_CONTEXT_PACK: ContextPack = {
 	frame: {
@@ -99,7 +100,25 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		generatedAt: DEFAULT_GENERATED_AT
 	},
 	downloadedRegions: ['VA - Southern Highlands', 'TN/NC - Smokies'],
-	generatedAt: DEFAULT_GENERATED_AT
+	generatedAt: DEFAULT_GENERATED_AT,
+	validUntil: DEFAULT_VALID_UNTIL,
+	sourceReceipts: [
+		{
+			id: 'field-pack:bundled-pilot',
+			title: 'Bundled Dad pilot pack',
+			kind: 'trail-pack',
+			citation: 'Hogg Country Scout mobile bundled fallback',
+			generatedAt: DEFAULT_GENERATED_AT,
+			miles: { from: 582.4, to: 606.0 }
+		},
+		{
+			id: 'field-guide:water-discipline',
+			title: 'Water discipline field-guide excerpt',
+			kind: 'field-guide',
+			citation: 'Hogg Country Field Guide'
+		}
+	],
+	pilotNotice: 'Bundled pilot context. Refresh the field pack before treating weather, water, or service details as current.'
 };
 
 export function cloneDefaultContextPack(): ContextPack {

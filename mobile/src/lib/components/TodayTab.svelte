@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { upcomingStops, waterSources, weatherSnapshot } from '$lib/mockTrailData';
+	import { waterSources, weatherSnapshot } from '$lib/mockTrailData';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import TrailPulsePanel from './TrailPulsePanel.svelte';
 	import ElevationStrip from './ElevationStrip.svelte';
@@ -30,9 +30,33 @@
 	const remaining = $derived(trailAssistant.milesRemainingToday.toFixed(1));
 	const progress = $derived(trailAssistant.progressPercent);
 
-	const nextWater = waterSources[0];
-	const nextShelter = upcomingStops.find((stop) => stop.kind === 'shelter');
-	const nextTown = upcomingStops.find((stop) => stop.kind === 'town');
+	const nextWater = $derived.by(() => {
+		const fromMile = trailAssistant.currentMile;
+		return (
+			trailAssistant.fieldPack.water
+				.filter((source) => source.mile >= fromMile - 0.01)
+				.sort((a, b) => a.mile - b.mile)[0] ?? null
+		);
+	});
+	const nextShelter = $derived.by(() => {
+		const fromMile = trailAssistant.currentMile;
+		return (
+			trailAssistant.fieldPack.shelters
+				.filter((shelter) => shelter.mile >= fromMile - 0.01)
+				.sort((a, b) => a.mile - b.mile)[0] ?? null
+		);
+	});
+	const nextTown = $derived.by(() => {
+		const fromMile = trailAssistant.currentMile;
+		return (
+			trailAssistant.fieldPack.towns
+				.filter((town) => town.mile >= fromMile - 0.01)
+				.sort((a, b) => a.mile - b.mile)[0] ?? null
+		);
+	});
+	const nextWaterDistance = $derived(nextWater ? Math.max(0, nextWater.mile - trailAssistant.currentMile).toFixed(1) : null);
+	const nextShelterDistance = $derived(nextShelter ? Math.max(0, nextShelter.mile - trailAssistant.currentMile).toFixed(1) : null);
+	const nextTownDistance = $derived(nextTown ? Math.max(0, nextTown.mile - trailAssistant.currentMile).toFixed(1) : null);
 
 	const checkInDue = $derived(
 		new Date(trailAssistant.nextCheckInDueAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
@@ -70,13 +94,13 @@
 		<div class="cockpit-strip">
 			<button class="cockpit-cell cell-button" type="button" data-kind="water" aria-label="Next water source">
 				<span class="cell-eyebrow">Next water</span>
-				<strong>{nextWater.distanceMiles.toFixed(1)} mi</strong>
-				<span class="cell-detail">{nextWater.name}</span>
+				<strong>{nextWaterDistance ? `${nextWaterDistance} mi` : '—'}</strong>
+				<span class="cell-detail">{nextWater?.name ?? waterSources[0].name}</span>
 			</button>
 			<button class="cockpit-cell cell-button" type="button" data-kind="shelter" aria-label="Next shelter">
 				<span class="cell-eyebrow">Next shelter</span>
-				<strong>{nextShelter ? `${nextShelter.distanceMiles.toFixed(1)} mi` : '—'}</strong>
-				<span class="cell-detail">{nextShelter?.title ?? 'No shelter on file'}</span>
+				<strong>{nextShelterDistance ? `${nextShelterDistance} mi` : '—'}</strong>
+				<span class="cell-detail">{nextShelter?.name ?? 'No shelter on file'}</span>
 			</button>
 			<button
 				class="cockpit-cell cell-button"
@@ -86,8 +110,8 @@
 				aria-label="Next town"
 			>
 				<span class="cell-eyebrow">Next town</span>
-				<strong>{nextTown ? `${nextTown.distanceMiles.toFixed(1)} mi` : '—'}</strong>
-				<span class="cell-detail">{nextTown?.title ?? '—'}</span>
+				<strong>{nextTownDistance ? `${nextTownDistance} mi` : '—'}</strong>
+				<span class="cell-detail">{nextTown?.name ?? '—'}</span>
 			</button>
 			<button
 				class="cockpit-cell cell-button"

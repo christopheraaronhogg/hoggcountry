@@ -29,12 +29,15 @@ function downgrade(confidence: ScoutConfidence): ScoutConfidence {
 	return order[idx]!;
 }
 
-function uniqueReceipts(records: ToolInvocationRecord[]): SourceReceipt[] {
+function uniqueReceipts(records: ToolInvocationRecord[], extras: SourceReceipt[] = []): SourceReceipt[] {
 	const seen = new Map<string, SourceReceipt>();
 	for (const record of records) {
 		for (const receipt of record.receipts) {
 			if (!seen.has(receipt.id)) seen.set(receipt.id, receipt);
 		}
+	}
+	for (const receipt of extras) {
+		if (!seen.has(receipt.id)) seen.set(receipt.id, receipt);
 	}
 	return Array.from(seen.values());
 }
@@ -106,7 +109,7 @@ export class DeterministicFallbackProvider implements ScoutProvider {
 			confidence,
 			mode: 'offline-local',
 			provider: 'deterministic-fallback',
-			additionalReceipts: uniqueReceipts(toolInvocations),
+			additionalReceipts: uniqueReceipts(toolInvocations, pack.sourceReceipts ?? []),
 			additionalConfirmations: confirmations,
 			contextUsed
 		};

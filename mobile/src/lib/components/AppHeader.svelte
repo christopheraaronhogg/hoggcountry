@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import { offlineModel } from './cockpitData';
 
 	function formatTime(iso: string): string {
 		return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -9,7 +8,7 @@
 	// Calibrated AT length per CLAUDE.md (AWOL 2026).
 	const trailMiles = 2197.4;
 	const percentComplete = $derived(((trailAssistant.currentMile / trailMiles) * 100).toFixed(1));
-	const offlineReady = offlineModel.status === 'ready';
+	const offlineReady = $derived(['ready', 'saved', 'stale', 'fallback', 'error'].includes(trailAssistant.fieldPackStatus.state));
 </script>
 
 <header class="header">
@@ -33,7 +32,7 @@
 			</span>
 			<span class="connection" data-offline-ready={offlineReady}>
 				<span class="status-dot" style:background={offlineReady ? 'var(--success)' : 'var(--warn)'}></span>
-				Scout local
+				{trailAssistant.fieldPackStatus.state === 'refreshing' ? 'Pack sync' : 'Pack saved'}
 			</span>
 		</div>
 	</div>
@@ -49,7 +48,7 @@
 		</div>
 		<div class="mile-meta">
 			<span>{percentComplete}% done</span>
-			<span>VA · Southern Highlands</span>
+			<span>{trailAssistant.fieldPack.downloadedRegions[0] ?? 'Field pack'}</span>
 		</div>
 	</div>
 

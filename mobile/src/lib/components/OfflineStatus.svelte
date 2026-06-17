@@ -2,14 +2,20 @@
 	import { offlineModel } from './cockpitData';
 	import { trailAssistant } from '$lib/trailState.svelte';
 
-	const statusLabel: Record<typeof offlineModel.status, string> = {
+	const statusLabel = {
 		ready: 'Offline ready',
 		updating: 'Updating',
 		partial: 'Partial pack',
-		'cloud-only': 'Cloud only'
-	};
+		'cloud-only': 'Cloud only',
+		fallback: 'Bundled pack',
+		saved: 'Saved pack',
+		refreshing: 'Refreshing',
+		stale: 'Stale pack',
+		error: 'Cached pack'
+	} as const;
 
-	function formatVerified(iso: string): string {
+	function formatRelative(iso: string | null): string {
+		if (!iso) return 'Bundled';
 		const minutes = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / (60 * 1000)));
 		if (minutes < 60) return `${minutes}m ago`;
 		const hours = Math.floor(minutes / 60);
@@ -17,6 +23,10 @@
 		const days = Math.floor(hours / 24);
 		return `${days}d ago`;
 	}
+
+	const status = $derived(trailAssistant.fieldPackStatus);
+	const packRegions = $derived(trailAssistant.fieldPack.downloadedRegions);
+	const receiptCount = $derived(trailAssistant.fieldPack.sourceReceipts?.length ?? 0);
 </script>
 
 <section class="offline-card">
@@ -25,24 +35,24 @@
 			<p class="eyebrow">On-device Scout</p>
 			<strong>{offlineModel.tier}</strong>
 		</div>
-		<span class="status-pill" data-status={offlineModel.status}>
+		<span class="status-pill" data-status={status.state}>
 			<span class="dot" aria-hidden="true"></span>
-			{statusLabel[offlineModel.status]}
+			{statusLabel[status.state]}
 		</span>
 	</header>
 
 	<dl class="offline-grid">
 		<div>
-			<dt>Pack size</dt>
-			<dd>{(offlineModel.sizeMb / 1024).toFixed(1)} GB</dd>
+			<dt>Pack source</dt>
+			<dd>{status.source}</dd>
 		</div>
 		<div>
-			<dt>Context</dt>
-			<dd>{(offlineModel.contextTokens / 1000).toFixed(0)}k tokens</dd>
+			<dt>Receipts</dt>
+			<dd>{receiptCount}</dd>
 		</div>
 		<div>
-			<dt>Last verified</dt>
-			<dd>{formatVerified(offlineModel.lastVerified)}</dd>
+			<dt>Loaded</dt>
+			<dd>{formatRelative(status.lastLoadedAt)}</dd>
 		</div>
 		<div>
 			<dt>Live signal</dt>
@@ -52,12 +62,21 @@
 
 	<p class="regions">
 		Field packs:
-		{#each offlineModel.regions as region, index (region)}
-			<span>{region}{index < offlineModel.regions.length - 1 ? ' · ' : ''}</span>
+		{#each packRegions as region, index (region)}
+			<span>{region}{index < packRegions.length - 1 ? ' · ' : ''}</span>
 		{/each}
 	</p>
 
-	<p class="note">{offlineModel.note}</p>
+	<p class="note">{status.detail}</p>
+
+	<button
+		class="outline-button compact"
+		type="button"
+		onclick={() => void trailAssistant.refreshFieldPack()}
+		disabled={!trailAssistant.onlineStatus || status.state === 'refreshing'}
+	>
+		{status.state === 'refreshing' ? 'Refreshing...' : 'Refresh field pack'}
+	</button>
 </section>
 
 <style>
@@ -102,7 +121,14 @@
 		background: rgba(95, 128, 144, 0.16);
 		color: var(--sky);
 	}
+	.status-pill[data-status='refreshing'] {
+		background: rgba(95, 128, 144, 0.16);
+		color: var(--sky);
+	}
 	.status-pill[data-status='updating'] .dot {
+		background: var(--sky);
+	}
+	.status-pill[data-status='refreshing'] .dot {
 		background: var(--sky);
 	}
 
@@ -110,7 +136,20 @@
 		background: rgba(200, 167, 122, 0.22);
 		color: #8c5d1f;
 	}
+	.status-pill[data-status='fallback'],
+	.status-pill[data-status='saved'],
+	.status-pill[data-status='stale'],
+	.status-pill[data-status='error'] {
+		background: rgba(200, 167, 122, 0.22);
+		color: #8c5d1f;
+	}
 	.status-pill[data-status='partial'] .dot {
+		background: #b6892c;
+	}
+	.status-pill[data-status='fallback'] .dot,
+	.status-pill[data-status='saved'] .dot,
+	.status-pill[data-status='stale'] .dot,
+	.status-pill[data-status='error'] .dot {
 		background: #b6892c;
 	}
 
