@@ -10,12 +10,17 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"cap:sync": "npm run build && npx cap sync",
-		"cap:copy": "npm run build && npx cap copy",
+		"preflight": "node scripts/preflight.mjs",
+		"cap:doctor": "node scripts/preflight.mjs",
+		"smoke:field-pack": "node --experimental-strip-types --experimental-transform-types scripts/smoke-field-pack-cache.mjs",
+		"cap:sync": "npm run build && node scripts/preflight.mjs && npx cap sync",
+		"cap:copy": "npm run build && node scripts/preflight.mjs && npx cap copy",
 		"cap:add:ios": "npx cap add ios",
 		"cap:add:android": "npx cap add android",
-		"cap:open:ios": "npx cap open ios",
-		"cap:open:android": "npx cap open android"
+		"cap:sync:ios": "npm run build && node scripts/preflight.mjs --platform ios && npx cap sync ios",
+		"cap:sync:android": "npm run build && node scripts/preflight.mjs --platform android && npx cap sync android",
+		"cap:open:ios": "node scripts/preflight.mjs --platform ios && npx cap open ios",
+		"cap:open:android": "node scripts/preflight.mjs --platform android && npx cap open android"
 	},
 	"dependencies": {
 		"@capacitor/app": "^7.1.0",

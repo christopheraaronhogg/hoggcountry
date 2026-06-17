@@ -1,6 +1,6 @@
 import type { ContextPack } from './types.ts';
 
-const DEFAULT_GENERATED_AT = '2026-06-16T00:00:00.000Z';
+const DEFAULT_GENERATED_AT = '2026-06-17T05:11:50.239Z';
 const DEFAULT_VALID_UNTIL = '2026-06-22T00:00:00.000Z';
 
 export const DEFAULT_CONTEXT_PACK: ContextPack = {
@@ -8,54 +8,157 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		totalMiles: 2197.4,
 		startMile: 0,
 		endMile: 2197.4,
-		source: 'AWOL 2026 + anchor-calibrated mileposts'
+		source: 'AWOL 2026 reference length + Hogg Country Dad pilot pack + Scout AT open-reference slice'
 	},
 	hiker: {
 		trailName: 'Hogg',
-		currentMile: 582.4,
+		currentMile: 1438,
 		direction: 'NOBO',
 		dayNumber: 42,
 		targetMilesToday: 13.8
 	},
 	water: [
 		{
-			name: 'Lick Creek',
-			mile: 586.6,
-			reliability: 'reliable',
-			note: 'Best fill before the exposed Chestnut Knob ridge.'
+			name: 'Unnamed mapped stream',
+			mile: 1438.4,
+			reliability: 'thin',
+			note: 'NY - intermittent. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
 		},
 		{
-			name: 'Spring below Chestnut Knob',
-			mile: 589.9,
-			reliability: 'seasonal',
-			note: 'Usable when present; do not gamble the day on it.'
+			name: 'Unnamed mapped stream',
+			mile: 1439,
+			reliability: 'thin',
+			note: 'NY - intermittent. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Unnamed mapped stream',
+			mile: 1441.5,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Stump Pond Stream',
+			mile: 1442,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Unnamed mapped stream',
+			mile: 1444.1,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Unnamed mapped stream',
+			mile: 1444.7,
+			reliability: 'thin',
+			note: 'NY - intermittent. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Whaley Lake Stream',
+			mile: 1446.3,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Unnamed mapped stream',
+			mile: 1447.2,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Unnamed mapped stream',
+			mile: 1449.9,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Burton Brook',
+			mile: 1452.6,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Swamp River',
+			mile: 1454.5,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
+		},
+		{
+			name: 'Unnamed mapped stream',
+			mile: 1454.5,
+			reliability: 'thin',
+			note: 'NY - perennial. Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.'
 		}
 	],
 	shelters: [
 		{
-			name: 'Chestnut Knob Shelter',
-			mile: 589.7,
-			capacity: 8,
-			note: 'Enclosed structure, exposed to wind on the ridge.'
+			name: 'Morgan Stewart Memorial Shelter',
+			mile: 1442.6,
+			note: 'NY. Open-data shelter candidate; verify current status, capacity, water, fees, and local rules.'
 		},
 		{
-			name: 'Jenny Knob Shelter',
-			mile: 605.7,
-			capacity: 6
+			name: 'Telephone Pioneers Shelter',
+			mile: 1451.6,
+			note: 'NY. Open-data shelter candidate; verify current status, capacity, water, fees, and local rules.'
+		},
+		{
+			name: 'Wiley Shelter',
+			mile: 1460.6,
+			note: 'CT. Open-data shelter candidate; verify current status, capacity, water, fees, and local rules.'
+		},
+		{
+			name: 'Mt. Algo Lean-to',
+			mile: 1472.5,
+			note: 'CT. Open-data shelter candidate; verify current status, capacity, water, fees, and local rules.'
+		},
+		{
+			name: 'Stewart Hollow Brook Lean-to',
+			mile: 1480.7,
+			note: 'CT. Open-data shelter candidate; verify current status, capacity, water, fees, and local rules.'
+		},
+		{
+			name: 'Pine Swamp Brook Lean-to',
+			mile: 1490.9,
+			note: 'CT. Open-data shelter candidate; verify current status, capacity, water, fees, and local rules.'
 		}
 	],
 	towns: [
 		{
-			name: 'Bland, VA',
-			mile: 596.0,
-			access: 'US-52 crossing, ~2.5 miles hitch',
-			servicesNote: 'Post office, motel, laundry, and resupply.'
+			name: 'Kent Hills',
+			mile: 1440,
+			access: 'Open-data settlement candidate (NY - 3.8 mi off trail)',
+			servicesNote: 'Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it.'
 		},
 		{
-			name: 'Pearisburg, VA',
-			mile: 632.4,
-			access: 'VA-634 crossing, easy hitch',
-			servicesNote: 'Walmart resupply, multiple hostels.'
+			name: 'Lake Carmel',
+			mile: 1440,
+			access: 'Open-data settlement candidate (NY - 6.1 mi off trail)',
+			servicesNote: 'Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it.'
+		},
+		{
+			name: 'Patterson',
+			mile: 1444.8,
+			access: 'Open-data settlement candidate (NY - 5.5 mi off trail)',
+			servicesNote: 'Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it.'
+		},
+		{
+			name: 'Beekman',
+			mile: 1446,
+			access: 'Open-data settlement candidate (NY - 3.0 mi off trail)',
+			servicesNote: 'Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it.'
+		},
+		{
+			name: 'Lagrangeville',
+			mile: 1446,
+			access: 'Open-data settlement candidate (NY - 6.8 mi off trail)',
+			servicesNote: 'Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it.'
+		},
+		{
+			name: 'Pawling',
+			mile: 1454.5,
+			access: 'Open-data settlement candidate (NY - 2.4 mi off trail)',
+			servicesNote: 'Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it.'
 		}
 	],
 	guideExcerpts: [
@@ -91,34 +194,70 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{ name: 'Anker 10k power bank', category: 'electronics', weightOz: 6.9, carried: true }
 	],
 	weather: {
-		mile: 582.4,
-		summary: 'Cold ridge wind with dry afternoon skies',
+		mile: 1438,
+		summary: 'Cached pilot weather: cold ridge wind with dry afternoon skies',
 		highF: 46,
 		lowF: 28,
 		windMph: 17,
-		riskNote: 'Crosswinds plus a soft recovery day make this a poor time to chase lost miles.',
-		generatedAt: DEFAULT_GENERATED_AT
+		riskNote: 'Weather in this pack is cached pilot context; refresh before exposed terrain.',
+		generatedAt: '2026-06-16T00:00:00.000Z'
 	},
-	downloadedRegions: ['VA - Southern Highlands', 'TN/NC - Smokies'],
+	downloadedRegions: ['Dad trail-ahead 1438.0-1474.0', 'AT open-reference candidates (NY/CT)'],
 	generatedAt: DEFAULT_GENERATED_AT,
 	validUntil: DEFAULT_VALID_UNTIL,
 	sourceReceipts: [
 		{
-			id: 'field-pack:bundled-pilot',
-			title: 'Bundled Dad pilot pack',
+			id: 'field-pack:dad-pilot',
+			title: 'Dad pilot mobile field pack',
 			kind: 'trail-pack',
-			citation: 'Hogg Country Scout mobile bundled fallback',
+			citation: 'Bundled Hogg Country Scout mobile fallback from local field-pack generator',
 			generatedAt: DEFAULT_GENERATED_AT,
-			miles: { from: 582.4, to: 606.0 }
+			miles: { from: 1438, to: 1474 }
+		},
+		{
+			id: 'trail-pack:open-reference-slice',
+			title: 'Scout AT open-reference trail-ahead slice',
+			kind: 'trail-pack',
+			citation: 'Scout full-trail open-reference pack, anchor-calibrated to AWOL 2026 frame',
+			generatedAt: DEFAULT_GENERATED_AT,
+			miles: { from: 1438, to: 1474 }
+		},
+		{
+			id: 'derived:usgs-water-candidates',
+			title: 'Mapped water candidates',
+			kind: 'derived',
+			citation: 'USGS/NHD public hydrography; reliability and potability unknown',
+			miles: { from: 1438, to: 1474 }
+		},
+		{
+			id: 'derived:osm-corridor-candidates',
+			title: 'Shelter and town candidates',
+			kind: 'derived',
+			citation: 'OpenStreetMap contributors, ODbL; mapped candidates, not confirmed logistics',
+			miles: { from: 1438, to: 1518 }
 		},
 		{
 			id: 'field-guide:water-discipline',
 			title: 'Water discipline field-guide excerpt',
 			kind: 'field-guide',
 			citation: 'Hogg Country Field Guide'
+		},
+		{
+			id: 'derived:awol-length',
+			title: 'AT reference length',
+			kind: 'derived',
+			citation: 'AWOL 2026 calibrated reference length',
+			miles: { from: 0, to: 2197.4 }
+		},
+		{
+			id: 'derived:generated-mile-caveat',
+			title: 'Generated mile caveat',
+			kind: 'derived',
+			citation: 'Open-reference landmark miles are anchor-calibrated estimates; confirm exact guidebook mileage before safety-critical decisions.'
 		}
 	],
-	pilotNotice: 'Bundled pilot context. Refresh the field pack before treating weather, water, or service details as current.'
+	pilotNotice:
+		'Bundled Dad trail-ahead fallback generated from open-reference candidates. Refresh when the endpoint is available; confirm current water, services, rules, and access before relying on this pack.'
 };
 
 export function cloneDefaultContextPack(): ContextPack {

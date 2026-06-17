@@ -28,10 +28,15 @@ test('default pack has the calibrated AT total mile frame', () => {
 test('runtime answers a basic water prompt offline using local pack only', async () => {
 	const { runtime } = makeRuntime();
 	const answer = await runtime.ask({ prompt: 'Where is the next reliable water?', onlineStatus: false });
+	const waterTool = answer.toolInvocations.find((tool) => tool.toolId === 'next_water');
 
 	assert.equal(answer.mode, 'offline-local');
 	assert.equal(answer.provider, 'deterministic-fallback');
-	assert.ok(answer.answer.includes('Lick Creek'));
+	assert.ok(answer.answer.includes('Water plan from mile 1438.0'));
+	assert.ok(waterTool, 'expected next_water tool invocation');
+	assert.equal(waterTool.confidence, 'low');
+	assert.ok(waterTool.summary.includes('Mapped water candidate'));
+	assert.ok(waterTool.safetyFlags?.some((flag) => flag.id === 'water-candidate-unverified'));
 	assert.ok(answer.receipts.length > 0);
 	assert.ok(answer.toolInvocations.some((tool) => tool.toolId === 'next_water'));
 });

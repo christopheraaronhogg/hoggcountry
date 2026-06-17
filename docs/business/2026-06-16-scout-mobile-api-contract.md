@@ -81,7 +81,7 @@ All v1 mobile contract responses are JSON with this envelope:
 All public endpoints serve `cache-control: public, max-age=60` and require no
 authentication so the app is useful on first install without an account.
 
-### 1. `GET /api/v1/public/scout/field-pack`
+### 1. `GET /scout/field-pack`
 
 Bootstrap pack for the mobile app. Composed of the same internal data the
 SvelteKit `/app-api/offline-pack` route already builds, minus the gated
@@ -102,7 +102,10 @@ PublicFieldPack {
 Implementation note: Scout web already has `loadDadPilotSummary()`,
 `loadScoutAtOpenReferenceOfflineSummary()`, `buildScoutDailyBrief()`, and
 `loadJourneySummary()` — this endpoint is a thin assembler over those, exposed
-via the Laravel proxy or directly on the SvelteKit node app.
+through the Forge Laravel proxy at `/scout/field-pack` or directly on the
+SvelteKit node app. The legacy SvelteKit `/api/v1/public/scout/field-pack`
+route still exists for direct Node/local use, but Forge's Laravel proxy keeps
+`/api/*` on Laravel and will not forward that path to SvelteKit.
 
 ### 2. `GET /api/v1/public/scout/dad/journey`
 
@@ -467,10 +470,12 @@ This document is a contract. Implementation lands in three small layers:
 1. **Shared types**: `packages/scout-mobile-contract` (added in this PR) is
    the single source of truth for the response shapes. Both
    `apps/openclaw-web` and `mobile/` depend on it.
-2. **Scout web (SvelteKit)**: new routes under
-   `apps/openclaw-web/src/routes/api/v1/public/scout/*` and
-   `apps/openclaw-web/src/routes/api/v1/scout/*` that compose existing
-   loaders. These run on the Forge node app behind the Laravel proxy.
+2. **Scout web (SvelteKit)**: public mobile bootstrap routes live on proxied
+   non-`/api` paths such as
+   `apps/openclaw-web/src/routes/scout/field-pack/+server.ts`, with legacy
+   direct-node compatibility under
+   `apps/openclaw-web/src/routes/api/v1/public/scout/*`. Forge's Laravel proxy
+   excludes `/api/*`, so mobile defaults must use the proxied non-`/api` URL.
 3. **Laravel**: no new domain logic. Sanctum-gated routes proxy to the
    SvelteKit node app under `/api/v1/scout/*` (the SvelteKit node app is
    already proxied — see `docs/runbooks/netlify-to-forge-cutover-checklist.md`).

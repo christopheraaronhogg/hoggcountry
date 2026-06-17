@@ -16,15 +16,16 @@ import type {
 	TrailState
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
-import { createScoutRuntime, InMemoryContextPackStore } from './scout';
+import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
 import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
+import type { PersistenceAdapter } from './scout/context-pack-store.ts';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
 const TRAIL_PULSE_RANGE_MILES = 0.1;
 const TRAIL_ID = 'appalachian-trail';
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
-	'https://hoggcountry.on-forge.com/api/v1/public/scout/field-pack';
+	'https://hoggcountry.com/scout/field-pack';
 
 function isoHoursFromNow(hours: number): string {
 	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -80,12 +81,34 @@ function makeTrailPulseReport(input: {
 	};
 }
 
-function browserStorageAdapter() {
+let nativePreferencesAdapterPromise: Promise<PersistenceAdapter | null> | null = null;
+
+function isNativeCapacitor(): boolean {
+	const capacitorWindow = window as Window & {
+		Capacitor?: { isNativePlatform?: () => boolean };
+	};
+
+	return capacitorWindow.Capacitor?.isNativePlatform?.() ?? false;
+}
+
+async function nativePreferencesAdapter(): Promise<PersistenceAdapter | null> {
+	if (!isNativeCapacitor()) return null;
+	nativePreferencesAdapterPromise ??= import('@capacitor/preferences')
+		.then(({ Preferences }) => createCapacitorPreferencesAdapter(Preferences))
+		.catch(() => null);
+	return nativePreferencesAdapterPromise;
+}
+
+function browserStorageAdapter(): PersistenceAdapter {
 	return {
 		async get(key: string) {
+			const nativeAdapter = await nativePreferencesAdapter();
+			if (nativeAdapter) return nativeAdapter.get(key);
 			return localStorage.getItem(key);
 		},
 		async set(key: string, value: string) {
+			const nativeAdapter = await nativePreferencesAdapter();
+			if (nativeAdapter) return nativeAdapter.set(key, value);
 			localStorage.setItem(key, value);
 		}
 	};
@@ -103,16 +126,16 @@ const defaultState: TrailState = {
 	coachMessages: [
 		makeMessage(
 			'assistant',
-			'Good morning. Trail readiness is holding steady today. If you stay disciplined on water and keep the mileage below 14, you should arrive at Bland with enough recovery margin for a clean town stop.'
+			'Good morning. Trail readiness is holding steady today. Keep mapped water marked low-confidence until it is confirmed from a current source or in the field.'
 		)
 	],
 	lastCheckIn: {
 		id: crypto.randomUUID(),
 		timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-		location: 'Lick Creek',
-		mile: 578.2,
+		location: 'NY/CT pilot corridor',
+		mile: 1438,
 		status: 'safe',
-		note: 'Left camp on time and moving well.'
+		note: 'Using the bundled Dad trail-ahead fallback until a refreshed field pack is saved on this phone.'
 	},
 	checkInHistory: [],
 	trailPulseReports: [
@@ -121,14 +144,14 @@ const defaultState: TrailState = {
 			chipText: 'Rocks',
 			noteText: 'Rocks',
 			reporterTrailName: 'Backtrack',
-			snappedMile: 582.4,
+			snappedMile: 1438.4,
 			observedAt: new Date(Date.now() - 34 * 60 * 1000).toISOString()
 		}),
 		makeTrailPulseReport({
 			source: 'text',
 			chipText: 'Water',
-			noteText: 'spring running slow',
-			snappedMile: 586.6,
+			noteText: 'mapped stream candidate needs field confirmation',
+			snappedMile: 1441.5,
 			observedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
 		})
 	],
@@ -144,7 +167,7 @@ const defaultState: TrailState = {
 		waterAlerts: true,
 		batterySaver: false,
 		lowSignalMode: true,
-		offlineRegion: 'VA - Southern Highlands'
+		offlineRegion: 'AT NY/CT pilot window'
 	},
 	trailLogSettings: {
 		autoPublish: false,
@@ -155,7 +178,7 @@ const defaultState: TrailState = {
 	},
 	onlineStatus: true,
 	syncState: 'synced',
-	currentMile: 582.4,
+	currentMile: 1438,
 	currentDayMiles: 8.2,
 	dayNumber: 42,
 	nextCheckInDueAt: isoHoursFromNow(4),
@@ -166,8 +189,8 @@ const defaultState: TrailState = {
 		targetVert: 2600,
 		reasons: [
 			'Your last two days were above plan and recovery is slightly lagging.',
-			'Crosswinds on the ridge will slow you more than the mileage chart suggests.',
-			'You still have enough margin to hit Bland on schedule without forcing a big day.'
+			'Mapped water in the loaded NY/CT window is candidate-grade and needs current confirmation.',
+			'Keep the mileage conservative until the refreshed field pack and real conditions agree.'
 		]
 	},
 	supportCircle: [
@@ -313,11 +336,11 @@ class TrailAssistantStore {
 		const recommendation = this.#state.readiness.recommendation;
 
 		if (lower.includes('water')) {
-			return 'Next reliable water is 4.2 miles ahead at Lick Creek. I would top off there because the ridge after it can dry out by late afternoon.';
+			return 'The bundled pack has mapped water candidates ahead, but they are not confirmed reliable or potable. Treat them as low-confidence until refreshed or checked in the field.';
 		}
 
 		if (lower.includes('town') || lower.includes('shuttle') || lower.includes('hostel')) {
-			return 'Bland is still the cleanest town stop. Big Walker Motel and the post office both fit your arrival window if you keep today under 14 miles.';
+			return 'The bundled pack has open-data town candidates ahead. Verify services, hours, and access before planning around a stop.';
 		}
 
 		if (lower.includes('miles') || lower.includes('push') || lower.includes('hold') || lower.includes('nero')) {
