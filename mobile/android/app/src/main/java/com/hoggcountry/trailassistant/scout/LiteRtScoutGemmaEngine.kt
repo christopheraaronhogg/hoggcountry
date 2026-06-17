@@ -117,21 +117,38 @@ class LiteRtScoutGemmaEngine private constructor(
     @Synchronized
     private fun ensureEngine(): Engine {
         engine?.let { return it }
-        val config = EngineConfig(
-            modelPath = modelPath,
-            backend = Backend.CPU(),
-            visionBackend = Backend.CPU(),
-            audioBackend = Backend.CPU(),
-            maxNumTokens = null,
-            maxNumImages = null,
-            cacheDir = cacheDir
-        )
-        Log.i(TAG, "Initializing LiteRT-LM engine from $modelPath (this can take seconds)")
-        val created = Engine(config)
-        created.initialize()
-        Log.i(TAG, "LiteRT-LM engine initialized")
-        engine = created
-        return created
+        // Auto-select the fastest backend the device supports, silently: try the
+        // GPU accelerator first (far faster than CPU on capable chips), fall back
+        // to CPU if the GPU delegate can't initialize. Free (no bigger download),
+        // so it is never a user choice in the default flow; an advanced override
+        // can force a specific backend later.
+        var lastError: Throwable? = null
+        for (textBackend in listOf(Backend.GPU(), Backend.CPU())) {
+            try {
+                Log.i(TAG, "Initializing LiteRT-LM engine on ${textBackend.name} backend (can take seconds)")
+                // Only the text backend is accelerated. The model constrains its
+                // audio backend to CPU (and we use no audio/vision in Scout chat),
+                // so forcing GPU on those slots fails engine creation outright.
+                val config = EngineConfig(
+                    modelPath = modelPath,
+                    backend = textBackend,
+                    visionBackend = Backend.CPU(),
+                    audioBackend = Backend.CPU(),
+                    maxNumTokens = null,
+                    maxNumImages = null,
+                    cacheDir = cacheDir
+                )
+                val created = Engine(config)
+                created.initialize()
+                Log.i(TAG, "LiteRT-LM engine initialized on ${textBackend.name}")
+                engine = created
+                return created
+            } catch (failure: Throwable) {
+                lastError = failure
+                Log.w(TAG, "Backend ${textBackend.name} unavailable (${failure.message}); trying next.")
+            }
+        }
+        throw lastError ?: IllegalStateException("No usable LiteRT-LM backend available")
     }
 
     companion object {
