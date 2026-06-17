@@ -8,9 +8,8 @@ package com.hoggcountry.trailassistant.scout;
  * describeModel() still returns the target descriptor so UI/telemetry can show
  * what model this build is built around.
  *
- * ScoutGemmaPlugin.createEngine() already tries MediaPipeScoutGemmaEngine first;
- * this stub remains the fallback when the runtime dependency or verified model is
- * missing.
+ * ScoutGemmaPlugin.createEngine() already tries LiteRtScoutGemmaEngine first;
+ * this stub remains the fallback when the verified model file is missing.
  */
 public final class UnavailableScoutGemmaEngine implements ScoutGemmaEngine {
     static final ScoutGemmaModelInfo TARGET_MODEL =
@@ -30,6 +29,6 @@ public final class UnavailableScoutGemmaEngine implements ScoutGemmaEngine {
     public GenerateResult generate(String prompt, String systemContext, int maxTokens)
             throws ScoutGemmaUnavailableException {
         throw new ScoutGemmaUnavailableException(
-                "On-device Gemma engine is not available in this build. Download and verify the Gemma model, then enable the local MediaPipe/LiteRT runtime.");
+                "On-device Gemma engine is not available in this build. Download and verify the Gemma 4 model file so the local LiteRT-LM runtime can load it.");
     }
 }

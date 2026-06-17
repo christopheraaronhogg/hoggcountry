@@ -1,10 +1,16 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
     namespace "com.hoggcountry.trailassistant"
     compileSdk rootProject.ext.compileSdkVersion
     buildFeatures {
         buildConfig true
+    }
+    // Match Capacitor's Java 21 (capacitor.build.gradle compileOptions) so the
+    // Kotlin on-device Gemma engine and the Java plugin agree on bytecode target.
+    kotlinOptions {
+        jvmTarget = '21'
     }
     defaultConfig {
         applicationId "com.hoggcountry.trailassistant"
@@ -64,21 +70,15 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
 
-    // --- On-device Scout (Gemma) engine ---------------------------------------
-    // The ScoutGemma Capacitor plugin (src/main/java/.../scout/ScoutGemmaPlugin.java)
-    // talks to ScoutGemmaEngine. Until a real engine is wired, the bundled stub
-    // reports the model as unavailable and Gemma-only builds block chat rather
-    // than using a paid/cloud model. MediaPipeScoutGemmaEngine is already wired
-    // as a reflection-gated loader; uncomment ONE path below and configure a
-    // verified model before it can activate.
-    // See SCOUT_GEMMA_BRIDGE.md. No paid/cloud model APIs — inference is local.
-    //
-    // Path A (Maven-available today): MediaPipe LLM Inference, runs Gemma .task/.litertlm.
-    //   implementation "com.google.mediapipe:tasks-genai:0.10.24"
-    //   NOTE: this task may require bumping minSdkVersion to 24 (currently 23).
-    //
-    // Path B (forward path): LiteRT-LM direct Android artifact, once published.
-    //   See https://ai.google.dev/edge/litert-lm
+    // --- On-device Scout (Gemma 4) engine -------------------------------------
+    // LiteRT-LM: Google's cross-platform (Android/iOS/Web/Desktop) on-device LLM
+    // runtime. Runs Gemma 4 E2B/E4B .litertlm weights LOCALLY — no paid/cloud
+    // model APIs. LiteRtScoutGemmaEngine (Kotlin) talks to it; ScoutGemmaPlugin
+    // talks only to the ScoutGemmaEngine interface. The engine stays fail-closed
+    // (returns null from tryCreate -> UnavailableScoutGemmaEngine) until a
+    // checksum-verified model file is on the device, so chat is blocked rather
+    // than routed to a cloud model. See SCOUT_GEMMA_BRIDGE.md.
+    implementation "com.google.ai.edge.litertlm:litertlm-android:$litertlmVersion"
 }
 
 apply from: 'capacitor.build.gradle'

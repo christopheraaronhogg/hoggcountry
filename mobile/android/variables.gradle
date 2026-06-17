@@ -1,7 +1,13 @@
 ext {
-    minSdkVersion = 23
+    // minSdk 24: required by the LiteRT-LM on-device Gemma runtime
+    // (com.google.ai.edge.litertlm). Bumped from 23 when the engine was wired.
+    minSdkVersion = 24
     compileSdkVersion = 35
     targetSdkVersion = 35
+    // On-device Gemma 4 runtime (LiteRT-LM). Inference is local; no cloud model APIs.
+    // Kotlin must be >= 2.3 to read litertlm-android's 2.3.0 class metadata.
+    kotlinVersion = '2.3.21'
+    litertlmVersion = '0.13.1'
     androidxActivityVersion = '1.9.2'
     androidxAppCompatVersion = '1.7.0'
     androidxCoordinatorLayoutVersion = '1.2.0'

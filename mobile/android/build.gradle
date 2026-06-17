@@ -9,6 +9,10 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.7.2'
         classpath 'com.google.gms:google-services:4.4.2'
+        // Kotlin: the on-device Gemma engine (LiteRtScoutGemmaEngine) is Kotlin
+        // because the LiteRT-LM API is Kotlin-first. Keep in sync with
+        // variables.gradle kotlinVersion.
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.21'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

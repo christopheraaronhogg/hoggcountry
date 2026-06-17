@@ -24,14 +24,17 @@ Native side (`app/src/main/java/com/hoggcountry/trailassistant/scout/`):
 | `ScoutGemmaEngine.java` | The boundary. The only place allowed to know about a model runtime. |
 | `ScoutGemmaModelInfo.java` | Descriptor `{ tier, modelId, maxContextTokens }`, mirrors JS `GemmaModelDescriptor`. |
 | `ScoutModelStore.java` | App-private model file/status boundary for first-run download, size checks, and SHA-256 verification. |
-| `MediaPipeScoutGemmaEngine.java` | Reflection-gated local engine loader. It only activates when MediaPipe `tasks-genai` is on the classpath and the model store reports a checksum-verified model. |
+| `LiteRtScoutGemmaEngine.kt` | The real local engine, backed by LiteRT-LM (`com.google.ai.edge.litertlm`). Kotlin, because the LiteRT-LM API is Kotlin-first. Only activates when the model store reports a checksum-verified model; otherwise `tryCreate` returns `null`. |
 | `ScoutGemmaUnavailableException.java` | Thrown when the engine can't generate → mapped to a Capacitor reject. Never fabricate output. |
 
-Current default behavior still falls back to `UnavailableScoutGemmaEngine`, which
-reports `isAvailable() == false`, because the MediaPipe dependency is not enabled
-and no verified model is configured. Honest behavior: the app builds and runs,
-Gemma-only builds block chat until a model is installed, and nothing pretends a
-model is present.
+The LiteRT-LM dependency (`litertlm-android`, pinned in `variables.gradle`) is
+**enabled** — the runtime classes are on the classpath and the engine compiles
+and links for real. Current default *runtime* behavior still falls back to
+`UnavailableScoutGemmaEngine` (`isAvailable() == false`) because **no verified
+model file is configured** (`ScoutModelSpec` has no URL/checksum yet, so
+`ScoutModelStore` reports `unconfigured`). Honest behavior: the app builds and
+runs, Gemma-only builds block chat until a model is installed and verified, and
+nothing pretends a model is present.
 
 ### JS ⇄ native contract
 
@@ -47,78 +50,76 @@ prepareModelDownload() -> { modelId, state, canDownload, destinationPath, expect
 `isGemmaModelDescriptor` guard rejects descriptors with `available === false` or
 missing fields, so a stub descriptor never gets treated as a real model.
 
-## Making it real — the swap point
+## The remaining swap: configure a verified model
 
-`ScoutGemmaPlugin#createEngine()` now tries a local runtime first and falls back
+`ScoutGemmaPlugin#createEngine()` tries the LiteRT-LM engine first and falls back
 to the stub otherwise:
 
 ```java
 ScoutGemmaEngine createEngine() {
-    ScoutGemmaEngine engine = MediaPipeScoutGemmaEngine.tryCreate(getContext());
+    ScoutGemmaEngine engine = LiteRtScoutGemmaEngine.tryCreate(getContext());
     return engine != null ? engine : new UnavailableScoutGemmaEngine();
 }
 ```
 
-`MediaPipeScoutGemmaEngine.tryCreate(...)` locates the verified model file,
-reflectively initializes the MediaPipe LLM runtime, and returns `null` (not throw)
-if the dependency or model is missing, so the app degrades to the fallback instead
-of crashing.
+`LiteRtScoutGemmaEngine.tryCreate(...)` returns `null` (never throws) unless
+`ScoutModelStore` reports a checksum-verified model file on the device, so the app
+degrades to the fallback instead of crashing. The engine code is complete; the
+ONLY thing left to make it generate is to **configure and download a verified
+model** (see "Model — exact steps" below). The heavy `Engine.initialize()` runs
+lazily on the first `generate()`, and `ScoutGemmaPlugin` runs generation on a
+background executor.
 
 ### Known gaps to close before go-live
 
-Intentional in the skeleton, but address these when the engine actually activates:
+- **Per-call `maxTokens` is not plumbed.** `LiteRtScoutGemmaEngine.generate()`
+  uses the model's default decode limit; the `maxTokens` argument does not yet
+  reach LiteRT-LM and `truncated` is always `false`. Plumb a per-request cap via
+  `ConversationConfig` (or document the fixed cap) before relying on it.
+- **No streaming yet.** Generation uses the synchronous `sendMessage`; swap to
+  `sendMessageAsync(...) : Flow<Message>` to stream tokens into the UI.
+- **Engine not closed on plugin teardown.** Each call uses a fresh `Conversation`
+  (closed via `use {}`), but the long-lived `Engine` handle is only released when
+  the process dies. Close it in a plugin `handleOnDestroy` if engines are ever
+  recreated within a session.
+- **Backend is the LiteRT-LM default.** `EngineConfig` is constructed with just
+  `modelPath`; evaluate GPU/NPU (`Backend.GPU()`) vs CPU on real devices and pick
+  per device class before go-live.
 
-- **Per-call `maxTokens` is ignored.** The engine sets the token cap once at creation
-  (`setMaxTokens` = target `maxContextTokens`); the `maxTokens` passed to `generate()`
-  never reaches the runtime, and `truncated` is always `false`. Plumb per-request limits
-  (or document the fixed cap) before relying on it.
-- **Blocking generation / ANR risk.** `generateResponse(String)` is synchronous and can
-  take seconds; run it off the main thread (or use the async/streaming API) so the
-  Capacitor call can't trip an ANR.
-- **No runtime teardown.** The reflected `LlmInference` handle is never closed; release it
-  (it holds native resources) if engines are ever recreated.
+## Dependency — done
 
-## Dependency — exact steps
-
-Pick ONE path (both are local inference; neither calls a hosted model):
-
-### Path A — MediaPipe LLM Inference (Maven-available today, recommended first)
-
-In `app/build.gradle` (commented stub already present):
+Decided 2026-06-17: **LiteRT-LM**, unified across Android and (later) iOS. The
+"no Android Maven artifact" blocker is **resolved** — Google now publishes
+`com.google.ai.edge.litertlm:litertlm-android` (stable `0.13.1` at time of
+wiring). It is enabled in `app/build.gradle`, pinned via `litertlmVersion` in
+`variables.gradle`. Local inference only; no hosted model.
 
 ```gradle
-implementation "com.google.mediapipe:tasks-genai:0.10.24"
+implementation "com.google.ai.edge.litertlm:litertlm-android:$litertlmVersion"
 ```
 
-Engine sketch (API surface is version-dependent — verify against the installed
-version):
+API (Kotlin-first), as used in `LiteRtScoutGemmaEngine.kt`:
 
-```java
-import com.google.mediapipe.tasks.genai.llminference.LlmInference;
-import com.google.mediapipe.tasks.genai.llminference.LlmInference.LlmInferenceOptions;
+```kotlin
+import com.google.ai.edge.litertlm.Engine
+import com.google.ai.edge.litertlm.EngineConfig
 
-LlmInferenceOptions options = LlmInferenceOptions.builder()
-    .setModelPath(modelFile.getAbsolutePath())  // app-private file
-    .setMaxTokens(maxTokens)
-    .build();
-LlmInference llm = LlmInference.createFromOptions(context, options);
-String text = llm.generateResponse(systemContext + "\n\n" + prompt);
+val engine = Engine(EngineConfig(modelPath = modelFile.absolutePath))
+engine.initialize()                              // seconds — runs lazily/off-thread
+engine.createConversation().use { conversation ->
+    val text = conversation.sendMessage(input).text   // sync; or sendMessageAsync -> Flow<Message>
+}
+engine.close()
 ```
 
-Blocker to check: `tasks-genai` typically requires **minSdk 24**; this module is
-currently **23** (`variables.gradle`). Bump `minSdkVersion` to 24 when enabling.
+`minSdk` was bumped **23 → 24** (LiteRT-LM requirement) in `variables.gradle`.
+The same `.litertlm` model file and the same `ScoutGemmaEngine` contract are
+reused by the future iOS Swift plugin (LiteRT-LM Swift API), so the engine is
+written once conceptually and mirrored per platform — that is what "unified"
+means here.
 
-### Path B — LiteRT-LM direct (forward path)
-
-Google's cross-platform on-device LLM stack. Docs:
-- https://ai.google.dev/edge/litert-lm
-- https://ai.google.dev/edge/litert-lm/overview
-
-As of now there is no broadly-published stable Android Gradle artifact for direct
-app integration (distribution is mostly prebuilt binaries / C++). **This is the
-"package availability" blocker** noted up front. Until that artifact ships, use
-Path A (which itself runs on LiteRT under the hood). Re-evaluate when LiteRT-LM
-publishes an Android Maven artifact.
+Docs: https://developers.google.com/edge/litert-lm/android •
+https://developers.google.com/edge/litert-lm/models/gemma-4
 
 ## Model — exact steps
 
@@ -155,17 +156,20 @@ app must keep chat blocked in Gemma-only builds.
 
 ## Validation
 
-Skeleton (today, no model):
+Engine wired, no model yet (today):
 - `npm run check` in `mobile/` (svelte-check passes — JS contract intact).
 - `npm run build` in `mobile/`, then `npx cap sync android`.
-- Build the debug APK (`npm run android:debug-apk`) — confirms the Java plugin
-  compiles and registers.
+- Build the debug APK (`npm run android:debug-apk`) — confirms the Kotlin
+  LiteRT-LM engine + Java plugin compile and link against `litertlm-android`.
 - Runtime smoke on a device/emulator: open Scout, ask a question — it must answer
   with the Gemma-only blocked message, and `ScoutGemma.isAvailable()` returns
   `{ available: false, reason: ... }` (inspect via Chrome `chrome://inspect`
   webview console: `Capacitor.Plugins.ScoutGemma.isAvailable()`).
 
-After wiring a real engine:
+After configuring + downloading a verified model:
 - Re-run the above; `isAvailable()` now `true`, `describeModel()` returns the real
   descriptor, and a Scout answer is produced on-device with the network disabled.
 - Physical-device latency/first-load check per `docs/runbooks/play-store-submission.md`.
+- Run the Scout reliability harness in API mode against the on-device engine
+  (`docs/scout-reliability-runbook.md`) — an engine is not "supported" until it
+  passes the easy slice.

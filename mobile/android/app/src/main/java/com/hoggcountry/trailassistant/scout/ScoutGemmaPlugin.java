@@ -6,10 +6,16 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @CapacitorPlugin(name = "ScoutGemma")
 public class ScoutGemmaPlugin extends Plugin {
     private ScoutGemmaEngine engine;
     private ScoutModelStore modelStore;
+    // On-device generation (and the lazy first-call model load, which takes
+    // seconds) must run off the Capacitor thread or it risks an ANR.
+    private final ExecutorService inference = Executors.newSingleThreadExecutor();
 
     @Override
     public void load() {
@@ -55,15 +61,17 @@ public class ScoutGemmaPlugin extends Plugin {
         String systemContext = call.getString("systemContext", "");
         int maxTokens = call.getInt("maxTokens", 512);
 
-        try {
-            ScoutGemmaEngine.GenerateResult generated = getEngine().generate(prompt, systemContext, maxTokens);
-            JSObject result = new JSObject();
-            result.put("text", generated.text);
-            result.put("truncated", generated.truncated);
-            call.resolve(result);
-        } catch (ScoutGemmaUnavailableException exception) {
-            call.reject(exception.getMessage());
-        }
+        inference.execute(() -> {
+            try {
+                ScoutGemmaEngine.GenerateResult generated = getEngine().generate(prompt, systemContext, maxTokens);
+                JSObject result = new JSObject();
+                result.put("text", generated.text);
+                result.put("truncated", generated.truncated);
+                call.resolve(result);
+            } catch (ScoutGemmaUnavailableException exception) {
+                call.reject(exception.getMessage());
+            }
+        });
     }
 
     @PluginMethod
@@ -77,7 +85,7 @@ public class ScoutGemmaPlugin extends Plugin {
     }
 
     ScoutGemmaEngine createEngine() {
-        ScoutGemmaEngine onDevice = MediaPipeScoutGemmaEngine.tryCreate(getContext());
+        ScoutGemmaEngine onDevice = LiteRtScoutGemmaEngine.tryCreate(getContext());
         return onDevice != null ? onDevice : new UnavailableScoutGemmaEngine();
     }
 
