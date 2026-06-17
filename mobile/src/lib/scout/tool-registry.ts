@@ -23,6 +23,31 @@ function trailPackReceipt(title: string, miles?: { from: number; to?: number }):
 	};
 }
 
+function openWaterSafetyFlag(source: WaterReference): ToolInvocationRecord['safetyFlags'] {
+	if (source.reliability === 'reliable') return undefined;
+	return [
+		{
+			id: 'water-candidate-unverified',
+			severity: 'warn',
+			message: 'This is a mapped water candidate; reliability and potability are unknown until confirmed from a current source or in the field.'
+		}
+	];
+}
+
+function isOpenDataCandidate(text: string | undefined): boolean {
+	return Boolean(text?.toLowerCase().includes('open-data') || text?.toLowerCase().includes('mapped candidate'));
+}
+
+function openLogisticsSafetyFlag(kind: 'shelter' | 'town'): ToolInvocationRecord['safetyFlags'] {
+	return [
+		{
+			id: `${kind}-candidate-unverified`,
+			severity: 'info',
+			message: `${kind === 'shelter' ? 'Shelter' : 'Town'} entry is an open-data candidate; verify current status, access, services, fees, and rules before depending on it.`
+		}
+	];
+}
+
 function fieldGuideReceipt(excerptId: string, title: string, citation?: string): SourceReceipt {
 	return {
 		id: `field-guide:${excerptId}`,
@@ -92,40 +117,42 @@ interface SourceSearchArgs {
 
 const nextWaterTool: ToolHandler<NextWaterArgs> = {
 	id: 'next_water',
-	description: 'Return the next reliable water source ahead of the hiker.',
+	description: 'Return the next loaded water source or mapped candidate ahead of the hiker.',
 	run(args, ctx) {
 		const fromMile = args.fromMile ?? ctx.pack.hiker.currentMile;
 		const includeSeasonal = args.includeSeasonal ?? false;
-		const candidates = ctx.pack.water.filter(
+		const preferredCandidates = ctx.pack.water.filter(
 			(source) => includeSeasonal || source.reliability === 'reliable'
 		);
 
-		const next = nextOnTrail(candidates, fromMile);
+		const next = nextOnTrail(preferredCandidates, fromMile) ?? nextOnTrail(ctx.pack.water, fromMile);
 
 		if (!next) {
 			return {
 				toolId: 'next_water',
 				args: { ...args } as Record<string, unknown>,
-				summary: 'No reliable water source found in the loaded pack ahead of the hiker.',
+				summary: 'No water source or mapped water candidate found in the loaded pack ahead of the hiker.',
 				confidence: 'low',
 				receipts: [trailPackReceipt('Water reference')],
 				safetyFlags: [
 					{
 						id: 'water-gap',
 						severity: 'warn',
-						message: 'Loaded pack shows no reliable water ahead — confirm from a current source before relying on it.'
+						message: 'Loaded pack shows no water candidate ahead — confirm from a current source before relying on it.'
 					}
 				]
 			};
 		}
 
 		const distance = next.mile - fromMile;
+		const candidateOnly = next.reliability !== 'reliable';
 		return {
 			toolId: 'next_water',
 			args: { ...args } as Record<string, unknown>,
 			summary: `${next.name} at mile ${next.mile.toFixed(1)} (${distance.toFixed(1)} mi ahead, ${next.reliability}).${next.note ? ' ' + next.note : ''}`,
-			confidence: next.reliability === 'reliable' ? 'high' : 'medium',
-			receipts: [trailPackReceipt(`Water: ${next.name}`, { from: next.mile })]
+			confidence: next.reliability === 'reliable' ? 'high' : candidateOnly ? 'low' : 'medium',
+			receipts: [trailPackReceipt(`Water: ${next.name}`, { from: next.mile })],
+			safetyFlags: openWaterSafetyFlag(next)
 		};
 	}
 };
@@ -148,12 +175,14 @@ const nextShelterTool: ToolHandler<NextShelterArgs> = {
 		}
 
 		const distance = next.mile - fromMile;
+		const openCandidate = isOpenDataCandidate(next.note);
 		return {
 			toolId: 'next_shelter',
 			args: { ...args } as Record<string, unknown>,
 			summary: `${next.name} at mile ${next.mile.toFixed(1)} (${distance.toFixed(1)} mi ahead).${next.note ? ' ' + next.note : ''}`,
-			confidence: 'high',
-			receipts: [trailPackReceipt(`Shelter: ${next.name}`, { from: next.mile })]
+			confidence: openCandidate ? 'medium' : 'high',
+			receipts: [trailPackReceipt(`Shelter: ${next.name}`, { from: next.mile })],
+			safetyFlags: openCandidate ? openLogisticsSafetyFlag('shelter') : undefined
 		};
 	}
 };
@@ -176,12 +205,14 @@ const nextTownTool: ToolHandler<NextTownArgs> = {
 		}
 
 		const distance = next.mile - fromMile;
+		const openCandidate = isOpenDataCandidate(next.access) || isOpenDataCandidate(next.servicesNote);
 		return {
 			toolId: 'next_town',
 			args: { ...args } as Record<string, unknown>,
 			summary: `${next.name} at mile ${next.mile.toFixed(1)} (${distance.toFixed(1)} mi ahead via ${next.access}).${next.servicesNote ? ' ' + next.servicesNote : ''}`,
-			confidence: 'medium',
-			receipts: [trailPackReceipt(`Town: ${next.name}`, { from: next.mile })]
+			confidence: openCandidate ? 'low' : 'medium',
+			receipts: [trailPackReceipt(`Town: ${next.name}`, { from: next.mile })],
+			safetyFlags: openCandidate ? openLogisticsSafetyFlag('town') : undefined
 		};
 	}
 };

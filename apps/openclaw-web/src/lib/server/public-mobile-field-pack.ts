@@ -1,10 +1,17 @@
 import { loadScoutAtOpenReferenceOfflineSummary } from '$lib/server/at-open-reference';
-import { loadDadPilotSummary } from '$lib/server/dad';
+import { loadDadPilotSummary, type DadPilotSummary } from '$lib/server/dad';
+import { loadReferencePack } from '$lib/server/map-pack';
+import type { TrailMapWaypoint } from '$lib/map-pack-types';
 
 const TOTAL_AT_MILES = 2197.4;
 const PACK_VALID_MS = 6 * 60 * 60 * 1000;
 const PILOT_CURRENT_MILE = 582.4;
 const PILOT_GENERATED_AT = '2026-06-16T00:00:00.000Z';
+const TRAIL_AHEAD_MILES = 36;
+const TOWN_LOOKAHEAD_MILES = 80;
+const MAX_WATER_POINTS = 12;
+const MAX_SHELTERS = 8;
+const MAX_TOWNS = 6;
 
 type SourceKind = 'trail-pack' | 'field-guide' | 'official' | 'hiker-input' | 'cached-weather' | 'derived';
 
@@ -77,34 +84,202 @@ interface MobileContextPack {
   readonly generatedAt: string;
 }
 
+type MobileWaterReference = MobileContextPack['water'][number];
+type MobileShelterReference = MobileContextPack['shelters'][number];
+type MobileTownReference = MobileContextPack['towns'][number];
+
+interface TrailAheadSlice {
+  readonly startMile: number;
+  readonly endMile: number;
+  readonly water: readonly MobileWaterReference[];
+  readonly shelters: readonly MobileShelterReference[];
+  readonly towns: readonly MobileTownReference[];
+  readonly downloadedRegions: readonly string[];
+  readonly sourceReceipts: readonly MobileSourceReceipt[];
+}
+
 function validUntil(generatedAt: Date): string {
   return new Date(generatedAt.getTime() + PACK_VALID_MS).toISOString();
 }
 
-function previewNote(latestFixIsPreview: boolean): string {
-  return latestFixIsPreview
-    ? 'Dad location is currently a preview/cache signal; do not treat it as a live safety fix.'
-    : 'Dad location came from the public Garmin pilot summary; verify before safety-critical decisions.';
+function finiteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-function buildContextPack(now: Date): MobileContextPack {
+function roundMile(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function currentMileFromDad(dad: DadPilotSummary | null): number {
+  const latest = dad?.latestTrailLocation;
+  const nearest = finiteNumber(latest?.nearestMile);
+  const offTrail = finiteNumber(latest?.distanceToTrailMiles);
+
+  if (!dad?.latestFixIsPreview && nearest !== null && nearest > 10 && nearest < TOTAL_AT_MILES && (offTrail === null || offTrail <= 20)) {
+    return roundMile(nearest);
+  }
+
+  return PILOT_CURRENT_MILE;
+}
+
+function pilotNotice(dad: DadPilotSummary | null, trailAhead: TrailAheadSlice | null): string {
+  const locationNote = dad
+    ? dad.latestFixIsPreview
+      ? 'Dad location is currently a preview/cache signal; do not treat it as a live safety fix.'
+      : 'Dad location came from the public Garmin pilot summary; verify before safety-critical decisions.'
+    : 'Dad public pilot summary was not reachable; app is using the cached pilot anchor.';
+
+  const dataNote = trailAhead
+    ? 'Trail-ahead water, shelter, and town entries are generated from open-reference candidates; confirm current water, services, rules, and access before relying on them.'
+    : 'Trail-ahead open-reference slice was not reachable; app is using the compact cached pilot pack.';
+
+  return `${locationNote} ${dataNote}`;
+}
+
+function inWindow(startMile: number, endMile: number) {
+  return (point: TrailMapWaypoint) => point.mile >= startMile - 0.01 && point.mile <= endMile;
+}
+
+function statesFor(points: readonly TrailMapWaypoint[]): string {
+  const states = Array.from(new Set(points.map((point) => point.state).filter(Boolean)));
+  return states.length ? states.join('/') : 'AT corridor';
+}
+
+function distanceFromDetail(detail: string): number | null {
+  const match = detail.match(/(\d+(?:\.\d+)?) mi off trail/u);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : null;
+}
+
+function uniqueByName<T extends { readonly name: string; readonly mile: number }>(items: readonly T[]): T[] {
+  const seen = new Set<string>();
+  const result: T[] = [];
+
+  for (const item of items) {
+    const key = `${item.name.toLowerCase()}:${Math.round(item.mile)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+
+  return result;
+}
+
+function mapWater(point: TrailMapWaypoint): MobileWaterReference {
+  const detail = point.detail ? `${point.detail}. ` : '';
+  return {
+    name: point.name === 'Unnamed stream' ? 'Unnamed mapped stream' : point.name,
+    mile: roundMile(point.mile),
+    reliability: 'thin',
+    note: `${detail}Mapped water candidate from public hydrography; reliability and potability unknown. Confirm current flow before relying on it.`
+  };
+}
+
+function mapShelter(point: TrailMapWaypoint): MobileShelterReference {
+  const detail = point.detail ? `${point.detail}. ` : '';
+  return {
+    name: point.name,
+    mile: roundMile(point.mile),
+    note: `${detail}Open-data shelter candidate; verify current status, capacity, water, fees, and local rules.`
+  };
+}
+
+function mapTown(point: TrailMapWaypoint): MobileTownReference {
+  const detail = point.detail ? `${point.detail}` : `${point.state} corridor`;
+  return {
+    name: point.name,
+    mile: roundMile(point.mile),
+    access: `Open-data settlement candidate (${detail})`,
+    servicesNote: 'Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it.'
+  };
+}
+
+async function buildTrailAheadSlice(currentMile: number, now: Date): Promise<TrailAheadSlice | null> {
+  const reference = await loadReferencePack();
+  const endMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TRAIL_AHEAD_MILES));
+  const townEndMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TOWN_LOOKAHEAD_MILES));
+
+  const waterPoints = reference.waypoints.water
+    .filter(inWindow(currentMile, endMile))
+    .sort((a, b) => a.mile - b.mile)
+    .slice(0, MAX_WATER_POINTS);
+
+  const shelterPoints = reference.waypoints.shelters
+    .filter(inWindow(currentMile, townEndMile))
+    .sort((a, b) => a.mile - b.mile)
+    .slice(0, MAX_SHELTERS);
+
+  const townPoints = reference.waypoints.towns
+    .filter(inWindow(currentMile, townEndMile))
+    .filter((point) => {
+      const distance = distanceFromDetail(point.detail);
+      return distance === null || distance <= 8;
+    })
+    .sort((a, b) => a.mile - b.mile)
+    .slice(0, MAX_TOWNS);
+
+  const allPoints = [...waterPoints, ...shelterPoints, ...townPoints];
+  if (!allPoints.length) return null;
+
+  const states = statesFor(allPoints);
+
+  return {
+    startMile: roundMile(currentMile),
+    endMile,
+    water: uniqueByName(waterPoints.map(mapWater)),
+    shelters: uniqueByName(shelterPoints.map(mapShelter)),
+    towns: uniqueByName(townPoints.map(mapTown)),
+    downloadedRegions: [
+      `Dad trail-ahead ${roundMile(currentMile).toFixed(1)}-${endMile.toFixed(1)}`,
+      `AT open-reference candidates (${states})`
+    ],
+    sourceReceipts: [
+      {
+        id: 'trail-pack:open-reference-slice',
+        title: 'Scout AT open-reference trail-ahead slice',
+        kind: 'trail-pack',
+        citation: 'Scout full-trail open-reference pack, anchor-calibrated to AWOL 2026 frame',
+        generatedAt: now.toISOString(),
+        miles: { from: roundMile(currentMile), to: endMile }
+      },
+      {
+        id: 'derived:usgs-water-candidates',
+        title: 'Mapped water candidates',
+        kind: 'derived',
+        citation: 'USGS/NHD public hydrography; reliability and potability unknown',
+        miles: { from: roundMile(currentMile), to: endMile }
+      },
+      {
+        id: 'derived:osm-corridor-candidates',
+        title: 'Shelter and town candidates',
+        kind: 'derived',
+        citation: 'OpenStreetMap contributors, ODbL; mapped candidates, not confirmed logistics',
+        miles: { from: roundMile(currentMile), to: townEndMile }
+      }
+    ]
+  };
+}
+
+function buildContextPack(now: Date, dad: DadPilotSummary | null, trailAhead: TrailAheadSlice | null): MobileContextPack {
   const generatedAt = now.toISOString();
+  const currentMile = currentMileFromDad(dad);
 
   return {
     frame: {
       totalMiles: TOTAL_AT_MILES,
       startMile: 0,
       endMile: TOTAL_AT_MILES,
-      source: 'AWOL 2026 reference length + Hogg Country Dad pilot pack'
+      source: 'AWOL 2026 reference length + Hogg Country Dad pilot pack + Scout AT open-reference slice'
     },
     hiker: {
       trailName: 'Hogg',
-      currentMile: PILOT_CURRENT_MILE,
+      currentMile,
       direction: 'NOBO',
       dayNumber: 42,
       targetMilesToday: 13.8
     },
-    water: [
+    water: trailAhead?.water.length ? trailAhead.water : [
       {
         name: 'Lick Creek',
         mile: 586.6,
@@ -118,7 +293,7 @@ function buildContextPack(now: Date): MobileContextPack {
         note: 'Seasonal; use only as a bonus source after filling at Lick Creek.'
       }
     ],
-    shelters: [
+    shelters: trailAhead?.shelters.length ? trailAhead.shelters : [
       {
         name: 'Chestnut Knob Shelter',
         mile: 589.7,
@@ -132,7 +307,7 @@ function buildContextPack(now: Date): MobileContextPack {
         note: 'Backup shelter farther north; confirm crowding from recent hiker reports.'
       }
     ],
-    towns: [
+    towns: trailAhead?.towns.length ? trailAhead.towns : [
       {
         name: 'Bland, VA',
         mile: 596.0,
@@ -179,7 +354,7 @@ function buildContextPack(now: Date): MobileContextPack {
       { name: 'Anker 10k power bank', category: 'electronics', weightOz: 6.9, carried: true }
     ],
     weather: {
-      mile: PILOT_CURRENT_MILE,
+      mile: currentMile,
       summary: 'Cached pilot weather: cold ridge wind with dry afternoon skies',
       highF: 46,
       lowF: 28,
@@ -187,12 +362,12 @@ function buildContextPack(now: Date): MobileContextPack {
       riskNote: 'Weather in this pack is cached pilot context; refresh before exposed terrain.',
       generatedAt: PILOT_GENERATED_AT
     },
-    downloadedRegions: ['Dad pilot - Southern VA', 'AT open reference summary'],
+    downloadedRegions: trailAhead?.downloadedRegions.length ? trailAhead.downloadedRegions : ['Dad pilot - Southern VA', 'AT open reference summary'],
     generatedAt
   };
 }
 
-function sourceReceipts(now: Date): MobileSourceReceipt[] {
+function sourceReceipts(now: Date, contextPack: MobileContextPack, trailAhead: TrailAheadSlice | null): MobileSourceReceipt[] {
   return [
     {
       id: 'field-pack:dad-pilot',
@@ -200,8 +375,9 @@ function sourceReceipts(now: Date): MobileSourceReceipt[] {
       kind: 'trail-pack',
       citation: 'Hogg Country public Scout mobile bootstrap',
       generatedAt: now.toISOString(),
-      miles: { from: PILOT_CURRENT_MILE, to: 606.0 }
+      miles: { from: contextPack.hiker.currentMile, to: trailAhead?.endMile ?? 606.0 }
     },
+    ...(trailAhead?.sourceReceipts ?? []),
     {
       id: 'field-guide:water-discipline',
       title: 'Water discipline field-guide excerpt',
@@ -214,6 +390,12 @@ function sourceReceipts(now: Date): MobileSourceReceipt[] {
       kind: 'derived',
       citation: 'AWOL 2026 calibrated reference length',
       miles: { from: 0, to: TOTAL_AT_MILES }
+    },
+    {
+      id: 'derived:generated-mile-caveat',
+      title: 'Generated mile caveat',
+      kind: 'derived',
+      citation: 'Open-reference landmark miles are anchor-calibrated estimates; confirm exact guidebook mileage before safety-critical decisions.'
     }
   ];
 }
@@ -223,15 +405,16 @@ export async function buildPublicMobileFieldPack(now = new Date()) {
     loadDadPilotSummary().catch(() => null),
     loadScoutAtOpenReferenceOfflineSummary(now).catch(() => null)
   ]);
-  const contextPack = buildContextPack(now);
-  const receipts = sourceReceipts(now);
+  const trailAhead = await buildTrailAheadSlice(currentMileFromDad(dad), now).catch(() => null);
+  const contextPack = buildContextPack(now, dad, trailAhead);
+  const receipts = sourceReceipts(now, contextPack, trailAhead);
 
   return {
     data: {
       context_pack: contextPack,
       dad,
       at_reference: atReference,
-      pilot_notice: dad ? previewNote(dad.latestFixIsPreview) : 'Dad public pilot summary was not reachable; app is using the cached pilot pack.'
+      pilot_notice: pilotNotice(dad, trailAhead)
     },
     meta: {
       pack_version: 1,
