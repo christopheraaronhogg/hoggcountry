@@ -26,7 +26,7 @@ public final class UnavailableScoutGemmaEngine implements ScoutGemmaEngine {
     }
 
     @Override
-    public GenerateResult generate(String prompt, String systemContext, int maxTokens)
+    public GenerateResult generate(String prompt, String systemContext, int maxTokens, TokenSink sink)
             throws ScoutGemmaUnavailableException {
         throw new ScoutGemmaUnavailableException(
                 "On-device Gemma engine is not available in this build. Download and verify the Gemma 4 model file so the local LiteRT-LM runtime can load it.");

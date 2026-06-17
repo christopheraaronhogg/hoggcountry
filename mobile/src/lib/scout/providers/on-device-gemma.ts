@@ -2,7 +2,8 @@ import type {
 	ProviderCapabilities,
 	ProviderRequest,
 	ProviderResponse,
-	ScoutProvider
+	ScoutProvider,
+	TokenSink
 } from '../types.ts';
 
 export type GemmaTier = 'fast' | 'balanced' | 'small';
@@ -16,11 +17,14 @@ export interface GemmaModelDescriptor {
 export interface OnDeviceGemmaBridge {
 	isAvailable(): Promise<boolean>;
 	describeModel(): Promise<GemmaModelDescriptor | null>;
-	generate(input: {
-		prompt: string;
-		systemContext: string;
-		maxTokens: number;
-	}): Promise<{ text: string; truncated: boolean }>;
+	generate(
+		input: {
+			prompt: string;
+			systemContext: string;
+			maxTokens: number;
+		},
+		onToken?: (chunk: string) => void
+	): Promise<{ text: string; truncated: boolean }>;
 }
 
 export interface OnDeviceGemmaProviderOptions {
@@ -99,7 +103,7 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 		return this.cachedDescriptor;
 	}
 
-	async generate(request: ProviderRequest): Promise<ProviderResponse> {
+	async generate(request: ProviderRequest, onToken?: TokenSink): Promise<ProviderResponse> {
 		const ready = await this.available();
 		if (!ready || !this.bridge) {
 			throw new OnDeviceModelUnavailableError(
@@ -108,11 +112,10 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 		}
 
 		const systemContext = renderSystemContext(request);
-		const result = await this.bridge.generate({
-			prompt: request.prompt,
-			systemContext,
-			maxTokens: 512
-		});
+		const result = await this.bridge.generate(
+			{ prompt: request.prompt, systemContext, maxTokens: 512 },
+			onToken
+		);
 
 		return {
 			answer: result.text,

@@ -6,6 +6,9 @@ import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
+import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.MessageCallback
+import java.util.concurrent.CountDownLatch
 
 /**
  * On-device Gemma 4 engine backed by LiteRT-LM
@@ -41,7 +44,8 @@ class LiteRtScoutGemmaEngine private constructor(
     override fun generate(
         prompt: String,
         systemContext: String?,
-        maxTokens: Int
+        maxTokens: Int,
+        sink: ScoutGemmaEngine.TokenSink?
     ): ScoutGemmaEngine.GenerateResult {
         val input = if (systemContext.isNullOrEmpty()) prompt else "$systemContext\n\n$prompt"
         try {
@@ -49,23 +53,44 @@ class LiteRtScoutGemmaEngine private constructor(
             // A fresh conversation per call keeps turns independent and releases
             // native resources deterministically (Conversation is Closeable).
             active.createConversation().use { conversation ->
-                val message = conversation.sendMessage(input)
-                // A LiteRT-LM Message carries a list of Content parts; pull the
-                // text parts out and join them. Per-call maxTokens is not yet
-                // plumbed, so truncation can't be detected -> truncated is always
-                // false. See SCOUT_GEMMA_BRIDGE.md "Known gaps".
-                val parts = message.contents.contents
-                val text = parts.filterIsInstance<Content.Text>().joinToString("") { it.text }
+                val full = StringBuilder()
+                val failure = arrayOfNulls<Throwable>(1)
+                val done = CountDownLatch(1)
+                // Stream tokens as they are produced. onMessage delivers
+                // incremental Content parts; we forward each text chunk to the
+                // sink and accumulate the full answer to return.
+                conversation.sendMessageAsync(
+                    input,
+                    object : MessageCallback {
+                        override fun onMessage(message: Message) {
+                            val chunk = message.contents.contents
+                                .filterIsInstance<Content.Text>()
+                                .joinToString("") { it.text }
+                            if (chunk.isNotEmpty()) {
+                                full.append(chunk)
+                                sink?.onToken(chunk)
+                            }
+                        }
+
+                        override fun onDone() {
+                            done.countDown()
+                        }
+
+                        override fun onError(t: Throwable) {
+                            failure[0] = t
+                            done.countDown()
+                        }
+                    },
+                    emptyMap<String, Any>()
+                )
+                done.await()
+                failure[0]?.let { throw it }
+
+                val text = full.toString()
                 if (text.isBlank()) {
-                    // Diagnostic for on-device validation: the engine ran but
-                    // produced no Content.Text. Distinguishes "response shape
-                    // differs from expectation" from a real generation failure.
+                    // Diagnostic: engine ran but produced no Content.Text.
                     // `adb logcat -s ScoutGemma:*` surfaces this.
-                    Log.w(
-                        TAG,
-                        "Gemma produced no text parts (total parts=" + parts.size
-                            + ", types=" + parts.joinToString(",") { it.javaClass.simpleName } + ")"
-                    )
+                    Log.w(TAG, "Gemma stream produced no text parts")
                 }
                 return ScoutGemmaEngine.GenerateResult(text, false)
             }

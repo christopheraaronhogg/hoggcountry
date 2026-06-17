@@ -7,6 +7,7 @@ import type {
 	ScoutRuntime,
 	ScoutRuntimeOptions,
 	SourceReceipt,
+	TokenSink,
 	ToolInvocationRecord
 } from './types.ts';
 
@@ -17,7 +18,7 @@ export class DefaultScoutRuntime implements ScoutRuntime {
 		this.clock = options.clock ?? (() => new Date());
 	}
 
-	async ask(input: ScoutAskInput): Promise<ScoutAnswer> {
+	async ask(input: ScoutAskInput, onToken?: TokenSink): Promise<ScoutAnswer> {
 		const now = this.clock();
 		await this.options.store.load();
 		const pack = this.options.store.get();
@@ -33,15 +34,15 @@ export class DefaultScoutRuntime implements ScoutRuntime {
 
 		let providerResponse;
 		try {
-			providerResponse = await decision.provider.generate({
-				prompt: input.prompt,
-				pack,
-				toolInvocations,
-				now
-			});
+			providerResponse = await decision.provider.generate(
+				{ prompt: input.prompt, pack, toolInvocations, now },
+				onToken
+			);
 		} catch (error) {
 			const fallbackProvider = this.options.router.providers().find((p) => p.capabilities.id === 'deterministic-fallback');
 			if (!fallbackProvider) throw error;
+			// The fallback is instant; don't stream it (callers treat a streamed
+			// chunk as "started", and a mid-stream switch to fallback would look odd).
 			providerResponse = await fallbackProvider.generate({
 				prompt: input.prompt,
 				pack,

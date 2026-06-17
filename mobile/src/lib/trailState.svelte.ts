@@ -234,6 +234,10 @@ class TrailAssistantStore {
 	#modelStatus = $state<ScoutGemmaModelStatus | null>(null);
 	#modelDownload = $state<{ bytesDownloaded: number; totalBytes: number } | null>(null);
 	#modelError = $state<string | null>(null);
+	// True while a Scout reply is being generated (on-device inference can take
+	// many seconds), so the chat can show a "thinking" indicator instead of
+	// looking frozen.
+	#scoutThinking = $state(false);
 
 	constructor() {
 		if (!browser) return;
@@ -459,6 +463,11 @@ class TrailAssistantStore {
 		return this.#state.coachMessages;
 	}
 
+	/** True while Scout is generating a reply (drives the chat "thinking" indicator). */
+	get scoutThinking() {
+		return this.#scoutThinking;
+	}
+
 	get lastCheckIn() {
 		return this.#state.lastCheckIn;
 	}
@@ -609,6 +618,27 @@ class TrailAssistantStore {
 
 	async #dispatchScoutReply(prompt: string) {
 		const fallbackText = this.#coachReplyFor(prompt);
+		this.#scoutThinking = true;
+
+		// Stream tokens into a live-updating assistant bubble. The bubble is only
+		// created on the FIRST token, so the "thinking" dots show until words start
+		// arriving, then flip straight into the growing answer.
+		let streamingId: string | null = null;
+		const onToken = (chunk: string) => {
+			if (!chunk) return;
+			if (streamingId === null) {
+				const message = makeMessage('assistant', chunk);
+				streamingId = message.id;
+				this.#scoutThinking = false;
+				this.#state.coachMessages = [...this.#state.coachMessages, message];
+			} else {
+				const id = streamingId;
+				this.#state.coachMessages = this.#state.coachMessages.map((m) =>
+					m.id === id ? { ...m, content: m.content + chunk } : m
+				);
+			}
+		};
+
 		try {
 			if (!(await this.#gemmaReady())) {
 				const answer = this.#gemmaUnavailableAnswer();
@@ -619,19 +649,36 @@ class TrailAssistantStore {
 				return;
 			}
 
-			const answer = await this.#scout.runtime.ask({
-				prompt,
-				onlineStatus: this.#state.onlineStatus,
-				batterySaver: this.#state.trailSettings.batterySaver,
-				allowCloud: false,
-				preferredMode: REQUIRE_GEMMA ? 'on-device' : undefined
-			});
+			const answer = await this.#scout.runtime.ask(
+				{
+					prompt,
+					onlineStatus: this.#state.onlineStatus,
+					batterySaver: this.#state.trailSettings.batterySaver,
+					allowCloud: false,
+					preferredMode: REQUIRE_GEMMA ? 'on-device' : undefined
+				},
+				onToken
+			);
 			this.#lastScoutAnswer = answer;
-			const message = makeMessage('assistant', answer.answer);
-			this.#scoutAnswersByMessage.set(message.id, answer);
-			this.#state.coachMessages = [...this.#state.coachMessages, message];
+
+			if (streamingId !== null) {
+				// Finalize the streamed bubble: snap to the provider's full text and
+				// attach receipts/confidence so the source chips render.
+				const id = streamingId;
+				this.#scoutAnswersByMessage.set(id, answer);
+				this.#state.coachMessages = this.#state.coachMessages.map((m) =>
+					m.id === id ? { ...m, content: answer.answer } : m
+				);
+			} else {
+				// Provider didn't stream (e.g. deterministic fallback) — append result.
+				const message = makeMessage('assistant', answer.answer);
+				this.#scoutAnswersByMessage.set(message.id, answer);
+				this.#state.coachMessages = [...this.#state.coachMessages, message];
+			}
 		} catch {
 			this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', fallbackText)];
+		} finally {
+			this.#scoutThinking = false;
 		}
 	}
 

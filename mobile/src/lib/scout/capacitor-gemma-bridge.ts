@@ -45,10 +45,15 @@ type ScoutGemmaPlugin = {
 	prepareModelDownload?: () => Promise<ScoutGemmaModelStatus>;
 	startModelDownload?: () => Promise<ScoutGemmaModelStatus>;
 	cancelModelDownload?: () => Promise<{ cancelled: boolean }>;
-	addListener?: (
-		eventName: 'scoutModelDownloadProgress',
-		listener: (data: ModelDownloadProgress) => void
-	) => Promise<{ remove: () => Promise<void> }>;
+	addListener?: {
+		(
+			eventName: 'scoutModelDownloadProgress',
+			listener: (data: ModelDownloadProgress) => void
+		): Promise<{ remove: () => Promise<void> }>;
+		(eventName: 'scoutGenerateToken', listener: (data: { text: string }) => void): Promise<{
+			remove: () => Promise<void>;
+		}>;
+	};
 };
 
 export type ModelDownloadProgress = {
@@ -90,12 +95,20 @@ export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaB
 			if (!isGemmaModelDescriptor(descriptor)) return null;
 			return descriptor;
 		},
-		async generate(input) {
-			const result = await plugin.generate(input);
-			return {
-				text: result.text,
-				truncated: result.truncated ?? false
-			};
+		async generate(input, onToken) {
+			let handle: { remove: () => Promise<void> } | undefined;
+			if (onToken && plugin.addListener) {
+				handle = await plugin.addListener('scoutGenerateToken', (data) => onToken(data.text));
+			}
+			try {
+				const result = await plugin.generate(input);
+				return {
+					text: result.text,
+					truncated: result.truncated ?? false
+				};
+			} finally {
+				await handle?.remove();
+			}
 		}
 	};
 }

@@ -35,6 +35,7 @@
 
 	$effect(() => {
 		trailAssistant.coachMessages.length;
+		trailAssistant.scoutThinking;
 		scrollToBottom();
 	});
 
@@ -192,6 +193,19 @@
 					<span class="timestamp">{new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
 				</div>
 			{/each}
+
+			{#if trailAssistant.scoutThinking}
+				<div class="message assistant thinking">
+					<div class="message-head">
+						<span class="bot-mark" aria-hidden="true">S</span>
+						<strong>Scout</strong>
+					</div>
+					<p class="thinking-dots" role="status" aria-label="Scout is thinking">
+						<span></span><span></span><span></span>
+						<em>thinking on-device…</em>
+					</p>
+				</div>
+			{/if}
 		</div>
 
 		<div class="composer">
@@ -343,6 +357,45 @@
 	.message p {
 		font-size: 0.92rem;
 		line-height: 1.4;
+	}
+
+	.thinking-dots {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		margin: 4px 0 2px;
+	}
+	.thinking-dots span {
+		width: 7px;
+		height: 7px;
+		border-radius: 999px;
+		background: var(--forest);
+		opacity: 0.3;
+		animation: scoutDot 1s infinite ease-in-out;
+	}
+	.thinking-dots span:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+	.thinking-dots span:nth-child(3) {
+		animation-delay: 0.4s;
+	}
+	.thinking-dots em {
+		margin-left: 6px;
+		font-style: normal;
+		font-size: 0.8rem;
+		color: var(--muted);
+	}
+	@keyframes scoutDot {
+		0%,
+		60%,
+		100% {
+			opacity: 0.3;
+			transform: translateY(0);
+		}
+		30% {
+			opacity: 1;
+			transform: translateY(-2px);
+		}
 	}
 
 	.message-head {

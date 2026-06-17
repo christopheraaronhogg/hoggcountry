@@ -191,10 +191,13 @@ export interface ProviderResponse {
 	contextUsed: string[];
 }
 
+/** Receives incremental text chunks while a provider streams a response. */
+export type TokenSink = (chunk: string) => void;
+
 export interface ScoutProvider {
 	capabilities: ProviderCapabilities;
 	available(): boolean | Promise<boolean>;
-	generate(request: ProviderRequest): ProviderResponse | Promise<ProviderResponse>;
+	generate(request: ProviderRequest, onToken?: TokenSink): ProviderResponse | Promise<ProviderResponse>;
 }
 
 export interface RouterDecisionInput {
@@ -230,5 +233,5 @@ export interface ScoutAskInput {
 }
 
 export interface ScoutRuntime {
-	ask(input: ScoutAskInput): Promise<ScoutAnswer>;
+	ask(input: ScoutAskInput, onToken?: TokenSink): Promise<ScoutAnswer>;
 }

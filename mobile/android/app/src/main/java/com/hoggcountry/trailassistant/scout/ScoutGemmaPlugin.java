@@ -105,8 +105,31 @@ public class ScoutGemmaPlugin extends Plugin {
         int maxTokens = call.getInt("maxTokens", 512);
 
         inference.execute(() -> {
+            final StringBuilder buffer = new StringBuilder();
+            final long[] lastEmit = { 0L };
             try {
-                ScoutGemmaEngine.GenerateResult generated = getEngine().generate(prompt, systemContext, maxTokens);
+                // Stream to JS via the scoutGenerateToken event, COALESCED into
+                // ~60ms batches. One event per raw token floods the bridge
+                // (hundreds of crossings + UI re-renders for a single answer);
+                // batched updates still read as smooth live typing.
+                ScoutGemmaEngine.GenerateResult generated = getEngine().generate(
+                        prompt, systemContext, maxTokens,
+                        (chunk) -> {
+                            synchronized (buffer) {
+                                buffer.append(chunk);
+                                long now = System.currentTimeMillis();
+                                if (now - lastEmit[0] >= 60) {
+                                    emitToken(buffer.toString());
+                                    buffer.setLength(0);
+                                    lastEmit[0] = now;
+                                }
+                            }
+                        });
+                synchronized (buffer) {
+                    if (buffer.length() > 0) {
+                        emitToken(buffer.toString());
+                    }
+                }
                 JSObject result = new JSObject();
                 result.put("text", generated.text);
                 result.put("truncated", generated.truncated);
@@ -115,6 +138,12 @@ public class ScoutGemmaPlugin extends Plugin {
                 call.reject(exception.getMessage());
             }
         });
+    }
+
+    private void emitToken(String text) {
+        JSObject event = new JSObject();
+        event.put("text", text);
+        notifyListeners("scoutGenerateToken", event);
     }
 
     @PluginMethod

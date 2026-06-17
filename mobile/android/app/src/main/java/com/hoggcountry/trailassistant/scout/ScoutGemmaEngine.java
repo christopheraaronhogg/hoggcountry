@@ -26,13 +26,22 @@ public interface ScoutGemmaEngine {
     ScoutGemmaModelInfo describeModel();
 
     /**
-     * Runs a single on-device completion.
+     * Runs a single on-device completion, streaming incremental text to {@code sink}
+     * as it is produced and returning the full result when generation completes.
      *
+     * @param sink receives each incremental text chunk during generation; may be
+     *             {@code null} for a non-streaming call (the full text is still
+     *             returned). Implementations must tolerate a null sink.
      * @throws ScoutGemmaUnavailableException when the engine cannot generate.
      *         Implementations must never return fabricated text.
      */
-    GenerateResult generate(String prompt, String systemContext, int maxTokens)
+    GenerateResult generate(String prompt, String systemContext, int maxTokens, TokenSink sink)
             throws ScoutGemmaUnavailableException;
+
+    /** Receives incremental text chunks as the engine streams a response. */
+    interface TokenSink {
+        void onToken(String chunk);
+    }
 
     /**
      * Releases any native resources held by this engine instance.
