@@ -1,8 +1,18 @@
 import type { GemmaModelDescriptor, OnDeviceGemmaBridge } from './providers/on-device-gemma.ts';
 
+type ScoutGemmaAvailability = {
+	available: boolean;
+	modelId?: string;
+	reason?: string;
+};
+
+type ScoutGemmaDescriptor = GemmaModelDescriptor & {
+	available?: boolean;
+};
+
 type ScoutGemmaPlugin = {
-	isAvailable(): Promise<{ available: boolean }>;
-	describeModel(): Promise<GemmaModelDescriptor | null>;
+	isAvailable(): Promise<ScoutGemmaAvailability>;
+	describeModel(): Promise<ScoutGemmaDescriptor | ScoutGemmaAvailability | null>;
 	generate(input: {
 		prompt: string;
 		systemContext: string;
@@ -32,7 +42,9 @@ export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaB
 			return result.available;
 		},
 		async describeModel() {
-			return plugin.describeModel();
+			const descriptor = await plugin.describeModel();
+			if (!isGemmaModelDescriptor(descriptor)) return null;
+			return descriptor;
 		},
 		async generate(input) {
 			const result = await plugin.generate(input);
@@ -42,4 +54,18 @@ export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaB
 			};
 		}
 	};
+}
+
+function isGemmaModelDescriptor(
+	descriptor: ScoutGemmaDescriptor | ScoutGemmaAvailability | null
+): descriptor is GemmaModelDescriptor {
+	return Boolean(
+		descriptor &&
+			descriptor.available !== false &&
+			'maxContextTokens' in descriptor &&
+			'tier' in descriptor &&
+			typeof descriptor.modelId === 'string' &&
+			typeof descriptor.maxContextTokens === 'number' &&
+			(descriptor.tier === 'fast' || descriptor.tier === 'balanced' || descriptor.tier === 'small')
+	);
 }

@@ -1,0 +1,34 @@
+package com.hoggcountry.trailassistant.scout;
+
+/**
+ * Default engine used until a real LiteRT-LM engine is wired in.
+ *
+ * It honestly reports the model as unavailable and never fabricates output, so
+ * Gemma-only Play builds block chat instead of silently using a paid/cloud model.
+ * describeModel() still returns the target descriptor so UI/telemetry can show
+ * what model this build is built around.
+ *
+ * To make Scout run on-device, replace this with a LiteRTScoutGemmaEngine and
+ * return it from ScoutGemmaPlugin.createEngine().
+ */
+public final class UnavailableScoutGemmaEngine implements ScoutGemmaEngine {
+    static final ScoutGemmaModelInfo TARGET_MODEL =
+            new ScoutGemmaModelInfo("balanced", "gemma-4-E2B-it-litert-lm", 4096);
+
+    @Override
+    public boolean isAvailable() {
+        return false;
+    }
+
+    @Override
+    public ScoutGemmaModelInfo describeModel() {
+        return TARGET_MODEL;
+    }
+
+    @Override
+    public GenerateResult generate(String prompt, String systemContext, int maxTokens)
+            throws ScoutGemmaUnavailableException {
+        throw new ScoutGemmaUnavailableException(
+                "On-device Gemma engine is not wired in this build. Download the LiteRT-LM model and provide a LiteRTScoutGemmaEngine.");
+    }
+}

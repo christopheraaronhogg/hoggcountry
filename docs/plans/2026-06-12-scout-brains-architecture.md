@@ -20,7 +20,7 @@ Gemma 4 (released 2026-04-02, Apache 2.0) ships edge variants built for this:
 
 | Model | RAM needed | Runs on | Notes |
 |-------|-----------|---------|-------|
-| E2B (~2.3B eff.) | ~1.5 GB | any Android 12+ w/ 3GB+ RAM (most phones since 2020) | default |
+| E2B (~2.3B eff.) | ~2.5 GB model package | Android 12+ w/ enough free storage and RAM for LiteRT-LM | default |
 | E4B (~4.5B eff.) | ~4 GB | 6GB+ devices (Pixel 6+, S21+, 2022+ mid-flagships) | "high" option |
 
 Both: text + vision + native audio input, 128K context, and **function
@@ -28,9 +28,10 @@ calling** — which is what makes offline loadout updates and plan edits work
 (the model calls the same tools, executed locally against the encrypted store).
 
 Runtimes for the Capacitor app:
-- **Android:** LiteRT-LM embedded in the APK (self-contained) or AICore /
-  MediaPipe AI Tasks (Play-services-managed download). Prefer LiteRT-LM for
-  guaranteed offline behavior on trail.
+- **Android:** LiteRT-LM with a first-run/on-demand model download. Gemma 4 E2B
+  is too large for the base Play app bundle, so do not plan to embed it directly
+  in the APK/AAB. Prefer LiteRT-LM for guaranteed offline behavior after the
+  model is downloaded before trail use.
 - **iOS:** official Google iOS path still maturing; llama.cpp (GGUF) via a
   native Capacitor plugin is the proven route today; revisit Core ML/MLX
   conversions as they land.

@@ -8,6 +8,7 @@
 - Android target SDK: `35`
 - Release artifact: `mobile/android/app/build/outputs/bundle/release/app-release.aab`
 - Model policy: Gemma 4 on-device only. No cloud/API model routing in Play release builds.
+- Target SDK note: bump compile/target SDK to API 36 before the August 31, 2026 Play requirement.
 
 ## Build
 
@@ -32,7 +33,8 @@ Do not commit keystores, passwords, Play Console exports, or private signing mat
 ## Required Before Production Submission
 
 - Wire the native Android Gemma 4 engine through the `ScoutGemma` Capacitor plugin bridge.
-- Bundle or download the approved Gemma 4 E2B/E4B LiteRT-LM model under a Play-compliant delivery strategy.
+- Download the approved Gemma 4 E2B/E4B LiteRT-LM model on first run or on demand. The current E2B LiteRT-LM package is roughly 2.5 GB, so it is too large to ship inside the base app bundle or a normal Play asset-pack lane.
+- Add model download progress, resumable download, storage/RAM precheck, checksum verification, and a clear offline-ready state.
 - Run a physical Android smoke test for first launch, field-pack refresh, offline reopen, and Scout answer latency.
 - Capture phone screenshots for the Play listing.
 - Finalize privacy policy text that says Scout uses on-device AI for chat and contacts Hogg Country only for field-pack/data refresh and user-initiated trail reports.
