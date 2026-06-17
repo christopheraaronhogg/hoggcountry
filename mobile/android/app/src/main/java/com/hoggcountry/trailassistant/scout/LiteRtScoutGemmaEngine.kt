@@ -54,9 +54,19 @@ class LiteRtScoutGemmaEngine private constructor(
                 // text parts out and join them. Per-call maxTokens is not yet
                 // plumbed, so truncation can't be detected -> truncated is always
                 // false. See SCOUT_GEMMA_BRIDGE.md "Known gaps".
-                val text = message.contents.contents
-                    .filterIsInstance<Content.Text>()
-                    .joinToString("") { it.text }
+                val parts = message.contents.contents
+                val text = parts.filterIsInstance<Content.Text>().joinToString("") { it.text }
+                if (text.isBlank()) {
+                    // Diagnostic for on-device validation: the engine ran but
+                    // produced no Content.Text. Distinguishes "response shape
+                    // differs from expectation" from a real generation failure.
+                    // `adb logcat -s ScoutGemma:*` surfaces this.
+                    Log.w(
+                        TAG,
+                        "Gemma produced no text parts (total parts=" + parts.size
+                            + ", types=" + parts.joinToString(",") { it.javaClass.simpleName } + ")"
+                    )
+                }
                 return ScoutGemmaEngine.GenerateResult(text, false)
             }
         } catch (failure: Throwable) {
@@ -91,8 +101,10 @@ class LiteRtScoutGemmaEngine private constructor(
             maxNumImages = null,
             cacheDir = cacheDir
         )
+        Log.i(TAG, "Initializing LiteRT-LM engine from $modelPath (this can take seconds)")
         val created = Engine(config)
         created.initialize()
+        Log.i(TAG, "LiteRT-LM engine initialized")
         engine = created
         return created
     }
