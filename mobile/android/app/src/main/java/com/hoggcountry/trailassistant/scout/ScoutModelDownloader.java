@@ -40,6 +40,7 @@ public final class ScoutModelDownloader {
     private static final long FREE_SPACE_MARGIN_BYTES = 64L << 20; // 64 MB headroom
     private static final int CONNECT_TIMEOUT_MS = 30_000;
     private static final int READ_TIMEOUT_MS = 60_000;
+    private static final int MAX_REDIRECTS = 5;
 
     /** Reports cumulative progress; totalBytes is -1 when the size is unknown. */
     public interface ProgressListener {
@@ -123,16 +124,45 @@ public final class ScoutModelDownloader {
         }
     }
 
-    private HttpURLConnection open(String url, long resumeFrom) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setInstanceFollowRedirects(true);
-        connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
-        connection.setReadTimeout(READ_TIMEOUT_MS);
-        if (resumeFrom > 0L) {
-            connection.setRequestProperty("Range", "bytes=" + resumeFrom + "-");
+    /**
+     * Opens the URL, following redirects manually so the {@code Range} header is
+     * re-applied on every hop. This matters because the model is served from a
+     * CDN that 302-redirects to a signed URL (e.g. Hugging Face -> Xet/CAS);
+     * {@link HttpURLConnection}'s automatic redirect does not reliably carry
+     * request headers, which would silently break resume on a multi-GB download.
+     */
+    private HttpURLConnection open(String url, long resumeFrom)
+            throws IOException, ScoutModelDownloadException {
+        String current = url;
+        for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
+            HttpURLConnection connection = (HttpURLConnection) new URL(current).openConnection();
+            connection.setInstanceFollowRedirects(false);
+            connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            connection.setReadTimeout(READ_TIMEOUT_MS);
+            if (resumeFrom > 0L) {
+                connection.setRequestProperty("Range", "bytes=" + resumeFrom + "-");
+            }
+            connection.connect();
+
+            int code = connection.getResponseCode();
+            if (code == HttpURLConnection.HTTP_MOVED_PERM
+                    || code == HttpURLConnection.HTTP_MOVED_TEMP
+                    || code == HttpURLConnection.HTTP_SEE_OTHER
+                    || code == 307
+                    || code == 308) {
+                String location = connection.getHeaderField("Location");
+                connection.disconnect();
+                if (location == null || location.isEmpty()) {
+                    throw new ScoutModelDownloadException(
+                            "Model download redirect was missing a Location header.");
+                }
+                current = new URL(new URL(current), location).toString();
+                continue;
+            }
+            return connection;
         }
-        connection.connect();
-        return connection;
+        throw new ScoutModelDownloadException(
+                "Too many redirects while fetching the model from " + url + ".");
     }
 
     private long resolveTotal(HttpURLConnection connection, long expected, long offset) {

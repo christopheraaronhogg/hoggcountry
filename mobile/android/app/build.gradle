@@ -18,9 +18,17 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "0.1.0"
-        buildConfigField "String", "SCOUT_GEMMA_MODEL_URL", "\"${System.getenv("SCOUT_GEMMA_MODEL_URL") ?: ""}\""
-        buildConfigField "String", "SCOUT_GEMMA_MODEL_SHA256", "\"${System.getenv("SCOUT_GEMMA_MODEL_SHA256") ?: ""}\""
-        buildConfigField "long", "SCOUT_GEMMA_MODEL_BYTES", "${System.getenv("SCOUT_GEMMA_MODEL_BYTES") ?: "0"}L"
+        // On-device Gemma 4 model source. Public, ungated, Apache-2.0 LiteRT-LM
+        // weights served from the Hugging Face CDN (Range/resume supported).
+        // Pinned SHA-256 + byte size are verified before the file is ever loaded.
+        // Non-secret — safe to commit. Swap the URL to Forge/R2 later without
+        // changing the checksum (same file). Env vars still override at build time.
+        def defaultModelUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm"
+        def defaultModelSha = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"
+        def defaultModelBytes = "2588147712"
+        buildConfigField "String", "SCOUT_GEMMA_MODEL_URL", "\"${System.getenv("SCOUT_GEMMA_MODEL_URL") ?: defaultModelUrl}\""
+        buildConfigField "String", "SCOUT_GEMMA_MODEL_SHA256", "\"${System.getenv("SCOUT_GEMMA_MODEL_SHA256") ?: defaultModelSha}\""
+        buildConfigField "long", "SCOUT_GEMMA_MODEL_BYTES", "${System.getenv("SCOUT_GEMMA_MODEL_BYTES") ?: defaultModelBytes}L"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

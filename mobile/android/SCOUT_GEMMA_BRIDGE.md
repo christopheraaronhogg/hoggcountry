@@ -121,38 +121,29 @@ means here.
 Docs: https://developers.google.com/edge/litert-lm/android •
 https://developers.google.com/edge/litert-lm/models/gemma-4
 
-## Model — exact steps
+## Model — configured (pilot)
 
-- Target: Gemma 4 E2B / E4B class, int4-quantized, in `.litertlm` or another
-  Android runtime-compatible format.
-- Source: official Gemma / LiteRT model pages (Hugging Face `google/...`, Kaggle),
-  gated by Gemma license acceptance. Docs:
-  https://ai.google.dev/gemma/docs/core • https://ai.google.dev/gemma/docs/releases
-- Do **not** commit model weights to the repo (size + license).
+**Pinned, as of 2026-06-17.** The build defaults (in `app/build.gradle`
+`defaultConfig`) point at the public, ungated, Apache-2.0 LiteRT-LM weights:
 
-Delivery (the E2B LiteRT-LM model package is roughly 2.5 GB, too large for the base AAB):
+- Model: Gemma 4 E2B (`litert-community/gemma-4-E2B-it-litert-lm`).
+- URL: `https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm`
+- Bytes: `2588147712` (~2.59 GB). SHA-256: `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c`
+  (verified by streaming the full file through `shasum`).
+- Apache-2.0 → re-hosting is allowed. **Swap the URL to Forge/R2 later without
+  changing the checksum** (same bytes → same hash). Env vars
+  (`SCOUT_GEMMA_MODEL_URL/SHA256/BYTES`) still override the build defaults.
+- Do **not** commit the weights file to the repo (2.6 GB).
 
-1. **First-run download** to `context.getFilesDir()` over Wi-Fi, with a progress
-   UI and resumable download. Simplest; keeps the AAB small. Downloading a model
-   file is not "cloud model usage" — inference still runs on-device.
-2. **Do not rely on Play Asset Delivery for the E2B file** unless the final model
-   packaging proves it fits Play's asset-pack constraints. Treat first-run
-   download as the current plan.
+Delivery: **first-run download** to `context.getFilesDir()` over Wi-Fi via
+`ScoutModelDownloader` (resumable, storage-precheck, cancellable, SHA-256
+verified), surfaced by the "On-device AI · Gemma 4" card in `AccountTab.svelte`.
+Downloading the file is not "cloud model usage" — inference runs on-device. Do
+not rely on Play Asset Delivery for a 2.6 GB file.
 
-Update `ScoutGemmaModelInfo` (`tier`, `modelId`, real `maxContextTokens`) and the
-plugin's `modelId` strings to match the chosen file once finalized.
-
-Configure a real model package at build time with:
-
-```sh
-export SCOUT_GEMMA_MODEL_URL=https://...
-export SCOUT_GEMMA_MODEL_SHA256=...
-export SCOUT_GEMMA_MODEL_BYTES=2583000000
-```
-
-Without those values, `ScoutGemma.getModelStatus()` returns `state:
-"unconfigured"` and `prepareModelDownload()` returns `canDownload: false`; the
-app must keep chat blocked in Gemma-only builds.
+If the URL/checksum are ever cleared, `ScoutGemma.getModelStatus()` returns
+`state: "unconfigured"`, `prepareModelDownload()` returns `canDownload: false`,
+and Gemma-only builds keep chat blocked — fail-closed.
 
 ## Validation
 
