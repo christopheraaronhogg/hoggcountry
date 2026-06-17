@@ -17,17 +17,19 @@ export type ScoutGemmaModelStatus = {
 	state:
 		| 'unconfigured'
 		| 'needs_download'
-		| 'invalid_size'
-		| 'invalid_checksum'
-		| 'verification_failed'
-		| 'downloaded_unverified'
+		| 'present_unverified'
 		| 'ready';
 	downloadConfigured: boolean;
 	checksumConfigured: boolean;
 	expectedBytes: number;
 	bytesOnDevice: number;
+	exists?: boolean;
+	canDownload?: boolean;
+	destinationPath?: string;
+	checksumAlgorithm?: string;
 	reason?: string;
-	actualSha256?: string;
+	url?: string;
+	expectedChecksum?: string;
 };
 
 type ScoutGemmaPlugin = {

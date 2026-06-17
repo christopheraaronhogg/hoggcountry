@@ -38,7 +38,7 @@ isAvailable()  -> { available: boolean, modelId?, reason? }
 describeModel() -> { tier, modelId, maxContextTokens, available? } | {}
 generate({ prompt, systemContext, maxTokens }) -> { text, truncated }
 getModelStatus() -> { modelId, state, downloadConfigured, checksumConfigured, expectedBytes, bytesOnDevice, reason? }
-prepareModelDownload() -> same status shape after creating the app-private model directory
+prepareModelDownload() -> { modelId, state, canDownload, destinationPath, expectedBytes, checksumConfigured, reason? }
 ```
 
 `tier` must be one of `fast` | `balanced` | `small`. The JS bridge's
@@ -133,7 +133,8 @@ export SCOUT_GEMMA_MODEL_BYTES=2583000000
 ```
 
 Without those values, `ScoutGemma.getModelStatus()` returns `state:
-"unconfigured"` and the app must keep chat blocked in Gemma-only builds.
+"unconfigured"` and `prepareModelDownload()` returns `canDownload: false`; the
+app must keep chat blocked in Gemma-only builds.
 
 ## Validation
 
