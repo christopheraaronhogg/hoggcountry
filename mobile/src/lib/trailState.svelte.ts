@@ -214,6 +214,9 @@ const defaultState: TrailState = {
 
 type PersistedState = TrailState;
 
+/** A write-action Scout proposes from chat, rendered as a confirm card. */
+type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
+
 class TrailAssistantStore {
 	#state = $state<TrailState>(defaultState);
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -238,6 +241,11 @@ class TrailAssistantStore {
 	// many seconds), so the chat can show a "thinking" indicator instead of
 	// looking frozen.
 	#scoutThinking = $state(false);
+	// A write-action Scout proposed from chat, awaiting explicit user confirm.
+	// Scout NEVER mutates trail state without the user confirming this card —
+	// the confirm-before-apply gate for "Do" tools.
+	#pendingAction = $state<ProposedAction | null>(null);
+	#pendingApply: (() => void) | null = null;
 
 	constructor() {
 		if (!browser) return;
@@ -468,6 +476,11 @@ class TrailAssistantStore {
 		return this.#scoutThinking;
 	}
 
+	/** A write-action Scout proposed, awaiting the user's Confirm/Cancel (or null). */
+	get pendingAction() {
+		return this.#pendingAction;
+	}
+
 	get lastCheckIn() {
 		return this.#state.lastCheckIn;
 	}
@@ -613,7 +626,83 @@ class TrailAssistantStore {
 		if (!trimmed) return;
 
 		this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('user', trimmed)];
+
+		// "Do" tools: if the message is a write-action intent, Scout PROPOSES the
+		// action (a confirm card) instead of just chatting. Nothing is written
+		// until the user confirms. Falls through to a normal reply otherwise.
+		const proposal = this.#detectActionIntent(trimmed);
+		if (proposal) {
+			this.#pendingAction = proposal.display;
+			this.#pendingApply = proposal.apply;
+			this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', proposal.prompt)];
+			return;
+		}
+
 		void this.#dispatchScoutReply(trimmed);
+	}
+
+	/**
+	 * Detects a write-action intent in a chat message and returns a proposed
+	 * action (display + apply closure + a prompt line), or null for plain chat.
+	 * The first "Do" tool is logging a check-in; loadout edits follow the same
+	 * shape. Apply is never run here — only on explicit confirm.
+	 */
+	#detectActionIntent(
+		text: string
+	): { display: ProposedAction; apply: () => void; prompt: string } | null {
+		const lower = text.toLowerCase();
+		let status: CheckInStatus | null = null;
+		if (/\b(need help|need-help|emergency|injured|hurt|sos|rescue|bailing)\b/.test(lower)) {
+			status = 'need-help';
+		} else if (/\b(delayed|behind schedule|running late|short day|taking it slow|slowing down|resting up)\b/.test(lower)) {
+			status = 'delayed';
+		} else if (/\b(check ?in|checking in|i'?m safe|im safe|log me safe|all good|made camp|safe and sound)\b/.test(lower)) {
+			status = 'safe';
+		}
+		if (!status) return null;
+
+		const labels: Record<CheckInStatus, string> = {
+			safe: 'Safe',
+			delayed: 'Delayed',
+			'need-help': 'Need help'
+		};
+		const confirmed = status;
+		const mile = this.#state.currentMile;
+		return {
+			display: {
+				id: crypto.randomUUID(),
+				title: `Log a "${labels[confirmed]}" check-in`,
+				detail: `Mile ${mile.toFixed(1)} · "${text}"`,
+				confirmLabel: 'Log check-in'
+			},
+			apply: () => this.performCheckIn(confirmed, text),
+			prompt: `Want me to log a "${labels[confirmed]}" check-in at mile ${mile.toFixed(1)}? I won't record anything until you confirm below.`
+		};
+	}
+
+	/** Apply the pending Scout-proposed action (called from the confirm card). */
+	confirmPendingAction() {
+		const action = this.#pendingAction;
+		const apply = this.#pendingApply;
+		this.#pendingAction = null;
+		this.#pendingApply = null;
+		if (!action || !apply) return;
+		apply();
+		this.#state.coachMessages = [
+			...this.#state.coachMessages,
+			makeMessage('assistant', `Done — ${action.title.toLowerCase()} recorded. ✓`)
+		];
+	}
+
+	/** Discard the pending Scout-proposed action without applying it. */
+	cancelPendingAction() {
+		if (!this.#pendingAction) return;
+		this.#pendingAction = null;
+		this.#pendingApply = null;
+		this.#state.coachMessages = [
+			...this.#state.coachMessages,
+			makeMessage('assistant', `No problem — I didn't record anything.`)
+		];
 	}
 
 	async #dispatchScoutReply(prompt: string) {

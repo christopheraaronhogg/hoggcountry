@@ -36,6 +36,7 @@
 	$effect(() => {
 		trailAssistant.coachMessages.length;
 		trailAssistant.scoutThinking;
+		trailAssistant.pendingAction;
 		scrollToBottom();
 	});
 
@@ -207,6 +208,22 @@
 				</div>
 			{/if}
 		</div>
+
+		{#if trailAssistant.pendingAction}
+			<div class="action-card" role="group" aria-label="Confirm Scout action">
+				<div class="action-info">
+					<span class="action-eyebrow">⚙︎ Scout wants to update your trail log</span>
+					<strong>{trailAssistant.pendingAction.title}</strong>
+					<span class="action-detail">{trailAssistant.pendingAction.detail}</span>
+				</div>
+				<div class="action-buttons">
+					<button class="action-cancel" onclick={() => trailAssistant.cancelPendingAction()}>Cancel</button>
+					<button class="action-confirm" onclick={() => trailAssistant.confirmPendingAction()}>
+						{trailAssistant.pendingAction.confirmLabel}
+					</button>
+				</div>
+			</div>
+		{/if}
 
 		<div class="composer">
 			<textarea
@@ -396,6 +413,58 @@
 			opacity: 1;
 			transform: translateY(-2px);
 		}
+	}
+
+	.action-card {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		margin: 8px 0;
+		padding: 12px 14px;
+		border-radius: 13px;
+		border: 1px solid var(--forest);
+		background: color-mix(in srgb, var(--forest) 8%, var(--surface));
+	}
+	.action-info {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.action-eyebrow {
+		font-size: 0.68rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--forest);
+	}
+	.action-info strong {
+		font-size: 0.95rem;
+	}
+	.action-detail {
+		font-size: 0.82rem;
+		color: var(--muted);
+	}
+	.action-buttons {
+		display: grid;
+		grid-template-columns: 1fr 1.4fr;
+		gap: 8px;
+	}
+	.action-cancel,
+	.action-confirm {
+		min-height: 40px;
+		border-radius: 11px;
+		font-weight: 800;
+		font-size: 0.88rem;
+	}
+	.action-cancel {
+		background: transparent;
+		border: 1px solid var(--line);
+		color: var(--ink);
+	}
+	.action-confirm {
+		background: linear-gradient(135deg, var(--forest), var(--moss));
+		color: #f7f2e8;
+		border: none;
 	}
 
 	.message-head {
