@@ -91,8 +91,8 @@
 		<h3>Stop pacing rules</h3>
 		<ul>
 			<li>Foot care + calorie debt before laundry.</li>
-			<li>Resupply by 15:30 — Bland PO closes at 16:30.</li>
-			<li>Hostel decision before 17:00 so dinner is locked.</li>
+			<li>Do not count on services until a current source confirms them.</li>
+			<li>Lodging, fuel, and food are candidate-only in this pilot pack.</li>
 			<li>Recovery > making up miles.</li>
 		</ul>
 		<div class="protocol-sources">

@@ -64,7 +64,7 @@
 		position: sticky;
 		top: 0;
 		z-index: 20;
-		padding: 12px 14px 14px;
+		padding: max(12px, calc(env(safe-area-inset-top, 0px) + 10px)) 14px 14px;
 		display: grid;
 		gap: 10px;
 		background:

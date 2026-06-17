@@ -3,180 +3,173 @@ import type { ItineraryDay, TownSnapshot, UpcomingStop, WaterSource, WeatherSnap
 export const quickPrompts = [
 	'Can I push mileage today?',
 	'What is the next reliable water?',
-	'Should I keep Bland as my town stop?',
+	'What needs verifying before the next town?',
 	'Give me the safest next move.'
 ];
 
 export const weatherSnapshot: WeatherSnapshot = {
-	highF: 46,
-	lowF: 28,
-	windMph: 17,
-	summary: 'Cold ridge wind with dry afternoon skies',
-	riskNote: 'Crosswinds plus a soft recovery day make this a poor time to chase lost miles.'
+	highF: 82,
+	lowF: 63,
+	windMph: 9,
+	summary: 'Cached pilot weather: warm, humid ridge walking with scattered showers possible',
+	riskNote: 'Mapped water is candidate-grade, so confirm flow before committing to a longer push.'
 };
 
 export const waterSources: WaterSource[] = [
 	{
-		name: 'Lick Creek',
-		mile: 586.6,
-		distanceMiles: 4.2,
-		reliability: 'reliable',
-		note: 'Best fill before the exposed ridge section.'
+		name: 'Unnamed mapped stream',
+		mile: 1438.4,
+		distanceMiles: 0.4,
+		reliability: 'thin',
+		note: 'Open-reference candidate only. Confirm flow and potability.'
 	},
 	{
-		name: 'Spring below Chestnut Knob',
-		mile: 589.9,
-		distanceMiles: 7.5,
-		reliability: 'seasonal',
-		note: 'Usable, but not the source to gamble the day on.'
+		name: 'Stump Pond Stream',
+		mile: 1442.0,
+		distanceMiles: 4.0,
+		reliability: 'thin',
+		note: 'Mapped water candidate. Do not treat as guaranteed reliable.'
 	}
 ];
 
 export const upcomingStops: UpcomingStop[] = [
 	{
-		kind: 'view',
-		title: 'High Ledge',
-		mile: 583.7,
-		distanceMiles: 1.3,
-		detail: 'Fast morale stop, but windy enough to cool you quickly.'
-	},
-	{
 		kind: 'water',
-		title: 'Lick Creek',
-		mile: 586.6,
-		distanceMiles: 4.2,
-		detail: 'Last easy water before camp.'
+		title: 'Unnamed mapped stream',
+		mile: 1438.4,
+		distanceMiles: 0.4,
+		detail: 'Closest water candidate. Verify before relying on it.'
 	},
 	{
 		kind: 'shelter',
-		title: 'Chestnut Knob Shelter',
-		mile: 589.7,
-		distanceMiles: 7.3,
-		detail: 'Current best camp if you keep the day controlled.'
+		title: 'Morgan Stewart Memorial Shelter',
+		mile: 1442.6,
+		distanceMiles: 4.6,
+		detail: 'Open-data shelter candidate. Confirm current access/rules.'
 	},
 	{
 		kind: 'town',
-		title: 'Bland, VA',
-		mile: 596.0,
-		distanceMiles: 13.6,
-		detail: 'Clean resupply and reset option if you do not force extra mileage.'
+		title: 'Kent Hills',
+		mile: 1440.0,
+		distanceMiles: 2.0,
+		detail: 'Mapped town candidate. Services are not confirmed.'
 	}
 ];
 
 export const itinerary: ItineraryDay[] = [
 	{
 		dayLabel: 'Wed',
-		dateLabel: 'Mar 11',
+		dateLabel: 'Jun 17',
 		status: 'today',
-		destination: 'Chestnut Knob Shelter',
-		mileage: 13.8,
-		elevationGain: 2600,
-		weather: 'Windy and cold',
-		note: 'Hold day. Protect recovery and hit water on schedule.'
+		destination: 'Morgan Stewart Memorial Shelter',
+		mileage: 8.2,
+		elevationGain: 1700,
+		weather: 'Humid, showers possible',
+		note: 'Hold discipline. Confirm mapped water before stretching the day.'
 	},
 	{
 		dayLabel: 'Thu',
-		dateLabel: 'Mar 12',
+		dateLabel: 'Jun 18',
 		status: 'town',
-		destination: 'Bland, VA',
-		mileage: 10.4,
-		elevationGain: 900,
-		weather: 'Clearing skies',
-		note: 'Town stop for laundry, calories, and a pace reset.'
+		destination: 'Pawling corridor',
+		mileage: 11.1,
+		elevationGain: 1400,
+		weather: 'Warm, lower precip',
+		note: 'Candidate town/services day. Verify hours and access before counting on it.'
 	},
 	{
 		dayLabel: 'Fri',
-		dateLabel: 'Mar 13',
+		dateLabel: 'Jun 19',
 		status: 'recovery',
-		destination: 'Jenny Knob',
-		mileage: 8.6,
-		elevationGain: 1800,
-		weather: 'Cool and dry',
-		note: 'Nero out of town. Let the body absorb the reset.'
+		destination: 'Wiley Shelter window',
+		mileage: 9.4,
+		elevationGain: 1300,
+		weather: 'Mild, verify water',
+		note: 'Keep the plan flexible until field reports confirm water.'
 	},
 	{
 		dayLabel: 'Sat',
-		dateLabel: 'Mar 14',
+		dateLabel: 'Jun 20',
 		status: 'planned',
-		destination: 'Helveys Mill Shelter',
-		mileage: 15.2,
-		elevationGain: 2400,
-		weather: 'Stable',
-		note: 'Best push opportunity if recovery markers rebound.'
+		destination: 'Pine Swamp Brook Lean-to',
+		mileage: 12.7,
+		elevationGain: 1900,
+		weather: 'Storm chance',
+		note: 'Do not spend safety margin unless the morning check is clean.'
 	},
 	{
 		dayLabel: 'Sun',
-		dateLabel: 'Mar 15',
+		dateLabel: 'Jun 21',
 		status: 'planned',
-		destination: 'Dismal Falls side trail camp',
-		mileage: 13.4,
-		elevationGain: 1900,
-		weather: 'Mixed clouds',
-		note: 'Good photo and water day. Do not turn it into a race.'
+		destination: 'CT line approach',
+		mileage: 10.5,
+		elevationGain: 1500,
+		weather: 'Wet footing risk',
+		note: 'Father\'s Day target: make the app useful, not the day aggressive.'
 	},
 	{
 		dayLabel: 'Mon',
-		dateLabel: 'Mar 16',
+		dateLabel: 'Jun 22',
 		status: 'planned',
-		destination: 'Pearisburg',
-		mileage: 14.1,
+		destination: 'CT ridge window',
+		mileage: 12.2,
 		elevationGain: 2100,
-		weather: 'Warming',
-		note: 'Stay ahead of the weather window and town before dark.'
+		weather: 'Warm',
+		note: 'Re-plan from confirmed water and service intel.'
 	},
 	{
 		dayLabel: 'Tue',
-		dateLabel: 'Mar 17',
+		dateLabel: 'Jun 23',
 		status: 'planned',
-		destination: 'Rice Field Shelter',
-		mileage: 12.9,
-		elevationGain: 3000,
-		weather: 'Wind returning',
-		note: 'Respect the climb and keep the first half conservative.'
+		destination: 'Next confirmed stop',
+		mileage: 11.8,
+		elevationGain: 1800,
+		weather: 'Unknown',
+		note: 'Treat this as draft until a fresh field pack or guide source confirms it.'
 	}
 ];
 
 export const townSnapshot: TownSnapshot = {
-	name: 'Bland, VA',
-	mile: 596.0,
-	eta: 'Tomorrow by 2:30 PM if you keep today controlled',
-	hitchNote: 'US-52 crossing still looks clean. Best pickup window is late morning through early afternoon.',
+	name: 'Pawling corridor',
+	mile: 1457.9,
+	eta: 'Candidate stop after the NY/CT forward window; verify before relying on it',
+	hitchNote: 'Open-data town candidate only. Confirm access, transit, and service hours from a current source.',
 	services: [
 		{
-			name: 'Big Walker Motel',
+			name: 'Lodging candidate',
 			category: 'hostel',
-			status: 'Beds likely available',
-			detail: 'Showers, laundry, and a solid breakfast window.'
+			status: 'Unverified',
+			detail: 'Do not assume availability without a current listing or call.'
 		},
 		{
-			name: 'Bland Post Office',
+			name: 'Resupply candidate',
 			category: 'resupply',
-			status: 'Open until 4:30 PM',
-			detail: 'Good for a box retrieval, but do not cut it close.'
+			status: 'Unverified',
+			detail: 'Open-data town signal only; confirm store and hours.'
 		},
 		{
-			name: 'Bland Shuttle Board',
+			name: 'Transit/access candidate',
 			category: 'shuttle',
-			status: 'Two drivers active today',
-			detail: 'Most reliable pickup is from the bridge lot.'
+			status: 'Unverified',
+			detail: 'Confirm pickup/access before planning the day around it.'
 		},
 		{
-			name: 'NAPA / fuel stop',
+			name: 'Fuel/gear candidate',
 			category: 'gear',
-			status: 'Canister fuel confirmed',
-			detail: 'Use it as a backup gear lane, not primary resupply.'
+			status: 'Unknown',
+			detail: 'No current fuel confirmation in the pilot pack.'
 		},
 		{
-			name: 'Main Street Market',
+			name: 'Food candidate',
 			category: 'food',
-			status: 'Open',
-			detail: 'Best for immediate calories, weak for deep trail resupply.'
+			status: 'Unknown',
+			detail: 'Treat as a search target, not a confirmed service.'
 		},
 		{
-			name: 'Town Laundry',
+			name: 'Laundry candidate',
 			category: 'laundry',
-			status: 'Open',
-			detail: 'Low wait if you arrive before the evening bubble.'
+			status: 'Unknown',
+			detail: 'Confirm locally if this matters.'
 		}
 	]
 };

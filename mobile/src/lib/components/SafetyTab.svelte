@@ -189,9 +189,9 @@
 		<p class="eyebrow">Bailout options</p>
 		<h3>If today goes sideways</h3>
 		<ul>
-			<li><strong>Chestnut Knob</strong> · stone shelter, exposed on the bald, 7.3 mi</li>
-			<li><strong>US-52 / Bland</strong> · best hitch lane, 13.6 mi</li>
-			<li><strong>Walker Gap</strong> · forest road retreat, 8.9 mi back</li>
+			<li><strong>Kent Hills</strong> · mapped town candidate, 2.0 mi ahead</li>
+			<li><strong>Morgan Stewart</strong> · open-data shelter candidate, 4.6 mi ahead</li>
+			<li><strong>Pawling corridor</strong> · services need current verification before relying on them</li>
 		</ul>
 		<div class="bailout-sources">
 			<SourceChip source={sourceReceipts.awol2026} />

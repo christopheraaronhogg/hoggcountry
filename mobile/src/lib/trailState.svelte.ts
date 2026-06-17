@@ -44,8 +44,8 @@ function makeCheckIn(status: CheckInStatus, note: string): CheckInRecord {
 	return {
 		id: crypto.randomUUID(),
 		timestamp: new Date().toISOString(),
-		location: 'Chestnut Knob Shelter',
-		mile: 582.4,
+		location: 'NY/CT pilot corridor',
+		mile: 1438,
 		status,
 		note
 	};
@@ -185,8 +185,8 @@ const defaultState: TrailState = {
 	readiness: {
 		score: 84,
 		recommendation: 'hold',
-		targetMiles: 13.8,
-		targetVert: 2600,
+		targetMiles: 10.8,
+		targetVert: 1700,
 		reasons: [
 			'Your last two days were above plan and recovery is slightly lagging.',
 			'Mapped water in the loaded NY/CT window is candidate-grade and needs current confirmation.',

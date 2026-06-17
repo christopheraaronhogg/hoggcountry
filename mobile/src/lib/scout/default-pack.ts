@@ -164,8 +164,8 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 	guideExcerpts: [
 		{
 			id: 'pack-water-on-ridges',
-			title: 'Pack water before ridge sections',
-			body: 'Ridge sections in southern VA frequently lose water sources. Top off at the last reliable source before climbing onto a long ridge.',
+			title: 'Confirm mapped water before committing',
+			body: 'Mapped water candidates are planning prompts, not promises. Top off at the last confirmed source before committing to a longer warm-weather push.',
 			tags: ['water', 'planning', 'ridge'],
 			citation: 'Hogg Country Field Guide, Section: Water Discipline'
 		},

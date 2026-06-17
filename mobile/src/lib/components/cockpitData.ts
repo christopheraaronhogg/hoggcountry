@@ -134,87 +134,73 @@ export const sourceReceipts: Record<string, SourceReceipt> = {
 	}
 };
 
-// Elevation profile for the next ~20 miles. Hand-shaped to match Southern
-// Virginia ridge work above Bland. Numbers are illustrative, not surveyed.
+// Elevation profile for the Dad pilot window near the NY/CT line. Numbers are
+// illustrative UI terrain, not surveyed or routing-grade.
 export const elevationNext20: ElevationPoint[] = [
-	{ mile: 582.4, elevation: 3120, terrain: 'gap', label: 'You' },
-	{ mile: 583.7, elevation: 3360, terrain: 'climb', label: 'High Ledge' },
-	{ mile: 584.6, elevation: 3490, terrain: 'ridge' },
-	{ mile: 585.4, elevation: 3270, terrain: 'descent' },
-	{ mile: 586.6, elevation: 3050, terrain: 'creek', label: 'Lick Creek' },
-	{ mile: 587.5, elevation: 3380, terrain: 'climb' },
-	{ mile: 588.6, elevation: 3970, terrain: 'climb' },
-	{ mile: 589.7, elevation: 4030, terrain: 'bald', label: 'Chestnut Knob' },
-	{ mile: 590.8, elevation: 3640, terrain: 'descent' },
-	{ mile: 592.0, elevation: 3110, terrain: 'gap' },
-	{ mile: 593.4, elevation: 3320, terrain: 'climb' },
-	{ mile: 594.6, elevation: 3050, terrain: 'descent' },
-	{ mile: 596.0, elevation: 2620, terrain: 'gap', label: 'Bland / US-52' },
-	{ mile: 597.3, elevation: 2860, terrain: 'climb' },
-	{ mile: 598.8, elevation: 3140, terrain: 'ridge' },
-	{ mile: 600.2, elevation: 3380, terrain: 'climb' },
-	{ mile: 601.6, elevation: 3220, terrain: 'descent' },
-	{ mile: 602.4, elevation: 2940, terrain: 'gap', label: 'Jenny Knob' }
+	{ mile: 1438.0, elevation: 1220, terrain: 'ridge', label: 'You' },
+	{ mile: 1438.4, elevation: 1180, terrain: 'creek' },
+	{ mile: 1439.2, elevation: 1320, terrain: 'climb' },
+	{ mile: 1440.0, elevation: 1080, terrain: 'gap' },
+	{ mile: 1441.5, elevation: 1360, terrain: 'creek' },
+	{ mile: 1442.6, elevation: 1610, terrain: 'ridge', label: 'Morgan St.' },
+	{ mile: 1444.1, elevation: 1420, terrain: 'creek' },
+	{ mile: 1446.8, elevation: 1700, terrain: 'ridge' },
+	{ mile: 1449.0, elevation: 1340, terrain: 'gap' },
+	{ mile: 1452.2, elevation: 1520, terrain: 'ridge' },
+	{ mile: 1454.5, elevation: 980, terrain: 'creek', label: 'Swamp River' },
+	{ mile: 1458.0, elevation: 1260, terrain: 'ridge' }
 ];
 
 export const nextServices: NextServiceMarker[] = [
 	{
-		id: 'view-high-ledge',
-		kind: 'view',
-		title: 'High Ledge',
-		mile: 583.7,
-		distanceMiles: 1.3,
-		detail: 'Morale stop. Wind exposed — chill risk if you linger.',
-		confidence: 'high'
-	},
-	{
-		id: 'water-lick-creek',
+		id: 'water-1438-4',
 		kind: 'water',
-		title: 'Lick Creek',
-		mile: 586.6,
-		distanceMiles: 4.2,
-		detail: 'Last reliable fill before the Chestnut Knob ridge.',
-		confidence: 'high',
-		verify: 'Confirm flow with passing NOBOs'
+		title: 'Mapped stream',
+		mile: 1438.4,
+		distanceMiles: 0.4,
+		detail: 'Open-reference water candidate. Confirm flow and potability before relying on it.',
+		confidence: 'low',
+		verify: 'Needs field/current-source check'
 	},
 	{
-		id: 'shelter-chestnut-knob',
+		id: 'shelter-morgan-stewart',
 		kind: 'shelter',
-		title: 'Chestnut Knob Shelter',
-		mile: 589.7,
-		distanceMiles: 7.3,
-		detail: 'Stone hut on the bald. Exposed in wind — bring fuel headroom.',
-		confidence: 'high'
-	},
-	{
-		id: 'road-us52',
-		kind: 'road',
-		title: 'US-52 crossing',
-		mile: 596.0,
-		distanceMiles: 13.6,
-		detail: 'Hitch lane into Bland. Best 11a–3p.',
-		confidence: 'high',
-		verify: 'Check shuttle board day-of'
-	},
-	{
-		id: 'town-bland',
-		kind: 'town',
-		title: 'Bland, VA',
-		mile: 596.0,
-		distanceMiles: 13.6,
-		detail: 'Clean resupply + reset. PO closes 16:30.',
-		confidence: 'high',
-		verify: 'Hours change in shoulder season'
-	},
-	{
-		id: 'campsite-jenny-knob',
-		kind: 'campsite',
-		title: 'Jenny Knob Shelter',
-		mile: 602.4,
-		distanceMiles: 20.0,
-		detail: 'Backup site if Bland turns into a late bailout.',
+		title: 'Morgan Stewart Memorial Shelter',
+		mile: 1442.6,
+		distanceMiles: 4.6,
+		detail: 'Open-data shelter candidate in the forward window.',
 		confidence: 'medium',
-		verify: 'Latest report 9d ago'
+		verify: 'Confirm current access/rules'
+	},
+	{
+		id: 'town-kent-hills',
+		kind: 'town',
+		title: 'Kent Hills',
+		mile: 1440.0,
+		distanceMiles: 2.0,
+		detail: 'Mapped town candidate near trail. Services/hours are not confirmed.',
+		confidence: 'low',
+		verify: 'Verify services before planning around it'
+	},
+	{
+		id: 'town-pawling',
+		kind: 'town',
+		title: 'Pawling',
+		mile: 1457.9,
+		distanceMiles: 19.9,
+		detail: 'Known town corridor, but this pack still treats services as candidate-only.',
+		confidence: 'low',
+		verify: 'Confirm resupply and transit'
+	},
+	{
+		id: 'shelter-wiley',
+		kind: 'shelter',
+		title: 'Wiley Shelter',
+		mile: 1452.2,
+		distanceMiles: 14.2,
+		detail: 'Later shelter candidate if the day stays controlled.',
+		confidence: 'medium',
+		verify: 'Confirm current shelter status'
 	}
 ];
 
@@ -224,7 +210,7 @@ export const offlineModel: OfflineModelInfo = {
 	sizeMb: 1840,
 	contextTokens: 8000,
 	lastVerified: '2026-06-15T14:08:00Z',
-	regions: ['VA — Southern Highlands', 'VA — Pearisburg → Catawba'],
+	regions: ['AT NY/CT pilot window', 'Open-reference trail-ahead candidates'],
 	note: 'Answers compose locally. Cloud Scout refines with live weather + ATC alerts when you have signal.'
 };
 
@@ -239,7 +225,7 @@ export const packInventory: PackItem[] = [
 		category: 'kitchen',
 		weightOz: 7.8,
 		status: 'replace',
-		note: 'Half empty — swap in Bland'
+		note: 'Half empty - verify next confirmed fuel option'
 	},
 	{
 		name: 'Sawyer Squeeze',
@@ -254,7 +240,7 @@ export const packInventory: PackItem[] = [
 		category: 'safety',
 		weightOz: 3.5,
 		status: 'carried',
-		note: 'Battery 68% — top up in Bland'
+		note: 'Battery 68% - top up at the next confirmed outlet'
 	},
 	{ name: 'Headlamp NU25', category: 'electronics', weightOz: 1.6, status: 'carried' },
 	{
@@ -262,63 +248,63 @@ export const packInventory: PackItem[] = [
 		category: 'worn',
 		weightOz: 1.4,
 		status: 'missing',
-		note: 'Lost at Helveys Mill — ship to Pearisburg PO'
+		note: 'Missing - do not assume the next town can replace it'
 	},
 	{
 		name: 'Trail runner refresh',
 		category: 'worn',
 		weightOz: 22,
 		status: 'shipped',
-		note: 'Box waiting at Big Walker Motel'
+		note: 'Shipment details need current confirmation'
 	}
 ];
 
 export const weatherForecast: WeatherForecastDay[] = [
 	{
 		dayLabel: 'Today',
-		dateLabel: 'Wed 11',
-		highF: 46,
-		lowF: 28,
-		windMph: 17,
-		precipPct: 10,
+		dateLabel: 'Jun 17',
+		highF: 82,
+		lowF: 63,
+		windMph: 9,
+		precipPct: 35,
 		risk: 'medium',
-		note: 'Cold ridge wind. Layer for High Ledge stop.'
+		note: 'Humid. Scattered showers possible.'
 	},
 	{
 		dayLabel: 'Thu',
-		dateLabel: 'Mar 12',
-		highF: 52,
-		lowF: 34,
-		windMph: 9,
-		precipPct: 20,
-		risk: 'low',
-		note: 'Clearing. Good Bland day.'
+		dateLabel: 'Jun 18',
+		highF: 80,
+		lowF: 61,
+		windMph: 8,
+		precipPct: 25,
+		risk: 'medium',
+		note: 'Warm. Verify water before committing.'
 	},
 	{
 		dayLabel: 'Fri',
-		dateLabel: 'Mar 13',
-		highF: 58,
-		lowF: 36,
-		windMph: 6,
-		precipPct: 5,
+		dateLabel: 'Jun 19',
+		highF: 78,
+		lowF: 59,
+		windMph: 7,
+		precipPct: 20,
 		risk: 'low',
-		note: 'Mild. Nero out of town.'
+		note: 'Lower precip risk. Still confirm sources.'
 	},
 	{
 		dayLabel: 'Sat',
-		dateLabel: 'Mar 14',
-		highF: 61,
-		lowF: 42,
-		windMph: 8,
-		precipPct: 30,
+		dateLabel: 'Jun 20',
+		highF: 81,
+		lowF: 64,
+		windMph: 10,
+		precipPct: 40,
 		risk: 'medium',
-		note: 'Afternoon showers possible. Push earlier.'
+		note: 'Storm chance. Keep bailout margin.'
 	},
 	{
 		dayLabel: 'Sun',
-		dateLabel: 'Mar 15',
-		highF: 64,
-		lowF: 44,
+		dateLabel: 'Jun 21',
+		highF: 83,
+		lowF: 65,
 		windMph: 11,
 		precipPct: 55,
 		risk: 'medium',
@@ -343,7 +329,7 @@ export const itineraryConfidence: Record<string, { confidence: SourceConfidence;
 	Sat: { confidence: 'medium', verify: 'Recovery + weather pivot point' },
 	Sun: { confidence: 'medium', verify: 'Storm window risk' },
 	Mon: { confidence: 'low', verify: 'Driven by Sun weather outcome' },
-	Tue: { confidence: 'draft', verify: 'Re-plan from Pearisburg' }
+	Tue: { confidence: 'draft', verify: 'Re-plan from current field intel' }
 };
 
 export const sourceConfidenceLabels: Record<SourceConfidence, string> = {

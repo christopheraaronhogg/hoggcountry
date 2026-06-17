@@ -16,7 +16,7 @@
 		<div class="plan-head">
 			<div>
 				<p class="eyebrow">Plan · Rolling 7-day</p>
-				<h2>Bland → Pearisburg window</h2>
+				<h2>NY/CT pilot window</h2>
 			</div>
 			<ConfidenceBadge confidence="medium" />
 		</div>
@@ -37,8 +37,8 @@
 		</div>
 
 		<p class="plan-note">
-			The plan protects recovery now so the next push window is spendable, not borrowed.
-			Confidence falls off after day 3 — re-plan from Pearisburg.
+			The plan protects recovery now while mapped water and town services stay unconfirmed.
+			Confidence falls off after day 3 - re-plan from current field intel.
 		</p>
 
 		<div class="plan-sources">
@@ -60,10 +60,10 @@
 	</section>
 
 	<section class="card terrain-card">
-		<ElevationStrip currentMile={582.4} />
+		<ElevationStrip currentMile={1438} />
 		<p class="terrain-note">
-			Two real climbs in this window: Chestnut Knob today, then the Pearisburg approach Sunday.
-			Days 4–7 should flex based on Saturday's storm outcome.
+			This is a candidate NY/CT trail-ahead slice. Treat water and service points as prompts to
+			verify, not confirmed logistics.
 		</p>
 	</section>
 
@@ -124,8 +124,8 @@
 		<p class="eyebrow">Planning honesty</p>
 		<h3>Don't spend tomorrow's town calories tonight</h3>
 		<p>
-			The plan only works if today stays disciplined. The classic failure is turning a hold day
-			into a late push, then arriving in Bland cooked and needing two recovery days instead of one.
+			The plan only works if today stays disciplined. The classic failure is treating mapped
+			candidate water and town signals as confirmed, then losing margin late in the day.
 		</p>
 		<div class="caution-sources">
 			<SourceChip source={sourceReceipts.hikerProfile} />
