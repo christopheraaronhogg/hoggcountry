@@ -32,9 +32,14 @@ These need Xcode (the SPM + linker steps are GUI-shaped) and, for a device build
 an Apple Developer Program enrollment.
 
 1. **Add the Swift package.** Xcode → File → Add Package Dependencies →
-   `https://github.com/google-ai-edge/LiteRT-LM`, rule **from 0.12.0**. Add the
+   `https://github.com/google-ai-edge/LiteRT-LM`, rule **from 0.13.1**. Add the
    `LiteRTLM` product to the **App** target. (SPM coexists fine with the
-   CocoaPods-managed Capacitor pods.)
+   CocoaPods-managed Capacitor pods.) Min iOS is **15** (the package declares
+   `.iOS(.v15)`), so the App target's deployment target must be ≥ 15.
+   **Do this in the Xcode GUI, not headless `xcodebuild`** — verified 2026-06-17
+   that adding the ref via the `xcodeproj` gem and resolving on the command line
+   *hangs* on the `CLiteRTLM.xcframework` (~80 MB) binary target (process idle,
+   `SourcePackages` stays empty). Xcode's GUI resolves the binary target reliably.
 2. **Linker flag (mandatory).** LiteRT-LM's static lib registers backends via C++
    static initializers that the linker will strip without it. Add `-all_load`
    (or a `-force_load` of the LiteRT-LM static lib) to the App target's
