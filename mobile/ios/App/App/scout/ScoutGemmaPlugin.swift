@@ -8,6 +8,13 @@ import Capacitor
 ///
 /// Identical JS contract to Android (see capacitor-gemma-bridge.ts), so the
 /// Svelte app and ModelRouter are unchanged across platforms.
+///
+/// Thread safety: `engine` and `downloader` are mutable and accessed from both
+/// the Capacitor thread and unstructured Tasks. All reads and writes of these
+/// two properties are confined to `stateQueue` (a private serial
+/// DispatchQueue) so there is no data race. `engine` is explicitly initialized
+/// in `load()` (called once, serially, by Capacitor during plugin setup) rather
+/// than via `lazy var`, which is not thread-safe.
 @objc(ScoutGemmaPlugin)
 public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "ScoutGemmaPlugin"
@@ -23,8 +30,36 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     ]
 
     private let store = ScoutModelStore()
-    private lazy var engine: ScoutGemmaEngine = ScoutGemmaEngineFactory.create(store: store)
-    private var downloader: ScoutModelDownloader?
+
+    /// Serial queue that owns all reads and writes of `_engine` and `_downloader`.
+    private let stateQueue = DispatchQueue(label: "com.hoggcountry.scoutgemma.state")
+
+    // Backing storage — never accessed directly; always go through stateQueue.sync.
+    private var _engine: ScoutGemmaEngine!
+    private var _downloader: ScoutModelDownloader?
+
+    // MARK: - Thread-safe accessors
+
+    private var engine: ScoutGemmaEngine {
+        get { stateQueue.sync { _engine } }
+        set { stateQueue.sync { _engine = newValue } }
+    }
+
+    private var downloader: ScoutModelDownloader? {
+        get { stateQueue.sync { _downloader } }
+        set { stateQueue.sync { _downloader = newValue } }
+    }
+
+    // MARK: - CAPPlugin lifecycle
+
+    /// Called once by Capacitor on the main thread during plugin registration.
+    /// Initialise the engine here rather than via `lazy var` (which is not
+    /// thread-safe) so `_engine` is set before any plugin method can be called.
+    public override func load() {
+        _engine = ScoutGemmaEngineFactory.create(store: store)
+    }
+
+    // MARK: - Plugin methods
 
     @objc func isAvailable(_ call: CAPPluginCall) {
         let available = engine.isAvailable
@@ -57,10 +92,12 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         let prompt = call.getString("prompt") ?? ""
         let systemContext = call.getString("systemContext") ?? ""
         let maxTokens = call.getInt("maxTokens") ?? 512
-        let engine = self.engine
+        // Capture the engine via stateQueue.sync BEFORE the Task so the async
+        // body never races against a post-download engine swap on stateQueue.
+        let capturedEngine = engine
         Task {
             do {
-                let result = try await engine.generate(
+                let result = try await capturedEngine.generate(
                     prompt: prompt, systemContext: systemContext, maxTokens: maxTokens)
                 call.resolve(["text": result.text, "truncated": result.truncated])
             } catch {
@@ -79,17 +116,18 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func startModelDownload(_ call: CAPPluginCall) {
-        let downloader = ScoutModelDownloader(store: store)
-        self.downloader = downloader
+        let dl = ScoutModelDownloader(store: store)
+        downloader = dl
         Task {
             do {
-                let status = try await downloader.download { [weak self] bytesDownloaded, totalBytes in
+                let status = try await dl.download { [weak self] bytesDownloaded, totalBytes in
                     self?.notifyListeners(
                         "scoutModelDownloadProgress",
                         data: ["bytesDownloaded": bytesDownloaded, "totalBytes": totalBytes])
                 }
                 // Model is on device and verified — rebuild the engine so the
-                // next isAvailable()/generate() picks it up.
+                // next isAvailable()/generate() picks it up. Both writes are
+                // through stateQueue.sync (inside the property setters).
                 self.engine = ScoutGemmaEngineFactory.create(store: self.store)
                 self.downloader = nil
                 call.resolve(status.toDict())
@@ -101,8 +139,11 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func cancelModelDownload(_ call: CAPPluginCall) {
-        let active = downloader != nil
-        downloader?.cancel()
-        call.resolve(["cancelled": active])
+        // Read + call under stateQueue to avoid racing startModelDownload's Task.
+        stateQueue.sync {
+            let active = _downloader != nil
+            _downloader?.cancel()
+            call.resolve(["cancelled": active])
+        }
     }
 }

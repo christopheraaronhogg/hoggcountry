@@ -43,6 +43,7 @@ struct ScoutModelStatus {
 
     let modelId: String
     let state: String
+    let fileName: String
     let filePath: String
     let exists: Bool
     let bytesOnDevice: Int64
@@ -51,13 +52,17 @@ struct ScoutModelStatus {
     let downloadConfigured: Bool
     let url: String?
     let canDownload: Bool
+    let expectedChecksum: String?
     let reason: String?
 
     /// Shape consumed by `capacitor-gemma-bridge.ts` (`ScoutGemmaModelStatus`).
+    /// Emits the canonical contract key set — identical to Android JSObject and
+    /// the TypeScript ScoutGemmaModelStatus type.
     func toDict() -> [String: Any] {
         var dict: [String: Any] = [
             "modelId": modelId,
             "state": state,
+            "fileName": fileName,
             "filePath": filePath,
             "exists": exists,
             "bytesOnDevice": bytesOnDevice,
@@ -67,6 +72,9 @@ struct ScoutModelStatus {
             "downloadConfigured": downloadConfigured,
             "canDownload": canDownload
         ]
+        // Emit expectedChecksum ONLY when checksumConfigured (contract: optional key).
+        if let checksum = expectedChecksum { dict["expectedChecksum"] = checksum }
+        // Emit url ONLY when downloadConfigured (contract: optional key).
         if let url = url { dict["url"] = url }
         if let reason = reason { dict["reason"] = reason }
         return dict
@@ -123,16 +131,20 @@ final class ScoutModelStore {
         let path = modelFileURL.path
         let exists = fileManager.fileExists(atPath: path)
         let size = exists ? fileSize(modelFileURL) : 0
-        let configured = spec.hasDownloadURL || spec.hasExpectedChecksum
+
+        // Internal gate: unconfigured when NEITHER a download URL nor a checksum is present.
+        let internalConfigured = spec.hasDownloadURL || spec.hasExpectedChecksum
+        // Canonical emitted key: downloadConfigured = hasDownloadURL only (contract).
+        let downloadConfigured = spec.hasDownloadURL
 
         let state: String
-        if !configured {
+        if !internalConfigured {
             state = ScoutModelStatus.unconfigured
         } else if !exists {
             state = ScoutModelStatus.needsDownload
         } else if spec.hasExpectedSize && size != spec.expectedSizeBytes {
             state = ScoutModelStatus.needsDownload
-        } else if isVerified {
+        } else if isVerified(for: modelFileURL) {
             state = ScoutModelStatus.ready
         } else {
             state = ScoutModelStatus.presentUnverified
@@ -142,22 +154,25 @@ final class ScoutModelStore {
         return ScoutModelStatus(
             modelId: spec.modelId,
             state: state,
+            fileName: spec.fileName,
             filePath: path,
             exists: exists,
             bytesOnDevice: size,
             expectedBytes: spec.expectedSizeBytes,
             checksumConfigured: spec.hasExpectedChecksum,
-            downloadConfigured: configured,
-            url: spec.downloadURL,
+            downloadConfigured: downloadConfigured,
+            url: downloadConfigured ? spec.downloadURL : nil,
             canDownload: canDownload,
+            expectedChecksum: spec.hasExpectedChecksum ? spec.expectedSha256 : nil,
             reason: nil
         )
     }
 
     /// Verifies a downloaded file against the configured size and SHA-256 and, on
-    /// success, writes a sibling `.verified` marker so `status()` can report
-    /// `ready` cheaply. Returns false (and clears any marker) when the spec has no
-    /// checksum, the file is missing, or the size/hash mismatch — fail closed.
+    /// success, writes a sibling `.verified` marker CONTAINING the verified file's
+    /// byte-size and last-modified-time (fail-closed binding). Returns false (and
+    /// clears any marker) when the spec has no checksum, the file is missing, or
+    /// the size/hash mismatch.
     @discardableResult
     func verify() throws -> Bool {
         guard spec.hasExpectedChecksum, let expected = spec.expectedSha256 else { return false }
@@ -168,20 +183,67 @@ final class ScoutModelStore {
         }
         let actual = try sha256Hex(of: modelFileURL)
         if actual.caseInsensitiveCompare(expected) == .orderedSame {
-            writeVerifiedMarker()
+            writeVerifiedMarker(for: modelFileURL)
             return true
         }
         clearVerifiedMarker()
         return false
     }
 
-    private var isVerified: Bool {
-        fileManager.fileExists(atPath: verifiedMarkerURL.path)
+    /// Clears the `.verified` marker so a subsequent move/replace cannot inherit
+    /// a stale verification. Called by the downloader BEFORE it replaces the file.
+    func clearVerifiedMarkerForReplace() {
+        clearVerifiedMarker()
     }
 
-    private func writeVerifiedMarker() {
+    // MARK: - Fail-closed marker (size + mtime binding)
+
+    /// Returns true ONLY if the marker exists AND the recorded size and mtime
+    /// match the current file's attributes. Any mismatch deletes the stale marker
+    /// and returns false — a post-verify replacement that changes size or mtime
+    /// fails closed without a per-load re-hash.
+    private func isVerified(for fileURL: URL) -> Bool {
+        let markerPath = verifiedMarkerURL.path
+        guard fileManager.fileExists(atPath: markerPath),
+              let markerContents = fileManager.contents(atPath: markerPath),
+              let markerString = String(data: markerContents, encoding: .utf8) else {
+            return false
+        }
+        let lines = markerString.components(separatedBy: "\n")
+        guard lines.count >= 2,
+              let recordedSize = Int64(lines[0]),
+              let recordedMtime = Int64(lines[1]) else {
+            // Marker is in the old empty format or corrupt — delete and fail closed.
+            clearVerifiedMarker()
+            return false
+        }
+        guard let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path),
+              let currentSize = (attrs[.size] as? NSNumber)?.int64Value,
+              let modDate = attrs[.modificationDate] as? Date else {
+            clearVerifiedMarker()
+            return false
+        }
+        let currentMtime = Int64(modDate.timeIntervalSince1970 * 1000)
+        if recordedSize == currentSize && recordedMtime == currentMtime {
+            return true
+        }
+        // Size or mtime changed — stale marker, fail closed.
+        clearVerifiedMarker()
+        return false
+    }
+
+    /// Writes the marker file containing "<sizeBytes>\n<mtimeMillis>" so the
+    /// verification is bound to this exact file identity.
+    private func writeVerifiedMarker(for fileURL: URL) {
+        guard let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path),
+              let size = (attrs[.size] as? NSNumber)?.int64Value,
+              let modDate = attrs[.modificationDate] as? Date else { return }
+        let mtime = Int64(modDate.timeIntervalSince1970 * 1000)
+        let content = "\(size)\n\(mtime)"
         ensureModelDir()
-        fileManager.createFile(atPath: verifiedMarkerURL.path, contents: Data())
+        fileManager.createFile(
+            atPath: verifiedMarkerURL.path,
+            contents: content.data(using: .utf8))
     }
 
     private func clearVerifiedMarker() {

@@ -43,7 +43,12 @@ final class ScoutModelDownloader: NSObject, URLSessionDownloadDelegate {
         }
         if store.status().state == ScoutModelStatus.ready { return store.status() }
         store.ensureModelDir()
-        try ensureFreeSpace()
+        // Skip the free-space precheck when resuming — the bytes are already
+        // partially on device, so the gross required-space check is overly conservative
+        // and can spuriously refuse a resumable download.
+        if resumeData == nil {
+            try ensureFreeSpace()
+        }
 
         self.onProgress = onProgress
         return try await withCheckedThrowingContinuation { (cont: CheckedContinuation<ScoutModelStatus, Error>) in
@@ -78,20 +83,49 @@ final class ScoutModelDownloader: NSObject, URLSessionDownloadDelegate {
         didFinishDownloadingTo location: URL
     ) {
         // Runs on the session queue; the temp file is deleted when this returns,
-        // so move it synchronously before doing anything else.
+        // so move/replace it synchronously before doing anything else.
         do {
             let dest = store.modelFileURL
             let fm = FileManager.default
+
+            // Clear the verified marker BEFORE replacing the file so a crash
+            // mid-replace can never leave a stale marker over an unverified file.
+            store.clearVerifiedMarkerForReplace()
+
+            // Atomic swap: replaceItemAt moves the new bytes into place as a single
+            // kernel operation, preventing a window where the destination is absent.
             if fm.fileExists(atPath: dest.path) {
-                try fm.removeItem(at: dest)
+                var resultURL: NSURL?
+                try fm.replaceItem(
+                    at: dest,
+                    withItemAt: location,
+                    backupItemName: nil,
+                    options: [],
+                    resultingItemURL: &resultURL)
+            } else {
+                try fm.moveItem(at: location, to: dest)
             }
-            try fm.moveItem(at: location, to: dest)
-            if try store.verify() {
+
+            let verified: Bool
+            do {
+                verified = try store.verify()
+            } catch {
+                // Verify threw — treat as verification failure: delete the moved
+                // file and ensure no marker remains (fail closed).
+                try? fm.removeItem(at: dest)
+                store.clearVerifiedMarkerForReplace()
+                finish(.failure(ScoutGemmaError.unavailable(
+                    "Downloaded model verification threw an error and was discarded: \(error.localizedDescription)")))
+                return
+            }
+
+            if verified {
                 finish(.success(store.status()))
             } else {
                 // Fail-closed: a file that does not match the pinned checksum is
                 // deleted so it can never be loaded or reported ready.
                 try? fm.removeItem(at: dest)
+                store.clearVerifiedMarkerForReplace()
                 finish(.failure(ScoutGemmaError.unavailable(
                     "Downloaded model failed checksum verification and was discarded.")))
             }

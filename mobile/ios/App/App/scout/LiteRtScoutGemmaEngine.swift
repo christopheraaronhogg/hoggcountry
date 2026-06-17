@@ -12,6 +12,12 @@ import LiteRTLM
 /// the app builds green before the package is added. Verify these calls against
 /// the installed package version when activating — the API is Early Preview
 /// (see docs/runbooks/ios-scout-gemma-bridge.md).
+///
+/// iOS 15.0 minimum: LiteRT-LM Swift requires iOS 15; the project deployment
+/// target is 14.0, so the class and its creation path are guarded with
+/// @available / #available so iOS 14 devices cleanly fall back to the
+/// UnavailableScoutGemmaEngine stub without a runtime crash.
+@available(iOS 15.0, *)
 final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
     private let modelPath: String
     private let cacheDir: String
@@ -70,11 +76,15 @@ final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
 /// Builds the active engine. Tries the LiteRT-LM engine first when its package is
 /// present and a verified model exists, otherwise returns the fail-closed stub —
 /// so the plugin compiles and runs identically with or without the package.
+/// The LiteRT branch is further guarded with `#available(iOS 15.0, *)` because
+/// LiteRT-LM requires iOS 15 while the project deployment target is 14.0.
 enum ScoutGemmaEngineFactory {
     static func create(store: ScoutModelStore) -> ScoutGemmaEngine {
         #if canImport(LiteRTLM)
-        if let engine = LiteRtScoutGemmaEngine.tryCreate(store: store) {
-            return engine
+        if #available(iOS 15.0, *) {
+            if let engine = LiteRtScoutGemmaEngine.tryCreate(store: store) {
+                return engine
+            }
         }
         #endif
         return UnavailableScoutGemmaEngine()
