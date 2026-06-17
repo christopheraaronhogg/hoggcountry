@@ -42,7 +42,26 @@ type ScoutGemmaPlugin = {
 	}): Promise<{ text: string; truncated?: boolean }>;
 	getModelStatus?: () => Promise<ScoutGemmaModelStatus>;
 	prepareModelDownload?: () => Promise<ScoutGemmaModelStatus>;
+	startModelDownload?: () => Promise<ScoutGemmaModelStatus>;
+	cancelModelDownload?: () => Promise<{ cancelled: boolean }>;
+	addListener?: (
+		eventName: 'scoutModelDownloadProgress',
+		listener: (data: ModelDownloadProgress) => void
+	) => Promise<{ remove: () => Promise<void> }>;
 };
+
+export type ModelDownloadProgress = {
+	bytesDownloaded: number;
+	/** -1 when the total size is not known ahead of time. */
+	totalBytes: number;
+};
+
+export interface ScoutModelManager {
+	getStatus(): Promise<ScoutGemmaModelStatus | null>;
+	prepareDownload(): Promise<ScoutGemmaModelStatus | null>;
+	startDownload(onProgress?: (progress: ModelDownloadProgress) => void): Promise<ScoutGemmaModelStatus>;
+	cancelDownload(): Promise<boolean>;
+}
 
 type CapacitorWindow = Window & {
 	Capacitor?: {
@@ -76,6 +95,49 @@ export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaB
 				text: result.text,
 				truncated: result.truncated ?? false
 			};
+		}
+	};
+}
+
+/**
+ * Model-management surface (status + download), distinct from the generation
+ * bridge. Returns null off-native or when the ScoutGemma plugin is absent, so
+ * web/dev builds simply show no on-device model controls.
+ */
+export function createCapacitorModelManager(win: Window = window): ScoutModelManager | null {
+	const capacitor = (win as CapacitorWindow).Capacitor;
+	if (!capacitor?.isNativePlatform?.()) return null;
+
+	const plugin = capacitor.Plugins?.ScoutGemma;
+	if (!plugin) return null;
+
+	return {
+		async getStatus() {
+			if (!plugin.getModelStatus) return null;
+			return plugin.getModelStatus();
+		},
+		async prepareDownload() {
+			if (!plugin.prepareModelDownload) return null;
+			return plugin.prepareModelDownload();
+		},
+		async startDownload(onProgress) {
+			if (!plugin.startModelDownload) {
+				throw new Error('On-device model download is not supported in this build.');
+			}
+			let handle: { remove: () => Promise<void> } | undefined;
+			if (onProgress && plugin.addListener) {
+				handle = await plugin.addListener('scoutModelDownloadProgress', onProgress);
+			}
+			try {
+				return await plugin.startModelDownload();
+			} finally {
+				await handle?.remove();
+			}
+		},
+		async cancelDownload() {
+			if (!plugin.cancelModelDownload) return false;
+			const result = await plugin.cancelModelDownload();
+			return result.cancelled;
 		}
 	};
 }

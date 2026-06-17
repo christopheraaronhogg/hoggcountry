@@ -17,7 +17,13 @@ import type {
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
-import { createCapacitorGemmaBridge } from './scout/capacitor-gemma-bridge.ts';
+import {
+	createCapacitorGemmaBridge,
+	createCapacitorModelManager,
+	type ModelDownloadProgress,
+	type ScoutGemmaModelStatus,
+	type ScoutModelManager
+} from './scout/capacitor-gemma-bridge.ts';
 import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
 import type { PersistenceAdapter } from './scout/context-pack-store.ts';
 import type { OnDeviceGemmaBridge } from './scout/providers/on-device-gemma.ts';
@@ -214,6 +220,7 @@ class TrailAssistantStore {
 		adapter: browser ? browserStorageAdapter() : undefined
 	});
 	#gemmaBridge: OnDeviceGemmaBridge | null = browser ? createCapacitorGemmaBridge() : null;
+	#modelManager: ScoutModelManager | null = browser ? createCapacitorModelManager() : null;
 	#scout: { runtime: ScoutRuntime } = createScoutRuntime({
 		store: this.#fieldPackStore,
 		onDeviceBridge: this.#gemmaBridge ?? undefined,
@@ -223,6 +230,9 @@ class TrailAssistantStore {
 	#fieldPackStatus = $state<ContextPackStatus>(this.#fieldPackStore.getStatus());
 	#lastScoutAnswer = $state<ScoutAnswer | null>(null);
 	#scoutAnswersByMessage = new Map<string, ScoutAnswer>();
+	#modelStatus = $state<ScoutGemmaModelStatus | null>(null);
+	#modelDownload = $state<{ bytesDownloaded: number; totalBytes: number } | null>(null);
+	#modelError = $state<string | null>(null);
 
 	constructor() {
 		if (!browser) return;
@@ -237,6 +247,7 @@ class TrailAssistantStore {
 			this.#fieldPackStatus = status;
 		});
 		void this.#loadFieldPack();
+		void this.refreshModelStatus();
 
 		window.addEventListener('online', () => {
 			this.#state.onlineStatus = true;
@@ -500,6 +511,26 @@ class TrailAssistantStore {
 		return this.#fieldPackStatus;
 	}
 
+	/** On-device Gemma model file state, or null off-native / before first probe. */
+	get modelStatus() {
+		return this.#modelStatus;
+	}
+
+	/** Live download progress while a model download is in flight, else null. */
+	get modelDownload() {
+		return this.#modelDownload;
+	}
+
+	/** Last model-download error message, cleared when a new download starts. */
+	get modelError() {
+		return this.#modelError;
+	}
+
+	/** True when on-device model management is available (native build w/ plugin). */
+	get supportsOnDeviceModel() {
+		return this.#modelManager !== null;
+	}
+
 	get syncState() {
 		return this.#state.syncState;
 	}
@@ -628,6 +659,49 @@ class TrailAssistantStore {
 		this.#applyPackToTrailState(pack);
 		this.#state.lastSyncAt = new Date().toISOString();
 		return pack;
+	}
+
+	/** Refresh the on-device model file status (cheap; no network). */
+	async refreshModelStatus(): Promise<ScoutGemmaModelStatus | null> {
+		if (!this.#modelManager) return null;
+		try {
+			this.#modelStatus = await this.#modelManager.getStatus();
+		} catch {
+			this.#modelStatus = null;
+		}
+		return this.#modelStatus;
+	}
+
+	/**
+	 * Download + verify the on-device Gemma model, tracking live progress. Safe
+	 * to call only on native builds where a download endpoint is configured; the
+	 * UI gates the button on {@link modelStatus} state. Re-probes status on
+	 * completion so the engine shows as ready.
+	 */
+	async downloadModel(): Promise<void> {
+		if (!this.#modelManager || this.#modelDownload) return;
+		this.#modelError = null;
+		this.#modelDownload = { bytesDownloaded: 0, totalBytes: this.#modelStatus?.expectedBytes ?? -1 };
+		try {
+			const status = await this.#modelManager.startDownload((progress: ModelDownloadProgress) => {
+				this.#modelDownload = {
+					bytesDownloaded: progress.bytesDownloaded,
+					totalBytes: progress.totalBytes
+				};
+			});
+			this.#modelStatus = status;
+		} catch (error) {
+			this.#modelError = error instanceof Error ? error.message : 'Model download failed.';
+			await this.refreshModelStatus();
+		} finally {
+			this.#modelDownload = null;
+		}
+	}
+
+	/** Cancel an in-flight model download; the partial file is kept for resume. */
+	async cancelModelDownload(): Promise<void> {
+		if (!this.#modelManager) return;
+		await this.#modelManager.cancelDownload();
 	}
 
 	get lastScoutAnswer(): ScoutAnswer | null {

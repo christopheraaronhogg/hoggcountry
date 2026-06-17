@@ -4,6 +4,25 @@
 	import OfflineStatus from './OfflineStatus.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import { sourceReceipts, offlineModel } from './cockpitData';
+
+	function fmtBytes(n: number | undefined): string {
+		if (!n || n < 0) return '—';
+		const gb = n / 1e9;
+		return gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(n / 1e6)} MB`;
+	}
+
+	const model = $derived(trailAssistant.modelStatus);
+	const dl = $derived(trailAssistant.modelDownload);
+	const pct = $derived(
+		dl && dl.totalBytes > 0
+			? Math.min(100, Math.round((dl.bytesDownloaded / dl.totalBytes) * 100))
+			: null
+	);
+	const canDownload = $derived(
+		!!model &&
+			model.downloadConfigured &&
+			(model.state === 'needs_download' || model.state === 'present_unverified')
+	);
 </script>
 
 <div class="section-stack">
@@ -41,6 +60,50 @@
 		<OfflineStatus />
 		<button class="outline-button compact">Manage field packs</button>
 	</section>
+
+	{#if trailAssistant.supportsOnDeviceModel}
+		<section class="card model-card">
+			<div class="section-heading">
+				<p class="eyebrow">On-device AI · Gemma 4</p>
+				<h2>Offline brain</h2>
+				<p>
+					Scout's chat runs on a Gemma 4 model stored on your phone. Download it once on Wi-Fi and
+					Scout answers keep working with no signal.
+				</p>
+			</div>
+
+			{#if dl}
+				<div class="model-progress">
+					<div class="bar"><div class="fill" style="width:{pct ?? 0}%"></div></div>
+					<div class="model-row">
+						<span>{pct !== null ? `${pct}%` : 'Downloading…'}</span>
+						<span class="tabular">{fmtBytes(dl.bytesDownloaded)} / {fmtBytes(dl.totalBytes)}</span>
+					</div>
+					<button class="outline-button compact" onclick={() => trailAssistant.cancelModelDownload()}>
+						Cancel download
+					</button>
+				</div>
+			{:else if model?.state === 'ready'}
+				<p class="model-ready">✓ Installed and verified — Scout works fully offline.</p>
+			{:else if canDownload}
+				<div class="model-row">
+					<span>Model size ≈ {fmtBytes(model?.expectedBytes)}</span>
+					<button class="cta-button compact" onclick={() => trailAssistant.downloadModel()}>
+						Download model
+					</button>
+				</div>
+			{:else}
+				<p class="model-note">
+					The on-device model isn't configured in this build yet. Scout uses its offline field-pack
+					answers until the model is available.
+				</p>
+			{/if}
+
+			{#if trailAssistant.modelError}
+				<p class="model-error">{trailAssistant.modelError}</p>
+			{/if}
+		</section>
+	{/if}
 
 	<section class="card">
 		<div class="section-heading">
@@ -319,12 +382,63 @@
 		gap: 10px;
 	}
 
-	.outline-button.compact {
+	.outline-button.compact,
+	.cta-button.compact {
 		width: auto;
 		min-height: 38px;
 		padding: 6px 12px;
 		font-size: 0.82rem;
 		justify-self: start;
+	}
+
+	.model-card {
+		display: grid;
+		gap: 12px;
+	}
+
+	.model-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		font-size: 0.85rem;
+		color: var(--muted);
+	}
+
+	.model-progress {
+		display: grid;
+		gap: 8px;
+	}
+
+	.model-progress .bar {
+		height: 8px;
+		border-radius: 999px;
+		background: var(--line);
+		overflow: hidden;
+	}
+
+	.model-progress .fill {
+		height: 100%;
+		background: var(--forest);
+		transition: width 0.2s ease;
+	}
+
+	.model-ready {
+		font-weight: 700;
+		color: var(--forest);
+		margin: 0;
+	}
+
+	.model-note {
+		font-size: 0.85rem;
+		color: var(--muted);
+		margin: 0;
+	}
+
+	.model-error {
+		font-size: 0.82rem;
+		color: var(--danger, #b14a3d);
+		margin: 0;
 	}
 
 	.habit-grid {

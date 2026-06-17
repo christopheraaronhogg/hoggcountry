@@ -16,6 +16,10 @@ public class ScoutGemmaPlugin extends Plugin {
     // On-device generation (and the lazy first-call model load, which takes
     // seconds) must run off the Capacitor thread or it risks an ANR.
     private final ExecutorService inference = Executors.newSingleThreadExecutor();
+    // The multi-GB model download runs on its own thread so it never blocks
+    // (or is blocked by) generation.
+    private final ExecutorService downloads = Executors.newSingleThreadExecutor();
+    private volatile ScoutModelDownloader activeDownloader;
 
     @Override
     public void load() {
@@ -82,6 +86,46 @@ public class ScoutGemmaPlugin extends Plugin {
     @PluginMethod
     public void prepareModelDownload(PluginCall call) {
         call.resolve(getModelStore().prepareDownload().toJSObject());
+    }
+
+    /**
+     * Downloads + verifies the on-device model, streaming progress to JS via the
+     * {@code scoutModelDownloadProgress} event. On success the engine is rebuilt
+     * so {@code isAvailable()} flips to true without an app restart.
+     */
+    @PluginMethod
+    public void startModelDownload(PluginCall call) {
+        downloads.execute(() -> {
+            ScoutModelDownloader downloader = new ScoutModelDownloader(getContext());
+            activeDownloader = downloader;
+            try {
+                ScoutModelStatus status = downloader.download((bytesDownloaded, totalBytes) -> {
+                    JSObject progress = new JSObject();
+                    progress.put("bytesDownloaded", bytesDownloaded);
+                    progress.put("totalBytes", totalBytes);
+                    notifyListeners("scoutModelDownloadProgress", progress);
+                });
+                // Model is on device and verified — rebuild the engine so the
+                // next isAvailable()/generate() picks it up.
+                engine = createEngine();
+                call.resolve(status.toJSObject());
+            } catch (ScoutModelDownloadException exception) {
+                call.reject(exception.getMessage());
+            } finally {
+                activeDownloader = null;
+            }
+        });
+    }
+
+    @PluginMethod
+    public void cancelModelDownload(PluginCall call) {
+        ScoutModelDownloader downloader = activeDownloader;
+        if (downloader != null) {
+            downloader.cancel();
+        }
+        JSObject result = new JSObject();
+        result.put("cancelled", downloader != null);
+        call.resolve(result);
     }
 
     ScoutGemmaEngine createEngine() {
