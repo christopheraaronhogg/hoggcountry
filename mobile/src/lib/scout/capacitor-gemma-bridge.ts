@@ -11,25 +11,26 @@ type ScoutGemmaDescriptor = GemmaModelDescriptor & {
 };
 
 export type ScoutGemmaModelStatus = {
+	// Required fields — emitted on all platforms for every status response.
 	modelId: string;
+	state: 'unconfigured' | 'needs_download' | 'present_unverified' | 'ready';
 	fileName: string;
 	filePath: string;
-	state:
-		| 'unconfigured'
-		| 'needs_download'
-		| 'present_unverified'
-		| 'ready';
-	downloadConfigured: boolean;
-	checksumConfigured: boolean;
-	expectedBytes: number;
+	exists: boolean;
 	bytesOnDevice: number;
-	exists?: boolean;
-	canDownload?: boolean;
-	destinationPath?: string;
-	checksumAlgorithm?: string;
-	reason?: string;
-	url?: string;
+	expectedBytes: number;
+	checksumAlgorithm: string; // always 'SHA-256'
+	checksumConfigured: boolean;
+	/** True when a download URL endpoint exists (hasDownloadUrl). NOT "url OR checksum". */
+	downloadConfigured: boolean;
+	canDownload: boolean;
+	// Optional fields — present only when the relevant feature is configured.
+	/** Only emitted when checksumConfigured is true. */
 	expectedChecksum?: string;
+	/** Only emitted when downloadConfigured is true. */
+	url?: string;
+	/** Only emitted when present. */
+	reason?: string;
 };
 
 type ScoutGemmaPlugin = {

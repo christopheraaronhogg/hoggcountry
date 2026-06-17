@@ -17,6 +17,7 @@ import type {
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
+import type { OnDeviceGemmaProvider } from './scout';
 import {
 	createCapacitorGemmaBridge,
 	createCapacitorModelManager,
@@ -221,7 +222,7 @@ class TrailAssistantStore {
 	});
 	#gemmaBridge: OnDeviceGemmaBridge | null = browser ? createCapacitorGemmaBridge() : null;
 	#modelManager: ScoutModelManager | null = browser ? createCapacitorModelManager() : null;
-	#scout: { runtime: ScoutRuntime } = createScoutRuntime({
+	#scout: { runtime: ScoutRuntime; onDeviceProvider: OnDeviceGemmaProvider | undefined } = createScoutRuntime({
 		store: this.#fieldPackStore,
 		onDeviceBridge: this.#gemmaBridge ?? undefined,
 		onDeviceTier: 'balanced'
@@ -690,6 +691,12 @@ class TrailAssistantStore {
 				};
 			});
 			this.#modelStatus = status;
+			// When the model is now ready, invalidate the cached availability so
+			// the router re-probes the native engine on the next Scout turn —
+			// without this the on-device path stays dead until the app restarts.
+			if (status.state === 'ready') {
+				this.#scout.onDeviceProvider?.invalidateAvailability();
+			}
 		} catch (error) {
 			this.#modelError = error instanceof Error ? error.message : 'Model download failed.';
 			await this.refreshModelStatus();

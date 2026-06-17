@@ -37,7 +37,11 @@ const TIER_TO_CHARS: Record<GemmaTier, number> = {
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
 	private cachedDescriptor: GemmaModelDescriptor | null = null;
-	private availability: boolean | null = null;
+	// Only a confirmed-true result is cached. A false/unknown result is left as
+	// null so the next call re-probes the (cheap) native isAvailable(). This
+	// ensures that after a model download completes and the native engine flips
+	// to available the router picks on-device without requiring an app restart.
+	private availability: true | null = null;
 
 	capabilities: ProviderCapabilities;
 
@@ -53,19 +57,35 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 		};
 	}
 
+	/**
+	 * Reset the positive-availability cache so the next available() call
+	 * re-probes the native bridge. Call this after a model download completes
+	 * or whenever the caller knows the model state has changed.
+	 */
+	invalidateAvailability(): void {
+		this.availability = null;
+	}
+
 	async available(): Promise<boolean> {
 		if (!this.bridge) {
-			this.availability = false;
+			// No bridge — never cache; a bridge could be wired later.
 			return false;
 		}
-		if (this.availability !== null) return this.availability;
+		// Return the cached positive result immediately.
+		if (this.availability === true) return true;
 
+		// Re-probe every time we don't have a confirmed positive.
 		try {
-			this.availability = await this.bridge.isAvailable();
+			const result = await this.bridge.isAvailable();
+			if (result) {
+				this.availability = true;
+			}
+			// Do NOT cache false — leave availability null so next call re-probes.
+			return result;
 		} catch {
-			this.availability = false;
+			// Transient error — do not cache; re-probe next time.
+			return false;
 		}
-		return this.availability;
 	}
 
 	async describe(): Promise<GemmaModelDescriptor | null> {

@@ -32,6 +32,7 @@ export function createScoutRuntime(options: CreateScoutRuntimeOptions = {}): {
 	runtime: ScoutRuntime;
 	store: ContextPackStore;
 	registry: ToolRegistry;
+	onDeviceProvider: OnDeviceGemmaProvider | undefined;
 } {
 	const store = options.store ?? new InMemoryContextPackStore({ initial: options.initialPack });
 	const registry = options.registry ?? defaultToolRegistry();
@@ -44,5 +45,5 @@ export function createScoutRuntime(options: CreateScoutRuntimeOptions = {}): {
 	const router = new DefaultModelRouter({ fallback, onDevice, cloud });
 	const runtime = new DefaultScoutRuntime({ store, registry, router });
 
-	return { runtime, store, registry };
+	return { runtime, store, registry, onDeviceProvider: onDevice };
 }
