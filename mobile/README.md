@@ -78,6 +78,22 @@ The APK lands at `android/app/build/outputs/apk/debug/app-debug.apk`. To install
 bash scripts/android-debug-apk.sh --install
 ```
 
+For a Google Play upload candidate, build the Android App Bundle. This turns on the Gemma-only mobile policy so Scout chat cannot route to a cloud/API model:
+
+```sh
+npm run android:release-bundle
+```
+
+The bundle lands at `android/app/build/outputs/bundle/release/app-release.aab`. If upload signing is configured, provide the keystore through environment variables before building:
+
+```sh
+export HC_ANDROID_KEYSTORE_FILE=/absolute/path/to/upload-keystore.jks
+export HC_ANDROID_KEYSTORE_PASSWORD=...
+export HC_ANDROID_KEY_ALIAS=...
+export HC_ANDROID_KEY_PASSWORD=...
+npm run android:release-bundle
+```
+
 ## Pilot Caveats
 
 - Water is open-reference candidate data. Treat it as low-confidence until current flow/potability is confirmed.

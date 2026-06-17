@@ -17,8 +17,10 @@ import type {
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
+import { createCapacitorGemmaBridge } from './scout/capacitor-gemma-bridge.ts';
 import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
 import type { PersistenceAdapter } from './scout/context-pack-store.ts';
+import type { OnDeviceGemmaBridge } from './scout/providers/on-device-gemma.ts';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
 const TRAIL_PULSE_RANGE_MILES = 0.1;
@@ -26,6 +28,8 @@ const TRAIL_ID = 'appalachian-trail';
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
+const MODEL_POLICY = (import.meta.env.VITE_SCOUT_MODEL_POLICY as string | undefined) ?? 'offline-tools';
+const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
 
 function isoHoursFromNow(hours: number): string {
 	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -159,7 +163,7 @@ const defaultState: TrailState = {
 	privacySettings: {
 		stealthMode: true,
 		sharePreciseLocation: false,
-		allowCoachInsights: true,
+		allowCoachInsights: false,
 		visibleToSupportCircle: true
 	},
 	trailSettings: {
@@ -209,7 +213,12 @@ class TrailAssistantStore {
 	#fieldPackStore = new InMemoryContextPackStore({
 		adapter: browser ? browserStorageAdapter() : undefined
 	});
-	#scout: { runtime: ScoutRuntime } = createScoutRuntime({ store: this.#fieldPackStore });
+	#gemmaBridge: OnDeviceGemmaBridge | null = browser ? createCapacitorGemmaBridge() : null;
+	#scout: { runtime: ScoutRuntime } = createScoutRuntime({
+		store: this.#fieldPackStore,
+		onDeviceBridge: this.#gemmaBridge ?? undefined,
+		onDeviceTier: 'balanced'
+	});
 	#fieldPack = $state.raw<ContextPack>(this.#fieldPackStore.get());
 	#fieldPackStatus = $state<ContextPackStatus>(this.#fieldPackStore.getStatus());
 	#lastScoutAnswer = $state<ScoutAnswer | null>(null);
@@ -332,6 +341,10 @@ class TrailAssistantStore {
 	}
 
 	#coachReplyFor(text: string): string {
+		if (REQUIRE_GEMMA) {
+			return 'Gemma 4 is required for this Play build, but the on-device model runtime is not available yet. Scout can still show the cached field pack, but chat answers are blocked until the native Gemma 4 bridge is installed.';
+		}
+
 		const lower = text.toLowerCase();
 		const recommendation = this.#state.readiness.recommendation;
 
@@ -356,6 +369,39 @@ class TrailAssistantStore {
 		}
 
 		return 'I can help with mileage, water, town timing, resupply, gear triage, or safety. Give me the hard constraint and I will turn it into the next best move.';
+	}
+
+	async #gemmaReady(): Promise<boolean> {
+		if (!REQUIRE_GEMMA) return true;
+		if (!this.#gemmaBridge) return false;
+		return this.#gemmaBridge.isAvailable().catch(() => false);
+	}
+
+	#gemmaUnavailableAnswer(): ScoutAnswer {
+		return {
+			answer: this.#coachReplyFor('gemma unavailable'),
+			confidence: 'draft',
+			mode: 'on-device',
+			provider: 'on-device-gemma',
+			receipts: this.#fieldPack.sourceReceipts ?? [],
+			toolInvocations: [],
+			requiredConfirmations: [
+				{
+					id: 'gemma4-runtime-required',
+					prompt: 'Install and verify the native Gemma 4 LiteRT-LM runtime before submitting this build.',
+					reason: 'low-confidence'
+				}
+			],
+			safetyFlags: [
+				{
+					id: 'chat-blocked-no-local-model',
+					severity: 'warn',
+					message: 'Scout chat is blocked because this build is configured for Gemma 4 only and no on-device model is available.'
+				}
+			],
+			contextUsed: ['gemma4-only-policy'],
+			generatedAt: new Date().toISOString()
+		};
 	}
 
 	#getCurrentPosition(): Promise<GeolocationPosition | null> {
@@ -532,11 +578,21 @@ class TrailAssistantStore {
 	async #dispatchScoutReply(prompt: string) {
 		const fallbackText = this.#coachReplyFor(prompt);
 		try {
+			if (!(await this.#gemmaReady())) {
+				const answer = this.#gemmaUnavailableAnswer();
+				this.#lastScoutAnswer = answer;
+				const message = makeMessage('assistant', answer.answer);
+				this.#scoutAnswersByMessage.set(message.id, answer);
+				this.#state.coachMessages = [...this.#state.coachMessages, message];
+				return;
+			}
+
 			const answer = await this.#scout.runtime.ask({
 				prompt,
 				onlineStatus: this.#state.onlineStatus,
 				batterySaver: this.#state.trailSettings.batterySaver,
-				allowCloud: this.#state.privacySettings.allowCoachInsights
+				allowCloud: false,
+				preferredMode: REQUIRE_GEMMA ? 'on-device' : undefined
 			});
 			this.#lastScoutAnswer = answer;
 			const message = makeMessage('assistant', answer.answer);
@@ -548,11 +604,18 @@ class TrailAssistantStore {
 	}
 
 	async askScout(prompt: string): Promise<ScoutAnswer> {
+		if (!(await this.#gemmaReady())) {
+			const answer = this.#gemmaUnavailableAnswer();
+			this.#lastScoutAnswer = answer;
+			return answer;
+		}
+
 		const answer = await this.#scout.runtime.ask({
 			prompt,
 			onlineStatus: this.#state.onlineStatus,
 			batterySaver: this.#state.trailSettings.batterySaver,
-			allowCloud: this.#state.privacySettings.allowCoachInsights
+			allowCloud: false,
+			preferredMode: REQUIRE_GEMMA ? 'on-device' : undefined
 		});
 		this.#lastScoutAnswer = answer;
 		return answer;

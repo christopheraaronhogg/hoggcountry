@@ -1,0 +1,58 @@
+# Hogg Country Android Play Store Submission
+
+## Current Target
+
+- App name: `Trail Assistant`
+- Package name: `com.hoggcountry.trailassistant`
+- Version: `0.1.0` / version code `1`
+- Android target SDK: `35`
+- Release artifact: `mobile/android/app/build/outputs/bundle/release/app-release.aab`
+- Model policy: Gemma 4 on-device only. No cloud/API model routing in Play release builds.
+
+## Build
+
+From `mobile/`:
+
+```sh
+npm run android:release-bundle
+```
+
+For a signed upload bundle, set the upload keystore environment variables before building:
+
+```sh
+export HC_ANDROID_KEYSTORE_FILE=/absolute/path/to/upload-keystore.jks
+export HC_ANDROID_KEYSTORE_PASSWORD=...
+export HC_ANDROID_KEY_ALIAS=...
+export HC_ANDROID_KEY_PASSWORD=...
+npm run android:release-bundle
+```
+
+Do not commit keystores, passwords, Play Console exports, or private signing material.
+
+## Required Before Production Submission
+
+- Wire the native Android Gemma 4 engine through the `ScoutGemma` Capacitor plugin bridge.
+- Bundle or download the approved Gemma 4 E2B/E4B LiteRT-LM model under a Play-compliant delivery strategy.
+- Run a physical Android smoke test for first launch, field-pack refresh, offline reopen, and Scout answer latency.
+- Capture phone screenshots for the Play listing.
+- Finalize privacy policy text that says Scout uses on-device AI for chat and contacts Hogg Country only for field-pack/data refresh and user-initiated trail reports.
+- Create the Play upload key or enroll the app in Play App Signing, then build a signed AAB.
+
+## Draft Listing Copy
+
+Short description:
+
+Trail-aware offline assistant for Appalachian Trail planning, check-ins, water, shelter, and town context.
+
+Full description:
+
+Trail Assistant is the Hogg Country field app for Appalachian Trail hikers. It keeps a compact trail-ahead field pack on your phone, shows water, shelter, town, mileage, and check-in context, and is being built around on-device Gemma 4 so core Scout answers can work without relying on a paid cloud model.
+
+This early release is focused on a Dad pilot corridor and conservative source receipts. Water, shelter, and town entries are treated as field candidates unless verified from current sources. Trail Assistant is not an emergency service and does not replace official weather, land-manager, guidebook, or satellite communicator guidance.
+
+## Data Safety Draft
+
+- Location: optional, used on device to estimate trail context and attach user-submitted trail reports when the hiker chooses to submit them.
+- App activity / messages: processed on device for Scout chat in Gemma-only builds.
+- Network: used for field-pack refresh and user-initiated trail condition sync.
+- No cloud/API model usage in the Play release build.

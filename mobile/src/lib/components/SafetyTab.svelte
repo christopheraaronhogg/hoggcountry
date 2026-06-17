@@ -134,13 +134,13 @@
 
 		<div class="toggle-row">
 			<div class="toggle-copy">
-				<strong>Coach insights</strong>
-				<span>Let Scout factor route position into recommendations.</span>
+				<strong>Scout route context</strong>
+				<span>Let on-device Scout factor route position into recommendations.</span>
 			</div>
 			<button
 				class:on={trailAssistant.privacySettings.allowCoachInsights}
 				class="toggle"
-				aria-label="Toggle coach insights"
+				aria-label="Toggle Scout route context"
 				onclick={() =>
 					trailAssistant.updatePrivacy({
 						allowCoachInsights: !trailAssistant.privacySettings.allowCoachInsights

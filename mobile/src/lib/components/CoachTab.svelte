@@ -127,13 +127,13 @@
 				<h2>Field assistant</h2>
 				<p class="hero-detail">
 					Mile {trailAssistant.currentMile.toFixed(1)} · Day {trailAssistant.dayNumber} · {trailAssistant.onlineStatus
-						? 'Cloud + local'
+						? 'Online field pack'
 						: 'Local only'}
 				</p>
 			</div>
 			<div class="mode-pill" data-online={trailAssistant.onlineStatus}>
 				<span class="status-dot" class:status-online={trailAssistant.onlineStatus} class:status-offline={!trailAssistant.onlineStatus}></span>
-				{trailAssistant.onlineStatus ? 'Online · cloud Scout' : `Offline · ${offlineModel.tier}`}
+				{trailAssistant.onlineStatus ? 'Online · Gemma-only Scout' : `Offline · ${offlineModel.tier}`}
 			</div>
 		</div>
 
@@ -210,7 +210,7 @@
 			<div class="composer-actions">
 				<div class="composer-meta">
 					<span class="mode-tag" data-online={trailAssistant.onlineStatus}>
-						{trailAssistant.onlineStatus ? 'Cloud Scout' : 'Local Scout'}
+						{trailAssistant.onlineStatus ? 'Gemma-only Scout' : 'Local Scout'}
 					</span>
 					<span class="hint">Sources cited per answer</span>
 				</div>

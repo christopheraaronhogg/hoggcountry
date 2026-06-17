@@ -206,12 +206,12 @@ export const nextServices: NextServiceMarker[] = [
 
 export const offlineModel: OfflineModelInfo = {
 	tier: 'Scout · Gemma 4 (compact)',
-	status: 'ready',
+	status: 'partial',
 	sizeMb: 1840,
 	contextTokens: 8000,
 	lastVerified: '2026-06-15T14:08:00Z',
 	regions: ['AT NY/CT pilot window', 'Open-reference trail-ahead candidates'],
-	note: 'Answers compose locally. Cloud Scout refines with live weather + ATC alerts when you have signal.'
+	note: 'Gemma 4 is the only planned model lane for this Play build. Chat is blocked until the native runtime is installed.'
 };
 
 export const packInventory: PackItem[] = [
