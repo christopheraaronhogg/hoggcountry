@@ -68,7 +68,8 @@
 				<h2>Offline brain</h2>
 				<p>
 					Scout's chat runs on a Gemma 4 model stored on your phone. Download it once on Wi-Fi and
-					Scout answers keep working with no signal.
+					Scout answers keep working with no signal. The download continues in the background — you
+					can leave this screen or lock your phone.
 				</p>
 			</div>
 
@@ -85,6 +86,29 @@
 				</div>
 			{:else if model?.state === 'ready'}
 				<p class="model-ready">✓ Installed and verified — Scout works fully offline.</p>
+			{:else if trailAssistant.meteredDownloadPrompt}
+				<div class="metered-warn">
+					<p>
+						You're on {trailAssistant.meteredDownloadPrompt.type === 'cellular'
+							? 'cellular'
+							: 'a metered connection'} — this model is ≈ {fmtBytes(model?.expectedBytes)}. Downloading
+						now may use your mobile data.
+					</p>
+					<div class="metered-actions">
+						<button
+							class="outline-button compact"
+							onclick={() => trailAssistant.dismissMeteredPrompt()}
+						>
+							Wait for Wi-Fi
+						</button>
+						<button
+							class="cta-button compact"
+							onclick={() => trailAssistant.downloadModel({ allowMetered: true })}
+						>
+							Download anyway
+						</button>
+					</div>
+				</div>
 			{:else if canDownload}
 				<div class="model-row">
 					<span>Model size ≈ {fmtBytes(model?.expectedBytes)}</span>
@@ -439,6 +463,27 @@
 		font-size: 0.82rem;
 		color: var(--danger, #b14a3d);
 		margin: 0;
+	}
+
+	.metered-warn {
+		display: grid;
+		gap: 10px;
+		padding: 10px 12px;
+		border-radius: 12px;
+		background: rgba(177, 74, 61, 0.08);
+		border: 1px solid rgba(177, 74, 61, 0.2);
+	}
+
+	.metered-warn p {
+		font-size: 0.84rem;
+		color: var(--ink, #2c2a24);
+		margin: 0;
+	}
+
+	.metered-actions {
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
 	}
 
 	.habit-grid {

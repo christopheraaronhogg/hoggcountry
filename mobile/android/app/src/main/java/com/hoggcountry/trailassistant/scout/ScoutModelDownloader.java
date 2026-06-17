@@ -68,6 +68,12 @@ public final class ScoutModelDownloader {
         cancelled = true;
     }
 
+    /** True once {@link #cancel()} has been called — lets the owner distinguish a
+     * cancelled transfer from a genuine failure when {@link #download} throws. */
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
     /**
      * Downloads (or resumes), then verifies. Returns the post-verify status.
      *

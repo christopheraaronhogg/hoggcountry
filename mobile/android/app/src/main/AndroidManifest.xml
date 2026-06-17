@@ -33,9 +33,23 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Foreground service that owns the multi-GB on-device model download so
+             it survives the app being backgrounded / the Activity destroyed. -->
+        <service
+            android:name=".scout.ScoutModelDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Wi-Fi-aware download: read connection type/metered before a big transfer. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Keep the model download alive when the app is not in the foreground. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Show download progress (API 33+ runtime grant; download still runs if denied). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

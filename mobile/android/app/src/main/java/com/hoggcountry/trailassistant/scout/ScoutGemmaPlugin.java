@@ -1,23 +1,37 @@
 package com.hoggcountry.trailassistant.scout;
 
+import android.Manifest;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.os.Build;
+
 import com.getcapacitor.JSObject;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@CapacitorPlugin(name = "ScoutGemma")
+@CapacitorPlugin(
+        name = "ScoutGemma",
+        permissions = {
+                @Permission(strings = { Manifest.permission.POST_NOTIFICATIONS }, alias = "notifications")
+        })
 public class ScoutGemmaPlugin extends Plugin {
 
     /**
      * volatile: the field is read on the Capacitor thread and on the inference
-     * executor, and written on the downloads executor. The additional
-     * synchronization in {@link #getEngine()} and {@link #startModelDownload}
-     * guards the lazy-init and swap sequences; volatile ensures cross-thread
-     * visibility of the reference between those synchronized blocks.
+     * executor, and written on the model-download bus callback (worker thread of
+     * {@link ScoutModelDownloadService}). The additional synchronization in
+     * {@link #getEngine()} and the bus {@code onComplete} swap guards the lazy-init
+     * and swap sequences; volatile ensures cross-thread visibility between them.
      */
     private volatile ScoutGemmaEngine engine;
 
@@ -26,37 +40,75 @@ public class ScoutGemmaPlugin extends Plugin {
     // On-device generation (and the lazy first-call model load, which takes
     // seconds) must run off the Capacitor thread or it risks an ANR.
     private final ExecutorService inference = Executors.newSingleThreadExecutor();
-    // The multi-GB model download runs on its own thread so it never blocks
-    // (or is blocked by) generation.
-    private final ExecutorService downloads = Executors.newSingleThreadExecutor();
-    private volatile ScoutModelDownloader activeDownloader;
 
     /**
-     * Guards lazy creation in {@link #getEngine()} and the engine swap in
-     * {@link #startModelDownload} so they cannot double-init or leave a window
-     * where a caller sees a partially-initialized engine.
+     * Guards lazy creation in {@link #getEngine()} and the engine swap on download
+     * completion so they cannot double-init or leave a window where a caller sees a
+     * partially-initialized engine.
      */
     private final Object engineLock = new Object();
+
+    /**
+     * Bridges {@link ScoutModelDownloadService} (which owns the transfer and
+     * outlives this plugin) to JS while the plugin is alive. The download itself is
+     * NOT tied to this plugin's lifecycle — that is the whole point of the
+     * foreground service — so terminal state arrives here as events, and on cold
+     * start the model is reconciled from {@link ScoutModelStore#getStatus()}.
+     */
+    private final ScoutModelDownloadBus.Listener downloadListener = new ScoutModelDownloadBus.Listener() {
+        @Override
+        public void onProgress(long bytesDownloaded, long totalBytes) {
+            JSObject progress = new JSObject();
+            progress.put("bytesDownloaded", bytesDownloaded);
+            progress.put("totalBytes", totalBytes);
+            notifyListeners("scoutModelDownloadProgress", progress);
+        }
+
+        @Override
+        public void onComplete(long totalBytes) {
+            // Model is on device and verified — swap in a fresh engine so the next
+            // isAvailable()/generate() picks it up without an app restart.
+            ScoutGemmaEngine previous;
+            synchronized (engineLock) {
+                previous = engine;
+                engine = createEngine();
+            }
+            if (previous != null) {
+                previous.close();
+            }
+            notifyListeners("scoutModelDownloadComplete", getModelStore().getStatus().toJSObject());
+        }
+
+        @Override
+        public void onError(String message) {
+            JSObject error = new JSObject();
+            error.put("message", message != null ? message : "Model download failed.");
+            notifyListeners("scoutModelDownloadError", error);
+        }
+
+        @Override
+        public void onCancelled() {
+            notifyListeners("scoutModelDownloadCancelled", new JSObject());
+        }
+    };
 
     @Override
     public void load() {
         modelStore = new ScoutModelStore(getContext());
         engine = createEngine();
+        ScoutModelDownloadBus.get().register(downloadListener);
     }
 
     /**
-     * Cleans up resources when the Capacitor plugin is destroyed (e.g. activity
-     * finish, process reclaim). Cancels any in-progress download, shuts down both
-     * executor services, and closes the current engine to release native resources.
+     * Cleans up UI-bound resources when the Capacitor plugin is destroyed (activity
+     * finish, process reclaim). Critically it does NOT cancel an in-flight model
+     * download — that is owned by {@link ScoutModelDownloadService} so it survives
+     * the app being backgrounded or the Activity being destroyed.
      */
     @Override
     protected void handleOnDestroy() {
-        ScoutModelDownloader downloader = activeDownloader;
-        if (downloader != null) {
-            downloader.cancel();
-        }
+        ScoutModelDownloadBus.get().unregister(downloadListener);
         inference.shutdownNow();
-        downloads.shutdownNow();
         ScoutGemmaEngine currentEngine;
         synchronized (engineLock) {
             currentEngine = engine;
@@ -162,57 +214,134 @@ public class ScoutGemmaPlugin extends Plugin {
     }
 
     /**
-     * Downloads + verifies the on-device model, streaming progress to JS via the
-     * {@code scoutModelDownloadProgress} event. On success the engine is rebuilt
-     * so {@code isAvailable()} flips to true without an app restart.
-     *
-     * <p>Engine swap is synchronized on {@link #engineLock} to prevent races with
-     * concurrent calls to {@link #getEngine()}: the previous engine is captured,
-     * the new one is installed, and then the old one is closed outside the lock so
-     * close() cannot block inference.
+     * Starts the model download in a foreground service and resolves immediately —
+     * the transfer is deliberately decoupled from this call's lifetime so it
+     * survives the user leaving the app. Progress and the terminal outcome arrive
+     * as events ({@code scoutModelDownloadProgress} / {@code …Complete} /
+     * {@code …Error} / {@code …Cancelled}); JS resolves its own promise on those.
      */
     @PluginMethod
     public void startModelDownload(PluginCall call) {
-        downloads.execute(() -> {
-            ScoutModelDownloader downloader = new ScoutModelDownloader(getContext());
-            activeDownloader = downloader;
-            try {
-                ScoutModelStatus status = downloader.download((bytesDownloaded, totalBytes) -> {
-                    JSObject progress = new JSObject();
-                    progress.put("bytesDownloaded", bytesDownloaded);
-                    progress.put("totalBytes", totalBytes);
-                    notifyListeners("scoutModelDownloadProgress", progress);
-                });
-                // Model is on device and verified — swap in a fresh engine so the
-                // next isAvailable()/generate() picks it up without an app restart.
-                ScoutGemmaEngine previous;
-                synchronized (engineLock) {
-                    previous = engine;
-                    engine = createEngine();
-                }
-                // Close the old engine outside the lock so close() cannot block
-                // callers waiting for engineLock in getEngine().
-                if (previous != null) {
-                    previous.close();
-                }
-                call.resolve(status.toJSObject());
-            } catch (ScoutModelDownloadException exception) {
-                call.reject(exception.getMessage());
-            } finally {
-                activeDownloader = null;
-            }
-        });
+        ScoutModelStatus status = getModelStore().getStatus();
+        if (ScoutModelStatus.READY.equals(status.state)) {
+            // Already downloaded + verified; nothing to start.
+            JSObject result = status.toJSObject();
+            result.put("started", false);
+            call.resolve(result);
+            return;
+        }
+        if (!status.downloadConfigured) {
+            call.reject("No model download endpoint is configured for this build.");
+            return;
+        }
+        ScoutModelDownloadService.start(getContext());
+        JSObject result = status.toJSObject();
+        result.put("started", true);
+        call.resolve(result);
     }
 
     @PluginMethod
     public void cancelModelDownload(PluginCall call) {
-        ScoutModelDownloader downloader = activeDownloader;
-        if (downloader != null) {
-            downloader.cancel();
-        }
+        boolean wasActive = ScoutModelDownloadBus.get().isActive();
+        ScoutModelDownloadService.cancel(getContext());
         JSObject result = new JSObject();
-        result.put("cancelled", downloader != null);
+        result.put("cancelled", wasActive);
         call.resolve(result);
+    }
+
+    /**
+     * Reports whether a download is in flight and its last known progress so the JS
+     * layer can re-attach its progress UI after the app returns to the foreground
+     * (the transfer may have continued — or finished — while the WebView was gone).
+     */
+    @PluginMethod
+    public void getDownloadState(PluginCall call) {
+        ScoutModelDownloadBus bus = ScoutModelDownloadBus.get();
+        JSObject result = new JSObject();
+        result.put("active", bus.isActive());
+        result.put("bytesDownloaded", bus.lastBytes());
+        result.put("totalBytes", bus.lastTotal());
+        call.resolve(result);
+    }
+
+    /**
+     * Reports the active network so JS can be Wi-Fi-aware before kicking off a
+     * multi-GB download: {@code connected}, {@code metered} (cellular / hotspot),
+     * and a coarse {@code type}. No network IO — reads ConnectivityManager state.
+     */
+    @PluginMethod
+    public void getNetworkStatus(PluginCall call) {
+        JSObject result = new JSObject();
+        boolean connected = false;
+        boolean metered = true;
+        String type = "none";
+
+        ConnectivityManager cm =
+                (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm != null) {
+            Network active = cm.getActiveNetwork();
+            NetworkCapabilities caps = active != null ? cm.getNetworkCapabilities(active) : null;
+            if (caps != null && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                connected = true;
+                metered = !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED);
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    type = "wifi";
+                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                    type = "cellular";
+                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                    type = "ethernet";
+                } else {
+                    type = "other";
+                }
+            }
+        }
+        result.put("connected", connected);
+        result.put("metered", metered);
+        result.put("type", type);
+        call.resolve(result);
+    }
+
+    /**
+     * Reports whether the OS will let us show the download-progress notification.
+     * On API &lt; 33 notifications need no runtime grant, so this is always granted.
+     */
+    @PluginMethod
+    public void checkNotificationsPermission(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", hasNotificationsPermission());
+        call.resolve(result);
+    }
+
+    /**
+     * Requests POST_NOTIFICATIONS (API 33+) so the background download shows a
+     * progress notification. Denial is non-fatal — the foreground service still
+     * runs and keeps the transfer alive; the user just loses the OS progress chip
+     * (in-app progress still updates while the app is open).
+     */
+    @PluginMethod
+    public void requestNotificationsPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+                || hasNotificationsPermission()) {
+            JSObject result = new JSObject();
+            result.put("granted", true);
+            call.resolve(result);
+            return;
+        }
+        requestPermissionForAlias("notifications", call, "notificationsPermissionCallback");
+    }
+
+    @PermissionCallback
+    private void notificationsPermissionCallback(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", hasNotificationsPermission());
+        call.resolve(result);
+    }
+
+    private boolean hasNotificationsPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true;
+        }
+        return getPermissionState("notifications") == PermissionState.GRANTED;
     }
 
     ScoutGemmaEngine createEngine() {

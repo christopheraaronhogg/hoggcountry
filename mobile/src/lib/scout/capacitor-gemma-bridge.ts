@@ -33,6 +33,9 @@ export type ScoutGemmaModelStatus = {
 	reason?: string;
 };
 
+/** Status shape plus the {@code started} flag startModelDownload adds. */
+type ScoutDownloadStartResult = ScoutGemmaModelStatus & { started?: boolean };
+
 type ScoutGemmaPlugin = {
 	isAvailable(): Promise<ScoutGemmaAvailability>;
 	describeModel(): Promise<ScoutGemmaDescriptor | ScoutGemmaAvailability | null>;
@@ -43,13 +46,36 @@ type ScoutGemmaPlugin = {
 	}): Promise<{ text: string; truncated?: boolean }>;
 	getModelStatus?: () => Promise<ScoutGemmaModelStatus>;
 	prepareModelDownload?: () => Promise<ScoutGemmaModelStatus>;
-	startModelDownload?: () => Promise<ScoutGemmaModelStatus>;
+	/**
+	 * Kicks off the foreground-service download and resolves IMMEDIATELY (the
+	 * transfer is decoupled from this call so it survives the app closing). The
+	 * terminal outcome arrives via the scoutModelDownload{Complete,Error,Cancelled}
+	 * events. {@code started} is false when the model is already ready.
+	 */
+	startModelDownload?: () => Promise<ScoutDownloadStartResult>;
 	cancelModelDownload?: () => Promise<{ cancelled: boolean }>;
+	/** Whether a background download is in flight + its last known progress. */
+	getDownloadState?: () => Promise<DownloadState>;
+	/** Active network type + metered flag, for Wi-Fi-aware downloads. */
+	getNetworkStatus?: () => Promise<NetworkStatus>;
+	checkNotificationsPermission?: () => Promise<{ granted: boolean }>;
+	requestNotificationsPermission?: () => Promise<{ granted: boolean }>;
 	addListener?: {
 		(
 			eventName: 'scoutModelDownloadProgress',
 			listener: (data: ModelDownloadProgress) => void
 		): Promise<{ remove: () => Promise<void> }>;
+		(
+			eventName: 'scoutModelDownloadComplete',
+			listener: (data: ScoutGemmaModelStatus) => void
+		): Promise<{ remove: () => Promise<void> }>;
+		(
+			eventName: 'scoutModelDownloadError',
+			listener: (data: { message: string }) => void
+		): Promise<{ remove: () => Promise<void> }>;
+		(eventName: 'scoutModelDownloadCancelled', listener: () => void): Promise<{
+			remove: () => Promise<void>;
+		}>;
 		(eventName: 'scoutGenerateToken', listener: (data: { text: string }) => void): Promise<{
 			remove: () => Promise<void>;
 		}>;
@@ -62,11 +88,44 @@ export type ModelDownloadProgress = {
 	totalBytes: number;
 };
 
+export type NetworkStatus = {
+	connected: boolean;
+	/** True on cellular / hotspot — surface a cost warning before a big download. */
+	metered: boolean;
+	type: 'wifi' | 'cellular' | 'ethernet' | 'other' | 'none';
+};
+
+export type DownloadState = {
+	active: boolean;
+	bytesDownloaded: number;
+	totalBytes: number;
+};
+
 export interface ScoutModelManager {
 	getStatus(): Promise<ScoutGemmaModelStatus | null>;
 	prepareDownload(): Promise<ScoutGemmaModelStatus | null>;
+	/**
+	 * Starts the download and resolves when it terminates (complete/cancelled) or
+	 * rejects on error. The transfer runs in a native foreground service, so if the
+	 * app is closed mid-download this promise is lost but the download continues;
+	 * use {@link reattachDownload} on resume to re-observe it.
+	 */
 	startDownload(onProgress?: (progress: ModelDownloadProgress) => void): Promise<ScoutGemmaModelStatus>;
 	cancelDownload(): Promise<boolean>;
+	/** Active network type + metered flag, or null when unsupported (e.g. iOS/web). */
+	getNetworkStatus(): Promise<NetworkStatus | null>;
+	/** Snapshot of any in-flight background download, or null when unsupported. */
+	getDownloadState(): Promise<DownloadState | null>;
+	/**
+	 * Re-observe a download already running in the background service (after the
+	 * app returns to the foreground). Resolves like {@link startDownload} when it
+	 * ends, or resolves null immediately when no download is active.
+	 */
+	reattachDownload(
+		onProgress?: (progress: ModelDownloadProgress) => void
+	): Promise<ScoutGemmaModelStatus | null>;
+	/** Ask for notification permission so the OS shows download progress (Android 13+). */
+	requestNotificationsPermission(): Promise<boolean>;
 }
 
 type CapacitorWindow = Window & {
@@ -125,6 +184,59 @@ export function createCapacitorModelManager(win: Window = window): ScoutModelMan
 	const plugin = capacitor.Plugins?.ScoutGemma;
 	if (!plugin) return null;
 
+	// Attaches progress + terminal listeners and returns a promise that settles
+	// when the background download ends. Shared by startDownload (which also kicks
+	// the service off) and reattachDownload (which only observes). All four
+	// listeners are removed exactly once, on the first terminal event or on abort.
+	// Defined as a const arrow (not a hoisted declaration) so the non-null
+	// narrowing of `plugin` above is preserved inside the closure.
+	const observeTerminal = async (
+		onProgress?: (progress: ModelDownloadProgress) => void
+	): Promise<{ done: Promise<ScoutGemmaModelStatus>; abort: () => Promise<void> }> => {
+		const handles: Array<{ remove: () => Promise<void> }> = [];
+		const removeAll = async () => {
+			const pending = handles.splice(0);
+			await Promise.all(pending.map((h) => h.remove().catch(() => {})));
+		};
+
+		let settle!: (status: ScoutGemmaModelStatus) => void;
+		let fail!: (error: Error) => void;
+		const done = new Promise<ScoutGemmaModelStatus>((resolve, reject) => {
+			settle = resolve;
+			fail = reject;
+		});
+
+		if (plugin.addListener) {
+			if (onProgress) {
+				handles.push(await plugin.addListener('scoutModelDownloadProgress', onProgress));
+			}
+			handles.push(
+				await plugin.addListener('scoutModelDownloadComplete', (status) => {
+					void removeAll();
+					settle(status);
+				})
+			);
+			handles.push(
+				await plugin.addListener('scoutModelDownloadError', (data) => {
+					void removeAll();
+					fail(new Error(data?.message || 'Model download failed.'));
+				})
+			);
+			handles.push(
+				await plugin.addListener('scoutModelDownloadCancelled', () => {
+					void removeAll();
+					// A user cancel is not an error: resolve with the current (partial)
+					// status so callers clear progress without surfacing a failure.
+					void plugin
+						.getModelStatus?.()
+						.then((status) => settle(status))
+						.catch(() => fail(new Error('Model download cancelled.')));
+				})
+			);
+		}
+		return { done, abort: removeAll };
+	};
+
 	return {
 		async getStatus() {
 			if (!plugin.getModelStatus) return null;
@@ -138,20 +250,48 @@ export function createCapacitorModelManager(win: Window = window): ScoutModelMan
 			if (!plugin.startModelDownload) {
 				throw new Error('On-device model download is not supported in this build.');
 			}
-			let handle: { remove: () => Promise<void> } | undefined;
-			if (onProgress && plugin.addListener) {
-				handle = await plugin.addListener('scoutModelDownloadProgress', onProgress);
-			}
+			// Attach terminal listeners BEFORE starting so a fast completion can't
+			// fire before we are listening.
+			const { done, abort } = await observeTerminal(onProgress);
 			try {
-				return await plugin.startModelDownload();
-			} finally {
-				await handle?.remove();
+				const start = await plugin.startModelDownload();
+				if (start.started === false) {
+					// Nothing to download (already verified / ready) — return now.
+					await abort();
+					return start;
+				}
+				return await done;
+			} catch (error) {
+				await abort();
+				throw error;
 			}
 		},
 		async cancelDownload() {
 			if (!plugin.cancelModelDownload) return false;
 			const result = await plugin.cancelModelDownload();
 			return result.cancelled;
+		},
+		async getNetworkStatus() {
+			if (!plugin.getNetworkStatus) return null;
+			return plugin.getNetworkStatus();
+		},
+		async getDownloadState() {
+			if (!plugin.getDownloadState) return null;
+			return plugin.getDownloadState();
+		},
+		async reattachDownload(onProgress) {
+			if (!plugin.getDownloadState) return null;
+			const state = await plugin.getDownloadState();
+			if (!state.active) return null;
+			const { done } = await observeTerminal(onProgress);
+			// Seed the caller's progress UI with the last known bytes immediately.
+			onProgress?.({ bytesDownloaded: state.bytesDownloaded, totalBytes: state.totalBytes });
+			return done;
+		},
+		async requestNotificationsPermission() {
+			if (!plugin.requestNotificationsPermission) return true;
+			const result = await plugin.requestNotificationsPermission();
+			return result.granted;
 		}
 	};
 }

@@ -22,6 +22,7 @@ import {
 	createCapacitorGemmaBridge,
 	createCapacitorModelManager,
 	type ModelDownloadProgress,
+	type NetworkStatus,
 	type ScoutGemmaModelStatus,
 	type ScoutModelManager
 } from './scout/capacitor-gemma-bridge.ts';
@@ -237,6 +238,10 @@ class TrailAssistantStore {
 	#modelStatus = $state<ScoutGemmaModelStatus | null>(null);
 	#modelDownload = $state<{ bytesDownloaded: number; totalBytes: number } | null>(null);
 	#modelError = $state<string | null>(null);
+	// Set when a download was requested on a metered (cellular/hotspot) connection
+	// and the user has not yet okayed the data cost. The UI shows a confirm; calling
+	// downloadModel({ allowMetered: true }) clears it and proceeds.
+	#meteredDownloadPrompt = $state<NetworkStatus | null>(null);
 	// True while a Scout reply is being generated (on-device inference can take
 	// many seconds), so the chat can show a "thinking" indicator instead of
 	// looking frozen.
@@ -260,7 +265,9 @@ class TrailAssistantStore {
 			this.#fieldPackStatus = status;
 		});
 		void this.#loadFieldPack();
-		void this.refreshModelStatus();
+		// Re-observe any model download that kept running in the background service
+		// while the app was closed (also refreshes status, which may now be ready).
+		void this.reconcileDownload();
 
 		window.addEventListener('online', () => {
 			this.#state.onlineStatus = true;
@@ -549,6 +556,16 @@ class TrailAssistantStore {
 		return this.#modelError;
 	}
 
+	/**
+	 * Non-null when a download was requested over a metered (cellular/hotspot)
+	 * connection and is awaiting the user's okay on the data cost. The UI shows a
+	 * "download over cellular?" confirm; downloadModel({ allowMetered: true })
+	 * proceeds, dismissMeteredPrompt() backs out.
+	 */
+	get meteredDownloadPrompt() {
+		return this.#meteredDownloadPrompt;
+	}
+
 	/** True when on-device model management is available (native build w/ plugin). */
 	get supportsOnDeviceModel() {
 		return this.#modelManager !== null;
@@ -810,14 +827,36 @@ class TrailAssistantStore {
 	}
 
 	/**
-	 * Download + verify the on-device Gemma model, tracking live progress. Safe
-	 * to call only on native builds where a download endpoint is configured; the
-	 * UI gates the button on {@link modelStatus} state. Re-probes status on
-	 * completion so the engine shows as ready.
+	 * Download + verify the on-device Gemma model, tracking live progress. The
+	 * native side runs the transfer in a foreground service so it survives the app
+	 * being backgrounded; this method tracks it while the UI is open and reconciles
+	 * on completion.
+	 *
+	 * Wi-Fi-aware: on a metered (cellular/hotspot) connection it stops and sets
+	 * {@link meteredDownloadPrompt} so the UI can warn about the ~2.5GB cost; pass
+	 * {@code allowMetered: true} to proceed anyway.
 	 */
-	async downloadModel(): Promise<void> {
+	async downloadModel(options: { allowMetered?: boolean } = {}): Promise<void> {
 		if (!this.#modelManager || this.#modelDownload) return;
 		this.#modelError = null;
+
+		// Best-effort: ask for notification permission so the OS shows background
+		// progress. Denial is non-fatal — the foreground service still runs.
+		await this.#modelManager.requestNotificationsPermission().catch(() => false);
+
+		// Wi-Fi-aware gate. Skip the download (don't burn cellular data) until the
+		// user explicitly okays a metered connection.
+		const network = await this.#modelManager.getNetworkStatus().catch(() => null);
+		if (network && !network.connected) {
+			this.#modelError = 'No internet connection. Connect to Wi-Fi to download the model.';
+			return;
+		}
+		if (network?.metered && !options.allowMetered) {
+			this.#meteredDownloadPrompt = network;
+			return;
+		}
+		this.#meteredDownloadPrompt = null;
+
 		this.#modelDownload = { bytesDownloaded: 0, totalBytes: this.#modelStatus?.expectedBytes ?? -1 };
 		try {
 			const status = await this.#modelManager.startDownload((progress: ModelDownloadProgress) => {
@@ -841,9 +880,59 @@ class TrailAssistantStore {
 		}
 	}
 
+	/** Back out of the metered-connection download confirm without downloading. */
+	dismissMeteredPrompt(): void {
+		this.#meteredDownloadPrompt = null;
+	}
+
+	/**
+	 * Re-observe a download that may have kept running in the background service
+	 * while the app was closed/backgrounded. Call on app resume / when the model UI
+	 * mounts: it re-attaches progress + terminal handling if a transfer is still in
+	 * flight, and refreshes status (which may now be ready). No-op otherwise.
+	 */
+	async reconcileDownload(): Promise<void> {
+		if (!this.#modelManager) return;
+		await this.refreshModelStatus();
+		if (this.#modelStatus?.state === 'ready') {
+			this.#scout.onDeviceProvider?.invalidateAvailability();
+			return;
+		}
+		if (this.#modelDownload) return; // Already tracking in this session.
+
+		const state = await this.#modelManager.getDownloadState().catch(() => null);
+		if (!state?.active) return; // No background download to re-observe.
+
+		// Seed the progress bar from the last known bytes before awaiting terminal.
+		this.#modelDownload = { bytesDownloaded: state.bytesDownloaded, totalBytes: state.totalBytes };
+		try {
+			const status = await this.#modelManager.reattachDownload((progress: ModelDownloadProgress) => {
+				this.#modelDownload = {
+					bytesDownloaded: progress.bytesDownloaded,
+					totalBytes: progress.totalBytes
+				};
+			});
+			if (status) {
+				this.#modelStatus = status;
+				if (status.state === 'ready') {
+					this.#scout.onDeviceProvider?.invalidateAvailability();
+				}
+			} else {
+				// Finished between the state check and the re-attach — reconcile.
+				await this.refreshModelStatus();
+			}
+		} catch (error) {
+			this.#modelError = error instanceof Error ? error.message : 'Model download failed.';
+			await this.refreshModelStatus();
+		} finally {
+			this.#modelDownload = null;
+		}
+	}
+
 	/** Cancel an in-flight model download; the partial file is kept for resume. */
 	async cancelModelDownload(): Promise<void> {
 		if (!this.#modelManager) return;
+		this.#meteredDownloadPrompt = null;
 		await this.#modelManager.cancelDownload();
 	}
 
