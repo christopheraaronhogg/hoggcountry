@@ -3,7 +3,6 @@
 	import CoachTab from '$lib/components/CoachTab.svelte';
 	import TodayTab from '$lib/components/TodayTab.svelte';
 	import MapTab from '$lib/components/MapTab.svelte';
-	import GearTab from '$lib/components/GearTab.svelte';
 	import TrailTab from '$lib/components/TrailTab.svelte';
 	import SettingsTab from '$lib/components/SettingsTab.svelte';
 	import TabNavigation from '$lib/components/TabNavigation.svelte';
@@ -24,8 +23,6 @@
 			<TodayTab />
 		{:else if tab === 'Map'}
 			<MapTab />
-		{:else if tab === 'Gear'}
-			<GearTab />
 		{:else if tab === 'Trail'}
 			<TrailTab />
 		{:else if tab === 'Settings'}

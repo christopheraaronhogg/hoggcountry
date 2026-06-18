@@ -482,6 +482,23 @@ class TrailAssistantStore {
 		this.#state.activeTab = tab;
 	}
 
+	// Which section the Trail pillar opens to (Guide · Bible · Journal · Gear).
+	// Shared so the Today "packing up?" glance can deep-link straight to Gear.
+	#trailSection = $state<'guide' | 'bible' | 'journal' | 'gear'>('guide');
+	get trailSection() {
+		return this.#trailSection;
+	}
+	set trailSection(section: 'guide' | 'bible' | 'journal' | 'gear') {
+		this.#trailSection = section;
+	}
+
+	/** Open the Trail pillar to a specific section (used by deep links like the
+	 *  Today packing glance jumping to Gear). */
+	openTrailSection(section: 'guide' | 'bible' | 'journal' | 'gear') {
+		this.#trailSection = section;
+		this.#state.activeTab = 'Trail';
+	}
+
 	get coachMessages() {
 		return this.#state.coachMessages;
 	}

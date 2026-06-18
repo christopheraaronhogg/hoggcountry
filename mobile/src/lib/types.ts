@@ -1,11 +1,11 @@
 // Bottom-nav pillars: Today (calm glance dashboard, home) · Scout (chat) · Map ·
-// Trail. Gear and Settings are reachable views but NOT bottom-nav tabs — Gear from
-// the Today "packing up?" glance (it's a morning ritual, not all-day), Settings
-// from the header gear. Old tabs (Plan/Town/Safety/You) were folded in — see
-// migrateTab().
-export type Tab = 'Today' | 'Scout' | 'Map' | 'Gear' | 'Trail' | 'Settings';
+// Trail. Settings is a reachable view but NOT a bottom-nav tab (header gear). Gear
+// lives as the 4th section inside Trail (Guide · Bible · Journal · Gear) and is
+// deep-linked from the Today "packing up?" glance. Old tabs (Plan/Town/Safety/You)
+// folded in — see migrateTab().
+export type Tab = 'Today' | 'Scout' | 'Map' | 'Trail' | 'Settings';
 
-/** The four bottom-nav pillars, in order. Gear/Settings are intentionally absent. */
+/** The four bottom-nav pillars, in order. Settings is intentionally absent. */
 export const NAV_TABS: readonly Tab[] = ['Today', 'Scout', 'Map', 'Trail'];
 
 /** Maps any previously-persisted tab id onto the new IA so a returning user
@@ -15,10 +15,11 @@ export function migrateTab(value: unknown): Tab {
 		case 'Scout':
 		case 'Today':
 		case 'Map':
-		case 'Gear':
 		case 'Trail':
 		case 'Settings':
 			return value;
+		case 'Gear':
+			return 'Trail'; // Gear is now a section inside Trail, not its own tab
 		case 'Coach':
 			return 'Scout';
 		case 'Plan':

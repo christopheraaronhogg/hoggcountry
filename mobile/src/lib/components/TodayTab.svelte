@@ -118,7 +118,7 @@
 	</section>
 
 	<!-- Gear: a morning packing glance, not an all-day tab -->
-	<button class="packing card" onclick={() => (trailAssistant.activeTab = 'Gear')}>
+	<button class="packing card" onclick={() => trailAssistant.openTrailSection('gear')}>
 		<div class="pk-left">
 			<div class="eyebrow">Packing up?</div>
 			<p class="pk-line">{packTotalCarriedLb} lb on your back</p>

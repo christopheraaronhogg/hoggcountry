@@ -7,7 +7,11 @@
 	// upcoming water / shelter / town placed ALONG the line by mile, plus a compact
 	// "elevation ahead" card. Not a geographic tile map — a calm linear read of
 	// what's coming, which is exactly how a thru-hike is experienced.
-	const SPAN = 30; // miles of trail shown on the ribbon
+	//
+	// One zoom control (5 / 10 / 20 mi, default 10) drives BOTH the ribbon window
+	// and the elevation card, so zooming re-scales the whole "what's ahead" view.
+	const ZOOMS = [5, 10, 20] as const;
+	let mapZoom = $state<(typeof ZOOMS)[number]>(10);
 
 	const from = $derived(trailAssistant.currentMile);
 
@@ -15,14 +19,24 @@
 
 	// Upcoming landmarks within the window. Water can be plentiful, so cap it to the
 	// nearest couple; shelters/towns are sparse, show all in-window.
+	// Short label so long shelter names ("Morgan Stewart Memorial Shelter") don't
+	// run off the ribbon and pile into their neighbors.
+	function short(name: string): string {
+		const trimmed = name.replace(/ (Memorial )?Shelter$/i, '');
+		return trimmed.length > 15 ? trimmed.slice(0, 14).trimEnd() + '…' : trimmed;
+	}
+
 	const landmarks = $derived.by<Landmark[]>(() => {
 		const pack = trailAssistant.fieldPack;
 		const ahead = <T extends { mile: number }>(items: T[]) =>
-			items.filter((i) => i.mile >= from - 0.01 && i.mile <= from + SPAN).sort((a, b) => a.mile - b.mile);
-		const water = ahead(pack.water).slice(0, 2).map((w) => ({ kind: 'water' as const, mile: w.mile, label: w.name }));
-		const shelters = ahead(pack.shelters).map((s) => ({ kind: 'shelter' as const, mile: s.mile, label: s.name }));
-		const towns = ahead(pack.towns).map((t) => ({ kind: 'town' as const, mile: t.mile, label: t.name }));
-		return [...water, ...shelters, ...towns].sort((a, b) => a.mile - b.mile).slice(0, 7);
+			items.filter((i) => i.mile >= from - 0.01 && i.mile <= from + mapZoom).sort((a, b) => a.mile - b.mile);
+		// The NEXT water already lives in the top chip, so keep the line to shelters
+		// + towns (the sleep/resupply anchors) plus just the next water — fewer, less
+		// cluttered pins than dropping every mapped stream on the ribbon.
+		const water = ahead(pack.water).slice(0, 1).map((w) => ({ kind: 'water' as const, mile: w.mile, label: short(w.name) }));
+		const shelters = ahead(pack.shelters).map((s) => ({ kind: 'shelter' as const, mile: s.mile, label: short(s.name) }));
+		const towns = ahead(pack.towns).map((t) => ({ kind: 'town' as const, mile: t.mile, label: short(t.name) }));
+		return [...water, ...shelters, ...towns].sort((a, b) => a.mile - b.mile).slice(0, 6);
 	});
 
 	const nextWater = $derived.by(() => {
@@ -68,10 +82,15 @@
 	}
 
 	function place(mile: number): { leftPct: number; topPct: number } {
-		const frac = Math.max(0, Math.min(1, (mile - from) / SPAN));
+		const frac = Math.max(0, Math.min(1, (mile - from) / mapZoom));
 		const topPct = YOU_TOP - frac * (YOU_TOP - AHEAD_TOP);
 		return { leftPct: (xForY((topPct / 100) * 540) / 320) * 100, topPct };
 	}
+
+	// Minimum vertical gap (% of height) between adjacent pins so their labels can't
+	// overlap. Pins keep their true horizontal spot on the line; only the vertical
+	// position is nudged up when two landmarks fall too close in mileage.
+	const MIN_GAP = 9;
 
 	$effect(() => {
 		// Re-place whenever the path mounts or the landmark set / position changes.
@@ -79,41 +98,52 @@
 		if (!pathEl) return;
 		buildSamples();
 		youPos = place(from);
-		placed = list.map((l) => ({ ...l, ...place(l.mile) }));
+		// Nearest first (largest topPct, lowest on screen). Walk upward and push any
+		// pin that's within MIN_GAP of the previous one further up the ribbon, then
+		// re-read its x off the line so the dot still sits on the trail.
+		const next = list
+			.map((l) => ({ ...l, ...place(l.mile) }))
+			.sort((a, b) => b.topPct - a.topPct);
+		for (let i = 1; i < next.length; i++) {
+			const gap = next[i - 1].topPct - next[i].topPct;
+			if (gap < MIN_GAP) {
+				const top = Math.max(AHEAD_TOP - 4, next[i - 1].topPct - MIN_GAP);
+				next[i] = { ...next[i], topPct: top, leftPct: (xForY((top / 100) * 540) / 320) * 100 };
+			}
+		}
+		placed = next;
 	});
 
 	const glyph: Record<Landmark['kind'], string> = { water: '💧', shelter: '⛺', town: '⌂' };
 
-	// --- elevation-ahead sparkline (real points) ----------------------------
-	const elevPath = $derived.by(() => {
-		const pts: ElevationPoint[] = elevationNext20;
-		if (pts.length < 2) return { d: '', hereX: 0, hereY: 40, lo: from, hi: from + SPAN, mid: '' };
-		const miles = pts.map((p) => p.mile);
-		const elevs = pts.map((p) => p.elevation);
-		const minMile = Math.min(...miles), maxMile = Math.max(...miles);
+	// --- elevation-ahead profile (real points, windowed by the zoom) ---------
+	// Shows the next `mapZoom` miles and reports the actual ups/downs (total ascent
+	// + descent), not just the silhouette, with a vertical ft scale.
+	const H = 46;
+	const elev = $derived.by(() => {
+		const W = 280, pad = 5;
+		const lo = from, hi = from + mapZoom;
+		const win = elevationNext20.filter((p) => p.mile >= lo - 0.01 && p.mile <= hi + 0.01);
+		if (win.length < 2) {
+			return { d: '', gain: 0, loss: 0, minEl: 0, maxEl: 0, hereY: H - pad, lo, hi, empty: true };
+		}
+		const elevs = win.map((p) => p.elevation);
 		const minEl = Math.min(...elevs), maxEl = Math.max(...elevs);
-		const W = 280, H = 46, pad = 4;
-		const x = (m: number) => ((m - minMile) / (maxMile - minMile || 1)) * W;
+		// Fixed window on x so the right edge is exactly `from + mapZoom`.
+		const x = (m: number) => ((m - lo) / (hi - lo || 1)) * W;
 		const y = (e: number) => H - pad - ((e - minEl) / (maxEl - minEl || 1)) * (H - pad * 2);
-		const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.mile).toFixed(1)},${y(p.elevation).toFixed(1)}`).join(' ');
-		const d = `${line} L${W},${H} L0,${H} Z`;
-		const hereX = x(Math.max(minMile, Math.min(maxMile, from)));
-		// y of the path at "here": nearest point
-		const nearest = pts.reduce((a, b) => (Math.abs(b.mile - from) < Math.abs(a.mile - from) ? b : a));
-		return {
-			d,
-			hereX,
-			hereY: y(nearest.elevation),
-			lo: minMile,
-			hi: maxMile
-		};
+		const line = win.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.mile).toFixed(1)},${y(p.elevation).toFixed(1)}`).join(' ');
+		const d = `${line} L${x(win[win.length - 1].mile).toFixed(1)},${H} L${x(win[0].mile).toFixed(1)},${H} Z`;
+		// Total ascent / descent across the window.
+		let gain = 0, loss = 0;
+		for (let i = 1; i < win.length; i++) {
+			const delta = win[i].elevation - win[i - 1].elevation;
+			if (delta > 0) gain += delta; else loss += -delta;
+		}
+		return { d, gain: Math.round(gain), loss: Math.round(loss), minEl, maxEl, hereY: y(win[0].elevation), lo, hi, empty: false };
 	});
 
-	const nextShelterMile = $derived(
-		trailAssistant.fieldPack.shelters
-			.filter((s) => s.mile >= from - 0.01)
-			.sort((a, b) => a.mile - b.mile)[0]?.mile ?? null
-	);
+	const fmt = (n: number) => n.toLocaleString('en-US');
 </script>
 
 <div class="map-screen">
@@ -171,25 +201,36 @@
 		<!-- elevation ahead -->
 		<div class="elev">
 			<div class="etop">
-				<span class="etitle">Elevation ahead · {SPAN} mi</span>
-				{#if nextShelterMile !== null}
-					<span class="erange">to shelter {(nextShelterMile - from).toFixed(1)} mi</span>
-				{/if}
+				<span class="etitle">Elevation ahead</span>
+				<div class="zoom" role="group" aria-label="Zoom map and elevation">
+					{#each ZOOMS as z (z)}
+						<button class="zbtn" class:on={mapZoom === z} onclick={() => (mapZoom = z)}>{z}</button>
+					{/each}
+					<span class="zunit">mi</span>
+				</div>
 			</div>
-			<svg viewBox="0 0 280 46" preserveAspectRatio="none">
-				<defs>
-					<linearGradient id="elevfill" x1="0" y1="0" x2="0" y2="1">
-						<stop offset="0" stop-color="rgba(47,75,53,.30)" />
-						<stop offset="1" stop-color="rgba(47,75,53,.04)" />
-					</linearGradient>
-				</defs>
-				<path class="epath" d={elevPath.d} />
-				<line class="here" x1={elevPath.hereX} y1="2" x2={elevPath.hereX} y2="46" />
-				<circle class="heredot" cx={elevPath.hereX} cy={elevPath.hereY} r="3.4" />
-			</svg>
+
+			<div class="updown">
+				<span class="up">↑ +{fmt(elev.gain)} ft</span>
+				<span class="down">↓ −{fmt(elev.loss)} ft</span>
+			</div>
+
+			<div class="chartrow">
+				<div class="yax"><span>{fmt(elev.maxEl)}</span><span>{fmt(elev.minEl)}</span></div>
+				<svg viewBox="0 0 280 46" preserveAspectRatio="none">
+					<defs>
+						<linearGradient id="elevfill" x1="0" y1="0" x2="0" y2="1">
+							<stop offset="0" stop-color="rgba(47,75,53,.30)" />
+							<stop offset="1" stop-color="rgba(47,75,53,.04)" />
+						</linearGradient>
+					</defs>
+					<path class="epath" d={elev.d} />
+				</svg>
+			</div>
+
 			<div class="elabels">
-				<span>Mi {elevPath.lo.toFixed(0)}</span>
-				<span>Mi {elevPath.hi.toFixed(0)}</span>
+				<span>Mi {elev.lo.toFixed(0)} · here</span>
+				<span>Mi {elev.hi.toFixed(0)}</span>
 			</div>
 		</div>
 	</div>
@@ -376,9 +417,9 @@
 	}
 	.elev .etop {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 5px;
+		margin-bottom: 6px;
 	}
 	.elev .etitle {
 		font-size: 0.6rem;
@@ -387,35 +428,87 @@
 		letter-spacing: 0.09em;
 		color: var(--muted);
 	}
-	.elev .erange {
-		font-size: 0.62rem;
+	/* zoom toggle */
+	.zoom {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		background: rgba(47, 75, 53, 0.07);
+		border-radius: 8px;
+		padding: 2px;
+	}
+	.zbtn {
+		min-width: 26px;
+		height: 22px;
+		padding: 0 6px;
+		border-radius: 6px;
+		font-size: 0.66rem;
+		font-weight: 800;
+		color: var(--muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.zbtn.on {
+		background: var(--surface-strong, #fffdf8);
+		color: var(--forest);
+		box-shadow: var(--shadow-soft);
+	}
+	.zunit {
+		font-size: 0.56rem;
+		font-weight: 800;
+		color: var(--muted);
+		padding: 0 3px 0 2px;
+	}
+	/* ascent / descent */
+	.updown {
+		display: flex;
+		gap: 14px;
+		margin-bottom: 4px;
+	}
+	.updown .up {
+		font-size: 0.78rem;
 		font-weight: 800;
 		color: var(--forest);
+		font-variant-numeric: tabular-nums;
+	}
+	.updown .down {
+		font-size: 0.78rem;
+		font-weight: 800;
+		color: var(--clay);
+		font-variant-numeric: tabular-nums;
+	}
+	/* chart + y-axis scale */
+	.chartrow {
+		display: flex;
+		align-items: stretch;
+		gap: 6px;
+	}
+	.yax {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		font-size: 0.54rem;
+		font-weight: 800;
+		color: var(--muted);
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		min-width: 26px;
+		padding: 1px 0;
 	}
 	.elev svg {
 		display: block;
 		width: 100%;
 		height: 46px;
+		flex: 1;
 	}
 	.elev .epath {
 		fill: url(#elevfill);
 		stroke: var(--forest);
 		stroke-width: 1.6;
 	}
-	.elev .here {
-		stroke: var(--clay);
-		stroke-width: 1.4;
-		stroke-dasharray: 3 3;
-	}
-	.elev .heredot {
-		fill: var(--clay);
-		stroke: #fff;
-		stroke-width: 1.5;
-	}
 	.elev .elabels {
 		display: flex;
 		justify-content: space-between;
-		margin-top: 3px;
+		margin-top: 4px;
 		font-size: 0.56rem;
 		font-weight: 800;
 		color: var(--muted);
