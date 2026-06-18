@@ -64,6 +64,13 @@
 </script>
 
 <div class="section-stack">
+	<!-- Today is a header-reachable HUD (tapped from the status strip), not a
+	     bottom-nav pillar — so it gets its own back affordance to Scout. -->
+	<header class="today-bar">
+		<button class="back" type="button" onclick={() => (trailAssistant.activeTab = 'Scout')} aria-label="Back to Scout">‹</button>
+		<h1>Today</h1>
+	</header>
+
 	<!-- Cockpit hero: the single screen that answers "what now". -->
 	<section class="cockpit card">
 		<div class="cockpit-top">
@@ -174,7 +181,7 @@
 				<strong>{packTotalCarriedLb} lb</strong>
 				<span>{packMissingCount > 0 ? `${packMissingCount} item missing` : 'Complete loadout'}</span>
 			</div>
-			<button class="outline-button compact" onclick={() => (trailAssistant.activeTab = 'Trail')}>
+			<button class="outline-button compact" onclick={() => (trailAssistant.activeTab = 'Gear')}>
 				Review pack →
 			</button>
 		</div>
@@ -214,6 +221,29 @@
 </div>
 
 <style>
+	.today-bar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.today-bar h1 {
+		font-family: var(--font-display);
+		font-size: 1.4rem;
+	}
+
+	.today-bar .back {
+		width: 34px;
+		height: 34px;
+		border-radius: 10px;
+		display: grid;
+		place-items: center;
+		font-size: 1.4rem;
+		line-height: 1;
+		color: var(--forest);
+		background: rgba(47, 75, 53, 0.08);
+	}
+
 	.cockpit {
 		padding: 14px 14px 16px;
 		display: grid;

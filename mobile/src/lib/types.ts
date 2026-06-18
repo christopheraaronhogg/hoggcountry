@@ -1,7 +1,11 @@
-// Four pillars + a demoted Settings surface (reached via the header gear, not the
-// bottom nav). Scout (pure chat) is the home tab. Old tabs (Plan/Town/Safety/You)
-// were folded in — see migrateTab() for the persisted-state mapping.
-export type Tab = 'Scout' | 'Today' | 'Map' | 'Trail' | 'Settings';
+// Bottom-nav pillars: Scout (pure chat, home/hub) · Map · Gear · Trail.
+// Today (HUD) and Settings are reachable views but NOT bottom-nav tabs — Today
+// from the header status strip, Settings from the header gear. Old tabs
+// (Plan/Town/Safety/You) were folded in — see migrateTab().
+export type Tab = 'Scout' | 'Today' | 'Map' | 'Gear' | 'Trail' | 'Settings';
+
+/** The four bottom-nav pillars, in order. Today/Settings are intentionally absent. */
+export const NAV_TABS: readonly Tab[] = ['Scout', 'Map', 'Gear', 'Trail'];
 
 /** Maps any previously-persisted tab id onto the new IA so a returning user
  *  doesn't land on a tab that no longer exists. */
@@ -10,6 +14,7 @@ export function migrateTab(value: unknown): Tab {
 		case 'Scout':
 		case 'Today':
 		case 'Map':
+		case 'Gear':
 		case 'Trail':
 		case 'Settings':
 			return value;

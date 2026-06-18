@@ -2,12 +2,13 @@
 	import type { Tab } from '$lib/types';
 	import { trailAssistant } from '$lib/trailState.svelte';
 
-	// Four pillars. Scout (chat) is the hub and the home tab; Settings lives behind
-	// the header gear, not here. Town logistics moved into Map; Plan folded into Today.
+	// Four pillars. Scout (chat) is the hub/home; Settings lives behind the header
+	// gear and the Today HUD behind the header status strip — neither is a nav tab.
+	// Town logistics moved into Map; Plan folded into Today; Gear is its own pillar.
 	const tabs: Array<{ key: Tab; label: string; glyph: string }> = [
 		{ key: 'Scout', label: 'Scout', glyph: '✦' },
-		{ key: 'Today', label: 'Today', glyph: '☀' },
 		{ key: 'Map', label: 'Map', glyph: '◎' },
+		{ key: 'Gear', label: 'Gear', glyph: '▣' },
 		{ key: 'Trail', label: 'Trail', glyph: '☷' }
 	];
 </script>
