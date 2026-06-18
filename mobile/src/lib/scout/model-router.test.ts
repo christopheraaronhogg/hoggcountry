@@ -60,6 +60,28 @@ test('online + cloud allowed but cloud unavailable → falls through to on-devic
 	assert.equal(d.provider.capabilities.id, 'on-device-gemma');
 });
 
+test('preferredMode on-device NEVER resolves to deterministic-fallback, even when the probe says unavailable', async () => {
+	// Gemma-only contract: a flaky/unavailable on-device probe must still route to
+	// on-device (whose generate() then throws and is surfaced) — never silently to
+	// the deterministic "offline" answer. Regression guard for the masquerade bug.
+	const router = new DefaultModelRouter({
+		fallback: fallback(),
+		onDevice: fakeProvider('on-device-gemma', 'on-device', false)
+	});
+	const d = await router.pick({ onlineStatus: true, batterySaver: false, allowCloud: false, preferredMode: 'on-device' });
+	assert.equal(d.provider.capabilities.id, 'on-device-gemma');
+	assert.notEqual(d.provider.capabilities.id, 'deterministic-fallback');
+});
+
+test('preferredMode on-device overrides battery saver (Gemma-only has no canned-offline alternative)', async () => {
+	const router = new DefaultModelRouter({
+		fallback: fallback(),
+		onDevice: fakeProvider('on-device-gemma', 'on-device', true)
+	});
+	const d = await router.pick({ onlineStatus: true, batterySaver: true, allowCloud: false, preferredMode: 'on-device' });
+	assert.equal(d.provider.capabilities.id, 'on-device-gemma');
+});
+
 test('preferredMode offline-local always uses the fallback', async () => {
 	const router = new DefaultModelRouter({
 		fallback: fallback(),

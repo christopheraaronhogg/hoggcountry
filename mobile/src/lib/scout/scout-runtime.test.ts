@@ -17,6 +17,14 @@ const throwingBridge: OnDeviceGemmaBridge = {
 	}
 };
 
+// Reports unavailable WITHOUT throwing from isAvailable — so the router selects it
+// (under forced on-device) and generate() throws OnDeviceModelUnavailableError.
+const unavailableBridge: OnDeviceGemmaBridge = {
+	isAvailable: async () => false,
+	describeModel: async () => null,
+	generate: async () => ({ text: 'should-never-run', truncated: false })
+};
+
 test('offline ask with an available on-device engine answers on-device', async () => {
 	const { runtime } = createScoutRuntime({ initialPack: cloneDefaultContextPack(), onDeviceBridge: okBridge });
 	const ans = await runtime.ask({ prompt: 'where is the next water', onlineStatus: false });
@@ -46,6 +54,20 @@ test('under preferredMode on-device, an engine failure REthrows — never a sile
 	await assert.rejects(
 		() => runtime.ask({ prompt: 'what is happening homie', onlineStatus: false, preferredMode: 'on-device' }),
 		/engine boom/
+	);
+});
+
+test('under preferredMode on-device, an UNAVAILABLE engine surfaces — never a silent deterministic offline answer', async () => {
+	// The router-selected-fallback path: isAvailable() returns false (no throw), so
+	// the router must still pick on-device (forced), whose generate() throws
+	// OnDeviceModelUnavailableError, which the runtime rethrows. It must NOT return
+	// the canned "Offline read from mile…" deterministic answer.
+	const { runtime } = createScoutRuntime({
+		initialPack: cloneDefaultContextPack(),
+		onDeviceBridge: unavailableBridge
+	});
+	await assert.rejects(() =>
+		runtime.ask({ prompt: 'what is happening homie', onlineStatus: false, preferredMode: 'on-device' })
 	);
 });
 

@@ -799,8 +799,12 @@ class TrailAssistantStore {
 			// a retry nudge — never a canned offline answer that hides the failure.
 			this.#scout.onDeviceProvider?.invalidateAvailability();
 			this.#warmUpModel();
+			// Keep the wording accurate for any failure here (on-device generation is
+			// the dominant case under the Gemma-only policy, but a store/tool error
+			// could also land here) while still nudging a retry — the warm-up above
+			// means the next attempt usually succeeds.
 			const snag =
-				'My on-device model stumbled starting up just now — give it a few seconds and ask again. It warms up after the first try.';
+				'Scout hit a snag answering that just now — give it a few seconds and ask again.';
 			if (streamingId !== null) {
 				const id = streamingId;
 				this.#state.coachMessages = this.#state.coachMessages.map((m) =>
