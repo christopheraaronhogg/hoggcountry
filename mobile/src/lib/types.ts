@@ -1,11 +1,12 @@
-// Bottom-nav pillars: Scout (pure chat, home/hub) · Map · Gear · Trail.
-// Today (HUD) and Settings are reachable views but NOT bottom-nav tabs — Today
-// from the header status strip, Settings from the header gear. Old tabs
-// (Plan/Town/Safety/You) were folded in — see migrateTab().
-export type Tab = 'Scout' | 'Today' | 'Map' | 'Gear' | 'Trail' | 'Settings';
+// Bottom-nav pillars: Today (calm glance dashboard, home) · Scout (chat) · Map ·
+// Trail. Gear and Settings are reachable views but NOT bottom-nav tabs — Gear from
+// the Today "packing up?" glance (it's a morning ritual, not all-day), Settings
+// from the header gear. Old tabs (Plan/Town/Safety/You) were folded in — see
+// migrateTab().
+export type Tab = 'Today' | 'Scout' | 'Map' | 'Gear' | 'Trail' | 'Settings';
 
-/** The four bottom-nav pillars, in order. Today/Settings are intentionally absent. */
-export const NAV_TABS: readonly Tab[] = ['Scout', 'Map', 'Gear', 'Trail'];
+/** The four bottom-nav pillars, in order. Gear/Settings are intentionally absent. */
+export const NAV_TABS: readonly Tab[] = ['Today', 'Scout', 'Map', 'Trail'];
 
 /** Maps any previously-persisted tab id onto the new IA so a returning user
  *  doesn't land on a tab that no longer exists. */
@@ -28,7 +29,7 @@ export function migrateTab(value: unknown): Tab {
 		case 'Account':
 			return 'Settings';
 		default:
-			return 'Scout';
+			return 'Today';
 	}
 }
 

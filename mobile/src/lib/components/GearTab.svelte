@@ -10,8 +10,11 @@
 
 <div class="gear">
 	<header class="gear-head">
-		<h1>Gear</h1>
-		<p>What's on your back. Ask Scout to add, drop, or swap an item — it confirms before changing anything.</p>
+		<button class="back" type="button" onclick={() => (trailAssistant.activeTab = 'Today')} aria-label="Back to Today">‹</button>
+		<div class="gear-title">
+			<h1>Gear</h1>
+			<p>What's on your back. Ask Scout to add, drop, or swap an item — it confirms before changing anything.</p>
+		</div>
 	</header>
 
 	<div class="gear-summary card">
@@ -46,6 +49,25 @@
 	.gear {
 		display: grid;
 		gap: 14px;
+	}
+
+	.gear-head {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+	}
+
+	.gear-head .back {
+		width: 34px;
+		height: 34px;
+		border-radius: 10px;
+		display: grid;
+		place-items: center;
+		font-size: 1.4rem;
+		line-height: 1;
+		color: var(--forest);
+		background: rgba(47, 75, 53, 0.08);
+		flex: none;
 	}
 
 	.gear-head h1 {

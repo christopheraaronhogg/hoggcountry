@@ -1,541 +1,369 @@
 <script lang="ts">
-	import { waterSources, weatherSnapshot } from '$lib/mockTrailData';
+	import { weatherSnapshot } from '$lib/mockTrailData';
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import TrailPulsePanel from './TrailPulsePanel.svelte';
-	import ElevationStrip from './ElevationStrip.svelte';
-	import WeatherStrip from './WeatherStrip.svelte';
-	import OfflineStatus from './OfflineStatus.svelte';
-	import ServiceStrip from './ServiceStrip.svelte';
-	import SourceChip from './SourceChip.svelte';
-	import ConfidenceBadge from './ConfidenceBadge.svelte';
-	import { sourceReceipts, packMissingCount, packTotalCarriedLb } from './cockpitData';
+	import { packMissingCount, packTotalCarriedLb } from './cockpitData';
 
-	function recommendationLabel() {
-		const labels = {
-			push: 'Push window',
-			steady: 'Steady day',
-			hold: 'Hold discipline',
-			nero: 'Nero recommended',
-			zero: 'Zero recommended'
-		};
+	// Calm glance dashboard (D3 "Today" — the bake-off winner). The structure does
+	// the safety work: readiness owns the page by size, the candidate-grade water
+	// caveat sits in clay (unmissable but not a klaxon), and Scout is a calm card
+	// that opens into the real chat — glance by default, converse on demand.
 
-		return labels[trailAssistant.readiness.recommendation];
-	}
+	const REC: Record<string, { label: string; tone: 'go' | 'warn' }> = {
+		push: { label: 'Push', tone: 'go' },
+		steady: { label: 'Steady', tone: 'go' },
+		hold: { label: 'Hold', tone: 'warn' },
+		nero: { label: 'Nero', tone: 'warn' },
+		zero: { label: 'Zero', tone: 'warn' }
+	};
+	const rec = $derived(REC[trailAssistant.readiness.recommendation] ?? { label: 'Steady', tone: 'go' });
 
-	function recommendationDetail() {
-		const m = trailAssistant.readiness;
-		return `Target ${m.targetMiles.toFixed(1)} mi · ${m.targetVert.toLocaleString()} ft · ${m.reasons.length} drivers`;
-	}
-
-	const remaining = $derived(trailAssistant.milesRemainingToday.toFixed(1));
-	const progress = $derived(trailAssistant.progressPercent);
-
+	const from = $derived(trailAssistant.currentMile);
 	const nextWater = $derived.by(() => {
-		const fromMile = trailAssistant.currentMile;
-		return (
-			trailAssistant.fieldPack.water
-				.filter((source) => source.mile >= fromMile - 0.01)
-				.sort((a, b) => a.mile - b.mile)[0] ?? null
-		);
+		const w = trailAssistant.fieldPack.water
+			.filter((s) => s.mile >= from - 0.01)
+			.sort((a, b) => a.mile - b.mile)[0];
+		return w ? { name: w.name, dist: Math.max(0, w.mile - from), candidate: w.reliability !== 'reliable' } : null;
 	});
 	const nextShelter = $derived.by(() => {
-		const fromMile = trailAssistant.currentMile;
-		return (
-			trailAssistant.fieldPack.shelters
-				.filter((shelter) => shelter.mile >= fromMile - 0.01)
-				.sort((a, b) => a.mile - b.mile)[0] ?? null
-		);
+		const s = trailAssistant.fieldPack.shelters
+			.filter((x) => x.mile >= from - 0.01)
+			.sort((a, b) => a.mile - b.mile)[0];
+		return s ? { name: s.name, dist: Math.max(0, s.mile - from) } : null;
 	});
-	const nextTown = $derived.by(() => {
-		const fromMile = trailAssistant.currentMile;
-		return (
-			trailAssistant.fieldPack.towns
-				.filter((town) => town.mile >= fromMile - 0.01)
-				.sort((a, b) => a.mile - b.mile)[0] ?? null
-		);
-	});
-	const nextWaterDistance = $derived(nextWater ? Math.max(0, nextWater.mile - trailAssistant.currentMile).toFixed(1) : null);
-	const nextShelterDistance = $derived(nextShelter ? Math.max(0, nextShelter.mile - trailAssistant.currentMile).toFixed(1) : null);
-	const nextTownDistance = $derived(nextTown ? Math.max(0, nextTown.mile - trailAssistant.currentMile).toFixed(1) : null);
 
+	const greeting = $derived.by(() => {
+		const steady = rec.tone === 'go' ? 'holding steady' : 'asking for restraint';
+		const water = nextWater?.candidate
+			? " Keep mapped water marked low-confidence until it's confirmed."
+			: '';
+		return `Good morning. Trail readiness is ${steady} today.${water}`;
+	});
+
+	const prompts = [
+		'Can I push mileage today?',
+		"What's the next reliable water?",
+		'What needs verifying before town?',
+		'Give me the safest next move.'
+	];
+
+	function ask(prompt: string) {
+		trailAssistant.activeTab = 'Scout';
+		trailAssistant.runQuickPrompt(prompt);
+	}
+
+	const lastAnswer = $derived(trailAssistant.lastScoutAnswer);
 	const checkInDue = $derived(
 		new Date(trailAssistant.nextCheckInDueAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 	);
 </script>
 
-<div class="section-stack">
-	<!-- Today is a header-reachable HUD (tapped from the status strip), not a
-	     bottom-nav pillar — so it gets its own back affordance to Scout. -->
-	<header class="today-bar">
-		<button class="back" type="button" onclick={() => (trailAssistant.activeTab = 'Scout')} aria-label="Back to Scout">‹</button>
-		<h1>Today</h1>
-	</header>
-
-	<!-- Cockpit hero: the single screen that answers "what now". -->
-	<section class="cockpit card">
-		<div class="cockpit-top">
-			<div>
-				<p class="eyebrow">Today · {recommendationLabel()}</p>
-				<h2>
-					<span class="big-number tabular">{trailAssistant.currentDayMiles.toFixed(1)}</span>
-					<span class="of-target tabular">/ {trailAssistant.readiness.targetMiles.toFixed(1)} mi</span>
-				</h2>
-				<p class="cockpit-detail">{recommendationDetail()}</p>
-			</div>
-
-			<div class="readiness-dial" aria-label="Readiness score">
-				<div class="dial-ring" style:--score={trailAssistant.readiness.score}>
-					<strong>{trailAssistant.readiness.score}</strong>
-					<span>READY</span>
-				</div>
-			</div>
+<div class="today">
+	<!-- Readiness owns the page -->
+	<section class="readiness card">
+		<div class="rtop">
+			<span class="lab">Readiness</span>
+			<span class="pill" data-tone={rec.tone}>{rec.label}</span>
 		</div>
+		<div class="num tabular">{trailAssistant.readiness.score}</div>
+		<p class="reason">
+			{#each trailAssistant.readiness.reasons.slice(0, 1) as reason (reason)}{reason}{/each}
+			{#if nextWater?.candidate}
+				Next water is <b>candidate-grade</b> — keep miles conservative.
+			{/if}
+		</p>
+	</section>
 
-		<div class="progress-shell" aria-hidden="true">
-			<div class="progress-fill" style:width={`${progress}%`}></div>
-			<div class="progress-tick" style:left={`${progress}%`}>
-				<span>{remaining} mi left</span>
-			</div>
+	<!-- Today's target + conditions glance -->
+	<section class="target card">
+		<div class="eyebrow">Today</div>
+		<div class="big tabular">
+			{trailAssistant.readiness.targetMiles.toFixed(1)}<span class="unit"> mi</span>
 		</div>
-
-		<div class="cockpit-strip">
-			<button class="cockpit-cell cell-button" type="button" data-kind="water" aria-label="Next water source">
-				<span class="cell-eyebrow">Next water</span>
-				<strong>{nextWaterDistance ? `${nextWaterDistance} mi` : '—'}</strong>
-				<span class="cell-detail">{nextWater?.name ?? waterSources[0].name}</span>
-			</button>
-			<button class="cockpit-cell cell-button" type="button" data-kind="shelter" aria-label="Next shelter">
-				<span class="cell-eyebrow">Next shelter</span>
-				<strong>{nextShelterDistance ? `${nextShelterDistance} mi` : '—'}</strong>
-				<span class="cell-detail">{nextShelter?.name ?? 'No shelter on file'}</span>
-			</button>
-			<button
-				class="cockpit-cell cell-button"
-				type="button"
-				data-kind="town"
-				onclick={() => (trailAssistant.activeTab = 'Map')}
-				aria-label="Next town"
-			>
-				<span class="cell-eyebrow">Next town</span>
-				<strong>{nextTownDistance ? `${nextTownDistance} mi` : '—'}</strong>
-				<span class="cell-detail">{nextTown?.name ?? '—'}</span>
-			</button>
-			<button
-				class="cockpit-cell cell-button"
-				type="button"
-				data-kind="safety"
-				onclick={() => (trailAssistant.activeTab = 'Settings')}
-				aria-label="Check-in due"
-			>
-				<span class="cell-eyebrow">Check-in due</span>
-				<strong>{checkInDue}</strong>
-				<span class="cell-detail risk-{trailAssistant.missedCheckInRisk}">
-					{trailAssistant.missedCheckInRisk === 'high' ? 'Send now' : trailAssistant.missedCheckInRisk === 'medium' ? 'Send soon' : 'Within window'}
-				</span>
-			</button>
-		</div>
-
-		<div class="cockpit-actions">
-			<button class="cta-button" onclick={() => (trailAssistant.activeTab = 'Scout')}>
-				Ask Scout about today
-			</button>
-			<button
-				class="secondary-button"
-				onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}
-			>
+		{#if nextShelter}
+			<p class="dest">to {nextShelter.name} · {nextShelter.dist.toFixed(1)} mi</p>
+		{/if}
+		<p class="meta">
+			{weatherSnapshot.summary} · {weatherSnapshot.highF}° / {weatherSnapshot.lowF}° · wind {weatherSnapshot.windMph} mph
+		</p>
+		<div class="checkin">
+			<span class="ci-due">Check-in due {checkInDue}</span>
+			<button class="safe-btn" onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}>
 				I'm safe ✓
 			</button>
 		</div>
 	</section>
 
-	<!-- Elevation + weather: glanceable terrain + condition picture. -->
-	<section class="card terrain-card">
-		<ElevationStrip currentMile={trailAssistant.currentMile} />
-		<div class="terrain-meta">
-			<p>{weatherSnapshot.summary}. {weatherSnapshot.riskNote}</p>
-			<SourceChip source={sourceReceipts.awol2026} />
-		</div>
-	</section>
+	<!-- Ask Scout — calm, not chat-first -->
+	<section class="ask card">
+		<div class="eyebrow">Ask Scout</div>
+		<p class="greet">{greeting}</p>
 
-	<section class="card weather-card">
-		<div class="card-header">
-			<div>
-				<p class="eyebrow">Forecast</p>
-				<h3>5-day outlook</h3>
-			</div>
-			<SourceChip source={sourceReceipts.nws} />
-		</div>
-		<WeatherStrip />
-	</section>
-
-	<!-- Next-20 mile service strip. -->
-	<section class="card section-card">
-		<ServiceStrip />
-	</section>
-
-	<!-- Pack + offline status, side-by-side compact summary. -->
-	<section class="card pack-summary">
-		<div class="summary-row">
-			<div>
-				<p class="eyebrow">Pack</p>
-				<strong>{packTotalCarriedLb} lb</strong>
-				<span>{packMissingCount > 0 ? `${packMissingCount} item missing` : 'Complete loadout'}</span>
-			</div>
-			<button class="outline-button compact" onclick={() => (trailAssistant.activeTab = 'Gear')}>
-				Review pack →
+		{#each prompts as prompt (prompt)}
+			<button class="prompt-row" onclick={() => ask(prompt)}>
+				<span class="q">›</span><span class="qtext">{prompt}</span><span class="arrow">+</span>
 			</button>
-		</div>
-	</section>
+		{/each}
 
-	<section class="card offline-card">
-		<OfflineStatus />
-	</section>
-
-	<TrailPulsePanel />
-
-	<!-- Why this day looks the way it does. -->
-	<section class="card section-card">
-		<div class="card-header">
-			<div>
-				<p class="eyebrow">Readiness drivers</p>
-				<h3>Why we're holding</h3>
+		{#if lastAnswer}
+			<div class="exchange">
+				<p class="ans">{lastAnswer.answer}</p>
+				<div class="receipts">
+					{#each lastAnswer.receipts.slice(0, 3) as r (r.id)}
+						<span class="receipt">{r.title}</span>
+					{/each}
+					<span class="badge">{lastAnswer.confidence}</span>
+				</div>
 			</div>
-			<ConfidenceBadge confidence="medium" />
-		</div>
-
-		<ul class="reason-list">
-			{#each trailAssistant.readiness.reasons as reason (reason)}
-				<li>{reason}</li>
-			{/each}
-		</ul>
-
-		<div class="receipts">
-			<p class="receipt-label">Sources used</p>
-			<div class="receipt-row">
-				<SourceChip source={sourceReceipts.hikerProfile} />
-				<SourceChip source={sourceReceipts.nws} />
-				<SourceChip source={sourceReceipts.farout} />
-			</div>
-		</div>
+		{/if}
 	</section>
+
+	<!-- Gear: a morning packing glance, not an all-day tab -->
+	<button class="packing card" onclick={() => (trailAssistant.activeTab = 'Gear')}>
+		<div class="pk-left">
+			<div class="eyebrow">Packing up?</div>
+			<p class="pk-line">{packTotalCarriedLb} lb on your back</p>
+			<p class="pk-sub">
+				{packMissingCount > 0
+					? `${packMissingCount} item${packMissingCount === 1 ? '' : 's'} not packed — check before you go`
+					: 'Full loadout — nothing left at camp'}
+			</p>
+		</div>
+		<span class="pk-arrow" aria-hidden="true">›</span>
+	</button>
 </div>
 
 <style>
-	.today-bar {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-
-	.today-bar h1 {
-		font-family: var(--font-display);
-		font-size: 1.4rem;
-	}
-
-	.today-bar .back {
-		width: 34px;
-		height: 34px;
-		border-radius: 10px;
+	.today {
 		display: grid;
-		place-items: center;
-		font-size: 1.4rem;
+		gap: 14px;
+	}
+
+	.card {
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-soft);
+	}
+
+	.eyebrow {
+		font-size: 0.64rem;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--moss);
+		font-weight: 800;
+		margin-bottom: 10px;
+	}
+
+	/* Readiness */
+	.readiness {
+		padding: 20px 20px 18px;
+	}
+	.rtop {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+	}
+	.rtop .lab {
+		font-size: 0.64rem;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--moss);
+		font-weight: 800;
+	}
+	.pill {
+		font-family: var(--font-display);
+		font-size: 0.95rem;
+		letter-spacing: 0.04em;
+		padding: 4px 14px 5px;
+		border-radius: 999px;
 		line-height: 1;
+	}
+	.pill[data-tone='warn'] {
+		color: var(--warn, #9a7320);
+		border: 1px solid rgba(182, 137, 44, 0.4);
+		background: rgba(182, 137, 44, 0.1);
+	}
+	.pill[data-tone='go'] {
 		color: var(--forest);
+		border: 1px solid rgba(47, 75, 53, 0.3);
 		background: rgba(47, 75, 53, 0.08);
 	}
-
-	.cockpit {
-		padding: 14px 14px 16px;
-		display: grid;
-		gap: 12px;
-		background:
-			radial-gradient(circle at top right, rgba(95, 128, 144, 0.14), transparent 38%),
-			linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(247, 240, 228, 0.96));
-	}
-
-	.cockpit-top {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		gap: 12px;
-		align-items: start;
-	}
-
-	.cockpit-top h2 {
-		display: flex;
-		align-items: baseline;
-		gap: 8px;
-		margin: 2px 0 4px;
+	.num {
 		font-family: var(--font-display);
-	}
-
-	.big-number {
-		font-size: 2.8rem;
 		font-weight: 800;
-		color: var(--forest);
-		line-height: 0.95;
+		font-size: 5.4rem;
+		line-height: 0.92;
+		letter-spacing: -0.02em;
+		color: var(--ink);
+		margin: 4px 0 2px;
 	}
-
-	.of-target {
-		font-size: 1rem;
-		font-weight: 700;
+	.reason {
+		font-size: 0.86rem;
+		line-height: 1.5;
 		color: var(--muted);
-	}
-
-	.cockpit-detail {
-		font-size: 0.84rem;
-		color: var(--muted);
-	}
-
-	.readiness-dial {
-		width: 76px;
-		height: 76px;
-		display: grid;
-		place-items: center;
-	}
-
-	.dial-ring {
-		--score: 0;
-		width: 100%;
-		height: 100%;
-		border-radius: 50%;
-		display: grid;
-		place-items: center;
-		text-align: center;
-		background:
-			conic-gradient(
-				var(--forest) calc(var(--score) * 1%),
-				rgba(47, 75, 53, 0.12) 0
-			);
-		position: relative;
-	}
-
-	.dial-ring::before {
-		content: '';
-		position: absolute;
-		inset: 6px;
-		border-radius: 50%;
-		background: var(--surface-strong);
-		z-index: 0;
-	}
-
-	.dial-ring strong,
-	.dial-ring span {
-		position: relative;
-		z-index: 1;
-	}
-
-	.dial-ring strong {
-		font-family: var(--font-display);
-		font-size: 1.3rem;
-		font-weight: 800;
-		color: var(--forest);
-		line-height: 1;
-	}
-
-	.dial-ring span {
-		font-size: 0.58rem;
-		font-weight: 800;
-		letter-spacing: 0.18em;
-		color: var(--muted);
-		margin-top: 2px;
-	}
-
-	.progress-shell {
-		position: relative;
-		height: 10px;
-		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.12);
-		overflow: visible;
-	}
-
-	.progress-fill {
-		height: 100%;
-		border-radius: inherit;
-		background: linear-gradient(90deg, var(--forest), var(--moss));
-	}
-
-	.progress-tick {
-		position: absolute;
-		top: 12px;
-		transform: translateX(-50%);
-		font-size: 0.7rem;
-		font-weight: 800;
-		color: var(--forest);
-		white-space: nowrap;
-	}
-
-	.cockpit-strip {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 6px;
 		margin-top: 6px;
 	}
-
-	.cockpit-cell {
-		display: grid;
-		gap: 2px;
-		padding: 9px 6px 10px;
-		border-radius: 12px;
-		background: rgba(47, 75, 53, 0.06);
-		border: 1px solid rgba(95, 101, 88, 0.1);
-		text-decoration: none;
-		color: var(--ink);
-		text-align: left;
-	}
-
-	.cockpit-cell.cell-button {
-		font: inherit;
-	}
-
-	.cockpit-cell[data-kind='water'] {
-		background: rgba(95, 128, 144, 0.1);
-	}
-	.cockpit-cell[data-kind='shelter'] {
-		background: rgba(170, 104, 67, 0.1);
-	}
-	.cockpit-cell[data-kind='town'] {
-		background: rgba(106, 132, 95, 0.12);
-	}
-	.cockpit-cell[data-kind='safety'] {
-		background: rgba(200, 167, 122, 0.18);
-	}
-
-	.cell-eyebrow {
-		font-size: 0.58rem;
+	.reason b {
+		color: var(--clay);
 		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--muted);
 	}
 
-	.cockpit-cell strong {
-		font-size: 1rem;
-		font-weight: 800;
-		color: var(--ink);
-		font-variant-numeric: tabular-nums;
+	/* Today target */
+	.target {
+		padding: 16px 18px 14px;
 	}
-
-	.cell-detail {
-		font-size: 0.7rem;
-		color: var(--muted);
-		font-weight: 700;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.cockpit-actions {
-		display: grid;
-		grid-template-columns: 1.4fr 1fr;
-		gap: 8px;
-	}
-
-	.cockpit-actions .secondary-button {
-		min-height: 44px;
-	}
-
-	.terrain-card {
-		padding: 14px;
-		display: grid;
-		gap: 10px;
-	}
-
-	.terrain-meta {
-		display: grid;
-		gap: 8px;
-	}
-
-	.terrain-meta p {
-		font-size: 0.84rem;
-		color: var(--muted);
-	}
-
-	.weather-card,
-	.section-card,
-	.offline-card {
-		padding: 14px;
-		display: grid;
-		gap: 10px;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 12px;
-	}
-
-	.card-header h3 {
+	.target .big {
 		font-family: var(--font-display);
-		font-size: 1.15rem;
+		font-weight: 800;
+		font-size: 2.8rem;
+		line-height: 1;
+		color: var(--ink);
 	}
-
-	.pack-summary {
-		padding: 12px 14px;
+	.target .big .unit {
+		font-size: 1.2rem;
+		color: var(--muted);
 	}
-
-	.summary-row {
+	.target .dest {
+		font-size: 0.9rem;
+		color: var(--ink);
+		margin-top: 8px;
+		font-weight: 700;
+	}
+	.target .meta {
+		font-size: 0.8rem;
+		color: var(--muted);
+		margin-top: 3px;
+	}
+	.checkin {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 12px;
+		gap: 10px;
+		margin-top: 12px;
+		padding-top: 12px;
+		border-top: 1px solid var(--line);
 	}
-
-	.summary-row div {
-		display: grid;
-		gap: 2px;
-	}
-
-	.summary-row strong {
-		font-family: var(--font-display);
-		font-size: 1.4rem;
-		font-weight: 800;
-		color: var(--forest);
-	}
-
-	.summary-row span {
-		font-size: 0.74rem;
+	.ci-due {
+		font-size: 0.78rem;
 		color: var(--muted);
+		font-weight: 700;
 	}
-
-	.outline-button.compact {
-		width: auto;
+	.safe-btn {
 		min-height: 38px;
-		padding: 6px 12px;
+		padding: 7px 14px;
+		border-radius: 999px;
+		background: rgba(47, 75, 53, 0.1);
+		color: var(--forest);
+		font-weight: 800;
 		font-size: 0.82rem;
 	}
 
-	.reason-list {
-		margin: 0;
-		padding-left: 18px;
-		display: grid;
-		gap: 8px;
-		color: var(--ink);
+	/* Ask Scout */
+	.ask {
+		padding: 18px 18px 16px;
 	}
-
-	.reason-list li {
+	.greet {
+		font-family: var(--font-display);
+		font-size: 1.12rem;
+		line-height: 1.34;
+		font-weight: 700;
 		color: var(--ink);
-		font-size: 0.88rem;
+		margin-bottom: 12px;
 	}
-
+	.prompt-row {
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		width: 100%;
+		padding: 12px 2px;
+		border-top: 1px solid var(--line);
+		font-size: 0.9rem;
+		color: var(--ink);
+		text-align: left;
+	}
+	.prompt-row .q {
+		font-size: 0.85rem;
+		color: var(--moss);
+	}
+	.prompt-row .qtext {
+		flex: 1;
+	}
+	.prompt-row .arrow {
+		color: var(--muted);
+		font-size: 1rem;
+	}
+	.exchange {
+		background: var(--bg, #fffdf8);
+		border: 1px solid var(--line);
+		border-left: 3px solid var(--forest);
+		border-radius: 10px;
+		padding: 14px 15px;
+		margin-top: 10px;
+	}
+	.exchange .ans {
+		font-size: 0.9rem;
+		line-height: 1.5;
+		color: var(--ink);
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		line-clamp: 4;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
 	.receipts {
-		display: grid;
-		gap: 6px;
-		padding-top: 8px;
-		border-top: 1px dashed rgba(95, 101, 88, 0.18);
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		flex-wrap: wrap;
+		margin-top: 12px;
+		padding-top: 11px;
+		border-top: 1px solid var(--line);
 	}
-
-	.receipt-label {
+	.receipt {
+		font-size: 0.66rem;
+		color: var(--muted);
+		background: var(--bg, #fffdf8);
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		padding: 3px 9px;
+	}
+	.badge {
+		margin-left: auto;
 		font-size: 0.64rem;
+		letter-spacing: 0.06em;
 		font-weight: 800;
 		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--muted);
+		color: var(--warn, #9a7320);
+		background: rgba(182, 137, 44, 0.13);
+		border: 1px solid rgba(182, 137, 44, 0.34);
+		border-radius: 999px;
+		padding: 3px 10px;
 	}
 
-	.receipt-row {
+	/* Packing glance */
+	.packing {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 14px 16px;
+		text-align: left;
+		width: 100%;
+	}
+	.pk-line {
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 1.15rem;
+		color: var(--forest);
+	}
+	.pk-sub {
+		font-size: 0.78rem;
+		color: var(--muted);
+		margin-top: 2px;
+	}
+	.pk-arrow {
+		font-size: 1.4rem;
+		color: var(--muted);
+		flex: none;
 	}
 </style>

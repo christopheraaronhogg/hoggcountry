@@ -135,7 +135,7 @@ function trailPulseDisplayText(report: TrailConditionReport): string {
 }
 
 const defaultState: TrailState = {
-	activeTab: 'Scout',
+	activeTab: 'Today',
 	coachMessages: [
 		makeMessage(
 			'assistant',
