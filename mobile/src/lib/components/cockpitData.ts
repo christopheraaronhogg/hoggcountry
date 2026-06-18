@@ -312,6 +312,57 @@ export const weatherForecast: WeatherForecastDay[] = [
 	}
 ];
 
+// Richer "today" weather for the Today HUD — current conditions + the day's arc.
+// Cached/illustrative (NWS-cached shape), same provenance posture as weatherForecast:
+// shown as a glance, with a plain-language "what it means" line for safety.
+export interface HourlyPrecip {
+	label: string; // '11a'
+	pct: number; // chance of precip
+	peak?: boolean; // the afternoon peak the hiker should plan around
+}
+
+export interface TodayWeather {
+	nowF: number;
+	summary: string; // 'Partly sunny'
+	highF: number;
+	lowF: number;
+	windMph: number;
+	windNote?: string; // 'calm'
+	precipPeakPct: number;
+	precipPeakLabel: string; // '~3p'
+	sunsetLabel: string; // '8:30p'
+	daylightLeftLabel: string; // '13h 16m left'
+	daylightFrac: number; // 0..1 of daylight remaining (for the bar)
+	meaning: string; // the plain-language "what it means" line
+	hourly: HourlyPrecip[];
+	source: string; // 'NWS · cached'
+}
+
+export const todayWeather: TodayWeather = {
+	nowF: 71,
+	summary: 'Partly sunny',
+	highF: 82,
+	lowF: 63,
+	windMph: 9,
+	windNote: 'calm',
+	precipPeakPct: 60,
+	precipPeakLabel: '~3p',
+	sunsetLabel: '8:30p',
+	daylightLeftLabel: '13h 16m left',
+	daylightFrac: 0.88,
+	meaning: 'Warm, dry morning — get the climb in before showers build after 2p, then 60% by mid-afternoon. Reach the shelter before the cells.',
+	hourly: [
+		{ label: '9a', pct: 5 },
+		{ label: '11a', pct: 10 },
+		{ label: '1p', pct: 30 },
+		{ label: '2p', pct: 45 },
+		{ label: '3p', pct: 60, peak: true },
+		{ label: '5p', pct: 55 },
+		{ label: '7p', pct: 20 }
+	],
+	source: 'NWS · cached'
+};
+
 export const packTotalCarriedLb = Number(
 	(
 		packInventory

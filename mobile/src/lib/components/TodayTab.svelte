@@ -1,90 +1,103 @@
 <script lang="ts">
-	import { weatherSnapshot } from '$lib/mockTrailData';
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import { packMissingCount, packTotalCarriedLb } from './cockpitData';
+	import { packMissingCount, packTotalCarriedLb, todayWeather, elevationNext20 } from './cockpitData';
 
-	// Calm glance dashboard (D3 "Today" — the bake-off winner). The structure does
-	// the safety work: readiness owns the page by size, the candidate-grade water
-	// caveat sits in clay (unmissable but not a klaxon), and Scout is a calm card
-	// that opens into the real chat — glance by default, converse on demand.
+	// Today = the hiker's day, now → camp (M1 "Day Timeline"). No readiness score —
+	// we have no vitals, so the HUD anchors only on REAL data: position, the day's
+	// arc, weather (first-class, with a plain "what it means" line), and the next
+	// honest move. The structure answers "what do I do next?" at a 2-second glance.
 
-	const REC: Record<string, { label: string; tone: 'go' | 'warn' }> = {
-		push: { label: 'Push', tone: 'go' },
-		steady: { label: 'Steady', tone: 'go' },
-		hold: { label: 'Hold', tone: 'warn' },
-		nero: { label: 'Nero', tone: 'warn' },
-		zero: { label: 'Zero', tone: 'warn' }
-	};
-	const rec = $derived(REC[trailAssistant.readiness.recommendation] ?? { label: 'Steady', tone: 'go' });
-
+	const TOTAL_MILES = 2197.4;
 	const from = $derived(trailAssistant.currentMile);
-	const nextWater = $derived.by(() => {
-		const w = trailAssistant.fieldPack.water
-			.filter((s) => s.mile >= from - 0.01)
-			.sort((a, b) => a.mile - b.mile)[0];
-		return w ? { name: w.name, dist: Math.max(0, w.mile - from), candidate: w.reliability !== 'reliable' } : null;
-	});
-	const nextShelter = $derived.by(() => {
-		const s = trailAssistant.fieldPack.shelters
-			.filter((x) => x.mile >= from - 0.01)
-			.sort((a, b) => a.mile - b.mile)[0];
-		return s ? { name: s.name, dist: Math.max(0, s.mile - from) } : null;
+	const dayNumber = $derived(trailAssistant.dayNumber);
+	const pct = $derived(Math.round((from / TOTAL_MILES) * 100));
+	const toGo = $derived(Math.max(0, TOTAL_MILES - from));
+
+	const wx = todayWeather;
+
+	// --- upcoming landmarks (keep mile, derive the day to camp) ----------------
+	const watersAhead = $derived(
+		trailAssistant.fieldPack.water.filter((w) => w.mile >= from - 0.01).sort((a, b) => a.mile - b.mile)
+	);
+	const sheltersAhead = $derived(
+		trailAssistant.fieldPack.shelters.filter((s) => s.mile >= from - 0.01).sort((a, b) => a.mile - b.mile)
+	);
+	const nextWater = $derived(watersAhead[0] ?? null);
+	const camp = $derived(sheltersAhead[0] ?? null); // the day's planned end
+
+	// Ascent between here and camp, derived from the real elevation profile (no
+	// fabricated number — sum the positive deltas of in-range points).
+	const climbFt = $derived.by(() => {
+		if (!camp) return 0;
+		const pts = elevationNext20.filter((p) => p.mile >= from - 0.01 && p.mile <= camp.mile + 0.01);
+		let gain = 0;
+		for (let i = 1; i < pts.length; i++) {
+			const d = pts[i].elevation - pts[i - 1].elevation;
+			if (d > 0) gain += d;
+		}
+		return Math.round(gain);
 	});
 
-	const greeting = $derived.by(() => {
-		const steady = rec.tone === 'go' ? 'holding steady' : 'asking for restraint';
-		const water = nextWater?.candidate
-			? " Keep mapped water marked low-confidence until it's confirmed."
-			: '';
-		return `Good morning. Trail readiness is ${steady} today.${water}`;
+	type Node = { kind: 'done' | 'now' | 'water' | 'camp' | 'evening'; title: string; detail?: string; flag?: string };
+	const dayNodes = $derived.by<Node[]>(() => {
+		const nodes: Node[] = [];
+		nodes.push({ kind: 'done', title: 'Broke camp', detail: 'Packed up and on the trail.' });
+		nodes.push({ kind: 'now', title: `Now · Mile ${from.toFixed(1)}`, detail: 'On trail, heading north.' });
+		const dayWaters = camp ? watersAhead.filter((w) => w.mile <= camp.mile + 0.01) : watersAhead.slice(0, 2);
+		for (const w of dayWaters.slice(0, 2)) {
+			const candidate = w.reliability !== 'reliable';
+			nodes.push({
+				kind: 'water',
+				title: `Water · ${w.name}`,
+				detail: `${(w.mile - from).toFixed(1)} mi ahead${candidate ? '' : ' · reliable'}`,
+				flag: candidate ? 'candidate — confirm flow' : undefined
+			});
+		}
+		if (camp) {
+			nodes.push({
+				kind: 'camp',
+				title: `Camp · ${camp.name}`,
+				detail: `${(camp.mile - from).toFixed(1)} mi to go${climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''}`
+			});
+		}
+		nodes.push({ kind: 'evening', title: 'Evening · verse & journal', detail: "Read tonight's scripture and log the day." });
+		return nodes;
 	});
 
+	const glyph: Record<Node['kind'], string> = { done: '✓', now: '●', water: '💧', camp: '⛺', evening: '✶' };
+
+	// --- ask scout (kept; reframed without readiness) --------------------------
 	const prompts = [
-		'Can I push mileage today?',
 		"What's the next reliable water?",
+		'Can the shelter hold us tonight?',
 		'What needs verifying before town?',
 		'Give me the safest next move.'
 	];
-
 	function ask(prompt: string) {
 		trailAssistant.activeTab = 'Scout';
 		trailAssistant.runQuickPrompt(prompt);
 	}
-
 	const lastAnswer = $derived(trailAssistant.lastScoutAnswer);
+
 	const checkInDue = $derived(
 		new Date(trailAssistant.nextCheckInDueAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 	);
 </script>
 
 <div class="today">
-	<!-- Readiness owns the page -->
-	<section class="readiness card">
-		<div class="rtop">
-			<span class="lab">Readiness</span>
-			<span class="pill" data-tone={rec.tone}>{rec.label}</span>
+	<!-- HUD: real data only, no readiness score -->
+	<section class="hud card">
+		<div class="hud-top">
+			<span class="day">Day {dayNumber}</span>
+			<span class="off">On-device AI</span>
 		</div>
-		<div class="num tabular">{trailAssistant.readiness.score}</div>
-		<p class="reason">
-			{#each trailAssistant.readiness.reasons.slice(0, 1) as reason (reason)}{reason}{/each}
-			{#if nextWater?.candidate}
-				Next water is <b>candidate-grade</b> — keep miles conservative.
-			{/if}
-		</p>
-	</section>
-
-	<!-- Today's target + conditions glance -->
-	<section class="target card">
-		<div class="eyebrow">Today</div>
-		<div class="big tabular">
-			{trailAssistant.readiness.targetMiles.toFixed(1)}<span class="unit"> mi</span>
+		<div class="mile tabular">{from.toFixed(1)}<span class="of"> / {TOTAL_MILES.toLocaleString()} mi</span></div>
+		<div class="bar"><div class="fill" style="width:{pct}%"></div></div>
+		<div class="splits">
+			<div><span class="k">Done</span><b class="tabular">{from.toFixed(0)} mi</b></div>
+			<div><span class="k">To go</span><b class="tabular">{toGo.toFixed(0)} mi</b></div>
+			<div><span class="k">Progress</span><b class="tabular">{pct}%</b></div>
 		</div>
-		{#if nextShelter}
-			<p class="dest">to {nextShelter.name} · {nextShelter.dist.toFixed(1)} mi</p>
-		{/if}
-		<p class="meta">
-			{weatherSnapshot.summary} · {weatherSnapshot.highF}° / {weatherSnapshot.lowF}° · wind {weatherSnapshot.windMph} mph
-		</p>
 		<div class="checkin">
 			<span class="ci-due">Check-in due {checkInDue}</span>
 			<button class="safe-btn" onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}>
@@ -93,17 +106,79 @@
 		</div>
 	</section>
 
-	<!-- Ask Scout — calm, not chat-first -->
+	<!-- NEXT: glance-first next action -->
+	{#if nextWater || camp}
+		<section class="next card">
+			<span class="eyebrow">Now → next</span>
+			{#if nextWater}
+				<p class="next-main">
+					Top off water · <b>{(nextWater.mile - from).toFixed(1)} mi</b>
+					{#if nextWater.reliability !== 'reliable'}<span class="cand">candidate — confirm flow</span>{/if}
+				</p>
+			{/if}
+			{#if camp}
+				<p class="next-sub">
+					then <b>{(camp.mile - from).toFixed(1)} mi</b> to {camp.name}{#if climbFt > 0} · +{climbFt.toLocaleString()} ft{/if}
+				</p>
+			{/if}
+		</section>
+	{/if}
+
+	<!-- Weather: first-class, with what-it-means + daylight -->
+	<section class="wx card">
+		<div class="wx-head">
+			<span class="eyebrow">Weather</span>
+			<span class="wx-src">{wx.source}</span>
+		</div>
+		<div class="wx-now">
+			<div class="temp tabular">{wx.nowF}°</div>
+			<div class="wx-meta">
+				<p class="sum">{wx.summary}</p>
+				<p class="hilo">High {wx.highF}° · Low {wx.lowF}° · wind {wx.windMph} mph</p>
+			</div>
+		</div>
+		<p class="means"><span class="meanslab">What it means</span> {wx.meaning}</p>
+		<div class="hourly" aria-label="Hourly chance of rain">
+			{#each wx.hourly as h (h.label)}
+				<div class="hcol">
+					<div class="htrack"><div class="hfill" class:peak={h.peak} style="height:{Math.max(6, h.pct)}%"></div></div>
+					<span class="hpct" class:peak={h.peak}>{h.pct}</span>
+					<span class="hlab">{h.label}</span>
+				</div>
+			{/each}
+		</div>
+		<div class="daylight">
+			<div class="dl-track"><div class="dl-fill" style="width:{wx.daylightFrac * 100}%"></div></div>
+			<span class="dl-lab">Sunset {wx.sunsetLabel} · {wx.daylightLeftLabel}</span>
+		</div>
+	</section>
+
+	<!-- Day spine: the day, now → camp -->
+	<section class="spine card">
+		<span class="eyebrow">Your day · now → camp</span>
+		<ol class="timeline">
+			{#each dayNodes as n, i (n.kind + i)}
+				<li class="node {n.kind}">
+					<span class="dot">{glyph[n.kind]}</span>
+					<div class="ncontent">
+						<p class="ntitle">{n.title}</p>
+						{#if n.detail}<p class="ndetail">{n.detail}</p>{/if}
+						{#if n.flag}<p class="nflag">{n.flag}</p>{/if}
+					</div>
+				</li>
+			{/each}
+		</ol>
+	</section>
+
+	<!-- Ask Scout — calm, opens the real chat -->
 	<section class="ask card">
 		<div class="eyebrow">Ask Scout</div>
-		<p class="greet">{greeting}</p>
-
+		<p class="greet">Cited, on-device answers — for the trail or the Word.</p>
 		{#each prompts as prompt (prompt)}
 			<button class="prompt-row" onclick={() => ask(prompt)}>
 				<span class="q">›</span><span class="qtext">{prompt}</span><span class="arrow">+</span>
 			</button>
 		{/each}
-
 		{#if lastAnswer}
 			<div class="exchange">
 				<p class="ans">{lastAnswer.answer}</p>
@@ -117,7 +192,7 @@
 		{/if}
 	</section>
 
-	<!-- Gear: a morning packing glance, not an all-day tab -->
+	<!-- Gear: a morning packing glance -->
 	<button class="packing card" onclick={() => trailAssistant.openTrailSection('gear')}>
 		<div class="pk-left">
 			<div class="eyebrow">Packing up?</div>
@@ -152,94 +227,90 @@
 		color: var(--moss);
 		font-weight: 800;
 		margin-bottom: 10px;
+		display: block;
 	}
 
-	/* Readiness */
-	.readiness {
-		padding: 20px 20px 18px;
+	/* HUD */
+	.hud {
+		padding: 16px 18px 14px;
 	}
-	.rtop {
+	.hud-top {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: space-between;
 	}
-	.rtop .lab {
-		font-size: 0.64rem;
+	.hud-top .day {
+		font-size: 0.7rem;
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: var(--moss);
 		font-weight: 800;
 	}
-	.pill {
-		font-family: var(--font-display);
-		font-size: 0.95rem;
+	.hud-top .off {
+		font-size: 0.6rem;
 		letter-spacing: 0.04em;
-		padding: 4px 14px 5px;
-		border-radius: 999px;
-		line-height: 1;
-	}
-	.pill[data-tone='warn'] {
-		color: var(--warn, #9a7320);
-		border: 1px solid rgba(182, 137, 44, 0.4);
-		background: rgba(182, 137, 44, 0.1);
-	}
-	.pill[data-tone='go'] {
-		color: var(--forest);
-		border: 1px solid rgba(47, 75, 53, 0.3);
-		background: rgba(47, 75, 53, 0.08);
-	}
-	.num {
-		font-family: var(--font-display);
 		font-weight: 800;
-		font-size: 5.4rem;
-		line-height: 0.92;
-		letter-spacing: -0.02em;
-		color: var(--ink);
-		margin: 4px 0 2px;
-	}
-	.reason {
-		font-size: 0.86rem;
-		line-height: 1.5;
-		color: var(--muted);
-		margin-top: 6px;
-	}
-	.reason b {
+		text-transform: uppercase;
 		color: var(--clay);
-		font-weight: 800;
+		background: rgba(170, 104, 67, 0.12);
+		border-radius: 999px;
+		padding: 3px 9px;
 	}
-
-	/* Today target */
-	.target {
-		padding: 16px 18px 14px;
-	}
-	.target .big {
+	.mile {
 		font-family: var(--font-display);
 		font-weight: 800;
-		font-size: 2.8rem;
+		font-size: 3.4rem;
 		line-height: 1;
+		letter-spacing: -0.01em;
 		color: var(--ink);
+		margin: 6px 0 10px;
 	}
-	.target .big .unit {
-		font-size: 1.2rem;
-		color: var(--muted);
-	}
-	.target .dest {
-		font-size: 0.9rem;
-		color: var(--ink);
-		margin-top: 8px;
+	.mile .of {
+		font-size: 1.05rem;
 		font-weight: 700;
-	}
-	.target .meta {
-		font-size: 0.8rem;
 		color: var(--muted);
-		margin-top: 3px;
+	}
+	.bar {
+		height: 7px;
+		border-radius: 999px;
+		background: rgba(47, 75, 53, 0.1);
+		overflow: hidden;
+	}
+	.fill {
+		height: 100%;
+		border-radius: 999px;
+		background: var(--forest);
+	}
+	.splits {
+		display: flex;
+		justify-content: space-between;
+		gap: 8px;
+		margin-top: 12px;
+	}
+	.splits div {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.splits .k {
+		font-size: 0.6rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--muted);
+		font-weight: 800;
+	}
+	.splits b {
+		font-family: var(--font-display);
+		font-size: 1.1rem;
+		color: var(--ink);
+		font-weight: 800;
 	}
 	.checkin {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 10px;
-		margin-top: 12px;
+		margin-top: 13px;
 		padding-top: 12px;
 		border-top: 1px solid var(--line);
 	}
@@ -249,13 +320,253 @@
 		font-weight: 700;
 	}
 	.safe-btn {
-		min-height: 38px;
-		padding: 7px 14px;
+		min-height: 44px;
+		padding: 9px 16px;
 		border-radius: 999px;
 		background: rgba(47, 75, 53, 0.1);
 		color: var(--forest);
 		font-weight: 800;
-		font-size: 0.82rem;
+		font-size: 0.85rem;
+	}
+
+	/* NEXT line */
+	.next {
+		padding: 14px 18px 15px;
+		border-left: 3px solid var(--forest);
+	}
+	.next-main {
+		font-family: var(--font-display);
+		font-size: 1.2rem;
+		font-weight: 700;
+		color: var(--ink);
+		line-height: 1.3;
+	}
+	.next-main b {
+		color: var(--forest);
+	}
+	.cand {
+		display: inline-block;
+		font-family: var(--font-sans);
+		font-size: 0.64rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--clay);
+		background: rgba(170, 104, 67, 0.12);
+		border-radius: 999px;
+		padding: 2px 8px;
+		margin-left: 4px;
+		vertical-align: middle;
+	}
+	.next-sub {
+		font-size: 0.86rem;
+		color: var(--muted);
+		margin-top: 5px;
+	}
+	.next-sub b {
+		color: var(--ink);
+		font-weight: 800;
+	}
+
+	/* Weather */
+	.wx {
+		padding: 15px 18px 16px;
+	}
+	.wx-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+	}
+	.wx-head .eyebrow {
+		margin-bottom: 0;
+	}
+	.wx-src {
+		font-size: 0.62rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+	.wx-now {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		margin: 10px 0 4px;
+	}
+	.temp {
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 3rem;
+		line-height: 1;
+		color: var(--sky);
+	}
+	.wx-meta .sum {
+		font-family: var(--font-display);
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--ink);
+	}
+	.wx-meta .hilo {
+		font-size: 0.8rem;
+		color: var(--muted);
+		margin-top: 2px;
+	}
+	.means {
+		font-size: 0.86rem;
+		line-height: 1.5;
+		color: var(--ink);
+		background: rgba(95, 128, 144, 0.08);
+		border-radius: 10px;
+		padding: 10px 12px;
+		margin: 10px 0;
+	}
+	.meanslab {
+		display: block;
+		font-size: 0.58rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--sky);
+		margin-bottom: 3px;
+	}
+	.hourly {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 6px;
+		height: 64px;
+		margin: 6px 0 4px;
+	}
+	.hcol {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 3px;
+		height: 100%;
+		justify-content: flex-end;
+	}
+	.htrack {
+		width: 100%;
+		max-width: 22px;
+		height: 38px;
+		display: flex;
+		align-items: flex-end;
+		background: rgba(95, 128, 144, 0.1);
+		border-radius: 5px;
+		overflow: hidden;
+	}
+	.hfill {
+		width: 100%;
+		background: var(--sky);
+		opacity: 0.55;
+		border-radius: 5px 5px 0 0;
+	}
+	.hfill.peak {
+		background: var(--clay);
+		opacity: 0.85;
+	}
+	.hpct {
+		font-size: 0.56rem;
+		font-weight: 800;
+		color: var(--muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.hpct.peak {
+		color: var(--clay);
+	}
+	.hlab {
+		font-size: 0.56rem;
+		color: var(--muted);
+		font-weight: 700;
+	}
+	.daylight {
+		margin-top: 8px;
+	}
+	.dl-track {
+		height: 6px;
+		border-radius: 999px;
+		background: rgba(198, 154, 62, 0.18);
+		overflow: hidden;
+	}
+	.dl-fill {
+		height: 100%;
+		border-radius: 999px;
+		background: var(--gold, #c69a3e);
+	}
+	.dl-lab {
+		display: block;
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--muted);
+		margin-top: 5px;
+	}
+
+	/* Day spine */
+	.spine {
+		padding: 16px 18px 14px;
+	}
+	.timeline {
+		list-style: none;
+		display: grid;
+		gap: 0;
+	}
+	.node {
+		display: grid;
+		grid-template-columns: 26px 1fr;
+		gap: 10px;
+		padding-bottom: 16px;
+		position: relative;
+	}
+	.node:not(:last-child)::before {
+		content: '';
+		position: absolute;
+		left: 12px;
+		top: 24px;
+		bottom: 0;
+		width: 2px;
+		background: var(--line);
+	}
+	.dot {
+		width: 26px;
+		height: 26px;
+		border-radius: 999px;
+		display: grid;
+		place-items: center;
+		font-size: 0.8rem;
+		background: rgba(47, 75, 53, 0.08);
+		color: var(--moss);
+		z-index: 1;
+	}
+	.node.now .dot {
+		background: var(--forest);
+		color: #f4efe4;
+	}
+	.node.camp .dot {
+		background: rgba(170, 104, 67, 0.14);
+		color: var(--clay);
+	}
+	.ntitle {
+		font-family: var(--font-display);
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--ink);
+		line-height: 1.2;
+	}
+	.node.now .ntitle {
+		color: var(--forest);
+	}
+	.ndetail {
+		font-size: 0.8rem;
+		color: var(--muted);
+		margin-top: 2px;
+		line-height: 1.4;
+	}
+	.nflag {
+		font-size: 0.74rem;
+		font-weight: 800;
+		color: var(--clay);
+		margin-top: 3px;
 	}
 
 	/* Ask Scout */
@@ -264,7 +575,7 @@
 	}
 	.greet {
 		font-family: var(--font-display);
-		font-size: 1.12rem;
+		font-size: 1.05rem;
 		line-height: 1.34;
 		font-weight: 700;
 		color: var(--ink);
@@ -275,7 +586,8 @@
 		align-items: center;
 		gap: 11px;
 		width: 100%;
-		padding: 12px 2px;
+		min-height: 44px;
+		padding: 11px 2px;
 		border-top: 1px solid var(--line);
 		font-size: 0.9rem;
 		color: var(--ink);
