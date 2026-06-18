@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>One Calm Scroll — Hogg Country Bake-off 2026-06-2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Anton&family=Lato:wght@400;700;900&family=Caveat:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* brief-locked palette */
+    --bg:#f4efe4;            /* cream */
+    --bg-deep:#e7dcc8;
+    --surface:#fbf7ef;       /* warm off-white */
+    --surface-strong:#fffdf8;
+    --ink:#22281f;
+    --muted:#5e6555;
+    --faint:#8b8d7c;
+    --line:#e2dac9;
+    --line-soft:#ece5d7;
+    --forest:#2f4b35;        /* forest green */
+    --pine:#264029;
+    --moss:#6a845f;          /* moss */
+    --sage:#8ba07c;          /* sage */
+    --sage-soft:#c4d2b6;
+    --clay:#a85f3b;          /* clay — cautions */
+    --clay-soft:#c79a82;
+    --sky:#5f8090;
+    --gold:#b6892c;
+    --radius-lg:26px; --radius-md:18px; --radius-sm:12px;
+    --cond:'Oswald', 'Avenir Next Condensed', system-ui, sans-serif;
+    --display:'Anton', 'Oswald', system-ui, sans-serif;
+    --sans:'Lato', 'Avenir Next', system-ui, sans-serif;
+    --hand:'Caveat', cursive;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{ background:#ded3bd; }
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    padding:38px 20px 64px;
+    background:radial-gradient(1300px 640px at 50% -8%, #ece2cd, #ded3bd 62%);
+    min-height:100vh;
+  }
+
+  /* ---------- Title band ---------- */
+  .band{
+    max-width:1180px; margin:0 auto 40px;
+    padding:30px 36px 32px;
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    box-shadow:0 1px 0 #fff inset, 0 22px 46px -34px rgba(34,40,31,.42);
+  }
+  .band .kicker{
+    font-family:var(--cond);
+    font-size:12px; letter-spacing:.26em; text-transform:uppercase;
+    color:var(--moss); font-weight:600; margin-bottom:13px;
+  }
+  .band h1{
+    font-family:var(--display); font-weight:400; font-size:52px; line-height:.98;
+    letter-spacing:.005em; color:var(--ink); margin-bottom:14px; text-transform:uppercase;
+  }
+  .band h1 em{ font-style:normal; color:var(--forest); }
+  .band .concept{
+    font-size:16.5px; line-height:1.55; color:var(--ink); max-width:74ch; margin-bottom:18px;
+  }
+  .band .concept b{ color:var(--forest); font-weight:700; }
+  .band .lang{ display:flex; flex-wrap:wrap; gap:8px; }
+  .band .lang span{
+    font-family:var(--cond);
+    font-size:12.5px; letter-spacing:.05em; color:var(--muted);
+    background:var(--bg); border:1px solid var(--line);
+    border-radius:999px; padding:6px 14px;
+  }
+
+  /* ---------- Phone stage ---------- */
+  .stage{
+    display:flex; flex-wrap:wrap; gap:26px; justify-content:center;
+    max-width:1180px; margin:0 auto;
+  }
+  .slot{ width:340px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:9px;
+    font-family:var(--cond);
+    font-size:13px; letter-spacing:.16em; text-transform:uppercase;
+    font-weight:600; color:var(--forest);
+    margin:0 0 11px 10px;
+  }
+  .chip .dot{ width:7px; height:7px; border-radius:50%; background:var(--moss); }
+  .chip small{ color:var(--faint); font-weight:500; letter-spacing:.08em; }
+
+  .phone{
+    width:340px; height:712px;
+    background:var(--bg);
+    border-radius:40px;
+    border:1px solid #c9bda3;
+    box-shadow:0 30px 60px -28px rgba(34,40,31,.55), 0 2px 0 #fff inset;
+    overflow:hidden; position:relative;
+    display:flex; flex-direction:column;
+  }
+
+  /* phone status bar */
+  .osbar{
+    height:36px; flex:none;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 22px;
+    font-family:var(--cond);
+    font-size:13px; font-weight:600; color:var(--ink); letter-spacing:.02em;
+  }
+  .osbar .right{ display:flex; gap:7px; align-items:center; color:var(--muted); }
+  .offline-pill{
+    font-family:var(--cond);
+    font-size:10px; letter-spacing:.12em; font-weight:600; text-transform:uppercase;
+    color:var(--clay); background:rgba(168,95,59,.11);
+    border:1px solid rgba(168,95,59,.32);
+    border-radius:999px; padding:3px 9px;
+  }
+
+  .screen{ flex:1; overflow:hidden; position:relative; }
+  .scroll{ height:100%; overflow:hidden; padding:0 16px; }
+
+  /* the single persistent header (NOT a tab bar — this scroll IS the app) */
+  .topline{
+    display:flex; align-items:center; gap:0;
+    padding:9px 8px 12px; margin-bottom:6px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .topline .seg{ display:flex; align-items:baseline; gap:6px; }
+  .topline .lab{ font-family:var(--cond); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
+  .topline .val{ font-family:var(--cond); font-size:19px; font-weight:600; color:var(--ink); line-height:1; }
+  .topline .div{ color:var(--line); margin:0 11px; }
+  .topline .pct{ margin-left:auto; display:flex; align-items:center; gap:7px; }
+  .topline .pct .bar{ width:46px; height:5px; border-radius:99px; background:var(--line); overflow:hidden; }
+  .topline .pct .bar span{ display:block; height:100%; width:65%; background:var(--moss); border-radius:99px; }
+  .topline .pct .n{ font-family:var(--cond); font-size:13px; color:var(--moss); font-weight:600; }
+
+  /* a quiet section divider used between scroll blocks */
+  .seclabel{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--cond); font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--moss); font-weight:600; margin:18px 6px 11px;
+  }
+  .seclabel::after{ content:''; flex:1; height:1px; background:var(--line-soft); }
+
+  /* ============================================================
+     WEATHER BLOCK — first-class, prominent (safety)
+     ============================================================ */
+  .weather{
+    background:linear-gradient(168deg, #35543c 0%, #2b4632 100%);
+    border-radius:var(--radius-md);
+    padding:18px 19px 17px;
+    color:#f3efe2;
+    position:relative; overflow:hidden;
+    box-shadow:0 14px 30px -22px rgba(34,40,31,.7);
+  }
+  .weather::after{
+    /* faint sun-glare-safe topographic shimmer */
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(220px 120px at 88% -10%, rgba(196,210,182,.16), transparent 70%);
+    pointer-events:none;
+  }
+  .weather .wtop{ display:flex; align-items:flex-start; justify-content:space-between; position:relative; }
+  .weather .place{ font-family:var(--cond); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--sage-soft); }
+  .weather .now{ display:flex; align-items:baseline; gap:4px; margin-top:1px; }
+  .weather .now .temp{ font-family:var(--display); font-size:62px; line-height:.86; letter-spacing:.01em; }
+  .weather .now .deg{ font-family:var(--cond); font-size:22px; color:var(--sage-soft); align-self:flex-start; margin-top:4px; }
+  .weather .sky{ text-align:right; }
+  .weather .sky .ic{ font-size:30px; line-height:1; }
+  .weather .sky .cond{ font-family:var(--cond); font-size:13px; letter-spacing:.04em; color:#e7ecd9; margin-top:5px; max-width:96px; }
+  .weather .wstats{
+    display:flex; gap:0; margin-top:15px; padding-top:14px;
+    border-top:1px solid rgba(196,210,182,.22); position:relative;
+  }
+  .weather .ws{ flex:1; text-align:center; border-left:1px solid rgba(196,210,182,.16); }
+  .weather .ws:first-child{ border-left:none; }
+  .weather .ws .k{ font-family:var(--cond); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--sage-soft); }
+  .weather .ws .v{ font-family:var(--cond); font-size:18px; font-weight:600; margin-top:3px; color:#fff; }
+  .weather .ws .v small{ font-size:11px; color:var(--sage-soft); font-weight:400; }
+  .weather .means{
+    margin-top:13px; padding:11px 12px;
+    background:rgba(244,239,228,.1);
+    border:1px solid rgba(244,239,228,.16);
+    border-radius:var(--radius-sm);
+    font-size:13px; line-height:1.45; color:#eef0e2; position:relative;
+  }
+  .weather .means b{ color:#fff; font-weight:700; }
+  .weather .means .pin{ color:var(--clay-soft); font-weight:700; }
+
+  /* ============================================================
+     TRAIL-AHEAD — ribbon + elevation ups/downs
+     ============================================================ */
+  .traincard{
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:16px 16px 12px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .traincard .thead{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; }
+  .traincard .thead .target{ font-family:var(--cond); font-size:13px; color:var(--ink); font-weight:600; }
+  .traincard .thead .target b{ font-family:var(--display); font-size:18px; letter-spacing:.01em; }
+  .traincard .thead .zoom{ display:flex; gap:5px; }
+  .traincard .thead .zoom span{
+    font-family:var(--cond); font-size:10.5px; letter-spacing:.05em; color:var(--faint);
+    border:1px solid var(--line); border-radius:7px; padding:2px 7px;
+  }
+  .traincard .thead .zoom span.on{ color:var(--forest); border-color:var(--moss); background:rgba(106,132,95,.1); font-weight:600; }
+  .ribbon{ display:block; width:100%; height:70px; margin:6px 0 2px; }
+  .elev{ display:block; width:100%; height:96px; margin:2px 0; }
+  .elevlegend{ display:flex; align-items:center; gap:14px; padding:2px 2px 0; }
+  .elevlegend span{ font-family:var(--cond); font-size:11px; letter-spacing:.03em; color:var(--muted); display:inline-flex; align-items:center; gap:5px; }
+  .elevlegend .up{ color:var(--clay); font-weight:600; }
+  .elevlegend .dn{ color:var(--moss); font-weight:600; }
+
+  /* ============================================================
+     NEXT STOPS — water / shelter / town
+     ============================================================ */
+  .stops{ background:var(--surface-strong); border:1px solid var(--line); border-radius:var(--radius-md); box-shadow:0 1px 0 #fff inset; overflow:hidden; }
+  .stop{
+    display:flex; align-items:center; gap:13px;
+    padding:14px 16px; border-top:1px solid var(--line-soft);
+  }
+  .stop:first-child{ border-top:none; }
+  .stop .glyph{
+    width:38px; height:38px; flex:none; border-radius:11px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--cond); font-size:18px; font-weight:600;
+    background:var(--bg); border:1px solid var(--line); color:var(--moss);
+  }
+  .stop.cand .glyph{ color:var(--clay); border-color:rgba(168,95,59,.34); border-style:dashed; background:rgba(168,95,59,.06); }
+  .stop .lt{ flex:1; min-width:0; }
+  .stop .lt .h{ font-size:14.5px; color:var(--ink); font-weight:700; }
+  .stop .lt .s{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .stop .lt .s.flag{ color:var(--clay); }
+  .stop .dist{ text-align:right; flex:none; }
+  .stop .dist .n{ font-family:var(--display); font-size:25px; color:var(--ink); line-height:.9; letter-spacing:.01em; }
+  .stop .dist .u{ font-family:var(--cond); font-size:11px; color:var(--muted); }
+  .stop .dist .climb{ font-family:var(--cond); font-size:11px; color:var(--clay); margin-top:3px; }
+
+  /* ============================================================
+     SCOUT ASK-BAR — expands inline, with citations
+     ============================================================ */
+  .askbar{
+    display:flex; align-items:center; gap:11px;
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:14px; padding:13px 15px; box-shadow:0 1px 0 #fff inset;
+  }
+  .askbar .sdot{ width:9px; height:9px; border-radius:50%; background:var(--moss); flex:none; box-shadow:0 0 0 4px rgba(106,132,95,.16); }
+  .askbar .ph{ flex:1; font-size:14px; color:var(--faint); }
+  .askbar .send{ font-family:var(--cond); font-size:12px; letter-spacing:.06em; color:var(--moss); font-weight:600; }
+
+  .exchange{
+    background:var(--surface);
+    border:1px solid var(--line); border-left:3px solid var(--forest);
+    border-radius:var(--radius-sm);
+    padding:14px 15px; margin-top:9px;
+  }
+  .exchange .you{ font-family:var(--cond); font-size:12.5px; letter-spacing:.04em; color:var(--muted); font-weight:600; margin-bottom:8px; }
+  .exchange .you::before{ content:'You · '; color:var(--faint); }
+  .exchange .ans{ font-size:14px; line-height:1.55; color:var(--ink); }
+  .exchange .ans b{ font-weight:700; }
+  .exchange .ans .cite{ color:var(--forest); font-weight:700; vertical-align:super; font-size:10px; }
+  .receipts{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:13px; padding-top:12px; border-top:1px solid var(--line-soft); }
+  .receipts .rl{ font-family:var(--cond); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
+  .receipt{
+    font-family:var(--cond); font-size:11px; letter-spacing:.02em; color:var(--muted);
+    background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:3px 10px;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .receipt b{ color:var(--forest); font-weight:600; }
+
+  /* ============================================================
+     QUICK GEAR CHECK-OFF (inline in scroll)
+     ============================================================ */
+  .gearquick{ background:var(--surface-strong); border:1px solid var(--line); border-radius:var(--radius-md); box-shadow:0 1px 0 #fff inset; overflow:hidden; }
+  .gearquick .gqhead{ display:flex; align-items:center; justify-content:space-between; padding:13px 16px 11px; }
+  .gearquick .gqhead .ttl{ font-family:var(--cond); font-size:13px; letter-spacing:.05em; color:var(--ink); font-weight:600; }
+  .gearquick .gqhead .ttl small{ color:var(--faint); font-weight:400; letter-spacing:.02em; }
+  .gearquick .gqhead .wt{ font-family:var(--cond); font-size:13px; color:var(--moss); font-weight:600; }
+  .checkitem{
+    display:flex; align-items:center; gap:12px;
+    padding:11px 16px; border-top:1px solid var(--line-soft);
+  }
+  .checkbox{ width:24px; height:24px; flex:none; border-radius:7px; border:1.5px solid var(--moss); display:flex; align-items:center; justify-content:center; color:#fff; }
+  .checkbox.on{ background:var(--forest); border-color:var(--forest); }
+  .checkbox.on::after{ content:'✓'; font-size:14px; font-weight:700; }
+  .checkitem .nm{ flex:1; font-size:14px; color:var(--ink); }
+  .checkitem.done .nm{ color:var(--faint); }
+  .checkitem .gw{ font-family:var(--cond); font-size:13px; color:var(--muted); }
+  .gearquick .openfull{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; border-top:1px solid var(--line-soft);
+    font-family:var(--cond); font-size:12.5px; letter-spacing:.06em; color:var(--moss); font-weight:600;
+  }
+  .gearquick .openfull .arrow{ color:var(--faint); }
+
+  /* ============================================================
+     VERSE OF THE DAY (inline)
+     ============================================================ */
+  .verse{
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:20px 20px 18px; box-shadow:0 1px 0 #fff inset;
+  }
+  .verse .ref{ font-family:var(--cond); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--moss); font-weight:600; margin-bottom:12px; }
+  .verse .scripture{ font-family:var(--cond); font-weight:300; font-size:21px; line-height:1.42; color:var(--ink); letter-spacing:.005em; }
+  .verse .scripture .lead{ color:var(--forest); }
+  .verse .vfoot{ display:flex; align-items:center; justify-content:space-between; margin-top:15px; padding-top:13px; border-top:1px solid var(--line-soft); }
+  .verse .vfoot .src{ font-size:11px; color:var(--faint); letter-spacing:.02em; }
+  .verse .vfoot .open{ font-family:var(--cond); font-size:12px; letter-spacing:.05em; color:var(--moss); font-weight:600; }
+
+  /* ============================================================
+     JOURNAL PROMPT (inline, end of scroll)
+     ============================================================ */
+  .jprompt{
+    background:var(--bg-deep); border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:17px 18px 16px;
+  }
+  .jprompt .jh{ display:flex; align-items:center; gap:8px; font-family:var(--cond); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--moss); font-weight:600; margin-bottom:10px; }
+  .jprompt .q{ font-family:var(--hand); font-size:23px; line-height:1.2; color:var(--forest); }
+  .jprompt .field{
+    margin-top:12px; padding:12px 13px; background:var(--surface-strong);
+    border:1px solid var(--line); border-radius:var(--radius-sm);
+    font-size:13.5px; color:var(--faint); line-height:1.45; min-height:54px;
+  }
+  .jprompt .jbtns{ display:flex; gap:9px; margin-top:11px; }
+  .jprompt .jbtns button{
+    flex:1; font-family:var(--cond); font-size:12px; letter-spacing:.06em; text-transform:uppercase; font-weight:600;
+    border-radius:10px; padding:10px 0; cursor:pointer; border:1px solid var(--line);
+    background:var(--surface-strong); color:var(--muted);
+  }
+  .jprompt .jbtns button.primary{ background:var(--forest); border-color:var(--forest); color:#f3efe2; }
+
+  /* end-of-scroll grace note */
+  .endnote{ text-align:center; font-family:var(--hand); font-size:18px; color:var(--faint); padding:6px 0 4px; }
+
+  /* fade implying more scroll below */
+  .fade{ position:absolute; left:0; right:0; bottom:0; height:30px; z-index:3;
+    background:linear-gradient(to top, var(--bg), rgba(244,239,228,0)); pointer-events:none; }
+
+  /* ============================================================
+     BIBLE SCREEN (one tap deeper) — searchable + browsable
+     ============================================================ */
+  .searchbar{
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:13px; padding:12px 14px; box-shadow:0 1px 0 #fff inset;
+    margin-bottom:6px;
+  }
+  .searchbar .mag{ color:var(--moss); font-size:15px; flex:none; }
+  .searchbar .q{ flex:1; font-size:14px; color:var(--ink); }
+  .searchbar .q b{ color:var(--ink); }
+  .searchbar .clr{ color:var(--faint); font-size:16px; }
+  .searchmeta{ font-family:var(--cond); font-size:11px; letter-spacing:.06em; color:var(--faint); margin:2px 8px 4px; }
+  .result{
+    background:var(--surface-strong); border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:12px 14px; margin-bottom:8px;
+  }
+  .result .rref{ font-family:var(--cond); font-size:12px; letter-spacing:.08em; color:var(--moss); font-weight:600; margin-bottom:4px; }
+  .result .rtext{ font-size:13.5px; line-height:1.5; color:var(--ink); }
+  .result .rtext mark{ background:rgba(182,137,44,.26); color:var(--ink); border-radius:3px; padding:0 2px; }
+
+  .testtab{ display:flex; gap:8px; margin:14px 6px 12px; }
+  .testtab span{ font-family:var(--cond); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:600; padding-bottom:5px; }
+  .testtab span.on{ color:var(--forest); border-bottom:2px solid var(--forest); }
+  .bookgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+  .bookgrid a{
+    font-family:var(--cond); font-size:12px; letter-spacing:.02em; color:var(--ink);
+    background:var(--surface-strong); border:1px solid var(--line); border-radius:9px;
+    padding:11px 4px; text-align:center; text-decoration:none;
+  }
+  .bookgrid a.psalm{ background:var(--forest); border-color:var(--forest); color:#f3efe2; font-weight:600; }
+  .bookgrid a.read{ background:rgba(106,132,95,.12); border-color:rgba(106,132,95,.32); color:var(--forest); }
+
+  /* ============================================================
+     FULL GEAR SCREEN (one tap deeper) — add/drop/swap/weights
+     ============================================================ */
+  .weights{ display:flex; gap:12px; margin-bottom:14px; }
+  .weightcard{ flex:1; background:var(--surface-strong); border:1px solid var(--line); border-radius:var(--radius-md); padding:15px 15px 13px; box-shadow:0 1px 0 #fff inset; }
+  .weightcard .lab{ font-family:var(--cond); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--moss); font-weight:600; margin-bottom:5px; }
+  .weightcard .n{ font-family:var(--display); font-size:42px; line-height:.86; letter-spacing:.01em; color:var(--ink); }
+  .weightcard .n .u{ font-family:var(--cond); font-size:14px; color:var(--muted); margin-left:3px; }
+  .weightcard.total{ background:var(--forest); border-color:var(--forest); }
+  .weightcard.total .lab{ color:var(--sage-soft); }
+  .weightcard.total .n{ color:var(--surface-strong); }
+  .weightcard.total .n .u{ color:var(--sage-soft); }
+
+  .gcat{ font-family:var(--cond); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--moss); font-weight:600; margin:14px 6px 9px; display:flex; justify-content:space-between; }
+  .gcat .cw{ color:var(--faint); }
+  .gitem{ display:flex; align-items:center; gap:12px; background:var(--surface-strong); border:1px solid var(--line); border-radius:11px; padding:11px 13px; margin-bottom:7px; }
+  .gitem .gcheck{ width:22px; height:22px; flex:none; border-radius:6px; border:1.5px solid var(--moss); display:flex; align-items:center; justify-content:center; color:#fff; }
+  .gitem .gcheck.on{ background:var(--forest); border-color:var(--forest); }
+  .gitem .gcheck.on::after{ content:'✓'; font-size:12px; font-weight:700; }
+  .gitem .gnm{ flex:1; font-size:14px; color:var(--ink); }
+  .gitem .gnm small{ display:block; font-family:var(--cond); font-size:11px; color:var(--faint); letter-spacing:.02em; margin-top:1px; }
+  .gitem .gwt{ font-family:var(--cond); font-size:13px; color:var(--muted); }
+  .gitem .swap{ font-family:var(--cond); font-size:10.5px; letter-spacing:.06em; color:var(--moss); border:1px solid var(--line); border-radius:7px; padding:3px 7px; }
+  .gearactions{ display:flex; gap:9px; margin-top:6px; }
+  .gearactions button{
+    flex:1; font-family:var(--cond); font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; font-weight:600;
+    border-radius:11px; padding:12px 0; cursor:pointer; border:1px solid var(--line);
+    background:var(--surface-strong); color:var(--forest); display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .gearactions button.add{ background:var(--forest); border-color:var(--forest); color:#f3efe2; }
+
+  /* ============================================================
+     JOURNAL SCREEN (one tap deeper) — document the journey
+     ============================================================ */
+  .jhero{
+    background:linear-gradient(168deg, #35543c, #2b4632);
+    border-radius:var(--radius-md); padding:18px 19px; color:#f3efe2; box-shadow:0 14px 30px -22px rgba(34,40,31,.6);
+  }
+  .jhero .jk{ font-family:var(--cond); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--sage-soft); }
+  .jhero .jtitle{ font-family:var(--display); font-size:26px; letter-spacing:.01em; margin-top:5px; line-height:1; }
+  .jhero .jstat{ display:flex; gap:18px; margin-top:13px; }
+  .jhero .jstat .js{ }
+  .jhero .jstat .js .n{ font-family:var(--display); font-size:24px; line-height:1; }
+  .jhero .jstat .js .l{ font-family:var(--cond); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--sage-soft); margin-top:3px; }
+  .jhero .follow{ margin-top:13px; padding-top:12px; border-top:1px solid rgba(196,210,182,.22); font-size:12.5px; color:#eef0e2; line-height:1.4; }
+  .jhero .follow b{ color:#fff; }
+
+  .entry{ background:var(--surface-strong); border:1px solid var(--line); border-radius:var(--radius-md); padding:15px 16px; margin-top:12px; box-shadow:0 1px 0 #fff inset; }
+  .entry .ehead{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; }
+  .entry .ehead .day{ font-family:var(--cond); font-size:13px; letter-spacing:.06em; color:var(--ink); font-weight:600; }
+  .entry .ehead .mi{ font-family:var(--cond); font-size:11px; color:var(--moss); letter-spacing:.04em; }
+  .entry .ebody{ font-size:13.5px; line-height:1.55; color:var(--ink); }
+  .entry .ebody .hand{ font-family:var(--hand); font-size:18px; color:var(--forest); display:block; margin-top:8px; }
+  .entry .etags{ display:flex; gap:7px; margin-top:11px; }
+  .entry .etags span{ font-family:var(--cond); font-size:10.5px; letter-spacing:.06em; color:var(--muted); background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:3px 9px; }
+  .entry .photo{ height:62px; border-radius:9px; margin-top:11px; background:linear-gradient(135deg,#8ba07c,#6a845f); display:flex; align-items:flex-end; padding:7px 9px; }
+  .entry .photo span{ font-family:var(--cond); font-size:10.5px; letter-spacing:.06em; color:#f3efe2; text-shadow:0 1px 2px rgba(0,0,0,.3); }
+
+  .newentry{
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    background:var(--forest); border:1px solid var(--forest); border-radius:13px;
+    padding:14px 0; margin-top:12px; color:#f3efe2;
+    font-family:var(--cond); font-size:13px; letter-spacing:.08em; text-transform:uppercase; font-weight:600; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===================== TITLE BAND ===================== -->
+  <section class="band">
+    <div class="kicker">Hogg Country · Bake-off 2026-06-2 · Direction M3</div>
+    <h1>One <em>Calm</em> Scroll</h1>
+    <p class="concept">
+      Radically simple: <b>one calm vertical scroll IS the app.</b> No tab-hopping to get through the day.
+      Top to bottom — prominent weather (it's safety) → trail-ahead ribbon with real ascent/descent →
+      next water/shelter/town → a quick gear check-off → today's verse → a journal prompt. Scout is a calm
+      ask-bar that expands inline with cited receipts. The full browsable Bible, full gear, and the journal
+      keepsake live exactly one tap deeper. Real data only — no invented readiness number, ever. Offline, on-device.
+    </p>
+    <div class="lang">
+      <span>One motor-tolerant scroll</span>
+      <span>Weather is first-class</span>
+      <span>No readiness score</span>
+      <span>Oswald / Anton numerals · Lato body</span>
+      <span>Clay, calm — never a klaxon</span>
+      <span>Glanceable in 2 seconds</span>
+    </div>
+  </section>
+
+  <!-- ===================== PHONES ===================== -->
+  <div class="stage">
+
+    <!-- ============ 1 · THE SCROLL (top) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>The Scroll <small>· top</small></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+
+            <div class="topline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <div class="pct"><span class="bar"><span></span></span><span class="n">65%</span></div>
+            </div>
+
+            <!-- WEATHER — prominent, first thing in the scroll -->
+            <div class="weather">
+              <div class="wtop">
+                <div>
+                  <div class="place">Now · NY / CT corridor</div>
+                  <div class="now"><span class="temp">82</span><span class="deg">°F</span></div>
+                </div>
+                <div class="sky">
+                  <div class="ic">⛅</div>
+                  <div class="cond">Scattered PM showers</div>
+                </div>
+              </div>
+              <div class="wstats">
+                <div class="ws"><div class="k">High / Low</div><div class="v">82° <small>/ 63°</small></div></div>
+                <div class="ws"><div class="k">Wind</div><div class="v">9 <small>mph</small></div></div>
+                <div class="ws"><div class="k">Rain</div><div class="v">55<small>%</small></div></div>
+                <div class="ws"><div class="k">Sunset</div><div class="v">8:30</div></div>
+              </div>
+              <div class="means">
+                <b>Warm and muggy.</b> Storms likely build after <b>2pm</b> — make miles early, then watch the
+                ridgeline. <span class="pin">Treat all water</span>; you have ~13h of light.
+              </div>
+            </div>
+
+            <!-- TRAIL AHEAD -->
+            <div class="seclabel">Trail ahead</div>
+            <div class="traincard">
+              <div class="thead">
+                <div class="target">Today's target <b>13.8</b> mi</div>
+                <div class="zoom"><span>5</span><span class="on">10</span><span>20</span></div>
+              </div>
+
+              <!-- the trail RIBBON: stylized winding AT line + pins -->
+              <svg class="ribbon" viewBox="0 0 308 70" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M6,40 C40,18 64,18 92,38 C120,58 150,58 178,36 C206,16 240,18 266,40 C282,53 296,50 302,44"
+                      fill="none" stroke="#c4d2b6" stroke-width="7" stroke-linecap="round"/>
+                <path d="M6,40 C40,18 64,18 92,38 C120,58 150,58 178,36 C206,16 240,18 266,40 C282,53 296,50 302,44"
+                      fill="none" stroke="#6a845f" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="1 5"/>
+                <!-- you are here -->
+                <circle cx="6" cy="40" r="6" fill="#2f4b35" stroke="#fffdf8" stroke-width="2.5"/>
+                <!-- candidate water (dashed clay) -->
+                <circle cx="40" cy="22" r="4.4" fill="#fbf7ef" stroke="#a85f3b" stroke-width="2" stroke-dasharray="2 1.7"/>
+                <!-- shelter -->
+                <circle cx="178" cy="36" r="5" fill="#fffdf8" stroke="#2f4b35" stroke-width="2.4"/>
+                <rect x="175.6" y="33.6" width="4.8" height="4.8" fill="#2f4b35"/>
+                <!-- town -->
+                <circle cx="302" cy="44" r="5" fill="#fffdf8" stroke="#5f8090" stroke-width="2.4"/>
+              </svg>
+
+              <!-- ELEVATION ahead with real ascent/descent -->
+              <svg class="elev" viewBox="0 0 308 96" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#6a845f" stop-opacity=".24"/>
+                    <stop offset="1" stop-color="#6a845f" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,70 L34,64 L64,74 L96,52 L128,60 L160,30 L196,42 L228,22 L262,34 L308,14 L308,96 L0,96 Z" fill="url(#eg)"/>
+                <path d="M0,70 L34,64 L64,74 L96,52 L128,60 L160,30 L196,42 L228,22 L262,34 L308,14" fill="none" stroke="#6a845f" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+                <circle cx="0" cy="70" r="4.5" fill="#2f4b35" stroke="#fffdf8" stroke-width="2"/>
+                <circle cx="160" cy="30" r="4.5" fill="#fffdf8" stroke="#2f4b35" stroke-width="2.2"/>
+              </svg>
+              <div class="elevlegend">
+                <span class="up">↑ +1,700 ft</span>
+                <span class="dn">↓ −980 ft</span>
+                <span>over next 10 mi</span>
+              </div>
+            </div>
+
+            <!-- NEXT STOPS -->
+            <div class="seclabel">Next stops</div>
+            <div class="stops">
+              <div class="stop cand">
+                <div class="glyph">≈</div>
+                <div class="lt"><div class="h">Mapped stream</div><div class="s flag">Candidate · flow unconfirmed</div></div>
+                <div class="dist"><div class="n">0.4</div><div class="u">mi · 1438.4</div></div>
+              </div>
+              <div class="stop">
+                <div class="glyph">⌂</div>
+                <div class="lt"><div class="h">Morgan Stewart Shelter</div><div class="s">mile 1442.6</div></div>
+                <div class="dist"><div class="n">4.6</div><div class="u">mi</div><div class="climb">↑ +1,700 ft</div></div>
+              </div>
+              <div class="stop">
+                <div class="glyph" style="color:var(--sky);border-color:rgba(95,128,144,.32)">◊</div>
+                <div class="lt"><div class="h">Pawling / Kent</div><div class="s">resupply · services unverified</div></div>
+                <div class="dist"><div class="n">19.9</div><div class="u">mi</div></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 2 · THE SCROLL (continued) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>The Scroll <small>· continued</small></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+
+            <!-- ASK SCOUT — calm inline bar, expanded with receipts -->
+            <div class="seclabel" style="margin-top:12px">Ask Scout</div>
+            <div class="askbar">
+              <span class="sdot"></span>
+              <span class="ph">Ask about water, weather, the climb…</span>
+              <span class="send">Ask</span>
+            </div>
+
+            <div class="exchange">
+              <div class="you">Is the next water safe to count on?</div>
+              <p class="ans">
+                I'd treat it as <b>uncertain</b>. The stream at mile 1438.4 is mapped but
+                <b>candidate-grade</b> — no recent field confirmation.<span class="cite">1</span> A FarOut note from
+                two days back called it "low, barely flowing."<span class="cite">2</span> Carry enough to reach
+                Morgan Stewart (4.6 mi)<span class="cite">3</span> where flow is reliable. PM storms may refill it.<span class="cite">4</span>
+              </p>
+              <div class="receipts">
+                <span class="rl">Sources</span>
+                <span class="receipt"><b>1·3</b> AWOL 2026</span>
+                <span class="receipt"><b>2</b> FarOut</span>
+                <span class="receipt"><b>4</b> NWS · cached</span>
+              </div>
+            </div>
+
+            <!-- QUICK GEAR CHECK-OFF -->
+            <div class="seclabel">Breaking camp</div>
+            <div class="gearquick">
+              <div class="gqhead">
+                <span class="ttl">Pack-up check <small>· 6 of 9</small></span>
+                <span class="wt">22.3 lb</span>
+              </div>
+              <div class="checkitem done"><span class="checkbox on"></span><span class="nm">Sleeping bag stowed</span><span class="gw">1.4</span></div>
+              <div class="checkitem done"><span class="checkbox on"></span><span class="nm">Tent + stakes</span><span class="gw">2.1</span></div>
+              <div class="checkitem done"><span class="checkbox on"></span><span class="nm">Filter + bottles</span><span class="gw">0.6</span></div>
+              <div class="checkitem"><span class="checkbox"></span><span class="nm">Phone off charger</span><span class="gw">0.4</span></div>
+              <div class="checkitem"><span class="checkbox"></span><span class="nm">Trekking poles</span><span class="gw">1.0</span></div>
+              <a class="openfull"><span>Open full gear list · 38 items</span><span class="arrow">›</span></a>
+            </div>
+
+            <!-- VERSE OF THE DAY -->
+            <div class="seclabel">Today's verse</div>
+            <div class="verse">
+              <div class="ref">Psalm 23 · 1–2</div>
+              <p class="scripture">
+                <span class="lead">The</span> LORD is my shepherd; I shall not want. He maketh me to lie down
+                in green pastures: he leadeth me beside the still waters.
+              </p>
+              <div class="vfoot">
+                <span class="src">King James · stored offline</span>
+                <span class="open">Open Bible ›</span>
+              </div>
+            </div>
+
+            <!-- JOURNAL PROMPT -->
+            <div class="seclabel">Before you walk</div>
+            <div class="jprompt">
+              <div class="jh"><span>✎</span> Day 42 · one line</div>
+              <div class="q">What did the morning look like from camp?</div>
+              <div class="field">Tap to dictate or write… (saved to your journal, family can follow)</div>
+              <div class="jbtns">
+                <button>Add photo</button>
+                <button class="primary">Save entry</button>
+              </div>
+            </div>
+
+            <div class="endnote">— that's the day. walk easy, Dad. —</div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 3 · BIBLE (one tap deeper) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Bible <small>· one tap deeper</small></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:15</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+
+            <div class="topline">
+              <div class="seg"><span class="lab">KJV</span><span class="val">Bible</span></div>
+              <div class="pct"><span class="n" style="font-size:11px;letter-spacing:.1em">66 BOOKS · OFFLINE</span></div>
+            </div>
+
+            <!-- FULL-TEXT VERSE SEARCH -->
+            <div class="searchbar">
+              <span class="mag">⌕</span>
+              <span class="q">still waters<b>|</b></span>
+              <span class="clr">✕</span>
+            </div>
+            <div class="searchmeta">3 verses · tap to open in context</div>
+
+            <div class="result">
+              <div class="rref">Psalm 23 : 2</div>
+              <div class="rtext">…he leadeth me beside the <mark>still waters</mark>.</div>
+            </div>
+            <div class="result">
+              <div class="rref">Psalm 107 : 29–30</div>
+              <div class="rtext">He maketh the storm a calm, so that the waves thereof are <mark>still</mark>… he bringeth them unto their desired haven.</div>
+            </div>
+            <div class="result">
+              <div class="rref">Mark 4 : 39</div>
+              <div class="rtext">…and said unto the sea, Peace, be <mark>still</mark>. And the wind ceased, and there was a great calm.</div>
+            </div>
+
+            <!-- BROWSE: book grid OT/NT -->
+            <div class="testtab"><span class="on">Old Testament</span><span>New Testament</span></div>
+            <div class="bookgrid">
+              <a>Gen</a><a>Exo</a><a>Lev</a><a>Num</a>
+              <a>Deut</a><a>Josh</a><a>Judg</a><a>Ruth</a>
+              <a>1 Sam</a><a>2 Sam</a><a>1 Kgs</a><a>2 Kgs</a>
+              <a>Job</a><a class="psalm">Psalms</a><a class="read">Prov</a><a>Eccl</a>
+              <a>Isa</a><a>Jer</a><a>Ezek</a><a>Dan</a>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 4 · FULL GEAR (one tap deeper) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Full Gear <small>· one tap deeper</small></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:15</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+
+            <div class="topline">
+              <div class="seg"><span class="lab">Pack</span><span class="val">38 items</span></div>
+              <div class="pct"><span class="n" style="font-size:11px;letter-spacing:.08em">31 CARRIED TODAY</span></div>
+            </div>
+
+            <div class="weights">
+              <div class="weightcard"><div class="lab">Base</div><div class="n">14.8<span class="u">lb</span></div></div>
+              <div class="weightcard total"><div class="lab">Total carried</div><div class="n">22.3<span class="u">lb</span></div></div>
+            </div>
+
+            <div class="gcat">Sleep <span class="cw">3.7 lb</span></div>
+            <div class="gitem">
+              <span class="gcheck on"></span>
+              <span class="gnm">Quilt 20°<small>Enlightened Equipment</small></span>
+              <span class="swap">swap</span>
+              <span class="gwt">1.4</span>
+            </div>
+            <div class="gitem">
+              <span class="gcheck on"></span>
+              <span class="gnm">Sleeping pad<small>NeoAir XLite</small></span>
+              <span class="swap">swap</span>
+              <span class="gwt">0.9</span>
+            </div>
+
+            <div class="gcat">Shelter <span class="cw">2.1 lb</span></div>
+            <div class="gitem">
+              <span class="gcheck on"></span>
+              <span class="gnm">Tent + stakes<small>Durston X-Mid 1</small></span>
+              <span class="swap">swap</span>
+              <span class="gwt">2.1</span>
+            </div>
+
+            <div class="gcat">Water <span class="cw">0.6 lb</span></div>
+            <div class="gitem">
+              <span class="gcheck"></span>
+              <span class="gnm">Backup filter<small>dropped — by mail to Pawling</small></span>
+              <span class="swap">add</span>
+              <span class="gwt">0.3</span>
+            </div>
+
+            <div class="gearactions">
+              <button class="add">＋ Add item</button>
+              <button>⇄ Swap</button>
+              <button>− Drop</button>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 5 · JOURNAL (one tap deeper) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Journal <small>· the keepsake</small></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:16</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+
+            <div class="jhero">
+              <div class="jk">The journey · NOBO 2026</div>
+              <div class="jtitle">Hal's Trail Log</div>
+              <div class="jstat">
+                <div class="js"><div class="n">42</div><div class="l">Days out</div></div>
+                <div class="js"><div class="n">1438</div><div class="l">Miles walked</div></div>
+                <div class="js"><div class="n">37</div><div class="l">Entries</div></div>
+              </div>
+              <div class="follow">
+                <b>5 family following.</b> Father's Day is Sunday — they'll see today's entry.
+              </div>
+            </div>
+
+            <div class="entry">
+              <div class="ehead"><span class="day">Day 41 · Tue</span><span class="mi">mi 1424 → 1438</span></div>
+              <div class="ebody">
+                Long ridge day. Knees held up better than I feared. Sat at the gap and watched a hawk work the
+                thermals for ten whole minutes.
+                <span class="hand">felt close to home up there.</span>
+              </div>
+              <div class="photo"><span>View north from the gap · 5:40pm</span></div>
+              <div class="etags"><span>14.2 mi</span><span>clear</span><span>good knees</span></div>
+            </div>
+
+            <div class="entry">
+              <div class="ehead"><span class="day">Day 40 · Mon</span><span class="mi">mi 1410 → 1424</span></div>
+              <div class="ebody">
+                Resupply day. Cheeseburger in town tasted like a miracle. Called your mother.
+              </div>
+              <div class="etags"><span>13.6 mi</span><span>town</span></div>
+            </div>
+
+            <div class="newentry">＋ New entry for Day 42</div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

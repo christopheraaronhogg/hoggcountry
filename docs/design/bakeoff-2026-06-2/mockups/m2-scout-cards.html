@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scout-First Cards — Hogg Country Bake-off 2026-06-2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Anton&family=Lato:wght@400;700;900&family=Caveat:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f4efe4; --bg-deep:#e7dcc8; --surface:#fbf7ef; --surface-strong:#fffdf8;
+    --ink:#202519; --muted:#5c6353; --faint:#8a8d79; --line:#e2dbc9; --line-soft:#ece6d7;
+    --forest:#2f4b35; --forest-deep:#243a29; --moss:#6a845f; --sage:#8fa17f;
+    --sand:#c8a77a; --clay:#a85f3b; --clay-soft:#c08a64; --sky:#5f8090;
+    --danger:#9a3b2f; --success:#2f6a47; --warn:#b6892c;
+    --radius-lg:26px; --radius-md:18px; --radius-sm:13px;
+    --display:'Oswald','Avenir Next Condensed',system-ui,sans-serif;
+    --anton:'Anton','Oswald',sans-serif;
+    --sans:'Lato','Avenir Next',system-ui,sans-serif;
+    --hand:'Caveat',cursive;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{ background:#ded3bd; }
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    padding:38px 20px 64px;
+    background:radial-gradient(1200px 620px at 50% -8%, #e9dfca, #ded3bd 62%);
+    min-height:100vh;
+  }
+
+  /* ---------- Title band ---------- */
+  .band{
+    max-width:980px;
+    margin:0 auto 42px;
+    padding:30px 36px 32px;
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    box-shadow:0 1px 0 #fff inset, 0 22px 46px -34px rgba(31,36,29,.42);
+  }
+  .band .kicker{
+    font-family:var(--display);
+    font-size:12px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--moss); font-weight:600; margin-bottom:13px;
+  }
+  .band h1{
+    font-family:var(--anton); font-weight:400; font-size:50px; line-height:.98;
+    letter-spacing:.005em; color:var(--ink); margin-bottom:14px; text-transform:uppercase;
+  }
+  .band h1 em{ font-style:normal; color:var(--forest); }
+  .band .concept{
+    font-size:16px; line-height:1.6; color:var(--ink); max-width:74ch; margin-bottom:18px;
+  }
+  .band .concept b{ color:var(--forest); font-weight:700; }
+  .band .lang{ display:flex; flex-wrap:wrap; gap:8px; }
+  .band .lang span{
+    font-family:var(--display);
+    font-size:12px; letter-spacing:.05em; color:var(--muted); font-weight:400;
+    background:var(--bg); border:1px solid var(--line);
+    border-radius:999px; padding:6px 14px;
+  }
+
+  /* ---------- Phone grid ---------- */
+  .stage{
+    display:flex; flex-wrap:wrap; gap:26px; justify-content:center;
+    max-width:1320px; margin:0 auto;
+  }
+  .slot{ width:320px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--display);
+    font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    font-weight:600; color:var(--forest);
+    margin:0 0 11px 8px;
+  }
+  .chip .dot{ width:7px; height:7px; border-radius:50%; background:var(--moss); }
+  .chip .sub{ color:var(--faint); font-weight:400; letter-spacing:.08em; }
+
+  .phone{
+    width:320px; height:686px;
+    background:var(--bg);
+    border-radius:38px;
+    border:1px solid #ccc0a6;
+    box-shadow:0 30px 60px -30px rgba(31,36,29,.55), 0 2px 0 #fff inset;
+    overflow:hidden;
+    position:relative;
+    display:flex; flex-direction:column;
+  }
+
+  /* phone status bar */
+  .osbar{
+    height:34px; flex:none;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px;
+    font-family:var(--display);
+    font-size:12.5px; font-weight:600; color:var(--ink);
+    letter-spacing:.02em;
+  }
+  .osbar .right{ display:flex; gap:7px; align-items:center; color:var(--muted); }
+  .offline-pill{
+    font-family:var(--display);
+    font-size:10px; letter-spacing:.12em; font-weight:600; text-transform:uppercase;
+    color:var(--forest); background:rgba(47,75,53,.1);
+    border:1px solid rgba(47,75,53,.26);
+    border-radius:999px; padding:2px 9px;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .offline-pill .od{ width:5px; height:5px; border-radius:50%; background:var(--moss); }
+
+  .screen{
+    flex:1; overflow:hidden; position:relative;
+    padding:4px 15px 0;
+  }
+  .scroll{ height:100%; overflow:hidden; }
+
+  /* ---------- trail status strip (top of every screen) ---------- */
+  .statusline{
+    display:flex; align-items:baseline; gap:0;
+    padding:7px 6px 13px;
+    border-bottom:1px solid var(--line-soft);
+    margin-bottom:15px;
+  }
+  .statusline .seg{ display:flex; align-items:baseline; gap:6px; }
+  .statusline .div{ color:var(--line); margin:0 11px; font-size:14px; }
+  .statusline .lab{ font-family:var(--display); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); font-weight:500; }
+  .statusline .val{ font-family:var(--display); font-size:18px; font-weight:600; color:var(--ink); letter-spacing:.01em; }
+  .statusline .pct{ margin-left:auto; font-family:var(--display); font-size:12px; color:var(--moss); font-weight:600; letter-spacing:.04em; }
+
+  /* progress hairline under status */
+  .progress{
+    height:3px; border-radius:99px; background:var(--line);
+    margin:-9px 6px 15px; overflow:hidden;
+  }
+  .progress span{ display:block; height:100%; width:65%; background:var(--moss); border-radius:99px; }
+
+  /* ---------- generic eyebrow ---------- */
+  .eyebrow{
+    font-family:var(--display);
+    font-size:10.5px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--moss); font-weight:600; margin-bottom:11px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .eyebrow .swipe{ color:var(--faint); letter-spacing:.1em; font-weight:400; }
+
+  /* =====================================================================
+     SCREEN 1 · SCOUT HOME — card deck + conversation spine
+     ===================================================================== */
+
+  /* swipeable glance-card deck */
+  .deck{
+    display:flex; gap:11px; overflow:hidden;
+    padding:1px 1px 4px; margin-bottom:6px;
+  }
+  .gcard{
+    flex:none; width:154px;
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:14px 14px 13px;
+    box-shadow:0 1px 0 #fff inset, 0 10px 22px -20px rgba(31,36,29,.5);
+    position:relative;
+    display:flex; flex-direction:column;
+  }
+  .gcard .gk{
+    font-family:var(--display); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--moss); font-weight:600; margin-bottom:8px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .gcard .gk .ic{ font-size:12px; color:var(--sage); }
+  .gcard .gbig{
+    font-family:var(--anton); font-size:34px; line-height:.92; letter-spacing:.005em;
+    color:var(--ink);
+  }
+  .gcard .gbig .u{ font-family:var(--display); font-size:15px; font-weight:400; color:var(--muted); letter-spacing:0; }
+  .gcard .gsub{ font-size:11.5px; line-height:1.4; color:var(--muted); margin-top:6px; }
+  .gcard .gtap{
+    margin-top:11px; padding-top:9px; border-top:1px solid var(--line-soft);
+    font-family:var(--display); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--forest); font-weight:600; display:flex; align-items:center; justify-content:space-between;
+  }
+  .gcard.weather{ background:linear-gradient(160deg,#fffdf8, #f6f1e6); }
+  .gcard.weather .gbig .u2{ font-family:var(--display); font-size:20px; color:var(--clay); font-weight:500; letter-spacing:0; margin-left:2px; }
+  .gcard.water{ border-color:rgba(168,95,59,.34); }
+  .gcard.water .gbig{ color:var(--clay); }
+  .gcard.water .gk .ic{ color:var(--clay-soft); }
+  .gcard.verse{ background:var(--forest); border-color:var(--forest); }
+  .gcard.verse .gk{ color:#aebfa0; }
+  .gcard.verse .gv{
+    font-family:var(--display); font-weight:300; font-size:16px; line-height:1.35;
+    color:#f1ece0; letter-spacing:.005em;
+  }
+  .gcard.verse .gtap{ border-top-color:rgba(255,255,255,.13); color:#cdd9c2; }
+
+  /* deck dots */
+  .dots{ display:flex; gap:6px; justify-content:center; margin:2px 0 16px; }
+  .dots i{ width:6px; height:6px; border-radius:50%; background:var(--line); }
+  .dots i.on{ width:18px; border-radius:99px; background:var(--moss); }
+
+  /* the conversation spine */
+  .convo{ margin-top:2px; }
+  .convo .scoutline{
+    display:flex; align-items:center; gap:9px; margin-bottom:14px;
+  }
+  .convo .scoutmark{
+    width:26px; height:26px; flex:none; border-radius:50%;
+    background:var(--forest); color:#f1ece0;
+    font-family:var(--anton); font-size:14px;
+    display:flex; align-items:center; justify-content:center; padding-top:1px;
+  }
+  .convo .scoutmark.sm-name{ font-family:var(--display); font-weight:600; font-size:12px; }
+  .convo .scoutmeta{ font-family:var(--display); font-size:12px; letter-spacing:.04em; color:var(--ink); font-weight:600; }
+  .convo .scoutmeta .by{ color:var(--faint); font-weight:400; }
+
+  .bubble{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:3px solid var(--forest);
+    border-radius:var(--radius-sm);
+    padding:15px 16px 14px;
+    margin-bottom:13px;
+  }
+  .bubble .ans{ font-size:14.5px; line-height:1.55; color:var(--ink); }
+  .bubble .ans b{ font-weight:700; }
+  .bubble .ans .cite{ color:var(--clay); font-weight:700; }
+  .receipts{
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    margin-top:13px; padding-top:12px; border-top:1px solid var(--line-soft);
+  }
+  .receipt{
+    font-family:var(--display);
+    font-size:10px; letter-spacing:.04em; color:var(--muted); font-weight:400;
+    background:var(--bg); border:1px solid var(--line);
+    border-radius:999px; padding:3px 9px;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .receipt .rn{ color:var(--forest); font-weight:600; }
+  .grade{
+    margin-left:auto;
+    font-family:var(--display);
+    font-size:9.5px; letter-spacing:.1em; font-weight:600; text-transform:uppercase;
+    color:var(--moss); background:rgba(106,132,95,.14);
+    border:1px solid rgba(106,132,95,.34);
+    border-radius:999px; padding:3px 10px;
+  }
+
+  /* ask bar */
+  .askbar{
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:12px 14px;
+    margin-top:4px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .askbar .micro{ font-family:var(--display); font-size:14px; color:var(--faint); flex:1; letter-spacing:.01em; }
+  .askbar .send{
+    width:34px; height:34px; flex:none; border-radius:50%;
+    background:var(--forest); color:#f1ece0;
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  .askbar .mic{ color:var(--moss); font-size:17px; }
+
+  /* quick chips beneath ask */
+  .qchips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:11px; padding:0 2px; }
+  .qchip{
+    font-family:var(--display); font-size:11px; letter-spacing:.03em; font-weight:400;
+    color:var(--forest); background:rgba(47,75,53,.07);
+    border:1px solid rgba(47,75,53,.18);
+    border-radius:999px; padding:6px 12px;
+  }
+
+  /* =====================================================================
+     SCREEN 2 · WEATHER (expanded glance card → full sourced read)
+     ===================================================================== */
+  .wxhero{
+    background:linear-gradient(165deg,#fffdf8,#f3eddf);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:20px 20px 18px;
+    margin-bottom:14px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .wxhero .now{ display:flex; align-items:flex-end; gap:14px; }
+  .wxhero .temp{
+    font-family:var(--anton); font-size:74px; line-height:.84; letter-spacing:.005em; color:var(--ink);
+  }
+  .wxhero .temp .deg{ font-family:var(--display); font-size:30px; font-weight:300; color:var(--muted); vertical-align:top; }
+  .wxhero .cond{ padding-bottom:8px; }
+  .wxhero .cond .c1{ font-family:var(--display); font-size:16px; font-weight:500; color:var(--ink); letter-spacing:.01em; }
+  .wxhero .cond .c2{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .wxmeans{
+    margin-top:15px; padding:12px 14px;
+    background:rgba(168,95,59,.08);
+    border:1px solid rgba(168,95,59,.24);
+    border-radius:var(--radius-sm);
+    font-size:13px; line-height:1.5; color:var(--ink);
+  }
+  .wxmeans b{ color:var(--clay); font-weight:700; }
+
+  .wxrow{ display:flex; gap:10px; margin-bottom:14px; }
+  .wxstat{
+    flex:1; background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:12px 13px 11px; box-shadow:0 1px 0 #fff inset;
+  }
+  .wxstat .l{ font-family:var(--display); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); font-weight:500; margin-bottom:5px; }
+  .wxstat .v{ font-family:var(--display); font-size:23px; font-weight:600; color:var(--ink); letter-spacing:.01em; line-height:1; }
+  .wxstat .v small{ font-size:12px; color:var(--muted); font-weight:400; }
+
+  /* hourly precip strip */
+  .hourly{
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:15px 16px 13px; box-shadow:0 1px 0 #fff inset;
+    margin-bottom:14px;
+  }
+  .hourly .hr{ display:flex; justify-content:space-between; align-items:flex-end; height:64px; margin-top:6px; }
+  .hourly .hcol{ display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; }
+  .hourly .hbar{ width:9px; border-radius:99px; background:var(--line); position:relative; }
+  .hourly .hbar span{ position:absolute; bottom:0; left:0; right:0; background:var(--sky); border-radius:99px; }
+  .hourly .ht{ font-family:var(--display); font-size:9.5px; color:var(--faint); letter-spacing:.02em; }
+  .hourly .hp{ font-family:var(--display); font-size:9.5px; color:var(--sky); font-weight:600; }
+
+  /* =====================================================================
+     SCREEN 3 · MAP — trail ribbon + elevation ahead
+     ===================================================================== */
+  .ribbonwrap{
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:16px 14px 8px; box-shadow:0 1px 0 #fff inset;
+    margin-bottom:14px; position:relative;
+  }
+  .ribbonwrap .rh{ display:flex; align-items:baseline; justify-content:space-between; margin:0 4px 6px; }
+  .ribbonwrap .rh .where{ font-family:var(--display); font-size:16px; font-weight:600; color:var(--ink); letter-spacing:.01em; }
+  .zoom{ display:flex; gap:5px; }
+  .zoom b{
+    font-family:var(--display); font-size:10px; letter-spacing:.04em; font-weight:500;
+    color:var(--faint); border:1px solid var(--line); border-radius:99px; padding:3px 8px; background:var(--bg);
+  }
+  .zoom b.on{ color:#f1ece0; background:var(--forest); border-color:var(--forest); }
+  .ribbon{ display:block; width:100%; height:172px; }
+
+  .elevwrap{
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:15px 16px 10px; box-shadow:0 1px 0 #fff inset;
+    margin-bottom:14px;
+  }
+  .elevwrap .eh{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px; }
+  .elevwrap .updown{ font-family:var(--display); font-size:12px; font-weight:600; letter-spacing:.02em; }
+  .elevwrap .updown .up{ color:var(--clay); } .elevwrap .updown .dn{ color:var(--moss); }
+  .elev{ display:block; width:100%; height:104px; margin:4px 0 2px; }
+
+  .factrow{
+    display:flex; align-items:center; gap:0;
+    padding:14px 4px; border-top:1px solid var(--line-soft);
+  }
+  .factrow:first-child{ border-top:none; }
+  .factrow .ficon{
+    width:30px; flex:none;
+    font-family:var(--display); font-size:15px; color:var(--moss); font-weight:600;
+  }
+  .factrow .fn{ font-size:14.5px; color:var(--ink); }
+  .factrow .fn .flag{ font-size:11.5px; color:var(--clay); display:block; margin-top:2px; }
+  .factrow .fn .flag.calm{ color:var(--muted); }
+  .factrow .fd{
+    margin-left:auto; text-align:right;
+    font-family:var(--anton); font-size:27px; font-weight:400; color:var(--ink);
+    line-height:.9; letter-spacing:.01em;
+  }
+  .factrow .fd .mi{ font-family:var(--display); font-size:12px; color:var(--muted); font-weight:400; }
+
+  /* =====================================================================
+     SCREEN 4 · GEAR — fast edit, check-off, weights
+     ===================================================================== */
+  .weights{ display:flex; gap:12px; margin-bottom:13px; }
+  .weightcard{
+    flex:1; background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:15px 16px 13px; box-shadow:0 1px 0 #fff inset;
+  }
+  .weightcard .l{ font-family:var(--display); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--moss); font-weight:600; margin-bottom:5px; }
+  .weightcard .n{ font-family:var(--anton); font-size:44px; font-weight:400; line-height:.86; letter-spacing:.005em; color:var(--ink); }
+  .weightcard .n .u{ font-family:var(--display); font-size:14px; color:var(--muted); margin-left:3px; font-weight:400; }
+  .weightcard.total{ background:var(--forest); border-color:var(--forest); }
+  .weightcard.total .l{ color:#aebfa0; }
+  .weightcard.total .n{ color:var(--surface-strong); }
+  .weightcard.total .n .u{ color:#c2d2b3; }
+
+  .packprog{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--display); font-size:11px; letter-spacing:.04em; color:var(--muted); font-weight:500;
+    margin:2px 2px 16px;
+  }
+  .packprog .pbar{ flex:1; height:5px; border-radius:99px; background:var(--line); overflow:hidden; }
+  .packprog .pbar span{ display:block; height:100%; width:82%; background:var(--moss); border-radius:99px; }
+  .packprog b{ font-family:var(--anton); font-size:14px; color:var(--ink); font-weight:400; letter-spacing:0; }
+
+  .geargroup{ margin-bottom:14px; }
+  .ghead{
+    display:flex; align-items:baseline; justify-content:space-between;
+    font-family:var(--display); font-size:11px; letter-spacing:.13em; text-transform:uppercase;
+    color:var(--moss); font-weight:600; margin:0 4px 8px;
+  }
+  .ghead .gw{ color:var(--faint); letter-spacing:.02em; font-weight:500; }
+  .gitem{
+    display:flex; align-items:center; gap:13px;
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:8px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .gitem .ck{
+    width:24px; height:24px; flex:none; border-radius:7px;
+    border:1.5px solid var(--sage); background:var(--surface);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--forest); font-size:13px; font-weight:700;
+  }
+  .gitem.done .ck{ background:var(--moss); border-color:var(--moss); color:#fff; }
+  .gitem.done .gname{ color:var(--muted); }
+  .gitem .gname{ flex:1; font-size:14.5px; color:var(--ink); }
+  .gitem .gname small{ display:block; font-size:11.5px; color:var(--faint); margin-top:1px; }
+  .gitem .gwt{ font-family:var(--display); font-size:14px; font-weight:600; color:var(--muted); }
+  .gitem .gwt small{ font-size:10px; font-weight:400; }
+  .gitem.add{ background:transparent; border-style:dashed; border-color:var(--sage); justify-content:center; gap:8px; color:var(--forest); }
+  .gitem.add .pl{ font-size:17px; line-height:1; }
+  .gitem.add .gname{ flex:0; font-family:var(--display); font-weight:600; letter-spacing:.05em; text-transform:uppercase; font-size:12px; }
+  .gleftnote{
+    text-align:center; font-family:var(--hand); font-size:18px; color:var(--clay);
+    margin:4px 0 2px;
+  }
+
+  /* =====================================================================
+     SCREEN 5 · BIBLE — searchable + browsable
+     ===================================================================== */
+  .bsearch{
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:999px; padding:11px 15px; margin-bottom:8px; box-shadow:0 1px 0 #fff inset;
+  }
+  .bsearch .mag{ color:var(--moss); font-size:15px; }
+  .bsearch .ph{ font-family:var(--display); font-size:14px; color:var(--faint); letter-spacing:.01em; flex:1; }
+  .bsearch .clr{ color:var(--faint); font-size:13px; }
+  .bhint{ font-size:11.5px; color:var(--faint); margin:0 6px 16px; line-height:1.4; }
+  .bhint b{ color:var(--moss); font-weight:700; }
+
+  .votd{
+    background:var(--forest); border:1px solid var(--forest);
+    border-radius:var(--radius-md); padding:18px 18px 16px; margin-bottom:16px;
+    position:relative; overflow:hidden;
+  }
+  .votd .vk{ font-family:var(--display); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#aebfa0; font-weight:600; margin-bottom:11px; }
+  .votd .vtext{ font-family:var(--display); font-weight:300; font-size:20px; line-height:1.45; color:#f3eee2; letter-spacing:.005em; }
+  .votd .vref{ font-family:var(--display); font-size:12px; letter-spacing:.06em; color:#cdd9c2; font-weight:600; margin-top:12px; }
+  .votd .vact{ display:flex; gap:8px; margin-top:14px; }
+  .votd .vact b{ font-family:var(--display); font-size:11px; letter-spacing:.04em; font-weight:500; color:#e7e0d2; border:1px solid rgba(255,255,255,.22); border-radius:99px; padding:5px 12px; }
+  .votd .vact b.fill{ background:rgba(255,255,255,.12); border-color:transparent; }
+
+  .testtab{ display:flex; gap:8px; margin-bottom:12px; }
+  .testtab b{
+    flex:1; text-align:center; font-family:var(--display); font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+    font-weight:500; color:var(--faint); border:1px solid var(--line); background:var(--bg);
+    border-radius:99px; padding:7px 0;
+  }
+  .testtab b.on{ color:#f1ece0; background:var(--forest); border-color:var(--forest); }
+
+  .bookgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+  .bookgrid b{
+    font-family:var(--display); font-size:12px; letter-spacing:.02em; font-weight:500;
+    color:var(--ink); background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:9px; padding:11px 4px; text-align:center; box-shadow:0 1px 0 #fff inset;
+  }
+  .bookgrid b.act{ background:rgba(106,132,95,.16); border-color:rgba(106,132,95,.4); color:var(--forest); font-weight:600; }
+  .bookgrid b.span2{ grid-column:span 2; }
+
+  .chaprow{ display:flex; align-items:center; justify-content:space-between; margin:16px 6px 9px; }
+  .chaprow .cl{ font-family:var(--display); font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--moss); font-weight:600; }
+  .chaprow .cv{ font-family:var(--display); font-size:11px; color:var(--faint); }
+  .chapgrid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .chapgrid i{
+    font-family:var(--display); font-size:13px; font-style:normal; font-weight:500;
+    color:var(--ink); background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:8px; padding:8px 0; text-align:center;
+  }
+  .chapgrid i.act{ background:var(--forest); border-color:var(--forest); color:#f1ece0; }
+
+  /* =====================================================================
+     SCREEN 6 · JOURNAL — document the journey
+     ===================================================================== */
+  .jhero{
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:18px 18px 16px; margin-bottom:14px; box-shadow:0 1px 0 #fff inset;
+  }
+  .jhero .jday{ font-family:var(--anton); font-size:30px; line-height:.9; color:var(--ink); letter-spacing:.01em; }
+  .jhero .jday small{ font-family:var(--display); font-size:14px; color:var(--muted); font-weight:400; letter-spacing:.02em; }
+  .jhero .jstats{ display:flex; gap:16px; margin-top:11px; padding-top:12px; border-top:1px solid var(--line-soft); }
+  .jhero .js{ flex:1; }
+  .jhero .js .jn{ font-family:var(--display); font-size:18px; font-weight:600; color:var(--ink); letter-spacing:.01em; }
+  .jhero .js .jl{ font-family:var(--display); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:500; margin-top:2px; }
+
+  .jcompose{
+    display:flex; align-items:center; gap:11px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:14px 16px; margin-bottom:8px;
+  }
+  .jcompose .jq{ flex:1; font-family:var(--hand); font-size:19px; color:var(--clay); }
+  .jcompose .jbtns{ display:flex; gap:9px; color:var(--moss); font-size:16px; }
+  .jcompose .jbtns .pin{ width:30px; height:30px; border-radius:50%; background:var(--forest); color:#f1ece0; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .jfollow{ text-align:center; font-size:11.5px; color:var(--faint); margin:2px 0 16px; }
+  .jfollow b{ color:var(--moss); font-weight:700; }
+
+  .entry{
+    background:var(--surface-strong); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:16px 17px 15px; margin-bottom:12px; box-shadow:0 1px 0 #fff inset;
+  }
+  .entry .emeta{ display:flex; align-items:baseline; gap:9px; margin-bottom:9px; }
+  .entry .eday{ font-family:var(--display); font-size:13px; font-weight:600; letter-spacing:.03em; color:var(--forest); }
+  .entry .emile{ font-family:var(--display); font-size:11px; color:var(--faint); letter-spacing:.02em; }
+  .entry .etime{ margin-left:auto; font-size:11px; color:var(--faint); }
+  .entry .etext{ font-size:14px; line-height:1.55; color:var(--ink); }
+  .entry .etext b{ font-weight:700; }
+  .entry .ephoto{
+    height:78px; border-radius:10px; margin-top:11px;
+    background:linear-gradient(150deg,#cdd2bd,#9fae8c 70%);
+    border:1px solid var(--line); position:relative; overflow:hidden;
+  }
+  .entry .ephoto::after{ content:'⛰'; position:absolute; right:14px; bottom:8px; font-size:30px; opacity:.4; }
+  .entry .etag{
+    display:inline-flex; align-items:center; gap:5px; margin-top:11px;
+    font-family:var(--display); font-size:10px; letter-spacing:.05em; color:var(--moss); font-weight:500;
+    background:rgba(106,132,95,.1); border:1px solid rgba(106,132,95,.26); border-radius:99px; padding:3px 9px;
+  }
+
+  /* ---------- bottom switcher ---------- */
+  .switcher{
+    flex:none; height:60px;
+    display:flex; align-items:center; justify-content:space-around;
+    border-top:1px solid var(--line);
+    background:linear-gradient(to top, var(--bg), rgba(244,239,228,0));
+    padding:0 10px 6px;
+  }
+  .switcher a{
+    font-family:var(--display);
+    font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--faint); font-weight:500; position:relative; padding:6px 2px;
+    text-decoration:none;
+  }
+  .switcher a.on{ color:var(--forest); font-weight:600; }
+  .switcher a.on::after{
+    content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%);
+    width:5px; height:5px; border-radius:50%; background:var(--forest);
+  }
+
+  .fade{
+    position:absolute; left:0; right:0; bottom:60px; height:34px; z-index:3;
+    background:linear-gradient(to top, var(--bg), rgba(244,239,228,0));
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===================== TITLE BAND ===================== -->
+  <section class="band">
+    <div class="kicker">Hogg Country · Bake-off 2026-06-2 · Direction M2</div>
+    <h1>Scout-First <em>Cards</em></h1>
+    <p class="concept">
+      Scout — the cited, on-device AI — is the spine. Home is a calm conversation, but above it sits a
+      <b>swipeable deck of live glance cards</b>: weather, next water, terrain ahead, gear, today's verse.
+      Flick through them in two seconds, tap any one to expand it into a <b>sourced Scout answer with receipts</b>.
+      The whole app is <b>ask or glance</b> — the information you need is visible without typing, and every
+      answer shows where it came from. No readiness score: only real trail data.
+    </p>
+    <div class="lang">
+      <span>Glance deck + conversation</span>
+      <span>Every answer cites its sources</span>
+      <span>Weather is first-class</span>
+      <span>Honest about candidate-grade data</span>
+      <span>Big Oswald / Anton numerals</span>
+      <span>Offline · on-device, always legible</span>
+    </div>
+  </section>
+
+  <!-- ===================== PHONES ===================== -->
+  <div class="stage">
+
+    <!-- ============ 1 · SCOUT HOME (deck + spine) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Scout Home <span class="sub">· deck + ask</span></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill"><span class="od"></span>Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <span class="pct">65% · 759.4 to go</span>
+            </div>
+            <div class="progress"><span></span></div>
+
+            <div class="eyebrow">Today at a glance <span class="swipe">swipe ›</span></div>
+            <div class="deck">
+              <!-- weather card -->
+              <div class="gcard weather">
+                <div class="gk"><span class="ic">☀</span>Weather</div>
+                <div class="gbig">82°<span class="u2">/63°</span></div>
+                <div class="gsub">PM showers · wind 9 · sunset 8:30</div>
+                <div class="gtap">Expand <span>+</span></div>
+              </div>
+              <!-- water card (candidate, calm) -->
+              <div class="gcard water">
+                <div class="gk"><span class="ic">≈</span>Next water</div>
+                <div class="gbig">0.4<span class="u"> mi</span></div>
+                <div class="gsub">Mapped stream · candidate-grade, confirm flow</div>
+                <div class="gtap">Expand <span>+</span></div>
+              </div>
+              <!-- (peeking third card) -->
+              <div class="gcard">
+                <div class="gk"><span class="ic">⌂</span>Shelter</div>
+                <div class="gbig">4.6<span class="u"> mi</span></div>
+                <div class="gsub">Morgan Stewart · +1,700 ft</div>
+                <div class="gtap">Expand <span>+</span></div>
+              </div>
+            </div>
+            <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+
+            <div class="convo">
+              <div class="scoutline">
+                <span class="scoutmark sm-name">SC</span>
+                <span class="scoutmeta">Scout <span class="by">· grounded in your offline pack</span></span>
+              </div>
+
+              <div class="bubble">
+                <p class="ans">
+                  Good morning, Hal. Your target today is <b>13.8 mi</b> to the Pawling area.
+                  The next water at mile 1438.4 is <span class="cite">candidate-grade</span> — fill up only if it's flowing.
+                  Plan to be at Morgan Stewart by mid-afternoon, ahead of the <b>PM showers</b>.
+                </p>
+                <div class="receipts">
+                  <span class="receipt"><span class="rn">AWOL</span> 2026</span>
+                  <span class="receipt"><span class="rn">NWS</span> cached</span>
+                  <span class="receipt"><span class="rn">FarOut</span> notes</span>
+                  <span class="grade">Well-sourced</span>
+                </div>
+              </div>
+
+              <div class="askbar">
+                <span class="micro">Ask Scout anything…</span>
+                <span class="mic">🎙</span>
+                <span class="send">↑</span>
+              </div>
+              <div class="qchips">
+                <span class="qchip">Where's reliable water?</span>
+                <span class="qchip">Read me Psalm 23</span>
+                <span class="qchip">Pawling resupply?</span>
+              </div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a class="on">Scout</a><a>Map</a><a>Gear</a><a>Bible</a><a>Journal</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ 2 · WEATHER (expanded card) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Weather <span class="sub">· card expanded</span></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill"><span class="od"></span>Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <span class="pct">NY / CT</span>
+            </div>
+
+            <div class="eyebrow">Weather · today<span class="swipe">NWS · cached 6:02a</span></div>
+
+            <div class="wxhero">
+              <div class="now">
+                <div class="temp">82<span class="deg">°F</span></div>
+                <div class="cond">
+                  <div class="c1">Scattered PM showers</div>
+                  <div class="c2">Feels 85° · humid · high 82° / low 63°</div>
+                </div>
+              </div>
+              <div class="wxmeans">
+                <b>What it means:</b> Hot, muggy morning — start early and drink ahead of thirst.
+                Showers likely <b>2–6 PM</b>; aim to reach Morgan Stewart before they build. Rocks get slick.
+              </div>
+            </div>
+
+            <div class="wxrow">
+              <div class="wxstat"><div class="l">Wind</div><div class="v">9 <small>mph SW</small></div></div>
+              <div class="wxstat"><div class="l">Rain chance</div><div class="v">60<small>%</small></div></div>
+              <div class="wxstat"><div class="l">Sunset</div><div class="v">8:30<small>p</small></div></div>
+            </div>
+
+            <div class="hourly">
+              <div class="eyebrow" style="margin-bottom:2px;">Rain chance · next hours</div>
+              <div class="hr">
+                <div class="hcol"><div class="hbar" style="height:46px;"><span style="height:14%;"></span></div><div class="hp">10%</div><div class="ht">9a</div></div>
+                <div class="hcol"><div class="hbar" style="height:46px;"><span style="height:20%;"></span></div><div class="hp">20%</div><div class="ht">11a</div></div>
+                <div class="hcol"><div class="hbar" style="height:46px;"><span style="height:40%;"></span></div><div class="hp">40%</div><div class="ht">1p</div></div>
+                <div class="hcol"><div class="hbar" style="height:46px;"><span style="height:60%;"></span></div><div class="hp">60%</div><div class="ht">3p</div></div>
+                <div class="hcol"><div class="hbar" style="height:46px;"><span style="height:55%;"></span></div><div class="hp">55%</div><div class="ht">5p</div></div>
+                <div class="hcol"><div class="hbar" style="height:46px;"><span style="height:20%;"></span></div><div class="hp">20%</div><div class="ht">7p</div></div>
+              </div>
+            </div>
+
+            <div class="bubble">
+              <p class="ans">
+                <b>Scout:</b> The window is the early afternoon. If you leave by 7:30 you'll clear the
+                exposed ridge before the 3 PM cell. Pack the rain shell on top.
+              </p>
+              <div class="receipts">
+                <span class="receipt"><span class="rn">NWS</span> Poughkeepsie · 6:02a</span>
+                <span class="receipt"><span class="rn">AWOL</span> ridge profile</span>
+                <span class="grade">Well-sourced</span>
+              </div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a class="on">Scout</a><a>Map</a><a>Gear</a><a>Bible</a><a>Journal</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ 3 · MAP (ribbon + elevation) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Map <span class="sub">· trail ahead</span></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill"><span class="od"></span>Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <span class="pct">65%</span>
+            </div>
+
+            <div class="ribbonwrap">
+              <div class="rh">
+                <span class="where">NY / CT corridor</span>
+                <span class="zoom"><b class="on">5</b><b>10</b><b>20 mi</b></span>
+              </div>
+              <!-- stylized winding AT ribbon, hiker + pins by mile -->
+              <svg class="ribbon" viewBox="0 0 290 172" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="rib" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#8fa17f"/><stop offset="1" stop-color="#6a845f"/>
+                  </linearGradient>
+                </defs>
+                <!-- ribbon casing -->
+                <path d="M40,158 C70,150 60,118 95,112 C132,106 120,72 150,66 C182,60 172,30 210,28 C236,27 248,18 256,10"
+                      fill="none" stroke="#e2dbc9" stroke-width="13" stroke-linecap="round"/>
+                <path d="M40,158 C70,150 60,118 95,112 C132,106 120,72 150,66 C182,60 172,30 210,28 C236,27 248,18 256,10"
+                      fill="none" stroke="url(#rib)" stroke-width="7" stroke-linecap="round"/>
+                <!-- center dashes -->
+                <path d="M40,158 C70,150 60,118 95,112 C132,106 120,72 150,66 C182,60 172,30 210,28 C236,27 248,18 256,10"
+                      fill="none" stroke="#fbf7ef" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round" opacity=".75"/>
+
+                <!-- water (candidate) pin at 0.4 mi -->
+                <g>
+                  <circle cx="64" cy="146" r="6.5" fill="#fbf7ef" stroke="#a85f3b" stroke-width="2" stroke-dasharray="2.6 2"/>
+                  <text x="64" y="149.5" font-family="Oswald" font-size="8" fill="#a85f3b" text-anchor="middle" font-weight="600">≈</text>
+                  <text x="78" y="143" font-family="Oswald" font-size="8.5" fill="#5c6353">water · 0.4</text>
+                </g>
+                <!-- shelter pin at 4.6 mi -->
+                <g>
+                  <circle cx="150" cy="66" r="6.5" fill="#2f4b35"/>
+                  <text x="150" y="69" font-family="Oswald" font-size="8" fill="#f1ece0" text-anchor="middle">⌂</text>
+                  <text x="163" y="63" font-family="Oswald" font-size="8.5" fill="#5c6353">shelter · 4.6</text>
+                </g>
+                <!-- town pin -->
+                <g>
+                  <circle cx="256" cy="10" r="5.5" fill="#fbf7ef" stroke="#6a845f" stroke-width="2"/>
+                  <text x="246" y="24" font-family="Oswald" font-size="8.5" fill="#5c6353" text-anchor="end">Pawling ◊</text>
+                </g>
+                <!-- you-are-here (largest, pulsing ring) -->
+                <circle cx="40" cy="158" r="11" fill="none" stroke="#2f4b35" stroke-width="1.4" opacity=".3"/>
+                <circle cx="40" cy="158" r="6.5" fill="#2f4b35" stroke="#fffdf8" stroke-width="2.5"/>
+                <text x="40" y="173" font-family="Oswald" font-size="8" fill="#2f4b35" text-anchor="middle" font-weight="600">YOU</text>
+              </svg>
+            </div>
+
+            <div class="elevwrap">
+              <div class="eh">
+                <span class="eyebrow" style="margin:0;">Elevation ahead · 5 mi</span>
+                <span class="updown"><span class="up">↑ 1,700 ft</span> &nbsp;<span class="dn">↓ 480 ft</span></span>
+              </div>
+              <svg class="elev" viewBox="0 0 280 104" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#6a845f" stop-opacity=".24"/>
+                    <stop offset="1" stop-color="#6a845f" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,76 L24,70 L48,82 L76,56 L104,64 L136,34 L168,46 L200,22 L236,34 L280,12 L280,104 L0,104 Z" fill="url(#eg)"/>
+                <path d="M0,76 L24,70 L48,82 L76,56 L104,64 L136,34 L168,46 L200,22 L236,34 L280,12" fill="none" stroke="#6a845f" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+                <circle cx="0" cy="76" r="4.5" fill="#2f4b35" stroke="#fffdf8" stroke-width="2"/>
+                <circle cx="24" cy="70" r="4" fill="#fbf7ef" stroke="#a85f3b" stroke-width="2" stroke-dasharray="2 1.6"/>
+                <circle cx="136" cy="34" r="4.5" fill="#2f4b35" stroke="#fffdf8" stroke-width="2"/>
+              </svg>
+            </div>
+
+            <div class="ribbonwrap" style="padding:6px 14px;">
+              <div class="factrow">
+                <span class="ficon">≈</span>
+                <span class="fn">Water<span class="flag">Candidate-grade — confirm it's flowing</span></span>
+                <span class="fd">0.4<span class="mi"> mi</span></span>
+              </div>
+              <div class="factrow">
+                <span class="ficon">⌂</span>
+                <span class="fn">Morgan Stewart<span class="flag calm">Memorial Shelter · mile 1442.6</span></span>
+                <span class="fd">4.6<span class="mi"> mi</span></span>
+              </div>
+              <div class="factrow">
+                <span class="ficon">◊</span>
+                <span class="fn">Pawling / Kent<span class="flag calm">Resupply &amp; services</span></span>
+                <span class="fd">14<span class="mi"> mi</span></span>
+              </div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a>Scout</a><a class="on">Map</a><a>Gear</a><a>Bible</a><a>Journal</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ 4 · GEAR (fast edit + check-off) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Gear <span class="sub">· packing up</span></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill"><span class="od"></span>Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <span class="pct">65%</span>
+            </div>
+
+            <div class="weights">
+              <div class="weightcard"><div class="l">Base weight</div><div class="n">14.8<span class="u">lb</span></div></div>
+              <div class="weightcard total"><div class="l">Total carried</div><div class="n">22.3<span class="u">lb</span></div></div>
+            </div>
+
+            <div class="packprog">
+              <span>Camp pack-up</span>
+              <span class="pbar"><span></span></span>
+              <b>31</b>/38
+            </div>
+
+            <div class="geargroup">
+              <div class="ghead">Breaking camp <span class="gw">tap to check off</span></div>
+              <div class="gitem done"><span class="ck">✓</span><span class="gname">Tent &amp; stakes<small>Big Agnes · stuffed</small></span><span class="gwt">28<small>oz</small></span></div>
+              <div class="gitem done"><span class="ck">✓</span><span class="gname">Sleeping quilt<small>packed</small></span><span class="gwt">21<small>oz</small></span></div>
+              <div class="gitem"><span class="ck"></span><span class="gname">Sleeping pad<small>still inflated</small></span><span class="gwt">15<small>oz</small></span></div>
+              <div class="gitem"><span class="ck"></span><span class="gname">Phone power bank<small>charging — don't forget</small></span><span class="gwt">11<small>oz</small></span></div>
+            </div>
+            <div class="gleftnote">"Did I leave anything?" — 2 items still out</div>
+
+            <div class="geargroup">
+              <div class="ghead">Edit pack <span class="gw">add · drop · swap</span></div>
+              <div class="gitem"><span class="ck" style="border:none;color:var(--clay);background:transparent;">⇄</span><span class="gname">Heavy fleece → sun hoody<small>swap suggested for the heat</small></span><span class="gwt" style="color:var(--clay);">−9<small>oz</small></span></div>
+              <div class="gitem add"><span class="pl">+</span><span class="gname">Add item</span></div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a>Scout</a><a>Map</a><a class="on">Gear</a><a>Bible</a><a>Journal</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ 5 · BIBLE (search + browse) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Bible <span class="sub">· KJV · offline</span></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill"><span class="od"></span>Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">King James</span><span class="val">Bible</span></div>
+              <span class="pct">66 books · offline</span>
+            </div>
+
+            <div class="bsearch">
+              <span class="mag">⌕</span>
+              <span class="ph">Search verses or jump to reference…</span>
+              <span class="clr">✕</span>
+            </div>
+            <p class="bhint">Try <b>"still waters"</b>, <b>"be strong and of a good courage"</b>, or type <b>"Ps 23"</b> to jump straight there.</p>
+
+            <div class="votd">
+              <div class="vk">Verse of the day</div>
+              <div class="vtext">"The LORD is my shepherd; I shall not want. He maketh me to lie down in green pastures: he leadeth me beside the still waters."</div>
+              <div class="vref">Psalm 23 : 1–2</div>
+              <div class="vact"><b class="fill">Read full psalm</b><b>★ Bookmark</b><b>🔊 Read aloud</b></div>
+            </div>
+
+            <div class="testtab"><b class="on">Old Testament</b><b>New Testament</b></div>
+            <div class="bookgrid">
+              <b>Gen</b><b>Exo</b><b>Lev</b><b>Num</b>
+              <b>Deut</b><b>Josh</b><b>Judg</b><b>Ruth</b>
+              <b>1 Sam</b><b>2 Sam</b><b>1 Kgs</b><b>2 Kgs</b>
+              <b>Job</b><b class="act">Psalms</b><b>Prov</b><b>Eccl</b>
+            </div>
+
+            <div class="chaprow"><span class="cl">Psalms · pick a chapter</span><span class="cv">150 chapters</span></div>
+            <div class="chapgrid">
+              <i>19</i><i>20</i><i>21</i><i>22</i><i class="act">23</i><i>24</i><i>25</i>
+              <i>26</i><i>27</i><i>28</i><i>29</i><i>30</i><i>31</i><i>32</i>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a>Scout</a><a>Map</a><a>Gear</a><a class="on">Bible</a><a>Journal</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ 6 · JOURNAL (document the journey) ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Journal <span class="sub">· the keepsake</span></div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill"><span class="od"></span>Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Trail</span><span class="val">Journal</span></div>
+              <span class="pct">Day 42</span>
+            </div>
+
+            <div class="jhero">
+              <div class="jday">Day 42 <small>· NY / CT corridor</small></div>
+              <div class="jstats">
+                <div class="js"><div class="jn">13.8 mi</div><div class="jl">today's target</div></div>
+                <div class="js"><div class="jn">1,438.0</div><div class="jl">miles walked</div></div>
+                <div class="js"><div class="jn">41</div><div class="jl">entries</div></div>
+              </div>
+            </div>
+
+            <div class="jcompose">
+              <span class="jq">How did today feel, Dad?</span>
+              <span class="jbtns">📷 🎙 <span class="pin">✎</span></span>
+            </div>
+            <p class="jfollow"><b>3 family members</b> are following along · Father's Day is Jun 21</p>
+
+            <div class="entry">
+              <div class="emeta">
+                <span class="eday">Day 41</span>
+                <span class="emile">mile 1424.2</span>
+                <span class="etime">yesterday · 8:41p</span>
+              </div>
+              <p class="etext">
+                Hot one. The ridge opened up near sunset and I could see clear into Connecticut.
+                Knees holding. Thought about all of you at dinner. <b>Grateful.</b>
+              </p>
+              <div class="ephoto"></div>
+              <span class="etag">📍 pinned at Telephone Pioneers Shelter</span>
+            </div>
+
+            <div class="entry">
+              <div class="emeta">
+                <span class="eday">Day 40</span>
+                <span class="emile">mile 1411.0</span>
+                <span class="etime">2 days ago · 7:12p</span>
+              </div>
+              <p class="etext">
+                Resupplied in town, feet feel new. Found a diner with real pie. Read Psalm 23 by headlamp.
+              </p>
+              <span class="etag">✦ verse saved · Psalm 23</span>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a>Scout</a><a>Map</a><a>Gear</a><a>Bible</a><a class="on">Journal</a>
+        </nav>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
