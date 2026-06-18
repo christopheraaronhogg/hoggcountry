@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { packMissingCount, packTotalCarriedLb, todayWeather, elevationNext20 } from './cockpitData';
+	import Icon, { type IconName } from './Icon.svelte';
 
 	// Today = the hiker's day, now → camp (M1 "Day Timeline"). No readiness score —
 	// we have no vitals, so the HUD anchors only on REAL data: position, the day's
@@ -64,7 +65,13 @@
 		return nodes;
 	});
 
-	const glyph: Record<Node['kind'], string> = { done: '✓', now: '●', water: '💧', camp: '⛺', evening: '✶' };
+	const nodeIcon: Record<Node['kind'], IconName> = {
+		done: 'check',
+		now: 'now',
+		water: 'water',
+		camp: 'shelter',
+		evening: 'moon'
+	};
 
 	// --- ask scout (kept; reframed without readiness) --------------------------
 	const prompts = [
@@ -159,7 +166,7 @@
 		<ol class="timeline">
 			{#each dayNodes as n, i (n.kind + i)}
 				<li class="node {n.kind}">
-					<span class="dot">{glyph[n.kind]}</span>
+					<span class="dot"><Icon name={nodeIcon[n.kind]} size={15} stroke={1.9} /></span>
 					<div class="ncontent">
 						<p class="ntitle">{n.title}</p>
 						{#if n.detail}<p class="ndetail">{n.detail}</p>{/if}

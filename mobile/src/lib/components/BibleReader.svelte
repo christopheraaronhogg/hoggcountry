@@ -9,6 +9,7 @@
 	} from '../bible/bible-index.ts';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import type { ScoutAnswer } from '$lib/scout/types';
+	import Icon from './Icon.svelte';
 
 	// Four modes — Browse (canon grid) · Read (scripture) · Search (full-text) ·
 	// Ask (Scout-powered scripture Q&A). Ask always pulls cited verses from the
@@ -288,7 +289,7 @@
 				aria-label="Ask the Bible"
 			/>
 			<button class="ask-send" type="submit" disabled={askState === 'asking' || !askQuestion.trim()} aria-label="Ask">
-				{askState === 'asking' ? '…' : '↑'}
+				{#if askState === 'asking'}…{:else}<Icon name="arrowUp" size={20} stroke={2.2} />{/if}
 			</button>
 		</form>
 
@@ -303,7 +304,7 @@
 				<div class="ask-q">{askQuestion}</div>
 				<div class="ask-card">
 					<div class="ask-head">
-						<span class="ask-scout">✶ Scout · Scripture</span>
+						<span class="ask-scout"><Icon name="scout" size={13} stroke={2} /> Scout · Scripture</span>
 						<span class="ask-dev">on-device</span>
 					</div>
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { elevationNext20, type ElevationPoint } from './cockpitData';
+	import Icon, { type IconName } from './Icon.svelte';
 
 	// Trail-ribbon map (matches the d1 "Scout Hub" bake-off mockup): a stylized
 	// winding AT line over a soft contour field, with the hiker's position and the
@@ -114,7 +115,7 @@
 		placed = next;
 	});
 
-	const glyph: Record<Landmark['kind'], string> = { water: '💧', shelter: '⛺', town: '⌂' };
+	const pinIcon: Record<Landmark['kind'], IconName> = { water: 'water', shelter: 'shelter', town: 'town' };
 
 	// --- elevation-ahead profile (real points, windowed by the zoom) ---------
 	// Shows the next `mapZoom` miles and reports the actual ups/downs (total ascent
@@ -178,7 +179,7 @@
 		{#if nextWater}
 			<div class="map-top-chip">
 				<span class="next-water-chip">
-					<span class="wglyph">💧</span> Next water {nextWater.dist.toFixed(1)} mi
+					<span class="wglyph"><Icon name="water" size={13} stroke={2} /></span> Next water {nextWater.dist.toFixed(1)} mi
 					{#if nextWater.candidate}<span class="cand-tag">candidate</span>{/if}
 				</span>
 			</div>
@@ -187,7 +188,7 @@
 		<!-- upcoming landmark pins, placed along the line by mile -->
 		{#each placed as p (p.kind + p.label + p.mile)}
 			<div class="pin {p.kind}" style="left:{p.leftPct}%; top:{p.topPct}%;">
-				<span class="lbl">{glyph[p.kind]} {p.label} · {(p.mile - from).toFixed(1)}mi</span>
+				<span class="lbl"><Icon name={pinIcon[p.kind]} size={12} stroke={2} /> {p.label} · {(p.mile - from).toFixed(1)}mi</span>
 				<span class="dot"></span>
 			</div>
 		{/each}

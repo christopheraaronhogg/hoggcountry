@@ -1,15 +1,16 @@
 <script lang="ts">
 	import type { Tab } from '$lib/types';
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
 
 	// Four pillars. Today (calm glance dashboard) is home; Settings lives behind the
 	// header gear, and Gear behind Today's "packing up?" glance (a morning ritual,
 	// not an all-day tab) — neither is a nav tab. Town folded into Map; Plan into Today.
-	const tabs: Array<{ key: Tab; label: string; glyph: string }> = [
-		{ key: 'Today', label: 'Today', glyph: '☀' },
-		{ key: 'Scout', label: 'Scout', glyph: '✦' },
-		{ key: 'Map', label: 'Map', glyph: '◎' },
-		{ key: 'Trail', label: 'Trail', glyph: '☷' }
+	const tabs: Array<{ key: Tab; label: string; icon: IconName }> = [
+		{ key: 'Today', label: 'Today', icon: 'today' },
+		{ key: 'Scout', label: 'Scout', icon: 'scout' },
+		{ key: 'Map', label: 'Map', icon: 'map' },
+		{ key: 'Trail', label: 'Trail', icon: 'trail' }
 	];
 </script>
 
@@ -22,7 +23,7 @@
 			aria-current={trailAssistant.activeTab === tab.key ? 'page' : undefined}
 			aria-label={tab.label}
 		>
-			<span class="nav-glyph" aria-hidden="true">{tab.glyph}</span>
+			<span class="nav-glyph" aria-hidden="true"><Icon name={tab.icon} size={23} stroke={1.7} /></span>
 			<span class="nav-label">{tab.label}</span>
 		</button>
 	{/each}

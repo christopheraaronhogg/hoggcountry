@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import Icon from './Icon.svelte';
 
 	// Calibrated AT length per CLAUDE.md (AWOL 2026).
 	const trailMiles = 2197.4;
@@ -42,7 +43,7 @@
 			aria-label="Settings"
 			aria-current={trailAssistant.activeTab === 'Settings' ? 'page' : undefined}
 		>
-			⚙
+			<Icon name="settings" size={20} stroke={1.7} />
 		</button>
 	</div>
 </header>
