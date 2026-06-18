@@ -34,6 +34,21 @@ test('on-device engine failure degrades to the deterministic fallback (never thr
 	assert.ok(ans.answer.length > 0);
 });
 
+test('under preferredMode on-device, an engine failure REthrows — never a silent offline fallback', async () => {
+	// Regression for the "asked a question, it acted offline" bug: in a Gemma-only
+	// build the caller forces preferredMode 'on-device'. A native generate() failure
+	// must surface (so the caller can warm + retry), NOT masquerade as a normal
+	// deterministic offline answer.
+	const { runtime } = createScoutRuntime({
+		initialPack: cloneDefaultContextPack(),
+		onDeviceBridge: throwingBridge
+	});
+	await assert.rejects(
+		() => runtime.ask({ prompt: 'what is happening homie', onlineStatus: false, preferredMode: 'on-device' }),
+		/engine boom/
+	);
+});
+
 test('with no engine and offline, it answers deterministically — never a cloud provider', async () => {
 	const { runtime } = createScoutRuntime({ initialPack: cloneDefaultContextPack() });
 	const ans = await runtime.ask({ prompt: 'how is the weather tomorrow', onlineStatus: false });

@@ -15,29 +15,68 @@
 	let draft = $state('');
 	let logRef = $state<HTMLDivElement | null>(null);
 
-	function scrollToBottom() {
+	// Auto-scroll only when the hiker is following the bottom. If they've scrolled
+	// up to read, we must NOT yank them back down on every streamed token (the
+	// "it fights me" complaint). Intent is inferred purely from scroll geometry:
+	// near the bottom = pinned (auto-stick); scrolled up = unpinned (leave them be).
+	let pinned = $state(true);
+	let hasUnseen = $state(false); // new content arrived while unpinned
+	const STICK_THRESHOLD = 56; // px of slack that still counts as "at bottom"
+
+	const prefersReduced =
+		typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	function distanceFromBottom(): number {
+		if (!logRef) return 0;
+		return logRef.scrollHeight - logRef.scrollTop - logRef.clientHeight;
+	}
+
+	function scrollToBottom(smooth = false) {
 		queueMicrotask(() => {
-			logRef?.scrollTo({ top: logRef.scrollHeight, behavior: 'smooth' });
+			if (!logRef) return;
+			logRef.scrollTo({
+				top: logRef.scrollHeight,
+				behavior: smooth && !prefersReduced ? 'smooth' : 'auto'
+			});
+			pinned = true;
+			hasUnseen = false;
 		});
+	}
+
+	// Geometry-only intent detection. A programmatic scroll-to-bottom lands within
+	// the threshold (stays pinned); a user dragging up measures far-from-bottom and
+	// unpins — no programmatic-scroll flag needed.
+	function onLogScroll() {
+		const atBottom = distanceFromBottom() <= STICK_THRESHOLD;
+		pinned = atBottom;
+		if (atBottom) hasUnseen = false;
 	}
 
 	function submit() {
 		if (!draft.trim()) return;
 		trailAssistant.sendCoachMessage(draft);
 		draft = '';
-		scrollToBottom();
+		scrollToBottom(true); // deliberate send → follow, smoothly
 	}
 
 	function usePrompt(prompt: string) {
 		trailAssistant.runQuickPrompt(prompt);
-		scrollToBottom();
+		scrollToBottom(true);
 	}
 
+	// Re-runs on every message/token/state change. Only auto-sticks when pinned;
+	// otherwise just flags that there's new content below the fold (for the pill).
+	// Instant ('auto') while streaming so the view tracks growing text without a
+	// perpetual smooth-scroll animation.
 	$effect(() => {
 		trailAssistant.coachMessages.length;
 		trailAssistant.scoutThinking;
 		trailAssistant.pendingAction;
-		scrollToBottom();
+		if (pinned) {
+			scrollToBottom(false);
+		} else {
+			hasUnseen = true;
+		}
 	});
 
 	// Convert a runtime SourceReceipt → the UI SourceChip shape. The runtime
@@ -137,7 +176,7 @@
 	{/if}
 
 	<section class="chat-card card">
-		<div class="chat-log" bind:this={logRef}>
+		<div class="chat-log" bind:this={logRef} onscroll={onLogScroll}>
 			{#each trailAssistant.coachMessages as message (message.id)}
 				{@const meta = message.role === 'assistant' ? receiptsFor(message.id, message.content) : null}
 				<div class:assistant={message.role === 'assistant'} class:user={message.role === 'user'} class="message">
@@ -195,6 +234,16 @@
 				</div>
 			{/if}
 		</div>
+
+		{#if !pinned && (hasUnseen || trailAssistant.scoutThinking)}
+			<button
+				class="jump-latest"
+				aria-label="Jump to latest messages"
+				onclick={() => scrollToBottom(true)}
+			>
+				↓ {trailAssistant.scoutThinking ? 'Scout is replying' : 'New messages'}
+			</button>
+		{/if}
 
 		{#if trailAssistant.pendingAction}
 			<div class="action-card" role="group" aria-label="Confirm Scout action">
@@ -285,6 +334,7 @@
 		display: grid;
 		gap: 12px;
 		padding: 14px;
+		position: relative; /* anchor for the floating jump-to-latest pill */
 	}
 
 	.chat-log {
@@ -293,6 +343,28 @@
 		max-height: 50vh;
 		overflow: auto;
 		padding-right: 4px;
+		overflow-anchor: none; /* we manage stickiness ourselves */
+	}
+
+	/* Floats over the bottom of the conversation only when the hiker has scrolled
+	   up and there's newer content below. Tapping re-pins to the latest. */
+	.jump-latest {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		bottom: calc(50vh - 28px);
+		z-index: 4;
+		min-height: 40px;
+		padding: 8px 16px;
+		border-radius: 999px;
+		font-size: 0.78rem;
+		font-weight: 800;
+		color: #f7f2e8;
+		background: linear-gradient(135deg, var(--forest), var(--moss));
+		box-shadow: var(--shadow-soft);
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
 	}
 
 	.message {

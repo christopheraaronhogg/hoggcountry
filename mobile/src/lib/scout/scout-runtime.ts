@@ -4,12 +4,16 @@ import type {
 	SafetyFlag,
 	ScoutAnswer,
 	ScoutAskInput,
+	ScoutProvider,
 	ScoutRuntime,
 	ScoutRuntimeOptions,
 	SourceReceipt,
 	TokenSink,
 	ToolInvocationRecord
 } from './types.ts';
+
+/** A provider that can reset a cached availability probe (the on-device one). */
+type InvalidatableProvider = ScoutProvider & { invalidateAvailability?: () => void };
 
 export class DefaultScoutRuntime implements ScoutRuntime {
 	private readonly clock: () => Date;
@@ -39,6 +43,26 @@ export class DefaultScoutRuntime implements ScoutRuntime {
 				onToken
 			);
 		} catch (error) {
+			const failedOnDevice = decision.provider.capabilities.id === 'on-device-gemma';
+			if (failedOnDevice) {
+				// The native engine reported available but generate() threw (e.g. a
+				// cold/flaky LiteRT init). Reset the cached positive so the next turn
+				// re-probes instead of re-selecting an engine that just failed.
+				const onDevice = this.options.router
+					.providers()
+					.find((p) => p.capabilities.id === 'on-device-gemma') as InvalidatableProvider | undefined;
+				onDevice?.invalidateAvailability?.();
+			}
+
+			// Under a Gemma-required policy the caller forces preferredMode 'on-device'.
+			// Do NOT silently answer from the deterministic fallback in that case — a
+			// canned "offline" answer is indistinguishable from a real on-device reply
+			// and hides the failure (this was the "acted offline" bug). Surface it so
+			// the caller can warm the engine and offer a retry.
+			if (failedOnDevice && input.preferredMode === 'on-device') {
+				throw error;
+			}
+
 			const fallbackProvider = this.options.router.providers().find((p) => p.capabilities.id === 'deterministic-fallback');
 			if (!fallbackProvider) throw error;
 			// The fallback is instant; don't stream it (callers treat a streamed

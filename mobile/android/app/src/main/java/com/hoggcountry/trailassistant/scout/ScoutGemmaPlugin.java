@@ -198,6 +198,26 @@ public class ScoutGemmaPlugin extends Plugin {
         notifyListeners("scoutGenerateToken", event);
     }
 
+    /**
+     * Eagerly initializes the on-device engine off the Capacitor thread so the
+     * first chat turn doesn't carry the heavy (and occasionally flaky) lazy
+     * LiteRT init. Resolves immediately; the actual warm-up runs on the inference
+     * executor and never blocks the caller or the UI.
+     */
+    @PluginMethod
+    public void warmUp(PluginCall call) {
+        inference.execute(() -> {
+            try {
+                getEngine().warmUp();
+            } catch (Throwable ignored) {
+                // Best-effort: warm-up failure just means the first generate retries init.
+            }
+        });
+        JSObject result = new JSObject();
+        result.put("warmed", true);
+        call.resolve(result);
+    }
+
     @PluginMethod
     public void getModelStatus(PluginCall call) {
         call.resolve(getModelStore().getStatus().toJSObject());

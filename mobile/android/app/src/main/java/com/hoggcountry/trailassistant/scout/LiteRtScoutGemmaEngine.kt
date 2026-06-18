@@ -40,6 +40,20 @@ class LiteRtScoutGemmaEngine private constructor(
 
     override fun describeModel(): ScoutGemmaModelInfo = modelInfo
 
+    /**
+     * Eagerly run the costly [Engine.initialize] so the first real chat turn is
+     * fast and doesn't risk the cold GPU/CPU-delegate init failing under the
+     * user's first message. Best-effort and never throws — if warm-up fails the
+     * engine stays null and the next [generate] retries init exactly as before.
+     */
+    override fun warmUp() {
+        try {
+            ensureEngine()
+        } catch (failure: Throwable) {
+            Log.w(TAG, "Engine warm-up failed (will retry on first generate): ${failure.message}")
+        }
+    }
+
     @Throws(ScoutGemmaUnavailableException::class)
     override fun generate(
         prompt: String,

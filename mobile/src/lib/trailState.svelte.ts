@@ -375,65 +375,69 @@ class TrailAssistantStore {
 		}, nextState === 'syncing' ? 1300 : 0);
 	}
 
-	#coachReplyFor(text: string): string {
-		if (REQUIRE_GEMMA) {
-			return 'Gemma 4 is required for this Play build, but the on-device model runtime is not available yet. Scout can still show the cached field pack, but chat answers are blocked until the native Gemma 4 bridge is installed.';
-		}
+	/**
+	 * Re-resolve the native Capacitor wiring if it wasn't ready when this store was
+	 * first constructed. The store is a module-level singleton built at import time,
+	 * which can race Capacitor's plugin injection — if it lost that race the bridge
+	 * was null for the whole session and on-device Scout never engaged. Calling this
+	 * before chat/model work lets a late-registered plugin self-heal: once the
+	 * bridge resolves we rebuild the Scout runtime around it.
+	 */
+	#ensureNativeWiring(): void {
+		if (!browser) return;
+		if (!this.#modelManager) this.#modelManager = createCapacitorModelManager();
+		if (this.#gemmaBridge) return;
+		const bridge = createCapacitorGemmaBridge();
+		if (!bridge) return;
+		this.#gemmaBridge = bridge;
+		this.#scout = createScoutRuntime({
+			store: this.#fieldPackStore,
+			onDeviceBridge: bridge,
+			onDeviceTier: 'balanced'
+		});
+	}
 
-		const lower = text.toLowerCase();
-		const recommendation = this.#state.readiness.recommendation;
-
-		if (lower.includes('water')) {
-			return 'The bundled pack has mapped water candidates ahead, but they are not confirmed reliable or potable. Treat them as low-confidence until refreshed or checked in the field.';
-		}
-
-		if (lower.includes('town') || lower.includes('shuttle') || lower.includes('hostel')) {
-			return 'The bundled pack has open-data town candidates ahead. Verify services, hours, and access before planning around a stop.';
-		}
-
-		if (lower.includes('miles') || lower.includes('push') || lower.includes('hold') || lower.includes('nero')) {
-			return `Today is a ${recommendation} day. I would cap this at ${this.#state.readiness.targetMiles.toFixed(1)} miles and avoid turning it into a make-up push.`;
-		}
-
-		if (lower.includes('safety') || lower.includes('check-in') || lower.includes('risk')) {
-			return 'Your missed check-in risk is still manageable, but the safe window closes in about four hours. Send a quick check-in before the next long ridge section.';
-		}
-
-		if (lower.includes('gear') || lower.includes('feet') || lower.includes('blister')) {
-			return 'Because your recovery is a little soft today, I would treat foot care like a hard requirement at the next water stop instead of waiting for camp.';
-		}
-
-		return 'I can help with mileage, water, town timing, resupply, gear triage, or safety. Give me the hard constraint and I will turn it into the next best move.';
+	/**
+	 * Eagerly initialize the on-device engine so the FIRST chat turn doesn't carry
+	 * (or risk) the heavy, sometimes-flaky lazy LiteRT init — the root of the
+	 * "asked a question, it answered offline" intermittency. Best-effort and silent.
+	 */
+	#warmUpModel(): void {
+		this.#ensureNativeWiring();
+		void this.#gemmaBridge?.warmUp?.();
 	}
 
 	async #gemmaReady(): Promise<boolean> {
 		if (!REQUIRE_GEMMA) return true;
+		this.#ensureNativeWiring();
 		if (!this.#gemmaBridge) return false;
 		return this.#gemmaBridge.isAvailable().catch(() => false);
 	}
 
 	#gemmaUnavailableAnswer(): ScoutAnswer {
+		// Tailor the message: not-installed → guide to the download; otherwise the
+		// model is present but the runtime hasn't warmed up yet.
+		const notInstalled = !this.#modelStatus || this.#modelStatus.state !== 'ready';
+		const answer = notInstalled
+			? "Scout's on-device model isn't installed yet. Open Settings → On-device AI and download it once on Wi-Fi, then I can answer fully offline."
+			: 'My on-device model is still warming up. Give it a few seconds and ask again.';
 		return {
-			answer: this.#coachReplyFor('gemma unavailable'),
+			answer,
 			confidence: 'draft',
 			mode: 'on-device',
 			provider: 'on-device-gemma',
 			receipts: this.#fieldPack.sourceReceipts ?? [],
 			toolInvocations: [],
-			requiredConfirmations: [
-				{
-					id: 'gemma4-runtime-required',
-					prompt: 'Install and verify the native Gemma 4 LiteRT-LM runtime before submitting this build.',
-					reason: 'low-confidence'
-				}
-			],
-			safetyFlags: [
-				{
-					id: 'chat-blocked-no-local-model',
-					severity: 'warn',
-					message: 'Scout chat is blocked because this build is configured for Gemma 4 only and no on-device model is available.'
-				}
-			],
+			requiredConfirmations: [],
+			safetyFlags: notInstalled
+				? [
+					{
+						id: 'on-device-model-not-installed',
+						severity: 'warn',
+						message: 'Scout answers run on a Gemma model stored on your phone — download it in Settings to chat offline.'
+					}
+				]
+				: [],
 			contextUsed: ['gemma4-only-policy'],
 			generatedAt: new Date().toISOString()
 		};
@@ -727,7 +731,9 @@ class TrailAssistantStore {
 	}
 
 	async #dispatchScoutReply(prompt: string) {
-		const fallbackText = this.#coachReplyFor(prompt);
+		// Self-heal the native wiring in case Capacitor wasn't ready at construction.
+		this.#ensureNativeWiring();
+		if (REQUIRE_GEMMA) await this.refreshModelStatus();
 		this.#scoutThinking = true;
 
 		// Stream tokens into a live-updating assistant bubble. The bubble is only
@@ -786,7 +792,23 @@ class TrailAssistantStore {
 				this.#state.coachMessages = [...this.#state.coachMessages, message];
 			}
 		} catch {
-			this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', fallbackText)];
+			// On-device generation failed this turn. Under the Gemma-only policy the
+			// runtime rethrows rather than silently faking an offline answer (the
+			// "acted offline" bug), so handle it honestly: reset the availability
+			// probe, warm the engine for next time, and tell the hiker plainly with
+			// a retry nudge — never a canned offline answer that hides the failure.
+			this.#scout.onDeviceProvider?.invalidateAvailability();
+			this.#warmUpModel();
+			const snag =
+				'My on-device model stumbled starting up just now — give it a few seconds and ask again. It warms up after the first try.';
+			if (streamingId !== null) {
+				const id = streamingId;
+				this.#state.coachMessages = this.#state.coachMessages.map((m) =>
+					m.id === id ? { ...m, content: snag } : m
+				);
+			} else {
+				this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', snag)];
+			}
 		} finally {
 			this.#scoutThinking = false;
 		}
@@ -872,9 +894,11 @@ class TrailAssistantStore {
 			this.#modelStatus = status;
 			// When the model is now ready, invalidate the cached availability so
 			// the router re-probes the native engine on the next Scout turn —
-			// without this the on-device path stays dead until the app restarts.
+			// without this the on-device path stays dead until the app restarts —
+			// and warm the engine so the first chat turn isn't a cold (flaky) init.
 			if (status.state === 'ready') {
 				this.#scout.onDeviceProvider?.invalidateAvailability();
+				this.#warmUpModel();
 			}
 		} catch (error) {
 			this.#modelError = error instanceof Error ? error.message : 'Model download failed.';
@@ -896,10 +920,14 @@ class TrailAssistantStore {
 	 * flight, and refreshes status (which may now be ready). No-op otherwise.
 	 */
 	async reconcileDownload(): Promise<void> {
+		// Heal native wiring first — this runs on cold start and app resume, the
+		// exact moments a Capacitor injection race might have left the bridge null.
+		this.#ensureNativeWiring();
 		if (!this.#modelManager) return;
 		await this.refreshModelStatus();
 		if (this.#modelStatus?.state === 'ready') {
 			this.#scout.onDeviceProvider?.invalidateAvailability();
+			this.#warmUpModel();
 			return;
 		}
 		if (this.#modelDownload) return; // Already tracking in this session.
@@ -920,6 +948,7 @@ class TrailAssistantStore {
 				this.#modelStatus = status;
 				if (status.state === 'ready') {
 					this.#scout.onDeviceProvider?.invalidateAvailability();
+					this.#warmUpModel();
 				}
 			} else {
 				// Finished between the state check and the re-attach — reconcile.

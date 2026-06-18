@@ -38,6 +38,17 @@ public interface ScoutGemmaEngine {
     GenerateResult generate(String prompt, String systemContext, int maxTokens, TokenSink sink)
             throws ScoutGemmaUnavailableException;
 
+    /**
+     * Eagerly initializes the underlying runtime so the FIRST {@link #generate}
+     * call doesn't pay (or risk) the heavy, sometimes-flaky lazy init. Best-effort:
+     * implementations MUST NOT throw — a warm-up failure just means the first real
+     * turn behaves as before. The default is a no-op (the unavailable stub has
+     * nothing to warm).
+     */
+    default void warmUp() {
+        // No-op by default.
+    }
+
     /** Receives incremental text chunks as the engine streams a response. */
     interface TokenSink {
         void onToken(String chunk);

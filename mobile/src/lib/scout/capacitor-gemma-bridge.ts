@@ -44,6 +44,9 @@ type ScoutGemmaPlugin = {
 		systemContext: string;
 		maxTokens: number;
 	}): Promise<{ text: string; truncated?: boolean }>;
+	/** Eagerly initialize the native engine (off the main thread) so the first
+	 *  chat turn doesn't carry the heavy, sometimes-flaky lazy LiteRT init. */
+	warmUp?: () => Promise<{ warmed: boolean }>;
 	getModelStatus?: () => Promise<ScoutGemmaModelStatus>;
 	prepareModelDownload?: () => Promise<ScoutGemmaModelStatus>;
 	/**
@@ -153,6 +156,10 @@ export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaB
 			const descriptor = await plugin.describeModel();
 			if (!isGemmaModelDescriptor(descriptor)) return null;
 			return descriptor;
+		},
+		async warmUp() {
+			// Best-effort: only call through if the native build exposes it.
+			await plugin.warmUp?.();
 		},
 		async generate(input, onToken) {
 			let handle: { remove: () => Promise<void> } | undefined;
