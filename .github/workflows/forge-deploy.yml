@@ -176,7 +176,70 @@ jobs:
           cd "$APP/current"
           pm2 delete hoggcountry-openclaw || true
           pm2 delete hoggcountry-scout || true
+          pm2 delete hoggcountry-scout-chatgpt-app || true
           npm run forge:scout:pm2
+
+          export SCOUT_CHATGPT_APP_PORT="$(grep -E '^SCOUT_CHATGPT_APP_PORT=' "$APP/.env" | tail -n 1 | cut -d= -f2-)"
+          export SCOUT_CHATGPT_APP_PORT="${SCOUT_CHATGPT_APP_PORT:-8788}"
+          smoke_scout_chatgpt_app() {
+            node <<'NODE'
+          const endpoint = `http://127.0.0.1:${process.env.SCOUT_CHATGPT_APP_PORT || '8788'}/mcp`;
+          const payload = {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+              protocolVersion: '2025-06-18',
+              capabilities: {},
+              clientInfo: {
+                name: 'forge-activate-smoke',
+                version: '1.0.0',
+              },
+            },
+          };
+
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          for (let attempt = 1; attempt <= 12; attempt += 1) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
+
+            try {
+              const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                  accept: 'application/json, text/event-stream',
+                  'content-type': 'application/json',
+                  'user-agent': 'hoggcountry-forge-activate/1.0',
+                },
+                body: JSON.stringify(payload),
+                signal: controller.signal,
+              });
+              const text = await response.text();
+              if (response.status === 200 && /"name"\s*:\s*"scout-chatgpt-app"/.test(text)) {
+                console.log(`Scout ChatGPT MCP loopback smoke passed on attempt ${attempt}`);
+                process.exit(0);
+              }
+              console.error(`Scout ChatGPT MCP loopback smoke attempt ${attempt} got ${response.status}: ${text.slice(0, 400)}`);
+            } catch (error) {
+              console.error(`Scout ChatGPT MCP loopback smoke attempt ${attempt} failed:`, error);
+            } finally {
+              clearTimeout(timeout);
+            }
+
+            await sleep(1000);
+          }
+
+          process.exit(1);
+          NODE
+          }
+
+          if ! smoke_scout_chatgpt_app; then
+            echo "Scout ChatGPT app failed local loopback smoke after PM2 reload."
+            pm2 show hoggcountry-scout-chatgpt-app || true
+            pm2 logs hoggcountry-scout-chatgpt-app --lines 120 --nostream || true
+            exit 1
+          fi
           pm2 save
 
           cd "$APP/current/backend"
