@@ -6,7 +6,6 @@ import type {
 	CheckInRecord,
 	CheckInStatus,
 	PrivacySettings,
-	ReadinessRecommendation,
 	SyncState,
 	Tab,
 	TrailConditionReport,
@@ -69,12 +68,12 @@ function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
 	};
 }
 
-function makeCheckIn(status: CheckInStatus, note: string): CheckInRecord {
+function makeCheckIn(status: CheckInStatus, note: string, mile: number): CheckInRecord {
 	return {
 		id: crypto.randomUUID(),
 		timestamp: new Date().toISOString(),
-		location: 'NY/CT pilot corridor',
-		mile: 1438,
+		location: `Mile ${mile.toFixed(1)}`,
+		mile,
 		status,
 		note
 	};
@@ -161,7 +160,7 @@ const defaultState: TrailState = {
 	lastCheckIn: {
 		id: crypto.randomUUID(),
 		timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-		location: 'NY/CT pilot corridor',
+		location: 'Mile 1438.0',
 		mile: 1438,
 		status: 'safe',
 		note: 'Using the bundled Dad trail-ahead fallback until a refreshed field pack is saved on this phone.'
@@ -195,25 +194,11 @@ const defaultState: TrailState = {
 	onlineStatus: true,
 	syncState: 'synced',
 	currentMile: 1438,
-	currentDayMiles: 8.2,
 	dayNumber: 42,
 	nextCheckInDueAt: isoHoursFromNow(4),
-	readiness: {
-		score: 84,
-		recommendation: 'hold',
-		targetMiles: 10.8,
-		targetVert: 1700,
-		reasons: [
-			'Your last two days were above plan and recovery is slightly lagging.',
-			'Mapped water in the loaded NY/CT window is candidate-grade and needs current confirmation.',
-			'Keep the mileage conservative until the refreshed field pack and real conditions agree.'
-		]
-	},
-	supportCircle: [
-		{ name: 'Sarah Hogg', role: 'Primary contact', method: 'SMS' },
-		{ name: 'Trail Concierge', role: 'Priority support', method: 'In app' },
-		{ name: 'Dad', role: 'Family backup', method: 'Call' }
-	],
+	// Support circle starts empty — these are the hiker's own emergency contacts,
+	// added on-device. No seeded/fabricated names.
+	supportCircle: [],
 	lastSyncAt: new Date(Date.now() - 12 * 60 * 1000).toISOString()
 };
 
@@ -342,10 +327,8 @@ class TrailAssistantStore {
 			onlineStatus: this.#state.onlineStatus,
 			syncState: this.#state.syncState,
 			currentMile: this.#state.currentMile,
-			currentDayMiles: this.#state.currentDayMiles,
 			dayNumber: this.#state.dayNumber,
 			nextCheckInDueAt: this.#state.nextCheckInDueAt,
-			readiness: { ...this.#state.readiness },
 			supportCircle: [...this.#state.supportCircle],
 			lastSyncAt: this.#state.lastSyncAt
 		};
@@ -364,12 +347,6 @@ class TrailAssistantStore {
 	#applyPackToTrailState(pack: ContextPack) {
 		this.#state.currentMile = pack.hiker.currentMile;
 		this.#state.dayNumber = pack.hiker.dayNumber;
-		if (pack.hiker.targetMilesToday) {
-			this.#state.readiness = {
-				...this.#state.readiness,
-				targetMiles: pack.hiker.targetMilesToday
-			};
-		}
 		this.#state.trailSettings = {
 			...this.#state.trailSettings,
 			offlineRegion: pack.downloadedRegions[0] ?? this.#state.trailSettings.offlineRegion
@@ -626,10 +603,6 @@ class TrailAssistantStore {
 		return this.#state.currentMile;
 	}
 
-	get currentDayMiles() {
-		return this.#state.currentDayMiles;
-	}
-
 	get dayNumber() {
 		return deriveDayNumber(HIKE_START_DATE, new Date());
 	}
@@ -643,24 +616,12 @@ class TrailAssistantStore {
 		return this.#state.nextCheckInDueAt;
 	}
 
-	get readiness() {
-		return this.#state.readiness;
-	}
-
 	get supportCircle() {
 		return this.#state.supportCircle;
 	}
 
 	get lastSyncAt() {
 		return this.#state.lastSyncAt;
-	}
-
-	get milesRemainingToday() {
-		return Math.max(0, this.#state.readiness.targetMiles - this.#state.currentDayMiles);
-	}
-
-	get progressPercent() {
-		return Math.min(100, (this.#state.currentDayMiles / this.#state.readiness.targetMiles) * 100);
 	}
 
 	get missedCheckInRisk() {
@@ -670,18 +631,6 @@ class TrailAssistantStore {
 		if (!this.#state.onlineStatus && hoursUntilDue < 1.5) return 'high';
 		if (hoursUntilDue < 2) return 'medium';
 		return 'low';
-	}
-
-	get readinessTone() {
-		const tones: Record<ReadinessRecommendation, string> = {
-			push: 'push',
-			steady: 'steady',
-			hold: 'hold',
-			nero: 'nero',
-			zero: 'zero'
-		};
-
-		return tones[this.#state.readiness.recommendation];
 	}
 
 	get syncLabel() {
@@ -1039,7 +988,7 @@ class TrailAssistantStore {
 			'need-help': note || 'Need human review on the next move.'
 		};
 
-		const record = makeCheckIn(status, label[status]);
+		const record = makeCheckIn(status, label[status], this.#state.currentMile);
 		this.#state.lastCheckIn = record;
 		this.#state.checkInHistory = [record, ...this.#state.checkInHistory].slice(0, 6);
 		this.#state.nextCheckInDueAt = isoHoursFromNow(status === 'need-help' ? 1 : 4);

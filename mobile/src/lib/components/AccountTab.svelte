@@ -3,7 +3,7 @@
 	import PackStatus from './PackStatus.svelte';
 	import OfflineStatus from './OfflineStatus.svelte';
 	import SourceChip from './SourceChip.svelte';
-	import { sourceReceipts, offlineModel } from './fieldData';
+	import { sourceReceipts } from './fieldData';
 
 	function fmtBytes(n: number | undefined): string {
 		if (!n || n < 0) return '—';
@@ -39,9 +39,9 @@
 		<div class="profile-top">
 			<div class="avatar">HC</div>
 			<div class="profile-copy">
-				<p class="eyebrow">Account · Pilot member</p>
-				<h2>Chris "Hogg"</h2>
-				<p>NOBO 2026 · Day {trailAssistant.dayNumber} · Mile {trailAssistant.currentMile.toFixed(1)}</p>
+				<p class="eyebrow">Hiker · {fieldPack.hiker.direction} 2026</p>
+				<h2>{fieldPack.hiker.trailName}</h2>
+				<p>Day {trailAssistant.dayNumber} · Mile {trailAssistant.currentMile.toFixed(1)}</p>
 			</div>
 		</div>
 
@@ -216,8 +216,8 @@
 	<section class="card">
 		<div class="section-heading">
 			<p class="eyebrow">Daily habits</p>
-			<h2>Readiness inputs</h2>
-			<p>These behaviors feed the readiness score. Skipping them quietly is how a hard day hides inside the mileage target.</p>
+			<h2>End-of-day log</h2>
+			<p>Tick these off so your trail journal reflects the real day, not just the mileage. Skipping them quietly is how a hard day hides.</p>
 		</div>
 
 		<div class="habit-grid">
@@ -241,7 +241,7 @@
 			<div class="toggle-row habit-row">
 				<div class="toggle-copy">
 					<strong>Calories</strong>
-					<span>Fuel debt = readiness drag.</span>
+					<span>Enough fuel in for tomorrow.</span>
 				</div>
 				<button
 					class:on={trailAssistant.trailLogSettings.caloriesLogged}
@@ -299,8 +299,8 @@
 			({fieldPackMiles.toFixed(0)} mi) from the {fieldPackStatus.source} pack, loaded {fieldPackLoaded}.
 		</p>
 		<div class="region-meta">
-			<span>{fieldPack.downloadedRegions.length || offlineModel.regions.length} regions cached</span>
-			<span>{(offlineModel.sizeMb / 1024).toFixed(1)} GB on device</span>
+			<span>{fieldPack.downloadedRegions.length} {fieldPack.downloadedRegions.length === 1 ? 'region' : 'regions'} cached</span>
+			<span>{model?.state === 'ready' ? `${fmtBytes(model.expectedBytes)} model on device` : 'Model not downloaded'}</span>
 		</div>
 	</section>
 
