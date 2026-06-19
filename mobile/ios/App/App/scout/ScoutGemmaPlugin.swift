@@ -177,12 +177,14 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     /// relaunch this honestly reports inactive.
     @objc func getDownloadState(_ call: CAPPluginCall) {
         stateQueue.sync {
-            var result: [String: Any] = ["active": _downloader != nil]
-            if let progress = _lastProgress {
-                result["bytesDownloaded"] = progress.bytes
-                result["totalBytes"] = progress.total
-            }
-            call.resolve(result)
+            // Always include numeric byte fields — the JS bridge treats them as
+            // required. Before the first progress sample, report 0 / expected size.
+            let progress = _lastProgress
+            call.resolve([
+                "active": _downloader != nil,
+                "bytesDownloaded": progress?.bytes ?? 0,
+                "totalBytes": progress?.total ?? store.spec.expectedSizeBytes
+            ])
         }
     }
 

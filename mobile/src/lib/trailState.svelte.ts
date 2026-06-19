@@ -819,9 +819,10 @@ class TrailAssistantStore {
 
 	async askScout(prompt: string): Promise<ScoutAnswer> {
 		if (!(await this.#gemmaReady())) {
-			const answer = this.#gemmaUnavailableAnswer();
-			this.#lastScoutAnswer = answer;
-			return answer;
+			// Return the unavailable STATUS to the caller, but do NOT record it as
+			// lastScoutAnswer — otherwise Today's "last answer" recap would show a
+			// status message with a confidence badge, as if it were a real answer.
+			return this.#gemmaUnavailableAnswer();
 		}
 
 		const answer = await this.#scout.runtime.ask({
