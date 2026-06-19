@@ -17,6 +17,8 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 | **Launch screen / splash** (iOS + Android) | native projects | brand emblem on cream |
 | **iOS screenshots** ×6 @ **1290×2796** | `docs/launch/screenshots/ios/` | Today, Map, Scout, Bible, Bible-Ask, Gear — native res, real M1 build |
 | **Play screenshots** ×6 @ 1080×2160 + **feature graphic 1024×500** + **512 icon** | `docs/launch/screenshots/play/` | letterboxed to Play's aspect limit |
+| **Framed marketing screenshots** (captioned, on brand background) | `…/screenshots/ios-framed/` + `…/play-framed/` | optional — use these *or* the raw set |
+| **App Review notes** (both stores) | `docs/launch/store-copy/review-notes.md` | pre-empts the 2.6 GB-download / iOS-stub / foreground-service questions |
 | **Apple listing copy** (name/subtitle/promo/keywords≤100/description/what's-new/category/age) | `docs/launch/store-copy/apple-app-store.md` | char limits verified |
 | **Play listing copy** (title/short/full/category/IARC/ads/tags) | `docs/launch/store-copy/google-play.md` | char limits verified |
 | **Privacy policy** (markdown + hostable HTML) | `docs/launch/privacy/privacy-policy.{md,html}` | grounded in real data flows |
@@ -48,7 +50,7 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 
 ### 🍎 Apple — *start #1 immediately*
 1. **Enroll in the Apple Developer Program** ($99/yr) → developer.apple.com. ⛔ **Long pole — approval can take 24–48h+.** *(If you already have a team, skip — just confirm you can sign in to App Store Connect.)*
-2. **App Store Connect:** create the app (bundle `com.hoggcountry.trailassistant`); paste name/subtitle/keywords/description from the Apple copy doc; upload the 6 iOS screenshots; set category + age rating; add the **privacy policy URL** + **support URL**; fill **App Privacy** from the disclosures doc.
+2. **App Store Connect:** create the app (bundle `com.hoggcountry.trailassistant`); paste name/subtitle/keywords/description from the Apple copy doc; upload the 6 iOS screenshots (raw or framed); set category + age rating; add the **privacy policy URL** + **support URL**; fill **App Privacy** from the disclosures doc; set **Sign-in required = No** and paste the **App Review notes** (`review-notes.md`).
 3. **On your Mac (with me, ~30 min):** open `mobile/ios` in Xcode → set **Signing Team** → **add `PrivacyInfo.xcprivacy` to the App target** → mark the **App scheme "Shared"** → (optional) wire the **LiteRT Swift package** for live iOS AI → **Product ▸ Archive ▸ upload**.
 4. **TestFlight → Dad:** add him as an **internal tester** = instant install on his iPhone, no review. (Submit for App Review only when you want public release.)
 
