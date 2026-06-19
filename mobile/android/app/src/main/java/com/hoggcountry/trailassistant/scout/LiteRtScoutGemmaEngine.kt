@@ -9,6 +9,7 @@ import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * On-device Gemma 4 engine backed by LiteRT-LM
@@ -97,7 +98,16 @@ class LiteRtScoutGemmaEngine private constructor(
                     },
                     emptyMap<String, Any>()
                 )
-                done.await()
+                // Bounded wait: if the native runtime wedges and never calls
+                // onDone/onError, fail honestly instead of blocking the single
+                // inference thread (and every later turn) forever. Exiting the
+                // `use` block closes the Conversation, aborting the in-flight call.
+                val completed = done.await(GENERATE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                if (!completed) {
+                    throw ScoutGemmaUnavailableException(
+                        "On-device Gemma timed out after ${GENERATE_TIMEOUT_SECONDS}s — give it a moment and try again."
+                    )
+                }
                 failure[0]?.let { throw it }
 
                 val text = full.toString()
@@ -108,6 +118,17 @@ class LiteRtScoutGemmaEngine private constructor(
                 }
                 return ScoutGemmaEngine.GenerateResult(text, false)
             }
+        } catch (alreadyHonest: ScoutGemmaUnavailableException) {
+            // Preserve the specific message (e.g. timeout) — don't re-wrap it.
+            throw alreadyHonest
+        } catch (oom: OutOfMemoryError) {
+            // The model needs substantial RAM. Surface an honest device-capability
+            // message and drop the engine so a retry starts clean. Never fabricate.
+            Log.w(TAG, "Out of memory running on-device model", oom)
+            close()
+            throw ScoutGemmaUnavailableException(
+                "Not enough free memory to run the on-device model on this device."
+            )
         } catch (failure: Throwable) {
             // Never fabricate output: any runtime failure surfaces as unavailable.
             throw ScoutGemmaUnavailableException(
@@ -167,6 +188,11 @@ class LiteRtScoutGemmaEngine private constructor(
 
     companion object {
         private const val TAG = "ScoutGemma"
+
+        // Upper bound for a single on-device generation. Generous enough for a
+        // long answer on a slow device, but bounded so a wedged native callback
+        // can't hang the inference thread (and all later turns) indefinitely.
+        private const val GENERATE_TIMEOUT_SECONDS = 120L
 
         /**
          * Loads the LiteRT-LM engine against the verified on-device model, or
