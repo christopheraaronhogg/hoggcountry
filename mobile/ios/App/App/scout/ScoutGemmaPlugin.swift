@@ -26,17 +26,22 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getModelStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "prepareModelDownload", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startModelDownload", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "cancelModelDownload", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "cancelModelDownload", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getDownloadState", returnType: CAPPluginReturnPromise)
     ]
 
     private let store = ScoutModelStore()
 
-    /// Serial queue that owns all reads and writes of `_engine` and `_downloader`.
+    /// Serial queue that owns all reads and writes of `_engine`, `_downloader`,
+    /// and `_lastProgress`.
     private let stateQueue = DispatchQueue(label: "com.hoggcountry.scoutgemma.state")
 
     // Backing storage — never accessed directly; always go through stateQueue.sync.
     private var _engine: ScoutGemmaEngine!
     private var _downloader: ScoutModelDownloader?
+    // Last progress sample, so getDownloadState() can report a live download's
+    // position (used by the JS reconcile-on-resume path).
+    private var _lastProgress: (bytes: Int64, total: Int64)?
 
     // MARK: - Thread-safe accessors
 
@@ -118,32 +123,74 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func startModelDownload(_ call: CAPPluginCall) {
         let dl = ScoutModelDownloader(store: store)
         downloader = dl
-        Task {
+        // Resolve IMMEDIATELY with { started: true } — the JS bridge then waits on
+        // the terminal listener events below (exactly like Android), instead of on
+        // this call. (Resolving here and *also* on completion would hang JS.)
+        var startResult = store.status().toDict()
+        startResult["started"] = true
+        call.resolve(startResult)
+
+        Task { [weak self] in
+            guard let self = self else { return }
             do {
                 let status = try await dl.download { [weak self] bytesDownloaded, totalBytes in
-                    self?.notifyListeners(
+                    guard let self = self else { return }
+                    self.stateQueue.sync { self._lastProgress = (bytesDownloaded, totalBytes) }
+                    self.notifyListeners(
                         "scoutModelDownloadProgress",
                         data: ["bytesDownloaded": bytesDownloaded, "totalBytes": totalBytes])
                 }
-                // Model is on device and verified — rebuild the engine so the
-                // next isAvailable()/generate() picks it up. Both writes are
-                // through stateQueue.sync (inside the property setters).
+                // Model is on device and verified — rebuild the engine so the next
+                // isAvailable()/generate() picks it up, then emit the terminal event.
                 self.engine = ScoutGemmaEngineFactory.create(store: self.store)
-                self.downloader = nil
-                call.resolve(status.toDict())
+                self.clearDownload()
+                self.notifyListeners("scoutModelDownloadComplete", data: status.toDict())
             } catch {
-                self.downloader = nil
-                call.reject(error.localizedDescription)
+                self.clearDownload()
+                let nsError = error as NSError
+                let cancelled = (nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled)
+                    || error is CancellationError
+                if cancelled {
+                    // A user cancel is not an error — resolve the JS promise quietly.
+                    self.notifyListeners("scoutModelDownloadCancelled", data: [:])
+                } else {
+                    self.notifyListeners(
+                        "scoutModelDownloadError",
+                        data: ["message": error.localizedDescription])
+                }
             }
         }
     }
 
     @objc func cancelModelDownload(_ call: CAPPluginCall) {
         // Read + call under stateQueue to avoid racing startModelDownload's Task.
+        // The download Task then throws cancelled and emits the terminal event.
         stateQueue.sync {
             let active = _downloader != nil
             _downloader?.cancel()
             call.resolve(["cancelled": active])
+        }
+    }
+
+    /// Current download state for the JS reconcile-on-resume path. iOS uses a
+    /// foreground URLSession that does not survive app termination, so after a
+    /// relaunch this honestly reports inactive.
+    @objc func getDownloadState(_ call: CAPPluginCall) {
+        stateQueue.sync {
+            var result: [String: Any] = ["active": _downloader != nil]
+            if let progress = _lastProgress {
+                result["bytesDownloaded"] = progress.bytes
+                result["totalBytes"] = progress.total
+            }
+            call.resolve(result)
+        }
+    }
+
+    /// Clears the active downloader + progress under the state queue.
+    private func clearDownload() {
+        stateQueue.sync {
+            _downloader = nil
+            _lastProgress = nil
         }
     }
 }
