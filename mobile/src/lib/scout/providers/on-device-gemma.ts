@@ -136,6 +136,13 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 			onToken
 		);
 
+		// A blank/whitespace generation is a failure, not an answer. Treat it as
+		// unavailable so the user gets an honest retry rather than an empty bubble
+		// dressed up with a confidence badge.
+		if (!result.text || !result.text.trim()) {
+			throw new OnDeviceModelUnavailableError('On-device model returned an empty response.');
+		}
+
 		return {
 			answer: result.text,
 			confidence: 'medium',

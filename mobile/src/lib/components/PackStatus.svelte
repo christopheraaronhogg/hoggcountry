@@ -1,17 +1,14 @@
 <script lang="ts">
-	import { packInventory, packTotalCarriedLb, packMissingCount } from './cockpitData';
+	import { trailAssistant } from '$lib/trailState.svelte';
 
-	const carried = packInventory.filter((item) => item.status === 'carried');
-	const flagged = packInventory.filter(
-		(item) => item.status === 'missing' || item.status === 'replace' || item.status === 'shipped'
+	// Real loadout from the field pack — the same source the Today glance and the
+	// Gear screen use, so the three never disagree.
+	const loadout = $derived(trailAssistant.fieldPack.loadout);
+	const carried = $derived(loadout.filter((item) => item.carried));
+	const notPacked = $derived(loadout.filter((item) => !item.carried));
+	const totalLb = $derived(
+		Math.round((carried.reduce((sum, item) => sum + (item.weightOz ?? 0), 0) / 16) * 10) / 10
 	);
-
-	const statusLabels = {
-		carried: 'Carried',
-		missing: 'Missing',
-		replace: 'Replace in town',
-		shipped: 'Waiting in town'
-	} as const;
 </script>
 
 <section class="pack-status">
@@ -22,36 +19,38 @@
 		</div>
 		<div class="pack-totals">
 			<div>
-				<span class="num">{packTotalCarriedLb}</span>
+				<span class="num">{totalLb}</span>
 				<span class="unit">lb</span>
 				<small>carried</small>
 			</div>
 			<div>
-				<span class="num" data-flag={packMissingCount > 0 || undefined}>{flagged.length}</span>
-				<small>need attention</small>
+				<span class="num" data-flag={notPacked.length > 0 || undefined}>{notPacked.length}</span>
+				<small>not packed</small>
 			</div>
 		</div>
 	</header>
 
 	<div class="pack-grid">
-		<ul class="carried-list">
-			<p class="list-label">Confirmed on you ({carried.length})</p>
-			{#each carried as item (item.name)}
-				<li>
-					<span>{item.name}</span>
-					<strong>{item.weightOz.toFixed(1)} oz</strong>
-				</li>
-			{/each}
-		</ul>
+		{#if carried.length}
+			<ul class="carried-list">
+				<p class="list-label">Confirmed on you ({carried.length})</p>
+				{#each carried as item (item.name)}
+					<li>
+						<span>{item.name}</span>
+						{#if item.weightOz}<strong>{item.weightOz.toFixed(1)} oz</strong>{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
 
-		{#if flagged.length}
+		{#if notPacked.length}
 			<ul class="flagged-list">
-				<p class="list-label flagged-label">Needs action</p>
-				{#each flagged as item (item.name)}
-					<li data-status={item.status}>
+				<p class="list-label flagged-label">Not packed</p>
+				{#each notPacked as item (item.name)}
+					<li>
 						<div class="flag-top">
 							<strong>{item.name}</strong>
-							<span class="flag-pill">{statusLabels[item.status]}</span>
+							<span class="flag-pill">Not packed</span>
 						</div>
 						{#if item.note}
 							<p>{item.note}</p>
@@ -59,6 +58,10 @@
 					</li>
 				{/each}
 			</ul>
+		{/if}
+
+		{#if !carried.length && !notPacked.length}
+			<p class="list-label">No gear loadout in the saved pack yet.</p>
 		{/if}
 	</div>
 </section>
@@ -175,16 +178,6 @@
 		background: rgba(255, 245, 233, 0.7);
 	}
 
-	.flagged-list li[data-status='missing'] {
-		border-color: rgba(154, 59, 47, 0.4);
-		background: rgba(247, 230, 224, 0.6);
-	}
-
-	.flagged-list li[data-status='shipped'] {
-		border-color: rgba(95, 128, 144, 0.4);
-		background: rgba(231, 240, 244, 0.7);
-	}
-
 	.flag-top {
 		display: flex;
 		align-items: center;
@@ -205,16 +198,6 @@
 		padding: 4px 8px;
 		border-radius: 999px;
 		background: rgba(170, 104, 67, 0.16);
-	}
-
-	.flagged-list li[data-status='missing'] .flag-pill {
-		color: var(--danger);
-		background: rgba(154, 59, 47, 0.12);
-	}
-
-	.flagged-list li[data-status='shipped'] .flag-pill {
-		color: var(--sky);
-		background: rgba(95, 128, 144, 0.18);
 	}
 
 	.flagged-list li p {

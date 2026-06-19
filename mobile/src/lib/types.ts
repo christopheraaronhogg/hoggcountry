@@ -34,7 +34,6 @@ export function migrateTab(value: unknown): Tab {
 	}
 }
 
-export type ReadinessRecommendation = 'push' | 'steady' | 'hold' | 'nero' | 'zero';
 export type SyncState = 'synced' | 'syncing' | 'queued-offline';
 export type CheckInStatus = 'safe' | 'delayed' | 'need-help';
 export type ServiceCategory = 'hostel' | 'shuttle' | 'resupply' | 'gear' | 'food' | 'laundry';
@@ -145,14 +144,6 @@ export interface TownSnapshot {
 	services: TownService[];
 }
 
-export interface ReadinessSnapshot {
-	score: number;
-	recommendation: ReadinessRecommendation;
-	targetMiles: number;
-	targetVert: number;
-	reasons: string[];
-}
-
 export interface WeatherSnapshot {
 	highF: number;
 	lowF: number;
@@ -174,10 +165,8 @@ export interface TrailState {
 	onlineStatus: boolean;
 	syncState: SyncState;
 	currentMile: number;
-	currentDayMiles: number;
 	dayNumber: number;
 	nextCheckInDueAt: string;
-	readiness: ReadinessSnapshot;
 	supportCircle: SupportContact[];
 	lastSyncAt: string;
 }

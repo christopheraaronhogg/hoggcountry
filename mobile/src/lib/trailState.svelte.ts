@@ -6,7 +6,6 @@ import type {
 	CheckInRecord,
 	CheckInStatus,
 	PrivacySettings,
-	ReadinessRecommendation,
 	SyncState,
 	Tab,
 	TrailConditionReport,
@@ -17,6 +16,8 @@ import type {
 	TrailState
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
+import { resolveModelPolicy } from './scout/model-policy.ts';
+import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
 import type { OnDeviceGemmaProvider } from './scout';
 import {
@@ -37,8 +38,22 @@ const TRAIL_ID = 'appalachian-trail';
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
-const MODEL_POLICY = (import.meta.env.VITE_SCOUT_MODEL_POLICY as string | undefined) ?? 'offline-tools';
+const MODEL_POLICY = resolveModelPolicy(
+	import.meta.env.VITE_SCOUT_MODEL_POLICY as string | undefined,
+	Boolean(import.meta.env.DEV)
+);
 const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
+
+// Dad's NOBO start date (src/data/gear.json startDate). The day number is derived
+// from this, not stored — so it's always the real "day N of the hike", never a
+// frozen placeholder.
+const HIKE_START_DATE = '2026-02-01';
+
+function deriveDayNumber(startDate: string, now: Date): number {
+	const start = new Date(`${startDate}T00:00:00`);
+	const days = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+	return Math.max(1, days);
+}
 
 function isoHoursFromNow(hours: number): string {
 	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -53,12 +68,12 @@ function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
 	};
 }
 
-function makeCheckIn(status: CheckInStatus, note: string): CheckInRecord {
+function makeCheckIn(status: CheckInStatus, note: string, mile: number): CheckInRecord {
 	return {
 		id: crypto.randomUUID(),
 		timestamp: new Date().toISOString(),
-		location: 'NY/CT pilot corridor',
-		mile: 1438,
+		location: `Mile ${mile.toFixed(1)}`,
+		mile,
 		status,
 		note
 	};
@@ -139,35 +154,22 @@ const defaultState: TrailState = {
 	coachMessages: [
 		makeMessage(
 			'assistant',
-			'Good morning. Trail readiness is holding steady today. Keep mapped water marked low-confidence until it is confirmed from a current source or in the field.'
+			"I'm Scout — your on-device trail assistant. Ask me about water, shelters, town, or safety and I'll answer from your saved field pack. Mapped water stays low-confidence until you confirm it from a current source or in the field."
 		)
 	],
 	lastCheckIn: {
 		id: crypto.randomUUID(),
 		timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-		location: 'NY/CT pilot corridor',
+		location: 'Mile 1438.0',
 		mile: 1438,
 		status: 'safe',
 		note: 'Using the bundled Dad trail-ahead fallback until a refreshed field pack is saved on this phone.'
 	},
 	checkInHistory: [],
-	trailPulseReports: [
-		makeTrailPulseReport({
-			source: 'chip',
-			chipText: 'Rocks',
-			noteText: 'Rocks',
-			reporterTrailName: 'Backtrack',
-			snappedMile: 1438.4,
-			observedAt: new Date(Date.now() - 34 * 60 * 1000).toISOString()
-		}),
-		makeTrailPulseReport({
-			source: 'text',
-			chipText: 'Water',
-			noteText: 'mapped stream candidate needs field confirmation',
-			snappedMile: 1441.5,
-			observedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-		})
-	],
+	// Trail Pulse starts empty — reports are crowd-sourced from real hikers, so the
+	// panel shows its honest "no one has reported nearby" empty state until one
+	// arrives. (No seeded/fabricated reports.)
+	trailPulseReports: [],
 	seenTrailPulseReportIds: [],
 	privacySettings: {
 		stealthMode: true,
@@ -192,25 +194,11 @@ const defaultState: TrailState = {
 	onlineStatus: true,
 	syncState: 'synced',
 	currentMile: 1438,
-	currentDayMiles: 8.2,
 	dayNumber: 42,
 	nextCheckInDueAt: isoHoursFromNow(4),
-	readiness: {
-		score: 84,
-		recommendation: 'hold',
-		targetMiles: 10.8,
-		targetVert: 1700,
-		reasons: [
-			'Your last two days were above plan and recovery is slightly lagging.',
-			'Mapped water in the loaded NY/CT window is candidate-grade and needs current confirmation.',
-			'Keep the mileage conservative until the refreshed field pack and real conditions agree.'
-		]
-	},
-	supportCircle: [
-		{ name: 'Sarah Hogg', role: 'Primary contact', method: 'SMS' },
-		{ name: 'Trail Concierge', role: 'Priority support', method: 'In app' },
-		{ name: 'Dad', role: 'Family backup', method: 'Call' }
-	],
+	// Support circle starts empty — these are the hiker's own emergency contacts,
+	// added on-device. No seeded/fabricated names.
+	supportCircle: [],
 	lastSyncAt: new Date(Date.now() - 12 * 60 * 1000).toISOString()
 };
 
@@ -252,6 +240,10 @@ class TrailAssistantStore {
 	// the confirm-before-apply gate for "Do" tools.
 	#pendingAction = $state<ProposedAction | null>(null);
 	#pendingApply: (() => void) | null = null;
+	// Real AT route geometry + USGS elevation (1-mi NOBO samples), fetched once
+	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
+	// until loaded, so UI renders an honest empty state in the meantime.
+	#trailGeo = $state.raw<TrailGeoPoint[]>([]);
 
 	constructor() {
 		if (!browser) return;
@@ -266,6 +258,13 @@ class TrailAssistantStore {
 			this.#fieldPackStatus = status;
 		});
 		void this.#loadFieldPack();
+		void loadTrailGeometry()
+			.then((points) => {
+				this.#trailGeo = points;
+			})
+			.catch((error) => {
+				console.error('Failed to load trail geometry', error);
+			});
 		// Re-observe any model download that kept running in the background service
 		// while the app was closed (also refreshes status, which may now be ready).
 		void this.reconcileDownload();
@@ -328,10 +327,8 @@ class TrailAssistantStore {
 			onlineStatus: this.#state.onlineStatus,
 			syncState: this.#state.syncState,
 			currentMile: this.#state.currentMile,
-			currentDayMiles: this.#state.currentDayMiles,
 			dayNumber: this.#state.dayNumber,
 			nextCheckInDueAt: this.#state.nextCheckInDueAt,
-			readiness: { ...this.#state.readiness },
 			supportCircle: [...this.#state.supportCircle],
 			lastSyncAt: this.#state.lastSyncAt
 		};
@@ -350,12 +347,6 @@ class TrailAssistantStore {
 	#applyPackToTrailState(pack: ContextPack) {
 		this.#state.currentMile = pack.hiker.currentMile;
 		this.#state.dayNumber = pack.hiker.dayNumber;
-		if (pack.hiker.targetMilesToday) {
-			this.#state.readiness = {
-				...this.#state.readiness,
-				targetMiles: pack.hiker.targetMilesToday
-			};
-		}
 		this.#state.trailSettings = {
 			...this.#state.trailSettings,
 			offlineRegion: pack.downloadedRegions[0] ?? this.#state.trailSettings.offlineRegion
@@ -426,7 +417,10 @@ class TrailAssistantStore {
 			confidence: 'draft',
 			mode: 'on-device',
 			provider: 'on-device-gemma',
-			receipts: this.#fieldPack.sourceReceipts ?? [],
+			// No citations on a status message — this is NOT a model answer, so it
+			// must never carry source provenance. (The chat also renders it as a
+			// plain status line, with no confidence badge — see #dispatchScoutReply.)
+			receipts: [],
 			toolInvocations: [],
 			requiredConfirmations: [],
 			safetyFlags: notInstalled
@@ -445,6 +439,10 @@ class TrailAssistantStore {
 
 	#getCurrentPosition(): Promise<GeolocationPosition | null> {
 		if (!browser || !navigator.geolocation) return Promise.resolve(null);
+		// Enforce the privacy toggle: location is only read when the hiker has opted
+		// in (default off). This is also why the OS permission prompt only appears
+		// after they enable "Precise location" — we never read it silently.
+		if (!this.#state.privacySettings.sharePreciseLocation) return Promise.resolve(null);
 
 		return new Promise((resolve) => {
 			navigator.geolocation.getCurrentPosition(
@@ -455,8 +453,12 @@ class TrailAssistantStore {
 		});
 	}
 
-	#snapPositionToTrailMile(_position: GeolocationPosition | null): number {
-		return this.#state.currentMile;
+	/** Snap a GPS fix to the nearest real AT mile (USGS route geometry). Falls back
+	 * to the last known mile when there's no fix or geometry isn't loaded yet. */
+	#snapPositionToTrailMile(position: GeolocationPosition | null): number {
+		if (!position) return this.#state.currentMile;
+		const mile = snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude);
+		return mile ?? this.#state.currentMile;
 	}
 
 	async #syncTrailPulseReport(report: TrailConditionReport) {
@@ -604,20 +606,17 @@ class TrailAssistantStore {
 		return this.#state.currentMile;
 	}
 
-	get currentDayMiles() {
-		return this.#state.currentDayMiles;
+	get dayNumber() {
+		return deriveDayNumber(HIKE_START_DATE, new Date());
 	}
 
-	get dayNumber() {
-		return this.#state.dayNumber;
+	/** Real AT route geometry + elevation (1-mi samples), or [] before it loads. */
+	get trailGeometry() {
+		return this.#trailGeo;
 	}
 
 	get nextCheckInDueAt() {
 		return this.#state.nextCheckInDueAt;
-	}
-
-	get readiness() {
-		return this.#state.readiness;
 	}
 
 	get supportCircle() {
@@ -628,14 +627,6 @@ class TrailAssistantStore {
 		return this.#state.lastSyncAt;
 	}
 
-	get milesRemainingToday() {
-		return Math.max(0, this.#state.readiness.targetMiles - this.#state.currentDayMiles);
-	}
-
-	get progressPercent() {
-		return Math.min(100, (this.#state.currentDayMiles / this.#state.readiness.targetMiles) * 100);
-	}
-
 	get missedCheckInRisk() {
 		const hoursUntilDue =
 			(new Date(this.#state.nextCheckInDueAt).getTime() - Date.now()) / (60 * 60 * 1000);
@@ -643,18 +634,6 @@ class TrailAssistantStore {
 		if (!this.#state.onlineStatus && hoursUntilDue < 1.5) return 'high';
 		if (hoursUntilDue < 2) return 'medium';
 		return 'low';
-	}
-
-	get readinessTone() {
-		const tones: Record<ReadinessRecommendation, string> = {
-			push: 'push',
-			steady: 'steady',
-			hold: 'hold',
-			nero: 'nero',
-			zero: 'zero'
-		};
-
-		return tones[this.#state.readiness.recommendation];
 	}
 
 	get syncLabel() {
@@ -774,11 +753,11 @@ class TrailAssistantStore {
 
 		try {
 			if (!(await this.#gemmaReady())) {
+				// Model unavailable: append a PLAIN status message. Deliberately do
+				// NOT register it as a ScoutAnswer or set lastScoutAnswer — it isn't a
+				// model answer, so the chat shows no confidence badge or source chips.
 				const answer = this.#gemmaUnavailableAnswer();
-				this.#lastScoutAnswer = answer;
-				const message = makeMessage('assistant', answer.answer);
-				this.#scoutAnswersByMessage.set(message.id, answer);
-				this.#state.coachMessages = [...this.#state.coachMessages, message];
+				this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', answer.answer)];
 				return;
 			}
 
@@ -808,12 +787,15 @@ class TrailAssistantStore {
 				this.#scoutAnswersByMessage.set(message.id, answer);
 				this.#state.coachMessages = [...this.#state.coachMessages, message];
 			}
-		} catch {
+		} catch (error) {
 			// On-device generation failed this turn. Under the Gemma-only policy the
 			// runtime rethrows rather than silently faking an offline answer (the
 			// "acted offline" bug), so handle it honestly: reset the availability
 			// probe, warm the engine for next time, and tell the hiker plainly with
 			// a retry nudge — never a canned offline answer that hides the failure.
+			// Log the real error so a genuine bug (store/tool failure) is debuggable
+			// from device logs rather than silently swallowed.
+			console.error('Scout reply failed', error);
 			this.#scout.onDeviceProvider?.invalidateAvailability();
 			this.#warmUpModel();
 			// Keep the wording accurate for any failure here (on-device generation is
@@ -837,9 +819,10 @@ class TrailAssistantStore {
 
 	async askScout(prompt: string): Promise<ScoutAnswer> {
 		if (!(await this.#gemmaReady())) {
-			const answer = this.#gemmaUnavailableAnswer();
-			this.#lastScoutAnswer = answer;
-			return answer;
+			// Return the unavailable STATUS to the caller, but do NOT record it as
+			// lastScoutAnswer — otherwise Today's "last answer" recap would show a
+			// status message with a confidence badge, as if it were a real answer.
+			return this.#gemmaUnavailableAnswer();
 		}
 
 		const answer = await this.#scout.runtime.ask({
@@ -1009,7 +992,7 @@ class TrailAssistantStore {
 			'need-help': note || 'Need human review on the next move.'
 		};
 
-		const record = makeCheckIn(status, label[status]);
+		const record = makeCheckIn(status, label[status], this.#state.currentMile);
 		this.#state.lastCheckIn = record;
 		this.#state.checkInHistory = [record, ...this.#state.checkInHistory].slice(0, 6);
 		this.#state.nextCheckInDueAt = isoHoursFromNow(status === 'need-help' ? 1 : 4);

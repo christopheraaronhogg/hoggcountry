@@ -2,7 +2,7 @@
 	import { townSnapshot } from '$lib/mockTrailData';
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
-	import { sourceReceipts } from './cockpitData';
+	import { sourceReceipts } from './fieldData';
 
 	const categorySymbol: Record<string, string> = {
 		hostel: '⌂',
