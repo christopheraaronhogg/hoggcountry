@@ -84,7 +84,7 @@ test('runtime downgrades confidence when the pack is stale', async () => {
 	assert.ok(answer.requiredConfirmations.some((c) => c.reason === 'stale-cache'));
 });
 
-test('runtime falls back when on-device provider throws', async () => {
+function makeThrowingOnDeviceRuntime() {
 	const store = new InMemoryContextPackStore({ initial: { ...DEFAULT_CONTEXT_PACK } });
 	const registry = defaultToolRegistry();
 	const fallback = new DeterministicFallbackProvider();
@@ -102,11 +102,28 @@ test('runtime falls back when on-device provider throws', async () => {
 		}
 	});
 	const router = new DefaultModelRouter({ fallback, onDevice });
+
+	return { store, registry, router };
+}
+
+test('runtime falls back when auto-selected on-device provider throws', async () => {
+	const { store, registry, router } = makeThrowingOnDeviceRuntime();
 	const { DefaultScoutRuntime } = await import('../mobile/src/lib/scout/scout-runtime.ts');
 	const runtime = new DefaultScoutRuntime({ store, registry, router, clock: () => FIXED_NOW });
 
-	const answer = await runtime.ask({ prompt: 'next water?', onlineStatus: false, preferredMode: 'on-device' });
+	const answer = await runtime.ask({ prompt: 'next water?', onlineStatus: false });
 	assert.equal(answer.provider, 'deterministic-fallback');
+});
+
+test('runtime rethrows when preferredMode forces on-device and provider throws', async () => {
+	const { store, registry, router } = makeThrowingOnDeviceRuntime();
+	const { DefaultScoutRuntime } = await import('../mobile/src/lib/scout/scout-runtime.ts');
+	const runtime = new DefaultScoutRuntime({ store, registry, router, clock: () => FIXED_NOW });
+
+	await assert.rejects(
+		() => runtime.ask({ prompt: 'next water?', onlineStatus: false, preferredMode: 'on-device' }),
+		OnDeviceModelUnavailableError
+	);
 });
 
 test('runToolsFor returns at least one invocation for any prompt', async () => {

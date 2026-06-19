@@ -160,10 +160,10 @@ This combination supports **4+**.
 ## SUPPORT URL & MARKETING URL
 
 - **Support URL (required):** `https://hoggcountry.com/support`
-  **DECISION:** This page must exist before submission (Apple checks it) and should carry a contact method (email is fine) + a short FAQ. If `/support` isn't live, point at `https://hoggcountry.com/contact` or a mailto-backed page. Confirm the path.
+  The route is implemented in the Scout web app and carries the support contact plus a short FAQ. It must be deployed before submission because Apple checks it.
 - **Marketing URL (optional):** `https://hoggcountry.com`
 - **Privacy Policy URL (required for App Privacy):** `https://hoggcountry.com/privacy`
-  **DECISION:** Required even though the app collects almost nothing. The policy must state (1) the single outbound flow — the optional Trail-Conditions report sends a condition tag, optional note, optional trail name, an approximate **trail-mile (not GPS coordinates)**, and a timestamp to Hogg Country's own real-time trail service (SpacetimeDB) over an encrypted connection — and (2) that the Gemma model downloads once from `huggingface.co` on first run. Confirm the path is live.
+  Required even though the app collects almost nothing. The policy states the single outbound flow — the optional Trail-Conditions report sends a condition tag, optional note, optional trail name, an approximate **trail-mile (not GPS coordinates)**, and a timestamp to Hogg Country's own real-time trail service — and that the Gemma model downloads once from `huggingface.co` on first run.
 
 ---
 

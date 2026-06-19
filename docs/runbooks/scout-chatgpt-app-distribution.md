@@ -1,6 +1,6 @@
 # Scout ChatGPT App Distribution Runbook
 
-Last verified: 2026-05-17
+Last verified: 2026-06-19
 
 ## Distribution reality
 
@@ -30,7 +30,7 @@ The Forge deploy starts two Node processes:
 - `hoggcountry-scout` serves the Scout SvelteKit/PWA runtime on
   `127.0.0.1:3000`.
 - `hoggcountry-scout-chatgpt-app` serves the ChatGPT Apps SDK MCP endpoint on
-  `127.0.0.1:8787`.
+  `127.0.0.1:8788`.
 
 Laravel exposes the MCP server at:
 
@@ -48,8 +48,8 @@ Shared Forge env file:
 
 ```env
 SCOUT_CHATGPT_APP_PROXY_ENABLED=true
-SCOUT_CHATGPT_APP_PROXY_ORIGIN=http://127.0.0.1:8787
-SCOUT_CHATGPT_APP_PORT=8787
+SCOUT_CHATGPT_APP_PROXY_ORIGIN=http://127.0.0.1:8788
+SCOUT_CHATGPT_APP_PORT=8788
 SCOUT_CHATGPT_APP_DOMAIN=https://hoggcountry.on-forge.com
 PUBLIC_SITE_ORIGIN=https://hoggcountry.com
 ```
@@ -67,6 +67,22 @@ Check status:
 ```bash
 pm2 show hoggcountry-scout-chatgpt-app
 pm2 logs hoggcountry-scout-chatgpt-app --lines 80
+```
+
+If `/mcp` initializes successfully but `serverInfo.name` is anything other than
+`scout-chatgpt-app`, the public proxy is pointed at the wrong MCP process. As of
+2026-06-19, this failure mode was observed with the KJV reader still answering
+on the Hogg Country `/mcp` endpoint. On Forge, check which process owns port
+`8788`, reload `hoggcountry-scout-chatgpt-app`, and make sure
+`SCOUT_CHATGPT_APP_PROXY_ORIGIN` points at the Scout app process:
+
+```bash
+ss -ltnp | grep ':8788'
+pm2 list
+pm2 show hoggcountry-scout-chatgpt-app
+cd /home/forge/hoggcountry.on-forge.com/current
+npm run forge:scout-chatgpt-app:pm2
+pm2 save
 ```
 
 Smoke test:

@@ -1,7 +1,7 @@
 # Build & version config — submission readiness
 
-Snapshot of the native build config as prepped tonight (everything short of the
-account-bound signing/upload). Branch: `scout-redesign`.
+Snapshot of the native build config as of 2026-06-19 (everything short of the
+account-bound signing/upload). Branch: `submission-hardening-claude`.
 
 ## Shared identity
 - **Bundle ID:** `com.hoggcountry.trailassistant` (identical iOS + Android) ✓
@@ -17,13 +17,14 @@ account-bound signing/upload). Branch: `scout-redesign`.
 | TARGETED_DEVICE_FAMILY | `1` (iPhone-only) | ✓ set tonight (was `1,2`; reversible decision) |
 | NSLocationWhenInUseUsageDescription | present | ✓ |
 | ITSAppUsesNonExemptEncryption | `false` | ✓ set tonight |
-| PrivacyInfo.xcprivacy | created at `App/PrivacyInfo.xcprivacy` | ⚠ **must be added to the App target in Xcode** (Add Files → check "App") |
+| PrivacyInfo.xcprivacy | created at `App/PrivacyInfo.xcprivacy` | ✓ referenced by the App target resource build phase |
 | AppIcon (1024, no alpha) | brand emblem | ✓ generated |
 | Launch screen / splash | brand emblem | ✓ generated |
 | CODE_SIGN_STYLE | Automatic | — needs DEVELOPMENT_TEAM (Chris's account) |
 | DEVELOPMENT_TEAM | unset | ⛔ **Chris** (Apple Developer account) |
-| Shared scheme for archiving | none in `xcshareddata/xcschemes` | ⚠ in Xcode: Product → Scheme → Manage Schemes → check "Shared" for "App" |
+| Shared scheme for archiving | `xcshareddata/xcschemes/App.xcscheme` | ✓ `xcodebuild -list` shows the App scheme |
 | LiteRT-LM Swift package (so Scout AI runs on iOS) | not added | ⛔ **needs Xcode GUI** on Chris's Mac (see runbook `docs/runbooks/ios-scout-gemma-bridge.md`) |
+| Local Xcode platform | iOS 26.2 not installed on this Mac | ⛔ install from Xcode → Settings → Components before simulator/device builds |
 
 ## Android (`mobile/android`)
 | Setting | Value | Status |
@@ -31,7 +32,7 @@ account-bound signing/upload). Branch: `scout-redesign`.
 | applicationId | `com.hoggcountry.trailassistant` | ✓ |
 | versionCode | `1` | ✓ |
 | versionName | `1.0.0` | ✓ bumped tonight (was 0.1.0) |
-| minSdk / target / compile | 24 / 35 / 35 | ✓ meets Play's API-35 requirement |
+| minSdk / target / compile | 24 / 35 / 35 | ✓ meets the current published Play API-35 requirement; re-check API-36 timing before final upload |
 | Adaptive launcher icon + round + legacy | brand emblem, cream background | ✓ generated all densities |
 | Splash drawables | brand emblem | ✓ generated |
 | 16 KB native-lib alignment (LiteRT .so) | `p_align 0x4000` on all arm64 libs | ✓ **verified — passes Play's requirement** |
@@ -41,5 +42,5 @@ account-bound signing/upload). Branch: `scout-redesign`.
 | Location permission | absent | known gap — geolocation no-ops on Android; not a blocker (app works without it) |
 
 ## What this means
-- **iOS** archives once a team is set + the privacy manifest is added to the target + the scheme is shared. Scout AI ships as a graceful stub on iOS until the LiteRT Swift package is wired.
-- **Android** builds a signed release AAB as soon as an upload keystore exists; AI already runs.
+- **iOS** project-file blockers are cleared for the privacy manifest and shared scheme. It archives once Chris sets the Apple Developer team and this Mac has the needed iOS platform installed. Scout AI ships as a graceful stub on iOS until the LiteRT Swift package is wired.
+- **Android** should build an upload-ready release AAB as soon as an upload keystore exists. Gemma is wired in the native Android lane, but still needs physical-device smoke proof before submission.

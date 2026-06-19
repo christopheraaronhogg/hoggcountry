@@ -21,6 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const mobileDir = resolve(__dirname, '..');
 
 const MIN_NODE_MAJOR = 20; // Capacitor 7 baseline.
+const MIN_ANDROID_JAVA_MAJOR = 21; // Capacitor Android Gradle config compiles with Java 21.
 
 const args = process.argv.slice(2);
 const platformArg = readFlag(args, '--platform');
@@ -121,9 +122,18 @@ function checkAndroidToolchain() {
 	if (sdk && existsSync(sdk)) ok(`Android SDK found (${sdk})`);
 	else warn('ANDROID_HOME/ANDROID_SDK_ROOT not set. Install Android Studio and set it before building APKs.');
 
-	if (hasCommand('java')) ok('Java runtime found');
-	else if (existsSync(defaultAndroidStudioJbr())) ok(`Android Studio Java runtime found (${defaultAndroidStudioJbr()})`);
-	else warn('java not found on PATH. Android Studio ships a JDK; building from CLI needs one too.');
+	const activeJava = javaInfo();
+	const androidStudioJava = javaInfo(join(defaultAndroidStudioJbr(), 'bin', 'java'));
+	if (activeJava?.major && activeJava.major >= MIN_ANDROID_JAVA_MAJOR) {
+		ok(`Java ${activeJava.version} found (>= ${MIN_ANDROID_JAVA_MAJOR})`);
+	} else if (androidStudioJava?.major && androidStudioJava.major >= MIN_ANDROID_JAVA_MAJOR) {
+		const active = activeJava?.version ? `active Java is ${activeJava.version}` : 'java is not on PATH';
+		warn(`${active}; Android builds require Java ${MIN_ANDROID_JAVA_MAJOR}. The Android scripts will use ${defaultAndroidStudioJbr()}.`);
+	} else if (activeJava?.version) {
+		fail(`Java ${activeJava.version} found, but Android builds require Java ${MIN_ANDROID_JAVA_MAJOR}. Install Android Studio or set JAVA_HOME to a JDK ${MIN_ANDROID_JAVA_MAJOR}+ runtime.`);
+	} else {
+		fail(`java not found. Install Android Studio (ships JBR ${MIN_ANDROID_JAVA_MAJOR}+) or set JAVA_HOME to a JDK ${MIN_ANDROID_JAVA_MAJOR}+ runtime.`);
+	}
 }
 
 function reportFieldPackEndpoint() {
@@ -169,6 +179,16 @@ function defaultAndroidSdkPath() {
 
 function defaultAndroidStudioJbr() {
 	return '/Applications/Android Studio.app/Contents/jbr/Contents/Home';
+}
+
+function javaInfo(bin = 'java') {
+	const result = spawnSync(bin, ['-version'], { encoding: 'utf8' });
+	if (result.error || result.status !== 0) return null;
+	const output = `${result.stderr ?? ''}${result.stdout ?? ''}`;
+	const match = output.match(/version "([^"]+)"/);
+	if (!match) return null;
+	const major = Number(match[1].split('.')[0]);
+	return { version: match[1], major: Number.isFinite(major) ? major : null };
 }
 
 function resolveFieldPackUrl() {

@@ -14,15 +14,6 @@ export interface SourceReceipt {
 	verify?: string;
 }
 
-export type TerrainKind = 'climb' | 'descent' | 'ridge' | 'gap' | 'bald' | 'creek';
-
-export interface ElevationPoint {
-	mile: number;
-	elevation: number;
-	terrain?: TerrainKind;
-	label?: string;
-}
-
 export type ServiceKind =
 	| 'water'
 	| 'shelter'
@@ -64,17 +55,6 @@ export interface PackItem {
 	weightOz: number;
 	status: PackItemStatus;
 	note?: string;
-}
-
-export interface WeatherForecastDay {
-	dayLabel: string;
-	dateLabel: string;
-	highF: number;
-	lowF: number;
-	windMph: number;
-	precipPct: number;
-	risk: 'low' | 'medium' | 'high';
-	note: string;
 }
 
 // Source receipts — every "claim" in the UI should be able to point at one.
@@ -133,23 +113,6 @@ export const sourceReceipts: Record<string, SourceReceipt> = {
 		freshness: 'Logged 2h ago'
 	}
 };
-
-// Elevation profile for the Dad pilot window near the NY/CT line. Numbers are
-// illustrative UI terrain, not surveyed or routing-grade.
-export const elevationNext20: ElevationPoint[] = [
-	{ mile: 1438.0, elevation: 1220, terrain: 'ridge', label: 'You' },
-	{ mile: 1438.4, elevation: 1180, terrain: 'creek' },
-	{ mile: 1439.2, elevation: 1320, terrain: 'climb' },
-	{ mile: 1440.0, elevation: 1080, terrain: 'gap' },
-	{ mile: 1441.5, elevation: 1360, terrain: 'creek' },
-	{ mile: 1442.6, elevation: 1610, terrain: 'ridge', label: 'Morgan St.' },
-	{ mile: 1444.1, elevation: 1420, terrain: 'creek' },
-	{ mile: 1446.8, elevation: 1700, terrain: 'ridge' },
-	{ mile: 1449.0, elevation: 1340, terrain: 'gap' },
-	{ mile: 1452.2, elevation: 1520, terrain: 'ridge' },
-	{ mile: 1454.5, elevation: 980, terrain: 'creek', label: 'Swamp River' },
-	{ mile: 1458.0, elevation: 1260, terrain: 'ridge' }
-];
 
 export const nextServices: NextServiceMarker[] = [
 	{
@@ -258,110 +221,6 @@ export const packInventory: PackItem[] = [
 		note: 'Shipment details need current confirmation'
 	}
 ];
-
-export const weatherForecast: WeatherForecastDay[] = [
-	{
-		dayLabel: 'Today',
-		dateLabel: 'Jun 17',
-		highF: 82,
-		lowF: 63,
-		windMph: 9,
-		precipPct: 35,
-		risk: 'medium',
-		note: 'Humid. Scattered showers possible.'
-	},
-	{
-		dayLabel: 'Thu',
-		dateLabel: 'Jun 18',
-		highF: 80,
-		lowF: 61,
-		windMph: 8,
-		precipPct: 25,
-		risk: 'medium',
-		note: 'Warm. Verify water before committing.'
-	},
-	{
-		dayLabel: 'Fri',
-		dateLabel: 'Jun 19',
-		highF: 78,
-		lowF: 59,
-		windMph: 7,
-		precipPct: 20,
-		risk: 'low',
-		note: 'Lower precip risk. Still confirm sources.'
-	},
-	{
-		dayLabel: 'Sat',
-		dateLabel: 'Jun 20',
-		highF: 81,
-		lowF: 64,
-		windMph: 10,
-		precipPct: 40,
-		risk: 'medium',
-		note: 'Storm chance. Keep bailout margin.'
-	},
-	{
-		dayLabel: 'Sun',
-		dateLabel: 'Jun 21',
-		highF: 83,
-		lowF: 65,
-		windMph: 11,
-		precipPct: 55,
-		risk: 'medium',
-		note: 'Wet day. Mind footing on rocks.'
-	}
-];
-
-// Richer "today" weather for the Today HUD — current conditions + the day's arc.
-// Cached/illustrative (NWS-cached shape), same provenance posture as weatherForecast:
-// shown as a glance, with a plain-language "what it means" line for safety.
-export interface HourlyPrecip {
-	label: string; // '11a'
-	pct: number; // chance of precip
-	peak?: boolean; // the afternoon peak the hiker should plan around
-}
-
-export interface TodayWeather {
-	nowF: number;
-	summary: string; // 'Partly sunny'
-	highF: number;
-	lowF: number;
-	windMph: number;
-	windNote?: string; // 'calm'
-	precipPeakPct: number;
-	precipPeakLabel: string; // '~3p'
-	sunsetLabel: string; // '8:30p'
-	daylightLeftLabel: string; // '13h 16m left'
-	daylightFrac: number; // 0..1 of daylight remaining (for the bar)
-	meaning: string; // the plain-language "what it means" line
-	hourly: HourlyPrecip[];
-	source: string; // 'NWS · cached'
-}
-
-export const todayWeather: TodayWeather = {
-	nowF: 71,
-	summary: 'Partly sunny',
-	highF: 82,
-	lowF: 63,
-	windMph: 9,
-	windNote: 'calm',
-	precipPeakPct: 60,
-	precipPeakLabel: '~3p',
-	sunsetLabel: '8:30p',
-	daylightLeftLabel: '13h 16m left',
-	daylightFrac: 0.88,
-	meaning: 'Warm, dry morning — get the climb in before showers build after 2p, then 60% by mid-afternoon. Reach the shelter before the cells.',
-	hourly: [
-		{ label: '9a', pct: 5 },
-		{ label: '11a', pct: 10 },
-		{ label: '1p', pct: 30 },
-		{ label: '2p', pct: 45 },
-		{ label: '3p', pct: 60, peak: true },
-		{ label: '5p', pct: 55 },
-		{ label: '7p', pct: 20 }
-	],
-	source: 'NWS · cached'
-};
 
 export const packTotalCarriedLb = Number(
 	(

@@ -1,6 +1,6 @@
 # ☀️ Morning Brief — App Store + Google Play launch prep
 
-**Date:** 2026-06-18 (overnight)  ·  **Branch:** `scout-redesign`  ·  **Everything below is committed under `docs/launch/`.**
+**Date:** 2026-06-19 update  ·  **Branch:** `submission-hardening-claude`
 
 ## TL;DR
 Everything that does **not** require your Apple/Google accounts, payment, or signature is **done and committed**: icons, launch screens, store screenshots (both stores, real build), full listing copy, privacy policy + both data-disclosure forms, and the native build/version config. The consistency review passed after I fixed the last 2 issues.
@@ -35,7 +35,7 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 **Calls I made (reasonable defaults — override anytime):**
 - **iPhone-only** (dropped iPad) — avoids owing iPad screenshots + iPad layout testing. Reversible (`TARGETED_DEVICE_FAMILY`).
 - Privacy policy **effective date = June 18, 2026**.
-- Privacy/support email placeholder **privacy@hoggcountry.com** — *confirm this inbox exists/forwards.*
+- Privacy/support email published in launch docs and public pages: **privacy@hoggcountry.com**. Confirm the inbox forwards before final store submission.
 - **App icon** = the boar-ridge-sunset emblem (a clean v1 mark; the boar is stylized — say the word and I'll refine or swap in a pro icon).
 
 **Open decisions that need you (details in the docs, tagged `DECISION:`):**
@@ -51,7 +51,7 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 ### 🍎 Apple — *start #1 immediately*
 1. **Enroll in the Apple Developer Program** ($99/yr) → developer.apple.com. ⛔ **Long pole — approval can take 24–48h+.** *(If you already have a team, skip — just confirm you can sign in to App Store Connect.)*
 2. **App Store Connect:** create the app (bundle `com.hoggcountry.trailassistant`); paste name/subtitle/keywords/description from the Apple copy doc; upload the 6 iOS screenshots (raw or framed); set category + age rating; add the **privacy policy URL** + **support URL**; fill **App Privacy** from the disclosures doc; set **Sign-in required = No** and paste the **App Review notes** (`review-notes.md`).
-3. **On your Mac (with me, ~30 min):** open `mobile/ios` in Xcode → set **Signing Team** → **add `PrivacyInfo.xcprivacy` to the App target** → mark the **App scheme "Shared"** → (optional) wire the **LiteRT Swift package** for live iOS AI → **Product ▸ Archive ▸ upload**.
+3. **On your Mac (with me, ~30 min):** install the missing iOS platform in Xcode Settings → Components, open `mobile/ios` in Xcode, set **Signing Team**, optionally wire the **LiteRT Swift package** for live iOS AI, then **Product ▸ Archive ▸ upload**. `PrivacyInfo.xcprivacy` is already in the App target and the App scheme is already shared.
 4. **TestFlight → Dad:** add him as an **internal tester** = instant install on his iPhone, no review. (Submit for App Review only when you want public release.)
 
 ### 🤖 Google Play
@@ -65,7 +65,7 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 ---
 
 ## D) Things I can finish *with* your Mac/account (just ping me)
-- iOS: signing config, add the privacy manifest to the target, share the scheme, archive + upload.
+- iOS: signing config, install the missing local iOS platform, archive + upload.
 - **Wire the LiteRT Swift package so iOS Scout AI runs** (per `docs/runbooks/ios-scout-gemma-bridge.md`) — needs the Xcode GUI.
 - Generate the Android upload keystore + signed AAB.
 - On-device verification that Scout produces a real answer (Android now; iOS after wiring).
@@ -78,4 +78,4 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 - **Model hosted on Hugging Face** (third-party) — fine for v1; consider your own host before scaling.
 
 ## Boundaries (respected)
-Nothing submitted · no accounts created · no payment entered · **no merge to `main`** · no emails sent. All work is on `scout-redesign`.
+Nothing submitted · no accounts created · no payment entered · public `/support`, `/data`, and the Scout ChatGPT MCP proxy still require a deploy to `main` before they are live on hoggcountry.com.

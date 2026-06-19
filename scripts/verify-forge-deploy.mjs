@@ -301,7 +301,7 @@ if (options.includeMcp) {
       }
     }),
     validate(result) {
-      if (!/protocolVersion|serverInfo|scout-chatgpt-app/.test(result.text)) {
+      if (!/"name"\s*:\s*"scout-chatgpt-app"/.test(result.text)) {
         return 'expected MCP initialize response from Scout ChatGPT app';
       }
       return null;

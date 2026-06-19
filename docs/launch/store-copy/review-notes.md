@@ -19,9 +19,9 @@ the iOS AI state, and the foreground service. Paste into:
 >
 > **Location:** used **on-device only** to place the hiker on the trail map. The only value ever transmitted is an **approximate trail-mile** (not GPS coordinates), and only when the user chooses to submit an optional trail-condition report. There is no background location use and no tracking.
 >
-> **Data & privacy:** no accounts, no ads, no analytics/tracking SDKs, nothing sold. The King James Bible text is public domain (Pure Cambridge Edition), bundled offline. Full details: [privacy policy URL].
+> **Data & privacy:** no accounts, no ads, no analytics/tracking SDKs, nothing sold. The King James Bible text is public domain (Pure Cambridge Edition), bundled offline. Full details: https://hoggcountry.com/privacy.
 >
-> Built by a small family team for the developer's father's 2026 thru-hike. Questions: [support email].
+> Built by a small family team for the developer's father's 2026 thru-hike. Questions: privacy@hoggcountry.com.
 
 ---
 
@@ -37,8 +37,8 @@ the iOS AI state, and the foreground service. Paste into:
 >
 > **Foreground service (`dataSync`):** used **solely** for that user-initiated model download. A multi-GB download needs to continue with visible progress and survive the app being backgrounded or killed, so it runs as a short-lived, user-initiated `dataSync` foreground service with a progress notification. It does not run in the background otherwise. (See the Foreground Service declaration.)
 >
-> **Data:** the only data that leaves the device is an optional, user-initiated trail-condition report — an approximate trail-mile (not GPS coordinates) plus a note the user types — sent to our own real-time trail service. No accounts, no ads, no analytics, nothing sold. Privacy policy: [privacy policy URL].
+> **Data:** the only data that leaves the device is an optional, user-initiated trail-condition report — an approximate trail-mile (not GPS coordinates) plus a note the user types — sent to our own real-time trail service. No accounts, no ads, no analytics, nothing sold. Privacy policy: https://hoggcountry.com/privacy.
 
 ---
 
-**DECISION:** fill `[support email]` and `[privacy policy URL]` once confirmed (see morning brief). Remove the iOS-stub paragraph if the LiteRT Swift package is wired before submission.
+Remove the iOS-stub paragraph if the LiteRT Swift package is wired before submission.

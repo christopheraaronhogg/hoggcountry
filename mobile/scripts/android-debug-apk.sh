@@ -21,10 +21,20 @@ cd "$(dirname "$0")/.."
 mobile_dir="$(pwd)"
 
 # --- Wire the toolchain env from known macOS locations ----------------------
+java_major() {
+	"$1" -version 2>&1 | awk -F\" '/version/ { split($2, parts, "."); print parts[1]; exit }'
+}
+
 jbr="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-if [ -z "${JAVA_HOME:-}" ] && [ -x "$jbr/bin/java" ]; then
-	export JAVA_HOME="$jbr"
-	export PATH="$JAVA_HOME/bin:$PATH"
+if [ -x "$jbr/bin/java" ]; then
+	current_java_major=""
+	if command -v java >/dev/null 2>&1; then
+		current_java_major="$(java_major "$(command -v java)" || true)"
+	fi
+	if [ -z "${JAVA_HOME:-}" ] || [ -z "$current_java_major" ] || [ "$current_java_major" -lt 21 ]; then
+		export JAVA_HOME="$jbr"
+		export PATH="$JAVA_HOME/bin:$PATH"
+	fi
 fi
 if [ -z "${ANDROID_HOME:-}" ] && [ -d "$HOME/Library/Android/sdk" ]; then
 	export ANDROID_HOME="$HOME/Library/Android/sdk"
