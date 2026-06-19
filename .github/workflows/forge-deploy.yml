@@ -165,6 +165,10 @@ jobs:
           update_env_var APP_BUILD_SHA "$SHA"
           update_env_var APP_BUILD_BRANCH "main"
           update_env_var APP_BUILD_TIME "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          update_env_var SCOUT_CHATGPT_APP_PROXY_ENABLED "true"
+          update_env_var SCOUT_CHATGPT_APP_PROXY_ORIGIN "http://127.0.0.1:8788"
+          update_env_var SCOUT_CHATGPT_APP_PORT "8788"
+          update_env_var SCOUT_CHATGPT_APP_DOMAIN "https://hoggcountry.on-forge.com"
 
           ln -nfs "$REL" "$APP/current"
           cd "$APP/current"
@@ -195,7 +199,7 @@ jobs:
           REMOTE
 
       - name: Verify Forge deploy
-        run: node scripts/verify-forge-deploy.mjs --base-url "${FORGE_BASE_URL:-https://hoggcountry.on-forge.com}" --expected-sha "${GITHUB_SHA}"
+        run: node scripts/verify-forge-deploy.mjs --include-mcp --base-url "${FORGE_BASE_URL:-https://hoggcountry.on-forge.com}" --expected-sha "${GITHUB_SHA}"
         env:
           FORGE_BASE_URL: ${{ vars.FORGE_BASE_URL }}
           GITHUB_SHA: ${{ github.sha }}
