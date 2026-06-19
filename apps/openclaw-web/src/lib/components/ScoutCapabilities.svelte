@@ -65,7 +65,7 @@
   <div class="caps-inner">
     <header class="caps-head">
       <p class="caps-kicker">What Scout does on trail</p>
-      <h2 id="scout-caps-title">A field cockpit, not a chatbot.</h2>
+      <h2 id="scout-caps-title">A trail dashboard, not a chatbot.</h2>
       <p class="caps-lede">
         Open Scout and you don't get a blinking cursor. You get the next 20 miles, the next water, the next bed, the
         weather that matters, and a pack check — with the work shown.

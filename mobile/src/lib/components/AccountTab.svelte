@@ -3,7 +3,7 @@
 	import PackStatus from './PackStatus.svelte';
 	import OfflineStatus from './OfflineStatus.svelte';
 	import SourceChip from './SourceChip.svelte';
-	import { sourceReceipts, offlineModel } from './cockpitData';
+	import { sourceReceipts, offlineModel } from './fieldData';
 
 	function fmtBytes(n: number | undefined): string {
 		if (!n || n < 0) return '—';

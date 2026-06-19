@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { ElevationPoint } from './cockpitData';
-	import { elevationNext20 } from './cockpitData';
+	import type { ElevationPoint } from './fieldData';
+	import { elevationNext20 } from './fieldData';
 
 	let {
 		points = elevationNext20,

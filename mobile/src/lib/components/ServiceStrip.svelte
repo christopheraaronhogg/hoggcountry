@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { NextServiceMarker } from './cockpitData';
-	import { nextServices } from './cockpitData';
+	import type { NextServiceMarker } from './fieldData';
+	import { nextServices } from './fieldData';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
 
 	let {

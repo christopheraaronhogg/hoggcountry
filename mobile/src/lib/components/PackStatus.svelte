@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { packInventory, packTotalCarriedLb, packMissingCount } from './cockpitData';
+	import { packInventory, packTotalCarriedLb, packMissingCount } from './fieldData';
 
 	const carried = packInventory.filter((item) => item.status === 'carried');
 	const flagged = packInventory.filter(

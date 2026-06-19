@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { SourceConfidence } from './cockpitData';
-	import { sourceConfidenceLabels } from './cockpitData';
+	import type { SourceConfidence } from './fieldData';
+	import { sourceConfidenceLabels } from './fieldData';
 
 	let {
 		confidence,

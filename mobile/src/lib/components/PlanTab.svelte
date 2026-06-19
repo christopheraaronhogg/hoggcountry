@@ -5,7 +5,7 @@
 	import WeatherStrip from './WeatherStrip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
 	import SourceChip from './SourceChip.svelte';
-	import { itineraryConfidence, sourceReceipts } from './cockpitData';
+	import { itineraryConfidence, sourceReceipts } from './fieldData';
 
 	const totalMiles = itinerary.reduce((total, day) => total + day.mileage, 0);
 	const totalVert = itinerary.reduce((total, day) => total + day.elevationGain, 0);

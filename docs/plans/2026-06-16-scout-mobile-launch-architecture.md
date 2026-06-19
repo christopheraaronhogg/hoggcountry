@@ -40,7 +40,7 @@ The homepage should become a live demo and sales path:
 
 ### Mobile App
 
-The app should be a dedicated field cockpit:
+The app should be a dedicated field dashboard:
 
 - Today: readiness, target miles, current mile, next water/shelter/town/road, weather risk, elevation/difficulty for the next 20 miles, offline pack status.
 - Scout: on-device first chat with source receipts and tool-call style status, able to answer with saved trail data when offline.

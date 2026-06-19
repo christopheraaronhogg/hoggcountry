@@ -8,7 +8,7 @@
 	import ServiceStrip from './ServiceStrip.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
-	import { sourceReceipts, packMissingCount, packTotalCarriedLb } from './cockpitData';
+	import { sourceReceipts, packMissingCount, packTotalCarriedLb } from './fieldData';
 
 	function recommendationLabel() {
 		const labels = {
@@ -64,16 +64,16 @@
 </script>
 
 <div class="section-stack">
-	<!-- Cockpit hero: the single screen that answers "what now". -->
-	<section class="cockpit card">
-		<div class="cockpit-top">
+	<!-- Field overview: the single screen that answers "what now". -->
+	<section class="field-panel card">
+		<div class="field-panel-top">
 			<div>
 				<p class="eyebrow">Today · {recommendationLabel()}</p>
 				<h2>
 					<span class="big-number tabular">{trailAssistant.currentDayMiles.toFixed(1)}</span>
 					<span class="of-target tabular">/ {trailAssistant.readiness.targetMiles.toFixed(1)} mi</span>
 				</h2>
-				<p class="cockpit-detail">{recommendationDetail()}</p>
+				<p class="field-panel-detail">{recommendationDetail()}</p>
 			</div>
 
 			<div class="readiness-dial" aria-label="Readiness score">
@@ -91,19 +91,19 @@
 			</div>
 		</div>
 
-		<div class="cockpit-strip">
-			<button class="cockpit-cell cell-button" type="button" data-kind="water" aria-label="Next water source">
+		<div class="field-panel-strip">
+			<button class="field-panel-cell cell-button" type="button" data-kind="water" aria-label="Next water source">
 				<span class="cell-eyebrow">Next water</span>
 				<strong>{nextWaterDistance ? `${nextWaterDistance} mi` : '—'}</strong>
 				<span class="cell-detail">{nextWater?.name ?? waterSources[0].name}</span>
 			</button>
-			<button class="cockpit-cell cell-button" type="button" data-kind="shelter" aria-label="Next shelter">
+			<button class="field-panel-cell cell-button" type="button" data-kind="shelter" aria-label="Next shelter">
 				<span class="cell-eyebrow">Next shelter</span>
 				<strong>{nextShelterDistance ? `${nextShelterDistance} mi` : '—'}</strong>
 				<span class="cell-detail">{nextShelter?.name ?? 'No shelter on file'}</span>
 			</button>
 			<button
-				class="cockpit-cell cell-button"
+				class="field-panel-cell cell-button"
 				type="button"
 				data-kind="town"
 				onclick={() => (trailAssistant.activeTab = 'Town')}
@@ -114,7 +114,7 @@
 				<span class="cell-detail">{nextTown?.name ?? '—'}</span>
 			</button>
 			<button
-				class="cockpit-cell cell-button"
+				class="field-panel-cell cell-button"
 				type="button"
 				data-kind="safety"
 				onclick={() => (trailAssistant.activeTab = 'Safety')}
@@ -128,7 +128,7 @@
 			</button>
 		</div>
 
-		<div class="cockpit-actions">
+		<div class="field-panel-actions">
 			<button class="cta-button" onclick={() => (trailAssistant.activeTab = 'Coach')}>
 				Ask Scout about today
 			</button>
@@ -214,7 +214,7 @@
 </div>
 
 <style>
-	.cockpit {
+	.field-panel {
 		padding: 14px 14px 16px;
 		display: grid;
 		gap: 12px;
@@ -223,14 +223,14 @@
 			linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(247, 240, 228, 0.96));
 	}
 
-	.cockpit-top {
+	.field-panel-top {
 		display: grid;
 		grid-template-columns: 1fr auto;
 		gap: 12px;
 		align-items: start;
 	}
 
-	.cockpit-top h2 {
+	.field-panel-top h2 {
 		display: flex;
 		align-items: baseline;
 		gap: 8px;
@@ -251,7 +251,7 @@
 		color: var(--muted);
 	}
 
-	.cockpit-detail {
+	.field-panel-detail {
 		font-size: 0.84rem;
 		color: var(--muted);
 	}
@@ -334,14 +334,14 @@
 		white-space: nowrap;
 	}
 
-	.cockpit-strip {
+	.field-panel-strip {
 		display: grid;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: 6px;
 		margin-top: 6px;
 	}
 
-	.cockpit-cell {
+	.field-panel-cell {
 		display: grid;
 		gap: 2px;
 		padding: 9px 6px 10px;
@@ -353,20 +353,20 @@
 		text-align: left;
 	}
 
-	.cockpit-cell.cell-button {
+	.field-panel-cell.cell-button {
 		font: inherit;
 	}
 
-	.cockpit-cell[data-kind='water'] {
+	.field-panel-cell[data-kind='water'] {
 		background: rgba(95, 128, 144, 0.1);
 	}
-	.cockpit-cell[data-kind='shelter'] {
+	.field-panel-cell[data-kind='shelter'] {
 		background: rgba(170, 104, 67, 0.1);
 	}
-	.cockpit-cell[data-kind='town'] {
+	.field-panel-cell[data-kind='town'] {
 		background: rgba(106, 132, 95, 0.12);
 	}
-	.cockpit-cell[data-kind='safety'] {
+	.field-panel-cell[data-kind='safety'] {
 		background: rgba(200, 167, 122, 0.18);
 	}
 
@@ -378,7 +378,7 @@
 		color: var(--muted);
 	}
 
-	.cockpit-cell strong {
+	.field-panel-cell strong {
 		font-size: 1rem;
 		font-weight: 800;
 		color: var(--ink);
@@ -394,13 +394,13 @@
 		text-overflow: ellipsis;
 	}
 
-	.cockpit-actions {
+	.field-panel-actions {
 		display: grid;
 		grid-template-columns: 1.4fr 1fr;
 		gap: 8px;
 	}
 
-	.cockpit-actions .secondary-button {
+	.field-panel-actions .secondary-button {
 		min-height: 44px;
 	}
 

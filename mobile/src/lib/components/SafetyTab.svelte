@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import SourceChip from './SourceChip.svelte';
-	import { sourceReceipts } from './cockpitData';
+	import { sourceReceipts } from './fieldData';
 
 	function send(status: 'safe' | 'delayed' | 'need-help') {
 		const notes = {
