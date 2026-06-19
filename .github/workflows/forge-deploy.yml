@@ -24,7 +24,9 @@ jobs:
         run: npm ci
 
       - name: Build Scout web for Forge
-        run: SCOUT_WEB_ADAPTER=node npm run build -w @hoggcountry/scout-web
+        run: |
+          npm run build -w @hoggcountry/scout-chatgpt-app
+          SCOUT_WEB_ADAPTER=node npm run build -w @hoggcountry/scout-web
 
       - name: Set up SSH
         env:

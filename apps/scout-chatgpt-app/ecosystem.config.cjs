@@ -50,8 +50,7 @@ module.exports = {
     {
       name: envValue('SCOUT_CHATGPT_APP_PM2_NAME', 'hoggcountry-scout-chatgpt-app'),
       cwd: root,
-      script: 'node_modules/.bin/tsx',
-      args: 'apps/scout-chatgpt-app/src/server.ts',
+      script: 'apps/scout-chatgpt-app/build/server.js',
       exec_mode: 'fork',
       instances: 1,
       autorestart: true,
