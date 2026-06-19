@@ -71,7 +71,7 @@
   }
 </script>
 
-<div class="cockpit" class:mounted>
+<div class="dashboard" class:mounted>
   <!-- Ambient background -->
   <div class="ambient-glow"></div>
 
@@ -121,7 +121,7 @@
     <!-- QUICK ACCESS: The Hiker's Toolkit -->
     <section class="instruments">
       <div class="section-header">
-        <h2 class="section-title">THE HIKER'S COCKPIT</h2>
+        <h2 class="section-title">THE HIKER'S TOOLKIT</h2>
       </div>
       <div class="quick-grid">
         {#each quickAccess as card}
@@ -170,7 +170,7 @@
 </div>
 
 <style>
-  .cockpit {
+  .dashboard {
     --bg: #0a0c10;
     --card: #14171d;
     --accent: #a6b589;
@@ -190,7 +190,7 @@
     transition: opacity 0.5s ease;
   }
 
-  .cockpit.mounted {
+  .dashboard.mounted {
     opacity: 1;
   }
 

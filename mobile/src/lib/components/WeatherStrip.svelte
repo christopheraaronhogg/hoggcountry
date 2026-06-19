@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { weatherForecast } from './cockpitData';
+	import { weatherForecast } from './fieldData';
 </script>
 
 <div class="weather-strip" role="list" aria-label="5-day forecast">

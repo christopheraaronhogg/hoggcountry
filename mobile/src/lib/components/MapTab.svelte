@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import { elevationNext20, type ElevationPoint } from './cockpitData';
+	import { elevationNext20, type ElevationPoint } from './fieldData';
 	import Icon, { type IconName } from './Icon.svelte';
 
 	// Trail-ribbon map (matches the d1 "Scout Hub" bake-off mockup): a stylized

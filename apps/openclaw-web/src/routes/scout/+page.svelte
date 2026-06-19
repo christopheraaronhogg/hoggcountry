@@ -36,14 +36,14 @@
     content="Scout is a field-grade Appalachian Trail assistant on your phone — grounded in real calibrated trail miles, source-first from your own documents, offline-aware, and honest about what to verify."
   />
   <link rel="canonical" href="https://hoggcountry.com/scout" />
-  <meta property="og:title" content="Scout — a field cockpit, not a chatbot" />
+  <meta property="og:title" content="Scout — a trail dashboard, not a chatbot" />
   <meta property="og:description" content="Grounded in real AT trail data, built from your own sources, useful offline, and honest about what to verify before you rely on it." />
 </svelte:head>
 
 <div class="scout">
   <header class="hero">
     <p class="kicker">Scout · The AT app</p>
-    <h1>A field cockpit, not a chatbot.</h1>
+    <h1>A trail dashboard, not a chatbot.</h1>
     <p class="lede">
       Scout plans your days, watches the weather, finds your next water and shelter, and turns your own documents into
       trail-ready decisions — grounded in the same calibrated Appalachian Trail data behind Dad's live map, and honest

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import { packMissingCount, packTotalCarriedLb, todayWeather, elevationNext20 } from './cockpitData';
+	import { packMissingCount, packTotalCarriedLb, todayWeather, elevationNext20 } from './fieldData';
 	import Icon, { type IconName } from './Icon.svelte';
 
 	// Today = the hiker's day, now → camp (M1 "Day Timeline"). No readiness score —

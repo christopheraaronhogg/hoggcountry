@@ -7,8 +7,8 @@
 		ScoutConfidence,
 		SourceReceipt as RuntimeSourceReceipt
 	} from '$lib/scout';
-	import { sourceReceipts } from './cockpitData';
-	import type { SourceReceipt as UiSourceReceipt } from './cockpitData';
+	import { sourceReceipts } from './fieldData';
+	import type { SourceReceipt as UiSourceReceipt } from './fieldData';
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
 

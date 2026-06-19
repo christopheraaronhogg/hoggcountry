@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { offlineModel } from './cockpitData';
+	import { offlineModel } from './fieldData';
 	import { trailAssistant } from '$lib/trailState.svelte';
 
 	const statusLabel = {
