@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Trail Assistant — Privacy Policy | Hogg Country</title>
+<meta name="description" content="Privacy policy for the Trail Assistant app by Hogg Country. Offline-first, on-device AI, no accounts, no ads, no tracking." />
+<style>
+  :root {
+    --bg: #f5f2e8;
+    --fg: #333333;
+    --pine: #4d594a;
+    --alpine: #a6b589;
+    --marker: #f0e000;
+    --terra: #d97706;
+    --muted: #4a5448;
+    --card: #ffffff;
+    --border: #e6e1d4;
+    --ink: #1f2937;
+    --link: #0a4fa6;
+    --link-hover: #093d7f;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    color: var(--fg);
+    background: var(--bg);
+    font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .wrap { width: min(760px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2.5rem 0 4rem; }
+  header.masthead {
+    border-bottom: 3px solid var(--pine);
+    padding-bottom: 1.25rem;
+    margin-bottom: 2rem;
+  }
+  .kicker {
+    font-family: Oswald, "Arial Narrow", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    color: var(--pine);
+    margin: 0 0 0.4rem;
+  }
+  h1 {
+    font-family: Oswald, Impact, "Arial Narrow Bold", sans-serif;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    line-height: 1.1;
+    margin: 0 0 0.6rem;
+  }
+  .meta { font-size: 0.9rem; color: var(--muted); margin: 0; }
+  .meta code {
+    background: #efe9d8; padding: 0.05rem 0.4rem; border-radius: 4px;
+    font-size: 0.85em; color: var(--pine);
+  }
+  h2 {
+    font-family: Oswald, Impact, "Arial Narrow Bold", sans-serif;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+    font-size: 1.4rem;
+    margin: 2.6rem 0 0.8rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--border);
+  }
+  h2:first-of-type { border-top: none; }
+  h3 {
+    font-family: Oswald, "Arial Narrow Bold", sans-serif;
+    color: var(--pine);
+    font-size: 1.08rem;
+    margin: 1.6rem 0 0.5rem;
+  }
+  p { margin: 0.7rem 0; }
+  a { color: var(--link); text-decoration: underline; text-underline-offset: 0.16rem; }
+  a:hover { color: var(--link-hover); }
+  ul { margin: 0.6rem 0 0.9rem; padding-left: 1.3rem; }
+  li { margin: 0.4rem 0; }
+  strong { color: var(--ink); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #efe9d8; padding: 0.05rem 0.35rem; border-radius: 4px; font-size: 0.88em;
+  }
+  .lead {
+    font-size: 1.08rem;
+    color: var(--muted);
+  }
+  .tldr {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--alpine);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    margin: 1.6rem 0;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.05);
+  }
+  .tldr h2 { border-top: none; margin-top: 0; font-size: 1.15rem; }
+  .tldr ul { margin-bottom: 0; }
+  .note {
+    background: #fbf6ea;
+    border: 1px solid #ecd9b0;
+    border-left: 5px solid var(--terra);
+    border-radius: 8px;
+    padding: 0.85rem 1.1rem;
+    margin: 1.2rem 0;
+    font-size: 0.96rem;
+  }
+  .note .tag {
+    display: inline-block;
+    font-family: Oswald, "Arial Narrow", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    color: var(--terra);
+    margin-bottom: 0.2rem;
+  }
+  .decision {
+    font-style: italic;
+    color: var(--terra);
+    font-size: 0.92em;
+  }
+  .table-wrap { overflow-x: auto; margin: 1rem 0 1.2rem; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.94rem;
+  }
+  th, td { text-align: left; padding: 0.7rem 0.9rem; vertical-align: top; border-bottom: 1px solid var(--border); }
+  th {
+    font-family: Oswald, "Arial Narrow", sans-serif;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: var(--pine);
+    font-weight: 500;
+  }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: #faf8f0; }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.4rem;
+    border-top: 3px solid var(--pine);
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+  .signoff {
+    font-family: Caveat, "Comic Sans MS", cursive;
+    font-size: 1.35rem;
+    color: var(--pine);
+    margin-top: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="kicker">Hogg Country</p>
+    <h1>Trail Assistant — Privacy Policy</h1>
+    <p class="meta">
+      Effective date: <strong>June 18, 2026</strong> &nbsp;·&nbsp;
+      iOS &amp; Android &nbsp;·&nbsp; bundle ID <code>com.hoggcountry.trailassistant</code>
+    </p>
+  </header>
+
+  <p class="lead">Trail Assistant is built to be a quiet, trustworthy companion on the Appalachian Trail. It was made with love for one specific 2026 thru-hiker — the developer's dad — and for other hikers walking the same miles. The whole app is designed around one idea: <strong>your phone is yours.</strong> Almost everything happens on the device in your pocket. This policy explains, plainly and honestly, the very small amount of data that ever leaves it, and the much larger amount that never does.</p>
+
+  <p>We don't believe in burying the truth in legal boilerplate, so here it is up front.</p>
+
+  <div class="tldr">
+    <h2>The short version</h2>
+    <ul>
+      <li><strong>No accounts. No login.</strong> You don't give us your name, email, or phone number to use the app.</li>
+      <li><strong>No ads. No analytics. No tracking.</strong> No advertising IDs, no third-party analytics or tracking SDKs, and no data is ever sold, rented, or used to profile you.</li>
+      <li><strong>The AI runs on your phone.</strong> Scout — the trail and scripture assistant — runs Google's Gemma model <em>locally</em> on your device via LiteRT. <strong>No question, prompt, or answer is ever sent to any server or AI cloud.</strong></li>
+      <li><strong>The only data that ever leaves your device</strong> is what you deliberately choose to send: when you tap <strong>Report Trail Conditions</strong>, the app sends a condition chip and/or a short note you typed, your optional trail name, an <strong>approximate</strong> position along the trail, and a timestamp — so other hikers benefit from current conditions. It does <strong>not</strong> send your GPS coordinates.</li>
+      <li><strong>Everything else stays on the device</strong> — your journal, gear list, settings, your on-phone check-in log, and all AI inference.</li>
+      <li><strong>One large download, once.</strong> On first run, <em>if you choose to enable on-device AI</em>, the app downloads the Gemma model (~2.6&nbsp;GB) one time from Hugging Face. The app is fully usable before and without it.</li>
+      <li><strong>The Bible is bundled.</strong> The King James Bible (Pure Cambridge Edition) is public domain and ships inside the app — reading and searching it requires no network and sends nothing anywhere.</li>
+    </ul>
+  </div>
+
+  <h2>1. Who we are</h2>
+  <p>Trail Assistant is published by <strong>Hogg Country</strong>, an independent project centered on the 2026 Appalachian Trail thru-hike. We are responsible for the small amount of data described below.</p>
+  <ul>
+    <li><strong>Website:</strong> <a href="https://hoggcountry.com">hoggcountry.com</a></li>
+    <li><strong>Privacy contact:</strong> <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a> <span class="decision">(DECISION: confirm this is the address we want published)</span></li>
+  </ul>
+  <p>If you have a question about your privacy that this policy doesn't answer, email the address above and a real person will read it.</p>
+
+  <h2>2. What data is processed, and where</h2>
+  <p>We've split this into two buckets, because the difference is the whole point of the app.</p>
+
+  <h3>A. Data that stays entirely on your device (never sent to us or anyone)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>What</th><th>Where it lives</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Your journal entries</strong></td>
+          <td>On-device storage only</td>
+          <td>We never see them. They are not backed up to our servers.</td>
+        </tr>
+        <tr>
+          <td><strong>Your gear loadout</strong> (items, weights, what's packed)</td>
+          <td>On-device storage only</td>
+          <td>Stays on your phone.</td>
+        </tr>
+        <tr>
+          <td><strong>App settings &amp; preferences</strong></td>
+          <td>On-device storage only</td>
+          <td>Includes things like your Wi-Fi-only download preference.</td>
+        </tr>
+        <tr>
+          <td><strong>All Scout AI activity</strong> — every question you ask and every answer Scout gives, for both trail and scripture questions</td>
+          <td>Processed on-device by the local Gemma model</td>
+          <td><strong>Nothing about your AI use is transmitted anywhere.</strong> No prompt, question, answer, or usage record leaves the phone.</td>
+        </tr>
+        <tr>
+          <td><strong>Bible reading &amp; verse search</strong></td>
+          <td>Bundled King James Bible, read locally</td>
+          <td>No network used; nothing sent.</td>
+        </tr>
+        <tr>
+          <td><strong>Your "check-in" / "I'm safe" status</strong></td>
+          <td>On-device log only</td>
+          <td>In this version, a check-in is recorded <strong>on your phone only</strong>. It does <strong>not</strong> transmit. We do not offer "let your family see you're okay" as a shipping feature.</td>
+        </tr>
+        <tr>
+          <td><strong>Your position</strong> on the Today, Map, and elevation views</td>
+          <td>Computed and used on-device to place you on the trail ribbon</td>
+          <td>If your device shares its location with the app, that location is used <strong>on the device</strong> to figure out where you are on the trail. Your raw GPS coordinates are <strong>never</strong> transmitted or stored off the device.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>We cannot read, recover, or sell any of this. It lives on your phone. If you delete the app, this data is deleted with it.</p>
+
+  <h3>B. The only data that leaves your device — optional and user-initiated</h3>
+  <p>There is exactly <strong>one</strong> path by which data goes from your phone to us, and it never happens automatically:</p>
+  <p><strong>When you choose to Report Trail Conditions</strong> (also called <em>Trail Pulse</em>) while online, the app sends the following to our real-time trail service:</p>
+  <ul>
+    <li>a <strong>condition chip</strong> (e.g. "Water," "Rocks") and/or a <strong>short note</strong> you typed;</li>
+    <li>your <strong>trail name</strong>, if you chose to provide one (optional);</li>
+    <li>an <strong>approximate position along the trail</strong> — a "snapped trail-mile" (for example, mile&nbsp;1,438.4), <strong>not</strong> your latitude/longitude and <strong>not</strong> your precise GPS location; and</li>
+    <li>a <strong>timestamp</strong> of when you observed the condition.</li>
+  </ul>
+  <p><strong>Why:</strong> so that other hikers nearby on the trail benefit from current conditions — water status, hazards, rough terrain, and the like.</p>
+  <p><strong>Where it goes:</strong> to <strong>SpacetimeDB</strong>, a real-time database service that we operate as our own backend, over an <strong>encrypted</strong> connection. It is not shared with advertising or analytics companies, and it is not sold.</p>
+  <p><strong>It's your choice every time.</strong> Nothing is sent unless <em>you</em> tap to send a report. If you never send one, this data never leaves your phone. There is no background location tracking and no automatic reporting.</p>
+
+  <div class="note">
+    <span class="tag">How your position is shared</span>
+    <p>Your phone <em>may</em> read precise GPS <strong>on the device</strong> in order to place you on the map and calculate the trail-mile. But only that derived <strong>trail-mile</strong> — an approximate point along a one-dimensional trail — is ever included in a report. Your exact coordinates stay on the phone.</p>
+  </div>
+
+  <div class="note">
+    <span class="tag">Android build note — honest disclosure</span>
+    <p>The current <strong>Android</strong> build does not request location permission, so on Android the trail-mile is derived <strong>without</strong> a live GPS fix. Precise GPS is not captured on Android in this build. We're flagging this openly and will keep the policy accurate as the build evolves.</p>
+  </div>
+
+  <h2>3. The one-time model download (Hugging Face)</h2>
+  <p>Scout's intelligence comes from Google's <strong>Gemma</strong> model, which runs <strong>on your device</strong> via LiteRT. To make that possible, the model file itself (~2.6&nbsp;GB) is downloaded <strong>once</strong>, on first run, <strong>only if you choose to enable on-device AI</strong>:</p>
+  <ul>
+    <li>The download is <strong>user-initiated</strong> — you decide to start it.</li>
+    <li>By default it happens <strong>only over Wi-Fi</strong>, so it won't burn your cellular data.</li>
+    <li>The file is <strong>checksum-verified</strong> after download to confirm it arrived intact.</li>
+    <li>It is downloaded from <strong>Hugging Face</strong> (<a href="https://huggingface.co">huggingface.co</a>), a third-party model host. When your device fetches the file, Hugging Face necessarily receives standard network request information (such as your IP address) as part of delivering the file — the same as any file download from the internet. <strong>We do not send Hugging Face any of your personal data, questions, or content,</strong> and Hugging Face's handling of that request is governed by their own privacy policy.</li>
+    <li>The app is <strong>fully usable before and without</strong> this download. You can use the day timeline, map, journal, gear, Bible reading and search, and field guide without ever downloading the model.</li>
+  </ul>
+  <p>After the model is on your device, Scout runs entirely offline. Asking Scout a question after that point involves <strong>no network connection at all</strong>.</p>
+
+  <div class="note">
+    <span class="tag">On-device AI availability — honest disclosure</span>
+    <p>On Android, the on-device AI is fully wired. On <strong>iOS</strong>, the very first build may ship the AI engine as a graceful "model unavailable" state until the native component is fully connected. Where that's the case, Scout will tell you clearly rather than pretending to work. This doesn't change the privacy promise: when the AI <em>does</em> run, it runs on your device and sends nothing out.</p>
+  </div>
+
+  <h2>4. What we deliberately do <em>not</em> do</h2>
+  <p>To be completely clear, Trail Assistant does <strong>not</strong>:</p>
+  <ul>
+    <li>require or offer <strong>user accounts or logins</strong>;</li>
+    <li>show <strong>advertising</strong> of any kind;</li>
+    <li>include <strong>third-party analytics, tracking, or telemetry SDKs</strong>. (Firebase is <strong>not</strong> active in this app — the <code>google-services.json</code> configuration file is absent, which we have verified — so no Firebase data collection occurs.)</li>
+    <li>use <strong>advertising identifiers</strong> (IDFA, GAID) or build any advertising / cross-app tracking profile;</li>
+    <li>transmit your <strong>precise GPS coordinates</strong> off the device — only an approximate trail-mile is shared, and only when you send a report;</li>
+    <li><strong>sell, rent, or trade</strong> your data, ever;</li>
+    <li>send your <strong>AI prompts or answers</strong> to any server or cloud;</li>
+    <li>run <strong>remote / push notifications</strong>. The only notifications are <strong>local</strong> ones on your own device (for example, model-download progress). Nothing is pushed from a server.</li>
+  </ul>
+
+  <h2>5. Notifications</h2>
+  <p>The app uses <strong>local notifications only</strong> — generated on your device, for example to show progress while the Gemma model downloads. There is <strong>no remote push notification</strong> service active, which means no third party is given a device token to message you.</p>
+
+  <h2>6. Children's privacy</h2>
+  <p>Trail Assistant is a general-audience hiking and scripture companion. It is <strong>not directed at children under 13</strong>, and we do not knowingly collect personal information from children under 13. Because the app has no accounts and collects no personal data except the optional, user-initiated trail-condition report described above, there is effectively no profile of any user to collect. If you believe a child has submitted a trail report and you'd like it removed, contact us at <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a> <span class="decision">(DECISION: confirm address)</span> and we'll delete it.</p>
+
+  <h2>7. Data retention and how to request deletion</h2>
+  <p><strong>On-device data</strong> (journal, gear, settings, AI activity, Bible data, your on-phone check-in log) is retained on <strong>your</strong> device for as long as you keep the app. You can clear it at any time by deleting your entries within the app or by uninstalling the app — uninstalling removes this data from your phone. We never had a copy, so there is nothing for us to delete on our side.</p>
+  <p><strong>Trail-condition reports</strong> (the chip, note, optional trail name, approximate trail-mile, and timestamp you chose to send) are stored on our real-time trail service so that current conditions can be shared with other hikers. These reports are intended to be timely and are aged out as they become stale. To request access to, correction of, or <strong>deletion</strong> of reports you have submitted, email <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a> <span class="decision">(DECISION: confirm address)</span>. Because there are no accounts, please include enough detail for us to locate the relevant entries (for example, the approximate dates, the trail name you used, and the approximate mile). We will act on verified deletion requests promptly.</p>
+
+  <h2>8. Security</h2>
+  <ul>
+    <li>Data sent during a <strong>trail-condition report</strong> travels over an <strong>encrypted</strong> connection to our backend.</li>
+    <li>The downloaded Gemma model is <strong>checksum-verified</strong> to confirm integrity.</li>
+    <li>Your <strong>raw GPS coordinates never leave the device</strong> — only a derived, approximate trail-mile is ever shared.</li>
+    <li>On-device data is protected by your <strong>device's own security</strong> (lock screen, OS sandboxing, and any device encryption you have enabled). Because so little data ever leaves the phone, the attack surface is intentionally small.</li>
+    <li>No system is perfectly secure, and we can't guarantee absolute security — but we've designed Trail Assistant to need as little of your data as possible, which is the strongest privacy protection of all.</li>
+  </ul>
+
+  <h2>9. A safety note (not strictly privacy, but it matters)</h2>
+  <p>Trail Assistant is a planning and reading companion. It helps you <em>think</em> — it is <strong>not an emergency device</strong> and <strong>not a substitute</strong> for official weather forecasts, official maps, or your own judgment in the field. Trail and weather data may be candidate-grade and is labeled as such; always <strong>confirm conditions in the field</strong> and carry appropriate emergency equipment.</p>
+
+  <h2>10. Changes to this policy</h2>
+  <p>If we change how the app handles data, we'll update this policy and revise the <strong>effective date</strong> at the top. Where a change is material, we'll make a reasonable effort to surface it in the app or on hoggcountry.com. Continuing to use the app after an update means you accept the revised policy.</p>
+
+  <h2>11. Contact</h2>
+  <p>
+    <strong>Hogg Country</strong><br />
+    Privacy: <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a> <span class="decision">(DECISION: confirm address)</span><br />
+    Web: <a href="https://hoggcountry.com">hoggcountry.com</a>
+  </p>
+
+  <footer>
+    <p>Trail Assistant by Hogg Country · bundle ID <code>com.hoggcountry.trailassistant</code> · iOS &amp; Android.</p>
+    <p class="signoff">Made with love for Dad, and for everyone walking north.</p>
+  </footer>
+
+</div>
+</body>
+</html>
