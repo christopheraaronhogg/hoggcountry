@@ -417,7 +417,10 @@ class TrailAssistantStore {
 			confidence: 'draft',
 			mode: 'on-device',
 			provider: 'on-device-gemma',
-			receipts: this.#fieldPack.sourceReceipts ?? [],
+			// No citations on a status message — this is NOT a model answer, so it
+			// must never carry source provenance. (The chat also renders it as a
+			// plain status line, with no confidence badge — see #dispatchScoutReply.)
+			receipts: [],
 			toolInvocations: [],
 			requiredConfirmations: [],
 			safetyFlags: notInstalled
@@ -750,11 +753,11 @@ class TrailAssistantStore {
 
 		try {
 			if (!(await this.#gemmaReady())) {
+				// Model unavailable: append a PLAIN status message. Deliberately do
+				// NOT register it as a ScoutAnswer or set lastScoutAnswer — it isn't a
+				// model answer, so the chat shows no confidence badge or source chips.
 				const answer = this.#gemmaUnavailableAnswer();
-				this.#lastScoutAnswer = answer;
-				const message = makeMessage('assistant', answer.answer);
-				this.#scoutAnswersByMessage.set(message.id, answer);
-				this.#state.coachMessages = [...this.#state.coachMessages, message];
+				this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', answer.answer)];
 				return;
 			}
 

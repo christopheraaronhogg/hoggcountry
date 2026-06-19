@@ -76,12 +76,23 @@ export function climbFeet(profile: ElevationPoint[]): number {
 	return Math.round(gain);
 }
 
+const EARTH_RADIUS_MILES = 3958.8;
+
 /**
  * Snap a GPS fix to the nearest real trail mile. Uses an equirectangular
  * approximation (accurate at trail scale) over the 1-mile sample points.
- * Returns null when geometry isn't loaded so callers can fall back honestly.
+ *
+ * Returns null when geometry isn't loaded OR when the fix is farther than
+ * `maxMiles` from the trail — so an off-trail location (a town hitch, a bad
+ * fix) can never be published as a precise on-trail mile. Callers fall back to
+ * the last known mile, honestly, rather than fabricating a position.
  */
-export function snapToMile(points: TrailGeoPoint[], lat: number, lon: number): number | null {
+export function snapToMile(
+	points: TrailGeoPoint[],
+	lat: number,
+	lon: number,
+	maxMiles = 2
+): number | null {
 	if (!points.length || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
 	const toRad = Math.PI / 180;
 	const latRad = lat * toRad;
@@ -96,5 +107,6 @@ export function snapToMile(points: TrailGeoPoint[], lat: number, lon: number): n
 			bestMile = p.m;
 		}
 	}
-	return bestMile;
+	const milesFromTrail = Math.sqrt(bestDist) * EARTH_RADIUS_MILES;
+	return milesFromTrail <= maxMiles ? bestMile : null;
 }

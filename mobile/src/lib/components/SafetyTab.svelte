@@ -104,7 +104,7 @@
 			</span>
 		</div>
 		<ul class="signal-list">
-			<li><span>Local Scout answers</span><strong>Available</strong></li>
+			<li><span>Local Scout answers</span><strong>{trailAssistant.modelStatus?.state === 'ready' ? 'Available' : 'Needs model download'}</strong></li>
 			<li><span>Field guide + mileposts</span><strong>Available</strong></li>
 			<li><span>Queued check-ins</span><strong>{trailAssistant.onlineStatus ? 'Real-time' : 'Will sync on signal'}</strong></li>
 			<li><span>Weather refresh</span><strong>{trailAssistant.onlineStatus ? 'Fresh' : 'Cached only'}</strong></li>

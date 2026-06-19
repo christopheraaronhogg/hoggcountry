@@ -117,14 +117,19 @@ public class ScoutGemmaPlugin extends Plugin {
     @Override
     protected void handleOnDestroy() {
         ScoutModelDownloadBus.get().unregister(downloadListener);
-        inference.shutdownNow();
-        ScoutGemmaEngine currentEngine;
+        final ScoutGemmaEngine currentEngine;
         synchronized (engineLock) {
             currentEngine = engine;
+            engine = null;
         }
+        // Close on the inference executor so teardown happens-AFTER any in-flight
+        // generate() (FIFO order), never freeing the native engine mid-call.
+        // Use shutdown() (graceful) rather than shutdownNow(): the latter would
+        // interrupt a running native call and leak/crash. Queued close still runs.
         if (currentEngine != null) {
-            currentEngine.close();
+            inference.execute(currentEngine::close);
         }
+        inference.shutdown();
     }
 
     @PluginMethod

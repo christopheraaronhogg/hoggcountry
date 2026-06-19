@@ -104,7 +104,7 @@
 	<section class="hud card">
 		<div class="hud-top">
 			<span class="day">Day {dayNumber}</span>
-			<span class="off">On-device AI</span>
+			<span class="off">{trailAssistant.modelStatus?.state === 'ready' ? 'On-device AI' : 'AI not installed'}</span>
 		</div>
 		<div class="mile tabular">{from.toFixed(1)}<span class="of"> / {TOTAL_MILES.toLocaleString()} mi</span></div>
 		<div class="bar"><div class="fill" style="width:{pct}%"></div></div>
