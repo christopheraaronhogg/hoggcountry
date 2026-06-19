@@ -246,9 +246,18 @@ public final class ScoutModelDownloadService extends Service {
     }
 
     public static void cancel(Context context) {
-        Intent intent = new Intent(context, ScoutModelDownloadService.class).setAction(ACTION_CANCEL);
-        // A started service receives this even while running; if nothing is
-        // running the no-op onStartCommand path stops it immediately.
-        context.startService(intent);
+        // Signal the in-process downloader directly instead of going through
+        // startService(). On API 26+ startService throws IllegalStateException
+        // when the app is in the background, and if no transfer is running it
+        // would needlessly start (and immediately stop) the service. The ACTIVE
+        // AtomicReference is process-wide, so this reaches the live downloader
+        // without any IPC. If ACTIVE is null there is nothing to cancel — safe no-op.
+        ScoutModelDownloader running = ACTIVE.get();
+        if (running != null) {
+            running.cancel();
+        }
+        // Terminal handling (bus publishCancelled + stopSelf) still happens on the
+        // worker thread when the downloader unwinds, preserving the existing
+        // behaviour that the JS bridge receives its cancelled event.
     }
 }

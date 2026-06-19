@@ -23,6 +23,15 @@
 			model.downloadConfigured &&
 			(model.state === 'needs_download' || model.state === 'present_unverified')
 	);
+	const fieldPack = $derived(trailAssistant.fieldPack);
+	const fieldPackStatus = $derived(trailAssistant.fieldPackStatus);
+	const fieldPackMiles = $derived(Math.max(0, fieldPack.frame.endMile - fieldPack.frame.startMile));
+	const fieldPackRegion = $derived(fieldPack.downloadedRegions[0] ?? trailAssistant.trailSettings.offlineRegion);
+	const fieldPackLoaded = $derived(
+		fieldPackStatus.lastLoadedAt
+			? new Date(fieldPackStatus.lastLoadedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })
+			: 'bundled'
+	);
 </script>
 
 <div class="section-stack">
@@ -58,7 +67,6 @@
 
 	<section class="card offline-section">
 		<OfflineStatus />
-		<button class="outline-button compact">Manage field packs</button>
 	</section>
 
 	{#if trailAssistant.supportsOnDeviceModel}
@@ -285,13 +293,15 @@
 
 	<section class="card region-card">
 		<p class="eyebrow">Offline readiness</p>
-		<h3>{trailAssistant.trailSettings.offlineRegion}</h3>
-		<p>Primary downloaded region. Field pack rev synced for the next ~120 trail miles.</p>
+		<h3>{fieldPackRegion}</h3>
+		<p>
+			{fieldPackStatus.label}. Covers miles {fieldPack.frame.startMile.toFixed(1)}-{fieldPack.frame.endMile.toFixed(1)}
+			({fieldPackMiles.toFixed(0)} mi) from the {fieldPackStatus.source} pack, loaded {fieldPackLoaded}.
+		</p>
 		<div class="region-meta">
-			<span>{offlineModel.regions.length} regions cached</span>
+			<span>{fieldPack.downloadedRegions.length || offlineModel.regions.length} regions cached</span>
 			<span>{(offlineModel.sizeMb / 1024).toFixed(1)} GB on device</span>
 		</div>
-		<button class="outline-button">Manage downloaded regions</button>
 	</section>
 
 	<section class="card data-card">
@@ -308,13 +318,13 @@
 	</section>
 
 	<section class="legal-card">
-		<p>Hogg Country v0.1 (beta) · Privacy and data use are governed by your support circle settings.</p>
+		<p>Hogg Country v0.1 (beta) · Privacy and data use are governed by the privacy policy and on-device controls.</p>
 		<div class="legal-links">
-			<button type="button" class="legal-link">Privacy</button>
+			<a class="legal-link" href="https://hoggcountry.com/privacy" target="_blank" rel="noopener">Privacy</a>
 			<span>·</span>
-			<button type="button" class="legal-link">Terms</button>
+			<a class="legal-link" href="https://hoggcountry.com/terms" target="_blank" rel="noopener">Terms</a>
 			<span>·</span>
-			<button type="button" class="legal-link">Source policy</button>
+			<a class="legal-link" href="https://hoggcountry.com/data" target="_blank" rel="noopener">Source policy</a>
 		</div>
 	</section>
 </div>
@@ -529,14 +539,6 @@
 		font-size: 0.74rem;
 		color: var(--muted);
 		font-weight: 700;
-	}
-
-	.region-card .outline-button {
-		justify-self: start;
-		width: auto;
-		min-height: 38px;
-		padding: 6px 12px;
-		font-size: 0.82rem;
 	}
 
 	.data-card {

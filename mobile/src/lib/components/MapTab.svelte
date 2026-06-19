@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import { elevationNext20, type ElevationPoint } from './fieldData';
+	import { elevationWindow } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
 
 	// Trail-ribbon map (matches the d1 "Scout Hub" bake-off mockup): a stylized
@@ -15,6 +15,7 @@
 	let mapZoom = $state<(typeof ZOOMS)[number]>(10);
 
 	const from = $derived(trailAssistant.currentMile);
+	const geo = $derived(trailAssistant.trailGeometry);
 
 	type Landmark = { kind: 'water' | 'shelter' | 'town'; mile: number; label: string };
 
@@ -124,7 +125,7 @@
 	const elev = $derived.by(() => {
 		const W = 280, pad = 5;
 		const lo = from, hi = from + mapZoom;
-		const win = elevationNext20.filter((p) => p.mile >= lo - 0.01 && p.mile <= hi + 0.01);
+		const win = elevationWindow(geo, lo, mapZoom);
 		if (win.length < 2) {
 			return { d: '', gain: 0, loss: 0, minEl: 0, maxEl: 0, hereY: H - pad, lo, hi, empty: true };
 		}

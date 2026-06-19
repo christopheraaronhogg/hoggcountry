@@ -17,6 +17,8 @@ import type {
 	TrailState
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
+import { resolveModelPolicy } from './scout/model-policy.ts';
+import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
 import type { OnDeviceGemmaProvider } from './scout';
 import {
@@ -37,8 +39,22 @@ const TRAIL_ID = 'appalachian-trail';
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
-const MODEL_POLICY = (import.meta.env.VITE_SCOUT_MODEL_POLICY as string | undefined) ?? 'offline-tools';
+const MODEL_POLICY = resolveModelPolicy(
+	import.meta.env.VITE_SCOUT_MODEL_POLICY as string | undefined,
+	Boolean(import.meta.env.DEV)
+);
 const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
+
+// Dad's NOBO start date (src/data/gear.json startDate). The day number is derived
+// from this, not stored — so it's always the real "day N of the hike", never a
+// frozen placeholder.
+const HIKE_START_DATE = '2026-02-01';
+
+function deriveDayNumber(startDate: string, now: Date): number {
+	const start = new Date(`${startDate}T00:00:00`);
+	const days = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+	return Math.max(1, days);
+}
 
 function isoHoursFromNow(hours: number): string {
 	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -139,7 +155,7 @@ const defaultState: TrailState = {
 	coachMessages: [
 		makeMessage(
 			'assistant',
-			'Good morning. Trail readiness is holding steady today. Keep mapped water marked low-confidence until it is confirmed from a current source or in the field.'
+			"I'm Scout — your on-device trail assistant. Ask me about water, shelters, town, or safety and I'll answer from your saved field pack. Mapped water stays low-confidence until you confirm it from a current source or in the field."
 		)
 	],
 	lastCheckIn: {
@@ -151,23 +167,10 @@ const defaultState: TrailState = {
 		note: 'Using the bundled Dad trail-ahead fallback until a refreshed field pack is saved on this phone.'
 	},
 	checkInHistory: [],
-	trailPulseReports: [
-		makeTrailPulseReport({
-			source: 'chip',
-			chipText: 'Rocks',
-			noteText: 'Rocks',
-			reporterTrailName: 'Backtrack',
-			snappedMile: 1438.4,
-			observedAt: new Date(Date.now() - 34 * 60 * 1000).toISOString()
-		}),
-		makeTrailPulseReport({
-			source: 'text',
-			chipText: 'Water',
-			noteText: 'mapped stream candidate needs field confirmation',
-			snappedMile: 1441.5,
-			observedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-		})
-	],
+	// Trail Pulse starts empty — reports are crowd-sourced from real hikers, so the
+	// panel shows its honest "no one has reported nearby" empty state until one
+	// arrives. (No seeded/fabricated reports.)
+	trailPulseReports: [],
 	seenTrailPulseReportIds: [],
 	privacySettings: {
 		stealthMode: true,
@@ -252,6 +255,10 @@ class TrailAssistantStore {
 	// the confirm-before-apply gate for "Do" tools.
 	#pendingAction = $state<ProposedAction | null>(null);
 	#pendingApply: (() => void) | null = null;
+	// Real AT route geometry + USGS elevation (1-mi NOBO samples), fetched once
+	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
+	// until loaded, so UI renders an honest empty state in the meantime.
+	#trailGeo = $state.raw<TrailGeoPoint[]>([]);
 
 	constructor() {
 		if (!browser) return;
@@ -266,6 +273,13 @@ class TrailAssistantStore {
 			this.#fieldPackStatus = status;
 		});
 		void this.#loadFieldPack();
+		void loadTrailGeometry()
+			.then((points) => {
+				this.#trailGeo = points;
+			})
+			.catch((error) => {
+				console.error('Failed to load trail geometry', error);
+			});
 		// Re-observe any model download that kept running in the background service
 		// while the app was closed (also refreshes status, which may now be ready).
 		void this.reconcileDownload();
@@ -445,6 +459,10 @@ class TrailAssistantStore {
 
 	#getCurrentPosition(): Promise<GeolocationPosition | null> {
 		if (!browser || !navigator.geolocation) return Promise.resolve(null);
+		// Enforce the privacy toggle: location is only read when the hiker has opted
+		// in (default off). This is also why the OS permission prompt only appears
+		// after they enable "Precise location" — we never read it silently.
+		if (!this.#state.privacySettings.sharePreciseLocation) return Promise.resolve(null);
 
 		return new Promise((resolve) => {
 			navigator.geolocation.getCurrentPosition(
@@ -455,8 +473,12 @@ class TrailAssistantStore {
 		});
 	}
 
-	#snapPositionToTrailMile(_position: GeolocationPosition | null): number {
-		return this.#state.currentMile;
+	/** Snap a GPS fix to the nearest real AT mile (USGS route geometry). Falls back
+	 * to the last known mile when there's no fix or geometry isn't loaded yet. */
+	#snapPositionToTrailMile(position: GeolocationPosition | null): number {
+		if (!position) return this.#state.currentMile;
+		const mile = snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude);
+		return mile ?? this.#state.currentMile;
 	}
 
 	async #syncTrailPulseReport(report: TrailConditionReport) {
@@ -609,7 +631,12 @@ class TrailAssistantStore {
 	}
 
 	get dayNumber() {
-		return this.#state.dayNumber;
+		return deriveDayNumber(HIKE_START_DATE, new Date());
+	}
+
+	/** Real AT route geometry + elevation (1-mi samples), or [] before it loads. */
+	get trailGeometry() {
+		return this.#trailGeo;
 	}
 
 	get nextCheckInDueAt() {
@@ -808,12 +835,15 @@ class TrailAssistantStore {
 				this.#scoutAnswersByMessage.set(message.id, answer);
 				this.#state.coachMessages = [...this.#state.coachMessages, message];
 			}
-		} catch {
+		} catch (error) {
 			// On-device generation failed this turn. Under the Gemma-only policy the
 			// runtime rethrows rather than silently faking an offline answer (the
 			// "acted offline" bug), so handle it honestly: reset the availability
 			// probe, warm the engine for next time, and tell the hiker plainly with
 			// a retry nudge — never a canned offline answer that hides the failure.
+			// Log the real error so a genuine bug (store/tool failure) is debuggable
+			// from device logs rather than silently swallowed.
+			console.error('Scout reply failed', error);
 			this.#scout.onDeviceProvider?.invalidateAvailability();
 			this.#warmUpModel();
 			// Keep the wording accurate for any failure here (on-device generation is

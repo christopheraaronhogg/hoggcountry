@@ -68,13 +68,22 @@ public class ScoutGemmaPlugin extends Plugin {
         public void onComplete(long totalBytes) {
             // Model is on device and verified — swap in a fresh engine so the next
             // isAvailable()/generate() picks it up without an app restart.
-            ScoutGemmaEngine previous;
+            //
+            // Invariant: no engine may be closed while a generate() is using it.
+            // We satisfy this by queuing the close() on the same single-thread
+            // inference executor that generate() runs on. Because the executor is
+            // single-threaded, close() cannot execute until any in-flight generate()
+            // has returned — the happens-before relationship is guaranteed by the
+            // executor's FIFO ordering. The engineLock swap is still done here (on
+            // the download thread) so that getEngine() callers immediately see the
+            // new engine; only the teardown of the OLD engine is deferred.
+            final ScoutGemmaEngine previous;
             synchronized (engineLock) {
                 previous = engine;
                 engine = createEngine();
             }
             if (previous != null) {
-                previous.close();
+                inference.execute(previous::close);
             }
             notifyListeners("scoutModelDownloadComplete", getModelStore().getStatus().toJSObject());
         }

@@ -41,7 +41,7 @@
 	<title>Trail Assistant</title>
 	<meta
 		name="description"
-		content="Phone-first prototype for the Hogg Country Trail Assistant."
+		content="On-device trail assistant for the Appalachian Trail — offline maps, gear, scripture, and Scout, your private AI hiking companion."
 	/>
 </svelte:head>
 

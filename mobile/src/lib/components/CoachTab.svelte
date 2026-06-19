@@ -7,7 +7,6 @@
 		ScoutConfidence,
 		SourceReceipt as RuntimeSourceReceipt
 	} from '$lib/scout';
-	import { sourceReceipts } from './fieldData';
 	import type { SourceReceipt as UiSourceReceipt } from './fieldData';
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
@@ -108,35 +107,10 @@
 		};
 	}
 
-	// Fallback heuristics for messages that pre-date the runtime (e.g. the
-	// hydrated seed message). Real runtime answers always override these.
-	function fallbackReceipts(text: string): UiSourceReceipt[] {
-		const lower = text.toLowerCase();
-		const keys: Array<keyof typeof sourceReceipts> = [];
-		if (lower.includes('water') || lower.includes('shelter') || lower.includes('town') || lower.includes('mile')) keys.push('awol2026');
-		if (lower.includes('weather') || lower.includes('wind') || lower.includes('rain') || lower.includes('cold')) keys.push('nws');
-		if (lower.includes('reports') || lower.includes('recent')) keys.push('farout');
-		if (!keys.length) keys.push('scoutLocal');
-		return keys.map((key) => sourceReceipts[key]);
-	}
-
-	function fallbackTools(text: string): string[] {
-		const tools: string[] = [];
-		const lower = text.toLowerCase();
-		if (lower.includes('water') || lower.includes('spring') || lower.includes('creek')) tools.push('water-lookup');
-		if (lower.includes('weather') || lower.includes('wind') || lower.includes('rain')) tools.push('weather-cache');
-		if (lower.includes('shelter') || lower.includes('camp')) tools.push('next-shelter');
-		if (lower.includes('town') || lower.includes('resupply') || lower.includes('motel')) tools.push('town-snapshot');
-		if (lower.includes('mile') || lower.includes('push') || lower.includes('pace')) tools.push('pace-model');
-		if (lower.includes('safe') || lower.includes('risk') || lower.includes('check-in')) tools.push('safety-window');
-		if (!tools.length) tools.push('field-pack');
-		return tools;
-	}
-
-	function receiptsFor(messageId: string, content: string): {
+	function receiptsFor(messageId: string): {
 		receipts: UiSourceReceipt[];
 		tools: string[];
-		confidence: ScoutConfidence;
+		confidence: ScoutConfidence | null;
 		confirmations: RequiredConfirmation[];
 		safetyFlags: SafetyFlag[];
 	} {
@@ -150,13 +124,10 @@
 				safetyFlags: answer.safetyFlags
 			};
 		}
-		return {
-			receipts: fallbackReceipts(content),
-			tools: fallbackTools(content),
-			confidence: trailAssistant.onlineStatus ? 'high' : 'medium',
-			confirmations: [],
-			safetyFlags: []
-		};
+		// Messages without a real runtime answer (the seed/welcome message) get NO
+		// fabricated citations, tools, or confidence — they render as plain text, so
+		// source chips never appear on anything Scout's model didn't actually produce.
+		return { receipts: [], tools: [], confidence: null, confirmations: [], safetyFlags: [] };
 	}
 </script>
 
@@ -178,13 +149,15 @@
 	<section class="chat-card card">
 		<div class="chat-log" bind:this={logRef} onscroll={onLogScroll}>
 			{#each trailAssistant.coachMessages as message (message.id)}
-				{@const meta = message.role === 'assistant' ? receiptsFor(message.id, message.content) : null}
+				{@const meta = message.role === 'assistant' ? receiptsFor(message.id) : null}
 				<div class:assistant={message.role === 'assistant'} class:user={message.role === 'user'} class="message">
 					{#if message.role === 'assistant' && meta}
 						<div class="message-head">
 							<span class="bot-mark" aria-hidden="true">S</span>
 							<strong>Scout</strong>
-							<ConfidenceBadge confidence={meta.confidence} short />
+							{#if meta.confidence}
+								<ConfidenceBadge confidence={meta.confidence} short />
+							{/if}
 						</div>
 					{/if}
 

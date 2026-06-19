@@ -1,20 +1,34 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import { packMissingCount, packTotalCarriedLb, todayWeather, elevationNext20 } from './fieldData';
+	import { elevationWindow, climbFeet } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
 
 	// Today = the hiker's day, now → camp (M1 "Day Timeline"). No readiness score —
 	// we have no vitals, so the HUD anchors only on REAL data: position, the day's
-	// arc, weather (first-class, with a plain "what it means" line), and the next
-	// honest move. The structure answers "what do I do next?" at a 2-second glance.
+	// arc, the last cached forecast, and the next honest move. The structure
+	// answers "what do I do next?" at a 2-second glance.
 
 	const TOTAL_MILES = 2197.4;
 	const from = $derived(trailAssistant.currentMile);
 	const dayNumber = $derived(trailAssistant.dayNumber);
-	const pct = $derived(Math.round((from / TOTAL_MILES) * 100));
+	const pct = $derived(Math.min(100, Math.round((from / TOTAL_MILES) * 100)));
 	const toGo = $derived(Math.max(0, TOTAL_MILES - from));
 
-	const wx = todayWeather;
+	// Last cached forecast that travels with the field pack (CachedWeather | null).
+	// There is no live/offline weather source yet, so this is shown as cached, with
+	// its real timestamp — never as a live reading.
+	const wx = $derived(trailAssistant.fieldPack.weather);
+	const wxUpdated = $derived(
+		wx ? new Date(wx.generatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ''
+	);
+
+	// Gear glance — derived from the SAME live loadout the Gear screen uses, so the
+	// two never disagree.
+	const loadout = $derived(trailAssistant.fieldPack.loadout);
+	const packTotalCarriedLb = $derived(
+		Math.round((loadout.filter((i) => i.carried).reduce((s, i) => s + (i.weightOz ?? 0), 0) / 16) * 10) / 10
+	);
+	const packMissingCount = $derived(loadout.filter((i) => !i.carried).length);
 
 	// --- upcoming landmarks (keep mile, derive the day to camp) ----------------
 	const watersAhead = $derived(
@@ -26,17 +40,11 @@
 	const nextWater = $derived(watersAhead[0] ?? null);
 	const camp = $derived(sheltersAhead[0] ?? null); // the day's planned end
 
-	// Ascent between here and camp, derived from the real elevation profile (no
-	// fabricated number — sum the positive deltas of in-range points).
+	// Ascent between here and camp, summed from the real USGS elevation profile.
+	const geo = $derived(trailAssistant.trailGeometry);
 	const climbFt = $derived.by(() => {
 		if (!camp) return 0;
-		const pts = elevationNext20.filter((p) => p.mile >= from - 0.01 && p.mile <= camp.mile + 0.01);
-		let gain = 0;
-		for (let i = 1; i < pts.length; i++) {
-			const d = pts[i].elevation - pts[i - 1].elevation;
-			if (d > 0) gain += d;
-		}
-		return Math.round(gain);
+		return climbFeet(elevationWindow(geo, from, camp.mile - from));
 	});
 
 	type Node = { kind: 'done' | 'now' | 'water' | 'camp' | 'evening'; title: string; detail?: string; flag?: string };
@@ -135,29 +143,30 @@
 	<section class="wx card">
 		<div class="wx-head">
 			<span class="eyebrow">Weather</span>
-			<span class="wx-src">{wx.source}</span>
+			<span class="wx-src">{wx ? `Cached ${wxUpdated}` : 'No cache'}</span>
 		</div>
-		<div class="wx-now">
-			<div class="temp tabular">{wx.nowF}°</div>
-			<div class="wx-meta">
-				<p class="sum">{wx.summary}</p>
-				<p class="hilo">High {wx.highF}° · Low {wx.lowF}° · wind {wx.windMph} mph</p>
-			</div>
-		</div>
-		<p class="means"><span class="meanslab">What it means</span> {wx.meaning}</p>
-		<div class="hourly" aria-label="Hourly chance of rain">
-			{#each wx.hourly as h (h.label)}
-				<div class="hcol">
-					<div class="htrack"><div class="hfill" class:peak={h.peak} style="height:{Math.max(6, h.pct)}%"></div></div>
-					<span class="hpct" class:peak={h.peak}>{h.pct}</span>
-					<span class="hlab">{h.label}</span>
+		{#if wx}
+			<div class="wx-now">
+				<div class="temp tabular">{wx.highF}°</div>
+				<div class="wx-meta">
+					<p class="sum">{wx.summary}</p>
+					<p class="hilo">High {wx.highF}° · Low {wx.lowF}° · wind {wx.windMph} mph</p>
 				</div>
-			{/each}
-		</div>
-		<div class="daylight">
-			<div class="dl-track"><div class="dl-fill" style="width:{wx.daylightFrac * 100}%"></div></div>
-			<span class="dl-lab">Sunset {wx.sunsetLabel} · {wx.daylightLeftLabel}</span>
-		</div>
+			</div>
+			<p class="means">
+				<span class="meanslab">Verify before exposed terrain</span>
+				{wx.riskNote ?? 'This is cached field-pack weather. Refresh before relying on it.'}
+			</p>
+			<div class="daylight">
+				<div class="dl-track"><div class="dl-fill" style="width:100%"></div></div>
+				<span class="dl-lab">Cached near mile {wx.mile.toFixed(1)} · updated {wxUpdated}</span>
+			</div>
+		{:else}
+			<p class="means">
+				<span class="meanslab">No cached forecast</span>
+				Download or refresh the field pack before relying on weather.
+			</p>
+		{/if}
 	</section>
 
 	<!-- Day spine: the day, now → camp -->
