@@ -318,7 +318,7 @@
 	</section>
 
 	<section class="legal-card">
-		<p>Hogg Country v0.1 (beta) · Privacy and data use are governed by the privacy policy and on-device controls.</p>
+		<p>Hogg Country · Privacy and data use are governed by the privacy policy and on-device controls.</p>
 		<div class="legal-links">
 			<a class="legal-link" href="https://hoggcountry.com/privacy" target="_blank" rel="noopener">Privacy</a>
 			<span>·</span>

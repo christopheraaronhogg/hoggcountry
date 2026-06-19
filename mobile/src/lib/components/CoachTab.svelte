@@ -250,9 +250,9 @@
 			<div class="composer-actions">
 				<div class="composer-meta">
 					<span class="mode-tag" data-online={trailAssistant.onlineStatus}>
-						{trailAssistant.onlineStatus ? 'Gemma-only Scout' : 'Local Scout'}
+						On-device Scout
 					</span>
-					<span class="hint">Sources cited per answer</span>
+					<span class="hint">Sources cited when used</span>
 				</div>
 				<button class="cta-button send" onclick={submit} disabled={!draft.trim()}>Send</button>
 			</div>

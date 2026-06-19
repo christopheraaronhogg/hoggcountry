@@ -72,7 +72,7 @@ export const sourceReceipts: Record<string, SourceReceipt> = {
 		label: 'ATC trail updates',
 		provider: 'Appalachian Trail Conservancy',
 		confidence: 'high',
-		freshness: 'Synced 4h ago',
+		freshness: 'Checked online',
 		verify: 'atctrailupdates.org'
 	},
 	nws: {
@@ -80,14 +80,14 @@ export const sourceReceipts: Record<string, SourceReceipt> = {
 		label: 'NWS forecast',
 		provider: 'National Weather Service',
 		confidence: 'high',
-		freshness: 'Forecast 38m ago'
+		freshness: 'Live forecast when online'
 	},
 	farout: {
 		id: 'farout',
 		label: 'Recent hiker reports',
 		provider: 'Trail reports (FarOut user notes)',
 		confidence: 'medium',
-		freshness: 'Latest 2h ago',
+		freshness: 'User reports — verify in field',
 		verify: 'Cross-check at next shelter log'
 	},
 	awol2025: {
@@ -110,7 +110,7 @@ export const sourceReceipts: Record<string, SourceReceipt> = {
 		label: 'Your own log',
 		provider: 'Personal pace + recovery history',
 		confidence: 'medium',
-		freshness: 'Logged 2h ago'
+		freshness: 'Your own entries'
 	}
 };
 
