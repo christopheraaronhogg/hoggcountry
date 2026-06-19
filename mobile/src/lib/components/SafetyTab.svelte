@@ -40,6 +40,21 @@
 			return `in ${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 		})()
 	);
+
+	// Bailout options derived from the loaded field pack (nearest town + shelter
+	// ahead) — not a hardcoded list. Empty when the pack window has none.
+	const bailouts = $derived.by(() => {
+		const from = trailAssistant.currentMile;
+		const pack = trailAssistant.fieldPack;
+		const ahead = <T extends { mile: number; name: string }>(items: T[]) =>
+			items.filter((i) => i.mile >= from - 0.01).sort((a, b) => a.mile - b.mile)[0];
+		const out: Array<{ name: string; detail: string }> = [];
+		const town = ahead(pack.towns);
+		if (town) out.push({ name: town.name, detail: `town candidate, ${(town.mile - from).toFixed(1)} mi ahead — verify services before relying on them` });
+		const shelter = ahead(pack.shelters);
+		if (shelter) out.push({ name: shelter.name, detail: `shelter candidate, ${(shelter.mile - from).toFixed(1)} mi ahead` });
+		return out;
+	});
 </script>
 
 <div class="section-stack">
@@ -181,6 +196,8 @@
 					</div>
 					<span class="method-pill">{contact.method}</span>
 				</div>
+			{:else}
+				<p class="support-empty">No contacts yet. Add the people who should be alerted if you miss a check-in window.</p>
 			{/each}
 		</div>
 	</section>
@@ -189,9 +206,11 @@
 		<p class="eyebrow">Bailout options</p>
 		<h3>If today goes sideways</h3>
 		<ul>
-			<li><strong>Kent Hills</strong> · mapped town candidate, 2.0 mi ahead</li>
-			<li><strong>Morgan Stewart</strong> · open-data shelter candidate, 4.6 mi ahead</li>
-			<li><strong>Pawling corridor</strong> · services need current verification before relying on them</li>
+			{#each bailouts as b (b.name)}
+				<li><strong>{b.name}</strong> · {b.detail}</li>
+			{:else}
+				<li>No mapped bailout options in the loaded pack window — confirm options from your guide.</li>
+			{/each}
 		</ul>
 		<div class="bailout-sources">
 			<SourceChip source={sourceReceipts.awol2026} />
